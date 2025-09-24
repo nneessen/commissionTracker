@@ -1,0 +1,348 @@
+/* /home/nneessen/projects/commissionTracker/commission-tracker/src/App.css */
+
+/* Reset and base styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  font-size: 12px;
+  line-height: 1.2;
+  background-color: #f8f9fa;
+  color: #333;
+}
+
+.app {
+  padding: 8px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.app-header {
+  background: #2563eb;
+  color: white;
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 16px;
+  text-align: center;
+}
+
+/* Spreadsheet-like layout */
+.spreadsheet-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.spreadsheet-section {
+  background: white;
+  border: 1px solid #d0d7de;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.section-header {
+  background: #f6f8fa;
+  padding: 4px 8px;
+  border-bottom: 1px solid #d0d7de;
+  font-weight: 600;
+  font-size: 11px;
+  text-transform: uppercase;
+  color: #656d76;
+  letter-spacing: 0.5px;
+}
+
+/* Table styles - Excel-like */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+
+.data-table th,
+.data-table td {
+  padding: 2px 6px;
+  text-align: left;
+  border: 1px solid #d0d7de;
+  background: white;
+  height: 20px;
+  vertical-align: middle;
+}
+
+.data-table th {
+  background: #f6f8fa;
+  font-weight: 600;
+  font-size: 10px;
+  color: #656d76;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.data-table tbody tr:nth-child(even) {
+  background-color: #f8f9fa;
+}
+
+.data-table tbody tr:hover {
+  background-color: #e6f3ff;
+}
+
+/* Input styles */
+.cell-input {
+  width: 100%;
+  border: none;
+  background: transparent;
+  font-size: 11px;
+  padding: 0;
+  margin: 0;
+  text-align: right;
+  font-family: inherit;
+}
+
+.cell-input:focus {
+  outline: 2px solid #2563eb;
+  outline-offset: -1px;
+  background: white;
+}
+
+.currency-cell {
+  text-align: right;
+  font-family: 'Monaco', 'Menlo', monospace;
+}
+
+/* Results section */
+.results-section {
+  background: white;
+  border: 1px solid #d0d7de;
+  border-radius: 4px;
+  margin-bottom: 8px;
+}
+
+.results-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+
+.results-table th,
+.results-table td {
+  padding: 3px 6px;
+  text-align: center;
+  border: 1px solid #d0d7de;
+  height: 22px;
+  vertical-align: middle;
+}
+
+.results-table th {
+  background: #e6f3ff;
+  font-weight: 600;
+  font-size: 10px;
+  color: #1a73e8;
+  white-space: nowrap;
+}
+
+.results-table td {
+  font-family: 'Monaco', 'Menlo', monospace;
+  font-size: 10px;
+}
+
+.breakeven-row {
+  background-color: #fff3cd !important;
+  font-weight: 600;
+}
+
+.target-row-1 {
+  background-color: #d1ecf1 !important;
+}
+
+.target-row-2 {
+  background-color: #d4edda !important;
+}
+
+/* Metrics dashboard */
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.metric-card {
+  background: white;
+  border: 1px solid #d0d7de;
+  border-radius: 4px;
+  padding: 8px;
+}
+
+.metric-card h4 {
+  font-size: 10px;
+  color: #656d76;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.metric-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: #2563eb;
+  font-family: 'Monaco', 'Menlo', monospace;
+}
+
+.metric-label {
+  font-size: 9px;
+  color: #656d76;
+  margin-top: 2px;
+}
+
+/* Controls */
+.controls-bar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  background: white;
+  border: 1px solid #d0d7de;
+  border-radius: 4px;
+  padding: 6px 8px;
+  margin-bottom: 8px;
+}
+
+.btn {
+  padding: 4px 8px;
+  border: 1px solid #d0d7de;
+  border-radius: 3px;
+  background: white;
+  font-size: 11px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.btn:hover {
+  background: #f6f8fa;
+}
+
+.btn-primary {
+  background: #2563eb;
+  color: white;
+  border-color: #2563eb;
+}
+
+.btn-primary:hover {
+  background: #1d4ed8;
+}
+
+/* Constants section */
+.constants-section {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  background: white;
+  border: 1px solid #d0d7de;
+  border-radius: 4px;
+  padding: 8px;
+  margin-bottom: 8px;
+}
+
+.constant-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.constant-label {
+  font-size: 9px;
+  color: #656d76;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.constant-input {
+  width: 80px;
+  padding: 2px 4px;
+  border: 1px solid #d0d7de;
+  border-radius: 2px;
+  font-size: 11px;
+  text-align: right;
+  font-family: 'Monaco', 'Menlo', monospace;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+  .spreadsheet-container {
+    grid-template-columns: 1fr;
+  }
+
+  .metrics-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .app {
+    padding: 4px;
+  }
+
+  .data-table th,
+  .data-table td {
+    padding: 1px 3px;
+    font-size: 10px;
+  }
+
+  .metrics-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Utility classes */
+.text-right {
+  text-align: right;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.font-mono {
+  font-family: 'Monaco', 'Menlo', monospace;
+}
+
+.text-sm {
+  font-size: 10px;
+}
+
+.text-xs {
+  font-size: 9px;
+}
+
+.font-semibold {
+  font-weight: 600;
+}
+
+.text-blue {
+  color: #2563eb;
+}
+
+.text-gray {
+  color: #656d76;
+}
+
+.text-green {
+  color: #059669;
+}
+
+.text-red {
+  color: #dc2626;
+}
+
+.mb-2 {
+  margin-bottom: 8px;
+}
+
+.mb-1 {
+  margin-bottom: 4px;
+}
