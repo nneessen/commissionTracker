@@ -7,8 +7,10 @@
   box-sizing: border-box;
 }
 
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-size: 14px;
   line-height: 1.3;
   background-color: #f8f9fa;
@@ -101,7 +103,7 @@ body {
   padding: 0;
   margin: 0;
   text-align: right;
-  font-family: inherit;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 .cell-input:focus {
@@ -374,7 +376,7 @@ body {
   border-radius: 2px;
   font-size: 13px;
   text-align: right;
-  font-family: 'Monaco', 'Menlo', monospace;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 /* Responsive adjustments */
@@ -531,7 +533,7 @@ body {
   border: 1px solid #d0d7de;
   border-radius: 4px;
   font-size: 14px;
-  font-family: inherit;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   box-sizing: border-box;
 }
 
@@ -547,7 +549,7 @@ body {
   border: 1px solid #d0d7de;
   border-radius: 4px;
   font-size: 14px;
-  font-family: inherit;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   background: white;
   box-sizing: border-box;
 }
@@ -582,4 +584,27 @@ body {
 
 .btn-primary:disabled:hover {
   background: #2563eb;
+}
+
+/* Delete button styles */
+.btn-delete {
+  background: none;
+  border: none;
+  color: #dc2626;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.btn-delete:hover {
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.btn-delete:active {
+  background: #fee2e2;
 }

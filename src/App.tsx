@@ -1,7 +1,7 @@
 /* /home/nneessen/projects/commissionTracker/commission-tracker/src/App.tsx */
 
 import React, { useState, useCallback, useMemo } from 'react';
-import { Download, Plus, X } from 'lucide-react';
+import { Download, Plus, X, Trash2 } from 'lucide-react';
 import './App.css';
 
 // Types for our data structures
@@ -195,6 +195,16 @@ function App() {
     setShowAddExpenseModal(false);
   }, []);
 
+  // Delete expense
+  const deleteExpense = useCallback((category: ExpenseCategory, id: string) => {
+    if (window.confirm('Are you sure you want to delete this expense?')) {
+      setExpenses(prev => ({
+        ...prev,
+        [category]: prev[category].filter(item => item.id !== id)
+      }));
+    }
+  }, []);
+
   // Export to CSV function
   const exportToCSV = useCallback(() => {
     const headers = ['Scenario', 'Commission Needed', 'AP (100%)', 'Policies (100%)', 'AP (90%)', 'Policies (90%)', 'AP (80%)', 'Policies (80%)', 'AP (70%)', 'Policies (70%)'];
@@ -293,6 +303,7 @@ function App() {
               <tr>
                 <th>Category</th>
                 <th className="text-right">Amount</th>
+                <th className="text-center">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -307,11 +318,21 @@ function App() {
                       onChange={(e) => updateExpense('personal', item.id, Number(e.target.value))}
                     />
                   </td>
+                  <td className="text-center">
+                    <button
+                      className="btn-delete"
+                      onClick={() => deleteExpense('personal', item.id)}
+                      title="Delete expense"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </td>
                 </tr>
               ))}
               <tr style={{ fontWeight: 600, backgroundColor: '#e6f3ff' }}>
                 <td>Total</td>
                 <td className="currency-cell">${totals.personalTotal.toLocaleString()}</td>
+                <td></td>
               </tr>
             </tbody>
           </table>
@@ -325,6 +346,7 @@ function App() {
               <tr>
                 <th>Category</th>
                 <th className="text-right">Amount</th>
+                <th className="text-center">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -339,11 +361,21 @@ function App() {
                       onChange={(e) => updateExpense('business', item.id, Number(e.target.value))}
                     />
                   </td>
+                  <td className="text-center">
+                    <button
+                      className="btn-delete"
+                      onClick={() => deleteExpense('business', item.id)}
+                      title="Delete expense"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </td>
                 </tr>
               ))}
               <tr style={{ fontWeight: 600, backgroundColor: '#e6f3ff' }}>
                 <td>Total</td>
                 <td className="currency-cell">${totals.businessTotal.toLocaleString()}</td>
+                <td></td>
               </tr>
             </tbody>
           </table>
@@ -358,6 +390,7 @@ function App() {
             <tr>
               <th>Creditor</th>
               <th className="text-right">Payment</th>
+              <th className="text-center">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -372,11 +405,21 @@ function App() {
                     onChange={(e) => updateExpense('debt', item.id, Number(e.target.value))}
                   />
                 </td>
+                <td className="text-center">
+                  <button
+                    className="btn-delete"
+                    onClick={() => deleteExpense('debt', item.id)}
+                    title="Delete expense"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </td>
               </tr>
             ))}
             <tr style={{ fontWeight: 600, backgroundColor: '#e6f3ff' }}>
               <td>Total</td>
               <td className="currency-cell">${totals.debtTotal.toLocaleString()}</td>
+              <td></td>
             </tr>
           </tbody>
         </table>
