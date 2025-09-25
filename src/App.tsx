@@ -1,37 +1,20 @@
 /* /home/nneessen/projects/commissionTracker/commission-tracker/src/App.tsx */
 
 import React, { useState, useCallback, useMemo } from 'react';
-import { Download } from 'lucide-react';
+import { Download, Plus, X } from 'lucide-react';
 import './App.css';
 
 // Types for our data structures
+interface ExpenseItem {
+  id: string;
+  name: string;
+  amount: number;
+}
+
 interface ExpenseData {
-  personal: {
-    electric: number;
-    legends: number;
-    home: number;
-    car: number;
-    carInsurance: number;
-    cookUnity: number;
-    miscFood: number;
-  };
-  business: {
-    office: number;
-    supabase: number;
-    railway: number;
-    claude: number;
-    closeCRM: number;
-    tmobile: number;
-    londonLeads: number;
-  };
-  debt: {
-    usBankPersonal: number;
-    usBankBusiness: number;
-    amexPlat: number;
-    amexBiz: number;
-    wellsFargo: number;
-    discover: number;
-  };
+  personal: ExpenseItem[];
+  business: ExpenseItem[];
+  debt: ExpenseItem[];
 }
 
 interface Constants {
@@ -54,35 +37,43 @@ interface CalculationResult {
   policies70: number;
 }
 
+type ExpenseCategory = 'personal' | 'business' | 'debt';
+
+interface NewExpenseForm {
+  name: string;
+  amount: number;
+  category: ExpenseCategory;
+}
+
 function App() {
   // State for all expenses
   const [expenses, setExpenses] = useState<ExpenseData>({
-    personal: {
-      electric: 50,
-      legends: 75,
-      home: 4200,
-      car: 1000,
-      carInsurance: 200,
-      cookUnity: 800,
-      miscFood: 600
-    },
-    business: {
-      office: 1000,
-      supabase: 65,
-      railway: 5,
-      claude: 200,
-      closeCRM: 300,
-      tmobile: 250,
-      londonLeads: 5000
-    },
-    debt: {
-      usBankPersonal: 301,
-      usBankBusiness: 35,
-      amexPlat: 634,
-      amexBiz: 1500,
-      wellsFargo: 85,
-      discover: 114
-    }
+    personal: [
+      { id: '1', name: 'Electric', amount: 50 },
+      { id: '2', name: 'Legends', amount: 75 },
+      { id: '3', name: 'Home', amount: 4200 },
+      { id: '4', name: 'Car', amount: 1000 },
+      { id: '5', name: 'Car Insurance', amount: 200 },
+      { id: '6', name: 'Cook Unity', amount: 800 },
+      { id: '7', name: 'Misc Food', amount: 600 }
+    ],
+    business: [
+      { id: '8', name: 'Office', amount: 1000 },
+      { id: '9', name: 'Supabase', amount: 65 },
+      { id: '10', name: 'Railway', amount: 5 },
+      { id: '11', name: 'Claude', amount: 200 },
+      { id: '12', name: 'Close CRM', amount: 300 },
+      { id: '13', name: 'T-Mobile', amount: 250 },
+      { id: '14', name: 'London Leads', amount: 5000 }
+    ],
+    debt: [
+      { id: '15', name: 'US Bank Personal', amount: 301 },
+      { id: '16', name: 'US Bank Business', amount: 35 },
+      { id: '17', name: 'Amex Plat', amount: 634 },
+      { id: '18', name: 'Amex Biz', amount: 1500 },
+      { id: '19', name: 'Wells Fargo', amount: 85 },
+      { id: '20', name: 'Discover', amount: 114 }
+    ]
   });
 
   // State for constants
@@ -93,11 +84,19 @@ function App() {
     target2: 10000
   });
 
+  // State for add expense modal
+  const [showAddExpenseModal, setShowAddExpenseModal] = useState(false);
+  const [newExpense, setNewExpense] = useState<NewExpenseForm>({
+    name: '',
+    amount: 0,
+    category: 'personal'
+  });
+
   // Calculated totals
   const totals = useMemo(() => {
-    const personalTotal = Object.values(expenses.personal).reduce((sum, val) => sum + val, 0);
-    const businessTotal = Object.values(expenses.business).reduce((sum, val) => sum + val, 0);
-    const debtTotal = Object.values(expenses.debt).reduce((sum, val) => sum + val, 0);
+    const personalTotal = expenses.personal.reduce((sum, item) => sum + item.amount, 0);
+    const businessTotal = expenses.business.reduce((sum, item) => sum + item.amount, 0);
+    const debtTotal = expenses.debt.reduce((sum, item) => sum + item.amount, 0);
     const monthlyExpenses = personalTotal + businessTotal + debtTotal;
 
     return { personalTotal, businessTotal, debtTotal, monthlyExpenses };
@@ -149,13 +148,12 @@ function App() {
   }, [calculations, constants, totals]);
 
   // Handle expense changes
-  const updateExpense = useCallback((category: keyof ExpenseData, field: string, value: number) => {
+  const updateExpense = useCallback((category: ExpenseCategory, id: string, amount: number) => {
     setExpenses(prev => ({
       ...prev,
-      [category]: {
-        ...prev[category],
-        [field]: value
-      }
+      [category]: prev[category].map(item =>
+        item.id === id ? { ...item, amount } : item
+      )
     }));
   }, []);
 
@@ -165,6 +163,36 @@ function App() {
       ...prev,
       [field]: value
     }));
+  }, []);
+
+  // Handle new expense form
+  const handleNewExpenseChange = useCallback((field: keyof NewExpenseForm, value: string | number) => {
+    setNewExpense(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  }, []);
+
+  // Add new expense
+  const addExpense = useCallback(() => {
+    if (newExpense.name.trim() && newExpense.amount >= 0) {
+      const id = Date.now().toString();
+      setExpenses(prev => ({
+        ...prev,
+        [newExpense.category]: [
+          ...prev[newExpense.category],
+          { id, name: newExpense.name.trim(), amount: newExpense.amount }
+        ]
+      }));
+      setNewExpense({ name: '', amount: 0, category: 'personal' });
+      setShowAddExpenseModal(false);
+    }
+  }, [newExpense]);
+
+  // Cancel new expense
+  const cancelAddExpense = useCallback(() => {
+    setNewExpense({ name: '', amount: 0, category: 'personal' });
+    setShowAddExpenseModal(false);
   }, []);
 
   // Export to CSV function
@@ -242,6 +270,10 @@ function App() {
 
       {/* Controls Bar */}
       <div className="controls-bar">
+        <button className="btn btn-primary" onClick={() => setShowAddExpenseModal(true)}>
+          <Plus size={12} />
+          Add Expense
+        </button>
         <button className="btn btn-primary" onClick={exportToCSV}>
           <Download size={12} />
           Export CSV
@@ -264,15 +296,15 @@ function App() {
               </tr>
             </thead>
             <tbody>
-              {Object.entries(expenses.personal).map(([key, value]) => (
-                <tr key={key}>
-                  <td>{key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1')}</td>
+              {expenses.personal.map((item) => (
+                <tr key={item.id}>
+                  <td>{item.name}</td>
                   <td className="currency-cell">
                     <input
                       type="number"
                       className="cell-input"
-                      value={value}
-                      onChange={(e) => updateExpense('personal', key, Number(e.target.value))}
+                      value={item.amount}
+                      onChange={(e) => updateExpense('personal', item.id, Number(e.target.value))}
                     />
                   </td>
                 </tr>
@@ -296,15 +328,15 @@ function App() {
               </tr>
             </thead>
             <tbody>
-              {Object.entries(expenses.business).map(([key, value]) => (
-                <tr key={key}>
-                  <td>{key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1')}</td>
+              {expenses.business.map((item) => (
+                <tr key={item.id}>
+                  <td>{item.name}</td>
                   <td className="currency-cell">
                     <input
                       type="number"
                       className="cell-input"
-                      value={value}
-                      onChange={(e) => updateExpense('business', key, Number(e.target.value))}
+                      value={item.amount}
+                      onChange={(e) => updateExpense('business', item.id, Number(e.target.value))}
                     />
                   </td>
                 </tr>
@@ -329,15 +361,15 @@ function App() {
             </tr>
           </thead>
           <tbody>
-            {Object.entries(expenses.debt).map(([key, value]) => (
-              <tr key={key}>
-                <td>{key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}</td>
+            {expenses.debt.map((item) => (
+              <tr key={item.id}>
+                <td>{item.name}</td>
                 <td className="currency-cell">
                   <input
                     type="number"
                     className="cell-input"
-                    value={value}
-                    onChange={(e) => updateExpense('debt', key, Number(e.target.value))}
+                    value={item.amount}
+                    onChange={(e) => updateExpense('debt', item.id, Number(e.target.value))}
                   />
                 </td>
               </tr>
@@ -374,49 +406,124 @@ function App() {
         </div>
       </div>
 
-      {/* Results Table */}
+      {/* Results Table - Redesigned */}
       <div className="results-section">
-        <div className="section-header">Commission Requirements by Persistency</div>
-        <table className="results-table">
-          <thead>
-            <tr>
-              <th>Scenario</th>
-              <th>Commission</th>
-              <th>AP (100%)</th>
-              <th>Policies</th>
-              <th>AP (90%)</th>
-              <th>Policies</th>
-              <th>AP (80%)</th>
-              <th>Policies</th>
-              <th>AP (70%)</th>
-              <th>Policies</th>
-            </tr>
-          </thead>
-          <tbody>
-            {calculations.map((calc, index) => (
-              <tr
-                key={calc.scenario}
-                className={
-                  index === 0 ? 'breakeven-row' :
-                  index === 1 ? 'target-row-1' :
-                  'target-row-2'
-                }
-              >
-                <td className="text-left font-semibold">{calc.scenario}</td>
-                <td>${calc.commissionNeeded.toLocaleString()}</td>
-                <td>${Math.round(calc.apNeeded100).toLocaleString()}</td>
-                <td>{calc.policies100}</td>
-                <td>${Math.round(calc.apNeeded90).toLocaleString()}</td>
-                <td>{calc.policies90}</td>
-                <td>${Math.round(calc.apNeeded80).toLocaleString()}</td>
-                <td>{calc.policies80}</td>
-                <td>${Math.round(calc.apNeeded70).toLocaleString()}</td>
-                <td>{calc.policies70}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <div className="section-header">
+          Commission Requirements & Sales Targets
+          <div className="section-subtitle">Monthly targets based on different persistency rates (how many policies remain active)</div>
+        </div>
+
+        <div className="results-grid">
+          {calculations.map((calc, index) => (
+            <div
+              key={calc.scenario}
+              className={`result-card ${
+                index === 0 ? 'breakeven-card' :
+                index === 1 ? 'target-card-1' :
+                'target-card-2'
+              }`}
+            >
+              <div className="result-header">
+                <h4 className="scenario-title">{calc.scenario}</h4>
+                <div className="commission-needed">${calc.commissionNeeded.toLocaleString()}</div>
+                <div className="commission-label">Commission Needed</div>
+              </div>
+
+              <div className="persistency-grid">
+                <div className="persistency-item">
+                  <div className="persistency-rate">100%</div>
+                  <div className="persistency-label">Perfect Retention</div>
+                  <div className="ap-amount">${Math.round(calc.apNeeded100).toLocaleString()}</div>
+                  <div className="policies-count">{calc.policies100} policies</div>
+                </div>
+
+                <div className="persistency-item">
+                  <div className="persistency-rate">90%</div>
+                  <div className="persistency-label">Excellent Retention</div>
+                  <div className="ap-amount">${Math.round(calc.apNeeded90).toLocaleString()}</div>
+                  <div className="policies-count">{calc.policies90} policies</div>
+                </div>
+
+                <div className="persistency-item">
+                  <div className="persistency-rate">80%</div>
+                  <div className="persistency-label">Good Retention</div>
+                  <div className="ap-amount">${Math.round(calc.apNeeded80).toLocaleString()}</div>
+                  <div className="policies-count">{calc.policies80} policies</div>
+                </div>
+
+                <div className="persistency-item">
+                  <div className="persistency-rate">70%</div>
+                  <div className="persistency-label">Fair Retention</div>
+                  <div className="ap-amount">${Math.round(calc.apNeeded70).toLocaleString()}</div>
+                  <div className="policies-count">{calc.policies70} policies</div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
+
+      {/* Add Expense Modal */}
+      {showAddExpenseModal && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <div className="modal-header">
+              <h3>Add New Expense</h3>
+              <button className="modal-close" onClick={cancelAddExpense}>
+                <X size={16} />
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="form-group">
+                <label>Expense Name</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  value={newExpense.name}
+                  onChange={(e) => handleNewExpenseChange('name', e.target.value)}
+                  placeholder="Enter expense name"
+                />
+              </div>
+              <div className="form-group">
+                <label>Amount</label>
+                <input
+                  type="number"
+                  className="form-input"
+                  value={newExpense.amount}
+                  onChange={(e) => handleNewExpenseChange('amount', Number(e.target.value))}
+                  placeholder="0"
+                  min="0"
+                  step="0.01"
+                />
+              </div>
+              <div className="form-group">
+                <label>Category</label>
+                <select
+                  className="form-select"
+                  value={newExpense.category}
+                  onChange={(e) => handleNewExpenseChange('category', e.target.value as ExpenseCategory)}
+                >
+                  <option value="personal">Personal</option>
+                  <option value="business">Business</option>
+                  <option value="debt">Debt</option>
+                </select>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn" onClick={cancelAddExpense}>
+                Cancel
+              </button>
+              <button
+                className="btn btn-primary"
+                onClick={addExpense}
+                disabled={!newExpense.name.trim() || newExpense.amount < 0}
+              >
+                Add Expense
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
