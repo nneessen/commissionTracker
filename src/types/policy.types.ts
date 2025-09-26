@@ -59,8 +59,8 @@ export interface NewPolicyForm {
   termLength?: number;
 
   // Financial fields
-  premium: number;
-  annualPremium?: number;
+  premium: number; // Payment amount (monthly, quarterly, etc.)
+  annualPremium?: number; // Calculated annual premium
   paymentFrequency: PaymentFrequency;
   commissionPercentage: number;
 

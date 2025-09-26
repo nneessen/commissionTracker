@@ -1,0 +1,88 @@
+<!-- /home/nneessen/projects/commissionTracker/add-test-policy.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Add Test Policy</title>
+    <style>
+        body { font-family: Arial; padding: 20px; }
+        button { padding: 10px 20px; margin: 10px; font-size: 16px; cursor: pointer; }
+        .success { color: green; }
+        .error { color: red; }
+        pre { background: #f4f4f4; padding: 10px; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Add Test Policy to Commission Tracker</h1>
+
+    <button onclick="checkPolicies()">Check Current Policies</button>
+    <button onclick="addPolicy()">Add Test Policy</button>
+    <button onclick="clearPolicies()">Clear All Policies</button>
+    <button onclick="window.open('http://localhost:3000', '_blank')">Open App</button>
+
+    <div id="output"></div>
+
+    <script>
+        const STORAGE_KEY = 'commission_tracker_policies';
+
+        function log(msg, type = 'info') {
+            const output = document.getElementById('output');
+            const color = type === 'error' ? 'red' : type === 'success' ? 'green' : 'black';
+            output.innerHTML += `<div style="color: ${color}">${new Date().toLocaleTimeString()}: ${msg}</div>`;
+        }
+
+        function checkPolicies() {
+            const policies = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+            log(`Found ${policies.length} policies`);
+            if (policies.length > 0) {
+                log('<pre>' + JSON.stringify(policies, null, 2) + '</pre>');
+            }
+        }
+
+        function addPolicy() {
+            const policies = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+
+            const newPolicy = {
+                id: 'test-' + Date.now(),
+                policyNumber: 'TEST-' + Math.floor(Math.random() * 10000),
+                status: 'active',
+                client: {
+                    name: 'Test Client ' + new Date().toLocaleTimeString(),
+                    state: 'CA',
+                    age: 35,
+                    email: 'test@example.com',
+                    phone: '555-0100'
+                },
+                carrierId: 'carrier-1',
+                product: 'term_life',
+                effectiveDate: new Date().toISOString(),
+                annualPremium: 1200,
+                paymentFrequency: 'monthly',
+                commissionPercentage: 50,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                notes: 'Test policy added at ' + new Date().toLocaleString()
+            };
+
+            policies.push(newPolicy);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(policies));
+
+            log(`Added policy ${newPolicy.policyNumber}`, 'success');
+            log('Policy details: <pre>' + JSON.stringify(newPolicy, null, 2) + '</pre>');
+            log('Total policies now: ' + policies.length);
+            log('Refresh the app to see the new policy!', 'success');
+        }
+
+        function clearPolicies() {
+            if (confirm('Clear all policies?')) {
+                localStorage.removeItem(STORAGE_KEY);
+                log('All policies cleared', 'success');
+            }
+        }
+
+        // Check on load
+        window.onload = () => {
+            checkPolicies();
+        };
+    </script>
+</body>
+</html>

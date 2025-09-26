@@ -3,3 +3,8 @@
 // expect(element).toHaveTextContent(/react/i)
 // learn more: https://github.com/testing-library/jest-dom
 import '@testing-library/jest-dom';
+
+// Mock uuid module
+jest.mock('uuid', () => ({
+  v4: jest.fn(() => 'test-uuid-' + Math.random().toString(36).substr(2, 9))
+}));

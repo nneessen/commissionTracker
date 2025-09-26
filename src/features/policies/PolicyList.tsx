@@ -2,12 +2,15 @@
 
 import React, { useState, useMemo } from 'react';
 import { Edit, Trash2, Search, Filter, ChevronUp, ChevronDown } from 'lucide-react';
-import { usePolicy } from '../../hooks/usePolicy';
 import { useCarriers } from '../../hooks/useCarriers';
 import { Policy, PolicyFilters, PolicyStatus } from '../../types/policy.types';
 import { ProductType } from '../../types/commission.types';
 
 interface PolicyListProps {
+  policies: Policy[];
+  deletePolicy: (id: string) => void;
+  updatePolicyStatus: (id: string, status: PolicyStatus) => void;
+  filterPolicies: (filters: PolicyFilters) => Policy[];
   onEditPolicy: (policyId: string) => void;
 }
 
@@ -30,9 +33,18 @@ const PRODUCT_ABBREV: Record<ProductType, string> = {
   accidental_life: 'Acc',
 };
 
-export const PolicyList: React.FC<PolicyListProps> = ({ onEditPolicy }) => {
-  const { policies, deletePolicy, updatePolicyStatus, filterPolicies } = usePolicy();
+export const PolicyList: React.FC<PolicyListProps> = ({
+  policies,
+  deletePolicy,
+  updatePolicyStatus,
+  filterPolicies,
+  onEditPolicy
+}) => {
   const { getCarrierById } = useCarriers();
+
+  console.log('=== PolicyList RENDER ===');
+  console.log('Policies from props:', policies);
+  console.log('Policies count:', policies.length);
   const [filters, setFilters] = useState<PolicyFilters>({});
   const [searchTerm, setSearchTerm] = useState('');
   const [sortField, setSortField] = useState<SortField>('effectiveDate');

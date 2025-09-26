@@ -1,14 +1,24 @@
 // /home/nneessen/projects/commissionTracker/src/features/policies/PolicyForm.tsx
 
 import React, { useState, useEffect } from 'react';
-import { usePolicy } from '../../hooks/usePolicy';
 import { useCarriers } from '../../hooks/useCarriers';
-import { NewPolicyForm, PolicyStatus, PaymentFrequency } from '../../types/policy.types';
+import { NewPolicyForm, PolicyStatus, PaymentFrequency, Policy } from '../../types/policy.types';
 import { ProductType } from '../../types/commission.types';
+
+import {
+  calculateAnnualPremium,
+  calculatePaymentAmount,
+  calculateExpectedCommission,
+  validatePremium,
+  validateCommissionPercentage
+} from '../../utils/policyCalculations';
 
 interface PolicyFormProps {
   policyId?: string;
   onClose: () => void;
+  addPolicy: (form: NewPolicyForm) => Policy | null;
+  updatePolicy: (id: string, updates: any) => void;
+  getPolicyById: (id: string) => Policy | undefined;
 }
 
 const US_STATES = [
@@ -31,8 +41,13 @@ const US_STATES = [
   { value: 'WI', label: 'WI' }, { value: 'WY', label: 'WY' },
 ];
 
-export const PolicyForm: React.FC<PolicyFormProps> = ({ policyId, onClose }) => {
-  const { addPolicy, updatePolicy, getPolicyById } = usePolicy();
+export const PolicyForm: React.FC<PolicyFormProps> = ({
+  policyId,
+  onClose,
+  addPolicy,
+  updatePolicy,
+  getPolicyById
+}) => {
   const { carriers } = useCarriers();
 
   const [formData, setFormData] = useState<NewPolicyForm>({
@@ -43,7 +58,6 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({ policyId, onClose }) => 
     product: 'term_life' as ProductType,
     policyNumber: '',
     effectiveDate: new Date().toISOString().split('T')[0],
-    expirationDate: '',
     premium: 0,
     paymentFrequency: 'monthly' as PaymentFrequency,
     commissionPercentage: 0,
@@ -65,8 +79,7 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({ policyId, onClose }) => 
           product: policy.product,
           policyNumber: policy.policyNumber,
           effectiveDate: policy.effectiveDate instanceof Date ? policy.effectiveDate.toISOString().split('T')[0] : policy.effectiveDate,
-          expirationDate: policy.expirationDate ? (policy.expirationDate instanceof Date ? policy.expirationDate.toISOString().split('T')[0] : policy.expirationDate) : '',
-          premium: policy.annualPremium / (policy.paymentFrequency === 'monthly' ? 12 : policy.paymentFrequency === 'quarterly' ? 4 : policy.paymentFrequency === 'semi-annual' ? 2 : 1),
+          premium: calculatePaymentAmount(policy.annualPremium, policy.paymentFrequency),
           paymentFrequency: policy.paymentFrequency,
           commissionPercentage: policy.commissionPercentage,
           status: policy.status,
@@ -93,14 +106,22 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({ policyId, onClose }) => 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
 
-    if (!formData.clientName) newErrors.clientName = 'Required';
-    if (!formData.clientState) newErrors.clientState = 'Required';
-    if (!formData.clientAge || formData.clientAge < 1) newErrors.clientAge = 'Invalid';
-    if (!formData.carrierId) newErrors.carrierId = 'Required';
-    if (!formData.policyNumber) newErrors.policyNumber = 'Required';
-    if (!formData.effectiveDate) newErrors.effectiveDate = 'Required';
-    if (formData.premium <= 0) newErrors.premium = 'Invalid';
-    if (formData.commissionPercentage <= 0) newErrors.commissionPercentage = 'Invalid';
+    if (!formData.clientName) newErrors.clientName = 'Client name is required';
+    if (!formData.clientState) newErrors.clientState = 'State is required';
+    if (!formData.clientAge || formData.clientAge < 1 || formData.clientAge > 120) {
+      newErrors.clientAge = 'Valid age is required (1-120)';
+    }
+    if (!formData.carrierId) newErrors.carrierId = 'Carrier is required';
+    if (!formData.policyNumber) newErrors.policyNumber = 'Policy number is required';
+    if (!formData.effectiveDate) newErrors.effectiveDate = 'Effective date is required';
+    
+    if (!validatePremium(formData.premium)) {
+      newErrors.premium = 'Premium must be greater than $0';
+    }
+    
+    if (!validateCommissionPercentage(formData.commissionPercentage)) {
+      newErrors.commissionPercentage = 'Commission must be between 0-200%';
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -108,25 +129,32 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({ policyId, onClose }) => 
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
     if (validateForm()) {
-      if (policyId) {
-        updatePolicy(policyId, formData);
-      } else {
-        addPolicy(formData);
+      // Calculate annual premium before submitting
+      const annualPremium = calculateAnnualPremium(formData.premium, formData.paymentFrequency);
+
+      const submissionData = {
+        ...formData,
+        annualPremium
+      };
+
+      try {
+        if (policyId) {
+          updatePolicy(policyId, submissionData);
+        } else {
+          addPolicy(submissionData);
+        }
+        onClose();
+      } catch (error) {
+        alert(`Error: ${error instanceof Error ? error.message : 'Failed to save policy'}`);
       }
-      onClose();
     }
   };
 
-  const annualPremium = formData.paymentFrequency === 'monthly'
-    ? formData.premium * 12
-    : formData.paymentFrequency === 'quarterly'
-    ? formData.premium * 4
-    : formData.paymentFrequency === 'semi-annual'
-    ? formData.premium * 2
-    : formData.premium;
-
-  const expectedCommission = (annualPremium * formData.commissionPercentage) / 100;
+  // Calculate display values
+  const annualPremium = calculateAnnualPremium(formData.premium, formData.paymentFrequency);
+  const expectedCommission = calculateExpectedCommission(annualPremium, formData.commissionPercentage);
 
   return (
     <form onSubmit={handleSubmit} className="modal-form">
@@ -162,6 +190,7 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({ policyId, onClose }) => 
                   <option key={state.value} value={state.value}>{state.label}</option>
                 ))}
               </select>
+              {errors.clientState && <span className="error-msg">{errors.clientState}</span>}
             </div>
             <div className="form-group">
               <label>Age *</label>
@@ -172,7 +201,10 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({ policyId, onClose }) => 
                 onChange={handleInputChange}
                 className={errors.clientAge ? 'error' : ''}
                 placeholder="45"
+                min="1"
+                max="120"
               />
+              {errors.clientAge && <span className="error-msg">{errors.clientAge}</span>}
             </div>
           </div>
 
@@ -236,31 +268,21 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({ policyId, onClose }) => 
             {errors.policyNumber && <span className="error-msg">{errors.policyNumber}</span>}
           </div>
 
-          <div className="form-row">
-            <div className="form-group">
-              <label>Effective Date *</label>
-              <input
-                type="date"
-                name="effectiveDate"
-                value={formData.effectiveDate}
-                onChange={handleInputChange}
-                className={errors.effectiveDate ? 'error' : ''}
-              />
-            </div>
-            <div className="form-group">
-              <label>Expiration Date</label>
-              <input
-                type="date"
-                name="expirationDate"
-                value={formData.expirationDate}
-                onChange={handleInputChange}
-              />
-            </div>
+          <div className="form-group">
+            <label>Effective Date *</label>
+            <input
+              type="date"
+              name="effectiveDate"
+              value={formData.effectiveDate}
+              onChange={handleInputChange}
+              className={errors.effectiveDate ? 'error' : ''}
+            />
+            {errors.effectiveDate && <span className="error-msg">{errors.effectiveDate}</span>}
           </div>
 
           <div className="form-row">
             <div className="form-group">
-              <label>Premium *</label>
+              <label>Premium Amount *</label>
               <input
                 type="number"
                 name="premium"
@@ -269,10 +291,12 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({ policyId, onClose }) => 
                 className={errors.premium ? 'error' : ''}
                 placeholder="250.00"
                 step="0.01"
+                min="0"
               />
+              {errors.premium && <span className="error-msg">{errors.premium}</span>}
             </div>
             <div className="form-group">
-              <label>Frequency *</label>
+              <label>Payment Frequency *</label>
               <select
                 name="paymentFrequency"
                 value={formData.paymentFrequency}
@@ -280,7 +304,7 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({ policyId, onClose }) => 
               >
                 <option value="monthly">Monthly</option>
                 <option value="quarterly">Quarterly</option>
-                <option value="semi_annual">Semi-Annual</option>
+                <option value="semi-annual">Semi-Annual</option>
                 <option value="annual">Annual</option>
               </select>
             </div>
@@ -297,7 +321,10 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({ policyId, onClose }) => 
                 className={errors.commissionPercentage ? 'error' : ''}
                 placeholder="50"
                 step="0.1"
+                min="0"
+                max="200"
               />
+              {errors.commissionPercentage && <span className="error-msg">{errors.commissionPercentage}</span>}
             </div>
             <div className="form-group">
               <label>Status</label>
@@ -333,7 +360,7 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({ policyId, onClose }) => 
           Cancel
         </button>
         <button type="submit" className="btn-primary">
-          {policyId ? 'Update Policy' : 'Submit Policy'}
+          {policyId ? 'Update Policy' : 'Add Policy'}
         </button>
       </div>
     </form>

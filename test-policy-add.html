@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Policy Add</title>
+</head>
+<body>
+    <h1>Test Policy Addition</h1>
+    <button onclick="addPolicy()">Add Test Policy</button>
+    <div id="result"></div>
+
+    <script>
+        function addPolicy() {
+            const testPolicy = {
+                policyNumber: 'TEST-' + Math.random().toString(36).substr(2, 9),
+                status: 'active',
+                clientName: 'Test Client',
+                clientState: 'CA',
+                clientAge: 35,
+                carrierId: 'carrier-1',
+                product: 'term_life',
+                effectiveDate: '2024-01-01',
+                premium: 100,
+                annualPremium: 1200,
+                paymentFrequency: 'monthly',
+                commissionPercentage: 50,
+                notes: 'Test policy'
+            };
+
+            // Store directly to localStorage to bypass any React issues
+            const storageKey = 'commission_tracker_policies';
+            const existing = localStorage.getItem(storageKey);
+            const policies = existing ? JSON.parse(existing) : [];
+
+            const newPolicy = {
+                id: 'test-' + Date.now(),
+                ...testPolicy,
+                client: {
+                    name: testPolicy.clientName,
+                    state: testPolicy.clientState,
+                    age: testPolicy.clientAge
+                },
+                effectiveDate: testPolicy.effectiveDate,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            };
+
+            policies.push(newPolicy);
+            localStorage.setItem(storageKey, JSON.stringify(policies));
+
+            document.getElementById('result').innerHTML =
+                `<p>Added policy ${newPolicy.policyNumber}</p>
+                 <p>Total policies: ${policies.length}</p>
+                 <p>Refresh the main app to see if it appears</p>`;
+        }
+    </script>
+</body>
+</html>

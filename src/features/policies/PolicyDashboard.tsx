@@ -12,7 +12,19 @@ import '../../styles/policy.css';
 export const PolicyDashboard: React.FC = () => {
   const [isPolicyFormOpen, setIsPolicyFormOpen] = useState(false);
   const [editingPolicyId, setEditingPolicyId] = useState<string | undefined>();
-  const { getPolicySummary, getExpiringPolicies, getPoliciesByClient } = usePolicy();
+  // Get ALL functions from usePolicy in ONE place
+  const {
+    policies,
+    addPolicy,
+    updatePolicy,
+    deletePolicy,
+    updatePolicyStatus,
+    getPolicyById,
+    filterPolicies,
+    getPolicySummary,
+    getExpiringPolicies,
+    getPoliciesByClient
+  } = usePolicy();
   const { carriers } = useCarriers();
 
   const summary = getPolicySummary();
@@ -83,7 +95,13 @@ export const PolicyDashboard: React.FC = () => {
       {/* Main Content Area */}
       <div className="dashboard-content">
         {/* Policy List with Actions */}
-        <PolicyList onEditPolicy={handleEditPolicy} />
+        <PolicyList
+          policies={policies}
+          deletePolicy={deletePolicy}
+          updatePolicyStatus={updatePolicyStatus}
+          filterPolicies={filterPolicies}
+          onEditPolicy={handleEditPolicy}
+        />
       </div>
 
       {/* Modal Dialog */}
@@ -97,6 +115,9 @@ export const PolicyDashboard: React.FC = () => {
             <PolicyForm
               policyId={editingPolicyId}
               onClose={handleCloseForm}
+              addPolicy={addPolicy}
+              updatePolicy={updatePolicy}
+              getPolicyById={getPolicyById}
             />
           </div>
         </div>

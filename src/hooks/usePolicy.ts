@@ -48,7 +48,19 @@ export const usePolicy = () => {
   }, [policies, isLoading]);
 
   // Add a new policy
-  const addPolicy = useCallback((formData: NewPolicyForm): Policy => {
+  const addPolicy = useCallback((formData: NewPolicyForm): Policy | null => {
+    // Ensure we have annualPremium, either passed directly or calculated
+    const annualPremium = formData.annualPremium ?? 0;
+
+    // Check for duplicate policy number BEFORE updating state
+    const currentPolicies = policies;
+    const isDuplicate = currentPolicies.some(p => p.policyNumber === formData.policyNumber);
+
+    if (isDuplicate) {
+      throw new Error(`Policy number ${formData.policyNumber} already exists`);
+    }
+
+    // Create the new policy
     const newPolicy: Policy = {
       id: uuidv4(),
       policyNumber: formData.policyNumber,
@@ -64,12 +76,14 @@ export const usePolicy = () => {
       product: formData.product,
       effectiveDate: new Date(formData.effectiveDate),
       termLength: formData.termLength,
-      expirationDate: formData.termLength
+      expirationDate: formData.expirationDate
+        ? new Date(formData.expirationDate)
+        : formData.termLength
         ? new Date(new Date(formData.effectiveDate).setFullYear(
             new Date(formData.effectiveDate).getFullYear() + formData.termLength
           ))
         : undefined,
-      annualPremium: formData.annualPremium || 0,
+      annualPremium,
       paymentFrequency: formData.paymentFrequency,
       commissionPercentage: formData.commissionPercentage,
       createdAt: new Date(),
@@ -77,22 +91,37 @@ export const usePolicy = () => {
       notes: formData.notes,
     };
 
+    // Update state with the new policy
     setPolicies(prev => [...prev, newPolicy]);
+
     return newPolicy;
-  }, []);
+  }, [policies]);
 
   // Update an existing policy
   const updatePolicy = useCallback((id: string, updates: Partial<Policy> | NewPolicyForm) => {
+    // If updates is NewPolicyForm, check for duplicate policy numbers first
+    if ('clientName' in updates) {
+      const formData = updates as NewPolicyForm;
+
+      // Check for duplicate policy number (excluding current policy)
+      const isDuplicate = policies.some(p =>
+        p.policyNumber === formData.policyNumber && p.id !== id
+      );
+
+      if (isDuplicate) {
+        throw new Error(`Policy number ${formData.policyNumber} already exists`);
+      }
+    }
+
     setPolicies(prev => prev.map(policy => {
       if (policy.id !== id) return policy;
 
       // If updates is NewPolicyForm, convert it to Policy format
       if ('clientName' in updates) {
         const formData = updates as NewPolicyForm;
-        const annualPremium = formData.premium *
-          (formData.paymentFrequency === 'monthly' ? 12 :
-           formData.paymentFrequency === 'quarterly' ? 4 :
-           formData.paymentFrequency === 'semi-annual' ? 2 : 1);
+
+        // Use the provided annualPremium or keep existing
+        const annualPremium = formData.annualPremium ?? policy.annualPremium;
 
         return {
           ...policy,
@@ -120,7 +149,7 @@ export const usePolicy = () => {
       // Otherwise treat as partial Policy update
       return { ...policy, ...updates, updatedAt: new Date() };
     }));
-  }, []);
+  }, [policies]);
 
   // Update policy status
   const updatePolicyStatus = useCallback((id: string, status: PolicyStatus) => {
@@ -241,4 +270,4 @@ export const usePolicy = () => {
     getExpiringPolicies,
     isDuplicatePolicyNumber,
   };
-};
+};;
