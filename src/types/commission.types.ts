@@ -50,6 +50,14 @@ export interface NewCommissionForm {
   carrierId: string;
   product: ProductType;
   annualPremium: number;
+  policyId?: string;
+  type?: CommissionType;
+  status?: CommissionStatus;
+  calculationBasis?: CalculationBasis;
+  expectedDate?: Date | string;
+  actualDate?: Date | string;
+  paidDate?: Date | string;
+  notes?: string;
 }
 
 export interface CommissionSummary {
@@ -73,6 +81,11 @@ export interface CommissionSummary {
     count: number;
     totalCommissions: number;
   }>;
+  statusBreakdown?: Array<{
+    status: CommissionStatus;
+    count: number;
+    totalCommissions: number;
+  }>;
 }
 
 export interface CommissionFilters {
@@ -81,6 +94,9 @@ export interface CommissionFilters {
   carrierId?: string;
   product?: ProductType;
   state?: string;
+  status?: CommissionStatus;
+  type?: CommissionType;
   minPremium?: number;
   maxPremium?: number;
+  policyId?: string;
 }

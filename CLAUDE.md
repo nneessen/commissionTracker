@@ -39,3 +39,4 @@ Once the project structure is established, update this file with:
 - Consider data backup and recovery strategies
 - Plan for reporting and analytics features
 - Account for different commission structures (percentage, flat rate, tiered, etc.)
+- add to memory. DO NOT USE useCallback or useMemo. React v19.1 was built so that those to hooks don't need to be used anymore

@@ -6,6 +6,152 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-09-26 15:01:54
+
+### Changed Files
+- `.serena/memories/hooks-refactor-code-patterns.md`
+- `.serena/memories/hooks-refactor-progress.md`
+- `.serena/memories/react-19-optimization-guidelines.md`
+- `ADD-POLICY-NOW.js`
+- `BROWSER-TEST-INSTRUCTIONS.md`
+- `CHANGELOG.md`
+- `CLAUDE.md`
+- `Commission_Breakeven_Calculator.csv`
+- `Excel_Formulas_Guide.md`
+- `PROJECT_STATS.md`
+- `TEST-NOW.md`
+- `add-test-policy.html`
+- `debug-policy-issue.js`
+- `docs/HOOK_MIGRATION_GUIDE.md`
+- `manual-test-instructions.md`
+- `simulate-add-policy.js`
+- `src/features/policies/index.ts`
+- `src/hooks/base/createCRUDHooks.ts`
+- `src/hooks/base/index.ts`
+- `src/hooks/base/useFilter.ts`
+- `src/hooks/base/useLocalStorageState.ts`
+- `src/hooks/base/usePagination.ts`
+- `src/hooks/base/useSort.ts`
+- `src/hooks/commissions/index.ts`
+- `src/hooks/commissions/useCommission.ts`
+- `src/hooks/commissions/useCommissionMetrics.ts`
+- `src/hooks/commissions/useCommissions.ts`
+- `src/hooks/commissions/useCreateCommission.ts`
+- `src/hooks/commissions/useDeleteCommission.ts`
+- `src/hooks/commissions/useUpdateCommission.ts`
+- `src/hooks/expenses/index.ts`
+- `src/hooks/expenses/useConstants.ts`
+- `src/hooks/expenses/useCreateExpense.ts`
+- `src/hooks/expenses/useDeleteExpense.ts`
+- `src/hooks/expenses/useExpense.ts`
+- `src/hooks/expenses/useExpenseMetrics.ts`
+- `src/hooks/expenses/useExpenses.ts`
+- `src/hooks/expenses/useUpdateExpense.ts`
+- `src/hooks/policies/__tests__/useCreatePolicy.test.tsx`
+- `src/hooks/policies/__tests__/usePolicies.test.tsx`
+- `src/hooks/policies/__tests__/usePolicyMetrics.test.tsx`
+- `src/hooks/policies/index.ts`
+- `src/hooks/policies/useCreatePolicy.ts`
+- `src/hooks/policies/useDeletePolicy.ts`
+- `src/hooks/policies/usePolicies.ts`
+- `src/hooks/policies/usePolicy.ts`
+- `src/hooks/policies/usePolicyMetrics.ts`
+- `src/hooks/policies/useUpdatePolicy.ts`
+- `src/types/commission.types.ts`
+- `test-add-policy-comprehensive.html`
+- `test-live-addition.html`
+- `test-live-app.js`
+- `test-policy-add.html`
+- `test-policy-browser.js`
+- `test-policy-node.js`
+
+### Statistics
+```
+ 55 files changed, 4324 insertions(+), 1395 deletions(-)
+```
+## [2.0.0] - 2025-09-26
+
+### 🚀 Major Hook Refactoring for React 19.1
+
+This release introduces a complete refactoring of all hooks to leverage React 19.1's built-in optimizations and provides a more modular, maintainable architecture.
+
+### Breaking Changes
+- **Complete hook architecture overhaul** - All entity hooks split into modular, focused hooks
+- **Import paths changed** - Must update all imports to use new modular paths
+- **Removed useCallback/useMemo** - React 19.1 handles these optimizations automatically
+- **Pagination now required** - All list hooks return paginated data by default
+
+### Added
+- **Modular hook architecture** - Each entity now has 6 focused hooks:
+  - `useEntities` - List with pagination, filtering, sorting
+  - `useEntity` - Single entity by ID
+  - `useCreateEntity` - Creation with validation
+  - `useUpdateEntity` - Updates with conflict detection
+  - `useDeleteEntity` - Safe deletion (single or batch)
+  - `useEntityMetrics` - Computed metrics and summaries
+
+- **Base hook infrastructure** (`src/hooks/base/`)
+  - `useLocalStorageState` - Generic state with localStorage sync
+  - `usePagination` - Configurable pagination with page size options
+  - `useFilter` - Advanced filtering with multiple operators
+  - `useSort` - Single and multi-field sorting
+  - `createHooks` - Factory pattern for entity CRUD operations
+
+- **Commission hooks** (`src/hooks/commissions/`)
+  - Full modular refactoring with 6 focused hooks
+  - Enhanced metrics with status breakdown
+  - Better carrier and product analytics
+
+- **Expense hooks** (`src/hooks/expenses/`)
+  - Full modular refactoring with 6 focused hooks
+  - Separated constants management
+  - Improved performance metrics calculations
+
+- **Policy hooks** (`src/hooks/policies/`)
+  - Already refactored in previous update
+  - Enhanced with pagination and advanced filtering
+
+- **Documentation**
+  - Comprehensive migration guide (`docs/HOOK_MIGRATION_GUIDE.md`)
+  - Detailed usage examples and patterns
+  - Breaking change documentation
+
+### Changed
+- **React 19.1 Optimizations**
+  - Removed ALL `useCallback` wrappers - functions stable by default
+  - Removed ALL `useMemo` wrappers - React Compiler handles optimization
+  - Cleaner, simpler function definitions throughout
+
+- **Improved Performance**
+  - Pagination reduces initial render payload
+  - Modular imports reduce bundle size
+  - Better tree-shaking with focused exports
+
+- **Enhanced Developer Experience**
+  - Use only the hooks you need
+  - Consistent patterns across all entities
+  - Better TypeScript support and type inference
+  - Clearer separation of concerns
+
+### Removed
+- Monolithic `useCommissions` hook (replaced with modular hooks)
+- Monolithic `useExpenses` hook (replaced with modular hooks)
+- All `useCallback` and `useMemo` usage (React 19.1 handles automatically)
+- Manual filtering functions (replaced with built-in filter hooks)
+
+### Technical Details
+- **Default Pagination**: 10 items per page, options: [10, 25, 50, 100]
+- **Date Handling**: Automatic parsing when loading from localStorage
+- **Error Management**: All mutation hooks include error state and clearError
+- **ID Generation**: Using uuid v4 for all new entities
+- **Conflict Detection**: Update hooks check for version conflicts
+
+### Migration Required
+1. Update all imports to use new modular paths
+2. Update components to use paginated data
+3. Remove any manual memoization
+4. Update to use new hook APIs (see migration guide)
+
 ## [Checkpoint] - 2025-09-26 14:04:57
 
 ### Changed Files
