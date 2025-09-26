@@ -1,4 +1,6 @@
+// src/components/layout/Sidebar.tsx
 import React, { useState, useEffect } from 'react';
+import { Link } from '@tanstack/react-router';
 import {
   Home,
   Calculator,
@@ -19,7 +21,6 @@ interface NavigationItem {
   icon: React.ElementType;
   label: string;
   href: string;
-  isActive?: boolean;
 }
 
 interface SidebarProps {
@@ -28,11 +29,10 @@ interface SidebarProps {
   userName?: string;
   userEmail?: string;
   onLogout?: () => void;
-  onNavigate?: (href: string) => void;
 }
 
 const navigationItems: NavigationItem[] = [
-  { icon: Home, label: 'Dashboard', href: '/dashboard', isActive: true },
+  { icon: Home, label: 'Dashboard', href: '/dashboard' },
   { icon: Calculator, label: 'Calculator', href: '/calculator' },
   { icon: TrendingUp, label: 'Analytics', href: '/analytics' },
   { icon: Target, label: 'Targets', href: '/targets' },
@@ -49,7 +49,6 @@ export default function Sidebar({
   userName = "Nick Neessen",
   userEmail = "nick@commissiontracker.io",
   onLogout,
-  onNavigate
 }: SidebarProps) {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -117,18 +116,22 @@ export default function Sidebar({
         {navigationItems.map((item) => {
           const Icon = item.icon;
           return (
-            <button
+            <Link
               key={item.href}
+              to={item.href}
+              className="sidebar-nav-item"
+              activeOptions={{ exact: false }}
+              activeProps={{
+                className: "sidebar-nav-item active"
+              }}
+              title={isCollapsed ? item.label : ''}
               onClick={() => {
-                onNavigate?.(item.href);
                 if (isMobile) closeMobile();
               }}
-              className={`sidebar-nav-item ${item.isActive ? 'active' : ''}`}
-              title={isCollapsed ? item.label : ''}
             >
               <Icon size={16} />
               {!isCollapsed && <span>{item.label}</span>}
-            </button>
+            </Link>
           );
         })}
       </nav>

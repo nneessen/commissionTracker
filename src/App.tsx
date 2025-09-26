@@ -1,11 +1,7 @@
-import React, { useState, useCallback } from "react";
+// src/App.tsx
+import React, { useState } from "react";
+import { Outlet, useNavigate } from "@tanstack/react-router";
 import { Sidebar } from "./components/layout";
-import { ExpenseManager } from "./features/expenses";
-import { CommissionList } from "./features/commissions";
-import { CalculationsDisplay } from "./features/calculations";
-import { ConstantsManager, CarrierManager } from "./features/settings";
-import { PolicyDashboard } from "./features/policies";
-import { AnalyticsDashboard } from "./features/analytics";
 import "./App.css";
 
 function App() {
@@ -16,85 +12,39 @@ function App() {
     isAuthenticated: true,
   });
 
-  // Sidebar and navigation state
+  // Sidebar state
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [activeView, setActiveView] = useState<'dashboard' | 'commissions' | 'policies' | 'analytics' | 'settings'>('policies');
-
-  // Navigation handler
-  const handleNavigation = useCallback((href: string) => {
-    console.log("Navigating to:", href);
-    // Simple view routing based on href
-    if (href.includes('policies')) {
-      setActiveView('policies');
-    } else if (href.includes('analytics')) {
-      setActiveView('analytics');
-    } else if (href.includes('commissions')) {
-      setActiveView('commissions');
-    } else if (href.includes('settings')) {
-      setActiveView('settings');
-    } else {
-      setActiveView('dashboard');
-    }
-  }, []);
+  const navigate = useNavigate();
 
   // Logout handler
-  const handleLogout = useCallback(() => {
+  const handleLogout = () => {
     if (window.confirm("Are you sure you want to logout?")) {
       setUser((prev) => ({ ...prev, isAuthenticated: false }));
       console.log("User logged out");
+      navigate({ to: "/" });
     }
-  }, []);
+  };
 
   // Sidebar toggle handler
-  const toggleSidebar = useCallback(() => {
+  const toggleSidebar = () => {
     setIsSidebarCollapsed((prev) => !prev);
-  }, []);
-
-  const renderActiveView = () => {
-    switch (activeView) {
-      case 'policies':
-        return <PolicyDashboard />;
-      case 'analytics':
-        return <AnalyticsDashboard />;
-      case 'commissions':
-        return <CommissionList />;
-      case 'settings':
-        return (
-          <div className="settings-container">
-            <div className="mb-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Settings</h2>
-              <ConstantsManager />
-            </div>
-            <div>
-              <CarrierManager />
-            </div>
-          </div>
-        );
-      default:
-        return (
-          <div className="dashboard-container">
-            <ConstantsManager />
-            <ExpenseManager />
-            <CalculationsDisplay />
-          </div>
-        );
-    }
   };
 
   return (
     <div className="app-container">
-      <Sidebar
-        isCollapsed={isSidebarCollapsed}
-        onToggleCollapse={toggleSidebar}
-        userName={user.name}
-        userEmail={user.email}
-        onLogout={handleLogout}
-        onNavigate={handleNavigation}
-      />
+      {user.isAuthenticated && (
+        <Sidebar
+          isCollapsed={isSidebarCollapsed}
+          onToggleCollapse={toggleSidebar}
+          userName={user.name}
+          userEmail={user.email}
+          onLogout={handleLogout}
+        />
+      )}
 
       <div className="main-content">
         <div className="app">
-          {renderActiveView()}
+          <Outlet />
         </div>
       </div>
     </div>
@@ -102,4 +52,3 @@ function App() {
 }
 
 export default App;
-

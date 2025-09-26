@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-09-26 15:44:16
+
+### Changed Files
+- `package-lock.json`
+- `package.json`
+- `src/App.tsx`
+- `src/components/layout/Sidebar.tsx`
+- `src/index.tsx`
+- `src/router.tsx`
+
+### Statistics
+```
+ 6 files changed, 1614 insertions(+), 195 deletions(-)
+```
+
 ## [Checkpoint] - 2025-09-26 15:01:54
 
 ### Changed Files
