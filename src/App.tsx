@@ -4,6 +4,8 @@ import { ExpenseManager } from "./features/expenses";
 import { CommissionList } from "./features/commissions";
 import { CalculationsDisplay } from "./features/calculations";
 import { ConstantsManager, CarrierManager } from "./features/settings";
+import { PolicyDashboard } from "./features/policies";
+import { AnalyticsDashboard } from "./features/analytics";
 import "./App.css";
 
 function App() {
@@ -16,13 +18,17 @@ function App() {
 
   // Sidebar and navigation state
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [activeView, setActiveView] = useState<'dashboard' | 'commissions' | 'settings'>('dashboard');
+  const [activeView, setActiveView] = useState<'dashboard' | 'commissions' | 'policies' | 'analytics' | 'settings'>('policies');
 
   // Navigation handler
   const handleNavigation = useCallback((href: string) => {
     console.log("Navigating to:", href);
     // Simple view routing based on href
-    if (href.includes('commissions')) {
+    if (href.includes('policies')) {
+      setActiveView('policies');
+    } else if (href.includes('analytics')) {
+      setActiveView('analytics');
+    } else if (href.includes('commissions')) {
       setActiveView('commissions');
     } else if (href.includes('settings')) {
       setActiveView('settings');
@@ -46,6 +52,10 @@ function App() {
 
   const renderActiveView = () => {
     switch (activeView) {
+      case 'policies':
+        return <PolicyDashboard />;
+      case 'analytics':
+        return <AnalyticsDashboard />;
       case 'commissions':
         return <CommissionList />;
       case 'settings':

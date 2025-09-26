@@ -11,6 +11,8 @@ export const Input: React.FC<InputProps> = ({
   disabled = false,
   required = false,
   className = '',
+  prefix,
+  suffix,
 }) => {
   const getInputClass = () => {
     let inputClass = 'form-input';
@@ -43,16 +45,20 @@ export const Input: React.FC<InputProps> = ({
           {required && <span className="required">*</span>}
         </label>
       )}
-      <input
-        type={type}
-        value={value}
-        onChange={handleChange}
-        placeholder={placeholder}
-        disabled={disabled}
-        required={required}
-        className={getInputClass()}
-        step={type === 'number' ? '0.01' : undefined}
-      />
+      <div className={prefix || suffix ? 'input-group' : ''}>
+        {prefix && <span className="input-prefix">{prefix}</span>}
+        <input
+          type={type}
+          value={value}
+          onChange={handleChange}
+          placeholder={placeholder}
+          disabled={disabled}
+          required={required}
+          className={getInputClass()}
+          step={type === 'number' ? '0.01' : undefined}
+        />
+        {suffix && <span className="input-suffix">{suffix}</span>}
+      </div>
       {error && (
         <p className="form-error">{error}</p>
       )}

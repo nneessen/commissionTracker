@@ -16,6 +16,7 @@ export function useCommissions() {
 
     const commission: Commission = {
       id: `commission-${Date.now()}`,
+      policyId: undefined, // No policy link for legacy commissions
       client: {
         name: newCommission.clientName,
         age: newCommission.clientAge,
@@ -23,9 +24,13 @@ export function useCommissions() {
       },
       carrierId: newCommission.carrierId,
       product: newCommission.product,
+      type: 'first_year',
+      status: 'pending',
+      calculationBasis: 'premium',
       annualPremium: newCommission.annualPremium,
       commissionAmount,
       commissionRate,
+      expectedDate: new Date(),
       createdAt: new Date(),
     };
 

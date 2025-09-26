@@ -15,7 +15,7 @@ export interface ProductCommissionRates {
   accidental_life: number;
 }
 
-export interface CarrierPerformance {
+export interface CarrierStats {
   carrierId: string;
   carrierName: string;
   totalCommissions: number;

@@ -4,16 +4,36 @@ export interface Client {
   state: string;
 }
 
+export type CommissionType = 'first_year' | 'renewal' | 'trail' | 'bonus' | 'override';
+export type CommissionStatus = 'pending' | 'paid' | 'clawback' | 'cancelled';
+export type CalculationBasis = 'premium' | 'fixed' | 'tiered';
+
 export interface Commission {
   id: string;
+  policyId?: string; // Links to Policy when available
   client: Client;
   carrierId: string;
   product: ProductType;
+
+  // Commission Details
+  type: CommissionType;
+  status: CommissionStatus;
+  calculationBasis: CalculationBasis;
+
+  // Financial
   annualPremium: number;
   commissionAmount: number;
   commissionRate: number;
+
+  // Dates
+  expectedDate?: Date;
+  actualDate?: Date;
+  paidDate?: Date;
   createdAt: Date;
   updatedAt?: Date;
+
+  // Additional
+  notes?: string;
 }
 
 export type ProductType =

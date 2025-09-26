@@ -74,7 +74,7 @@ export function DataTable<T>({
                       <ChevronUp
                         size={12}
                         className={
-                          sortConfig?.key === column.key && sortConfig.direction === 'asc'
+                          sortConfig?.key === column.key && sortConfig?.direction === 'asc'
                             ? 'sort-active'
                             : 'sort-inactive'
                         }
@@ -82,7 +82,7 @@ export function DataTable<T>({
                       <ChevronDown
                         size={12}
                         className={
-                          sortConfig?.key === column.key && sortConfig.direction === 'desc'
+                          sortConfig?.key === column.key && sortConfig?.direction === 'desc'
                             ? 'sort-active'
                             : 'sort-inactive'
                         }
@@ -104,7 +104,9 @@ export function DataTable<T>({
               {columns.map((column) => (
                 <td key={String(column.key)}>
                   {column.accessor
-                    ? column.accessor(item)
+                    ? typeof column.accessor === 'function'
+                      ? column.accessor(item)
+                      : String((item as any)[column.accessor] || '')
                     : String((item as any)[column.key] || '')}
                 </td>
               ))}

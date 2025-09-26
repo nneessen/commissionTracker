@@ -21,7 +21,7 @@ export interface ButtonProps {
 
 export interface InputProps {
   label?: string;
-  type?: 'text' | 'number' | 'email' | 'password';
+  type?: 'text' | 'number' | 'email' | 'password' | 'date';
   placeholder?: string;
   value: string | number;
   onChange: (value: string | number) => void;
@@ -29,6 +29,8 @@ export interface InputProps {
   disabled?: boolean;
   required?: boolean;
   className?: string;
+  prefix?: string;
+  suffix?: string;
 }
 
 export interface SelectOption {
@@ -49,9 +51,10 @@ export interface SelectProps {
 }
 
 export interface DataTableColumn<T> {
-  key: keyof T | string;
+  key?: keyof T | string;
   header: string;
-  accessor?: (item: T) => ReactNode;
+  accessor?: keyof T | ((item: T) => ReactNode);
+  render?: (item: T) => ReactNode;
   sortable?: boolean;
   width?: string;
 }
