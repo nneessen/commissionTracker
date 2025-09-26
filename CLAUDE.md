@@ -4,34 +4,43 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a commission tracking application project. The codebase is currently empty and ready for initial development.
+Commission tracking application built with React, TypeScript, and modern web technologies. Features a modular architecture for managing clients, policies, expenses, and commission calculations.
 
-## Development Setup
+## Technology Stack
 
-Since this is a new project, the technology stack and build system have not yet been established. When development begins:
+- **Frontend**: React 19.1, TypeScript, React Router v7
+- **Styling**: Tailwind CSS
+- **Build Tool**: Vite
+- **Package Manager**: npm
+- **State Management**: React Context API
+- **Data Persistence**: Supabase (PostgreSQL)
 
-1. Initialize the appropriate package manager (npm, yarn, pip, etc.) based on the chosen technology stack
-2. Set up the initial project structure
-3. Configure development tooling (linting, formatting, testing)
+## Development Commands
 
-## Architecture Notes
+- `npm start` - Start development server
+- `npm run build` - Build for production
+- `npm test` - Run test suite
+- `npm run lint` - Run ESLint
+- `npm run typecheck` - Run TypeScript type checking
 
-This project will likely need:
+## Architecture
 
-- Database layer for storing commission data, client information, and payment records
-- Business logic for commission calculations and tracking
-- User interface for data entry and reporting
-- Authentication and authorization for secure access
+The project follows a feature-based modular architecture:
 
-## Future Development Commands
+- `/src/features/*` - Feature modules (dashboard, policies, expenses, etc.)
+- `/src/components/*` - Shared UI components
+- `/src/services/*` - API and external service integrations
+- `/src/utils/*` - Utility functions and helpers
+- `/src/types/*` - TypeScript type definitions
 
-Once the project structure is established, update this file with:
+## Current Features
 
-- Build commands (`npm run build`, `make build`, etc.)
-- Development server commands (`npm run dev`, `python manage.py runserver`, etc.)
-- Testing commands (`npm test`, `pytest`, etc.)
-- Linting and formatting commands
-- Database migration or setup commands if applicable
+- Client management system
+- Policy tracking and management
+- Expense tracking with categorization
+- Commission calculations (percentage, flat rate, tiered)
+- Dashboard with analytics and reporting
+- Dark mode support
 
 ## Project-Specific Considerations
 
@@ -40,3 +49,4 @@ Once the project structure is established, update this file with:
 - Plan for reporting and analytics features
 - Account for different commission structures (percentage, flat rate, tiered, etc.)
 - add to memory. DO NOT USE useCallback or useMemo. React v19.1 was built so that those to hooks don't need to be used anymore
+

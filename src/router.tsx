@@ -13,6 +13,7 @@ import { CalculationsDisplay } from "./features/calculations";
 import { ConstantsManager, CarrierManager } from "./features/settings";
 import { PolicyDashboard } from "./features/policies";
 import { AnalyticsDashboard } from "./features/analytics";
+import { ExpensesProvider } from "./contexts/ExpensesContext";
 
 // Create root route with App layout
 const rootRoute = new RootRoute({
@@ -29,11 +30,13 @@ const indexRoute = new Route({
   getParentRoute: () => rootRoute,
   path: "/",
   component: () => (
-    <div className="dashboard-container">
-      <ConstantsManager />
-      <ExpenseManager />
-      <CalculationsDisplay />
-    </div>
+    <ExpensesProvider>
+      <div className="dashboard-container">
+        <ConstantsManager />
+        <ExpenseManager />
+        <CalculationsDisplay />
+      </div>
+    </ExpensesProvider>
   ),
 });
 
@@ -42,11 +45,13 @@ const dashboardRoute = new Route({
   getParentRoute: () => rootRoute,
   path: "dashboard",
   component: () => (
-    <div className="dashboard-container">
-      <ConstantsManager />
-      <ExpenseManager />
-      <CalculationsDisplay />
-    </div>
+    <ExpensesProvider>
+      <div className="dashboard-container">
+        <ConstantsManager />
+        <ExpenseManager />
+        <CalculationsDisplay />
+      </div>
+    </ExpensesProvider>
   ),
 });
 
@@ -76,15 +81,17 @@ const settingsRoute = new Route({
   getParentRoute: () => rootRoute,
   path: "settings",
   component: () => (
-    <div className="settings-container">
-      <div className="mb-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">Settings</h2>
-        <ConstantsManager />
+    <ExpensesProvider>
+      <div className="settings-container">
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Settings</h2>
+          <ConstantsManager />
+        </div>
+        <div>
+          <CarrierManager />
+        </div>
       </div>
-      <div>
-        <CarrierManager />
-      </div>
-    </div>
+    </ExpensesProvider>
   ),
 });
 
@@ -116,7 +123,11 @@ const reportsRoute = new Route({
 const expensesRoute = new Route({
   getParentRoute: () => rootRoute,
   path: "expenses",
-  component: ExpenseManager,
+  component: () => (
+    <ExpensesProvider>
+      <ExpenseManager />
+    </ExpensesProvider>
+  ),
 });
 
 // Clients route (coming soon)

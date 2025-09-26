@@ -55,6 +55,14 @@ export function useExpenses() {
 
   // Calculate commission requirements
   const calculations = useMemo((): CalculationResult[] => {
+    console.log('🔄 RECALCULATING with constants:', {
+      avgAP: constants.avgAP,
+      commissionRate: constants.commissionRate,
+      target1: constants.target1,
+      target2: constants.target2,
+      monthlyExpenses: totals.monthlyExpenses
+    });
+
     const results: CalculationResult[] = [];
     const scenarios = [
       { name: "Breakeven", target: 0 },
@@ -68,6 +76,13 @@ export function useExpenses() {
       const apNeeded90 = apNeeded100 / 0.9;
       const apNeeded80 = apNeeded100 / 0.8;
       const apNeeded70 = apNeeded100 / 0.7;
+
+      console.log(`   📊 ${scenario.name}:
+        - Commission Needed: $${commissionNeeded}
+        - AP Needed (100%): $${Math.round(apNeeded100)}
+        - Policies (100%): ${Math.ceil(apNeeded100 / constants.avgAP)}
+        - Commission Rate: ${constants.commissionRate}
+        - Avg AP: ${constants.avgAP}`);
 
       results.push({
         scenario: scenario.name,
@@ -89,7 +104,14 @@ export function useExpenses() {
   // Additional performance metrics
   const performanceMetrics = useMemo((): PerformanceMetrics => {
     const breakeven = calculations[0];
-    return {
+    console.log('🎯 RECALCULATING Performance Metrics with:', {
+      breakevenAPNeeded: breakeven?.apNeeded100,
+      avgAP: constants.avgAP,
+      commissionRate: constants.commissionRate,
+      monthlyExpenses: totals.monthlyExpenses
+    });
+
+    const metrics = {
       weeklyAPTarget: Math.round(breakeven.apNeeded100 / 4.33),
       dailyAPTarget: Math.round(breakeven.apNeeded100 / 30),
       quarterlyAPTarget: Math.round(breakeven.apNeeded100 * 3),
@@ -98,6 +120,9 @@ export function useExpenses() {
         (totals.monthlyExpenses / (breakeven.apNeeded100 * constants.commissionRate)) * 100
       ).toFixed(1),
     };
+
+    console.log('   Metrics calculated:', metrics);
+    return metrics;
   }, [calculations, constants, totals]);
 
   // Expense management functions

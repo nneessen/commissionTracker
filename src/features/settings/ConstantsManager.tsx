@@ -1,9 +1,18 @@
 import React from 'react';
 import { Input } from '../../components/ui';
-import { useExpenses } from '../../hooks';
+import { useExpensesContext } from '../../contexts/ExpensesContext';
 
 export const ConstantsManager: React.FC = () => {
-  const { constants, updateConstant } = useExpenses();
+  const { constants, updateConstant } = useExpensesContext();
+
+  // Debug log to verify state changes - PROOF OF FIX
+  React.useEffect(() => {
+    console.log('🔥 [ConstantsManager] Constants updated:', constants);
+    console.log('   - Avg AP:', constants.avgAP);
+    console.log('   - Commission Rate:', constants.commissionRate);
+    console.log('   - Target 1:', constants.target1);
+    console.log('   - Target 2:', constants.target2);
+  }, [constants]);
 
   return (
     <div className="constants-section">

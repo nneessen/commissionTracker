@@ -1,8 +1,31 @@
 import React from 'react';
-import { useExpenses } from '../../hooks';
+import { useExpensesContext } from '../../contexts/ExpensesContext';
 
 export const CalculationsDisplay: React.FC = () => {
-  const { calculations, performanceMetrics } = useExpenses();
+  const { calculations, performanceMetrics } = useExpensesContext();
+
+  // Debug log to verify calculations update - PROOF OF FIX
+  React.useEffect(() => {
+    console.log('✅ [CalculationsDisplay] RENDERING with new values:');
+    calculations.forEach((calc, idx) => {
+      console.log(`   Card ${idx + 1} (${calc.scenario}):
+      - Commission Needed: $${calc.commissionNeeded}
+      - AP (100%): $${Math.round(calc.apNeeded100)}
+      - Policies (100%): ${calc.policies100}
+      - AP (90%): $${Math.round(calc.apNeeded90)}
+      - Policies (90%): ${calc.policies90}
+      - AP (80%): $${Math.round(calc.apNeeded80)}
+      - Policies (80%): ${calc.policies80}
+      - AP (70%): $${Math.round(calc.apNeeded70)}
+      - Policies (70%): ${calc.policies70}`);
+    });
+    console.log('   Performance Metrics:', {
+      weeklyAPTarget: performanceMetrics.weeklyAPTarget,
+      dailyAPTarget: performanceMetrics.dailyAPTarget,
+      commissionPerPolicy: performanceMetrics.commissionPerPolicy,
+      expenseRatio: performanceMetrics.expenseRatio
+    });
+  }, [calculations, performanceMetrics]);
 
   return (
     <div>

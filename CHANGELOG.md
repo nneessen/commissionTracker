@@ -6,6 +6,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-09-26 18:48:24
+
+### Changed Files
+- `CLAUDE.md`
+- `MANUAL_TEST_INSTRUCTIONS.md`
+- `TEST_SCENARIOS.md`
+- `docs/HOOK_MIGRATION_GUIDE.md`
+- `src/components/layout/Sidebar.tsx`
+- `src/contexts/ExpensesContext.tsx`
+- `src/features/calculations/CalculationsDisplay.tsx`
+- `src/features/expenses/ExpenseManager.tsx`
+- `src/features/settings/ConstantsManager.tsx`
+- `src/hooks/useExpenses.ts`
+- `src/router.tsx`
+- `verify-fix.js`
+
+### Statistics
+```
+ 12 files changed, 424 insertions(+), 410 deletions(-)
+```
+
 ## [Checkpoint] - 2025-09-26 15:44:16
 
 ### Changed Files

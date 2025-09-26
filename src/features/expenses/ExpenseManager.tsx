@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Plus, Download, Trash2 } from 'lucide-react';
 import { Button, Modal, Input, Select } from '../../components/ui';
 import { ExpenseItem, NewExpenseForm, ExpenseCategory } from '../../types';
-import { useExpenses } from '../../hooks';
+import { useExpensesContext } from '../../contexts/ExpensesContext';
 
 export const ExpenseManager: React.FC = () => {
   const {
@@ -12,7 +12,7 @@ export const ExpenseManager: React.FC = () => {
     updateExpense,
     deleteExpense,
     exportToCSV,
-  } = useExpenses();
+  } = useExpensesContext();
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [newExpense, setNewExpense] = useState<NewExpenseForm>({
