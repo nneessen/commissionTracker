@@ -60,11 +60,11 @@ export const PolicyDashboard: React.FC = () => {
               <span className="stat-label">Active</span>
             </div>
             <div className="stat-item">
-              <span className="stat-value">${(summary.totalAnnualPremium / 1000).toFixed(0)}K</span>
+              <span className="stat-value">${(summary.totalAnnualPremium / 1000).toFixed(1)}K</span>
               <span className="stat-label">Premium</span>
             </div>
             <div className="stat-item">
-              <span className="stat-value">${(summary.totalExpectedCommission / 1000).toFixed(0)}K</span>
+              <span className="stat-value">${(summary.totalExpectedCommission / 1000).toFixed(1)}K</span>
               <span className="stat-label">Commission</span>
             </div>
             <div className="stat-item">
