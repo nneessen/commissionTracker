@@ -98,7 +98,7 @@ export const useAgentSettings = (agentId?: string) => {
 
   useEffect(() => {
     fetchSettings();
-  }, [agentId]);
+  }, [agentId, fetchSettings]);
 
   return {
     settings,
@@ -148,7 +148,7 @@ export const useContractLevel = (agentId?: string) => {
 
   useEffect(() => {
     fetchContractLevel();
-  }, [agentId]);
+  }, [agentId, fetchContractLevel]);
 
   return {
     contractLevel,

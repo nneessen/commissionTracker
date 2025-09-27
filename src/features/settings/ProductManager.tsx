@@ -1,9 +1,9 @@
 // src/features/settings/ProductManager.tsx
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Plus, Edit, Trash2, ToggleLeft, ToggleRight, Filter } from 'lucide-react';
 import { Button, Modal, Input, DataTable, Select } from '../../components/ui';
-import { Product, NewProductForm, DataTableColumn, Carrier, ProductType } from '../../types';
+import { Product, NewProductForm, DataTableColumn, ProductType } from '../../types';
 import { useProducts, useCarriers } from '../../hooks';
 
 const PRODUCT_TYPES: { value: ProductType; label: string }[] = [

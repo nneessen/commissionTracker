@@ -3,11 +3,9 @@
 
 import React, { useState, useCallback, useMemo } from 'react';
 import {
-  Download,
   FileText,
   FileSpreadsheet,
   Search,
-  Filter,
   ChevronLeft,
   ChevronRight,
   Loader2,
@@ -73,7 +71,7 @@ export const CompGuideViewer: React.FC = () => {
   } = useCompGuideData(filters, pagination);
 
   const { data: carrierNames } = useCarrierNames();
-  const { data: productTypes } = useProductTypes();
+  useProductTypes();
   const { refreshAll } = useRefreshCompGuide();
 
   // Export hook (only enabled when exporting)
@@ -87,7 +85,7 @@ export const CompGuideViewer: React.FC = () => {
     if (!carrierNames) return [{ value: '', label: 'All Carriers' }];
     return [
       { value: '', label: 'All Carriers' },
-      ...carrierNames.map(name => ({ value: name, label: name }))
+      ...carrierNames.map((name: string) => ({ value: name, label: name }))
     ];
   }, [carrierNames]);
 
@@ -115,7 +113,7 @@ export const CompGuideViewer: React.FC = () => {
     const headers = ['Carrier', 'Product Name', 'Product Type', 'Contract Level', 'Commission %'];
     const csvContent = [
       headers.join(','),
-      ...exportData.map(item => [
+      ...exportData.map((item: any) => [
         `"${item.carrierName}"`,
         `"${item.productName}"`,
         item.productType,
@@ -163,7 +161,7 @@ export const CompGuideViewer: React.FC = () => {
           <div class="stats">
             <p><strong>Generated:</strong> ${new Date().toLocaleString()}</p>
             <p><strong>Total Records:</strong> ${exportData.length}</p>
-            <p><strong>Carriers:</strong> ${Array.from(new Set(exportData.map(d => d.carrierName))).length}</p>
+            <p><strong>Carriers:</strong> ${Array.from(new Set(exportData.map((d: any) => d.carrierName))).length}</p>
           </div>
           <table>
             <thead>
@@ -176,7 +174,7 @@ export const CompGuideViewer: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              ${exportData.map(item => `
+              ${exportData.map((item: any) => `
                 <tr>
                   <td>${item.carrierName}</td>
                   <td>${item.productName}</td>
@@ -398,7 +396,7 @@ export const CompGuideViewer: React.FC = () => {
 
             {/* Table Body */}
             <div className="divide-y divide-gray-200">
-              {compGuideData.data.map((item) => (
+              {compGuideData.data.map((item: any) => (
                 <div key={item.id} className="px-6 py-4 whitespace-nowrap">
                   <div className="grid grid-cols-5 gap-4 items-center">
                     <div className="text-sm font-medium text-gray-900">

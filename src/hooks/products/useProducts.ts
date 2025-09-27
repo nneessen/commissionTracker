@@ -117,7 +117,7 @@ export const useProductsByCarrier = (carrierId?: string) => {
 
   useEffect(() => {
     fetchProducts();
-  }, [carrierId]);
+  }, [carrierId, fetchProducts]);
 
   return {
     products,
@@ -148,7 +148,7 @@ export const useProductsWithRates = (carrierId?: string) => {
 
   useEffect(() => {
     fetchProducts();
-  }, [carrierId]);
+  }, [carrierId, fetchProducts]);
 
   return {
     products,

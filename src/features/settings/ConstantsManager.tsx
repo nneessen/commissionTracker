@@ -1,7 +1,6 @@
 // src/features/settings/ConstantsManager.tsx
 
 import React from 'react';
-import { Input } from '../../components/ui';
 import { useConstants } from '../../hooks';
 
 export const ConstantsManager: React.FC = () => {

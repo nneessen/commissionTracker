@@ -49,7 +49,7 @@ export function useCompGuideData(
     staleTime,
     refetchOnWindowFocus,
     // Keep previous data while loading new data for smooth pagination
-    placeholderData: (previousData) => previousData,
+    placeholderData: (previousData: any) => previousData,
   });
 }
 
@@ -209,11 +209,11 @@ export function useCompGuideOptimisticUpdates() {
       // Future implementation for updating commission rates
       throw new Error('Commission rate updates not yet implemented');
     },
-    onMutate: async (newData) => {
+    onMutate: async (newData: any) => {
       // Optimistic update implementation would go here
       return { previousData: undefined };
     },
-    onError: (err, newData, context) => {
+    onError: (err: any, newData: any, context: any) => {
       // Rollback optimistic update on error
       if (context?.previousData) {
         // Restore previous data

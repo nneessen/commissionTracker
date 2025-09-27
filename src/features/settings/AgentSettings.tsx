@@ -7,7 +7,7 @@ import { US_STATES } from '../../types/agent.types';
 
 export const AgentSettings: React.FC = () => {
   const { settings, loading, error, createSettings, updateSettings } = useAgentSettings();
-  const { contractLevel, updateContractLevel } = useContractLevel();
+  const { contractLevel } = useContractLevel();
 
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({

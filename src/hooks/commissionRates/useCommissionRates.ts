@@ -117,7 +117,7 @@ export const useCommissionRatesByProduct = (productId?: string) => {
 
   useEffect(() => {
     fetchRates();
-  }, [productId]);
+  }, [productId, fetchRates]);
 
   return {
     rates,
@@ -154,7 +154,7 @@ export const useCommissionRatesByCarrier = (carrierId?: string) => {
 
   useEffect(() => {
     fetchRates();
-  }, [carrierId]);
+  }, [carrierId, fetchRates]);
 
   return {
     rates,
@@ -191,7 +191,7 @@ export const useCommissionRatesByContractLevel = (contractLevel?: number) => {
 
   useEffect(() => {
     fetchRates();
-  }, [contractLevel]);
+  }, [contractLevel, fetchRates]);
 
   return {
     rates,
@@ -228,7 +228,7 @@ export const useCommissionRate = (carrierId?: string, productId?: string, contra
 
   useEffect(() => {
     fetchRate();
-  }, [carrierId, productId, contractLevel]);
+  }, [carrierId, productId, contractLevel, fetchRate]);
 
   return {
     rate,

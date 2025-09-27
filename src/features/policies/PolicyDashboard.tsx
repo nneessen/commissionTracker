@@ -1,8 +1,7 @@
 // /home/nneessen/projects/commissionTracker/src/features/policies/PolicyDashboard.tsx
 
 import React, { useState } from 'react';
-import { Plus, TrendingUp, Users, DollarSign, FileText, AlertCircle, BarChart } from 'lucide-react';
-import { Button } from '../../components/ui';
+import { Plus, AlertCircle } from 'lucide-react';
 import { PolicyForm } from './PolicyForm';
 import { PolicyList } from './PolicyList';
 import { usePolicy } from '../../hooks/usePolicy';
@@ -23,9 +22,8 @@ export const PolicyDashboard: React.FC = () => {
     filterPolicies,
     getPolicySummary,
     getExpiringPolicies,
-    getPoliciesByClient
   } = usePolicy();
-  const { carriers } = useCarriers();
+  useCarriers();
 
   const summary = getPolicySummary();
   const expiringPolicies = getExpiringPolicies(30);
