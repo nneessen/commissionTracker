@@ -6,6 +6,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-09-27 16:29:49
+
+### Changed Files
+- `database/001_create_agent_settings.sql`
+- `database/003_migrate_comp_guide_data.sql`
+- `package-lock.json`
+- `package.json`
+- `scripts/migrate-comp-guide-data.js`
+- `src/components/layout/SettingsLayout.tsx`
+- `src/components/layout/index.ts`
+- `src/data/compGuideData.json`
+- `src/features/settings/CompGuideViewer.tsx`
+- `src/hooks/compGuide/useCompGuide.ts`
+- `src/index.tsx`
+- `src/services/compGuide/compGuideService.ts`
+- `supabase/migrations/002_create_agent_settings.sql`
+
+### Statistics
+```
+ 13 files changed, 18378 insertions(+), 251 deletions(-)
+```
+
 ## [Checkpoint] - 2025-09-27 16:10:23
 
 ### Changed Files
