@@ -1,14 +1,14 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
-const supabaseKey = process.env.REACT_APP_SUPABASE_ANON_KEY;
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl) {
-  throw new Error('Missing env.REACT_APP_SUPABASE_URL');
+  throw new Error('Missing env.VITE_SUPABASE_URL');
 }
 
 if (!supabaseKey) {
-  throw new Error('Missing env.REACT_APP_SUPABASE_ANON_KEY');
+  throw new Error('Missing env.VITE_SUPABASE_ANON_KEY');
 }
 
 export const supabase = createClient(supabaseUrl, supabaseKey);
