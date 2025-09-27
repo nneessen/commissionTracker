@@ -1,6 +1,6 @@
 // src/services/commissions/CommissionRepository.ts
 import { BaseRepository } from '../base/BaseRepository';
-import { TABLES } from '../supabase';
+import { TABLES } from '../base/supabase';
 import { Commission, CreateCommissionData, UpdateCommissionData } from '../../types/commission.types';
 
 export class CommissionRepository extends BaseRepository<Commission, CreateCommissionData, UpdateCommissionData> {

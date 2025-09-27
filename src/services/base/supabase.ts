@@ -19,8 +19,11 @@ export const TABLES = {
   COMMISSIONS: 'commissions',
   EXPENSES: 'expenses',
   CARRIERS: 'carriers',
+  PRODUCTS: 'products',
+  COMMISSION_RATES: 'commission_rates',
   CONSTANTS: 'constants',
   AGENTS: 'agents',
+  AGENT_SETTINGS: 'agent_settings',
   COMP_GUIDE: 'comp_guide',
   CHARGEBACKS: 'chargebacks',
-} as const;;
+} as const;

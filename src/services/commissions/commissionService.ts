@@ -1,6 +1,6 @@
-import { supabase, TABLES } from './supabase';
-import { Commission, CommissionFilters, NewCommissionForm } from '../types/commission.types';
-import { RISK_SCORE_WEIGHTS, CHARGEBACK_THRESHOLDS, RISK_LEVELS } from '../constants/financial';
+import { supabase, TABLES } from '../base/supabase';
+import { Commission, CommissionFilters, NewCommissionForm } from '../../types/commission.types';
+import { RISK_SCORE_WEIGHTS, CHARGEBACK_THRESHOLDS, RISK_LEVELS } from '../../constants/financial';
 
 // src/services/commissionService.ts
 
@@ -220,7 +220,7 @@ class CommissionService {
     isAutoCalculated: boolean;
     contractCompLevel: number;
   } | null> {
-    const { compGuideService, agentService, carrierService } = await import('./index');
+    const { compGuideService, agentService, carrierService } = await import('../index');
     
     // Get carrier name for comp guide lookup
     const carrier = await carrierService.getById(data.carrierId);
@@ -362,10 +362,12 @@ class CommissionService {
     // Map our ProductType enum values to comp guide product names
     const productMapping: Record<string, string> = {
       'whole_life': 'Provider Whole Life',
-      'term_life': 'Term Life',
+      'term': 'Term Life',
       'universal_life': 'Express UL',
       'indexed_universal_life': 'Express Issue Premier WL',
-      'accidental_life': 'Accidental Death',
+      'accidental': 'Accidental Death',
+      'final_expense': 'Final Expense',
+      'annuity': 'Annuity',
     };
 
     return productMapping[productType] || null;
@@ -746,4 +748,5 @@ class CommissionService {
   }
 }
 
+export { CommissionService };
 export const commissionService = new CommissionService();

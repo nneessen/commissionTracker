@@ -41,7 +41,7 @@ describe('usePolicies', () => {
         phone: '555-0001',
       },
       carrierId: 'carrier-1',
-      product: 'term_life',
+      product: 'term',
       effectiveDate: new Date('2024-01-01'),
       termLength: 20,
       annualPremium: 1200,

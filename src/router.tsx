@@ -9,7 +9,7 @@ import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import App from "./App";
 import { ExpenseManager } from "./features/expenses";
 import { CommissionList } from "./features/commissions";
-import { ConstantsManager, CarrierManager, AgentManager, CompGuideManager } from "./features/settings";
+import { ConstantsManager, CarrierManager, ProductManager, AgentManager, AgentSettings, CompGuideManager, CompGuideViewer } from "./features/settings";
 import { PolicyDashboard } from "./features/policies";
 import { AnalyticsDashboard } from "./features/analytics";
 import { DashboardHome } from "./features/dashboard";
@@ -59,19 +59,40 @@ const settingsRoute = new Route({
   getParentRoute: () => rootRoute,
   path: "settings",
   component: () => (
-    <div className="settings-container">
+    <div className="settings-container p-6 max-w-7xl mx-auto">
       <div className="mb-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">Settings</h2>
-        <ConstantsManager />
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Settings</h1>
+        <p className="text-gray-600">Manage your agent profile, carriers, products, and compensation guides</p>
       </div>
+
+      {/* Agent Settings - Most Important */}
       <div className="mb-8">
-        <CarrierManager />
+        <AgentSettings />
       </div>
+
+      {/* Data Management Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        <div className="space-y-8">
+          <CarrierManager />
+        </div>
+        <div className="space-y-8">
+          <ProductManager />
+        </div>
+      </div>
+
+      {/* Compensation Guide Section */}
       <div className="mb-8">
-        <AgentManager />
+        <CompGuideViewer />
       </div>
-      <div>
-        <CompGuideManager />
+
+      {/* Additional Settings */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div>
+          <ConstantsManager />
+        </div>
+        <div>
+          <AgentManager />
+        </div>
       </div>
     </div>
   ),

@@ -1,7 +1,7 @@
 // src/hooks/expenses/useCreateExpense.ts
 import { useState } from 'react';
 import { ExpenseItem, NewExpenseForm } from '../../types/expense.types';
-import { expenseService, CreateExpenseData } from '../../services/expenseService';
+import { expenseService, CreateExpenseData } from '../../services';
 
 export interface UseCreateExpenseResult {
   createExpense: (formData: NewExpenseForm) => Promise<ExpenseItem | null>;

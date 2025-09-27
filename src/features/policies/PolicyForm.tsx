@@ -55,7 +55,7 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
     clientState: '',
     clientAge: 0,
     carrierId: '',
-    product: 'term_life' as ProductType,
+    product: 'term' as ProductType,
     policyNumber: '',
     effectiveDate: new Date().toISOString().split('T')[0],
     premium: 0,
@@ -232,10 +232,12 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
               onChange={handleInputChange}
             >
               <option value="whole_life">Whole Life</option>
-              <option value="term_life">Term Life</option>
+              <option value="term">Term Life</option>
               <option value="universal_life">Universal Life</option>
               <option value="indexed_universal_life">IUL</option>
-              <option value="accidental_life">Accidental</option>
+              <option value="accidental">Accidental Death</option>
+              <option value="final_expense">Final Expense</option>
+              <option value="annuity">Annuity</option>
             </select>
           </div>
 

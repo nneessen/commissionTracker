@@ -1,7 +1,7 @@
 // src/services/compGuideService.ts
 
-import { supabase, TABLES } from './supabase';
-import { CompGuideEntry, CompGuideLookup, CommissionCalculation } from '../types/user.types';
+import { supabase, TABLES } from '../base/supabase';
+import { CompGuideEntry, CompGuideLookup, CommissionCalculation } from '../../types/product.types';
 
 class CompGuideService {
   async getAll(): Promise<CompGuideEntry[]> {
@@ -160,6 +160,8 @@ class CompGuideService {
       productName: dbRecord.product_name,
       contractLevel: dbRecord.contract_level,
       commissionPercentage: parseFloat(dbRecord.commission_percentage),
+      productType: dbRecord.product_type || 'term',
+      isActive: dbRecord.is_active !== false,
       createdAt: new Date(dbRecord.created_at),
       updatedAt: new Date(dbRecord.updated_at),
     };

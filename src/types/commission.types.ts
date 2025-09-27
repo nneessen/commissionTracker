@@ -1,3 +1,6 @@
+// Import and re-export ProductType from product.types.ts instead of redefining
+import type { ProductType } from './product.types';
+
 export interface Client {
   name: string;
   age: number;
@@ -51,12 +54,7 @@ export interface Commission {
   notes?: string;
 }
 
-export type ProductType =
-  | "whole_life"
-  | "term_life"
-  | "universal_life"
-  | "indexed_universal_life"
-  | "accidental_life";
+export type { ProductType } from './product.types';
 
 export interface NewCommissionForm {
   clientName: string;

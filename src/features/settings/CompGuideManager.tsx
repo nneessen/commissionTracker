@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { compGuideService } from '../../services';
-import { CompGuideEntry } from '../../types/user.types';
+import { CompGuideEntry } from '../../types/product.types';
 
 export const CompGuideManager: React.FC = () => {
   const [compGuideData, setCompGuideData] = useState<CompGuideEntry[]>([]);

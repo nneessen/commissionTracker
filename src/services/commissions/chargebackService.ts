@@ -1,7 +1,7 @@
 // src/services/chargebackService.ts
 
-import { supabase, TABLES } from './supabase';
-import { Chargeback, CreateChargebackData } from '../types/user.types';
+import { supabase, TABLES } from '../base/supabase';
+import { Chargeback, CreateChargebackData } from '../../types/user.types';
 
 export type { CreateChargebackData };
 

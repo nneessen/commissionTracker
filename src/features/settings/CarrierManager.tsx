@@ -1,7 +1,9 @@
+// src/features/settings/CarrierManager.tsx
+
 import React, { useState } from 'react';
 import { Plus, Edit, Trash2, ToggleLeft, ToggleRight } from 'lucide-react';
 import { Button, Modal, Input, DataTable } from '../../components/ui';
-import { Carrier, NewCarrierForm, DataTableColumn, ProductCommissionRates } from '../../types';
+import { Carrier, NewCarrierForm, DataTableColumn } from '../../types';
 import { useCarriers } from '../../hooks';
 
 export const CarrierManager: React.FC = () => {
@@ -19,25 +21,13 @@ export const CarrierManager: React.FC = () => {
 
   const [formData, setFormData] = useState<NewCarrierForm>({
     name: '',
-    commissionRates: {
-      whole_life: 0.75,
-      term_life: 0.60,
-      universal_life: 0.70,
-      indexed_universal_life: 0.80,
-      accidental_life: 0.55,
-    },
+    isActive: true,
   });
 
   const resetForm = () => {
     setFormData({
       name: '',
-      commissionRates: {
-        whole_life: 0.75,
-        term_life: 0.60,
-        universal_life: 0.70,
-        indexed_universal_life: 0.80,
-        accidental_life: 0.55,
-      },
+      isActive: true,
     });
   };
 
@@ -53,7 +43,7 @@ export const CarrierManager: React.FC = () => {
     setEditingCarrier(carrier);
     setFormData({
       name: carrier.name,
-      commissionRates: { ...carrier.commissionRates },
+      isActive: carrier.isActive,
     });
     setShowEditModal(true);
   };
@@ -62,7 +52,7 @@ export const CarrierManager: React.FC = () => {
     if (editingCarrier && formData.name.trim()) {
       updateCarrier(editingCarrier.id, {
         name: formData.name,
-        commissionRates: formData.commissionRates,
+        isActive: formData.isActive,
       });
       resetForm();
       setEditingCarrier(null);
@@ -94,42 +84,23 @@ export const CarrierManager: React.FC = () => {
           className={`flex items-center space-x-1 px-2 py-1 rounded text-sm font-medium ${
             carrier.isActive
               ? 'bg-green-100 text-green-800'
-              : 'bg-gray-100 text-gray-800'
+              : 'bg-red-100 text-red-800'
           }`}
         >
           {carrier.isActive ? (
             <ToggleRight size={16} className="text-green-600" />
           ) : (
-            <ToggleLeft size={16} className="text-gray-400" />
+            <ToggleLeft size={16} className="text-red-400" />
           )}
           {carrier.isActive ? 'Active' : 'Inactive'}
         </button>
       ),
     },
     {
-      key: 'whole_life',
-      header: 'Whole Life',
-      accessor: (carrier) => `${(carrier.commissionRates.whole_life * 100).toFixed(1)}%`,
-    },
-    {
-      key: 'term_life',
-      header: 'Term Life',
-      accessor: (carrier) => `${(carrier.commissionRates.term_life * 100).toFixed(1)}%`,
-    },
-    {
-      key: 'universal_life',
-      header: 'Universal Life',
-      accessor: (carrier) => `${(carrier.commissionRates.universal_life * 100).toFixed(1)}%`,
-    },
-    {
-      key: 'indexed_universal_life',
-      header: 'Indexed UL',
-      accessor: (carrier) => `${(carrier.commissionRates.indexed_universal_life * 100).toFixed(1)}%`,
-    },
-    {
-      key: 'accidental_life',
-      header: 'Accidental',
-      accessor: (carrier) => `${(carrier.commissionRates.accidental_life * 100).toFixed(1)}%`,
+      key: 'createdAt',
+      header: 'Created',
+      sortable: true,
+      accessor: (carrier) => new Date(carrier.createdAt).toLocaleDateString(),
     },
     {
       key: 'actions',
@@ -156,35 +127,39 @@ export const CarrierManager: React.FC = () => {
     },
   ];
 
-  const renderCommissionRateInputs = () => {
-    const rates = [
-      { key: 'whole_life' as keyof ProductCommissionRates, label: 'Whole Life' },
-      { key: 'term_life' as keyof ProductCommissionRates, label: 'Term Life' },
-      { key: 'universal_life' as keyof ProductCommissionRates, label: 'Universal Life' },
-      { key: 'indexed_universal_life' as keyof ProductCommissionRates, label: 'Indexed Universal Life' },
-      { key: 'accidental_life' as keyof ProductCommissionRates, label: 'Accidental Life' },
-    ];
-
+  const renderFormFields = () => {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {rates.map(({ key, label }) => (
-          <Input
-            key={key}
-            label={label}
-            type="number"
-            value={formData.commissionRates[key]}
-            onChange={(value) =>
+      <div className="space-y-4">
+        <Input
+          label="Carrier Name"
+          value={formData.name}
+          onChange={(value) =>
+            setFormData((prev) => ({
+              ...prev,
+              name: value,
+            }))
+          }
+          placeholder="Enter carrier name"
+          required
+        />
+
+        <div className="flex items-center space-x-2">
+          <input
+            type="checkbox"
+            id="isActive"
+            checked={formData.isActive}
+            onChange={(e) =>
               setFormData((prev) => ({
                 ...prev,
-                commissionRates: {
-                  ...prev.commissionRates,
-                  [key]: Number(value),
-                },
+                isActive: e.target.checked,
               }))
             }
-            placeholder="0.75"
+            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
           />
-        ))}
+          <label htmlFor="isActive" className="text-sm font-medium text-gray-700">
+            Active Carrier
+          </label>
+        </div>
       </div>
     );
   };
@@ -215,23 +190,10 @@ export const CarrierManager: React.FC = () => {
           resetForm();
         }}
         title="Add New Carrier"
-        size="lg"
+        size="md"
       >
         <div className="space-y-4">
-          <Input
-            label="Carrier Name"
-            value={formData.name}
-            onChange={(value) =>
-              setFormData((prev) => ({ ...prev, name: String(value) }))
-            }
-            placeholder="Enter carrier name"
-            required
-          />
-
-          <div>
-            <h4 className="font-medium text-gray-900 mb-3">Commission Rates</h4>
-            {renderCommissionRateInputs()}
-          </div>
+          {renderFormFields()}
 
           <div className="flex justify-end space-x-2 pt-4">
             <Button
@@ -262,23 +224,10 @@ export const CarrierManager: React.FC = () => {
           resetForm();
         }}
         title="Edit Carrier"
-        size="lg"
+        size="md"
       >
         <div className="space-y-4">
-          <Input
-            label="Carrier Name"
-            value={formData.name}
-            onChange={(value) =>
-              setFormData((prev) => ({ ...prev, name: String(value) }))
-            }
-            placeholder="Enter carrier name"
-            required
-          />
-
-          <div>
-            <h4 className="font-medium text-gray-900 mb-3">Commission Rates</h4>
-            {renderCommissionRateInputs()}
-          </div>
+          {renderFormFields()}
 
           <div className="flex justify-end space-x-2 pt-4">
             <Button

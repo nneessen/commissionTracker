@@ -246,7 +246,6 @@ class DataMigrationService {
         await carrierService.create({
           name: carrier.name,
           isActive: carrier.isActive,
-          commissionRates: carrier.commissionRates,
         });
         result.details.carriers++;
       } catch (error) {

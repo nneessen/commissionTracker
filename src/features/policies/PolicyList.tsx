@@ -27,10 +27,12 @@ const STATUS_BADGES: Record<PolicyStatus, string> = {
 
 const PRODUCT_ABBREV: Record<ProductType, string> = {
   whole_life: 'Whole',
-  term_life: 'Term',
+  term: 'Term',
   universal_life: 'UL',
   indexed_universal_life: 'IUL',
-  accidental_life: 'Acc',
+  accidental: 'Acc',
+  final_expense: 'FE',
+  annuity: 'Ann',
 };
 
 export const PolicyList: React.FC<PolicyListProps> = ({
@@ -199,10 +201,12 @@ export const PolicyList: React.FC<PolicyListProps> = ({
             >
               <option value="">All</option>
               <option value="whole_life">Whole Life</option>
-              <option value="term_life">Term Life</option>
+              <option value="term">Term Life</option>
               <option value="universal_life">Universal Life</option>
               <option value="indexed_universal_life">IUL</option>
-              <option value="accidental_life">Accidental</option>
+              <option value="accidental">Accidental Death</option>
+              <option value="final_expense">Final Expense</option>
+              <option value="annuity">Annuity</option>
             </select>
           </div>
           <div className="filter-group">

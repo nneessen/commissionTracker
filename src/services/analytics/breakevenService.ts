@@ -1,8 +1,8 @@
 // src/services/breakevenService.ts
 
-import { supabase, TABLES } from './supabase';
-import { commissionService, chargebackService, constantsService, expenseService } from './index';
-import { BREAKEVEN_RATES, CHARGEBACK_THRESHOLDS, EMERGENCY_FUND, FINANCIAL_CONSTANTS } from '../constants/financial';
+import { supabase, TABLES } from '../base/supabase';
+import { commissionService, chargebackService, constantsService, expenseService } from '../index';
+import { BREAKEVEN_RATES, CHARGEBACK_THRESHOLDS, EMERGENCY_FUND, FINANCIAL_CONSTANTS } from '../../constants/financial';
 
 export interface BreakevenScenario {
   scenarioName: string;

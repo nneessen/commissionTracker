@@ -103,10 +103,12 @@ export const PerformanceTable: React.FC<PerformanceTableProps> = ({ title, data,
             render: (item: ProductPerformance) => {
               const productLabels: Record<string, string> = {
                 whole_life: 'Whole Life',
-                term_life: 'Term Life',
+                term: 'Term Life',
                 universal_life: 'Universal Life',
                 indexed_universal_life: 'Indexed Universal',
-                accidental_life: 'Accidental',
+                accidental: 'Accidental Death',
+                final_expense: 'Final Expense',
+                annuity: 'Annuity',
               };
               return (
                 <div className="font-medium">

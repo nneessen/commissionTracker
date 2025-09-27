@@ -1,7 +1,7 @@
 // src/services/agentService.ts
 
-import { supabase, TABLES } from './supabase';
-import { Agent, CreateAgentData, UpdateAgentData } from '../types/user.types';
+import { supabase, TABLES } from '../base/supabase';
+import { Agent, CreateAgentData, UpdateAgentData } from '../../types/user.types';
 
 export type { CreateAgentData, UpdateAgentData };
 

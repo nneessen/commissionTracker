@@ -1,6 +1,6 @@
 // src/services/expenses/ExpenseRepository.ts
 import { BaseRepository } from '../base/BaseRepository';
-import { TABLES } from '../supabase';
+import { TABLES } from '../base/supabase';
 import { Expense, CreateExpenseData, UpdateExpenseData } from '../../types/expense.types';
 
 export class ExpenseRepository extends BaseRepository<Expense, CreateExpenseData, UpdateExpenseData> {

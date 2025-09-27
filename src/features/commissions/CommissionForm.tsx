@@ -10,10 +10,12 @@ interface CommissionFormProps {
 
 const PRODUCT_OPTIONS: SelectOption[] = [
   { value: 'whole_life', label: 'Whole Life' },
-  { value: 'term_life', label: 'Term Life' },
+  { value: 'term', label: 'Term Life' },
   { value: 'universal_life', label: 'Universal Life' },
   { value: 'indexed_universal_life', label: 'Indexed Universal Life' },
-  { value: 'accidental_life', label: 'Accidental Life' },
+  { value: 'accidental', label: 'Accidental Death' },
+  { value: 'final_expense', label: 'Final Expense' },
+  { value: 'annuity', label: 'Annuity' },
 ];
 
 const US_STATES: SelectOption[] = [
@@ -93,9 +95,8 @@ export const CommissionForm: React.FC<CommissionFormProps> = ({
   }));
 
   const selectedCarrier = getCarrierById(formData.carrierId);
-  const estimatedCommission = selectedCarrier
-    ? formData.annualPremium * selectedCarrier.commissionRates[formData.product]
-    : 0;
+  // TODO: Update commission calculation to use new product/commission rate structure
+  const estimatedCommission = 0; // Temporary - needs to be updated for new architecture
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -248,7 +249,8 @@ export const CommissionForm: React.FC<CommissionFormProps> = ({
               </div>
               {selectedCarrier && (
                 <p className="text-xs text-gray-500">
-                  Rate: {(selectedCarrier.commissionRates[formData.product] * 100).toFixed(1)}%
+                  {/* TODO: Update to show commission rate from new structure */}
+                  Rate: TBD
                 </p>
               )}
             </div>

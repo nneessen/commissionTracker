@@ -1,10 +1,9 @@
-import { supabase, TABLES } from './supabase';
-import { Carrier, ProductCommissionRates } from '../types/carrier.types';
+import { supabase, TABLES } from '../base/supabase';
+import { Carrier } from '../../types/carrier.types';
 
 export interface CreateCarrierData {
   name: string;
   isActive?: boolean;
-  commissionRates: ProductCommissionRates;
 }
 
 export interface UpdateCarrierData extends Partial<CreateCarrierData> {
@@ -103,7 +102,7 @@ class CarrierService {
   async setActive(id: string, isActive: boolean): Promise<Carrier> {
     const { data, error } = await supabase
       .from(TABLES.CARRIERS)
-      .update({ is_active: isActive })
+      .update({ is_active: isActive, updated_at: new Date().toISOString() })
       .eq('id', id)
       .select()
       .single();
@@ -115,12 +114,20 @@ class CarrierService {
     return this.transformFromDB(data);
   }
 
+  async toggleActive(id: string): Promise<Carrier> {
+    const carrier = await this.getById(id);
+    if (!carrier) {
+      throw new Error('Carrier not found');
+    }
+
+    return this.setActive(id, !carrier.isActive);
+  }
+
   private transformFromDB(dbRecord: any): Carrier {
     return {
       id: dbRecord.id,
       name: dbRecord.name,
       isActive: dbRecord.is_active,
-      commissionRates: dbRecord.commission_rates,
       createdAt: new Date(dbRecord.created_at),
       updatedAt: dbRecord.updated_at ? new Date(dbRecord.updated_at) : undefined,
     };
@@ -131,7 +138,10 @@ class CarrierService {
 
     if (data.name !== undefined) dbData.name = data.name;
     if (data.isActive !== undefined) dbData.is_active = data.isActive;
-    if (data.commissionRates !== undefined) dbData.commission_rates = data.commissionRates;
+
+    if (isUpdate) {
+      dbData.updated_at = new Date().toISOString();
+    }
 
     return dbData;
   }

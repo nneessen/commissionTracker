@@ -1,6 +1,6 @@
 // src/services/policies/PolicyRepository.ts
 import { BaseRepository } from '../base/BaseRepository';
-import { TABLES } from '../supabase';
+import { TABLES } from '../base/supabase';
 import { Policy, CreatePolicyData, UpdatePolicyData } from '../../types/policy.types';
 
 export class PolicyRepository extends BaseRepository<Policy, CreatePolicyData, UpdatePolicyData> {

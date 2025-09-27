@@ -1,5 +1,5 @@
-import { supabase, TABLES } from './supabase';
-import { Constants } from '../types/expense.types';
+import { supabase, TABLES } from '../base/supabase';
+import { Constants } from '../../types/expense.types';
 
 interface ConstantRecord {
   id: string;

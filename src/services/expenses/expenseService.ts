@@ -1,5 +1,5 @@
-import { supabase, TABLES } from './supabase';
-import { ExpenseItem, ExpenseCategory } from '../types/expense.types';
+import { supabase, TABLES } from '../base/supabase';
+import { ExpenseItem, ExpenseCategory } from '../../types/expense.types';
 
 export interface CreateExpenseData {
   name: string;
@@ -142,4 +142,5 @@ class ExpenseService {
   }
 }
 
+export { ExpenseService };
 export const expenseService = new ExpenseService();

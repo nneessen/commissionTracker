@@ -32,6 +32,29 @@ export {
   useCreatePolicy
 } from './policies';
 
+// Product hooks (modular architecture)
+export {
+  useProducts,
+  useProductsByCarrier,
+  useProductsWithRates
+} from './products';
+
+// Commission Rate hooks (modular architecture)
+export {
+  useCommissionRates,
+  useCommissionRatesByProduct,
+  useCommissionRatesByCarrier,
+  useCommissionRatesByContractLevel,
+  useCommissionRate
+} from './commissionRates';
+
+// Agent Settings hooks (modular architecture)
+export {
+  useAgentSettings,
+  useContractLevel,
+  useAllAgentSettings
+} from './agentSettings';
+
 // Export types
 export type {
   UseCommissionsResult,

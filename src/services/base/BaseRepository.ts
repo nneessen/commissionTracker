@@ -1,6 +1,6 @@
 // src/services/base/BaseRepository.ts
 import { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
-import { supabase } from "../supabase";
+import { supabase } from "./supabase";
 
 export interface BaseEntity {
   id: string;

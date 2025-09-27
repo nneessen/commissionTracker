@@ -42,7 +42,7 @@ describe('useCreatePolicy', () => {
     clientEmail: 'john@example.com',
     clientPhone: '555-0001',
     carrierId: 'carrier-1',
-    product: 'term_life',
+    product: 'term',
     effectiveDate: '2024-01-01',
     termLength: 20,
     premium: 100, // Monthly premium
@@ -208,7 +208,7 @@ describe('useCreatePolicy', () => {
       status: 'active',
       client: { name: 'Test', state: 'NY', age: 30 },
       carrierId: 'carrier-1',
-      product: 'term_life',
+      product: 'term',
       effectiveDate: new Date(),
       annualPremium: 1000,
       paymentFrequency: 'monthly',

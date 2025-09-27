@@ -65,10 +65,12 @@ export const CommissionList: React.FC = () => {
       accessor: (commission) => {
         const productLabels = {
           whole_life: 'Whole Life',
-          term_life: 'Term Life',
+          term: 'Term Life',
           universal_life: 'Universal Life',
           indexed_universal_life: 'Indexed Universal Life',
-          accidental_life: 'Accidental Life',
+          accidental: 'Accidental Death',
+          final_expense: 'Final Expense',
+          annuity: 'Annuity',
         };
         return productLabels[commission.product] || commission.product;
       },

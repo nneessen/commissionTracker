@@ -1,7 +1,7 @@
 // src/hooks/expenses/useUpdateExpense.ts
 import { useState } from 'react';
 import { ExpenseItem } from '../../types/expense.types';
-import { expenseService, CreateExpenseData } from '../../services/expenseService';
+import { expenseService, CreateExpenseData } from '../../services';
 
 export interface UseUpdateExpenseResult {
   updateExpense: (id: string, updates: Partial<CreateExpenseData>) => Promise<ExpenseItem | null>;

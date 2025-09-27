@@ -1,5 +1,5 @@
-import { supabase, TABLES } from './supabase';
-import { Policy, NewPolicyForm, PolicyFilters, CreatePolicyData, UpdatePolicyData } from '../types/policy.types';
+import { supabase, TABLES } from '../base/supabase';
+import { Policy, NewPolicyForm, PolicyFilters, CreatePolicyData, UpdatePolicyData } from '../../types/policy.types';
 
 class PolicyService {
   async getAll(): Promise<Policy[]> {
@@ -165,4 +165,5 @@ class PolicyService {
   }
 }
 
+export { PolicyService };
 export const policyService = new PolicyService();

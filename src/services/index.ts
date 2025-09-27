@@ -1,33 +1,35 @@
 // Core infrastructure
-export { supabase, TABLES } from './supabase';
+export { supabase, TABLES } from './base/supabase';
 
 // Base classes and types
 export * from './base';
 
-// New feature-organized services (preferred)
+// Feature-organized services
 export * from './policies';
 export * from './commissions';
 export * from './expenses';
+export * from './settings';
+export * from './analytics';
+export * from './agents';
 
-// Legacy services (to be migrated)
-export { carrierService } from './carrierService';
-export { constantsService } from './constantsService';
-export { agentService } from './agentService';
-export { compGuideService } from './compGuideService';
-export { chargebackService } from './chargebackService';
-export { breakevenService } from './breakevenService';
+// Individual service exports for backward compatibility
+export { carrierService } from './settings/carrierService';
+export { constantsService } from './settings/constantsService';
+export { agentService } from './agents/agentService';
+export { compGuideService } from './settings/compGuideService';
+export { productService } from './settings/productService';
+export { agentSettingsService } from './settings/agentSettingsService';
+export { chargebackService } from './commissions/chargebackService';
+export { commissionRateService } from './commissions/commissionRateService';
+export { breakevenService } from './analytics/breakevenService';
 
 // Legacy service exports for backward compatibility
-export { policyService } from './policyService';
-export { commissionService } from './commissionService';
-export { expenseService } from './expenseService';
+export { policyService } from './policies/policyService';
+export { commissionService } from './commissions/commissionService';
+export { expenseService } from './expenses/expenseService';
 
-// New service type exports
+// Type exports
 export type { CreatePolicyData, UpdatePolicyData } from '../types/policy.types';
 export type { CreateCommissionData, UpdateCommissionData } from '../types/commission.types';
 export type { CreateExpenseData, UpdateExpenseData } from '../types/expense.types';
-
-// Legacy type exports
-export type { CreateCarrierData, UpdateCarrierData } from './carrierService';
-export type { CreateAgentData, UpdateAgentData } from './agentService';
-export type { CreateChargebackData } from './chargebackService';
+export type { NewProductForm as CreateProductData, NewCommissionRateForm as CreateCommissionRateData } from '../types/product.types';

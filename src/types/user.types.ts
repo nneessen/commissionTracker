@@ -40,28 +40,7 @@ export interface UpdateAgentData extends Partial<CreateAgentData> {
   id: string;
 }
 
-export interface CompGuideEntry {
-  id: string;
-  carrierName: string;
-  productName: string;
-  contractLevel: number; // 80-145
-  commissionPercentage: number; // Stored as percentage (e.g., 125.50 for 125.5%)
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface CompGuideLookup {
-  carrierName: string;
-  productName: string;
-  contractLevel: number;
-}
-
-export interface CommissionCalculation {
-  monthlyPremium: number;
-  commissionPercentage: number;
-  advanceMonths: number; // typically 9
-  totalCommission: number;
-}
+// CompGuideEntry, CompGuideLookup, and CommissionCalculation moved to product.types.ts
 
 export interface Chargeback {
   id: string;

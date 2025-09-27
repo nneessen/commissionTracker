@@ -431,7 +431,7 @@ export function useMetrics() {
   }, [commissions, policies, getCarrierById]);
 
   const productPerformance = useMemo((): ProductPerformance[] => {
-    const products = ['whole_life', 'term_life', 'universal_life', 'indexed_universal_life', 'accidental_life'] as const;
+    const products = ['whole_life', 'term', 'universal_life', 'indexed_universal_life', 'accidental', 'final_expense', 'annuity'] as const;
 
     return products.map(product => {
       const productPolicies = policies.filter(p => p.product === product);

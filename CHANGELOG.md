@@ -6,6 +6,84 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-09-27 15:44:01
+
+### Changed Files
+- `create-tables-now.sql`
+- `plans/fix-all-types.md`
+- `scripts/create-tables.js`
+- `src/__tests__/policies.test.tsx`
+- `src/data/compGuideData.ts`
+- `src/features/analytics/PerformanceTable.tsx`
+- `src/features/commissions/CommissionForm.tsx`
+- `src/features/commissions/CommissionList.tsx`
+- `src/features/policies/PolicyForm.tsx`
+- `src/features/policies/PolicyList.tsx`
+- `src/features/settings/AgentSettings.tsx`
+- `src/features/settings/CarrierManager.tsx`
+- `src/features/settings/CompGuideManager.tsx`
+- `src/features/settings/CompGuideViewer.tsx`
+- `src/features/settings/ProductManager.tsx`
+- `src/features/settings/index.ts`
+- `src/hooks/agentSettings/index.ts`
+- `src/hooks/agentSettings/useAgentSettings.ts`
+- `src/hooks/commissionRates/index.ts`
+- `src/hooks/commissionRates/useCommissionRates.ts`
+- `src/hooks/commissions/useCreateCommission.ts`
+- `src/hooks/expenses/useCreateExpense.ts`
+- `src/hooks/expenses/useUpdateExpense.ts`
+- `src/hooks/index.ts`
+- `src/hooks/policies/__tests__/useCreatePolicy.test.tsx`
+- `src/hooks/policies/__tests__/usePolicies.test.tsx`
+- `src/hooks/products/index.ts`
+- `src/hooks/products/useProducts.ts`
+- `src/hooks/useMetrics.ts`
+- `src/router.tsx`
+- `src/services/agents/agentService.ts`
+- `src/services/agents/index.ts`
+- `src/services/analytics/breakevenService.ts`
+- `src/services/analytics/index.ts`
+- `src/services/base/BaseRepository.ts`
+- `src/services/base/supabase.ts`
+- `src/services/commissions/CommissionRepository.ts`
+- `src/services/commissions/CommissionService.ts`
+- `src/services/commissions/chargebackService.ts`
+- `src/services/commissions/commissionRateService.ts`
+- `src/services/commissions/commissionService.ts`
+- `src/services/commissions/index.ts`
+- `src/services/database/commission-schema-update.sql`
+- `src/services/database/comp-guide-data.sql`
+- `src/services/database/database-schema.sql`
+- `src/services/database/enhanced-schema.sql`
+- `src/services/expenses/ExpenseRepository.ts`
+- `src/services/expenses/ExpenseService.ts`
+- `src/services/expenses/expenseService.ts`
+- `src/services/expenses/index.ts`
+- `src/services/index.ts`
+- `src/services/policies/PolicyRepository.ts`
+- `src/services/policies/PolicyService.ts`
+- `src/services/policies/index.ts`
+- `src/services/policies/policyService.ts`
+- `src/services/settings/agentSettingsService.ts`
+- `src/services/settings/carrierService.ts`
+- `src/services/settings/compGuideService.ts`
+- `src/services/settings/constantsService.ts`
+- `src/services/settings/index.ts`
+- `src/services/settings/productService.ts`
+- `src/types/agent.types.ts`
+- `src/types/carrier.types.ts`
+- `src/types/commission.types.ts`
+- `src/types/index.ts`
+- `src/types/product.types.ts`
+- `src/types/user.types.ts`
+- `src/utils/dataMigration.ts`
+- `supabase/config.toml`
+
+### Statistics
+```
+ 69 files changed, 3960 insertions(+), 820 deletions(-)
+```
+
 ## [Checkpoint] - 2025-09-27 14:21:23
 
 ### Changed Files
