@@ -119,52 +119,6 @@ export const ExpenseManager: React.FC = () => {
         )}
       </div>
 
-      {/* Debt Payments */}
-      <div className="spreadsheet-section mb-2">
-        <div className="section-header">Monthly Debt Payments</div>
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Creditor</th>
-              <th className="text-right">Payment</th>
-              <th className="text-center">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {expenses.debt.map((item) => (
-              <tr key={item.id}>
-                <td>{item.name}</td>
-                <td className="currency-cell">
-                  <input
-                    type="number"
-                    className="cell-input"
-                    value={item.amount}
-                    onChange={(e) =>
-                      updateExpense('debt', item.id, Number(e.target.value))
-                    }
-                  />
-                </td>
-                <td className="text-center">
-                  <button
-                    className="btn-delete"
-                    onClick={() => handleDeleteExpense('debt', item.id)}
-                    title="Delete expense"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </td>
-              </tr>
-            ))}
-            <tr style={{ fontWeight: 600, backgroundColor: '#e6f3ff' }}>
-              <td>Total</td>
-              <td className="currency-cell">
-                ${totals.debtTotal.toLocaleString()}
-              </td>
-              <td></td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
 
       {/* Add Expense Modal */}
       <Modal
@@ -204,7 +158,6 @@ export const ExpenseManager: React.FC = () => {
             options={[
               { value: 'personal', label: 'Personal' },
               { value: 'business', label: 'Business' },
-              { value: 'debt', label: 'Debt' },
             ]}
             required
           />

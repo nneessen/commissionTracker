@@ -3,7 +3,6 @@ import React, { useState, useEffect } from "react";
 import { Link } from "@tanstack/react-router";
 import {
   Home,
-  Calculator,
   TrendingUp,
   Target,
   BarChart3,
@@ -33,7 +32,6 @@ interface SidebarProps {
 
 const navigationItems: NavigationItem[] = [
   { icon: Home, label: "Dashboard", href: "/dashboard" },
-  { icon: Calculator, label: "Calculator", href: "/calculator" },
   { icon: TrendingUp, label: "Analytics", href: "/analytics" },
   { icon: Target, label: "Targets", href: "/targets" },
   { icon: BarChart3, label: "Reports", href: "/reports" },

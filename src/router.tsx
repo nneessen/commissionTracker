@@ -9,19 +9,19 @@ import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import App from "./App";
 import { ExpenseManager } from "./features/expenses";
 import { CommissionList } from "./features/commissions";
-import { CalculationsDisplay } from "./features/calculations";
 import { ConstantsManager, CarrierManager } from "./features/settings";
 import { PolicyDashboard } from "./features/policies";
 import { AnalyticsDashboard } from "./features/analytics";
+import { DashboardHome } from "./features/dashboard";
 import { ExpensesProvider } from "./contexts/ExpensesContext";
 
-// Create root route with App layout
+// Create root route with App layout and ExpensesProvider
 const rootRoute = new RootRoute({
   component: () => (
-    <>
+    <ExpensesProvider>
       <App />
       <TanStackRouterDevtools />
-    </>
+    </ExpensesProvider>
   ),
 });
 
@@ -29,30 +29,14 @@ const rootRoute = new RootRoute({
 const indexRoute = new Route({
   getParentRoute: () => rootRoute,
   path: "/",
-  component: () => (
-    <ExpensesProvider>
-      <div className="dashboard-container">
-        <ConstantsManager />
-        <ExpenseManager />
-        <CalculationsDisplay />
-      </div>
-    </ExpensesProvider>
-  ),
+  component: DashboardHome,
 });
 
 // Dashboard route (alias for home)
 const dashboardRoute = new Route({
   getParentRoute: () => rootRoute,
   path: "dashboard",
-  component: () => (
-    <ExpensesProvider>
-      <div className="dashboard-container">
-        <ConstantsManager />
-        <ExpenseManager />
-        <CalculationsDisplay />
-      </div>
-    </ExpensesProvider>
-  ),
+  component: DashboardHome,
 });
 
 // Policies route
@@ -69,29 +53,21 @@ const analyticsRoute = new Route({
   component: AnalyticsDashboard,
 });
 
-// Calculator/Commissions route
-const calculatorRoute = new Route({
-  getParentRoute: () => rootRoute,
-  path: "calculator",
-  component: CommissionList,
-});
 
 // Settings route
 const settingsRoute = new Route({
   getParentRoute: () => rootRoute,
   path: "settings",
   component: () => (
-    <ExpensesProvider>
-      <div className="settings-container">
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Settings</h2>
-          <ConstantsManager />
-        </div>
-        <div>
-          <CarrierManager />
-        </div>
+    <div className="settings-container">
+      <div className="mb-8">
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">Settings</h2>
+        <ConstantsManager />
       </div>
-    </ExpensesProvider>
+      <div>
+        <CarrierManager />
+      </div>
+    </div>
   ),
 });
 
@@ -123,11 +99,7 @@ const reportsRoute = new Route({
 const expensesRoute = new Route({
   getParentRoute: () => rootRoute,
   path: "expenses",
-  component: () => (
-    <ExpensesProvider>
-      <ExpenseManager />
-    </ExpensesProvider>
-  ),
+  component: ExpenseManager,
 });
 
 // Clients route (coming soon)
@@ -148,7 +120,6 @@ const routeTree = rootRoute.addChildren([
   dashboardRoute,
   policiesRoute,
   analyticsRoute,
-  calculatorRoute,
   settingsRoute,
   targetsRoute,
   reportsRoute,

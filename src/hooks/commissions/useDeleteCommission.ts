@@ -1,36 +1,25 @@
 // src/hooks/commissions/useDeleteCommission.ts
 import { useState } from 'react';
-import { Commission } from '../../types/commission.types';
-import { useLocalStorageState } from '../base/useLocalStorageState';
-
-const COMMISSIONS_STORAGE_KEY = 'commissions';
+import { commissionService } from '../../services';
 
 export interface UseDeleteCommissionResult {
-  deleteCommission: (id: string) => boolean;
-  deleteMultipleCommissions: (ids: string[]) => number;
+  deleteCommission: (id: string) => Promise<boolean>;
+  deleteMultipleCommissions: (ids: string[]) => Promise<number>;
   isDeleting: boolean;
   error: string | null;
   clearError: () => void;
 }
 
 export function useDeleteCommission(): UseDeleteCommissionResult {
-  const [commissions, setCommissions] = useLocalStorageState<Commission[]>(COMMISSIONS_STORAGE_KEY, []);
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const deleteCommission = (id: string): boolean => {
+  const deleteCommission = async (id: string): Promise<boolean> => {
     setIsDeleting(true);
     setError(null);
 
     try {
-      const exists = commissions.some(c => c.id === id);
-
-      if (!exists) {
-        throw new Error('Commission not found');
-      }
-
-      setCommissions(prev => prev.filter(commission => commission.id !== id));
-
+      await commissionService.delete(id);
       setIsDeleting(false);
       return true;
     } catch (err) {
@@ -41,22 +30,21 @@ export function useDeleteCommission(): UseDeleteCommissionResult {
     }
   };
 
-  const deleteMultipleCommissions = (ids: string[]): number => {
+  const deleteMultipleCommissions = async (ids: string[]): Promise<number> => {
     setIsDeleting(true);
     setError(null);
 
     try {
-      const idsSet = new Set(ids);
       let deletedCount = 0;
 
-      setCommissions(prev => {
-        const newCommissions = prev.filter(commission => {
-          const shouldDelete = idsSet.has(commission.id);
-          if (shouldDelete) deletedCount++;
-          return !shouldDelete;
-        });
-        return newCommissions;
-      });
+      for (const id of ids) {
+        try {
+          await commissionService.delete(id);
+          deletedCount++;
+        } catch (err) {
+          console.error(`Failed to delete commission ${id}:`, err);
+        }
+      }
 
       if (deletedCount === 0) {
         setError('No commissions found to delete');

@@ -1,39 +1,39 @@
 // /home/nneessen/projects/commissionTracker/src/hooks/policies/usePolicies.ts
 
 import { useState, useEffect } from 'react';
-import { Policy } from '../../types';
-import { useLocalStorageState } from '../base/useLocalStorageState';
+import { Policy, PolicyFilters } from '../../types';
+import { policyService } from '../../services';
 import { usePagination } from '../base/usePagination';
-import { useFilter, FilterConfig } from '../base/useFilter';
 import { useSort } from '../base/useSort';
 
-const STORAGE_KEY = 'policies';
 
 export interface UsePoliciesResult {
   // Data
   policies: Policy[];
   paginatedPolicies: Policy[];
   isLoading: boolean;
+  error: string | null;
 
   // Pagination
   currentPage: number;
   pageSize: number;
   totalPages: number;
-  totalPolicies: number;
+  totalItems: number;
+  pageSizeOptions: number[];
   goToPage: (page: number) => void;
   nextPage: () => void;
   previousPage: () => void;
   setPageSize: (size: number) => void;
 
   // Filtering
-  filters: FilterConfig<Policy> | null;
-  setFilters: (filters: FilterConfig<Policy> | null) => void;
+  filters: PolicyFilters;
+  setFilters: (filters: PolicyFilters) => void;
   clearFilters: () => void;
   filterCount: number;
 
   // Sorting
-  sortField: keyof Policy | null;
-  sortDirection: 'asc' | 'desc' | null;
+  sortConfig: any;
+  setSortConfig: (config: any) => void;
   toggleSort: (field: keyof Policy) => void;
   clearSort: () => void;
 
@@ -46,54 +46,55 @@ export interface UsePoliciesResult {
  * Follows React 19.1 best practices - no useCallback or useMemo needed
  */
 export function usePolicies(): UsePoliciesResult {
-  const [policies, setPolicies] = useLocalStorageState<Policy[]>(STORAGE_KEY, []);
+  const [policies, setPolicies] = useState<Policy[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  // Parse dates when loading from localStorage
+  // Load policies from database
   useEffect(() => {
-    const parsedPolicies = policies.map(p => ({
-      ...p,
-      effectiveDate: new Date(p.effectiveDate),
-      expirationDate: p.expirationDate ? new Date(p.expirationDate) : undefined,
-      createdAt: new Date(p.createdAt),
-      updatedAt: p.updatedAt ? new Date(p.updatedAt) : new Date(p.createdAt)
-    }));
+    const loadPolicies = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const data = await policyService.getAll();
+        setPolicies(data);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load policies');
+        console.error('Error loading policies:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-    // Only update if dates needed parsing
-    const needsParsing = policies.some(p =>
-      typeof p.effectiveDate === 'string' ||
-      (p.expirationDate && typeof p.expirationDate === 'string') ||
-      typeof p.createdAt === 'string' ||
-      (p.updatedAt && typeof p.updatedAt === 'string')
-    );
-
-    if (needsParsing) {
-      setPolicies(parsedPolicies);
-    }
-
-    setIsLoading(false);
+    loadPolicies();
   }, [refreshKey]);
 
-  // Apply filtering
-  const {
-    filteredData,
-    filters,
-    setFilters,
-    clearFilters,
-    filterCount
-  } = useFilter<Policy>(policies);
+  // Apply filtering using a simpler approach for complex filters
+  const [customFilters, setCustomFilters] = useState<PolicyFilters>({});
+
+  const filteredData = policies.filter(policy => {
+    const f = customFilters;
+    if (f.startDate && new Date(policy.createdAt) < f.startDate) return false;
+    if (f.endDate && new Date(policy.createdAt) > f.endDate) return false;
+    if (f.carrierId && policy.carrierId !== f.carrierId) return false;
+    if (f.product && policy.product !== f.product) return false;
+    if (f.status && policy.status !== f.status) return false;
+    if (f.minPremium && policy.annualPremium < f.minPremium) return false;
+    if (f.maxPremium && policy.annualPremium > f.maxPremium) return false;
+    return true;
+  });
+
+  const clearFilters = () => setCustomFilters({});
+  const filterCount = Object.keys(customFilters).filter(key =>
+    customFilters[key as keyof PolicyFilters] !== undefined
+  ).length;
 
   // Apply sorting
-  const {
-    sortedData,
-    sortConfig,
-    setSortConfig,
-    toggleSort,
-    clearSort
-  } = useSort<Policy>(filteredData, {
-    initialSort: { field: 'createdAt', direction: 'desc' }
-  });
+  const { sortedData, sortConfig, setSortConfig, toggleSort, clearSort } =
+    useSort<Policy>(filteredData, {
+      initialSort: { field: 'createdAt', direction: 'desc' }
+    });
 
   // Apply pagination
   const {
@@ -108,35 +109,40 @@ export function usePolicies(): UsePoliciesResult {
     pageSizeOptions: [10, 25, 50, 100]
   });
 
-  // Extract sort field and direction for easier access
-  const sortField = sortConfig && 'field' in sortConfig ? sortConfig.field : null;
-  const sortDirection = sortConfig && 'field' in sortConfig ? sortConfig.direction : null;
+  const pageSizeOptions = [10, 25, 50, 100];
 
-  // Force refresh function
-  const refresh = () => {
-    setRefreshKey(prev => prev + 1);
-  };
+  const refresh = () => setRefreshKey(key => key + 1);
 
   return {
     policies: sortedData,
     paginatedPolicies: paginatedData,
     isLoading,
+    error,
+
+    // Pagination
     currentPage: pagination.currentPage,
-    pageSize: pagination.pageSize,
     totalPages: pagination.totalPages,
-    totalPolicies: pagination.totalItems,
+    pageSize: pagination.pageSize,
+    totalItems: pagination.totalItems,
+    pageSizeOptions,
     goToPage,
     nextPage,
     previousPage,
     setPageSize,
-    filters,
-    setFilters,
+
+    // Filtering
+    filters: customFilters,
+    setFilters: setCustomFilters,
     clearFilters,
     filterCount,
-    sortField,
-    sortDirection,
+
+    // Sorting
+    sortConfig,
+    setSortConfig,
     toggleSort,
     clearSort,
-    refresh
+
+    // Refresh
+    refresh,
   };
 }

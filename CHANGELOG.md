@@ -5,10 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-
 ## [Checkpoint] - 2025-09-26 18:48:24
 
 ### Changed Files
+
 - `CLAUDE.md`
 - `MANUAL_TEST_INSTRUCTIONS.md`
 - `TEST_SCENARIOS.md`
@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `verify-fix.js`
 
 ### Statistics
+
 ```
  12 files changed, 424 insertions(+), 410 deletions(-)
 ```
@@ -30,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Checkpoint] - 2025-09-26 15:44:16
 
 ### Changed Files
+
 - `package-lock.json`
 - `package.json`
 - `src/App.tsx`
@@ -38,6 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `src/router.tsx`
 
 ### Statistics
+
 ```
  6 files changed, 1614 insertions(+), 195 deletions(-)
 ```
@@ -45,6 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Checkpoint] - 2025-09-26 15:01:54
 
 ### Changed Files
+
 - `.serena/memories/hooks-refactor-code-patterns.md`
 - `.serena/memories/hooks-refactor-progress.md`
 - `.serena/memories/react-19-optimization-guidelines.md`
@@ -102,9 +106,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `test-policy-node.js`
 
 ### Statistics
+
 ```
  55 files changed, 4324 insertions(+), 1395 deletions(-)
 ```
+
 ## [2.0.0] - 2025-09-26
 
 ### 🚀 Major Hook Refactoring for React 19.1
@@ -112,12 +118,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 This release introduces a complete refactoring of all hooks to leverage React 19.1's built-in optimizations and provides a more modular, maintainable architecture.
 
 ### Breaking Changes
+
 - **Complete hook architecture overhaul** - All entity hooks split into modular, focused hooks
 - **Import paths changed** - Must update all imports to use new modular paths
 - **Removed useCallback/useMemo** - React 19.1 handles these optimizations automatically
 - **Pagination now required** - All list hooks return paginated data by default
 
 ### Added
+
 - **Modular hook architecture** - Each entity now has 6 focused hooks:
   - `useEntities` - List with pagination, filtering, sorting
   - `useEntity` - Single entity by ID
@@ -153,6 +161,7 @@ This release introduces a complete refactoring of all hooks to leverage React 19
   - Breaking change documentation
 
 ### Changed
+
 - **React 19.1 Optimizations**
   - Removed ALL `useCallback` wrappers - functions stable by default
   - Removed ALL `useMemo` wrappers - React Compiler handles optimization
@@ -170,12 +179,14 @@ This release introduces a complete refactoring of all hooks to leverage React 19
   - Clearer separation of concerns
 
 ### Removed
+
 - Monolithic `useCommissions` hook (replaced with modular hooks)
 - Monolithic `useExpenses` hook (replaced with modular hooks)
 - All `useCallback` and `useMemo` usage (React 19.1 handles automatically)
 - Manual filtering functions (replaced with built-in filter hooks)
 
 ### Technical Details
+
 - **Default Pagination**: 10 items per page, options: [10, 25, 50, 100]
 - **Date Handling**: Automatic parsing when loading from localStorage
 - **Error Management**: All mutation hooks include error state and clearError
@@ -183,6 +194,7 @@ This release introduces a complete refactoring of all hooks to leverage React 19
 - **Conflict Detection**: Update hooks check for version conflicts
 
 ### Migration Required
+
 1. Update all imports to use new modular paths
 2. Update components to use paginated data
 3. Remove any manual memoization
@@ -191,9 +203,11 @@ This release introduces a complete refactoring of all hooks to leverage React 19
 ## [Checkpoint] - 2025-09-26 14:04:57
 
 ### Changed Files
+
 - `src/features/policies/PolicyDashboard.tsx`
 
 ### Statistics
+
 ```
  1 file changed, 2 insertions(+), 2 deletions(-)
 ```
@@ -201,6 +215,7 @@ This release introduces a complete refactoring of all hooks to leverage React 19
 ## [Checkpoint] - 2025-09-26 13:34:25
 
 ### Changed Files
+
 - `ADD-POLICY-NOW.js`
 - `BROWSER-TEST-INSTRUCTIONS.md`
 - `CHANGELOG.md`
@@ -227,12 +242,15 @@ This release introduces a complete refactoring of all hooks to leverage React 19
 - `test-policy-node.js`
 
 ### Statistics
+
 ```
  24 files changed, 2059 insertions(+), 70 deletions(-)
 ```
+
 ## [1.0.2] - 2025-09-26
 
 ### Fixed - Complete Rewrite of Policy Addition Logic
+
 - **CRITICAL FIX**: Completely rewrote policy addition to fix scope and closure issues
   - Fixed: `addPolicy` had scope issues where `isDuplicate` and `newPolicy` variables were only accessible inside `setPolicies` callback
   - Fixed: Moved duplicate checking BEFORE state update to properly throw errors
@@ -241,6 +259,7 @@ This release introduces a complete refactoring of all hooks to leverage React 19
   - Result: Policies now properly add and persist to localStorage
 
 ### Root Cause Analysis
+
 - The bug was caused by attempting to check `isDuplicate` and return `newPolicy` outside the `setPolicies` callback where they were set
 - This caused the function to always return `null` and never throw duplicate errors
 - The fix moves duplicate checking before the state update and creates the policy object in the correct scope
@@ -248,31 +267,35 @@ This release introduces a complete refactoring of all hooks to leverage React 19
 ## [1.0.1] - 2025-09-26 (Initial Attempt - Did Not Work)
 
 ### Attempted Fixes
+
 - **Initial Bug Report**: Policy addition failing - form submission did nothing
   - Annual premium calculation was added but didn't fix the core issue
   - Created utility functions but the main problem was in the hook logic
 
 ### Added
+
 - Created `utils/policyCalculations.ts` with reusable premium calculation functions
 - Added comprehensive test suite for policy functionality
 - Added validation for commission percentages (0-200% range)
 - Added validation for premium amounts
 
 ### Changed
+
 - Refactored PolicyForm to calculate annual premium before submission
 - Updated NewPolicyForm interface to include optional annualPremium field
 - Improved form validation with clearer error messages
 
 ### Technical Details
+
 - Premium calculation logic is now centralized in utility functions
 - Support for all payment frequencies (monthly, quarterly, semi-annual, annual)
 - Test coverage includes edge cases and different payment scenarios
 - Added extensive console logging for debugging (can be removed in production)
 
-
 ## [Checkpoint] - 2025-09-26 10:41:42
 
 ### Changed Files
+
 - `.serena/.gitignore`
 - `.serena/project.yml`
 - `package-lock.json`
@@ -307,6 +330,7 @@ This release introduces a complete refactoring of all hooks to leverage React 19
 - `tsconfig.json`
 
 ### Statistics
+
 ```
  32 files changed, 4419 insertions(+), 80 deletions(-)
 ```

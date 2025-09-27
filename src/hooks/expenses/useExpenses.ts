@@ -1,17 +1,10 @@
 // src/hooks/expenses/useExpenses.ts
 import { useState, useEffect } from 'react';
 import { ExpenseItem, ExpenseData, ExpenseCategory } from '../../types/expense.types';
-import { useLocalStorageState } from '../base/useLocalStorageState';
+import { expenseService } from '../../services';
 import { useSort } from '../base/useSort';
 import { usePagination } from '../base/usePagination';
 
-const EXPENSES_STORAGE_KEY = 'expenses';
-
-const DEFAULT_EXPENSES: ExpenseData = {
-  personal: [],
-  business: [],
-  debt: [],
-};
 
 export interface ExpenseFilters {
   category?: ExpenseCategory;
@@ -27,6 +20,7 @@ export interface UseExpensesResult {
   paginatedExpenses: ExpenseItem[];
   expensesByCategory: ExpenseData;
   isLoading: boolean;
+  error: string | null;
 
   // Pagination
   currentPage: number;
@@ -56,29 +50,37 @@ export interface UseExpensesResult {
 }
 
 export function useExpenses(): UseExpensesResult {
-  const [expenseData, setExpenseData] = useLocalStorageState<ExpenseData>(EXPENSES_STORAGE_KEY, DEFAULT_EXPENSES);
   const [allExpenses, setAllExpenses] = useState<ExpenseItem[]>([]);
+  const [expensesByCategory, setExpensesByCategory] = useState<ExpenseData>({ personal: [], business: [] });
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  // Flatten all expenses into a single array
+  // Load expenses from database
   useEffect(() => {
-    const flatExpenses: ExpenseItem[] = [
-      ...expenseData.personal.map(e => ({ ...e, category: 'personal' as ExpenseCategory })),
-      ...expenseData.business.map(e => ({ ...e, category: 'business' as ExpenseCategory })),
-      ...expenseData.debt.map(e => ({ ...e, category: 'debt' as ExpenseCategory })),
-    ];
+    const loadExpenses = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const expenses = await expenseService.getAll();
+        setAllExpenses(expenses);
 
-    // Parse dates
-    const parsedExpenses = flatExpenses.map(expense => ({
-      ...expense,
-      createdAt: expense.createdAt ? new Date(expense.createdAt) : new Date(),
-      updatedAt: expense.updatedAt ? new Date(expense.updatedAt) : undefined,
-    }));
+        // Organize by category
+        const categoryData: ExpenseData = {
+          personal: expenses.filter(e => e.category === 'personal'),
+          business: expenses.filter(e => e.category === 'business'),
+        };
+        setExpensesByCategory(categoryData);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load expenses');
+        console.error('Error loading expenses:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-    setAllExpenses(parsedExpenses);
-    setIsLoading(false);
-  }, [expenseData, refreshKey]);
+    loadExpenses();
+  }, [refreshKey]);
 
   // Apply filtering using a simpler approach for complex filters
   const [customFilters, setCustomFilters] = useState<ExpenseFilters>({});
@@ -128,8 +130,9 @@ export function useExpenses(): UseExpensesResult {
   return {
     expenses: sortedData,
     paginatedExpenses: paginatedData,
-    expensesByCategory: expenseData,
+    expensesByCategory,
     isLoading,
+    error,
 
     // Pagination
     currentPage: pagination.currentPage,

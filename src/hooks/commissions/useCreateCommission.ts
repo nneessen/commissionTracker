@@ -1,26 +1,22 @@
 // src/hooks/commissions/useCreateCommission.ts
 import { useState } from 'react';
-import { v4 as uuidv4 } from 'uuid';
 import { Commission, NewCommissionForm } from '../../types/commission.types';
-import { useLocalStorageState } from '../base/useLocalStorageState';
+import { commissionService } from '../../services';
 import { useCarriers } from '../useCarriers';
 
-const COMMISSIONS_STORAGE_KEY = 'commissions';
-
 export interface UseCreateCommissionResult {
-  createCommission: (formData: NewCommissionForm) => Commission | null;
+  createCommission: (formData: NewCommissionForm) => Promise<Commission | null>;
   isCreating: boolean;
   error: string | null;
   clearError: () => void;
 }
 
 export function useCreateCommission(): UseCreateCommissionResult {
-  const [commissions, setCommissions] = useLocalStorageState<Commission[]>(COMMISSIONS_STORAGE_KEY, []);
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { getCarrierById } = useCarriers();
 
-  const createCommission = (formData: NewCommissionForm): Commission | null => {
+  const createCommission = async (formData: NewCommissionForm): Promise<Commission | null> => {
     setIsCreating(true);
     setError(null);
 
@@ -40,13 +36,14 @@ export function useCreateCommission(): UseCreateCommissionResult {
       // Calculate commission amount
       const commissionAmount = formData.annualPremium * commissionRate;
 
-      // Create new commission
-      const newCommission: Commission = {
-        id: uuidv4(),
+      // Create commission data
+      const commissionData = {
         policyId: formData.policyId,
         client: {
-          name: formData.clientName,
-          age: formData.clientAge,
+          firstName: formData.clientName?.split(' ')[0] || '',
+          lastName: formData.clientName?.split(' ').slice(1).join(' ') || '',
+          email: '',
+          phone: '',
           state: formData.clientState,
         },
         carrierId: formData.carrierId,
@@ -61,12 +58,10 @@ export function useCreateCommission(): UseCreateCommissionResult {
         actualDate: formData.actualDate ? new Date(formData.actualDate) : undefined,
         paidDate: formData.paidDate ? new Date(formData.paidDate) : undefined,
         notes: formData.notes,
-        createdAt: new Date(),
       };
 
-      // Add to storage
-      setCommissions(prev => [newCommission, ...prev]);
-
+      // Create via service
+      const newCommission = await commissionService.create(commissionData);
       setIsCreating(false);
       return newCommission;
     } catch (err) {

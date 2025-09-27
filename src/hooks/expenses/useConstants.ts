@@ -1,9 +1,7 @@
 // src/hooks/expenses/useConstants.ts
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Constants } from '../../types/expense.types';
-import { useLocalStorageState } from '../base/useLocalStorageState';
-
-const CONSTANTS_STORAGE_KEY = 'constants';
+import { constantsService } from '../../services';
 
 const DEFAULT_CONSTANTS: Constants = {
   avgAP: 15000,
@@ -14,19 +12,42 @@ const DEFAULT_CONSTANTS: Constants = {
 
 export interface UseConstantsResult {
   constants: Constants;
-  updateConstant: (field: keyof Constants, value: number) => void;
-  resetConstants: () => void;
+  updateConstant: (field: keyof Constants, value: number) => Promise<boolean>;
+  resetConstants: () => Promise<boolean>;
+  isLoading: boolean;
   isUpdating: boolean;
   error: string | null;
   clearError: () => void;
+  refresh: () => void;
 }
 
 export function useConstants(): UseConstantsResult {
-  const [constants, setConstants] = useLocalStorageState<Constants>(CONSTANTS_STORAGE_KEY, DEFAULT_CONSTANTS);
+  const [constants, setConstants] = useState<Constants>(DEFAULT_CONSTANTS);
+  const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  const updateConstant = (field: keyof Constants, value: number) => {
+  // Load constants from database
+  useEffect(() => {
+    const loadConstants = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const data = await constantsService.getAll();
+        setConstants(data);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load constants');
+        console.error('Error loading constants:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadConstants();
+  }, [refreshKey]);
+
+  const updateConstant = async (field: keyof Constants, value: number): Promise<boolean> => {
     setIsUpdating(true);
     setError(null);
 
@@ -40,31 +61,52 @@ export function useConstants(): UseConstantsResult {
         throw new Error('Commission rate must be between 0 and 1');
       }
 
+      await constantsService.setValue(field, value);
+
+      // Update local state
       setConstants(prev => ({
         ...prev,
         [field]: value,
       }));
 
       setIsUpdating(false);
+      return true;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to update constant';
       setError(errorMessage);
       setIsUpdating(false);
+      return false;
     }
   };
 
-  const resetConstants = () => {
-    setConstants(DEFAULT_CONSTANTS);
+  const resetConstants = async (): Promise<boolean> => {
+    setIsUpdating(true);
+    setError(null);
+
+    try {
+      const updatedConstants = await constantsService.updateMultiple(DEFAULT_CONSTANTS);
+      setConstants(updatedConstants);
+      setIsUpdating(false);
+      return true;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to reset constants';
+      setError(errorMessage);
+      setIsUpdating(false);
+      return false;
+    }
   };
 
   const clearError = () => setError(null);
+  const refresh = () => setRefreshKey(key => key + 1);
 
   return {
     constants,
     updateConstant,
     resetConstants,
+    isLoading,
     isUpdating,
     error,
     clearError,
+    refresh,
   };
 }

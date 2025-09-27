@@ -1,66 +1,116 @@
-import { useMemo } from 'react';
-import { useLocalStorage } from './useLocalStorage';
+import { useState, useEffect } from 'react';
+import { carrierService } from '../services';
 import { Carrier, DEFAULT_CARRIERS, NewCarrierForm } from '../types';
 
 export function useCarriers() {
-  const [carriers, setCarriers] = useLocalStorage<Carrier[]>('carriers', []);
+  const [carriers, setCarriers] = useState<Carrier[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Initialize with default carriers if empty
-  const initializedCarriers = useMemo(() => {
-    if (carriers.length === 0) {
-      const defaultCarriers: Carrier[] = DEFAULT_CARRIERS.map((carrier, index) => ({
-        ...carrier,
-        id: `carrier-${index + 1}`,
-        createdAt: new Date(),
-      }));
-      setCarriers(defaultCarriers);
-      return defaultCarriers;
-    }
-    return carriers;
-  }, [carriers, setCarriers]);
+  // Load carriers from database
+  useEffect(() => {
+    const loadCarriers = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const data = await carrierService.getAll();
 
-  const addCarrier = (newCarrier: NewCarrierForm) => {
-    const carrier: Carrier = {
-      id: `carrier-${Date.now()}`,
-      ...newCarrier,
-      isActive: true,
-      createdAt: new Date(),
+        // Initialize with default carriers if empty
+        if (data.length === 0) {
+          const defaultCarriers = [];
+          for (const defaultCarrier of DEFAULT_CARRIERS) {
+            const created = await carrierService.create(defaultCarrier);
+            defaultCarriers.push(created);
+          }
+          setCarriers(defaultCarriers);
+        } else {
+          setCarriers(data);
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load carriers');
+        console.error('Error loading carriers:', err);
+      } finally {
+        setIsLoading(false);
+      }
     };
-    setCarriers((prev) => [...prev, carrier]);
-    return carrier;
+
+    loadCarriers();
+  }, []);
+
+  const addCarrier = async (newCarrier: NewCarrierForm): Promise<Carrier | null> => {
+    try {
+      const carrier = await carrierService.create({
+        ...newCarrier,
+        isActive: true,
+      });
+      setCarriers((prev) => [...prev, carrier]);
+      return carrier;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create carrier');
+      return null;
+    }
   };
 
-  const updateCarrier = (id: string, updates: Partial<Omit<Carrier, 'id' | 'createdAt'>>) => {
-    setCarriers((prev) =>
-      prev.map((carrier) =>
-        carrier.id === id
-          ? { ...carrier, ...updates, updatedAt: new Date() }
-          : carrier
-      )
-    );
+  const updateCarrier = async (id: string, updates: Partial<Omit<Carrier, 'id' | 'createdAt'>>): Promise<boolean> => {
+    try {
+      const updatedCarrier = await carrierService.update(id, updates);
+      setCarriers((prev) =>
+        prev.map((carrier) =>
+          carrier.id === id ? updatedCarrier : carrier
+        )
+      );
+      return true;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update carrier');
+      return false;
+    }
   };
 
-  const deleteCarrier = (id: string) => {
-    setCarriers((prev) => prev.filter((carrier) => carrier.id !== id));
+  const deleteCarrier = async (id: string): Promise<boolean> => {
+    try {
+      await carrierService.delete(id);
+      setCarriers((prev) => prev.filter((carrier) => carrier.id !== id));
+      return true;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete carrier');
+      return false;
+    }
   };
 
-  const toggleCarrierActive = (id: string) => {
-    updateCarrier(id, { isActive: !initializedCarriers.find(c => c.id === id)?.isActive });
+  const toggleCarrierActive = async (id: string): Promise<boolean> => {
+    const carrier = carriers.find(c => c.id === id);
+    if (!carrier) return false;
+
+    try {
+      const updatedCarrier = await carrierService.setActive(id, !carrier.isActive);
+      setCarriers((prev) =>
+        prev.map((c) => c.id === id ? updatedCarrier : c)
+      );
+      return true;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to toggle carrier status');
+      return false;
+    }
   };
 
   const getCarrierById = (id: string): Carrier | undefined => {
-    return initializedCarriers.find((carrier) => carrier.id === id);
+    return carriers.find((carrier) => carrier.id === id);
   };
 
-  const activeCarriers = initializedCarriers.filter((carrier) => carrier.isActive);
+  const activeCarriers = carriers.filter((carrier) => carrier.isActive);
+
+  const clearError = () => setError(null);
 
   return {
-    carriers: initializedCarriers,
+    carriers,
     activeCarriers,
+    isLoading,
+    error,
     addCarrier,
     updateCarrier,
     deleteCarrier,
     toggleCarrierActive,
     getCarrierById,
+    clearError,
   };
 }

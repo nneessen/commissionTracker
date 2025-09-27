@@ -10,15 +10,13 @@ export interface ExpenseItem {
 export interface ExpenseData {
   personal: ExpenseItem[];
   business: ExpenseItem[];
-  debt: ExpenseItem[];
 }
 
-export type ExpenseCategory = "personal" | "business" | "debt";
+export type ExpenseCategory = "personal" | "business";
 
 export interface ExpenseTotals {
   personalTotal: number;
   businessTotal: number;
-  debtTotal: number;
   monthlyExpenses: number;
 }
 

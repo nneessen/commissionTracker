@@ -1,16 +1,16 @@
 // src/hooks/commissions/useCommissions.ts
 import { useState, useEffect } from 'react';
 import { Commission, CommissionFilters } from '../../types/commission.types';
-import { useLocalStorageState } from '../base/useLocalStorageState';
+import { commissionService } from '../../services';
 import { useSort } from '../base/useSort';
 import { usePagination } from '../base/usePagination';
 
-const COMMISSIONS_STORAGE_KEY = 'commissions';
 
 export interface UseCommissionsResult {
   commissions: Commission[];
   paginatedCommissions: Commission[];
   isLoading: boolean;
+  error: string | null;
 
   // Pagination
   currentPage: number;
@@ -40,30 +40,28 @@ export interface UseCommissionsResult {
 }
 
 export function useCommissions(): UseCommissionsResult {
-  const [commissions, setCommissions] = useLocalStorageState<Commission[]>(COMMISSIONS_STORAGE_KEY, []);
+  const [commissions, setCommissions] = useState<Commission[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  // Parse dates when loading from localStorage
+  // Load commissions from database
   useEffect(() => {
-    const parsedCommissions = commissions.map((comm) => ({
-      ...comm,
-      expectedDate: comm.expectedDate ? new Date(comm.expectedDate) : undefined,
-      actualDate: comm.actualDate ? new Date(comm.actualDate) : undefined,
-      paidDate: comm.paidDate ? new Date(comm.paidDate) : undefined,
-      createdAt: new Date(comm.createdAt),
-      updatedAt: comm.updatedAt ? new Date(comm.updatedAt) : undefined,
-    }));
+    const loadCommissions = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const data = await commissionService.getAll();
+        setCommissions(data);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load commissions');
+        console.error('Error loading commissions:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-    const needsUpdate = parsedCommissions.some((parsed, i) =>
-      parsed.createdAt.getTime() !== new Date(commissions[i].createdAt).getTime()
-    );
-
-    if (needsUpdate) {
-      setCommissions(parsedCommissions);
-    }
-
-    setIsLoading(false);
+    loadCommissions();
   }, [refreshKey]);
 
   // Apply filtering using a simpler approach for complex filters
@@ -116,6 +114,7 @@ export function useCommissions(): UseCommissionsResult {
     commissions: sortedData,
     paginatedCommissions: paginatedData,
     isLoading,
+    error,
 
     // Pagination
     currentPage: pagination.currentPage,

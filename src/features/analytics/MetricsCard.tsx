@@ -15,14 +15,6 @@ interface MetricsCardProps {
   color?: 'blue' | 'green' | 'yellow' | 'red' | 'purple';
 }
 
-const colorClasses = {
-  blue: 'text-blue-600 bg-blue-100',
-  green: 'text-green-600 bg-green-100',
-  yellow: 'text-yellow-600 bg-yellow-100',
-  red: 'text-red-600 bg-red-100',
-  purple: 'text-purple-600 bg-purple-100',
-};
-
 export const MetricsCard: React.FC<MetricsCardProps> = ({
   title,
   value,
@@ -32,32 +24,44 @@ export const MetricsCard: React.FC<MetricsCardProps> = ({
   color = 'blue',
 }) => {
   return (
-    <div className="bg-white rounded-lg shadow-sm border p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-medium text-gray-500">{title}</h3>
+    <div className="metric-card">
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+        <h4>{title}</h4>
         {icon && (
-          <div className={`p-2 rounded-lg ${colorClasses[color]}`}>
+          <div style={{
+            padding: '8px',
+            borderRadius: '8px',
+            background: 'linear-gradient(135deg, #f8f9fa 0%, #e2e8f0 100%)',
+            border: '1px solid #e2e8f0',
+            color: '#1a1a1a'
+          }}>
             {icon}
           </div>
         )}
       </div>
 
-      <div className="space-y-1">
-        <div className="flex items-baseline gap-2">
-          <p className="text-2xl font-semibold text-gray-900">{value}</p>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+          <div className="metric-value">{value}</div>
           {trend && (
-            <div className={`flex items-center gap-1 text-sm ${trend.isPositive ? 'text-green-600' : 'text-red-600'}`}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              fontSize: '12px',
+              color: trend.isPositive ? '#2d3748' : '#1a1a1a'
+            }}>
               {trend.isPositive ? (
-                <TrendingUp className="w-4 h-4" />
+                <TrendingUp size={14} />
               ) : (
-                <TrendingDown className="w-4 h-4" />
+                <TrendingDown size={14} />
               )}
               <span>{Math.abs(trend.value).toFixed(1)}%</span>
             </div>
           )}
         </div>
         {subtitle && (
-          <p className="text-sm text-gray-500">{subtitle}</p>
+          <div className="metric-label">{subtitle}</div>
         )}
       </div>
     </div>
