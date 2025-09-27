@@ -9,7 +9,7 @@ import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import App from "./App";
 import { ExpenseManager } from "./features/expenses";
 import { CommissionList } from "./features/commissions";
-import { ConstantsManager, CarrierManager } from "./features/settings";
+import { ConstantsManager, CarrierManager, AgentManager, CompGuideManager } from "./features/settings";
 import { PolicyDashboard } from "./features/policies";
 import { AnalyticsDashboard } from "./features/analytics";
 import { DashboardHome } from "./features/dashboard";
@@ -64,8 +64,14 @@ const settingsRoute = new Route({
         <h2 className="text-2xl font-bold text-gray-900 mb-4">Settings</h2>
         <ConstantsManager />
       </div>
-      <div>
+      <div className="mb-8">
         <CarrierManager />
+      </div>
+      <div className="mb-8">
+        <AgentManager />
+      </div>
+      <div>
+        <CompGuideManager />
       </div>
     </div>
   ),

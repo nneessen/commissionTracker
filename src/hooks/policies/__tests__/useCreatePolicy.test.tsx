@@ -45,29 +45,30 @@ describe('useCreatePolicy', () => {
     product: 'term_life',
     effectiveDate: '2024-01-01',
     termLength: 20,
+    premium: 100, // Monthly premium
     annualPremium: 1200,
     paymentFrequency: 'monthly',
     commissionPercentage: 10,
     notes: 'Test policy',
   };
 
-  test('should create a new policy successfully', () => {
+  test('should create a new policy successfully', async () => {
     const { result } = renderHook(() => useCreatePolicy());
 
     let createdPolicy: Policy | null = null;
-    act(() => {
-      createdPolicy = result.current.createPolicy(validFormData);
+    await act(async () => {
+      createdPolicy = await result.current.createPolicy(validFormData);
     });
 
     expect(createdPolicy).not.toBeNull();
-    expect(createdPolicy?.id).toBe('test-uuid-123');
-    expect(createdPolicy?.policyNumber).toBe('POL-001');
-    expect(createdPolicy?.client.name).toBe('John Doe');
+    expect((createdPolicy as unknown as Policy).id).toBe('test-uuid-123');
+    expect((createdPolicy as unknown as Policy).policyNumber).toBe('POL-001');
+    expect((createdPolicy as unknown as Policy).client.name).toBe('John Doe');
     expect(result.current.error).toBeNull();
     expect(result.current.isCreating).toBe(false);
   });
 
-  test('should prevent duplicate policy numbers', () => {
+  test('should prevent duplicate policy numbers', async () => {
     const existingPolicy: Policy = {
       id: 'existing-policy',
       policyNumber: 'POL-001',
@@ -84,6 +85,7 @@ describe('useCreatePolicy', () => {
       paymentFrequency: 'annual',
       commissionPercentage: 15,
       createdAt: new Date('2023-01-01'),
+      updatedAt: new Date('2023-01-01'),
     };
 
     localStorageMock.setItem('policies', JSON.stringify([existingPolicy]));
@@ -91,8 +93,8 @@ describe('useCreatePolicy', () => {
     const { result } = renderHook(() => useCreatePolicy());
 
     let createdPolicy: Policy | null = null;
-    act(() => {
-      createdPolicy = result.current.createPolicy(validFormData);
+    await act(async () => {
+      createdPolicy = await result.current.createPolicy(validFormData);
     });
 
     expect(createdPolicy).toBeNull();
@@ -100,7 +102,7 @@ describe('useCreatePolicy', () => {
     expect(result.current.isCreating).toBe(false);
   });
 
-  test('should validate required fields', () => {
+  test('should validate required fields', async () => {
     const { result } = renderHook(() => useCreatePolicy());
 
     const incompleteForm: NewPolicyForm = {
@@ -109,15 +111,15 @@ describe('useCreatePolicy', () => {
     };
 
     let createdPolicy: Policy | null = null;
-    act(() => {
-      createdPolicy = result.current.createPolicy(incompleteForm);
+    await act(async () => {
+      createdPolicy = await result.current.createPolicy(incompleteForm);
     });
 
     expect(createdPolicy).toBeNull();
     expect(result.current.error).toBe('Missing required fields');
   });
 
-  test('should validate effective date', () => {
+  test('should validate effective date', async () => {
     const { result } = renderHook(() => useCreatePolicy());
 
     const invalidDateForm: NewPolicyForm = {
@@ -126,15 +128,15 @@ describe('useCreatePolicy', () => {
     };
 
     let createdPolicy: Policy | null = null;
-    act(() => {
-      createdPolicy = result.current.createPolicy(invalidDateForm);
+    await act(async () => {
+      createdPolicy = await result.current.createPolicy(invalidDateForm);
     });
 
     expect(createdPolicy).toBeNull();
     expect(result.current.error).toBe('Invalid effective date');
   });
 
-  test('should validate expiration date is after effective date', () => {
+  test('should validate expiration date is after effective date', async () => {
     const { result } = renderHook(() => useCreatePolicy());
 
     const invalidDateRangeForm: NewPolicyForm = {
@@ -144,15 +146,15 @@ describe('useCreatePolicy', () => {
     };
 
     let createdPolicy: Policy | null = null;
-    act(() => {
-      createdPolicy = result.current.createPolicy(invalidDateRangeForm);
+    await act(async () => {
+      createdPolicy = await result.current.createPolicy(invalidDateRangeForm);
     });
 
     expect(createdPolicy).toBeNull();
     expect(result.current.error).toBe('Effective date must be before expiration date');
   });
 
-  test('should calculate expiration date from term length', () => {
+  test('should calculate expiration date from term length', async () => {
     const { result } = renderHook(() => useCreatePolicy());
 
     const formWithTerm: NewPolicyForm = {
@@ -162,19 +164,19 @@ describe('useCreatePolicy', () => {
     };
 
     let createdPolicy: Policy | null = null;
-    act(() => {
-      createdPolicy = result.current.createPolicy(formWithTerm);
+    await act(async () => {
+      createdPolicy = await result.current.createPolicy(formWithTerm);
     });
 
     expect(createdPolicy).not.toBeNull();
-    expect(createdPolicy?.expirationDate).toBeInstanceOf(Date);
+    expect((createdPolicy as unknown as Policy).expirationDate).toBeInstanceOf(Date);
 
     const expectedExpiration = new Date('2024-01-01');
     expectedExpiration.setFullYear(expectedExpiration.getFullYear() + 10);
-    expect(createdPolicy?.expirationDate?.getFullYear()).toBe(expectedExpiration.getFullYear());
+    expect((createdPolicy as unknown as Policy).expirationDate?.getFullYear()).toBe(expectedExpiration.getFullYear());
   });
 
-  test('should handle optional fields correctly', () => {
+  test('should handle optional fields correctly', async () => {
     const { result } = renderHook(() => useCreatePolicy());
 
     const minimalForm: NewPolicyForm = {
@@ -187,18 +189,18 @@ describe('useCreatePolicy', () => {
     };
 
     let createdPolicy: Policy | null = null;
-    act(() => {
-      createdPolicy = result.current.createPolicy(minimalForm);
+    await act(async () => {
+      createdPolicy = await result.current.createPolicy(minimalForm);
     });
 
     expect(createdPolicy).not.toBeNull();
-    expect(createdPolicy?.client.email).toBeUndefined();
-    expect(createdPolicy?.client.phone).toBeUndefined();
-    expect(createdPolicy?.expirationDate).toBeUndefined();
-    expect(createdPolicy?.notes).toBeUndefined();
+    expect((createdPolicy as unknown as Policy).client.email).toBeUndefined();
+    expect((createdPolicy as unknown as Policy).client.phone).toBeUndefined();
+    expect((createdPolicy as unknown as Policy).expirationDate).toBeUndefined();
+    expect((createdPolicy as unknown as Policy).notes).toBeUndefined();
   });
 
-  test('should clear error when requested', () => {
+  test('should clear error when requested', async () => {
     // First set up an existing policy to create a duplicate error
     const existingPolicy = {
       id: 'existing',
@@ -212,6 +214,7 @@ describe('useCreatePolicy', () => {
       paymentFrequency: 'monthly',
       commissionPercentage: 10,
       createdAt: new Date(),
+      updatedAt: new Date(),
     };
 
     localStorageMock.setItem('policies', JSON.stringify([existingPolicy]));
@@ -219,8 +222,8 @@ describe('useCreatePolicy', () => {
     const { result } = renderHook(() => useCreatePolicy());
 
     // Try to create a duplicate policy
-    act(() => {
-      result.current.createPolicy(validFormData);
+    await act(async () => {
+      await result.current.createPolicy(validFormData);
     });
 
     expect(result.current.error).toBe('Policy number POL-001 already exists');
@@ -233,11 +236,11 @@ describe('useCreatePolicy', () => {
     expect(result.current.error).toBeNull();
   });
 
-  test('should persist created policy to localStorage', () => {
+  test('should persist created policy to localStorage', async () => {
     const { result } = renderHook(() => useCreatePolicy());
 
-    act(() => {
-      result.current.createPolicy(validFormData);
+    await act(async () => {
+      await result.current.createPolicy(validFormData);
     });
 
     const storedPolicies = JSON.parse(localStorageMock.getItem('policies') || '[]');

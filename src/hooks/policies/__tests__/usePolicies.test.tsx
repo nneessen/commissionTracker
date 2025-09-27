@@ -48,6 +48,7 @@ describe('usePolicies', () => {
       paymentFrequency: 'monthly',
       commissionPercentage: 10,
       createdAt: new Date('2024-01-01'),
+      updatedAt: new Date('2024-01-01'),
     },
     {
       id: '2',
@@ -67,6 +68,7 @@ describe('usePolicies', () => {
       paymentFrequency: 'quarterly',
       commissionPercentage: 15,
       createdAt: new Date('2024-02-01'),
+      updatedAt: new Date('2024-02-01'),
     },
     {
       id: '3',
@@ -80,12 +82,13 @@ describe('usePolicies', () => {
         phone: '555-0003',
       },
       carrierId: 'carrier-1',
-      product: 'disability',
+      product: 'universal_life',
       effectiveDate: new Date('2024-03-01'),
       annualPremium: 1800,
       paymentFrequency: 'annual',
       commissionPercentage: 12,
       createdAt: new Date('2024-03-01'),
+      updatedAt: new Date('2024-03-01'),
     },
   ];
 
@@ -93,7 +96,7 @@ describe('usePolicies', () => {
     const { result } = renderHook(() => usePolicies());
 
     expect(result.current.policies).toEqual([]);
-    expect(result.current.totalPolicies).toBe(0);
+    expect(result.current.totalItems).toBe(0);
     expect(result.current.isLoading).toBe(false);
   });
 
@@ -102,7 +105,7 @@ describe('usePolicies', () => {
     const { result } = renderHook(() => usePolicies());
 
     expect(result.current.policies).toHaveLength(3);
-    expect(result.current.totalPolicies).toBe(3);
+    expect(result.current.totalItems).toBe(3);
   });
 
   test('should handle pagination correctly', () => {
@@ -155,9 +158,7 @@ describe('usePolicies', () => {
     // Filter by status
     act(() => {
       result.current.setFilters({
-        field: 'status',
-        operator: 'equals',
-        value: 'active',
+        status: 'active',
       });
     });
 
@@ -182,8 +183,8 @@ describe('usePolicies', () => {
       result.current.toggleSort('annualPremium');
     });
 
-    expect(result.current.sortField).toBe('annualPremium');
-    expect(result.current.sortDirection).toBe('asc');
+    expect(result.current.sortConfig.field).toBe('annualPremium');
+    expect(result.current.sortConfig.direction).toBe('asc');
     expect(result.current.policies[0].annualPremium).toBe(1200);
     expect(result.current.policies[2].annualPremium).toBe(2400);
 
@@ -192,7 +193,7 @@ describe('usePolicies', () => {
       result.current.toggleSort('annualPremium');
     });
 
-    expect(result.current.sortDirection).toBe('desc');
+    expect(result.current.sortConfig.direction).toBe('desc');
     expect(result.current.policies[0].annualPremium).toBe(2400);
     expect(result.current.policies[2].annualPremium).toBe(1200);
   });

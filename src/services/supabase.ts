@@ -20,4 +20,7 @@ export const TABLES = {
   EXPENSES: 'expenses',
   CARRIERS: 'carriers',
   CONSTANTS: 'constants',
-} as const;
+  AGENTS: 'agents',
+  COMP_GUIDE: 'comp_guide',
+  CHARGEBACKS: 'chargebacks',
+} as const;;

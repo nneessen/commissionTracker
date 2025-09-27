@@ -11,6 +11,7 @@ export type CalculationBasis = 'premium' | 'fixed' | 'tiered';
 export interface Commission {
   id: string;
   policyId?: string; // Links to Policy when available
+  agentId?: string; // Links to Agent for comp level and tracking
   client: Client;
   carrierId: string;
   product: ProductType;
@@ -20,10 +21,17 @@ export interface Commission {
   status: CommissionStatus;
   calculationBasis: CalculationBasis;
 
-  // Financial
+  // Financial - Enhanced for 9-month advance model
   annualPremium: number;
+  monthlyPremium: number; // Key for 9-month advance calculations
   commissionAmount: number;
-  commissionRate: number;
+  commissionRate: number; // Auto-calculated from comp guide or manual override
+  advanceMonths: number; // Typically 9, but configurable
+  
+  // Comp Guide Integration
+  contractCompLevel?: number; // Agent's contract level (80-145)
+  isAutoCalculated: boolean; // True if comp rate was looked up from comp guide
+  compGuidePercentage?: number; // Original percentage from comp guide
 
   // Dates
   expectedDate?: Date;
