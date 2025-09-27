@@ -76,6 +76,10 @@ export interface PolicyFilters {
     end: Date;
   };
   searchTerm?: string;
+  startDate?: Date;
+  endDate?: Date;
+  minPremium?: number;
+  maxPremium?: number;
 }
 
 export interface PolicySummary {

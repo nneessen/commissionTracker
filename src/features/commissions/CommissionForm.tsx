@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Modal, Button, Input, Select } from '../../components/ui';
 import { NewCommissionForm, ProductType, SelectOption } from '../../types';
-import { useCarriers, useCommissions } from '../../hooks';
+import { useCarriers, useCreateCommission } from '../../hooks';
 
 interface CommissionFormProps {
   isOpen: boolean;
@@ -74,7 +74,7 @@ export const CommissionForm: React.FC<CommissionFormProps> = ({
   onClose,
 }) => {
   const { activeCarriers, getCarrierById } = useCarriers();
-  const { addCommission } = useCommissions();
+  const { createCommission, isCreating, error } = useCreateCommission();
 
   const [formData, setFormData] = useState<NewCommissionForm>({
     clientName: '',
@@ -124,15 +124,14 @@ export const CommissionForm: React.FC<CommissionFormProps> = ({
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (validateForm()) {
-      try {
-        addCommission(formData);
+      const result = await createCommission(formData);
+      if (result) {
         resetForm();
         onClose();
-      } catch (error) {
-        console.error('Error adding commission:', error);
       }
+      // Error handling is managed by the hook
     }
   };
 
@@ -256,12 +255,21 @@ export const CommissionForm: React.FC<CommissionFormProps> = ({
           </div>
         </div>
 
+        {/* Error Display */}
+        {error && (
+          <div className="rounded-md bg-red-50 p-4">
+            <div className="text-sm text-red-700">{error}</div>
+          </div>
+        )}
+
         {/* Actions */}
         <div className="flex justify-end space-x-2 pt-4">
-          <Button variant="ghost" onClick={handleClose}>
+          <Button variant="ghost" onClick={handleClose} disabled={isCreating}>
             Cancel
           </Button>
-          <Button onClick={handleSubmit}>Add Commission</Button>
+          <Button onClick={handleSubmit} disabled={isCreating}>
+            {isCreating ? 'Adding...' : 'Add Commission'}
+          </Button>
         </div>
       </div>
     </Modal>

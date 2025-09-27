@@ -191,7 +191,11 @@ class DataMigrationService {
       try {
         await commissionService.create({
           policyId: commission.policyId,
-          client: commission.client,
+          client: {
+            firstName: commission.client.name.split(' ')[0] || '',
+            lastName: commission.client.name.split(' ').slice(1).join(' ') || '',
+            state: commission.client.state,
+          },
           carrierId: commission.carrierId,
           product: commission.product,
           type: commission.type,

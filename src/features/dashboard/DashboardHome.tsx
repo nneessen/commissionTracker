@@ -12,21 +12,69 @@ import {
   Calculator
 } from 'lucide-react';
 import { MetricsCard } from '../analytics';
-import { useExpensesContext } from '../../contexts/ExpensesContext';
+import { useExpenseMetrics, useConstants } from '../../hooks';
 import { useMetrics } from '../../hooks/useMetrics';
 import { getBreakevenCalculation, getTargetCalculation } from '../../utils/calculationUtils';
+import { CalculationResult } from '../../types/expense.types';
 
 export const DashboardHome: React.FC = () => {
-  const { totals, calculations, performanceMetrics, constants } = useExpensesContext();
+  // Use new modular hooks
+  const { metrics: expenseMetrics } = useExpenseMetrics();
+  const { constants } = useConstants();
   const { commissionMetrics, policyMetrics, clientMetrics } = useMetrics();
 
   const formatCurrency = (value: number) => {
     return `$${value.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
   };
 
+  // Create totals from expense metrics
+  const totals = {
+    personalTotal: expenseMetrics?.personalTotal || 0,
+    businessTotal: expenseMetrics?.businessTotal || 0,
+    monthlyExpenses: expenseMetrics?.monthlyTotal || 0,
+  };
+
+  // Create calculations based on constants and totals
+  const createCalculationResult = (scenario: string, commissionNeeded: number): CalculationResult => {
+    const avgAP = constants?.avgAP || 100000;
+    const commissionRate = constants?.commissionRate || 0.1;
+
+    const apNeeded100 = commissionNeeded / commissionRate;
+    const policies100 = Math.ceil(apNeeded100 / avgAP);
+
+    return {
+      scenario,
+      commissionNeeded,
+      apNeeded100,
+      policies100,
+      apNeeded90: apNeeded100 * 0.9,
+      policies90: Math.ceil((apNeeded100 * 0.9) / avgAP),
+      apNeeded80: apNeeded100 * 0.8,
+      policies80: Math.ceil((apNeeded100 * 0.8) / avgAP),
+      apNeeded70: apNeeded100 * 0.7,
+      policies70: Math.ceil((apNeeded100 * 0.7) / avgAP),
+    };
+  };
+
+  const calculations: CalculationResult[] = [
+    createCalculationResult('Breakeven', totals.monthlyExpenses),
+    createCalculationResult(`+$${(constants?.target1 || 5000).toLocaleString()}`, totals.monthlyExpenses + (constants?.target1 || 5000)),
+    createCalculationResult(`+$${(constants?.target2 || 10000).toLocaleString()}`, totals.monthlyExpenses + (constants?.target2 || 10000)),
+  ];
+
+  // Create performance metrics based on constants and totals
+  const performanceMetrics = {
+    dailyAPTarget: Math.ceil((totals.monthlyExpenses * 12) / (constants?.commissionRate || 0.1) / 250), // 250 working days per year
+    weeklyAPTarget: Math.ceil((totals.monthlyExpenses * 12) / (constants?.commissionRate || 0.1) / 50), // 50 working weeks per year
+    quarterlyAPTarget: Math.ceil((totals.monthlyExpenses * 3) / (constants?.commissionRate || 0.1)), // quarterly
+    commissionPerPolicy: (constants?.avgAP || 100000) * (constants?.commissionRate || 0.1),
+    expenseRatio: commissionMetrics?.totalEarned ?
+      ((totals.monthlyExpenses * 12) / commissionMetrics.totalEarned * 100).toFixed(1) : '0',
+  };
+
   const breakeven = getBreakevenCalculation(calculations);
-  const target1 = getTargetCalculation(calculations, constants.target1);
-  const target2 = getTargetCalculation(calculations, constants.target2);
+  const target1 = getTargetCalculation(calculations, constants?.target1 || 5000);
+  const target2 = getTargetCalculation(calculations, constants?.target2 || 10000);
 
   return (
     <div className="dashboard-home">

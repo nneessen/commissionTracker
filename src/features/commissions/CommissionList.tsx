@@ -2,17 +2,22 @@ import React, { useState } from 'react';
 import { Trash2, Plus } from 'lucide-react';
 import { Button, DataTable } from '../../components/ui';
 import { Commission, DataTableColumn } from '../../types';
-import { useCommissions, useCarriers } from '../../hooks';
+import { useCommissions, useDeleteCommission, useCommissionMetrics, useCarriers } from '../../hooks';
 import { CommissionForm } from './CommissionForm';
 
 export const CommissionList: React.FC = () => {
-  const { commissions, deleteCommission, commissionSummary } = useCommissions();
+  const { paginatedCommissions: commissions, refresh } = useCommissions();
+  const { deleteCommission, isDeleting } = useDeleteCommission();
+  const { metrics: commissionSummary } = useCommissionMetrics();
   const { getCarrierById } = useCarriers();
   const [showAddModal, setShowAddModal] = useState(false);
 
-  const handleDeleteCommission = (id: string) => {
+  const handleDeleteCommission = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this commission?')) {
-      deleteCommission(id);
+      const success = await deleteCommission(id);
+      if (success) {
+        refresh(); // Refresh the list after deletion
+      }
     }
   };
 
@@ -105,6 +110,7 @@ export const CommissionList: React.FC = () => {
             e.stopPropagation();
             handleDeleteCommission(commission.id);
           }}
+          disabled={isDeleting}
           title="Delete commission"
         >
           <Trash2 size={16} />
@@ -120,28 +126,28 @@ export const CommissionList: React.FC = () => {
         <div className="metric-card">
           <h4>Total Commissions</h4>
           <div className="metric-value">
-            ${commissionSummary.totalCommissions.toLocaleString(undefined, {
+            ${commissionSummary?.totalCommissions?.toLocaleString(undefined, {
               minimumFractionDigits: 2,
               maximumFractionDigits: 2,
-            })}
+            }) || '0.00'}
           </div>
         </div>
         <div className="metric-card">
           <h4>Total Policies</h4>
           <div className="metric-value">
-            {commissionSummary.commissionCount}
+            {commissionSummary?.commissionCount || 0}
           </div>
         </div>
         <div className="metric-card">
           <h4>Avg Commission Rate</h4>
           <div className="metric-value">
-            {(commissionSummary.averageCommissionRate * 100).toFixed(1)}%
+            {commissionSummary ? (commissionSummary.averageCommissionRate * 100).toFixed(1) : '0.0'}%
           </div>
         </div>
         <div className="metric-card">
           <h4>Total Premiums</h4>
           <div className="metric-value">
-            ${commissionSummary.totalPremiums.toLocaleString()}
+            ${commissionSummary?.totalPremiums?.toLocaleString() || '0'}
           </div>
         </div>
       </div>

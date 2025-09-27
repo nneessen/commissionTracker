@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+## [Checkpoint] - 2025-09-27 11:48:43
+
+### Changed Files
+- `src/features/commissions/CommissionForm.tsx`
+- `src/features/commissions/CommissionList.tsx`
+- `src/features/dashboard/DashboardHome.tsx`
+- `src/features/expenses/ExpenseManager.tsx`
+- `src/features/settings/ConstantsManager.tsx`
+- `src/hooks/commissions/index.ts`
+- `src/hooks/commissions/useCommissionMetrics.ts`
+- `src/hooks/expenses/useCreateExpense.ts`
+- `src/hooks/expenses/useDeleteExpense.ts`
+- `src/hooks/expenses/useExpense.ts`
+- `src/hooks/expenses/useExpenseMetrics.ts`
+- `src/hooks/expenses/useUpdateExpense.ts`
+- `src/hooks/index.ts`
+- `src/hooks/policies/index.ts`
+- `src/hooks/useCommissions.ts`
+- `src/hooks/useExpenses.ts`
+- `src/hooks/useLocalStorage.ts`
+- `src/types/policy.types.ts`
+- `src/utils/dataMigration.ts`
+
+### Statistics
+```
+ 19 files changed, 735 insertions(+), 475 deletions(-)
+```
 ## [Checkpoint] - 2025-09-26 18:48:24
 
 ### Changed Files
