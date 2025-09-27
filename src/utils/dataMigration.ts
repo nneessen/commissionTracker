@@ -163,6 +163,8 @@ class DataMigrationService {
         await policyService.create({
           policyNumber: policy.policyNumber,
           client: {
+            name: policy.client.name,
+            age: policy.client.age,
             firstName: policy.client.name?.split(' ')[0] || 'Unknown',
             lastName: policy.client.name?.split(' ').slice(1).join(' ') || '',
             email: policy.client.email,

@@ -1,32 +1,5 @@
 import { supabase, TABLES } from './supabase';
-import { Policy, NewPolicyForm, PolicyFilters } from '../types/policy.types';
-
-export interface CreatePolicyData {
-  policyNumber: string;
-  client: {
-    firstName: string;
-    lastName: string;
-    email?: string;
-    phone?: string;
-    address?: string;
-    city?: string;
-    state?: string;
-    zipCode?: string;
-  };
-  carrierId: string;
-  product: string;
-  effectiveDate: Date;
-  termLength?: number;
-  expirationDate?: Date;
-  annualPremium: number;
-  paymentFrequency: string;
-  commissionPercentage: number;
-  notes?: string;
-}
-
-export interface UpdatePolicyData extends Partial<CreatePolicyData> {
-  id: string;
-}
+import { Policy, NewPolicyForm, PolicyFilters, CreatePolicyData, UpdatePolicyData } from '../types/policy.types';
 
 class PolicyService {
   async getAll(): Promise<Policy[]> {
@@ -154,15 +127,20 @@ class PolicyService {
       status: dbRecord.status,
       client: dbRecord.client,
       carrierId: dbRecord.carrier_id,
+      agentId: dbRecord.agent_id, // May be undefined - that's ok now
       product: dbRecord.product,
       effectiveDate: new Date(dbRecord.effective_date),
       termLength: dbRecord.term_length,
       expirationDate: dbRecord.expiration_date ? new Date(dbRecord.expiration_date) : undefined,
       annualPremium: parseFloat(dbRecord.annual_premium),
+      monthlyPremium: dbRecord.monthly_premium ? parseFloat(dbRecord.monthly_premium) : undefined,
       paymentFrequency: dbRecord.payment_frequency,
       commissionPercentage: parseFloat(dbRecord.commission_percentage),
+      advanceMonths: dbRecord.advance_months,
       createdAt: new Date(dbRecord.created_at),
       updatedAt: new Date(dbRecord.updated_at),
+      created_at: dbRecord.created_at ? new Date(dbRecord.created_at) : undefined,
+      updated_at: dbRecord.updated_at ? new Date(dbRecord.updated_at) : undefined,
       createdBy: dbRecord.created_by,
       notes: dbRecord.notes,
     };

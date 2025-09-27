@@ -127,7 +127,7 @@ class ExpenseService {
       amount: parseFloat(dbRecord.amount),
       category: dbRecord.category,
       createdAt: new Date(dbRecord.created_at),
-      updatedAt: dbRecord.updated_at ? new Date(dbRecord.updated_at) : undefined,
+      updatedAt: dbRecord.updated_at ? new Date(dbRecord.updated_at) : new Date(),
     };
   }
 

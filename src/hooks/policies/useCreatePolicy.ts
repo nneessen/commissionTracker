@@ -58,6 +58,8 @@ export function useCreatePolicy(): UseCreatePolicyResult {
       const policyData: CreatePolicyData = {
         policyNumber: formData.policyNumber,
         client: {
+          name: formData.clientName,
+          age: formData.clientAge,
           firstName: formData.clientName?.split(' ')[0] || '',
           lastName: formData.clientName?.split(' ').slice(1).join(' ') || '',
           email: formData.clientEmail,

@@ -1,18 +1,25 @@
-export interface ExpenseItem {
+export type ExpenseType = "personal" | "business";
+export type ExpenseCategory = "personal" | "business"; // For backward compatibility
+
+export interface Expense {
   id: string;
   name: string;
   amount: number;
   category: ExpenseCategory;
-  createdAt?: Date;
-  updatedAt?: Date;
+  expenseType?: ExpenseType; // Optional for backward compatibility
+  description?: string;
+  isDeductible?: boolean; // Optional for backward compatibility
+  receiptUrl?: string;
+  createdAt?: Date; // Optional for backward compatibility
+  updatedAt?: Date; // Optional for backward compatibility
+  created_at?: Date; // Optional for BaseEntity compatibility
+  updated_at?: Date; // Optional for BaseEntity compatibility
 }
 
 export interface ExpenseData {
-  personal: ExpenseItem[];
-  business: ExpenseItem[];
+  personal: Expense[];
+  business: Expense[];
 }
-
-export type ExpenseCategory = "personal" | "business";
 
 export interface ExpenseTotals {
   personalTotal: number;
@@ -53,3 +60,10 @@ export interface PerformanceMetrics {
   commissionPerPolicy: number;
   expenseRatio: string;
 }
+
+// Service layer types
+export type CreateExpenseData = Omit<Expense, 'id' | 'createdAt' | 'updatedAt' | 'created_at' | 'updated_at'>;
+export type UpdateExpenseData = Partial<CreateExpenseData>;
+
+// Legacy support
+export interface ExpenseItem extends Expense {}

@@ -335,10 +335,12 @@ class CommissionService {
       throw new Error('Cannot recalculate manually entered commission');
     }
 
+    const monthlyPremium = commission.monthlyPremium || commission.annualPremium / 12;
+
     const calculation = await this.calculateCommissionWithCompGuide({
       carrierId: commission.carrierId,
       product: commission.product,
-      monthlyPremium: commission.monthlyPremium,
+      monthlyPremium: monthlyPremium,
       agentId: commission.agentId,
       contractCompLevel: newContractLevel || commission.contractCompLevel,
       advanceMonths: commission.advanceMonths,
@@ -704,7 +706,7 @@ class CommissionService {
       actualDate: dbRecord.actual_date ? new Date(dbRecord.actual_date) : undefined,
       paidDate: dbRecord.paid_date ? new Date(dbRecord.paid_date) : undefined,
       createdAt: new Date(dbRecord.created_at),
-      updatedAt: dbRecord.updated_at ? new Date(dbRecord.updated_at) : undefined,
+      updatedAt: dbRecord.updated_at ? new Date(dbRecord.updated_at) : new Date(),
       notes: dbRecord.notes,
     };
   }

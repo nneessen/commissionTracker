@@ -11,7 +11,7 @@ export type CalculationBasis = 'premium' | 'fixed' | 'tiered';
 export interface Commission {
   id: string;
   policyId?: string; // Links to Policy when available
-  agentId?: string; // Links to Agent for comp level and tracking
+  agentId?: string; // Optional for backward compatibility
   client: Client;
   carrierId: string;
   product: ProductType;
@@ -23,22 +23,29 @@ export interface Commission {
 
   // Financial - Enhanced for 9-month advance model
   annualPremium: number;
-  monthlyPremium: number; // Key for 9-month advance calculations
+  monthlyPremium?: number; // Optional for backward compatibility
   commissionAmount: number;
   commissionRate: number; // Auto-calculated from comp guide or manual override
-  advanceMonths: number; // Typically 9, but configurable
-  
+  advanceMonths?: number; // Optional for backward compatibility
+
   // Comp Guide Integration
   contractCompLevel?: number; // Agent's contract level (80-145)
-  isAutoCalculated: boolean; // True if comp rate was looked up from comp guide
+  isAutoCalculated?: boolean; // True if comp rate was looked up from comp guide
   compGuidePercentage?: number; // Original percentage from comp guide
+
+  // Performance tracking fields (generated columns) - optional for backward compatibility
+  monthEarned?: number; // 1-12
+  yearEarned?: number; // e.g., 2024
+  quarterEarned?: number; // 1-4
 
   // Dates
   expectedDate?: Date;
   actualDate?: Date;
   paidDate?: Date;
   createdAt: Date;
-  updatedAt?: Date;
+  updatedAt?: Date; // Optional for backward compatibility
+  created_at?: Date; // Optional for BaseEntity compatibility
+  updated_at?: Date; // Optional for BaseEntity compatibility
 
   // Additional
   notes?: string;
@@ -108,3 +115,7 @@ export interface CommissionFilters {
   maxPremium?: number;
   policyId?: string;
 }
+
+// Service layer types
+export type CreateCommissionData = Omit<Commission, 'id' | 'createdAt' | 'updatedAt' | 'created_at' | 'updated_at'>;
+export type UpdateCommissionData = Partial<CreateCommissionData>;
