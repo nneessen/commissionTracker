@@ -17,7 +17,7 @@ Commission tracking application built with React, TypeScript, and modern web tec
 
 ## Development Commands
 
-- `npm start` - Start development server
+- `npm run dev:local` - Start development server
 - `npm run build` - Build for production
 - `npm test` - Run test suite
 - `npm run lint` - Run ESLint
@@ -49,4 +49,3 @@ The project follows a feature-based modular architecture:
 - Plan for reporting and analytics features
 - Account for different commission structures (percentage, flat rate, tiered, etc.)
 - add to memory. DO NOT USE useCallback or useMemo. React v19.1 was built so that those to hooks don't need to be used anymore
-

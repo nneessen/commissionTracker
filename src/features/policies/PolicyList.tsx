@@ -1,10 +1,17 @@
 // /home/nneessen/projects/commissionTracker/src/features/policies/PolicyList.tsx
 
-import React, { useState, useMemo } from 'react';
-import { Edit, Trash2, Search, Filter, ChevronUp, ChevronDown } from 'lucide-react';
-import { useCarriers } from '../../hooks/useCarriers';
-import { Policy, PolicyFilters, PolicyStatus } from '../../types/policy.types';
-import { ProductType } from '../../types/commission.types';
+import React, { useState, useMemo } from "react";
+import {
+  Edit,
+  Trash2,
+  Search,
+  Filter,
+  ChevronUp,
+  ChevronDown,
+} from "lucide-react";
+import { useCarriers } from "../../hooks/useCarriers";
+import { Policy, PolicyFilters, PolicyStatus } from "../../types/policy.types";
+import { ProductType } from "../../types/commission.types";
 
 interface PolicyListProps {
   policies: Policy[];
@@ -14,25 +21,32 @@ interface PolicyListProps {
   onEditPolicy: (policyId: string) => void;
 }
 
-type SortField = 'policyNumber' | 'client' | 'carrier' | 'status' | 'premium' | 'commission' | 'effectiveDate';
-type SortDirection = 'asc' | 'desc';
+type SortField =
+  | "policyNumber"
+  | "client"
+  | "carrier"
+  | "status"
+  | "premium"
+  | "commission"
+  | "effectiveDate";
+type SortDirection = "asc" | "desc";
 
 const STATUS_BADGES: Record<PolicyStatus, string> = {
-  pending: 'pending',
-  active: 'active',
-  lapsed: 'lapsed',
-  cancelled: 'cancelled',
-  matured: 'matured',
+  pending: "pending",
+  active: "active",
+  lapsed: "lapsed",
+  cancelled: "cancelled",
+  matured: "matured",
 };
 
 const PRODUCT_ABBREV: Record<ProductType, string> = {
-  whole_life: 'Whole',
-  term: 'Term',
-  universal_life: 'UL',
-  indexed_universal_life: 'IUL',
-  accidental: 'Acc',
-  final_expense: 'FE',
-  annuity: 'Ann',
+  whole_life: "Whole",
+  term: "Term",
+  universal_life: "UL",
+  indexed_universal_life: "IUL",
+  accidental: "Acc",
+  final_expense: "FE",
+  annuity: "Ann",
 };
 
 export const PolicyList: React.FC<PolicyListProps> = ({
@@ -40,17 +54,14 @@ export const PolicyList: React.FC<PolicyListProps> = ({
   deletePolicy,
   updatePolicyStatus,
   filterPolicies,
-  onEditPolicy
+  onEditPolicy,
 }) => {
   const { getCarrierById } = useCarriers();
 
-  console.log('=== PolicyList RENDER ===');
-  console.log('Policies from props:', policies);
-  console.log('Policies count:', policies.length);
   const [filters, setFilters] = useState<PolicyFilters>({});
-  const [searchTerm, setSearchTerm] = useState('');
-  const [sortField, setSortField] = useState<SortField>('effectiveDate');
-  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortField, setSortField] = useState<SortField>("effectiveDate");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [showFilters, setShowFilters] = useState(false);
 
   const filteredAndSortedPolicies = useMemo(() => {
@@ -60,31 +71,31 @@ export const PolicyList: React.FC<PolicyListProps> = ({
       let aVal: any, bVal: any;
 
       switch (sortField) {
-        case 'policyNumber':
+        case "policyNumber":
           aVal = a.policyNumber;
           bVal = b.policyNumber;
           break;
-        case 'client':
+        case "client":
           aVal = a.client.name;
           bVal = b.client.name;
           break;
-        case 'carrier':
-          aVal = getCarrierById(a.carrierId)?.name || '';
-          bVal = getCarrierById(b.carrierId)?.name || '';
+        case "carrier":
+          aVal = getCarrierById(a.carrierId)?.name || "";
+          bVal = getCarrierById(b.carrierId)?.name || "";
           break;
-        case 'status':
+        case "status":
           aVal = a.status;
           bVal = b.status;
           break;
-        case 'premium':
+        case "premium":
           aVal = a.annualPremium;
           bVal = b.annualPremium;
           break;
-        case 'commission':
+        case "commission":
           aVal = a.annualPremium * (a.commissionPercentage / 100);
           bVal = b.annualPremium * (b.commissionPercentage / 100);
           break;
-        case 'effectiveDate':
+        case "effectiveDate":
           aVal = new Date(a.effectiveDate).getTime();
           bVal = new Date(b.effectiveDate).getTime();
           break;
@@ -93,20 +104,27 @@ export const PolicyList: React.FC<PolicyListProps> = ({
           bVal = b.effectiveDate;
       }
 
-      if (sortDirection === 'asc') {
+      if (sortDirection === "asc") {
         return aVal > bVal ? 1 : -1;
       } else {
         return aVal < bVal ? 1 : -1;
       }
     });
-  }, [filters, searchTerm, sortField, sortDirection, filterPolicies, getCarrierById]);
+  }, [
+    filters,
+    searchTerm,
+    sortField,
+    sortDirection,
+    filterPolicies,
+    getCarrierById,
+  ]);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
     } else {
       setSortField(field);
-      setSortDirection('asc');
+      setSortDirection("asc");
     }
   };
 
@@ -115,35 +133,41 @@ export const PolicyList: React.FC<PolicyListProps> = ({
   };
 
   const handleDeletePolicy = (policyId: string) => {
-    if (window.confirm('Are you sure you want to delete this policy?')) {
+    if (window.confirm("Are you sure you want to delete this policy?")) {
       deletePolicy(policyId);
     }
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(amount);
   };
 
   const formatDate = (date: string | Date) => {
-    const dateObj = typeof date === 'string' ? new Date(date) : date;
-    return dateObj.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
+    const dateObj = typeof date === "string" ? new Date(date) : date;
+    return dateObj.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
     });
   };
 
-  const SortHeader: React.FC<{ field: SortField; children: React.ReactNode }> = ({ field, children }) => (
+  const SortHeader: React.FC<{
+    field: SortField;
+    children: React.ReactNode;
+  }> = ({ field, children }) => (
     <th className="sortable" onClick={() => handleSort(field)}>
       {children}
-      {sortField === field && (
-        sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
-      )}
+      {sortField === field &&
+        (sortDirection === "asc" ? (
+          <ChevronUp size={14} />
+        ) : (
+          <ChevronDown size={14} />
+        ))}
     </th>
   );
 
@@ -163,7 +187,7 @@ export const PolicyList: React.FC<PolicyListProps> = ({
         </div>
         <button
           onClick={() => setShowFilters(!showFilters)}
-          className={`filter-toggle ${showFilters ? 'active' : ''}`}
+          className={`filter-toggle ${showFilters ? "active" : ""}`}
         >
           <Filter size={16} />
           Filters
@@ -176,11 +200,13 @@ export const PolicyList: React.FC<PolicyListProps> = ({
           <div className="filter-group">
             <label>Status</label>
             <select
-              value={filters.status || ''}
-              onChange={(e) => setFilters(prev => ({
-                ...prev,
-                status: e.target.value as PolicyStatus || undefined
-              }))}
+              value={filters.status || ""}
+              onChange={(e) =>
+                setFilters((prev) => ({
+                  ...prev,
+                  status: (e.target.value as PolicyStatus) || undefined,
+                }))
+              }
             >
               <option value="">All</option>
               <option value="pending">Pending</option>
@@ -193,11 +219,13 @@ export const PolicyList: React.FC<PolicyListProps> = ({
           <div className="filter-group">
             <label>Product</label>
             <select
-              value={filters.product || ''}
-              onChange={(e) => setFilters(prev => ({
-                ...prev,
-                product: e.target.value as ProductType || undefined
-              }))}
+              value={filters.product || ""}
+              onChange={(e) =>
+                setFilters((prev) => ({
+                  ...prev,
+                  product: (e.target.value as ProductType) || undefined,
+                }))
+              }
             >
               <option value="">All</option>
               <option value="whole_life">Whole Life</option>
@@ -212,19 +240,25 @@ export const PolicyList: React.FC<PolicyListProps> = ({
           <div className="filter-group">
             <label>Carrier</label>
             <select
-              value={filters.carrierId || ''}
-              onChange={(e) => setFilters(prev => ({
-                ...prev,
-                carrierId: e.target.value || undefined
-              }))}
+              value={filters.carrierId || ""}
+              onChange={(e) =>
+                setFilters((prev) => ({
+                  ...prev,
+                  carrierId: e.target.value || undefined,
+                }))
+              }
             >
               <option value="">All</option>
-              {Array.from(new Set(policies.map(p => p.carrierId))).map(carrierId => {
-                const carrier = getCarrierById(carrierId);
-                return carrier ? (
-                  <option key={carrierId} value={carrierId}>{carrier.name}</option>
-                ) : null;
-              })}
+              {Array.from(new Set(policies.map((p) => p.carrierId))).map(
+                (carrierId) => {
+                  const carrier = getCarrierById(carrierId);
+                  return carrier ? (
+                    <option key={carrierId} value={carrierId}>
+                      {carrier.name}
+                    </option>
+                  ) : null;
+                },
+              )}
             </select>
           </div>
         </div>
@@ -255,38 +289,53 @@ export const PolicyList: React.FC<PolicyListProps> = ({
             ) : (
               filteredAndSortedPolicies.map((policy) => {
                 const carrier = getCarrierById(policy.carrierId);
-                const commission = policy.annualPremium * (policy.commissionPercentage / 100);
+                const commission =
+                  policy.annualPremium * (policy.commissionPercentage / 100);
 
                 return (
                   <tr key={policy.id}>
                     <td className="policy-number">{policy.policyNumber}</td>
                     <td>
                       <div className="client-info">
-                        <span className="client-name">{policy.client.name}</span>
-                        <span className="client-details">{policy.client.age}y • {policy.client.state}</span>
+                        <span className="client-name">
+                          {policy.client.name}
+                        </span>
+                        <span className="client-details">
+                          {policy.client.age}y • {policy.client.state}
+                        </span>
                       </div>
                     </td>
                     <td>
                       <div className="carrier-info">
-                        <span className="carrier-name">{carrier?.name || 'Unknown'}</span>
-                        <span className="product-type">{PRODUCT_ABBREV[policy.product]}</span>
+                        <span className="carrier-name">
+                          {carrier?.name || "Unknown"}
+                        </span>
+                        <span className="product-type">
+                          {PRODUCT_ABBREV[policy.product]}
+                        </span>
                       </div>
                     </td>
                     <td>
-                      <span className={`status-badge ${STATUS_BADGES[policy.status]}`}>
+                      <span
+                        className={`status-badge ${STATUS_BADGES[policy.status]}`}
+                      >
                         {policy.status}
                       </span>
                     </td>
                     <td className="numeric">
                       <div className="premium-info">
                         <span>{formatCurrency(policy.annualPremium)}</span>
-                        <span className="payment-freq">{policy.paymentFrequency}</span>
+                        <span className="payment-freq">
+                          {policy.paymentFrequency}
+                        </span>
                       </div>
                     </td>
                     <td className="numeric commission">
                       <div className="commission-info">
                         <span>{formatCurrency(commission)}</span>
-                        <span className="commission-rate">{policy.commissionPercentage}%</span>
+                        <span className="commission-rate">
+                          {policy.commissionPercentage}%
+                        </span>
                       </div>
                     </td>
                     <td className="date">{formatDate(policy.effectiveDate)}</td>
@@ -300,7 +349,12 @@ export const PolicyList: React.FC<PolicyListProps> = ({
                       </button>
                       <select
                         value={policy.status}
-                        onChange={(e) => handleStatusChange(policy.id, e.target.value as PolicyStatus)}
+                        onChange={(e) =>
+                          handleStatusChange(
+                            policy.id,
+                            e.target.value as PolicyStatus,
+                          )
+                        }
                         className="status-select"
                       >
                         <option value="pending">Pending</option>
@@ -327,3 +381,4 @@ export const PolicyList: React.FC<PolicyListProps> = ({
     </div>
   );
 };
+
