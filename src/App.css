@@ -1,5 +1,7 @@
 /* /home/nneessen/projects/commissionTracker/commission-tracker/src/App.css */
 
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+
 /* Reset and base styles */
 * {
   margin: 0;
@@ -7,10 +9,13 @@
   box-sizing: border-box;
 }
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family:
+    "Inter",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
   font-size: 14px;
   line-height: 1.3;
   background-color: #f8f9fa;
@@ -107,7 +112,12 @@ body {
   padding: 0;
   margin: 0;
   text-align: right;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family:
+    "Inter",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
 }
 
 .cell-input:focus {
@@ -119,7 +129,7 @@ body {
 
 .currency-cell {
   text-align: right;
-  font-family: 'Monaco', 'Menlo', monospace;
+  font-family: "Monaco", "Menlo", monospace;
 }
 
 /* Results section - Redesigned */
@@ -172,7 +182,7 @@ body {
 .commission-needed {
   font-size: 24px;
   font-weight: 700;
-  font-family: 'Monaco', 'Menlo', monospace;
+  font-family: "Monaco", "Menlo", monospace;
   color: #1a1a1a;
   margin-bottom: 4px;
 }
@@ -217,7 +227,7 @@ body {
 .ap-amount {
   font-size: 16px;
   font-weight: 600;
-  font-family: 'Monaco', 'Menlo', monospace;
+  font-family: "Monaco", "Menlo", monospace;
   color: #1a1a1a;
   margin-bottom: 2px;
 }
@@ -312,7 +322,7 @@ body {
   font-size: 18px;
   font-weight: 700;
   color: #1a1a1a;
-  font-family: 'Monaco', 'Menlo', monospace;
+  font-family: "Monaco", "Menlo", monospace;
 }
 
 .metric-label {
@@ -397,7 +407,12 @@ body {
   border-radius: 4px;
   font-size: 13px;
   text-align: right;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family:
+    "Inter",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
   background: #ffffff;
   transition: border-color 0.2s ease;
 }
@@ -508,7 +523,7 @@ body {
 .goal-card .goal-amount {
   font-size: 28px;
   font-weight: 700;
-  font-family: 'Monaco', 'Menlo', monospace;
+  font-family: "Monaco", "Menlo", monospace;
   margin-bottom: 8px;
 }
 
@@ -564,7 +579,7 @@ body {
   font-size: 14px;
   font-weight: 600;
   color: #1a1a1a;
-  font-family: 'Monaco', 'Menlo', monospace;
+  font-family: "Monaco", "Menlo", monospace;
 }
 
 .recent-activity {
@@ -592,7 +607,7 @@ body {
 }
 
 .font-mono {
-  font-family: 'Monaco', 'Menlo', monospace;
+  font-family: "Monaco", "Menlo", monospace;
 }
 
 .text-sm {
@@ -712,7 +727,12 @@ body {
   border: 1px solid #e2e8f0;
   border-radius: 6px;
   font-size: 14px;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family:
+    "Inter",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
   box-sizing: border-box;
   background: #ffffff;
   transition: all 0.2s ease;
@@ -730,7 +750,12 @@ body {
   border: 1px solid #e2e8f0;
   border-radius: 6px;
   font-size: 14px;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family:
+    "Inter",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
   background: #ffffff;
   box-sizing: border-box;
   transition: all 0.2s ease;
@@ -939,7 +964,7 @@ body {
 }
 
 .sidebar-nav-item.active::before {
-  content: '';
+  content: "";
   position: absolute;
   left: 0;
   top: 0;
@@ -1060,3 +1085,4 @@ body {
     display: none;
   }
 }
+

@@ -9,10 +9,11 @@ import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import App from "./App";
 import { ExpenseManager } from "./features/expenses";
 import { CommissionList } from "./features/commissions";
-import { ConstantsManager, CarrierManager, ProductManager, AgentManager, AgentSettings, CompGuideManager, CompGuideViewer } from "./features/settings";
 import { PolicyDashboard } from "./features/policies";
 import { AnalyticsDashboard } from "./features/analytics";
 import { DashboardHome } from "./features/dashboard";
+import { CommissionGuide } from "./features/commission-guide";
+import { SettingsDashboard } from "./features/settings";
 import { ExpensesProvider } from "./contexts/ExpensesContext";
 
 // Create root route with App layout and ExpensesProvider
@@ -53,49 +54,18 @@ const analyticsRoute = new Route({
   component: AnalyticsDashboard,
 });
 
+// Commission Guide route (replaces old settings)
+const commissionGuideRoute = new Route({
+  getParentRoute: () => rootRoute,
+  path: "commission-guide",
+  component: CommissionGuide,
+});
 
 // Settings route
 const settingsRoute = new Route({
   getParentRoute: () => rootRoute,
   path: "settings",
-  component: () => (
-    <div className="settings-container p-6 max-w-7xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Settings</h1>
-        <p className="text-gray-600">Manage your agent profile, carriers, products, and compensation guides</p>
-      </div>
-
-      {/* Agent Settings - Most Important */}
-      <div className="mb-8">
-        <AgentSettings />
-      </div>
-
-      {/* Data Management Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-        <div className="space-y-8">
-          <CarrierManager />
-        </div>
-        <div className="space-y-8">
-          <ProductManager />
-        </div>
-      </div>
-
-      {/* Compensation Guide Section */}
-      <div className="mb-8">
-        <CompGuideViewer />
-      </div>
-
-      {/* Additional Settings */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div>
-          <ConstantsManager />
-        </div>
-        <div>
-          <AgentManager />
-        </div>
-      </div>
-    </div>
-  ),
+  component: SettingsDashboard,
 });
 
 // Targets route (coming soon)
@@ -147,6 +117,7 @@ const routeTree = rootRoute.addChildren([
   dashboardRoute,
   policiesRoute,
   analyticsRoute,
+  commissionGuideRoute,
   settingsRoute,
   targetsRoute,
   reportsRoute,

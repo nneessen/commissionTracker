@@ -1,34 +1,43 @@
-import { useState, useEffect } from 'react';
-import { carrierService } from '../services';
-import { Carrier, DEFAULT_CARRIERS, NewCarrierForm } from '../types';
+import { useState, useCallback, useEffect } from 'react';
+import { Carrier, NewCarrierForm, DEFAULT_CARRIERS } from '../types/carrier.types';
+import { v4 as uuidv4 } from 'uuid';
 
-export function useCarriers() {
+const STORAGE_KEY = 'commission_tracker_carriers';
+
+export const useCarriers = () => {
   const [carriers, setCarriers] = useState<Carrier[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  // Load carriers from database
+  // Load carriers from localStorage on mount
   useEffect(() => {
-    const loadCarriers = async () => {
+    const loadCarriers = () => {
       try {
-        setIsLoading(true);
-        setError(null);
-        const data = await carrierService.getAll();
-
-        // Initialize with default carriers if empty
-        if (data.length === 0) {
-          const defaultCarriers = [];
-          for (const defaultCarrier of DEFAULT_CARRIERS) {
-            const created = await carrierService.create(defaultCarrier);
-            defaultCarriers.push(created);
-          }
-          setCarriers(defaultCarriers);
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          setCarriers(parsed.map((c: any) => ({
+            ...c,
+            createdAt: new Date(c.createdAt),
+            updatedAt: c.updatedAt ? new Date(c.updatedAt) : undefined,
+          })));
         } else {
-          setCarriers(data);
+          // Initialize with default carriers if none exist
+          const defaultCarriers: Carrier[] = DEFAULT_CARRIERS.map(carrier => ({
+            ...carrier,
+            id: uuidv4(),
+            createdAt: new Date(),
+          }));
+          setCarriers(defaultCarriers);
         }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load carriers');
-        console.error('Error loading carriers:', err);
+      } catch (error) {
+        console.error('Error loading carriers:', error);
+        // Fallback to default carriers on error
+        const defaultCarriers: Carrier[] = DEFAULT_CARRIERS.map(carrier => ({
+          ...carrier,
+          id: uuidv4(),
+          createdAt: new Date(),
+        }));
+        setCarriers(defaultCarriers);
       } finally {
         setIsLoading(false);
       }
@@ -37,80 +46,70 @@ export function useCarriers() {
     loadCarriers();
   }, []);
 
-  const addCarrier = async (newCarrier: NewCarrierForm): Promise<Carrier | null> => {
+  // Save carriers to localStorage whenever they change
+  useEffect(() => {
+    if (!isLoading) {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(carriers));
+      } catch (error) {
+        console.error('Error saving carriers:', error);
+      }
+    }
+  }, [carriers, isLoading]);
+
+  // Add a new carrier
+  const addCarrier = useCallback((form: NewCarrierForm): Carrier | null => {
     try {
-      const carrier = await carrierService.create({
-        ...newCarrier,
-        isActive: true,
-      });
-      setCarriers((prev) => [...prev, carrier]);
-      return carrier;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create carrier');
+      const newCarrier: Carrier = {
+        id: uuidv4(),
+        name: form.name.trim(),
+        isActive: form.isActive ?? true,
+        createdAt: new Date(),
+      };
+
+      setCarriers(prev => [...prev, newCarrier]);
+      return newCarrier;
+    } catch (error) {
+      console.error('Error adding carrier:', error);
       return null;
     }
-  };
+  }, []);
 
-  const updateCarrier = async (id: string, updates: Partial<Omit<Carrier, 'id' | 'createdAt'>>): Promise<boolean> => {
-    try {
-      const updatedCarrier = await carrierService.update(id, updates);
-      setCarriers((prev) =>
-        prev.map((carrier) =>
-          carrier.id === id ? updatedCarrier : carrier
-        )
-      );
-      return true;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update carrier');
-      return false;
-    }
-  };
+  // Update a carrier
+  const updateCarrier = useCallback((id: string, updates: Partial<Omit<Carrier, 'id' | 'createdAt'>>) => {
+    setCarriers(prev => prev.map(carrier =>
+      carrier.id === id
+        ? {
+            ...carrier,
+            ...updates,
+            updatedAt: new Date()
+          }
+        : carrier
+    ));
+  }, []);
 
-  const deleteCarrier = async (id: string): Promise<boolean> => {
-    try {
-      await carrierService.delete(id);
-      setCarriers((prev) => prev.filter((carrier) => carrier.id !== id));
-      return true;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete carrier');
-      return false;
-    }
-  };
+  // Delete a carrier
+  const deleteCarrier = useCallback((id: string) => {
+    setCarriers(prev => prev.filter(carrier => carrier.id !== id));
+  }, []);
 
-  const toggleCarrierActive = async (id: string): Promise<boolean> => {
-    const carrier = carriers.find(c => c.id === id);
-    if (!carrier) return false;
+  // Get carrier by ID
+  const getCarrierById = useCallback((id: string): Carrier | undefined => {
+    return carriers.find(carrier => carrier.id === id);
+  }, [carriers]);
 
-    try {
-      const updatedCarrier = await carrierService.setActive(id, !carrier.isActive);
-      setCarriers((prev) =>
-        prev.map((c) => c.id === id ? updatedCarrier : c)
-      );
-      return true;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to toggle carrier status');
-      return false;
-    }
-  };
-
-  const getCarrierById = (id: string): Carrier | undefined => {
-    return carriers.find((carrier) => carrier.id === id);
-  };
-
-  const activeCarriers = carriers.filter((carrier) => carrier.isActive);
-
-  const clearError = () => setError(null);
+  // Get active carriers only
+  const getActiveCarriers = useCallback((): Carrier[] => {
+    return carriers.filter(carrier => carrier.isActive);
+  }, [carriers]);
 
   return {
     carriers,
-    activeCarriers,
     isLoading,
-    error,
     addCarrier,
     updateCarrier,
     deleteCarrier,
-    toggleCarrierActive,
     getCarrierById,
-    clearError,
+    getActiveCarriers,
   };
-}
+};

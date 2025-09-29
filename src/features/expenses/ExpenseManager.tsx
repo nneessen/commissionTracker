@@ -30,8 +30,8 @@ export const ExpenseManager: React.FC = () => {
 
   const handleAddExpense = async () => {
     if (newExpense.name.trim() && newExpense.amount >= 0) {
-      const success = await createExpense(newExpense);
-      if (success) {
+      const result = await createExpense(newExpense);
+      if (result) {
         setNewExpense({ name: '', amount: 0, category: 'personal' });
         setShowAddModal(false);
         refresh(); // Refresh the expenses list
