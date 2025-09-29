@@ -6,6 +6,32 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-09-29 11:19:29
+
+### Changed Files
+- `package-lock.json`
+- `package.json`
+- `plans/carriers-products-comps-implementation.md`
+- `plans/services-crud-operations-fix.md`
+- `scripts/importCommissionData.js`
+- `server.js`
+- `src/api/servicesRouter.js`
+- `src/services/settings/AgentRepository.ts`
+- `src/services/settings/CarrierRepository.ts`
+- `src/services/settings/CompGuideRepository.ts`
+- `src/services/settings/ProductService.ts`
+- `src/services/settings/agentService.ts`
+- `src/services/settings/carrierService.ts`
+- `src/services/settings/compGuideService.ts`
+- `src/types/compGuide.types.ts`
+- `src/types/user.types.ts`
+- `src/utils/dataMigration.ts`
+
+### Statistics
+```
+ 17 files changed, 4319 insertions(+), 310 deletions(-)
+```
+
 ## [Checkpoint] - 2025-09-27 16:29:49
 
 ### Changed Files

@@ -23,8 +23,14 @@ export interface Agent {
   id: string;
   name: string;
   email?: string;
+  phone?: string;
   contractCompLevel: number; // 80-145
+  licenseNumber?: string;
+  licenseStates?: string[];
+  hireDate?: Date;
   isActive: boolean;
+  ytdCommission?: number;
+  ytdPremium?: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -32,8 +38,14 @@ export interface Agent {
 export interface CreateAgentData {
   name: string;
   email?: string;
+  phone?: string;
   contractCompLevel: number;
+  licenseNumber?: string;
+  licenseStates?: string[];
+  hireDate?: Date;
   isActive?: boolean;
+  ytdCommission?: number;
+  ytdPremium?: number;
 }
 
 export interface UpdateAgentData extends Partial<CreateAgentData> {

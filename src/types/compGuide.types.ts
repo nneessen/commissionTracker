@@ -25,7 +25,7 @@ export interface NewCompGuideForm {
   first_year_percentage?: number;
   renewal_percentage?: number;
   trail_percentage?: number;
-  effective_date?: Date;
+  effective_date: Date;
   expiration_date?: Date;
   is_active?: boolean;
   notes?: string;
