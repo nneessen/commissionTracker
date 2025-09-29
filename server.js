@@ -167,8 +167,66 @@ app.get('/rest/v1/products', createTableHandler('comp_guide', 'carrier_name ASC,
 // Comp Guide endpoint
 app.get('/rest/v1/comp_guide', createTableHandler('comp_guide', 'carrier_name ASC, product_name ASC, contract_level ASC'));
 
-// Carriers endpoint
+// Carriers endpoint - Delegate to services router for full CRUD
 app.get('/rest/v1/carriers', createTableHandler('carriers', 'name ASC'));
+
+// PUT endpoint for carriers update
+app.put('/rest/v1/carriers/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updates = [];
+    const values = [];
+    let paramCount = 1;
+
+    // Map frontend fields to database columns
+    const fieldMapping = {
+      'name': 'name',
+      'short_name': 'short_name',
+      'is_active': 'is_active',
+      'default_commission_rates': 'commission_rates',
+      'commission_rates': 'commission_rates',
+      'contact_info': 'contact_info',
+      'notes': 'notes'
+    };
+
+    // Build dynamic update query with field mapping
+    Object.keys(req.body).forEach(key => {
+      if (key !== 'id' && req.body[key] !== undefined && fieldMapping[key]) {
+        const dbColumn = fieldMapping[key];
+        updates.push(`${dbColumn} = $${paramCount++}`);
+        // Handle JSON fields
+        if (key === 'default_commission_rates' || key === 'commission_rates' || key === 'contact_info') {
+          values.push(JSON.stringify(req.body[key]));
+        } else {
+          values.push(req.body[key]);
+        }
+      }
+    });
+
+    if (updates.length === 0) {
+      return res.status(400).json({ error: 'No fields to update' });
+    }
+
+    updates.push(`updated_at = NOW()`);
+    values.push(id);
+
+    const result = await pool.query(`
+      UPDATE carriers
+      SET ${updates.join(', ')}
+      WHERE id = $${paramCount}
+      RETURNING *
+    `, values);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Carrier not found' });
+    }
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error updating carrier:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
 
 // Constants endpoint
 app.get('/rest/v1/constants', createTableHandler('constants', 'id ASC'));

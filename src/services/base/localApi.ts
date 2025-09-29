@@ -26,6 +26,8 @@ interface QueryState {
   limit?: number;
   offset?: number;
   single?: boolean;
+  operation?: 'select' | 'insert' | 'update' | 'delete';
+  data?: any;
 }
 
 class LocalApiClient {
@@ -55,8 +57,18 @@ class LocalApiClient {
     return this;
   }
 
-  private async execute(): Promise<QueryResult<any[]>> {
+  private async execute(): Promise<QueryResult<any>> {
     try {
+      // Handle different operations
+      if (this.queryState.operation === 'update') {
+        return this.executeUpdate();
+      } else if (this.queryState.operation === 'delete') {
+        return this.executeDelete();
+      } else if (this.queryState.operation === 'insert') {
+        return this.executeInsert();
+      }
+
+      // Default to select operation
       const url = this.buildQueryUrl();
       const response = await fetch(url, {
         headers: { 'Content-Type': 'application/json' },
@@ -106,8 +118,10 @@ class LocalApiClient {
     }
   }
 
-  async update(values: any): Promise<QueryResult<any>> {
-    return this.updateWithFilter(values);
+  update(values: any) {
+    this.queryState.operation = 'update';
+    this.queryState.data = values;
+    return this;
   }
 
   async upsert(values: any | any[]): Promise<QueryResult<any>> {
@@ -189,10 +203,12 @@ class LocalApiClient {
     return this;
   }
 
-  single() {
+  async single() {
     this.queryState.single = true;
     this.queryState.limit = 1;
-    return this;
+    // Execute the operation and return the promise
+    const result = await this.execute();
+    return result;
   }
 
   // Make this class thenable so it works like Supabase
@@ -243,6 +259,48 @@ class LocalApiClient {
   }
 
   // Helper methods for filtered operations
+  private async executeUpdate(): Promise<QueryResult<any>> {
+    try {
+      // Get the ID from filters (should be set by .eq("id", value))
+      const idFilter = this.queryState.filters.find(f => f.column === 'id' && f.type === 'eq');
+      if (!idFilter) {
+        throw new Error('Update requires an ID filter (use .eq("id", value))');
+      }
+
+      const id = idFilter.value;
+      const response = await fetch(`${API_URL}/rest/v1/${this.queryState.table}/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(this.queryState.data),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      // Return single item if single() was called, otherwise return array
+      if (this.queryState.single) {
+        return { data, error: null };
+      }
+      return { data: [data], error: null };
+    } catch (error) {
+      console.error(`Error updating ${this.queryState.table}:`, error);
+      return { data: null, error };
+    }
+  }
+
+  private async executeInsert(): Promise<QueryResult<any>> {
+    // Placeholder for insert execution
+    return { data: null, error: new Error('Insert execution not implemented') };
+  }
+
+  private async executeDelete(): Promise<QueryResult<any>> {
+    // Placeholder for delete execution
+    return { data: null, error: new Error('Delete execution not implemented') };
+  }
+
   private async updateWithFilter(values: any): Promise<QueryResult<any>> {
     try {
       // For now, assume we have an ID in the values
