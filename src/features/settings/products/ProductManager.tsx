@@ -38,8 +38,8 @@ const ProductForm: React.FC<ProductFormProps> = ({ entry, carriers, isOpen, onCl
         first_year_percentage: entry.first_year_percentage || 0,
         renewal_percentage: entry.renewal_percentage || 0,
         trail_percentage: entry.trail_percentage || 0,
-        effective_date: entry.effective_date,
-        expiration_date: entry.expiration_date,
+        effective_date: entry.effective_date ? new Date(entry.effective_date) : new Date(),
+        expiration_date: entry.expiration_date ? new Date(entry.expiration_date) : undefined,
         is_active: entry.is_active,
         notes: entry.notes || ''
       });
@@ -137,7 +137,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ entry, carriers, isOpen, onCl
                 }}
               >
                 <option value="">Select a carrier</option>
-                {carriers.filter(c => c.is_active).map(carrier => (
+                {carriers.filter(c => c.is_active).map((carrier, idx) => (
                   <option key={carrier.id} value={carrier.id}>
                     {carrier.name}
                   </option>
@@ -175,7 +175,10 @@ const ProductForm: React.FC<ProductFormProps> = ({ entry, carriers, isOpen, onCl
                 min="80"
                 max="145"
                 value={formData.contract_level}
-                onChange={(e) => setFormData({ ...formData, contract_level: parseInt(e.target.value) })}
+                onChange={(e) => {
+                  const val = parseInt(e.target.value);
+                  setFormData({ ...formData, contract_level: isNaN(val) ? 100 : val });
+                }}
                 required
                 style={{
                   width: '100%',
@@ -197,7 +200,10 @@ const ProductForm: React.FC<ProductFormProps> = ({ entry, carriers, isOpen, onCl
                 min="0"
                 max="999.999"
                 value={formData.commission_percentage}
-                onChange={(e) => setFormData({ ...formData, commission_percentage: parseFloat(e.target.value) })}
+                onChange={(e) => {
+                  const val = parseFloat(e.target.value);
+                  setFormData({ ...formData, commission_percentage: isNaN(val) ? 0 : val });
+                }}
                 required
                 style={{
                   width: '100%',
@@ -220,7 +226,10 @@ const ProductForm: React.FC<ProductFormProps> = ({ entry, carriers, isOpen, onCl
                 step="0.001"
                 min="0"
                 value={formData.first_year_percentage || ''}
-                onChange={(e) => setFormData({ ...formData, first_year_percentage: e.target.value ? parseFloat(e.target.value) : undefined })}
+                onChange={(e) => {
+                  const val = e.target.value ? parseFloat(e.target.value) : undefined;
+                  setFormData({ ...formData, first_year_percentage: val !== undefined && !isNaN(val) ? val : undefined });
+                }}
                 style={{
                   width: '100%',
                   padding: '12px',
@@ -240,7 +249,10 @@ const ProductForm: React.FC<ProductFormProps> = ({ entry, carriers, isOpen, onCl
                 step="0.001"
                 min="0"
                 value={formData.renewal_percentage || ''}
-                onChange={(e) => setFormData({ ...formData, renewal_percentage: e.target.value ? parseFloat(e.target.value) : undefined })}
+                onChange={(e) => {
+                  const val = e.target.value ? parseFloat(e.target.value) : undefined;
+                  setFormData({ ...formData, renewal_percentage: val !== undefined && !isNaN(val) ? val : undefined });
+                }}
                 style={{
                   width: '100%',
                   padding: '12px',
@@ -260,7 +272,10 @@ const ProductForm: React.FC<ProductFormProps> = ({ entry, carriers, isOpen, onCl
                 step="0.001"
                 min="0"
                 value={formData.trail_percentage || ''}
-                onChange={(e) => setFormData({ ...formData, trail_percentage: e.target.value ? parseFloat(e.target.value) : undefined })}
+                onChange={(e) => {
+                  const val = e.target.value ? parseFloat(e.target.value) : undefined;
+                  setFormData({ ...formData, trail_percentage: val !== undefined && !isNaN(val) ? val : undefined });
+                }}
                 style={{
                   width: '100%',
                   padding: '12px',
@@ -279,8 +294,8 @@ const ProductForm: React.FC<ProductFormProps> = ({ entry, carriers, isOpen, onCl
               </label>
               <input
                 type="date"
-                value={formData.effective_date?.toISOString().split('T')[0] || ''}
-                onChange={(e) => setFormData({ ...formData, effective_date: new Date(e.target.value) })}
+                value={formData.effective_date instanceof Date && !isNaN(formData.effective_date.getTime()) ? formData.effective_date.toISOString().split('T')[0] : ''}
+                onChange={(e) => setFormData({ ...formData, effective_date: e.target.value ? new Date(e.target.value) : new Date() })}
                 required
                 style={{
                   width: '100%',
@@ -298,7 +313,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ entry, carriers, isOpen, onCl
               </label>
               <input
                 type="date"
-                value={formData.expiration_date?.toISOString().split('T')[0] || ''}
+                value={formData.expiration_date instanceof Date && !isNaN(formData.expiration_date.getTime()) ? formData.expiration_date.toISOString().split('T')[0] : ''}
                 onChange={(e) => setFormData({ ...formData, expiration_date: e.target.value ? new Date(e.target.value) : undefined })}
                 style={{
                   width: '100%',
@@ -459,9 +474,11 @@ export const ProductManager: React.FC = () => {
     }
   };
 
-  const formatPercentage = (value?: number) => {
-    if (value === undefined || value === null) return '-';
-    return `${value.toFixed(3)}%`;
+  const formatPercentage = (value?: number | string) => {
+    if (value === undefined || value === null || value === '') return '-';
+    const numValue = typeof value === 'string' ? parseFloat(value) : value;
+    if (isNaN(numValue)) return '-';
+    return `${numValue.toFixed(3)}%`;
   };
 
   const formatDate = (date: Date) => {
@@ -598,8 +615,8 @@ export const ProductManager: React.FC = () => {
                   }}
                 >
                   <option value="">All Carriers</option>
-                  {carriers.map(carrier => (
-                    <option key={carrier.id} value={carrier.id}>
+                  {carriers.map((carrier, idx) => (
+                    <option key={carrier.id || `filter-carrier-${idx}`} value={carrier.id}>
                       {carrier.name}
                     </option>
                   ))}
@@ -612,7 +629,10 @@ export const ProductManager: React.FC = () => {
                 </label>
                 <select
                   value={filters.contract_level || ''}
-                  onChange={(e) => setFilters({ ...filters, contract_level: e.target.value ? parseInt(e.target.value) : undefined })}
+                  onChange={(e) => {
+                    const val = e.target.value ? parseInt(e.target.value) : undefined;
+                    setFilters({ ...filters, contract_level: val !== undefined && !isNaN(val) ? val : undefined });
+                  }}
                   style={{
                     width: '100%',
                     padding: '8px',
@@ -708,8 +728,8 @@ export const ProductManager: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {filteredEntries.map((entry) => (
-                  <tr key={entry.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                {filteredEntries.map((entry, index) => (
+                  <tr key={entry.id || `entry-${index}`} style={{ borderBottom: '1px solid #f1f5f9' }}>
                     <td style={{ padding: '12px' }}>
                       <div style={{ fontWeight: '500' }}>{entry.carrier_name}</div>
                     </td>

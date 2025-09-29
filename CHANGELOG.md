@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-09-29 12:32:16
+
+### Changed Files
+- `server.js`
+- `src/features/settings/carriers/CarrierManager.tsx`
+- `src/features/settings/products/ProductManager.tsx`
+- `src/services/settings/CompGuideRepository.ts`
+- `src/services/settings/compGuideService.ts`
+- `src/services/settings/constantsService.ts`
+- `src/types/compGuide.types.ts`
+
+### Statistics
+```
+ 7 files changed, 155 insertions(+), 121 deletions(-)
+```
+
 ## [Checkpoint] - 2025-09-29 11:19:29
 
 ### Changed Files

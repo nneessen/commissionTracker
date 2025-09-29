@@ -22,9 +22,11 @@ class CompGuideService extends BaseService<CompGuideEntry, CompGuideCreateData, 
   protected validateCreate(data: CompGuideCreateData): { isValid: boolean; errors: string[] } {
     const rules: ValidationRule[] = [
       {
-        field: 'carrier_id',
+        field: 'carrier_name',
         required: true,
-        type: 'uuid'
+        type: 'string',
+        minLength: 1,
+        maxLength: 255
       },
       {
         field: 'product_name',
@@ -104,8 +106,10 @@ class CompGuideService extends BaseService<CompGuideEntry, CompGuideCreateData, 
   protected validateUpdate(data: CompGuideUpdateData): { isValid: boolean; errors: string[] } {
     const rules: ValidationRule[] = [
       {
-        field: 'carrier_id',
-        type: 'uuid'
+        field: 'carrier_name',
+        type: 'string',
+        minLength: 1,
+        maxLength: 255
       },
       {
         field: 'product_name',
@@ -181,7 +185,7 @@ class CompGuideService extends BaseService<CompGuideEntry, CompGuideCreateData, 
   protected async beforeCreate(data: CompGuideCreateData): Promise<CompGuideCreateData> {
     // Check for duplicate entry (carrier + product + contract level)
     const existingEntry = await this.compGuideRepository.findExistingEntry(
-      data.carrier_id,
+      data.carrier_name,
       data.product_name,
       data.contract_level
     );
@@ -197,18 +201,18 @@ class CompGuideService extends BaseService<CompGuideEntry, CompGuideCreateData, 
 
   protected async beforeUpdate(id: string, data: CompGuideUpdateData): Promise<CompGuideUpdateData> {
     // Check for duplicate entry if key fields are being updated
-    if (data.carrier_id || data.product_name || data.contract_level) {
+    if (data.carrier_name || data.product_name || data.contract_level) {
       const current = await this.repository.findById(id);
       if (!current) {
         throw new Error('Commission guide entry not found');
       }
 
-      const carrierId = data.carrier_id || current.carrier_id;
+      const carrierName = data.carrier_name || current.carrier_name;
       const productName = data.product_name || current.product_name;
       const contractLevel = data.contract_level || current.contract_level;
 
       const existingEntry = await this.compGuideRepository.findExistingEntry(
-        carrierId,
+        carrierName,
         productName,
         contractLevel,
         id
@@ -240,9 +244,9 @@ class CompGuideService extends BaseService<CompGuideEntry, CompGuideCreateData, 
     }
   }
 
-  async getByCarrier(carrierId: string) {
+  async getByCarrier(carrierName: string) {
     try {
-      const entries = await this.compGuideRepository.findByCarrier(carrierId);
+      const entries = await this.compGuideRepository.findByCarrier(carrierName);
       return {
         data: entries,
         success: true
@@ -315,9 +319,9 @@ class CompGuideService extends BaseService<CompGuideEntry, CompGuideCreateData, 
     }
   }
 
-  async getProductsByCarrier(carrierId: string) {
+  async getProductsByCarrier(carrierName: string) {
     try {
-      const products = await this.compGuideRepository.getProductsByCarrier(carrierId);
+      const products = await this.compGuideRepository.getProductsByCarrier(carrierName);
       return {
         data: products,
         success: true
@@ -330,9 +334,9 @@ class CompGuideService extends BaseService<CompGuideEntry, CompGuideCreateData, 
     }
   }
 
-  async getCommissionRate(carrierId: string, productName: string, contractLevel: number) {
+  async getCommissionRate(carrierName: string, productName: string, contractLevel: number) {
     try {
-      const rate = await this.compGuideRepository.getCommissionRate(carrierId, productName, contractLevel);
+      const rate = await this.compGuideRepository.getCommissionRate(carrierName, productName, contractLevel);
       return {
         data: rate,
         success: true
@@ -358,7 +362,7 @@ class CompGuideService extends BaseService<CompGuideEntry, CompGuideCreateData, 
       // Check for duplicates
       for (const entry of entries) {
         const existing = await this.compGuideRepository.findExistingEntry(
-          entry.carrier_id,
+          entry.carrier_name,
           entry.product_name,
           entry.contract_level
         );

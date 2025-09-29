@@ -1,6 +1,6 @@
 export interface CompGuideEntry {
   id: string;
-  carrier_id: string;
+  carrier_name: string;
   product_name: string;
   contract_level: number; // 80-145
   commission_percentage: number;
@@ -13,12 +13,10 @@ export interface CompGuideEntry {
   notes?: string;
   created_at: Date;
   updated_at?: Date;
-  // Joined data
-  carrier_name?: string;
 }
 
 export interface NewCompGuideForm {
-  carrier_id: string;
+  carrier_name: string;
   product_name: string;
   contract_level: number;
   commission_percentage: number;
@@ -32,7 +30,7 @@ export interface NewCompGuideForm {
 }
 
 export interface CompGuideFilters {
-  carrier_id?: string;
+  carrier_name?: string;
   product_name?: string;
   contract_level?: number;
   is_active?: boolean;

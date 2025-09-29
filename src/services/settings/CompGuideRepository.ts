@@ -3,7 +3,7 @@ import { BaseRepository } from '../base/BaseRepository';
 import { CompGuideEntry } from '../../types/compGuide.types';
 
 export interface CompGuideCreateData {
-  carrier_id: string;
+  carrier_name: string;
   product_name: string;
   contract_level: number;
   commission_percentage: number;
@@ -20,7 +20,7 @@ export interface CompGuideUpdateData extends Partial<CompGuideCreateData> {}
 
 export interface CompGuideDBRecord {
   id: string;
-  carrier_id: string;
+  carrier_name: string;
   product_name: string;
   contract_level: number;
   commission_percentage: number;
@@ -33,12 +33,10 @@ export interface CompGuideDBRecord {
   notes?: string;
   created_at: string;
   updated_at?: string;
-  // Joined carrier data
-  carrier_name?: string;
 }
 
 export interface CompGuideFilters {
-  carrier_id?: string;
+  carrier_name?: string;
   product_name?: string;
   contract_level?: number;
   is_active?: boolean;
@@ -58,7 +56,7 @@ export class CompGuideRepository extends BaseRepository<
   protected transformFromDB(dbRecord: CompGuideDBRecord): CompGuideEntry {
     return {
       id: dbRecord.id,
-      carrier_id: dbRecord.carrier_id,
+      carrier_name: dbRecord.carrier_name,
       product_name: dbRecord.product_name,
       contract_level: dbRecord.contract_level,
       commission_percentage: dbRecord.commission_percentage,
@@ -70,15 +68,14 @@ export class CompGuideRepository extends BaseRepository<
       is_active: dbRecord.is_active,
       notes: dbRecord.notes,
       created_at: new Date(dbRecord.created_at),
-      updated_at: dbRecord.updated_at ? new Date(dbRecord.updated_at) : undefined,
-      carrier_name: dbRecord.carrier_name
+      updated_at: dbRecord.updated_at ? new Date(dbRecord.updated_at) : undefined
     };
   }
 
   protected transformToDB(data: CompGuideCreateData | CompGuideUpdateData, isUpdate = false): any {
     const dbData: any = {};
 
-    if (data.carrier_id !== undefined) dbData.carrier_id = data.carrier_id;
+    if (data.carrier_name !== undefined) dbData.carrier_name = data.carrier_name;
     if (data.product_name !== undefined) dbData.product_name = data.product_name;
     if (data.contract_level !== undefined) dbData.contract_level = data.contract_level;
     if (data.commission_percentage !== undefined) dbData.commission_percentage = data.commission_percentage;
@@ -105,11 +102,8 @@ export class CompGuideRepository extends BaseRepository<
     try {
       const { data, error } = await this.client
         .from(this.tableName)
-        .select(`
-          *,
-          carriers(name)
-        `)
-        .order('carrier_id')
+        .select('*')
+        .order('carrier_name')
         .order('product_name')
         .order('contract_level');
 
@@ -117,27 +111,18 @@ export class CompGuideRepository extends BaseRepository<
         throw this.handleError(error, 'findAllWithCarriers');
       }
 
-      return data?.map((record: any) => {
-        const transformed = this.transformFromDB(record);
-        if (record.carriers) {
-          transformed.carrier_name = record.carriers.name;
-        }
-        return transformed;
-      }) || [];
+      return data?.map((record: any) => this.transformFromDB(record)) || [];
     } catch (error) {
       throw this.wrapError(error, 'findAllWithCarriers');
     }
   }
 
-  async findByCarrier(carrierId: string): Promise<CompGuideEntry[]> {
+  async findByCarrier(carrierName: string): Promise<CompGuideEntry[]> {
     try {
       const { data, error } = await this.client
         .from(this.tableName)
-        .select(`
-          *,
-          carriers(name)
-        `)
-        .eq('carrier_id', carrierId)
+        .select('*')
+        .eq('carrier_name', carrierName)
         .order('product_name')
         .order('contract_level');
 
@@ -145,13 +130,7 @@ export class CompGuideRepository extends BaseRepository<
         throw this.handleError(error, 'findByCarrier');
       }
 
-      return data?.map((record: any) => {
-        const transformed = this.transformFromDB(record);
-        if (record.carriers) {
-          transformed.carrier_name = record.carriers.name;
-        }
-        return transformed;
-      }) || [];
+      return data?.map((record: any) => this.transformFromDB(record)) || [];
     } catch (error) {
       throw this.wrapError(error, 'findByCarrier');
     }
@@ -161,25 +140,16 @@ export class CompGuideRepository extends BaseRepository<
     try {
       const { data, error } = await this.client
         .from(this.tableName)
-        .select(`
-          *,
-          carriers(name)
-        `)
+        .select('*')
         .eq('product_name', productName)
-        .order('carrier_id')
+        .order('carrier_name')
         .order('contract_level');
 
       if (error) {
         throw this.handleError(error, 'findByProduct');
       }
 
-      return data?.map((record: any) => {
-        const transformed = this.transformFromDB(record);
-        if (record.carriers) {
-          transformed.carrier_name = record.carriers.name;
-        }
-        return transformed;
-      }) || [];
+      return data?.map((record: any) => this.transformFromDB(record)) || [];
     } catch (error) {
       throw this.wrapError(error, 'findByProduct');
     }
@@ -189,25 +159,16 @@ export class CompGuideRepository extends BaseRepository<
     try {
       const { data, error } = await this.client
         .from(this.tableName)
-        .select(`
-          *,
-          carriers(name)
-        `)
+        .select('*')
         .eq('contract_level', contractLevel)
-        .order('carrier_id')
+        .order('carrier_name')
         .order('product_name');
 
       if (error) {
         throw this.handleError(error, 'findByContractLevel');
       }
 
-      return data?.map((record: any) => {
-        const transformed = this.transformFromDB(record);
-        if (record.carriers) {
-          transformed.carrier_name = record.carriers.name;
-        }
-        return transformed;
-      }) || [];
+      return data?.map((record: any) => this.transformFromDB(record)) || [];
     } catch (error) {
       throw this.wrapError(error, 'findByContractLevel');
     }
@@ -217,14 +178,11 @@ export class CompGuideRepository extends BaseRepository<
     try {
       let query = this.client
         .from(this.tableName)
-        .select(`
-          *,
-          carriers(name)
-        `);
+        .select('*');
 
       // Apply filters
-      if (filters.carrier_id) {
-        query = query.eq('carrier_id', filters.carrier_id);
+      if (filters.carrier_name) {
+        query = query.eq('carrier_name', filters.carrier_name);
       }
       if (filters.product_name) {
         query = query.ilike('product_name', `%${filters.product_name}%`);
@@ -242,7 +200,7 @@ export class CompGuideRepository extends BaseRepository<
         query = query.lte('commission_percentage', filters.max_commission);
       }
 
-      query = query.order('carrier_id').order('product_name').order('contract_level');
+      query = query.order('carrier_name').order('product_name').order('contract_level');
 
       const { data, error } = await query;
 
@@ -250,20 +208,14 @@ export class CompGuideRepository extends BaseRepository<
         throw this.handleError(error, 'findByFiltersWithCarriers');
       }
 
-      return data?.map((record: any) => {
-        const transformed = this.transformFromDB(record);
-        if (record.carriers) {
-          transformed.carrier_name = record.carriers.name;
-        }
-        return transformed;
-      }) || [];
+      return data?.map((record: any) => this.transformFromDB(record)) || [];
     } catch (error) {
       throw this.wrapError(error, 'findByFiltersWithCarriers');
     }
   }
 
   async findExistingEntry(
-    carrierId: string,
+    carrierName: string,
     productName: string,
     contractLevel: number,
     excludeId?: string
@@ -272,7 +224,7 @@ export class CompGuideRepository extends BaseRepository<
       let query = this.client
         .from(this.tableName)
         .select('*')
-        .eq('carrier_id', carrierId)
+        .eq('carrier_name', carrierName)
         .eq('product_name', productName)
         .eq('contract_level', contractLevel);
 
@@ -313,12 +265,12 @@ export class CompGuideRepository extends BaseRepository<
     }
   }
 
-  async getProductsByCarrier(carrierId: string): Promise<string[]> {
+  async getProductsByCarrier(carrierName: string): Promise<string[]> {
     try {
       const { data, error } = await this.client
         .from(this.tableName)
         .select('product_name')
-        .eq('carrier_id', carrierId)
+        .eq('carrier_name', carrierName)
         .order('product_name');
 
       if (error) {
@@ -332,7 +284,7 @@ export class CompGuideRepository extends BaseRepository<
   }
 
   async getCommissionRate(
-    carrierId: string,
+    carrierName: string,
     productName: string,
     contractLevel: number
   ): Promise<number | null> {
@@ -340,7 +292,7 @@ export class CompGuideRepository extends BaseRepository<
       const { data, error } = await this.client
         .from(this.tableName)
         .select('commission_percentage')
-        .eq('carrier_id', carrierId)
+        .eq('carrier_name', carrierName)
         .eq('product_name', productName)
         .eq('contract_level', contractLevel)
         .eq('is_active', true)

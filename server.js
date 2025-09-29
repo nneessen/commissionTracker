@@ -161,6 +161,21 @@ app.get('/rest/v1/commissions', createTableHandler('commissions', 'created_at DE
 // Expenses endpoint
 app.get('/rest/v1/expenses', createTableHandler('expenses', 'created_at DESC'));
 
+// Products endpoint - map to comp_guide table
+app.get('/rest/v1/products', createTableHandler('comp_guide', 'carrier_name ASC, product_name ASC'));
+
+// Comp Guide endpoint
+app.get('/rest/v1/comp_guide', createTableHandler('comp_guide', 'carrier_name ASC, product_name ASC, contract_level ASC'));
+
+// Carriers endpoint
+app.get('/rest/v1/carriers', createTableHandler('carriers', 'name ASC'));
+
+// Constants endpoint
+app.get('/rest/v1/constants', createTableHandler('constants', 'id ASC'));
+
+// Agents endpoint
+app.get('/rest/v1/agents', createTableHandler('agents', 'name ASC'));
+
 app.listen(PORT, () => {
   console.log(`🚀 Local API server running on http://localhost:${PORT}`);
   console.log(`📊 Database: PostgreSQL on localhost:54322`);

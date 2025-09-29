@@ -47,6 +47,11 @@ const CarrierForm: React.FC<CarrierFormProps> = ({ carrier, isOpen, onClose, onS
     e.preventDefault();
     try {
       if (carrier) {
+        if (!carrier.id) {
+          console.error('Attempting to update carrier without ID:', carrier);
+          alert('Cannot update carrier: Missing ID. Please refresh and try again.');
+          return;
+        }
         const updated = await carrierService.update(carrier.id, formData);
         onSave(updated);
       } else {
@@ -56,6 +61,7 @@ const CarrierForm: React.FC<CarrierFormProps> = ({ carrier, isOpen, onClose, onS
       onClose();
     } catch (error) {
       console.error('Error saving carrier:', error);
+      alert(`Error saving carrier: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
@@ -296,6 +302,7 @@ export const CarrierManager: React.FC = () => {
     try {
       setLoading(true);
       const data = await carrierService.getAll();
+      console.log('Loaded carriers:', data.map(c => ({ id: c.id, name: c.name })));
       setCarriers(data);
     } catch (error) {
       console.error('Error loading carriers:', error);
@@ -389,9 +396,9 @@ export const CarrierManager: React.FC = () => {
           </div>
         ) : (
           <div style={{ display: 'grid', gap: '16px' }}>
-            {filteredCarriers.map((carrier) => (
+            {filteredCarriers.map((carrier, index) => (
               <div
-                key={carrier.id}
+                key={carrier.id || `carrier-${index}`}
                 style={{
                   padding: '16px',
                   border: '1px solid #e2e8f0',
