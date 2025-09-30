@@ -1,9 +1,8 @@
 // /home/nneessen/projects/commissionTracker/src/hooks/useMetrics.ts
 
-import { useMemo } from 'react';
-import { usePolicy } from './usePolicy';
-import { useCommissions } from './useCommissions';
-import { useCarriers } from './useCarriers';
+import { usePolicies } from './policies/usePolicies';
+import { useCommissions } from './commissions/useCommissions';
+import { useCarriers } from './carriers/useCarriers';
 import {
   ClientMetrics,
   PolicyMetrics,
@@ -16,11 +15,15 @@ import {
 import { ProductType } from '../types/commission.types';
 
 export function useMetrics() {
-  const { policies } = usePolicy();
+  const { policies } = usePolicies();
   const { commissions } = useCommissions();
-  const { getCarrierById } = useCarriers();
+  const { carriers } = useCarriers();
 
-  const clientMetrics = useMemo((): ClientMetrics => {
+  // Helper function to get carrier by ID
+  const getCarrierById = (id: string) => carriers.find(c => c.id === id);
+
+  // Calculate client metrics
+  const calculateClientMetrics = (): ClientMetrics => {
     const uniqueClients = new Set(policies.map(p => p.client.name));
     const totalClients = uniqueClients.size;
 
@@ -108,7 +111,7 @@ export function useMetrics() {
       totalClients,
       averagePoliciesPerClient,
       clientLifetimeValue: totalLifetimeValue,
-      retentionRate: 0.85, // Placeholder - would need historical data
+      retentionRate: null, // Not yet implemented - requires historical data
       averageAge,
       averageLifetimeValue,
       stateDistribution: Object.fromEntries(stateDistribution),
@@ -118,9 +121,10 @@ export function useMetrics() {
       newClientsThisMonth,
       newClientsThisYear
     };
-  }, [policies]);
+  };
 
-  const policyMetrics = useMemo((): PolicyMetrics => {
+  // Calculate policy metrics
+  const calculatePolicyMetrics = (): PolicyMetrics => {
     const totalPolicies = policies.length;
     const activePolicies = policies.filter(p => p.status === 'active').length;
     const pendingPolicies = policies.filter(p => p.status === 'pending').length;
@@ -241,9 +245,10 @@ export function useMetrics() {
       policiesExpiringThisMonth,
       policiesExpiringThisQuarter
     };
-  }, [policies, getCarrierById]);
+  };
 
-  const commissionMetrics = useMemo((): CommissionMetrics => {
+  // Calculate commission metrics
+  const calculateCommissionMetrics = (): CommissionMetrics => {
     const totalEarned = commissions
       .filter(c => c.status === 'paid')
       .reduce((sum, c) => sum + c.commissionAmount, 0);
@@ -428,9 +433,10 @@ export function useMetrics() {
       expectedCommissionsNext30Days,
       expectedCommissionsNext90Days
     };
-  }, [commissions, policies, getCarrierById]);
+  };
 
-  const productPerformance = useMemo((): ProductPerformance[] => {
+  // Calculate product performance
+  const calculateProductPerformance = (): ProductPerformance[] => {
     const products = ['whole_life', 'term', 'universal_life', 'indexed_universal_life', 'accidental', 'final_expense', 'annuity'] as const;
 
     return products.map(product => {
@@ -449,9 +455,10 @@ export function useMetrics() {
         averageSize: averagePremium
       };
     });
-  }, [policies, commissions]);
+  };
 
-  const carrierPerformance = useMemo((): CarrierPerformance[] => {
+  // Calculate carrier performance
+  const calculateCarrierPerformance = (): CarrierPerformance[] => {
     const carrierMap = new Map<string, CarrierPerformance>();
 
     policies.forEach(policy => {
@@ -481,9 +488,10 @@ export function useMetrics() {
 
     return Array.from(carrierMap.values())
       .sort((a, b) => b.revenue - a.revenue);
-  }, [policies, getCarrierById]);
+  };
 
-  const statePerformance = useMemo((): StatePerformance[] => {
+  // Calculate state performance
+  const calculateStatePerformance = (): StatePerformance[] => {
     const stateMap = new Map<string, StatePerformance>();
 
     policies.forEach(policy => {
@@ -510,9 +518,10 @@ export function useMetrics() {
 
     return Array.from(stateMap.values())
       .sort((a, b) => b.revenue - a.revenue);
-  }, [policies]);
+  };
 
-  const forecastMetrics = useMemo((): ForecastMetrics => {
+  // Calculate forecast metrics
+  const calculateForecastMetrics = (): ForecastMetrics => {
     const now = new Date();
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
@@ -654,7 +663,16 @@ export function useMetrics() {
       projectedPolicyGrowth,
       renewalForecast
     };
-  }, [policies, commissions, productPerformance, carrierPerformance, commissionMetrics]);
+  };
+
+  // Calculate all metrics
+  const clientMetrics = calculateClientMetrics();
+  const policyMetrics = calculatePolicyMetrics();
+  const commissionMetrics = calculateCommissionMetrics();
+  const productPerformance = calculateProductPerformance();
+  const carrierPerformance = calculateCarrierPerformance();
+  const statePerformance = calculateStatePerformance();
+  const forecastMetrics = calculateForecastMetrics();
 
   return {
     clientMetrics,

@@ -6,7 +6,7 @@ export interface ClientMetrics {
   totalClients: number;
   averagePoliciesPerClient: number;
   clientLifetimeValue: number;
-  retentionRate: number;
+  retentionRate: number | null;
   averageAge: number;
   averageLifetimeValue: number;
   stateDistribution: Record<string, number>;
