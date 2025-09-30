@@ -1,4 +1,8 @@
 // /home/nneessen/projects/commissionTracker/src/hooks/policies/index.ts
 
-export * from './usePolicies';
-export * from './useCreatePolicy';
+// Simple, single-purpose hooks for policy operations
+export { usePolicies } from './usePolicies';
+export { usePoliciesList } from './usePoliciesList';
+export { useCreatePolicy } from './useCreatePolicy';
+export { useUpdatePolicy } from './useUpdatePolicy';
+export { useDeletePolicy } from './useDeletePolicy';

@@ -1,7 +1,7 @@
 // /home/nneessen/projects/commissionTracker/src/services/compGuide/compGuideService.ts
 // Service layer for Commission Guide data from Supabase database
 
-import { supabase } from '../base/supabase';
+import { supabase } from "../base/supabase";
 
 export interface CompGuideRecord {
   id: string;
@@ -28,8 +28,12 @@ export interface CompGuideFilters {
 export interface CompGuidePaginationOptions {
   page?: number;
   pageSize?: number;
-  sortBy?: 'carrier_name' | 'product_type' | 'commission_percentage' | 'contract_level';
-  sortOrder?: 'asc' | 'desc';
+  sortBy?:
+    | "carrier_name"
+    | "product_type"
+    | "commission_percentage"
+    | "contract_level";
+  sortOrder?: "asc" | "desc";
 }
 
 export interface CompGuideQueryResult {
@@ -41,33 +45,27 @@ export interface CompGuideQueryResult {
 }
 
 class CompGuideService {
-  private readonly tableName = 'comp_guide';
+  private readonly tableName = "comp_guide";
 
   /**
    * Get paginated commission guide data with filtering and search
    */
   async getCompGuideData(
     filters: CompGuideFilters = {},
-    pagination: CompGuidePaginationOptions = {}
+    pagination: CompGuidePaginationOptions = {},
   ): Promise<CompGuideQueryResult> {
     const {
       page = 1,
       pageSize = 50,
-      sortBy = 'carrier_name',
-      sortOrder = 'asc'
+      sortBy = "carrier_name",
+      sortOrder = "asc",
     } = pagination;
 
-    const {
-      carrierName,
-      productType,
-      contractLevel,
-      searchTerm
-    } = filters;
+    const { carrierName, productType, contractLevel, searchTerm } = filters;
 
     // Build the query with joins
-    let query = supabase
-      .from(this.tableName)
-      .select(`
+    let query = supabase.from(this.tableName).select(
+      `
         id,
         carrier_id,
         product_type,
@@ -81,29 +79,33 @@ class CompGuideService {
           id,
           name
         )
-      `, { count: 'exact' });
+      `,
+      { count: "exact" },
+    );
 
     // Apply filters
     if (carrierName) {
-      query = query.ilike('carriers.name', `%${carrierName}%`);
+      query = query.ilike("carriers.name", `%${carrierName}%`);
     }
 
     if (productType) {
-      query = query.eq('product_type', productType);
+      query = query.eq("product_type", productType);
     }
 
     if (contractLevel) {
       const compLevel = this.mapContractLevelToCompLevel(contractLevel);
-      query = query.eq('comp_level', compLevel);
+      query = query.eq("comp_level", compLevel);
     }
 
     if (searchTerm) {
-      query = query.or(`carriers.name.ilike.%${searchTerm}%,product_type.ilike.%${searchTerm}%`);
+      query = query.or(
+        `carriers.name.ilike.%${searchTerm}%,product_type.ilike.%${searchTerm}%`,
+      );
     }
 
     // Apply sorting - map to database column names
     const dbSortBy = this.mapSortField(sortBy);
-    query = query.order(dbSortBy, { ascending: sortOrder === 'asc' });
+    query = query.order(dbSortBy, { ascending: sortOrder === "asc" });
 
     // Apply pagination
     const from = (page - 1) * pageSize;
@@ -113,7 +115,9 @@ class CompGuideService {
     const { data, error, count } = await query;
 
     if (error) {
-      throw new Error(`Failed to fetch commission guide data: ${error.message}`);
+      throw new Error(
+        `Failed to fetch commission guide data: ${error.message}`,
+      );
     }
 
     const transformedData = (data || []).map(this.transformFromDB);
@@ -125,7 +129,7 @@ class CompGuideService {
       total,
       page,
       pageSize,
-      totalPages
+      totalPages,
     };
   }
 
@@ -134,15 +138,15 @@ class CompGuideService {
    */
   async getCarrierNames(): Promise<string[]> {
     const { data, error } = await supabase
-      .from('carriers')
-      .select('name')
-      .order('name');
+      .from("carriers")
+      .select("name")
+      .order("name");
 
     if (error) {
       throw new Error(`Failed to fetch carrier names: ${error.message}`);
     }
 
-    return (data || []).map(carrier => carrier.name);
+    return (data || []).map((carrier) => carrier.name);
   }
 
   /**
@@ -151,15 +155,17 @@ class CompGuideService {
   async getProductTypes(): Promise<string[]> {
     const { data, error } = await supabase
       .from(this.tableName)
-      .select('product_type')
-      .order('product_type');
+      .select("product_type")
+      .order("product_type");
 
     if (error) {
       throw new Error(`Failed to fetch product types: ${error.message}`);
     }
 
     // Get unique values
-    const uniqueTypes = Array.from(new Set((data || []).map(item => item.product_type)));
+    const uniqueTypes = Array.from(
+      new Set((data || []).map((item) => item.product_type)),
+    );
     return uniqueTypes;
   }
 
@@ -169,27 +175,32 @@ class CompGuideService {
   async getCommissionRate(
     carrierName: string,
     productType: string,
-    contractLevel: number
+    contractLevel: number,
   ): Promise<number | null> {
     const compLevel = this.mapContractLevelToCompLevel(contractLevel);
 
     const { data, error } = await supabase
       .from(this.tableName)
-      .select(`
+      .select(
+        `
         commission_percentage,
         carriers!inner(name)
-      `)
-      .ilike('carriers.name', `%${carrierName}%`)
-      .eq('product_type', productType)
-      .eq('comp_level', compLevel)
-      .gte('effective_date', new Date().toISOString().split('T')[0])
-      .or('expiration_date.is.null,expiration_date.gte.' + new Date().toISOString().split('T')[0])
-      .order('effective_date', { ascending: false })
+      `,
+      )
+      .ilike("carriers.name", `%${carrierName}%`)
+      .eq("product_type", productType)
+      .eq("comp_level", compLevel)
+      .gte("effective_date", new Date().toISOString().split("T")[0])
+      .or(
+        "expiration_date.is.null,expiration_date.gte." +
+          new Date().toISOString().split("T")[0],
+      )
+      .order("effective_date", { ascending: false })
       .limit(1)
       .single();
 
     if (error) {
-      if (error.code === 'PGRST116') {
+      if (error.code === "PGRST116") {
         return null; // Not found
       }
       throw new Error(`Failed to fetch commission rate: ${error.message}`);
@@ -201,7 +212,9 @@ class CompGuideService {
   /**
    * Export all commission guide data for CSV/PDF generation
    */
-  async exportAllData(filters: CompGuideFilters = {}): Promise<CompGuideRecord[]> {
+  async exportAllData(
+    filters: CompGuideFilters = {},
+  ): Promise<CompGuideRecord[]> {
     const { data } = await this.getCompGuideData(filters, { pageSize: 10000 });
     return data;
   }
@@ -213,7 +226,7 @@ class CompGuideService {
     return {
       id: dbRecord.id,
       carrierId: dbRecord.carrier_id,
-      carrierName: dbRecord.carriers?.name || 'Unknown Carrier',
+      carrierName: dbRecord.carriers?.name || "Unknown Carrier",
       productType: dbRecord.product_type,
       productName: this.formatProductName(dbRecord.product_type),
       compLevel: dbRecord.comp_level,
@@ -222,7 +235,7 @@ class CompGuideService {
       effectiveDate: dbRecord.effective_date,
       expirationDate: dbRecord.expiration_date,
       createdAt: dbRecord.created_at,
-      updatedAt: dbRecord.updated_at
+      updatedAt: dbRecord.updated_at,
     };
   }
 
@@ -230,10 +243,10 @@ class CompGuideService {
    * Map contract level number to comp_level enum
    */
   private mapContractLevelToCompLevel(contractLevel: number): string {
-    if (contractLevel >= 140) return 'premium';
-    if (contractLevel >= 120) return 'enhanced';
-    if (contractLevel >= 100) return 'release';
-    return 'street';
+    if (contractLevel >= 140) return "premium";
+    if (contractLevel >= 120) return "enhanced";
+    if (contractLevel >= 100) return "release";
+    return "street";
   }
 
   /**
@@ -241,10 +254,10 @@ class CompGuideService {
    */
   private mapCompLevelToContractLevel(compLevel: string): number {
     const mapping = {
-      'street': 80,
-      'release': 100,
-      'enhanced': 120,
-      'premium': 140
+      street: 80,
+      release: 100,
+      enhanced: 120,
+      premium: 140,
     };
     return mapping[compLevel as keyof typeof mapping] || 100;
   }
@@ -254,13 +267,13 @@ class CompGuideService {
    */
   private formatProductName(productType: string): string {
     const mapping = {
-      'whole_life': 'Whole Life',
-      'term_life': 'Term Life',
-      'universal_life': 'Universal Life',
-      'variable_life': 'Variable Life',
-      'health': 'Health',
-      'disability': 'Disability',
-      'annuity': 'Annuity'
+      whole_life: "Whole Life",
+      term_life: "Term Life",
+      universal_life: "Universal Life",
+      variable_life: "Variable Life",
+      health: "Health",
+      disability: "Disability",
+      annuity: "Annuity",
     };
     return mapping[productType as keyof typeof mapping] || productType;
   }
@@ -270,12 +283,12 @@ class CompGuideService {
    */
   private mapSortField(sortBy: string): string {
     const mapping = {
-      'carrier_name': 'carriers.name',
-      'product_type': 'product_type',
-      'commission_percentage': 'commission_percentage',
-      'contract_level': 'comp_level'
+      carrier_name: "carriers.name",
+      product_type: "product_type",
+      commission_percentage: "commission_percentage",
+      contract_level: "comp_level",
     };
-    return mapping[sortBy as keyof typeof mapping] || 'carriers.name';
+    return mapping[sortBy as keyof typeof mapping] || "carriers.name";
   }
 
   /**
@@ -287,26 +300,41 @@ class CompGuideService {
     productTypes: number;
     averageCommission: number;
   }> {
-    const [recordsResult, carriersResult, productsResult, avgResult] = await Promise.all([
-      supabase.from(this.tableName).select('id', { count: 'exact', head: true }),
-      supabase.from('carriers').select('id', { count: 'exact', head: true }),
-      supabase.from(this.tableName).select('product_type').then(({ data }) =>
-        data ? Array.from(new Set(data.map(item => item.product_type))).length : 0
-      ),
-      supabase.from(this.tableName).select('commission_percentage').then(({ data }) => {
-        if (!data || data.length === 0) return 0;
-        const avg = data.reduce((sum, item) => sum + item.commission_percentage, 0) / data.length;
-        return avg * 100; // Convert to percentage
-      })
-    ]);
+    const [recordsResult, carriersResult, productsResult, avgResult] =
+      await Promise.all([
+        supabase
+          .from(this.tableName)
+          .select("id", { count: "exact", head: true }),
+        supabase.from("carriers").select("id", { count: "exact", head: true }),
+        supabase
+          .from(this.tableName)
+          .select("product_type")
+          .then(({ data }) =>
+            data
+              ? Array.from(new Set(data.map((item) => item.product_type)))
+                  .length
+              : 0,
+          ),
+        supabase
+          .from(this.tableName)
+          .select("commission_percentage")
+          .then(({ data }) => {
+            if (!data || data.length === 0) return 0;
+            const avg =
+              data.reduce((sum, item) => sum + item.commission_percentage, 0) /
+              data.length;
+            return avg * 100; // Convert to percentage
+          }),
+      ]);
 
     return {
       totalRecords: recordsResult.count || 0,
       uniqueCarriers: carriersResult.count || 0,
       productTypes: productsResult,
-      averageCommission: avgResult
+      averageCommission: avgResult,
     };
   }
 }
 
 export const compGuideService = new CompGuideService();
+

@@ -3,6 +3,7 @@ import { Upload, X, Check, AlertCircle, Download, Eye } from 'lucide-react';
 import { FFG_COMP_GUIDE_DATA, getUniqueCarriers, getProductsByCarrier } from '../data/ffgCompGuideData';
 import { Carrier } from '../../../types/carrier.types';
 import { CompGuideEntry, NewCompGuideForm } from '../../../types/compGuide.types';
+import { Database } from '../../../types/database.types';
 import { carrierService } from '../../../services/settings/carrierService';
 import { compGuideService } from '../../../services/settings/compGuideService';
 
@@ -18,7 +19,7 @@ interface ImportSummary {
   carriersToCreate: string[];
   existingCarriers: string[];
   productsToImport: number;
-  contractLevels: number[];
+  compLevels: Database["public"]["Enums"]["comp_level"][];
 }
 
 export const CompGuideImporter: React.FC<CompGuideImporterProps> = ({
@@ -62,12 +63,20 @@ export const CompGuideImporter: React.FC<CompGuideImporterProps> = ({
       existingCarriers.some(existing => existing.name === carrier)
     );
 
+    // Map contract level to comp level enum
+    const mapCompLevel = (contractLevel: number): Database["public"]["Enums"]["comp_level"] => {
+      if (contractLevel <= 85) return 'street';
+      if (contractLevel <= 100) return 'release';
+      if (contractLevel <= 120) return 'enhanced';
+      return 'premium';
+    };
+
     return {
       totalRecords: filteredData.length,
       carriersToCreate,
       existingCarriers: existingCarrierNames,
       productsToImport: [...new Set(filteredData.map(item => item.product))].length,
-      contractLevels: [...new Set(filteredData.map(item => item.contractLevel))].sort((a, b) => a - b)
+      compLevels: [...new Set(filteredData.map(item => mapCompLevel(item.contractLevel)))]
     };
   };
 
@@ -121,13 +130,17 @@ export const CompGuideImporter: React.FC<CompGuideImporterProps> = ({
 
       for (const carrierName of carriersToCreate) {
         try {
-          const newCarrier = await carrierService.create({
+          const { data: newCarrier, error } = await carrierService.createCarrier({
             name: carrierName,
+            short_name: carrierName,
             is_active: true,
             default_commission_rates: {},
             contact_info: {}
           });
-          newCarrierIds[carrierName] = newCarrier.id;
+          if (error) throw new Error(error.message);
+          if (newCarrier) {
+            newCarrierIds[carrierName] = newCarrier.id;
+          }
         } catch (error) {
           errors.push(`Failed to create carrier ${carrierName}: ${error}`);
         }
@@ -151,17 +164,44 @@ export const CompGuideImporter: React.FC<CompGuideImporterProps> = ({
               throw new Error(`No carrier ID found for ${item.carrier}`);
             }
 
-            const formData: NewCompGuideForm = {
-              carrier_id: carrierId,
-              product_name: item.product,
-              contract_level: item.contractLevel,
-              commission_percentage: item.commissionRate,
-              effective_date: new Date(item.effectiveDate),
-              is_active: true
+            // Map the product type from FFG data to database enum
+            const mapProductType = (product: string): Database["public"]["Enums"]["product_type"] => {
+              const productMap: Record<string, Database["public"]["Enums"]["product_type"]> = {
+                'Term Life': 'term_life',
+                'Whole Life': 'whole_life',
+                'Universal Life': 'universal_life',
+                'Variable Life': 'variable_life',
+                'Health': 'health',
+                'Disability': 'disability',
+                'Annuity': 'annuity'
+              };
+              return productMap[product] || 'other';
             };
 
-            const created = await compGuideService.create(formData);
-            imported.push(created);
+            // Map contract level to comp level enum
+            const mapCompLevel = (contractLevel: number): Database["public"]["Enums"]["comp_level"] => {
+              if (contractLevel <= 85) return 'street';
+              if (contractLevel <= 100) return 'release';
+              if (contractLevel <= 120) return 'enhanced';
+              return 'premium';
+            };
+
+            const formData: NewCompGuideForm = {
+              carrier_id: carrierId,
+              product_type: mapProductType(item.product),
+              comp_level: mapCompLevel(item.contractLevel),
+              commission_percentage: item.commissionRate,
+              bonus_percentage: 0,
+              effective_date: new Date(item.effectiveDate).toISOString().split('T')[0],
+              minimum_premium: 0,
+              maximum_premium: 0
+            };
+
+            const { data: created, error: createError } = await compGuideService.createEntry(formData);
+            if (createError) throw new Error(createError.message);
+            if (created) {
+              imported.push(created);
+            }
           } catch (error) {
             errors.push(`Failed to import ${item.carrier} - ${item.product} (${item.contractLevel}): ${error}`);
           }
@@ -308,7 +348,7 @@ export const CompGuideImporter: React.FC<CompGuideImporterProps> = ({
                 <div>
                   <span style={{ fontSize: '14px', color: '#6b7280' }}>Contract Levels</span>
                   <div style={{ fontSize: '20px', fontWeight: '600' }}>
-                    {summary.contractLevels.length} ({summary.contractLevels[0]}-{summary.contractLevels[summary.contractLevels.length - 1]})
+                    {summary.compLevels.length} ({summary.compLevels[0]}-{summary.compLevels[summary.compLevels.length - 1]})
                   </div>
                 </div>
               </div>

@@ -15,6 +15,7 @@ import { DashboardHome } from "./features/dashboard";
 import { CommissionGuide } from "./features/commission-guide";
 import { SettingsDashboard } from "./features/settings";
 import { ExpensesProvider } from "./contexts/ExpensesContext";
+import { Login } from "./features/auth/Login";
 
 // Create root route with App layout and ExpensesProvider
 const rootRoute = new RootRoute({
@@ -38,6 +39,13 @@ const dashboardRoute = new Route({
   getParentRoute: () => rootRoute,
   path: "dashboard",
   component: DashboardHome,
+});
+
+// Login route
+const loginRoute = new Route({
+  getParentRoute: () => rootRoute,
+  path: "login",
+  component: Login,
 });
 
 // Policies route
@@ -115,6 +123,7 @@ const clientsRoute = new Route({
 const routeTree = rootRoute.addChildren([
   indexRoute,
   dashboardRoute,
+  loginRoute,
   policiesRoute,
   analyticsRoute,
   commissionGuideRoute,

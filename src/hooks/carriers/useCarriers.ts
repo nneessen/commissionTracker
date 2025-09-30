@@ -1,0 +1,232 @@
+// /home/nneessen/projects/commissionTracker/src/hooks/carriers/useCarriers.ts
+
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { carrierService } from '../../services/settings/carrierService';
+import { Carrier, NewCarrierForm } from '../../types/carrier.types';
+
+// Query keys for React Query cache management
+export const carrierQueryKeys = {
+  all: ['carriers'] as const,
+  lists: () => [...carrierQueryKeys.all, 'list'] as const,
+  list: () => [...carrierQueryKeys.lists()] as const,
+  detail: (id: string) => [...carrierQueryKeys.all, 'detail', id] as const,
+  active: () => [...carrierQueryKeys.all, 'active'] as const,
+  byName: (name: string) => [...carrierQueryKeys.all, 'byName', name] as const,
+  search: (term: string) => [...carrierQueryKeys.all, 'search', term] as const,
+};
+
+/**
+ * Hook to fetch all carriers
+ */
+export function useCarriers(options?: {
+  enabled?: boolean;
+  staleTime?: number;
+  refetchOnWindowFocus?: boolean;
+}) {
+  const {
+    enabled = true,
+    staleTime = 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus = false
+  } = options || {};
+
+  return useQuery({
+    queryKey: carrierQueryKeys.list(),
+    queryFn: async () => {
+      const result = await carrierService.getAll();
+      if (result.success && result.data) {
+        return result.data;
+      }
+      throw new Error(result.error?.message || 'Failed to fetch carriers');
+    },
+    enabled,
+    staleTime,
+    refetchOnWindowFocus,
+  });
+}
+
+/**
+ * Hook to fetch a carrier by ID
+ */
+export function useCarrier(id: string, options?: {
+  enabled?: boolean;
+  staleTime?: number;
+}) {
+  const {
+    enabled = true,
+    staleTime = 5 * 60 * 1000,
+  } = options || {};
+
+  return useQuery({
+    queryKey: carrierQueryKeys.detail(id),
+    queryFn: async () => {
+      const result = await carrierService.getById(id);
+      if (result.success) {
+        return result.data;
+      }
+      throw new Error(result.error?.message || 'Failed to fetch carrier');
+    },
+    enabled: enabled && !!id,
+    staleTime,
+  });
+}
+
+/**
+ * Hook to fetch active carriers only
+ */
+export function useActiveCarriers(options?: {
+  enabled?: boolean;
+  staleTime?: number;
+}) {
+  const {
+    enabled = true,
+    staleTime = 5 * 60 * 1000,
+  } = options || {};
+
+  return useQuery({
+    queryKey: carrierQueryKeys.active(),
+    queryFn: async () => {
+      const result = await carrierService.getActiveCarriers();
+      if (result.success && result.data) {
+        return result.data;
+      }
+      throw new Error(result.error?.message || 'Failed to fetch active carriers');
+    },
+    enabled,
+    staleTime,
+  });
+}
+
+/**
+ * Hook to search carriers by name
+ */
+export function useSearchCarriers(searchTerm: string, options?: {
+  enabled?: boolean;
+  staleTime?: number;
+}) {
+  const {
+    enabled = true,
+    staleTime = 30 * 1000, // 30 seconds for search results
+  } = options || {};
+
+  return useQuery({
+    queryKey: carrierQueryKeys.search(searchTerm),
+    queryFn: async () => {
+      if (!searchTerm.trim()) {
+        return [];
+      }
+      const result = await carrierService.searchCarriers(searchTerm);
+      if (result.success && result.data) {
+        return result.data;
+      }
+      throw new Error(result.error?.message || 'Failed to search carriers');
+    },
+    enabled: enabled && searchTerm.length > 0,
+    staleTime,
+  });
+}
+
+/**
+ * Hook to create a new carrier
+ */
+export function useCreateCarrier() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: NewCarrierForm) => {
+      const result = await carrierService.create(data);
+      if (result.success && result.data) {
+        return result.data;
+      }
+      throw new Error(result.error?.message || 'Failed to create carrier');
+    },
+    onSuccess: (newCarrier) => {
+      // Invalidate and refetch carriers list
+      queryClient.invalidateQueries({ queryKey: carrierQueryKeys.lists() });
+      // Add the new carrier to the cache
+      queryClient.setQueryData(carrierQueryKeys.detail(newCarrier.id), newCarrier);
+    },
+    onError: (error) => {
+      console.error('Error creating carrier:', error);
+    },
+  });
+}
+
+/**
+ * Hook to update a carrier
+ */
+export function useUpdateCarrier() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Partial<Carrier> }) => {
+      const result = await carrierService.update(id, data);
+      if (result.success && result.data) {
+        return result.data;
+      }
+      throw new Error(result.error?.message || 'Failed to update carrier');
+    },
+    onSuccess: (updatedCarrier) => {
+      // Update the specific carrier in cache
+      queryClient.setQueryData(carrierQueryKeys.detail(updatedCarrier.id), updatedCarrier);
+      // Invalidate lists to ensure they're fresh
+      queryClient.invalidateQueries({ queryKey: carrierQueryKeys.lists() });
+    },
+    onError: (error) => {
+      console.error('Error updating carrier:', error);
+    },
+  });
+}
+
+/**
+ * Hook to delete a carrier
+ */
+export function useDeleteCarrier() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const result = await carrierService.delete(id);
+      if (!result.success) {
+        throw new Error(result.error?.message || 'Failed to delete carrier');
+      }
+    },
+    onSuccess: (_, deletedId) => {
+      // Remove from cache
+      queryClient.removeQueries({ queryKey: carrierQueryKeys.detail(deletedId) });
+      // Invalidate lists
+      queryClient.invalidateQueries({ queryKey: carrierQueryKeys.lists() });
+    },
+    onError: (error) => {
+      console.error('Error deleting carrier:', error);
+    },
+  });
+}
+
+/**
+ * Legacy compatibility hook that mimics the old useCarriers behavior
+ */
+export function useLegacyCarriers() {
+  const { data: carriers = [], isLoading } = useCarriers();
+  const createMutation = useCreateCarrier();
+  const updateMutation = useUpdateCarrier();
+  const deleteMutation = useDeleteCarrier();
+  const { data: activeCarriers = [] } = useActiveCarriers();
+
+  return {
+    carriers,
+    isLoading,
+    addCarrier: (form: NewCarrierForm) => {
+      return createMutation.mutateAsync(form);
+    },
+    updateCarrier: (id: string, updates: Partial<Carrier>) => {
+      return updateMutation.mutateAsync({ id, data: updates });
+    },
+    deleteCarrier: (id: string) => {
+      return deleteMutation.mutateAsync(id);
+    },
+    getCarrierById: (id: string) => {
+      return carriers.find(c => c.id === id);
+    },
+    getActiveCarriers: () => activeCarriers,
+  };
+}

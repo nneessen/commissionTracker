@@ -2,26 +2,27 @@
 import React, { useState } from "react";
 import { Outlet, useNavigate } from "@tanstack/react-router";
 import { Sidebar } from "./components/layout";
+import { useAuth } from "./contexts/AuthContext";
+import { Login } from "./features/auth/Login";
 import "./App.css";
 
 function App() {
-  // State for user authentication
-  const [user, setUser] = useState({
-    name: "Nick Neessen",
-    email: "nick@commissiontracker.io",
-    isAuthenticated: true,
-  });
+  // Get authentication state from AuthContext
+  const { user, loading, signOut } = useAuth();
 
   // Sidebar state
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const navigate = useNavigate();
 
   // Logout handler
-  const handleLogout = () => {
+  const handleLogout = async () => {
     if (window.confirm("Are you sure you want to logout?")) {
-      setUser((prev) => ({ ...prev, isAuthenticated: false }));
-      console.log("User logged out");
-      navigate({ to: "/" });
+      try {
+        await signOut();
+        navigate({ to: "/" });
+      } catch (error) {
+        console.error("Logout error:", error);
+      }
     }
   };
 
@@ -30,17 +31,34 @@ function App() {
     setIsSidebarCollapsed((prev) => !prev);
   };
 
+  // Handle successful login
+  const handleLoginSuccess = () => {
+    navigate({ to: "/" });
+  };
+
+  // Show loading state while checking authentication
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-lg">Loading...</div>
+      </div>
+    );
+  }
+
+  // Show login if not authenticated
+  if (!user) {
+    return <Login onSuccess={handleLoginSuccess} />;
+  }
+
   return (
     <div className="app-container">
-      {user.isAuthenticated && (
-        <Sidebar
-          isCollapsed={isSidebarCollapsed}
-          onToggleCollapse={toggleSidebar}
-          userName={user.name}
-          userEmail={user.email}
-          onLogout={handleLogout}
-        />
-      )}
+      <Sidebar
+        isCollapsed={isSidebarCollapsed}
+        onToggleCollapse={toggleSidebar}
+        userName={user.name || user.email?.split('@')[0] || 'User'}
+        userEmail={user.email || ''}
+        onLogout={handleLogout}
+      />
 
       <div className="main-content">
         <div className="app">

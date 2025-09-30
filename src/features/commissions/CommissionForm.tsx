@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Modal, Button, Input, Select } from '../../components/ui';
 import { NewCommissionForm, ProductType, SelectOption } from '../../types';
+import { Carrier } from '../../types/carrier.types';
 import { useCarriers, useCreateCommission } from '../../hooks';
 
 interface CommissionFormProps {
@@ -75,8 +76,10 @@ export const CommissionForm: React.FC<CommissionFormProps> = ({
   isOpen,
   onClose,
 }) => {
-  const { activeCarriers, getCarrierById } = useCarriers();
-  const { createCommission, isCreating, error } = useCreateCommission();
+  const { carriers, getCarrierById, getActiveCarriers } = useCarriers();
+  const { mutate: createCommission, isPending: isCreating, error } = useCreateCommission();
+
+  const activeCarriers = getActiveCarriers();
 
   const [formData, setFormData] = useState<NewCommissionForm>({
     clientName: '',
@@ -89,7 +92,7 @@ export const CommissionForm: React.FC<CommissionFormProps> = ({
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const carrierOptions: SelectOption[] = activeCarriers.map((carrier) => ({
+  const carrierOptions: SelectOption[] = activeCarriers.map((carrier: Carrier) => ({
     value: carrier.id,
     label: carrier.name,
   }));
@@ -125,14 +128,28 @@ export const CommissionForm: React.FC<CommissionFormProps> = ({
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     if (validateForm()) {
-      const result = await createCommission(formData);
-      if (result) {
-        resetForm();
-        onClose();
-      }
-      // Error handling is managed by the hook
+      // Transform form data to match CreateCommissionData structure
+      const commissionData = {
+        ...formData,
+        client: {
+          firstName: formData.clientName.split(' ')[0] || '',
+          lastName: formData.clientName.split(' ').slice(1).join(' ') || '',
+          state: formData.clientState,
+        },
+        agentId: 'default-agent', // You may want to get this from a context or user state
+        type: 'new_business', // Default type for new commissions
+        status: 'pending',
+        calculationBasis: 'annual_premium',
+      };
+
+      createCommission(commissionData, {
+        onSuccess: () => {
+          resetForm();
+          onClose();
+        }
+      });
     }
   };
 
@@ -260,7 +277,9 @@ export const CommissionForm: React.FC<CommissionFormProps> = ({
         {/* Error Display */}
         {error && (
           <div className="rounded-md bg-red-50 p-4">
-            <div className="text-sm text-red-700">{error}</div>
+            <div className="text-sm text-red-700">
+              {error instanceof Error ? error.message : String(error)}
+            </div>
           </div>
         )}
 

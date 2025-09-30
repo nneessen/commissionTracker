@@ -2,7 +2,7 @@
 
 import { usePolicies } from './policies/usePolicies';
 import { useCommissions } from './commissions/useCommissions';
-import { useCarriers } from './carriers/useCarriers';
+import { useCarriers } from './useCarriers';
 import {
   ClientMetrics,
   PolicyMetrics,

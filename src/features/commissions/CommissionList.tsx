@@ -7,17 +7,18 @@ import { CommissionForm } from './CommissionForm';
 
 export const CommissionList: React.FC = () => {
   const { paginatedCommissions: commissions, refresh } = useCommissions();
-  const { deleteCommission, isDeleting } = useDeleteCommission();
+  const { mutate: deleteCommission, isPending: isDeleting } = useDeleteCommission();
   const { metrics: commissionSummary } = useCommissionMetrics();
   const { getCarrierById } = useCarriers();
   const [showAddModal, setShowAddModal] = useState(false);
 
   const handleDeleteCommission = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this commission?')) {
-      const success = await deleteCommission(id);
-      if (success) {
-        refresh(); // Refresh the list after deletion
-      }
+      deleteCommission(id, {
+        onSuccess: () => {
+          refresh(); // Refresh the list after deletion
+        }
+      });
     }
   };
 

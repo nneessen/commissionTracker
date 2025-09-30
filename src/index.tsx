@@ -6,6 +6,7 @@ import { RouterProvider } from '@tanstack/react-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { router } from './router';
+import { AuthProvider } from './contexts/AuthContext';
 import reportWebVitals from './reportWebVitals';
 
 // Create a QueryClient instance with optimized defaults
@@ -34,8 +35,10 @@ const root = ReactDOM.createRoot(
 root.render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
-      <ReactQueryDevtools initialIsOpen={false} />
+      <AuthProvider>
+        <RouterProvider router={router} />
+        <ReactQueryDevtools initialIsOpen={false} />
+      </AuthProvider>
     </QueryClientProvider>
   </React.StrictMode>
 );

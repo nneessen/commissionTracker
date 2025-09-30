@@ -6,6 +6,95 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-09-30 18:57:20
+
+### Changed Files
+- `.env`
+- `.env.example`
+- `2025-09-30-THIS-PLAN-FIRST.txt`
+- `2025-09-30-this-session-is-being-continued-from-a-previous-co.txt`
+- `database/fix-rls-policies.sql`
+- `database/init/01-schema.sql`
+- `database/migrations/002_remove_agents_use_users.sql`
+- `database/migrations/003_rls_policies_auth.sql`
+- `database/migrations/004_user_metadata_setup.sql`
+- `database/migrations/005_fix_rls_security.sql`
+- `database/quick-fix-rls.sql`
+- `package-lock.json`
+- `package.json`
+- `plans/carriers-products-comps-implementation.md`
+- `plans/fix-all-types.md`
+- `plans/fix-carrier-update-error-2025-01-29.md`
+- `plans/fix-local-api-errors.md`
+- `plans/services-crud-operations-fix.md`
+- `plans/supabase-integration-completion.md`
+- `scripts/fix-rls.sh`
+- `src/App.tsx`
+- `src/components/ProtectedRoute.tsx`
+- `src/contexts/AuthContext.tsx`
+- `src/features/auth/Login.tsx`
+- `src/features/commissions/CommissionForm.tsx`
+- `src/features/commissions/CommissionList.tsx`
+- `src/features/expenses/ExpenseManager.tsx`
+- `src/features/settings/carriers/CarrierManager.tsx`
+- `src/features/settings/components/CompGuideImporter.tsx`
+- `src/features/settings/products/ProductManager.tsx`
+- `src/hooks/base/index.ts`
+- `src/hooks/carriers/index.ts`
+- `src/hooks/carriers/useCarriers.ts`
+- `src/hooks/carriers/useCarriersList.ts`
+- `src/hooks/carriers/useCreateCarrier.ts`
+- `src/hooks/carriers/useDeleteCarrier.ts`
+- `src/hooks/carriers/useUpdateCarrier.ts`
+- `src/hooks/commissions/index.ts`
+- `src/hooks/commissions/useCommissionsList.ts`
+- `src/hooks/commissions/useCreateCommission.ts`
+- `src/hooks/commissions/useDeleteCommission.ts`
+- `src/hooks/commissions/useUpdateCommission.ts`
+- `src/hooks/expenses/index.ts`
+- `src/hooks/expenses/useCreateExpense.ts`
+- `src/hooks/expenses/useDeleteExpense.ts`
+- `src/hooks/expenses/useExpensesList.ts`
+- `src/hooks/expenses/useUpdateExpense.ts`
+- `src/hooks/policies/index.ts`
+- `src/hooks/policies/useCreatePolicy.ts`
+- `src/hooks/policies/useDeletePolicy.ts`
+- `src/hooks/policies/usePoliciesList.ts`
+- `src/hooks/policies/useUpdatePolicy.ts`
+- `src/hooks/useCarriers.ts`
+- `src/hooks/useMetrics.ts`
+- `src/index.tsx`
+- `src/reportWebVitals.ts`
+- `src/router.tsx`
+- `src/services/base/BaseRepository.ts`
+- `src/services/base/BaseService.ts`
+- `src/services/base/localApi.ts`
+- `src/services/base/logger.ts`
+- `src/services/base/supabase.ts`
+- `src/services/commissions/commissionService.ts`
+- `src/services/compGuide/compGuideService.ts`
+- `src/services/settings/CarrierRepository.ts`
+- `src/services/settings/CompGuideRepository.ts`
+- `src/services/settings/ProductService.ts`
+- `src/services/settings/agentService.ts`
+- `src/services/settings/carrierService.ts`
+- `src/services/settings/compGuideService.ts`
+- `src/services/settings/constantsService.ts`
+- `src/services/settings/userService.ts`
+- `src/setupTests.ts`
+- `src/types/commission.types.ts`
+- `src/types/compGuide.types.ts`
+- `src/types/database.types.ts`
+- `src/types/user.types.ts`
+- `supabase/.temp/cli-latest`
+- `supabase/migrations/003_optimize_performance_schema.sql`
+- `vitest.config.ts`
+
+### Statistics
+```
+ 80 files changed, 7771 insertions(+), 4411 deletions(-)
+```
+
 ## [Checkpoint] - 2025-09-29 18:25:02
 
 ### Changed Files

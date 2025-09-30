@@ -1,6 +1,9 @@
+// /home/nneessen/projects/commissionTracker/src/features/settings/products/ProductManager.tsx
+
 import React, { useState, useEffect } from 'react';
 import { Package, Plus, Edit2, Trash2, Search, Filter, Download, Upload, X, Calendar } from 'lucide-react';
 import { CompGuideEntry, NewCompGuideForm, CompGuideFilters } from '../../../types/compGuide.types';
+import { Database } from '../../../types/database.types';
 import { Carrier } from '../../../types/carrier.types';
 import { compGuideService } from '../../../services/settings/compGuideService';
 import { carrierService } from '../../../services/settings/carrierService';
@@ -17,44 +20,48 @@ interface ProductFormProps {
 const ProductForm: React.FC<ProductFormProps> = ({ entry, carriers, isOpen, onClose, onSave }) => {
   const [formData, setFormData] = useState<NewCompGuideForm>({
     carrier_id: '',
-    product_name: '',
-    contract_level: 100,
+    product_type: 'term_life' as Database["public"]["Enums"]["product_type"],
+    comp_level: 'street' as Database["public"]["Enums"]["comp_level"],
     commission_percentage: 0,
-    first_year_percentage: 0,
-    renewal_percentage: 0,
-    trail_percentage: 0,
-    effective_date: new Date(),
-    is_active: true,
-    notes: ''
+    bonus_percentage: 0,
+    effective_date: new Date().toISOString().split('T')[0],
+    minimum_premium: 0,
+    maximum_premium: 0
   });
+
+  // Available enum values
+  const productTypes: Database["public"]["Enums"]["product_type"][] = [
+    'term_life', 'whole_life', 'universal_life', 'variable_life',
+    'health', 'disability', 'annuity', 'other'
+  ];
+
+  const compLevels: Database["public"]["Enums"]["comp_level"][] = [
+    'street', 'release', 'enhanced', 'premium'
+  ];
 
   useEffect(() => {
     if (entry) {
       setFormData({
         carrier_id: entry.carrier_id,
-        product_name: entry.product_name,
-        contract_level: entry.contract_level,
+        product_type: entry.product_type,
+        comp_level: entry.comp_level,
         commission_percentage: entry.commission_percentage,
-        first_year_percentage: entry.first_year_percentage || 0,
-        renewal_percentage: entry.renewal_percentage || 0,
-        trail_percentage: entry.trail_percentage || 0,
-        effective_date: entry.effective_date ? new Date(entry.effective_date) : new Date(),
-        expiration_date: entry.expiration_date ? new Date(entry.expiration_date) : undefined,
-        is_active: entry.is_active,
-        notes: entry.notes || ''
+        bonus_percentage: entry.bonus_percentage || 0,
+        effective_date: entry.effective_date,
+        expiration_date: entry.expiration_date,
+        minimum_premium: entry.minimum_premium || 0,
+        maximum_premium: entry.maximum_premium || 0
       });
     } else {
       setFormData({
         carrier_id: '',
-        product_name: '',
-        contract_level: 100,
+        product_type: 'term_life',
+        comp_level: 'street',
         commission_percentage: 0,
-        first_year_percentage: 0,
-        renewal_percentage: 0,
-        trail_percentage: 0,
-        effective_date: new Date(),
-        is_active: true,
-        notes: ''
+        bonus_percentage: 0,
+        effective_date: new Date().toISOString().split('T')[0],
+        minimum_premium: 0,
+        maximum_premium: 0
       });
     }
   }, [entry]);
@@ -63,11 +70,13 @@ const ProductForm: React.FC<ProductFormProps> = ({ entry, carriers, isOpen, onCl
     e.preventDefault();
     try {
       if (entry) {
-        const updated = await compGuideService.update(entry.id, formData);
-        onSave(updated);
+        const { data: updated, error: updateError } = await compGuideService.updateEntry(entry.id, formData);
+        if (updateError) throw new Error(updateError.message);
+        if (updated) onSave(updated);
       } else {
-        const created = await compGuideService.create(formData);
-        onSave(created);
+        const { data: created, error: createError } = await compGuideService.createEntry(formData);
+        if (createError) throw new Error(createError.message);
+        if (created) onSave(created);
       }
       onClose();
     } catch (error) {
@@ -137,7 +146,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ entry, carriers, isOpen, onCl
                 }}
               >
                 <option value="">Select a carrier</option>
-                {carriers.filter(c => c.is_active).map((carrier, idx) => (
+                {carriers.filter(c => c.is_active).map((carrier) => (
                   <option key={carrier.id} value={carrier.id}>
                     {carrier.name}
                   </option>
@@ -147,12 +156,11 @@ const ProductForm: React.FC<ProductFormProps> = ({ entry, carriers, isOpen, onCl
 
             <div>
               <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
-                Product Name *
+                Product Type *
               </label>
-              <input
-                type="text"
-                value={formData.product_name}
-                onChange={(e) => setFormData({ ...formData, product_name: e.target.value })}
+              <select
+                value={formData.product_type}
+                onChange={(e) => setFormData({ ...formData, product_type: e.target.value as Database["public"]["Enums"]["product_type"] })}
                 required
                 style={{
                   width: '100%',
@@ -161,24 +169,24 @@ const ProductForm: React.FC<ProductFormProps> = ({ entry, carriers, isOpen, onCl
                   borderRadius: '8px',
                   fontSize: '14px'
                 }}
-              />
+              >
+                {productTypes.map(type => (
+                  <option key={type} value={type}>
+                    {type.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
             <div>
               <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
-                Contract Level * (80-145)
+                Comp Level *
               </label>
-              <input
-                type="number"
-                min="80"
-                max="145"
-                value={formData.contract_level}
-                onChange={(e) => {
-                  const val = parseInt(e.target.value);
-                  setFormData({ ...formData, contract_level: isNaN(val) ? 100 : val });
-                }}
+              <select
+                value={formData.comp_level}
+                onChange={(e) => setFormData({ ...formData, comp_level: e.target.value as Database["public"]["Enums"]["comp_level"] })}
                 required
                 style={{
                   width: '100%',
@@ -187,7 +195,13 @@ const ProductForm: React.FC<ProductFormProps> = ({ entry, carriers, isOpen, onCl
                   borderRadius: '8px',
                   fontSize: '14px'
                 }}
-              />
+              >
+                {compLevels.map(level => (
+                  <option key={level} value={level}>
+                    {level.charAt(0).toUpperCase() + level.slice(1)}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div>
@@ -216,19 +230,19 @@ const ProductForm: React.FC<ProductFormProps> = ({ entry, carriers, isOpen, onCl
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', marginBottom: '20px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
             <div>
               <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
-                First Year %
+                Bonus %
               </label>
               <input
                 type="number"
                 step="0.001"
                 min="0"
-                value={formData.first_year_percentage || ''}
+                value={formData.bonus_percentage || ''}
                 onChange={(e) => {
                   const val = e.target.value ? parseFloat(e.target.value) : undefined;
-                  setFormData({ ...formData, first_year_percentage: val !== undefined && !isNaN(val) ? val : undefined });
+                  setFormData({ ...formData, bonus_percentage: val !== undefined && !isNaN(val) ? val : undefined });
                 }}
                 style={{
                   width: '100%',
@@ -242,40 +256,13 @@ const ProductForm: React.FC<ProductFormProps> = ({ entry, carriers, isOpen, onCl
 
             <div>
               <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
-                Renewal %
+                Effective Date *
               </label>
               <input
-                type="number"
-                step="0.001"
-                min="0"
-                value={formData.renewal_percentage || ''}
-                onChange={(e) => {
-                  const val = e.target.value ? parseFloat(e.target.value) : undefined;
-                  setFormData({ ...formData, renewal_percentage: val !== undefined && !isNaN(val) ? val : undefined });
-                }}
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '8px',
-                  fontSize: '14px'
-                }}
-              />
-            </div>
-
-            <div>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
-                Trail %
-              </label>
-              <input
-                type="number"
-                step="0.001"
-                min="0"
-                value={formData.trail_percentage || ''}
-                onChange={(e) => {
-                  const val = e.target.value ? parseFloat(e.target.value) : undefined;
-                  setFormData({ ...formData, trail_percentage: val !== undefined && !isNaN(val) ? val : undefined });
-                }}
+                type="date"
+                value={formData.effective_date}
+                onChange={(e) => setFormData({ ...formData, effective_date: e.target.value })}
+                required
                 style={{
                   width: '100%',
                   padding: '12px',
@@ -290,13 +277,17 @@ const ProductForm: React.FC<ProductFormProps> = ({ entry, carriers, isOpen, onCl
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
             <div>
               <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
-                Effective Date *
+                Minimum Premium
               </label>
               <input
-                type="date"
-                value={formData.effective_date instanceof Date && !isNaN(formData.effective_date.getTime()) ? formData.effective_date.toISOString().split('T')[0] : ''}
-                onChange={(e) => setFormData({ ...formData, effective_date: e.target.value ? new Date(e.target.value) : new Date() })}
-                required
+                type="number"
+                step="0.01"
+                min="0"
+                value={formData.minimum_premium || ''}
+                onChange={(e) => {
+                  const val = e.target.value ? parseFloat(e.target.value) : undefined;
+                  setFormData({ ...formData, minimum_premium: val !== undefined && !isNaN(val) ? val : undefined });
+                }}
                 style={{
                   width: '100%',
                   padding: '12px',
@@ -309,12 +300,17 @@ const ProductForm: React.FC<ProductFormProps> = ({ entry, carriers, isOpen, onCl
 
             <div>
               <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
-                Expiration Date
+                Maximum Premium
               </label>
               <input
-                type="date"
-                value={formData.expiration_date instanceof Date && !isNaN(formData.expiration_date.getTime()) ? formData.expiration_date.toISOString().split('T')[0] : ''}
-                onChange={(e) => setFormData({ ...formData, expiration_date: e.target.value ? new Date(e.target.value) : undefined })}
+                type="number"
+                step="0.01"
+                min="0"
+                value={formData.maximum_premium || ''}
+                onChange={(e) => {
+                  const val = e.target.value ? parseFloat(e.target.value) : undefined;
+                  setFormData({ ...formData, maximum_premium: val !== undefined && !isNaN(val) ? val : undefined });
+                }}
                 style={{
                   width: '100%',
                   padding: '12px',
@@ -328,33 +324,20 @@ const ProductForm: React.FC<ProductFormProps> = ({ entry, carriers, isOpen, onCl
 
           <div style={{ marginBottom: '20px' }}>
             <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
-              Notes
+              Expiration Date
             </label>
-            <textarea
-              value={formData.notes}
-              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              rows={3}
+            <input
+              type="date"
+              value={formData.expiration_date || ''}
+              onChange={(e) => setFormData({ ...formData, expiration_date: e.target.value || undefined })}
               style={{
                 width: '100%',
                 padding: '12px',
                 border: '1px solid #e2e8f0',
                 borderRadius: '8px',
-                fontSize: '14px',
-                resize: 'vertical'
+                fontSize: '14px'
               }}
             />
-          </div>
-
-          <div style={{ marginBottom: '24px' }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <input
-                type="checkbox"
-                checked={formData.is_active}
-                onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-                style={{ marginRight: '8px' }}
-              />
-              <span style={{ fontWeight: '500' }}>Active</span>
-            </label>
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
@@ -404,6 +387,15 @@ export const ProductManager: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
 
+  const productTypes: Database["public"]["Enums"]["product_type"][] = [
+    'term_life', 'whole_life', 'universal_life', 'variable_life',
+    'health', 'disability', 'annuity', 'other'
+  ];
+
+  const compLevels: Database["public"]["Enums"]["comp_level"][] = [
+    'street', 'release', 'enhanced', 'premium'
+  ];
+
   useEffect(() => {
     loadData();
   }, []);
@@ -415,12 +407,16 @@ export const ProductManager: React.FC = () => {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [entriesData, carriersData] = await Promise.all([
-        compGuideService.getAll(),
-        carrierService.getAll()
+      const [entriesResult, carriersResult] = await Promise.all([
+        compGuideService.getAllEntries(),
+        carrierService.getAllCarriers()
       ]);
-      setEntries(entriesData);
-      setCarriers(carriersData);
+
+      if (entriesResult.error) throw new Error(entriesResult.error.message);
+      if (carriersResult.error) throw new Error(carriersResult.error.message);
+
+      if (entriesResult.data) setEntries(entriesResult.data);
+      if (carriersResult.data) setCarriers(carriersResult.data);
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
@@ -431,15 +427,14 @@ export const ProductManager: React.FC = () => {
   const applyFilters = () => {
     let filtered = entries.filter(entry => {
       const matchesSearch =
-        entry.product_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        entry.carrier_name?.toLowerCase().includes(searchTerm.toLowerCase());
+        entry.product_type.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        carriers.find(c => c.id === entry.carrier_id)?.name?.toLowerCase().includes(searchTerm.toLowerCase());
 
       const matchesCarrier = !filters.carrier_id || entry.carrier_id === filters.carrier_id;
-      const matchesProduct = !filters.product_name || entry.product_name.toLowerCase().includes(filters.product_name.toLowerCase());
-      const matchesLevel = !filters.contract_level || entry.contract_level === filters.contract_level;
-      const matchesActive = filters.is_active === undefined || entry.is_active === filters.is_active;
+      const matchesProduct = !filters.product_type || entry.product_type === filters.product_type;
+      const matchesLevel = !filters.comp_level || entry.comp_level === filters.comp_level;
 
-      return matchesSearch && matchesCarrier && matchesProduct && matchesLevel && matchesActive;
+      return matchesSearch && matchesCarrier && matchesProduct && matchesLevel;
     });
 
     setFilteredEntries(filtered);
@@ -456,9 +451,11 @@ export const ProductManager: React.FC = () => {
   };
 
   const handleDeleteProduct = async (entry: CompGuideEntry) => {
-    if (window.confirm(`Are you sure you want to delete ${entry.product_name} for ${entry.carrier_name}?`)) {
+    const carrierName = carriers.find(c => c.id === entry.carrier_id)?.name || 'Unknown';
+    const productName = entry.product_type.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+    if (window.confirm(`Are you sure you want to delete ${productName} for ${carrierName}?`)) {
       try {
-        await compGuideService.delete(entry.id);
+        await compGuideService.deleteEntry(entry.id);
         setEntries(entries.filter(e => e.id !== entry.id));
       } catch (error) {
         console.error('Error deleting product:', error);
@@ -481,8 +478,20 @@ export const ProductManager: React.FC = () => {
     return `${numValue.toFixed(3)}%`;
   };
 
-  const formatDate = (date: Date) => {
+  const formatDate = (date: string) => {
     return new Date(date).toLocaleDateString();
+  };
+
+  const getCarrierName = (carrierId: string) => {
+    return carriers.find(c => c.id === carrierId)?.name || 'Unknown';
+  };
+
+  const formatProductType = (type: string) => {
+    return type.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+  };
+
+  const formatCompLevel = (level: string) => {
+    return level.charAt(0).toUpperCase() + level.slice(1);
   };
 
   if (loading) {
@@ -615,8 +624,8 @@ export const ProductManager: React.FC = () => {
                   }}
                 >
                   <option value="">All Carriers</option>
-                  {carriers.map((carrier, idx) => (
-                    <option key={carrier.id || `filter-carrier-${idx}`} value={carrier.id}>
+                  {carriers.map((carrier) => (
+                    <option key={carrier.id} value={carrier.id}>
                       {carrier.name}
                     </option>
                   ))}
@@ -625,14 +634,35 @@ export const ProductManager: React.FC = () => {
 
               <div>
                 <label style={{ display: 'block', marginBottom: '4px', fontSize: '12px', fontWeight: '500', color: '#6b7280' }}>
-                  Contract Level
+                  Product Type
                 </label>
                 <select
-                  value={filters.contract_level || ''}
-                  onChange={(e) => {
-                    const val = e.target.value ? parseInt(e.target.value) : undefined;
-                    setFilters({ ...filters, contract_level: val !== undefined && !isNaN(val) ? val : undefined });
+                  value={filters.product_type || ''}
+                  onChange={(e) => setFilters({ ...filters, product_type: e.target.value as Database["public"]["Enums"]["product_type"] || undefined })}
+                  style={{
+                    width: '100%',
+                    padding: '8px',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '6px',
+                    fontSize: '14px'
                   }}
+                >
+                  <option value="">All Products</option>
+                  {productTypes.map(type => (
+                    <option key={type} value={type}>
+                      {formatProductType(type)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', marginBottom: '4px', fontSize: '12px', fontWeight: '500', color: '#6b7280' }}>
+                  Comp Level
+                </label>
+                <select
+                  value={filters.comp_level || ''}
+                  onChange={(e) => setFilters({ ...filters, comp_level: e.target.value as Database["public"]["Enums"]["comp_level"] || undefined })}
                   style={{
                     width: '100%',
                     padding: '8px',
@@ -642,30 +672,11 @@ export const ProductManager: React.FC = () => {
                   }}
                 >
                   <option value="">All Levels</option>
-                  {[80, 85, 90, 95, 100, 105, 110, 115, 120, 125, 130, 135, 140, 145].map(level => (
-                    <option key={level} value={level}>{level}</option>
+                  {compLevels.map(level => (
+                    <option key={level} value={level}>
+                      {formatCompLevel(level)}
+                    </option>
                   ))}
-                </select>
-              </div>
-
-              <div>
-                <label style={{ display: 'block', marginBottom: '4px', fontSize: '12px', fontWeight: '500', color: '#6b7280' }}>
-                  Status
-                </label>
-                <select
-                  value={filters.is_active === undefined ? '' : filters.is_active.toString()}
-                  onChange={(e) => setFilters({ ...filters, is_active: e.target.value === '' ? undefined : e.target.value === 'true' })}
-                  style={{
-                    width: '100%',
-                    padding: '8px',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '6px',
-                    fontSize: '14px'
-                  }}
-                >
-                  <option value="">All Status</option>
-                  <option value="true">Active</option>
-                  <option value="false">Inactive</option>
                 </select>
               </div>
 
@@ -711,16 +722,13 @@ export const ProductManager: React.FC = () => {
                     Commission
                   </th>
                   <th style={{ padding: '12px', textAlign: 'right', fontWeight: '600', fontSize: '12px', color: '#6b7280', textTransform: 'uppercase' }}>
-                    First Year
-                  </th>
-                  <th style={{ padding: '12px', textAlign: 'right', fontWeight: '600', fontSize: '12px', color: '#6b7280', textTransform: 'uppercase' }}>
-                    Renewal
+                    Bonus
                   </th>
                   <th style={{ padding: '12px', textAlign: 'center', fontWeight: '600', fontSize: '12px', color: '#6b7280', textTransform: 'uppercase' }}>
                     Effective
                   </th>
                   <th style={{ padding: '12px', textAlign: 'center', fontWeight: '600', fontSize: '12px', color: '#6b7280', textTransform: 'uppercase' }}>
-                    Status
+                    Premium Range
                   </th>
                   <th style={{ padding: '12px', textAlign: 'center', fontWeight: '600', fontSize: '12px', color: '#6b7280', textTransform: 'uppercase' }}>
                     Actions
@@ -731,10 +739,10 @@ export const ProductManager: React.FC = () => {
                 {filteredEntries.map((entry, index) => (
                   <tr key={entry.id || `entry-${index}`} style={{ borderBottom: '1px solid #f1f5f9' }}>
                     <td style={{ padding: '12px' }}>
-                      <div style={{ fontWeight: '500' }}>{entry.carrier_name}</div>
+                      <div style={{ fontWeight: '500' }}>{getCarrierName(entry.carrier_id)}</div>
                     </td>
                     <td style={{ padding: '12px' }}>
-                      <div style={{ fontWeight: '500' }}>{entry.product_name}</div>
+                      <div style={{ fontWeight: '500' }}>{formatProductType(entry.product_type)}</div>
                     </td>
                     <td style={{ padding: '12px', textAlign: 'center' }}>
                       <span style={{
@@ -744,32 +752,24 @@ export const ProductManager: React.FC = () => {
                         fontSize: '12px',
                         fontWeight: '500'
                       }}>
-                        {entry.contract_level}
+                        {formatCompLevel(entry.comp_level)}
                       </span>
                     </td>
                     <td style={{ padding: '12px', textAlign: 'right', fontWeight: '500' }}>
                       {formatPercentage(entry.commission_percentage)}
                     </td>
                     <td style={{ padding: '12px', textAlign: 'right' }}>
-                      {formatPercentage(entry.first_year_percentage)}
-                    </td>
-                    <td style={{ padding: '12px', textAlign: 'right' }}>
-                      {formatPercentage(entry.renewal_percentage)}
+                      {formatPercentage(entry.bonus_percentage)}
                     </td>
                     <td style={{ padding: '12px', textAlign: 'center', fontSize: '14px' }}>
                       {formatDate(entry.effective_date)}
                     </td>
-                    <td style={{ padding: '12px', textAlign: 'center' }}>
-                      <span style={{
-                        padding: '4px 8px',
-                        backgroundColor: entry.is_active ? '#dcfce7' : '#fee2e2',
-                        color: entry.is_active ? '#166534' : '#dc2626',
-                        borderRadius: '4px',
-                        fontSize: '12px',
-                        fontWeight: '500'
-                      }}>
-                        {entry.is_active ? 'Active' : 'Inactive'}
-                      </span>
+                    <td style={{ padding: '12px', textAlign: 'center', fontSize: '14px' }}>
+                      {entry.minimum_premium || entry.maximum_premium ? (
+                        `$${entry.minimum_premium || 0} - $${entry.maximum_premium || '∞'}`
+                      ) : (
+                        '-'
+                      )}
                     </td>
                     <td style={{ padding: '12px', textAlign: 'center' }}>
                       <div style={{ display: 'flex', justifyContent: 'center', gap: '8px' }}>

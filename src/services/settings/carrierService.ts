@@ -1,13 +1,15 @@
 // src/services/settings/carrierService.ts
 
-import { BaseService } from '../base/BaseService';
-import { Carrier } from '../../types/carrier.types';
-import {
-  CarrierRepository,
-  CarrierCreateData,
-  CarrierUpdateData
-} from './CarrierRepository';
-import { ValidationRule } from '../base/BaseService';
+import { supabase } from '../base/supabase';
+import { Database } from '../../types/database.types';
+import { ServiceResponse } from '../base/BaseService';
+
+type CarrierRow = Database['public']['Tables']['carriers']['Row'];
+type CarrierInsert = Database['public']['Tables']['carriers']['Insert'];
+type CarrierUpdate = Database['public']['Tables']['carriers']['Update'];
+
+// Re-export for backward compatibility
+export interface Carrier extends CarrierRow {}
 
 export interface NewCarrierForm {
   name: string;
@@ -25,211 +27,160 @@ export interface NewCarrierForm {
   notes?: string;
 }
 
-class CarrierService extends BaseService<Carrier, CarrierCreateData, CarrierUpdateData> {
-  private carrierRepository: CarrierRepository;
-
-  constructor() {
-    const repository = new CarrierRepository();
-    super(repository);
-    this.carrierRepository = repository;
+class CarrierService {
+  /**
+   * Get all carriers
+   */
+  async getAllCarriers() {
+    return await supabase
+      .from('carriers')
+      .select('*')
+      .order('name', { ascending: true });
   }
 
-  protected validateCreate(data: CarrierCreateData): { isValid: boolean; errors: string[] } {
-    const rules: ValidationRule[] = [
-      {
-        field: 'name',
-        required: true,
-        type: 'string',
-        minLength: 1,
-        maxLength: 255
-      },
-      {
-        field: 'short_name',
-        type: 'string',
-        maxLength: 50
-      },
-      {
-        field: 'is_active',
-        type: 'boolean'
-      },
-      {
-        field: 'notes',
-        type: 'string',
-        maxLength: 1000
-      }
-    ];
-
-    const validation = this.validate(data, rules);
-
-    // Additional custom validations
-    if (data.contact_info) {
-      if (data.contact_info.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.contact_info.email)) {
-        validation.errors.push('Invalid email format in contact info');
-        validation.isValid = false;
-      }
-      if (data.contact_info.rep_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.contact_info.rep_email)) {
-        validation.errors.push('Invalid rep email format in contact info');
-        validation.isValid = false;
-      }
+  /**
+   * Get all carriers (alias for hooks compatibility)
+   */
+  async getAll(): Promise<ServiceResponse<Carrier[]>> {
+    const result = await this.getAllCarriers();
+    if (result.error) {
+      return { success: false, error: result.error };
     }
-
-    return validation;
+    return { success: true, data: result.data || [] };
   }
 
-  protected validateUpdate(data: CarrierUpdateData): { isValid: boolean; errors: string[] } {
-    const rules: ValidationRule[] = [
-      {
-        field: 'name',
-        type: 'string',
-        minLength: 1,
-        maxLength: 255
-      },
-      {
-        field: 'short_name',
-        type: 'string',
-        maxLength: 50
-      },
-      {
-        field: 'is_active',
-        type: 'boolean'
-      },
-      {
-        field: 'notes',
-        type: 'string',
-        maxLength: 1000
-      }
-    ];
+  /**
+   * Get carrier by ID
+   */
+  async getCarrierById(id: string) {
+    return await supabase
+      .from('carriers')
+      .select('*')
+      .eq('id', id)
+      .single();
+  }
 
-    const validation = this.validate(data, rules);
-
-    // Additional custom validations
-    if (data.contact_info) {
-      if (data.contact_info.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.contact_info.email)) {
-        validation.errors.push('Invalid email format in contact info');
-        validation.isValid = false;
-      }
-      if (data.contact_info.rep_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.contact_info.rep_email)) {
-        validation.errors.push('Invalid rep email format in contact info');
-        validation.isValid = false;
-      }
+  /**
+   * Get carrier by ID (alias for hooks compatibility)
+   */
+  async getById(id: string): Promise<ServiceResponse<Carrier>> {
+    const result = await this.getCarrierById(id);
+    if (result.error) {
+      return { success: false, error: result.error };
     }
-
-    return validation;
+    return { success: true, data: result.data };
   }
 
-  protected async beforeCreate(data: CarrierCreateData): Promise<CarrierCreateData> {
-    // Check for duplicate name
-    const existingCarrier = await this.carrierRepository.findByName(data.name);
-    if (existingCarrier) {
-      throw new Error(`Carrier with name "${data.name}" already exists`);
+  /**
+   * Create a new carrier
+   */
+  async createCarrier(data: NewCarrierForm) {
+    const carrierData: CarrierInsert = {
+      name: data.name,
+      code: data.short_name,
+      commission_structure: data.default_commission_rates || {},
+      contact_info: data.contact_info || {}
+    };
+
+    return await supabase
+      .from('carriers')
+      .insert(carrierData)
+      .select()
+      .single();
+  }
+
+  /**
+   * Create a new carrier (alias for hooks compatibility)
+   */
+  async create(data: NewCarrierForm): Promise<ServiceResponse<Carrier>> {
+    const result = await this.createCarrier(data);
+    if (result.error) {
+      return { success: false, error: result.error };
     }
-
-    return data;
+    return { success: true, data: result.data };
   }
 
-  protected async beforeUpdate(id: string, data: CarrierUpdateData): Promise<CarrierUpdateData> {
-    // Check for duplicate name if name is being updated
-    if (data.name) {
-      const nameExists = await this.carrierRepository.checkNameExists(data.name, id);
-      if (nameExists) {
-        throw new Error(`Carrier with name "${data.name}" already exists`);
-      }
+  /**
+   * Update a carrier
+   */
+  async updateCarrier(id: string, data: Partial<NewCarrierForm>) {
+    const updateData: CarrierUpdate = {
+      ...(data.name && { name: data.name }),
+      ...(data.short_name !== undefined && { code: data.short_name }),
+      ...(data.default_commission_rates && { commission_structure: data.default_commission_rates }),
+      ...(data.contact_info && { contact_info: data.contact_info })
+    };
+
+    return await supabase
+      .from('carriers')
+      .update(updateData)
+      .eq('id', id)
+      .select()
+      .single();
+  }
+
+  /**
+   * Update a carrier (alias for hooks compatibility)
+   */
+  async update(id: string, data: Partial<NewCarrierForm>): Promise<ServiceResponse<Carrier>> {
+    const result = await this.updateCarrier(id, data);
+    if (result.error) {
+      return { success: false, error: result.error };
     }
-
-    return data;
+    return { success: true, data: result.data };
   }
 
-  protected async beforeDelete(id: string): Promise<{ allowed: boolean; reason?: string }> {
-    // Check if carrier has associated comp guide entries
-    // This would require a comp guide repository query
-    // For now, allow deletion (can be enhanced later)
-    return { allowed: true };
+  /**
+   * Delete a carrier
+   */
+  async deleteCarrier(id: string) {
+    return await supabase
+      .from('carriers')
+      .delete()
+      .eq('id', id);
   }
 
-  // Carrier-specific methods
-  async findByName(name: string) {
-    try {
-      const carrier = await this.carrierRepository.findByName(name);
-      return {
-        data: carrier,
-        success: true
-      };
-    } catch (error) {
-      return {
-        error: error instanceof Error ? error.message : 'Unknown error occurred',
-        success: false
-      };
+  /**
+   * Delete a carrier (alias for hooks compatibility)
+   */
+  async delete(id: string): Promise<ServiceResponse<void>> {
+    const result = await this.deleteCarrier(id);
+    if (result.error) {
+      return { success: false, error: result.error };
     }
+    return { success: true };
   }
 
-  async getActiveCarriers() {
-    try {
-      const carriers = await this.carrierRepository.findActiveCarriers();
-      return {
-        data: carriers,
-        success: true
-      };
-    } catch (error) {
-      return {
-        error: error instanceof Error ? error.message : 'Unknown error occurred',
-        success: false
-      };
+  /**
+   * Search carriers by name
+   */
+  async searchCarriers(query: string): Promise<ServiceResponse<Carrier[]>> {
+    const result = await supabase
+      .from('carriers')
+      .select('*')
+      .or(`name.ilike.%${query}%,code.ilike.%${query}%`)
+      .order('name', { ascending: true });
+
+    if (result.error) {
+      return { success: false, error: result.error };
     }
+    return { success: true, data: result.data || [] };
   }
 
-  async searchCarriers(searchTerm: string) {
-    try {
-      const carriers = await this.carrierRepository.searchByName(searchTerm);
-      return {
-        data: carriers,
-        success: true
-      };
-    } catch (error) {
-      return {
-        error: error instanceof Error ? error.message : 'Unknown error occurred',
-        success: false
-      };
-    }
-  }
+  /**
+   * Get active carriers
+   */
+  async getActiveCarriers(): Promise<ServiceResponse<Carrier[]>> {
+    // Since is_active doesn't exist in database, return all carriers
+    const result = await supabase
+      .from('carriers')
+      .select('*')
+      .order('name', { ascending: true });
 
-  // Legacy interface methods for backward compatibility
-  async getAll(): Promise<Carrier[]> {
-    const result = await super.getAll();
-    if (result.success && result.data) {
-      return result.data;
+    if (result.error) {
+      return { success: false, error: result.error };
     }
-    throw new Error(result.error || 'Failed to get carriers');
-  }
-
-  async getById(id: string): Promise<Carrier | null> {
-    const result = await super.getById(id);
-    if (result.success) {
-      return result.data || null;
-    }
-    throw new Error(result.error || 'Failed to get carrier');
-  }
-
-  async create(data: NewCarrierForm): Promise<Carrier> {
-    const result = await super.create(data);
-    if (result.success && result.data) {
-      return result.data;
-    }
-    throw new Error(result.error || 'Failed to create carrier');
-  }
-
-  async update(id: string, data: Partial<Carrier>): Promise<Carrier> {
-    const result = await super.update(id, data);
-    if (result.success && result.data) {
-      return result.data;
-    }
-    throw new Error(result.error || 'Failed to update carrier');
-  }
-
-  async delete(id: string): Promise<void> {
-    const result = await super.delete(id);
-    if (!result.success) {
-      throw new Error(result.error || 'Failed to delete carrier');
-    }
+    return { success: true, data: result.data || [] };
   }
 }
 

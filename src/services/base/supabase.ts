@@ -1,30 +1,15 @@
-import { createClient } from '@supabase/supabase-js';
-import { createLocalApiClient } from './localApi';
+// src/services/base/supabase.ts
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
-const useLocal = import.meta.env.VITE_USE_LOCAL === 'true';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-// Create appropriate client based on environment
-let supabase: any;
-
-if (useLocal) {
-  console.log('🏠 Using local API at http://localhost:3001');
-  supabase = createLocalApiClient();
-} else {
-  if (!supabaseUrl) {
-    throw new Error('Missing env.VITE_SUPABASE_URL');
-  }
-
-  if (!supabaseKey) {
-    throw new Error('Missing env.VITE_SUPABASE_ANON_KEY');
-  }
-
-  console.log('☁️ Using Supabase');
-  supabase = createClient(supabaseUrl, supabaseKey);
+if (!supabaseUrl || !supabaseKey) {
+  throw new Error('Missing Supabase environment variables. Please check your .env file.');
 }
 
-export { supabase };
+// Create a single supabase client for interacting with your database
+export const supabase: SupabaseClient = createClient(supabaseUrl, supabaseKey);
 
 // Database tables
 export const TABLES = {

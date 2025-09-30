@@ -1,48 +1,46 @@
+// /home/nneessen/projects/commissionTracker/src/types/compGuide.types.ts
+
+import { Database } from "./database.types";
+
 export interface CompGuideEntry {
   id: string;
-  carrier_name: string;
-  product_name: string;
-  contract_level: number; // 80-145
+  carrier_id: string; // Changed from carrier_name
+  product_type: Database["public"]["Enums"]["product_type"]; // Changed from product_name
+  comp_level: Database["public"]["Enums"]["comp_level"]; // Changed from contract_level (number)
   commission_percentage: number;
-  first_year_percentage?: number;
-  renewal_percentage?: number;
-  trail_percentage?: number;
-  effective_date: Date;
-  expiration_date?: Date;
-  is_active: boolean;
-  notes?: string;
-  created_at: Date;
-  updated_at?: Date;
+  bonus_percentage?: number;
+  effective_date: string; // Changed from Date
+  expiration_date?: string; // Changed from Date
+  minimum_premium?: number;
+  maximum_premium?: number;
+  created_at: string;
+  updated_at?: string;
 }
 
 export interface NewCompGuideForm {
-  carrier_name: string;
-  product_name: string;
-  contract_level: number;
+  carrier_id: string;
+  product_type: Database["public"]["Enums"]["product_type"];
+  comp_level: Database["public"]["Enums"]["comp_level"];
   commission_percentage: number;
-  first_year_percentage?: number;
-  renewal_percentage?: number;
-  trail_percentage?: number;
-  effective_date: Date;
-  expiration_date?: Date;
-  is_active?: boolean;
-  notes?: string;
+  bonus_percentage?: number;
+  effective_date: string;
+  expiration_date?: string;
+  minimum_premium?: number;
+  maximum_premium?: number;
 }
 
 export interface CompGuideFilters {
-  carrier_name?: string;
-  product_name?: string;
-  contract_level?: number;
-  is_active?: boolean;
-  effective_from?: Date;
-  effective_to?: Date;
+  carrier_id?: string;
+  product_type?: Database["public"]["Enums"]["product_type"];
+  comp_level?: Database["public"]["Enums"]["comp_level"];
+  effective_from?: string;
+  effective_to?: string;
 }
 
 export interface ProductSummary {
-  product_name: string;
+  product_type: Database["public"]["Enums"]["product_type"];
   carrier_count: number;
   avg_commission: number;
-  min_contract_level: number;
-  max_contract_level: number;
-  is_active: boolean;
+  min_comp_level: Database["public"]["Enums"]["comp_level"];
+  max_comp_level: Database["public"]["Enums"]["comp_level"];
 }

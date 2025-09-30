@@ -1,40 +1,17 @@
-// src/hooks/expenses/useDeleteExpense.ts
-import { useState } from 'react';
-import { expenseService } from '../../services';
+// /home/nneessen/projects/commissionTracker/src/hooks/expenses/useDeleteExpense.ts
 
-export interface UseDeleteExpenseResult {
-  deleteExpense: (id: string) => Promise<boolean>;
-  isDeleting: boolean;
-  error: string | null;
-  clearError: () => void;
-}
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { expenseService } from '../../services/expenses/expenseService';
 
-export function useDeleteExpense(): UseDeleteExpenseResult {
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+export const useDeleteExpense = () => {
+  const queryClient = useQueryClient();
 
-  const deleteExpense = async (id: string): Promise<boolean> => {
-    setIsDeleting(true);
-    setError(null);
-
-    try {
-      await expenseService.delete(id);
-      setIsDeleting(false);
-      return true;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to delete expense';
-      setError(errorMessage);
-      setIsDeleting(false);
-      return false;
+  return useMutation({
+    mutationFn: async (id: string) => {
+      return await expenseService.delete(id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['expenses'] });
     }
-  };
-
-  const clearError = () => setError(null);
-
-  return {
-    deleteExpense,
-    isDeleting,
-    error,
-    clearError,
-  };
-}
+  });
+};

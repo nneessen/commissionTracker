@@ -1,11 +1,11 @@
 // src/services/settings/constantsService.ts
 
-import { localApi } from '../base/localApi';
+import { supabase } from '../base/supabase';
 
 export const constantsService = {
   async getAll(): Promise<any> {
     try {
-      const { data, error } = await localApi.from('constants').select('*');
+      const { data, error } = await supabase.from('constants').select('*');
 
       if (error) {
         throw new Error(`Failed to fetch constants: ${error.message}`);

@@ -17,15 +17,15 @@ export const useCarriers = () => {
           const parsed = JSON.parse(stored);
           setCarriers(parsed.map((c: any) => ({
             ...c,
-            createdAt: new Date(c.createdAt),
-            updatedAt: c.updatedAt ? new Date(c.updatedAt) : undefined,
+            created_at: new Date(c.created_at || c.createdAt),
+            updated_at: c.updated_at ? new Date(c.updated_at) : c.updatedAt ? new Date(c.updatedAt) : undefined,
           })));
         } else {
           // Initialize with default carriers if none exist
           const defaultCarriers: Carrier[] = DEFAULT_CARRIERS.map(carrier => ({
             ...carrier,
             id: uuidv4(),
-            createdAt: new Date(),
+            created_at: new Date(),
           }));
           setCarriers(defaultCarriers);
         }
@@ -35,7 +35,7 @@ export const useCarriers = () => {
         const defaultCarriers: Carrier[] = DEFAULT_CARRIERS.map(carrier => ({
           ...carrier,
           id: uuidv4(),
-          createdAt: new Date(),
+          created_at: new Date(),
         }));
         setCarriers(defaultCarriers);
       } finally {
@@ -63,8 +63,12 @@ export const useCarriers = () => {
       const newCarrier: Carrier = {
         id: uuidv4(),
         name: form.name.trim(),
-        isActive: form.isActive ?? true,
-        createdAt: new Date(),
+        short_name: form.short_name,
+        is_active: form.is_active ?? true,
+        default_commission_rates: form.default_commission_rates || {},
+        contact_info: form.contact_info || {},
+        notes: form.notes,
+        created_at: new Date(),
       };
 
       setCarriers(prev => [...prev, newCarrier]);
@@ -76,13 +80,13 @@ export const useCarriers = () => {
   }, []);
 
   // Update a carrier
-  const updateCarrier = useCallback((id: string, updates: Partial<Omit<Carrier, 'id' | 'createdAt'>>) => {
+  const updateCarrier = useCallback((id: string, updates: Partial<Omit<Carrier, 'id' | 'created_at'>>) => {
     setCarriers(prev => prev.map(carrier =>
       carrier.id === id
         ? {
             ...carrier,
             ...updates,
-            updatedAt: new Date()
+            updated_at: new Date()
           }
         : carrier
     ));
@@ -100,7 +104,7 @@ export const useCarriers = () => {
 
   // Get active carriers only
   const getActiveCarriers = useCallback((): Carrier[] => {
-    return carriers.filter(carrier => carrier.isActive);
+    return carriers.filter(carrier => carrier.is_active);
   }, [carriers]);
 
   return {

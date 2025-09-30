@@ -21,7 +21,8 @@ export interface CommissionWithChargebackRisk {
 
 export interface CreateCommissionData {
   policyId?: string;
-  agentId?: string; // Links to Agent for comp level lookup
+  userId?: string; // Links to auth.users for comp level lookup
+  agentId?: string; // Deprecated - use userId instead
   client: {
     firstName: string;
     lastName: string;
@@ -223,17 +224,22 @@ class CommissionService {
     const { compGuideService, agentService, carrierService } = await import('../index');
     
     // Get carrier name for comp guide lookup
-    const carrier = await carrierService.getById(data.carrierId);
-    if (!carrier) {
-      throw new Error('Carrier not found');
+    const { data: carrier, error: carrierError } = await carrierService.getCarrierById(data.carrierId);
+    if (carrierError || !carrier) {
+      throw new Error(carrierError?.message || 'Carrier not found');
     }
 
     // Determine contract comp level
     let contractCompLevel = data.contractCompLevel;
-    if (!contractCompLevel && data.agentId) {
-      const agent = await agentService.getById(data.agentId);
-      if (agent) {
-        contractCompLevel = agent.contractCompLevel;
+    const userId = data.userId || data.agentId; // Support both for backward compatibility
+    if (!contractCompLevel && userId) {
+      try {
+        const user = await agentService.getAgentById(userId);
+        if (user) {
+          contractCompLevel = user.contractCompLevel;
+        }
+      } catch (error) {
+        console.warn('Could not get user contract comp level:', error);
       }
     }
 
@@ -248,22 +254,28 @@ class CommissionService {
     }
 
     // Get commission percentage from comp guide
-    const commissionCalculation = await compGuideService.calculateCommission(
-      data.monthlyPremium,
+    const rateResult = await compGuideService.getCommissionRate(
       carrier.name,
       compGuideProductName,
-      contractCompLevel,
-      data.advanceMonths || 9
+      contractCompLevel
     );
 
-    if (!commissionCalculation) {
-      return null; // No comp guide entry found
+    if (rateResult.error || !rateResult.data) {
+      return null;
     }
 
+    // Calculate commission amount
+    const annualPremium = data.monthlyPremium * 12;
+    const commissionCalculation = {
+      amount: (annualPremium * rateResult.data) / 100,
+      rate: rateResult.data
+    };
+
+
     return {
-      commissionAmount: commissionCalculation.totalCommission,
-      commissionRate: commissionCalculation.commissionPercentage,
-      compGuidePercentage: commissionCalculation.commissionPercentage,
+      commissionAmount: commissionCalculation.amount,
+      commissionRate: commissionCalculation.rate,
+      compGuidePercentage: commissionCalculation.rate,
       isAutoCalculated: true,
       contractCompLevel,
     };
@@ -287,7 +299,8 @@ class CommissionService {
         carrierId: commissionData.carrierId,
         product: commissionData.product,
         monthlyPremium: finalData.monthlyPremium,
-        agentId: commissionData.agentId,
+        userId: commissionData.userId || commissionData.agentId,
+        agentId: commissionData.agentId, // Keep for backward compatibility
         contractCompLevel: commissionData.contractCompLevel,
         advanceMonths: commissionData.advanceMonths,
       });
@@ -689,7 +702,8 @@ class CommissionService {
     return {
       id: dbRecord.id,
       policyId: dbRecord.policy_id,
-      agentId: dbRecord.agent_id,
+      userId: dbRecord.user_id || dbRecord.agent_id, // Support both columns
+      agentId: dbRecord.agent_id, // Keep for backward compatibility
       client: dbRecord.client,
       carrierId: dbRecord.carrier_id,
       product: dbRecord.product,
@@ -717,7 +731,12 @@ class CommissionService {
     const dbData: any = {};
 
     if (data.policyId !== undefined) dbData.policy_id = data.policyId;
-    if (data.agentId !== undefined) dbData.agent_id = data.agentId;
+    // Map both userId and agentId to user_id for database
+    const userId = (data as any).userId || data.agentId;
+    if (userId !== undefined) {
+      dbData.user_id = userId;
+      dbData.agent_id = userId; // Keep for backward compatibility
+    }
     if (data.client !== undefined) dbData.client = data.client;
     if (data.carrierId !== undefined) dbData.carrier_id = data.carrierId;
     if (data.product !== undefined) dbData.product = data.product;

@@ -10,9 +10,9 @@ export const ExpenseManager: React.FC = () => {
   // Use new modular hooks
   const { expensesByCategory: expenses, refresh } = useExpenses();
   const { metrics } = useExpenseMetrics();
-  const { createExpense } = useCreateExpense();
-  const { updateExpense } = useUpdateExpense();
-  const { deleteExpense } = useDeleteExpense();
+  const { mutate: createExpense } = useCreateExpense();
+  const { mutate: updateExpense } = useUpdateExpense();
+  const { mutate: deleteExpense } = useDeleteExpense();
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [newExpense, setNewExpense] = useState<NewExpenseForm>({
@@ -28,31 +28,34 @@ export const ExpenseManager: React.FC = () => {
     monthlyExpenses: metrics?.monthlyTotal || 0,
   };
 
-  const handleAddExpense = async () => {
+  const handleAddExpense = () => {
     if (newExpense.name.trim() && newExpense.amount >= 0) {
-      const result = await createExpense(newExpense);
-      if (result) {
-        setNewExpense({ name: '', amount: 0, category: 'personal' });
-        setShowAddModal(false);
-        refresh(); // Refresh the expenses list
-      }
+      createExpense(newExpense, {
+        onSuccess: () => {
+          setNewExpense({ name: '', amount: 0, category: 'personal' });
+          setShowAddModal(false);
+          refresh(); // Refresh the expenses list
+        }
+      });
     }
   };
 
-  const handleDeleteExpense = async (id: string) => {
+  const handleDeleteExpense = (id: string) => {
     if (window.confirm('Are you sure you want to delete this expense?')) {
-      const success = await deleteExpense(id);
-      if (success) {
-        refresh(); // Refresh the expenses list
-      }
+      deleteExpense(id, {
+        onSuccess: () => {
+          refresh(); // Refresh the expenses list
+        }
+      });
     }
   };
 
-  const handleUpdateExpense = async (id: string, amount: number) => {
-    const success = await updateExpense(id, { amount });
-    if (success) {
-      refresh(); // Refresh the expenses list
-    }
+  const handleUpdateExpense = (id: string, amount: number) => {
+    updateExpense({ id, updates: { amount } }, {
+      onSuccess: () => {
+        refresh(); // Refresh the expenses list
+      }
+    });
   };
 
   // Simple CSV export function

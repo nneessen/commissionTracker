@@ -3,7 +3,7 @@ import { BaseRepository, BaseEntity, QueryOptions, FilterOptions } from './BaseR
 
 export interface ServiceResponse<T> {
   data?: T;
-  error?: string;
+  error?: Error;
   success: boolean;
 }
 
@@ -11,307 +11,262 @@ export interface ListResponse<T> {
   data: T[];
   total: number;
   page: number;
-  limit: number;
-  success: boolean;
-  error?: string;
+  pageSize: number;
 }
 
 export interface ValidationRule {
   field: string;
-  required?: boolean;
-  type?: 'string' | 'number' | 'boolean' | 'date' | 'email' | 'uuid';
-  minLength?: number;
-  maxLength?: number;
-  min?: number;
-  max?: number;
-  pattern?: RegExp;
-  custom?: (value: any) => boolean | string;
+  validate: (value: any, data?: any) => boolean;
+  message: string;
 }
 
-export abstract class BaseService<T extends BaseEntity, TCreate = Omit<T, 'id' | 'created_at' | 'updated_at'>, TUpdate = Partial<TCreate>> {
-  protected readonly repository: BaseRepository<T, TCreate, TUpdate>;
+export abstract class BaseService<T extends BaseEntity, CreateData = any, UpdateData = any> {
+  protected repository: BaseRepository<T, CreateData, UpdateData>;
+  protected validationRules: ValidationRule[] = [];
 
-  constructor(repository: BaseRepository<T, TCreate, TUpdate>) {
+  constructor(repository: BaseRepository<T, CreateData, UpdateData>) {
     this.repository = repository;
+    this.initializeValidationRules();
   }
 
-  async getAll(options?: QueryOptions): Promise<ServiceResponse<T[]>> {
-    try {
-      const data = await this.repository.findAll(options);
-      return {
-        data,
-        success: true
-      };
-    } catch (error) {
-      return {
-        error: error instanceof Error ? error.message : 'Unknown error occurred',
-        success: false
-      };
-    }
+  /**
+   * Initialize validation rules - override in child classes
+   */
+  protected initializeValidationRules(): void {
+    // Override in child classes to add specific validation rules
   }
 
-  async getById(id: string): Promise<ServiceResponse<T | null>> {
+  /**
+   * Validate data against rules
+   */
+  protected validate(data: any, rules?: ValidationRule[]): Error[] {
+    const errors: Error[] = [];
+    const rulesToUse = rules || this.validationRules;
+
+    rulesToUse.forEach(rule => {
+      const value = this.getNestedValue(data, rule.field);
+      if (!rule.validate(value, data)) {
+        errors.push(new Error(rule.message));
+      }
+    });
+
+    return errors;
+  }
+
+  /**
+   * Get nested value from object using dot notation
+   */
+  private getNestedValue(obj: any, path: string): any {
+    return path.split('.').reduce((current, part) => current?.[part], obj);
+  }
+
+  /**
+   * Create a new entity
+   */
+  async create(data: CreateData): Promise<ServiceResponse<T>> {
     try {
-      if (!this.isValidUUID(id)) {
+      const errors = this.validate(data);
+      if (errors.length > 0) {
         return {
-          error: 'Invalid ID format',
-          success: false
+          success: false,
+          error: new Error(errors.map(e => e.message).join(', '))
         };
       }
 
-      const data = await this.repository.findById(id);
+      const entity = await this.repository.create(data);
       return {
-        data,
-        success: true
+        success: true,
+        data: entity
       };
     } catch (error) {
       return {
-        error: error instanceof Error ? error.message : 'Unknown error occurred',
-        success: false
+        success: false,
+        error: error instanceof Error ? error : new Error(String(error))
       };
     }
   }
 
-  async getByFilters(filters: FilterOptions, options?: QueryOptions): Promise<ServiceResponse<T[]>> {
+  /**
+   * Get entity by ID
+   */
+  async getById(id: string): Promise<ServiceResponse<T>> {
     try {
-      const data = await this.repository.findByFilters(filters, options);
+      const entity = await this.repository.findById(id);
+
+      if (!entity) {
+        return {
+          success: false,
+          error: new Error('Entity not found')
+        };
+      }
+
       return {
-        data,
-        success: true
+        success: true,
+        data: entity
       };
     } catch (error) {
       return {
-        error: error instanceof Error ? error.message : 'Unknown error occurred',
-        success: false
+        success: false,
+        error: error instanceof Error ? error : new Error(String(error))
       };
     }
   }
 
-  async getListWithPagination(page: number = 1, limit: number = 10, filters?: FilterOptions): Promise<ListResponse<T>> {
+  /**
+   * Get all entities
+   */
+  async getAll(options?: QueryOptions, filters?: FilterOptions): Promise<ServiceResponse<T[]>> {
     try {
-      const offset = (page - 1) * limit;
-      const options: QueryOptions = { limit, offset };
+      const entities = await this.repository.findAll(options, filters);
 
-      const [data, total] = await Promise.all([
-        this.repository.findByFilters(filters || {}, options),
+      return {
+        success: true,
+        data: entities
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error : new Error(String(error))
+      };
+    }
+  }
+
+  /**
+   * Get paginated list
+   */
+  async getPaginated(
+    page: number = 1,
+    pageSize: number = 10,
+    filters?: FilterOptions,
+    orderBy?: string,
+    orderDirection: 'asc' | 'desc' = 'desc'
+  ): Promise<ServiceResponse<ListResponse<T>>> {
+    try {
+      const offset = (page - 1) * pageSize;
+
+      const [entities, total] = await Promise.all([
+        this.repository.findAll(
+          {
+            limit: pageSize,
+            offset,
+            orderBy,
+            orderDirection
+          },
+          filters
+        ),
         this.repository.count(filters)
       ]);
 
       return {
-        data,
-        total,
-        page,
-        limit,
-        success: true
+        success: true,
+        data: {
+          data: entities,
+          total,
+          page,
+          pageSize
+        }
       };
     } catch (error) {
       return {
-        data: [],
-        total: 0,
-        page,
-        limit,
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred'
+        error: error instanceof Error ? error : new Error(String(error))
       };
     }
   }
 
-  async create(data: TCreate): Promise<ServiceResponse<T>> {
+  /**
+   * Update an entity
+   */
+  async update(id: string, updates: UpdateData): Promise<ServiceResponse<T>> {
     try {
-      const validationResult = this.validateCreate(data);
-      if (!validationResult.isValid) {
+      const errors = this.validate(updates);
+      if (errors.length > 0) {
         return {
-          error: validationResult.errors.join(', '),
-          success: false
+          success: false,
+          error: new Error(errors.map(e => e.message).join(', '))
         };
       }
 
-      const processedData = await this.beforeCreate(data);
-      const result = await this.repository.create(processedData);
-      await this.afterCreate(result);
-
+      const entity = await this.repository.update(id, updates);
       return {
-        data: result,
-        success: true
+        success: true,
+        data: entity
       };
     } catch (error) {
       return {
-        error: error instanceof Error ? error.message : 'Unknown error occurred',
-        success: false
+        success: false,
+        error: error instanceof Error ? error : new Error(String(error))
       };
     }
   }
 
-  async update(id: string, data: TUpdate): Promise<ServiceResponse<T>> {
-    try {
-      if (!this.isValidUUID(id)) {
-        return {
-          error: 'Invalid ID format',
-          success: false
-        };
-      }
-
-      const validationResult = this.validateUpdate(data);
-      if (!validationResult.isValid) {
-        return {
-          error: validationResult.errors.join(', '),
-          success: false
-        };
-      }
-
-      const processedData = await this.beforeUpdate(id, data);
-      const result = await this.repository.update(id, processedData);
-      await this.afterUpdate(result);
-
-      return {
-        data: result,
-        success: true
-      };
-    } catch (error) {
-      return {
-        error: error instanceof Error ? error.message : 'Unknown error occurred',
-        success: false
-      };
-    }
-  }
-
+  /**
+   * Delete an entity
+   */
   async delete(id: string): Promise<ServiceResponse<void>> {
     try {
-      if (!this.isValidUUID(id)) {
-        return {
-          error: 'Invalid ID format',
-          success: false
-        };
-      }
-
-      const canDelete = await this.beforeDelete(id);
-      if (!canDelete.allowed) {
-        return {
-          error: canDelete.reason || 'Cannot delete this record',
-          success: false
-        };
-      }
-
       await this.repository.delete(id);
-      await this.afterDelete(id);
-
       return {
         success: true
       };
     } catch (error) {
       return {
-        error: error instanceof Error ? error.message : 'Unknown error occurred',
-        success: false
+        success: false,
+        error: error instanceof Error ? error : new Error(String(error))
       };
     }
   }
 
-  protected validate(data: any, rules: ValidationRule[]): { isValid: boolean; errors: string[] } {
-    const errors: string[] = [];
-
-    for (const rule of rules) {
-      const value = data[rule.field];
-
-      if (rule.required && (value === undefined || value === null || value === '')) {
-        errors.push(`${rule.field} is required`);
-        continue;
-      }
-
-      if (value === undefined || value === null) {
-        continue; // Skip validation for optional empty fields
-      }
-
-      if (rule.type) {
-        if (!this.validateType(value, rule.type)) {
-          errors.push(`${rule.field} must be of type ${rule.type}`);
-          continue;
+  /**
+   * Batch create entities
+   */
+  async createMany(items: CreateData[]): Promise<ServiceResponse<T[]>> {
+    try {
+      // Validate all items
+      for (const item of items) {
+        const errors = this.validate(item);
+        if (errors.length > 0) {
+          return {
+            success: false,
+            error: new Error(`Validation failed: ${errors.map(e => e.message).join(', ')}`)
+          };
         }
       }
 
-      if (rule.minLength && typeof value === 'string' && value.length < rule.minLength) {
-        errors.push(`${rule.field} must be at least ${rule.minLength} characters long`);
-      }
-
-      if (rule.maxLength && typeof value === 'string' && value.length > rule.maxLength) {
-        errors.push(`${rule.field} must not exceed ${rule.maxLength} characters`);
-      }
-
-      if (rule.min && typeof value === 'number' && value < rule.min) {
-        errors.push(`${rule.field} must be at least ${rule.min}`);
-      }
-
-      if (rule.max && typeof value === 'number' && value > rule.max) {
-        errors.push(`${rule.field} must not exceed ${rule.max}`);
-      }
-
-      if (rule.pattern && typeof value === 'string' && !rule.pattern.test(value)) {
-        errors.push(`${rule.field} format is invalid`);
-      }
-
-      if (rule.custom) {
-        const customResult = rule.custom(value);
-        if (customResult !== true) {
-          errors.push(typeof customResult === 'string' ? customResult : `${rule.field} is invalid`);
-        }
-      }
-    }
-
-    return {
-      isValid: errors.length === 0,
-      errors
-    };
-  }
-
-  private validateType(value: any, type: string): boolean {
-    switch (type) {
-      case 'string':
-        return typeof value === 'string';
-      case 'number':
-        return typeof value === 'number' && !isNaN(value);
-      case 'boolean':
-        return typeof value === 'boolean';
-      case 'date':
-        return value instanceof Date || !isNaN(Date.parse(value));
-      case 'email':
-        return typeof value === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
-      case 'uuid':
-        return typeof value === 'string' && this.isValidUUID(value);
-      default:
-        return true;
+      const entities = await this.repository.createMany(items);
+      return {
+        success: true,
+        data: entities
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error : new Error(String(error))
+      };
     }
   }
 
-  private isValidUUID(uuid: string): boolean {
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-    return uuidRegex.test(uuid);
+  /**
+   * Check if entity exists
+   */
+  async exists(id: string): Promise<boolean> {
+    try {
+      return await this.repository.exists(id);
+    } catch (error) {
+      console.error('Error checking existence:', error);
+      return false;
+    }
   }
 
-  // Abstract methods for subclasses to implement
-  protected abstract validateCreate(data: TCreate): { isValid: boolean; errors: string[] };
-  protected abstract validateUpdate(data: TUpdate): { isValid: boolean; errors: string[] };
-
-  // Lifecycle hooks that subclasses can override
-  protected async beforeCreate(data: TCreate): Promise<TCreate> {
-    return data;
-  }
-
-  protected async afterCreate(result: T): Promise<void> {
-    // Override in subclasses if needed
-  }
-
-  protected async beforeUpdate(id: string, data: TUpdate): Promise<TUpdate> {
-    return data;
-  }
-
-  protected async afterUpdate(result: T): Promise<void> {
-    // Override in subclasses if needed
-  }
-
-  protected async beforeDelete(id: string): Promise<{ allowed: boolean; reason?: string }> {
-    return { allowed: true };
-  }
-
-  protected async afterDelete(id: string): Promise<void> {
-    // Override in subclasses if needed
+  /**
+   * Get count of entities
+   */
+  async count(filters?: FilterOptions): Promise<number> {
+    try {
+      return await this.repository.count(filters);
+    } catch (error) {
+      console.error('Error getting count:', error);
+      return 0;
+    }
   }
 }

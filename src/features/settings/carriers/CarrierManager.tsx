@@ -52,11 +52,13 @@ const CarrierForm: React.FC<CarrierFormProps> = ({ carrier, isOpen, onClose, onS
           alert('Cannot update carrier: Missing ID. Please refresh and try again.');
           return;
         }
-        const updated = await carrierService.update(carrier.id, formData);
-        onSave(updated);
+        const { data: updated, error: updateError } = await carrierService.updateCarrier(carrier.id, formData);
+        if (updateError) throw new Error(updateError.message);
+        if (updated) onSave(updated);
       } else {
-        const created = await carrierService.create(formData);
-        onSave(created);
+        const { data: created, error: createError } = await carrierService.createCarrier(formData);
+        if (createError) throw new Error(createError.message);
+        if (created) onSave(created);
       }
       onClose();
     } catch (error) {
@@ -301,9 +303,12 @@ export const CarrierManager: React.FC = () => {
   const loadCarriers = async () => {
     try {
       setLoading(true);
-      const data = await carrierService.getAll();
-      console.log('Loaded carriers:', data.map(c => ({ id: c.id, name: c.name })));
-      setCarriers(data);
+      const { data, error } = await carrierService.getAllCarriers();
+      if (error) throw new Error(error.message);
+      if (data) {
+        console.log('Loaded carriers:', data.map(c => ({ id: c.id, name: c.name })));
+        setCarriers(data);
+      }
     } catch (error) {
       console.error('Error loading carriers:', error);
     } finally {
@@ -324,7 +329,7 @@ export const CarrierManager: React.FC = () => {
   const handleDeleteCarrier = async (carrier: Carrier) => {
     if (window.confirm(`Are you sure you want to delete ${carrier.name}?`)) {
       try {
-        await carrierService.delete(carrier.id);
+        await carrierService.deleteCarrier(carrier.id);
         setCarriers(carriers.filter(c => c.id !== carrier.id));
       } catch (error) {
         console.error('Error deleting carrier:', error);
