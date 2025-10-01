@@ -1,221 +1,301 @@
-// /home/nneessen/projects/commissionTracker/src/features/auth/Login.tsx
+// src/features/auth/Login.tsx
 
 import React, { useState } from 'react';
-import { supabase } from '../../services/base/supabase';
+import { useAuth } from '../../contexts/AuthContext';
 import { Button, Input } from '../../components/ui';
 
 interface LoginProps {
   onSuccess?: () => void;
 }
 
+type AuthMode = 'signin' | 'signup' | 'reset';
+
+interface FormErrors {
+  email?: string;
+  password?: string;
+  confirmPassword?: string;
+}
+
 export const Login: React.FC<LoginProps> = ({ onSuccess }) => {
-  const [isSignUp, setIsSignUp] = useState(false);
+  const { signIn, signUp, resetPassword } = useAuth();
+  const [mode, setMode] = useState<AuthMode>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [formErrors, setFormErrors] = useState<FormErrors>({});
 
-  const handleAuth = async (e: React.FormEvent) => {
+  const validateForm = (): boolean => {
+    const errors: FormErrors = {};
+
+    // Email validation
+    if (!email) {
+      errors.email = 'Email is required';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      errors.email = 'Please enter a valid email address';
+    }
+
+    // Password validation
+    if (mode !== 'reset') {
+      if (!password) {
+        errors.password = 'Password is required';
+      } else if (password.length < 6) {
+        errors.password = 'Password must be at least 6 characters';
+      }
+
+      // Confirm password validation (signup only)
+      if (mode === 'signup') {
+        if (!confirmPassword) {
+          errors.confirmPassword = 'Please confirm your password';
+        } else if (password !== confirmPassword) {
+          errors.confirmPassword = 'Passwords do not match';
+        }
+      }
+    }
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!validateForm()) {
+      return;
+    }
+
     setError(null);
     setMessage(null);
     setLoading(true);
 
     try {
-      if (isSignUp) {
-        // Sign up
-        if (password !== confirmPassword) {
-          throw new Error('Passwords do not match');
-        }
-        if (password.length < 6) {
-          throw new Error('Password must be at least 6 characters');
-        }
-
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/auth/callback`,
-            data: {
-              full_name: email.split('@')[0], // Default name from email
-            }
-          }
-        });
-
-        if (error) throw error;
-
-        if (data.user && !data.session) {
-          setMessage('Check your email for the confirmation link!');
-        } else if (data.session) {
-          // Auto-confirmed (for development)
-          onSuccess?.();
-        }
-      } else {
-        // Sign in
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-
-        if (error) throw error;
-
-        if (data.session) {
-          onSuccess?.();
-        }
+      if (mode === 'signin') {
+        await signIn(email, password);
+        onSuccess?.();
+      } else if (mode === 'signup') {
+        await signUp(email, password);
+        setMessage('Account created! Please check your email for confirmation.');
+        // Don't call onSuccess here - wait for email confirmation
+      } else if (mode === 'reset') {
+        await resetPassword(email);
+        setMessage('Password reset email sent! Check your inbox.');
+        // Switch back to signin mode after a delay
+        setTimeout(() => setMode('signin'), 3000);
       }
-    } catch (error) {
-      setError(error instanceof Error ? error.message : 'An error occurred');
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'An error occurred';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
-  const handlePasswordReset = async () => {
-    if (!email) {
-      setError('Please enter your email address');
-      return;
-    }
-
-    setLoading(true);
+  const switchMode = (newMode: AuthMode) => {
+    setMode(newMode);
     setError(null);
     setMessage(null);
+    setFormErrors({});
+    setPassword('');
+    setConfirmPassword('');
+  };
 
-    try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/reset-password`,
-      });
+  const getTitle = () => {
+    switch (mode) {
+      case 'signup':
+        return 'Create your account';
+      case 'reset':
+        return 'Reset your password';
+      default:
+        return 'Welcome back';
+    }
+  };
 
-      if (error) throw error;
+  const getSubtitle = () => {
+    switch (mode) {
+      case 'signup':
+        return 'Start tracking your commissions today';
+      case 'reset':
+        return "Enter your email and we'll send you a reset link";
+      default:
+        return 'Sign in to continue to your dashboard';
+    }
+  };
 
-      setMessage('Check your email for the password reset link!');
-    } catch (error) {
-      setError(error instanceof Error ? error.message : 'An error occurred');
-    } finally {
-      setLoading(false);
+  const getButtonText = () => {
+    if (loading) return 'Please wait...';
+    switch (mode) {
+      case 'signup':
+        return 'Create account';
+      case 'reset':
+        return 'Send reset link';
+      default:
+        return 'Sign in';
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            {isSignUp ? 'Create your account' : 'Sign in to your account'}
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-indigo-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full">
+        {/* Logo/Brand */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white text-2xl font-bold mb-4 shadow-lg">
+            CT
+          </div>
+          <h2 className="text-3xl font-bold text-gray-900 mb-2">
+            {getTitle()}
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            {isSignUp ? 'Already have an account?' : "Don't have an account?"}
-            {' '}
-            <button
-              type="button"
-              onClick={() => {
-                setIsSignUp(!isSignUp);
-                setError(null);
-                setMessage(null);
-              }}
-              className="font-medium text-blue-600 hover:text-blue-500"
-            >
-              {isSignUp ? 'Sign in' : 'Sign up'}
-            </button>
+          <p className="text-sm text-gray-600">
+            {getSubtitle()}
           </p>
         </div>
 
-        <form className="mt-8 space-y-6" onSubmit={handleAuth}>
-          <div className="rounded-md shadow-sm -space-y-px">
-            <div>
-              <label htmlFor="email-address" className="sr-only">
-                Email address
-              </label>
-              <Input
-                type="email"
-                required
-                value={email}
-                onChange={(value) => setEmail(String(value))}
-                placeholder="Email address"
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-              />
+        {/* Main Card */}
+        <div className="bg-white rounded-2xl shadow-xl p-8 space-y-6">
+          {/* Success Message */}
+          {message && (
+            <div className="rounded-xl bg-green-50 border border-green-200 p-4 animate-fadeIn">
+              <div className="flex items-start">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <p className="ml-3 text-sm font-medium text-green-800">
+                  {message}
+                </p>
+              </div>
             </div>
-            <div>
-              <label htmlFor="password" className="sr-only">
-                Password
-              </label>
+          )}
+
+          {/* Error Message */}
+          {error && (
+            <div className="rounded-xl bg-red-50 border border-red-200 p-4 animate-fadeIn">
+              <div className="flex items-start">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <p className="ml-3 text-sm font-medium text-red-800">
+                  {error}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Form */}
+          <form className="space-y-5" onSubmit={handleSubmit}>
+            {/* Email Input */}
+            <Input
+              label="Email address"
+              type="email"
+              placeholder="you@example.com"
+              value={email}
+              onChange={(value) => setEmail(String(value))}
+              error={formErrors.email}
+              required
+              disabled={loading}
+              className="w-full"
+            />
+
+            {/* Password Input (not shown in reset mode) */}
+            {mode !== 'reset' && (
               <Input
+                label="Password"
                 type="password"
-                required
+                placeholder="Enter your password"
                 value={password}
                 onChange={(value) => setPassword(String(value))}
-                placeholder="Password"
-                className={`appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 ${
-                  isSignUp && !confirmPassword ? '' : 'rounded-b-md'
-                } focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm`}
+                error={formErrors.password}
+                required
+                disabled={loading}
+                className="w-full"
               />
-            </div>
-            {isSignUp && (
-              <div>
-                <label htmlFor="confirm-password" className="sr-only">
-                  Confirm Password
-                </label>
-                <Input
-                  type="password"
-                  required
-                  value={confirmPassword}
-                  onChange={(value) => setConfirmPassword(String(value))}
-                  placeholder="Confirm Password"
-                  className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                />
-              </div>
             )}
-          </div>
 
-          {!isSignUp && (
-            <div className="flex items-center justify-between">
-              <div className="text-sm">
+            {/* Confirm Password Input (signup only) */}
+            {mode === 'signup' && (
+              <Input
+                label="Confirm password"
+                type="password"
+                placeholder="Confirm your password"
+                value={confirmPassword}
+                onChange={(value) => setConfirmPassword(String(value))}
+                error={formErrors.confirmPassword}
+                required
+                disabled={loading}
+                className="w-full"
+              />
+            )}
+
+            {/* Forgot Password Link (signin only) */}
+            {mode === 'signin' && (
+              <div className="flex items-center justify-end">
                 <button
                   type="button"
-                  onClick={handlePasswordReset}
-                  className="font-medium text-blue-600 hover:text-blue-500"
+                  onClick={() => switchMode('reset')}
+                  className="text-sm font-medium text-blue-600 hover:text-blue-500 transition-colors"
+                  disabled={loading}
                 >
                   Forgot your password?
                 </button>
               </div>
-            </div>
-          )}
+            )}
 
-          {error && (
-            <div className="rounded-md bg-red-50 p-4">
-              <div className="flex">
-                <div className="ml-3">
-                  <h3 className="text-sm font-medium text-red-800">
-                    {error}
-                  </h3>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {message && (
-            <div className="rounded-md bg-green-50 p-4">
-              <div className="flex">
-                <div className="ml-3">
-                  <h3 className="text-sm font-medium text-green-800">
-                    {message}
-                  </h3>
-                </div>
-              </div>
-            </div>
-          )}
-
-          <div>
+            {/* Submit Button */}
             <Button
               type="submit"
               disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              loading={loading}
+              className="w-full py-3 text-base font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white"
             >
-              {loading ? 'Loading...' : (isSignUp ? 'Sign up' : 'Sign in')}
+              {getButtonText()}
             </Button>
+          </form>
+
+          {/* Mode Switcher */}
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-200"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-4 bg-white text-gray-500">
+                {mode === 'signin' && "Don't have an account?"}
+                {mode === 'signup' && "Already have an account?"}
+                {mode === 'reset' && "Remember your password?"}
+              </span>
+            </div>
           </div>
-        </form>
+
+          {mode === 'signin' && (
+            <button
+              type="button"
+              onClick={() => switchMode('signup')}
+              className="w-full text-center text-sm font-medium text-blue-600 hover:text-blue-500 transition-colors py-2"
+              disabled={loading}
+            >
+              Create a new account
+            </button>
+          )}
+
+          {(mode === 'signup' || mode === 'reset') && (
+            <button
+              type="button"
+              onClick={() => switchMode('signin')}
+              className="w-full text-center text-sm font-medium text-blue-600 hover:text-blue-500 transition-colors py-2"
+              disabled={loading}
+            >
+              Sign in instead
+            </button>
+          )}
+        </div>
+
+        {/* Footer */}
+        <p className="mt-8 text-center text-xs text-gray-500">
+          By continuing, you agree to our Terms of Service and Privacy Policy
+        </p>
       </div>
     </div>
   );
