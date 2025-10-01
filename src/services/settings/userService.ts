@@ -8,7 +8,19 @@ export class UserService {
   /**
    * Get the current authenticated user with metadata
    */
+  // ✅ PHASE 2: Simple in-memory cache for current user
+  private currentUserCache: { user: User; timestamp: number } | null = null;
+  private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
   async getCurrentUser(): Promise<User | null> {
+    // ✅ PHASE 2: Check cache first
+    if (this.currentUserCache) {
+      const age = Date.now() - this.currentUserCache.timestamp;
+      if (age < this.CACHE_TTL) {
+        return this.currentUserCache.user;
+      }
+    }
+
     const { data: { user }, error } = await supabase.auth.getUser();
 
     if (error || !user) {
@@ -16,7 +28,15 @@ export class UserService {
     }
 
     // Map Supabase user to our User type
-    return this.mapSupabaseUserToUser(user);
+    const mappedUser = this.mapSupabaseUserToUser(user);
+
+    // ✅ PHASE 2: Update cache
+    this.currentUserCache = {
+      user: mappedUser,
+      timestamp: Date.now()
+    };
+
+    return mappedUser;
   }
 
   /**
@@ -79,7 +99,28 @@ export class UserService {
       throw error;
     }
 
-    // Fetch and return updated user
+    // ✅ PHASE 2: Try to get updated user from auth session first (avoid double query)
+    const { data: { user }, error: getUserError } = await supabase.auth.getUser();
+
+    if (!getUserError && user && user.id === userId) {
+      // User is authenticated and matches - map from auth user with updated metadata
+      const updatedUser = this.mapSupabaseUserToUser({
+        ...user,
+        user_metadata: { ...user.user_metadata, ...metadata }
+      });
+
+      // ✅ PHASE 2: Update cache if this is the current user
+      if (this.currentUserCache?.user.id === userId) {
+        this.currentUserCache = {
+          user: updatedUser,
+          timestamp: Date.now()
+        };
+      }
+
+      return updatedUser;
+    }
+
+    // Fallback to database query if auth user mismatch or error
     return this.getUserById(userId);
   }
 
@@ -118,10 +159,20 @@ export class UserService {
    * Sign out the current user
    */
   async signOut(): Promise<void> {
+    // ✅ PHASE 2: Clear cache on sign out
+    this.clearCache();
+
     const { error } = await supabase.auth.signOut();
     if (error) {
       throw error;
     }
+  }
+
+  /**
+   * ✅ PHASE 2: Clear user cache (call on sign out or user update)
+   */
+  clearCache(): void {
+    this.currentUserCache = null;
   }
 
   /**
