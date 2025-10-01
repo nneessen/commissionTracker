@@ -56,8 +56,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setSupabaseUser(session?.user ?? null);
 
         // Get full user data with metadata
+        // ✅ OPTIMIZED: Map directly from session user (no database query!)
         if (session?.user) {
-          const fullUser = await userService.getUserById(session.user.id);
+          const fullUser = userService.mapAuthUserToUser(session.user);
           setUser(fullUser);
         } else {
           setUser(null);
@@ -103,8 +104,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setSupabaseUser(session?.user ?? null);
 
       // Get full user data with metadata
+      // ✅ OPTIMIZED: Map directly from session user (no database query!)
       if (session?.user) {
-        const fullUser = await userService.getUserById(session.user.id);
+        const fullUser = userService.mapAuthUserToUser(session.user);
         setUser(fullUser);
       } else {
         setUser(null);
@@ -134,8 +136,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setSupabaseUser(session?.user ?? null);
 
       // Get full user data with metadata
+      // ✅ OPTIMIZED: Map directly from session user (no database query!)
       if (session?.user) {
-        const fullUser = await userService.getUserById(session.user.id);
+        const fullUser = userService.mapAuthUserToUser(session.user);
         setUser(fullUser);
       }
 
@@ -164,8 +167,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setSupabaseUser(data.user);
 
       // Get full user data with metadata
+      // ✅ OPTIMIZED: Map directly from auth user (no database query!)
       if (data.user) {
-        const fullUser = await userService.getUserById(data.user.id);
+        const fullUser = userService.mapAuthUserToUser(data.user);
         setUser(fullUser);
       }
 
@@ -207,8 +211,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setSupabaseUser(data.user);
 
       // Get full user data with metadata
+      // ✅ OPTIMIZED: Map directly from auth user (no database query!)
       if (data.user) {
-        const fullUser = await userService.getUserById(data.user.id);
+        const fullUser = userService.mapAuthUserToUser(data.user);
         setUser(fullUser);
       }
 

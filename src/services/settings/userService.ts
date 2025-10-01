@@ -99,8 +99,19 @@ export class UserService {
    * Get user's contract compensation level
    */
   async getUserContractLevel(userId: string): Promise<number> {
-    const user = await this.getUserById(userId);
-    return user?.contractCompLevel || 100; // Default to 100 if not set
+    // ✅ OPTIMIZED: Only fetch the field we need (not entire user object)
+    const { data, error } = await supabase
+      .from('users')
+      .select('contract_comp_level')
+      .eq('id', userId)
+      .single();
+
+    if (error || !data) {
+      logger.error('Error fetching contract level', error instanceof Error ? error : String(error), 'UserService');
+      return 100; // Default to 100 if not set
+    }
+
+    return data.contract_comp_level || 100;
   }
 
   /**
@@ -111,6 +122,14 @@ export class UserService {
     if (error) {
       throw error;
     }
+  }
+
+  /**
+   * Map Supabase auth user to our User type (public for AuthContext)
+   * This allows AuthContext to map users without a database query
+   */
+  public mapAuthUserToUser(supabaseUser: any): User {
+    return this.mapSupabaseUserToUser(supabaseUser);
   }
 
   /**
