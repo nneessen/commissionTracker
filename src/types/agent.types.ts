@@ -2,7 +2,7 @@
 
 export interface AgentSettings {
   id: string;
-  agentId: string;
+  userId: string;
   contractLevel: number; // 80-145
   firstName?: string;
   lastName?: string;

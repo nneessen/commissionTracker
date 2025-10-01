@@ -61,7 +61,7 @@ export interface Chargeback {
   id: string;
   policyId: string;
   commissionId: string;
-  agentId?: string;
+  userId?: string;
   chargebackType: 'policy_lapse' | 'refund' | 'cancellation';
   chargebackAmount: number;
   chargebackReason?: string;
@@ -75,7 +75,7 @@ export interface Chargeback {
 export interface CreateChargebackData {
   policyId: string;
   commissionId: string;
-  agentId?: string;
+  userId?: string;
   chargebackType: 'policy_lapse' | 'refund' | 'cancellation';
   chargebackAmount: number;
   chargebackReason?: string;

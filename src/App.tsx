@@ -4,6 +4,7 @@ import { Outlet, useNavigate } from "@tanstack/react-router";
 import { Sidebar } from "./components/layout";
 import { useAuth } from "./contexts/AuthContext";
 import { Login } from "./features/auth/Login";
+import { logger } from "./services/base/logger";
 import "./App.css";
 
 function App() {
@@ -21,7 +22,7 @@ function App() {
         await signOut();
         navigate({ to: "/" });
       } catch (error) {
-        console.error("Logout error:", error);
+        logger.error("Logout error", error instanceof Error ? error : String(error), "App");
       }
     }
   };

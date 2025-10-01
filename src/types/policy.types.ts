@@ -36,7 +36,7 @@ export interface Policy {
 
   // Policy Details
   carrierId: string;
-  agentId?: string; // Optional for backward compatibility
+  userId?: string; // Links to auth.users
   product: ProductType;
   effectiveDate: Date;
   termLength?: number; // in years
@@ -117,7 +117,7 @@ export interface CreatePolicyData {
   policyNumber: string;
   client: PolicyClient | PolicyClientExtended; // Support both formats
   carrierId: string;
-  agentId?: string; // Optional for backward compatibility
+  userId?: string; // Links to auth.users
   product: ProductType;
   effectiveDate: Date;
   termLength?: number;

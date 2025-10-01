@@ -117,7 +117,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         await refreshSession();
       }
     } catch (err) {
-      logger.error('Error checking session', err, 'Auth');
+      logger.error('Error checking session', err instanceof Error ? err : String(err), 'Auth');
       setError(err instanceof Error ? err : new Error('Failed to check session'));
     } finally {
       setLoading(false);
@@ -141,7 +141,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       logger.auth('Session refreshed');
     } catch (err) {
-      logger.error('Error refreshing session', err, 'Auth');
+      logger.error('Error refreshing session', err instanceof Error ? err : String(err), 'Auth');
       // If refresh fails, user needs to sign in again
       await signOut();
       throw err;
@@ -171,7 +171,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       logger.auth('Sign in successful', { email: data.user?.email });
     } catch (err) {
-      logger.error('Sign in error', err, 'Auth');
+      logger.error('Sign in error', err instanceof Error ? err : String(err), 'Auth');
       setError(err instanceof Error ? err : new Error('Failed to sign in'));
       throw err;
     } finally {
@@ -214,7 +214,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       logger.auth('Sign up successful', { email: data.user?.email });
     } catch (err) {
-      logger.error('Sign up error', err, 'Auth');
+      logger.error('Sign up error', err instanceof Error ? err : String(err), 'Auth');
       setError(err instanceof Error ? err : new Error('Failed to sign up'));
       throw err;
     } finally {
@@ -237,7 +237,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       logger.auth('Sign out successful');
     } catch (err) {
-      logger.error('Sign out error', err, 'Auth');
+      logger.error('Sign out error', err instanceof Error ? err : String(err), 'Auth');
       setError(err instanceof Error ? err : new Error('Failed to sign out'));
       throw err;
     } finally {
@@ -258,7 +258,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       logger.auth('Password reset email sent');
     } catch (err) {
-      logger.error('Password reset error', err, 'Auth');
+      logger.error('Password reset error', err instanceof Error ? err : String(err), 'Auth');
       setError(err instanceof Error ? err : new Error('Failed to reset password'));
       throw err;
     } finally {
@@ -279,7 +279,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       logger.auth('Password updated successfully');
     } catch (err) {
-      logger.error('Password update error', err, 'Auth');
+      logger.error('Password update error', err instanceof Error ? err : String(err), 'Auth');
       setError(err instanceof Error ? err : new Error('Failed to update password'));
       throw err;
     } finally {
@@ -303,7 +303,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       logger.auth('User metadata updated successfully');
     } catch (err) {
-      logger.error('Error updating user metadata', err, 'Auth');
+      logger.error('Error updating user metadata', err instanceof Error ? err : String(err), 'Auth');
       setError(err instanceof Error ? err : new Error('Failed to update user metadata'));
       throw err;
     } finally {

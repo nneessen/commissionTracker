@@ -1,4 +1,5 @@
 // /home/nneessen/projects/commissionTracker/src/hooks/policies/usePolicies.ts
+import { logger } from '../../services/base/logger';
 
 import { useState, useEffect } from 'react';
 import { Policy, PolicyFilters } from '../../types';
@@ -61,7 +62,7 @@ export function usePolicies(): UsePoliciesResult {
         setPolicies(data);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load policies');
-        console.error('Error loading policies:', err);
+        logger.error('Error loading policies', err instanceof Error ? err : String(err), 'Migration');
       } finally {
         setIsLoading(false);
       }

@@ -1,6 +1,6 @@
 // /home/nneessen/projects/commissionTracker/src/features/policies/PolicyList.tsx
 
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import {
   Edit,
   Trash2,
@@ -64,7 +64,7 @@ export const PolicyList: React.FC<PolicyListProps> = ({
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [showFilters, setShowFilters] = useState(false);
 
-  const filteredAndSortedPolicies = useMemo(() => {
+  const filteredAndSortedPolicies = (() => {
     const filtered = filterPolicies({ ...filters, searchTerm });
 
     return [...filtered].sort((a, b) => {
@@ -110,14 +110,7 @@ export const PolicyList: React.FC<PolicyListProps> = ({
         return aVal < bVal ? 1 : -1;
       }
     });
-  }, [
-    filters,
-    searchTerm,
-    sortField,
-    sortDirection,
-    filterPolicies,
-    getCarrierById,
-  ]);
+  })();
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {

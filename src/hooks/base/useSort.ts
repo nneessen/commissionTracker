@@ -29,7 +29,7 @@ export interface UseSortResult<T> {
 /**
  * Compare two values for sorting
  */
-function compareValues(a: any, b: any, direction: SortDirection): number {
+function compareValues(a: unknown, b: unknown, direction: SortDirection): number {
   // Handle null/undefined values
   if (a === null || a === undefined) return direction === 'asc' ? 1 : -1;
   if (b === null || b === undefined) return direction === 'asc' ? -1 : 1;

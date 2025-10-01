@@ -1,37 +1,99 @@
 // src/services/commissions/CommissionRepository.ts
+import { logger } from '../base/logger';
 import { BaseRepository } from '../base/BaseRepository';
 import { TABLES } from '../base/supabase';
 import { Commission, CreateCommissionData, UpdateCommissionData } from '../../types/commission.types';
+import { caches, DataLoader } from '../../utils/cache';
+import { batchLoadByIds, batchLoadByForeignKey } from '../../utils/queryBatch';
+import { queryPerformance, measureAsync } from '../../utils/performance';
 
 export class CommissionRepository extends BaseRepository<Commission, CreateCommissionData, UpdateCommissionData> {
+  // DataLoader for batching findById requests
+  private idLoader = new DataLoader<string, Commission>(
+    async (ids: string[]) => {
+      const resultMap = await batchLoadByIds<any>(TABLES.COMMISSIONS, ids);
+      return ids.map(id => {
+        const data = resultMap.get(id);
+        return data ? this.transformFromDB(data) : null as any;
+      });
+    },
+    { maxBatchSize: 100, batchWindowMs: 10 }
+  );
+
   constructor() {
     super(TABLES.COMMISSIONS);
   }
 
-  async findByPolicy(policyId: string): Promise<Commission[]> {
-    try {
-      const { data, error } = await this.client
-        .from(this.tableName)
-        .select('*')
-        .eq('policy_id', policyId)
-        .order('created_at', { ascending: false });
+  /**
+   * Override findById to use caching and batching
+   */
+  async findById(id: string): Promise<Commission | null> {
+    // Check cache first
+    const cacheKey = `commission:${id}`;
+    const cached = caches.commissions.get(cacheKey);
+    if (cached) {
+      return cached as Commission;
+    }
 
-      if (error) {
-        throw this.handleError(error, 'findByPolicy');
+    try {
+      // Use DataLoader for automatic batching
+      const commission = await this.idLoader.load(id);
+
+      // Cache the result
+      if (commission) {
+        caches.commissions.set(cacheKey, commission);
       }
 
-      return data?.map(this.transformFromDB) || [];
+      return commission;
     } catch (error) {
-      throw this.wrapError(error, 'findByPolicy');
+      // Fallback to base implementation
+      return super.findById(id);
     }
   }
 
-  async findByAgent(agentId: string): Promise<Commission[]> {
+  /**
+   * Batch load commissions by IDs
+   */
+  async findByIds(ids: string[]): Promise<Commission[]> {
+    if (ids.length === 0) return [];
+
+    try {
+      const resultMap = await batchLoadByIds<any>(TABLES.COMMISSIONS, ids);
+      return ids
+        .map(id => resultMap.get(id))
+        .filter(Boolean)
+        .map(data => this.transformFromDB(data));
+    } catch (error) {
+      throw this.wrapError(error, 'findByIds');
+    }
+  }
+
+  async findByPolicy(policyId: string): Promise<Commission[]> {
+    return queryPerformance.trackQuery('findByPolicy', 'commissions', async () => {
+      try {
+        const { data, error } = await this.client
+          .from(this.tableName)
+          .select('*')
+          .eq('policy_id', policyId)
+          .order('created_at', { ascending: false });
+
+        if (error) {
+          throw this.handleError(error, 'findByPolicy');
+        }
+
+        return data?.map(this.transformFromDB) || [];
+      } catch (error) {
+        throw this.wrapError(error, 'findByPolicy');
+      }
+    });
+  }
+
+  async findByAgent(userId: string): Promise<Commission[]> {
     try {
       const { data, error } = await this.client
         .from(this.tableName)
         .select('*')
-        .eq('agent_id', agentId)
+        .eq('user_id', userId)
         .order('expected_date', { ascending: false });
 
       if (error) {
@@ -99,7 +161,7 @@ export class CommissionRepository extends BaseRepository<Commission, CreateCommi
     }
   }
 
-  async getMonthlyEarnings(agentId: string, year: number, month: number): Promise<{
+  async getMonthlyEarnings(userId: string, year: number, month: number): Promise<{
     expected: number;
     actual: number;
     pending: number;
@@ -112,7 +174,7 @@ export class CommissionRepository extends BaseRepository<Commission, CreateCommi
       const { data, error } = await this.client
         .from(this.tableName)
         .select('commission_amount, status, actual_date')
-        .eq('agent_id', agentId)
+        .eq('user_id', userId)
         .gte('month_earned', month)
         .eq('year_earned', year);
 
@@ -140,7 +202,7 @@ export class CommissionRepository extends BaseRepository<Commission, CreateCommi
     }
   }
 
-  async getYearToDateSummary(agentId: string, year: number): Promise<{
+  async getYearToDateSummary(userId: string, year: number): Promise<{
     totalExpected: number;
     totalActual: number;
     totalPending: number;
@@ -155,7 +217,7 @@ export class CommissionRepository extends BaseRepository<Commission, CreateCommi
       const { data, error } = await this.client
         .from(this.tableName)
         .select('commission_amount, status, month_earned, year_earned')
-        .eq('agent_id', agentId)
+        .eq('user_id', userId)
         .eq('year_earned', year)
         .order('month_earned', { ascending: true });
 
@@ -248,7 +310,7 @@ export class CommissionRepository extends BaseRepository<Commission, CreateCommi
     return {
       id: dbRecord.id,
       policyId: dbRecord.policy_id,
-      agentId: dbRecord.agent_id,
+      userId: dbRecord.user_id,
       client: dbRecord.client, // JSONB field
       carrierId: dbRecord.carrier_id,
       product: dbRecord.product,
@@ -278,7 +340,7 @@ export class CommissionRepository extends BaseRepository<Commission, CreateCommi
     const dbData: any = {};
 
     if (data.policyId !== undefined) dbData.policy_id = data.policyId;
-    if (data.agentId !== undefined) dbData.agent_id = data.agentId;
+    if (data.userId !== undefined) dbData.user_id = data.userId;
     if (data.client !== undefined) dbData.client = data.client;
     if (data.carrierId !== undefined) dbData.carrier_id = data.carrierId;
     if (data.product !== undefined) dbData.product = data.product;

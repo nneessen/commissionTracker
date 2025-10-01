@@ -10,7 +10,5 @@ export { useCommissionMetrics } from './commissions/useCommissionMetrics';
 // For backward compatibility, export types
 export type { UseCommissionsResult } from './commissions/useCommissions';
 export type { UseCommissionResult } from './commissions/useCommission';
-export type { UseCreateCommissionResult } from './commissions/useCreateCommission';
-export type { UseDeleteCommissionResult } from './commissions/useDeleteCommission';
 export type { UseCommissionMetricsResult } from './commissions/useCommissionMetrics';
 

@@ -1,4 +1,5 @@
 // src/services/settings/constantsService.ts
+import { logger } from '../base/logger';
 
 import { supabase } from '../base/supabase';
 
@@ -30,7 +31,7 @@ export const constantsService = {
         target2: 6500,
       };
     } catch (error) {
-      console.error('Error fetching constants:', error);
+      logger.error('Error fetching constants', error instanceof Error ? error : String(error), 'Migration');
       throw error;
     }
   },
@@ -47,5 +48,21 @@ export const constantsService = {
   async updateMultiple(updates: any[]): Promise<any> {
     // Placeholder for bulk updates
     throw new Error('Not implemented');
+  },
+
+  async setValue(field: string, value: number): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('constants')
+        .update({ [field]: value })
+        .eq('id', 1); // Assuming single row with id 1
+
+      if (error) {
+        throw new Error(`Failed to update constant ${field}: ${error.message}`);
+      }
+    } catch (error) {
+      logger.error(`Error updating constant ${field}`, error instanceof Error ? error : String(error), 'ConstantsService');
+      throw error;
+    }
   }
 };

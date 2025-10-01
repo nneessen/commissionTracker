@@ -1,5 +1,6 @@
 // src/services/base/BaseService.ts
 import { BaseRepository, BaseEntity, QueryOptions, FilterOptions } from './BaseRepository';
+import { logger } from './logger';
 
 export interface ServiceResponse<T> {
   data?: T;
@@ -16,11 +17,15 @@ export interface ListResponse<T> {
 
 export interface ValidationRule {
   field: string;
-  validate: (value: any, data?: any) => boolean;
+  validate: (value: unknown, data?: Record<string, unknown>) => boolean;
   message: string;
 }
 
-export abstract class BaseService<T extends BaseEntity, CreateData = any, UpdateData = any> {
+export abstract class BaseService<
+  T extends BaseEntity,
+  CreateData = Partial<T>,
+  UpdateData = Partial<T>
+> {
   protected repository: BaseRepository<T, CreateData, UpdateData>;
   protected validationRules: ValidationRule[] = [];
 
@@ -39,7 +44,7 @@ export abstract class BaseService<T extends BaseEntity, CreateData = any, Update
   /**
    * Validate data against rules
    */
-  protected validate(data: any, rules?: ValidationRule[]): Error[] {
+  protected validate(data: Record<string, unknown>, rules?: ValidationRule[]): Error[] {
     const errors: Error[] = [];
     const rulesToUse = rules || this.validationRules;
 
@@ -56,8 +61,12 @@ export abstract class BaseService<T extends BaseEntity, CreateData = any, Update
   /**
    * Get nested value from object using dot notation
    */
-  private getNestedValue(obj: any, path: string): any {
-    return path.split('.').reduce((current, part) => current?.[part], obj);
+  private getNestedValue(obj: Record<string, unknown>, path: string): unknown {
+    return path.split('.').reduce((current: unknown, part) => {
+      return current && typeof current === 'object' && part in current
+        ? (current as Record<string, unknown>)[part]
+        : undefined;
+    }, obj);
   }
 
   /**
@@ -65,7 +74,7 @@ export abstract class BaseService<T extends BaseEntity, CreateData = any, Update
    */
   async create(data: CreateData): Promise<ServiceResponse<T>> {
     try {
-      const errors = this.validate(data);
+      const errors = this.validate(data as Record<string, unknown>);
       if (errors.length > 0) {
         return {
           success: false,
@@ -179,7 +188,7 @@ export abstract class BaseService<T extends BaseEntity, CreateData = any, Update
    */
   async update(id: string, updates: UpdateData): Promise<ServiceResponse<T>> {
     try {
-      const errors = this.validate(updates);
+      const errors = this.validate(updates as Record<string, unknown>);
       if (errors.length > 0) {
         return {
           success: false,
@@ -224,7 +233,7 @@ export abstract class BaseService<T extends BaseEntity, CreateData = any, Update
     try {
       // Validate all items
       for (const item of items) {
-        const errors = this.validate(item);
+        const errors = this.validate(item as Record<string, unknown>);
         if (errors.length > 0) {
           return {
             success: false,
@@ -253,7 +262,7 @@ export abstract class BaseService<T extends BaseEntity, CreateData = any, Update
     try {
       return await this.repository.exists(id);
     } catch (error) {
-      console.error('Error checking existence:', error);
+      logger.error('Error checking existence', error instanceof Error ? error : String(error), 'BaseService');
       return false;
     }
   }
@@ -265,7 +274,7 @@ export abstract class BaseService<T extends BaseEntity, CreateData = any, Update
     try {
       return await this.repository.count(filters);
     } catch (error) {
-      console.error('Error getting count:', error);
+      logger.error('Error getting count', error instanceof Error ? error : String(error), 'BaseService');
       return 0;
     }
   }

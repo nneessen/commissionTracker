@@ -1,4 +1,5 @@
 // /home/nneessen/projects/commissionTracker/src/services/settings/agentService.ts
+import { logger } from '../base/logger';
 // This file is deprecated - use userService.ts instead
 // Keeping for backward compatibility
 
@@ -35,8 +36,8 @@ export class AgentService {
     throw new Error('Users cannot be deleted through this interface');
   }
 
-  async getAgentContractLevel(agentId: string): Promise<number> {
-    return userService.getUserContractLevel(agentId);
+  async getAgentContractLevel(userId: string): Promise<number> {
+    return userService.getUserContractLevel(userId);
   }
 }
 

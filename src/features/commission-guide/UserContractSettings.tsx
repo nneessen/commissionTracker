@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Save, User, Percent, AlertCircle, CheckCircle } from 'lucide-react';
+import { logger } from '../../services/base/logger';
 
 interface UserContractData {
   contractLevel: number;
@@ -29,7 +30,7 @@ export function UserContractSettings() {
         setContractData(JSON.parse(saved));
       }
     } catch (error) {
-      console.error('Failed to load contract settings:', error);
+      logger.error('Failed to load contract settings', error instanceof Error ? error : String(error), 'UserContractSettings');
     }
   };
 
@@ -54,7 +55,7 @@ export function UserContractSettings() {
 
       setMessage({ type: 'success', text: 'Contract settings saved successfully!' });
     } catch (error) {
-      console.error('Failed to save contract settings:', error);
+      logger.error('Failed to save contract settings', error instanceof Error ? error : String(error), 'UserContractSettings');
       setMessage({ type: 'error', text: 'Failed to save settings. Please try again.' });
     } finally {
       setSaving(false);

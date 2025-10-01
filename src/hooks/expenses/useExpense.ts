@@ -1,4 +1,5 @@
 // src/hooks/expenses/useExpense.ts
+import { logger } from '../../services/base/logger';
 import { useState, useEffect } from 'react';
 import { ExpenseItem } from '../../types/expense.types';
 import { expenseService } from '../../services';
@@ -32,7 +33,7 @@ export function useExpense(id: string): UseExpenseResult {
         setExpense(data);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load expense');
-        console.error('Error loading expense:', err);
+        logger.error('Error loading expense', err instanceof Error ? err : String(err), 'Migration');
       } finally {
         setIsLoading(false);
       }

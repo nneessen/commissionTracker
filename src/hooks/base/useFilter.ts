@@ -8,7 +8,7 @@ export type FilterOperator = 'equals' | 'contains' | 'startsWith' | 'endsWith' |
 export interface Filter<T> {
   field: keyof T;
   operator: FilterOperator;
-  value: any;
+  value: string | number | boolean | string[] | number[] | null | Date;
   caseSensitive?: boolean;
 }
 
@@ -60,10 +60,10 @@ function applyFilter<T>(item: T, filter: Filter<T>): boolean {
       return fieldStr.endsWith(filterStr);
 
     case 'greaterThan':
-      return fieldValue > filterValue;
+      return filterValue !== null && fieldValue > filterValue;
 
     case 'lessThan':
-      return fieldValue < filterValue;
+      return filterValue !== null && fieldValue < filterValue;
 
     case 'between':
       if (Array.isArray(filterValue) && filterValue.length === 2) {
@@ -72,10 +72,10 @@ function applyFilter<T>(item: T, filter: Filter<T>): boolean {
       return false;
 
     case 'in':
-      return Array.isArray(filterValue) && filterValue.includes(fieldValue);
+      return Array.isArray(filterValue) && (filterValue as unknown[]).includes(fieldValue);
 
     case 'notIn':
-      return Array.isArray(filterValue) && !filterValue.includes(fieldValue);
+      return Array.isArray(filterValue) && !(filterValue as unknown[]).includes(fieldValue);
 
     default:
       return true;

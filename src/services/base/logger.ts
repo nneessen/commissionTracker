@@ -9,7 +9,7 @@ type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 interface LogEntry {
   level: LogLevel;
   message: string;
-  data?: any;
+  data?: Record<string, unknown> | string | number | boolean | null | Error;
   timestamp: Date;
   context?: string;
 }
@@ -38,7 +38,7 @@ class Logger {
     return true;
   }
 
-  private log(level: LogLevel, message: string, data?: any, context?: string): void {
+  private log(level: LogLevel, message: string, data?: Record<string, unknown> | string | number | boolean | null | Error, context?: string): void {
     if (!this.shouldLog(level)) {
       return;
     }
@@ -85,24 +85,24 @@ class Logger {
     }
   }
 
-  debug(message: string, data?: any, context?: string): void {
+  debug(message: string, data?: Record<string, unknown> | string | number | boolean | null | Error, context?: string): void {
     this.log('debug', message, data, context);
   }
 
-  info(message: string, data?: any, context?: string): void {
+  info(message: string, data?: Record<string, unknown> | string | number | boolean | null | Error, context?: string): void {
     this.log('info', message, data, context);
   }
 
-  warn(message: string, data?: any, context?: string): void {
+  warn(message: string, data?: Record<string, unknown> | string | number | boolean | null | Error, context?: string): void {
     this.log('warn', message, data, context);
   }
 
-  error(message: string, data?: any, context?: string): void {
+  error(message: string, data?: Record<string, unknown> | string | number | boolean | null | Error, context?: string): void {
     this.log('error', message, data, context);
   }
 
   // Specific auth-related logging
-  auth(event: string, data?: any): void {
+  auth(event: string, data?: Record<string, unknown> | string | number | boolean | null | Error): void {
     this.info(`Auth event: ${event}`, data, 'Auth');
   }
 
@@ -137,4 +137,5 @@ class Logger {
 export const logger = new Logger();
 
 // Export for testing or custom instances
-export { Logger, LogLevel, LogEntry };
+export { Logger };
+export type { LogLevel, LogEntry };

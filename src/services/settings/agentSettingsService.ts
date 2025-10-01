@@ -1,4 +1,5 @@
 // src/services/settings/agentSettingsService.ts
+import { logger } from '../base/logger';
 
 export const agentSettingsService = {
   async getSettings(): Promise<any> {

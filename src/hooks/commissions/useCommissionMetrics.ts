@@ -1,4 +1,5 @@
 // src/hooks/commissions/useCommissionMetrics.ts
+import { logger } from '../../services/base/logger';
 import { useState, useEffect } from 'react';
 import { Commission, CommissionSummary } from '../../types/commission.types';
 import { commissionService } from '../../services';
@@ -137,7 +138,7 @@ export function useCommissionMetrics(): UseCommissionMetricsResult {
         setMetrics(summaryData);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load commission metrics');
-        console.error('Error loading commission metrics:', err);
+        logger.error('Error loading commission metrics', err instanceof Error ? err : String(err), 'Migration');
       } finally {
         setIsLoading(false);
       }

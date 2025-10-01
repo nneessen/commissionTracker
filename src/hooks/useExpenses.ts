@@ -12,8 +12,5 @@ export { useConstants } from './expenses/useConstants';
 // For backward compatibility, export types
 export type { UseExpensesResult } from './expenses/useExpenses';
 export type { UseExpenseResult } from './expenses/useExpense';
-export type { UseCreateExpenseResult } from './expenses/useCreateExpense';
-export type { UseUpdateExpenseResult } from './expenses/useUpdateExpense';
-export type { UseDeleteExpenseResult } from './expenses/useDeleteExpense';
 export type { UseExpenseMetricsResult } from './expenses/useExpenseMetrics';
 export type { UseConstantsResult } from './expenses/useConstants';

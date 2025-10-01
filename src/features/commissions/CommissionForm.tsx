@@ -138,13 +138,13 @@ export const CommissionForm: React.FC<CommissionFormProps> = ({
           lastName: formData.clientName.split(' ').slice(1).join(' ') || '',
           state: formData.clientState,
         },
-        agentId: 'default-agent', // You may want to get this from a context or user state
+        userId: 'default-agent', // You may want to get this from a context or user state
         type: 'new_business', // Default type for new commissions
         status: 'pending',
         calculationBasis: 'annual_premium',
       };
 
-      createCommission(commissionData, {
+      createCommission(commissionData as any, {
         onSuccess: () => {
           resetForm();
           onClose();

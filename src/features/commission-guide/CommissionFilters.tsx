@@ -23,7 +23,7 @@ export function CommissionFilters({
     if (value === '' || value === undefined) {
       delete newFilters[key];
     } else {
-      newFilters[key] = value;
+      newFilters[key] = value as never;
     }
 
     onFilterChange(newFilters);

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { logger } from '../../services/base/logger';
 import { Search, Filter, Download, Settings, Calculator, Building2, Database } from 'lucide-react';
 import { useCompGuideData, useCarrierNames, useProductTypes } from '../../hooks/compGuide/useCompGuide';
 import { CompGuideFilters, CompGuidePaginationOptions } from '../../services/compGuide/compGuideService';
@@ -32,7 +33,7 @@ export function CommissionGuide() {
 
   const handleExport = () => {
     // TODO: Implement export functionality
-    console.log('Export commission guide data');
+    logger.info('Export commission guide data', undefined, 'CommissionGuide');
   };
 
   const tabs = [

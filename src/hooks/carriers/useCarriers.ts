@@ -1,4 +1,5 @@
 // /home/nneessen/projects/commissionTracker/src/hooks/carriers/useCarriers.ts
+import { logger } from '../../services/base/logger';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { carrierService } from '../../services/settings/carrierService';
@@ -146,7 +147,7 @@ export function useCreateCarrier() {
       queryClient.setQueryData(carrierQueryKeys.detail(newCarrier.id), newCarrier);
     },
     onError: (error) => {
-      console.error('Error creating carrier:', error);
+      logger.error('Error creating carrier', error instanceof Error ? error : String(error), 'Migration');
     },
   });
 }
@@ -172,7 +173,7 @@ export function useUpdateCarrier() {
       queryClient.invalidateQueries({ queryKey: carrierQueryKeys.lists() });
     },
     onError: (error) => {
-      console.error('Error updating carrier:', error);
+      logger.error('Error updating carrier', error instanceof Error ? error : String(error), 'Migration');
     },
   });
 }
@@ -197,7 +198,7 @@ export function useDeleteCarrier() {
       queryClient.invalidateQueries({ queryKey: carrierQueryKeys.lists() });
     },
     onError: (error) => {
-      console.error('Error deleting carrier:', error);
+      logger.error('Error deleting carrier', error instanceof Error ? error : String(error), 'Migration');
     },
   });
 }

@@ -1,7 +1,7 @@
 // src/services/settings/index.ts
+import { logger } from '../base/logger';
 
 export { carrierService } from './carrierService';
 export { constantsService } from './constantsService';
 export { compGuideService } from './compGuideService';
-export { productService } from './productService';
 export { agentSettingsService } from './agentSettingsService';

@@ -59,17 +59,12 @@ export {
 export type {
   UseCommissionsResult,
   UseCommissionResult,
-  UseCreateCommissionResult,
-  UseDeleteCommissionResult,
   UseCommissionMetricsResult
 } from './useCommissions';
 
 export type {
   UseExpensesResult,
   UseExpenseResult,
-  UseCreateExpenseResult,
-  UseUpdateExpenseResult,
-  UseDeleteExpenseResult,
   UseExpenseMetricsResult,
   UseConstantsResult
 } from './useExpenses';

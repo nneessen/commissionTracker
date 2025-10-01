@@ -1,4 +1,5 @@
 // /home/nneessen/projects/commissionTracker/src/services/settings/userService.ts
+import { logger } from '../base/logger';
 
 import { supabase } from '../base/supabase';
 import { User, UpdateUserData } from '../../types';
@@ -29,7 +30,7 @@ export class UserService {
       .single();
 
     if (error || !data) {
-      console.error('Error fetching user:', error);
+      logger.error('Error fetching user', error instanceof Error ? error : String(error), 'Migration');
       return null;
     }
 
@@ -46,7 +47,7 @@ export class UserService {
       .order('name');
 
     if (error) {
-      console.error('Error fetching users:', error);
+      logger.error('Error fetching users', error instanceof Error ? error : String(error), 'Migration');
       return [];
     }
 
@@ -74,7 +75,7 @@ export class UserService {
     });
 
     if (error) {
-      console.error('Error updating user:', error);
+      logger.error('Error updating user', error instanceof Error ? error : String(error), 'Migration');
       throw error;
     }
 

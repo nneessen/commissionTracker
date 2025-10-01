@@ -9,6 +9,7 @@ import { Policy } from '../types/policy.types';
 import { Commission } from '../types/commission.types';
 import { ExpenseItem, ExpenseData, Constants } from '../types/expense.types';
 import { Carrier } from '../types/carrier.types';
+import { logger } from '../services/base/logger';
 
 export interface MigrationResult {
   success: boolean;
@@ -76,12 +77,14 @@ class DataMigrationService {
 
   async checkDatabaseEmpty(): Promise<boolean> {
     try {
-      const [policies, commissions, expenses, carriers] = await Promise.all([
+      const [policies, commissions, expenses, carriersResponse] = await Promise.all([
         policyService.getAll(),
         commissionService.getAll(),
         expenseService.getAll(),
         carrierService.getAll(),
       ]);
+
+      const carriers = carriersResponse.data || [];
 
       return (
         policies.length === 0 &&
@@ -90,7 +93,7 @@ class DataMigrationService {
         carriers.length === 0
       );
     } catch (error) {
-      console.error('Error checking database state:', error);
+      logger.error('Error checking database state', error instanceof Error ? error : String(error), 'DataMigration');
       return false;
     }
   }
@@ -101,7 +104,7 @@ class DataMigrationService {
       try {
         window.localStorage.removeItem(key);
       } catch (error) {
-        console.warn(`Failed to clear localStorage key: ${key}`, error);
+        logger.warn(`Failed to clear localStorage key: ${key}`, error instanceof Error ? error : String(error), 'DataMigration');
       }
     });
   }
@@ -115,7 +118,7 @@ class DataMigrationService {
         data.policies = JSON.parse(policies);
       }
     } catch (error) {
-      console.warn('Failed to parse policies from localStorage:', error);
+      logger.warn('Failed to parse policies from localStorage', error instanceof Error ? error : String(error), 'DataMigration');
     }
 
     try {
@@ -124,7 +127,7 @@ class DataMigrationService {
         data.commissions = JSON.parse(commissions);
       }
     } catch (error) {
-      console.warn('Failed to parse commissions from localStorage:', error);
+      logger.warn('Failed to parse commissions from localStorage', error instanceof Error ? error : String(error), 'DataMigration');
     }
 
     try {
@@ -133,7 +136,7 @@ class DataMigrationService {
         data.expenses = JSON.parse(expenses);
       }
     } catch (error) {
-      console.warn('Failed to parse expenses from localStorage:', error);
+      logger.warn('Failed to parse expenses from localStorage', error instanceof Error ? error : String(error), 'DataMigration');
     }
 
     try {
@@ -142,7 +145,7 @@ class DataMigrationService {
         data.carriers = JSON.parse(carriers);
       }
     } catch (error) {
-      console.warn('Failed to parse carriers from localStorage:', error);
+      logger.warn('Failed to parse carriers from localStorage', error instanceof Error ? error : String(error), 'DataMigration');
     }
 
     try {
@@ -151,7 +154,7 @@ class DataMigrationService {
         data.constants = JSON.parse(constants);
       }
     } catch (error) {
-      console.warn('Failed to parse constants from localStorage:', error);
+      logger.warn('Failed to parse constants from localStorage', error instanceof Error ? error : String(error), 'DataMigration');
     }
 
     return data;
@@ -208,9 +211,8 @@ class DataMigrationService {
           commissionRate: commission.commissionRate,
           expectedDate: commission.expectedDate ? new Date(commission.expectedDate) : undefined,
           actualDate: commission.actualDate ? new Date(commission.actualDate) : undefined,
-          paidDate: commission.paidDate ? new Date(commission.paidDate) : undefined,
           notes: commission.notes,
-        });
+        } as any);
         result.details.commissions++;
       } catch (error) {
         result.errors.push(`Failed to migrate commission ${commission.id}: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -258,7 +260,7 @@ class DataMigrationService {
     if (!constants) return;
 
     try {
-      await constantsService.updateMultiple(constants);
+      await constantsService.updateMultiple(Object.entries(constants).map(([key, value]) => ({ key, value })));
       result.details.constants = Object.keys(constants).length;
     } catch (error) {
       result.errors.push(`Failed to migrate constants: ${error instanceof Error ? error.message : 'Unknown error'}`);

@@ -1,4 +1,5 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useEffect } from 'react';
+import { logger } from '../services/base/logger';
 import { Carrier, NewCarrierForm, DEFAULT_CARRIERS } from '../types/carrier.types';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -30,7 +31,7 @@ export const useCarriers = () => {
           setCarriers(defaultCarriers);
         }
       } catch (error) {
-        console.error('Error loading carriers:', error);
+        logger.error('Error loading carriers', error instanceof Error ? error : String(error), 'Migration');
         // Fallback to default carriers on error
         const defaultCarriers: Carrier[] = DEFAULT_CARRIERS.map(carrier => ({
           ...carrier,
@@ -52,13 +53,13 @@ export const useCarriers = () => {
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(carriers));
       } catch (error) {
-        console.error('Error saving carriers:', error);
+        logger.error('Error saving carriers', error instanceof Error ? error : String(error), 'Migration');
       }
     }
   }, [carriers, isLoading]);
 
   // Add a new carrier
-  const addCarrier = useCallback((form: NewCarrierForm): Carrier | null => {
+  const addCarrier = (form: NewCarrierForm): Carrier | null => {
     try {
       const newCarrier: Carrier = {
         id: uuidv4(),
@@ -74,13 +75,13 @@ export const useCarriers = () => {
       setCarriers(prev => [...prev, newCarrier]);
       return newCarrier;
     } catch (error) {
-      console.error('Error adding carrier:', error);
+      logger.error('Error adding carrier', error instanceof Error ? error : String(error), 'Migration');
       return null;
     }
-  }, []);
+  };
 
   // Update a carrier
-  const updateCarrier = useCallback((id: string, updates: Partial<Omit<Carrier, 'id' | 'created_at'>>) => {
+  const updateCarrier = (id: string, updates: Partial<Omit<Carrier, 'id' | 'created_at'>>) => {
     setCarriers(prev => prev.map(carrier =>
       carrier.id === id
         ? {
@@ -90,22 +91,22 @@ export const useCarriers = () => {
           }
         : carrier
     ));
-  }, []);
+  };
 
   // Delete a carrier
-  const deleteCarrier = useCallback((id: string) => {
+  const deleteCarrier = (id: string) => {
     setCarriers(prev => prev.filter(carrier => carrier.id !== id));
-  }, []);
+  };
 
   // Get carrier by ID
-  const getCarrierById = useCallback((id: string): Carrier | undefined => {
+  const getCarrierById = (id: string): Carrier | undefined => {
     return carriers.find(carrier => carrier.id === id);
-  }, [carriers]);
+  };
 
   // Get active carriers only
-  const getActiveCarriers = useCallback((): Carrier[] => {
+  const getActiveCarriers = (): Carrier[] => {
     return carriers.filter(carrier => carrier.is_active);
-  }, [carriers]);
+  };
 
   return {
     carriers,

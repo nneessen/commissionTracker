@@ -1,4 +1,5 @@
 // src/hooks/expenses/useExpenseMetrics.ts
+import { logger } from '../../services/base/logger';
 import { useState, useEffect } from 'react';
 import { ExpenseCategory } from '../../types/expense.types';
 import { expenseService } from '../../services';
@@ -72,7 +73,7 @@ export function useExpenseMetrics(): UseExpenseMetricsResult {
         setMetrics(metricsData);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load expense metrics');
-        console.error('Error loading expense metrics:', err);
+        logger.error('Error loading expense metrics', err instanceof Error ? err : String(err), 'Migration');
       } finally {
         setIsLoading(false);
       }

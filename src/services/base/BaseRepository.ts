@@ -1,6 +1,8 @@
 // src/services/base/BaseRepository.ts
 import { supabase } from './supabase';
 import { SupabaseClient, PostgrestError } from '@supabase/supabase-js';
+import { DbRecord, DomainModel } from '../../types/database';
+import { logger } from './logger';
 
 export interface BaseEntity {
   id: string;
@@ -16,10 +18,14 @@ export interface QueryOptions {
 }
 
 export interface FilterOptions {
-  [key: string]: any;
+  [key: string]: string | number | boolean | null | undefined;
 }
 
-export abstract class BaseRepository<T extends BaseEntity, CreateData = any, UpdateData = any> {
+export abstract class BaseRepository<
+  T extends BaseEntity,
+  CreateData = Partial<T>,
+  UpdateData = Partial<T>
+> {
   protected client: SupabaseClient;
   protected tableName: string;
 
@@ -243,7 +249,7 @@ export abstract class BaseRepository<T extends BaseEntity, CreateData = any, Upd
    */
   protected handleError(error: PostgrestError, operation: string): Error {
     const message = `${this.tableName}.${operation} failed: ${error.message}`;
-    console.error(message, error);
+    logger.error(message, error instanceof Error ? error : String(error), `BaseRepository.${this.tableName}`);
 
     // Create a more user-friendly error based on the error code
     if (error.code === '23505') {
@@ -273,7 +279,7 @@ export abstract class BaseRepository<T extends BaseEntity, CreateData = any, Upd
    * Transform database record to entity
    * Override in child classes for custom transformations
    */
-  protected transformFromDB(dbRecord: any): T {
+  protected transformFromDB(dbRecord: Record<string, unknown>): T {
     return dbRecord as T;
   }
 
@@ -281,7 +287,7 @@ export abstract class BaseRepository<T extends BaseEntity, CreateData = any, Upd
    * Transform entity to database record
    * Override in child classes for custom transformations
    */
-  protected transformToDB(data: any, isUpdate = false): any {
-    return data;
+  protected transformToDB(data: CreateData | UpdateData, isUpdate = false): Record<string, unknown> {
+    return data as Record<string, unknown>;
   }
 }

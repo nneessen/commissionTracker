@@ -14,8 +14,7 @@ export type CalculationBasis = 'premium' | 'fixed' | 'tiered';
 export interface Commission {
   id: string;
   policyId?: string; // Links to Policy when available
-  userId?: string; // Links to auth.users
-  agentId?: string; // Deprecated - use userId instead
+  userId: string; // Links to auth.users (required)
   client: Client;
   carrierId: string;
   product: ProductType;

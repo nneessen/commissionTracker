@@ -48,13 +48,13 @@ export interface ProfitTarget {
 
 class BreakevenService {
   async calculateBreakevenAnalysis(
-    agentId?: string,
+    userId?: string,
     targetProfit: number = 5000,
     analysisMonths: number = 12
   ): Promise<BreakevenAnalysis> {
     // Get current metrics
     const currentMetrics = await commissionService.calculateNetCommissionAfterChargebacks(
-      agentId,
+      userId,
       new Date(Date.now() - analysisMonths * 30 * 24 * 60 * 60 * 1000),
       new Date()
     );
@@ -213,10 +213,10 @@ class BreakevenService {
 
   async calculateProfitTarget(
     targetAmount: number,
-    agentId?: string,
+    userId?: string,
     analysisMonths: number = 12
   ): Promise<ProfitTarget> {
-    const currentMetrics = await commissionService.calculateNetCommissionAfterChargebacks(agentId);
+    const currentMetrics = await commissionService.calculateNetCommissionAfterChargebacks(userId);
     const expenses = await expenseService.getAll();
     const monthlyExpenses = expenses.reduce((total, expense) => total + expense.amount, 0);
 
@@ -247,7 +247,7 @@ class BreakevenService {
   }
 
   async getChargebackProjections(
-    agentId?: string,
+    userId?: string,
     projectionMonths: number = 6
   ): Promise<{
     currentChargebacks: number;
@@ -259,7 +259,7 @@ class BreakevenService {
     }>;
     mitigation: string[];
   }> {
-    const commissions = await commissionService.getCommissionsWithChargebackRisk(agentId);
+    const commissions = await commissionService.getCommissionsWithChargebackRisk(userId);
 
     let currentChargebacks = 0;
     let projectedChargebacks = 0;
@@ -317,7 +317,7 @@ class BreakevenService {
     };
   }
 
-  async calculateEmergencyFund(agentId?: string, analysisMonths: number = 12): Promise<{
+  async calculateEmergencyFund(userId?: string, analysisMonths: number = 12): Promise<{
     recommendedFund: number;
     currentRisk: number;
     monthsOfCoverage: number;
@@ -328,8 +328,8 @@ class BreakevenService {
     }>;
   }> {
     const projectionMonths = EMERGENCY_FUND.PROJECTION_MONTHS; // Use a consistent 12-month projection for clarity
-    const chargebackProjections = await this.getChargebackProjections(agentId, projectionMonths);
-    const currentMetrics = await commissionService.calculateNetCommissionAfterChargebacks(agentId);
+    const chargebackProjections = await this.getChargebackProjections(userId, projectionMonths);
+    const currentMetrics = await commissionService.calculateNetCommissionAfterChargebacks(userId);
 
     const monthlyProjectedChargebacks = chargebackProjections.projectedChargebacks / projectionMonths;
 

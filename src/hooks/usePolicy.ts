@@ -1,6 +1,7 @@
 // /home/nneessen/projects/commissionTracker/src/hooks/usePolicy.ts
+import { logger } from '../services/base/logger';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Policy, NewPolicyForm, PolicyFilters, PolicySummary, PolicyStatus } from '../types/policy.types';
 import { ProductType } from '../types/commission.types';
 import { v4 as uuidv4 } from 'uuid';
@@ -27,7 +28,7 @@ export const usePolicy = () => {
           })));
         }
       } catch (error) {
-        console.error('Error loading policies:', error);
+        logger.error('Error loading policies', error instanceof Error ? error : String(error), 'Migration');
       } finally {
         setIsLoading(false);
       }
@@ -42,13 +43,13 @@ export const usePolicy = () => {
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(policies));
       } catch (error) {
-        console.error('Error saving policies:', error);
+        logger.error('Error saving policies', error instanceof Error ? error : String(error), 'Migration');
       }
     }
   }, [policies, isLoading]);
 
   // Add a new policy
-  const addPolicy = useCallback((formData: NewPolicyForm): Policy | null => {
+  const addPolicy = (formData: NewPolicyForm): Policy | null => {
     // Ensure we have annualPremium, either passed directly or calculated
     const annualPremium = formData.annualPremium ?? 0;
 
@@ -95,10 +96,10 @@ export const usePolicy = () => {
     setPolicies(prev => [...prev, newPolicy]);
 
     return newPolicy;
-  }, [policies]);
+  };
 
   // Update an existing policy
-  const updatePolicy = useCallback((id: string, updates: Partial<Policy> | NewPolicyForm) => {
+  const updatePolicy = (id: string, updates: Partial<Policy> | NewPolicyForm) => {
     // If updates is NewPolicyForm, check for duplicate policy numbers first
     if ('clientName' in updates) {
       const formData = updates as NewPolicyForm;
@@ -149,32 +150,32 @@ export const usePolicy = () => {
       // Otherwise treat as partial Policy update
       return { ...policy, ...updates, updatedAt: new Date() };
     }));
-  }, [policies]);
+  };
 
   // Update policy status
-  const updatePolicyStatus = useCallback((id: string, status: PolicyStatus) => {
+  const updatePolicyStatus = (id: string, status: PolicyStatus) => {
     updatePolicy(id, { status });
-  }, [updatePolicy]);
+  };
 
   // Delete a policy
-  const deletePolicy = useCallback((id: string) => {
+  const deletePolicy = (id: string) => {
     setPolicies(prev => prev.filter(policy => policy.id !== id));
-  }, []);
+  };
 
   // Get policy by ID
-  const getPolicyById = useCallback((id: string): Policy | undefined => {
+  const getPolicyById = (id: string): Policy | undefined => {
     return policies.find(policy => policy.id === id);
-  }, [policies]);
+  };
 
   // Get policies by client name
-  const getPoliciesByClient = useCallback((clientName: string): Policy[] => {
+  const getPoliciesByClient = (clientName: string): Policy[] => {
     return policies.filter(policy =>
       policy.client.name.toLowerCase().includes(clientName.toLowerCase())
     );
-  }, [policies]);
+  };
 
   // Filter policies
-  const filterPolicies = useCallback((filters: PolicyFilters): Policy[] => {
+  const filterPolicies = (filters: PolicyFilters): Policy[] => {
     return policies.filter(policy => {
       if (filters.status && policy.status !== filters.status) return false;
       if (filters.carrierId && policy.carrierId !== filters.carrierId) return false;
@@ -199,10 +200,10 @@ export const usePolicy = () => {
 
       return true;
     });
-  }, [policies]);
+  };
 
   // Get policy summary
-  const getPolicySummary = useCallback((): PolicySummary => {
+  const getPolicySummary = (): PolicySummary => {
     const activePolicies = policies.filter(p => p.status === 'active');
     const pendingPolicies = policies.filter(p => p.status === 'pending');
     const lapsedPolicies = policies.filter(p => p.status === 'lapsed');
@@ -234,10 +235,10 @@ export const usePolicy = () => {
       policiesByStatus,
       policiesByProduct,
     };
-  }, [policies]);
+  };
 
   // Get policies expiring soon (within 30 days)
-  const getExpiringPolicies = useCallback((days: number = 30): Policy[] => {
+  const getExpiringPolicies = (days: number = 30): Policy[] => {
     const futureDate = new Date();
     futureDate.setDate(futureDate.getDate() + days);
     const now = new Date();
@@ -247,14 +248,14 @@ export const usePolicy = () => {
       const expDate = policy.expirationDate.getTime();
       return expDate >= now.getTime() && expDate <= futureDate.getTime();
     });
-  }, [policies]);
+  };
 
   // Check for duplicate policy number
-  const isDuplicatePolicyNumber = useCallback((policyNumber: string, excludeId?: string): boolean => {
+  const isDuplicatePolicyNumber = (policyNumber: string, excludeId?: string): boolean => {
     return policies.some(policy =>
       policy.policyNumber === policyNumber && policy.id !== excludeId
     );
-  }, [policies]);
+  };
 
   return {
     policies,

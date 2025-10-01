@@ -17,7 +17,6 @@ export { carrierService } from './settings/carrierService';
 export { constantsService } from './settings/constantsService';
 export { agentService } from './agents/agentService';
 export { compGuideService } from './settings/compGuideService';
-export { productService } from './settings/productService';
 export { agentSettingsService } from './settings/agentSettingsService';
 export { chargebackService } from './commissions/chargebackService';
 export { commissionRateService } from './commissions/commissionRateService';

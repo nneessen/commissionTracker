@@ -5,6 +5,7 @@ import { Package, Plus, Edit2, Trash2, Search, Filter, Download, Upload, X, Cale
 import { CompGuideEntry, NewCompGuideForm, CompGuideFilters } from '../../../types/compGuide.types';
 import { Database } from '../../../types/database.types';
 import { Carrier } from '../../../types/carrier.types';
+import { logger } from '../../../services/base/logger';
 import { compGuideService } from '../../../services/settings/compGuideService';
 import { carrierService } from '../../../services/settings/carrierService';
 import { SettingsCard } from '../components/SettingsComponents';
@@ -80,7 +81,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ entry, carriers, isOpen, onCl
       }
       onClose();
     } catch (error) {
-      console.error('Error saving product:', error);
+      logger.error('Error saving product', error instanceof Error ? error : String(error), 'ProductManager');
     }
   };
 
@@ -418,7 +419,7 @@ export const ProductManager: React.FC = () => {
       if (entriesResult.data) setEntries(entriesResult.data);
       if (carriersResult.data) setCarriers(carriersResult.data);
     } catch (error) {
-      console.error('Error loading data:', error);
+      logger.error('Error loading data', error instanceof Error ? error : String(error), 'ProductManager');
     } finally {
       setLoading(false);
     }
@@ -458,7 +459,7 @@ export const ProductManager: React.FC = () => {
         await compGuideService.deleteEntry(entry.id);
         setEntries(entries.filter(e => e.id !== entry.id));
       } catch (error) {
-        console.error('Error deleting product:', error);
+        logger.error('Error deleting product', error instanceof Error ? error : String(error), 'ProductManager');
       }
     }
   };

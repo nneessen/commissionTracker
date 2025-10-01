@@ -1,51 +1,67 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Purpose: guidance for Claude Code (claude.ai/code) and human contributors working on this repository.
+Target app: small-scale personal + business expense tracker. React 19.1, TypeScript, Supabase/Postgres.
 
-## Project Overview
+---
 
-Commission tracking application built with React, TypeScript, and modern web technologies. Features a modular architecture for managing clients, policies, expenses, and commission calculations.
+# Project summary
 
-## Technology Stack
+Small-footprint full-stack app to record, categorize, and report personal and business expenses.  
+Design for low concurrency, low cost, strong data safety, fast developer feedback loops.
 
-- **Frontend**: React 19.1, TypeScript, React Router v7
-- **Styling**: Tailwind CSS
-- **Build Tool**: Vite
-- **Package Manager**: npm
-- **State Management**: React Context API
-- **Data Persistence**: Supabase (PostgreSQL)
+---
 
-## Development Commands
+# Stack (explicit)
 
-- `npm run dev:local` - Start development server
-- `npm run build` - Build for production
-- `npm test` - Run test suite
-- `npm run lint` - Run ESLint
-- `npm run typecheck` - Run TypeScript type checking
+- Frontend: React 19.1 + TypeScript
+- Routing: TanStack Router (latest)
+- Data fetching: TanStack Query (latest)
+- Forms: TanStack Form (latest)
+- UI: shadcn + Tailwind CSS v4
+- Build: Vite
+- Backend / DB: Supabase (Postgres). Use Supabase Edge Functions / serverless for server-side logic.
+- Hosting: Vercel or Railway for frontend. Supabase managed Postgres for DB. Use AWS/GCP for optional services.
+- Language for backend jobs: Python (optional workers/scripts)
+- Devops: GitHub Actions for CI, migrations via supabase / pg-migrate
 
-## Architecture
+---
 
-The project follows a feature-based modular architecture:
+# Goals and constraints
 
-- `/src/features/*` - Feature modules (dashboard, policies, expenses, etc.)
-- `/src/components/*` - Shared UI components
-- `/src/services/*` - API and external service integrations
-- `/src/utils/*` - Utility functions and helpers
-- `/src/types/*` - TypeScript type definitions
+- Target users: individual / small teams. Not enterprise scale.
+- Prioritize correctness, privacy, predictable costs.
+- Minimal latency. No unnecessary microservices.
+- Prefer simple, observable, and reversible changes.
 
-## Current Features
+---
 
-- Client management system
-- Policy tracking and management
-- Expense tracking with categorization
-- Commission calculations (percentage, flat rate, tiered)
-- Dashboard with analytics and reporting
-- Dark mode support
+# Project rules (must-follow)
 
-## Project-Specific Considerations
+- TypeScript strict mode on.
+- Keep naming conventional. Component names PascalCase. Files kebab-case. Function names camelCase. Do not invent fanciful class/file names like `ImprovedSidebar`.
+- Prefer composition over large HOCs.
+- Avoid `useCallback` / `useMemo` by default. Only introduce them when profiling shows measurable benefit.
+- Never commit secrets. Use `.env.example`.
+- Do not use transient mock data in production code. Use seeded fixtures for local dev and tests.
+- Each PR must include tests for any new business logic or SQL migrations.
 
-- Commission tracking typically involves sensitive financial data - ensure proper security measures
-- Consider data backup and recovery strategies
-- Plan for reporting and analytics features
-- Account for different commission structures (percentage, flat rate, tiered, etc.)
-- add to memory. DO NOT USE useCallback or useMemo. React v19.1 was built so that those to hooks don't need to be used anymore
+---
+
+# High-level architecture
+
+- `/src/features/*` — feature folders by domain (expenses, accounts, reports, auth)
+- `/src/components/*` — reusable UI primitives
+- `/src/routes/*` — route components & loaders (TanStack Router)
+- `/src/api/*` — network wrappers and RPC clients (keeps TanStack Query hooks thin)
+- `/src/lib/*` — app-wide utilities (date, currency)
+- `/src/db/*` — typed DB model adapters and migrations (server-only)
+- `/migrations` — SQL migrations (source of truth)
+
+Keep features self-contained. Each feature should export:
+
+- React routes and route loader functions
+- TanStack Query keys and hooks
+- Tests and stories
+
+---

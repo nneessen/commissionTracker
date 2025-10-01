@@ -22,7 +22,7 @@ export function DataTable<T>({
     setSortConfig({ key, direction });
   };
 
-  const sortedData = React.useMemo(() => {
+  const sortedData = (() => {
     if (!sortConfig) return data;
 
     return [...data].sort((a, b) => {
@@ -37,7 +37,7 @@ export function DataTable<T>({
       }
       return 0;
     });
-  }, [data, sortConfig]);
+  })();
 
   if (loading) {
     return (

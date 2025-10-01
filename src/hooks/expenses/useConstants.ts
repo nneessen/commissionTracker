@@ -1,4 +1,5 @@
 // src/hooks/expenses/useConstants.ts
+import { logger } from '../../services/base/logger';
 import { useState, useEffect } from 'react';
 import { Constants } from '../../types/expense.types';
 import { constantsService } from '../../services';
@@ -38,7 +39,7 @@ export function useConstants(): UseConstantsResult {
         setConstants(data);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load constants');
-        console.error('Error loading constants:', err);
+        logger.error('Error loading constants', err instanceof Error ? err : String(err), 'Migration');
       } finally {
         setIsLoading(false);
       }
@@ -84,7 +85,7 @@ export function useConstants(): UseConstantsResult {
     setError(null);
 
     try {
-      const updatedConstants = await constantsService.updateMultiple(DEFAULT_CONSTANTS);
+      const updatedConstants = await constantsService.updateMultiple(Object.entries(DEFAULT_CONSTANTS).map(([key, value]) => ({ key, value })));
       setConstants(updatedConstants);
       setIsUpdating(false);
       return true;

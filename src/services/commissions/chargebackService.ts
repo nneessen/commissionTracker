@@ -1,4 +1,5 @@
 // src/services/chargebackService.ts
+import { logger } from '../base/logger';
 
 import { supabase, TABLES } from '../base/supabase';
 import { Chargeback, CreateChargebackData } from '../../types/user.types';
@@ -50,11 +51,11 @@ class ChargebackService {
     return data?.map(this.transformFromDB) || [];
   }
 
-  async getByAgentId(agentId: string): Promise<Chargeback[]> {
+  async getByAgentId(userId: string): Promise<Chargeback[]> {
     const { data, error } = await supabase
       .from(TABLES.CHARGEBACKS)
       .select('*')
-      .eq('agent_id', agentId)
+      .eq('user_id', userId)
       .order('chargeback_date', { ascending: false });
 
     if (error) {
@@ -120,13 +121,13 @@ class ChargebackService {
     }
   }
 
-  async getTotalChargebackAmount(agentId?: string, startDate?: Date, endDate?: Date): Promise<number> {
+  async getTotalChargebackAmount(userId?: string, startDate?: Date, endDate?: Date): Promise<number> {
     let query = supabase
       .from(TABLES.CHARGEBACKS)
       .select('chargeback_amount');
 
-    if (agentId) {
-      query = query.eq('agent_id', agentId);
+    if (userId) {
+      query = query.eq('user_id', userId);
     }
 
     if (startDate) {
@@ -191,7 +192,7 @@ class ChargebackService {
     return data?.map(this.transformFromDB) || [];
   }
 
-  async getChargebackMetrics(agentId?: string): Promise<{
+  async getChargebackMetrics(userId?: string): Promise<{
     totalAmount: number;
     count: number;
     pendingAmount: number;
@@ -201,8 +202,8 @@ class ChargebackService {
       .from(TABLES.CHARGEBACKS)
       .select('chargeback_amount, status');
 
-    if (agentId) {
-      query = query.eq('agent_id', agentId);
+    if (userId) {
+      query = query.eq('user_id', userId);
     }
 
     const { data, error } = await query;
@@ -237,7 +238,7 @@ class ChargebackService {
       id: dbRecord.id,
       policyId: dbRecord.policy_id,
       commissionId: dbRecord.commission_id,
-      agentId: dbRecord.agent_id,
+      userId: dbRecord.user_id,
       chargebackType: dbRecord.chargeback_type,
       chargebackAmount: parseFloat(dbRecord.chargeback_amount),
       chargebackReason: dbRecord.chargeback_reason,
@@ -253,7 +254,7 @@ class ChargebackService {
     return {
       policy_id: data.policyId,
       commission_id: data.commissionId,
-      agent_id: data.agentId,
+      user_id: data.userId,
       chargeback_type: data.chargebackType,
       chargeback_amount: data.chargebackAmount,
       chargeback_reason: data.chargebackReason,

@@ -1,4 +1,5 @@
 // src/services/settings/compGuideService.ts
+import { logger } from '../base/logger';
 
 import { supabase } from '../base/supabase';
 import { Database } from '../../types/database.types';

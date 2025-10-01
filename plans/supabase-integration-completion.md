@@ -128,4 +128,3 @@ Each hook does ONE thing:
 
 **Estimated time**: 2-3 hours total
 **Complexity**: Low (mostly find/replace + copy/paste pattern)
-

@@ -47,12 +47,12 @@ export class PolicyRepository extends BaseRepository<Policy, CreatePolicyData, U
     }
   }
 
-  async findByAgent(agentId: string): Promise<Policy[]> {
+  async findByAgent(userId: string): Promise<Policy[]> {
     try {
       const { data, error } = await this.client
         .from(this.tableName)
         .select('*')
-        .eq('agent_id', agentId)
+        .eq('user_id', userId)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -157,7 +157,7 @@ export class PolicyRepository extends BaseRepository<Policy, CreatePolicyData, U
       status: dbRecord.status,
       client: dbRecord.client, // JSONB field
       carrierId: dbRecord.carrier_id,
-      agentId: dbRecord.agent_id,
+      userId: dbRecord.user_id,
       product: dbRecord.product,
       effectiveDate: new Date(dbRecord.effective_date),
       termLength: dbRecord.term_length,
@@ -183,7 +183,7 @@ export class PolicyRepository extends BaseRepository<Policy, CreatePolicyData, U
     if (data.status !== undefined) dbData.status = data.status;
     if (data.client !== undefined) dbData.client = data.client;
     if (data.carrierId !== undefined) dbData.carrier_id = data.carrierId;
-    if (data.agentId !== undefined) dbData.agent_id = data.agentId;
+    if (data.userId !== undefined) dbData.user_id = data.userId;
     if (data.product !== undefined) dbData.product = data.product;
     if (data.effectiveDate !== undefined) {
       dbData.effective_date = data.effectiveDate instanceof Date

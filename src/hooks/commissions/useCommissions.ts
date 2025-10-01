@@ -1,4 +1,5 @@
 // src/hooks/commissions/useCommissions.ts
+import { logger } from '../../services/base/logger';
 import { useState, useEffect } from 'react';
 import { Commission, CommissionFilters } from '../../types/commission.types';
 import { commissionService } from '../../services';
@@ -55,7 +56,7 @@ export function useCommissions(): UseCommissionsResult {
         setCommissions(data);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load commissions');
-        console.error('Error loading commissions:', err);
+        logger.error('Error loading commissions', err instanceof Error ? err : String(err), 'Migration');
       } finally {
         setIsLoading(false);
       }

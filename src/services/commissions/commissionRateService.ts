@@ -1,4 +1,5 @@
 // src/services/commissionRateService.ts
+import { logger } from '../base/logger';
 
 import { supabase, TABLES } from '../base/supabase';
 import { CommissionRate, NewCommissionRateForm, UpdateCommissionRateForm } from '../../types/product.types';

@@ -1,4 +1,5 @@
 // /home/nneessen/projects/commissionTracker/src/hooks/useLocalStorage.ts
+import { logger } from '../services/base/logger';
 
 import { useState, useEffect } from 'react';
 
@@ -13,7 +14,7 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
       const item = window.localStorage.getItem(key);
       return item ? JSON.parse(item) : initialValue;
     } catch (error) {
-      console.error(`Error reading localStorage key "${key}":`, error);
+      logger.error(`Error reading localStorage key "${key}"`, error instanceof Error ? error : String(error), "useLocalStorage");
       return initialValue;
     }
   });
@@ -30,7 +31,7 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
         window.localStorage.setItem(key, JSON.stringify(valueToStore));
       }
     } catch (error) {
-      console.error(`Error setting localStorage key "${key}":`, error);
+      logger.error(`Error setting localStorage key "${key}"`, error instanceof Error ? error : String(error), "useLocalStorage");
     }
   };
 

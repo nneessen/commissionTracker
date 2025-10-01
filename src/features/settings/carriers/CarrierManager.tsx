@@ -3,6 +3,7 @@ import { Building2, Plus, Edit2, Trash2, Search, Phone, Mail, Globe, X } from 'l
 import { Carrier, NewCarrierForm } from '../../../types/carrier.types';
 import { carrierService } from '../../../services/settings/carrierService';
 import { SettingsCard } from '../components/SettingsComponents';
+import { logger } from '../../../services/base/logger';
 
 interface CarrierFormProps {
   carrier?: Carrier | null;
@@ -48,7 +49,7 @@ const CarrierForm: React.FC<CarrierFormProps> = ({ carrier, isOpen, onClose, onS
     try {
       if (carrier) {
         if (!carrier.id) {
-          console.error('Attempting to update carrier without ID:', carrier);
+          logger.warn('Attempting to update carrier without ID', { name: carrier.name }, 'CarrierManager');
           alert('Cannot update carrier: Missing ID. Please refresh and try again.');
           return;
         }
@@ -62,7 +63,7 @@ const CarrierForm: React.FC<CarrierFormProps> = ({ carrier, isOpen, onClose, onS
       }
       onClose();
     } catch (error) {
-      console.error('Error saving carrier:', error);
+      logger.error('Error saving carrier', error instanceof Error ? error : String(error), 'CarrierManager');
       alert(`Error saving carrier: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
@@ -306,11 +307,11 @@ export const CarrierManager: React.FC = () => {
       const { data, error } = await carrierService.getAllCarriers();
       if (error) throw new Error(error.message);
       if (data) {
-        console.log('Loaded carriers:', data.map(c => ({ id: c.id, name: c.name })));
+        logger.debug('Loaded carriers', { carriers: data.map(c => ({ id: c.id, name: c.name })) }, 'CarrierManager');
         setCarriers(data);
       }
     } catch (error) {
-      console.error('Error loading carriers:', error);
+      logger.error('Error loading carriers', error instanceof Error ? error : String(error), 'CarrierManager');
     } finally {
       setLoading(false);
     }
@@ -332,7 +333,7 @@ export const CarrierManager: React.FC = () => {
         await carrierService.deleteCarrier(carrier.id);
         setCarriers(carriers.filter(c => c.id !== carrier.id));
       } catch (error) {
-        console.error('Error deleting carrier:', error);
+        logger.error('Error deleting carrier', error instanceof Error ? error : String(error), 'CarrierManager');
       }
     }
   };

@@ -127,7 +127,7 @@ class PolicyService {
       status: dbRecord.status,
       client: dbRecord.client,
       carrierId: dbRecord.carrier_id,
-      agentId: dbRecord.agent_id, // May be undefined - that's ok now
+      userId: dbRecord.agent_id, // May be undefined - that's ok now
       product: dbRecord.product,
       effectiveDate: new Date(dbRecord.effective_date),
       termLength: dbRecord.term_length,

@@ -1,4 +1,5 @@
 // src/services/settings/AgentRepository.ts
+import { logger } from '../base/logger';
 import { BaseRepository } from '../base/BaseRepository';
 import { Agent } from '../../types/user.types';
 
@@ -42,21 +43,22 @@ export class AgentRepository extends BaseRepository<
     super('agents');
   }
 
-  protected transformFromDB(dbRecord: AgentDBRecord): Agent {
+  protected transformFromDB(dbRecord: Record<string, unknown>): Agent {
+    const agentRecord = dbRecord as unknown as AgentDBRecord;
     return {
-      id: dbRecord.id,
-      name: dbRecord.name,
-      email: dbRecord.email,
-      contractCompLevel: dbRecord.contract_comp_level,
-      isActive: dbRecord.is_active,
-      createdAt: new Date(dbRecord.created_at),
-      updatedAt: dbRecord.updated_at ? new Date(dbRecord.updated_at) : new Date(),
-      phone: dbRecord.phone,
-      licenseNumber: dbRecord.license_number,
-      licenseStates: dbRecord.license_states || [],
-      hireDate: dbRecord.hire_date ? new Date(dbRecord.hire_date) : undefined,
-      ytdCommission: dbRecord.ytd_commission || 0,
-      ytdPremium: dbRecord.ytd_premium || 0
+      id: agentRecord.id,
+      name: agentRecord.name,
+      email: agentRecord.email || '',
+      contractCompLevel: agentRecord.contract_comp_level,
+      isActive: agentRecord.is_active,
+      createdAt: new Date(agentRecord.created_at),
+      updatedAt: agentRecord.updated_at ? new Date(agentRecord.updated_at) : new Date(),
+      phone: agentRecord.phone || '',
+      licenseNumber: agentRecord.license_number,
+      licenseStates: agentRecord.license_states || [],
+      hireDate: agentRecord.hire_date ? new Date(agentRecord.hire_date) : undefined,
+      ytdCommission: agentRecord.ytd_commission || 0,
+      ytdPremium: agentRecord.ytd_premium || 0
     };
   }
 
@@ -184,7 +186,7 @@ export class AgentRepository extends BaseRepository<
     }
   }
 
-  async updateYtdStats(agentId: string, commission: number, premium: number): Promise<void> {
+  async updateYtdStats(userId: string, commission: number, premium: number): Promise<void> {
     try {
       const { error } = await this.client
         .from(this.tableName)
@@ -193,7 +195,7 @@ export class AgentRepository extends BaseRepository<
           ytd_premium: premium,
           updated_at: new Date().toISOString()
         })
-        .eq('id', agentId);
+        .eq('id', userId);
 
       if (error) {
         throw this.handleError(error, 'updateYtdStats');
