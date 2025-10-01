@@ -25,7 +25,17 @@ export interface CompGuideCreateData {
 
 class CompGuideService {
   /**
-   * Get all comp guide entries
+   * Retrieves all compensation guide entries with carrier details
+   *
+   * @returns Promise resolving to Supabase query result with comp guide entries and carrier info
+   *
+   * @example
+   * ```ts
+   * const { data, error } = await compGuideService.getAllEntries();
+   * if (!error) {
+   *   data.forEach(entry => console.log(`${entry.carriers.name}: ${entry.commission_percentage}%`));
+   * }
+   * ```
    */
   async getAllEntries() {
     return await supabase
@@ -42,7 +52,15 @@ class CompGuideService {
   }
 
   /**
-   * Get entry by ID
+   * Retrieves a single compensation guide entry by its unique identifier
+   *
+   * @param id - The unique identifier of the comp guide entry
+   * @returns Promise resolving to Supabase query result with entry and carrier info
+   *
+   * @example
+   * ```ts
+   * const { data, error } = await compGuideService.getEntryById('entry-123');
+   * ```
    */
   async getEntryById(id: string) {
     return await supabase
@@ -60,7 +78,21 @@ class CompGuideService {
   }
 
   /**
-   * Create a new entry
+   * Creates a new compensation guide entry in the database
+   *
+   * @param data - The comp guide entry data to create
+   * @returns Promise resolving to Supabase query result with created entry
+   *
+   * @example
+   * ```ts
+   * const { data, error } = await compGuideService.createEntry({
+   *   carrier_id: 'carrier-123',
+   *   product_type: 'whole_life',
+   *   comp_level: 85,
+   *   commission_percentage: 95,
+   *   effective_date: '2024-01-01'
+   * });
+   * ```
    */
   async createEntry(data: CompGuideCreateData) {
     const entryData: CompGuideInsert = {
@@ -83,7 +115,18 @@ class CompGuideService {
   }
 
   /**
-   * Update an entry
+   * Updates an existing compensation guide entry
+   *
+   * @param id - The unique identifier of the entry to update
+   * @param data - Partial entry data with fields to update
+   * @returns Promise resolving to Supabase query result with updated entry
+   *
+   * @example
+   * ```ts
+   * const { data, error } = await compGuideService.updateEntry('entry-123', {
+   *   commission_percentage: 97
+   * });
+   * ```
    */
   async updateEntry(id: string, data: Partial<CompGuideCreateData>) {
     const updateData: CompGuideUpdate = {
@@ -107,7 +150,15 @@ class CompGuideService {
   }
 
   /**
-   * Delete an entry
+   * Deletes a compensation guide entry from the database
+   *
+   * @param id - The unique identifier of the entry to delete
+   * @returns Promise resolving to Supabase query result
+   *
+   * @example
+   * ```ts
+   * const { error } = await compGuideService.deleteEntry('entry-123');
+   * ```
    */
   async deleteEntry(id: string) {
     return await supabase
@@ -117,7 +168,24 @@ class CompGuideService {
   }
 
   /**
-   * Get commission rate for a specific carrier, product type, and comp level
+   * Retrieves the commission rate for a specific carrier, product type, and compensation level
+   *
+   * @param carrierName - The name of the insurance carrier
+   * @param productType - The insurance product type enum value
+   * @param compLevel - The compensation level enum value
+   * @returns Promise resolving to object with commission percentage or null if not found
+   *
+   * @example
+   * ```ts
+   * const result = await compGuideService.getCommissionRate(
+   *   'Acme Insurance',
+   *   'whole_life',
+   *   85
+   * );
+   * if (!result.error && result.data) {
+   *   console.log(`Commission rate: ${result.data}%`);
+   * }
+   * ```
    */
   async getCommissionRate(
     carrierName: string,
@@ -151,7 +219,15 @@ class CompGuideService {
   }
 
   /**
-   * Search entries
+   * Searches compensation guide entries by product name or contract level
+   *
+   * @param query - The search query string
+   * @returns Promise resolving to Supabase query result with matching entries
+   *
+   * @example
+   * ```ts
+   * const { data, error } = await compGuideService.searchEntries('whole life');
+   * ```
    */
   async searchEntries(query: string) {
     return await supabase
@@ -169,7 +245,15 @@ class CompGuideService {
   }
 
   /**
-   * Get entries by carrier
+   * Retrieves all compensation guide entries for a specific carrier
+   *
+   * @param carrierId - The unique identifier of the carrier
+   * @returns Promise resolving to Supabase query result with carrier's entries
+   *
+   * @example
+   * ```ts
+   * const { data, error } = await compGuideService.getEntriesByCarrier('carrier-123');
+   * ```
    */
   async getEntriesByCarrier(carrierId: string) {
     return await supabase
@@ -180,7 +264,14 @@ class CompGuideService {
   }
 
   /**
-   * Get active entries
+   * Retrieves all active compensation guide entries with carrier details
+   *
+   * @returns Promise resolving to Supabase query result with active entries
+   *
+   * @example
+   * ```ts
+   * const { data, error } = await compGuideService.getActiveEntries();
+   * ```
    */
   async getActiveEntries() {
     return await supabase
@@ -198,7 +289,30 @@ class CompGuideService {
   }
 
   /**
-   * Bulk import entries
+   * Bulk imports multiple compensation guide entries in a single operation
+   *
+   * @param entries - Array of comp guide entries to create
+   * @returns Promise resolving to Supabase query result with created entries
+   *
+   * @example
+   * ```ts
+   * const { data, error } = await compGuideService.bulkImport([
+   *   {
+   *     carrier_id: 'carrier-123',
+   *     product_type: 'whole_life',
+   *     comp_level: 85,
+   *     commission_percentage: 95,
+   *     effective_date: '2024-01-01'
+   *   },
+   *   {
+   *     carrier_id: 'carrier-123',
+   *     product_type: 'term',
+   *     comp_level: 85,
+   *     commission_percentage: 90,
+   *     effective_date: '2024-01-01'
+   *   }
+   * ]);
+   * ```
    */
   async bulkImport(entries: CompGuideCreateData[]) {
     const entryData: CompGuideInsert[] = entries.map(entry => ({

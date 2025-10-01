@@ -30,7 +30,17 @@ export interface NewCarrierForm {
 
 class CarrierService {
   /**
-   * Get all carriers
+   * Retrieves all carriers from the database, ordered alphabetically by name
+   *
+   * @returns Promise resolving to Supabase query result with carrier data
+   *
+   * @example
+   * ```ts
+   * const { data, error } = await carrierService.getAllCarriers();
+   * if (!error) {
+   *   data.forEach(carrier => console.log(carrier.name));
+   * }
+   * ```
    */
   async getAllCarriers() {
     return await supabase
@@ -40,7 +50,17 @@ class CarrierService {
   }
 
   /**
-   * Get all carriers (alias for hooks compatibility)
+   * Retrieves all carriers (hook-compatible alias)
+   *
+   * @returns Promise resolving to ServiceResponse containing array of carriers
+   *
+   * @example
+   * ```ts
+   * const response = await carrierService.getAll();
+   * if (response.success) {
+   *   console.log(`Found ${response.data.length} carriers`);
+   * }
+   * ```
    */
   async getAll(): Promise<ServiceResponse<Carrier[]>> {
     const result = await this.getAllCarriers();
@@ -51,7 +71,15 @@ class CarrierService {
   }
 
   /**
-   * Get carrier by ID
+   * Retrieves a single carrier by its unique identifier
+   *
+   * @param id - The unique identifier of the carrier
+   * @returns Promise resolving to Supabase query result with carrier data
+   *
+   * @example
+   * ```ts
+   * const { data, error } = await carrierService.getCarrierById('carrier-123');
+   * ```
    */
   async getCarrierById(id: string) {
     return await supabase
@@ -62,7 +90,18 @@ class CarrierService {
   }
 
   /**
-   * Get carrier by ID (alias for hooks compatibility)
+   * Retrieves a carrier by ID (hook-compatible alias)
+   *
+   * @param id - The unique identifier of the carrier
+   * @returns Promise resolving to ServiceResponse containing the carrier
+   *
+   * @example
+   * ```ts
+   * const response = await carrierService.getById('carrier-123');
+   * if (response.success) {
+   *   console.log(`Carrier: ${response.data.name}`);
+   * }
+   * ```
    */
   async getById(id: string): Promise<ServiceResponse<Carrier>> {
     const result = await this.getCarrierById(id);
@@ -73,7 +112,19 @@ class CarrierService {
   }
 
   /**
-   * Create a new carrier
+   * Creates a new carrier record in the database
+   *
+   * @param data - The carrier information to create
+   * @returns Promise resolving to Supabase query result with created carrier
+   *
+   * @example
+   * ```ts
+   * const { data, error } = await carrierService.createCarrier({
+   *   name: 'Acme Insurance',
+   *   short_name: 'ACME',
+   *   contact_info: { email: 'info@acme.com' }
+   * });
+   * ```
    */
   async createCarrier(data: NewCarrierForm) {
     const carrierData: CarrierInsert = {
@@ -91,7 +142,18 @@ class CarrierService {
   }
 
   /**
-   * Create a new carrier (alias for hooks compatibility)
+   * Creates a new carrier (hook-compatible alias)
+   *
+   * @param data - The carrier information to create
+   * @returns Promise resolving to ServiceResponse with created carrier
+   *
+   * @example
+   * ```ts
+   * const response = await carrierService.create({
+   *   name: 'Acme Insurance',
+   *   short_name: 'ACME'
+   * });
+   * ```
    */
   async create(data: NewCarrierForm): Promise<ServiceResponse<Carrier>> {
     const result = await this.createCarrier(data);
@@ -102,7 +164,18 @@ class CarrierService {
   }
 
   /**
-   * Update a carrier
+   * Updates an existing carrier's information
+   *
+   * @param id - The unique identifier of the carrier to update
+   * @param data - Partial carrier data with fields to update
+   * @returns Promise resolving to Supabase query result with updated carrier
+   *
+   * @example
+   * ```ts
+   * const { data, error } = await carrierService.updateCarrier('carrier-123', {
+   *   contact_info: { phone: '555-1234' }
+   * });
+   * ```
    */
   async updateCarrier(id: string, data: Partial<NewCarrierForm>) {
     const updateData: CarrierUpdate = {
@@ -121,7 +194,18 @@ class CarrierService {
   }
 
   /**
-   * Update a carrier (alias for hooks compatibility)
+   * Updates a carrier (hook-compatible alias)
+   *
+   * @param id - The unique identifier of the carrier to update
+   * @param data - Partial carrier data with fields to update
+   * @returns Promise resolving to ServiceResponse with updated carrier
+   *
+   * @example
+   * ```ts
+   * const response = await carrierService.update('carrier-123', {
+   *   name: 'Updated Name'
+   * });
+   * ```
    */
   async update(id: string, data: Partial<NewCarrierForm>): Promise<ServiceResponse<Carrier>> {
     const result = await this.updateCarrier(id, data);
@@ -132,7 +216,15 @@ class CarrierService {
   }
 
   /**
-   * Delete a carrier
+   * Deletes a carrier from the database
+   *
+   * @param id - The unique identifier of the carrier to delete
+   * @returns Promise resolving to Supabase query result
+   *
+   * @example
+   * ```ts
+   * const { error } = await carrierService.deleteCarrier('carrier-123');
+   * ```
    */
   async deleteCarrier(id: string) {
     return await supabase
@@ -142,7 +234,18 @@ class CarrierService {
   }
 
   /**
-   * Delete a carrier (alias for hooks compatibility)
+   * Deletes a carrier (hook-compatible alias)
+   *
+   * @param id - The unique identifier of the carrier to delete
+   * @returns Promise resolving to ServiceResponse
+   *
+   * @example
+   * ```ts
+   * const response = await carrierService.delete('carrier-123');
+   * if (response.success) {
+   *   console.log('Carrier deleted successfully');
+   * }
+   * ```
    */
   async delete(id: string): Promise<ServiceResponse<void>> {
     const result = await this.deleteCarrier(id);
@@ -153,7 +256,18 @@ class CarrierService {
   }
 
   /**
-   * Search carriers by name
+   * Searches carriers by name or code using case-insensitive matching
+   *
+   * @param query - The search query string
+   * @returns Promise resolving to ServiceResponse with matching carriers
+   *
+   * @example
+   * ```ts
+   * const response = await carrierService.searchCarriers('acme');
+   * if (response.success) {
+   *   console.log(`Found ${response.data.length} matching carriers`);
+   * }
+   * ```
    */
   async searchCarriers(query: string): Promise<ServiceResponse<Carrier[]>> {
     const result = await supabase
@@ -169,7 +283,17 @@ class CarrierService {
   }
 
   /**
-   * Get active carriers
+   * Retrieves all active carriers (currently returns all carriers as is_active field doesn't exist)
+   *
+   * @returns Promise resolving to ServiceResponse with active carriers
+   *
+   * @example
+   * ```ts
+   * const response = await carrierService.getActiveCarriers();
+   * if (response.success) {
+   *   response.data.forEach(carrier => console.log(carrier.name));
+   * }
+   * ```
    */
   async getActiveCarriers(): Promise<ServiceResponse<Carrier[]>> {
     // Since is_active doesn't exist in database, return all carriers
