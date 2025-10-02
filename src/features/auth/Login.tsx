@@ -101,20 +101,64 @@ export const Login: React.FC<LoginProps> = ({ onSuccess }) => {
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An error occurred';
+      const errorLower = errorMessage.toLowerCase();
 
-      // Handle "Email not confirmed" error specifically
-      if (errorMessage.toLowerCase().includes('email not confirmed') ||
-          errorMessage.toLowerCase().includes('email not verified')) {
-        setError('Please verify your email before signing in. ');
+      // 1. Email not confirmed/verified (High Priority)
+      if (errorLower.includes('email not confirmed') ||
+          errorLower.includes('email not verified')) {
+        setError('Please verify your email before signing in.');
         // Store email for verification screen
         sessionStorage.setItem(SESSION_STORAGE_KEYS.VERIFICATION_EMAIL, email);
-        // Show resend link after a brief delay
+        // Redirect to verification page
         setTimeout(() => {
           navigate({
             to: '/auth/verify-email',
           } as any); // Type assertion needed for router state
-        }, 2000);
-      } else {
+        }, 1500);
+      }
+
+      // 2. Invalid credentials - user not found or wrong password (High Priority)
+      // Security best practice: Same message for both cases
+      else if (mode === 'signin' && (
+        errorLower.includes('invalid login credentials') ||
+        errorLower.includes('invalid email or password') ||
+        errorLower.includes('email not found')
+      )) {
+        setError('No account found or incorrect password. ');
+      }
+
+      // 3. Account disabled/suspended (Medium Priority)
+      else if (errorLower.includes('user is disabled') ||
+               errorLower.includes('account has been disabled') ||
+               errorLower.includes('account suspended')) {
+        setError('Your account has been disabled. Please contact support for assistance.');
+      }
+
+      // 4. Rate limiting (Medium Priority)
+      else if (errorLower.includes('rate limit') ||
+               errorLower.includes('too many requests') ||
+               errorLower.includes('email rate limit exceeded')) {
+        setError('Too many attempts. Please wait a few minutes and try again.');
+      }
+
+      // 5. Network/Connection errors (Medium Priority)
+      else if (errorLower.includes('network') ||
+               errorLower.includes('fetch failed') ||
+               errorLower.includes('failed to fetch') ||
+               errorLower.includes('networkerror')) {
+        setError('Connection error. Please check your internet and try again.');
+      }
+
+      // 6. Password requirements (Signup only)
+      else if (mode === 'signup' && (
+        errorLower.includes('password') &&
+        (errorLower.includes('weak') || errorLower.includes('requirements') || errorLower.includes('too short'))
+      )) {
+        setError('Password must be at least 6 characters with a mix of letters and numbers.');
+      }
+
+      // 7. Generic fallback
+      else {
         setError(errorMessage);
       }
     } finally {
@@ -208,9 +252,30 @@ export const Login: React.FC<LoginProps> = ({ onSuccess }) => {
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                   </svg>
                 </div>
-                <p className="ml-3 text-sm font-medium text-red-800">
-                  {error}
-                </p>
+                <div className="ml-3">
+                  <p className="text-sm font-medium text-red-800">
+                    {error}
+                  </p>
+                  {/* Show "Create account" button for invalid credentials */}
+                  {mode === 'signin' && error.includes('No account found') && (
+                    <button
+                      type="button"
+                      onClick={() => switchMode('signup')}
+                      className="mt-2 text-sm font-semibold text-red-700 hover:text-red-600 underline transition-colors"
+                    >
+                      Create a new account
+                    </button>
+                  )}
+                  {/* Show support link for disabled accounts */}
+                  {error.includes('disabled') && (
+                    <a
+                      href="mailto:support@commissiontracker.com"
+                      className="mt-2 inline-block text-sm font-semibold text-red-700 hover:text-red-600 underline transition-colors"
+                    >
+                      Contact Support
+                    </a>
+                  )}
+                </div>
               </div>
             </div>
           )}

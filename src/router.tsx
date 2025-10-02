@@ -4,6 +4,7 @@ import {
   RootRoute,
   Route,
   createRouter,
+  useNavigate,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import App from "./App";
@@ -12,7 +13,7 @@ import { CommissionList } from "./features/commissions";
 import { PolicyDashboard } from "./features/policies";
 import { AnalyticsDashboard } from "./features/analytics";
 import { DashboardHome } from "./features/dashboard";
-import { CommissionGuide } from "./features/commission-guide";
+import { CompGuide } from "./features/comps";
 import { SettingsDashboard } from "./features/settings";
 import { ExpensesProvider } from "./contexts/ExpensesContext";
 import { Login, AuthCallback, ResetPassword, EmailVerificationPending } from "./features/auth";
@@ -41,11 +42,17 @@ const dashboardRoute = new Route({
   component: DashboardHome,
 });
 
-// Login route
+// Login route with success handler
 const loginRoute = new Route({
   getParentRoute: () => rootRoute,
   path: "login",
-  component: Login,
+  component: () => {
+    const navigate = useNavigate();
+    const handleLoginSuccess = () => {
+      navigate({ to: "/" });
+    };
+    return <Login onSuccess={handleLoginSuccess} />;
+  },
 });
 
 // Auth callback route (for email confirmation)
@@ -83,11 +90,11 @@ const analyticsRoute = new Route({
   component: AnalyticsDashboard,
 });
 
-// Commission Guide route (replaces old settings)
-const commissionGuideRoute = new Route({
+// Comp Guide route (replaces old settings)
+const compGuideRoute = new Route({
   getParentRoute: () => rootRoute,
-  path: "commission-guide",
-  component: CommissionGuide,
+  path: "comps",
+  component: CompGuide,
 });
 
 // Settings route
@@ -150,7 +157,7 @@ const routeTree = rootRoute.addChildren([
   verifyEmailRoute,
   policiesRoute,
   analyticsRoute,
-  commissionGuideRoute,
+  compGuideRoute,
   settingsRoute,
   targetsRoute,
   reportsRoute,

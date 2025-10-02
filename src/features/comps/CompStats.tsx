@@ -2,7 +2,7 @@ import React from 'react';
 import { BarChart3, Building2, Package, Percent, TrendingUp } from 'lucide-react';
 import { useCompsList } from '../../hooks/comps';
 
-export function CommissionStats() {
+export function CompStats() {
   const { data: comps, isLoading, error } = useCompsList();
 
   // Calculate statistics from comps data
@@ -10,6 +10,7 @@ export function CommissionStats() {
     totalProducts: comps.length,
     avgCommission: comps.reduce((sum, c) => sum + c.commission_percentage, 0) / comps.length || 0,
     activeCarriers: new Set(comps.map(c => c.carrier_id)).size,
+    productTypes: new Set(comps.map(c => c.product_type)).size,
     topRate: Math.max(...comps.map(c => c.commission_percentage), 0)
   } : null;
 
@@ -34,23 +35,23 @@ export function CommissionStats() {
   if (error || !stats) {
     return (
       <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-        <p className="text-sm text-red-600">Failed to load commission statistics</p>
+        <p className="text-sm text-red-600">Failed to load comp statistics</p>
       </div>
     );
   }
 
   const statCards = [
     {
-      name: 'Total Records',
-      value: stats.totalRecords.toLocaleString(),
-      description: 'Commission rates in database',
+      name: 'Total Products',
+      value: stats.totalProducts.toLocaleString(),
+      description: 'Compensation rates in database',
       icon: BarChart3,
       color: 'text-blue-600',
       bgColor: 'bg-blue-50'
     },
     {
       name: 'Carriers',
-      value: stats.uniqueCarriers.toLocaleString(),
+      value: stats.activeCarriers.toLocaleString(),
       description: 'Insurance carriers',
       icon: Building2,
       color: 'text-green-600',
@@ -66,7 +67,7 @@ export function CommissionStats() {
     },
     {
       name: 'Average Commission',
-      value: `${stats.averageCommission.toFixed(1)}%`,
+      value: `${stats.avgCommission.toFixed(1)}%`,
       description: 'Across all products & carriers',
       icon: TrendingUp,
       color: 'text-orange-600',
@@ -77,8 +78,8 @@ export function CommissionStats() {
   return (
     <div className="mb-6">
       <div className="mb-4">
-        <h3 className="text-lg font-medium text-gray-900">Commission Guide Overview</h3>
-        <p className="text-sm text-gray-500">Current FFG commission data summary</p>
+        <h3 className="text-lg font-medium text-gray-900">Comp Guide Overview</h3>
+        <p className="text-sm text-gray-500">Current FFG compensation data summary</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -138,4 +139,4 @@ export function CommissionStats() {
   );
 }
 
-export default CommissionStats;
+export default CompStats;

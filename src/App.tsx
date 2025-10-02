@@ -3,7 +3,6 @@ import React, { useState } from "react";
 import { Outlet, useNavigate, useLocation } from "@tanstack/react-router";
 import { Sidebar } from "./components/layout";
 import { useAuth } from "./contexts/AuthContext";
-import { Login } from "./features/auth/Login";
 import { logger } from "./services/base/logger";
 import "./App.css";
 
@@ -37,13 +36,10 @@ function App() {
     setIsSidebarCollapsed((prev) => !prev);
   };
 
-  // Handle successful login
-  const handleLoginSuccess = () => {
-    navigate({ to: "/" });
-  };
 
   // Show loading state while checking authentication
-  if (loading) {
+  // BUT don't show it on public paths (login, auth callback, etc) to avoid unmounting forms
+  if (loading && !isPublicPath) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-lg">Loading...</div>
@@ -58,7 +54,14 @@ function App() {
 
   // Protected routes - require authentication
   if (!user) {
-    return <Login onSuccess={handleLoginSuccess} />;
+    // Redirect to login route instead of rendering Login directly
+    // This ensures Login component is always rendered via router with consistent props
+    navigate({ to: "/login" });
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-lg">Redirecting to login...</div>
+      </div>
+    );
   }
 
   // Authenticated user - show app with sidebar and routes

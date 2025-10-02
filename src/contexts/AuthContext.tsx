@@ -188,6 +188,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } catch (err) {
       logger.error('Sign in error', err instanceof Error ? err : String(err), 'Auth');
       setError(err instanceof Error ? err : new Error('Failed to sign in'));
+      // Re-throw the original error so Login.tsx can handle it with proper message
       throw err;
     } finally {
       setLoading(false);

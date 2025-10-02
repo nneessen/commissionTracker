@@ -1,46 +1,72 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { ChevronLeft, ChevronRight, ArrowUp, ArrowDown, Building2, Package, Percent, Calendar, AlertCircle } from 'lucide-react';
-import { CompGuideQueryResult, CompGuidePaginationOptions } from '../../services/compGuide/compGuideService';
+import { Comp } from '../../types/comp.types';
 
-interface CommissionTableProps {
-  data?: CompGuideQueryResult;
-  pagination: CompGuidePaginationOptions;
+interface CompTableProps {
+  data: Comp[];
   isLoading: boolean;
-  error: any;
-  onPaginationChange: (newPagination: Partial<CompGuidePaginationOptions>) => void;
+  error?: string;
+  onPaginationChange?: (newPagination: any) => void;
 }
 
-export function CommissionTable({
-  data,
-  pagination,
-  isLoading,
-  error,
-  onPaginationChange
-}: CommissionTableProps) {
+type SortField = 'carrier_id' | 'product_type' | 'commission_percentage' | 'comp_level';
+type SortOrder = 'asc' | 'desc';
 
-  const handleSort = (field: 'carrier_name' | 'product_type' | 'commission_percentage' | 'contract_level') => {
-    const newOrder = pagination.sortBy === field && pagination.sortOrder === 'asc' ? 'desc' : 'asc';
-    onPaginationChange({
-      sortBy: field,
-      sortOrder: newOrder,
-      page: 1 // Reset to first page when sorting
+export function CompTable({
+  data,
+  isLoading,
+  error
+}: CompTableProps) {
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+  const [sortBy, setSortBy] = useState<SortField>('carrier_id');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
+
+  // Client-side sorting
+  const sortedData = useMemo(() => {
+    if (!data) return [];
+
+    return [...data].sort((a, b) => {
+      let aVal = a[sortBy];
+      let bVal = b[sortBy];
+
+      if (typeof aVal === 'string') aVal = aVal.toLowerCase();
+      if (typeof bVal === 'string') bVal = bVal.toLowerCase();
+
+      if (aVal < bVal) return sortOrder === 'asc' ? -1 : 1;
+      if (aVal > bVal) return sortOrder === 'asc' ? 1 : -1;
+      return 0;
     });
+  }, [data, sortBy, sortOrder]);
+
+  // Client-side pagination
+  const paginatedData = useMemo(() => {
+    const startIndex = (page - 1) * pageSize;
+    return sortedData.slice(startIndex, startIndex + pageSize);
+  }, [sortedData, page, pageSize]);
+
+  const totalPages = Math.ceil((data?.length || 0) / pageSize);
+  const total = data?.length || 0;
+
+  const handleSort = (field: SortField) => {
+    const newOrder = sortBy === field && sortOrder === 'asc' ? 'desc' : 'asc';
+    setSortBy(field);
+    setSortOrder(newOrder);
+    setPage(1); // Reset to first page when sorting
   };
 
   const handlePageChange = (newPage: number) => {
-    onPaginationChange({ page: newPage });
+    setPage(newPage);
   };
 
   const handlePageSizeChange = (newPageSize: number) => {
-    onPaginationChange({
-      pageSize: newPageSize,
-      page: 1 // Reset to first page when changing page size
-    });
+    setPageSize(newPageSize);
+    setPage(1); // Reset to first page when changing page size
   };
 
-  const getSortIcon = (field: string) => {
-    if (pagination.sortBy !== field) return null;
-    return pagination.sortOrder === 'asc' ?
+  const getSortIcon = (field: SortField) => {
+    if (sortBy !== field) return null;
+    return sortOrder === 'asc' ?
       <ArrowUp className="h-4 w-4 ml-1" /> :
       <ArrowDown className="h-4 w-4 ml-1" />;
   };
@@ -49,17 +75,19 @@ export function CommissionTable({
     return `${rate.toFixed(2)}%`;
   };
 
-  const getContractLevelBadge = (level: number) => {
-    if (level >= 140) return { label: 'Premium', color: 'bg-purple-100 text-purple-800' };
-    if (level >= 120) return { label: 'Enhanced', color: 'bg-blue-100 text-blue-800' };
-    if (level >= 100) return { label: 'Release', color: 'bg-green-100 text-green-800' };
-    return { label: 'Street', color: 'bg-gray-100 text-gray-800' };
+  const getCompLevelBadge = (level: string) => {
+    const badges = {
+      premium: { label: 'Premium', color: 'bg-purple-100 text-purple-800' },
+      enhanced: { label: 'Enhanced', color: 'bg-blue-100 text-blue-800' },
+      release: { label: 'Release', color: 'bg-green-100 text-green-800' },
+      street: { label: 'Street', color: 'bg-gray-100 text-gray-800' }
+    };
+    return badges[level as keyof typeof badges] || badges.street;
   };
 
   const renderPagination = () => {
-    if (!data) return null;
+    if (!data || data.length === 0) return null;
 
-    const { page, totalPages, total, pageSize } = data;
     const startItem = (page - 1) * pageSize + 1;
     const endItem = Math.min(page * pageSize, total);
 
@@ -161,9 +189,9 @@ export function CommissionTable({
     return (
       <div className="text-center py-12">
         <AlertCircle className="mx-auto h-12 w-12 text-red-400 mb-4" />
-        <h3 className="text-lg font-medium text-gray-900 mb-2">Error Loading Commission Data</h3>
+        <h3 className="text-lg font-medium text-gray-900 mb-2">Error Loading Comp Data</h3>
         <p className="text-sm text-gray-500 mb-4">
-          {error.message || 'An unexpected error occurred while loading the commission guide.'}
+          {error || 'An unexpected error occurred while loading the comp guide.'}
         </p>
         <button
           onClick={() => window.location.reload()}
@@ -184,12 +212,12 @@ export function CommissionTable({
               <th
                 scope="col"
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                onClick={() => handleSort('carrier_name')}
+                onClick={() => handleSort('carrier_id')}
               >
                 <div className="flex items-center">
                   <Building2 className="h-4 w-4 mr-2" />
                   Carrier
-                  {getSortIcon('carrier_name')}
+                  {getSortIcon('carrier_id')}
                 </div>
               </th>
               <th
@@ -206,11 +234,11 @@ export function CommissionTable({
               <th
                 scope="col"
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                onClick={() => handleSort('contract_level')}
+                onClick={() => handleSort('comp_level')}
               >
                 <div className="flex items-center">
                   Level
-                  {getSortIcon('contract_level')}
+                  {getSortIcon('comp_level')}
                 </div>
               </th>
               <th
@@ -238,55 +266,61 @@ export function CommissionTable({
                 <td colSpan={5} className="px-6 py-12 text-center">
                   <div className="flex items-center justify-center">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mr-3"></div>
-                    <span className="text-gray-500">Loading commission data...</span>
+                    <span className="text-gray-500">Loading comp data...</span>
                   </div>
                 </td>
               </tr>
-            ) : data?.data.length === 0 ? (
+            ) : paginatedData.length === 0 ? (
               <tr>
                 <td colSpan={5} className="px-6 py-12 text-center">
                   <div className="text-gray-500">
                     <Package className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">No Commission Data Found</h3>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">No Comp Data Found</h3>
                     <p className="text-sm">Try adjusting your search filters or check back later.</p>
                   </div>
                 </td>
               </tr>
             ) : (
-              data?.data.map((record) => {
-                const levelBadge = getContractLevelBadge(record.contractLevel);
+              paginatedData.map((record) => {
+                const levelBadge = getCompLevelBadge(record.comp_level);
                 return (
                   <tr key={record.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div>
-                          <div className="text-sm font-medium text-gray-900">{record.carrierName}</div>
-                          <div className="text-sm text-gray-500">{record.carrierId}</div>
+                          <div className="text-sm font-medium text-gray-900">{record.carrier_id}</div>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div>
-                        <div className="text-sm font-medium text-gray-900">{record.productName}</div>
-                        <div className="text-sm text-gray-500">{record.productType}</div>
+                        <div className="text-sm font-medium text-gray-900">
+                          {record.product_type.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                        </div>
+                        <div className="text-sm text-gray-500">{record.product_type}</div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${levelBadge.color}`}>
                         {levelBadge.label}
                       </span>
-                      <div className="text-xs text-gray-500 mt-1">{record.contractLevel}</div>
+                      <div className="text-xs text-gray-500 mt-1">{record.comp_level}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-lg font-semibold text-blue-600">
-                        {formatCommissionRate(record.commissionPercentage)}
+                        {formatCommissionRate(record.commission_percentage)}
                       </div>
+                      {record.bonus_percentage && (
+                        <div className="text-xs text-green-600">
+                          +{record.bonus_percentage}% bonus
+                        </div>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(record.effectiveDate).toLocaleDateString()}
-                      {record.expirationDate && (
+                      {new Date(record.effective_date).toLocaleDateString()}
+                      {record.expiration_date && (
                         <div className="text-xs text-gray-400">
-                          Expires: {new Date(record.expirationDate).toLocaleDateString()}
+                          Expires: {new Date(record.expiration_date).toLocaleDateString()}
                         </div>
                       )}
                     </td>
@@ -298,9 +332,9 @@ export function CommissionTable({
         </table>
       </div>
 
-      {data && data.data.length > 0 && renderPagination()}
+      {paginatedData.length > 0 && renderPagination()}
     </div>
   );
 }
 
-export default CommissionTable;
+export default CompTable;

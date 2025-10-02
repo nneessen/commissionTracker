@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
 import { logger } from '../../services/base/logger';
-import { Search, Filter, Download, Settings, Calculator, Building2, Database } from 'lucide-react';
+import { Download, Settings, Calculator, Database } from 'lucide-react';
 import { useCompsList } from '../../hooks/comps';
 import { CompFilters } from '../../types/comp.types';
 import { UserContractSettings } from './UserContractSettings';
-import { CommissionTable } from './CommissionTable';
-import { CommissionFilters } from './CommissionFilters';
-import { CommissionStats } from './CommissionStats';
+import { CompTable } from './CompTable';
+import { CompFiltersComponent } from './CompFilters';
+import { CompStats } from './CompStats';
 
-export function CommissionGuide() {
+export function CompGuide() {
   const [activeTab, setActiveTab] = useState<'guide' | 'settings'>('guide');
   const [filters, setFilters] = useState<CompFilters>({});
 
@@ -18,21 +18,17 @@ export function CommissionGuide() {
     setFilters(newFilters);
   };
 
-  const handlePaginationChange = (newPagination: any) => {
-    // Pagination logic if needed
-  };
-
   const handleExport = () => {
     // TODO: Implement export functionality
-    logger.info('Export commission guide data', undefined, 'CommissionGuide');
+    logger.info('Export comp guide data', undefined, 'CompGuide');
   };
 
   const tabs = [
     {
       id: 'guide',
-      name: 'Commission Guide',
+      name: 'Comp Guide',
       icon: Calculator,
-      description: 'FFG commission rates by carrier and product'
+      description: 'FFG compensation rates by carrier and product'
     },
     {
       id: 'settings',
@@ -42,6 +38,10 @@ export function CommissionGuide() {
     }
   ];
 
+  // Get unique carrier IDs and product types from data for filter options
+  const carrierIds = comps ? Array.from(new Set(comps.map(c => c.carrier_id))) : [];
+  const productTypes = comps ? Array.from(new Set(comps.map(c => c.product_type))) : [];
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -50,7 +50,7 @@ export function CommissionGuide() {
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center">
               <Database className="h-6 w-6 text-blue-600 mr-3" />
-              <h1 className="text-xl font-semibold text-gray-900">Commission Guide</h1>
+              <h1 className="text-xl font-semibold text-gray-900">Comp Guide</h1>
             </div>
             <div className="flex items-center space-x-4">
               <button
@@ -104,22 +104,21 @@ export function CommissionGuide() {
           {activeTab === 'guide' ? (
             <div className="p-6">
               {/* Statistics */}
-              <CommissionStats />
+              <CompStats />
 
               {/* Filters */}
-              <CommissionFilters
+              <CompFiltersComponent
                 filters={filters}
-                carrierNames={[]}
-                productTypes={[]}
+                carrierIds={carrierIds}
+                productTypes={productTypes}
                 onFilterChange={handleFilterChange}
               />
 
-              {/* Commission Table */}
-              <CommissionTable
+              {/* Comp Table */}
+              <CompTable
                 data={comps || []}
                 isLoading={isLoading}
                 error={error?.message}
-                onPaginationChange={handlePaginationChange}
               />
             </div>
           ) : (
@@ -133,4 +132,4 @@ export function CommissionGuide() {
   );
 }
 
-export default CommissionGuide;
+export default CompGuide;
