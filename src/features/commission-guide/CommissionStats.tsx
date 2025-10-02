@@ -1,9 +1,17 @@
 import React from 'react';
 import { BarChart3, Building2, Package, Percent, TrendingUp } from 'lucide-react';
-import { useCompGuideStatistics } from '../../hooks/compGuide/useCompGuide';
+import { useCompsList } from '../../hooks/comps';
 
 export function CommissionStats() {
-  const { data: stats, isLoading, error } = useCompGuideStatistics();
+  const { data: comps, isLoading, error } = useCompsList();
+
+  // Calculate statistics from comps data
+  const stats = comps ? {
+    totalProducts: comps.length,
+    avgCommission: comps.reduce((sum, c) => sum + c.commission_percentage, 0) / comps.length || 0,
+    activeCarriers: new Set(comps.map(c => c.carrier_id)).size,
+    topRate: Math.max(...comps.map(c => c.commission_percentage), 0)
+  } : null;
 
   if (isLoading) {
     return (

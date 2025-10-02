@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Package, Plus, Edit2, Trash2, Search, Filter, Download, Upload, X, Calendar } from 'lucide-react';
-import { CompGuideEntry, NewCompGuideForm, CompGuideFilters } from '../../../types/compGuide.types';
+import { Comp, CreateCompData, CompFilters } from '../../../types/comp.types';
 import { Database } from '../../../types/database.types';
 import { Carrier } from '../../../types/carrier.types';
 import { logger } from '../../../services/base/logger';
@@ -11,15 +11,15 @@ import { carrierService } from '../../../services/settings/carrierService';
 import { SettingsCard } from '../components/SettingsComponents';
 
 interface ProductFormProps {
-  entry?: CompGuideEntry | null;
+  entry?: Comp | null;
   carriers: Carrier[];
   isOpen: boolean;
   onClose: () => void;
-  onSave: (entry: CompGuideEntry) => void;
+  onSave: (entry: Comp) => void;
 }
 
 const ProductForm: React.FC<ProductFormProps> = ({ entry, carriers, isOpen, onClose, onSave }) => {
-  const [formData, setFormData] = useState<NewCompGuideForm>({
+  const [formData, setFormData] = useState<CreateCompData>({
     carrier_id: '',
     product_type: 'term_life' as Database["public"]["Enums"]["product_type"],
     comp_level: 'street' as Database["public"]["Enums"]["comp_level"],
@@ -378,12 +378,12 @@ const ProductForm: React.FC<ProductFormProps> = ({ entry, carriers, isOpen, onCl
 };
 
 export const ProductManager: React.FC = () => {
-  const [entries, setEntries] = useState<CompGuideEntry[]>([]);
-  const [filteredEntries, setFilteredEntries] = useState<CompGuideEntry[]>([]);
+  const [entries, setEntries] = useState<Comp[]>([]);
+  const [filteredEntries, setFilteredEntries] = useState<Comp[]>([]);
   const [carriers, setCarriers] = useState<Carrier[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filters, setFilters] = useState<CompGuideFilters>({});
-  const [selectedEntry, setSelectedEntry] = useState<CompGuideEntry | null>(null);
+  const [filters, setFilters] = useState<CompFilters>({});
+  const [selectedEntry, setSelectedEntry] = useState<Comp | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
@@ -446,12 +446,12 @@ export const ProductManager: React.FC = () => {
     setIsFormOpen(true);
   };
 
-  const handleEditProduct = (entry: CompGuideEntry) => {
+  const handleEditProduct = (entry: Comp) => {
     setSelectedEntry(entry);
     setIsFormOpen(true);
   };
 
-  const handleDeleteProduct = async (entry: CompGuideEntry) => {
+  const handleDeleteProduct = async (entry: Comp) => {
     const carrierName = carriers.find(c => c.id === entry.carrier_id)?.name || 'Unknown';
     const productName = entry.product_type.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
     if (window.confirm(`Are you sure you want to delete ${productName} for ${carrierName}?`)) {
@@ -464,7 +464,7 @@ export const ProductManager: React.FC = () => {
     }
   };
 
-  const handleSaveProduct = (entry: CompGuideEntry) => {
+  const handleSaveProduct = (entry: Comp) => {
     if (selectedEntry) {
       setEntries(entries.map(e => e.id === entry.id ? entry : e));
     } else {

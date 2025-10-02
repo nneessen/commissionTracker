@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { logger } from '../../services/base/logger';
 import { Search, Filter, Download, Settings, Calculator, Building2, Database } from 'lucide-react';
-import { useCompGuideData, useCarrierNames, useProductTypes } from '../../hooks/compGuide/useCompGuide';
-import { CompGuideFilters, CompGuidePaginationOptions } from '../../services/compGuide/compGuideService';
+import { useCompsList } from '../../hooks/comps';
+import { CompFilters } from '../../types/comp.types';
 import { UserContractSettings } from './UserContractSettings';
 import { CommissionTable } from './CommissionTable';
 import { CommissionFilters } from './CommissionFilters';
@@ -10,25 +10,16 @@ import { CommissionStats } from './CommissionStats';
 
 export function CommissionGuide() {
   const [activeTab, setActiveTab] = useState<'guide' | 'settings'>('guide');
-  const [filters, setFilters] = useState<CompGuideFilters>({});
-  const [pagination, setPagination] = useState<CompGuidePaginationOptions>({
-    page: 1,
-    pageSize: 50,
-    sortBy: 'carrier_name',
-    sortOrder: 'asc'
-  });
+  const [filters, setFilters] = useState<CompFilters>({});
 
-  const { data: compGuideData, isLoading, error } = useCompGuideData(filters, pagination);
-  const { data: carrierNames } = useCarrierNames();
-  const { data: productTypes } = useProductTypes();
+  const { data: comps, isLoading, error } = useCompsList(filters);
 
-  const handleFilterChange = (newFilters: CompGuideFilters) => {
+  const handleFilterChange = (newFilters: CompFilters) => {
     setFilters(newFilters);
-    setPagination(prev => ({ ...prev, page: 1 })); // Reset to first page
   };
 
-  const handlePaginationChange = (newPagination: Partial<CompGuidePaginationOptions>) => {
-    setPagination(prev => ({ ...prev, ...newPagination }));
+  const handlePaginationChange = (newPagination: any) => {
+    // Pagination logic if needed
   };
 
   const handleExport = () => {
@@ -118,17 +109,16 @@ export function CommissionGuide() {
               {/* Filters */}
               <CommissionFilters
                 filters={filters}
-                carrierNames={carrierNames || []}
-                productTypes={productTypes || []}
+                carrierNames={[]}
+                productTypes={[]}
                 onFilterChange={handleFilterChange}
               />
 
               {/* Commission Table */}
               <CommissionTable
-                data={compGuideData}
-                pagination={pagination}
+                data={comps || []}
                 isLoading={isLoading}
-                error={error}
+                error={error?.message}
                 onPaginationChange={handlePaginationChange}
               />
             </div>

@@ -1,8 +1,10 @@
 // src/features/auth/Login.tsx
 
 import React, { useState } from 'react';
+import { useNavigate } from '@tanstack/react-router';
 import { useAuth } from '../../contexts/AuthContext';
 import { Button, Input } from '../../components/ui';
+import { SESSION_STORAGE_KEYS } from '../../constants/auth.constants';
 
 interface LoginProps {
   onSuccess?: () => void;
@@ -18,6 +20,7 @@ interface FormErrors {
 
 export const Login: React.FC<LoginProps> = ({ onSuccess }) => {
   const { signIn, signUp, resetPassword } = useAuth();
+  const navigate = useNavigate();
   const [mode, setMode] = useState<AuthMode>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -75,9 +78,21 @@ export const Login: React.FC<LoginProps> = ({ onSuccess }) => {
         await signIn(email, password);
         onSuccess?.();
       } else if (mode === 'signup') {
-        await signUp(email, password);
-        setMessage('Account created! Please check your email for confirmation.');
-        // Don't call onSuccess here - wait for email confirmation
+        const result = await signUp(email, password);
+
+        if (result.requiresVerification) {
+          // Store email in sessionStorage for verification screen
+          sessionStorage.setItem(SESSION_STORAGE_KEYS.VERIFICATION_EMAIL, result.email);
+
+          // Navigate to verification screen
+          navigate({
+            to: '/auth/verify-email',
+          } as any); // Type assertion needed for router state
+        } else {
+          // Auto-confirm is enabled, user is logged in
+          setMessage('Account created successfully!');
+          onSuccess?.();
+        }
       } else if (mode === 'reset') {
         await resetPassword(email);
         setMessage('Password reset email sent! Check your inbox.');
@@ -86,7 +101,22 @@ export const Login: React.FC<LoginProps> = ({ onSuccess }) => {
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An error occurred';
-      setError(errorMessage);
+
+      // Handle "Email not confirmed" error specifically
+      if (errorMessage.toLowerCase().includes('email not confirmed') ||
+          errorMessage.toLowerCase().includes('email not verified')) {
+        setError('Please verify your email before signing in. ');
+        // Store email for verification screen
+        sessionStorage.setItem(SESSION_STORAGE_KEYS.VERIFICATION_EMAIL, email);
+        // Show resend link after a brief delay
+        setTimeout(() => {
+          navigate({
+            to: '/auth/verify-email',
+          } as any); // Type assertion needed for router state
+        }, 2000);
+      } else {
+        setError(errorMessage);
+      }
     } finally {
       setLoading(false);
     }

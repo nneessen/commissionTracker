@@ -1,6 +1,6 @@
 // src/App.tsx
 import React, { useState } from "react";
-import { Outlet, useNavigate } from "@tanstack/react-router";
+import { Outlet, useNavigate, useLocation } from "@tanstack/react-router";
 import { Sidebar } from "./components/layout";
 import { useAuth } from "./contexts/AuthContext";
 import { Login } from "./features/auth/Login";
@@ -10,10 +10,15 @@ import "./App.css";
 function App() {
   // Get authentication state from AuthContext
   const { user, loading, signOut } = useAuth();
+  const location = useLocation();
 
   // Sidebar state
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const navigate = useNavigate();
+
+  // Public routes that don't require authentication
+  const publicPaths = ['/login', '/auth/callback', '/auth/verify-email', '/auth/reset-password'];
+  const isPublicPath = publicPaths.some(path => location.pathname.startsWith(path));
 
   // Logout handler
   const handleLogout = async () => {
@@ -46,11 +51,17 @@ function App() {
     );
   }
 
-  // Show login if not authenticated
+  // Allow public auth routes to render even without authentication
+  if (isPublicPath) {
+    return <Outlet />;
+  }
+
+  // Protected routes - require authentication
   if (!user) {
     return <Login onSuccess={handleLoginSuccess} />;
   }
 
+  // Authenticated user - show app with sidebar and routes
   return (
     <div className="app-container">
       <Sidebar

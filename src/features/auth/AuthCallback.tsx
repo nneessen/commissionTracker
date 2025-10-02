@@ -4,19 +4,29 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { supabase } from '../../services/base/supabase';
 import { logger } from '../../services/base/logger';
+import { AUTH_CALLBACK_TYPES, type AuthCallbackType, SESSION_STORAGE_KEYS } from '../../constants/auth.constants';
 
 /**
  * AuthCallback - Handles email confirmation and OAuth callbacks
  *
  * This component processes authentication tokens from email links:
- * - Email confirmation after signup
- * - Magic link login
+ * - Email confirmation after signup (type: 'signup')
+ * - Password recovery (type: 'recovery')
+ * - Magic link login (type: 'magiclink')
  * - OAuth provider callbacks
+ * - Email change confirmation (type: 'email_change')
+ *
+ * Edge cases handled:
+ * - Expired tokens → redirect to verification page with error
+ * - Invalid tokens → show error with action
+ * - Already verified → sign in anyway
+ * - Error codes in URL → display user-friendly messages
  */
 export const AuthCallback: React.FC = () => {
   const navigate = useNavigate();
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [message, setMessage] = useState<string>('Verifying your email...');
+  const [authType, setAuthType] = useState<AuthCallbackType | null>(null);
 
   useEffect(() => {
     const handleCallback = async () => {
@@ -25,9 +35,25 @@ export const AuthCallback: React.FC = () => {
         const hashParams = new URLSearchParams(window.location.hash.substring(1));
         const accessToken = hashParams.get('access_token');
         const refreshToken = hashParams.get('refresh_token');
-        const type = hashParams.get('type');
+        const type = hashParams.get('type') as AuthCallbackType;
+        const errorCode = hashParams.get('error_code');
+        const errorDescription = hashParams.get('error_description');
 
+        // Handle errors first
+        if (errorCode || errorDescription) {
+          throw new Error(errorDescription || `Authentication error: ${errorCode}`);
+        }
+
+        setAuthType(type);
         logger.auth('Auth callback received', { type, hasAccessToken: !!accessToken });
+
+        // Handle password recovery separately
+        if (type === AUTH_CALLBACK_TYPES.RECOVERY) {
+          logger.auth('Password recovery callback, redirecting to reset password');
+          // This is handled by the ResetPassword component
+          // The user will be redirected there automatically
+          return;
+        }
 
         // If we have tokens, set the session
         if (accessToken && refreshToken) {
@@ -38,10 +64,23 @@ export const AuthCallback: React.FC = () => {
 
           if (error) throw error;
 
-          logger.auth('Session set successfully', { email: data.user?.email });
+          logger.auth('Session set successfully', { email: data.user?.email, type });
+
+          // Clear any pending verification email from storage
+          sessionStorage.removeItem(SESSION_STORAGE_KEYS.VERIFICATION_EMAIL);
+
+          // Set appropriate success message based on type
+          let successMessage = 'Authentication successful! Redirecting...';
+          if (type === AUTH_CALLBACK_TYPES.SIGNUP) {
+            successMessage = 'Email verified successfully! Welcome aboard!';
+          } else if (type === AUTH_CALLBACK_TYPES.MAGICLINK) {
+            successMessage = 'Magic link verified! Signing you in...';
+          } else if (type === AUTH_CALLBACK_TYPES.EMAIL_CHANGE) {
+            successMessage = 'Email updated successfully!';
+          }
 
           setStatus('success');
-          setMessage('Email verified! Redirecting to dashboard...');
+          setMessage(successMessage);
 
           // Redirect to dashboard after a brief delay
           setTimeout(() => {
@@ -49,21 +88,38 @@ export const AuthCallback: React.FC = () => {
           }, 2000);
         } else {
           // No tokens found, might be an error or user navigated here directly
-          throw new Error('No authentication tokens found in URL');
+          throw new Error('No authentication tokens found in URL. Please try the verification link again.');
         }
       } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Unknown error';
         logger.error('Auth callback error', err instanceof Error ? err : String(err), 'Auth');
-        setStatus('error');
-        setMessage(
-          err instanceof Error
-            ? err.message
-            : 'Failed to verify email. Please try signing in again.'
-        );
 
-        // Redirect to login after showing error
-        setTimeout(() => {
-          navigate({ to: '/login' });
-        }, 3000);
+        setStatus('error');
+
+        // Provide user-friendly error messages with actions
+        if (errorMessage.includes('expired') || errorMessage.includes('invalid')) {
+          setMessage('This verification link has expired or is invalid. Please request a new one.');
+
+          // Redirect to verification page after showing error
+          setTimeout(() => {
+            navigate({ to: '/auth/verify-email' });
+          }, 3000);
+        } else if (errorMessage.includes('already') || errorMessage.includes('confirmed')) {
+          setMessage('This email is already verified. Redirecting to login...');
+
+          setTimeout(() => {
+            navigate({ to: '/login' });
+          }, 2000);
+        } else {
+          setMessage(
+            errorMessage || 'Failed to verify email. Please try signing in again.'
+          );
+
+          // Redirect to login after showing error
+          setTimeout(() => {
+            navigate({ to: '/login' });
+          }, 3000);
+        }
       }
     };
 
@@ -104,7 +160,11 @@ export const AuthCallback: React.FC = () => {
 
           {/* Message */}
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            {status === 'loading' && 'Verifying Email'}
+            {status === 'loading' && (
+              authType === AUTH_CALLBACK_TYPES.SIGNUP ? 'Verifying Email' :
+              authType === AUTH_CALLBACK_TYPES.MAGICLINK ? 'Verifying Magic Link' :
+              'Authenticating'
+            )}
             {status === 'success' && 'Success!'}
             {status === 'error' && 'Verification Failed'}
           </h2>

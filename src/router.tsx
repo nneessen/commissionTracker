@@ -15,7 +15,7 @@ import { DashboardHome } from "./features/dashboard";
 import { CommissionGuide } from "./features/commission-guide";
 import { SettingsDashboard } from "./features/settings";
 import { ExpensesProvider } from "./contexts/ExpensesContext";
-import { Login } from "./features/auth/Login";
+import { Login, AuthCallback, ResetPassword, EmailVerificationPending } from "./features/auth";
 
 // Create root route with App layout and ExpensesProvider
 const rootRoute = new RootRoute({
@@ -46,6 +46,27 @@ const loginRoute = new Route({
   getParentRoute: () => rootRoute,
   path: "login",
   component: Login,
+});
+
+// Auth callback route (for email confirmation)
+const authCallbackRoute = new Route({
+  getParentRoute: () => rootRoute,
+  path: "auth/callback",
+  component: AuthCallback,
+});
+
+// Password reset route
+const resetPasswordRoute = new Route({
+  getParentRoute: () => rootRoute,
+  path: "auth/reset-password",
+  component: ResetPassword,
+});
+
+// Email verification route
+const verifyEmailRoute = new Route({
+  getParentRoute: () => rootRoute,
+  path: "auth/verify-email",
+  component: EmailVerificationPending,
 });
 
 // Policies route
@@ -124,6 +145,9 @@ const routeTree = rootRoute.addChildren([
   indexRoute,
   dashboardRoute,
   loginRoute,
+  authCallbackRoute,
+  resetPasswordRoute,
+  verifyEmailRoute,
   policiesRoute,
   analyticsRoute,
   commissionGuideRoute,

@@ -57,7 +57,7 @@ describe('useCreatePolicy', () => {
 
     let createdPolicy: Policy | null = null;
     await act(async () => {
-      createdPolicy = await result.current.createPolicy(validFormData);
+      createdPolicy = await result.current.mutateAsync(validFormData);
     });
 
     expect(createdPolicy).not.toBeNull();
@@ -65,7 +65,7 @@ describe('useCreatePolicy', () => {
     expect((createdPolicy as unknown as Policy).policyNumber).toBe('POL-001');
     expect((createdPolicy as unknown as Policy).client.name).toBe('John Doe');
     expect(result.current.error).toBeNull();
-    expect(result.current.isCreating).toBe(false);
+    expect(result.current.isPending).toBe(false);
   });
 
   test('should prevent duplicate policy numbers', async () => {
@@ -94,12 +94,16 @@ describe('useCreatePolicy', () => {
 
     let createdPolicy: Policy | null = null;
     await act(async () => {
-      createdPolicy = await result.current.createPolicy(validFormData);
+      try {
+        createdPolicy = await result.current.mutateAsync(validFormData);
+      } catch (error) {
+        // Expected to throw
+      }
     });
 
     expect(createdPolicy).toBeNull();
-    expect(result.current.error).toBe('Policy number POL-001 already exists');
-    expect(result.current.isCreating).toBe(false);
+    expect(result.current.error?.message).toBe('Policy number POL-001 already exists');
+    expect(result.current.isPending).toBe(false);
   });
 
   test('should validate required fields', async () => {
@@ -112,11 +116,15 @@ describe('useCreatePolicy', () => {
 
     let createdPolicy: Policy | null = null;
     await act(async () => {
-      createdPolicy = await result.current.createPolicy(incompleteForm);
+      try {
+        createdPolicy = await result.current.mutateAsync(incompleteForm);
+      } catch (error) {
+        // Expected to throw
+      }
     });
 
     expect(createdPolicy).toBeNull();
-    expect(result.current.error).toBe('Missing required fields');
+    expect(result.current.error?.message).toBe('Missing required fields');
   });
 
   test('should validate effective date', async () => {
@@ -129,11 +137,15 @@ describe('useCreatePolicy', () => {
 
     let createdPolicy: Policy | null = null;
     await act(async () => {
-      createdPolicy = await result.current.createPolicy(invalidDateForm);
+      try {
+        createdPolicy = await result.current.mutateAsync(invalidDateForm);
+      } catch (error) {
+        // Expected to throw
+      }
     });
 
     expect(createdPolicy).toBeNull();
-    expect(result.current.error).toBe('Invalid effective date');
+    expect(result.current.error?.message).toBe('Invalid effective date');
   });
 
   test('should validate expiration date is after effective date', async () => {
@@ -147,11 +159,15 @@ describe('useCreatePolicy', () => {
 
     let createdPolicy: Policy | null = null;
     await act(async () => {
-      createdPolicy = await result.current.createPolicy(invalidDateRangeForm);
+      try {
+        createdPolicy = await result.current.mutateAsync(invalidDateRangeForm);
+      } catch (error) {
+        // Expected to throw
+      }
     });
 
     expect(createdPolicy).toBeNull();
-    expect(result.current.error).toBe('Effective date must be before expiration date');
+    expect(result.current.error?.message).toBe('Effective date must be before expiration date');
   });
 
   test('should calculate expiration date from term length', async () => {
@@ -165,7 +181,7 @@ describe('useCreatePolicy', () => {
 
     let createdPolicy: Policy | null = null;
     await act(async () => {
-      createdPolicy = await result.current.createPolicy(formWithTerm);
+      createdPolicy = await result.current.mutateAsync(formWithTerm);
     });
 
     expect(createdPolicy).not.toBeNull();
@@ -190,7 +206,7 @@ describe('useCreatePolicy', () => {
 
     let createdPolicy: Policy | null = null;
     await act(async () => {
-      createdPolicy = await result.current.createPolicy(minimalForm);
+      createdPolicy = await result.current.mutateAsync(minimalForm);
     });
 
     expect(createdPolicy).not.toBeNull();
@@ -223,14 +239,18 @@ describe('useCreatePolicy', () => {
 
     // Try to create a duplicate policy
     await act(async () => {
-      await result.current.createPolicy(validFormData);
+      try {
+        await result.current.mutateAsync(validFormData);
+      } catch (error) {
+        // Expected to throw
+      }
     });
 
-    expect(result.current.error).toBe('Policy number POL-001 already exists');
+    expect(result.current.error?.message).toBe('Policy number POL-001 already exists');
 
-    // Clear the error
+    // Clear the error using reset
     act(() => {
-      result.current.clearError();
+      result.current.reset();
     });
 
     expect(result.current.error).toBeNull();
@@ -240,7 +260,7 @@ describe('useCreatePolicy', () => {
     const { result } = renderHook(() => useCreatePolicy());
 
     await act(async () => {
-      await result.current.createPolicy(validFormData);
+      await result.current.mutateAsync(validFormData);
     });
 
     const storedPolicies = JSON.parse(localStorageMock.getItem('policies') || '[]');

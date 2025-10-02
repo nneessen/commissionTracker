@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Upload, X, Check, AlertCircle, Download, Eye } from 'lucide-react';
 import { FFG_COMP_GUIDE_DATA, getUniqueCarriers, getProductsByCarrier } from '../data/ffgCompGuideData';
 import { Carrier } from '../../../types/carrier.types';
-import { CompGuideEntry, NewCompGuideForm } from '../../../types/compGuide.types';
+import { Comp, CreateCompData } from '../../../types/comp.types';
 import { Database } from '../../../types/database.types';
 import { carrierService } from '../../../services/settings/carrierService';
 import { compGuideService } from '../../../services/settings/compGuideService';
@@ -10,7 +10,7 @@ import { compGuideService } from '../../../services/settings/compGuideService';
 interface CompGuideImporterProps {
   isOpen: boolean;
   onClose: () => void;
-  onImportComplete: (importedEntries: CompGuideEntry[]) => void;
+  onImportComplete: (importedEntries: Comp[]) => void;
   existingCarriers: Carrier[];
 }
 
@@ -36,7 +36,7 @@ export const CompGuideImporter: React.FC<CompGuideImporterProps> = ({
   const [importResults, setImportResults] = useState<{
     success: number;
     errors: string[];
-    imported: CompGuideEntry[];
+    imported: Comp[];
   }>({ success: 0, errors: [], imported: [] });
 
   const ffgCarriers = getUniqueCarriers();
@@ -117,7 +117,7 @@ export const CompGuideImporter: React.FC<CompGuideImporterProps> = ({
     );
 
     const errors: string[] = [];
-    const imported: CompGuideEntry[] = [];
+    const imported: Comp[] = [];
     let processed = 0;
 
     try {
@@ -186,7 +186,7 @@ export const CompGuideImporter: React.FC<CompGuideImporterProps> = ({
               return 'premium';
             };
 
-            const formData: NewCompGuideForm = {
+            const formData: CreateCompData = {
               carrier_id: carrierId,
               product_type: mapProductType(item.product),
               comp_level: mapCompLevel(item.contractLevel),

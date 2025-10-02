@@ -45,6 +45,7 @@ USER_EMAIL=your_email@example.com
 ```
 
 Get your Supabase credentials from:
+
 - Dashboard → Project Settings → API
 
 ### Database Setup
@@ -74,6 +75,7 @@ Open [http://localhost:5173](http://localhost:5173) to view in browser.
 ## 📋 Features
 
 ### Core Functionality
+
 - ✅ **Policy Management** - Track insurance policies with client details
 - ✅ **Commission Tracking** - Record and calculate commissions
 - ✅ **Expense Tracking** - Monitor business expenses
@@ -82,7 +84,9 @@ Open [http://localhost:5173](http://localhost:5173) to view in browser.
 - ✅ **Analytics** - View metrics and performance data
 
 ### Technical Features
-- ✅ **Authentication** - Supabase Auth integration
+
+- ✅ **Authentication** - Supabase Auth with email verification
+- ✅ **Email Verification** - Custom verification flow with resend capability
 - ✅ **Row Level Security** - Multi-user data isolation
 - ✅ **Real-time Updates** - Live data with TanStack Query
 - ✅ **Type Safety** - Full TypeScript coverage
@@ -97,6 +101,7 @@ Open [http://localhost:5173](http://localhost:5173) to view in browser.
 ### Tech Stack
 
 **Frontend:**
+
 - React 19.1 with TypeScript
 - TanStack Router (routing)
 - TanStack Query (data fetching)
@@ -105,11 +110,13 @@ Open [http://localhost:5173](http://localhost:5173) to view in browser.
 - Vite (build tool)
 
 **Backend:**
+
 - Supabase (Postgres database)
 - Row Level Security (RLS)
 - Edge Functions (serverless)
 
 **Testing:**
+
 - Vitest (unit tests)
 - React Testing Library
 
@@ -201,6 +208,7 @@ npm test -- --coverage
 ```
 
 Current test coverage:
+
 - ✅ Utilities: 100% (54 tests)
 - ⚠️ Services: TBD
 - ⚠️ Components: TBD
@@ -228,11 +236,13 @@ All service methods are documented with JSDoc comments:
 ### Key Services
 
 **Commission Services:**
+
 - `CommissionCRUDService` - CRUD operations
 - `CommissionCalculationService` - Commission calculations
 - `CommissionAnalyticsService` - Metrics and reporting
 
 **Settings Services:**
+
 - `carrierService` - Carrier management
 - `compGuideService` - Compensation guide management
 
@@ -242,10 +252,10 @@ Each entity has standardized hooks:
 
 ```typescript
 // Carriers
-useCarriersList()      // Query for list
-useCreateCarrier()     // Mutation to create
-useUpdateCarrier()     // Mutation to update
-useDeleteCarrier()     // Mutation to delete
+useCarriersList(); // Query for list
+useCreateCarrier(); // Mutation to create
+useUpdateCarrier(); // Mutation to update
+useDeleteCarrier(); // Mutation to delete
 
 // Same pattern for: policies, commissions, expenses, compGuide
 ```
@@ -272,6 +282,76 @@ USING (auth.uid() = user_id);
 - ✅ User authentication required for all operations
 - ✅ Input validation on all forms
 - ✅ Error messages don't leak sensitive data
+
+### Email Verification Flow
+
+Commission Tracker implements a complete email verification system:
+
+**User Signup Flow:**
+1. User creates account on signup page
+2. Account created but not verified
+3. User redirected to verification screen (`/auth/verify-email`)
+4. Verification email sent automatically
+
+**Verification Screen Features:**
+- Shows user's email address
+- Clear instructions to check inbox
+- Resend email button with 60s cooldown
+- Max 3 resend attempts per session
+- Security notice about 24hr link expiration
+
+**Email Verification:**
+1. User clicks verification link in email
+2. AuthCallback component processes token
+3. Session established and user logged in
+4. Redirected to dashboard
+
+**Edge Cases Handled:**
+- Expired tokens → redirect to resend screen
+- Already verified → auto-login
+- Unverified login attempt → redirect to verification
+- Page refresh → email persists via sessionStorage
+- Rate limiting → prevent email abuse
+
+**Email Template Setup:**
+
+Custom HTML email template with professional design. To configure:
+1. See `docs/EMAIL_TEMPLATE_SETUP.md` for complete setup guide
+2. Template file: `docs/email-templates/verify-email.html`
+3. Configure in Supabase Dashboard → Auth → Email Templates
+
+**Components:**
+- `src/features/auth/EmailVerificationPending.tsx` - Verification screen
+- `src/features/auth/AuthCallback.tsx` - Token processing
+- `src/features/auth/Login.tsx` - Handles unverified users
+- `src/contexts/AuthContext.tsx` - resendVerificationEmail method
+
+**Testing:**
+
+Run verification flow tests:
+```bash
+npm test EmailVerificationPending
+npm test AuthCallback
+npm test AuthContext
+```
+
+**Troubleshooting:**
+
+*Emails not arriving:*
+- Check spam folder
+- Verify Supabase email settings (Auth → Settings)
+- Free tier limited to 3 emails/hour per user
+- Configure custom SMTP for production
+
+*Verification link not working:*
+- Check redirect URLs in Supabase (Auth → URL Configuration)
+- Verify callback URL matches: `http://localhost:5173/auth/callback`
+- Links expire after 24 hours
+
+*User stuck on verification screen:*
+- Clear sessionStorage
+- Request new verification email
+- Check browser console for errors
 
 ---
 
@@ -332,21 +412,25 @@ VITE_SUPABASE_ANON_KEY=your_anon_key
 ### Common Issues
 
 **TypeScript errors in test files:**
+
 ```bash
 # Ignore test errors during development
 npm run typecheck 2>&1 | grep -v "__tests__"
 ```
 
 **Database connection issues:**
+
 - Check Supabase credentials in `.env`
 - Verify project is not paused in Supabase dashboard
 - Reset database password if needed
 
 **Migration errors:**
+
 - See [APPLY_MIGRATIONS.md](./APPLY_MIGRATIONS.md)
 - Use Supabase Dashboard SQL Editor (recommended)
 
 **RLS policy blocking queries:**
+
 - Ensure user is authenticated (`auth.uid()` not null)
 - Check policies allow the operation
 - Verify `user_id` matches authenticated user
@@ -356,6 +440,7 @@ npm run typecheck 2>&1 | grep -v "__tests__"
 ## 🗺️ Roadmap
 
 ### Completed ✅
+
 - Phase 1: Security & Foundation
 - Phase 2: Code Quality & Migrations
 - Phase 3: Service Architecture
@@ -364,10 +449,12 @@ npm run typecheck 2>&1 | grep -v "__tests__"
 - Phase 5.2: API Documentation
 
 ### In Progress 🚧
+
 - Migration application
 - Integration tests
 
 ### Planned 📝
+
 - Phase 5.3: User Documentation
 - Phase 6: Final Polish
 - E2E testing
@@ -396,6 +483,7 @@ git push origin feature/your-feature
 ### Commit Conventions
 
 Follow conventional commits:
+
 - `feat:` New feature
 - `fix:` Bug fix
 - `docs:` Documentation
@@ -414,6 +502,7 @@ Follow conventional commits:
 ## 🙋 Support
 
 For issues and questions:
+
 - Check [APPLY_MIGRATIONS.md](./APPLY_MIGRATIONS.md) for database issues
 - See [plans/MASTER_PROJECT_PLAN.md](./plans/MASTER_PROJECT_PLAN.md) for project status
 - Review phase completion docs for implementation details

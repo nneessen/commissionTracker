@@ -7,6 +7,16 @@ import { User } from '../types';
 import { userService } from '../services/settings/userService';
 import { logger } from '../services/base/logger';
 
+/**
+ * Result of sign up operation
+ */
+export interface SignUpResult {
+  /** Whether email verification is required before login */
+  requiresVerification: boolean;
+  /** User's email address */
+  email: string;
+}
+
 interface AuthContextType {
   user: User | null;
   supabaseUser: SupabaseUser | null;
@@ -14,12 +24,13 @@ interface AuthContextType {
   loading: boolean;
   error: Error | null;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string) => Promise<SignUpResult>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   updatePassword: (newPassword: string) => Promise<void>;
   refreshSession: () => Promise<void>;
   updateUserMetadata: (metadata: any) => Promise<void>;
+  resendVerificationEmail: (email: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -183,7 +194,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const signUp = async (email: string, password: string) => {
+  const signUp = async (email: string, password: string): Promise<SignUpResult> => {
     try {
       setError(null);
       setLoading(true);
@@ -202,22 +213,28 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (error) throw error;
 
       // Check if email confirmation is required
-      if (data.user && !data.session) {
-        logger.auth('Email confirmation required');
-        throw new Error('Please check your email for confirmation link');
+      const requiresVerification = data.user && !data.session;
+
+      if (requiresVerification) {
+        logger.auth('Email confirmation required', { email });
+        // Don't throw error - this is expected behavior
+        return { requiresVerification: true, email };
       }
 
-      setSession(data.session);
-      setSupabaseUser(data.user);
+      // Auto-confirm is enabled - set session immediately
+      if (data.session && data.user) {
+        setSession(data.session);
+        setSupabaseUser(data.user);
 
-      // Get full user data with metadata
-      // ✅ OPTIMIZED: Map directly from auth user (no database query!)
-      if (data.user) {
+        // Get full user data with metadata
+        // ✅ OPTIMIZED: Map directly from auth user (no database query!)
         const fullUser = userService.mapAuthUserToUser(data.user);
         setUser(fullUser);
+
+        logger.auth('Sign up successful (auto-confirmed)', { email: data.user.email });
       }
 
-      logger.auth('Sign up successful', { email: data.user?.email });
+      return { requiresVerification: false, email };
     } catch (err) {
       logger.error('Sign up error', err instanceof Error ? err : String(err), 'Auth');
       setError(err instanceof Error ? err : new Error('Failed to sign up'));
@@ -316,6 +333,28 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const resendVerificationEmail = async (email: string) => {
+    try {
+      setError(null);
+
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+        }
+      });
+
+      if (error) throw error;
+
+      logger.auth('Verification email resent', { email });
+    } catch (err) {
+      logger.error('Resend verification email error', err instanceof Error ? err : String(err), 'Auth');
+      setError(err instanceof Error ? err : new Error('Failed to resend verification email'));
+      throw err;
+    }
+  };
+
   const value: AuthContextType = {
     user,
     supabaseUser,
@@ -329,6 +368,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     updatePassword,
     refreshSession,
     updateUserMetadata,
+    resendVerificationEmail,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
