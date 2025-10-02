@@ -82,10 +82,25 @@ export const AuthCallback: React.FC = () => {
           setStatus('success');
           setMessage(successMessage);
 
-          // Redirect to dashboard after a brief delay
-          setTimeout(() => {
-            navigate({ to: '/' });
-          }, 2000);
+          // Check if we're in a popup window
+          if (window.opener && !window.opener.closed) {
+            // We're in a popup - try to redirect the parent and close this window
+            setTimeout(() => {
+              try {
+                // Try to communicate with parent window
+                window.opener.location.href = '/';
+                window.close();
+              } catch (e) {
+                // If cross-origin issue, just redirect normally
+                navigate({ to: '/' });
+              }
+            }, 2000);
+          } else {
+            // Normal redirect in same window
+            setTimeout(() => {
+              navigate({ to: '/' });
+            }, 2000);
+          }
         } else {
           // No tokens found, might be an error or user navigated here directly
           throw new Error('No authentication tokens found in URL. Please try the verification link again.');

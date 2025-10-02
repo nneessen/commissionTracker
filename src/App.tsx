@@ -1,5 +1,5 @@
 // src/App.tsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Outlet, useNavigate, useLocation } from "@tanstack/react-router";
 import { Sidebar } from "./components/layout";
 import { useAuth } from "./contexts/AuthContext";
@@ -36,6 +36,13 @@ function App() {
     setIsSidebarCollapsed((prev) => !prev);
   };
 
+  // Protected routes - require authentication (MUST be before early returns!)
+  useEffect(() => {
+    // Only redirect if user is not authenticated and not already on login page
+    if (!user && !loading && !isPublicPath && location.pathname !== '/login') {
+      navigate({ to: "/login" });
+    }
+  }, [user, loading, isPublicPath, location.pathname, navigate]);
 
   // Show loading state while checking authentication
   // BUT don't show it on public paths (login, auth callback, etc) to avoid unmounting forms
@@ -52,11 +59,8 @@ function App() {
     return <Outlet />;
   }
 
-  // Protected routes - require authentication
-  if (!user) {
-    // Redirect to login route instead of rendering Login directly
-    // This ensures Login component is always rendered via router with consistent props
-    navigate({ to: "/login" });
+  // Show redirect message while navigating to login
+  if (!user && !isPublicPath) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-lg">Redirecting to login...</div>
