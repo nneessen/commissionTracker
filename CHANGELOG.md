@@ -5,6 +5,94 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- FFG Comp Guide data import (7 carriers, 42 products, 60 commission rates)
+- Cursor-based pagination for handling large datasets (bypasses Supabase 1000 row limit)
+- Infinite scrolling support with `useInfinitePolicies` hook
+- `PolicyListInfinite` component for large policy lists
+- `PolicyFormUpdated` component with real product selection
+- Product selection by carrier with auto-populated commission rates
+- 16 performance indexes for common query patterns
+- PostgreSQL helper functions (`get_policy_count`, `get_policies_paginated`)
+- `useProducts` hook for fetching products by carrier
+- `scripts/parse-ffg-data.ts` for parsing FFG Comp Guide data
+
+### Changed
+- Policy forms now use actual product names instead of generic types
+- Commission rates auto-populate from selected products
+- PolicyRepository enhanced with cursor-based pagination methods
+- Improved query performance with strategic indexes
+- Products table now contains real FFG data instead of sample data
+
+### Fixed
+- Critical database schema mismatch (carrier_id vs carrier field)
+- Products table creation that was missing despite migration
+- Policy-product relationships now properly established
+- Commission rate calculations now use product-specific rates
+
+## [0.3.0] - 2025-10-03
+
+### Added
+- Complete products architecture implementation
+- Product-carrier relationships in database
+- `get_product_commission_rate()` helper function
+- Products table with proper foreign key constraints
+
+### Changed
+- Policies table schema to include product_id
+- Migration from generic product types to specific products
+- PolicyService to handle product relationships
+
+### Fixed
+- 400 error "Could not find the 'carrier_id' column of 'policies'"
+- Database enum mismatches (comp_level values)
+- Missing products table creation
+
+## [0.2.0] - 2025-10-02
+
+### Added
+- TanStack Query integration for policies feature
+- `usePoliciesView` comprehensive hook for policy management
+- Proper service/repository layered architecture
+- Automatic cache invalidation on mutations
+- Loading and error states in PolicyDashboard
+
+### Changed
+- Policies feature completely refactored to use Supabase (removed localStorage)
+- PolicyService now delegates to PolicyRepository (eliminated duplication)
+- PolicyDashboard uses hooks directly (no more prop drilling)
+- Service layer reduced from 170 to 98 lines
+
+### Removed
+- localStorage dependency in policies feature
+- Duplicate transform methods in service layer
+- Props drilling pattern in policy components
+
+### Fixed
+- React hooks violations (conditional hooks, missing dependencies)
+- TypeScript type mismatches in policy components
+- Memory leaks from missing cleanup functions
+
+## [0.1.0] - 2025-10-01
+
+### Added
+- Authentication system with Supabase Auth
+- Email verification flow
+- Protected routes implementation
+- User profile management
+- RLS (Row Level Security) policies
+
+### Changed
+- Migrated from local auth to Supabase Auth
+- Updated all services to use Supabase client
+- Refactored auth context for better error handling
+
+### Fixed
+- Login error messages not displaying
+- Auth state persistence issues
+- Token refresh logic
 
 ## [Checkpoint] - 2025-09-30 18:57:20
 
