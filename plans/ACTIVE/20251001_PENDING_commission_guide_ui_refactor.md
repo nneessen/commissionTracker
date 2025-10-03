@@ -12,6 +12,7 @@ The Commission Guide UI components (`CommissionGuide.tsx`, `CommissionStats.tsx`
 ## Current State
 
 ### What Works ✅
+
 - Core CRUD hooks (`useCompsList`, `useCreateComp`, `useUpdateComp`, `useDeleteComp`)
 - Type definitions (`Comp`, `CreateCompData`, `UpdateCompData`, `CompFilters`)
 - Supabase service layer (`compGuideService`)
@@ -31,6 +32,7 @@ src/features/commission-guide/CommissionStats.tsx(69,23): Property 'averageCommi
 ```
 
 ### Test-Only Issues (Lower Priority)
+
 ```
 src/hooks/policies/__tests__/useCreatePolicy.test.tsx: Property 'client' is missing in type 'NewPolicyForm'
 ```
@@ -47,16 +49,19 @@ src/hooks/policies/__tests__/useCreatePolicy.test.tsx: Property 'client' is miss
 ### Option A: Update Components to Match New Hooks (Recommended)
 
 **Pros**:
+
 - Clean separation of concerns
 - Components control their own filtering/pagination
 - Simpler hook design
 - Better for small datasets
 
 **Cons**:
+
 - More work in components
 - Client-side pagination only
 
 **Steps**:
+
 1. Update `CommissionFilters.tsx` to use `CompFilters` type
 2. Update `CommissionTable.tsx` to:
    - Accept `Comp[]` instead of `CompGuideQueryResult`
@@ -66,38 +71,46 @@ src/hooks/policies/__tests__/useCreatePolicy.test.tsx: Property 'client' is miss
    ```typescript
    const stats = {
      totalRecords: comps.length,
-     uniqueCarriers: new Set(comps.map(c => c.carrier_id)).size,
-     productTypes: new Set(comps.map(c => c.product_type)).size,
-     averageCommission: comps.reduce((sum, c) => sum + c.commission_percentage, 0) / comps.length
-   }
+     uniqueCarriers: new Set(comps.map((c) => c.carrier_id)).size,
+     productTypes: new Set(comps.map((c) => c.product_type)).size,
+     averageCommission:
+       comps.reduce((sum, c) => sum + c.commission_percentage, 0) /
+       comps.length,
+   };
    ```
 4. Update `CommissionGuide.tsx` to pass correct types
 
 ### Option B: Create Advanced Hooks with Pagination (If Needed)
 
 **Pros**:
+
 - Server-side pagination for large datasets
 - Better performance with thousands of records
 - Pre-calculated statistics
 
 **Cons**:
+
 - More complex hooks
 - May not be needed for small datasets
 
 **Steps**:
+
 1. Create `useCompsWithPagination.ts`:
    ```typescript
    export const useCompsWithPagination = (
      filters: CompFilters,
-     pagination: PaginationOptions
+     pagination: PaginationOptions,
    ) => {
      return useQuery({
-       queryKey: ['comps', 'paginated', filters, pagination],
+       queryKey: ["comps", "paginated", filters, pagination],
        queryFn: async () => {
          // Call service with pagination params
-         const result = await compGuideService.getCompGuideData(filters, pagination);
+         const result = await compGuideService.getCompGuideData(
+           filters,
+           pagination,
+         );
          return result; // Returns { data, total, page, pageSize, totalPages }
-       }
+       },
      });
    };
    ```
@@ -107,6 +120,7 @@ src/hooks/policies/__tests__/useCreatePolicy.test.tsx: Property 'client' is miss
 ## Recommendation
 
 **Start with Option A** because:
+
 - Compensation guides are typically small datasets (< 1000 records)
 - Simpler to maintain
 - Follows modern React patterns

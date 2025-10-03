@@ -14,6 +14,8 @@ import {
   PolicyFilters,
   CreatePolicyData,
 } from "../../types/policy.types";
+import showToast from "../../utils/toast";
+import { clientService } from "../../services/clients/clientService";
 import "../../styles/policy.css";
 
 export const PolicyDashboard: React.FC = () => {
@@ -29,56 +31,87 @@ export const PolicyDashboard: React.FC = () => {
   useCarriers();
 
   // Adapter functions to match old interface that PolicyList/PolicyForm expect
-  const addPolicy = (formData: any) => {
-    // Convert form data to CreatePolicyData format
-    const policyData: CreatePolicyData = {
-      policyNumber: formData.policyNumber,
-      status: formData.status,
-      client: {
+  const addPolicy = async (formData: any) => {
+    try {
+      // CRITICAL: Database uses client_id FK, not inline client data
+      // First, create or find the client
+      const client = await clientService.createOrFind({
         name: formData.clientName,
-        state: formData.clientState,
-        age: formData.clientAge,
-        email: formData.clientEmail,
-        phone: formData.clientPhone,
-      },
-      carrierId: formData.carrierId,
-      product: formData.product,
-      effectiveDate: new Date(formData.effectiveDate),
-      termLength: formData.termLength,
-      expirationDate: formData.expirationDate
-        ? new Date(formData.expirationDate)
-        : undefined,
-      annualPremium: formData.annualPremium || 0,
-      paymentFrequency: formData.paymentFrequency,
-      commissionPercentage: formData.commissionPercentage,
-      notes: formData.notes,
-    };
+        email: formData.clientEmail || undefined,
+        phone: formData.clientPhone || undefined,
+        address: {
+          state: formData.clientState,
+        },
+      });
 
-    createPolicyMutation.mutate(policyData, {
-      onSuccess: () => {
-        refetch();
-      },
-    });
+      // Calculate monthly premium based on payment frequency
+      const monthlyPremium = formData.paymentFrequency === 'annual'
+        ? (formData.annualPremium || 0) / 12
+        : formData.paymentFrequency === 'semi-annual'
+        ? (formData.annualPremium || 0) / 6
+        : formData.paymentFrequency === 'quarterly'
+        ? (formData.annualPremium || 0) / 3
+        : (formData.annualPremium || 0) / 12; // Default to monthly
 
-    // Return a mock policy for backwards compatibility
-    return { id: "temp", ...policyData } as any;
+      // Convert form data to match actual database schema
+      const policyData: CreatePolicyData = {
+        policyNumber: formData.policyNumber,
+        status: formData.status,
+        clientId: client.id, // Use client_id foreign key
+        carrierId: formData.carrierId,
+        product: formData.product, // Product enum, not product_id
+        effectiveDate: new Date(formData.effectiveDate),
+        termLength: formData.termLength,
+        expirationDate: formData.expirationDate
+          ? new Date(formData.expirationDate)
+          : undefined,
+        annualPremium: formData.annualPremium || 0,
+        monthlyPremium: monthlyPremium, // Required field!
+        paymentFrequency: formData.paymentFrequency,
+        commissionPercentage: (formData.commissionPercentage || 0) / 100, // Convert percentage to decimal
+        notes: formData.notes || undefined,
+      };
+
+      createPolicyMutation.mutate(policyData, {
+        onSuccess: (data) => {
+          showToast.success(`Policy ${data.policyNumber} created successfully!`);
+          handleCloseForm(); // Close modal on success
+          refetch();
+        },
+        onError: (error: any) => {
+          const errorMessage = error?.message || 'Failed to create policy. Please try again.';
+          showToast.error(errorMessage);
+          // Keep modal open on error so user can fix and retry
+        },
+      });
+
+      // Return a mock policy for backwards compatibility
+      return { id: "temp", ...policyData } as any;
+    } catch (error) {
+      showToast.error('Failed to create policy. Please try again.');
+      throw error;
+    }
   };
 
-  const updatePolicy = (id: string, updates: any) => {
-    // If updates has clientName, convert to proper format
+  const updatePolicy = async (id: string, updates: any) => {
+    // If updates has clientName, we need to handle client separately
     let policyData: Partial<CreatePolicyData>;
 
     if ("clientName" in updates) {
+      // First, create or find the client (similar to addPolicy)
+      const client = await clientService.createOrFind({
+        name: updates.clientName,
+        email: updates.clientEmail || undefined,
+        phone: updates.clientPhone || undefined,
+        address: {
+          state: updates.clientState,
+        },
+      });
+
       policyData = {
         policyNumber: updates.policyNumber,
         status: updates.status,
-        client: {
-          name: updates.clientName,
-          state: updates.clientState,
-          age: updates.clientAge,
-          email: updates.clientEmail,
-          phone: updates.clientPhone,
-        },
+        clientId: client.id, // Use client_id foreign key
         carrierId: updates.carrierId,
         product: updates.product,
         effectiveDate: new Date(updates.effectiveDate),
@@ -87,8 +120,9 @@ export const PolicyDashboard: React.FC = () => {
           ? new Date(updates.expirationDate)
           : undefined,
         annualPremium: updates.annualPremium || 0,
+        monthlyPremium: updates.monthlyPremium || (updates.annualPremium || 0) / 12,
         paymentFrequency: updates.paymentFrequency,
-        commissionPercentage: updates.commissionPercentage,
+        commissionPercentage: (updates.commissionPercentage || 0) / 100, // Convert to decimal
         notes: updates.notes,
       };
     } else {

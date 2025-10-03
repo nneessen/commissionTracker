@@ -1,7 +1,8 @@
 // /home/nneessen/projects/commissionTracker/src/features/policies/PolicyForm.tsx
 
 import React, { useState, useEffect } from "react";
-import { useCarriers } from "../../hooks/useCarriers";
+import { useLegacyCarriers as useCarriers } from "../../hooks/carriers/useCarriers";
+import { useProducts } from "../../hooks/products/useProducts";
 import {
   NewPolicyForm,
   PolicyStatus,
@@ -90,13 +91,13 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
 }) => {
   const { carriers } = useCarriers();
 
-  // TODO: the way product is being used is wrong. this should be productId because its whats used to calculate the users commission
   const [formData, setFormData] = useState<NewPolicyForm>({
     clientName: "",
     clientState: "",
     clientAge: 0,
     carrierId: "",
-    product: "term" as ProductType,
+    productId: "", // Use productId to link to products table
+    product: "term_life" as ProductType,
     policyNumber: "",
     effectiveDate: new Date().toISOString().split("T")[0],
     premium: 0,
@@ -107,6 +108,9 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Fetch products for selected carrier
+  const { data: products = [], isLoading: productsLoading, error: productsError } = useProducts(formData.carrierId);
 
   useEffect(() => {
     if (policyId) {
@@ -142,12 +146,38 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
     >,
   ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: ["clientAge", "premium", "commissionPercentage"].includes(name)
-        ? parseFloat(value) || 0
-        : value,
-    }));
+
+    // Handle carrier change - reset product selection
+    if (name === 'carrierId') {
+      setFormData(prev => ({
+        ...prev,
+        carrierId: value,
+        productId: '', // Reset product when carrier changes
+        commissionPercentage: 0,
+      }));
+    }
+    // Handle product change - auto-set commission percentage
+    else if (name === 'productId') {
+      const selectedProduct = products.find(p => p.id === value);
+      setFormData(prev => ({
+        ...prev,
+        productId: value,
+        product: selectedProduct?.product_type || 'term_life' as ProductType,
+        commissionPercentage: selectedProduct?.commission_percentage
+          ? selectedProduct.commission_percentage * 100 // Convert decimal to percentage
+          : 0,
+      }));
+    }
+    // Handle other fields
+    else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: ["clientAge", "premium"].includes(name)
+          ? parseFloat(value) || 0
+          : value,
+      }));
+    }
+
     // Clear error when user types
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: "" }));
@@ -167,6 +197,7 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
       newErrors.clientAge = "Valid age is required (1-120)";
     }
     if (!formData.carrierId) newErrors.carrierId = "Carrier is required";
+    if (!formData.productId) newErrors.productId = "Product is required";
     if (!formData.policyNumber)
       newErrors.policyNumber = "Policy number is required";
     if (!formData.effectiveDate)
@@ -205,7 +236,7 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
         } else {
           addPolicy(submissionData);
         }
-        onClose();
+        // Don't close immediately - let the mutation handler close on success
       } catch (error) {
         alert(
           `Error: ${error instanceof Error ? error.message : "Failed to save policy"}`,
@@ -305,20 +336,39 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
           </div>
 
           <div className="form-group">
-            <label>Product Type *</label>
+            <label>Product *</label>
             <select
-              name="product"
-              value={formData.product}
+              name="productId"
+              value={formData.productId}
               onChange={handleInputChange}
+              className={errors.productId ? "error" : ""}
+              disabled={!formData.carrierId || productsLoading}
             >
-              <option value="whole_life">Whole Life</option>
-              <option value="term">Term Life</option>
-              <option value="universal_life">Universal Life</option>
-              <option value="indexed_universal_life">IUL</option>
-              <option value="accidental">Accidental Death</option>
-              <option value="final_expense">Final Expense</option>
-              <option value="annuity">Annuity</option>
+              <option value="">
+                {!formData.carrierId
+                  ? "Select a carrier first"
+                  : productsLoading
+                  ? "Loading products..."
+                  : products.length === 0
+                  ? "No products available for this carrier"
+                  : "Select Product"}
+              </option>
+              {products.map((product) => (
+                <option key={product.id} value={product.id}>
+                  {product.name}
+                  {product.commission_percentage &&
+                    ` (${(product.commission_percentage * 100).toFixed(1)}% commission)`}
+                </option>
+              ))}
             </select>
+            {errors.productId && (
+              <span className="error-msg">{errors.productId}</span>
+            )}
+            {formData.carrierId && !productsLoading && products.length === 0 && (
+              <span className="error-msg" style={{ color: '#ff6b6b' }}>
+                ⚠️ This carrier has no products configured. Please contact admin or select a different carrier.
+              </span>
+            )}
           </div>
 
           <div className="form-group">
@@ -398,37 +448,18 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
             </div>
           </div>
 
-          <div className="form-row">
-            <div className="form-group">
-              <label>Commission % *</label>
-              <input
-                type="number"
-                name="commissionPercentage"
-                value={formData.commissionPercentage || ""}
-                onChange={handleInputChange}
-                className={errors.commissionPercentage ? "error" : ""}
-                placeholder="50"
-                step="0.1"
-                min="0"
-                max="200"
-              />
-              {errors.commissionPercentage && (
-                <span className="error-msg">{errors.commissionPercentage}</span>
-              )}
-            </div>
-            <div className="form-group">
-              <label>Status</label>
-              <select
-                name="status"
-                value={formData.status}
-                onChange={handleInputChange}
-              >
-                <option value="pending">Pending</option>
-                <option value="active">Active</option>
-                <option value="lapsed">Lapsed</option>
-                <option value="cancelled">Cancelled</option>
-              </select>
-            </div>
+          <div className="form-group">
+            <label>Status</label>
+            <select
+              name="status"
+              value={formData.status}
+              onChange={handleInputChange}
+            >
+              <option value="pending">Pending</option>
+              <option value="active">Active</option>
+              <option value="lapsed">Lapsed</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
           </div>
 
           {/* Calculated Values */}
@@ -436,6 +467,10 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
             <div className="calc-row">
               <span>Annual Premium:</span>
               <strong>${annualPremium.toFixed(2)}</strong>
+            </div>
+            <div className="calc-row">
+              <span>Commission Rate:</span>
+              <strong>{formData.commissionPercentage.toFixed(2)}%</strong>
             </div>
             <div className="calc-row">
               <span>Expected Commission:</span>

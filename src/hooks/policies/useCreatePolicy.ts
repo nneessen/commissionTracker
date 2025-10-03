@@ -9,7 +9,7 @@ export const useCreatePolicy = () => {
 
   return useMutation({
     mutationFn: async (newPolicy: CreatePolicyData) => {
-      return await policyService.create(newPolicy);
+      return policyService.create(newPolicy);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['policies'] });

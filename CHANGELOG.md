@@ -5,6 +5,64 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+## [Checkpoint] - 2025-10-03 14:00:27
+
+### Changed Files
+- `COMMISSION_SYSTEM_IMPLEMENTATION.md`
+- `FIX_PRODUCTS_DROPDOWN.md`
+- `package-lock.json`
+- `package.json`
+- `plans/ACTIVE/20251001_PENDING_commission_guide_ui_refactor.md`
+- `plans/ACTIVE/20251003_ACTIVE_fix_policy_addition_debug.md`
+- `plans/ACTIVE/20251003_ACTIVE_fix_products_dropdown_DIAGNOSED.md`
+- `plans/ACTIVE/20251003_ACTIVE_fix_products_dropdown_population.md`
+- `plans/COMPLETED/20251003_COMPLETED_ffg_import_and_performance.md`
+- `products`
+- `scripts/apply-corrected-ffg-data.js`
+- `scripts/apply-ffg-correct-carriers.js`
+- `scripts/apply-rls-fix.js`
+- `scripts/check-policies-schema.js`
+- `scripts/check-products.js`
+- `scripts/diagnose-rls-issue.js`
+- `scripts/disable-rls.js`
+- `scripts/execute-sql.cjs`
+- `scripts/fix-rls-final.js`
+- `scripts/fix-rls-policies.js`
+- `scripts/fix-simple-term.js`
+- `scripts/import-comp-guide-data.js`
+- `scripts/inspect-database.js`
+- `scripts/populate-comp-guide.js`
+- `scripts/populate-database.js`
+- `scripts/run-migrations-api.cjs`
+- `scripts/run-migrations-direct.js`
+- `scripts/run-migrations.js`
+- `scripts/setup-rls-policies.js`
+- `scripts/test-full-flow.js`
+- `scripts/test-policy-direct.js`
+- `scripts/test-policy-form.js`
+- `scripts/test-products-query.js`
+- `src/App.tsx`
+- `src/features/policies/PolicyDashboard.tsx`
+- `src/features/policies/PolicyForm.tsx`
+- `src/hooks/policies/useCreatePolicy.ts`
+- `src/hooks/products/useProducts.ts`
+- `src/services/clients/clientService.ts`
+- `src/services/commissions/commissionCalculationService.ts`
+- `src/services/policies/PolicyRepository.ts`
+- `src/types/policy.types.ts`
+- `src/utils/toast.ts`
+- `supabase/fix-rls-for-anon-access.sql`
+- `supabase/migrations/20251003_004_enable_public_access.sql`
+- `supabase/migrations/20251003_005_disable_rls_for_reference_tables.sql`
+- `supabase/migrations/20251003_006_fix_anon_access.sql`
+- `supabase/migrations/20251003_007_fix_ffg_products_correct_data.sql`
+- `tests/commission-calculation.test.ts`
+
+### Statistics
+```
+ 49 files changed, 5848 insertions(+), 135 deletions(-)
+```
 ## [Unreleased]
 
 ### Added

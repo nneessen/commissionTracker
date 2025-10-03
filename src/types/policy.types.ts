@@ -116,25 +116,22 @@ export interface PolicySummary {
   policiesByProduct: Record<ProductType, number>;
 }
 
-// Service layer types - backward compatible
+// Service layer types - matches actual database schema
 export interface CreatePolicyData {
   policyNumber: string;
-  client: PolicyClient | PolicyClientExtended; // Support both formats
+  clientId: string; // Foreign key to clients table
   carrierId: string;
-  productId?: string; // NEW: Links to products table
   userId?: string; // Links to auth.users
-  product: ProductType; // Keep for backward compatibility
+  product: ProductType; // Product enum type
   effectiveDate: Date;
   termLength?: number;
   expirationDate?: Date;
   annualPremium: number;
-  monthlyPremium?: number; // Optional
+  monthlyPremium: number; // Required field in database
   paymentFrequency: PaymentFrequency;
-  commissionPercentage: number;
-  advanceMonths?: number; // Optional
-  createdBy?: string;
+  commissionPercentage: number; // Stored as decimal (e.g., 0.1025 for 102.5%)
   notes?: string;
-  status?: PolicyStatus; // Optional, defaults to 'active'
+  status?: PolicyStatus; // Optional, defaults to 'pending'
 }
 
 export type UpdatePolicyData = Partial<CreatePolicyData>;

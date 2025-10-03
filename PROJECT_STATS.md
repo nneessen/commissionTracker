@@ -1,17 +1,15 @@
 # Project Statistics
 
-Last Updated: 2025-09-30 18:57:20
+Last Updated: 2025-10-03 14:00:27
 
 ## Metrics
-
-- Total Files: 13165
-- Total Lines of Code: 317258
-- Total Commits: 28
+- Total Files: 13256
+- Total Lines of Code: 331483
+- Total Commits: 45
 
 ## Recent Activity
-
-d280dee fix(security): resolve critical pre-commit issues
-57cad03 docs: multiple changes in .,plans,src/services/base
-78ec5e7 docs: multiple changes in .,src/features/settings/carriers,src/features/settings/products
-8f145bf docs: multiple changes in .,plans,scripts
-1c7d750 feat: refactor settings architecture and add commission guide feature
+c77b8cc docs: comprehensive documentation update after FFG import completion
+fa17071 feat(policies): import FFG data and implement cursor pagination with performance optimizations
+466e435 fix(policies): resolve critical database schema mismatch and implement products architecture
+e2205a4 refactor(policies): migrate to TanStack Query and fix React hooks violations
+4afd2d8 fix(auth): resolve login error messages not displaying due to routing issue

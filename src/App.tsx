@@ -1,6 +1,7 @@
 // src/App.tsx
 import React, { useState, useEffect } from "react";
 import { Outlet, useNavigate, useLocation } from "@tanstack/react-router";
+import { Toaster } from "react-hot-toast";
 import { Sidebar } from "./components/layout";
 import { useAuth } from "./contexts/AuthContext";
 import { logger } from "./services/base/logger";
@@ -56,7 +57,12 @@ function App() {
 
   // Allow public auth routes to render even without authentication
   if (isPublicPath) {
-    return <Outlet />;
+    return (
+      <>
+        <Toaster />
+        <Outlet />
+      </>
+    );
   }
 
   // Show redirect message while navigating to login
@@ -70,21 +76,24 @@ function App() {
 
   // Authenticated user - show app with sidebar and routes
   return (
-    <div className="app-container">
-      <Sidebar
-        isCollapsed={isSidebarCollapsed}
-        onToggleCollapse={toggleSidebar}
-        userName={user.name || user.email?.split('@')[0] || 'User'}
-        userEmail={user.email || ''}
-        onLogout={handleLogout}
-      />
+    <>
+      <Toaster />
+      <div className="app-container">
+        <Sidebar
+          isCollapsed={isSidebarCollapsed}
+          onToggleCollapse={toggleSidebar}
+          userName={user.name || user.email?.split('@')[0] || 'User'}
+          userEmail={user.email || ''}
+          onLogout={handleLogout}
+        />
 
-      <div className="main-content">
-        <div className="app">
-          <Outlet />
+        <div className="main-content">
+          <div className="app">
+            <Outlet />
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 

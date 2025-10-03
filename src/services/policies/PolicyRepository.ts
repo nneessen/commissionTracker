@@ -263,7 +263,8 @@ export class PolicyRepository extends BaseRepository<Policy, CreatePolicyData, U
   }
 
   protected transformFromDB(dbRecord: any): Policy {
-    return {
+    console.log('[PolicyRepository] transformFromDB input:', dbRecord);
+    const policy = {
       id: dbRecord.id,
       policyNumber: dbRecord.policy_number,
       status: dbRecord.status,
@@ -288,9 +289,14 @@ export class PolicyRepository extends BaseRepository<Policy, CreatePolicyData, U
       createdBy: dbRecord.created_by,
       notes: dbRecord.notes,
     };
+    console.log('[PolicyRepository] transformFromDB output:', policy);
+    return policy;
   }
 
   protected transformToDB(data: any, isUpdate = false): any {
+    console.log('[PolicyRepository] transformToDB input:', data);
+    console.log('[PolicyRepository] isUpdate:', isUpdate);
+
     const dbData: any = {};
 
     if (data.policyNumber !== undefined) dbData.policy_number = data.policyNumber;
@@ -319,6 +325,7 @@ export class PolicyRepository extends BaseRepository<Policy, CreatePolicyData, U
     if (data.createdBy !== undefined) dbData.created_by = data.createdBy;
     if (data.notes !== undefined) dbData.notes = data.notes;
 
+    console.log('[PolicyRepository] transformToDB output:', dbData);
     return dbData;
   }
 }

@@ -27,6 +27,7 @@ export function useProducts(carrierId?: string) {
 
       return (data || []) as Product[];
     },
+    enabled: !!carrierId, // Only run query when carrierId is provided
     staleTime: 1000 * 60 * 15, // 15 minutes (products don't change often)
     gcTime: 1000 * 60 * 30, // 30 minutes
   });
