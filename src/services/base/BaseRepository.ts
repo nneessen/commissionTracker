@@ -1,8 +1,7 @@
 // src/services/base/BaseRepository.ts
-import { supabase } from './supabase';
-import { SupabaseClient, PostgrestError } from '@supabase/supabase-js';
-import { DbRecord, DomainModel } from '../../types/database';
-import { logger } from './logger';
+import { supabase } from "./supabase";
+import { SupabaseClient, PostgrestError } from "@supabase/supabase-js";
+import { logger } from "./logger";
 
 export interface BaseEntity {
   id: string;
@@ -14,7 +13,7 @@ export interface QueryOptions {
   limit?: number;
   offset?: number;
   orderBy?: string;
-  orderDirection?: 'asc' | 'desc';
+  orderDirection?: "asc" | "desc";
 }
 
 export interface FilterOptions {
@@ -24,7 +23,7 @@ export interface FilterOptions {
 export abstract class BaseRepository<
   T extends BaseEntity,
   CreateData = Partial<T>,
-  UpdateData = Partial<T>
+  UpdateData = Partial<T>,
 > {
   protected client: SupabaseClient;
   protected tableName: string;
@@ -48,12 +47,12 @@ export abstract class BaseRepository<
         .single();
 
       if (error) {
-        throw this.handleError(error, 'create');
+        throw this.handleError(error, "create");
       }
 
       return this.transformFromDB(result);
     } catch (error) {
-      throw this.wrapError(error, 'create');
+      throw this.wrapError(error, "create");
     }
   }
 
@@ -64,20 +63,20 @@ export abstract class BaseRepository<
     try {
       const { data, error } = await this.client
         .from(this.tableName)
-        .select('*')
-        .eq('id', id)
+        .select("*")
+        .eq("id", id)
         .single();
 
       if (error) {
-        if (error.code === 'PGRST116') {
+        if (error.code === "PGRST116") {
           return null; // Not found
         }
-        throw this.handleError(error, 'findById');
+        throw this.handleError(error, "findById");
       }
 
       return data ? this.transformFromDB(data) : null;
     } catch (error) {
-      throw this.wrapError(error, 'findById');
+      throw this.wrapError(error, "findById");
     }
   }
 
@@ -86,7 +85,7 @@ export abstract class BaseRepository<
    */
   async findAll(options?: QueryOptions, filters?: FilterOptions): Promise<T[]> {
     try {
-      let query = this.client.from(this.tableName).select('*');
+      let query = this.client.from(this.tableName).select("*");
 
       // Apply filters
       if (filters) {
@@ -100,10 +99,10 @@ export abstract class BaseRepository<
       // Apply sorting
       if (options?.orderBy) {
         query = query.order(options.orderBy, {
-          ascending: options.orderDirection === 'asc'
+          ascending: options.orderDirection === "asc",
         });
       } else {
-        query = query.order('created_at', { ascending: false });
+        query = query.order("created_at", { ascending: false });
       }
 
       // Apply pagination
@@ -111,18 +110,21 @@ export abstract class BaseRepository<
         query = query.limit(options.limit);
       }
       if (options?.offset) {
-        query = query.range(options.offset, options.offset + (options.limit || 10) - 1);
+        query = query.range(
+          options.offset,
+          options.offset + (options.limit || 10) - 1,
+        );
       }
 
       const { data, error } = await query;
 
       if (error) {
-        throw this.handleError(error, 'findAll');
+        throw this.handleError(error, "findAll");
       }
 
-      return data?.map(item => this.transformFromDB(item)) || [];
+      return data?.map((item) => this.transformFromDB(item)) || [];
     } catch (error) {
-      throw this.wrapError(error, 'findAll');
+      throw this.wrapError(error, "findAll");
     }
   }
 
@@ -136,17 +138,17 @@ export abstract class BaseRepository<
       const { data, error } = await this.client
         .from(this.tableName)
         .update(dbData)
-        .eq('id', id)
+        .eq("id", id)
         .select()
         .single();
 
       if (error) {
-        throw this.handleError(error, 'update');
+        throw this.handleError(error, "update");
       }
 
       return this.transformFromDB(data);
     } catch (error) {
-      throw this.wrapError(error, 'update');
+      throw this.wrapError(error, "update");
     }
   }
 
@@ -158,13 +160,13 @@ export abstract class BaseRepository<
       const { error } = await this.client
         .from(this.tableName)
         .delete()
-        .eq('id', id);
+        .eq("id", id);
 
       if (error) {
-        throw this.handleError(error, 'delete');
+        throw this.handleError(error, "delete");
       }
     } catch (error) {
-      throw this.wrapError(error, 'delete');
+      throw this.wrapError(error, "delete");
     }
   }
 
@@ -175,7 +177,7 @@ export abstract class BaseRepository<
     try {
       let query = this.client
         .from(this.tableName)
-        .select('*', { count: 'exact', head: true });
+        .select("*", { count: "exact", head: true });
 
       // Apply filters
       if (filters) {
@@ -189,12 +191,12 @@ export abstract class BaseRepository<
       const { count, error } = await query;
 
       if (error) {
-        throw this.handleError(error, 'count');
+        throw this.handleError(error, "count");
       }
 
       return count || 0;
     } catch (error) {
-      throw this.wrapError(error, 'count');
+      throw this.wrapError(error, "count");
     }
   }
 
@@ -205,20 +207,20 @@ export abstract class BaseRepository<
     try {
       const { data, error } = await this.client
         .from(this.tableName)
-        .select('id')
-        .eq('id', id)
+        .select("id")
+        .eq("id", id)
         .single();
 
       if (error) {
-        if (error.code === 'PGRST116') {
+        if (error.code === "PGRST116") {
           return false; // Not found
         }
-        throw this.handleError(error, 'exists');
+        throw this.handleError(error, "exists");
       }
 
       return !!data;
     } catch (error) {
-      throw this.wrapError(error, 'exists');
+      throw this.wrapError(error, "exists");
     }
   }
 
@@ -227,7 +229,7 @@ export abstract class BaseRepository<
    */
   async createMany(items: CreateData[]): Promise<T[]> {
     try {
-      const dbData = items.map(item => this.transformToDB(item));
+      const dbData = items.map((item) => this.transformToDB(item));
 
       const { data, error } = await this.client
         .from(this.tableName)
@@ -235,12 +237,12 @@ export abstract class BaseRepository<
         .select();
 
       if (error) {
-        throw this.handleError(error, 'createMany');
+        throw this.handleError(error, "createMany");
       }
 
-      return data?.map(item => this.transformFromDB(item)) || [];
+      return data?.map((item) => this.transformFromDB(item)) || [];
     } catch (error) {
-      throw this.wrapError(error, 'createMany');
+      throw this.wrapError(error, "createMany");
     }
   }
 
@@ -249,17 +251,23 @@ export abstract class BaseRepository<
    */
   protected handleError(error: PostgrestError, operation: string): Error {
     const message = `${this.tableName}.${operation} failed: ${error.message}`;
-    logger.error(message, error instanceof Error ? error : String(error), `BaseRepository.${this.tableName}`);
+    logger.error(
+      message,
+      error instanceof Error ? error : String(error),
+      `BaseRepository.${this.tableName}`,
+    );
 
     // Create a more user-friendly error based on the error code
-    if (error.code === '23505') {
+    if (error.code === "23505") {
       return new Error(`Duplicate entry found. Please use a unique value.`);
     }
-    if (error.code === '23503') {
+    if (error.code === "23503") {
       return new Error(`Referenced record not found. Please check your data.`);
     }
-    if (error.code === '23502') {
-      return new Error(`Required field is missing. Please provide all required fields.`);
+    if (error.code === "23502") {
+      return new Error(
+        `Required field is missing. Please provide all required fields.`,
+      );
     }
 
     return new Error(message);
@@ -287,7 +295,11 @@ export abstract class BaseRepository<
    * Transform entity to database record
    * Override in child classes for custom transformations
    */
-  protected transformToDB(data: CreateData | UpdateData, isUpdate = false): Record<string, unknown> {
+  protected transformToDB(
+    data: CreateData | UpdateData,
+    isUpdate = false,
+  ): Record<string, unknown> {
     return data as Record<string, unknown>;
   }
 }
+

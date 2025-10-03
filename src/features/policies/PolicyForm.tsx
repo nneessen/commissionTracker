@@ -1,17 +1,22 @@
 // /home/nneessen/projects/commissionTracker/src/features/policies/PolicyForm.tsx
 
-import React, { useState, useEffect } from 'react';
-import { useCarriers } from '../../hooks/useCarriers';
-import { NewPolicyForm, PolicyStatus, PaymentFrequency, Policy } from '../../types/policy.types';
-import { ProductType } from '../../types/commission.types';
+import React, { useState, useEffect } from "react";
+import { useCarriers } from "../../hooks/useCarriers";
+import {
+  NewPolicyForm,
+  PolicyStatus,
+  PaymentFrequency,
+  Policy,
+} from "../../types/policy.types";
+import { ProductType } from "../../types/commission.types";
 
 import {
   calculateAnnualPremium,
   calculatePaymentAmount,
   calculateExpectedCommission,
   validatePremium,
-  validateCommissionPercentage
-} from '../../utils/policyCalculations';
+  validateCommissionPercentage,
+} from "../../utils/policyCalculations";
 
 interface PolicyFormProps {
   policyId?: string;
@@ -21,24 +26,59 @@ interface PolicyFormProps {
   getPolicyById: (id: string) => Policy | undefined;
 }
 
+// TODO: US_STATES is a constant that can should be in a utils folder instead. this should be stored in this file
+
 const US_STATES = [
-  { value: 'AL', label: 'AL' }, { value: 'AK', label: 'AK' }, { value: 'AZ', label: 'AZ' },
-  { value: 'AR', label: 'AR' }, { value: 'CA', label: 'CA' }, { value: 'CO', label: 'CO' },
-  { value: 'CT', label: 'CT' }, { value: 'DE', label: 'DE' }, { value: 'FL', label: 'FL' },
-  { value: 'GA', label: 'GA' }, { value: 'HI', label: 'HI' }, { value: 'ID', label: 'ID' },
-  { value: 'IL', label: 'IL' }, { value: 'IN', label: 'IN' }, { value: 'IA', label: 'IA' },
-  { value: 'KS', label: 'KS' }, { value: 'KY', label: 'KY' }, { value: 'LA', label: 'LA' },
-  { value: 'ME', label: 'ME' }, { value: 'MD', label: 'MD' }, { value: 'MA', label: 'MA' },
-  { value: 'MI', label: 'MI' }, { value: 'MN', label: 'MN' }, { value: 'MS', label: 'MS' },
-  { value: 'MO', label: 'MO' }, { value: 'MT', label: 'MT' }, { value: 'NE', label: 'NE' },
-  { value: 'NV', label: 'NV' }, { value: 'NH', label: 'NH' }, { value: 'NJ', label: 'NJ' },
-  { value: 'NM', label: 'NM' }, { value: 'NY', label: 'NY' }, { value: 'NC', label: 'NC' },
-  { value: 'ND', label: 'ND' }, { value: 'OH', label: 'OH' }, { value: 'OK', label: 'OK' },
-  { value: 'OR', label: 'OR' }, { value: 'PA', label: 'PA' }, { value: 'RI', label: 'RI' },
-  { value: 'SC', label: 'SC' }, { value: 'SD', label: 'SD' }, { value: 'TN', label: 'TN' },
-  { value: 'TX', label: 'TX' }, { value: 'UT', label: 'UT' }, { value: 'VT', label: 'VT' },
-  { value: 'VA', label: 'VA' }, { value: 'WA', label: 'WA' }, { value: 'WV', label: 'WV' },
-  { value: 'WI', label: 'WI' }, { value: 'WY', label: 'WY' },
+  { value: "AL", label: "AL" },
+  { value: "AK", label: "AK" },
+  { value: "AZ", label: "AZ" },
+  { value: "AR", label: "AR" },
+  { value: "CA", label: "CA" },
+  { value: "CO", label: "CO" },
+  { value: "CT", label: "CT" },
+  { value: "DE", label: "DE" },
+  { value: "FL", label: "FL" },
+  { value: "GA", label: "GA" },
+  { value: "HI", label: "HI" },
+  { value: "ID", label: "ID" },
+  { value: "IL", label: "IL" },
+  { value: "IN", label: "IN" },
+  { value: "IA", label: "IA" },
+  { value: "KS", label: "KS" },
+  { value: "KY", label: "KY" },
+  { value: "LA", label: "LA" },
+  { value: "ME", label: "ME" },
+  { value: "MD", label: "MD" },
+  { value: "MA", label: "MA" },
+  { value: "MI", label: "MI" },
+  { value: "MN", label: "MN" },
+  { value: "MS", label: "MS" },
+  { value: "MO", label: "MO" },
+  { value: "MT", label: "MT" },
+  { value: "NE", label: "NE" },
+  { value: "NV", label: "NV" },
+  { value: "NH", label: "NH" },
+  { value: "NJ", label: "NJ" },
+  { value: "NM", label: "NM" },
+  { value: "NY", label: "NY" },
+  { value: "NC", label: "NC" },
+  { value: "ND", label: "ND" },
+  { value: "OH", label: "OH" },
+  { value: "OK", label: "OK" },
+  { value: "OR", label: "OR" },
+  { value: "PA", label: "PA" },
+  { value: "RI", label: "RI" },
+  { value: "SC", label: "SC" },
+  { value: "SD", label: "SD" },
+  { value: "TN", label: "TN" },
+  { value: "TX", label: "TX" },
+  { value: "UT", label: "UT" },
+  { value: "VT", label: "VT" },
+  { value: "VA", label: "VA" },
+  { value: "WA", label: "WA" },
+  { value: "WV", label: "WV" },
+  { value: "WI", label: "WI" },
+  { value: "WY", label: "WY" },
 ];
 
 export const PolicyForm: React.FC<PolicyFormProps> = ({
@@ -46,23 +86,24 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
   onClose,
   addPolicy,
   updatePolicy,
-  getPolicyById
+  getPolicyById,
 }) => {
   const { carriers } = useCarriers();
 
+  // TODO: the way product is being used is wrong. this should be productId because its whats used to calculate the users commission
   const [formData, setFormData] = useState<NewPolicyForm>({
-    clientName: '',
-    clientState: '',
+    clientName: "",
+    clientState: "",
     clientAge: 0,
-    carrierId: '',
-    product: 'term' as ProductType,
-    policyNumber: '',
-    effectiveDate: new Date().toISOString().split('T')[0],
+    carrierId: "",
+    product: "term" as ProductType,
+    policyNumber: "",
+    effectiveDate: new Date().toISOString().split("T")[0],
     premium: 0,
-    paymentFrequency: 'monthly' as PaymentFrequency,
+    paymentFrequency: "monthly" as PaymentFrequency,
     commissionPercentage: 0,
-    status: 'pending' as PolicyStatus,
-    notes: '',
+    status: "pending" as PolicyStatus,
+    notes: "",
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -78,49 +119,65 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
           carrierId: policy.carrierId,
           product: policy.product,
           policyNumber: policy.policyNumber,
-          effectiveDate: policy.effectiveDate instanceof Date ? policy.effectiveDate.toISOString().split('T')[0] : policy.effectiveDate,
-          premium: calculatePaymentAmount(policy.annualPremium, policy.paymentFrequency),
+          effectiveDate:
+            policy.effectiveDate instanceof Date
+              ? policy.effectiveDate.toISOString().split("T")[0]
+              : policy.effectiveDate,
+          premium: calculatePaymentAmount(
+            policy.annualPremium,
+            policy.paymentFrequency,
+          ),
           paymentFrequency: policy.paymentFrequency,
           commissionPercentage: policy.commissionPercentage,
           status: policy.status,
-          notes: policy.notes || '',
+          notes: policy.notes || "",
         });
       }
     }
   }, [policyId, getPolicyById]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >,
+  ) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: ['clientAge', 'premium', 'commissionPercentage'].includes(name)
+      [name]: ["clientAge", "premium", "commissionPercentage"].includes(name)
         ? parseFloat(value) || 0
-        : value
+        : value,
     }));
     // Clear error when user types
     if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }));
+      setErrors((prev) => ({ ...prev, [name]: "" }));
     }
   };
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
 
-    if (!formData.clientName) newErrors.clientName = 'Client name is required';
-    if (!formData.clientState) newErrors.clientState = 'State is required';
-    if (!formData.clientAge || formData.clientAge < 1 || formData.clientAge > 120) {
-      newErrors.clientAge = 'Valid age is required (1-120)';
+    if (!formData.clientName) newErrors.clientName = "Client name is required";
+    if (!formData.clientState) newErrors.clientState = "State is required";
+    if (
+      !formData.clientAge ||
+      formData.clientAge < 1 ||
+      formData.clientAge > 120
+    ) {
+      newErrors.clientAge = "Valid age is required (1-120)";
     }
-    if (!formData.carrierId) newErrors.carrierId = 'Carrier is required';
-    if (!formData.policyNumber) newErrors.policyNumber = 'Policy number is required';
-    if (!formData.effectiveDate) newErrors.effectiveDate = 'Effective date is required';
-    
+    if (!formData.carrierId) newErrors.carrierId = "Carrier is required";
+    if (!formData.policyNumber)
+      newErrors.policyNumber = "Policy number is required";
+    if (!formData.effectiveDate)
+      newErrors.effectiveDate = "Effective date is required";
+
     if (!validatePremium(formData.premium)) {
-      newErrors.premium = 'Premium must be greater than $0';
+      newErrors.premium = "Premium must be greater than $0";
     }
-    
+
     if (!validateCommissionPercentage(formData.commissionPercentage)) {
-      newErrors.commissionPercentage = 'Commission must be between 0-200%';
+      newErrors.commissionPercentage = "Commission must be between 0-200%";
     }
 
     setErrors(newErrors);
@@ -132,11 +189,14 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
 
     if (validateForm()) {
       // Calculate annual premium before submitting
-      const annualPremium = calculateAnnualPremium(formData.premium, formData.paymentFrequency);
+      const annualPremium = calculateAnnualPremium(
+        formData.premium,
+        formData.paymentFrequency,
+      );
 
       const submissionData = {
         ...formData,
-        annualPremium
+        annualPremium,
       };
 
       try {
@@ -147,14 +207,22 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
         }
         onClose();
       } catch (error) {
-        alert(`Error: ${error instanceof Error ? error.message : 'Failed to save policy'}`);
+        alert(
+          `Error: ${error instanceof Error ? error.message : "Failed to save policy"}`,
+        );
       }
     }
   };
 
   // Calculate display values
-  const annualPremium = calculateAnnualPremium(formData.premium, formData.paymentFrequency);
-  const expectedCommission = calculateExpectedCommission(annualPremium, formData.commissionPercentage);
+  const annualPremium = calculateAnnualPremium(
+    formData.premium,
+    formData.paymentFrequency,
+  );
+  const expectedCommission = calculateExpectedCommission(
+    annualPremium,
+    formData.commissionPercentage,
+  );
 
   return (
     <form onSubmit={handleSubmit} className="modal-form">
@@ -170,10 +238,12 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
               name="clientName"
               value={formData.clientName}
               onChange={handleInputChange}
-              className={errors.clientName ? 'error' : ''}
+              className={errors.clientName ? "error" : ""}
               placeholder="John Smith"
             />
-            {errors.clientName && <span className="error-msg">{errors.clientName}</span>}
+            {errors.clientName && (
+              <span className="error-msg">{errors.clientName}</span>
+            )}
           </div>
 
           <div className="form-row">
@@ -183,28 +253,34 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
                 name="clientState"
                 value={formData.clientState}
                 onChange={handleInputChange}
-                className={errors.clientState ? 'error' : ''}
+                className={errors.clientState ? "error" : ""}
               >
                 <option value="">Select</option>
-                {US_STATES.map(state => (
-                  <option key={state.value} value={state.value}>{state.label}</option>
+                {US_STATES.map((state) => (
+                  <option key={state.value} value={state.value}>
+                    {state.label}
+                  </option>
                 ))}
               </select>
-              {errors.clientState && <span className="error-msg">{errors.clientState}</span>}
+              {errors.clientState && (
+                <span className="error-msg">{errors.clientState}</span>
+              )}
             </div>
             <div className="form-group">
               <label>Age *</label>
               <input
                 type="number"
                 name="clientAge"
-                value={formData.clientAge || ''}
+                value={formData.clientAge || ""}
                 onChange={handleInputChange}
-                className={errors.clientAge ? 'error' : ''}
+                className={errors.clientAge ? "error" : ""}
                 placeholder="45"
                 min="1"
                 max="120"
               />
-              {errors.clientAge && <span className="error-msg">{errors.clientAge}</span>}
+              {errors.clientAge && (
+                <span className="error-msg">{errors.clientAge}</span>
+              )}
             </div>
           </div>
 
@@ -214,14 +290,18 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
               name="carrierId"
               value={formData.carrierId}
               onChange={handleInputChange}
-              className={errors.carrierId ? 'error' : ''}
+              className={errors.carrierId ? "error" : ""}
             >
               <option value="">Select Carrier</option>
-              {carriers.map(carrier => (
-                <option key={carrier.id} value={carrier.id}>{carrier.name}</option>
+              {carriers.map((carrier) => (
+                <option key={carrier.id} value={carrier.id}>
+                  {carrier.name}
+                </option>
               ))}
             </select>
-            {errors.carrierId && <span className="error-msg">{errors.carrierId}</span>}
+            {errors.carrierId && (
+              <span className="error-msg">{errors.carrierId}</span>
+            )}
           </div>
 
           <div className="form-group">
@@ -264,10 +344,12 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
               name="policyNumber"
               value={formData.policyNumber}
               onChange={handleInputChange}
-              className={errors.policyNumber ? 'error' : ''}
+              className={errors.policyNumber ? "error" : ""}
               placeholder="POL-123456"
             />
-            {errors.policyNumber && <span className="error-msg">{errors.policyNumber}</span>}
+            {errors.policyNumber && (
+              <span className="error-msg">{errors.policyNumber}</span>
+            )}
           </div>
 
           <div className="form-group">
@@ -277,9 +359,11 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
               name="effectiveDate"
               value={formData.effectiveDate}
               onChange={handleInputChange}
-              className={errors.effectiveDate ? 'error' : ''}
+              className={errors.effectiveDate ? "error" : ""}
             />
-            {errors.effectiveDate && <span className="error-msg">{errors.effectiveDate}</span>}
+            {errors.effectiveDate && (
+              <span className="error-msg">{errors.effectiveDate}</span>
+            )}
           </div>
 
           <div className="form-row">
@@ -288,14 +372,16 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
               <input
                 type="number"
                 name="premium"
-                value={formData.premium || ''}
+                value={formData.premium || ""}
                 onChange={handleInputChange}
-                className={errors.premium ? 'error' : ''}
+                className={errors.premium ? "error" : ""}
                 placeholder="250.00"
                 step="0.01"
                 min="0"
               />
-              {errors.premium && <span className="error-msg">{errors.premium}</span>}
+              {errors.premium && (
+                <span className="error-msg">{errors.premium}</span>
+              )}
             </div>
             <div className="form-group">
               <label>Payment Frequency *</label>
@@ -318,15 +404,17 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
               <input
                 type="number"
                 name="commissionPercentage"
-                value={formData.commissionPercentage || ''}
+                value={formData.commissionPercentage || ""}
                 onChange={handleInputChange}
-                className={errors.commissionPercentage ? 'error' : ''}
+                className={errors.commissionPercentage ? "error" : ""}
                 placeholder="50"
                 step="0.1"
                 min="0"
                 max="200"
               />
-              {errors.commissionPercentage && <span className="error-msg">{errors.commissionPercentage}</span>}
+              {errors.commissionPercentage && (
+                <span className="error-msg">{errors.commissionPercentage}</span>
+              )}
             </div>
             <div className="form-group">
               <label>Status</label>
@@ -351,7 +439,9 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
             </div>
             <div className="calc-row">
               <span>Expected Commission:</span>
-              <strong className="commission">${expectedCommission.toFixed(2)}</strong>
+              <strong className="commission">
+                ${expectedCommission.toFixed(2)}
+              </strong>
             </div>
           </div>
         </div>
@@ -362,9 +452,10 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
           Cancel
         </button>
         <button type="submit" className="btn-primary">
-          {policyId ? 'Update Policy' : 'Add Policy'}
+          {policyId ? "Update Policy" : "Add Policy"}
         </button>
       </div>
     </form>
   );
 };
+

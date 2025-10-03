@@ -1,110 +1,87 @@
-// src/types/product.types.ts
+// Product-related types for the commission tracker application
 
-export type ProductType = 'term' | 'whole_life' | 'universal_life' | 'indexed_universal_life' | 'final_expense' | 'accidental' | 'annuity';
+// Re-export ProductType from existing location to avoid breaking changes
+export type { ProductType } from './commission.types';
 
+// Compensation levels matching database enum
+export type CompLevel =
+  | 'street'
+  | 'bronze'
+  | 'silver'
+  | 'gold'
+  | 'platinum'
+  | 'diamond';
+
+// Base product interface matching database schema
 export interface Product {
   id: string;
-  carrierId: string;
-  productName: string;
-  productType: ProductType;
-  isActive: boolean;
-  createdAt: Date;
-  updatedAt?: Date;
+  carrier_id: string;
+  name: string; // e.g., "Mutual of Omaha Living Promise"
+  code?: string; // Internal product code
+  product_type: ProductType; // e.g., "whole_life"
+  description?: string;
+  min_premium?: number;
+  max_premium?: number;
+  min_age?: number;
+  max_age?: number;
+  commission_percentage?: number; // Default commission rate if not in comp_guide
+  is_active: boolean;
+  metadata?: Record<string, any>; // JSONB field for extra data
+  created_at: Date;
+  updated_at: Date;
 }
 
-export interface CommissionRate {
+// Product with carrier details (for joined queries)
+export interface ProductWithCarrier extends Product {
+  carrier: {
+    id: string;
+    name: string;
+    code?: string;
+  };
+}
+
+// Form data for creating/editing products
+export interface ProductFormData {
+  carrier_id: string;
+  name: string;
+  code?: string;
+  product_type: ProductType;
+  description?: string;
+  min_premium?: number;
+  max_premium?: number;
+  min_age?: number;
+  max_age?: number;
+  commission_percentage?: number;
+  is_active: boolean;
+}
+
+// Commission override for specific products
+export interface ProductCommissionOverride {
   id: string;
-  carrierId: string;
-  productId: string;
-  contractLevel: number; // 80-145
-  commissionPercentage: number; // e.g., 85.5 for 85.5%
-  createdAt: Date;
-  updatedAt?: Date;
+  product_id: string;
+  comp_level: CompLevel;
+  commission_percentage: number;
+  bonus_percentage?: number;
+  effective_date: Date;
+  expiration_date?: Date;
+  notes?: string;
+  created_at: Date;
+  updated_at: Date;
 }
 
-export interface ProductWithRates extends Product {
-  commissionRates: CommissionRate[];
-  carrierName?: string;
+// Filter options for product queries
+export interface ProductFilters {
+  carrier_id?: string;
+  product_type?: ProductType;
+  is_active?: boolean;
+  search?: string; // Search by name or code
 }
 
-export interface CarrierProduct {
-  carrierId: string;
-  carrierName: string;
-  products: ProductWithRates[];
+// Product selection item for forms
+export interface ProductOption {
+  value: string; // product id
+  label: string; // formatted display name
+  carrier_name: string;
+  product_type: ProductType;
+  commission_percentage?: number;
 }
-
-export interface NewProductForm {
-  productName: string;
-  productType: Product['productType'];
-  carrierId: string;
-  isActive?: boolean;
-}
-
-export interface UpdateProductForm extends Partial<NewProductForm> {
-  id: string;
-}
-
-export interface CommissionRateForm {
-  contractLevel: number;
-  commissionPercentage: number;
-}
-
-export interface NewCommissionRateForm extends CommissionRateForm {
-  carrierId: string;
-  productId: string;
-}
-
-export interface UpdateCommissionRateForm extends CommissionRateForm {
-  id: string;
-}
-
-export interface CompGuideEntry {
-  id: string;
-  carrierName: string;
-  productName: string;
-  contractLevel: number;
-  commissionPercentage: number;
-  productType: Product['productType'];
-  isActive: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface CompGuideLookup {
-  carrierName: string;
-  productName: string;
-  contractLevel: number;
-}
-
-export interface CommissionCalculation {
-  monthlyPremium: number;
-  commissionPercentage: number;
-  advanceMonths: number;
-  totalCommission: number;
-}
-
-export interface ProductStats {
-  productId: string;
-  productName: string;
-  carrierName: string;
-  totalCommissions: number;
-  totalPremiums: number;
-  policyCount: number;
-  averageCommissionRate: number;
-}
-
-export const PRODUCT_TYPES: { value: Product['productType']; label: string }[] = [
-  { value: 'term', label: 'Term Life' },
-  { value: 'whole_life', label: 'Whole Life' },
-  { value: 'universal_life', label: 'Universal Life' },
-  { value: 'indexed_universal_life', label: 'Indexed Universal Life' },
-  { value: 'final_expense', label: 'Final Expense' },
-  { value: 'accidental', label: 'Accidental Death' },
-  { value: 'annuity', label: 'Annuity' },
-];
-
-export const CONTRACT_LEVELS = Array.from({ length: 14 }, (_, i) => 80 + i * 5); // 80, 85, 90, ..., 145
-
-export const validateContractLevel = (level: number): boolean => {
-  return level >= 80 && level <= 145 && level % 5 === 0;
-};

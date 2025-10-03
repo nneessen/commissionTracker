@@ -1,7 +1,12 @@
 // src/services/agentService.ts
+// TODO: check CLAUDE.md in this folder
 
-import { supabase, TABLES } from '../base/supabase';
-import { Agent, CreateAgentData, UpdateAgentData } from '../../types/user.types';
+import { supabase, TABLES } from "../base/supabase";
+import {
+  Agent,
+  CreateAgentData,
+  UpdateAgentData,
+} from "../../types/user.types";
 
 export type { CreateAgentData, UpdateAgentData };
 
@@ -9,8 +14,8 @@ class AgentService {
   async getAll(): Promise<Agent[]> {
     const { data, error } = await supabase
       .from(TABLES.AGENTS)
-      .select('*')
-      .order('created_at', { ascending: false });
+      .select("*")
+      .order("created_at", { ascending: false });
 
     if (error) {
       throw new Error(`Failed to fetch agents: ${error.message}`);
@@ -22,12 +27,12 @@ class AgentService {
   async getById(id: string): Promise<Agent | null> {
     const { data, error } = await supabase
       .from(TABLES.AGENTS)
-      .select('*')
-      .eq('id', id)
+      .select("*")
+      .eq("id", id)
       .single();
 
     if (error) {
-      if (error.code === 'PGRST116') {
+      if (error.code === "PGRST116") {
         return null; // Not found
       }
       throw new Error(`Failed to fetch agent: ${error.message}`);
@@ -39,9 +44,9 @@ class AgentService {
   async getActive(): Promise<Agent[]> {
     const { data, error } = await supabase
       .from(TABLES.AGENTS)
-      .select('*')
-      .eq('is_active', true)
-      .order('name', { ascending: true });
+      .select("*")
+      .eq("is_active", true)
+      .order("name", { ascending: true });
 
     if (error) {
       throw new Error(`Failed to fetch active agents: ${error.message}`);
@@ -72,7 +77,7 @@ class AgentService {
     const { data, error } = await supabase
       .from(TABLES.AGENTS)
       .update(dbData)
-      .eq('id', id)
+      .eq("id", id)
       .select()
       .single();
 
@@ -84,10 +89,7 @@ class AgentService {
   }
 
   async delete(id: string): Promise<void> {
-    const { error } = await supabase
-      .from(TABLES.AGENTS)
-      .delete()
-      .eq('id', id);
+    const { error } = await supabase.from(TABLES.AGENTS).delete().eq("id", id);
 
     if (error) {
       throw new Error(`Failed to delete agent: ${error.message}`);
@@ -97,12 +99,14 @@ class AgentService {
   async getByContractLevel(contractLevel: number): Promise<Agent[]> {
     const { data, error } = await supabase
       .from(TABLES.AGENTS)
-      .select('*')
-      .eq('contract_comp_level', contractLevel)
-      .order('name', { ascending: true });
+      .select("*")
+      .eq("contract_comp_level", contractLevel)
+      .order("name", { ascending: true });
 
     if (error) {
-      throw new Error(`Failed to fetch agents by contract level: ${error.message}`);
+      throw new Error(
+        `Failed to fetch agents by contract level: ${error.message}`,
+      );
     }
 
     return data?.map(this.transformFromDB) || [];
@@ -125,7 +129,8 @@ class AgentService {
 
     if (data.name !== undefined) dbData.name = data.name;
     if (data.email !== undefined) dbData.email = data.email;
-    if (data.contractCompLevel !== undefined) dbData.contract_comp_level = data.contractCompLevel;
+    if (data.contractCompLevel !== undefined)
+      dbData.contract_comp_level = data.contractCompLevel;
     if (data.isActive !== undefined) dbData.is_active = data.isActive;
 
     return dbData;
@@ -133,3 +138,4 @@ class AgentService {
 }
 
 export const agentService = new AgentService();
+

@@ -157,8 +157,10 @@ export class PolicyRepository extends BaseRepository<Policy, CreatePolicyData, U
       status: dbRecord.status,
       client: dbRecord.client, // JSONB field
       carrierId: dbRecord.carrier_id,
+      productId: dbRecord.product_id, // NEW: Product ID field
       userId: dbRecord.user_id,
       product: dbRecord.product,
+      productDetails: dbRecord.products || undefined, // NEW: Joined product data if available
       effectiveDate: new Date(dbRecord.effective_date),
       termLength: dbRecord.term_length,
       expirationDate: dbRecord.expiration_date ? new Date(dbRecord.expiration_date) : undefined,
@@ -183,6 +185,7 @@ export class PolicyRepository extends BaseRepository<Policy, CreatePolicyData, U
     if (data.status !== undefined) dbData.status = data.status;
     if (data.client !== undefined) dbData.client = data.client;
     if (data.carrierId !== undefined) dbData.carrier_id = data.carrierId;
+    if (data.productId !== undefined) dbData.product_id = data.productId; // NEW: Product ID field
     if (data.userId !== undefined) dbData.user_id = data.userId;
     if (data.product !== undefined) dbData.product = data.product;
     if (data.effectiveDate !== undefined) {

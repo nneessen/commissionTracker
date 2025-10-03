@@ -20,15 +20,13 @@ export const PolicyDashboard: React.FC = () => {
   const [isPolicyFormOpen, setIsPolicyFormOpen] = useState(false);
   const [editingPolicyId, setEditingPolicyId] = useState<string | undefined>();
 
-  // Use the new TanStack Query hooks for data fetching
   const { data: policies = [], isLoading, error, refetch } = usePoliciesList();
 
-  // Mutation hooks
   const createPolicyMutation = useCreatePolicy();
   const updatePolicyMutation = useUpdatePolicy();
   const deletePolicyMutation = useDeletePolicy();
 
-  useCarriers(); // Load carriers data
+  useCarriers();
 
   // Adapter functions to match old interface that PolicyList/PolicyForm expect
   const addPolicy = (formData: any) => {

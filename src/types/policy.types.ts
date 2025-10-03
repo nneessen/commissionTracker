@@ -1,6 +1,7 @@
 // /home/nneessen/projects/commissionTracker/src/types/policy.types.ts
 
 import { ProductType } from './commission.types';
+import { Product } from './product.types';
 
 export type PolicyStatus = 'pending' | 'active' | 'lapsed' | 'cancelled' | 'matured';
 export type PaymentFrequency = 'annual' | 'semi-annual' | 'quarterly' | 'monthly';
@@ -36,8 +37,10 @@ export interface Policy {
 
   // Policy Details
   carrierId: string;
+  productId?: string; // Links to products table (NEW)
   userId?: string; // Links to auth.users
-  product: ProductType;
+  product: ProductType; // Product type enum (kept for backward compatibility)
+  productDetails?: Product; // Full product object when joined (NEW)
   effectiveDate: Date;
   termLength?: number; // in years
   expirationDate?: Date;
@@ -71,7 +74,8 @@ export interface NewPolicyForm {
 
   // Policy fields
   carrierId: string;
-  product: ProductType;
+  productId?: string; // NEW: Actual product selection
+  product: ProductType; // Keep for backward compatibility
   effectiveDate: string; // ISO date string for form
   expirationDate?: string;
   termLength?: number;
@@ -117,8 +121,9 @@ export interface CreatePolicyData {
   policyNumber: string;
   client: PolicyClient | PolicyClientExtended; // Support both formats
   carrierId: string;
+  productId?: string; // NEW: Links to products table
   userId?: string; // Links to auth.users
-  product: ProductType;
+  product: ProductType; // Keep for backward compatibility
   effectiveDate: Date;
   termLength?: number;
   expirationDate?: Date;
