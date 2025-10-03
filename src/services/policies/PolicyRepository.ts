@@ -103,6 +103,118 @@ export class PolicyRepository extends BaseRepository<Policy, CreatePolicyData, U
     }
   }
 
+  /**
+   * Find policies with cursor-based pagination to handle Supabase 1000 row limit
+   * @param options Pagination options including cursor, limit, and filters
+   * @returns Paginated policy results with next cursor
+   */
+  async findPaginated(options: {
+    cursor?: string;
+    limit?: number;
+    filters?: {
+      status?: string;
+      carrierId?: string;
+      productId?: string;
+      userId?: string;
+    };
+    orderBy?: 'created_at' | 'effective_date' | 'id';
+    orderDirection?: 'asc' | 'desc';
+  }): Promise<{
+    data: Policy[];
+    nextCursor: string | null;
+    hasMore: boolean;
+  }> {
+    try {
+      const {
+        cursor,
+        limit = 50,
+        filters = {},
+        orderBy = 'created_at',
+        orderDirection = 'desc'
+      } = options;
+
+      // Build base query
+      let query = this.client
+        .from(this.tableName)
+        .select('*, products!policies_product_id_fkey(*)'); // Include product details
+
+      // Apply cursor (for pagination)
+      if (cursor) {
+        if (orderDirection === 'desc') {
+          query = query.lt(orderBy, cursor);
+        } else {
+          query = query.gt(orderBy, cursor);
+        }
+      }
+
+      // Apply filters
+      if (filters.status) query = query.eq('status', filters.status);
+      if (filters.carrierId) query = query.eq('carrier_id', filters.carrierId);
+      if (filters.productId) query = query.eq('product_id', filters.productId);
+      if (filters.userId) query = query.eq('user_id', filters.userId);
+
+      // Order and limit
+      query = query
+        .order(orderBy, { ascending: orderDirection === 'asc' })
+        .limit(limit + 1); // Fetch one extra to check if there's more
+
+      const { data, error } = await query;
+
+      if (error) {
+        throw this.handleError(error, 'findPaginated');
+      }
+
+      const hasMore = data ? data.length > limit : false;
+      const policies = data ? data.slice(0, limit).map(this.transformFromDB) : [];
+
+      // Next cursor is the last item's orderBy field
+      const nextCursor = hasMore && policies.length > 0
+        ? policies[policies.length - 1][orderBy === 'created_at' ? 'createdAt' : orderBy === 'effective_date' ? 'effectiveDate' : 'id']
+        : null;
+
+      return {
+        data: policies,
+        nextCursor: nextCursor instanceof Date ? nextCursor.toISOString() : nextCursor,
+        hasMore
+      };
+    } catch (error) {
+      throw this.wrapError(error, 'findPaginated');
+    }
+  }
+
+  /**
+   * Count total policies with filters (separate from pagination for performance)
+   */
+  async countPolicies(filters?: {
+    status?: string;
+    carrierId?: string;
+    productId?: string;
+    userId?: string;
+  }): Promise<number> {
+    try {
+      let query = this.client
+        .from(this.tableName)
+        .select('id', { count: 'exact', head: true }); // Only count, don't fetch data
+
+      if (filters) {
+        if (filters.status) query = query.eq('status', filters.status);
+        if (filters.carrierId) query = query.eq('carrier_id', filters.carrierId);
+        if (filters.productId) query = query.eq('product_id', filters.productId);
+        if (filters.userId) query = query.eq('user_id', filters.userId);
+      }
+
+      const { count, error } = await query;
+
+      if (error) {
+        throw this.handleError(error, 'countPolicies');
+      }
+
+      return count || 0;
+    } catch (error) {
+      throw this.wrapError(error, 'countPolicies');
+    }
+  }
+
   async getMonthlyMetrics(year: number, month: number): Promise<{
     totalPolicies: number;
     totalPremium: number;
