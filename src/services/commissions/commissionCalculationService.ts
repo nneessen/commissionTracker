@@ -9,13 +9,11 @@ import { logger } from '@/services/base/logger';
 type CompGuideEntry = Database['public']['Tables']['comp_guide']['Row'];
 
 export interface CommissionCalculationParams {
-  carrierName?: string; // Use carrier name instead of ID
-  carrierId?: string; // Keep for compatibility, will look up name
-  productName?: string; // Actual product name
-  productType?: ProductType; // Product type for filtering
+  carrierId: string; // Required: carrier UUID
+  productType: ProductType; // Required: product type from enum
   annualPremium: number;
-  agentId?: string; // Use agent ID instead of user ID
-  contractLevelOverride?: number;
+  agentId?: string; // Optional: use agent ID to get contract level
+  contractLevelOverride?: number; // Optional: override agent's contract level
 }
 
 export interface CommissionCalculationResult {
@@ -88,17 +86,21 @@ class CommissionCalculationService {
    * Get commission rate from comp guide using carrier name
    */
   async getCommissionRate(
-    carrierName: string,
-    productName: string,
+    carrierId: string,
+    productType: ProductType,
     contractLevel: number
   ): Promise<{ rate: number; compGuideId?: string }> {
     try {
       const { data, error } = await supabase
         .from('comp_guide')
         .select('id, commission_percentage')
-        .eq('carrier_name', carrierName)
-        .eq('product_name', productName)
+        .eq('carrier_id', carrierId)
+        .eq('product_type', productType)
         .eq('contract_level', contractLevel)
+        .lte('effective_date', new Date().toISOString())
+        .or(`expiration_date.is.null,expiration_date.gte.${new Date().toISOString()}`)
+        .order('effective_date', { ascending: false })
+        .limit(1)
         .maybeSingle();
 
       if (error) {
@@ -107,17 +109,16 @@ class CommissionCalculationService {
       }
 
       if (!data) {
-        // Try to find by product type if product name not found
-        logger.warn('CommissionCalculation', 'No comp guide entry found by product name', {
-          carrierName,
-          productName,
+        logger.warn('CommissionCalculation', 'No comp guide entry found', {
+          carrierId,
+          productType,
           contractLevel
         });
         return { rate: 0 };
       }
 
       return {
-        rate: Number(data.commission_percentage),
+        rate: Number(data.commission_percentage) * 100, // Convert decimal to percentage
         compGuideId: data.id
       };
     } catch (error) {
@@ -131,23 +132,16 @@ class CommissionCalculationService {
    */
   async calculateCommission(params: CommissionCalculationParams): Promise<CommissionCalculationResult> {
     const {
-      carrierName,
       carrierId,
-      productName,
+      productType,
       annualPremium,
       agentId,
       contractLevelOverride
     } = params;
 
     try {
-      // Get carrier name if only ID provided
-      let actualCarrierName = carrierName;
-      if (!actualCarrierName && carrierId) {
-        actualCarrierName = await this.getCarrierName(carrierId) || '';
-      }
-
-      if (!actualCarrierName) {
-        throw new Error('Carrier name not found');
+      if (!carrierId || !productType) {
+        throw new Error('Carrier ID and product type are required');
       }
 
       // Get contract level (use override or fetch from agent)
@@ -158,8 +152,8 @@ class CommissionCalculationService {
 
       // Get commission rate from comp guide
       const { rate, compGuideId } = await this.getCommissionRate(
-        actualCarrierName,
-        productName || '',
+        carrierId,
+        productType,
         contractLevel
       );
 
@@ -167,8 +161,8 @@ class CommissionCalculationService {
       const commissionAmount = (annualPremium * rate) / 100;
 
       logger.info('CommissionCalculation', 'Commission calculated', {
-        carrierName: actualCarrierName,
-        productName,
+        carrierId,
+        productType,
         contractLevel,
         rate,
         annualPremium,
@@ -196,24 +190,25 @@ class CommissionCalculationService {
   }
 
   /**
-   * Get available products for a carrier by name
+   * Get available products for a carrier by ID
    */
-  async getCarrierProductsByName(carrierName: string): Promise<string[]> {
+  async getCarrierProducts(carrierId: string): Promise<ProductType[]> {
     try {
       const { data, error } = await supabase
-        .from('comp_guide')
-        .select('product_name')
-        .eq('carrier_name', carrierName)
-        .order('product_name');
+        .from('products')
+        .select('product_type')
+        .eq('carrier_id', carrierId)
+        .eq('is_active', true)
+        .order('product_type');
 
       if (error) {
         logger.error('CommissionCalculation', 'Error fetching carrier products', error);
         return [];
       }
 
-      // Get unique product names
-      const uniqueProducts = Array.from(new Set(data?.map(item => item.product_name) || []));
-      return uniqueProducts;
+      // Get unique product types
+      const uniqueTypes = Array.from(new Set(data?.map(item => item.product_type as ProductType) || []));
+      return uniqueTypes;
     } catch (error) {
       logger.error('CommissionCalculation', 'Failed to get carrier products', error);
       return [];
@@ -221,36 +216,27 @@ class CommissionCalculationService {
   }
 
   /**
-   * Get available products for a carrier by ID
-   */
-  async getCarrierProducts(carrierId: string): Promise<string[]> {
-    const carrierName = await this.getCarrierName(carrierId);
-    if (!carrierName) return [];
-    return this.getCarrierProductsByName(carrierName);
-  }
-
-  /**
    * Validate if a commission rate exists for given parameters
    */
   async hasCommissionRate(
-    carrierName: string,
-    productName: string,
+    carrierId: string,
+    productType: ProductType,
     contractLevel: number
   ): Promise<boolean> {
-    const { rate } = await this.getCommissionRate(carrierName, productName, contractLevel);
+    const { rate } = await this.getCommissionRate(carrierId, productType, contractLevel);
     return rate > 0;
   }
 
   /**
    * Get all commission rates for a carrier
    */
-  async getCarrierCommissionRates(carrierName: string): Promise<CompGuideEntry[]> {
+  async getCarrierCommissionRates(carrierId: string): Promise<CompGuideEntry[]> {
     try {
       const { data, error } = await supabase
         .from('comp_guide')
         .select('*')
-        .eq('carrier_name', carrierName)
-        .order('product_name, contract_level');
+        .eq('carrier_id', carrierId)
+        .order('product_type, contract_level');
 
       if (error) {
         logger.error('CommissionCalculation', 'Error fetching carrier rates', error);
@@ -267,14 +253,14 @@ class CommissionCalculationService {
   /**
    * Get commission rates for a specific product
    */
-  async getProductCommissionRates(carrierName: string, productName: string): Promise<CompGuideEntry[]> {
+  async getProductCommissionRates(carrierId: string, productType: ProductType): Promise<CompGuideEntry[]> {
     try {
       const { data, error } = await supabase
         .from('comp_guide')
         .select('*')
-        .eq('carrier_name', carrierName)
-        .eq('product_name', productName)
-        .order('contract_level DESC');
+        .eq('carrier_id', carrierId)
+        .eq('product_type', productType)
+        .order('contract_level', { ascending: false });
 
       if (error) {
         logger.error('CommissionCalculation', 'Error fetching product rates', error);
