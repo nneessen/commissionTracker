@@ -1,7 +1,9 @@
 // PolicyFormUpdated.tsx - Updated version that uses real products from database
 import React, { useState, useEffect } from "react";
+import { useAuth } from "../../contexts/AuthContext";
 import { useCarriers } from "../../hooks/useCarriers";
-import { useProducts, useProductCommission } from "../../hooks/products/useProducts";
+import { useProducts } from "../../hooks/products/useProducts";
+import { useCommissionRate } from "../../hooks/commissions/useCommissionRate";
 import {
   NewPolicyForm,
   PolicyStatus,
@@ -67,6 +69,10 @@ export const PolicyFormUpdated: React.FC<PolicyFormProps> = ({
   getPolicyById,
 }) => {
   const { carriers } = useCarriers();
+  const { user } = useAuth();
+
+  // Get agent's contract level (default to 100 if not set)
+  const contractLevel = user?.contractCompLevel || 100;
 
   // Extended form data to include productId
   interface ExtendedPolicyForm extends NewPolicyForm {
@@ -96,18 +102,21 @@ export const PolicyFormUpdated: React.FC<PolicyFormProps> = ({
   // Fetch products for selected carrier
   const { data: products = [], isLoading: productsLoading } = useProducts(formData.carrierId);
 
-  // Fetch commission rate for selected product
-  const { data: productCommission } = useProductCommission(formData.productId);
+  // Fetch commission rate for selected product and agent's contract level
+  const { data: commissionRate, isLoading: rateLoading } = useCommissionRate(
+    formData.productId,
+    contractLevel
+  );
 
-  // Update commission percentage when product changes
+  // Update commission percentage when rate loads
   useEffect(() => {
-    if (productCommission !== null && productCommission !== undefined) {
+    if (commissionRate !== null && commissionRate !== undefined) {
       setFormData(prev => ({
         ...prev,
-        commissionPercentage: productCommission
+        commissionPercentage: commissionRate
       }));
     }
-  }, [productCommission]);
+  }, [commissionRate]);
 
   // Load existing policy data if editing
   useEffect(() => {
@@ -439,6 +448,11 @@ export const PolicyFormUpdated: React.FC<PolicyFormProps> = ({
               {errors.premium && (
                 <span className="error-msg">{errors.premium}</span>
               )}
+              {formData.premium > 0 && (
+                <div style={{ fontSize: '0.875rem', color: '#6b7280', marginTop: '0.25rem' }}>
+                  Annual Premium: ${annualPremium.toFixed(2)}
+                </div>
+              )}
             </div>
             <div className="form-group">
               <label>Payment Frequency *</label>
@@ -468,14 +482,25 @@ export const PolicyFormUpdated: React.FC<PolicyFormProps> = ({
                 step="0.1"
                 min="0"
                 max="200"
+                readOnly={!!commissionRate && !policyId}
               />
               {errors.commissionPercentage && (
                 <span className="error-msg">{errors.commissionPercentage}</span>
               )}
-              {productCommission && (
-                <span className="helper-text">
-                  Default: {productCommission.toFixed(1)}%
-                </span>
+              {rateLoading && (
+                <div style={{ fontSize: '0.875rem', color: '#6b7280', marginTop: '0.25rem' }}>
+                  Loading commission rate...
+                </div>
+              )}
+              {commissionRate && !rateLoading && (
+                <div style={{ fontSize: '0.875rem', color: '#059669', marginTop: '0.25rem' }}>
+                  ✓ Rate for contract level {contractLevel}: {commissionRate.toFixed(1)}%
+                </div>
+              )}
+              {!formData.productId && !rateLoading && (
+                <div style={{ fontSize: '0.875rem', color: '#9ca3af', marginTop: '0.25rem' }}>
+                  Select a product to load commission rate
+                </div>
               )}
             </div>
             <div className="form-group">
@@ -500,11 +525,21 @@ export const PolicyFormUpdated: React.FC<PolicyFormProps> = ({
               <strong>${annualPremium.toFixed(2)}</strong>
             </div>
             <div className="calc-row">
+              <span>Commission Rate:</span>
+              <strong>{formData.commissionPercentage.toFixed(1)}%</strong>
+            </div>
+            <div className="calc-row">
               <span>Expected Commission:</span>
               <strong className="commission">
                 ${expectedCommission.toFixed(2)}
               </strong>
             </div>
+            {formData.productId && (
+              <div className="calc-row" style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.5rem' }}>
+                <span>Contract Level:</span>
+                <span>{contractLevel}</span>
+              </div>
+            )}
           </div>
         </div>
       </div>
