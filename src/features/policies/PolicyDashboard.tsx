@@ -72,6 +72,7 @@ export const PolicyDashboard: React.FC = () => {
         policyNumber: formData.policyNumber,
         status: formData.status,
         clientId: client.id, // Use client_id foreign key
+        userId: user.id, // CRITICAL: Set user_id for RLS compliance
         carrierId: formData.carrierId,
         product: formData.product, // Product enum, not product_id
         effectiveDate: new Date(formData.effectiveDate),

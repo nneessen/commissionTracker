@@ -8,11 +8,77 @@ export class PolicyRepository extends BaseRepository<Policy, CreatePolicyData, U
     super(TABLES.POLICIES);
   }
 
+  // Override findAll to include client join
+  async findAll(options?: any, filters?: any): Promise<Policy[]> {
+    try {
+      let query = this.client
+        .from(this.tableName)
+        .select(`
+          *,
+          clients!policies_client_id_fkey (
+            id,
+            name,
+            email,
+            phone,
+            address
+          )
+        `);
+
+      // Apply filters
+      if (filters) {
+        Object.entries(filters).forEach(([key, value]) => {
+          if (value !== undefined && value !== null) {
+            query = query.eq(key, value);
+          }
+        });
+      }
+
+      // Apply sorting
+      if (options?.orderBy) {
+        query = query.order(options.orderBy, {
+          ascending: options.orderDirection === "asc",
+        });
+      } else {
+        query = query.order("created_at", { ascending: false });
+      }
+
+      // Apply pagination
+      if (options?.limit) {
+        query = query.limit(options.limit);
+      }
+      if (options?.offset) {
+        query = query.range(
+          options.offset,
+          options.offset + (options.limit || 10) - 1,
+        );
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        throw this.handleError(error, "findAll");
+      }
+
+      return data?.map((item) => this.transformFromDB(item)) || [];
+    } catch (error) {
+      throw this.wrapError(error, "findAll");
+    }
+  }
+
   async findByPolicyNumber(policyNumber: string): Promise<Policy | null> {
     try {
       const { data, error } = await this.client
         .from(this.tableName)
-        .select('*')
+        .select(`
+          *,
+          clients!policies_client_id_fkey (
+            id,
+            name,
+            email,
+            phone,
+            address
+          )
+        `)
         .eq('policy_number', policyNumber)
         .single();
 
@@ -33,7 +99,16 @@ export class PolicyRepository extends BaseRepository<Policy, CreatePolicyData, U
     try {
       const { data, error } = await this.client
         .from(this.tableName)
-        .select('*')
+        .select(`
+          *,
+          clients!policies_client_id_fkey (
+            id,
+            name,
+            email,
+            phone,
+            address
+          )
+        `)
         .eq('carrier_id', carrierId)
         .order('created_at', { ascending: false });
 
@@ -51,7 +126,16 @@ export class PolicyRepository extends BaseRepository<Policy, CreatePolicyData, U
     try {
       const { data, error } = await this.client
         .from(this.tableName)
-        .select('*')
+        .select(`
+          *,
+          clients!policies_client_id_fkey (
+            id,
+            name,
+            email,
+            phone,
+            address
+          )
+        `)
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
 
@@ -69,7 +153,16 @@ export class PolicyRepository extends BaseRepository<Policy, CreatePolicyData, U
     try {
       const { data, error } = await this.client
         .from(this.tableName)
-        .select('*')
+        .select(`
+          *,
+          clients!policies_client_id_fkey (
+            id,
+            name,
+            email,
+            phone,
+            address
+          )
+        `)
         .eq('status', 'active')
         .gte('effective_date', startDate.toISOString().split('T')[0])
         .lte('effective_date', endDate.toISOString().split('T')[0])
@@ -136,7 +229,17 @@ export class PolicyRepository extends BaseRepository<Policy, CreatePolicyData, U
       // Build base query
       let query = this.client
         .from(this.tableName)
-        .select('*, products!policies_product_id_fkey(*)'); // Include product details
+        .select(`
+          *,
+          clients!policies_client_id_fkey (
+            id,
+            name,
+            email,
+            phone,
+            address
+          ),
+          products!policies_product_id_fkey(*)
+        `); // Include client and product details
 
       // Apply cursor (for pagination)
       if (cursor) {
@@ -263,11 +366,35 @@ export class PolicyRepository extends BaseRepository<Policy, CreatePolicyData, U
   }
 
   protected transformFromDB(dbRecord: any): Policy {
+    // Handle joined client data from foreign key relationship
+    let clientData;
+    if (dbRecord.clients) {
+      // Client was joined - transform address object to state string
+      const address = dbRecord.clients.address || {};
+      clientData = {
+        name: dbRecord.clients.name || 'Unknown',
+        state: address.state || 'Unknown',
+        age: address.age || 0,
+        email: dbRecord.clients.email,
+        phone: dbRecord.clients.phone
+      };
+    } else if (dbRecord.client) {
+      // Fallback to JSONB client field for backward compatibility
+      clientData = dbRecord.client;
+    } else {
+      // No client data - create minimal object
+      clientData = {
+        name: 'Unknown',
+        state: 'Unknown',
+        age: 0
+      };
+    }
+
     const policy = {
       id: dbRecord.id,
       policyNumber: dbRecord.policy_number,
       status: dbRecord.status,
-      client: dbRecord.client, // JSONB field
+      client: clientData,
       carrierId: dbRecord.carrier_id,
       productId: dbRecord.product_id, // NEW: Product ID field
       userId: dbRecord.user_id,
@@ -296,7 +423,7 @@ export class PolicyRepository extends BaseRepository<Policy, CreatePolicyData, U
 
     if (data.policyNumber !== undefined) dbData.policy_number = data.policyNumber;
     if (data.status !== undefined) dbData.status = data.status;
-    if (data.client !== undefined) dbData.client = data.client;
+    if (data.clientId !== undefined) dbData.client_id = data.clientId; // Use client_id foreign key
     if (data.carrierId !== undefined) dbData.carrier_id = data.carrierId;
     if (data.productId !== undefined) dbData.product_id = data.productId; // NEW: Product ID field
     if (data.userId !== undefined) dbData.user_id = data.userId;

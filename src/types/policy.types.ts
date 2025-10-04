@@ -121,7 +121,7 @@ export interface CreatePolicyData {
   policyNumber: string;
   clientId: string; // Foreign key to clients table
   carrierId: string;
-  userId?: string; // Links to auth.users
+  userId: string; // Required for RLS compliance - links to auth.users
   product: ProductType; // Product enum type
   effectiveDate: Date;
   termLength?: number;
