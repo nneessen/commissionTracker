@@ -22,8 +22,8 @@ import {
 interface PolicyFormProps {
   policyId?: string;
   onClose: () => void;
-  addPolicy: (form: NewPolicyForm) => Policy | null;
-  updatePolicy: (id: string, updates: any) => void;
+  addPolicy: (form: NewPolicyForm) => Promise<Policy | null>;
+  updatePolicy: (id: string, updates: any) => Promise<void>;
   getPolicyById: (id: string) => Policy | undefined;
 }
 
@@ -473,7 +473,7 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
               <strong>{formData.commissionPercentage.toFixed(2)}%</strong>
             </div>
             <div className="calc-row">
-              <span>Expected Commission:</span>
+              <span>Expected Advance (9 months):</span>
               <strong className="commission">
                 ${expectedCommission.toFixed(2)}
               </strong>

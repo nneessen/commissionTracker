@@ -153,15 +153,27 @@ class CommissionCalculationService {
         );
       }
 
-      // Calculate commission amount
-      const annualPremium = data.monthlyPremium * 12;
+      // Calculate commission ADVANCE amount
+      // BUSINESS RULE: Advance = Monthly Premium × Advance Months × Commission Rate
+      // This is the upfront payment, NOT annual commission
+      // The advance is earned month-by-month as client pays
+      const advanceMonths = data.advanceMonths || 9; // Industry standard
+      const commissionRate = rateResult.data / 100; // Convert percentage to decimal
+
       const commissionCalculation = {
-        amount: (annualPremium * rateResult.data) / 100,
+        amount: data.monthlyPremium * advanceMonths * commissionRate,
         rate: rateResult.data
       };
 
+      logger.info('CommissionCalculation', 'Advance calculated using comp guide', {
+        monthlyPremium: data.monthlyPremium,
+        advanceMonths,
+        commissionRate: rateResult.data,
+        advanceAmount: commissionCalculation.amount
+      });
+
       return {
-        commissionAmount: commissionCalculation.amount,
+        commissionAmount: commissionCalculation.amount, // This is the ADVANCE
         commissionRate: commissionCalculation.rate,
         compGuidePercentage: commissionCalculation.rate,
         isAutoCalculated: true,
@@ -241,9 +253,19 @@ class CommissionCalculationService {
       }
 
       // Ensure required fields are set
+      // BUSINESS RULE: If commission amount not calculated, use the ONE formula
+      // Advance = Monthly Premium × Advance Months × Commission Rate
       if (!finalData.commissionAmount && finalData.monthlyPremium && finalData.commissionRate) {
         const advanceMonths = finalData.advanceMonths || 9;
+        // commissionRate is already a percentage (e.g., 102.5), so divide by 100
         finalData.commissionAmount = finalData.monthlyPremium * advanceMonths * (finalData.commissionRate / 100);
+
+        logger.info('CommissionCalculation', 'Advance calculated using fallback formula', {
+          monthlyPremium: finalData.monthlyPremium,
+          advanceMonths,
+          commissionRate: finalData.commissionRate,
+          advanceAmount: finalData.commissionAmount
+        });
       }
 
       if (!finalData.advanceMonths) {

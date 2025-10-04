@@ -49,7 +49,8 @@ CREATE POLICY "Enable read access for all users" ON products FOR SELECT USING (a
 -- Add partial indexes for better performance on filtered queries
 CREATE INDEX IF NOT EXISTS idx_policies_active_premium ON policies(annual_premium, effective_date) WHERE status = 'active';
 CREATE INDEX IF NOT EXISTS idx_commissions_pending_amount ON commissions(commission_amount, created_at) WHERE status = 'pending';
-CREATE INDEX IF NOT EXISTS idx_expenses_recent ON expenses(expense_date, amount) WHERE expense_date >= CURRENT_DATE - INTERVAL '1 year';
+-- Removed: Cannot use CURRENT_DATE in index predicate (not immutable)
+-- CREATE INDEX IF NOT EXISTS idx_expenses_recent ON expenses(expense_date, amount) WHERE expense_date >= CURRENT_DATE - INTERVAL '1 year';
 
 -- Add monthly_premium column to policies if it doesn't exist (for better calculations)
 ALTER TABLE policies ADD COLUMN IF NOT EXISTS monthly_premium DECIMAL(10,2) GENERATED ALWAYS AS (annual_premium / 12) STORED;

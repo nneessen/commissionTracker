@@ -11,9 +11,10 @@ ALTER TABLE clients ENABLE ROW LEVEL SECURITY;
 ALTER TABLE comp_guide ENABLE ROW LEVEL SECURITY;
 ALTER TABLE constants ENABLE ROW LEVEL SECURITY;
 ALTER TABLE chargebacks ENABLE ROW LEVEL SECURITY;
-ALTER TABLE settings ENABLE ROW LEVEL SECURITY;
+-- Note: agent_settings table is dropped in migration 20250930_002_remove_agents_use_users.sql
+-- ALTER TABLE agent_settings ENABLE ROW LEVEL SECURITY;
 
--- Drop existing policies if any
+-- Drop existing policies if any (from 001_initial_schema.sql)
 DROP POLICY IF EXISTS "Enable all for carriers" ON carriers;
 DROP POLICY IF EXISTS "Enable all for commissions" ON commissions;
 DROP POLICY IF EXISTS "Enable all for policies" ON policies;
@@ -22,7 +23,29 @@ DROP POLICY IF EXISTS "Enable all for clients" ON clients;
 DROP POLICY IF EXISTS "Enable all for comp_guide" ON comp_guide;
 DROP POLICY IF EXISTS "Enable all for constants" ON constants;
 DROP POLICY IF EXISTS "Enable all for chargebacks" ON chargebacks;
-DROP POLICY IF EXISTS "Enable all for settings" ON settings;
+
+-- Drop policies created in 001_initial_schema.sql
+DROP POLICY IF EXISTS "Users can view own commissions" ON commissions;
+DROP POLICY IF EXISTS "Users can insert own commissions" ON commissions;
+DROP POLICY IF EXISTS "Users can update own commissions" ON commissions;
+DROP POLICY IF EXISTS "Users can delete own commissions" ON commissions;
+
+DROP POLICY IF EXISTS "Users can view own policies" ON policies;
+DROP POLICY IF EXISTS "Users can insert own policies" ON policies;
+DROP POLICY IF EXISTS "Users can update own policies" ON policies;
+DROP POLICY IF EXISTS "Users can delete own policies" ON policies;
+
+DROP POLICY IF EXISTS "Users can view own clients" ON clients;
+DROP POLICY IF EXISTS "Users can insert own clients" ON clients;
+DROP POLICY IF EXISTS "Users can update own clients" ON clients;
+DROP POLICY IF EXISTS "Users can delete own clients" ON clients;
+
+DROP POLICY IF EXISTS "Users can view own expenses" ON expenses;
+DROP POLICY IF EXISTS "Users can insert own expenses" ON expenses;
+DROP POLICY IF EXISTS "Users can update own expenses" ON expenses;
+DROP POLICY IF EXISTS "Users can delete own expenses" ON expenses;
+
+-- DROP POLICY IF EXISTS "Enable all for agent_settings" ON agent_settings; -- table dropped in 20250930_002
 
 -- Create policies for authenticated users
 -- These policies allow authenticated users to access all data
@@ -150,23 +173,25 @@ CREATE POLICY "Users can update constants" ON constants
   USING (auth.uid() IS NOT NULL)
   WITH CHECK (auth.uid() IS NOT NULL);
 
--- Settings - users can only access their own settings
-CREATE POLICY "Users can read own settings" ON settings
-  FOR SELECT
-  USING (auth.uid() IS NOT NULL);
+-- Agent Settings - users can only access their own settings
+-- Note: RLS policies for agent_settings are already defined in 002_create_agent_settings.sql
+-- Commenting out to avoid duplicates
+-- CREATE POLICY "Users can read own agent_settings" ON agent_settings
+--   FOR SELECT
+--   USING (auth.uid() IS NOT NULL);
 
-CREATE POLICY "Users can insert own settings" ON settings
-  FOR INSERT
-  WITH CHECK (auth.uid() IS NOT NULL);
+-- CREATE POLICY "Users can insert own agent_settings" ON agent_settings
+--   FOR INSERT
+--   WITH CHECK (auth.uid() IS NOT NULL);
 
-CREATE POLICY "Users can update own settings" ON settings
-  FOR UPDATE
-  USING (auth.uid() IS NOT NULL)
-  WITH CHECK (auth.uid() IS NOT NULL);
+-- CREATE POLICY "Users can update own agent_settings" ON agent_settings
+--   FOR UPDATE
+--   USING (auth.uid() IS NOT NULL)
+--   WITH CHECK (auth.uid() IS NOT NULL);
 
-CREATE POLICY "Users can delete own settings" ON settings
-  FOR DELETE
-  USING (auth.uid() IS NOT NULL);
+-- CREATE POLICY "Users can delete own agent_settings" ON agent_settings
+--   FOR DELETE
+--   USING (auth.uid() IS NOT NULL);
 
 -- Chargebacks - users can access all chargebacks
 CREATE POLICY "Users can read chargebacks" ON chargebacks

@@ -17,22 +17,31 @@ export interface ClientData {
 
 export interface Client extends ClientData {
   id: string;
+  user_id?: string;
   created_at: string;
   updated_at: string;
 }
 
 class ClientService {
   /**
-   * Create or find a client by name
-   * If a client with the same name exists, return it
+   * Create or find a client by name for a specific user
+   * If a client with the same name exists for this user, return it
    * Otherwise create a new client
+   *
+   * @param clientData - Client information
+   * @param userId - User ID from auth.users (required for RLS policy compliance)
    */
-  async createOrFind(clientData: ClientData): Promise<Client> {
-    // First, try to find existing client by name
+  async createOrFind(clientData: ClientData, userId: string): Promise<Client> {
+    if (!userId) {
+      throw new Error('User ID is required to create or find client');
+    }
+
+    // First, try to find existing client by name AND user_id
     const { data: existingClients, error: searchError } = await supabase
       .from('clients')
       .select('*')
       .eq('name', clientData.name)
+      .eq('user_id', userId)
       .limit(1);
 
     if (searchError) {
@@ -43,10 +52,10 @@ class ClientService {
       return existingClients[0];
     }
 
-    // Client doesn't exist, create new one
+    // Client doesn't exist, create new one with user_id for RLS
     const { data: newClient, error: createError } = await supabase
       .from('clients')
-      .insert([clientData])
+      .insert([{ ...clientData, user_id: userId }])
       .select()
       .single();
 

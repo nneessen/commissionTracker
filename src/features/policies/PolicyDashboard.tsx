@@ -9,6 +9,7 @@ import {
   useDeletePolicy,
 } from "../../hooks/policies";
 import { useCarriers } from "../../hooks/useCarriers";
+import { useAuth } from "../../contexts/AuthContext";
 import {
   PolicyStatus,
   PolicyFilters,
@@ -22,6 +23,7 @@ export const PolicyDashboard: React.FC = () => {
   const [isPolicyFormOpen, setIsPolicyFormOpen] = useState(false);
   const [editingPolicyId, setEditingPolicyId] = useState<string | undefined>();
 
+  const { user } = useAuth();
   const { data: policies = [], isLoading, error, refetch } = usePoliciesList();
 
   const createPolicyMutation = useCreatePolicy();
@@ -33,8 +35,13 @@ export const PolicyDashboard: React.FC = () => {
   // Adapter functions to match old interface that PolicyList/PolicyForm expect
   const addPolicy = async (formData: any) => {
     try {
+      // Verify user is authenticated
+      if (!user?.id) {
+        throw new Error('You must be logged in to create a policy');
+      }
+
       // CRITICAL: Database uses client_id FK, not inline client data
-      // First, create or find the client
+      // First, create or find the client (with user_id for RLS compliance)
       const client = await clientService.createOrFind({
         name: formData.clientName,
         email: formData.clientEmail || undefined,
@@ -42,7 +49,7 @@ export const PolicyDashboard: React.FC = () => {
         address: {
           state: formData.clientState,
         },
-      });
+      }, user.id);
 
       // Calculate monthly premium based on payment frequency
       const monthlyPremium = formData.paymentFrequency === 'annual'
@@ -52,6 +59,13 @@ export const PolicyDashboard: React.FC = () => {
         : formData.paymentFrequency === 'quarterly'
         ? (formData.annualPremium || 0) / 3
         : (formData.annualPremium || 0) / 12; // Default to monthly
+
+      // Validate commission percentage (database DECIMAL(5,4) = max 999.99%)
+      const commissionPercent = formData.commissionPercentage || 0;
+      if (commissionPercent < 0 || commissionPercent > 999.99) {
+        showToast.error('Commission percentage must be between 0 and 999.99');
+        throw new Error('Commission percentage must be between 0 and 999.99');
+      }
 
       // Convert form data to match actual database schema
       const policyData: CreatePolicyData = {
@@ -68,7 +82,7 @@ export const PolicyDashboard: React.FC = () => {
         annualPremium: formData.annualPremium || 0,
         monthlyPremium: monthlyPremium, // Required field!
         paymentFrequency: formData.paymentFrequency,
-        commissionPercentage: (formData.commissionPercentage || 0) / 100, // Convert percentage to decimal
+        commissionPercentage: commissionPercent / 100, // Convert percentage to decimal
         notes: formData.notes || undefined,
       };
 
@@ -98,7 +112,12 @@ export const PolicyDashboard: React.FC = () => {
     let policyData: Partial<CreatePolicyData>;
 
     if ("clientName" in updates) {
-      // First, create or find the client (similar to addPolicy)
+      // Verify user is authenticated
+      if (!user?.id) {
+        throw new Error('You must be logged in to update a policy');
+      }
+
+      // First, create or find the client (similar to addPolicy, with user_id for RLS)
       const client = await clientService.createOrFind({
         name: updates.clientName,
         email: updates.clientEmail || undefined,
@@ -106,7 +125,14 @@ export const PolicyDashboard: React.FC = () => {
         address: {
           state: updates.clientState,
         },
-      });
+      }, user.id);
+
+      // Validate commission percentage (database DECIMAL(5,4) = max 999.99%)
+      const updateCommissionPercent = updates.commissionPercentage || 0;
+      if (updateCommissionPercent < 0 || updateCommissionPercent > 999.99) {
+        showToast.error('Commission percentage must be between 0 and 999.99');
+        throw new Error('Commission percentage must be between 0 and 999.99');
+      }
 
       policyData = {
         policyNumber: updates.policyNumber,
@@ -122,7 +148,7 @@ export const PolicyDashboard: React.FC = () => {
         annualPremium: updates.annualPremium || 0,
         monthlyPremium: updates.monthlyPremium || (updates.annualPremium || 0) / 12,
         paymentFrequency: updates.paymentFrequency,
-        commissionPercentage: (updates.commissionPercentage || 0) / 100, // Convert to decimal
+        commissionPercentage: updateCommissionPercent / 100, // Convert to decimal
         notes: updates.notes,
       };
     } else {

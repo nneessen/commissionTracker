@@ -32,9 +32,11 @@ INSERT INTO constants (key, value, description) VALUES
 ON CONFLICT (key) DO NOTHING;
 
 -- Insert some sample carriers if none exist
-INSERT INTO carriers (name, commission_rates) VALUES
+-- Note: carriers table already exists from 001_initial_schema.sql with different schema
+-- Schema has: id, name, code, contact_info, commission_structure, created_at, updated_at
+INSERT INTO carriers (name, commission_structure) VALUES
   ('Sample Insurance Co.', '{"first_year": 0.08, "renewal": 0.02}')
-ON CONFLICT DO NOTHING;
+ON CONFLICT (name) DO NOTHING;
 
 -- Create indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_constants_key ON constants(key);
@@ -44,9 +46,22 @@ ALTER TABLE carriers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE constants ENABLE ROW LEVEL SECURITY;
 
 -- Create RLS policies for public read access
-CREATE POLICY IF NOT EXISTS "Enable read access for all users" ON carriers FOR SELECT USING (true);
-CREATE POLICY IF NOT EXISTS "Enable read access for all users" ON constants FOR SELECT USING (true);
+-- Note: policies are created in 001_initial_schema.sql, so skip if they already exist
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'carriers' AND policyname = 'Enable read access for all users') THEN
+    CREATE POLICY "Enable read access for all users" ON carriers FOR SELECT USING (true);
+  END IF;
 
--- Allow authenticated users to update constants
-CREATE POLICY IF NOT EXISTS "Enable update for authenticated users" ON constants FOR UPDATE USING (auth.role() = 'authenticated');
-CREATE POLICY IF NOT EXISTS "Enable insert for authenticated users" ON constants FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'constants' AND policyname = 'Enable read access for all users') THEN
+    CREATE POLICY "Enable read access for all users" ON constants FOR SELECT USING (true);
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'constants' AND policyname = 'Enable update for authenticated users') THEN
+    CREATE POLICY "Enable update for authenticated users" ON constants FOR UPDATE USING (auth.role() = 'authenticated');
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'constants' AND policyname = 'Enable insert for authenticated users') THEN
+    CREATE POLICY "Enable insert for authenticated users" ON constants FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+  END IF;
+END $$;

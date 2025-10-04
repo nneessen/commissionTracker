@@ -84,8 +84,8 @@ SELECT
   id as agent_id,
   SPLIT_PART(name, ' ', 1) as first_name,
   CASE
-    WHEN array_length(string_to_array(name, ' '), 1) > 1
-    THEN array_to_string(string_to_array(name, ' ')[2:], ' ')
+    WHEN POSITION(' ' IN name) > 0
+    THEN SUBSTRING(name FROM POSITION(' ' IN name) + 1)
     ELSE NULL
   END as last_name,
   CASE comp_level

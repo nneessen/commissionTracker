@@ -49,14 +49,25 @@ export function calculatePaymentAmount(
 }
 
 /**
- * Calculate expected commission from annual premium and percentage
+ * Calculate expected commission advance (9-month advance by default)
+ * Formula: Monthly Premium × Advance Months × Commission Rate
+ *
+ * @param annualPremium - Annual premium amount
+ * @param commissionPercentage - Commission percentage (e.g., 100 for 100%)
+ * @param advanceMonths - Number of months advance (default 9)
  */
 export function calculateExpectedCommission(
   annualPremium: number,
-  commissionPercentage: number
+  commissionPercentage: number,
+  advanceMonths: number = 9
 ): number {
   if (annualPremium <= 0 || commissionPercentage <= 0) return 0;
-  return (annualPremium * commissionPercentage) / 100;
+
+  // Convert annual to monthly premium
+  const monthlyPremium = annualPremium / 12;
+
+  // Calculate advance: Monthly Premium × Advance Months × Commission Rate
+  return (monthlyPremium * advanceMonths * commissionPercentage) / 100;
 }
 
 /**
