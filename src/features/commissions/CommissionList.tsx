@@ -6,10 +6,11 @@ import { useCommissions, useDeleteCommission, useCommissionMetrics, useCarriers 
 import { CommissionForm } from './CommissionForm';
 
 export const CommissionList: React.FC = () => {
-  const { paginatedCommissions: commissions, refresh } = useCommissions();
+  const { data: commissions = [] } = useCommissions();
   const { mutate: deleteCommission, isPending: isDeleting } = useDeleteCommission();
-  const { metrics: commissionSummary } = useCommissionMetrics();
-  const { getCarrierById } = useCarriers();
+  const { data: commissionSummary } = useCommissionMetrics();
+  const { data: carriers = [] } = useCarriers();
+  const getCarrierById = (id: string) => carriers.find(c => c.id === id);
   const [showAddModal, setShowAddModal] = useState(false);
 
   const handleDeleteCommission = async (id: string) => {

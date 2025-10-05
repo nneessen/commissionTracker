@@ -13,8 +13,9 @@ export interface CompGuideEntry extends CompGuideRow {}
 
 export interface CompGuideCreateData {
   carrier_id: string;
+  product_id?: string;
   product_type: Database["public"]["Enums"]["product_type"];
-  comp_level: Database["public"]["Enums"]["comp_level"];
+  contract_level: number;
   commission_percentage: number;
   bonus_percentage?: number;
   effective_date: string;
@@ -101,8 +102,9 @@ class CompGuideService {
   async createEntry(data: CompGuideCreateData) {
     const entryData: CompGuideInsert = {
       carrier_id: data.carrier_id,
+      product_id: data.product_id,
       product_type: data.product_type,
-      comp_level: data.comp_level,
+      contract_level: data.contract_level,
       commission_percentage: data.commission_percentage,
       bonus_percentage: data.bonus_percentage,
       effective_date: data.effective_date,
@@ -136,7 +138,7 @@ class CompGuideService {
     const updateData: CompGuideUpdate = {
       ...(data.carrier_id && { carrier_id: data.carrier_id }),
       ...(data.product_type && { product_type: data.product_type }),
-      ...(data.comp_level && { comp_level: data.comp_level }),
+      ...(data.contract_level && { contract_level: data.contract_level }),
       ...(data.commission_percentage !== undefined && {
         commission_percentage: data.commission_percentage,
       }),
@@ -278,7 +280,41 @@ class CompGuideService {
       .from("comp_guide")
       .select("*")
       .eq("carrier_id", carrierId)
-      .order("product_name", { ascending: true });
+      .order("contract_level", { ascending: true });
+  }
+
+  /**
+   * Retrieves all compensation guide entries for a specific product
+   *
+   * @param productId - The unique identifier of the product
+   * @returns Promise resolving to Supabase query result with product's entries
+   *
+   * @example
+   * ```ts
+   * const { data, error } = await compGuideService.getEntriesByProduct('product-123');
+   * ```
+   */
+  async getEntriesByProduct(productId: string) {
+    return await supabase
+      .from("comp_guide")
+      .select("*")
+      .eq("product_id", productId)
+      .order("contract_level", { ascending: true });
+  }
+
+  /**
+   * Creates multiple comp guide entries in a single operation (for new products)
+   *
+   * @param entries - Array of comp guide entries to create
+   * @returns Promise resolving to Supabase query result with created entries
+   *
+   * @example
+   * ```ts
+   * const { data, error } = await compGuideService.createBulkEntries([...]);
+   * ```
+   */
+  async createBulkEntries(entries: CompGuideInsert[]) {
+    return await supabase.from("comp_guide").insert(entries).select();
   }
 
   /**
@@ -334,11 +370,104 @@ class CompGuideService {
    * ]);
    * ```
    */
+  /**
+   * Get all commission data in a unified format for the grid
+   * Returns carriers with their products and all commission rates
+   */
+  async getAllCommissionData() {
+    const { data, error } = await supabase
+      .from('carriers')
+      .select(`
+        id,
+        name,
+        products!products_carrier_id_fkey (
+          id,
+          name,
+          product_type,
+          is_active
+        ),
+        comp_guide!comp_guide_carrier_id_fkey (
+          id,
+          product_id,
+          contract_level,
+          commission_percentage
+        )
+      `)
+      .eq('is_active', true)
+      .order('name');
+
+    if (error) throw error;
+    
+    // Transform the data into a grid-friendly format
+    const gridData = [];
+    
+    for (const carrier of data || []) {
+      // Get unique products
+      const productsMap = new Map();
+      
+      // Add products from products table
+      for (const product of carrier.products || []) {
+        if (!productsMap.has(product.id)) {
+          productsMap.set(product.id, {
+            carrierId: carrier.id,
+            carrierName: carrier.name,
+            productId: product.id,
+            productName: product.name,
+            productType: product.product_type,
+            isActive: product.is_active,
+            rates: {}
+          });
+        }
+      }
+      
+      // Add commission rates to products
+      for (const compEntry of carrier.comp_guide || []) {
+        if (compEntry.product_id && productsMap.has(compEntry.product_id)) {
+          const product = productsMap.get(compEntry.product_id);
+          product.rates[compEntry.contract_level] = compEntry.commission_percentage;
+        }
+      }
+      
+      // Add products without specific product_id (carrier-level rates)
+      const carrierLevelRates = (carrier.comp_guide || [])
+        .filter((entry: any) => !entry.product_id)
+        .reduce((acc: Record<number, number>, entry: any) => {
+          acc[entry.contract_level] = entry.commission_percentage;
+          return acc;
+        }, {} as Record<number, number>);
+      
+      // If there are carrier-level rates but no products, add a placeholder
+      if (Object.keys(carrierLevelRates).length > 0 && productsMap.size === 0) {
+        gridData.push({
+          carrierId: carrier.id,
+          carrierName: carrier.name,
+          productId: null,
+          productName: 'Default Rates',
+          productType: null,
+          isActive: true,
+          rates: carrierLevelRates
+        });
+      }
+      
+      // Add all products to grid data
+      for (const product of productsMap.values()) {
+        // If product has no rates, use carrier-level rates
+        if (Object.keys(product.rates).length === 0 && Object.keys(carrierLevelRates).length > 0) {
+          product.rates = carrierLevelRates;
+        }
+        gridData.push(product);
+      }
+    }
+    
+    return gridData;
+  }
+
   async bulkImport(entries: CompGuideCreateData[]) {
     const entryData: CompGuideInsert[] = entries.map((entry) => ({
       carrier_id: entry.carrier_id,
+      product_id: entry.product_id,
       product_type: entry.product_type,
-      comp_level: entry.comp_level,
+      contract_level: entry.contract_level,
       commission_percentage: entry.commission_percentage,
       bonus_percentage: entry.bonus_percentage,
       effective_date: entry.effective_date,

@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { usePoliciesList } from './usePoliciesList';
+import { usePolicies } from './usePolicies';
 import { useSort } from '../base/useSort';
 import { usePagination } from '../base/usePagination';
 import { Policy, PolicyFilters } from '../../types/policy.types';
@@ -12,7 +12,7 @@ import { Policy, PolicyFilters } from '../../types/policy.types';
  */
 export function usePoliciesView() {
   // Fetch all policies using TanStack Query
-  const { data: policies = [], isLoading, error, refetch } = usePoliciesList();
+  const { data: policies = [], isLoading, error, refetch } = usePolicies();
 
   // Client-side filtering state
   const [filters, setFilters] = useState<PolicyFilters>({});

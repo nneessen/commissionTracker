@@ -1,7 +1,7 @@
 // PolicyFormUpdated.tsx - Updated version that uses real products from database
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../../contexts/AuthContext";
-import { useCarriers } from "../../hooks/useCarriers";
+import { useCarriers } from "../../hooks/carriers";
 import { useProducts } from "../../hooks/products/useProducts";
 import { useCommissionRate } from "../../hooks/commissions/useCommissionRate";
 import {
@@ -68,7 +68,7 @@ export const PolicyFormUpdated: React.FC<PolicyFormProps> = ({
   updatePolicy,
   getPolicyById,
 }) => {
-  const { carriers } = useCarriers();
+  const { data: carriers = [] } = useCarriers();
   const { user } = useAuth();
 
   // Get agent's contract level (default to 100 if not set)

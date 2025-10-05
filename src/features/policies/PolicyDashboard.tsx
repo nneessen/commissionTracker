@@ -3,12 +3,12 @@ import { Plus, AlertCircle } from "lucide-react";
 import { PolicyForm } from "./PolicyForm";
 import { PolicyList } from "./PolicyList";
 import {
-  usePoliciesList,
+  usePolicies,
   useCreatePolicy,
   useUpdatePolicy,
   useDeletePolicy,
 } from "../../hooks/policies";
-import { useCarriers } from "../../hooks/useCarriers";
+import { useCarriers } from "../../hooks/carriers";
 import { useAuth } from "../../contexts/AuthContext";
 import {
   PolicyStatus,
@@ -24,7 +24,7 @@ export const PolicyDashboard: React.FC = () => {
   const [editingPolicyId, setEditingPolicyId] = useState<string | undefined>();
 
   const { user } = useAuth();
-  const { data: policies = [], isLoading, error, refetch } = usePoliciesList();
+  const { data: policies = [], isLoading, error, refetch } = usePolicies();
 
   const createPolicyMutation = useCreatePolicy();
   const updatePolicyMutation = useUpdatePolicy();

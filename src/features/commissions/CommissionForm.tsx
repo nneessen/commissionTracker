@@ -76,10 +76,11 @@ export const CommissionForm: React.FC<CommissionFormProps> = ({
   isOpen,
   onClose,
 }) => {
-  const { carriers, getCarrierById, getActiveCarriers } = useCarriers();
+  const { data: carriers = [] } = useCarriers();
   const { mutate: createCommission, isPending: isCreating, error } = useCreateCommission();
 
-  const activeCarriers = getActiveCarriers();
+  const getCarrierById = (id: string) => carriers.find(c => c.id === id);
+  const activeCarriers = carriers.filter(c => c.is_active);
 
   const [formData, setFormData] = useState<NewCommissionForm>({
     clientName: '',

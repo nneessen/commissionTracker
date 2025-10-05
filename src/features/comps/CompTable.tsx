@@ -1,6 +1,16 @@
-import React, { useState, useMemo } from 'react';
-import { ChevronLeft, ChevronRight, ArrowUp, ArrowDown, Building2, Package, Percent, Calendar, AlertCircle } from 'lucide-react';
-import { Comp } from '../../types/comp.types';
+import React, { useState } from "react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  ArrowUp,
+  ArrowDown,
+  Building2,
+  Package,
+  Percent,
+  Calendar,
+  AlertCircle,
+} from "lucide-react";
+import { Comp } from "../../types/comp.types";
 
 interface CompTableProps {
   data: Comp[];
@@ -9,47 +19,41 @@ interface CompTableProps {
   onPaginationChange?: (newPagination: any) => void;
 }
 
-type SortField = 'carrier_id' | 'product_type' | 'commission_percentage' | 'comp_level';
-type SortOrder = 'asc' | 'desc';
+type SortField =
+  | "carrier_id"
+  | "product_type"
+  | "commission_percentage"
+  | "comp_level";
+type SortOrder = "asc" | "desc";
 
-export function CompTable({
-  data,
-  isLoading,
-  error
-}: CompTableProps) {
+export function CompTable({ data, isLoading, error }: CompTableProps) {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
-  const [sortBy, setSortBy] = useState<SortField>('carrier_id');
-  const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
+  const [sortBy, setSortBy] = useState<SortField>("carrier_id");
+  const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
 
-  // Client-side sorting
-  const sortedData = useMemo(() => {
-    if (!data) return [];
+  // Sort data (React 19 doesn't need useMemo)
+  const sortedData = !data ? [] : [...data].sort((a, b) => {
+    let aVal = a[sortBy];
+    let bVal = b[sortBy];
 
-    return [...data].sort((a, b) => {
-      let aVal = a[sortBy];
-      let bVal = b[sortBy];
+    if (typeof aVal === "string") aVal = aVal.toLowerCase();
+    if (typeof bVal === "string") bVal = bVal.toLowerCase();
 
-      if (typeof aVal === 'string') aVal = aVal.toLowerCase();
-      if (typeof bVal === 'string') bVal = bVal.toLowerCase();
+    if (aVal < bVal) return sortOrder === "asc" ? -1 : 1;
+    if (aVal > bVal) return sortOrder === "asc" ? 1 : -1;
+    return 0;
+  });
 
-      if (aVal < bVal) return sortOrder === 'asc' ? -1 : 1;
-      if (aVal > bVal) return sortOrder === 'asc' ? 1 : -1;
-      return 0;
-    });
-  }, [data, sortBy, sortOrder]);
-
-  // Client-side pagination
-  const paginatedData = useMemo(() => {
-    const startIndex = (page - 1) * pageSize;
-    return sortedData.slice(startIndex, startIndex + pageSize);
-  }, [sortedData, page, pageSize]);
+  // Client-side pagination (React 19 doesn't need useMemo)
+  const startIndex = (page - 1) * pageSize;
+  const paginatedData = sortedData.slice(startIndex, startIndex + pageSize);
 
   const totalPages = Math.ceil((data?.length || 0) / pageSize);
   const total = data?.length || 0;
 
   const handleSort = (field: SortField) => {
-    const newOrder = sortBy === field && sortOrder === 'asc' ? 'desc' : 'asc';
+    const newOrder = sortBy === field && sortOrder === "asc" ? "desc" : "asc";
     setSortBy(field);
     setSortOrder(newOrder);
     setPage(1); // Reset to first page when sorting
@@ -66,9 +70,11 @@ export function CompTable({
 
   const getSortIcon = (field: SortField) => {
     if (sortBy !== field) return null;
-    return sortOrder === 'asc' ?
-      <ArrowUp className="h-4 w-4 ml-1" /> :
-      <ArrowDown className="h-4 w-4 ml-1" />;
+    return sortOrder === "asc" ? (
+      <ArrowUp className="h-4 w-4 ml-1" />
+    ) : (
+      <ArrowDown className="h-4 w-4 ml-1" />
+    );
   };
 
   const formatCommissionRate = (rate: number) => {
@@ -77,10 +83,10 @@ export function CompTable({
 
   const getCompLevelBadge = (level: string) => {
     const badges = {
-      premium: { label: 'Premium', color: 'bg-purple-100 text-purple-800' },
-      enhanced: { label: 'Enhanced', color: 'bg-blue-100 text-blue-800' },
-      release: { label: 'Release', color: 'bg-green-100 text-green-800' },
-      street: { label: 'Street', color: 'bg-gray-100 text-gray-800' }
+      premium: { label: "Premium", color: "bg-purple-100 text-purple-800" },
+      enhanced: { label: "Enhanced", color: "bg-blue-100 text-blue-800" },
+      release: { label: "Release", color: "bg-green-100 text-green-800" },
+      street: { label: "Street", color: "bg-gray-100 text-gray-800" },
     };
     return badges[level as keyof typeof badges] || badges.street;
   };
@@ -112,7 +118,8 @@ export function CompTable({
         <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
           <div className="flex items-center space-x-4">
             <p className="text-sm text-gray-700">
-              Showing <span className="font-medium">{startItem}</span> to <span className="font-medium">{endItem}</span> of{' '}
+              Showing <span className="font-medium">{startItem}</span> to{" "}
+              <span className="font-medium">{endItem}</span> of{" "}
               <span className="font-medium">{total}</span> results
             </p>
             <div className="flex items-center space-x-2">
@@ -132,7 +139,10 @@ export function CompTable({
             </div>
           </div>
           <div>
-            <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+            <nav
+              className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
+              aria-label="Pagination"
+            >
               <button
                 onClick={() => handlePageChange(page - 1)}
                 disabled={page <= 1}
@@ -161,8 +171,8 @@ export function CompTable({
                     onClick={() => handlePageChange(pageNum)}
                     className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
                       pageNum === page
-                        ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
-                        : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                        ? "z-10 bg-blue-50 border-blue-500 text-blue-600"
+                        : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
                     }`}
                   >
                     {pageNum}
@@ -189,9 +199,12 @@ export function CompTable({
     return (
       <div className="text-center py-12">
         <AlertCircle className="mx-auto h-12 w-12 text-red-400 mb-4" />
-        <h3 className="text-lg font-medium text-gray-900 mb-2">Error Loading Comp Data</h3>
+        <h3 className="text-lg font-medium text-gray-900 mb-2">
+          Error Loading Comp Data
+        </h3>
         <p className="text-sm text-gray-500 mb-4">
-          {error || 'An unexpected error occurred while loading the comp guide.'}
+          {error ||
+            "An unexpected error occurred while loading the comp guide."}
         </p>
         <button
           onClick={() => window.location.reload()}
@@ -212,47 +225,50 @@ export function CompTable({
               <th
                 scope="col"
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                onClick={() => handleSort('carrier_id')}
+                onClick={() => handleSort("carrier_id")}
               >
                 <div className="flex items-center">
                   <Building2 className="h-4 w-4 mr-2" />
                   Carrier
-                  {getSortIcon('carrier_id')}
+                  {getSortIcon("carrier_id")}
                 </div>
               </th>
               <th
                 scope="col"
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                onClick={() => handleSort('product_type')}
+                onClick={() => handleSort("product_type")}
               >
                 <div className="flex items-center">
                   <Package className="h-4 w-4 mr-2" />
                   Product
-                  {getSortIcon('product_type')}
+                  {getSortIcon("product_type")}
                 </div>
               </th>
               <th
                 scope="col"
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                onClick={() => handleSort('comp_level')}
+                onClick={() => handleSort("comp_level")}
               >
                 <div className="flex items-center">
                   Level
-                  {getSortIcon('comp_level')}
+                  {getSortIcon("comp_level")}
                 </div>
               </th>
               <th
                 scope="col"
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                onClick={() => handleSort('commission_percentage')}
+                onClick={() => handleSort("commission_percentage")}
               >
                 <div className="flex items-center">
                   <Percent className="h-4 w-4 mr-2" />
                   Commission Rate
-                  {getSortIcon('commission_percentage')}
+                  {getSortIcon("commission_percentage")}
                 </div>
               </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th
+                scope="col"
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
                 <div className="flex items-center">
                   <Calendar className="h-4 w-4 mr-2" />
                   Effective Date
@@ -275,8 +291,12 @@ export function CompTable({
                 <td colSpan={5} className="px-6 py-12 text-center">
                   <div className="text-gray-500">
                     <Package className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">No Comp Data Found</h3>
-                    <p className="text-sm">Try adjusting your search filters or check back later.</p>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">
+                      No Comp Data Found
+                    </h3>
+                    <p className="text-sm">
+                      Try adjusting your search filters or check back later.
+                    </p>
                   </div>
                 </td>
               </tr>
@@ -288,23 +308,37 @@ export function CompTable({
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div>
-                          <div className="text-sm font-medium text-gray-900">{record.carrier_id}</div>
+                          <div className="text-sm font-medium text-gray-900">
+                            {record.carrier_id}
+                          </div>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div>
                         <div className="text-sm font-medium text-gray-900">
-                          {record.product_type.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                          {record.product_type
+                            .split("_")
+                            .map(
+                              (word) =>
+                                word.charAt(0).toUpperCase() + word.slice(1),
+                            )
+                            .join(" ")}
                         </div>
-                        <div className="text-sm text-gray-500">{record.product_type}</div>
+                        <div className="text-sm text-gray-500">
+                          {record.product_type}
+                        </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${levelBadge.color}`}>
+                      <span
+                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${levelBadge.color}`}
+                      >
                         {levelBadge.label}
                       </span>
-                      <div className="text-xs text-gray-500 mt-1">{record.comp_level}</div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        {record.comp_level}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-lg font-semibold text-blue-600">
@@ -320,7 +354,10 @@ export function CompTable({
                       {new Date(record.effective_date).toLocaleDateString()}
                       {record.expiration_date && (
                         <div className="text-xs text-gray-400">
-                          Expires: {new Date(record.expiration_date).toLocaleDateString()}
+                          Expires:{" "}
+                          {new Date(
+                            record.expiration_date,
+                          ).toLocaleDateString()}
                         </div>
                       )}
                     </td>

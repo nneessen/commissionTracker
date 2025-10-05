@@ -1,4 +1,4 @@
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { policyService } from '../../services/policies/policyService';
 import { Policy } from '../../types/policy.types';
 
@@ -72,6 +72,7 @@ export function useInfinitePolicies(options: UseInfinitePoliciesOptions = {}) {
 
 /**
  * Hook to get total count of policies (separate from pagination)
+ * Returns standard TanStack Query result
  */
 export function usePolicyCount(filters?: {
   status?: string;
@@ -79,21 +80,12 @@ export function usePolicyCount(filters?: {
   productId?: string;
   userId?: string;
 }) {
-  const queryResult = useInfiniteQuery<number>({
+  return useQuery({
     queryKey: ['policies', 'count', filters],
     queryFn: async () => {
       const repository = (policyService as any).repository;
       return repository.countPolicies(filters);
     },
-    initialPageParam: undefined,
-    getNextPageParam: () => undefined, // No pagination for count
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
-
-  return {
-    count: queryResult.data?.pages[0] || 0,
-    isLoading: queryResult.isLoading,
-    isError: queryResult.isError,
-    error: queryResult.error,
-  };
 }

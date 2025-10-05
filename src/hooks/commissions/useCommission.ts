@@ -1,55 +1,33 @@
 // src/hooks/commissions/useCommission.ts
-import { logger } from '../../services/base/logger';
-import { useState, useEffect } from 'react';
-import { Commission } from '../../types/commission.types';
+
+import { useQuery } from '@tanstack/react-query';
 import { commissionService } from '../../services';
 
-export interface UseCommissionResult {
-  commission: Commission | null;
-  isLoading: boolean;
-  error: string | null;
-  clearError: () => void;
-  refresh: () => void;
+export interface UseCommissionOptions {
+  enabled?: boolean;
+  staleTime?: number;
 }
 
-export function useCommission(id: string): UseCommissionResult {
-  const [commission, setCommission] = useState<Commission | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [refreshKey, setRefreshKey] = useState(0);
-
-  useEffect(() => {
-    const loadCommission = async () => {
+/**
+ * Fetch a single commission by ID using TanStack Query
+ *
+ * @param id Commission ID
+ * @param options Optional configuration for the query
+ * @returns TanStack Query result with commission data
+ */
+export function useCommission(id: string, options?: UseCommissionOptions) {
+  return useQuery({
+    queryKey: ['commissions', id],
+    queryFn: async () => {
       if (!id) {
-        setCommission(null);
-        setIsLoading(false);
-        return;
+        throw new Error('Commission ID is required');
       }
-
-      try {
-        setIsLoading(true);
-        setError(null);
-        const data = await commissionService.getById(id);
-        setCommission(data);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load commission');
-        logger.error('Error loading commission', err instanceof Error ? err : String(err), 'Migration');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadCommission();
-  }, [id, refreshKey]);
-
-  const clearError = () => setError(null);
-  const refresh = () => setRefreshKey(key => key + 1);
-
-  return {
-    commission,
-    isLoading,
-    error,
-    clearError,
-    refresh,
-  };
+      return await commissionService.getById(id);
+    },
+    staleTime: options?.staleTime ?? 5 * 60 * 1000, // 5 minutes default
+    gcTime: 10 * 60 * 1000, // 10 minutes garbage collection
+    enabled: options?.enabled ?? !!id,
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+  });
 }

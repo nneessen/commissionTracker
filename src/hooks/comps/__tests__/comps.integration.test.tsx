@@ -6,7 +6,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useCompsList, useCreateComp, useUpdateComp, useDeleteComp } from '../index';
+import { useComps, useCreateComp, useUpdateComp, useDeleteComp } from '../index';
 
 // Create a wrapper with QueryClient for tests
 function createWrapper() {
@@ -31,10 +31,10 @@ describe('Comp Hooks Integration', () => {
     // Clear any cached data between tests
   });
 
-  describe('useCompsList', () => {
+  describe('useComps', () => {
     it('should have correct structure and types', () => {
       const wrapper = createWrapper();
-      const { result } = renderHook(() => useCompsList(), { wrapper });
+      const { result } = renderHook(() => useComps(), { wrapper });
 
       // Verify hook returns TanStack Query result
       expect(result.current).toHaveProperty('data');
@@ -50,7 +50,7 @@ describe('Comp Hooks Integration', () => {
         product_type: 'term_life' as const,
       };
 
-      const { result } = renderHook(() => useCompsList(filters), { wrapper });
+      const { result } = renderHook(() => useComps(filters), { wrapper });
 
       // Should not throw error with filters
       expect(result.current).toBeDefined();

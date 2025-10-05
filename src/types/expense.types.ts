@@ -35,7 +35,6 @@ export interface NewExpenseForm {
 
 export interface Constants {
   avgAP: number;
-  commissionRate: number;
   target1: number;
   target2: number;
 }
@@ -62,8 +61,12 @@ export interface PerformanceMetrics {
 }
 
 // Service layer types
-export type CreateExpenseData = Omit<Expense, 'id' | 'createdAt' | 'updatedAt' | 'created_at' | 'updated_at'>;
+export type CreateExpenseData = Omit<
+  Expense,
+  "id" | "createdAt" | "updatedAt" | "created_at" | "updated_at"
+>;
 export type UpdateExpenseData = Partial<CreateExpenseData>;
 
 // Legacy support
 export interface ExpenseItem extends Expense {}
+

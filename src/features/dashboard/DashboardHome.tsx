@@ -19,8 +19,8 @@ import { CalculationResult } from '../../types/expense.types';
 
 export const DashboardHome: React.FC = () => {
   // Use new modular hooks
-  const { metrics: expenseMetrics } = useExpenseMetrics();
-  const { constants } = useConstants();
+  const { data: expenseMetrics } = useExpenseMetrics();
+  const { data: constants } = useConstants();
   const { commissionMetrics, policyMetrics, clientMetrics } = useMetrics();
 
   const formatCurrency = (value: number) => {

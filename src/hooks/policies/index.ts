@@ -1,13 +1,11 @@
-// /home/nneessen/projects/commissionTracker/src/hooks/policies/index.ts
+// src/hooks/policies/index.ts
 
-// Simple, single-purpose hooks for policy operations
+// TanStack Query hooks for policy data fetching
+export { usePolicies } from './usePolicies';
+export { usePoliciesView } from './usePoliciesView';
+export { useInfinitePolicies } from './useInfinitePolicies';
 
-// Query hooks
-export { usePolicies } from './usePolicies'; // Legacy - will be deprecated
-export { usePoliciesList } from './usePoliciesList';
-export { usePoliciesView } from './usePoliciesView'; // Recommended for UI components
-
-// Mutation hooks
+// Mutation hooks for policy operations
 export { useCreatePolicy } from './useCreatePolicy';
 export { useUpdatePolicy } from './useUpdatePolicy';
 export { useDeletePolicy } from './useDeletePolicy';

@@ -1,7 +1,7 @@
 // /home/nneessen/projects/commissionTracker/src/features/policies/PolicyForm.tsx
 
 import React, { useState, useEffect } from "react";
-import { useLegacyCarriers as useCarriers } from "../../hooks/carriers/useCarriers";
+import { useCarriers } from "../../hooks/carriers";
 import { useProducts } from "../../hooks/products/useProducts";
 import {
   NewPolicyForm,
@@ -89,7 +89,7 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
   updatePolicy,
   getPolicyById,
 }) => {
-  const { carriers } = useCarriers();
+  const { data: carriers = [] } = useCarriers();
 
   const [formData, setFormData] = useState<NewPolicyForm>({
     clientName: "",

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { logger } from '../../services/base/logger';
 import { Download, Settings, Calculator, Database } from 'lucide-react';
-import { useCompsList } from '../../hooks/comps';
+import { useComps } from '../../hooks/comps';
 import { CompFilters } from '../../types/comp.types';
 import { UserContractSettings } from './UserContractSettings';
 import { CompTable } from './CompTable';
@@ -12,7 +12,7 @@ export function CompGuide() {
   const [activeTab, setActiveTab] = useState<'guide' | 'settings'>('guide');
   const [filters, setFilters] = useState<CompFilters>({});
 
-  const { data: comps, isLoading, error } = useCompsList(filters);
+  const { data: comps, isLoading, error } = useComps(filters);
 
   const handleFilterChange = (newFilters: CompFilters) => {
     setFilters(newFilters);

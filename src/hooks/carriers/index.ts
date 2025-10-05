@@ -1,7 +1,9 @@
-// /home/nneessen/projects/commissionTracker/src/hooks/carriers/index.ts
+// src/hooks/carriers/index.ts
 
-// Simple, single-purpose hooks for carrier operations
-export { useCarriersList } from './useCarriersList';
+// TanStack Query hooks for carrier data fetching
+export { useCarriers, carrierQueryKeys } from './useCarriers';
+
+// Mutation hooks for carrier operations
 export { useCreateCarrier } from './useCreateCarrier';
 export { useUpdateCarrier } from './useUpdateCarrier';
 export { useDeleteCarrier } from './useDeleteCarrier';

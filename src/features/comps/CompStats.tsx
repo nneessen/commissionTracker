@@ -1,9 +1,9 @@
 import React from 'react';
 import { BarChart3, Building2, Package, Percent, TrendingUp } from 'lucide-react';
-import { useCompsList } from '../../hooks/comps';
+import { useComps } from '../../hooks/comps';
 
 export function CompStats() {
-  const { data: comps, isLoading, error } = useCompsList();
+  const { data: comps, isLoading, error } = useComps();
 
   // Calculate statistics from comps data
   const stats = comps ? {

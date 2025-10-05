@@ -1,8 +1,8 @@
 // src/hooks/expenses/useExpenseMetrics.ts
-import { logger } from '../../services/base/logger';
-import { useState, useEffect } from 'react';
-import { ExpenseCategory } from '../../types/expense.types';
+
+import { useQuery } from '@tanstack/react-query';
 import { expenseService } from '../../services';
+import { ExpenseCategory } from '../../types/expense.types';
 
 export interface ExpenseMetrics {
   totalByCategory: Record<ExpenseCategory, number>;
@@ -18,78 +18,59 @@ export interface ExpenseMetrics {
   }>;
 }
 
-export interface UseExpenseMetricsResult {
-  metrics: ExpenseMetrics | null;
-  isLoading: boolean;
-  error: string | null;
-  clearError: () => void;
-  refresh: () => void;
+export interface UseExpenseMetricsOptions {
+  enabled?: boolean;
+  staleTime?: number;
 }
 
-export function useExpenseMetrics(): UseExpenseMetricsResult {
-  const [metrics, setMetrics] = useState<ExpenseMetrics | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [refreshKey, setRefreshKey] = useState(0);
+/**
+ * Fetch and calculate expense metrics using TanStack Query
+ *
+ * @param options Optional configuration for the query
+ * @returns TanStack Query result with expense metrics
+ */
+export function useExpenseMetrics(options?: UseExpenseMetricsOptions) {
+  return useQuery({
+    queryKey: ['expense-metrics'],
+    queryFn: async () => {
+      // Get all expenses and category totals
+      const [expenses, totalByCategory] = await Promise.all([
+        expenseService.getAll(),
+        expenseService.getTotalByCategory()
+      ]);
 
-  useEffect(() => {
-    const loadMetrics = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
+      // Calculate metrics
+      const personalTotal = totalByCategory.personal || 0;
+      const businessTotal = totalByCategory.business || 0;
+      const monthlyTotal = personalTotal + businessTotal;
+      const expenseCount = expenses.length;
+      const averageExpense = expenseCount > 0 ? monthlyTotal / expenseCount : 0;
 
-        // Get all expenses and category totals
-        const [expenses, totalByCategory] = await Promise.all([
-          expenseService.getAll(),
-          expenseService.getTotalByCategory()
-        ]);
+      // Calculate top categories
+      const topCategories = Object.entries(totalByCategory)
+        .map(([category, amount]) => ({
+          category: category as ExpenseCategory,
+          amount,
+          percentage: monthlyTotal > 0 ? (amount / monthlyTotal) * 100 : 0
+        }))
+        .sort((a, b) => b.amount - a.amount);
 
-        // Calculate metrics
-        const personalTotal = totalByCategory.personal || 0;
-        const businessTotal = totalByCategory.business || 0;
-        const monthlyTotal = personalTotal + businessTotal;
-        const expenseCount = expenses.length;
-        const averageExpense = expenseCount > 0 ? monthlyTotal / expenseCount : 0;
+      const metricsData: ExpenseMetrics = {
+        totalByCategory,
+        monthlyTotal,
+        personalTotal,
+        businessTotal,
+        averageExpense,
+        expenseCount,
+        topCategories,
+      };
 
-        // Calculate top categories
-        const topCategories = Object.entries(totalByCategory)
-          .map(([category, amount]) => ({
-            category: category as ExpenseCategory,
-            amount,
-            percentage: monthlyTotal > 0 ? (amount / monthlyTotal) * 100 : 0
-          }))
-          .sort((a, b) => b.amount - a.amount);
-
-        const metricsData: ExpenseMetrics = {
-          totalByCategory,
-          monthlyTotal,
-          personalTotal,
-          businessTotal,
-          averageExpense,
-          expenseCount,
-          topCategories,
-        };
-
-        setMetrics(metricsData);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load expense metrics');
-        logger.error('Error loading expense metrics', err instanceof Error ? err : String(err), 'Migration');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadMetrics();
-  }, [refreshKey]);
-
-  const clearError = () => setError(null);
-  const refresh = () => setRefreshKey(key => key + 1);
-
-  return {
-    metrics,
-    isLoading,
-    error,
-    clearError,
-    refresh,
-  };
+      return metricsData;
+    },
+    staleTime: options?.staleTime ?? 2 * 60 * 1000, // 2 minutes default
+    gcTime: 5 * 60 * 1000, // 5 minutes garbage collection
+    enabled: options?.enabled ?? true,
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+  });
 }

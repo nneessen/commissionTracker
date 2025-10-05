@@ -203,31 +203,3 @@ export function useDeleteCarrier() {
   });
 }
 
-/**
- * Legacy compatibility hook that mimics the old useCarriers behavior
- */
-export function useLegacyCarriers() {
-  const { data: carriers = [], isLoading } = useCarriers();
-  const createMutation = useCreateCarrier();
-  const updateMutation = useUpdateCarrier();
-  const deleteMutation = useDeleteCarrier();
-  const { data: activeCarriers = [] } = useActiveCarriers();
-
-  return {
-    carriers,
-    isLoading,
-    addCarrier: (form: NewCarrierForm) => {
-      return createMutation.mutateAsync(form);
-    },
-    updateCarrier: (id: string, updates: Partial<Carrier>) => {
-      return updateMutation.mutateAsync({ id, data: updates });
-    },
-    deleteCarrier: (id: string) => {
-      return deleteMutation.mutateAsync(id);
-    },
-    getCarrierById: (id: string) => {
-      return carriers.find(c => c.id === id);
-    },
-    getActiveCarriers: () => activeCarriers,
-  };
-}

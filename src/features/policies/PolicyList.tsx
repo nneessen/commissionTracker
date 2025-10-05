@@ -9,7 +9,7 @@ import {
   ChevronUp,
   ChevronDown,
 } from "lucide-react";
-import { useCarriers } from "../../hooks/useCarriers";
+import { useCarriers } from "../../hooks/carriers";
 import { Policy, PolicyFilters, PolicyStatus } from "../../types/policy.types";
 import { ProductType } from "../../types/commission.types";
 
@@ -56,7 +56,8 @@ export const PolicyList: React.FC<PolicyListProps> = ({
   filterPolicies,
   onEditPolicy,
 }) => {
-  const { getCarrierById } = useCarriers();
+  const { data: carriers = [] } = useCarriers();
+  const getCarrierById = (id: string) => carriers.find(c => c.id === id);
 
   const [filters, setFilters] = useState<PolicyFilters>({});
   const [searchTerm, setSearchTerm] = useState("");
@@ -92,8 +93,8 @@ export const PolicyList: React.FC<PolicyListProps> = ({
           bVal = b.annualPremium;
           break;
         case "commission":
-          aVal = a.annualPremium * (a.commissionPercentage / 100);
-          bVal = b.annualPremium * (b.commissionPercentage / 100);
+          aVal = a.annualPremium * a.commissionPercentage;
+          bVal = b.annualPremium * b.commissionPercentage;
           break;
         case "effectiveDate":
           aVal = new Date(a.effectiveDate).getTime();
@@ -283,7 +284,7 @@ export const PolicyList: React.FC<PolicyListProps> = ({
               filteredAndSortedPolicies.map((policy) => {
                 const carrier = getCarrierById(policy.carrierId);
                 const commission =
-                  policy.annualPremium * (policy.commissionPercentage / 100);
+                  policy.annualPremium * policy.commissionPercentage;
 
                 return (
                   <tr key={policy.id}>
@@ -327,7 +328,7 @@ export const PolicyList: React.FC<PolicyListProps> = ({
                       <div className="commission-info">
                         <span>{formatCurrency(commission)}</span>
                         <span className="commission-rate">
-                          {policy.commissionPercentage}%
+                          {(policy.commissionPercentage * 100).toFixed(0)}%
                         </span>
                       </div>
                     </td>

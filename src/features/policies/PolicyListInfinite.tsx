@@ -9,7 +9,7 @@ import {
   ChevronDown,
   Loader2,
 } from "lucide-react";
-import { useCarriers } from "../../hooks/useCarriers";
+import { useCarriers } from "../../hooks/carriers";
 import { useInfinitePolicies, usePolicyCount } from "../../hooks/policies/useInfinitePolicies";
 import { Policy, PolicyFilters, PolicyStatus } from "../../types/policy.types";
 import { ProductType } from "../../types/commission.types";
@@ -44,7 +44,8 @@ export const PolicyListInfinite: React.FC<PolicyListInfiniteProps> = ({
   onDeletePolicy,
   updatePolicyStatus,
 }) => {
-  const { getCarrierById, carriers } = useCarriers();
+  const { data: carriers = [] } = useCarriers();
+  const getCarrierById = (id: string) => carriers.find(c => c.id === id);
   const loadMoreRef = useRef<HTMLDivElement>(null);
 
   // Filters state
@@ -75,7 +76,7 @@ export const PolicyListInfinite: React.FC<PolicyListInfiniteProps> = ({
   });
 
   // Get total count separately
-  const { count } = usePolicyCount(filters);
+  const { data: count = 0 } = usePolicyCount(filters);
 
   // Intersection observer for infinite scroll
   useEffect(() => {
@@ -259,7 +260,7 @@ export const PolicyListInfinite: React.FC<PolicyListInfiniteProps> = ({
             ) : (
               displayPolicies.map((policy) => {
                 const carrier = getCarrierById(policy.carrierId);
-                const commission = policy.annualPremium * (policy.commissionPercentage / 100);
+                const commission = policy.annualPremium * policy.commissionPercentage;
                 const productName = policy.productDetails?.name || PRODUCT_ABBREV[policy.product];
 
                 return (
@@ -300,7 +301,7 @@ export const PolicyListInfinite: React.FC<PolicyListInfiniteProps> = ({
                       <div className="commission-info">
                         <span>{formatCurrency(commission)}</span>
                         <span className="commission-rate">
-                          {policy.commissionPercentage}%
+                          {(policy.commissionPercentage * 100).toFixed(0)}%
                         </span>
                       </div>
                     </td>

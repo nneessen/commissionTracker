@@ -1,6 +1,6 @@
 // src/hooks/expenses/useConstants.ts
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { logger } from '../../services/base/logger';
-import { useState, useEffect } from 'react';
 import { Constants } from '../../types/expense.types';
 import { constantsService } from '../../services';
 
@@ -11,48 +11,35 @@ const DEFAULT_CONSTANTS: Constants = {
   target2: 6500,
 };
 
-export interface UseConstantsResult {
-  constants: Constants;
-  updateConstant: (field: keyof Constants, value: number) => Promise<boolean>;
-  resetConstants: () => Promise<boolean>;
-  isLoading: boolean;
-  isUpdating: boolean;
-  error: string | null;
-  clearError: () => void;
-  refresh: () => void;
+/**
+ * Hook to fetch and manage constants using TanStack Query
+ * Returns standard TanStack Query result with data property
+ */
+export function useConstants() {
+  return useQuery({
+    queryKey: ['constants'],
+    queryFn: async () => {
+      try {
+        const data = await constantsService.getAll();
+        return data;
+      } catch (err) {
+        logger.error('Error loading constants', err instanceof Error ? err : String(err), 'Migration');
+        throw err;
+      }
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    placeholderData: DEFAULT_CONSTANTS, // Use default constants while loading
+  });
 }
 
-export function useConstants(): UseConstantsResult {
-  const [constants, setConstants] = useState<Constants>(DEFAULT_CONSTANTS);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isUpdating, setIsUpdating] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [refreshKey, setRefreshKey] = useState(0);
+/**
+ * Mutation hook to update a single constant
+ */
+export function useUpdateConstant() {
+  const queryClient = useQueryClient();
 
-  // Load constants from database
-  useEffect(() => {
-    const loadConstants = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        const data = await constantsService.getAll();
-        setConstants(data);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load constants');
-        logger.error('Error loading constants', err instanceof Error ? err : String(err), 'Migration');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadConstants();
-  }, [refreshKey]);
-
-  const updateConstant = async (field: keyof Constants, value: number): Promise<boolean> => {
-    setIsUpdating(true);
-    setError(null);
-
-    try {
+  return useMutation({
+    mutationFn: async ({ field, value }: { field: keyof Constants; value: number }) => {
       // Validate value
       if (value < 0) {
         throw new Error(`${field} cannot be negative`);
@@ -63,51 +50,43 @@ export function useConstants(): UseConstantsResult {
       }
 
       await constantsService.setValue(field, value);
+      return { field, value };
+    },
+    onSuccess: (data) => {
+      // Optimistically update the cache
+      queryClient.setQueryData(['constants'], (old: Constants | undefined) => {
+        if (!old) return DEFAULT_CONSTANTS;
+        return {
+          ...old,
+          [data.field]: data.value,
+        };
+      });
+    },
+    onError: (err) => {
+      logger.error('Error updating constant', err instanceof Error ? err : String(err), 'Migration');
+    },
+  });
+}
 
-      // Update local state
-      setConstants(prev => ({
-        ...prev,
-        [field]: value,
-      }));
+/**
+ * Mutation hook to reset all constants to defaults
+ */
+export function useResetConstants() {
+  const queryClient = useQueryClient();
 
-      setIsUpdating(false);
-      return true;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to update constant';
-      setError(errorMessage);
-      setIsUpdating(false);
-      return false;
-    }
-  };
-
-  const resetConstants = async (): Promise<boolean> => {
-    setIsUpdating(true);
-    setError(null);
-
-    try {
-      const updatedConstants = await constantsService.updateMultiple(Object.entries(DEFAULT_CONSTANTS).map(([key, value]) => ({ key, value })));
-      setConstants(updatedConstants);
-      setIsUpdating(false);
-      return true;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to reset constants';
-      setError(errorMessage);
-      setIsUpdating(false);
-      return false;
-    }
-  };
-
-  const clearError = () => setError(null);
-  const refresh = () => setRefreshKey(key => key + 1);
-
-  return {
-    constants,
-    updateConstant,
-    resetConstants,
-    isLoading,
-    isUpdating,
-    error,
-    clearError,
-    refresh,
-  };
+  return useMutation({
+    mutationFn: async () => {
+      const updatedConstants = await constantsService.updateMultiple(
+        Object.entries(DEFAULT_CONSTANTS).map(([key, value]) => ({ key, value }))
+      );
+      return updatedConstants;
+    },
+    onSuccess: (data) => {
+      // Update the cache with the reset constants
+      queryClient.setQueryData(['constants'], data);
+    },
+    onError: (err) => {
+      logger.error('Error resetting constants', err instanceof Error ? err : String(err), 'Migration');
+    },
+  });
 }

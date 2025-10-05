@@ -1,27 +1,31 @@
 // src/features/expenses/ExpenseManager.tsx
 
-import React, { useState } from 'react';
-import { Plus, Download, Trash2 } from 'lucide-react';
-import { Button, Modal, Input, Select } from '../../components/ui';
-import { ExpenseItem, NewExpenseForm, ExpenseCategory } from '../../types';
-import { useExpenses, useExpenseMetrics, useCreateExpense, useUpdateExpense, useDeleteExpense } from '../../hooks';
+import React, { useState } from "react";
+import { Plus, Download, Trash2 } from "lucide-react";
+import { Button, Modal, Input, Select } from "../../components/ui";
+import { ExpenseItem, NewExpenseForm, ExpenseCategory } from "../../types";
+import {
+  useExpenses,
+  useExpenseMetrics,
+  useCreateExpense,
+  useUpdateExpense,
+  useDeleteExpense,
+} from "../../hooks";
 
 export const ExpenseManager: React.FC = () => {
-  // Use new modular hooks
-  const { expensesByCategory: expenses, refresh } = useExpenses();
-  const { metrics } = useExpenseMetrics();
+  const { data: expenses = [], refetch } = useExpenses();
+  const { data: metrics } = useExpenseMetrics();
   const { mutate: createExpense } = useCreateExpense();
   const { mutate: updateExpense } = useUpdateExpense();
   const { mutate: deleteExpense } = useDeleteExpense();
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [newExpense, setNewExpense] = useState<NewExpenseForm>({
-    name: '',
+    name: "",
     amount: 0,
-    category: 'personal',
+    category: "personal",
   });
 
-  // Create totals from metrics
   const totals = {
     personalTotal: metrics?.personalTotal || 0,
     businessTotal: metrics?.businessTotal || 0,
@@ -32,57 +36,64 @@ export const ExpenseManager: React.FC = () => {
     if (newExpense.name.trim() && newExpense.amount >= 0) {
       createExpense(newExpense, {
         onSuccess: () => {
-          setNewExpense({ name: '', amount: 0, category: 'personal' });
+          setNewExpense({ name: "", amount: 0, category: "personal" });
           setShowAddModal(false);
-          refresh(); // Refresh the expenses list
-        }
+          refetch(); // Refresh the expenses list
+        },
       });
     }
   };
 
   const handleDeleteExpense = (id: string) => {
-    if (window.confirm('Are you sure you want to delete this expense?')) {
+    if (window.confirm("Are you sure you want to delete this expense?")) {
       deleteExpense(id, {
         onSuccess: () => {
-          refresh(); // Refresh the expenses list
-        }
+          refetch(); // Refresh the expenses list
+        },
       });
     }
   };
 
   const handleUpdateExpense = (id: string, amount: number) => {
-    updateExpense({ id, updates: { amount } }, {
-      onSuccess: () => {
-        refresh(); // Refresh the expenses list
-      }
-    });
+    updateExpense(
+      { id, updates: { amount } },
+      {
+        onSuccess: () => {
+          refetch(); // Refresh the expenses list
+        },
+      },
+    );
   };
 
-  // Simple CSV export function
+  // TODO: move this somewhere else. this is used multiple places and should be a utility and needs to probably be refactored to be reusable
   const exportToCSV = () => {
     const allExpenses = [...expenses.personal, ...expenses.business];
 
     if (allExpenses.length === 0) {
-      alert('No expenses to export');
+      alert("No expenses to export");
       return;
     }
 
-    const headers = ['Category', 'Name', 'Amount', 'Date'];
+    const headers = ["Category", "Name", "Amount", "Date"];
     const csvContent = [
-      headers.join(','),
-      ...allExpenses.map(expense => [
-        expense.category,
-        `"${expense.name}"`,
-        expense.amount,
-        expense.createdAt ? new Date(expense.createdAt).toLocaleDateString() : ''
-      ].join(','))
-    ].join('\n');
+      headers.join(","),
+      ...allExpenses.map((expense) =>
+        [
+          expense.category,
+          `"${expense.name}"`,
+          expense.amount,
+          expense.createdAt
+            ? new Date(expense.createdAt).toLocaleDateString()
+            : "",
+        ].join(","),
+      ),
+    ].join("\n");
 
-    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const blob = new Blob([csvContent], { type: "text/csv" });
     const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
+    const link = document.createElement("a");
     link.href = url;
-    link.download = `expenses-${new Date().toISOString().split('T')[0]}.csv`;
+    link.download = `expenses-${new Date().toISOString().split("T")[0]}.csv`;
     link.click();
     window.URL.revokeObjectURL(url);
   };
@@ -91,7 +102,7 @@ export const ExpenseManager: React.FC = () => {
     title: string,
     items: ExpenseItem[],
     category: ExpenseCategory,
-    total: number
+    total: number,
   ) => (
     <div className="spreadsheet-section">
       <div className="section-header">{title}</div>
@@ -128,7 +139,7 @@ export const ExpenseManager: React.FC = () => {
               </td>
             </tr>
           ))}
-          <tr style={{ fontWeight: 600, backgroundColor: '#e6f3ff' }}>
+          <tr style={{ fontWeight: 600, backgroundColor: "#e6f3ff" }}>
             <td>Total</td>
             <td className="currency-cell">${total.toLocaleString()}</td>
             <td></td>
@@ -158,16 +169,16 @@ export const ExpenseManager: React.FC = () => {
       {/* Expenses Grid */}
       <div className="spreadsheet-container">
         {renderExpenseTable(
-          'Personal Expenses',
+          "Personal Expenses",
           expenses.personal,
-          'personal',
-          totals.personalTotal
+          "personal",
+          totals.personalTotal,
         )}
         {renderExpenseTable(
-          'Business Expenses',
+          "Business Expenses",
           expenses.business,
-          'business',
-          totals.businessTotal
+          "business",
+          totals.businessTotal,
         )}
       </div>
 
@@ -207,8 +218,8 @@ export const ExpenseManager: React.FC = () => {
               }))
             }
             options={[
-              { value: 'personal', label: 'Personal' },
-              { value: 'business', label: 'Business' },
+              { value: "personal", label: "Personal" },
+              { value: "business", label: "Business" },
             ]}
             required
           />
@@ -228,3 +239,4 @@ export const ExpenseManager: React.FC = () => {
     </div>
   );
 };
+
