@@ -1,27 +1,23 @@
 import React from 'react';
-import { SettingsLayout } from '../../components/layout';
+import { PageLayout } from '../../components/layout';
 import {
   User,
   Settings,
   Grid3x3
 } from 'lucide-react';
-import { SettingsCard, SettingsHeader } from './components/SettingsComponents';
+import { SettingsCard } from './components/SettingsComponents';
 import { CommissionManagement } from './CommissionManagement';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export function SettingsDashboard() {
   return (
-    <SettingsLayout
-      title="Settings"
-      description="Configure and manage your commission tracker"
-      backLink="/dashboard"
-    >
-      <div className="mx-auto max-w-7xl p-6">
-        <SettingsHeader
-          title="Settings"
-          description="Configure carriers, products, commission rates, and system settings"
-        />
+    <PageLayout>
+      <div className="dashboard-header">
+        <h1>Settings</h1>
+        <p>Configure carriers, products, commission rates, and system settings</p>
+      </div>
 
+      <div className="dashboard-content">
         <Tabs defaultValue="commissions" className="mt-6">
           <TabsList className="grid w-full grid-cols-3 mb-8">
             <TabsTrigger value="commissions" className="flex items-center gap-2">
@@ -67,6 +63,6 @@ export function SettingsDashboard() {
           </TabsContent>
         </Tabs>
       </div>
-    </SettingsLayout>
+    </PageLayout>
   );
 }

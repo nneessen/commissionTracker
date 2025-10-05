@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { Plus, AlertCircle } from "lucide-react";
+import { PageLayout } from "../../components/layout";
 import { PolicyForm } from "./PolicyForm";
 import { PolicyList } from "./PolicyList";
 import {
@@ -258,15 +259,15 @@ export const PolicyDashboard: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="policy-dashboard">
+      <PageLayout>
         <div className="loading-spinner">Loading policies...</div>
-      </div>
+      </PageLayout>
     );
   }
 
   if (error) {
     return (
-      <div className="policy-dashboard">
+      <PageLayout>
         <div className="error-message">
           <AlertCircle size={20} />
           <span>Error loading policies: {(error as Error).message}</span>
@@ -274,12 +275,12 @@ export const PolicyDashboard: React.FC = () => {
             Retry
           </button>
         </div>
-      </div>
+      </PageLayout>
     );
   }
 
   return (
-    <div className="policy-dashboard">
+    <PageLayout>
       {/* Compact Header with Stats */}
       <div className="dashboard-header">
         <div className="header-left">
@@ -368,6 +369,6 @@ export const PolicyDashboard: React.FC = () => {
           </div>
         </div>
       )}
-    </div>
+    </PageLayout>
   );
 };

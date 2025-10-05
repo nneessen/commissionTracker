@@ -61,9 +61,9 @@ export function DataTable<T>({
       <table className="data-table">
         <thead>
           <tr>
-            {columns.map((column) => (
+            {columns.map((column, index) => (
               <th
-                key={String(column.key)}
+                key={column.key ? String(column.key) : `header-${index}`}
                 className={column.sortable ? 'sortable' : ''}
                 onClick={column.sortable ? () => handleSort(String(column.key)) : undefined}
               >
@@ -101,8 +101,8 @@ export function DataTable<T>({
               className={onRowClick ? 'clickable-row' : ''}
               onClick={onRowClick ? () => onRowClick(item) : undefined}
             >
-              {columns.map((column) => (
-                <td key={String(column.key)}>
+              {columns.map((column, colIndex) => (
+                <td key={column.key ? String(column.key) : `cell-${index}-${colIndex}`}>
                   {column.accessor
                     ? typeof column.accessor === 'function'
                       ? column.accessor(item)

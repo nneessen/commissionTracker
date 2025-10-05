@@ -11,6 +11,7 @@ import {
   BarChart3,
   Calculator
 } from 'lucide-react';
+import { PageLayout } from '../../components/layout';
 import { MetricsCard } from '../analytics';
 import { useExpenseMetrics, useConstants } from '../../hooks';
 import { useMetrics } from '../../hooks/useMetrics';
@@ -77,13 +78,12 @@ export const DashboardHome: React.FC = () => {
   const target2 = getTargetCalculation(calculations, constants?.target2 || 10000);
 
   return (
-    <div className="dashboard-home">
-      <div style={{ padding: '24px', maxWidth: '1400px', margin: '0 auto' }}>
-        {/* Header */}
-        <div className="dashboard-header">
-          <h1>Commission Dashboard</h1>
-          <p>Your commission tracking overview and key performance metrics</p>
-        </div>
+    <PageLayout>
+      {/* Header */}
+      <div className="dashboard-header">
+        <h1>Commission Dashboard</h1>
+        <p>Your commission tracking overview and key performance metrics</p>
+      </div>
 
         {/* Key Performance Metrics */}
         <div className="dashboard-metrics-grid">
@@ -267,7 +267,6 @@ export const DashboardHome: React.FC = () => {
             <p className="coming-soon">This feature is coming soon</p>
           </div>
         </div>
-      </div>
-    </div>
+    </PageLayout>
   );
 };

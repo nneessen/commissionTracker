@@ -1,13 +1,13 @@
 // src/services/settings/carrierService.ts
-import { logger } from '../base/logger';
+import { logger } from "../base/logger";
 
-import { supabase } from '../base/supabase';
-import { Database } from '../../types/database.types';
-import { ServiceResponse } from '../base/BaseService';
+import { supabase } from "../base/supabase";
+import { Database } from "../../types/database.types";
+import { ServiceResponse } from "../base/BaseService";
 
-type CarrierRow = Database['public']['Tables']['carriers']['Row'];
-type CarrierInsert = Database['public']['Tables']['carriers']['Insert'];
-type CarrierUpdate = Database['public']['Tables']['carriers']['Update'];
+type CarrierRow = Database["public"]["Tables"]["carriers"]["Row"];
+type CarrierInsert = Database["public"]["Tables"]["carriers"]["Insert"];
+type CarrierUpdate = Database["public"]["Tables"]["carriers"]["Update"];
 
 // Re-export for backward compatibility
 export interface Carrier extends CarrierRow {}
@@ -44,9 +44,9 @@ class CarrierService {
    */
   async getAllCarriers() {
     return await supabase
-      .from('carriers')
-      .select('*')
-      .order('name', { ascending: true });
+      .from("carriers")
+      .select("*")
+      .order("name", { ascending: true });
   }
 
   /**
@@ -82,11 +82,7 @@ class CarrierService {
    * ```
    */
   async getCarrierById(id: string) {
-    return await supabase
-      .from('carriers')
-      .select('*')
-      .eq('id', id)
-      .single();
+    return await supabase.from("carriers").select("*").eq("id", id).single();
   }
 
   /**
@@ -131,11 +127,11 @@ class CarrierService {
       name: data.name,
       code: data.short_name,
       commission_structure: data.default_commission_rates || {},
-      contact_info: data.contact_info || {}
+      contact_info: data.contact_info || {},
     };
 
     return await supabase
-      .from('carriers')
+      .from("carriers")
       .insert(carrierData)
       .select()
       .single();
@@ -181,14 +177,16 @@ class CarrierService {
     const updateData: CarrierUpdate = {
       ...(data.name && { name: data.name }),
       ...(data.short_name !== undefined && { code: data.short_name }),
-      ...(data.default_commission_rates && { commission_structure: data.default_commission_rates }),
-      ...(data.contact_info && { contact_info: data.contact_info })
+      ...(data.default_commission_rates && {
+        commission_structure: data.default_commission_rates,
+      }),
+      ...(data.contact_info && { contact_info: data.contact_info }),
     };
 
     return await supabase
-      .from('carriers')
+      .from("carriers")
       .update(updateData)
-      .eq('id', id)
+      .eq("id", id)
       .select()
       .single();
   }
@@ -207,7 +205,10 @@ class CarrierService {
    * });
    * ```
    */
-  async update(id: string, data: Partial<NewCarrierForm>): Promise<ServiceResponse<Carrier>> {
+  async update(
+    id: string,
+    data: Partial<NewCarrierForm>,
+  ): Promise<ServiceResponse<Carrier>> {
     const result = await this.updateCarrier(id, data);
     if (result.error) {
       return { success: false, error: result.error };
@@ -227,10 +228,7 @@ class CarrierService {
    * ```
    */
   async deleteCarrier(id: string) {
-    return await supabase
-      .from('carriers')
-      .delete()
-      .eq('id', id);
+    return await supabase.from("carriers").delete().eq("id", id);
   }
 
   /**
@@ -271,10 +269,10 @@ class CarrierService {
    */
   async searchCarriers(query: string): Promise<ServiceResponse<Carrier[]>> {
     const result = await supabase
-      .from('carriers')
-      .select('*')
+      .from("carriers")
+      .select("*")
       .or(`name.ilike.%${query}%,code.ilike.%${query}%`)
-      .order('name', { ascending: true });
+      .order("name", { ascending: true });
 
     if (result.error) {
       return { success: false, error: result.error };
@@ -298,9 +296,9 @@ class CarrierService {
   async getActiveCarriers(): Promise<ServiceResponse<Carrier[]>> {
     // Since is_active doesn't exist in database, return all carriers
     const result = await supabase
-      .from('carriers')
-      .select('*')
-      .order('name', { ascending: true });
+      .from("carriers")
+      .select("*")
+      .order("name", { ascending: true });
 
     if (result.error) {
       return { success: false, error: result.error };
@@ -310,3 +308,4 @@ class CarrierService {
 }
 
 export const carrierService = new CarrierService();
+

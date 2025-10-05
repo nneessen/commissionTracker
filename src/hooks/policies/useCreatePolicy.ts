@@ -12,7 +12,9 @@ export const useCreatePolicy = () => {
       return policyService.create(newPolicy);
     },
     onSuccess: () => {
+      // Invalidate both policies and commissions queries
       queryClient.invalidateQueries({ queryKey: ['policies'] });
+      queryClient.invalidateQueries({ queryKey: ['commissions'] });
     }
   });
 };

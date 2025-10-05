@@ -20,3 +20,6 @@ export {
   useBulkUpdateCompRates,
   compRatesKeys,
 } from './useCompRates';
+
+// Contract-level commission lookup
+export { useCompGuide } from './useCompGuide';

@@ -45,6 +45,17 @@ export const AnalyticsDashboard: React.FC = () => {
     return `$${value.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
   };
 
+  // Add loading check
+  if (!clientMetrics || !policyMetrics || !commissionMetrics) {
+    return (
+      <div className="policy-container p-6 max-w-7xl mx-auto">
+        <div className="text-center py-12">
+          <p className="text-gray-500">Loading analytics...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="policy-container p-6 max-w-7xl mx-auto">
       <div className="space-y-6">

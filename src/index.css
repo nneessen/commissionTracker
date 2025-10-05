@@ -87,3 +87,11 @@ code {
 .animate-fadeIn {
   animation: fadeIn 0.3s ease-in-out;
 }
+
+/* ==================== Unified Page Layout ==================== */
+.page-layout {
+  padding: 20px;
+  max-width: 1400px;
+  margin: 0 auto;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}

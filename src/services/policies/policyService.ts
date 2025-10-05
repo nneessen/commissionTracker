@@ -1,5 +1,6 @@
 import { Policy, PolicyFilters, CreatePolicyData } from '../../types/policy.types';
 import { PolicyRepository } from './PolicyRepository';
+import { supabase } from '../base/supabase';
 
 /**
  * Service layer for policies - handles business logic
@@ -23,10 +24,44 @@ class PolicyService {
   }
 
   /**
-   * Create a new policy
+   * Create a new policy and automatically create commission record
    */
   async create(policyData: CreatePolicyData): Promise<Policy> {
-    return this.repository.create(policyData);
+    // 1. Create policy record
+    const policy = await this.repository.create(policyData);
+
+    // 2. Calculate advance amount
+    const monthlyPremium = policyData.monthly_premium || 0;
+    const commissionRate = policyData.commission_percentage || 0;
+    const advanceMonths = 9; // Industry standard
+    const advanceAmount = monthlyPremium * advanceMonths * commissionRate;
+
+    // 3. Create commission record if there's an advance amount
+    if (advanceAmount > 0) {
+      const { error: commissionError } = await supabase
+        .from('commissions')
+        .insert([{
+          user_id: policy.user_id,
+          policy_id: policy.id,
+          carrier_id: policy.carrier_id,
+          commission_amount: advanceAmount,
+          payment_date: policy.effective_date,
+          status: 'pending',
+          is_advance: true,
+          advance_months: advanceMonths,
+          months_paid: 0,
+          earned_amount: 0,
+          unearned_amount: advanceAmount,
+        }]);
+
+      if (commissionError) {
+        console.error('Failed to create commission record:', commissionError);
+        // Don't fail policy creation if commission creation fails
+        // Can be retried/fixed manually
+      }
+    }
+
+    return policy;
   }
 
   /**

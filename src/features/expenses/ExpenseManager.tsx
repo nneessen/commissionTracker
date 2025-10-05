@@ -115,7 +115,7 @@ export const ExpenseManager: React.FC = () => {
           </tr>
         </thead>
         <tbody>
-          {items.map((item) => (
+          {items?.map((item) => (
             <tr key={item.id}>
               <td>{item.name}</td>
               <td className="currency-cell">

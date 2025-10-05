@@ -157,7 +157,7 @@ export function CommissionManagement() {
           await updateCompRate.mutateAsync({
             id: '', // We need to find the actual ID
             updates: {
-              commission_percentage: numValue,
+              commission_percentage: numValue / 100,
               contract_level: contractLevel,
               carrier_id: row.carrierId,
               product_id: row.productId
@@ -170,7 +170,7 @@ export function CommissionManagement() {
             product_id: row.productId,
             product_type: row.productType || 'term_life',
             contract_level: contractLevel,
-            commission_percentage: numValue,
+            commission_percentage: numValue / 100,
             effective_date: new Date().toISOString().split('T')[0]
           });
         }
@@ -394,10 +394,10 @@ export function CommissionManagement() {
                               onClick={() => setEditingCell({
                                 rowId,
                                 contractLevel: level,
-                                value: rate?.toString() || ''
+                                value: rate ? (rate * 100).toString() : ''
                               })}
                             >
-                              {rate ? `${rate}%` : '-'}
+                              {rate ? `${(rate * 100).toFixed(1)}%` : '-'}
                             </div>
                           )}
                         </TableCell>

@@ -1,8 +1,11 @@
 // /home/nneessen/projects/commissionTracker/src/features/policies/PolicyForm.tsx
 
 import React, { useState, useEffect } from "react";
+import { useAuth } from "../../contexts/AuthContext";
 import { useCarriers } from "../../hooks/carriers";
 import { useProducts } from "../../hooks/products/useProducts";
+import { useCompGuide } from "../../hooks/comps";
+import { supabase } from "../../services/base/supabase";
 import {
   NewPolicyForm,
   PolicyStatus,
@@ -89,7 +92,11 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
   updatePolicy,
   getPolicyById,
 }) => {
+  const { user } = useAuth();
   const { data: carriers = [] } = useCarriers();
+
+  // Get user's contract level from user metadata (defaults to 100 if not set)
+  const userContractLevel = user?.raw_user_meta_data?.contract_comp_level || 100;
 
   const [formData, setFormData] = useState<NewPolicyForm>({
     clientName: "",
@@ -108,9 +115,13 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [productCommissionRates, setProductCommissionRates] = useState<Record<string, number>>({});
 
   // Fetch products for selected carrier
   const { data: products = [], isLoading: productsLoading, error: productsError } = useProducts(formData.carrierId);
+
+  // Fetch commission rate from comp_guide based on product and user's contract level
+  const { data: compGuideData } = useCompGuide(formData.productId, userContractLevel);
 
   useEffect(() => {
     if (policyId) {
@@ -140,6 +151,56 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
     }
   }, [policyId, getPolicyById]);
 
+  // Fetch commission rates for all products when products change
+  useEffect(() => {
+    const fetchProductCommissionRates = async () => {
+      if (products.length === 0) return;
+
+      const today = new Date().toISOString().split('T')[0];
+      const rates: Record<string, number> = {};
+
+      for (const product of products) {
+        const { data } = await supabase
+          .from('comp_guide')
+          .select('commission_percentage')
+          .eq('product_id', product.id)
+          .eq('contract_level', userContractLevel)
+          .lte('effective_date', today)
+          .or(`expiration_date.is.null,expiration_date.gte.${today}`)
+          .order('effective_date', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        // Use comp_guide rate if available, otherwise fallback to product rate
+        rates[product.id] = data?.commission_percentage || product.commission_percentage || 0;
+      }
+
+      setProductCommissionRates(rates);
+    };
+
+    fetchProductCommissionRates();
+  }, [products, userContractLevel]);
+
+  // Update commission percentage when comp_guide data changes or fallback to product commission
+  useEffect(() => {
+    if (formData.productId && compGuideData) {
+      // Use comp_guide commission rate (contract-level based)
+      setFormData(prev => ({
+        ...prev,
+        commissionPercentage: compGuideData.commission_percentage * 100, // Convert decimal to percentage
+      }));
+    } else if (formData.productId && !compGuideData) {
+      // Fallback to product commission rate
+      const selectedProduct = products.find(p => p.id === formData.productId);
+      setFormData(prev => ({
+        ...prev,
+        commissionPercentage: selectedProduct?.commission_percentage
+          ? selectedProduct.commission_percentage * 100
+          : 0,
+      }));
+    }
+  }, [formData.productId, compGuideData, products]);
+
   const handleInputChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
@@ -156,16 +217,14 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
         commissionPercentage: 0,
       }));
     }
-    // Handle product change - auto-set commission percentage
+    // Handle product change - commission will be set by useEffect watching compGuideData
     else if (name === 'productId') {
       const selectedProduct = products.find(p => p.id === value);
       setFormData(prev => ({
         ...prev,
         productId: value,
         product: selectedProduct?.product_type || 'term_life' as ProductType,
-        commissionPercentage: selectedProduct?.commission_percentage
-          ? selectedProduct.commission_percentage * 100 // Convert decimal to percentage
-          : 0,
+        commissionPercentage: 0, // Will be updated by useEffect
       }));
     }
     // Handle other fields
@@ -356,8 +415,8 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
               {products.map((product) => (
                 <option key={product.id} value={product.id}>
                   {product.name}
-                  {product.commission_percentage &&
-                    ` (${(product.commission_percentage * 100).toFixed(1)}% commission)`}
+                  {productCommissionRates[product.id] &&
+                    ` (${(productCommissionRates[product.id] * 100).toFixed(1)}% commission)`}
                 </option>
               ))}
             </select>
