@@ -99,7 +99,15 @@ export class UserService {
       throw error;
     }
 
-    // ✅ PHASE 2: Try to get updated user from auth session first (avoid double query)
+    // ✅ CRITICAL: Refresh the auth session to get updated JWT token with new metadata
+    // Without this, the UI won't see the changes because the JWT is cached
+    const { error: refreshError } = await supabase.auth.refreshSession();
+    if (refreshError) {
+      logger.error('Error refreshing session after metadata update', refreshError, 'Migration');
+      // Don't throw - the metadata was updated, just the session refresh failed
+    }
+
+    // ✅ PHASE 2: Try to get updated user from auth session (now with refreshed JWT)
     const { data: { user }, error: getUserError } = await supabase.auth.getUser();
 
     if (!getUserError && user && user.id === userId) {

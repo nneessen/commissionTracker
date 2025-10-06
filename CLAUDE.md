@@ -12,6 +12,7 @@ Target app: small-scale personal + business expense tracker. React 19.1, TypeScr
 This is a full-stack application for insurance sales agents to track Key Performance Indicators (KPIs) based on policy data.
 
 **Core Purpose:**
+
 - Track insurance policies (the source of truth for all metrics)
 - Calculate KPIs: persistency rates, average annual premium (AP), policies sold/cancelled/lapsed
 - Analyze performance by state, carrier, product type
@@ -54,6 +55,7 @@ This is a full-stack application for insurance sales agents to track Key Perform
 ## Critical Architecture Rules
 
 **ZERO LOCAL STORAGE FOR APPLICATION DATA**
+
 - ❌ NEVER use localStorage, sessionStorage, or IndexedDB for policy, commission, client, or any business data
 - ✅ ALWAYS use Supabase database for ALL data persistence
 - ✅ Local storage ONLY for: cookies, session tokens, UI preferences (theme, sidebar state)
@@ -62,6 +64,7 @@ This is a full-stack application for insurance sales agents to track Key Perform
 - ✅ Use TanStack Query for server state management (it handles caching properly)
 
 **Database is Single Source of Truth**
+
 - ALL application data lives in Supabase PostgreSQL database
 - Migrations must work on any machine, any time, idempotently
 - No local database files or SQLite
@@ -72,6 +75,7 @@ This is a full-stack application for insurance sales agents to track Key Perform
 **CRITICAL: There is ONLY ONE migration directory - `supabase/migrations/`**
 
 **Migration Best Practices:**
+
 - ✅ ALL migrations go in `supabase/migrations/` ONLY
 - ✅ Use Supabase CLI to create migrations: `supabase migration new <name>`
 - ✅ Migration naming: `YYYYMMDD_NNN_descriptive_name.sql` (e.g., `20251005_001_add_user_preferences.sql`)
@@ -84,6 +88,7 @@ This is a full-stack application for insurance sales agents to track Key Perform
 - ❌ NEVER commit migrations that haven't been tested locally
 
 **Migration Workflow:**
+
 1. Create migration: `supabase migration new add_feature_x`
 2. Write SQL in generated file: `supabase/migrations/YYYYMMDD_NNN_add_feature_x.sql`
 3. Test locally: `supabase db reset` (applies all migrations)
@@ -92,12 +97,14 @@ This is a full-stack application for insurance sales agents to track Key Perform
 6. Apply to production: Supabase auto-applies on git push OR manual `supabase db push`
 
 **Common Migration Commands:**
+
 - `supabase migration list` - View migration status
 - `supabase migration new <name>` - Create new migration
 - `supabase db reset` - Reset local DB and apply all migrations
 - `supabase db push` - Push migrations to remote (if not auto-deployed)
 
 **Before Creating Migrations, Always:**
+
 1. Check `supabase/migrations/` for existing migrations
 2. Verify no duplicate directories exist (`database/`, `db/`, etc.)
 3. Use `git status` to see if migrations are already in progress
@@ -127,6 +134,7 @@ This is a full-stack application for insurance sales agents to track Key Perform
 - `/docs/*` — Architecture, KPI definitions, migration guides
 
 **Data Flow:**
+
 1. User interacts with React components
 2. Components use TanStack Query hooks
 3. Hooks call service functions
@@ -135,6 +143,7 @@ This is a full-stack application for insurance sales agents to track Key Perform
 6. **NO local storage at any step**
 
 Keep features self-contained. Each feature should export:
+
 - React routes and route loader functions
 - TanStack Query keys and hooks
 - Service functions for business logic
@@ -145,11 +154,13 @@ Keep features self-contained. Each feature should export:
 # KPI Data Model
 
 **Policies Table** (Source of Truth):
+
 - Contains: client info, carrier, product, premium, status, dates
 - Drives all KPI calculations
 - Never deleted, only status updated (active → lapsed → cancelled)
 
 **Key Metrics Calculated from Policies:**
+
 - **Persistency**: `COUNT(WHERE status='active' AND months_since_start >= X) / COUNT(total in cohort)`
 - **Avg AP**: `AVG(annual_premium WHERE status='active')`
 - **Pace Metrics**: `(annual_target - YTD_premium) / weeks_remaining / avg_AP = policies_per_week_needed`
@@ -158,3 +169,9 @@ Keep features self-contained. Each feature should export:
 See `/docs/kpi-definitions.md` for complete formulas.
 
 ---
+
+GOLDEN RULES TO NEVER BREAK
+
+- when working on plans, do not forget to update them as you go and when completed, change the name to match the other files names and move to plans/completed/
+- always fetch my current db schema from my remote supabase before every new task
+

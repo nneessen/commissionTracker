@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { SettingsCard } from './components/SettingsComponents';
 import { CommissionManagement } from './CommissionManagement';
+import { UserProfile } from './components/UserProfile';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export function SettingsDashboard() {
@@ -51,15 +52,7 @@ export function SettingsDashboard() {
           </TabsContent>
 
           <TabsContent value="agents" className="mt-0">
-            <SettingsCard title="Agent Settings" icon={<User size={20} />}>
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <User className="mb-4 h-12 w-12 text-muted-foreground opacity-50" />
-                <p className="text-muted-foreground">Agent settings management coming soon.</p>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  Configure agent-specific settings, permissions, and preferences.
-                </p>
-              </div>
-            </SettingsCard>
+            <UserProfile />
           </TabsContent>
         </Tabs>
       </div>

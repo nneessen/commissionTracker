@@ -12,6 +12,7 @@ import {
 import { useCarriers } from "../../hooks/carriers";
 import { Policy, PolicyFilters, PolicyStatus } from "../../types/policy.types";
 import { ProductType } from "../../types/commission.types";
+import { calculateCommissionAdvance } from "../../utils/policyCalculations";
 
 interface PolicyListProps {
   policies: Policy[];
@@ -93,8 +94,8 @@ export const PolicyList: React.FC<PolicyListProps> = ({
           bVal = b.annualPremium;
           break;
         case "commission":
-          aVal = a.annualPremium * a.commissionPercentage;
-          bVal = b.annualPremium * b.commissionPercentage;
+          aVal = calculateCommissionAdvance(a.annualPremium, a.commissionPercentage, a.advanceMonths);
+          bVal = calculateCommissionAdvance(b.annualPremium, b.commissionPercentage, b.advanceMonths);
           break;
         case "effectiveDate":
           aVal = new Date(a.effectiveDate).getTime();
@@ -283,8 +284,12 @@ export const PolicyList: React.FC<PolicyListProps> = ({
             ) : (
               filteredAndSortedPolicies.map((policy) => {
                 const carrier = getCarrierById(policy.carrierId);
-                const commission =
-                  policy.annualPremium * policy.commissionPercentage;
+                // Calculate commission advance: Monthly Premium × Advance Months × Commission Rate
+                const commission = calculateCommissionAdvance(
+                  policy.annualPremium,
+                  policy.commissionPercentage,
+                  policy.advanceMonths
+                );
 
                 return (
                   <tr key={policy.id}>

@@ -13,6 +13,7 @@ import {
   StatePerformance
 } from '../types/metrics.types';
 import { ProductType } from '../types/commission.types';
+import { calculateCommissionAdvance } from '../utils/policyCalculations';
 
 export function useMetrics() {
   const { data: policies = [], isLoading: policiesLoading } = usePolicies();
@@ -479,7 +480,11 @@ export function useMetrics() {
 
       const perf = carrierMap.get(policy.carrierId)!;
       perf.policies++;
-      const commissionAmount = policy.annualPremium * policy.commissionPercentage;
+      const commissionAmount = calculateCommissionAdvance(
+        policy.annualPremium,
+        policy.commissionPercentage,
+        policy.advanceMonths
+      );
       perf.revenue += commissionAmount;
     });
 
@@ -508,7 +513,11 @@ export function useMetrics() {
 
       const perf = stateMap.get(policy.client.state)!;
       perf.policies++;
-      perf.revenue += policy.annualPremium * policy.commissionPercentage;
+      perf.revenue += calculateCommissionAdvance(
+        policy.annualPremium,
+        policy.commissionPercentage,
+        policy.advanceMonths
+      );
     });
 
     // Calculate average size (premium per policy)
@@ -581,14 +590,15 @@ export function useMetrics() {
     // Calculate pipeline value from pending policies
     const pipelineValue = policies
       .filter(p => p.status === 'pending')
-      .reduce((sum, p) => sum + (p.annualPremium * p.commissionPercentage), 0);
+      .reduce((sum, p) => sum + calculateCommissionAdvance(p.annualPremium, p.commissionPercentage, p.advanceMonths), 0);
 
     // Estimate renewal income
     const expectedRenewals = policies
       .filter(p => p.status === 'active')
       .reduce((sum, p) => {
-        // Assume 50% of commission rate for renewals
-        return sum + (p.annualPremium * p.commissionPercentage * 0.5);
+        // Assume 50% of commission rate for renewals (ongoing monthly commissions)
+        const advance = calculateCommissionAdvance(p.annualPremium, p.commissionPercentage, p.advanceMonths);
+        return sum + (advance * 0.5);
       }, 0);
 
     // Growth opportunities
@@ -642,8 +652,10 @@ export function useMetrics() {
       });
 
       const expectedRenewalCount = policiesForRenewal.length;
-      const expectedRenewalRevenue = policiesForRenewal.reduce((sum, p) =>
-        sum + (p.annualPremium * p.commissionPercentage * 0.5), 0); // Assume 50% commission on renewals
+      const expectedRenewalRevenue = policiesForRenewal.reduce((sum, p) => {
+        const advance = calculateCommissionAdvance(p.annualPremium, p.commissionPercentage, p.advanceMonths);
+        return sum + (advance * 0.5); // Assume 50% commission on renewals
+      }, 0);
 
       renewalForecast.push({
         month: futureMonth.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),

@@ -13,6 +13,7 @@ import { useCarriers } from "../../hooks/carriers";
 import { useInfinitePolicies, usePolicyCount } from "../../hooks/policies/useInfinitePolicies";
 import { Policy, PolicyFilters, PolicyStatus } from "../../types/policy.types";
 import { ProductType } from "../../types/commission.types";
+import { calculateCommissionAdvance } from "../../utils/policyCalculations";
 
 interface PolicyListInfiniteProps {
   onEditPolicy: (policyId: string) => void;
@@ -260,7 +261,12 @@ export const PolicyListInfinite: React.FC<PolicyListInfiniteProps> = ({
             ) : (
               displayPolicies.map((policy) => {
                 const carrier = getCarrierById(policy.carrierId);
-                const commission = policy.annualPremium * policy.commissionPercentage;
+                // Calculate commission advance: Monthly Premium × Advance Months × Commission Rate
+                const commission = calculateCommissionAdvance(
+                  policy.annualPremium,
+                  policy.commissionPercentage,
+                  policy.advanceMonths
+                );
                 const productName = policy.productDetails?.name || PRODUCT_ABBREV[policy.product];
 
                 return (

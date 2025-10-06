@@ -50,11 +50,20 @@ export function calculatePaymentAmount(
 
 /**
  * Calculate expected commission advance (9-month advance by default)
+ *
+ * IMPORTANT: This is the ADVANCE amount, not annual commission.
+ * Advance = upfront payment for X months of commissions.
+ *
  * Formula: Monthly Premium × Advance Months × Commission Rate
  *
- * @param annualPremium - Annual premium amount
- * @param commissionPercentage - Commission percentage (e.g., 100 for 100%)
- * @param advanceMonths - Number of months advance (default 9)
+ * @param annualPremium - Annual premium amount (e.g., $1200)
+ * @param commissionPercentage - Commission as WHOLE NUMBER percentage (e.g., 85 for 85%, NOT 0.85)
+ * @param advanceMonths - Number of months advance (default 9, industry standard)
+ * @returns Commission advance amount
+ *
+ * @example
+ * // $100/month premium, 85% commission, 9-month advance
+ * calculateExpectedCommission(1200, 85, 9) // Returns $765
  */
 export function calculateExpectedCommission(
   annualPremium: number,
@@ -67,7 +76,35 @@ export function calculateExpectedCommission(
   const monthlyPremium = annualPremium / 12;
 
   // Calculate advance: Monthly Premium × Advance Months × Commission Rate
+  // Divide by 100 to convert percentage to decimal (85 -> 0.85)
   return (monthlyPremium * advanceMonths * commissionPercentage) / 100;
+}
+
+/**
+ * Calculate expected commission advance from decimal commission rate
+ * Use this when commission is stored as decimal in database (e.g., 0.85 for 85%)
+ *
+ * @param annualPremium - Annual premium amount
+ * @param commissionDecimal - Commission as DECIMAL (e.g., 0.85 for 85%, NOT 85)
+ * @param advanceMonths - Number of months advance (default 9)
+ * @returns Commission advance amount
+ *
+ * @example
+ * // $100/month premium, 0.85 commission rate (85%), 9-month advance
+ * calculateCommissionAdvance(1200, 0.85, 9) // Returns $765
+ */
+export function calculateCommissionAdvance(
+  annualPremium: number,
+  commissionDecimal: number,
+  advanceMonths: number = 9
+): number {
+  if (annualPremium <= 0 || commissionDecimal <= 0) return 0;
+
+  // Convert annual to monthly premium
+  const monthlyPremium = annualPremium / 12;
+
+  // Calculate advance: Monthly Premium × Advance Months × Commission Rate
+  return monthlyPremium * advanceMonths * commissionDecimal;
 }
 
 /**
