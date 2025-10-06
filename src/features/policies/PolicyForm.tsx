@@ -78,15 +78,6 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
     userContractLevel,
   );
 
-  console.log(
-    "🔍 DEBUG: compGuideData =",
-    compGuideData,
-    "for productId =",
-    formData.productId,
-    "contractLevel =",
-    userContractLevel,
-  );
-
   useEffect(() => {
     if (policyId) {
       const policy = getPolicyById(policyId);
@@ -123,13 +114,6 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
       const today = new Date().toISOString().split("T")[0];
       const rates: Record<string, number> = {};
 
-      console.log(
-        "🔍 DEBUG: Fetching commission rates for",
-        products.length,
-        "products with contractLevel =",
-        userContractLevel,
-      );
-
       for (const product of products) {
         const { data } = await supabase
           .from("comp_guide")
@@ -145,17 +129,6 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
         // Use comp_guide rate if available, otherwise fallback to product rate
         rates[product.id] =
           data?.commission_percentage || product.commission_percentage || 0;
-
-        console.log(
-          "🔍 DEBUG: Product",
-          product.name,
-          "- comp_guide:",
-          data?.commission_percentage,
-          "fallback:",
-          product.commission_percentage,
-          "final:",
-          rates[product.id],
-        );
       }
 
       setProductCommissionRates(rates);
@@ -168,10 +141,6 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
   useEffect(() => {
     if (formData.productId && compGuideData) {
       // Use comp_guide commission rate (contract-level based)
-      console.log(
-        "✅ Using comp_guide rate:",
-        compGuideData.commission_percentage,
-      );
       setFormData((prev) => ({
         ...prev,
         commissionPercentage: compGuideData.commission_percentage * 100, // Convert decimal to percentage
@@ -179,10 +148,6 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
     } else if (formData.productId && !compGuideData) {
       // Fallback to product commission rate
       const selectedProduct = products.find((p) => p.id === formData.productId);
-      console.log(
-        "⚠️ Falling back to product rate:",
-        selectedProduct?.commission_percentage,
-      );
       setFormData((prev) => ({
         ...prev,
         commissionPercentage: selectedProduct?.commission_percentage

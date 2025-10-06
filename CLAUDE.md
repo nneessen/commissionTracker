@@ -67,6 +67,41 @@ This is a full-stack application for insurance sales agents to track Key Perform
 - No local database files or SQLite
 - Supabase handles auth, RLS, and all data access
 
+## Database Migration Rules
+
+**CRITICAL: There is ONLY ONE migration directory - `supabase/migrations/`**
+
+**Migration Best Practices:**
+- ✅ ALL migrations go in `supabase/migrations/` ONLY
+- ✅ Use Supabase CLI to create migrations: `supabase migration new <name>`
+- ✅ Migration naming: `YYYYMMDD_NNN_descriptive_name.sql` (e.g., `20251005_001_add_user_preferences.sql`)
+- ✅ Test migrations locally before applying to production
+- ✅ Migrations must be idempotent (safe to run multiple times)
+- ✅ Use transactions for multi-step migrations
+- ❌ NEVER create duplicate migration directories (no `database/`, `db/`, etc.)
+- ❌ NEVER use file extensions like `.OLD`, `.backup`, `.temp` - delete old files or move to `/archive`
+- ❌ NEVER manually edit the schema without creating a migration
+- ❌ NEVER commit migrations that haven't been tested locally
+
+**Migration Workflow:**
+1. Create migration: `supabase migration new add_feature_x`
+2. Write SQL in generated file: `supabase/migrations/YYYYMMDD_NNN_add_feature_x.sql`
+3. Test locally: `supabase db reset` (applies all migrations)
+4. Verify changes: Connect to local DB and test
+5. Commit migration file to git
+6. Apply to production: Supabase auto-applies on git push OR manual `supabase db push`
+
+**Common Migration Commands:**
+- `supabase migration list` - View migration status
+- `supabase migration new <name>` - Create new migration
+- `supabase db reset` - Reset local DB and apply all migrations
+- `supabase db push` - Push migrations to remote (if not auto-deployed)
+
+**Before Creating Migrations, Always:**
+1. Check `supabase/migrations/` for existing migrations
+2. Verify no duplicate directories exist (`database/`, `db/`, etc.)
+3. Use `git status` to see if migrations are already in progress
+
 ## Code Quality Rules
 
 - TypeScript strict mode on.
