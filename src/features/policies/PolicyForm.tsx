@@ -13,6 +13,7 @@ import {
   Policy,
 } from "../../types/policy.types";
 import { ProductType } from "../../types/commission.types";
+import { US_STATES } from "../../types/agent.types";
 
 import {
   calculateAnnualPremium,
@@ -30,61 +31,6 @@ interface PolicyFormProps {
   getPolicyById: (id: string) => Policy | undefined;
 }
 
-// TODO: US_STATES is a constant that can should be in a utils folder instead. this should be stored in this file
-
-const US_STATES = [
-  { value: "AL", label: "AL" },
-  { value: "AK", label: "AK" },
-  { value: "AZ", label: "AZ" },
-  { value: "AR", label: "AR" },
-  { value: "CA", label: "CA" },
-  { value: "CO", label: "CO" },
-  { value: "CT", label: "CT" },
-  { value: "DE", label: "DE" },
-  { value: "FL", label: "FL" },
-  { value: "GA", label: "GA" },
-  { value: "HI", label: "HI" },
-  { value: "ID", label: "ID" },
-  { value: "IL", label: "IL" },
-  { value: "IN", label: "IN" },
-  { value: "IA", label: "IA" },
-  { value: "KS", label: "KS" },
-  { value: "KY", label: "KY" },
-  { value: "LA", label: "LA" },
-  { value: "ME", label: "ME" },
-  { value: "MD", label: "MD" },
-  { value: "MA", label: "MA" },
-  { value: "MI", label: "MI" },
-  { value: "MN", label: "MN" },
-  { value: "MS", label: "MS" },
-  { value: "MO", label: "MO" },
-  { value: "MT", label: "MT" },
-  { value: "NE", label: "NE" },
-  { value: "NV", label: "NV" },
-  { value: "NH", label: "NH" },
-  { value: "NJ", label: "NJ" },
-  { value: "NM", label: "NM" },
-  { value: "NY", label: "NY" },
-  { value: "NC", label: "NC" },
-  { value: "ND", label: "ND" },
-  { value: "OH", label: "OH" },
-  { value: "OK", label: "OK" },
-  { value: "OR", label: "OR" },
-  { value: "PA", label: "PA" },
-  { value: "RI", label: "RI" },
-  { value: "SC", label: "SC" },
-  { value: "SD", label: "SD" },
-  { value: "TN", label: "TN" },
-  { value: "TX", label: "TX" },
-  { value: "UT", label: "UT" },
-  { value: "VT", label: "VT" },
-  { value: "VA", label: "VA" },
-  { value: "WA", label: "WA" },
-  { value: "WV", label: "WV" },
-  { value: "WI", label: "WI" },
-  { value: "WY", label: "WY" },
-];
-
 export const PolicyForm: React.FC<PolicyFormProps> = ({
   policyId,
   onClose,
@@ -95,8 +41,8 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
   const { user } = useAuth();
   const { data: carriers = [] } = useCarriers();
 
-  // Get user's contract level from user metadata (defaults to 100 if not set)
-  const userContractLevel = user?.raw_user_meta_data?.contract_comp_level || 100;
+  const userContractLevel =
+    user?.raw_user_meta_data?.contract_comp_level || 100;
 
   const [formData, setFormData] = useState<NewPolicyForm>({
     clientName: "",
@@ -115,13 +61,31 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [productCommissionRates, setProductCommissionRates] = useState<Record<string, number>>({});
+  const [productCommissionRates, setProductCommissionRates] = useState<
+    Record<string, number>
+  >({});
 
   // Fetch products for selected carrier
-  const { data: products = [], isLoading: productsLoading, error: productsError } = useProducts(formData.carrierId);
+  const {
+    data: products = [],
+    isLoading: productsLoading,
+    error: productsError,
+  } = useProducts(formData.carrierId);
 
   // Fetch commission rate from comp_guide based on product and user's contract level
-  const { data: compGuideData } = useCompGuide(formData.productId, userContractLevel);
+  const { data: compGuideData } = useCompGuide(
+    formData.productId,
+    userContractLevel,
+  );
+
+  console.log(
+    "🔍 DEBUG: compGuideData =",
+    compGuideData,
+    "for productId =",
+    formData.productId,
+    "contractLevel =",
+    userContractLevel,
+  );
 
   useEffect(() => {
     if (policyId) {
@@ -156,23 +120,42 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
     const fetchProductCommissionRates = async () => {
       if (products.length === 0) return;
 
-      const today = new Date().toISOString().split('T')[0];
+      const today = new Date().toISOString().split("T")[0];
       const rates: Record<string, number> = {};
+
+      console.log(
+        "🔍 DEBUG: Fetching commission rates for",
+        products.length,
+        "products with contractLevel =",
+        userContractLevel,
+      );
 
       for (const product of products) {
         const { data } = await supabase
-          .from('comp_guide')
-          .select('commission_percentage')
-          .eq('product_id', product.id)
-          .eq('contract_level', userContractLevel)
-          .lte('effective_date', today)
+          .from("comp_guide")
+          .select("commission_percentage")
+          .eq("product_id", product.id)
+          .eq("contract_level", userContractLevel)
+          .lte("effective_date", today)
           .or(`expiration_date.is.null,expiration_date.gte.${today}`)
-          .order('effective_date', { ascending: false })
+          .order("effective_date", { ascending: false })
           .limit(1)
           .maybeSingle();
 
         // Use comp_guide rate if available, otherwise fallback to product rate
-        rates[product.id] = data?.commission_percentage || product.commission_percentage || 0;
+        rates[product.id] =
+          data?.commission_percentage || product.commission_percentage || 0;
+
+        console.log(
+          "🔍 DEBUG: Product",
+          product.name,
+          "- comp_guide:",
+          data?.commission_percentage,
+          "fallback:",
+          product.commission_percentage,
+          "final:",
+          rates[product.id],
+        );
       }
 
       setProductCommissionRates(rates);
@@ -185,14 +168,22 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
   useEffect(() => {
     if (formData.productId && compGuideData) {
       // Use comp_guide commission rate (contract-level based)
-      setFormData(prev => ({
+      console.log(
+        "✅ Using comp_guide rate:",
+        compGuideData.commission_percentage,
+      );
+      setFormData((prev) => ({
         ...prev,
         commissionPercentage: compGuideData.commission_percentage * 100, // Convert decimal to percentage
       }));
     } else if (formData.productId && !compGuideData) {
       // Fallback to product commission rate
-      const selectedProduct = products.find(p => p.id === formData.productId);
-      setFormData(prev => ({
+      const selectedProduct = products.find((p) => p.id === formData.productId);
+      console.log(
+        "⚠️ Falling back to product rate:",
+        selectedProduct?.commission_percentage,
+      );
+      setFormData((prev) => ({
         ...prev,
         commissionPercentage: selectedProduct?.commission_percentage
           ? selectedProduct.commission_percentage * 100
@@ -209,21 +200,21 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
     const { name, value } = e.target;
 
     // Handle carrier change - reset product selection
-    if (name === 'carrierId') {
-      setFormData(prev => ({
+    if (name === "carrierId") {
+      setFormData((prev) => ({
         ...prev,
         carrierId: value,
-        productId: '', // Reset product when carrier changes
+        productId: "", // Reset product when carrier changes
         commissionPercentage: 0,
       }));
     }
     // Handle product change - commission will be set by useEffect watching compGuideData
-    else if (name === 'productId') {
-      const selectedProduct = products.find(p => p.id === value);
-      setFormData(prev => ({
+    else if (name === "productId") {
+      const selectedProduct = products.find((p) => p.id === value);
+      setFormData((prev) => ({
         ...prev,
         productId: value,
-        product: selectedProduct?.product_type || 'term_life' as ProductType,
+        product: selectedProduct?.product_type || ("term_life" as ProductType),
         commissionPercentage: 0, // Will be updated by useEffect
       }));
     }
@@ -407,10 +398,10 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
                 {!formData.carrierId
                   ? "Select a carrier first"
                   : productsLoading
-                  ? "Loading products..."
-                  : products.length === 0
-                  ? "No products available for this carrier"
-                  : "Select Product"}
+                    ? "Loading products..."
+                    : products.length === 0
+                      ? "No products available for this carrier"
+                      : "Select Product"}
               </option>
               {products.map((product) => (
                 <option key={product.id} value={product.id}>
@@ -423,11 +414,14 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
             {errors.productId && (
               <span className="error-msg">{errors.productId}</span>
             )}
-            {formData.carrierId && !productsLoading && products.length === 0 && (
-              <span className="error-msg" style={{ color: '#ff6b6b' }}>
-                ⚠️ This carrier has no products configured. Please contact admin or select a different carrier.
-              </span>
-            )}
+            {formData.carrierId &&
+              !productsLoading &&
+              products.length === 0 && (
+                <span className="error-msg" style={{ color: "#ff6b6b" }}>
+                  ⚠️ This carrier has no products configured. Please contact
+                  admin or select a different carrier.
+                </span>
+              )}
           </div>
 
           <div className="form-group">
@@ -552,4 +546,3 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
     </form>
   );
 };
-

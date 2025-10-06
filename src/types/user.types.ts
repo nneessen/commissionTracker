@@ -1,4 +1,10 @@
 // User represents the authenticated user with agent properties
+//
+//
+interface UserMetadata {
+  [key: string]: any;
+}
+
 export interface User {
   id: string;
   email: string;
@@ -17,12 +23,13 @@ export interface User {
   createdAt?: Date;
   updatedAt?: Date;
   preferences?: UserPreferences;
+  raw_user_meta_data: UserMetadata;
 }
 
 export interface UserPreferences {
-  theme: 'light' | 'dark';
-  dateFormat: 'MM/DD/YYYY' | 'DD/MM/YYYY' | 'YYYY-MM-DD';
-  currency: 'USD' | 'EUR' | 'GBP' | 'CAD';
+  theme: "light" | "dark";
+  dateFormat: "MM/DD/YYYY" | "DD/MM/YYYY" | "YYYY-MM-DD";
+  currency: "USD" | "EUR" | "GBP" | "CAD";
   defaultCommissionRate: number;
   notifications: {
     emailReports: boolean;
@@ -62,12 +69,12 @@ export interface Chargeback {
   policyId: string;
   commissionId: string;
   userId?: string;
-  chargebackType: 'policy_lapse' | 'refund' | 'cancellation';
+  chargebackType: "policy_lapse" | "refund" | "cancellation";
   chargebackAmount: number;
   chargebackReason?: string;
   policyLapseDate?: Date;
   chargebackDate: Date;
-  status: 'pending' | 'processed' | 'disputed' | 'resolved';
+  status: "pending" | "processed" | "disputed" | "resolved";
   createdAt: Date;
   updatedAt: Date;
 }
@@ -76,12 +83,12 @@ export interface CreateChargebackData {
   policyId: string;
   commissionId: string;
   userId?: string;
-  chargebackType: 'policy_lapse' | 'refund' | 'cancellation';
+  chargebackType: "policy_lapse" | "refund" | "cancellation";
   chargebackAmount: number;
   chargebackReason?: string;
   policyLapseDate?: Date;
   chargebackDate: Date;
-  status?: 'pending' | 'processed' | 'disputed' | 'resolved';
+  status?: "pending" | "processed" | "disputed" | "resolved";
 }
 
 export interface NavigationItem {
@@ -91,3 +98,4 @@ export interface NavigationItem {
   icon?: string;
   isActive?: boolean;
 }
+
