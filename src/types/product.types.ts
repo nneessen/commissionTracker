@@ -1,7 +1,9 @@
 // Product-related types for the commission tracker application
 
-// Re-export ProductType from existing location to avoid breaking changes
-export type { ProductType } from './commission.types';
+import { Database } from './database.types';
+
+// ProductType is the database enum for product types
+export type ProductType = Database["public"]["Enums"]["product_type"];
 
 // Compensation levels matching database enum
 export type CompLevel =

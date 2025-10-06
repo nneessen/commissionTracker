@@ -142,7 +142,7 @@ class CommissionCalculationService {
         () => compGuideService.getCommissionRate(
           carrier.name,
           compGuideProductName as any,
-          contractCompLevel as any
+          contractCompLevel // Now passing as number directly, no cast needed
         ),
         { maxAttempts: 3 }
       );
@@ -165,12 +165,12 @@ class CommissionCalculationService {
         rate: rateResult.data
       };
 
-      logger.info('CommissionCalculation', 'Advance calculated using comp guide', {
+      logger.info('CommissionCalculation', 'Advance calculated using comp guide', JSON.stringify({
         monthlyPremium: data.monthlyPremium,
         advanceMonths,
         commissionRate: rateResult.data,
         advanceAmount: commissionCalculation.amount
-      });
+      }));
 
       return {
         commissionAmount: commissionCalculation.amount, // This is the ADVANCE
@@ -260,12 +260,12 @@ class CommissionCalculationService {
         // commissionRate is already a percentage (e.g., 102.5), so divide by 100
         finalData.commissionAmount = finalData.monthlyPremium * advanceMonths * (finalData.commissionRate / 100);
 
-        logger.info('CommissionCalculation', 'Advance calculated using fallback formula', {
+        logger.info('CommissionCalculation', 'Advance calculated using fallback formula', JSON.stringify({
           monthlyPremium: finalData.monthlyPremium,
           advanceMonths,
           commissionRate: finalData.commissionRate,
           advanceAmount: finalData.commissionAmount
-        });
+        }));
       }
 
       if (!finalData.advanceMonths) {

@@ -6,6 +6,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-10-06 14:25:03
+
+### Changed Files
+- `package-lock.json`
+- `src/features/comps/CompFilters.tsx`
+- `src/features/comps/CompTable.tsx`
+- `src/features/settings/components/CompGuideImporter.tsx`
+- `src/hooks/comps/useCompRates.ts`
+- `src/services/commissions/CommissionCalculationService.ts`
+- `src/services/settings/compGuideService.ts`
+- `src/types/comp.types.ts`
+- `src/types/product.types.ts`
+- `supabase/migrations/20250930000002_remove_agents_use_users.sql`
+- `supabase/migrations/20250930000003_rls_policies_auth.sql`
+- `supabase/migrations/20250930000004_user_metadata_setup.sql`
+- `supabase/migrations/20250930000005_fix_rls_security.sql`
+- `tsconfig.tsbuildinfo`
+
+### Statistics
+```
+ 14 files changed, 86 insertions(+), 94 deletions(-)
+```
+
 ## [Checkpoint] - 2025-10-04 15:54:37
 
 ### Changed Files

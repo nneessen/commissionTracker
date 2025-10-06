@@ -23,7 +23,7 @@ type SortField =
   | "carrier_id"
   | "product_type"
   | "commission_percentage"
-  | "comp_level";
+  | "contract_level";
 type SortOrder = "asc" | "desc";
 
 export function CompTable({ data, isLoading, error }: CompTableProps) {
@@ -81,15 +81,7 @@ export function CompTable({ data, isLoading, error }: CompTableProps) {
     return `${rate.toFixed(2)}%`;
   };
 
-  const getCompLevelBadge = (level: string) => {
-    const badges = {
-      premium: { label: "Premium", color: "bg-purple-100 text-purple-800" },
-      enhanced: { label: "Enhanced", color: "bg-blue-100 text-blue-800" },
-      release: { label: "Release", color: "bg-green-100 text-green-800" },
-      street: { label: "Street", color: "bg-gray-100 text-gray-800" },
-    };
-    return badges[level as keyof typeof badges] || badges.street;
-  };
+  // Removed unnecessary badge categorization - contract level is just a number
 
   const renderPagination = () => {
     if (!data || data.length === 0) return null;
@@ -247,11 +239,11 @@ export function CompTable({ data, isLoading, error }: CompTableProps) {
               <th
                 scope="col"
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                onClick={() => handleSort("comp_level")}
+                onClick={() => handleSort("contract_level")}
               >
                 <div className="flex items-center">
-                  Level
-                  {getSortIcon("comp_level")}
+                  Contract Level
+                  {getSortIcon("contract_level")}
                 </div>
               </th>
               <th
@@ -302,7 +294,6 @@ export function CompTable({ data, isLoading, error }: CompTableProps) {
               </tr>
             ) : (
               paginatedData.map((record) => {
-                const levelBadge = getCompLevelBadge(record.comp_level);
                 return (
                   <tr key={record.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -331,13 +322,8 @@ export function CompTable({ data, isLoading, error }: CompTableProps) {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${levelBadge.color}`}
-                      >
-                        {levelBadge.label}
-                      </span>
-                      <div className="text-xs text-gray-500 mt-1">
-                        {record.comp_level}
+                      <div className="text-lg font-semibold text-gray-900">
+                        {record.contract_level}%
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">

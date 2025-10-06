@@ -1,10 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { compGuideService } from '../../services/settings/compGuideService';
+import { compGuideService, CompGuideCreateData } from '../../services/settings/compGuideService';
 import { Database } from '../../types/database.types';
 
 type CompGuideRow = Database['public']['Tables']['comp_guide']['Row'];
 type CompGuideInsert = Database['public']['Tables']['comp_guide']['Insert'];
-type CompGuideUpdate = Database['public']['Tables']['comp_guide']['Update'];
 
 // Query keys
 export const compRatesKeys = {
@@ -75,7 +74,7 @@ export function useUpdateCompRate() {
       updates,
     }: {
       id: string;
-      updates: CompGuideUpdate;
+      updates: Partial<CompGuideCreateData>;
     }) => {
       const { data, error } = await compGuideService.updateEntry(id, updates);
       if (error) throw new Error(error.message);
@@ -94,7 +93,7 @@ export function useCreateCompRate() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (entry: CompGuideInsert) => {
+    mutationFn: async (entry: CompGuideCreateData) => {
       const { data, error } = await compGuideService.createEntry(entry);
       if (error) throw new Error(error.message);
       return data;
@@ -147,7 +146,7 @@ export function useBulkUpdateCompRates() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (updates: Array<{ id: string; updates: CompGuideUpdate }>) => {
+    mutationFn: async (updates: Array<{ id: string; updates: Partial<CompGuideCreateData> }>) => {
       const promises = updates.map(({ id, updates: data }) =>
         compGuideService.updateEntry(id, data)
       );

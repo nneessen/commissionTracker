@@ -19,7 +19,7 @@ interface ImportSummary {
   carriersToCreate: string[];
   existingCarriers: string[];
   productsToImport: number;
-  compLevels: Database["public"]["Enums"]["comp_level"][];
+  contractLevels: number[];
 }
 
 export const CompGuideImporter: React.FC<CompGuideImporterProps> = ({
@@ -63,20 +63,12 @@ export const CompGuideImporter: React.FC<CompGuideImporterProps> = ({
       existingCarriers.some(existing => existing.name === carrier)
     );
 
-    // Map contract level to comp level enum
-    const mapCompLevel = (contractLevel: number): Database["public"]["Enums"]["comp_level"] => {
-      if (contractLevel <= 85) return 'street';
-      if (contractLevel <= 100) return 'release';
-      if (contractLevel <= 120) return 'enhanced';
-      return 'premium';
-    };
-
     return {
       totalRecords: filteredData.length,
       carriersToCreate,
       existingCarriers: existingCarrierNames,
       productsToImport: [...new Set(filteredData.map(item => item.product))].length,
-      compLevels: [...new Set(filteredData.map(item => mapCompLevel(item.contractLevel)))]
+      contractLevels: [...new Set(filteredData.map(item => item.contractLevel))]
     };
   };
 
@@ -178,18 +170,10 @@ export const CompGuideImporter: React.FC<CompGuideImporterProps> = ({
               return productMap[product] || 'other';
             };
 
-            // Map contract level to comp level enum
-            const mapCompLevel = (contractLevel: number): Database["public"]["Enums"]["comp_level"] => {
-              if (contractLevel <= 85) return 'street';
-              if (contractLevel <= 100) return 'release';
-              if (contractLevel <= 120) return 'enhanced';
-              return 'premium';
-            };
-
             const formData: CreateCompData = {
               carrier_id: carrierId,
               product_type: mapProductType(item.product),
-              comp_level: mapCompLevel(item.contractLevel),
+              contract_level: item.contractLevel, // Use contract level directly as number
               commission_percentage: item.commissionRate,
               bonus_percentage: 0,
               effective_date: new Date(item.effectiveDate).toISOString().split('T')[0],
@@ -348,7 +332,7 @@ export const CompGuideImporter: React.FC<CompGuideImporterProps> = ({
                 <div>
                   <span style={{ fontSize: '14px', color: '#6b7280' }}>Contract Levels</span>
                   <div style={{ fontSize: '20px', fontWeight: '600' }}>
-                    {summary.compLevels.length} ({summary.compLevels[0]}-{summary.compLevels[summary.compLevels.length - 1]})
+                    {summary.contractLevels.length} ({summary.contractLevels[0]}-{summary.contractLevels[summary.contractLevels.length - 1]})
                   </div>
                 </div>
               </div>

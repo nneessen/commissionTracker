@@ -18,7 +18,7 @@ export function CompFiltersComponent({
 }: CompFiltersProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  const handleFilterChange = (key: keyof CompFilters, value: string | undefined) => {
+  const handleFilterChange = (key: keyof CompFilters, value: string | number | undefined) => {
     const newFilters = { ...filters };
 
     if (value === '' || value === undefined) {
@@ -104,24 +104,22 @@ export function CompFiltersComponent({
       {isExpanded && (
         <div className="mt-4 pt-4 border-t border-gray-200">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Comp Level Filter */}
+            {/* Contract Level Filter */}
             <div>
-              <label htmlFor="compLevel" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="contractLevel" className="block text-sm font-medium text-gray-700 mb-2">
                 <BarChart3 className="h-4 w-4 inline mr-1" />
-                Comp Level
+                Contract Level
               </label>
-              <select
-                id="compLevel"
-                value={filters.comp_level || ''}
-                onChange={(e) => handleFilterChange('comp_level', e.target.value as Database["public"]["Enums"]["comp_level"])}
+              <input
+                id="contractLevel"
+                type="number"
+                min="80"
+                max="145"
+                value={filters.contract_level || ''}
+                onChange={(e) => handleFilterChange('contract_level', e.target.value ? parseInt(e.target.value) : undefined)}
+                placeholder="80-145"
                 className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-              >
-                <option value="">All Levels</option>
-                <option value="street">Street</option>
-                <option value="release">Release</option>
-                <option value="enhanced">Enhanced</option>
-                <option value="premium">Premium</option>
-              </select>
+              />
             </div>
 
             {/* Carrier Filter (Duplicate for advanced section) */}
@@ -194,11 +192,11 @@ export function CompFiltersComponent({
                     </button>
                   </span>
                 )}
-                {filters.comp_level && (
+                {filters.contract_level && (
                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
-                    Level: {filters.comp_level}
+                    Contract Level: {filters.contract_level}
                     <button
-                      onClick={() => handleFilterChange('comp_level', undefined)}
+                      onClick={() => handleFilterChange('contract_level', undefined)}
                       className="ml-1 text-orange-600 hover:text-orange-800"
                     >
                       <X className="h-3 w-3" />

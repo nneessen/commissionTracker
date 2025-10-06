@@ -7,7 +7,8 @@ export interface Comp {
   id: string;
   carrier_id: string;
   product_type: Database["public"]["Enums"]["product_type"];
-  comp_level: Database["public"]["Enums"]["comp_level"];
+  contract_level: number; // Changed from comp_level enum to contract_level integer (80-145)
+  product_id?: string; // Added product_id field
   commission_percentage: number;
   bonus_percentage?: number;
   effective_date: string;
@@ -22,7 +23,8 @@ export interface Comp {
 export interface CreateCompData {
   carrier_id: string;
   product_type: Database["public"]["Enums"]["product_type"];
-  comp_level: Database["public"]["Enums"]["comp_level"];
+  contract_level: number; // Changed from comp_level enum to contract_level integer (80-145)
+  product_id?: string; // Added product_id field
   commission_percentage: number;
   bonus_percentage?: number;
   effective_date: string;
@@ -35,7 +37,8 @@ export interface CreateCompData {
 export interface UpdateCompData {
   carrier_id?: string;
   product_type?: Database["public"]["Enums"]["product_type"];
-  comp_level?: Database["public"]["Enums"]["comp_level"];
+  contract_level?: number; // Changed from comp_level enum to contract_level integer (80-145)
+  product_id?: string; // Added product_id field
   commission_percentage?: number;
   bonus_percentage?: number;
   effective_date?: string;
@@ -48,7 +51,8 @@ export interface UpdateCompData {
 export interface CompFilters {
   carrier_id?: string;
   product_type?: Database["public"]["Enums"]["product_type"];
-  comp_level?: Database["public"]["Enums"]["comp_level"];
+  contract_level?: number; // Changed from comp_level enum to contract_level integer (80-145)
+  product_id?: string; // Added product_id field
   effective_from?: string;
   effective_to?: string;
 }
@@ -58,6 +62,6 @@ export interface ProductSummary {
   product_type: Database["public"]["Enums"]["product_type"];
   carrier_count: number;
   avg_commission: number;
-  min_comp_level: Database["public"]["Enums"]["comp_level"];
-  max_comp_level: Database["public"]["Enums"]["comp_level"];
+  min_contract_level: number; // Changed from comp_level to contract_level
+  max_contract_level: number; // Changed from comp_level to contract_level
 }

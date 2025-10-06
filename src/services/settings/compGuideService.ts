@@ -183,11 +183,11 @@ class CompGuideService {
   }
 
   /**
-   * Retrieves the commission rate for a specific carrier, product type, and compensation level
+   * Retrieves the commission rate for a specific carrier, product type, and contract level
    *
    * @param carrierName - The name of the insurance carrier
    * @param productType - The insurance product type enum value
-   * @param compLevel - The compensation level enum value
+   * @param contractLevel - The contract level (integer 80-145)
    * @returns Promise resolving to object with commission percentage or null if not found
    *
    * @example
@@ -205,7 +205,7 @@ class CompGuideService {
   async getCommissionRate(
     carrierName: string,
     productType: Database["public"]["Enums"]["product_type"],
-    compLevel: Database["public"]["Enums"]["comp_level"],
+    contractLevel: number, // Changed from comp_level enum to contract_level integer
   ) {
     // First get the carrier ID
     const { data: carrier, error: carrierError } = await supabase
@@ -221,13 +221,13 @@ class CompGuideService {
       };
     }
 
-    // Then get the commission rate
+    // Then get the commission rate using contract_level instead of comp_level
     const { data, error } = await supabase
       .from("comp_guide")
       .select("commission_percentage")
       .eq("carrier_id", carrier.id)
       .eq("product_type", productType)
-      .eq("comp_level", compLevel)
+      .eq("contract_level", contractLevel) // Changed from comp_level to contract_level
       .single();
 
     return {
