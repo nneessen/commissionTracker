@@ -3,11 +3,15 @@ import { PageLayout } from '../../components/layout';
 import {
   User,
   Settings,
-  Grid3x3
+  Building2,
+  Package,
+  Percent
 } from 'lucide-react';
 import { SettingsCard } from './components/SettingsComponents';
-import { CommissionManagement } from './CommissionManagement';
 import { UserProfile } from './components/UserProfile';
+import { CarriersManagement } from './carriers/CarriersManagement';
+import { ProductsManagement } from './products/ProductsManagement';
+import { CommissionRatesManagement } from './commission-rates/CommissionRatesManagement';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export function SettingsDashboard() {
@@ -19,11 +23,19 @@ export function SettingsDashboard() {
       </div>
 
       <div className="dashboard-content">
-        <Tabs defaultValue="commissions" className="mt-6">
-          <TabsList className="grid w-full grid-cols-3 mb-8">
-            <TabsTrigger value="commissions" className="flex items-center gap-2">
-              <Grid3x3 className="h-4 w-4" />
-              Commission Management
+        <Tabs defaultValue="carriers" className="mt-6">
+          <TabsList className="grid w-full grid-cols-5 mb-8">
+            <TabsTrigger value="carriers" className="flex items-center gap-2">
+              <Building2 className="h-4 w-4" />
+              Carriers
+            </TabsTrigger>
+            <TabsTrigger value="products" className="flex items-center gap-2">
+              <Package className="h-4 w-4" />
+              Products
+            </TabsTrigger>
+            <TabsTrigger value="rates" className="flex items-center gap-2">
+              <Percent className="h-4 w-4" />
+              Commission Rates
             </TabsTrigger>
             <TabsTrigger value="constants" className="flex items-center gap-2">
               <Settings className="h-4 w-4" />
@@ -35,8 +47,16 @@ export function SettingsDashboard() {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="commissions" className="mt-0">
-            <CommissionManagement />
+          <TabsContent value="carriers" className="mt-0">
+            <CarriersManagement />
+          </TabsContent>
+
+          <TabsContent value="products" className="mt-0">
+            <ProductsManagement />
+          </TabsContent>
+
+          <TabsContent value="rates" className="mt-0">
+            <CommissionRatesManagement />
           </TabsContent>
 
           <TabsContent value="constants" className="mt-0">
