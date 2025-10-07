@@ -9,12 +9,19 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/Input';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { ProductWithRates, CONTRACT_LEVELS } from '../hooks/useCommissionRates';
 import { compGuideService } from '@/services/settings/compGuideService';
-import { CheckCircle2, XCircle } from 'lucide-react';
+import { capitalizeWords } from '@/utils/stringUtils';
 
 interface RateEditDialogProps {
   open: boolean;
@@ -52,7 +59,8 @@ export function RateEditDialog({
           data.forEach((entry: any) => {
             const level = entry.contract_level;
             const percentage = entry.commission_percentage * 100; // Convert to percentage
-            newRates[level] = percentage.toString();
+            // Fix floating-point precision issues by rounding to 2 decimal places
+            newRates[level] = percentage.toFixed(2);
             newRateIds[level] = entry.id;
           });
         }
@@ -79,12 +87,12 @@ export function RateEditDialog({
   };
 
   const handleFillAll = () => {
-    const value = prompt('Enter commission percentage to apply to all levels (0-100):');
+    const value = prompt('Enter commission percentage to apply to all levels (0-200):');
     if (!value) return;
 
     const numValue = parseFloat(value);
-    if (isNaN(numValue) || numValue < 0 || numValue > 100) {
-      alert('Please enter a valid percentage between 0 and 100');
+    if (isNaN(numValue) || numValue < 0 || numValue > 200) {
+      alert('Please enter a valid percentage between 0 and 200');
       return;
     }
 
@@ -111,8 +119,8 @@ export function RateEditDialog({
       if (!value.trim()) return; // Skip empty values
 
       const numValue = parseFloat(value);
-      if (isNaN(numValue) || numValue < 0 || numValue > 100) {
-        alert(`Invalid rate for level ${level}%: must be between 0 and 100`);
+      if (isNaN(numValue) || numValue < 0 || numValue > 200) {
+        alert(`Invalid rate for level ${level}%: must be between 0 and 200`);
         hasError = true;
         return;
       }
@@ -131,7 +139,7 @@ export function RateEditDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[700px] max-h-[90vh]">
+      <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>Edit Commission Rates</DialogTitle>
           <DialogDescription>
@@ -141,18 +149,18 @@ export function RateEditDialog({
 
         <div className="space-y-4">
           {/* Product Info */}
-          <div className="rounded-lg border p-4 bg-muted/50">
-            <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between px-1">
+            <div className="flex items-center gap-3">
               <div>
-                <h3 className="font-semibold">{product.productName}</h3>
-                <p className="text-sm text-muted-foreground">{product.carrierName}</p>
+                <span className="font-semibold">{product.productName}</span>
+                <span className="text-muted-foreground"> - {product.carrierName}</span>
               </div>
-              <div className="text-right">
-                <Badge variant="outline">{product.productType.replace('_', ' ')}</Badge>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {filledCount}/{CONTRACT_LEVELS.length} levels set
-                </p>
-              </div>
+              <Badge variant="outline" className="text-xs">
+                {capitalizeWords(product.productType)}
+              </Badge>
+            </div>
+            <div className="text-sm text-muted-foreground">
+              {filledCount}/{CONTRACT_LEVELS.length} set
             </div>
           </div>
 
@@ -168,54 +176,52 @@ export function RateEditDialog({
 
           <Separator />
 
-          {/* Rates Grid */}
-          <ScrollArea className="h-[400px] rounded-md border p-4">
-            {isLoadingDetails ? (
-              <div className="text-center py-8 text-muted-foreground">
-                Loading rates...
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 gap-4">
-                {CONTRACT_LEVELS.map((level) => {
-                  const hasValue = rates[level]?.trim();
-                  const value = rates[level] || '';
+          {/* Rates Table */}
+          {isLoadingDetails ? (
+            <div className="text-center py-8 text-muted-foreground">
+              Loading rates...
+            </div>
+          ) : (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[200px]">Contract Level</TableHead>
+                    <TableHead className="text-right">Commission Rate (%)</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {CONTRACT_LEVELS.map((level) => {
+                    const value = rates[level] || '';
+                    const hasValue = value.trim();
 
-                  return (
-                    <div
-                      key={level}
-                      className={`flex items-center gap-3 rounded-lg border p-3 ${
-                        hasValue ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2 flex-1">
-                        {hasValue ? (
-                          <CheckCircle2 className="h-4 w-4 text-green-600" />
-                        ) : (
-                          <XCircle className="h-4 w-4 text-red-600" />
-                        )}
-                        <span className="font-medium text-sm w-12">
-                          {level}%
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Input
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          max="100"
-                          value={value}
-                          onChange={(val) => handleRateChange(level, String(val))}
-                          placeholder="0.0"
-                          className="h-9 w-24 text-right"
-                        />
-                        <span className="text-sm text-muted-foreground">%</span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </ScrollArea>
+                    return (
+                      <TableRow key={level} className="h-10">
+                        <TableCell className="font-medium">{level}%</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            <input
+                              type="number"
+                              value={value}
+                              onChange={(e) => handleRateChange(level, e.target.value)}
+                              placeholder="0.0"
+                              step="0.01"
+                              min="0"
+                              max="200"
+                              className={`h-8 w-20 text-right text-sm rounded-md border bg-transparent px-3 py-1 shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 ${
+                                hasValue ? 'border-border' : 'border-muted'
+                              }`}
+                            />
+                            <span className="text-sm text-muted-foreground w-4">%</span>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          )}
         </div>
 
         <DialogFooter className="gap-2">

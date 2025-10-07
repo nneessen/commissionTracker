@@ -8,7 +8,7 @@ import {
 } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import App from "./App";
-import { ExpenseManager } from "./features/expenses";
+import { ExpenseManagement } from "./features/expenses";
 import { CommissionList } from "./features/commissions";
 import { PolicyDashboard } from "./features/policies";
 import { AnalyticsDashboard } from "./features/analytics";
@@ -132,7 +132,7 @@ const reportsRoute = new Route({
 const expensesRoute = new Route({
   getParentRoute: () => rootRoute,
   path: "expenses",
-  component: ExpenseManager,
+  component: ExpenseManagement,
 });
 
 // Clients route (coming soon)

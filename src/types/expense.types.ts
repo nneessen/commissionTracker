@@ -1,72 +1,129 @@
-export type ExpenseType = "personal" | "business";
-export type ExpenseCategory = "personal" | "business"; // For backward compatibility
+// src/types/expense.types.ts
 
+import type { Database } from './database.types';
+
+// DB-aligned types
+export type ExpenseType = 'personal' | 'business';
+export type ExpenseCategory = Database['public']['Enums']['expense_category'];
+
+/**
+ * Main Expense interface matching ACTUAL database schema
+ */
 export interface Expense {
   id: string;
+  user_id: string;
   name: string;
+  description: string;
   amount: number;
-  category: ExpenseCategory;
-  expenseType?: ExpenseType; // Optional for backward compatibility
+  category: string; // DB has TEXT not ENUM currently
+  expense_type: ExpenseType;
+  date: string; // ISO date string - DB column is named 'date' not 'expense_date'
+  is_recurring: boolean;
+  recurring_frequency: string | null;
+  receipt_url: string | null;
+  is_deductible: boolean;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * Data required to create a new expense
+ */
+export interface CreateExpenseData {
+  name: string;
+  description: string;
+  amount: number;
+  category: string;
+  expense_type: ExpenseType;
+  date: string; // ISO date string
+  is_recurring?: boolean;
+  recurring_frequency?: string | null;
+  receipt_url?: string | null;
+  is_deductible?: boolean;
+  notes?: string | null;
+}
+
+/**
+ * Data for updating an existing expense
+ */
+export interface UpdateExpenseData {
+  name?: string;
   description?: string;
-  isDeductible?: boolean; // Optional for backward compatibility
-  receiptUrl?: string;
-  createdAt?: Date; // Optional for backward compatibility
-  updatedAt?: Date; // Optional for backward compatibility
-  created_at?: Date; // Optional for BaseEntity compatibility
-  updated_at?: Date; // Optional for BaseEntity compatibility
+  amount?: number;
+  category?: string;
+  expense_type?: ExpenseType;
+  date?: string;
+  is_recurring?: boolean;
+  recurring_frequency?: string | null;
+  receipt_url?: string | null;
+  is_deductible?: boolean;
+  notes?: string | null;
 }
 
-export interface ExpenseData {
-  personal: Expense[];
-  business: Expense[];
-}
-
+/**
+ * Summary totals for expenses
+ */
 export interface ExpenseTotals {
-  personalTotal: number;
-  businessTotal: number;
-  monthlyExpenses: number;
+  personal: number;
+  business: number;
+  deductible: number;
+  total: number;
+  monthlyTotal: number;
 }
 
-export interface NewExpenseForm {
+/**
+ * Monthly breakdown by category
+ */
+export interface MonthlyExpenseBreakdown {
+  totalExpenses: number;
+  categoryBreakdown: Record<string, number>;
+  businessExpenses: number;
+  personalExpenses: number;
+}
+
+/**
+ * Filter options for querying expenses
+ */
+export interface ExpenseFilters {
+  expenseType?: ExpenseType | 'all';
+  category?: string | 'all';
+  startDate?: string;
+  endDate?: string;
+  searchTerm?: string;
+  deductibleOnly?: boolean;
+}
+
+/**
+ * Expense Category Model for customizable user-defined categories
+ */
+export interface ExpenseCategoryModel {
+  id: string;
+  user_id: string;
   name: string;
-  amount: number;
-  category: ExpenseCategory;
+  description: string | null;
+  is_active: boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
 }
 
-export interface Constants {
-  avgAP: number;
-  target1: number;
-  target2: number;
+/**
+ * Data for creating expense category
+ */
+export interface CreateExpenseCategoryData {
+  name: string;
+  description?: string | null;
+  is_active?: boolean;
+  sort_order?: number;
 }
 
-export interface CalculationResult {
-  scenario: string;
-  commissionNeeded: number;
-  apNeeded100: number;
-  policies100: number;
-  apNeeded90: number;
-  policies90: number;
-  apNeeded80: number;
-  policies80: number;
-  apNeeded70: number;
-  policies70: number;
+/**
+ * Data for updating expense category
+ */
+export interface UpdateExpenseCategoryData {
+  name?: string;
+  description?: string | null;
+  is_active?: boolean;
+  sort_order?: number;
 }
-
-export interface PerformanceMetrics {
-  weeklyAPTarget: number;
-  dailyAPTarget: number;
-  quarterlyAPTarget: number;
-  commissionPerPolicy: number;
-  expenseRatio: string;
-}
-
-// Service layer types
-export type CreateExpenseData = Omit<
-  Expense,
-  "id" | "createdAt" | "updatedAt" | "created_at" | "updated_at"
->;
-export type UpdateExpenseData = Partial<CreateExpenseData>;
-
-// Legacy support
-export interface ExpenseItem extends Expense {}
-

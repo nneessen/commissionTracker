@@ -1,1 +1,1 @@
-export { ExpenseManager } from './ExpenseManager';
+export { ExpenseManagement } from './ExpenseManagement';

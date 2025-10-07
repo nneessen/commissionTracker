@@ -16,7 +16,6 @@ import { MetricsCard } from '../analytics';
 import { useExpenseMetrics, useConstants } from '../../hooks';
 import { useMetrics } from '../../hooks/useMetrics';
 import { getBreakevenCalculation, getTargetCalculation } from '../../utils/calculationUtils';
-import { CalculationResult } from '../../types/expense.types';
 
 export const DashboardHome: React.FC = () => {
   // Use new modular hooks
@@ -30,12 +29,25 @@ export const DashboardHome: React.FC = () => {
 
   // Create totals from expense metrics
   const totals = {
-    personalTotal: expenseMetrics?.personalTotal || 0,
-    businessTotal: expenseMetrics?.businessTotal || 0,
+    personalTotal: expenseMetrics?.personal || 0,
+    businessTotal: expenseMetrics?.business || 0,
     monthlyExpenses: expenseMetrics?.monthlyTotal || 0,
   };
 
   // Create calculations based on constants and totals
+  interface CalculationResult {
+    scenario: string;
+    commissionNeeded: number;
+    apNeeded100: number;
+    policies100: number;
+    apNeeded90: number;
+    policies90: number;
+    apNeeded80: number;
+    policies80: number;
+    apNeeded70: number;
+    policies70: number;
+  }
+
   const createCalculationResult = (scenario: string, commissionNeeded: number): CalculationResult => {
     const avgAP = constants?.avgAP || 100000;
     const commissionRate = constants?.commissionRate || 0.1;
