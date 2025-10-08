@@ -1,41 +1,44 @@
 // src/features/expenses/ExpenseManagement.tsx
 
-import React, { useState } from 'react';
+import { useState } from 'react';
+import { Plus, Download } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, Upload, Download, Settings } from 'lucide-react';
 import { ExpenseSummaryCards } from './components/ExpenseSummaryCards';
 import { ExpenseFilters } from './components/ExpenseFilters';
 import { ExpenseTable } from './components/ExpenseTable';
 import { ExpenseDialog } from './components/ExpenseDialog';
 import { ExpenseDeleteDialog } from './components/ExpenseDeleteDialog';
-import { ExpenseBulkImport } from './components/ExpenseBulkImport';
-import { CategoryManagementDialog } from './components/CategoryManagementDialog';
-import { useExpenses, useExpenseMetrics, useCreateExpense, useUpdateExpense, useDeleteExpense } from '@/hooks/expenses';
-import type { Expense, ExpenseFilters as ExpenseFiltersType, CreateExpenseData, UpdateExpenseData } from '@/types/expense.types';
+import { useExpenses } from '@/hooks/expenses/useExpenses';
+import { useExpenseMetrics } from '@/hooks/expenses/useExpenseMetrics';
+import { useCreateExpense } from '@/hooks/expenses/useCreateExpense';
+import { useUpdateExpense } from '@/hooks/expenses/useUpdateExpense';
+import { useDeleteExpense } from '@/hooks/expenses/useDeleteExpense';
+import type { Expense, ExpenseFilters as ExpenseFiltersType, CreateExpenseData } from '@/types/expense.types';
+import { DEFAULT_EXPENSE_CATEGORIES } from '@/types/expense.types';
+import { expenseService } from '@/services/expenses';
 
 export function ExpenseManagement() {
+  // State
   const [filters, setFilters] = useState<ExpenseFiltersType>({
     expenseType: 'all',
     category: 'all',
     searchTerm: '',
     deductibleOnly: false,
   });
-
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
-  const [isCategoryManagementOpen, setIsCategoryManagementOpen] = useState(false);
   const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
 
   // Hooks
   const { data: expenses = [], isLoading: isLoadingExpenses } = useExpenses({ filters });
-  const { data: totals, isLoading: isLoadingMetrics } = useExpenseMetrics();
+  const { data: totals, isLoading: isLoadingMetrics } = useExpenseMetrics({ filters });
   const createExpense = useCreateExpense();
   const updateExpense = useUpdateExpense();
   const deleteExpense = useDeleteExpense();
 
+  // Handlers
   const handleAddExpense = () => {
     setSelectedExpense(null);
     setIsAddDialogOpen(true);
@@ -51,10 +54,10 @@ export function ExpenseManagement() {
     setIsDeleteDialogOpen(true);
   };
 
-  const handleSaveExpense = async (data: CreateExpenseData | { id: string; updates: UpdateExpenseData }) => {
-    if ('id' in data) {
+  const handleSaveExpense = async (data: CreateExpenseData) => {
+    if (selectedExpense) {
       // Update existing
-      await updateExpense.mutateAsync(data);
+      await updateExpense.mutateAsync({ id: selectedExpense.id, updates: data });
       setIsEditDialogOpen(false);
     } else {
       // Create new
@@ -72,142 +75,86 @@ export function ExpenseManagement() {
     }
   };
 
-  const handleBulkImport = async (csvText: string) => {
-    const lines = csvText.trim().split('\n');
-
-    // Skip header row
-    for (let i = 1; i < lines.length; i++) {
-      const line = lines[i].trim();
-      if (!line) continue;
-
-      const [name, description, amountStr, type, category, date, deductibleStr] = line
-        .split(',')
-        .map((s) => s.trim());
-
-      if (!name || !description || !amountStr || !type || !category || !date) {
-        throw new Error(`Invalid data on line ${i + 1}: missing required fields`);
-      }
-
-      const amount = parseFloat(amountStr);
-      if (isNaN(amount) || amount <= 0) {
-        throw new Error(`Invalid amount on line ${i + 1}`);
-      }
-
-      if (type !== 'personal' && type !== 'business') {
-        throw new Error(`Invalid type on line ${i + 1}: must be "personal" or "business"`);
-      }
-
-      const validCategories = ['marketing', 'office', 'travel', 'professional', 'technology', 'other'];
-      if (!validCategories.includes(category)) {
-        throw new Error(`Invalid category on line ${i + 1}`);
-      }
-
-      const expenseData: CreateExpenseData = {
-        name,
-        description,
-        amount,
-        expense_type: type as 'personal' | 'business',
-        category: category,
-        date: date,
-        is_deductible: deductibleStr?.toLowerCase() === 'true',
-        receipt_url: null,
-        notes: null,
-      };
-
-      await createExpense.mutateAsync(expenseData);
-    }
-  };
-
   const handleExportCSV = () => {
-    if (expenses.length === 0) {
-      alert('No expenses to export');
-      return;
-    }
-
-    const headers = ['Date', 'Name', 'Description', 'Type', 'Category', 'Amount', 'Deductible'];
-    const csvContent = [
-      headers.join(','),
-      ...expenses.map((expense) =>
-        [
-          expense.date,
-          `"${expense.name}"`,
-          `"${expense.description}"`,
-          expense.expense_type,
-          expense.category,
-          expense.amount,
-          expense.is_deductible,
-        ].join(',')
-      ),
-    ].join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `expenses-${new Date().toISOString().split('T')[0]}.csv`;
-    link.click();
-    window.URL.revokeObjectURL(url);
+    const csv = expenseService.exportToCSV(expenses);
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `expenses-${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
+
+  // Get unique categories from expenses
+  const categories = DEFAULT_EXPENSE_CATEGORIES.map(cat => cat.name);
 
   return (
-    <>
-      <div className="space-y-6">
-        {/* Summary Cards */}
-        <ExpenseSummaryCards totals={totals} isLoading={isLoadingMetrics} />
-
-        {/* Main Card */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between flex-wrap gap-4">
-              <div>
-                <CardTitle>Expense Management</CardTitle>
-                <CardDescription>
-                  Track and manage your personal and business expenses
-                </CardDescription>
-              </div>
-              <div className="flex gap-2 flex-wrap">
-                <Button variant="outline" onClick={() => setIsCategoryManagementOpen(true)}>
-                  <Settings className="h-4 w-4 mr-2" />
-                  Manage Categories
-                </Button>
-                <Button variant="outline" onClick={handleExportCSV} disabled={expenses.length === 0}>
-                  <Download className="h-4 w-4 mr-2" />
-                  Export CSV
-                </Button>
-                <Button variant="outline" onClick={() => setIsBulkImportOpen(true)}>
-                  <Upload className="h-4 w-4 mr-2" />
-                  Bulk Import
-                </Button>
-                <Button onClick={handleAddExpense}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Expense
-                </Button>
-              </div>
-            </div>
-          </CardHeader>
-
-          <CardContent className="space-y-6">
-            {/* Filters */}
-            <ExpenseFilters filters={filters} onFiltersChange={setFilters} />
-
-            {/* Table */}
-            <ExpenseTable
-              expenses={expenses}
-              isLoading={isLoadingExpenses}
-              onEdit={handleEditExpense}
-              onDelete={handleDeleteExpense}
-            />
-          </CardContent>
-        </Card>
+    <div className="container mx-auto py-6 space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Expenses</h1>
+          <p className="text-muted-foreground">
+            Track and manage your personal and business expenses
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handleExportCSV} disabled={expenses.length === 0}>
+            <Download className="mr-2 h-4 w-4" />
+            Export CSV
+          </Button>
+          <Button onClick={handleAddExpense}>
+            <Plus className="mr-2 h-4 w-4" />
+            Add Expense
+          </Button>
+        </div>
       </div>
+
+      {/* Summary Cards */}
+      <ExpenseSummaryCards totals={totals} isLoading={isLoadingMetrics} />
+
+      {/* Filters */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Filter Expenses</CardTitle>
+          <CardDescription>Search and filter your expenses</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ExpenseFilters
+            filters={filters}
+            onFiltersChange={setFilters}
+            categories={categories}
+          />
+        </CardContent>
+      </Card>
+
+      {/* Expenses Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>All Expenses</CardTitle>
+          <CardDescription>
+            {expenses.length} expense{expenses.length !== 1 ? 's' : ''} found
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ExpenseTable
+            expenses={expenses}
+            isLoading={isLoadingExpenses}
+            onEdit={handleEditExpense}
+            onDelete={handleDeleteExpense}
+          />
+        </CardContent>
+      </Card>
 
       {/* Dialogs */}
       <ExpenseDialog
         open={isAddDialogOpen}
         onOpenChange={setIsAddDialogOpen}
-        expense={null}
         onSave={handleSaveExpense}
-        isSaving={createExpense.isPending}
+        isSubmitting={createExpense.isPending}
       />
 
       <ExpenseDialog
@@ -215,7 +162,7 @@ export function ExpenseManagement() {
         onOpenChange={setIsEditDialogOpen}
         expense={selectedExpense}
         onSave={handleSaveExpense}
-        isSaving={updateExpense.isPending}
+        isSubmitting={updateExpense.isPending}
       />
 
       <ExpenseDeleteDialog
@@ -225,18 +172,6 @@ export function ExpenseManagement() {
         onConfirm={handleConfirmDelete}
         isDeleting={deleteExpense.isPending}
       />
-
-      <ExpenseBulkImport
-        open={isBulkImportOpen}
-        onOpenChange={setIsBulkImportOpen}
-        onImport={handleBulkImport}
-        isImporting={createExpense.isPending}
-      />
-
-      <CategoryManagementDialog
-        open={isCategoryManagementOpen}
-        onOpenChange={setIsCategoryManagementOpen}
-      />
-    </>
+    </div>
   );
 }

@@ -1,2 +1,4 @@
 // src/services/expenses/index.ts
-export { ExpenseService, expenseService } from './expenseService';
+export { expenseService } from './expenseService';
+export { expenseCategoryService } from './expenseCategoryService';
+export { expenseAnalyticsService } from './expenseAnalyticsService';

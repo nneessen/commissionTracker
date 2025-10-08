@@ -8,23 +8,22 @@ import {
 } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import App from "./App";
-import { ExpenseManagement } from "./features/expenses";
+import { ExpenseDashboard } from "./features/expenses";
 import { CommissionList } from "./features/commissions";
 import { PolicyDashboard } from "./features/policies";
 import { AnalyticsDashboard } from "./features/analytics";
 import { DashboardHome } from "./features/dashboard";
 import { CompGuide } from "./features/comps";
 import { SettingsDashboard } from "./features/settings";
-import { ExpensesProvider } from "./contexts/ExpensesContext";
 import { Login, AuthCallback, ResetPassword, EmailVerificationPending } from "./features/auth";
 
-// Create root route with App layout and ExpensesProvider
+// Create root route with App layout
 const rootRoute = new RootRoute({
   component: () => (
-    <ExpensesProvider>
+    <>
       <App />
       <TanStackRouterDevtools />
-    </ExpensesProvider>
+    </>
   ),
 });
 
@@ -132,7 +131,7 @@ const reportsRoute = new Route({
 const expensesRoute = new Route({
   getParentRoute: () => rootRoute,
   path: "expenses",
-  component: ExpenseManagement,
+  component: ExpenseDashboard,
 });
 
 // Clients route (coming soon)

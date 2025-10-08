@@ -1,6 +1,5 @@
 // src/features/expenses/components/ExpenseDeleteDialog.tsx
 
-import React from 'react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,7 +33,6 @@ export function ExpenseDeleteDialog({
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
-      minimumFractionDigits: 2,
     }).format(amount);
   };
 
@@ -42,31 +40,33 @@ export function ExpenseDeleteDialog({
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+          <AlertDialogTitle>Delete Expense?</AlertDialogTitle>
           <AlertDialogDescription>
-            This will permanently delete the expense:
-            <div className="mt-4 p-4 bg-muted rounded-md">
-              <div className="font-semibold">{expense.name}</div>
-              <div className="text-sm">
-                Amount: {formatCurrency(expense.amount)}
-              </div>
-              <div className="text-sm">
-                Type: {expense.expense_type === 'business' ? 'Business' : 'Personal'}
-              </div>
-            </div>
-            <div className="mt-2">
-              This action cannot be undone.
-            </div>
+            Are you sure you want to delete this expense? This action cannot be undone.
           </AlertDialogDescription>
         </AlertDialogHeader>
+
+        <div className="my-4 rounded-lg border p-4 space-y-2">
+          <div className="font-medium">{expense.name}</div>
+          <div className="text-sm text-muted-foreground">{expense.description}</div>
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-muted-foreground">Amount:</span>
+            <span className="font-medium">{formatCurrency(expense.amount)}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-muted-foreground">Type:</span>
+            <span className="font-medium capitalize">{expense.expense_type}</span>
+          </div>
+        </div>
+
         <AlertDialogFooter>
           <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
           <AlertDialogAction
             onClick={onConfirm}
             disabled={isDeleting}
-            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            className="bg-destructive hover:bg-destructive/90"
           >
-            {isDeleting ? 'Deleting...' : 'Delete Expense'}
+            {isDeleting ? 'Deleting...' : 'Delete'}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

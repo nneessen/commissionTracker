@@ -2,24 +2,26 @@
 
 import type { Database } from './database.types';
 
-// DB-aligned types
+// Expense type enum
 export type ExpenseType = 'personal' | 'business';
-export type ExpenseCategory = Database['public']['Enums']['expense_category'];
+
+// Recurring frequency options
+export type RecurringFrequency = 'daily' | 'weekly' | 'monthly' | 'yearly';
 
 /**
- * Main Expense interface matching ACTUAL database schema
+ * Main Expense interface matching database schema
  */
 export interface Expense {
   id: string;
   user_id: string;
   name: string;
-  description: string;
+  description: string | null;
   amount: number;
-  category: string; // DB has TEXT not ENUM currently
+  category: string;
   expense_type: ExpenseType;
-  date: string; // ISO date string - DB column is named 'date' not 'expense_date'
+  date: string; // ISO date string (YYYY-MM-DD)
   is_recurring: boolean;
-  recurring_frequency: string | null;
+  recurring_frequency: RecurringFrequency | null;
   receipt_url: string | null;
   is_deductible: boolean;
   notes: string | null;
@@ -32,13 +34,13 @@ export interface Expense {
  */
 export interface CreateExpenseData {
   name: string;
-  description: string;
+  description?: string | null;
   amount: number;
   category: string;
   expense_type: ExpenseType;
-  date: string; // ISO date string
+  date: string;
   is_recurring?: boolean;
-  recurring_frequency?: string | null;
+  recurring_frequency?: RecurringFrequency | null;
   receipt_url?: string | null;
   is_deductible?: boolean;
   notes?: string | null;
@@ -49,37 +51,16 @@ export interface CreateExpenseData {
  */
 export interface UpdateExpenseData {
   name?: string;
-  description?: string;
+  description?: string | null;
   amount?: number;
   category?: string;
   expense_type?: ExpenseType;
   date?: string;
   is_recurring?: boolean;
-  recurring_frequency?: string | null;
+  recurring_frequency?: RecurringFrequency | null;
   receipt_url?: string | null;
   is_deductible?: boolean;
   notes?: string | null;
-}
-
-/**
- * Summary totals for expenses
- */
-export interface ExpenseTotals {
-  personal: number;
-  business: number;
-  deductible: number;
-  total: number;
-  monthlyTotal: number;
-}
-
-/**
- * Monthly breakdown by category
- */
-export interface MonthlyExpenseBreakdown {
-  totalExpenses: number;
-  categoryBreakdown: Record<string, number>;
-  businessExpenses: number;
-  personalExpenses: number;
 }
 
 /**
@@ -92,12 +73,50 @@ export interface ExpenseFilters {
   endDate?: string;
   searchTerm?: string;
   deductibleOnly?: boolean;
+  recurringOnly?: boolean;
 }
 
 /**
- * Expense Category Model for customizable user-defined categories
+ * Summary totals for expenses
  */
-export interface ExpenseCategoryModel {
+export interface ExpenseTotals {
+  total: number;
+  personal: number;
+  business: number;
+  deductible: number;
+  monthlyTotal: number;
+  yearlyTotal: number;
+}
+
+/**
+ * Monthly expense breakdown
+ */
+export interface MonthlyExpenseBreakdown {
+  month: string; // YYYY-MM format
+  total: number;
+  personal: number;
+  business: number;
+  deductible: number;
+  byCategory: Record<string, number>;
+}
+
+/**
+ * Yearly expense summary
+ */
+export interface YearlyExpenseSummary {
+  year: number;
+  total: number;
+  personal: number;
+  business: number;
+  deductible: number;
+  monthlyBreakdown: MonthlyExpenseBreakdown[];
+  byCategory: Record<string, number>;
+}
+
+/**
+ * Expense Category model for user-defined categories
+ */
+export interface ExpenseCategory {
   id: string;
   user_id: string;
   name: string;
@@ -127,3 +146,69 @@ export interface UpdateExpenseCategoryData {
   is_active?: boolean;
   sort_order?: number;
 }
+
+/**
+ * Data point for trend charts
+ */
+export interface ExpenseTrendData {
+  month: string; // Format: "Jan 2025"
+  personal: number;
+  business: number;
+  total: number;
+}
+
+/**
+ * Category breakdown for pie/bar charts
+ */
+export interface CategoryBreakdownData {
+  category: string;
+  amount: number;
+  percentage: number;
+  count: number;
+}
+
+/**
+ * Comparison data for business vs personal
+ */
+export interface ExpenseComparisonData {
+  type: 'personal' | 'business';
+  amount: number;
+  count: number;
+  avgAmount: number;
+}
+
+/**
+ * Advanced filter options with ranges
+ */
+export interface AdvancedExpenseFilters extends ExpenseFilters {
+  minAmount?: number;
+  maxAmount?: number;
+}
+
+/**
+ * Export options for CSV/PDF
+ */
+export interface ExpenseExportOptions {
+  format: 'csv' | 'pdf';
+  filters?: AdvancedExpenseFilters;
+  includeCharts?: boolean;
+  includeSummary?: boolean;
+}
+
+/**
+ * Default expense categories
+ */
+export const DEFAULT_EXPENSE_CATEGORIES = [
+  { name: 'Office Supplies', description: 'Pens, paper, printer ink, etc.' },
+  { name: 'Travel', description: 'Transportation, hotels, flights' },
+  { name: 'Meals & Entertainment', description: 'Business meals, client entertainment' },
+  { name: 'Utilities', description: 'Electricity, water, internet, phone' },
+  { name: 'Insurance', description: 'Health, liability, property insurance' },
+  { name: 'Marketing', description: 'Advertising, promotional materials' },
+  { name: 'Professional Services', description: 'Legal, accounting, consulting' },
+  { name: 'Technology', description: 'Software subscriptions, hardware' },
+  { name: 'Rent & Lease', description: 'Office space, equipment leases' },
+  { name: 'Training & Education', description: 'Courses, conferences, books' },
+  { name: 'Vehicle', description: 'Gas, maintenance, registration' },
+  { name: 'Other', description: 'Miscellaneous expenses' },
+];

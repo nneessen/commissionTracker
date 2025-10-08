@@ -1,15 +1,15 @@
 # Project Statistics
 
-Last Updated: 2025-10-06 14:25:03
+Last Updated: 2025-10-08 14:09:35
 
 ## Metrics
-- Total Files: 13750
-- Total Lines of Code: 306443
-- Total Commits: 55
+- Total Files: 21637
+- Total Lines of Code: 308238
+- Total Commits: 59
 
 ## Recent Activity
+c082a63 a
+ba2fb97 feat(settings)!: redesign commission management with shadcn/ui components
+d81b63e a
+d62272f docs: multiple changes in .,src/features/comps,src/features/settings/components
 7e5185b chore: remove duplicate database directory and add migration guidelines
-18e92c1 fix(policies): add debug logging for contract-level commission calculation
-0619c36 feat(commissions): implement contract-level commission calculation
-1497478 feat(settings): implement unified commission management grid
-872f72f docs: multiple changes in .,src/features/policies,src/services/policies

@@ -1,175 +1,248 @@
 // src/services/expenses/expenseCategoryService.ts
 
-import { supabase } from '@/services/base/supabase';
+import { supabase } from '../base/supabase';
 import type {
-  ExpenseCategoryModel,
+  ExpenseCategory,
   CreateExpenseCategoryData,
   UpdateExpenseCategoryData,
-} from '@/types/expense.types';
+  DEFAULT_EXPENSE_CATEGORIES,
+} from '../../types/expense.types';
 
-/**
- * Database record shape for expense_categories
- */
-interface ExpenseCategoryDBRecord {
-  id: string;
-  user_id: string;
-  name: string;
-  description: string | null;
-  is_active: boolean;
-  sort_order: number;
-  created_at: string;
-  updated_at: string;
-}
+class ExpenseCategoryService {
+  private readonly TABLE_NAME = 'expense_categories';
 
-/**
- * Transform DB record to application ExpenseCategoryModel
- */
-function transformDBRecord(record: ExpenseCategoryDBRecord): ExpenseCategoryModel {
-  return {
-    id: record.id,
-    user_id: record.user_id,
-    name: record.name,
-    description: record.description,
-    is_active: record.is_active,
-    sort_order: record.sort_order,
-    created_at: record.created_at,
-    updated_at: record.updated_at,
-  };
-}
-
-/**
- * Get all expense categories for the current user
- */
-export async function getExpenseCategories(): Promise<ExpenseCategoryModel[]> {
-  const { data, error } = await supabase
-    .from('expense_categories')
-    .select('*')
-    .eq('is_active', true)
-    .order('sort_order', { ascending: true });
-
-  if (error) {
-    console.error('Error fetching expense categories:', error);
-    throw new Error(`Failed to fetch expense categories: ${error.message}`);
-  }
-
-  return (data as ExpenseCategoryDBRecord[]).map(transformDBRecord);
-}
-
-/**
- * Get all expense categories including inactive ones
- */
-export async function getAllExpenseCategories(): Promise<ExpenseCategoryModel[]> {
-  const { data, error } = await supabase
-    .from('expense_categories')
-    .select('*')
-    .order('sort_order', { ascending: true });
-
-  if (error) {
-    console.error('Error fetching all expense categories:', error);
-    throw new Error(`Failed to fetch all expense categories: ${error.message}`);
-  }
-
-  return (data as ExpenseCategoryDBRecord[]).map(transformDBRecord);
-}
-
-/**
- * Create a new expense category
- */
-export async function createExpenseCategory(
-  categoryData: CreateExpenseCategoryData
-): Promise<ExpenseCategoryModel> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    throw new Error('User not authenticated');
-  }
-
-  const { data, error } = await supabase
-    .from('expense_categories')
-    .insert({
-      user_id: user.id,
-      name: categoryData.name,
-      description: categoryData.description || null,
-      is_active: categoryData.is_active ?? true,
-      sort_order: categoryData.sort_order ?? 0,
-    })
-    .select()
-    .single();
-
-  if (error) {
-    console.error('Error creating expense category:', error);
-    throw new Error(`Failed to create expense category: ${error.message}`);
-  }
-
-  return transformDBRecord(data as ExpenseCategoryDBRecord);
-}
-
-/**
- * Update an existing expense category
- */
-export async function updateExpenseCategory(
-  id: string,
-  updates: UpdateExpenseCategoryData
-): Promise<ExpenseCategoryModel> {
-  const { data, error } = await supabase
-    .from('expense_categories')
-    .update({
-      ...updates,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', id)
-    .select()
-    .single();
-
-  if (error) {
-    console.error('Error updating expense category:', error);
-    throw new Error(`Failed to update expense category: ${error.message}`);
-  }
-
-  return transformDBRecord(data as ExpenseCategoryDBRecord);
-}
-
-/**
- * Delete an expense category (soft delete by setting is_active to false)
- */
-export async function deleteExpenseCategory(id: string): Promise<void> {
-  const { error } = await supabase
-    .from('expense_categories')
-    .update({
-      is_active: false,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', id);
-
-  if (error) {
-    console.error('Error deleting expense category:', error);
-    throw new Error(`Failed to delete expense category: ${error.message}`);
-  }
-}
-
-/**
- * Reorder expense categories
- */
-export async function reorderExpenseCategories(
-  categoryIds: string[]
-): Promise<void> {
-  const updates = categoryIds.map((id, index) => ({
-    id,
-    sort_order: index,
-    updated_at: new Date().toISOString(),
-  }));
-
-  for (const update of updates) {
-    const { error } = await supabase
-      .from('expense_categories')
-      .update({ sort_order: update.sort_order, updated_at: update.updated_at })
-      .eq('id', update.id);
+  /**
+   * Get all active categories for the current user
+   */
+  async getAll(): Promise<ExpenseCategory[]> {
+    const { data, error } = await supabase
+      .from(this.TABLE_NAME)
+      .select('*')
+      .eq('is_active', true)
+      .order('sort_order', { ascending: true })
+      .order('name', { ascending: true });
 
     if (error) {
-      console.error('Error reordering categories:', error);
-      throw new Error(`Failed to reorder categories: ${error.message}`);
+      throw new Error(`Failed to fetch expense categories: ${error.message}`);
+    }
+
+    return (data || []) as ExpenseCategory[];
+  }
+
+  /**
+   * Get all categories including inactive ones
+   */
+  async getAllIncludingInactive(): Promise<ExpenseCategory[]> {
+    const { data, error } = await supabase
+      .from(this.TABLE_NAME)
+      .select('*')
+      .order('sort_order', { ascending: true })
+      .order('name', { ascending: true });
+
+    if (error) {
+      throw new Error(`Failed to fetch all expense categories: ${error.message}`);
+    }
+
+    return (data || []) as ExpenseCategory[];
+  }
+
+  /**
+   * Get a single category by ID
+   */
+  async getById(id: string): Promise<ExpenseCategory> {
+    const { data, error } = await supabase
+      .from(this.TABLE_NAME)
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error) {
+      throw new Error(`Failed to fetch category: ${error.message}`);
+    }
+
+    if (!data) {
+      throw new Error('Category not found');
+    }
+
+    return data as ExpenseCategory;
+  }
+
+  /**
+   * Create a new category
+   */
+  async create(categoryData: CreateExpenseCategoryData): Promise<ExpenseCategory> {
+    const { data, error } = await supabase
+      .from(this.TABLE_NAME)
+      .insert({
+        ...categoryData,
+        is_active: categoryData.is_active ?? true,
+        sort_order: categoryData.sort_order ?? 0,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      if (error.code === '23505') {
+        throw new Error('A category with this name already exists');
+      }
+      throw new Error(`Failed to create category: ${error.message}`);
+    }
+
+    return data as ExpenseCategory;
+  }
+
+  /**
+   * Update an existing category
+   */
+  async update(id: string, updates: UpdateExpenseCategoryData): Promise<ExpenseCategory> {
+    const { data, error } = await supabase
+      .from(this.TABLE_NAME)
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      if (error.code === '23505') {
+        throw new Error('A category with this name already exists');
+      }
+      throw new Error(`Failed to update category: ${error.message}`);
+    }
+
+    return data as ExpenseCategory;
+  }
+
+  /**
+   * Delete a category (soft delete by setting is_active to false)
+   */
+  async delete(id: string): Promise<void> {
+    const { error } = await supabase
+      .from(this.TABLE_NAME)
+      .update({ is_active: false })
+      .eq('id', id);
+
+    if (error) {
+      throw new Error(`Failed to delete category: ${error.message}`);
     }
   }
+
+  /**
+   * Hard delete a category (permanent delete)
+   */
+  async hardDelete(id: string): Promise<void> {
+    const { error } = await supabase
+      .from(this.TABLE_NAME)
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      throw new Error(`Failed to permanently delete category: ${error.message}`);
+    }
+  }
+
+  /**
+   * Initialize default categories for a new user
+   */
+  async initializeDefaultCategories(): Promise<void> {
+    const existingCategories = await this.getAll();
+
+    if (existingCategories.length > 0) {
+      // User already has categories
+      return;
+    }
+
+    // Import the default categories constant
+    const { DEFAULT_EXPENSE_CATEGORIES } = await import('../../types/expense.types');
+
+    // Create all default categories
+    const createPromises = DEFAULT_EXPENSE_CATEGORIES.map((category, index) =>
+      this.create({
+        name: category.name,
+        description: category.description,
+        is_active: true,
+        sort_order: index,
+      })
+    );
+
+    try {
+      await Promise.all(createPromises);
+    } catch (error) {
+      // Some categories might already exist, which is fine
+      console.warn('Some default categories could not be created:', error);
+    }
+  }
+
+  /**
+   * Check if user has any categories
+   */
+  async hasCategories(): Promise<boolean> {
+    const { count, error } = await supabase
+      .from(this.TABLE_NAME)
+      .select('*', { count: 'exact', head: true })
+      .eq('is_active', true);
+
+    if (error) {
+      throw new Error(`Failed to check categories: ${error.message}`);
+    }
+
+    return (count ?? 0) > 0;
+  }
+
+  /**
+   * Reorder categories
+   */
+  async reorderCategories(categoryIds: string[]): Promise<void> {
+    const updates = categoryIds.map((id, index) => ({
+      id,
+      sort_order: index,
+    }));
+
+    // Update each category's sort order
+    const updatePromises = updates.map(({ id, sort_order }) =>
+      supabase
+        .from(this.TABLE_NAME)
+        .update({ sort_order })
+        .eq('id', id)
+    );
+
+    const results = await Promise.all(updatePromises);
+
+    const failedUpdate = results.find(result => result.error);
+    if (failedUpdate?.error) {
+      throw new Error(`Failed to reorder categories: ${failedUpdate.error.message}`);
+    }
+  }
+
+  /**
+   * Restore a soft-deleted category
+   */
+  async restore(id: string): Promise<ExpenseCategory> {
+    const { data, error } = await supabase
+      .from(this.TABLE_NAME)
+      .update({ is_active: true })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(`Failed to restore category: ${error.message}`);
+    }
+
+    return data as ExpenseCategory;
+  }
 }
+
+export const expenseCategoryService = new ExpenseCategoryService();
+
+// Export the old functional API for backward compatibility if needed
+export {
+  expenseCategoryService as default,
+};
+
+// Legacy functional exports (for gradual migration)
+export const getExpenseCategories = () => expenseCategoryService.getAll();
+export const getAllExpenseCategories = () => expenseCategoryService.getAllIncludingInactive();
+export const createExpenseCategory = (data: CreateExpenseCategoryData) => expenseCategoryService.create(data);
+export const updateExpenseCategory = (id: string, data: UpdateExpenseCategoryData) => expenseCategoryService.update(id, data);
+export const deleteExpenseCategory = (id: string) => expenseCategoryService.delete(id);
+export const reorderExpenseCategories = (ids: string[]) => expenseCategoryService.reorderCategories(ids);

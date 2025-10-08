@@ -2,9 +2,10 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { expenseService } from '../../services/expenses/expenseService';
-import type { ExpenseTotals } from '../../types/expense.types';
+import type { ExpenseTotals, ExpenseFilters } from '../../types/expense.types';
 
 export interface UseExpenseMetricsOptions {
+  filters?: ExpenseFilters;
   enabled?: boolean;
   staleTime?: number;
 }
@@ -23,9 +24,9 @@ export interface UseExpenseMetricsResult {
  */
 export const useExpenseMetrics = (options?: UseExpenseMetricsOptions) => {
   return useQuery({
-    queryKey: ['expense-metrics'],
+    queryKey: ['expense-metrics', options?.filters],
     queryFn: async () => {
-      return await expenseService.getTotals();
+      return await expenseService.getTotals(options?.filters);
     },
     staleTime: options?.staleTime ?? 5 * 60 * 1000, // 5 minutes default
     enabled: options?.enabled ?? true,

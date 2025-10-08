@@ -8,27 +8,8 @@ import type {
   ExpenseFilters,
   ExpenseTotals,
   MonthlyExpenseBreakdown,
-  ExpenseType,
+  YearlyExpenseSummary,
 } from '../../types/expense.types';
-
-// Database record type (snake_case from DB, matching ACTUAL schema)
-interface ExpenseDBRecord {
-  id: string;
-  user_id: string;
-  name: string;
-  description: string;
-  amount: string; // Decimal comes as string from DB
-  category: string; // TEXT in DB
-  expense_type: ExpenseType;
-  date: string; // Column is named 'date' not 'expense_date'
-  is_recurring: boolean;
-  recurring_frequency: string | null;
-  receipt_url: string | null;
-  is_deductible: boolean;
-  notes: string | null;
-  created_at: string;
-  updated_at: string;
-}
 
 class ExpenseService {
   /**
@@ -61,31 +42,30 @@ class ExpenseService {
       query = query.eq('is_deductible', true);
     }
 
+    if (filters?.recurringOnly) {
+      query = query.eq('is_recurring', true);
+    }
+
+    if (filters?.searchTerm) {
+      // Search in name and description
+      query = query.or(
+        `name.ilike.%${filters.searchTerm}%,description.ilike.%${filters.searchTerm}%`
+      );
+    }
+
     const { data, error } = await query;
 
     if (error) {
       throw new Error(`Failed to fetch expenses: ${error.message}`);
     }
 
-    let expenses = (data || []).map(this.transformFromDB);
-
-    // Apply search filter (client-side since it searches multiple fields)
-    if (filters?.searchTerm) {
-      const searchLower = filters.searchTerm.toLowerCase();
-      expenses = expenses.filter(
-        (exp) =>
-          exp.name.toLowerCase().includes(searchLower) ||
-          exp.description.toLowerCase().includes(searchLower)
-      );
-    }
-
-    return expenses;
+    return (data || []) as Expense[];
   }
 
   /**
-   * Fetch a single expense by ID
+   * Get a single expense by ID
    */
-  async getById(id: string): Promise<Expense | null> {
+  async getById(id: string): Promise<Expense> {
     const { data, error } = await supabase
       .from(TABLES.EXPENSES)
       .select('*')
@@ -93,33 +73,35 @@ class ExpenseService {
       .single();
 
     if (error) {
-      if (error.code === 'PGRST116') {
-        return null; // Not found
-      }
       throw new Error(`Failed to fetch expense: ${error.message}`);
     }
 
-    return data ? this.transformFromDB(data) : null;
+    if (!data) {
+      throw new Error('Expense not found');
+    }
+
+    return data as Expense;
   }
 
   /**
    * Create a new expense
    */
   async create(expenseData: CreateExpenseData): Promise<Expense> {
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    // Get current user
+    const { data: { user } } = await supabase.auth.getUser();
 
-    if (userError || !user) {
+    if (!user) {
       throw new Error('User not authenticated');
     }
 
-    const dbData = {
-      ...this.transformToDB(expenseData),
-      user_id: user.id,
-    };
-
     const { data, error } = await supabase
       .from(TABLES.EXPENSES)
-      .insert([dbData])
+      .insert({
+        ...expenseData,
+        user_id: user.id,
+        is_recurring: expenseData.is_recurring || false,
+        is_deductible: expenseData.is_deductible || false,
+      })
       .select()
       .single();
 
@@ -127,18 +109,16 @@ class ExpenseService {
       throw new Error(`Failed to create expense: ${error.message}`);
     }
 
-    return this.transformFromDB(data);
+    return data as Expense;
   }
 
   /**
    * Update an existing expense
    */
   async update(id: string, updates: UpdateExpenseData): Promise<Expense> {
-    const dbData = this.transformToDB(updates);
-
     const { data, error } = await supabase
       .from(TABLES.EXPENSES)
-      .update(dbData)
+      .update(updates)
       .eq('id', id)
       .select()
       .single();
@@ -147,14 +127,17 @@ class ExpenseService {
       throw new Error(`Failed to update expense: ${error.message}`);
     }
 
-    return this.transformFromDB(data);
+    return data as Expense;
   }
 
   /**
    * Delete an expense
    */
   async delete(id: string): Promise<void> {
-    const { error } = await supabase.from(TABLES.EXPENSES).delete().eq('id', id);
+    const { error } = await supabase
+      .from(TABLES.EXPENSES)
+      .delete()
+      .eq('id', id);
 
     if (error) {
       throw new Error(`Failed to delete expense: ${error.message}`);
@@ -162,41 +145,7 @@ class ExpenseService {
   }
 
   /**
-   * Get expenses by type (personal or business)
-   */
-  async getByType(expenseType: ExpenseType): Promise<Expense[]> {
-    const { data, error } = await supabase
-      .from(TABLES.EXPENSES)
-      .select('*')
-      .eq('expense_type', expenseType)
-      .order('date', { ascending: false });
-
-    if (error) {
-      throw new Error(`Failed to fetch expenses by type: ${error.message}`);
-    }
-
-    return (data || []).map(this.transformFromDB);
-  }
-
-  /**
-   * Get expenses by category
-   */
-  async getByCategory(category: string): Promise<Expense[]> {
-    const { data, error } = await supabase
-      .from(TABLES.EXPENSES)
-      .select('*')
-      .eq('category', category)
-      .order('date', { ascending: false });
-
-    if (error) {
-      throw new Error(`Failed to fetch expenses by category: ${error.message}`);
-    }
-
-    return (data || []).map(this.transformFromDB);
-  }
-
-  /**
-   * Get expenses within a date range
+   * Get expenses by date range
    */
   async getByDateRange(startDate: string, endDate: string): Promise<Expense[]> {
     const { data, error } = await supabase
@@ -210,161 +159,216 @@ class ExpenseService {
       throw new Error(`Failed to fetch expenses by date range: ${error.message}`);
     }
 
-    return (data || []).map(this.transformFromDB);
+    return (data || []) as Expense[];
   }
 
   /**
-   * Calculate total expenses with breakdowns
+   * Get expense totals
    */
-  async getTotals(): Promise<ExpenseTotals> {
-    const { data, error } = await supabase
-      .from(TABLES.EXPENSES)
-      .select('amount, expense_type, is_deductible');
+  async getTotals(filters?: ExpenseFilters): Promise<ExpenseTotals> {
+    const expenses = await this.getAll(filters);
 
-    if (error) {
-      throw new Error(`Failed to fetch expense totals: ${error.message}`);
-    }
+    const now = new Date();
+    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    const currentYear = now.getFullYear();
 
-    const expenses = data || [];
-
-    const totals: ExpenseTotals = {
-      personal: 0,
-      business: 0,
-      deductible: 0,
-      total: 0,
-      monthlyTotal: 0,
-    };
-
-    expenses.forEach((expense) => {
-      const amount = parseFloat(expense.amount);
-      totals.total += amount;
+    const totals = expenses.reduce((acc, expense) => {
+      acc.total += expense.amount;
 
       if (expense.expense_type === 'personal') {
-        totals.personal += amount;
+        acc.personal += expense.amount;
       } else {
-        totals.business += amount;
+        acc.business += expense.amount;
       }
 
       if (expense.is_deductible) {
-        totals.deductible += amount;
+        acc.deductible += expense.amount;
       }
+
+      // Check if expense is in current month
+      if (expense.date.startsWith(currentMonth)) {
+        acc.monthlyTotal += expense.amount;
+      }
+
+      // Check if expense is in current year
+      if (expense.date.startsWith(String(currentYear))) {
+        acc.yearlyTotal += expense.amount;
+      }
+
+      return acc;
+    }, {
+      total: 0,
+      personal: 0,
+      business: 0,
+      deductible: 0,
+      monthlyTotal: 0,
+      yearlyTotal: 0,
     });
-
-    // Calculate current month total
-    const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
-      .toISOString()
-      .split('T')[0];
-    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0)
-      .toISOString()
-      .split('T')[0];
-
-    const monthlyExpenses = await this.getByDateRange(startOfMonth, endOfMonth);
-    totals.monthlyTotal = monthlyExpenses.reduce((sum, exp) => sum + exp.amount, 0);
 
     return totals;
   }
 
   /**
-   * Get monthly expense breakdown
+   * Get monthly breakdown for a specific year
    */
-  async getMonthlyBreakdown(year: number, month: number): Promise<MonthlyExpenseBreakdown> {
-    const startDate = new Date(year, month - 1, 1).toISOString().split('T')[0];
-    const endDate = new Date(year, month, 0).toISOString().split('T')[0];
+  async getMonthlyBreakdown(year: number): Promise<MonthlyExpenseBreakdown[]> {
+    const startDate = `${year}-01-01`;
+    const endDate = `${year}-12-31`;
+    const expenses = await this.getByDateRange(startDate, endDate);
 
-    const { data, error } = await supabase
-      .from(TABLES.EXPENSES)
-      .select('amount, category, expense_type')
-      .gte('date', startDate)
-      .lte('date', endDate);
+    const monthlyData: Record<string, MonthlyExpenseBreakdown> = {};
 
-    if (error) {
-      throw new Error(`Failed to fetch monthly breakdown: ${error.message}`);
-    }
+    expenses.forEach(expense => {
+      const monthKey = expense.date.substring(0, 7); // YYYY-MM
 
-    const expenses = data || [];
-
-    const breakdown: MonthlyExpenseBreakdown = {
-      totalExpenses: 0,
-      categoryBreakdown: {},
-      businessExpenses: 0,
-      personalExpenses: 0,
-    };
-
-    expenses.forEach((expense) => {
-      const amount = parseFloat(expense.amount);
-      breakdown.totalExpenses += amount;
-
-      // Category breakdown
-      const category = expense.category;
-      breakdown.categoryBreakdown[category] =
-        (breakdown.categoryBreakdown[category] || 0) + amount;
-
-      // Type breakdown
-      if (expense.expense_type === 'business') {
-        breakdown.businessExpenses += amount;
-      } else {
-        breakdown.personalExpenses += amount;
+      if (!monthlyData[monthKey]) {
+        monthlyData[monthKey] = {
+          month: monthKey,
+          total: 0,
+          personal: 0,
+          business: 0,
+          deductible: 0,
+          byCategory: {},
+        };
       }
+
+      monthlyData[monthKey].total += expense.amount;
+
+      if (expense.expense_type === 'personal') {
+        monthlyData[monthKey].personal += expense.amount;
+      } else {
+        monthlyData[monthKey].business += expense.amount;
+      }
+
+      if (expense.is_deductible) {
+        monthlyData[monthKey].deductible += expense.amount;
+      }
+
+      // Track by category
+      if (!monthlyData[monthKey].byCategory[expense.category]) {
+        monthlyData[monthKey].byCategory[expense.category] = 0;
+      }
+      monthlyData[monthKey].byCategory[expense.category] += expense.amount;
     });
 
-    return breakdown;
+    // Convert to array and sort by month
+    return Object.values(monthlyData).sort((a, b) => a.month.localeCompare(b.month));
   }
 
   /**
-   * Transform database record to application Expense type
+   * Get yearly summary
    */
-  private transformFromDB(dbRecord: ExpenseDBRecord): Expense {
-    return {
-      id: dbRecord.id,
-      user_id: dbRecord.user_id,
-      name: dbRecord.name,
-      description: dbRecord.description,
-      amount: parseFloat(dbRecord.amount),
-      category: dbRecord.category,
-      expense_type: dbRecord.expense_type,
-      date: dbRecord.date,
-      is_recurring: dbRecord.is_recurring,
-      recurring_frequency: dbRecord.recurring_frequency,
-      receipt_url: dbRecord.receipt_url,
-      is_deductible: dbRecord.is_deductible,
-      notes: dbRecord.notes,
-      created_at: dbRecord.created_at,
-      updated_at: dbRecord.updated_at,
+  async getYearlySummary(year: number): Promise<YearlyExpenseSummary> {
+    const monthlyBreakdown = await this.getMonthlyBreakdown(year);
+
+    const summary: YearlyExpenseSummary = {
+      year,
+      total: 0,
+      personal: 0,
+      business: 0,
+      deductible: 0,
+      monthlyBreakdown,
+      byCategory: {},
     };
+
+    monthlyBreakdown.forEach(month => {
+      summary.total += month.total;
+      summary.personal += month.personal;
+      summary.business += month.business;
+      summary.deductible += month.deductible;
+
+      // Aggregate categories
+      Object.entries(month.byCategory).forEach(([category, amount]) => {
+        if (!summary.byCategory[category]) {
+          summary.byCategory[category] = 0;
+        }
+        summary.byCategory[category] += amount;
+      });
+    });
+
+    return summary;
   }
 
   /**
-   * Transform application data to database format
+   * Export expenses to CSV format
    */
-  private transformToDB(
-    data: CreateExpenseData | UpdateExpenseData
-  ): Partial<ExpenseDBRecord> {
-    const dbData: Partial<ExpenseDBRecord> = {};
+  exportToCSV(expenses: Expense[]): string {
+    if (!expenses || expenses.length === 0) {
+      return '';
+    }
 
-    if ('name' in data && data.name !== undefined) dbData.name = data.name;
-    if ('description' in data && data.description !== undefined)
-      dbData.description = data.description;
-    if ('amount' in data && data.amount !== undefined)
-      dbData.amount = data.amount.toString();
-    if ('category' in data && data.category !== undefined) dbData.category = data.category;
-    if ('expense_type' in data && data.expense_type !== undefined)
-      dbData.expense_type = data.expense_type;
-    if ('date' in data && data.date !== undefined) dbData.date = data.date;
-    if ('is_recurring' in data && data.is_recurring !== undefined)
-      dbData.is_recurring = data.is_recurring;
-    if ('recurring_frequency' in data && data.recurring_frequency !== undefined)
-      dbData.recurring_frequency = data.recurring_frequency;
-    if ('receipt_url' in data && data.receipt_url !== undefined)
-      dbData.receipt_url = data.receipt_url;
-    if ('is_deductible' in data && data.is_deductible !== undefined)
-      dbData.is_deductible = data.is_deductible;
-    if ('notes' in data && data.notes !== undefined) dbData.notes = data.notes;
+    const headers = [
+      'Date',
+      'Name',
+      'Description',
+      'Amount',
+      'Category',
+      'Type',
+      'Tax Deductible',
+      'Recurring',
+      'Notes',
+    ];
 
-    return dbData;
+    const rows = expenses.map(expense => [
+      expense.date,
+      expense.name,
+      expense.description || '',
+      expense.amount.toFixed(2),
+      expense.category,
+      expense.expense_type,
+      expense.is_deductible ? 'Yes' : 'No',
+      expense.is_recurring ? 'Yes' : 'No',
+      expense.notes || '',
+    ]);
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row =>
+        row.map(cell =>
+          `"${String(cell).replace(/"/g, '""')}"`
+        ).join(',')
+      ),
+    ].join('\n');
+
+    return csvContent;
+  }
+
+  /**
+   * Import expenses from CSV data
+   */
+  async importFromCSV(csvData: string): Promise<{ imported: number; errors: string[] }> {
+    const lines = csvData.trim().split('\n');
+    const headers = lines[0].toLowerCase().replace(/['"]/g, '').split(',');
+
+    let imported = 0;
+    const errors: string[] = [];
+
+    for (let i = 1; i < lines.length; i++) {
+      try {
+        const values = lines[i].match(/(".*?"|[^,]+)/g) || [];
+        const cleanValues = values.map(v => v.replace(/^["']|["']$/g, ''));
+
+        const expenseData: CreateExpenseData = {
+          date: cleanValues[headers.indexOf('date')] || new Date().toISOString().split('T')[0],
+          name: cleanValues[headers.indexOf('name')] || 'Imported Expense',
+          description: cleanValues[headers.indexOf('description')] || null,
+          amount: parseFloat(cleanValues[headers.indexOf('amount')] || '0'),
+          category: cleanValues[headers.indexOf('category')] || 'Other',
+          expense_type: (cleanValues[headers.indexOf('type')] as 'personal' | 'business') || 'personal',
+          is_deductible: cleanValues[headers.indexOf('tax deductible')]?.toLowerCase() === 'yes',
+          is_recurring: cleanValues[headers.indexOf('recurring')]?.toLowerCase() === 'yes',
+          notes: cleanValues[headers.indexOf('notes')] || null,
+        };
+
+        await this.create(expenseData);
+        imported++;
+      } catch (error) {
+        errors.push(`Row ${i + 1}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+    }
+
+    return { imported, errors };
   }
 }
 
 export const expenseService = new ExpenseService();
-export { ExpenseService };
-export type { CreateExpenseData, UpdateExpenseData } from '../../types/expense.types';

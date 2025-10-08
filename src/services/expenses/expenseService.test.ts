@@ -19,13 +19,14 @@ describe('ExpenseService', () => {
   const mockExpenseDBRecord = {
     id: '123',
     user_id: 'user-1',
-    agent_id: null,
     name: 'Office Supplies',
     description: 'Pens and paper',
     amount: '45.99',
     category: 'office' as const,
     expense_type: 'business' as const,
-    expense_date: '2025-01-15',
+    date: '2025-01-15',
+    is_recurring: false,
+    recurring_frequency: null,
     receipt_url: null,
     is_deductible: true,
     notes: null,
@@ -36,13 +37,14 @@ describe('ExpenseService', () => {
   const mockExpense: Expense = {
     id: '123',
     user_id: 'user-1',
-    agent_id: null,
     name: 'Office Supplies',
     description: 'Pens and paper',
     amount: 45.99,
     category: 'office',
     expense_type: 'business',
-    expense_date: '2025-01-15',
+    date: '2025-01-15',
+    is_recurring: false,
+    recurring_frequency: null,
     receipt_url: null,
     is_deductible: true,
     notes: null,
@@ -123,7 +125,7 @@ describe('ExpenseService', () => {
         amount: 45.99,
         category: 'office',
         expense_type: 'business',
-        expense_date: '2025-01-15',
+        date: '2025-01-15',
         is_deductible: true,
       };
 
@@ -151,7 +153,7 @@ describe('ExpenseService', () => {
         amount: 45.99,
         category: 'office',
         expense_type: 'business',
-        expense_date: '2025-01-15',
+        date: '2025-01-15',
       };
 
       const mockFrom = vi.fn().mockReturnValue({

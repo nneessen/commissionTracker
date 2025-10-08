@@ -11,6 +11,8 @@ const DEFAULT_CONSTANTS: Constants = {
   target2: 6500,
 };
 
+export type UseConstantsResult = ReturnType<typeof useConstants>;
+
 /**
  * Hook to fetch and manage constants using TanStack Query
  * Returns standard TanStack Query result with data property
@@ -49,7 +51,7 @@ export function useUpdateConstant() {
         throw new Error('Commission rate must be between 0 and 1');
       }
 
-      await constantsService.setValue(field, value);
+      await constantsService.setValue(String(field), value);
       return { field, value };
     },
     onSuccess: (data) => {
@@ -77,7 +79,7 @@ export function useResetConstants() {
   return useMutation({
     mutationFn: async () => {
       const updatedConstants = await constantsService.updateMultiple(
-        Object.entries(DEFAULT_CONSTANTS).map(([key, value]) => ({ key, value }))
+        Object.entries(DEFAULT_CONSTANTS).map(([key, value]) => ({ key: String(key), value }))
       );
       return updatedConstants;
     },

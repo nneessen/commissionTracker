@@ -32,11 +32,7 @@ INSERT INTO constants (key, value, description) VALUES
 ON CONFLICT (key) DO NOTHING;
 
 -- Insert some sample carriers if none exist
--- Note: carriers table already exists from 001_initial_schema.sql with different schema
--- Schema has: id, name, code, contact_info, commission_structure, created_at, updated_at
-INSERT INTO carriers (name, commission_structure) VALUES
-  ('Sample Insurance Co.', '{"first_year": 0.08, "renewal": 0.02}')
-ON CONFLICT (name) DO NOTHING;
+-- Skipped - will be handled by application initialization
 
 -- Create indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_constants_key ON constants(key);
