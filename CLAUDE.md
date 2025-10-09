@@ -16,13 +16,22 @@ This is a full-stack application for insurance sales agents to track Key Perform
 - Track insurance policies (the source of truth for all metrics)
 - Calculate KPIs: persistency rates, average annual premium (AP), policies sold/cancelled/lapsed
 - Analyze performance by state, carrier, product type
-- Track commission earnings and advances
+- Track commission earnings with contract-level calculations
+- Monitor advances and splits with upline agents
 - Monitor pace metrics (policies needed per day/week/month to hit goals)
-- Expense tracking for business operations
+- Expense tracking for business operations with categories and reports
+- Advanced time period filtering (MTD, YTD, Last 30/60/90 days, custom ranges)
 
 **Core Entity:** POLICIES - Everything derives from policy data
 **Target User:** Individual insurance agents (single-user deployment)
 **Design Principles:** Low concurrency, low cost, strong data safety, real-time KPI calculations
+
+**Recent Major Features (as of Oct 2025):**
+- ✅ Contract-level commission system with automatic calculations
+- ✅ Redesigned data-dense dashboard with quick actions
+- ✅ Time period filtering across all views
+- ✅ Commission management grid with splits and advances
+- ✅ Expense categories and reporting system
 
 ---
 
@@ -156,8 +165,17 @@ Keep features self-contained. Each feature should export:
 **Policies Table** (Source of Truth):
 
 - Contains: client info, carrier, product, premium, status, dates
+- Links to contract-level commission settings
 - Drives all KPI calculations
 - Never deleted, only status updated (active → lapsed → cancelled)
+
+**Commission System** (Contract-Level):
+
+- **Commission Settings**: Stored at contract level (carrier + product + contract_level)
+- **Automatic Calculation**: Commissions auto-calculated when policies are added
+- **Split Management**: Track splits with upline agents (percentage based)
+- **Advance Tracking**: Monitor advances and chargebacks
+- **Time Period Filters**: MTD, YTD, Last 30/60/90 days, custom ranges
 
 **Key Metrics Calculated from Policies:**
 
@@ -165,8 +183,9 @@ Keep features self-contained. Each feature should export:
 - **Avg AP**: `AVG(annual_premium WHERE status='active')`
 - **Pace Metrics**: `(annual_target - YTD_premium) / weeks_remaining / avg_AP = policies_per_week_needed`
 - **State Performance**: `GROUP BY client_state → SUM(annual_premium), COUNT(*), AVG(annual_premium)`
+- **Commission Performance**: Total earned, advances outstanding, splits paid
 
-See `/docs/kpi-definitions.md` for complete formulas.
+See `/docs/kpi-definitions.md` for complete formulas and `/docs/commission-lifecycle-business-rules.md` for commission rules.
 
 ---
 

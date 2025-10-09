@@ -76,14 +76,16 @@ Open [http://localhost:5173](http://localhost:5173) to view in browser.
 
 ### Core Functionality
 
-- ✅ **Policy Management** - Track insurance policies with real products
-- ✅ **Product Selection** - Real carrier products with commission rates
-- ✅ **Commission Tracking** - Auto-calculate based on product rates
-- ✅ **Expense Tracking** - Monitor business expenses
-- ✅ **Comp Guide** - FFG commission rate guides (7 carriers, 42 products)
-- ✅ **Carrier Management** - Real insurance carriers from FFG
-- ✅ **Analytics** - View metrics and performance data
-- ✅ **Infinite Scrolling** - Handle unlimited policies with pagination
+- ✅ **Policy Management** - Track insurance policies with real products and status tracking
+- ✅ **Contract-Level Commissions** - Automatic commission calculations based on carrier contracts
+- ✅ **Commission Tracking** - Track earnings, advances, splits with upline agents
+- ✅ **Time Period Filtering** - MTD, YTD, Last 30/60/90 days, custom date ranges
+- ✅ **Dashboard Analytics** - Data-dense overview with quick actions and KPI metrics
+- ✅ **Expense Tracking** - Categorized business expenses with reporting
+- ✅ **Comp Guide** - FFG commission rate guides (7 carriers, 42+ products)
+- ✅ **Carrier Management** - Real insurance carriers with product hierarchies
+- ✅ **Performance Analytics** - Track persistency, pace metrics, state performance
+- ✅ **Infinite Scrolling** - Handle unlimited policies with cursor-based pagination
 
 ### Technical Features
 
@@ -130,11 +132,14 @@ commissionTracker/
 ├── src/
 │   ├── components/        # Reusable UI components
 │   ├── features/          # Feature modules
-│   │   ├── commissions/
-│   │   ├── policies/
-│   │   ├── expenses/
-│   │   ├── settings/
-│   │   └── commission-guide/
+│   │   ├── analytics/     # Performance analytics
+│   │   ├── auth/          # Authentication flows
+│   │   ├── commissions/   # Commission management
+│   │   ├── comps/         # Comp guide management
+│   │   ├── dashboard/     # Dashboard overview
+│   │   ├── expenses/      # Expense tracking
+│   │   ├── policies/      # Policy management
+│   │   └── settings/      # User & commission settings
 │   ├── hooks/             # TanStack Query hooks
 │   │   ├── carriers/
 │   │   ├── commissions/
@@ -142,12 +147,11 @@ commissionTracker/
 │   │   ├── policies/
 │   │   └── compGuide/
 │   ├── services/          # Business logic
-│   │   ├── commissions/
-│   │   │   ├── CommissionCRUDService.ts
-│   │   │   ├── CommissionCalculationService.ts
-│   │   │   └── CommissionAnalyticsService.ts
-│   │   ├── settings/
-│   │   └── monitoring/
+│   │   ├── commissions/   # Commission calculations & CRUD
+│   │   ├── expenses/      # Expense management
+│   │   ├── policies/      # Policy operations
+│   │   ├── settings/      # Settings management
+│   │   └── monitoring/    # Performance tracking
 │   ├── types/             # TypeScript types
 │   ├── utils/             # Utilities
 │   │   ├── cache.ts       # Caching layer
@@ -155,8 +159,10 @@ commissionTracker/
 │   │   └── performance.ts # Performance monitoring
 │   └── errors/            # Error classes
 ├── supabase/
-│   └── migrations/        # Database migrations
+│   └── migrations/        # Database migrations (ONLY migration dir)
 ├── plans/                 # Project planning docs
+│   ├── ACTIVE/           # Current work in progress
+│   └── completed/        # Completed features
 └── docs/                  # Additional documentation
 ```
 
