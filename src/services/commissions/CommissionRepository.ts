@@ -340,35 +340,6 @@ export class CommissionRepository extends BaseRepository<Commission, CreateCommi
     }
   }
 
-  protected transformFromDB(dbRecord: any): Commission {
-    return {
-      id: dbRecord.id,
-      policyId: dbRecord.policy_id,
-      userId: dbRecord.user_id,
-      client: dbRecord.client, // JSONB field
-      carrierId: dbRecord.carrier_id,
-      product: dbRecord.product,
-      type: dbRecord.type,
-      status: dbRecord.status,
-      calculationBasis: dbRecord.calculation_basis,
-      annualPremium: parseFloat(dbRecord.annual_premium || '0'),
-      monthlyPremium: parseFloat(dbRecord.monthly_premium || '0'),
-      commissionAmount: parseFloat(dbRecord.commission_amount || '0'),
-      commissionRate: parseFloat(dbRecord.commission_rate || '0'),
-      advanceMonths: dbRecord.advance_months || 0,
-      monthEarned: dbRecord.month_earned,
-      yearEarned: dbRecord.year_earned,
-      quarterEarned: dbRecord.quarter_earned,
-      expectedDate: dbRecord.expected_date ? new Date(dbRecord.expected_date) : undefined,
-      actualDate: dbRecord.actual_date ? new Date(dbRecord.actual_date) : undefined,
-      paidDate: dbRecord.paid_date ? new Date(dbRecord.paid_date) : undefined,
-      createdAt: new Date(dbRecord.created_at),
-      updatedAt: new Date(dbRecord.updated_at),
-      created_at: new Date(dbRecord.created_at),
-      updated_at: new Date(dbRecord.updated_at),
-      notes: dbRecord.notes,
-    };
-  }
 
   protected transformToDB(data: any, isUpdate = false): any {
     const dbData: any = {};
