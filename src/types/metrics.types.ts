@@ -188,3 +188,17 @@ export interface StatePerformance {
   revenue: number;
   averageSize: number;
 }
+
+// Dashboard calculation types
+export interface CalculationResult {
+  scenario: string;
+  commissionNeeded: number;
+  apNeeded100: number;
+  policies100: number;
+  apNeeded90: number;
+  policies90: number;
+  apNeeded80: number;
+  policies80: number;
+  apNeeded70: number;
+  policies70: number;
+}
