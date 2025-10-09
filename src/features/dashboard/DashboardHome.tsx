@@ -1,16 +1,40 @@
 // src/features/dashboard/DashboardHome.v2.tsx
 // COMPLETELY REDESIGNED - NO CARD GRIDS, DATA-DENSE, PROFESSIONAL
 
-import React from 'react';
+import React, { useState } from 'react';
+import { useNavigate } from '@tanstack/react-router';
 import { PageLayout } from '../../components/layout';
 import { useExpenseMetrics, useConstants } from '../../hooks';
 import { useMetrics } from '../../hooks/useMetrics';
+import { useCreateExpense } from '../../hooks/expenses/useCreateExpense';
+import { useCreatePolicy } from '../../hooks/policies/useCreatePolicy';
 import { TrendingUp, TrendingDown, AlertCircle, CheckCircle } from 'lucide-react';
+import showToast from '../../utils/toast';
+import { ExpenseDialog } from '../expenses/components/ExpenseDialog';
+import { PolicyForm } from '../policies/PolicyForm';
+import type { CreateExpenseData } from '../../types/expense.types';
+import type { NewPolicyForm, CreatePolicyData } from '../../types/policy.types';
+import { clientService } from '../../services/clients/clientService';
+import { useAuth } from '../../contexts/AuthContext';
 
 export const DashboardHome: React.FC = () => {
+  // Navigation
+  const navigate = useNavigate();
+
+  // Auth
+  const { user } = useAuth();
+
+  // Data hooks
   const { data: expenseMetrics } = useExpenseMetrics();
   const { data: constants } = useConstants();
   const { commissionMetrics, policyMetrics, clientMetrics } = useMetrics();
+
+  // Mutation hooks
+  const createExpense = useCreateExpense();
+  const createPolicy = useCreatePolicy();
+
+  // Dialog state for quick actions
+  const [activeDialog, setActiveDialog] = useState<'policy' | 'expense' | null>(null);
 
   const formatCurrency = (value: number) => {
     return `$${value.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
@@ -18,6 +42,109 @@ export const DashboardHome: React.FC = () => {
 
   const formatPercent = (value: number) => {
     return `${value.toFixed(1)}%`;
+  };
+
+  /**
+   * Handles quick action button clicks
+   * Opens appropriate dialog or navigates to correct page
+   */
+  const handleQuickAction = (action: string) => {
+    switch (action) {
+      case 'Add Policy':
+        setActiveDialog('policy');
+        break;
+      case 'Add Expense':
+        setActiveDialog('expense');
+        break;
+      case 'View Reports':
+        navigate({ to: '/analytics' });
+        break;
+      default:
+        console.warn(`Unknown action: ${action}`);
+    }
+  };
+
+  /**
+   * Handles saving a new expense from the quick action dialog
+   */
+  const handleSaveExpense = async (data: CreateExpenseData) => {
+    try {
+      await createExpense.mutateAsync(data);
+      showToast.success('Expense created successfully!');
+      setActiveDialog(null);
+    } catch (error) {
+      showToast.error('Failed to create expense. Please try again.');
+      console.error('Error creating expense:', error);
+    }
+  };
+
+  /**
+   * Adapter function for PolicyForm - handles client creation and policy creation
+   * Copied from PolicyDashboard to ensure consistency
+   */
+  const handleAddPolicy = async (formData: NewPolicyForm) => {
+    try {
+      // Verify user is authenticated
+      if (!user?.id) {
+        throw new Error('You must be logged in to create a policy');
+      }
+
+      // Create or find the client (with user_id for RLS compliance)
+      const client = await clientService.createOrFind({
+        name: formData.clientName,
+        email: formData.clientEmail || undefined,
+        phone: formData.clientPhone || undefined,
+        address: {
+          state: formData.clientState,
+        },
+      }, user.id);
+
+      // Calculate monthly premium based on payment frequency
+      const monthlyPremium = formData.paymentFrequency === 'annual'
+        ? (formData.annualPremium || 0) / 12
+        : formData.paymentFrequency === 'semi-annual'
+        ? (formData.annualPremium || 0) / 6
+        : formData.paymentFrequency === 'quarterly'
+        ? (formData.annualPremium || 0) / 3
+        : (formData.annualPremium || 0) / 12; // Default to monthly
+
+      // Validate commission percentage
+      const commissionPercent = formData.commissionPercentage || 0;
+      if (commissionPercent < 0 || commissionPercent > 999.99) {
+        showToast.error('Commission percentage must be between 0 and 999.99');
+        throw new Error('Commission percentage must be between 0 and 999.99');
+      }
+
+      // Convert form data to match database schema
+      const policyData: CreatePolicyData = {
+        policyNumber: formData.policyNumber,
+        status: formData.status,
+        clientId: client.id,
+        userId: user.id,
+        carrierId: formData.carrierId,
+        product: formData.product,
+        effectiveDate: new Date(formData.effectiveDate),
+        termLength: formData.termLength,
+        expirationDate: formData.expirationDate
+          ? new Date(formData.expirationDate)
+          : undefined,
+        annualPremium: formData.annualPremium || 0,
+        monthlyPremium: monthlyPremium,
+        paymentFrequency: formData.paymentFrequency,
+        commissionPercentage: commissionPercent / 100,
+        notes: formData.notes || undefined,
+      };
+
+      const result = await createPolicy.mutateAsync(policyData);
+      showToast.success(`Policy ${result.policyNumber} created successfully!`);
+      setActiveDialog(null);
+      return result;
+    } catch (error: any) {
+      const errorMessage = error?.message || 'Failed to create policy. Please try again.';
+      showToast.error(errorMessage);
+      console.error('Error creating policy:', error);
+      throw error; // Re-throw to keep modal open
+    }
   };
 
   // Calculate real metrics
@@ -50,6 +177,9 @@ export const DashboardHome: React.FC = () => {
 
   const isBreakeven = ytdCommission >= totalExpenses;
   const surplusDeficit = ytdCommission - totalExpenses;
+
+  // Loading state for quick actions
+  const isCreating = createPolicy.isPending || createExpense.isPending;
 
   return (
     <PageLayout>
@@ -165,17 +295,17 @@ export const DashboardHome: React.FC = () => {
             </thead>
             <tbody>
               {[
-                { metric: 'Commission Income', current: ytdCommission, target: totalExpenses, unit: '$' },
-                { metric: 'Active Policies', current: activePolicies, target: 10, unit: '#' },
-                { metric: 'Retention Rate', current: retentionRate, target: 85, unit: '%' },
-                { metric: 'Avg Policy Premium', current: avgPremium, target: constants?.avgAP || 15000, unit: '$' },
-                { metric: 'Commission Rate', current: avgCommissionRate * 100, target: (constants?.commissionRate || 0.2) * 100, unit: '%' },
-                { metric: 'Total Clients', current: totalClients, target: 20, unit: '#' },
-                { metric: 'Policies per Client', current: parseFloat(policiesPerClient), target: 2, unit: 'x' },
+                { metric: 'Commission Income', current: ytdCommission, target: totalExpenses, unit: '$', showTarget: true },
+                { metric: 'Active Policies', current: activePolicies, target: null, unit: '#', showTarget: false },
+                { metric: 'Retention Rate', current: retentionRate, target: null, unit: '%', showTarget: false },
+                { metric: 'Avg Policy Premium', current: avgPremium, target: constants?.avgAP || 15000, unit: '$', showTarget: true },
+                { metric: 'Commission Rate', current: avgCommissionRate * 100, target: (constants?.commissionRate || 0.2) * 100, unit: '%', showTarget: true },
+                { metric: 'Total Clients', current: totalClients, target: null, unit: '#', showTarget: false },
+                { metric: 'Policies per Client', current: parseFloat(policiesPerClient), target: null, unit: 'x', showTarget: false },
               ].map((row, i) => {
-                const pct = row.target > 0 ? (row.current / row.target) * 100 : 0;
-                const status = pct >= 100 ? 'hit' : pct >= 75 ? 'good' : pct >= 50 ? 'fair' : 'poor';
-                const statusColor = status === 'hit' ? '#10b981' : status === 'good' ? '#3b82f6' : status === 'fair' ? '#f59e0b' : '#ef4444';
+                const pct = row.showTarget && row.target && row.target > 0 ? (row.current / row.target) * 100 : 0;
+                const status = row.showTarget ? (pct >= 100 ? 'hit' : pct >= 75 ? 'good' : pct >= 50 ? 'fair' : 'poor') : 'neutral';
+                const statusColor = status === 'hit' ? '#10b981' : status === 'good' ? '#3b82f6' : status === 'fair' ? '#f59e0b' : status === 'poor' ? '#ef4444' : '#94a3b8';
 
                 return (
                   <tr key={i} style={{ borderBottom: '1px solid #f3f4f6' }}>
@@ -184,19 +314,21 @@ export const DashboardHome: React.FC = () => {
                       {row.unit === '$' ? formatCurrency(row.current) : row.unit === '%' ? formatPercent(row.current) : row.current.toFixed(1)}
                     </td>
                     <td style={{ padding: '8px 4px', textAlign: 'right', color: '#656d76', fontFamily: 'Monaco, monospace' }}>
-                      {row.unit === '$' ? formatCurrency(row.target) : row.unit === '%' ? formatPercent(row.target) : row.target}
+                      {row.showTarget && row.target ? (row.unit === '$' ? formatCurrency(row.target) : row.unit === '%' ? formatPercent(row.target) : row.target) : '—'}
                     </td>
                     <td style={{ padding: '8px 4px', textAlign: 'right', fontWeight: 600, color: statusColor }}>
-                      {pct.toFixed(0)}%
+                      {row.showTarget ? `${pct.toFixed(0)}%` : '—'}
                     </td>
                     <td style={{ padding: '8px 4px', textAlign: 'center' }}>
-                      <span style={{
-                        display: 'inline-block',
-                        width: '8px',
-                        height: '8px',
-                        borderRadius: '50%',
-                        background: statusColor,
-                      }} />
+                      {row.showTarget && (
+                        <span style={{
+                          display: 'inline-block',
+                          width: '8px',
+                          height: '8px',
+                          borderRadius: '50%',
+                          background: statusColor,
+                        }} />
+                      )}
                     </td>
                   </tr>
                 );
@@ -260,31 +392,38 @@ export const DashboardHome: React.FC = () => {
               Quick Actions
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              {['Add Policy', 'Record Commission', 'Add Expense', 'View Reports'].map((action, i) => (
+              {['Add Policy', 'Add Expense', 'View Reports'].map((action, i) => (
                 <button
                   key={i}
+                  onClick={() => handleQuickAction(action)}
+                  disabled={isCreating}
                   style={{
                     padding: '8px 12px',
                     borderRadius: '6px',
                     border: '1px solid #e2e8f0',
-                    background: '#f8f9fa',
+                    background: isCreating ? '#f3f4f6' : '#f8f9fa',
                     fontSize: '10px',
                     fontWeight: 500,
-                    cursor: 'pointer',
+                    cursor: isCreating ? 'not-allowed' : 'pointer',
                     textAlign: 'left',
-                    color: '#1a1a1a',
+                    color: isCreating ? '#94a3b8' : '#1a1a1a',
                     transition: 'all 0.2s ease',
+                    opacity: isCreating ? 0.6 : 1,
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.background = '#e2e8f0';
-                    e.currentTarget.style.borderColor = '#cbd5e0';
+                    if (!isCreating) {
+                      e.currentTarget.style.background = '#e2e8f0';
+                      e.currentTarget.style.borderColor = '#cbd5e0';
+                    }
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.background = '#f8f9fa';
-                    e.currentTarget.style.borderColor = '#e2e8f0';
+                    if (!isCreating) {
+                      e.currentTarget.style.background = '#f8f9fa';
+                      e.currentTarget.style.borderColor = '#e2e8f0';
+                    }
                   }}
                 >
-                  {action}
+                  {isCreating && action !== 'View Reports' ? `${action}...` : action}
                 </button>
               ))}
             </div>
@@ -349,6 +488,34 @@ export const DashboardHome: React.FC = () => {
           ))}
         </div>
       </div>
+
+      {/* Quick Action Dialogs */}
+      <ExpenseDialog
+        open={activeDialog === 'expense'}
+        onOpenChange={(open) => setActiveDialog(open ? 'expense' : null)}
+        onSave={handleSaveExpense}
+        isSubmitting={createExpense.isPending}
+      />
+
+      {/* Policy Modal - Using same pattern as PolicyDashboard */}
+      {activeDialog === 'policy' && (
+        <div className="modal-overlay" onClick={() => setActiveDialog(null)}>
+          <div className="modal-dialog" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>New Policy Submission</h2>
+              <button className="modal-close" onClick={() => setActiveDialog(null)}>
+                ×
+              </button>
+            </div>
+            <PolicyForm
+              onClose={() => setActiveDialog(null)}
+              addPolicy={handleAddPolicy}
+              updatePolicy={() => Promise.resolve()}
+              getPolicyById={() => undefined}
+            />
+          </div>
+        </div>
+      )}
     </PageLayout>
   );
 };

@@ -12,6 +12,7 @@ import { UserProfile } from './components/UserProfile';
 import { CarriersManagement } from './carriers/CarriersManagement';
 import { ProductsManagement } from './products/ProductsManagement';
 import { CommissionRatesManagement } from './commission-rates/CommissionRatesManagement';
+import { ConstantsManagement } from './ConstantsManagement';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export function SettingsDashboard() {
@@ -61,13 +62,7 @@ export function SettingsDashboard() {
 
           <TabsContent value="constants" className="mt-0">
             <SettingsCard title="Constants Management" icon={<Settings size={20} />}>
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <Settings className="mb-4 h-12 w-12 text-muted-foreground opacity-50" />
-                <p className="text-muted-foreground">Constants management features coming soon.</p>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  Configure default values, commission rates, and application settings.
-                </p>
-              </div>
+              <ConstantsManagement />
             </SettingsCard>
           </TabsContent>
 

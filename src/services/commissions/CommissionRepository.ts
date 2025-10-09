@@ -25,6 +25,40 @@ export class CommissionRepository extends BaseRepository<Commission, CreateCommi
   }
 
   /**
+   * Transform database record to Commission object
+   * Maps database column names to TypeScript interface property names
+   */
+  protected transformFromDB(dbRecord: any): Commission {
+    return {
+      id: dbRecord.id,
+      policyId: dbRecord.policy_id,
+      userId: dbRecord.user_id,
+      client: dbRecord.client || {},
+      carrierId: dbRecord.carrier_id || '',
+      product: dbRecord.product || '',
+      type: dbRecord.type,
+      status: dbRecord.status,
+      calculationBasis: dbRecord.calculation_basis || '',
+      annualPremium: parseFloat(dbRecord.annual_premium || 0),
+      monthlyPremium: parseFloat(dbRecord.monthly_premium || 0),
+      commissionAmount: parseFloat(dbRecord.amount || 0), // DB column is 'amount'
+      commissionRate: parseFloat(dbRecord.rate || 0), // DB column is 'rate'
+      advanceMonths: dbRecord.advance_months || 9,
+      contractCompLevel: dbRecord.contract_comp_level,
+      isAutoCalculated: dbRecord.is_auto_calculated || false,
+      expectedDate: dbRecord.expected_date ? new Date(dbRecord.expected_date) : undefined,
+      actualDate: dbRecord.actual_date ? new Date(dbRecord.actual_date) : undefined,
+      paidDate: dbRecord.payment_date ? new Date(dbRecord.payment_date) : undefined, // DB column is 'payment_date'
+      monthEarned: dbRecord.month_earned,
+      yearEarned: dbRecord.year_earned,
+      quarterEarned: dbRecord.quarter_earned,
+      notes: dbRecord.notes,
+      createdAt: new Date(dbRecord.created_at),
+      updatedAt: dbRecord.updated_at ? new Date(dbRecord.updated_at) : undefined,
+    } as Commission;
+  }
+
+  /**
    * Override findById to use caching and batching
    */
   async findById(id: string): Promise<Commission | null> {
@@ -81,7 +115,7 @@ export class CommissionRepository extends BaseRepository<Commission, CreateCommi
           throw this.handleError(error, 'findByPolicy');
         }
 
-        return data?.map(this.transformFromDB) || [];
+        return data?.map(item => this.transformFromDB(item)) || [];
       } catch (error) {
         throw this.wrapError(error, 'findByPolicy');
       }
@@ -100,7 +134,7 @@ export class CommissionRepository extends BaseRepository<Commission, CreateCommi
         throw this.handleError(error, 'findByAgent');
       }
 
-      return data?.map(this.transformFromDB) || [];
+      return data?.map(item => this.transformFromDB(item)) || [];
     } catch (error) {
       throw this.wrapError(error, 'findByAgent');
     }
@@ -118,7 +152,7 @@ export class CommissionRepository extends BaseRepository<Commission, CreateCommi
         throw this.handleError(error, 'findByStatus');
       }
 
-      return data?.map(this.transformFromDB) || [];
+      return data?.map(item => this.transformFromDB(item)) || [];
     } catch (error) {
       throw this.wrapError(error, 'findByStatus');
     }
@@ -136,7 +170,7 @@ export class CommissionRepository extends BaseRepository<Commission, CreateCommi
         throw this.handleError(error, 'findByCarrier');
       }
 
-      return data?.map(this.transformFromDB) || [];
+      return data?.map(item => this.transformFromDB(item)) || [];
     } catch (error) {
       throw this.wrapError(error, 'findByCarrier');
     }
@@ -155,7 +189,7 @@ export class CommissionRepository extends BaseRepository<Commission, CreateCommi
         throw this.handleError(error, 'findByDateRange');
       }
 
-      return data?.map(this.transformFromDB) || [];
+      return data?.map(item => this.transformFromDB(item)) || [];
     } catch (error) {
       throw this.wrapError(error, 'findByDateRange');
     }

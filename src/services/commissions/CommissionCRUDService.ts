@@ -102,8 +102,8 @@ class CommissionCRUDService {
   async getAll(): Promise<Commission[]> {
     try {
       return await withRetry(async () => {
-        const commissions = await this.repository.findAll();
-        return commissions.map(this.transformFromDB);
+        // CommissionRepository already transforms the data in its findAll method
+        return await this.repository.findAll();
       }, { maxAttempts: 2 });
     } catch (error) {
       throw this.handleError(error, 'getAll');
@@ -140,7 +140,8 @@ class CommissionCRUDService {
         if (!commission) {
           throw new NotFoundError('Commission', id);
         }
-        return this.transformFromDB(commission);
+        // Repository already transforms the data
+        return commission;
       }, { maxAttempts: 2 });
     } catch (error) {
       if (error instanceof NotFoundError) {
@@ -164,8 +165,8 @@ class CommissionCRUDService {
    */
   async getByPolicyId(policyId: string): Promise<Commission[]> {
     try {
-      const commissions = await this.repository.findByPolicy(policyId);
-      return commissions.map(this.transformFromDB);
+      // Repository already transforms the data
+      return await this.repository.findByPolicy(policyId);
     } catch (error) {
       throw this.handleError(error, 'getByPolicyId');
     }
@@ -185,8 +186,8 @@ class CommissionCRUDService {
    */
   async getCommissionsByUser(userId: string): Promise<Commission[]> {
     try {
-      const commissions = await this.repository.findByAgent(userId);
-      return commissions.map(this.transformFromDB);
+      // Repository already transforms the data
+      return await this.repository.findByAgent(userId);
     } catch (error) {
       throw this.handleError(error, 'getCommissionsByUser');
     }
@@ -432,15 +433,16 @@ class CommissionCRUDService {
       type: dbRecord.type,
       status: dbRecord.status,
       calculationBasis: dbRecord.calculation_basis,
-      annualPremium: parseFloat(dbRecord.annual_premium),
-      monthlyPremium: parseFloat(dbRecord.monthly_premium || dbRecord.annual_premium / 12),
-      commissionAmount: parseFloat(dbRecord.commission_amount),
-      commissionRate: parseFloat(dbRecord.commission_rate || 0),
+      annualPremium: parseFloat(dbRecord.annual_premium || 0),
+      monthlyPremium: parseFloat(dbRecord.monthly_premium || dbRecord.annual_premium / 12 || 0),
+      commissionAmount: parseFloat(dbRecord.amount || dbRecord.commission_amount || 0), // DB uses 'amount'
+      commissionRate: parseFloat(dbRecord.rate || dbRecord.commission_rate || 0), // DB uses 'rate'
       advanceMonths: dbRecord.advance_months || 9,
       contractCompLevel: dbRecord.contract_comp_level,
       isAutoCalculated: dbRecord.is_auto_calculated || false,
       expectedDate: dbRecord.expected_date ? new Date(dbRecord.expected_date) : undefined,
       actualDate: dbRecord.actual_date ? new Date(dbRecord.actual_date) : undefined,
+      paidDate: dbRecord.payment_date ? new Date(dbRecord.payment_date) : undefined, // DB uses 'payment_date'
       monthEarned: dbRecord.month_earned,
       yearEarned: dbRecord.year_earned,
       notes: dbRecord.notes,
