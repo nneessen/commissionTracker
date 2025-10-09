@@ -1,67 +1,25 @@
-import React from 'react';
-import { InputProps } from '../../types';
+// src/components/ui/input.tsx
+import * as React from "react"
+import { cn } from "@/lib/utils"
 
-export const Input: React.FC<InputProps> = ({
-  label,
-  type = 'text',
-  placeholder,
-  value,
-  onChange,
-  error,
-  disabled = false,
-  required = false,
-  className = '',
-  prefix,
-  suffix,
-}) => {
-  const getInputClass = () => {
-    let inputClass = 'form-input';
+export interface InputProps
+  extends React.InputHTMLAttributes<HTMLInputElement> {}
 
-    if (error) {
-      inputClass += ' form-input-error';
-    }
+const Input = React.forwardRef<HTMLInputElement, InputProps>(
+  ({ className, type, ...props }, ref) => {
+    return (
+      <input
+        type={type}
+        className={cn(
+          "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+          className
+        )}
+        ref={ref}
+        {...props}
+      />
+    )
+  }
+)
+Input.displayName = "Input"
 
-    if (disabled) {
-      inputClass += ' form-input-disabled';
-    }
-
-    return `${inputClass} ${className}`;
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const inputValue = e.target.value;
-    if (type === 'number') {
-      onChange(inputValue === '' ? 0 : parseFloat(inputValue) || 0);
-    } else {
-      onChange(inputValue);
-    }
-  };
-
-  return (
-    <div className="form-group">
-      {label && (
-        <label className="form-label">
-          {label}
-          {required && <span className="required">*</span>}
-        </label>
-      )}
-      <div className={prefix || suffix ? 'input-group' : ''}>
-        {prefix && <span className="input-prefix">{prefix}</span>}
-        <input
-          type={type}
-          value={value}
-          onChange={handleChange}
-          placeholder={placeholder}
-          disabled={disabled}
-          required={required}
-          className={getInputClass()}
-          step={type === 'number' ? '0.01' : undefined}
-        />
-        {suffix && <span className="input-suffix">{suffix}</span>}
-      </div>
-      {error && (
-        <p className="form-error">{error}</p>
-      )}
-    </div>
-  );
-};
+export { Input }

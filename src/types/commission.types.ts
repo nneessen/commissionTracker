@@ -24,12 +24,22 @@ export interface Commission {
   status: CommissionStatus;
   calculationBasis: CalculationBasis;
 
-  // Financial - Enhanced for 9-month advance model
+  // Financial - Commission Advance Model
   annualPremium: number;
   monthlyPremium?: number; // Optional for backward compatibility
-  commissionAmount: number;
-  commissionRate: number; // Auto-calculated from comp guide or manual override
-  advanceMonths?: number; // Optional for backward compatibility
+
+  // ADVANCE (upfront payment)
+  advanceAmount: number;        // The upfront commission payment (monthly_premium × 9 × rate)
+  advanceMonths: number;         // Number of months in advance (default 9)
+
+  // EARNING TRACKING (as client pays premiums)
+  monthsPaid: number;            // How many premiums the client has paid
+  earnedAmount: number;          // Portion of advance that's been earned
+  unearnedAmount: number;        // Portion of advance still at risk of chargeback
+  lastPaymentDate?: Date;        // When the last premium was paid
+
+  // COMMISSION RATE
+  commissionRate: number;        // Commission percentage from comp guide (e.g., 95 for 95%)
 
   // Comp Guide Integration
   contractCompLevel?: number; // Agent's contract level (80-145)

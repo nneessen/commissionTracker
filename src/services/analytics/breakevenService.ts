@@ -271,11 +271,11 @@ class BreakevenService {
 
       // Project future chargebacks based on risk level
       if (chargeback_risk.riskLevel === 'high') {
-        projectedChargebacks += commission.commissionAmount * 0.8; // 80% chance
+        projectedChargebacks += commission.advanceAmount * 0.8; // 80% chance
       } else if (chargeback_risk.riskLevel === 'medium') {
-        projectedChargebacks += commission.commissionAmount * 0.3; // 30% chance
+        projectedChargebacks += commission.advanceAmount * 0.3; // 30% chance
       } else {
-        projectedChargebacks += commission.commissionAmount * 0.05; // 5% chance
+        projectedChargebacks += commission.advanceAmount * 0.05; // 5% chance
       }
     });
 

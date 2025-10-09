@@ -262,10 +262,11 @@ export const PolicyListInfinite: React.FC<PolicyListInfiniteProps> = ({
               displayPolicies.map((policy) => {
                 const carrier = getCarrierById(policy.carrierId);
                 // Calculate commission advance: Monthly Premium × Advance Months × Commission Rate
+                // Note: Using default 9 months advance - actual advances are tracked in commissions table
                 const commission = calculateCommissionAdvance(
                   policy.annualPremium,
                   policy.commissionPercentage,
-                  policy.advanceMonths
+                  9 // Default advance months
                 );
                 const productName = policy.productDetails?.name || PRODUCT_ABBREV[policy.product];
 

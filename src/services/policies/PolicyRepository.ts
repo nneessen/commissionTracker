@@ -407,7 +407,7 @@ export class PolicyRepository extends BaseRepository<Policy, CreatePolicyData, U
       monthlyPremium: parseFloat(dbRecord.monthly_premium || '0'),
       paymentFrequency: dbRecord.payment_frequency,
       commissionPercentage: parseFloat(dbRecord.commission_percentage || '0'),
-      advanceMonths: dbRecord.advance_months || 0,
+      // advanceMonths removed - now only in commissions table
       createdAt: new Date(dbRecord.created_at),
       updatedAt: new Date(dbRecord.updated_at),
       created_at: new Date(dbRecord.created_at),
@@ -443,7 +443,7 @@ export class PolicyRepository extends BaseRepository<Policy, CreatePolicyData, U
     if (data.monthlyPremium !== undefined) dbData.monthly_premium = data.monthlyPremium;
     if (data.paymentFrequency !== undefined) dbData.payment_frequency = data.paymentFrequency;
     if (data.commissionPercentage !== undefined) dbData.commission_percentage = data.commissionPercentage;
-    if (data.advanceMonths !== undefined) dbData.advance_months = data.advanceMonths;
+    // advanceMonths removed - now only in commissions table
     if (data.createdBy !== undefined) dbData.created_by = data.createdBy;
     if (data.notes !== undefined) dbData.notes = data.notes;
 

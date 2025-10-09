@@ -49,8 +49,8 @@ export interface Policy {
   annualPremium: number;
   monthlyPremium?: number; // Optional for backward compatibility
   paymentFrequency: PaymentFrequency;
-  commissionPercentage: number; // Override carrier default if needed
-  advanceMonths?: number; // Optional for backward compatibility
+  commissionPercentage: number; // Commission rate as decimal (e.g., 0.95 for 95%)
+  // Note: advanceMonths removed - now only stored in commissions table
 
   // Metadata
   createdAt: Date;

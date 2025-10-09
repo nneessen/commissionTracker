@@ -41,14 +41,25 @@ export class CommissionRepository extends BaseRepository<Commission, CreateCommi
       calculationBasis: dbRecord.calculation_basis || '',
       annualPremium: parseFloat(dbRecord.annual_premium || 0),
       monthlyPremium: parseFloat(dbRecord.monthly_premium || 0),
-      commissionAmount: parseFloat(dbRecord.amount || 0), // DB column is 'amount'
-      commissionRate: parseFloat(dbRecord.rate || 0), // DB column is 'rate'
-      advanceMonths: dbRecord.advance_months || 9,
+
+      // ADVANCE (upfront payment) - Use commission_amount from DB
+      advanceAmount: parseFloat(dbRecord.commission_amount || dbRecord.advance_amount || dbRecord.amount || 0),
+      advanceMonths: dbRecord.advance_months ?? 9,
+
+      // EARNING TRACKING
+      monthsPaid: dbRecord.months_paid || 0,
+      earnedAmount: parseFloat(dbRecord.earned_amount || 0),
+      unearnedAmount: parseFloat(dbRecord.unearned_amount || 0),
+      lastPaymentDate: dbRecord.last_payment_date ? new Date(dbRecord.last_payment_date) : undefined,
+
+      // COMMISSION RATE
+      commissionRate: parseFloat(dbRecord.rate || 0),
+
       contractCompLevel: dbRecord.contract_comp_level,
       isAutoCalculated: dbRecord.is_auto_calculated || false,
       expectedDate: dbRecord.expected_date ? new Date(dbRecord.expected_date) : undefined,
       actualDate: dbRecord.actual_date ? new Date(dbRecord.actual_date) : undefined,
-      paidDate: dbRecord.payment_date ? new Date(dbRecord.payment_date) : undefined, // DB column is 'payment_date'
+      paidDate: dbRecord.payment_date || dbRecord.paid_date ? new Date(dbRecord.payment_date || dbRecord.paid_date) : undefined,
       monthEarned: dbRecord.month_earned,
       yearEarned: dbRecord.year_earned,
       quarterEarned: dbRecord.quarter_earned,
@@ -354,9 +365,19 @@ export class CommissionRepository extends BaseRepository<Commission, CreateCommi
     if (data.calculationBasis !== undefined) dbData.calculation_basis = data.calculationBasis;
     if (data.annualPremium !== undefined) dbData.annual_premium = data.annualPremium;
     if (data.monthlyPremium !== undefined) dbData.monthly_premium = data.monthlyPremium;
-    if (data.commissionAmount !== undefined) dbData.commission_amount = data.commissionAmount;
-    if (data.commissionRate !== undefined) dbData.commission_rate = data.commissionRate;
+
+    // ADVANCE
+    if (data.advanceAmount !== undefined) dbData.advance_amount = data.advanceAmount;
     if (data.advanceMonths !== undefined) dbData.advance_months = data.advanceMonths;
+
+    // EARNING TRACKING
+    if (data.monthsPaid !== undefined) dbData.months_paid = data.monthsPaid;
+    if (data.earnedAmount !== undefined) dbData.earned_amount = data.earnedAmount;
+    if (data.unearnedAmount !== undefined) dbData.unearned_amount = data.unearnedAmount;
+    if (data.lastPaymentDate !== undefined) dbData.last_payment_date = data.lastPaymentDate;
+
+    // COMMISSION RATE
+    if (data.commissionRate !== undefined) dbData.rate = data.commissionRate;
     if (data.monthEarned !== undefined) dbData.month_earned = data.monthEarned;
     if (data.yearEarned !== undefined) dbData.year_earned = data.yearEarned;
     if (data.quarterEarned !== undefined) dbData.quarter_earned = data.quarterEarned;

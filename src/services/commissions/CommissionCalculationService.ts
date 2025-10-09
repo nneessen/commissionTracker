@@ -9,7 +9,7 @@ import { CalculationError, ExternalServiceError, NotFoundError, ValidationError,
 import { withRetry } from '../../utils/retry';
 
 export interface CalculationResult {
-  commissionAmount: number;
+  advanceAmount: number; // Changed from commissionAmount for clarity
   commissionRate: number;
   compGuidePercentage: number;
   isAutoCalculated: boolean;
@@ -66,7 +66,7 @@ class CommissionCalculationService {
    *   advanceMonths: 9
    * });
    * if (result) {
-   *   console.log(`Commission: $${result.commissionAmount} at ${result.commissionRate}%`);
+   *   console.log(`Advance: $${result.advanceAmount} at ${result.commissionRate}%`);
    * }
    * ```
    */
@@ -173,7 +173,7 @@ class CommissionCalculationService {
       }));
 
       return {
-        commissionAmount: commissionCalculation.amount, // This is the ADVANCE
+        advanceAmount: commissionCalculation.amount, // This is the ADVANCE
         commissionRate: commissionCalculation.rate,
         compGuidePercentage: commissionCalculation.rate,
         isAutoCalculated: true,
@@ -240,7 +240,7 @@ class CommissionCalculationService {
         if (calculation) {
           finalData = {
             ...finalData,
-            commissionAmount: calculation.commissionAmount,
+            advanceAmount: calculation.advanceAmount,
             commissionRate: calculation.commissionRate,
             contractCompLevel: calculation.contractCompLevel,
             isAutoCalculated: calculation.isAutoCalculated,
@@ -253,18 +253,18 @@ class CommissionCalculationService {
       }
 
       // Ensure required fields are set
-      // BUSINESS RULE: If commission amount not calculated, use the ONE formula
+      // BUSINESS RULE: If advance amount not calculated, use the ONE formula
       // Advance = Monthly Premium × Advance Months × Commission Rate
-      if (!finalData.commissionAmount && finalData.monthlyPremium && finalData.commissionRate) {
+      if (!finalData.advanceAmount && finalData.monthlyPremium && finalData.commissionRate) {
         const advanceMonths = finalData.advanceMonths || 9;
         // commissionRate is already a percentage (e.g., 102.5), so divide by 100
-        finalData.commissionAmount = finalData.monthlyPremium * advanceMonths * (finalData.commissionRate / 100);
+        finalData.advanceAmount = finalData.monthlyPremium * advanceMonths * (finalData.commissionRate / 100);
 
         logger.info('CommissionCalculation', 'Advance calculated using fallback formula', JSON.stringify({
           monthlyPremium: finalData.monthlyPremium,
           advanceMonths,
           commissionRate: finalData.commissionRate,
-          advanceAmount: finalData.commissionAmount
+          advanceAmount: finalData.advanceAmount
         }));
       }
 
@@ -326,7 +326,7 @@ class CommissionCalculationService {
       }
 
       return commissionCRUDService.update(commissionId, {
-        commissionAmount: calculation.commissionAmount,
+        advanceAmount: calculation.advanceAmount,
         commissionRate: calculation.commissionRate,
         contractCompLevel: calculation.contractCompLevel,
       });

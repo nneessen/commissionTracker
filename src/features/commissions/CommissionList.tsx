@@ -87,16 +87,42 @@ export const CommissionList: React.FC = () => {
       key: 'commissionRate',
       header: 'Rate',
       sortable: true,
-      accessor: (commission) => `${(commission.commissionRate * 100).toFixed(1)}%`,
+      accessor: (commission) => `${commission.commissionRate.toFixed(1)}%`,
       width: '20',
     },
     {
-      key: 'commissionAmount',
-      header: 'Commission',
+      key: 'advanceAmount',
+      header: 'Advance',
+      sortable: true,
+      accessor: (commission) => (
+        <span className="font-semibold text-blue-600">
+          ${commission.advanceAmount.toLocaleString(undefined, {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          })}
+        </span>
+      ),
+    },
+    {
+      key: 'earnedAmount',
+      header: 'Earned',
       sortable: true,
       accessor: (commission) => (
         <span className="font-semibold text-green-600">
-          ${commission.commissionAmount.toLocaleString(undefined, {
+          ${commission.earnedAmount.toLocaleString(undefined, {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          })}
+        </span>
+      ),
+    },
+    {
+      key: 'unearnedAmount',
+      header: 'Unearned',
+      sortable: true,
+      accessor: (commission) => (
+        <span className="font-semibold text-orange-600">
+          ${commission.unearnedAmount.toLocaleString(undefined, {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2,
           })}

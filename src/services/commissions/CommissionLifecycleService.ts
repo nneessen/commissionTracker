@@ -190,13 +190,13 @@ class CommissionLifecycleService {
     const advanceAmount = monthlyPremium * advanceMonths * commissionRate;
     const monthlyEarningRate = advanceAmount / advanceMonths;
 
-    logger.info('CommissionLifecycle', 'Advance calculated', {
+    logger.info('Advance calculated', {
       monthlyPremium,
       advanceMonths,
       commissionRate,
       advanceAmount,
       monthlyEarningRate
-    });
+    }, 'CommissionLifecycle');
 
     return {
       advanceAmount,

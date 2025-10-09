@@ -6,6 +6,47 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-10-09 17:35:55
+
+### Changed Files
+- `COMPLETION_SUMMARY.md`
+- `TIME_PERIOD_METRICS_COMPLETE.md`
+- `docs/CALCULATIONS_VERIFIED.md`
+- `docs/expense-system-guide.md`
+- `docs/time-period-filter-implementation.md`
+- `plans/completed/20251009_commission_advance_terminology_fix_COMPLETED.md`
+- `plans/completed/20251009_time_period_filter_complete_implementation_COMPLETED.md`
+- `src/components/ui/MetricTooltip.tsx`
+- `src/components/ui/Select.tsx`
+- `src/components/ui/dialog.tsx`
+- `src/components/ui/input.tsx`
+- `src/features/commissions/CommissionList.tsx`
+- `src/features/dashboard/DashboardHome.tsx`
+- `src/features/dashboard/DashboardHome.tsx.backup`
+- `src/features/dashboard/components/FinancialHealthCard.tsx`
+- `src/features/policies/PolicyList.tsx`
+- `src/features/policies/PolicyListInfinite.tsx`
+- `src/hooks/commissions/useCommissionMetrics.ts`
+- `src/hooks/useMetrics.ts`
+- `src/hooks/useMetricsWithDateRange.ts`
+- `src/services/analytics/breakevenService.ts`
+- `src/services/commissions/CommissionAnalyticsService.ts`
+- `src/services/commissions/CommissionCRUDService.ts`
+- `src/services/commissions/CommissionCalculationService.ts`
+- `src/services/commissions/CommissionLifecycleService.ts`
+- `src/services/commissions/CommissionRepository.ts`
+- `src/services/policies/PolicyRepository.ts`
+- `src/types/commission.types.ts`
+- `src/types/policy.types.ts`
+- `src/utils/dataMigration.ts`
+- `src/utils/dateRange.ts`
+- `supabase/migrations/20251009_001_fix_commission_schema.sql`
+
+### Statistics
+```
+ 32 files changed, 4623 insertions(+), 262 deletions(-)
+```
+
 ## [Checkpoint] - 2025-10-09 13:43:00
 
 ### Changed Files

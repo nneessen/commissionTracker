@@ -226,7 +226,7 @@ class DataMigrationService {
           status: commission.status,
           calculationBasis: commission.calculationBasis,
           annualPremium: commission.annualPremium,
-          commissionAmount: commission.commissionAmount,
+          advanceAmount: commission.advanceAmount,
           commissionRate: commission.commissionRate,
           expectedDate: commission.expectedDate ? new Date(commission.expectedDate) : undefined,
           actualDate: commission.actualDate ? new Date(commission.actualDate) : undefined,

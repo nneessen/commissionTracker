@@ -58,7 +58,7 @@ export const PolicyList: React.FC<PolicyListProps> = ({
   onEditPolicy,
 }) => {
   const { data: carriers = [] } = useCarriers();
-  const getCarrierById = (id: string) => carriers.find(c => c.id === id);
+  const getCarrierById = (id: string) => carriers.find((c) => c.id === id);
 
   const [filters, setFilters] = useState<PolicyFilters>({});
   const [searchTerm, setSearchTerm] = useState("");
@@ -94,8 +94,16 @@ export const PolicyList: React.FC<PolicyListProps> = ({
           bVal = b.annualPremium;
           break;
         case "commission":
-          aVal = calculateCommissionAdvance(a.annualPremium, a.commissionPercentage, a.advanceMonths);
-          bVal = calculateCommissionAdvance(b.annualPremium, b.commissionPercentage, b.advanceMonths);
+          aVal = calculateCommissionAdvance(
+            a.annualPremium,
+            a.commissionPercentage,
+            9, // Default advance months
+          );
+          bVal = calculateCommissionAdvance(
+            b.annualPremium,
+            b.commissionPercentage,
+            9, // Default advance months
+          );
           break;
         case "effectiveDate":
           aVal = new Date(a.effectiveDate).getTime();
@@ -285,10 +293,11 @@ export const PolicyList: React.FC<PolicyListProps> = ({
               filteredAndSortedPolicies.map((policy) => {
                 const carrier = getCarrierById(policy.carrierId);
                 // Calculate commission advance: Monthly Premium × Advance Months × Commission Rate
+                // Note: Using default 9 months advance - actual advances are tracked in commissions table
                 const commission = calculateCommissionAdvance(
                   policy.annualPremium,
                   policy.commissionPercentage,
-                  policy.advanceMonths
+                  9, // Default advance months
                 );
 
                 return (
@@ -380,4 +389,3 @@ export const PolicyList: React.FC<PolicyListProps> = ({
     </div>
   );
 };
-

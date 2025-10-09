@@ -254,11 +254,11 @@ export function useMetrics() {
   const calculateCommissionMetrics = (): CommissionMetrics => {
     const totalEarned = commissions
       .filter(c => c.status === 'paid')
-      .reduce((sum, c) => sum + c.commissionAmount, 0);
+      .reduce((sum, c) => sum + c.advanceAmount, 0);
 
     const totalPending = commissions
       .filter(c => c.status === 'pending')
-      .reduce((sum, c) => sum + c.commissionAmount, 0);
+      .reduce((sum, c) => sum + c.advanceAmount, 0);
 
     const paidCommissions = totalEarned;
     const pendingCommissions = totalPending;
@@ -284,7 +284,7 @@ export function useMetrics() {
           const date = c.paidDate ? new Date(c.paidDate) : new Date(c.createdAt);
           return date >= monthStart && date <= monthEnd && c.status === 'paid';
         })
-        .reduce((sum, c) => sum + c.commissionAmount, 0);
+        .reduce((sum, c) => sum + c.advanceAmount, 0);
 
       monthlyEarnings.push({
         label: monthStart.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
@@ -296,25 +296,25 @@ export function useMetrics() {
     const commissionByType: Record<string, number> = {
       first_year: commissions
         .filter(c => c.type === 'first_year')
-        .reduce((sum, c) => sum + c.commissionAmount, 0),
+        .reduce((sum, c) => sum + c.advanceAmount, 0),
       renewal: commissions
         .filter(c => c.type === 'renewal')
-        .reduce((sum, c) => sum + c.commissionAmount, 0),
+        .reduce((sum, c) => sum + c.advanceAmount, 0),
       trail: commissions
         .filter(c => c.type === 'trail')
-        .reduce((sum, c) => sum + c.commissionAmount, 0),
+        .reduce((sum, c) => sum + c.advanceAmount, 0),
       bonus: commissions
         .filter(c => c.type === 'bonus')
-        .reduce((sum, c) => sum + c.commissionAmount, 0),
+        .reduce((sum, c) => sum + c.advanceAmount, 0),
       override: commissions
         .filter(c => c.type === 'override')
-        .reduce((sum, c) => sum + c.commissionAmount, 0),
+        .reduce((sum, c) => sum + c.advanceAmount, 0),
     };
 
     // Commission by carrier
     const carrierCommissions = new Map<string, number>();
     commissions.forEach(c => {
-      carrierCommissions.set(c.carrierId, (carrierCommissions.get(c.carrierId) || 0) + c.commissionAmount);
+      carrierCommissions.set(c.carrierId, (carrierCommissions.get(c.carrierId) || 0) + c.advanceAmount);
     });
 
     const commissionByCarrier = Array.from(carrierCommissions.entries())
@@ -331,7 +331,7 @@ export function useMetrics() {
     commissions.forEach(c => {
       const current = productCommissions.get(c.product) || { amount: 0, count: 0 };
       productCommissions.set(c.product, {
-        amount: current.amount + c.commissionAmount,
+        amount: current.amount + c.advanceAmount,
         count: current.count + 1
       });
     });
@@ -357,7 +357,7 @@ export function useMetrics() {
 
       commissionTrends.push({
         period: monthStart.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
-        amount: monthCommissions.reduce((sum, c) => sum + c.commissionAmount, 0),
+        amount: monthCommissions.reduce((sum, c) => sum + c.advanceAmount, 0),
         policyCount: monthCommissions.length
       });
     }
@@ -380,7 +380,7 @@ export function useMetrics() {
         const daysUntil = Math.ceil((expectedDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
         return daysUntil > 0 && daysUntil <= 30;
       })
-      .reduce((sum, c) => sum + c.commissionAmount, 0);
+      .reduce((sum, c) => sum + c.advanceAmount, 0);
 
     const expectedCommissionsNext90Days = commissions
       .filter(c => {
@@ -389,7 +389,7 @@ export function useMetrics() {
         const daysUntil = Math.ceil((expectedDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
         return daysUntil > 0 && daysUntil <= 90;
       })
-      .reduce((sum, c) => sum + c.commissionAmount, 0);
+      .reduce((sum, c) => sum + c.advanceAmount, 0);
 
     // Year-over-year growth
     const currentYear = new Date().getFullYear();
@@ -398,14 +398,14 @@ export function useMetrics() {
         const date = c.paidDate ? new Date(c.paidDate) : new Date(c.createdAt);
         return date.getFullYear() === currentYear - 1 && c.status === 'paid';
       })
-      .reduce((sum, c) => sum + c.commissionAmount, 0);
+      .reduce((sum, c) => sum + c.advanceAmount, 0);
 
     const thisYearEarnings = commissions
       .filter(c => {
         const date = c.paidDate ? new Date(c.paidDate) : new Date(c.createdAt);
         return date.getFullYear() === currentYear && c.status === 'paid';
       })
-      .reduce((sum, c) => sum + c.commissionAmount, 0);
+      .reduce((sum, c) => sum + c.advanceAmount, 0);
 
     const yearOverYearGrowth = lastYearEarnings > 0
       ? ((thisYearEarnings - lastYearEarnings) / lastYearEarnings) * 100
@@ -449,7 +449,7 @@ export function useMetrics() {
 
       // Calculate revenue from commissions for this product
       const productCommissions = commissions.filter(c => c.product === product);
-      const totalRevenue = productCommissions.reduce((sum, c) => sum + c.commissionAmount, 0);
+      const totalRevenue = productCommissions.reduce((sum, c) => sum + c.advanceAmount, 0);
 
       return {
         product,
@@ -483,7 +483,7 @@ export function useMetrics() {
       const commissionAmount = calculateCommissionAdvance(
         policy.annualPremium,
         policy.commissionPercentage,
-        policy.advanceMonths
+        9
       );
       perf.revenue += commissionAmount;
     });
@@ -516,7 +516,7 @@ export function useMetrics() {
       perf.revenue += calculateCommissionAdvance(
         policy.annualPremium,
         policy.commissionPercentage,
-        policy.advanceMonths
+        9
       );
     });
 
@@ -550,14 +550,14 @@ export function useMetrics() {
           const date = new Date(c.createdAt);
           return date >= prevMonthStart && date <= prevMonthEnd;
         })
-        .reduce((sum, c) => sum + c.commissionAmount, 0);
+        .reduce((sum, c) => sum + c.advanceAmount, 0);
 
       const currMonthCommissions = commissions
         .filter(c => {
           const date = new Date(c.createdAt);
           return date >= currMonthStart && date <= currMonthEnd;
         })
-        .reduce((sum, c) => sum + c.commissionAmount, 0);
+        .reduce((sum, c) => sum + c.advanceAmount, 0);
 
       if (prevMonthCommissions > 0) {
         const growthRate = ((currMonthCommissions - prevMonthCommissions) / prevMonthCommissions);
@@ -577,7 +577,7 @@ export function useMetrics() {
         threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
         return date >= threeMonthsAgo && c.status === 'paid';
       })
-      .reduce((sum, c) => sum + c.commissionAmount, 0);
+      .reduce((sum, c) => sum + c.advanceAmount, 0);
 
     const monthlyRunRate = lastThreeMonthsCommissions / 3;
 
@@ -590,14 +590,14 @@ export function useMetrics() {
     // Calculate pipeline value from pending policies
     const pipelineValue = policies
       .filter(p => p.status === 'pending')
-      .reduce((sum, p) => sum + calculateCommissionAdvance(p.annualPremium, p.commissionPercentage, p.advanceMonths), 0);
+      .reduce((sum, p) => sum + calculateCommissionAdvance(p.annualPremium, p.commissionPercentage, 9), 0);
 
     // Estimate renewal income
     const expectedRenewals = policies
       .filter(p => p.status === 'active')
       .reduce((sum, p) => {
         // Assume 50% of commission rate for renewals (ongoing monthly commissions)
-        const advance = calculateCommissionAdvance(p.annualPremium, p.commissionPercentage, p.advanceMonths);
+        const advance = calculateCommissionAdvance(p.annualPremium, p.commissionPercentage, 9);
         return sum + (advance * 0.5);
       }, 0);
 
@@ -653,7 +653,7 @@ export function useMetrics() {
 
       const expectedRenewalCount = policiesForRenewal.length;
       const expectedRenewalRevenue = policiesForRenewal.reduce((sum, p) => {
-        const advance = calculateCommissionAdvance(p.annualPremium, p.commissionPercentage, p.advanceMonths);
+        const advance = calculateCommissionAdvance(p.annualPremium, p.commissionPercentage, 9);
         return sum + (advance * 0.5); // Assume 50% commission on renewals
       }, 0);
 

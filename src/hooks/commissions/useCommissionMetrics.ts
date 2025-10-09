@@ -27,7 +27,7 @@ export function useCommissionMetrics(options?: UseCommissionMetricsOptions) {
 
       // Calculate metrics
       const totalCommissions = commissions.reduce(
-        (sum, c) => sum + c.commissionAmount,
+        (sum, c) => sum + c.advanceAmount,
         0,
       );
       const totalPremiums = commissions.reduce(
@@ -56,7 +56,7 @@ export function useCommissionMetrics(options?: UseCommissionMetricsOptions) {
         carrierMap.set(commission.carrierId, {
           name: carrierName,
           totalCommissions:
-            existing.totalCommissions + commission.commissionAmount,
+            existing.totalCommissions + commission.advanceAmount,
           count: existing.count + 1,
         });
       });
@@ -83,7 +83,7 @@ export function useCommissionMetrics(options?: UseCommissionMetricsOptions) {
         productMap.set(commission.product, {
           count: existing.count + 1,
           totalCommissions:
-            existing.totalCommissions + commission.commissionAmount,
+            existing.totalCommissions + commission.advanceAmount,
         });
       });
 
@@ -109,7 +109,7 @@ export function useCommissionMetrics(options?: UseCommissionMetricsOptions) {
         stateMap.set(clientState, {
           count: existing.count + 1,
           totalCommissions:
-            existing.totalCommissions + commission.commissionAmount,
+            existing.totalCommissions + commission.advanceAmount,
         });
       });
 

@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { TrendingUp, TrendingDown, DollarSign, AlertCircle } from 'lucide-react';
+
+type TimePeriod = 'daily' | 'weekly' | 'monthly' | 'yearly';
 
 interface FinancialHealthCardProps {
   monthlyExpenses: number;
@@ -16,14 +18,50 @@ export const FinancialHealthCard: React.FC<FinancialHealthCardProps> = ({
   breakevenCommission,
   surplusDeficit,
 }) => {
+  const [timePeriod, setTimePeriod] = useState<TimePeriod>('monthly');
+
   const formatCurrency = (value: number) => {
     return `$${value.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
   };
 
-  const isSurplus = surplusDeficit >= 0;
-  const healthPercentage = breakevenCommission > 0
-    ? Math.min(100, (totalEarned / breakevenCommission) * 100)
+  // Calculate values based on selected time period
+  const getAdjustedValue = (monthlyValue: number) => {
+    const now = new Date();
+    const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    const dayOfMonth = now.getDate();
+
+    switch (timePeriod) {
+      case 'daily':
+        return monthlyValue / daysInMonth;
+      case 'weekly':
+        return (monthlyValue / daysInMonth) * 7;
+      case 'monthly':
+        return monthlyValue;
+      case 'yearly':
+        return monthlyValue * 12;
+      default:
+        return monthlyValue;
+    }
+  };
+
+  const adjustedExpenses = getAdjustedValue(monthlyExpenses);
+  const adjustedEarned = getAdjustedValue(totalEarned);
+  const adjustedSurplus = adjustedEarned - adjustedExpenses;
+
+  const isSurplus = adjustedSurplus >= 0;
+  const healthPercentage = adjustedExpenses > 0
+    ? Math.min(100, (adjustedEarned / adjustedExpenses) * 100)
     : 0;
+
+  const getPeriodLabel = () => {
+    switch (timePeriod) {
+      case 'daily': return 'Daily';
+      case 'weekly': return 'Weekly';
+      case 'monthly': return 'Monthly';
+      case 'yearly': return 'Yearly';
+      default: return 'Monthly';
+    }
+  };
 
   return (
     <div
@@ -36,24 +74,60 @@ export const FinancialHealthCard: React.FC<FinancialHealthCardProps> = ({
         marginBottom: '24px',
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-        <div
-          style={{
-            padding: '12px',
-            borderRadius: '12px',
-            background: 'linear-gradient(135deg, #1a1a1a 0%, #2d3748 100%)',
-            boxShadow: '0 4px 12px rgba(26, 26, 26, 0.15)',
-          }}
-        >
-          <DollarSign size={24} color="#f8f9fa" />
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div
+            style={{
+              padding: '12px',
+              borderRadius: '12px',
+              background: 'linear-gradient(135deg, #1a1a1a 0%, #2d3748 100%)',
+              boxShadow: '0 4px 12px rgba(26, 26, 26, 0.15)',
+            }}
+          >
+            <DollarSign size={24} color="#f8f9fa" />
+          </div>
+          <div>
+            <h3 style={{ fontSize: '20px', fontWeight: 600, color: '#1a1a1a', margin: 0 }}>
+              Financial Health
+            </h3>
+            <p style={{ fontSize: '14px', color: '#4a5568', margin: 0 }}>
+              Breakeven tracking & income analysis
+            </p>
+          </div>
         </div>
-        <div>
-          <h3 style={{ fontSize: '20px', fontWeight: 600, color: '#1a1a1a', margin: 0 }}>
-            Financial Health
-          </h3>
-          <p style={{ fontSize: '14px', color: '#4a5568', margin: 0 }}>
-            Breakeven tracking & income analysis
-          </p>
+
+        {/* Time Period Switcher */}
+        <div style={{
+          display: 'flex',
+          gap: '4px',
+          background: '#f1f5f9',
+          padding: '4px',
+          borderRadius: '8px',
+          boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.1)'
+        }}>
+          {(['daily', 'weekly', 'monthly', 'yearly'] as TimePeriod[]).map((period) => (
+            <button
+              key={period}
+              onClick={() => setTimePeriod(period)}
+              style={{
+                padding: '6px 12px',
+                fontSize: '12px',
+                fontWeight: 600,
+                textTransform: 'capitalize',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                background: timePeriod === period
+                  ? 'linear-gradient(135deg, #1a1a1a 0%, #2d3748 100%)'
+                  : 'transparent',
+                color: timePeriod === period ? '#ffffff' : '#64748b',
+                boxShadow: timePeriod === period ? '0 2px 4px rgba(0,0,0,0.1)' : 'none',
+              }}
+            >
+              {period}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -66,7 +140,7 @@ export const FinancialHealthCard: React.FC<FinancialHealthCardProps> = ({
           marginBottom: '20px',
         }}
       >
-        {/* Monthly Expenses */}
+        {/* Expenses */}
         <div
           style={{
             padding: '16px',
@@ -76,17 +150,17 @@ export const FinancialHealthCard: React.FC<FinancialHealthCardProps> = ({
           }}
         >
           <div style={{ fontSize: '12px', color: '#4a5568', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600 }}>
-            Monthly Expenses
+            {getPeriodLabel()} Expenses
           </div>
           <div style={{ fontSize: '24px', fontWeight: 700, color: '#1a1a1a', fontFamily: 'Monaco, Menlo, monospace' }}>
-            {formatCurrency(monthlyExpenses)}
+            {formatCurrency(adjustedExpenses)}
           </div>
           <div style={{ fontSize: '11px', color: '#656d76', marginTop: '4px' }}>
             Break even target
           </div>
         </div>
 
-        {/* YTD Earned */}
+        {/* Commission Earned */}
         <div
           style={{
             padding: '16px',
@@ -98,10 +172,10 @@ export const FinancialHealthCard: React.FC<FinancialHealthCardProps> = ({
           }}
         >
           <div style={{ fontSize: '12px', color: '#4a5568', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600 }}>
-            YTD Commission
+            {getPeriodLabel()} Commission
           </div>
           <div style={{ fontSize: '24px', fontWeight: 700, color: '#1a1a1a', fontFamily: 'Monaco, Menlo, monospace' }}>
-            {formatCurrency(totalEarned)}
+            {formatCurrency(adjustedEarned)}
           </div>
           <div
             style={{
@@ -114,7 +188,7 @@ export const FinancialHealthCard: React.FC<FinancialHealthCardProps> = ({
             }}
           >
             {isSurplus ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
-            {isSurplus ? `+${formatCurrency(surplusDeficit)} surplus` : `${formatCurrency(Math.abs(surplusDeficit))} deficit`}
+            {isSurplus ? `+${formatCurrency(adjustedSurplus)} surplus` : `${formatCurrency(Math.abs(adjustedSurplus))} deficit`}
           </div>
         </div>
 
@@ -184,7 +258,7 @@ export const FinancialHealthCard: React.FC<FinancialHealthCardProps> = ({
         <div style={{ fontSize: '11px', color: '#656d76', marginTop: '8px' }}>
           {healthPercentage >= 100
             ? '✓ You have exceeded your breakeven target'
-            : `${formatCurrency(breakevenCommission - totalEarned)} needed to break even`}
+            : `${formatCurrency(adjustedExpenses - adjustedEarned)} needed to break even`}
         </div>
       </div>
 
