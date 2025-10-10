@@ -3,17 +3,16 @@ import React, { useState } from 'react';
 import { useConstants, useUpdateConstant } from '../../hooks/expenses/useConstants';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/Input';
-import { AlertCircle, CheckCircle, Settings, DollarSign, Percent } from 'lucide-react';
+import { AlertCircle, CheckCircle, Settings, DollarSign } from 'lucide-react';
 
 export const ConstantsManagement: React.FC = () => {
   const { data: constants, isLoading } = useConstants();
   const updateConstant = useUpdateConstant();
 
   const [formData, setFormData] = useState({
-    avgAP: constants?.avgAP || 15000,
-    commissionRate: (constants?.commissionRate || 0.2) * 100, // Convert to percentage for display
-    target1: constants?.target1 || 4000,
-    target2: constants?.target2 || 6500,
+    avgAP: constants?.avgAP || 0,
+    target1: constants?.target1 || 0,
+    target2: constants?.target2 || 0,
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -24,21 +23,20 @@ export const ConstantsManagement: React.FC = () => {
     if (constants) {
       setFormData({
         avgAP: constants.avgAP,
-        commissionRate: constants.commissionRate * 100,
         target1: constants.target1,
         target2: constants.target2,
       });
     }
   }, [constants]);
 
-  const handleInputChange = (field: keyof typeof formData, value: string) => {
-    const numValue = parseFloat(value) || 0;
+  const handleInputChange = (field: keyof typeof formData, value: string | number) => {
+    const numValue = typeof value === 'number' ? value : (parseFloat(value) || 0);
     setFormData(prev => ({ ...prev, [field]: numValue }));
     setErrors(prev => ({ ...prev, [field]: '' }));
     setSuccessMessage('');
   };
 
-  const validateAndSave = async (field: 'avgAP' | 'commissionRate' | 'target1' | 'target2') => {
+  const validateAndSave = async (field: 'avgAP' | 'target1' | 'target2') => {
     const value = formData[field];
 
     // Validation
@@ -47,16 +45,8 @@ export const ConstantsManagement: React.FC = () => {
       return;
     }
 
-    if (field === 'commissionRate' && (value < 0 || value > 100)) {
-      setErrors(prev => ({ ...prev, [field]: 'Commission rate must be between 0 and 100%' }));
-      return;
-    }
-
     try {
-      // Convert commission rate back to decimal for storage
-      const valueToSave = field === 'commissionRate' ? value / 100 : value;
-
-      await updateConstant.mutateAsync({ field, value: valueToSave });
+      await updateConstant.mutateAsync({ field, value });
       setSuccessMessage(`${getFieldLabel(field)} updated successfully!`);
 
       // Clear success message after 3 seconds
@@ -72,7 +62,6 @@ export const ConstantsManagement: React.FC = () => {
   const getFieldLabel = (field: string): string => {
     const labels: Record<string, string> = {
       avgAP: 'Average Annual Premium',
-      commissionRate: 'Expected Commission Rate',
       target1: 'Monthly Income Target #1',
       target2: 'Monthly Income Target #2',
     };
@@ -82,7 +71,6 @@ export const ConstantsManagement: React.FC = () => {
   const getFieldDescription = (field: string): string => {
     const descriptions: Record<string, string> = {
       avgAP: 'Your expected average annual premium per policy. Used for pace calculations and dashboard comparisons.',
-      commissionRate: 'Your expected average commission rate across all products (as a percentage).',
       target1: 'Your first monthly income goal (used in breakeven calculations).',
       target2: 'Your second monthly income goal (used in breakeven calculations).',
     };
@@ -135,7 +123,7 @@ export const ConstantsManagement: React.FC = () => {
                   <Input
                     type="number"
                     value={formData.avgAP}
-                    onChange={(e) => handleInputChange('avgAP', e.target.value)}
+                    onChange={(value) => handleInputChange('avgAP', value)}
                     onBlur={() => validateAndSave('avgAP')}
                     min={0}
                     step={100}
@@ -150,50 +138,6 @@ export const ConstantsManagement: React.FC = () => {
                 </div>
                 <Button
                   onClick={() => validateAndSave('avgAP')}
-                  disabled={updateConstant.isPending}
-                  size="sm"
-                >
-                  {updateConstant.isPending ? 'Saving...' : 'Save'}
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Commission Rate */}
-        <div className="border border-gray-200 rounded-lg p-5 bg-white shadow-sm">
-          <div className="flex items-start gap-3 mb-4">
-            <Percent className="h-5 w-5 text-blue-600 mt-0.5" />
-            <div className="flex-1">
-              <label className="block text-sm font-semibold text-gray-900 mb-1">
-                {getFieldLabel('commissionRate')}
-              </label>
-              <p className="text-xs text-gray-600 mb-3">{getFieldDescription('commissionRate')}</p>
-
-              <div className="flex gap-3 items-start">
-                <div className="flex-1">
-                  <div className="relative">
-                    <Input
-                      type="number"
-                      value={formData.commissionRate}
-                      onChange={(e) => handleInputChange('commissionRate', e.target.value)}
-                      onBlur={() => validateAndSave('commissionRate')}
-                      min={0}
-                      max={100}
-                      step={0.5}
-                      className={errors.commissionRate ? 'border-red-500' : ''}
-                    />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">%</span>
-                  </div>
-                  {errors.commissionRate && (
-                    <div className="flex items-center gap-1 mt-1 text-xs text-red-600">
-                      <AlertCircle className="h-3 w-3" />
-                      {errors.commissionRate}
-                    </div>
-                  )}
-                </div>
-                <Button
-                  onClick={() => validateAndSave('commissionRate')}
                   disabled={updateConstant.isPending}
                   size="sm"
                 >
@@ -219,7 +163,7 @@ export const ConstantsManagement: React.FC = () => {
                   <Input
                     type="number"
                     value={formData.target1}
-                    onChange={(e) => handleInputChange('target1', e.target.value)}
+                    onChange={(value) => handleInputChange('target1', value)}
                     onBlur={() => validateAndSave('target1')}
                     min={0}
                     step={100}
@@ -259,7 +203,7 @@ export const ConstantsManagement: React.FC = () => {
                   <Input
                     type="number"
                     value={formData.target2}
-                    onChange={(e) => handleInputChange('target2', e.target.value)}
+                    onChange={(value) => handleInputChange('target2', value)}
                     onBlur={() => validateAndSave('target2')}
                     min={0}
                     step={100}
@@ -293,7 +237,6 @@ export const ConstantsManagement: React.FC = () => {
             <p className="font-semibold mb-1">How These Values Are Used</p>
             <ul className="list-disc list-inside space-y-1 text-blue-800">
               <li><strong>Avg Annual Premium:</strong> Appears on dashboard for comparison and used in pace calculations</li>
-              <li><strong>Commission Rate:</strong> Compared against your actual commission rate on the dashboard</li>
               <li><strong>Monthly Targets:</strong> Used in financial breakeven analysis and goal tracking</li>
             </ul>
           </div>

@@ -8,18 +8,16 @@ interface ConstantRow {
   description?: string;
 }
 
-interface Constants {
+export interface Constants {
   avgAP: number;
-  commissionRate: number;
   target1: number;
   target2: number;
 }
 
 const DEFAULT_CONSTANTS: Constants = {
-  avgAP: 15000,
-  commissionRate: 0.2,
-  target1: 4000,
-  target2: 6500,
+  avgAP: 0,
+  target1: 0,
+  target2: 0,
 };
 
 export const constantsService = {
@@ -36,7 +34,7 @@ export const constantsService = {
         const constantsObj: Partial<Constants> = {};
 
         data.forEach((row: ConstantRow) => {
-          if (row.key === 'avgAP' || row.key === 'commissionRate' || row.key === 'target1' || row.key === 'target2') {
+          if (row.key === 'avgAP' || row.key === 'target1' || row.key === 'target2') {
             constantsObj[row.key] = Number(row.value);
           }
         });
@@ -44,7 +42,6 @@ export const constantsService = {
         // Merge with defaults for any missing values
         return {
           avgAP: constantsObj.avgAP ?? DEFAULT_CONSTANTS.avgAP,
-          commissionRate: constantsObj.commissionRate ?? DEFAULT_CONSTANTS.commissionRate,
           target1: constantsObj.target1 ?? DEFAULT_CONSTANTS.target1,
           target2: constantsObj.target2 ?? DEFAULT_CONSTANTS.target2,
         };

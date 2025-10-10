@@ -250,16 +250,16 @@ export const DashboardHome: React.FC = () => {
           {/* Stat Item Component */}
           {[
             {
-              label: `Avg ${getPeriodLabel(timePeriod)} Commission`,
+              label: `${getPeriodLabel(timePeriod)} Commission Earned`,
               value: formatCurrency(periodCommissions.earned),
               trend: periodAnalytics.surplusDeficit >= 0 ? 'up' : 'down',
               color: periodCommissions.earned > 0 ? '#10b981' : '#ef4444',
               tooltip: {
-                title: 'Commission Earned (Avg per Period)',
-                description: `Average commission earned per ${timePeriod.toLowerCase()} based on data in the date range. Calculated by taking total earned and scaling to show average per ${timePeriod}.`,
-                formula: '(Total Earned in Range / Days in Range) × Days per ' + timePeriod,
-                example: `$4,000 earned over 30 days = $133/day × 7 = $933/week average`,
-                note: 'This is SCALED to the period - the actual number represents average per ' + timePeriod
+                title: `${getPeriodLabel(timePeriod)} Commission Earned`,
+                description: `Total commission earned during the selected ${timePeriod.toLowerCase()} period.`,
+                formula: 'SUM(advance_amount) WHERE status=paid AND date in selected range',
+                example: 'Shows actual commission received in the period',
+                note: 'This is the actual total, not scaled or averaged'
               }
             },
             {
@@ -269,34 +269,34 @@ export const DashboardHome: React.FC = () => {
               tooltip: {
                 title: 'Pending Pipeline',
                 description: 'Total value of ALL commissions awaiting payment (current state, not filtered by period).',
-                formula: 'SUM(commission_amount) WHERE status=pending',
+                formula: 'SUM(advance_amount) WHERE status=pending',
                 example: 'Shows total amount you are currently owed',
                 note: 'This is a point-in-time metric - does NOT change with time period'
               }
             },
             {
-              label: `Avg ${getPeriodLabel(timePeriod)} Expenses`,
+              label: `${getPeriodLabel(timePeriod)} Total Expenses`,
               value: formatCurrency(periodExpenses.total),
               color: '#f59e0b',
               tooltip: {
-                title: 'Total Expenses (Avg per Period)',
-                description: `Average expenses per ${timePeriod.toLowerCase()} based on data in the date range. Calculated by taking total expenses and scaling to show average per ${timePeriod}.`,
-                formula: '(Total Expenses in Range / Days in Range) × Days per ' + timePeriod,
-                example: `$4,000 spent over 30 days = $133/day × 7 = $933/week average`,
-                note: 'This is SCALED to the period - the actual number represents average per ' + timePeriod
+                title: `${getPeriodLabel(timePeriod)} Total Expenses`,
+                description: `Total expenses during the selected ${timePeriod.toLowerCase()} period.`,
+                formula: 'SUM(amount) WHERE date in selected range',
+                example: 'Shows actual expenses for the period',
+                note: 'This is the actual total, not scaled or averaged'
               }
             },
             {
-              label: `Avg ${getPeriodLabel(timePeriod)} Surplus/Deficit`,
+              label: `${getPeriodLabel(timePeriod)} Net Income`,
               value: formatCurrency(Math.abs(periodAnalytics.surplusDeficit)),
               trend: periodAnalytics.surplusDeficit >= 0 ? 'up' : 'down',
               color: periodAnalytics.surplusDeficit >= 0 ? '#10b981' : '#ef4444',
               tooltip: {
-                title: 'Surplus/Deficit (Avg per Period)',
-                description: `Average profit (green) or loss (red) per ${timePeriod.toLowerCase()}. Based on scaled commission and expense averages.`,
-                formula: 'Avg Commission Earned - Avg Total Expenses',
-                example: 'Avg $5,000/week earned - $3,000/week spent = $2,000/week surplus',
-                note: 'Both values are scaled averages per ' + timePeriod
+                title: `${getPeriodLabel(timePeriod)} Net Income`,
+                description: `Net profit (green) or loss (red) for the ${timePeriod.toLowerCase()} period.`,
+                formula: 'Commission Earned - Total Expenses',
+                example: '$5,000 earned - $3,000 spent = $2,000 profit',
+                note: 'Based on actual totals for the period'
               }
             },
             {
@@ -502,14 +502,14 @@ export const DashboardHome: React.FC = () => {
             </thead>
             <tbody>
               {[
-                { metric: `Avg ${getPeriodLabel(timePeriod)} Commission`, current: periodCommissions.earned, target: periodExpenses.total, unit: '$', showTarget: true },
-                { metric: `${getPeriodLabel(timePeriod)} New Policies`, current: periodPolicies.newCount, target: periodAnalytics.policiesNeeded, unit: '#', showTarget: true },
-                { metric: `Avg ${getPeriodLabel(timePeriod)} Premium Written`, current: periodPolicies.premiumWritten, target: null, unit: '$', showTarget: false },
+                { metric: `${getPeriodLabel(timePeriod)} Commission Earned`, current: periodCommissions.earned, target: null, unit: '$', showTarget: false },
+                { metric: `${getPeriodLabel(timePeriod)} New Policies`, current: periodPolicies.newCount, target: null, unit: '#', showTarget: false },
+                { metric: `${getPeriodLabel(timePeriod)} Premium Written`, current: periodPolicies.premiumWritten, target: null, unit: '$', showTarget: false },
                 { metric: `${getPeriodLabel(timePeriod)} New Clients`, current: periodClients.newCount, target: null, unit: '#', showTarget: false },
-                { metric: `Avg Premium per Policy`, current: periodPolicies.averagePremium, target: constants?.avgAP || 15000, unit: '$', showTarget: true },
-                { metric: `Commission Rate`, current: periodCommissions.averageRate, target: (constants?.commissionRate || 0.95) * 100, unit: '%', showTarget: true },
-                { metric: `Avg ${getPeriodLabel(timePeriod)} Expenses`, current: periodExpenses.total, target: periodCommissions.earned, unit: '$', showTarget: true },
-                { metric: `Avg ${getPeriodLabel(timePeriod)} Net Income`, current: periodAnalytics.netIncome, target: 0, unit: '$', showTarget: true },
+                { metric: `Avg Premium per Policy`, current: periodPolicies.averagePremium, target: constants?.avgAP, unit: '$', showTarget: !!constants?.avgAP },
+                { metric: `Avg Commission Rate`, current: periodCommissions.averageRate, target: null, unit: '%', showTarget: false },
+                { metric: `${getPeriodLabel(timePeriod)} Total Expenses`, current: periodExpenses.total, target: null, unit: '$', showTarget: false },
+                { metric: `${getPeriodLabel(timePeriod)} Net Income`, current: periodAnalytics.netIncome, target: null, unit: '$', showTarget: false },
               ].map((row, i) => {
                 const pct = row.showTarget && row.target && row.target > 0 ? (row.current / row.target) * 100 : 0;
                 const status = row.showTarget ? (pct >= 100 ? 'hit' : pct >= 75 ? 'good' : pct >= 50 ? 'fair' : 'poor') : 'neutral';
@@ -664,7 +664,7 @@ export const DashboardHome: React.FC = () => {
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
           {[
-            { category: `Avg ${getPeriodLabel(timePeriod)} Financial`, kpis: [
+            { category: `${getPeriodLabel(timePeriod)} Financial`, kpis: [
               { label: 'Commission Earned', value: formatCurrency(periodCommissions.earned) },
               { label: 'Total Expenses', value: formatCurrency(periodExpenses.total) },
               { label: 'Net Income', value: formatCurrency(periodAnalytics.netIncome) },
@@ -674,11 +674,11 @@ export const DashboardHome: React.FC = () => {
             ]},
             { category: `${getPeriodLabel(timePeriod)} Production`, kpis: [
               { label: 'New Policies', value: periodPolicies.newCount },
-              { label: 'Avg Premium Written', value: formatCurrency(periodPolicies.premiumWritten) },
+              { label: 'Premium Written', value: formatCurrency(periodPolicies.premiumWritten) },
               { label: 'Avg Premium/Policy', value: formatCurrency(periodPolicies.averagePremium) },
               { label: 'Cancelled', value: periodPolicies.cancelled },
               { label: 'Lapsed', value: periodPolicies.lapsed },
-              { label: 'Avg Comm Value', value: formatCurrency(periodPolicies.commissionableValue) },
+              { label: 'Commissionable Value', value: formatCurrency(periodPolicies.commissionableValue) },
             ]},
             { category: `${getPeriodLabel(timePeriod)} Metrics`, kpis: [
               { label: 'Lapse Rate', value: formatPercent(lapsedRate) },
@@ -691,7 +691,7 @@ export const DashboardHome: React.FC = () => {
             { category: `${getPeriodLabel(timePeriod)} Clients`, kpis: [
               { label: 'New Clients', value: periodClients.newCount },
               { label: 'Avg Client Age', value: periodClients.averageAge > 0 ? periodClients.averageAge.toFixed(1) : '—' },
-              { label: 'Avg Total Value', value: formatCurrency(periodClients.totalValue) },
+              { label: 'Total Value', value: formatCurrency(periodClients.totalValue) },
               { label: 'Avg Value/Client', value: formatCurrency(avgClientValue) },
             ]},
             { category: 'Current Status', kpis: [

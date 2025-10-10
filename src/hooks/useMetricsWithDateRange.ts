@@ -136,55 +136,38 @@ export function useMetricsWithDateRange(
 
   // Calculate period commission metrics
   const periodCommissions = useMemo((): PeriodCommissionMetrics => {
-    // Calculate raw totals first
-    const rawEarned = filteredCommissions
-      .reduce((sum, c) => sum + (c.earnedAmount || 0), 0);
+    // Calculate actual totals for the period (NO SCALING)
+    // Use advanceAmount (total commission received), not earnedAmount (portion earned over time)
+    const earned = filteredCommissions
+      .filter(c => c.status === 'paid')
+      .reduce((sum, c) => sum + (c.advanceAmount || 0), 0);
 
-    const rawPending = filteredCommissions
+    const pending = filteredCommissions
       .filter(c => c.status === 'pending')
       .reduce((sum, c) => sum + (c.advanceAmount || 0), 0);
 
-    // ✅ APPLY TIME PERIOD SCALING
-    const earned = getAveragePeriodValue(rawEarned, dateRange, timePeriod);
-    const pending = getAveragePeriodValue(rawPending, dateRange, timePeriod);
-
     // Group by carrier - use advanceAmount (total commission value)
-    const byCarrierRaw: Record<string, number> = {};
+    const byCarrier: Record<string, number> = {};
     filteredCommissions.forEach(c => {
       const carrierId = c.carrierId;
       if (carrierId) {
-        byCarrierRaw[carrierId] = (byCarrierRaw[carrierId] || 0) + (c.advanceAmount || 0);
+        byCarrier[carrierId] = (byCarrier[carrierId] || 0) + (c.advanceAmount || 0);
       }
-    });
-    // Scale carrier metrics
-    const byCarrier: Record<string, number> = {};
-    Object.keys(byCarrierRaw).forEach(key => {
-      byCarrier[key] = getAveragePeriodValue(byCarrierRaw[key], dateRange, timePeriod);
     });
 
     // Group by product - use advanceAmount (total commission value)
-    const byProductRaw: Record<ProductType, number> = {} as Record<ProductType, number>;
+    const byProduct: Record<ProductType, number> = {} as Record<ProductType, number>;
     filteredCommissions.forEach(c => {
       if (c.product) {
-        byProductRaw[c.product] = (byProductRaw[c.product] || 0) + (c.advanceAmount || 0);
+        byProduct[c.product] = (byProduct[c.product] || 0) + (c.advanceAmount || 0);
       }
-    });
-    // Scale product metrics
-    const byProduct: Record<ProductType, number> = {} as Record<ProductType, number>;
-    (Object.keys(byProductRaw) as ProductType[]).forEach(key => {
-      byProduct[key] = getAveragePeriodValue(byProductRaw[key], dateRange, timePeriod);
     });
 
     // Group by state - use advanceAmount (total commission value)
-    const byStateRaw: Record<string, number> = {};
+    const byState: Record<string, number> = {};
     filteredCommissions.forEach(c => {
       const state = c.client?.state || 'Unknown';
-      byStateRaw[state] = (byStateRaw[state] || 0) + (c.advanceAmount || 0);
-    });
-    // Scale state metrics
-    const byState: Record<string, number> = {};
-    Object.keys(byStateRaw).forEach(key => {
-      byState[key] = getAveragePeriodValue(byStateRaw[key], dateRange, timePeriod);
+      byState[state] = (byState[state] || 0) + (c.advanceAmount || 0);
     });
 
     const count = filteredCommissions.length;
@@ -206,34 +189,24 @@ export function useMetricsWithDateRange(
       averageRate,
       averageAmount
     };
-  }, [filteredCommissions, dateRange, timePeriod]);
+  }, [filteredCommissions]);
 
   // Calculate period expense metrics
   const periodExpenses = useMemo((): PeriodExpenseMetrics => {
-    // Calculate raw totals first
-    const rawTotal = filteredExpenses.reduce((sum, e) => sum + (e.amount || 0), 0);
-
-    // ✅ APPLY TIME PERIOD SCALING to total
-    const total = getAveragePeriodValue(rawTotal, dateRange, timePeriod);
+    // Calculate actual totals for the period (NO SCALING)
+    const total = filteredExpenses.reduce((sum, e) => sum + (e.amount || 0), 0);
 
     // Group by category
-    const byCategoryRaw: Record<string, number> = {};
+    const byCategory: Record<string, number> = {};
     filteredExpenses.forEach(e => {
       const category = e.category || 'Uncategorized';
-      byCategoryRaw[category] = (byCategoryRaw[category] || 0) + e.amount;
-    });
-    // Scale category metrics
-    const byCategory: Record<string, number> = {};
-    Object.keys(byCategoryRaw).forEach(key => {
-      byCategory[key] = getAveragePeriodValue(byCategoryRaw[key], dateRange, timePeriod);
+      byCategory[category] = (byCategory[category] || 0) + e.amount;
     });
 
-    const rawRecurring = filteredExpenses
+    const recurring = filteredExpenses
       .filter(e => e.is_recurring)
       .reduce((sum, e) => sum + e.amount, 0);
 
-    // ✅ APPLY TIME PERIOD SCALING to recurring and one-time
-    const recurring = getAveragePeriodValue(rawRecurring, dateRange, timePeriod);
     const oneTime = total - recurring;
 
     const count = filteredExpenses.length;
@@ -247,19 +220,16 @@ export function useMetricsWithDateRange(
       count,
       averageAmount
     };
-  }, [filteredExpenses, dateRange, timePeriod]);
+  }, [filteredExpenses]);
 
   // Calculate period policy metrics
   const periodPolicies = useMemo((): PeriodPolicyMetrics => {
     const newCount = filteredPolicies.length;
 
-    const rawPremiumWritten = filteredPolicies.reduce(
+    const premiumWritten = filteredPolicies.reduce(
       (sum, p) => sum + (p.annualPremium || 0),
       0
     );
-
-    // ✅ APPLY TIME PERIOD SCALING to premium written
-    const premiumWritten = getAveragePeriodValue(rawPremiumWritten, dateRange, timePeriod);
 
     const averagePremium = newCount > 0 ? premiumWritten / newCount : 0;
 
@@ -267,14 +237,11 @@ export function useMetricsWithDateRange(
     const lapsed = filteredPolicies.filter(p => p.status === 'lapsed').length;
 
     // Calculate total commissionable value
-    const rawCommissionableValue = filteredPolicies.reduce((sum, p) => {
+    const commissionableValue = filteredPolicies.reduce((sum, p) => {
       const premium = p.annualPremium || 0;
       const rate = p.commissionPercentage || 0;
       return sum + (premium * rate);
     }, 0);
-
-    // ✅ APPLY TIME PERIOD SCALING to commissionable value
-    const commissionableValue = getAveragePeriodValue(rawCommissionableValue, dateRange, timePeriod);
 
     return {
       newCount,
@@ -284,7 +251,7 @@ export function useMetricsWithDateRange(
       lapsed,
       commissionableValue
     };
-  }, [filteredPolicies, dateRange, timePeriod]);
+  }, [filteredPolicies]);
 
   // Calculate period client metrics
   const periodClients = useMemo((): PeriodClientMetrics => {
@@ -318,14 +285,11 @@ export function useMetricsWithDateRange(
       byState[state] = (byState[state] || 0) + 1;
     });
 
-    // Calculate total value
-    const rawTotalValue = filteredPolicies.reduce(
+    // Calculate total value (actual total, no scaling)
+    const totalValue = filteredPolicies.reduce(
       (sum, p) => sum + (p.annualPremium || 0),
       0
     );
-
-    // ✅ APPLY TIME PERIOD SCALING to total value
-    const totalValue = getAveragePeriodValue(rawTotalValue, dateRange, timePeriod);
 
     return {
       newCount,
@@ -333,7 +297,7 @@ export function useMetricsWithDateRange(
       byState,
       totalValue
     };
-  }, [filteredPolicies, dateRange, timePeriod]);
+  }, [filteredPolicies]);
 
   // Calculate current state metrics (point-in-time, not filtered by date)
   const currentState = useMemo((): CurrentStateMetrics => {
@@ -379,7 +343,7 @@ export function useMetricsWithDateRange(
     // Calculate average commission per policy
     const avgCommissionPerPolicy = periodPolicies.newCount > 0
       ? periodCommissions.earned / periodPolicies.newCount
-      : periodPolicies.averagePremium * periodCommissions.averageRate;
+      : periodPolicies.averagePremium * (periodCommissions.averageRate / 100);
 
     // Calculate policies needed to break even
     const policiesNeeded = avgCommissionPerPolicy > 0

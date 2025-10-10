@@ -5,10 +5,9 @@ import { Constants } from '../../types/expense.types';
 import { constantsService } from '../../services';
 
 const DEFAULT_CONSTANTS: Constants = {
-  avgAP: 15000,
-  commissionRate: 0.2,
-  target1: 4000,
-  target2: 6500,
+  avgAP: 0,
+  target1: 0,
+  target2: 0,
 };
 
 export type UseConstantsResult = ReturnType<typeof useConstants>;
@@ -45,10 +44,6 @@ export function useUpdateConstant() {
       // Validate value
       if (value < 0) {
         throw new Error(`${field} cannot be negative`);
-      }
-
-      if (field === 'commissionRate' && (value < 0 || value > 1)) {
-        throw new Error('Commission rate must be between 0 and 1');
       }
 
       await constantsService.setValue(String(field), value);
