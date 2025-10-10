@@ -135,7 +135,7 @@ export const ConstantsManagement: React.FC = () => {
                   <Input
                     type="number"
                     value={formData.avgAP}
-                    onChange={(value) => handleInputChange('avgAP', String(value))}
+                    onChange={(e) => handleInputChange('avgAP', e.target.value)}
                     onBlur={() => validateAndSave('avgAP')}
                     min={0}
                     step={100}
@@ -176,7 +176,7 @@ export const ConstantsManagement: React.FC = () => {
                     <Input
                       type="number"
                       value={formData.commissionRate}
-                      onChange={(value) => handleInputChange('commissionRate', String(value))}
+                      onChange={(e) => handleInputChange('commissionRate', e.target.value)}
                       onBlur={() => validateAndSave('commissionRate')}
                       min={0}
                       max={100}
@@ -219,7 +219,7 @@ export const ConstantsManagement: React.FC = () => {
                   <Input
                     type="number"
                     value={formData.target1}
-                    onChange={(value) => handleInputChange('target1', String(value))}
+                    onChange={(e) => handleInputChange('target1', e.target.value)}
                     onBlur={() => validateAndSave('target1')}
                     min={0}
                     step={100}
@@ -259,7 +259,7 @@ export const ConstantsManagement: React.FC = () => {
                   <Input
                     type="number"
                     value={formData.target2}
-                    onChange={(value) => handleInputChange('target2', String(value))}
+                    onChange={(e) => handleInputChange('target2', e.target.value)}
                     onBlur={() => validateAndSave('target2')}
                     min={0}
                     step={100}

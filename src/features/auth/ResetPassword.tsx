@@ -146,7 +146,7 @@ export const ResetPassword: React.FC = () => {
                 type="password"
                 placeholder="Enter your new password"
                 value={password}
-                onChange={(value) => setPassword(String(value))}
+                onChange={(e) => setPassword(e.target.value)}
                 required
                 disabled={loading}
                 className="w-full"
@@ -158,7 +158,7 @@ export const ResetPassword: React.FC = () => {
                 type="password"
                 placeholder="Confirm your new password"
                 value={confirmPassword}
-                onChange={(value) => setConfirmPassword(String(value))}
+                onChange={(e) => setConfirmPassword(e.target.value)}
                 required
                 disabled={loading}
                 className="w-full"

@@ -181,8 +181,8 @@ export const CommissionForm: React.FC<CommissionFormProps> = ({
             <Input
               label="Client Name"
               value={formData.clientName}
-              onChange={(value) =>
-                setFormData((prev) => ({ ...prev, clientName: String(value) }))
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, clientName: e.target.value }))
               }
               error={errors.clientName}
               required
@@ -191,8 +191,8 @@ export const CommissionForm: React.FC<CommissionFormProps> = ({
               label="Client Age"
               type="number"
               value={formData.clientAge}
-              onChange={(value) =>
-                setFormData((prev) => ({ ...prev, clientAge: Number(value) }))
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, clientAge: Number(e.target.value) }))
               }
               error={errors.clientAge}
               required
@@ -249,8 +249,8 @@ export const CommissionForm: React.FC<CommissionFormProps> = ({
               label="Annual Premium"
               type="number"
               value={formData.annualPremium}
-              onChange={(value) =>
-                setFormData((prev) => ({ ...prev, annualPremium: Number(value) }))
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, annualPremium: Number(e.target.value) }))
               }
               error={errors.annualPremium}
               required

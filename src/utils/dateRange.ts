@@ -165,3 +165,64 @@ export function formatDateRange(range: DateRange): string {
 
   return `${start} - ${end}`;
 }
+
+/**
+ * Average number of days in each time period
+ * Used for scaling metrics across different time periods
+ */
+export const DAYS_PER_PERIOD: Record<TimePeriod, number> = {
+  daily: 1,
+  weekly: 7,
+  monthly: 30.44,  // Average month length (365.25 / 12)
+  yearly: 365.25   // Account for leap years
+};
+
+/**
+ * Scale a metric value from one time period to another
+ * @param value The value to scale
+ * @param fromPeriod The original time period
+ * @param toPeriod The target time period
+ * @returns Scaled value
+ */
+export function scaleMetricByPeriod(
+  value: number,
+  fromPeriod: TimePeriod,
+  toPeriod: TimePeriod
+): number {
+  const fromDays = DAYS_PER_PERIOD[fromPeriod];
+  const toDays = DAYS_PER_PERIOD[toPeriod];
+  return (value / fromDays) * toDays;
+}
+
+/**
+ * Get the average value per display period based on actual data in a date range
+ * This is the KEY function for fixing the time period scaling bug.
+ *
+ * Example: If you have $4,000 in expenses over 30 days and want to show "Weekly":
+ * - Daily average = $4,000 / 30 = $133.33/day
+ * - Weekly average = $133.33 * 7 = $933.33/week
+ *
+ * @param totalValue The total value across the entire date range
+ * @param dateRange The date range the total covers
+ * @param displayPeriod The time period to display the average for
+ * @returns Average value per display period
+ */
+export function getAveragePeriodValue(
+  totalValue: number,
+  dateRange: DateRange,
+  displayPeriod: TimePeriod
+): number {
+  // Calculate number of days in the actual date range
+  const msPerDay = 24 * 60 * 60 * 1000;
+  const rangeDays = Math.max(1, Math.ceil(
+    (dateRange.endDate.getTime() - dateRange.startDate.getTime()) / msPerDay
+  ));
+
+  // Calculate daily average from the total
+  const dailyAverage = totalValue / rangeDays;
+
+  // Scale to the display period
+  const periodDays = DAYS_PER_PERIOD[displayPeriod];
+
+  return dailyAverage * periodDays;
+}

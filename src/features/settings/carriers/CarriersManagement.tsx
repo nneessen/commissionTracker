@@ -110,7 +110,7 @@ export function CarriersManagement() {
               type="text"
               placeholder="Search carriers..."
               value={searchTerm}
-              onChange={(value) => setSearchTerm(String(value))}
+              onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-9"
             />
           </div>

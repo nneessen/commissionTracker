@@ -288,7 +288,7 @@ export const Login: React.FC<LoginProps> = ({ onSuccess }) => {
               type="email"
               placeholder="you@example.com"
               value={email}
-              onChange={(value) => setEmail(String(value))}
+              onChange={(e) => setEmail(e.target.value)}
               error={formErrors.email}
               required
               disabled={loading}
@@ -302,7 +302,7 @@ export const Login: React.FC<LoginProps> = ({ onSuccess }) => {
                 type="password"
                 placeholder="Enter your password"
                 value={password}
-                onChange={(value) => setPassword(String(value))}
+                onChange={(e) => setPassword(e.target.value)}
                 error={formErrors.password}
                 required
                 disabled={loading}
@@ -317,7 +317,7 @@ export const Login: React.FC<LoginProps> = ({ onSuccess }) => {
                 type="password"
                 placeholder="Confirm your password"
                 value={confirmPassword}
-                onChange={(value) => setConfirmPassword(String(value))}
+                onChange={(e) => setConfirmPassword(e.target.value)}
                 error={formErrors.confirmPassword}
                 required
                 disabled={loading}
