@@ -15,3 +15,6 @@ export * from './comps';
 export { useMigration } from './useMigration';
 export { useLocalStorage } from './useLocalStorage';
 export { useMetrics } from './useMetrics';
+
+// Analytics aggregation hook
+export { useAnalyticsData } from './useAnalyticsData';
