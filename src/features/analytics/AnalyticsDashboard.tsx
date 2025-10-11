@@ -91,7 +91,10 @@ export function AnalyticsDashboard() {
     <div style={{
       minHeight: '100vh',
       background: '#f8f9fa',
-      padding: window.innerWidth < 768 ? '12px' : '24px'
+      padding: window.innerWidth < 768 ? '12px' : '24px',
+      overflowX: 'hidden',
+      width: '100%',
+      boxSizing: 'border-box'
     }}>
       {/* Page Header */}
       <div style={{ marginBottom: '24px' }}>
@@ -196,12 +199,20 @@ export function AnalyticsDashboard() {
       ) : (
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 600px), 1fr))',
+          gridTemplateColumns: window.innerWidth >= 1200 ? '1fr 1fr' : '1fr',
           gap: '16px',
-          maxWidth: '1600px'
+          maxWidth: '1600px',
+          margin: '0 auto',
+          width: '100%'
         }}>
           {/* Left Column */}
-          <div style={{ display: 'grid', gap: '16px' }}>
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '16px',
+            minWidth: 0,
+            width: '100%'
+          }}>
             <Suspense fallback={<div style={{ padding: '20px', textAlign: 'center', color: '#94a3b8' }}>Loading...</div>}>
               <PerformanceAttribution />
             </Suspense>
@@ -217,7 +228,13 @@ export function AnalyticsDashboard() {
           </div>
 
           {/* Right Column */}
-          <div style={{ display: 'grid', gap: '16px' }}>
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '16px',
+            minWidth: 0,
+            width: '100%'
+          }}>
             <Suspense fallback={<div style={{ padding: '20px', textAlign: 'center', color: '#94a3b8' }}>Loading...</div>}>
               <ClientSegmentation />
             </Suspense>

@@ -1,15 +1,15 @@
 # Project Statistics
 
-Last Updated: 2025-10-09 18:41:31
+Last Updated: 2025-10-11 11:59:50
 
 ## Metrics
-- Total Files: 21653
-- Total Lines of Code: 311942
-- Total Commits: 65
+- Total Files: 21708
+- Total Lines of Code: 325617
+- Total Commits: 70
 
 ## Recent Activity
-1df7059 docs: multiple changes in .,docs,plans/completed
-7eac5be docs: multiple changes in .,src/services/commissions
-57e737c docs: multiple changes in .,.serena/memories,plans/COMPLETED
-3a00c04 docs(dashboard): add documentation and completion report for dashboard redesign
-45ce5cc refactor(dashboard): redesign dashboard with data-dense layout and improve input component
+d31d573 feat(analytics): complete analytics redesign with advanced insights and visualizations
+e96c0dd feat: analytics redesign Phase 1 - foundation services complete
+4467ab6 dashboard fix calcs
+bde347b a
+989b4f6 docs: multiple changes in .,docs,plans/ACTIVE
