@@ -1,16 +1,16 @@
 // src/features/auth/Login.tsx
 
-import React, { useState } from 'react';
-import { useNavigate } from '@tanstack/react-router';
-import { useAuth } from '../../contexts/AuthContext';
-import { Button, Input } from '../../components/ui';
-import { SESSION_STORAGE_KEYS } from '../../constants/auth.constants';
+import React, { useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
+import { useAuth } from "../../contexts/AuthContext";
+import { Button, Input } from "../../components/ui";
+import { SESSION_STORAGE_KEYS } from "../../constants/auth.constants";
 
 interface LoginProps {
   onSuccess?: () => void;
 }
 
-type AuthMode = 'signin' | 'signup' | 'reset';
+type AuthMode = "signin" | "signup" | "reset";
 
 interface FormErrors {
   email?: string;
@@ -21,10 +21,10 @@ interface FormErrors {
 export const Login: React.FC<LoginProps> = ({ onSuccess }) => {
   const { signIn, signUp, resetPassword } = useAuth();
   const navigate = useNavigate();
-  const [mode, setMode] = useState<AuthMode>('signin');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [mode, setMode] = useState<AuthMode>("signin");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -35,25 +35,25 @@ export const Login: React.FC<LoginProps> = ({ onSuccess }) => {
 
     // Email validation
     if (!email) {
-      errors.email = 'Email is required';
+      errors.email = "Email is required";
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      errors.email = 'Please enter a valid email address';
+      errors.email = "Please enter a valid email address";
     }
 
     // Password validation
-    if (mode !== 'reset') {
+    if (mode !== "reset") {
       if (!password) {
-        errors.password = 'Password is required';
+        errors.password = "Password is required";
       } else if (password.length < 6) {
-        errors.password = 'Password must be at least 6 characters';
+        errors.password = "Password must be at least 6 characters";
       }
 
       // Confirm password validation (signup only)
-      if (mode === 'signup') {
+      if (mode === "signup") {
         if (!confirmPassword) {
-          errors.confirmPassword = 'Please confirm your password';
+          errors.confirmPassword = "Please confirm your password";
         } else if (password !== confirmPassword) {
-          errors.confirmPassword = 'Passwords do not match';
+          errors.confirmPassword = "Passwords do not match";
         }
       }
     }
@@ -74,87 +74,107 @@ export const Login: React.FC<LoginProps> = ({ onSuccess }) => {
     setLoading(true);
 
     try {
-      if (mode === 'signin') {
+      if (mode === "signin") {
         await signIn(email, password);
         onSuccess?.();
-      } else if (mode === 'signup') {
+      } else if (mode === "signup") {
         const result = await signUp(email, password);
 
         if (result.requiresVerification) {
           // Store email in sessionStorage for verification screen
-          sessionStorage.setItem(SESSION_STORAGE_KEYS.VERIFICATION_EMAIL, result.email);
+          sessionStorage.setItem(
+            SESSION_STORAGE_KEYS.VERIFICATION_EMAIL,
+            result.email,
+          );
 
           // Navigate to verification screen
           navigate({
-            to: '/auth/verify-email',
+            to: "/auth/verify-email",
           } as any); // Type assertion needed for router state
         } else {
           // Auto-confirm is enabled, user is logged in
-          setMessage('Account created successfully!');
+          setMessage("Account created successfully!");
           onSuccess?.();
         }
-      } else if (mode === 'reset') {
+      } else if (mode === "reset") {
         await resetPassword(email);
-        setMessage('Password reset email sent! Check your inbox.');
+        setMessage("Password reset email sent! Check your inbox.");
         // Switch back to signin mode after a delay
-        setTimeout(() => setMode('signin'), 3000);
+        setTimeout(() => setMode("signin"), 3000);
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'An error occurred';
+      const errorMessage =
+        err instanceof Error ? err.message : "An error occurred";
       const errorLower = errorMessage.toLowerCase();
 
       // 1. Email not confirmed/verified (High Priority)
-      if (errorLower.includes('email not confirmed') ||
-          errorLower.includes('email not verified')) {
-        setError('Please verify your email before signing in.');
+      if (
+        errorLower.includes("email not confirmed") ||
+        errorLower.includes("email not verified")
+      ) {
+        setError("Please verify your email before signing in.");
         // Store email for verification screen
         sessionStorage.setItem(SESSION_STORAGE_KEYS.VERIFICATION_EMAIL, email);
         // Redirect to verification page
         setTimeout(() => {
           navigate({
-            to: '/auth/verify-email',
+            to: "/auth/verify-email",
           } as any); // Type assertion needed for router state
         }, 1500);
       }
 
       // 2. Invalid credentials - user not found or wrong password (High Priority)
       // Security best practice: Same message for both cases
-      else if (mode === 'signin' && (
-        errorLower.includes('invalid login credentials') ||
-        errorLower.includes('invalid email or password') ||
-        errorLower.includes('email not found')
-      )) {
-        setError('No account found or incorrect password. ');
+      else if (
+        mode === "signin" &&
+        (errorLower.includes("invalid login credentials") ||
+          errorLower.includes("invalid email or password") ||
+          errorLower.includes("email not found"))
+      ) {
+        setError("No account found or incorrect password. ");
       }
 
       // 3. Account disabled/suspended (Medium Priority)
-      else if (errorLower.includes('user is disabled') ||
-               errorLower.includes('account has been disabled') ||
-               errorLower.includes('account suspended')) {
-        setError('Your account has been disabled. Please contact support for assistance.');
+      else if (
+        errorLower.includes("user is disabled") ||
+        errorLower.includes("account has been disabled") ||
+        errorLower.includes("account suspended")
+      ) {
+        setError(
+          "Your account has been disabled. Please contact support for assistance.",
+        );
       }
 
       // 4. Rate limiting (Medium Priority)
-      else if (errorLower.includes('rate limit') ||
-               errorLower.includes('too many requests') ||
-               errorLower.includes('email rate limit exceeded')) {
-        setError('Too many attempts. Please wait a few minutes and try again.');
+      else if (
+        errorLower.includes("rate limit") ||
+        errorLower.includes("too many requests") ||
+        errorLower.includes("email rate limit exceeded")
+      ) {
+        setError("Too many attempts. Please wait a few minutes and try again.");
       }
 
       // 5. Network/Connection errors (Medium Priority)
-      else if (errorLower.includes('network') ||
-               errorLower.includes('fetch failed') ||
-               errorLower.includes('failed to fetch') ||
-               errorLower.includes('networkerror')) {
-        setError('Connection error. Please check your internet and try again.');
+      else if (
+        errorLower.includes("network") ||
+        errorLower.includes("fetch failed") ||
+        errorLower.includes("failed to fetch") ||
+        errorLower.includes("networkerror")
+      ) {
+        setError("Connection error. Please check your internet and try again.");
       }
 
       // 6. Password requirements (Signup only)
-      else if (mode === 'signup' && (
-        errorLower.includes('password') &&
-        (errorLower.includes('weak') || errorLower.includes('requirements') || errorLower.includes('too short'))
-      )) {
-        setError('Password must be at least 6 characters with a mix of letters and numbers.');
+      else if (
+        mode === "signup" &&
+        errorLower.includes("password") &&
+        (errorLower.includes("weak") ||
+          errorLower.includes("requirements") ||
+          errorLower.includes("too short"))
+      ) {
+        setError(
+          "Password must be at least 6 characters with a mix of letters and numbers.",
+        );
       }
 
       // 7. Generic fallback
@@ -171,41 +191,41 @@ export const Login: React.FC<LoginProps> = ({ onSuccess }) => {
     setError(null);
     setMessage(null);
     setFormErrors({});
-    setPassword('');
-    setConfirmPassword('');
+    setPassword("");
+    setConfirmPassword("");
   };
 
   const getTitle = () => {
     switch (mode) {
-      case 'signup':
-        return 'Create your account';
-      case 'reset':
-        return 'Reset your password';
+      case "signup":
+        return "Create your account";
+      case "reset":
+        return "Reset your password";
       default:
-        return 'Welcome back';
+        return "Welcome back";
     }
   };
 
   const getSubtitle = () => {
     switch (mode) {
-      case 'signup':
-        return 'Start tracking your commissions today';
-      case 'reset':
+      case "signup":
+        return "Start tracking your commissions today";
+      case "reset":
         return "Enter your email and we'll send you a reset link";
       default:
-        return 'Sign in to continue to your dashboard';
+        return "Sign in to continue to your dashboard";
     }
   };
 
   const getButtonText = () => {
-    if (loading) return 'Please wait...';
+    if (loading) return "Please wait...";
     switch (mode) {
-      case 'signup':
-        return 'Create account';
-      case 'reset':
-        return 'Send reset link';
+      case "signup":
+        return "Create account";
+      case "reset":
+        return "Send reset link";
       default:
-        return 'Sign in';
+        return "Sign in";
     }
   };
 
@@ -220,9 +240,7 @@ export const Login: React.FC<LoginProps> = ({ onSuccess }) => {
           <h2 className="text-3xl font-bold text-gray-900 mb-2">
             {getTitle()}
           </h2>
-          <p className="text-sm text-gray-600">
-            {getSubtitle()}
-          </p>
+          <p className="text-sm text-gray-600">{getSubtitle()}</p>
         </div>
 
         {/* Main Card */}
@@ -232,8 +250,16 @@ export const Login: React.FC<LoginProps> = ({ onSuccess }) => {
             <div className="rounded-xl bg-green-50 border border-green-200 p-4 animate-fadeIn">
               <div className="flex items-start">
                 <div className="flex-shrink-0">
-                  <svg className="h-5 w-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  <svg
+                    className="h-5 w-5 text-green-600"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                      clipRule="evenodd"
+                    />
                   </svg>
                 </div>
                 <p className="ml-3 text-sm font-medium text-green-800">
@@ -248,26 +274,32 @@ export const Login: React.FC<LoginProps> = ({ onSuccess }) => {
             <div className="rounded-xl bg-red-50 border border-red-200 p-4 animate-fadeIn">
               <div className="flex items-start">
                 <div className="flex-shrink-0">
-                  <svg className="h-5 w-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  <svg
+                    className="h-5 w-5 text-red-600"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                      clipRule="evenodd"
+                    />
                   </svg>
                 </div>
                 <div className="ml-3">
-                  <p className="text-sm font-medium text-red-800">
-                    {error}
-                  </p>
+                  <p className="text-sm font-medium text-red-800">{error}</p>
                   {/* Show "Create account" button for invalid credentials */}
-                  {mode === 'signin' && error.includes('No account found') && (
+                  {mode === "signin" && error.includes("No account found") && (
                     <button
                       type="button"
-                      onClick={() => switchMode('signup')}
+                      onClick={() => switchMode("signup")}
                       className="mt-2 text-sm font-semibold text-red-700 hover:text-red-600 underline transition-colors"
                     >
                       Create a new account
                     </button>
                   )}
                   {/* Show support link for disabled accounts */}
-                  {error.includes('disabled') && (
+                  {error.includes("disabled") && (
                     <a
                       href="mailto:support@commissiontracker.com"
                       className="mt-2 inline-block text-sm font-semibold text-red-700 hover:text-red-600 underline transition-colors"
@@ -282,27 +314,27 @@ export const Login: React.FC<LoginProps> = ({ onSuccess }) => {
 
           {/* Form */}
           <form className="space-y-5" onSubmit={handleSubmit}>
-            {/* Email Input */}
+            {/* Email Input DO NOT CHANGE THE onChange PROP */}
             <Input
               label="Email address"
               type="email"
               placeholder="you@example.com"
               value={email}
-              onChange={(value) => setEmail(String(value))}
+              onChange={(e) => setEmail(e.target.value)}
               error={formErrors.email}
               required
               disabled={loading}
               className="w-full"
             />
 
-            {/* Password Input (not shown in reset mode) */}
-            {mode !== 'reset' && (
+            {/* Password Input DO NOT CHANGE the onChange prop */}
+            {mode !== "reset" && (
               <Input
                 label="Password"
                 type="password"
                 placeholder="Enter your password"
                 value={password}
-                onChange={(value) => setPassword(String(value))}
+                onChange={(e) => setPassword(e.target.value)}
                 error={formErrors.password}
                 required
                 disabled={loading}
@@ -311,7 +343,7 @@ export const Login: React.FC<LoginProps> = ({ onSuccess }) => {
             )}
 
             {/* Confirm Password Input (signup only) */}
-            {mode === 'signup' && (
+            {mode === "signup" && (
               <Input
                 label="Confirm password"
                 type="password"
@@ -326,11 +358,11 @@ export const Login: React.FC<LoginProps> = ({ onSuccess }) => {
             )}
 
             {/* Forgot Password Link (signin only) */}
-            {mode === 'signin' && (
+            {mode === "signin" && (
               <div className="flex items-center justify-end">
                 <button
                   type="button"
-                  onClick={() => switchMode('reset')}
+                  onClick={() => switchMode("reset")}
                   className="text-sm font-medium text-blue-600 hover:text-blue-500 transition-colors"
                   disabled={loading}
                 >
@@ -357,17 +389,17 @@ export const Login: React.FC<LoginProps> = ({ onSuccess }) => {
             </div>
             <div className="relative flex justify-center text-sm">
               <span className="px-4 bg-white text-gray-500">
-                {mode === 'signin' && "Don't have an account?"}
-                {mode === 'signup' && "Already have an account?"}
-                {mode === 'reset' && "Remember your password?"}
+                {mode === "signin" && "Don't have an account?"}
+                {mode === "signup" && "Already have an account?"}
+                {mode === "reset" && "Remember your password?"}
               </span>
             </div>
           </div>
 
-          {mode === 'signin' && (
+          {mode === "signin" && (
             <button
               type="button"
-              onClick={() => switchMode('signup')}
+              onClick={() => switchMode("signup")}
               className="w-full text-center text-sm font-medium text-blue-600 hover:text-blue-500 transition-colors py-2"
               disabled={loading}
             >
@@ -375,10 +407,10 @@ export const Login: React.FC<LoginProps> = ({ onSuccess }) => {
             </button>
           )}
 
-          {(mode === 'signup' || mode === 'reset') && (
+          {(mode === "signup" || mode === "reset") && (
             <button
               type="button"
-              onClick={() => switchMode('signin')}
+              onClick={() => switchMode("signin")}
               className="w-full text-center text-sm font-medium text-blue-600 hover:text-blue-500 transition-colors py-2"
               disabled={loading}
             >
