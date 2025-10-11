@@ -16,7 +16,7 @@ import type { CreateExpenseData } from '../../types/expense.types';
 import type { NewPolicyForm, CreatePolicyData } from '../../types/policy.types';
 import { clientService } from '../../services/clients/clientService';
 import { useAuth } from '../../contexts/AuthContext';
-import { TimePeriod, getPeriodLabel, formatDateRange } from '../../utils/dateRange';
+import { TimePeriod, getPeriodLabel, formatDateRange, getDaysInPeriod, DAYS_PER_PERIOD } from '../../utils/dateRange';
 import { MetricTooltip } from '../../components/ui/MetricTooltip';
 
 export const DashboardHome: React.FC = () => {
@@ -32,7 +32,7 @@ export const DashboardHome: React.FC = () => {
   // Time period filter state
   const [timePeriod, setTimePeriod] = useState<TimePeriod>('monthly');
 
-  // Use the new date-filtered metrics hook
+  // Always fetch MONTHLY data - we'll scale it for display based on timePeriod
   const {
     periodCommissions,
     periodExpenses,
@@ -42,7 +42,7 @@ export const DashboardHome: React.FC = () => {
     periodAnalytics,
     dateRange,
     isLoading
-  } = useMetricsWithDateRange({ timePeriod });
+  } = useMetricsWithDateRange({ timePeriod: 'monthly' }); // ALWAYS fetch monthly data
 
   // Mutation hooks
   const createExpense = useCreateExpense();
@@ -58,6 +58,82 @@ export const DashboardHome: React.FC = () => {
   const formatPercent = (value: number) => {
     return `${value.toFixed(1)}%`;
   };
+
+  /**
+   * Scale a value to the display period
+   * This converts monthly totals to per-period breakdowns
+   * For example: $5,000 monthly → $1,154 weekly → $164 daily → $60,000 yearly
+   *
+   * IMPORTANT: This assumes the input value is a MONTHLY total
+   * and scales it to show the equivalent per-period amount
+   */
+  const scaleToDisplayPeriod = (monthlyValue: number): number => {
+    switch (timePeriod) {
+      case 'daily':
+        return monthlyValue / 30.44;  // Divide by average days per month
+      case 'weekly':
+        return monthlyValue / 4.33;   // Divide by average weeks per month
+      case 'monthly':
+        return monthlyValue;          // Show as-is for monthly
+      case 'yearly':
+        return monthlyValue * 12;     // Multiply by 12 for annual
+      default:
+        return monthlyValue;
+    }
+  };
+
+  /**
+   * Scale a count/integer value to the display period
+   * Uses the same logic but rounds to nearest integer
+   */
+  const scaleCountToDisplayPeriod = (monthlyCount: number): number => {
+    return Math.round(scaleToDisplayPeriod(monthlyCount));
+  };
+
+  /**
+   * Get the appropriate policies needed value based on selected timeframe
+   * This breaks down large goals into manageable per-period targets
+   */
+  const getPoliciesNeededDisplay = (): number => {
+    switch (timePeriod) {
+      case 'daily':
+        return periodAnalytics.paceMetrics.dailyTarget;
+      case 'weekly':
+        return periodAnalytics.paceMetrics.weeklyTarget;
+      case 'monthly':
+        return periodAnalytics.paceMetrics.monthlyTarget;
+      case 'yearly':
+        return periodAnalytics.policiesNeeded;
+    }
+  };
+
+  /**
+   * Get the timeframe-appropriate label suffix for metrics
+   * Examples: "Per Day", "Per Week", "Per Month", "Per Year"
+   */
+  const getPeriodSuffix = (): string => {
+    switch (timePeriod) {
+      case 'daily':
+        return ' Per Day';
+      case 'weekly':
+        return ' Per Week';
+      case 'monthly':
+        return ' Per Month';
+      case 'yearly':
+        return ' Per Year';
+    }
+  };
+
+  /**
+   * Scale the breakeven amount to the selected display period
+   * This shows how much needs to be earned per day/week/month/year
+   */
+  const getBreakevenDisplay = (): number => {
+    const daysInRange = getDaysInPeriod(timePeriod);
+    const dailyBreakeven = periodAnalytics.breakevenNeeded / Math.max(1, daysInRange);
+    return dailyBreakeven * DAYS_PER_PERIOD[timePeriod];
+  };
+
 
   /**
    * Handles quick action button clicks
@@ -251,15 +327,15 @@ export const DashboardHome: React.FC = () => {
           {[
             {
               label: `${getPeriodLabel(timePeriod)} Commission Earned`,
-              value: formatCurrency(periodCommissions.earned),
+              value: formatCurrency(scaleToDisplayPeriod(periodCommissions.earned)),
               trend: periodAnalytics.surplusDeficit >= 0 ? 'up' : 'down',
               color: periodCommissions.earned > 0 ? '#10b981' : '#ef4444',
               tooltip: {
                 title: `${getPeriodLabel(timePeriod)} Commission Earned`,
-                description: `Total commission earned during the selected ${timePeriod.toLowerCase()} period.`,
-                formula: 'SUM(advance_amount) WHERE status=paid AND date in selected range',
-                example: 'Shows actual commission received in the period',
-                note: 'This is the actual total, not scaled or averaged'
+                description: `Commission earned scaled to ${timePeriod.toLowerCase()} period.`,
+                formula: `Monthly total ${timePeriod === 'weekly' ? '÷ 4.33' : timePeriod === 'daily' ? '÷ 30.44' : timePeriod === 'yearly' ? '× 12' : ''}`,
+                example: `$5,000 monthly → ${timePeriod === 'weekly' ? '$1,154 weekly' : timePeriod === 'daily' ? '$164 daily' : timePeriod === 'yearly' ? '$60,000 yearly' : '$5,000 monthly'}`,
+                note: `Scaled from monthly total to show ${timePeriod} breakdown`
               }
             },
             {
@@ -276,51 +352,51 @@ export const DashboardHome: React.FC = () => {
             },
             {
               label: `${getPeriodLabel(timePeriod)} Total Expenses`,
-              value: formatCurrency(periodExpenses.total),
+              value: formatCurrency(scaleToDisplayPeriod(periodExpenses.total)),
               color: '#f59e0b',
               tooltip: {
                 title: `${getPeriodLabel(timePeriod)} Total Expenses`,
-                description: `Total expenses during the selected ${timePeriod.toLowerCase()} period.`,
-                formula: 'SUM(amount) WHERE date in selected range',
-                example: 'Shows actual expenses for the period',
-                note: 'This is the actual total, not scaled or averaged'
+                description: `Expenses scaled to ${timePeriod.toLowerCase()} period.`,
+                formula: `Monthly total ${timePeriod === 'weekly' ? '÷ 4.33' : timePeriod === 'daily' ? '÷ 30.44' : timePeriod === 'yearly' ? '× 12' : ''}`,
+                example: `$5,000 monthly → ${timePeriod === 'weekly' ? '$1,154 weekly' : timePeriod === 'daily' ? '$164 daily' : timePeriod === 'yearly' ? '$60,000 yearly' : '$5,000 monthly'}`,
+                note: `Scaled from monthly total to show ${timePeriod} breakdown`
               }
             },
             {
               label: `${getPeriodLabel(timePeriod)} Net Income`,
-              value: formatCurrency(Math.abs(periodAnalytics.surplusDeficit)),
+              value: formatCurrency(Math.abs(scaleToDisplayPeriod(periodAnalytics.surplusDeficit))),
               trend: periodAnalytics.surplusDeficit >= 0 ? 'up' : 'down',
               color: periodAnalytics.surplusDeficit >= 0 ? '#10b981' : '#ef4444',
               tooltip: {
                 title: `${getPeriodLabel(timePeriod)} Net Income`,
-                description: `Net profit (green) or loss (red) for the ${timePeriod.toLowerCase()} period.`,
-                formula: 'Commission Earned - Total Expenses',
-                example: '$5,000 earned - $3,000 spent = $2,000 profit',
-                note: 'Based on actual totals for the period'
+                description: `Net income scaled to ${timePeriod.toLowerCase()} period.`,
+                formula: `(Commission - Expenses) ${timePeriod === 'weekly' ? '÷ 4.33' : timePeriod === 'daily' ? '÷ 30.44' : timePeriod === 'yearly' ? '× 12' : ''}`,
+                example: `Net income scaled to show ${timePeriod} breakdown`,
+                note: `Scaled from monthly total to show ${timePeriod} breakdown`
               }
             },
             {
-              label: 'Breakeven Needed',
-              value: formatCurrency(Math.max(0, periodAnalytics.breakevenNeeded)),
+              label: 'Breakeven Needed' + getPeriodSuffix(),
+              value: formatCurrency(Math.max(0, getBreakevenDisplay())),
               color: periodAnalytics.breakevenNeeded <= 0 ? '#10b981' : '#ef4444',
               tooltip: {
-                title: 'Breakeven Needed',
-                description: 'Additional commission needed to cover your expenses for this period.',
-                formula: 'IF deficit: Expenses - Commission, ELSE: 0',
-                example: 'If expenses=$3,000 and commission=$2,000, need $1,000 more',
-                note: 'Green ($0) means you are profitable'
+                title: 'Breakeven Needed' + getPeriodSuffix(),
+                description: `Additional commission needed ${timePeriod === 'daily' ? 'per day' : timePeriod === 'weekly' ? 'per week' : timePeriod === 'monthly' ? 'per month' : 'per year'} to cover expenses. Scales with timeframe to show per-period breakdown.`,
+                formula: 'IF deficit: (Expenses - Commission) / Days, ELSE: 0',
+                example: 'Need $1,000 monthly ÷ 30 days = $33.33 per day',
+                note: 'Green ($0) means you are profitable. Scales with timeframe selection.'
               }
             },
             {
-              label: 'Policies Needed',
-              value: periodAnalytics.policiesNeeded.toString(),
+              label: 'Policies Needed' + getPeriodSuffix(),
+              value: getPoliciesNeededDisplay().toString(),
               color: '#8b5cf6',
               tooltip: {
-                title: 'Policies Needed',
-                description: 'Number of new policies to sell to reach breakeven for this period.',
-                formula: 'Breakeven Needed / Avg Commission per Policy',
-                example: 'Need $1,000 / $200 per policy = 5 policies',
-                note: 'Based on your average commission rate and premium'
+                title: 'Policies Needed' + getPeriodSuffix(),
+                description: `Number of new policies to sell ${timePeriod === 'daily' ? 'today' : timePeriod === 'weekly' ? 'this week' : timePeriod === 'monthly' ? 'this month' : 'this year'} to reach breakeven. Changes with timeframe selection to show per-period breakdown.`,
+                formula: 'Breakeven Needed / Avg Commission per Policy / Days in Period',
+                example: 'Need 60 policies monthly ÷ 30 days = 2 policies per day',
+                note: 'Scales with selected timeframe to make goals achievable'
               }
             },
             {
@@ -482,8 +558,8 @@ export const DashboardHome: React.FC = () => {
               </div>
               <div style={{ fontSize: '10px', color: isBreakeven ? '#047857' : '#92400e' }}>
                 {isBreakeven
-                  ? `${getPeriodLabel(timePeriod)} surplus of ${formatCurrency(periodAnalytics.surplusDeficit)}`
-                  : `Need ${formatCurrency(periodAnalytics.breakevenNeeded)} more (${periodAnalytics.policiesNeeded} policies @ avg)`
+                  ? `${getPeriodLabel(timePeriod)} surplus of ${formatCurrency(scaleToDisplayPeriod(periodAnalytics.surplusDeficit))}`
+                  : `Need ${formatCurrency(getBreakevenDisplay())}${getPeriodSuffix().toLowerCase()} (${Math.ceil(getPoliciesNeededDisplay())} policies)`
                 }
               </div>
             </div>
@@ -502,14 +578,14 @@ export const DashboardHome: React.FC = () => {
             </thead>
             <tbody>
               {[
-                { metric: `${getPeriodLabel(timePeriod)} Commission Earned`, current: periodCommissions.earned, target: null, unit: '$', showTarget: false },
-                { metric: `${getPeriodLabel(timePeriod)} New Policies`, current: periodPolicies.newCount, target: null, unit: '#', showTarget: false },
-                { metric: `${getPeriodLabel(timePeriod)} Premium Written`, current: periodPolicies.premiumWritten, target: null, unit: '$', showTarget: false },
-                { metric: `${getPeriodLabel(timePeriod)} New Clients`, current: periodClients.newCount, target: null, unit: '#', showTarget: false },
+                { metric: `${getPeriodLabel(timePeriod)} Commission Earned`, current: scaleToDisplayPeriod(periodCommissions.earned), target: null, unit: '$', showTarget: false },
+                { metric: `${getPeriodLabel(timePeriod)} New Policies`, current: scaleCountToDisplayPeriod(periodPolicies.newCount), target: null, unit: '#', showTarget: false },
+                { metric: `${getPeriodLabel(timePeriod)} Premium Written`, current: scaleToDisplayPeriod(periodPolicies.premiumWritten), target: null, unit: '$', showTarget: false },
+                { metric: `${getPeriodLabel(timePeriod)} New Clients`, current: scaleCountToDisplayPeriod(periodClients.newCount), target: null, unit: '#', showTarget: false },
                 { metric: `Avg Premium per Policy`, current: periodPolicies.averagePremium, target: constants?.avgAP, unit: '$', showTarget: !!constants?.avgAP },
                 { metric: `Avg Commission Rate`, current: periodCommissions.averageRate, target: null, unit: '%', showTarget: false },
-                { metric: `${getPeriodLabel(timePeriod)} Total Expenses`, current: periodExpenses.total, target: null, unit: '$', showTarget: false },
-                { metric: `${getPeriodLabel(timePeriod)} Net Income`, current: periodAnalytics.netIncome, target: null, unit: '$', showTarget: false },
+                { metric: `${getPeriodLabel(timePeriod)} Total Expenses`, current: scaleToDisplayPeriod(periodExpenses.total), target: null, unit: '$', showTarget: false },
+                { metric: `${getPeriodLabel(timePeriod)} Net Income`, current: scaleToDisplayPeriod(periodAnalytics.netIncome), target: null, unit: '$', showTarget: false },
               ].map((row, i) => {
                 const pct = row.showTarget && row.target && row.target > 0 ? (row.current / row.target) * 100 : 0;
                 const status = row.showTarget ? (pct >= 100 ? 'hit' : pct >= 75 ? 'good' : pct >= 50 ? 'fair' : 'poor') : 'neutral';
@@ -571,7 +647,7 @@ export const DashboardHome: React.FC = () => {
               {!isBreakeven && (
                 <div style={{ padding: '8px', borderRadius: '6px', background: '#fed7aa', borderLeft: '3px solid #ea580c' }}>
                   <div style={{ fontSize: '10px', fontWeight: 600, color: '#7c2d12' }}>Below Breakeven ({getPeriodLabel(timePeriod)})</div>
-                  <div style={{ fontSize: '9px', color: '#7c2d12', marginTop: '2px' }}>Need {periodAnalytics.policiesNeeded} more policies to break even</div>
+                  <div style={{ fontSize: '9px', color: '#7c2d12', marginTop: '2px' }}>Need {Math.ceil(getPoliciesNeededDisplay())} policies{getPeriodSuffix().toLowerCase()} to break even</div>
                 </div>
               )}
               {periodPolicies.newCount === 0 && (
@@ -595,7 +671,7 @@ export const DashboardHome: React.FC = () => {
               {periodExpenses.total > periodCommissions.earned && periodCommissions.earned > 0 && (
                 <div style={{ padding: '8px', borderRadius: '6px', background: '#fed7aa', borderLeft: '3px solid #ea580c' }}>
                   <div style={{ fontSize: '10px', fontWeight: 600, color: '#7c2d12' }}>Expenses Exceed Income</div>
-                  <div style={{ fontSize: '9px', color: '#7c2d12', marginTop: '2px' }}>{getPeriodLabel(timePeriod)} deficit: {formatCurrency(Math.abs(periodAnalytics.surplusDeficit))}</div>
+                  <div style={{ fontSize: '9px', color: '#7c2d12', marginTop: '2px' }}>{getPeriodLabel(timePeriod)} deficit: {formatCurrency(Math.abs(scaleToDisplayPeriod(periodAnalytics.surplusDeficit)))}</div>
                 </div>
               )}
             </div>
@@ -665,33 +741,33 @@ export const DashboardHome: React.FC = () => {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
           {[
             { category: `${getPeriodLabel(timePeriod)} Financial`, kpis: [
-              { label: 'Commission Earned', value: formatCurrency(periodCommissions.earned) },
-              { label: 'Total Expenses', value: formatCurrency(periodExpenses.total) },
-              { label: 'Net Income', value: formatCurrency(periodAnalytics.netIncome) },
+              { label: 'Commission Earned', value: formatCurrency(scaleToDisplayPeriod(periodCommissions.earned)) },
+              { label: 'Total Expenses', value: formatCurrency(scaleToDisplayPeriod(periodExpenses.total)) },
+              { label: 'Net Income', value: formatCurrency(scaleToDisplayPeriod(periodAnalytics.netIncome)) },
               { label: 'Profit Margin', value: formatPercent(periodAnalytics.profitMargin) },
-              { label: 'Recurring Expenses', value: formatCurrency(periodExpenses.recurring) },
-              { label: 'One-Time Expenses', value: formatCurrency(periodExpenses.oneTime) },
+              { label: 'Recurring Expenses', value: formatCurrency(scaleToDisplayPeriod(periodExpenses.recurring)) },
+              { label: 'One-Time Expenses', value: formatCurrency(scaleToDisplayPeriod(periodExpenses.oneTime)) },
             ]},
             { category: `${getPeriodLabel(timePeriod)} Production`, kpis: [
-              { label: 'New Policies', value: periodPolicies.newCount },
-              { label: 'Premium Written', value: formatCurrency(periodPolicies.premiumWritten) },
+              { label: 'New Policies', value: scaleCountToDisplayPeriod(periodPolicies.newCount) },
+              { label: 'Premium Written', value: formatCurrency(scaleToDisplayPeriod(periodPolicies.premiumWritten)) },
               { label: 'Avg Premium/Policy', value: formatCurrency(periodPolicies.averagePremium) },
-              { label: 'Cancelled', value: periodPolicies.cancelled },
-              { label: 'Lapsed', value: periodPolicies.lapsed },
-              { label: 'Commissionable Value', value: formatCurrency(periodPolicies.commissionableValue) },
+              { label: 'Cancelled', value: scaleCountToDisplayPeriod(periodPolicies.cancelled) },
+              { label: 'Lapsed', value: scaleCountToDisplayPeriod(periodPolicies.lapsed) },
+              { label: 'Commissionable Value', value: formatCurrency(scaleToDisplayPeriod(periodPolicies.commissionableValue)) },
             ]},
             { category: `${getPeriodLabel(timePeriod)} Metrics`, kpis: [
               { label: 'Lapse Rate', value: formatPercent(lapsedRate) },
               { label: 'Cancel Rate', value: formatPercent(cancellationRate) },
-              { label: 'Commission Count', value: periodCommissions.count },
+              { label: 'Commission Count', value: scaleCountToDisplayPeriod(periodCommissions.count) },
               { label: 'Avg Commission', value: formatCurrency(periodCommissions.averageAmount) },
               { label: 'Avg Comm Rate', value: formatPercent(periodCommissions.averageRate) },
-              { label: 'Expense Count', value: periodExpenses.count },
+              { label: 'Expense Count', value: scaleCountToDisplayPeriod(periodExpenses.count) },
             ]},
             { category: `${getPeriodLabel(timePeriod)} Clients`, kpis: [
-              { label: 'New Clients', value: periodClients.newCount },
+              { label: 'New Clients', value: scaleCountToDisplayPeriod(periodClients.newCount) },
               { label: 'Avg Client Age', value: periodClients.averageAge > 0 ? periodClients.averageAge.toFixed(1) : '—' },
-              { label: 'Total Value', value: formatCurrency(periodClients.totalValue) },
+              { label: 'Total Value', value: formatCurrency(scaleToDisplayPeriod(periodClients.totalValue)) },
               { label: 'Avg Value/Client', value: formatCurrency(avgClientValue) },
             ]},
             { category: 'Current Status', kpis: [
@@ -702,8 +778,8 @@ export const DashboardHome: React.FC = () => {
               { label: 'Retention Rate', value: formatPercent(currentState.retentionRate) },
             ]},
             { category: 'Targets & Pace', kpis: [
-              { label: 'Breakeven Needed', value: formatCurrency(periodAnalytics.breakevenNeeded) },
-              { label: 'Policies Needed', value: periodAnalytics.policiesNeeded },
+              { label: 'Breakeven Needed' + getPeriodSuffix(), value: formatCurrency(Math.max(0, getBreakevenDisplay())) },
+              { label: 'Policies Needed' + getPeriodSuffix(), value: Math.ceil(getPoliciesNeededDisplay()) },
               { label: 'Daily Target', value: periodAnalytics.paceMetrics.dailyTarget },
               { label: 'Weekly Target', value: periodAnalytics.paceMetrics.weeklyTarget },
               { label: 'Monthly Target', value: periodAnalytics.paceMetrics.monthlyTarget },
