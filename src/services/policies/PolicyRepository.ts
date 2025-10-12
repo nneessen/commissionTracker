@@ -369,8 +369,20 @@ export class PolicyRepository extends BaseRepository<Policy, CreatePolicyData, U
     // Handle joined client data from foreign key relationship
     let clientData;
     if (dbRecord.clients) {
-      // Client was joined - transform address object to state string
-      const address = dbRecord.clients.address || {};
+      // Client was joined - parse address JSONB field
+      let address = {};
+      if (dbRecord.clients.address) {
+        if (typeof dbRecord.clients.address === 'string') {
+          try {
+            address = JSON.parse(dbRecord.clients.address);
+          } catch (e) {
+            console.error('Failed to parse client address JSON:', e);
+          }
+        } else {
+          address = dbRecord.clients.address;
+        }
+      }
+
       clientData = {
         name: dbRecord.clients.name || 'Unknown',
         state: address.state || 'Unknown',

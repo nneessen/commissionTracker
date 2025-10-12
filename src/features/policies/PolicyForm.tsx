@@ -80,12 +80,22 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
   useEffect(() => {
     if (policyId) {
       const policy = getPolicyById(policyId);
+      console.log('🔍 PolicyForm: Loading policy for edit', { policyId, policy });
       if (policy) {
+        console.log('📝 PolicyForm: Setting form data', {
+          clientName: policy.client.name,
+          clientState: policy.client.state,
+          clientAge: policy.client.age,
+          carrierId: policy.carrierId,
+          productId: policy.productId,
+          product: policy.product,
+        });
         setFormData({
           clientName: policy.client.name,
           clientState: policy.client.state,
           clientAge: policy.client.age,
           carrierId: policy.carrierId,
+          productId: policy.productId || "",
           product: policy.product,
           policyNumber: policy.policyNumber,
           effectiveDate:
@@ -97,13 +107,45 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
             policy.paymentFrequency,
           ),
           paymentFrequency: policy.paymentFrequency,
-          commissionPercentage: policy.commissionPercentage,
+          commissionPercentage: policy.commissionPercentage * 100,
           status: policy.status,
           notes: policy.notes || "",
         });
+      } else {
+        console.error('❌ PolicyForm: Policy not found for id:', policyId);
       }
     }
   }, [policyId, getPolicyById]);
+
+  // When products load and we're editing a policy without productId, try to find matching product
+  useEffect(() => {
+    if (policyId && formData.carrierId && !formData.productId && formData.product && products.length > 0) {
+      console.log('🔎 Looking for product matching carrier and product type', {
+        carrierId: formData.carrierId,
+        productType: formData.product,
+        availableProducts: products
+      });
+
+      // Try to find a product that matches the carrier and product type
+      const matchingProduct = products.find(p =>
+        p.carrier_id === formData.carrierId &&
+        p.product_type === formData.product
+      );
+
+      if (matchingProduct) {
+        console.log('✅ Found matching product:', matchingProduct);
+        setFormData(prev => ({
+          ...prev,
+          productId: matchingProduct.id
+        }));
+      } else {
+        console.warn('⚠️ No matching product found for carrier/type', {
+          carrierId: formData.carrierId,
+          productType: formData.product
+        });
+      }
+    }
+  }, [policyId, formData.carrierId, formData.productId, formData.product, products]);
 
   // Fetch commission rates for all products when products change
   useEffect(() => {
@@ -138,7 +180,14 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
 
   // Update commission percentage when comp_guide data changes or fallback to product commission
   useEffect(() => {
+    // Don't override commission percentage when editing an existing policy
+    if (policyId) {
+      console.log('⏭️  Skipping commission auto-update for existing policy');
+      return;
+    }
+
     if (formData.productId && compGuideData) {
+      console.log('💰 Auto-setting commission from comp_guide', compGuideData.commission_percentage * 100);
       // Use comp_guide commission rate (contract-level based)
       setFormData((prev) => ({
         ...prev,
@@ -147,6 +196,7 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
     } else if (formData.productId && !compGuideData) {
       // Fallback to product commission rate
       const selectedProduct = products.find((p) => p.id === formData.productId);
+      console.log('💰 Auto-setting commission from product', selectedProduct?.commission_percentage ? selectedProduct.commission_percentage * 100 : 0);
       setFormData((prev) => ({
         ...prev,
         commissionPercentage: selectedProduct?.commission_percentage
@@ -154,7 +204,7 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
           : 0,
       }));
     }
-  }, [formData.productId, compGuideData, products]);
+  }, [formData.productId, compGuideData, products, policyId]);
 
   const handleInputChange = (
     e: React.ChangeEvent<

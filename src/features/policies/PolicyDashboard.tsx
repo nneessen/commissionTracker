@@ -49,6 +49,7 @@ export const PolicyDashboard: React.FC = () => {
         phone: formData.clientPhone || undefined,
         address: {
           state: formData.clientState,
+          age: formData.clientAge,
         },
       }, user.id);
 
@@ -126,6 +127,7 @@ export const PolicyDashboard: React.FC = () => {
         phone: updates.clientPhone || undefined,
         address: {
           state: updates.clientState,
+          age: updates.clientAge,
         },
       }, user.id);
 
