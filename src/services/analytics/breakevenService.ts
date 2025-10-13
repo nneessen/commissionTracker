@@ -1,8 +1,9 @@
-// src/services/breakevenService.ts
+// src/services/analytics/breakevenService.ts
 
 import { supabase, TABLES } from '../base/supabase';
 import { commissionService, chargebackService, constantsService, expenseService } from '../index';
 import { BREAKEVEN_RATES, CHARGEBACK_THRESHOLDS, EMERGENCY_FUND, FINANCIAL_CONSTANTS } from '../../constants/financial';
+import type { NetCommissionMetrics } from '../commissions/CommissionAnalyticsService';
 
 export interface BreakevenScenario {
   scenarioName: string;
@@ -121,7 +122,7 @@ class BreakevenService {
   private async calculateScenario(
     scenarioName: string,
     chargebackRate: number,
-    currentMetrics: any,
+    currentMetrics: NetCommissionMetrics,
     monthlyExpenses: number,
     targetProfit: number,
     timeFrame: number
@@ -163,7 +164,7 @@ class BreakevenService {
   }
 
   private async generateRecommendations(
-    currentMetrics: any,
+    currentMetrics: NetCommissionMetrics,
     monthlyExpenses: number,
     targetProfit: number,
     scenarios: BreakevenScenario[],

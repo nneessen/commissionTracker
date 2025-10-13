@@ -39,7 +39,7 @@ export interface Commission {
   lastPaymentDate?: Date;        // When the last premium was paid
 
   // COMMISSION RATE
-  commissionRate: number;        // Commission percentage from comp guide (e.g., 95 for 95%)
+  commissionRate: number;        // Commission rate as DECIMAL from comp guide (e.g., 0.95 for 95%)
 
   // Comp Guide Integration
   contractCompLevel?: number; // Agent's contract level (80-145)

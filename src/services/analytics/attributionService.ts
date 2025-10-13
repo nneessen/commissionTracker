@@ -73,9 +73,9 @@ export function calculateContribution(
   // Current period metrics
   const currentPolicies = currentPeriodPolicies.length;
   const currentCommission = currentPeriodCommissions.reduce((sum, c) => sum + (c.amount || 0), 0);
-  // Convert commission rate from percentage (95) to decimal (0.95)
+  // Commission rate is already stored as decimal (0.95 for 95%) in database
   const currentAvgRate = currentPolicies > 0
-    ? currentPeriodCommissions.reduce((sum, c) => sum + ((c.commissionRate || 0) / 100), 0) / currentPolicies
+    ? currentPeriodCommissions.reduce((sum, c) => sum + (c.commissionRate || 0), 0) / currentPolicies
     : 0;
   const currentAvgPremium = currentPolicies > 0
     ? currentPeriodPolicies.reduce((sum, p) => sum + (p.annualPremium || 0), 0) / currentPolicies
@@ -84,9 +84,9 @@ export function calculateContribution(
   // Previous period metrics
   const previousPolicies = previousPeriodPolicies.length;
   const previousCommission = previousPeriodCommissions.reduce((sum, c) => sum + (c.amount || 0), 0);
-  // Convert commission rate from percentage (95) to decimal (0.95)
+  // Commission rate is already stored as decimal (0.95 for 95%) in database
   const previousAvgRate = previousPolicies > 0
-    ? previousPeriodCommissions.reduce((sum, c) => sum + ((c.commissionRate || 0) / 100), 0) / previousPolicies
+    ? previousPeriodCommissions.reduce((sum, c) => sum + (c.commissionRate || 0), 0) / previousPolicies
     : 0;
   const previousAvgPremium = previousPolicies > 0
     ? previousPeriodPolicies.reduce((sum, p) => sum + (p.annualPremium || 0), 0) / previousPolicies
@@ -209,9 +209,9 @@ export function calculateCarrierROI(
     const totalPremium = data.policies.reduce((sum, p) => sum + (p.annualPremium || 0), 0);
     const avgPremium = totalPolicies > 0 ? totalPremium / totalPolicies : 0;
     const totalCommission = data.commissions.reduce((sum, c) => sum + (c.amount || 0), 0);
-    // Keep as percentage for display (not converting to decimal here since it's for display)
+    // Commission rate stored as decimal (0.95 for 95%), multiply by 100 for display as percentage
     const avgCommissionRate = totalPolicies > 0
-      ? data.commissions.reduce((sum, c) => sum + (c.commissionRate || 0), 0) / totalPolicies
+      ? (data.commissions.reduce((sum, c) => sum + (c.commissionRate || 0), 0) / totalPolicies) * 100
       : 0;
     const roi = totalPremium > 0 ? (totalCommission / totalPremium) * 100 : 0;
     const efficiency = totalPolicies > 0 ? totalCommission / totalPolicies : 0;
