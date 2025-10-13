@@ -98,7 +98,7 @@ export function ExpenseTable({ expenses, isLoading, onEdit, onDelete }: ExpenseT
               </TableCell>
               <TableCell>
                 <div className="flex flex-wrap gap-1">
-                  {expense.is_deductible && (
+                  {expense.is_tax_deductible && (
                     <Badge variant="secondary" className="text-purple-700">
                       Tax Deductible
                     </Badge>

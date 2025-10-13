@@ -39,7 +39,7 @@ class ExpenseService {
     }
 
     if (filters?.deductibleOnly) {
-      query = query.eq('is_deductible', true);
+      query = query.eq('is_tax_deductible', true);
     }
 
     if (filters?.recurringOnly) {
@@ -100,7 +100,8 @@ class ExpenseService {
         ...expenseData,
         user_id: user.id,
         is_recurring: expenseData.is_recurring || false,
-        is_deductible: expenseData.is_deductible || false,
+        recurring_frequency: expenseData.recurring_frequency || null,
+        is_tax_deductible: expenseData.is_tax_deductible || false,
       })
       .select()
       .single();
@@ -181,7 +182,7 @@ class ExpenseService {
         acc.business += expense.amount;
       }
 
-      if (expense.is_deductible) {
+      if (expense.is_tax_deductible) {
         acc.deductible += expense.amount;
       }
 
@@ -240,7 +241,7 @@ class ExpenseService {
         monthlyData[monthKey].business += expense.amount;
       }
 
-      if (expense.is_deductible) {
+      if (expense.is_tax_deductible) {
         monthlyData[monthKey].deductible += expense.amount;
       }
 
@@ -306,6 +307,7 @@ class ExpenseService {
       'Type',
       'Tax Deductible',
       'Recurring',
+      'Recurring Frequency',
       'Notes',
     ];
 
@@ -316,8 +318,9 @@ class ExpenseService {
       expense.amount.toFixed(2),
       expense.category,
       expense.expense_type,
-      expense.is_deductible ? 'Yes' : 'No',
+      expense.is_tax_deductible ? 'Yes' : 'No',
       expense.is_recurring ? 'Yes' : 'No',
+      expense.recurring_frequency || '',
       expense.notes || '',
     ]);
 
@@ -348,6 +351,8 @@ class ExpenseService {
         const values = lines[i].match(/(".*?"|[^,]+)/g) || [];
         const cleanValues = values.map(v => v.replace(/^["']|["']$/g, ''));
 
+        const recurringFreqValue = cleanValues[headers.indexOf('recurring frequency')];
+
         const expenseData: CreateExpenseData = {
           date: cleanValues[headers.indexOf('date')] || new Date().toISOString().split('T')[0],
           name: cleanValues[headers.indexOf('name')] || 'Imported Expense',
@@ -355,8 +360,9 @@ class ExpenseService {
           amount: parseFloat(cleanValues[headers.indexOf('amount')] || '0'),
           category: cleanValues[headers.indexOf('category')] || 'Other',
           expense_type: (cleanValues[headers.indexOf('type')] as 'personal' | 'business') || 'personal',
-          is_deductible: cleanValues[headers.indexOf('tax deductible')]?.toLowerCase() === 'yes',
+          is_tax_deductible: cleanValues[headers.indexOf('tax deductible')]?.toLowerCase() === 'yes',
           is_recurring: cleanValues[headers.indexOf('recurring')]?.toLowerCase() === 'yes',
+          recurring_frequency: recurringFreqValue && recurringFreqValue.trim() !== '' ? recurringFreqValue as any : null,
           notes: cleanValues[headers.indexOf('notes')] || null,
         };
 

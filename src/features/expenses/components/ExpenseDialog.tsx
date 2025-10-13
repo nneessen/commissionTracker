@@ -20,8 +20,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/Select';
-import type { Expense, CreateExpenseData } from '@/types/expense.types';
+import type { Expense, CreateExpenseData, RecurringFrequency } from '@/types/expense.types';
 import { DEFAULT_EXPENSE_CATEGORIES } from '@/types/expense.types';
+import { RECURRING_FREQUENCY_OPTIONS, TAX_DEDUCTIBLE_TOOLTIP } from '../config/recurringConfig';
 
 interface ExpenseDialogProps {
   open: boolean;
@@ -45,9 +46,9 @@ export function ExpenseDialog({
     category: '',
     expense_type: 'personal',
     date: new Date().toISOString().split('T')[0],
-    is_deductible: false,
     is_recurring: false,
     recurring_frequency: null,
+    is_tax_deductible: false,
     receipt_url: '',
     notes: '',
   });
@@ -61,9 +62,9 @@ export function ExpenseDialog({
         category: expense.category,
         expense_type: expense.expense_type,
         date: expense.date,
-        is_deductible: expense.is_deductible,
-        is_recurring: expense.is_recurring,
-        recurring_frequency: expense.recurring_frequency,
+        is_recurring: expense.is_recurring || false,
+        recurring_frequency: expense.recurring_frequency || null,
+        is_tax_deductible: expense.is_tax_deductible || false,
         receipt_url: expense.receipt_url || '',
         notes: expense.notes || '',
       });
@@ -75,9 +76,9 @@ export function ExpenseDialog({
         category: '',
         expense_type: 'personal',
         date: new Date().toISOString().split('T')[0],
-        is_deductible: false,
         is_recurring: false,
         recurring_frequency: null,
+        is_tax_deductible: false,
         receipt_url: '',
         notes: '',
       });
@@ -201,38 +202,77 @@ export function ExpenseDialog({
             />
           </div>
 
-          {/* Checkboxes */}
-          <div className="flex gap-4">
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                id="is_deductible"
-                checked={formData.is_deductible}
-                onChange={(e) =>
-                  setFormData({ ...formData, is_deductible: e.target.checked })
-                }
-                className="h-4 w-4 rounded border-gray-300"
-              />
-              <Label htmlFor="is_deductible" className="cursor-pointer">
-                Tax Deductible
-              </Label>
-            </div>
-
+          {/* Checkboxes Row */}
+          <div className="grid gap-4 md:grid-cols-2">
+            {/* Recurring Expense */}
             <div className="flex items-center space-x-2">
               <input
                 type="checkbox"
                 id="is_recurring"
-                checked={formData.is_recurring}
+                checked={formData.is_recurring || false}
                 onChange={(e) =>
-                  setFormData({ ...formData, is_recurring: e.target.checked })
+                  setFormData({
+                    ...formData,
+                    is_recurring: e.target.checked,
+                    recurring_frequency: e.target.checked ? formData.recurring_frequency : null,
+                  })
                 }
                 className="h-4 w-4 rounded border-gray-300"
               />
-              <Label htmlFor="is_recurring" className="cursor-pointer">
-                Recurring
+              <Label htmlFor="is_recurring" className="cursor-pointer font-normal">
+                Recurring Expense
+              </Label>
+            </div>
+
+            {/* Tax Deductible */}
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="is_tax_deductible"
+                checked={formData.is_tax_deductible || false}
+                onChange={(e) =>
+                  setFormData({ ...formData, is_tax_deductible: e.target.checked })
+                }
+                className="h-4 w-4 rounded border-gray-300"
+              />
+              <Label
+                htmlFor="is_tax_deductible"
+                className="cursor-pointer font-normal"
+                title={TAX_DEDUCTIBLE_TOOLTIP}
+              >
+                Tax Deductible ⓘ
               </Label>
             </div>
           </div>
+
+          {/* Recurring Frequency (only shown if is_recurring is true) */}
+          {formData.is_recurring && (
+            <div className="space-y-2">
+              <Label htmlFor="recurring_frequency">
+                How Often? <span className="text-destructive">*</span>
+              </Label>
+              <Select
+                value={formData.recurring_frequency || ''}
+                onValueChange={(value) =>
+                  setFormData({ ...formData, recurring_frequency: value as RecurringFrequency })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select frequency" />
+                </SelectTrigger>
+                <SelectContent>
+                  {RECURRING_FREQUENCY_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Note: Recurring expenses are not auto-generated. You manually create each entry when it occurs.
+              </p>
+            </div>
+          )}
 
           {/* Receipt URL */}
           <div className="space-y-2">

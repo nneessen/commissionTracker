@@ -6,7 +6,14 @@ import type { Database } from './database.types';
 export type ExpenseType = 'personal' | 'business';
 
 // Recurring frequency options
-export type RecurringFrequency = 'daily' | 'weekly' | 'monthly' | 'yearly';
+export type RecurringFrequency =
+  | 'daily'
+  | 'weekly'
+  | 'biweekly'
+  | 'monthly'
+  | 'quarterly'
+  | 'semiannually'
+  | 'annually';
 
 /**
  * Main Expense interface matching database schema
@@ -22,8 +29,8 @@ export interface Expense {
   date: string; // ISO date string (YYYY-MM-DD)
   is_recurring: boolean;
   recurring_frequency: RecurringFrequency | null;
+  is_tax_deductible: boolean;
   receipt_url: string | null;
-  is_deductible: boolean;
   notes: string | null;
   created_at: string;
   updated_at: string;
@@ -41,8 +48,8 @@ export interface CreateExpenseData {
   date: string;
   is_recurring?: boolean;
   recurring_frequency?: RecurringFrequency | null;
+  is_tax_deductible?: boolean;
   receipt_url?: string | null;
-  is_deductible?: boolean;
   notes?: string | null;
 }
 
@@ -58,8 +65,8 @@ export interface UpdateExpenseData {
   date?: string;
   is_recurring?: boolean;
   recurring_frequency?: RecurringFrequency | null;
+  is_tax_deductible?: boolean;
   receipt_url?: string | null;
-  is_deductible?: boolean;
   notes?: string | null;
 }
 
@@ -72,8 +79,8 @@ export interface ExpenseFilters {
   startDate?: string;
   endDate?: string;
   searchTerm?: string;
-  deductibleOnly?: boolean;
   recurringOnly?: boolean;
+  deductibleOnly?: boolean;
 }
 
 /**
@@ -83,7 +90,6 @@ export interface ExpenseTotals {
   total: number;
   personal: number;
   business: number;
-  deductible: number;
   monthlyTotal: number;
   yearlyTotal: number;
 }
@@ -96,7 +102,6 @@ export interface MonthlyExpenseBreakdown {
   total: number;
   personal: number;
   business: number;
-  deductible: number;
   byCategory: Record<string, number>;
 }
 
@@ -108,7 +113,6 @@ export interface YearlyExpenseSummary {
   total: number;
   personal: number;
   business: number;
-  deductible: number;
   monthlyBreakdown: MonthlyExpenseBreakdown[];
   byCategory: Record<string, number>;
 }

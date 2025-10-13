@@ -151,8 +151,11 @@ export class ExpenseAnalyticsService {
         if (!matchesName && !matchesDescription && !matchesNotes) return false;
       }
 
-      // Deductible filter
-      if (filters.deductibleOnly && !expense.is_deductible) {
+      // Amount range filter
+      if (filters.minAmount !== undefined && expense.amount < filters.minAmount) {
+        return false;
+      }
+      if (filters.maxAmount !== undefined && expense.amount > filters.maxAmount) {
         return false;
       }
 
@@ -161,11 +164,8 @@ export class ExpenseAnalyticsService {
         return false;
       }
 
-      // Amount range filter
-      if (filters.minAmount !== undefined && expense.amount < filters.minAmount) {
-        return false;
-      }
-      if (filters.maxAmount !== undefined && expense.amount > filters.maxAmount) {
+      // Tax deductible filter
+      if (filters.deductibleOnly && !expense.is_tax_deductible) {
         return false;
       }
 
@@ -252,6 +252,86 @@ export class ExpenseAnalyticsService {
       previousMonth: previousMonthTotal,
       growthPercentage,
       growthAmount,
+    };
+  }
+
+  /**
+   * Get recurring vs one-time expense breakdown
+   */
+  getRecurringVsOneTime(expenses: Expense[]): {
+    recurring: number;
+    oneTime: number;
+    recurringCount: number;
+    oneTimeCount: number;
+  } {
+    let recurring = 0;
+    let oneTime = 0;
+    let recurringCount = 0;
+    let oneTimeCount = 0;
+
+    expenses.forEach((expense) => {
+      if (expense.is_recurring) {
+        recurring += expense.amount;
+        recurringCount += 1;
+      } else {
+        oneTime += expense.amount;
+        oneTimeCount += 1;
+      }
+    });
+
+    return {
+      recurring,
+      oneTime,
+      recurringCount,
+      oneTimeCount,
+    };
+  }
+
+  /**
+   * Get tax deductible expense total
+   */
+  getTaxDeductibleTotal(expenses: Expense[]): {
+    deductibleTotal: number;
+    deductibleCount: number;
+    deductiblePercentage: number;
+  } {
+    const deductibleExpenses = expenses.filter((e) => e.is_tax_deductible);
+    const deductibleTotal = deductibleExpenses.reduce((sum, e) => sum + e.amount, 0);
+    const total = expenses.reduce((sum, e) => sum + e.amount, 0);
+    const deductiblePercentage = total > 0 ? (deductibleTotal / total) * 100 : 0;
+
+    return {
+      deductibleTotal,
+      deductibleCount: deductibleExpenses.length,
+      deductiblePercentage,
+    };
+  }
+
+  /**
+   * Calculate monthly burn rate (average monthly spending)
+   */
+  getExpenseBurnRate(expenses: Expense[], months: number = 6): {
+    burnRate: number;
+    monthsAnalyzed: number;
+  } {
+    if (expenses.length === 0) {
+      return { burnRate: 0, monthsAnalyzed: 0 };
+    }
+
+    const now = new Date();
+    const startDate = subMonths(startOfMonth(now), months - 1);
+
+    const recentExpenses = expenses.filter((e) => {
+      const expenseDate = parseISO(e.date);
+      return expenseDate >= startDate;
+    });
+
+    const total = recentExpenses.reduce((sum, e) => sum + e.amount, 0);
+    const burnRate = total / months;
+
+    return {
+      burnRate,
+      monthsAnalyzed: months,
     };
   }
 }

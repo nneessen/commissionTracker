@@ -136,7 +136,7 @@ export function ExpenseTimeline({
                         <Badge variant="outline" className="text-xs">
                           {expense.category}
                         </Badge>
-                        {expense.is_deductible && (
+                        {expense.is_tax_deductible && (
                           <Badge variant="secondary" className="text-xs bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400">
                             Tax Deductible
                           </Badge>
