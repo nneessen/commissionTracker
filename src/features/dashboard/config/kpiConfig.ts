@@ -25,6 +25,7 @@ interface KPIConfigParams {
     count: number;
     recurring: number;
     oneTime: number;
+    taxDeductible: number;
   };
   periodPolicies: {
     newCount: number;
@@ -112,6 +113,10 @@ export function generateKPIConfig(params: KPIConfigParams): KPISection[] {
         {
           label: 'One-Time Expenses',
           value: formatCurrency(scaleToDisplayPeriod(periodExpenses.oneTime, timePeriod)),
+        },
+        {
+          label: 'Tax Deductible ⓘ',
+          value: formatCurrency(scaleToDisplayPeriod(periodExpenses.taxDeductible, timePeriod)),
         },
       ],
     },

@@ -38,6 +38,7 @@ interface PeriodExpenseMetrics {
   byCategory: Record<string, number>;
   recurring: number;
   oneTime: number;
+  taxDeductible: number;
   count: number;
   averageAmount: number;
 }
@@ -209,6 +210,10 @@ export function useMetricsWithDateRange(
 
     const oneTime = total - recurring;
 
+    const taxDeductible = filteredExpenses
+      .filter(e => e.is_tax_deductible)
+      .reduce((sum, e) => sum + e.amount, 0);
+
     const count = filteredExpenses.length;
     const averageAmount = count > 0 ? total / count : 0;
 
@@ -217,6 +222,7 @@ export function useMetricsWithDateRange(
       byCategory,
       recurring,
       oneTime,
+      taxDeductible,
       count,
       averageAmount
     };
