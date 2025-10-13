@@ -200,6 +200,52 @@ export interface ExpenseExportOptions {
 }
 
 /**
+ * Expense Template - for quick one-click expense entry
+ */
+export interface ExpenseTemplate {
+  id: string;
+  user_id: string;
+  template_name: string;
+  description: string | null;
+  amount: number;
+  category: string;
+  expense_type: ExpenseType;
+  is_tax_deductible: boolean;
+  recurring_frequency: RecurringFrequency | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * Data for creating an expense template
+ */
+export interface CreateExpenseTemplateData {
+  template_name: string;
+  description?: string | null;
+  amount: number;
+  category: string;
+  expense_type: ExpenseType;
+  is_tax_deductible?: boolean;
+  recurring_frequency?: RecurringFrequency | null;
+  notes?: string | null;
+}
+
+/**
+ * Data for updating an expense template
+ */
+export interface UpdateExpenseTemplateData {
+  template_name?: string;
+  description?: string | null;
+  amount?: number;
+  category?: string;
+  expense_type?: ExpenseType;
+  is_tax_deductible?: boolean;
+  recurring_frequency?: RecurringFrequency | null;
+  notes?: string | null;
+}
+
+/**
  * Default expense categories
  */
 export const DEFAULT_EXPENSE_CATEGORIES = [
