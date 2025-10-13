@@ -279,29 +279,48 @@ export function ExpenseDialog({
 
           {/* Recurring Frequency (only shown if is_recurring is true) */}
           {formData.is_recurring && (
-            <div className="space-y-2">
-              <Label htmlFor="recurring_frequency">
-                How Often? <span className="text-destructive">*</span>
-              </Label>
-              <Select
-                value={formData.recurring_frequency || ''}
-                onValueChange={(value) =>
-                  setFormData({ ...formData, recurring_frequency: value as RecurringFrequency })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select frequency" />
-                </SelectTrigger>
-                <SelectContent>
-                  {RECURRING_FREQUENCY_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">
-                Note: Recurring expenses are not auto-generated. You manually create each entry when it occurs.
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="recurring_frequency">
+                  How Often? <span className="text-destructive">*</span>
+                </Label>
+                <Select
+                  value={formData.recurring_frequency || ''}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, recurring_frequency: value as RecurringFrequency })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select frequency" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {RECURRING_FREQUENCY_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="recurring_end_date">
+                  End Date (Optional)
+                </Label>
+                <Input
+                  id="recurring_end_date"
+                  type="date"
+                  value={formData.recurring_end_date || ''}
+                  onChange={(e) => setFormData({ ...formData, recurring_end_date: e.target.value || null })}
+                  min={formData.date}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Leave blank to continue indefinitely. Set a date to stop recurring expenses automatically (e.g., end of lease).
+                </p>
+              </div>
+
+              <p className="text-xs text-muted-foreground border-l-2 border-blue-500 pl-3 py-2 bg-blue-50">
+                ⚡ <strong>Auto-generation:</strong> When you create this recurring expense, the next 12 occurrences will be automatically generated for you (or up to the end date if sooner).
               </p>
             </div>
           )}

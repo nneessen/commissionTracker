@@ -29,6 +29,8 @@ export interface Expense {
   date: string; // ISO date string (YYYY-MM-DD)
   is_recurring: boolean;
   recurring_frequency: RecurringFrequency | null;
+  recurring_group_id: string | null; // UUID linking related recurring expenses
+  recurring_end_date: string | null; // Optional end date for recurring series
   is_tax_deductible: boolean;
   receipt_url: string | null;
   notes: string | null;
@@ -48,6 +50,8 @@ export interface CreateExpenseData {
   date: string;
   is_recurring?: boolean;
   recurring_frequency?: RecurringFrequency | null;
+  recurring_group_id?: string | null;
+  recurring_end_date?: string | null;
   is_tax_deductible?: boolean;
   receipt_url?: string | null;
   notes?: string | null;
@@ -249,16 +253,32 @@ export interface UpdateExpenseTemplateData {
  * Default expense categories
  */
 export const DEFAULT_EXPENSE_CATEGORIES = [
-  { name: 'Office Supplies', description: 'Pens, paper, printer ink, etc.' },
-  { name: 'Travel', description: 'Transportation, hotels, flights' },
-  { name: 'Meals & Entertainment', description: 'Business meals, client entertainment' },
-  { name: 'Utilities', description: 'Electricity, water, internet, phone' },
-  { name: 'Insurance', description: 'Health, liability, property insurance' },
-  { name: 'Marketing', description: 'Advertising, promotional materials' },
-  { name: 'Professional Services', description: 'Legal, accounting, consulting' },
-  { name: 'Technology', description: 'Software subscriptions, hardware' },
-  { name: 'Rent & Lease', description: 'Office space, equipment leases' },
-  { name: 'Training & Education', description: 'Courses, conferences, books' },
-  { name: 'Vehicle', description: 'Gas, maintenance, registration' },
-  { name: 'Other', description: 'Miscellaneous expenses' },
+  // Business Categories
+  { name: 'Office Supplies', description: 'Pens, paper, printer ink, etc.', type: 'business' },
+  { name: 'Travel', description: 'Transportation, hotels, flights', type: 'business' },
+  { name: 'Meals & Entertainment', description: 'Business meals, client entertainment', type: 'business' },
+  { name: 'Utilities', description: 'Electricity, water, internet, phone', type: 'business' },
+  { name: 'Insurance', description: 'Business insurance (health, liability, property)', type: 'business' },
+  { name: 'Marketing', description: 'Advertising, promotional materials', type: 'business' },
+  { name: 'Professional Services', description: 'Legal, accounting, consulting', type: 'business' },
+  { name: 'Technology', description: 'Software subscriptions, hardware', type: 'business' },
+  { name: 'Rent & Lease', description: 'Office space, equipment leases', type: 'business' },
+  { name: 'Training & Education', description: 'Courses, conferences, books', type: 'business' },
+  { name: 'Vehicle', description: 'Gas, maintenance, registration (business use)', type: 'business' },
+
+  // Personal Categories
+  { name: 'Credit Card Bill', description: 'Credit card monthly payments', type: 'personal' },
+  { name: 'Mortgage/Rent', description: 'Home mortgage or rent payments', type: 'personal' },
+  { name: 'Groceries', description: 'Food and household supplies', type: 'personal' },
+  { name: 'Car Payment', description: 'Auto loan or lease payments', type: 'personal' },
+  { name: 'Healthcare', description: 'Medical, dental, prescriptions', type: 'personal' },
+  { name: 'Entertainment', description: 'Movies, concerts, hobbies', type: 'personal' },
+  { name: 'Childcare', description: 'Daycare, babysitting, after-school programs', type: 'personal' },
+  { name: 'Shopping', description: 'Clothing, personal items', type: 'personal' },
+  { name: 'Subscriptions', description: 'Streaming, gym, personal memberships', type: 'personal' },
+  { name: 'Personal Insurance', description: 'Personal insurance (auto, life, home)', type: 'personal' },
+  { name: 'Dining Out', description: 'Restaurants, takeout (personal)', type: 'personal' },
+
+  // General
+  { name: 'Other', description: 'Miscellaneous expenses', type: 'other' },
 ];

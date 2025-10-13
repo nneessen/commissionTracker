@@ -42,23 +42,9 @@ export function ExpenseTemplatesPanel({
     );
   }
 
+  // Don't render anything if no templates - the dashboard will handle empty state
   if (templates.length === 0) {
-    return (
-      <div
-        style={{
-          padding: '24px',
-          background: '#ffffff',
-          borderRadius: '8px',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-          textAlign: 'center',
-        }}
-      >
-        <Zap style={{ width: '32px', height: '32px', margin: '0 auto 12px', color: '#94a3b8' }} />
-        <p style={{ fontSize: '13px', color: '#64748b', lineHeight: '1.5' }}>
-          No templates yet. Save an expense as a template for quick re-use!
-        </p>
-      </div>
-    );
+    return null;
   }
 
   return (
@@ -72,35 +58,30 @@ export function ExpenseTemplatesPanel({
     >
       <div
         style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
           marginBottom: '12px',
         }}
       >
-        <Zap style={{ width: '16px', height: '16px', color: '#f59e0b' }} />
-        <h3
+        <div
           style={{
-            fontSize: '13px',
+            fontSize: '12px',
             fontWeight: 600,
-            color: '#4a5568',
+            color: '#64748b',
             textTransform: 'uppercase',
             letterSpacing: '0.5px',
+            marginBottom: '4px',
           }}
         >
           Quick Add Templates
-        </h3>
-        <span
+        </div>
+        <div
           style={{
-            fontSize: '11px',
-            color: '#94a3b8',
-            background: '#f1f5f9',
-            padding: '2px 8px',
-            borderRadius: '12px',
+            fontSize: '13px',
+            color: '#64748b',
+            lineHeight: '1.4',
           }}
         >
-          {templates.length}
-        </span>
+          Click any template to instantly add expense for today
+        </div>
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>

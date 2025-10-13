@@ -20,6 +20,7 @@ export interface ExpenseListCardProps {
   onDelete: (expense: Expense) => void;
   isLoading?: boolean;
   limit?: number;
+  emptyStateComponent?: React.ReactNode;
 }
 
 /**
@@ -35,6 +36,7 @@ export const ExpenseListCard: React.FC<ExpenseListCardProps> = ({
   onDelete,
   isLoading = false,
   limit,
+  emptyStateComponent,
 }) => {
   if (isLoading) {
     return (
@@ -68,6 +70,12 @@ export const ExpenseListCard: React.FC<ExpenseListCardProps> = ({
   const displayExpenses = limit ? expenses.slice(0, limit) : expenses;
   const allCategories = Array.from(new Set(expenses.map((e) => e.category)));
 
+  // If no expenses and custom empty state provided, use it
+  if (displayExpenses.length === 0 && emptyStateComponent) {
+    return <>{emptyStateComponent}</>;
+  }
+
+  // Default empty state
   if (displayExpenses.length === 0) {
     return (
       <div
@@ -88,7 +96,7 @@ export const ExpenseListCard: React.FC<ExpenseListCardProps> = ({
             letterSpacing: '0.5px',
           }}
         >
-          Recent Expenses
+          All Expenses
         </div>
         <div
           style={{
@@ -124,28 +132,33 @@ export const ExpenseListCard: React.FC<ExpenseListCardProps> = ({
       {/* Header */}
       <div
         style={{
-          fontSize: EXPENSE_FONT_SIZES.SECTION_HEADER,
-          fontWeight: 600,
-          color: '#1a1a1a',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
           marginBottom: '16px',
-          textTransform: 'uppercase',
-          letterSpacing: '0.5px',
         }}
       >
-        Recent Expenses
-        {limit && expenses.length > limit && (
-          <span
-            style={{
-              marginLeft: '8px',
-              fontSize: EXPENSE_FONT_SIZES.STAT_LABEL,
-              fontWeight: EXPENSE_TYPOGRAPHY.DEFAULT_FONT_WEIGHT,
-              color: '#656d76',
-              textTransform: 'none',
-            }}
-          >
-            (showing {limit} of {expenses.length})
-          </span>
-        )}
+        <div
+          style={{
+            fontSize: EXPENSE_FONT_SIZES.SECTION_HEADER,
+            fontWeight: 600,
+            color: '#1a1a1a',
+            textTransform: 'uppercase',
+            letterSpacing: '0.5px',
+          }}
+        >
+          All Expenses
+        </div>
+        <div
+          style={{
+            fontSize: '12px',
+            color: '#64748b',
+          }}
+        >
+          {limit && expenses.length > limit
+            ? `Showing ${limit} of ${expenses.length}`
+            : `${expenses.length} total`}
+        </div>
       </div>
 
       {/* Table */}
@@ -166,11 +179,11 @@ export const ExpenseListCard: React.FC<ExpenseListCardProps> = ({
               <th
                 style={{
                   textAlign: 'left',
-                  padding: '8px 4px',
+                  padding: '6px 4px',
                   fontWeight: 600,
                   color: EXPENSE_TABLE_STYLES.HEADER_TEXT,
                   textTransform: 'uppercase',
-                  fontSize: EXPENSE_FONT_SIZES.TABLE_HEADER,
+                  fontSize: '10px',
                   letterSpacing: '0.5px',
                 }}
               >
@@ -179,11 +192,11 @@ export const ExpenseListCard: React.FC<ExpenseListCardProps> = ({
               <th
                 style={{
                   textAlign: 'left',
-                  padding: '8px 4px',
+                  padding: '6px 4px',
                   fontWeight: 600,
                   color: EXPENSE_TABLE_STYLES.HEADER_TEXT,
                   textTransform: 'uppercase',
-                  fontSize: EXPENSE_FONT_SIZES.TABLE_HEADER,
+                  fontSize: '10px',
                   letterSpacing: '0.5px',
                 }}
               >
@@ -192,11 +205,11 @@ export const ExpenseListCard: React.FC<ExpenseListCardProps> = ({
               <th
                 style={{
                   textAlign: 'left',
-                  padding: '8px 4px',
+                  padding: '6px 4px',
                   fontWeight: 600,
                   color: EXPENSE_TABLE_STYLES.HEADER_TEXT,
                   textTransform: 'uppercase',
-                  fontSize: EXPENSE_FONT_SIZES.TABLE_HEADER,
+                  fontSize: '10px',
                   letterSpacing: '0.5px',
                 }}
               >
@@ -205,11 +218,11 @@ export const ExpenseListCard: React.FC<ExpenseListCardProps> = ({
               <th
                 style={{
                   textAlign: 'right',
-                  padding: '8px 4px',
+                  padding: '6px 4px',
                   fontWeight: 600,
                   color: EXPENSE_TABLE_STYLES.HEADER_TEXT,
                   textTransform: 'uppercase',
-                  fontSize: EXPENSE_FONT_SIZES.TABLE_HEADER,
+                  fontSize: '10px',
                   letterSpacing: '0.5px',
                 }}
               >
@@ -218,11 +231,11 @@ export const ExpenseListCard: React.FC<ExpenseListCardProps> = ({
               <th
                 style={{
                   textAlign: 'center',
-                  padding: '8px 4px',
+                  padding: '6px 4px',
                   fontWeight: 600,
                   color: EXPENSE_TABLE_STYLES.HEADER_TEXT,
                   textTransform: 'uppercase',
-                  fontSize: EXPENSE_FONT_SIZES.TABLE_HEADER,
+                  fontSize: '10px',
                   letterSpacing: '0.5px',
                 }}
               >
@@ -231,11 +244,11 @@ export const ExpenseListCard: React.FC<ExpenseListCardProps> = ({
               <th
                 style={{
                   textAlign: 'center',
-                  padding: '8px 4px',
+                  padding: '6px 4px',
                   fontWeight: 600,
                   color: EXPENSE_TABLE_STYLES.HEADER_TEXT,
                   textTransform: 'uppercase',
-                  fontSize: EXPENSE_FONT_SIZES.TABLE_HEADER,
+                  fontSize: '10px',
                   letterSpacing: '0.5px',
                 }}
               >
@@ -268,9 +281,9 @@ export const ExpenseListCard: React.FC<ExpenseListCardProps> = ({
                   {/* Date */}
                   <td
                     style={{
-                      padding: '12px 4px',
+                      padding: '8px 4px',
                       color: EXPENSE_TABLE_STYLES.CELL_TEXT_SECONDARY,
-                      fontSize: EXPENSE_FONT_SIZES.TABLE_CELL,
+                      fontSize: '12px',
                       whiteSpace: 'nowrap',
                     }}
                   >
@@ -280,25 +293,26 @@ export const ExpenseListCard: React.FC<ExpenseListCardProps> = ({
                   {/* Name */}
                   <td
                     style={{
-                      padding: '12px 4px',
+                      padding: '8px 4px',
                       color: EXPENSE_TABLE_STYLES.CELL_TEXT,
-                      fontWeight: EXPENSE_TYPOGRAPHY.BOLD_FONT_WEIGHT,
+                      fontWeight: 500,
+                      fontSize: '13px',
                     }}
                   >
                     {expense.name}
                   </td>
 
                   {/* Category */}
-                  <td style={{ padding: '12px 4px' }}>
+                  <td style={{ padding: '8px 4px' }}>
                     <span
                       style={{
                         display: 'inline-block',
-                        padding: '4px 8px',
+                        padding: '2px 6px',
                         background: `${categoryColor}15`,
                         color: categoryColor,
                         borderRadius: EXPENSE_BORDER_RADIUS.XSMALL,
-                        fontSize: EXPENSE_FONT_SIZES.STAT_LABEL,
-                        fontWeight: EXPENSE_TYPOGRAPHY.BOLD_FONT_WEIGHT,
+                        fontSize: '11px',
+                        fontWeight: 500,
                       }}
                     >
                       {expense.category}
@@ -308,7 +322,7 @@ export const ExpenseListCard: React.FC<ExpenseListCardProps> = ({
                   {/* Amount */}
                   <td
                     style={{
-                      padding: '12px 4px',
+                      padding: '8px 4px',
                       textAlign: 'right',
                       fontFamily: EXPENSE_TYPOGRAPHY.MONO_FONT,
                       fontWeight: EXPENSE_TYPOGRAPHY.BOLD_FONT_WEIGHT,
@@ -321,7 +335,7 @@ export const ExpenseListCard: React.FC<ExpenseListCardProps> = ({
                   {/* Type */}
                   <td
                     style={{
-                      padding: '12px 4px',
+                      padding: '8px 4px',
                       textAlign: 'center',
                     }}
                   >
@@ -339,7 +353,7 @@ export const ExpenseListCard: React.FC<ExpenseListCardProps> = ({
                   {/* Actions */}
                   <td
                     style={{
-                      padding: '12px 4px',
+                      padding: '8px 4px',
                       textAlign: 'center',
                     }}
                   >

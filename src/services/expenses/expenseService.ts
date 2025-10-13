@@ -85,6 +85,7 @@ class ExpenseService {
 
   /**
    * Create a new expense
+   * If is_recurring=true, automatically generates future occurrences
    */
   async create(expenseData: CreateExpenseData): Promise<Expense> {
     // Get current user
@@ -94,13 +95,21 @@ class ExpenseService {
       throw new Error('User not authenticated');
     }
 
+    // Generate recurring_group_id if this is a recurring expense
+    const isRecurring = expenseData.is_recurring || false;
+    const recurringGroupId = isRecurring && !expenseData.recurring_group_id
+      ? this.generateUUID()
+      : expenseData.recurring_group_id;
+
     const { data, error } = await supabase
       .from(TABLES.EXPENSES)
       .insert({
         ...expenseData,
         user_id: user.id,
-        is_recurring: expenseData.is_recurring || false,
+        is_recurring: isRecurring,
         recurring_frequency: expenseData.recurring_frequency || null,
+        recurring_group_id: recurringGroupId,
+        recurring_end_date: expenseData.recurring_end_date || null,
         is_tax_deductible: expenseData.is_tax_deductible || false,
       })
       .select()
@@ -110,7 +119,28 @@ class ExpenseService {
       throw new Error(`Failed to create expense: ${error.message}`);
     }
 
+    // AUTO-GENERATE future recurring expenses
+    if (isRecurring && expenseData.recurring_frequency) {
+      try {
+        const { recurringExpenseService } = await import('./recurringExpenseService');
+        await recurringExpenseService.generateRecurringExpenses(
+          { ...expenseData, recurring_group_id: recurringGroupId },
+          user.id
+        );
+      } catch (recurringError) {
+        console.error('Failed to generate recurring expenses:', recurringError);
+        // Don't fail the main creation if recurring generation fails
+      }
+    }
+
     return data as Expense;
+  }
+
+  /**
+   * Generate UUID for recurring group
+   */
+  private generateUUID(): string {
+    return crypto.randomUUID();
   }
 
   /**

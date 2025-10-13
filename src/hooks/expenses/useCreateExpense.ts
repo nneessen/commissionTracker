@@ -15,11 +15,17 @@ export const useCreateExpense = () => {
     mutationFn: async (newExpense: CreateExpenseData): Promise<Expense> => {
       return await expenseService.create(newExpense);
     },
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       // Invalidate all expense-related queries
       queryClient.invalidateQueries({ queryKey: ['expenses'] });
       queryClient.invalidateQueries({ queryKey: ['expense-metrics'] });
-      toast.success('Expense created successfully');
+
+      // Show appropriate success message
+      if (variables.is_recurring && variables.recurring_frequency) {
+        toast.success(`✓ Expense created! Auto-generated next 12 ${variables.recurring_frequency} occurrences.`);
+      } else {
+        toast.success('Expense created successfully');
+      }
     },
     onError: (error: Error) => {
       toast.error(`Failed to create expense: ${error.message}`);
