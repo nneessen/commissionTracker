@@ -23,6 +23,8 @@ import {
 import type { Expense, CreateExpenseData, RecurringFrequency } from '@/types/expense.types';
 import { DEFAULT_EXPENSE_CATEGORIES } from '@/types/expense.types';
 import { RECURRING_FREQUENCY_OPTIONS, TAX_DEDUCTIBLE_TOOLTIP } from '../config/recurringConfig';
+import { useCreateExpenseTemplate } from '../../../hooks/expenses/useExpenseTemplates';
+import showToast from '../../../utils/toast';
 
 interface ExpenseDialogProps {
   open: boolean;
@@ -52,6 +54,10 @@ export function ExpenseDialog({
     receipt_url: '',
     notes: '',
   });
+
+  const [saveAsTemplate, setSaveAsTemplate] = useState(false);
+  const [templateName, setTemplateName] = useState('');
+  const createTemplate = useCreateExpenseTemplate();
 
   useEffect(() => {
     if (expense) {
@@ -85,9 +91,35 @@ export function ExpenseDialog({
     }
   }, [expense, open]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Save expense first
     onSave(formData);
+
+    // Save as template if checkbox is checked (only for new expenses, not edits)
+    if (!expense && saveAsTemplate && templateName.trim()) {
+      try {
+        await createTemplate.mutateAsync({
+          template_name: templateName.trim(),
+          amount: formData.amount,
+          category: formData.category,
+          expense_type: formData.expense_type,
+          is_tax_deductible: formData.is_tax_deductible,
+          recurring_frequency: formData.recurring_frequency,
+          notes: formData.notes,
+          description: formData.description,
+        });
+        showToast.success('Template saved!');
+      } catch (error) {
+        console.error('Failed to save template:', error);
+        showToast.error('Failed to save template');
+      }
+    }
+
+    // Reset template fields
+    setSaveAsTemplate(false);
+    setTemplateName('');
   };
 
   return (
@@ -296,6 +328,39 @@ export function ExpenseDialog({
               rows={2}
             />
           </div>
+
+          {/* Save as Template (only for new expenses) */}
+          {!expense && (
+            <div className="space-y-3 pt-4 border-t">
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="save_as_template"
+                  checked={saveAsTemplate}
+                  onChange={(e) => setSaveAsTemplate(e.target.checked)}
+                  className="h-4 w-4 rounded border-gray-300"
+                />
+                <Label htmlFor="save_as_template" className="cursor-pointer font-normal">
+                  💾 Save as template for quick re-use
+                </Label>
+              </div>
+
+              {saveAsTemplate && (
+                <div className="space-y-2 pl-6">
+                  <Label htmlFor="template_name">Template Name</Label>
+                  <Input
+                    id="template_name"
+                    value={templateName}
+                    onChange={(e) => setTemplateName(e.target.value)}
+                    placeholder="e.g., Netflix Monthly, Office Rent"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Give your template a memorable name. Click this template later to quickly add this expense again!
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
