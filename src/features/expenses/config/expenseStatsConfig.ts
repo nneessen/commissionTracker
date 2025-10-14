@@ -1,6 +1,32 @@
 // src/features/expenses/config/expenseStatsConfig.ts
 
-import { EXPENSE_COLORS } from '../../../constants/expenses';
+/**
+ * Color palette for expense visualizations
+ */
+const EXPENSE_COLORS = {
+  // Category colors (10 distinct colors for charts/breakdowns)
+  CATEGORIES: [
+    '#3b82f6', // Blue
+    '#10b981', // Green
+    '#f59e0b', // Amber
+    '#ef4444', // Red
+    '#8b5cf6', // Purple
+    '#ec4899', // Pink
+    '#06b6d4', // Cyan
+    '#14b8a6', // Teal
+    '#f97316', // Orange
+    '#a78bfa', // Violet
+  ],
+  // Expense type colors
+  PERSONAL: '#8b5cf6', // Purple
+  BUSINESS: '#3b82f6', // Blue
+  TOTAL: '#64748b', // Slate
+  COUNT: '#94a3b8', // Slate light
+  // Growth/trend colors
+  GROWTH_POSITIVE: '#10b981', // Green
+  GROWTH_NEGATIVE: '#ef4444', // Red
+  GROWTH_NEUTRAL: '#94a3b8', // Slate
+};
 
 export interface ExpenseTrend {
   value: number;
