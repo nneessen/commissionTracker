@@ -16,6 +16,7 @@ import type { NewPolicyForm, CreatePolicyData } from '../../types/policy.types';
 // Components
 import { DashboardHeader } from './components/DashboardHeader';
 import { TimePeriodSwitcher } from './components/TimePeriodSwitcher';
+import { DateRangeDisplay } from './components/DateRangeDisplay';
 import { QuickStatsPanel } from './components/QuickStatsPanel';
 import { PerformanceOverviewCard } from './components/PerformanceOverviewCard';
 import { AlertsPanel } from './components/AlertsPanel';
@@ -48,7 +49,7 @@ export const DashboardHome: React.FC = () => {
   const [timePeriod, setTimePeriod] = useState<TimePeriod>('monthly');
   const [activeDialog, setActiveDialog] = useState<'policy' | 'expense' | null>(null);
 
-  // Fetch metrics (always monthly, scaled for display)
+  // Fetch metrics for the selected time period (no scaling needed)
   const {
     periodCommissions,
     periodExpenses,
@@ -56,7 +57,8 @@ export const DashboardHome: React.FC = () => {
     periodClients,
     currentState,
     periodAnalytics,
-  } = useMetricsWithDateRange({ timePeriod: 'monthly' });
+    dateRange,
+  } = useMetricsWithDateRange({ timePeriod });
 
   const createExpense = useCreateExpense();
   const createPolicy = useCreatePolicy();
@@ -73,6 +75,18 @@ export const DashboardHome: React.FC = () => {
   const periodSuffix = getPeriodSuffix(timePeriod);
   const isBreakeven = periodAnalytics.surplusDeficit >= 0;
   const isCreating = createPolicy.isPending || createExpense.isPending;
+
+  // 🔍 DEBUG: Log what's being displayed
+  console.log('📊 [DASHBOARD] ====== DISPLAY VALUES ======');
+  console.log('📊 [DASHBOARD] Time Period:', timePeriod);
+  console.log('📊 [DASHBOARD] Commission Earned:', periodCommissions.earned);
+  console.log('📊 [DASHBOARD] Commission Pending (pipeline):', currentState.pendingPipeline);
+  console.log('📊 [DASHBOARD] Total Expenses:', periodExpenses.total);
+  console.log('📊 [DASHBOARD] Net Income:', periodAnalytics.netIncome);
+  console.log('📊 [DASHBOARD] Surplus/Deficit:', periodAnalytics.surplusDeficit);
+  console.log('📊 [DASHBOARD] New Policies:', periodPolicies.newCount);
+  console.log('📊 [DASHBOARD] Premium Written:', periodPolicies.premiumWritten);
+  console.log('📊 [DASHBOARD] ====== END DISPLAY VALUES ======');
 
   // Generate configurations
   const statsConfig = generateStatsConfig({
@@ -219,10 +233,13 @@ export const DashboardHome: React.FC = () => {
 
   return (
     <PageLayout>
-      {/* Header with time period switcher */}
+      {/* Header with time period switcher and date range */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
         <DashboardHeader monthProgress={monthProgress} />
-        <TimePeriodSwitcher timePeriod={timePeriod} onTimePeriodChange={setTimePeriod} />
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
+          <TimePeriodSwitcher timePeriod={timePeriod} onTimePeriodChange={setTimePeriod} />
+          <DateRangeDisplay timePeriod={timePeriod} dateRange={dateRange} />
+        </div>
       </div>
 
       {/* Main 3-column layout */}
@@ -240,7 +257,7 @@ export const DashboardHome: React.FC = () => {
           metrics={metricsConfig}
           isBreakeven={isBreakeven}
           timePeriod={timePeriod}
-          surplusDeficit={scaleToDisplayPeriod(periodAnalytics.surplusDeficit, timePeriod)}
+          surplusDeficit={periodAnalytics.surplusDeficit}
           breakevenDisplay={breakevenDisplay}
           policiesNeeded={policiesNeededDisplay}
           periodSuffix={periodSuffix}

@@ -28,15 +28,20 @@ export interface Commission {
   annualPremium: number;
   monthlyPremium?: number; // Optional for backward compatibility
 
-  // ADVANCE (upfront payment)
-  advanceAmount: number;        // The upfront commission payment (monthly_premium × 9 × rate)
-  advanceMonths: number;         // Number of months in advance (default 9)
+  // ADVANCE (upfront payment) - Database field names
+  amount: number;                // Total commission amount (matches DB 'amount' field)
+  rate: number;                  // Commission rate as percentage (matches DB 'rate' field)
+  advanceMonths: number;         // Number of months in advance (default 9, matches DB 'advance_months')
 
-  // EARNING TRACKING (as client pays premiums)
-  monthsPaid: number;            // How many premiums the client has paid
-  earnedAmount: number;          // Portion of advance that's been earned
-  unearnedAmount: number;        // Portion of advance still at risk of chargeback
-  lastPaymentDate?: Date;        // When the last premium was paid
+  // EARNING TRACKING (as client pays premiums) - Database field names
+  monthsPaid: number;            // How many premiums the client has paid (matches DB 'months_paid')
+  earnedAmount: number;          // Portion of advance that's been earned (matches DB 'earned_amount')
+  unearnedAmount: number;        // Portion of advance still at risk of chargeback (matches DB 'unearned_amount')
+  lastPaymentDate?: Date;        // When the last premium was paid (matches DB 'last_payment_date')
+
+  // DEPRECATED: Use 'amount' instead
+  /** @deprecated Use 'amount' field instead - kept for backward compatibility */
+  advanceAmount?: number;
 
   // COMMISSION RATE
   commissionRate: number;        // Commission rate as DECIMAL from comp guide (e.g., 0.95 for 95%)

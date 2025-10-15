@@ -78,15 +78,15 @@ export function generateStatsConfig(params: StatsConfigParams): StatItemConfig[]
   return [
     {
       label: `${periodLabel} Commission Earned`,
-      value: formatCurrency(scaleToDisplayPeriod(periodCommissions.earned, timePeriod)),
+      value: formatCurrency(periodCommissions.earned),
       trend: periodAnalytics.surplusDeficit >= 0 ? 'up' : 'down',
       color: periodCommissions.earned > 0 ? METRIC_COLORS.COMMISSION_EARNED : METRIC_COLORS.NET_INCOME_NEGATIVE,
       tooltip: {
         title: `${periodLabel} Commission Earned`,
-        description: `Commission earned scaled to ${timePeriod.toLowerCase()} period.`,
-        formula: `Monthly total ${timePeriod === 'weekly' ? '÷ 4.33' : timePeriod === 'daily' ? '÷ 30.44' : timePeriod === 'yearly' ? '× 12' : ''}`,
-        example: `$5,000 monthly → ${timePeriod === 'weekly' ? '$1,154 weekly' : timePeriod === 'daily' ? '$164 daily' : timePeriod === 'yearly' ? '$60,000 yearly' : '$5,000 monthly'}`,
-        note: `Scaled from monthly total to show ${timePeriod} breakdown`,
+        description: `Total commission earned during the ${timePeriod.toLowerCase()} period.`,
+        formula: `SUM(amount) WHERE status='paid' AND date IN period`,
+        example: `Shows actual commissions received in this time period`,
+        note: `Filtered by ${timePeriod} date range - actual data, not projected`,
       },
     },
     {
@@ -103,27 +103,27 @@ export function generateStatsConfig(params: StatsConfigParams): StatItemConfig[]
     },
     {
       label: `${periodLabel} Total Expenses`,
-      value: formatCurrency(scaleToDisplayPeriod(periodExpenses.total, timePeriod)),
+      value: formatCurrency(periodExpenses.total),
       color: METRIC_COLORS.EXPENSES,
       tooltip: {
         title: `${periodLabel} Total Expenses`,
-        description: `Expenses scaled to ${timePeriod.toLowerCase()} period.`,
-        formula: `Monthly total ${timePeriod === 'weekly' ? '÷ 4.33' : timePeriod === 'daily' ? '÷ 30.44' : timePeriod === 'yearly' ? '× 12' : ''}`,
-        example: `$5,000 monthly → ${timePeriod === 'weekly' ? '$1,154 weekly' : timePeriod === 'daily' ? '$164 daily' : timePeriod === 'yearly' ? '$60,000 yearly' : '$5,000 monthly'}`,
-        note: `Scaled from monthly total to show ${timePeriod} breakdown`,
+        description: `Total expenses during the ${timePeriod.toLowerCase()} period.`,
+        formula: `SUM(amount) WHERE date IN period`,
+        example: `Shows actual expenses incurred in this time period`,
+        note: `Filtered by ${timePeriod} date range - actual data, not projected`,
       },
     },
     {
       label: `${periodLabel} Net Income`,
-      value: formatCurrency(Math.abs(scaleToDisplayPeriod(periodAnalytics.surplusDeficit, timePeriod))),
+      value: formatCurrency(Math.abs(periodAnalytics.surplusDeficit)),
       trend: periodAnalytics.surplusDeficit >= 0 ? 'up' : 'down',
       color: periodAnalytics.surplusDeficit >= 0 ? METRIC_COLORS.NET_INCOME_POSITIVE : METRIC_COLORS.NET_INCOME_NEGATIVE,
       tooltip: {
         title: `${periodLabel} Net Income`,
-        description: `Net income scaled to ${timePeriod.toLowerCase()} period.`,
-        formula: `(Commission - Expenses) ${timePeriod === 'weekly' ? '÷ 4.33' : timePeriod === 'daily' ? '÷ 30.44' : timePeriod === 'yearly' ? '× 12' : ''}`,
-        example: `Net income scaled to show ${timePeriod} breakdown`,
-        note: `Scaled from monthly total to show ${timePeriod} breakdown`,
+        description: `Net income (Commission - Expenses) for the ${timePeriod.toLowerCase()} period.`,
+        formula: `Commission Earned - Total Expenses`,
+        example: `$450 commission - $5,450 expenses = -$5,000 deficit`,
+        note: `Actual ${timePeriod} performance, not projected`,
       },
     },
     {
@@ -237,14 +237,14 @@ export function generateStatsConfig(params: StatsConfigParams): StatItemConfig[]
       value: formatCurrency(
         periodPolicies.newCount > 0
           ? periodCommissions.earned / periodPolicies.newCount
-          : periodPolicies.averagePremium * periodCommissions.averageRate
+          : periodPolicies.averagePremium * (periodCommissions.averageRate / 100)
       ),
       color: METRIC_COLORS.AVG_COMMISSION,
       tooltip: {
         title: 'Average Commission per Policy',
         description: `Average commission earned per policy in ${timePeriod.toLowerCase()} period.`,
         formula: 'Total Commission Earned / New Policies Written',
-        example: '$10,000 commission / 50 policies = $200/policy',
+        example: '$450 commission / 2 policies = $225/policy',
       },
     },
     {

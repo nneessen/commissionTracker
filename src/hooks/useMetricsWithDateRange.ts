@@ -137,47 +137,62 @@ export function useMetricsWithDateRange(
 
   // Calculate period commission metrics
   const periodCommissions = useMemo((): PeriodCommissionMetrics => {
+    console.log('🔍 [METRICS] Calculating commission metrics for period:', timePeriod);
+    console.log('🔍 [METRICS] Date range:', dateRange);
+    console.log('🔍 [METRICS] Total commissions from DB:', commissions.length);
+    console.log('🔍 [METRICS] Filtered commissions for period:', filteredCommissions.length);
+    console.log('🔍 [METRICS] Filtered commission details:', filteredCommissions.map(c => ({
+      id: c.id.substring(0, 8),
+      status: c.status,
+      amount: c.amount,
+      paidDate: c.paidDate,
+      createdAt: c.createdAt
+    })));
+
     // Calculate actual totals for the period (NO SCALING)
-    // Use advanceAmount (total commission received), not earnedAmount (portion earned over time)
+    // Use amount (total commission received), not earnedAmount (portion earned over time)
     const earned = filteredCommissions
       .filter(c => c.status === 'paid')
-      .reduce((sum, c) => sum + (c.advanceAmount || 0), 0);
+      .reduce((sum, c) => sum + (c.amount || 0), 0);
 
     const pending = filteredCommissions
       .filter(c => c.status === 'pending')
-      .reduce((sum, c) => sum + (c.advanceAmount || 0), 0);
+      .reduce((sum, c) => sum + (c.amount || 0), 0);
 
-    // Group by carrier - use advanceAmount (total commission value)
+    console.log('💰 [METRICS] Commission Earned (paid):', earned);
+    console.log('💰 [METRICS] Commission Pending:', pending);
+
+    // Group by carrier - use amount (total commission value)
     const byCarrier: Record<string, number> = {};
     filteredCommissions.forEach(c => {
       const carrierId = c.carrierId;
       if (carrierId) {
-        byCarrier[carrierId] = (byCarrier[carrierId] || 0) + (c.advanceAmount || 0);
+        byCarrier[carrierId] = (byCarrier[carrierId] || 0) + (c.amount || 0);
       }
     });
 
-    // Group by product - use advanceAmount (total commission value)
+    // Group by product - use amount (total commission value)
     const byProduct: Record<ProductType, number> = {} as Record<ProductType, number>;
     filteredCommissions.forEach(c => {
       if (c.product) {
-        byProduct[c.product] = (byProduct[c.product] || 0) + (c.advanceAmount || 0);
+        byProduct[c.product] = (byProduct[c.product] || 0) + (c.amount || 0);
       }
     });
 
-    // Group by state - use advanceAmount (total commission value)
+    // Group by state - use amount (total commission value)
     const byState: Record<string, number> = {};
     filteredCommissions.forEach(c => {
       const state = c.client?.state || 'Unknown';
-      byState[state] = (byState[state] || 0) + (c.advanceAmount || 0);
+      byState[state] = (byState[state] || 0) + (c.amount || 0);
     });
 
     const count = filteredCommissions.length;
     const averageRate = count > 0
-      ? filteredCommissions.reduce((sum, c) => sum + (c.commissionRate || 0), 0) / count
+      ? filteredCommissions.reduce((sum, c) => sum + (c.rate || c.commissionRate || 0), 0) / count
       : 0;
 
     // Average based on total commission value, not just earned + pending
-    const totalCommissionValue = filteredCommissions.reduce((sum, c) => sum + (c.advanceAmount || 0), 0);
+    const totalCommissionValue = filteredCommissions.reduce((sum, c) => sum + (c.amount || 0), 0);
     const averageAmount = count > 0 ? totalCommissionValue / count : 0;
 
     return {
@@ -194,8 +209,19 @@ export function useMetricsWithDateRange(
 
   // Calculate period expense metrics
   const periodExpenses = useMemo((): PeriodExpenseMetrics => {
+    console.log('🔍 [EXPENSES] Calculating expense metrics');
+    console.log('🔍 [EXPENSES] Filtered expenses:', filteredExpenses.length);
+    console.log('🔍 [EXPENSES] Expense details:', filteredExpenses.map(e => ({
+      id: e.id?.substring(0, 8),
+      amount: e.amount,
+      date: e.date,
+      category: e.category
+    })));
+
     // Calculate actual totals for the period (NO SCALING)
     const total = filteredExpenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+
+    console.log('💰 [EXPENSES] Total expenses:', total);
 
     // Group by category
     const byCategory: Record<string, number> = {};
@@ -230,12 +256,24 @@ export function useMetricsWithDateRange(
 
   // Calculate period policy metrics
   const periodPolicies = useMemo((): PeriodPolicyMetrics => {
+    console.log('🔍 [POLICIES] Calculating policy metrics');
+    console.log('🔍 [POLICIES] Filtered policies:', filteredPolicies.length);
+    console.log('🔍 [POLICIES] Policy details:', filteredPolicies.map(p => ({
+      id: p.id.substring(0, 8),
+      status: p.status,
+      annualPremium: p.annualPremium,
+      effectiveDate: p.effectiveDate
+    })));
+
     const newCount = filteredPolicies.length;
 
     const premiumWritten = filteredPolicies.reduce(
       (sum, p) => sum + (p.annualPremium || 0),
       0
     );
+
+    console.log('💰 [POLICIES] New count:', newCount);
+    console.log('💰 [POLICIES] Premium written:', premiumWritten);
 
     const averagePremium = newCount > 0 ? premiumWritten / newCount : 0;
 
@@ -318,7 +356,7 @@ export function useMetricsWithDateRange(
     // ✅ FIXED: Pending pipeline - all pending commissions regardless of date (total value)
     const pendingPipeline = commissions
       .filter(c => c.status === 'pending')
-      .reduce((sum, c) => sum + (c.advanceAmount || 0), 0);
+      .reduce((sum, c) => sum + (c.amount || 0), 0);
 
     // Calculate retention rate
     const retentionRate = totalPolicies > 0

@@ -92,15 +92,15 @@ export function generateKPIConfig(params: KPIConfigParams): KPISection[] {
       kpis: [
         {
           label: 'Commission Earned',
-          value: formatCurrency(scaleToDisplayPeriod(periodCommissions.earned, timePeriod)),
+          value: formatCurrency(periodCommissions.earned),
         },
         {
           label: 'Total Expenses',
-          value: formatCurrency(scaleToDisplayPeriod(periodExpenses.total, timePeriod)),
+          value: formatCurrency(periodExpenses.total),
         },
         {
           label: 'Net Income',
-          value: formatCurrency(scaleToDisplayPeriod(periodAnalytics.netIncome, timePeriod)),
+          value: formatCurrency(periodAnalytics.netIncome),
         },
         {
           label: 'Profit Margin',
@@ -108,15 +108,15 @@ export function generateKPIConfig(params: KPIConfigParams): KPISection[] {
         },
         {
           label: 'Recurring Expenses',
-          value: formatCurrency(scaleToDisplayPeriod(periodExpenses.recurring, timePeriod)),
+          value: formatCurrency(periodExpenses.recurring),
         },
         {
           label: 'One-Time Expenses',
-          value: formatCurrency(scaleToDisplayPeriod(periodExpenses.oneTime, timePeriod)),
+          value: formatCurrency(periodExpenses.oneTime),
         },
         {
           label: 'Tax Deductible ⓘ',
-          value: formatCurrency(scaleToDisplayPeriod(periodExpenses.taxDeductible, timePeriod)),
+          value: formatCurrency(periodExpenses.taxDeductible),
         },
       ],
     },
@@ -125,11 +125,11 @@ export function generateKPIConfig(params: KPIConfigParams): KPISection[] {
       kpis: [
         {
           label: 'New Policies',
-          value: scaleCountToDisplayPeriod(periodPolicies.newCount, timePeriod),
+          value: periodPolicies.newCount,
         },
         {
           label: 'Premium Written',
-          value: formatCurrency(scaleToDisplayPeriod(periodPolicies.premiumWritten, timePeriod)),
+          value: formatCurrency(periodPolicies.premiumWritten),
         },
         {
           label: 'Avg Premium/Policy',
@@ -137,15 +137,15 @@ export function generateKPIConfig(params: KPIConfigParams): KPISection[] {
         },
         {
           label: 'Cancelled',
-          value: scaleCountToDisplayPeriod(periodPolicies.cancelled, timePeriod),
+          value: periodPolicies.cancelled,
         },
         {
           label: 'Lapsed',
-          value: scaleCountToDisplayPeriod(periodPolicies.lapsed, timePeriod),
+          value: periodPolicies.lapsed,
         },
         {
           label: 'Commissionable Value',
-          value: formatCurrency(scaleToDisplayPeriod(periodPolicies.commissionableValue, timePeriod)),
+          value: formatCurrency(periodPolicies.commissionableValue),
         },
       ],
     },
@@ -162,7 +162,7 @@ export function generateKPIConfig(params: KPIConfigParams): KPISection[] {
         },
         {
           label: 'Commission Count',
-          value: scaleCountToDisplayPeriod(periodCommissions.count, timePeriod),
+          value: periodCommissions.count,
         },
         {
           label: 'Avg Commission',
@@ -174,7 +174,7 @@ export function generateKPIConfig(params: KPIConfigParams): KPISection[] {
         },
         {
           label: 'Expense Count',
-          value: scaleCountToDisplayPeriod(periodExpenses.count, timePeriod),
+          value: periodExpenses.count,
         },
       ],
     },
@@ -183,7 +183,7 @@ export function generateKPIConfig(params: KPIConfigParams): KPISection[] {
       kpis: [
         {
           label: 'New Clients',
-          value: scaleCountToDisplayPeriod(periodClients.newCount, timePeriod),
+          value: periodClients.newCount,
         },
         {
           label: 'Avg Client Age',
@@ -191,7 +191,7 @@ export function generateKPIConfig(params: KPIConfigParams): KPISection[] {
         },
         {
           label: 'Total Value',
-          value: formatCurrency(scaleToDisplayPeriod(periodClients.totalValue, timePeriod)),
+          value: formatCurrency(periodClients.totalValue),
         },
         {
           label: 'Avg Value/Client',

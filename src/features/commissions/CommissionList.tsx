@@ -15,11 +15,7 @@ export const CommissionList: React.FC = () => {
 
   const handleDeleteCommission = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this commission?')) {
-      deleteCommission(id, {
-        onSuccess: () => {
-          refresh(); // Refresh the list after deletion
-        }
-      });
+      deleteCommission(id);
     }
   };
 
@@ -91,12 +87,12 @@ export const CommissionList: React.FC = () => {
       width: '20',
     },
     {
-      key: 'advanceAmount',
-      header: 'Advance',
+      key: 'amount',
+      header: 'Amount',
       sortable: true,
       accessor: (commission) => (
         <span className="font-semibold text-blue-600">
-          ${commission.advanceAmount.toLocaleString(undefined, {
+          ${commission.amount.toLocaleString(undefined, {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2,
           })}
