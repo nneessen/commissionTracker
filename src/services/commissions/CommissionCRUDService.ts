@@ -448,9 +448,13 @@ class CommissionCRUDService {
       annualPremium: parseFloat(dbRecord.annual_premium || 0),
       monthlyPremium: parseFloat(dbRecord.monthly_premium || dbRecord.annual_premium / 12 || 0),
 
-      // ADVANCE (upfront payment)
-      advanceAmount: parseFloat(dbRecord.advance_amount || dbRecord.amount || 0), // New column name with fallback
+      // ADVANCE (upfront payment) - Database field names
+      amount: parseFloat(dbRecord.amount || 0), // Total commission amount (DB 'amount' field)
+      rate: parseFloat(dbRecord.rate || 0), // Commission rate percentage (DB 'rate' field)
       advanceMonths: dbRecord.advance_months ?? 9,
+
+      // DEPRECATED: Keep for backward compatibility
+      advanceAmount: parseFloat(dbRecord.amount || 0), // Deprecated - use 'amount' instead
 
       // EARNING TRACKING
       monthsPaid: dbRecord.months_paid || 0,
@@ -458,7 +462,7 @@ class CommissionCRUDService {
       unearnedAmount: parseFloat(dbRecord.unearned_amount || 0),
       lastPaymentDate: dbRecord.last_payment_date ? new Date(dbRecord.last_payment_date) : undefined,
 
-      // COMMISSION RATE
+      // COMMISSION RATE (for calculations)
       commissionRate: parseFloat(dbRecord.rate || dbRecord.commission_rate || 0),
 
       contractCompLevel: dbRecord.contract_comp_level,
