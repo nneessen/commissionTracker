@@ -6,6 +6,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-10-15 13:15:44
+
+### Changed Files
+- `plans/COMPLETED/20251013_dashboard_polish_and_redesign_COMPLETED.md`
+- `scripts/CLAUDE.md`
+- `src/features/dashboard/CLAUDE.md`
+- `src/features/dashboard/components/DetailedKPIGrid_Accordion.tsx`
+- `src/features/dashboard/components/DetailedKPIGrid_MetricsDashboard.tsx`
+- `src/features/dashboard/components/DetailedKPIGrid_TabbedView.tsx`
+- `src/features/expenses/ExpenseDashboard.tsx`
+- `src/features/expenses/components/ExpenseDialog.tsx`
+- `src/features/expenses/config/expenseStatsConfig.ts`
+- `src/lib/date.ts`
+- `src/services/expenses/recurringExpenseService.ts`
+- `src/services/metrics/index.ts`
+- `src/services/metrics/metricCalculationService.ts`
+- `src/services/metrics/types.ts`
+
+### Statistics
+```
+ 14 files changed, 2263 insertions(+), 18 deletions(-)
+```
+
 ## [Checkpoint] - 2025-10-13 14:49:23
 
 ### Changed Files

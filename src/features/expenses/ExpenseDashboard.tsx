@@ -21,6 +21,7 @@ import type {
   ExpenseTemplate,
 } from "../../types/expense.types";
 import { formatCurrency, formatMonthYear } from "../../lib/format";
+import { parseLocalDate, isSameMonth } from "../../lib/date";
 import showToast from "../../utils/toast";
 import { Heading } from "../../components/ui/heading";
 
@@ -71,19 +72,11 @@ export function ExpenseDashboard() {
     filters
   );
   filteredExpenses = filteredExpenses.filter((expense) => {
-    const expenseDate = new Date(expense.date);
-    return (
-      expenseDate.getMonth() === selectedMonth.getMonth() &&
-      expenseDate.getFullYear() === selectedMonth.getFullYear()
-    );
+    return isSameMonth(expense.date, selectedMonth);
   });
 
   const expensesForMonth = expenses.filter((expense) => {
-    const expenseDate = new Date(expense.date);
-    return (
-      expenseDate.getMonth() === selectedMonth.getMonth() &&
-      expenseDate.getFullYear() === selectedMonth.getFullYear()
-    );
+    return isSameMonth(expense.date, selectedMonth);
   });
 
   // Analytics calculations (NO useMemo)

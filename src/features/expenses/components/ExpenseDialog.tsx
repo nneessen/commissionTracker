@@ -24,6 +24,7 @@ import type { Expense, CreateExpenseData, RecurringFrequency } from '@/types/exp
 import { DEFAULT_EXPENSE_CATEGORIES } from '@/types/expense.types';
 import { RECURRING_FREQUENCY_OPTIONS, TAX_DEDUCTIBLE_TOOLTIP } from '../config/recurringConfig';
 import { useCreateExpenseTemplate } from '../../../hooks/expenses/useExpenseTemplates';
+import { getTodayString } from '../../../lib/date';
 import showToast from '../../../utils/toast';
 
 interface ExpenseDialogProps {
@@ -47,7 +48,7 @@ export function ExpenseDialog({
     amount: 0,
     category: '',
     expense_type: 'personal',
-    date: new Date().toISOString().split('T')[0],
+    date: getTodayString(),
     is_recurring: false,
     recurring_frequency: null,
     is_tax_deductible: false,
@@ -81,7 +82,7 @@ export function ExpenseDialog({
         amount: 0,
         category: '',
         expense_type: 'personal',
-        date: new Date().toISOString().split('T')[0],
+        date: getTodayString(),
         is_recurring: false,
         recurring_frequency: null,
         is_tax_deductible: false,

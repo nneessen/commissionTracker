@@ -1,15 +1,15 @@
 # Project Statistics
 
-Last Updated: 2025-10-13 14:49:23
+Last Updated: 2025-10-15 13:15:44
 
 ## Metrics
-- Total Files: 21750
-- Total Lines of Code: 334800
-- Total Commits: 82
+- Total Files: 21741
+- Total Lines of Code: 330453
+- Total Commits: 86
 
 ## Recent Activity
+bb7a250 fix(commissions): map database amount field to TypeScript amount property
+60609e8 fix(dashboard): fix commission field mapping and calculation bugs
+0520dd6 refactor(expenses): consolidate dashboard components and remove legacy code
+9380921 docs: multiple changes in .,docs,plans/COMPLETED
 4538b6c docs: multiple changes in .,docs,plans/COMPLETED
-a76e647 feat(expenses): complete expense templates UI - one-click recurring expenses
-e76798e docs: add expense templates UI implementation guide
-363b25a feat(expenses): add expense templates foundation
-9ead6f4 feat(dashboard): integrate recurring and tax deductible expense KPIs

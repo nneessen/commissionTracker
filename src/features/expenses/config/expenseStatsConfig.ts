@@ -1,5 +1,7 @@
 // src/features/expenses/config/expenseStatsConfig.ts
 
+import { parseLocalDate } from '../../../lib/date';
+
 /**
  * Color palette for expense visualizations
  */
@@ -232,7 +234,7 @@ export const generateTrendData = ({
 
   // Aggregate expenses by month
   expenses.forEach((expense) => {
-    const expenseDate = new Date(expense.date);
+    const expenseDate = parseLocalDate(expense.date);
     const monthsAgo =
       (currentYear - expenseDate.getFullYear()) * 12 +
       (currentMonth - expenseDate.getMonth());

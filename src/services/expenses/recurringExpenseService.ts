@@ -2,6 +2,7 @@
 
 import { supabase } from '../base/supabase';
 import type { Expense, CreateExpenseData, RecurringFrequency } from '../../types/expense.types';
+import { parseLocalDate, formatDateForDB } from '../../lib/date';
 import { v4 as uuidv4 } from 'uuid';
 
 /**
@@ -94,8 +95,8 @@ class RecurringExpenseService {
     maxOccurrences: number = 12
   ): string[] {
     const occurrences: string[] = [];
-    const start = new Date(startDate);
-    const end = endDate ? new Date(endDate) : null;
+    const start = parseLocalDate(startDate);
+    const end = endDate ? parseLocalDate(endDate) : null;
 
     for (let i = 1; i <= maxOccurrences; i++) {
       const nextDate = this.getNextOccurrence(start, frequency, i);
@@ -105,7 +106,7 @@ class RecurringExpenseService {
         break;
       }
 
-      occurrences.push(nextDate.toISOString().split('T')[0]);
+      occurrences.push(formatDateForDB(nextDate));
     }
 
     return occurrences;
@@ -265,8 +266,8 @@ class RecurringExpenseService {
       return 0;
     }
 
-    const lastDate = new Date(lastExpense.date);
-    const target = new Date(targetDate);
+    const lastDate = parseLocalDate(lastExpense.date);
+    const target = parseLocalDate(targetDate);
 
     // If target is within existing range, no need to extend
     if (target <= lastDate) {
