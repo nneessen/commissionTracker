@@ -1,5 +1,7 @@
 // src/utils/formatting.ts
 
+import { formatDateForDisplay, parseLocalDate } from '../lib/date';
+
 /**
  * Formatting Utilities
  *
@@ -86,6 +88,9 @@ export function formatNumberWithCommas(
  * @param options Optional Intl.DateTimeFormatOptions
  * @returns Formatted date string
  *
+ * IMPORTANT: Delegates to /src/lib/date.ts to avoid UTC timezone shifting bugs
+ * (e.g., "2025-10-01" stays as Oct 1, not becoming Sept 30)
+ *
  * @example
  * formatDate(new Date()) // "Jan 15, 2025"
  * formatDate(new Date(), { month: 'long' }) // "January 15, 2025"
@@ -94,24 +99,18 @@ export function formatDate(
   date: Date | string,
   options?: Intl.DateTimeFormatOptions
 ): string {
-  const dateObj = typeof date === 'string' ? new Date(date) : date;
-  const defaultOptions: Intl.DateTimeFormatOptions = {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-    ...options,
-  };
-
-  return dateObj.toLocaleString('en-US', defaultOptions);
+  return formatDateForDisplay(date, options);
 }
 
 /**
  * Format a date and time for display
  * @param date Date to format
  * @returns Formatted date-time string (e.g., "Jan 15, 10:30 AM")
+ *
+ * IMPORTANT: Uses parseLocalDate to avoid UTC timezone shifting bugs
  */
 export function formatDateTime(date: Date | string): string {
-  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  const dateObj = typeof date === 'string' ? parseLocalDate(date) : date;
   return dateObj.toLocaleString('en-US', {
     month: 'short',
     day: 'numeric',

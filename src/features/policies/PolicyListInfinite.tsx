@@ -14,6 +14,7 @@ import { useInfinitePolicies, usePolicyCount } from "../../hooks/policies/useInf
 import { Policy, PolicyFilters, PolicyStatus } from "../../types/policy.types";
 import { ProductType } from "../../types/commission.types";
 import { calculateCommissionAdvance } from "../../utils/policyCalculations";
+import { formatCurrency, formatDate } from "../../lib/format";
 
 interface PolicyListInfiniteProps {
   onEditPolicy: (policyId: string) => void;
@@ -110,22 +111,6 @@ export const PolicyListInfinite: React.FC<PolicyListInfiniteProps> = ({
         p.client.name.toLowerCase().includes(searchTerm.toLowerCase())
       )
     : policies;
-
-  const formatCurrency = (amount: number): string => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(amount);
-  };
-
-  const formatDate = (date: Date | string): string => {
-    const d = typeof date === 'string' ? new Date(date) : date;
-    return d.toLocaleDateString('en-US', {
-      month: '2-digit',
-      day: '2-digit',
-      year: 'numeric',
-    });
-  };
 
   const handleStatusChange = (policyId: string, newStatus: PolicyStatus) => {
     updatePolicyStatus(policyId, newStatus);

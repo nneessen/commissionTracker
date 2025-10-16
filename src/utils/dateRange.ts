@@ -1,5 +1,7 @@
 // src/utils/dateRange.ts
 
+import { parseLocalDate } from '../lib/date';
+
 export type TimePeriod = 'daily' | 'weekly' | 'monthly' | 'yearly';
 
 export interface DateRange {
@@ -53,9 +55,12 @@ export function getDateRange(period: TimePeriod): DateRange {
  * @param date The date to check
  * @param range The date range to check against
  * @returns boolean indicating if date is in range
+ *
+ * IMPORTANT: Uses parseLocalDate to avoid UTC timezone shifting bugs
+ * (e.g., "2025-10-01" stays as Oct 1, not becoming Sept 30)
  */
 export function isInDateRange(date: Date | string, range: DateRange): boolean {
-  const checkDate = typeof date === 'string' ? new Date(date) : date;
+  const checkDate = typeof date === 'string' ? parseLocalDate(date) : date;
   return checkDate >= range.startDate && checkDate <= range.endDate;
 }
 

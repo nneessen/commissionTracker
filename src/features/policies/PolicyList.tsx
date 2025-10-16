@@ -13,6 +13,7 @@ import { useCarriers } from "../../hooks/carriers";
 import { Policy, PolicyFilters, PolicyStatus } from "../../types/policy.types";
 import { ProductType } from "../../types/commission.types";
 import { calculateCommissionAdvance } from "../../utils/policyCalculations";
+import { formatCurrency, formatDate } from "../../lib/format";
 
 interface PolicyListProps {
   policies: Policy[];
@@ -139,24 +140,6 @@ export const PolicyList: React.FC<PolicyListProps> = ({
     if (window.confirm("Are you sure you want to delete this policy?")) {
       deletePolicy(policyId);
     }
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
-
-  const formatDate = (date: string | Date) => {
-    const dateObj = typeof date === "string" ? new Date(date) : date;
-    return dateObj.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
   };
 
   const SortHeader: React.FC<{

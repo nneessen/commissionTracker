@@ -1,5 +1,7 @@
 // src/lib/format.ts
 
+import { parseLocalDate, formatDateForDisplay } from './date';
+
 /**
  * Format a number as USD currency
  */
@@ -13,21 +15,16 @@ export function formatCurrency(amount: number): string {
 }
 
 /**
- * Format a date string or Date object
+ * Format a date string or Date object for display
+ *
+ * IMPORTANT: Uses parseLocalDate to avoid UTC timezone shifting bugs
+ * (e.g., "2025-10-01" staying as Oct 1, not becoming Sept 30)
  */
 export function formatDate(
   date: string | Date,
   options?: Intl.DateTimeFormatOptions
 ): string {
-  const defaultOptions: Intl.DateTimeFormatOptions = {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  };
-  return new Date(date).toLocaleDateString(
-    "en-US",
-    options || defaultOptions
-  );
+  return formatDateForDisplay(date, options);
 }
 
 /**

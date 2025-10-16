@@ -1,5 +1,6 @@
 import React from 'react';
 import { Clock, FileText, DollarSign } from 'lucide-react';
+import { formatCurrency, formatDate } from '../../../lib/format';
 
 interface RecentPolicy {
   id: string;
@@ -28,18 +29,6 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({
   recentPolicies,
   recentCommissions,
 }) => {
-  const formatCurrency = (value: number) => {
-    return `$${value.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
-  };
-
-  const formatDate = (date: Date) => {
-    return new Date(date).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    });
-  };
-
   const formatProductName = (product: string) => {
     return product
       .split('_')
