@@ -9,6 +9,7 @@ export { PerformanceOverviewCard } from './PerformanceOverviewCard';
 export { AlertsPanel } from './AlertsPanel';
 export { QuickActionsPanel } from './QuickActionsPanel';
 export { DetailedKPIGrid } from './DetailedKPIGrid';
+export { DetailedKPIGrid_Compact } from './DetailedKPIGrid_Compact';
 
 // Legacy components (kept for backwards compatibility)
 export { FinancialHealthCard } from './FinancialHealthCard';

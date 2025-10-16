@@ -396,19 +396,20 @@ export function useMetricsWithDateRange(
       ? (netIncome / periodCommissions.paid) * 100
       : 0;
 
-    // Calculate average commission per policy
-    // Use actual PAID commission if we have it, otherwise use target avg premium
-    // This handles the case where you have policies but haven't been PAID yet (earned commissions)
-    const avgCommissionPerPolicy = periodCommissions.paid > 0 && periodPolicies.newCount > 0
-      ? periodCommissions.paid / periodPolicies.newCount  // Use actual if paid
-      : targetAvgPremium * (periodCommissions.averageRate / 100 || 0.75); // Otherwise use target (default 75% FYC)
+    // Calculate average commission per policy from ALL commissions (all-time average)
+    // This gives a more stable baseline for planning than period-specific averages
+    const allCommissionTotal = commissions.reduce((sum, c) => sum + (c.amount || 0), 0);
+    const allCommissionCount = commissions.length;
+    const avgCommissionPerPolicy = allCommissionCount > 0
+      ? allCommissionTotal / allCommissionCount  // Use actual historical average
+      : targetAvgPremium * 0.75; // Fallback to target × 75% if no commission history
 
-    console.log('💰 [ANALYTICS] Target Avg Premium:', targetAvgPremium);
-    console.log('💰 [ANALYTICS] Commission Paid (received):', periodCommissions.paid);
-    console.log('💰 [ANALYTICS] Commission Earned (entitled):', periodCommissions.earned);
-    console.log('💰 [ANALYTICS] Commission Avg Rate:', periodCommissions.averageRate);
-    console.log('💰 [ANALYTICS] Policies Sold:', periodPolicies.newCount);
+    console.log('💰 [ANALYTICS] All-Time Commission Total:', allCommissionTotal);
+    console.log('💰 [ANALYTICS] All-Time Commission Count:', allCommissionCount);
     console.log('💰 [ANALYTICS] Calculated Avg Commission Per Policy:', avgCommissionPerPolicy);
+    console.log('💰 [ANALYTICS] Period Expenses Total:', periodExpenses.total);
+    console.log('💰 [ANALYTICS] Breakeven Needed:', breakevenNeeded);
+    console.log('💰 [ANALYTICS] Policies Needed:', Math.ceil(breakevenNeeded / avgCommissionPerPolicy));
 
     // Calculate policies needed to break even
     const policiesNeeded = avgCommissionPerPolicy > 0
@@ -471,7 +472,7 @@ export function useMetricsWithDateRange(
         policiesPerDayNeeded
       }
     };
-  }, [periodCommissions, periodExpenses, periodPolicies, timePeriod]);
+  }, [periodCommissions, periodExpenses, periodPolicies, timePeriod, commissions]);
 
   return {
     periodCommissions,

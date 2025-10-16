@@ -46,7 +46,8 @@ Located in `/plans/completed/`:
    - Advance tracking
 
 2. **Dashboard Redesign**
-   - Data-dense layout
+   - Data-dense layout with multiple style options
+   - Standard, Compact, and Terminal/Console layout variants
    - Quick action buttons
    - KPI metrics overview
    - Time period filtering
@@ -65,6 +66,31 @@ Located in `/plans/completed/`:
    - Category management
    - Receipt attachments
    - Reporting by category
+
+## Dashboard Layout Options
+
+The application provides **three dashboard layout variants**:
+
+1. **Standard Dashboard** (`DashboardHome.tsx`)
+   - Default layout with comprehensive metrics
+   - Professional gradient design
+   - Best for: General use and presentations
+
+2. **Compact Dashboard** (`DetailedKPIGrid_Compact.tsx`)
+   - 2-column responsive grid
+   - Higher information density
+   - Best for: Power users who need more data on screen
+
+3. **Terminal Dashboard** (`DashboardHome_Terminal.tsx`)
+   - Terminal/console aesthetic
+   - Monospace fonts (Fira Code)
+   - GitHub Dark theme colors
+   - Symbol-based status indicators
+   - Best for: Developers and terminal enthusiasts
+
+See [DESIGN_SYSTEM.md](./DESIGN_SYSTEM.md) for styling constants.
+
+---
 
 ## Database Schema
 All migrations are in `/supabase/migrations/`

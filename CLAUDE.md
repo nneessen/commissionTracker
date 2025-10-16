@@ -29,6 +29,7 @@ This is a full-stack application for insurance sales agents to track Key Perform
 **Recent Major Features (as of Oct 2025):**
 - ✅ Contract-level commission system with automatic calculations
 - ✅ Redesigned data-dense dashboard with quick actions
+- ✅ Multiple dashboard layouts (standard, compact, terminal/console)
 - ✅ Time period filtering across all views
 - ✅ Commission management grid with splits and advances
 - ✅ Expense categories and reporting system

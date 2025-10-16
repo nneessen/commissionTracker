@@ -293,6 +293,69 @@ All cards follow this structure:
 </button>
 ```
 
+## Terminal/Console Theme (Optional)
+
+The application includes an alternative terminal-style theme for developers who prefer darker, monospace interfaces.
+
+**Constants Location**: `src/constants/dashboardTerminal.ts`
+
+### Terminal Color Palette
+```typescript
+TERMINAL_COLORS = {
+  // Backgrounds
+  BG_MAIN: '#0d1117',       // Main background (GitHub dark)
+  BG_SECTION: '#161b22',    // Section backgrounds
+  BG_HOVER: '#21262d',      // Hover states
+  BORDER: '#30363d',        // Subtle borders
+
+  // Text
+  TEXT_PRIMARY: '#c9d1d9',      // Light gray
+  TEXT_SECONDARY: '#8b949e',    // Muted gray
+  TEXT_MUTED: '#6e7681',        // Very muted
+
+  // Status
+  SUCCESS: '#3fb950',       // Green
+  WARNING: '#d29922',       // Yellow
+  DANGER: '#f85149',        // Red
+  INFO: '#58a6ff',          // Blue
+  HIGHLIGHT: '#00ff41',     // Matrix green (sparingly)
+}
+```
+
+### Terminal Typography
+```typescript
+TERMINAL_TYPOGRAPHY = {
+  FONT_FAMILY: "'Fira Code', 'Courier New', Consolas, monospace",
+  FONT_SIZE_XS: '11px',
+  FONT_SIZE_SM: '12px',
+  FONT_SIZE_BASE: '13px',
+  FONT_SIZE_MD: '14px',
+  FONT_SIZE_LG: '16px',
+  FONT_SIZE_XL: '18px',
+  LINE_HEIGHT: '1.4',
+  LETTER_SPACING: '0.5px',
+}
+```
+
+### Terminal Symbols
+```typescript
+TERMINAL_SYMBOLS = {
+  SUCCESS: '✓',
+  ERROR: '×',
+  WARNING: '⚠',
+  INFO: '!',
+  ARROW_RIGHT: '>',
+  ARROW_UP: '↗',
+  ARROW_DOWN: '↘',
+  ARROW_FLAT: '→',
+  BULLET: '•',
+}
+```
+
+**Usage**: Import `DashboardHome_Terminal.tsx` instead of `DashboardHome.tsx` for the terminal aesthetic.
+
+---
+
 ## Key Design Rules
 
 1. **All section headers** are uppercase, `13px`, `600` weight, `letterSpacing: '0.5px'`

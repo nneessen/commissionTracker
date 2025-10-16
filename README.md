@@ -81,6 +81,7 @@ Open [http://localhost:5173](http://localhost:5173) to view in browser.
 - ✅ **Commission Tracking** - Track earnings, advances, splits with upline agents
 - ✅ **Time Period Filtering** - MTD, YTD, Last 30/60/90 days, custom date ranges
 - ✅ **Dashboard Analytics** - Data-dense overview with quick actions and KPI metrics
+- ✅ **Multiple Dashboard Layouts** - Choose between standard, compact, or terminal-style dashboards
 - ✅ **Expense Tracking** - Categorized business expenses with reporting
 - ✅ **Comp Guide** - FFG commission rate guides (7 carriers, 42+ products)
 - ✅ **Carrier Management** - Real insurance carriers with product hierarchies
@@ -98,6 +99,44 @@ Open [http://localhost:5173](http://localhost:5173) to view in browser.
 - ✅ **Performance** - 16+ indexes, helper functions, caching
 - ✅ **Error Handling** - Comprehensive error management
 - ✅ **Monitoring** - Performance tracking and metrics
+
+### Dashboard Layout Options
+
+The application includes **three dashboard layout variants** to suit different workflows:
+
+**1. Standard Dashboard** (`DashboardHome.tsx`)
+- Default layout with comprehensive metrics
+- Clean, professional design with gradients
+- Data-dense with organized sections
+- Best for: General use and business presentations
+
+**2. Compact Dashboard** (`DetailedKPIGrid_Compact.tsx`)
+- 2-column responsive grid layout
+- Increased information density
+- Tighter spacing for more data on screen
+- Best for: Power users who need to see everything at once
+
+**3. Terminal/Console Dashboard** (`DashboardHome_Terminal.tsx`)
+- Developer-inspired terminal aesthetic
+- Monospace fonts (Fira Code)
+- Dark theme (GitHub Dark color scheme)
+- Symbol-based status indicators (✓, ×, ⚠)
+- ASCII-style borders and minimal UI
+- Best for: Developers and users who prefer terminal interfaces
+
+**Switching Between Layouts:**
+
+Edit `src/routes/dashboard.tsx` to change the import:
+
+```typescript
+// Standard (default)
+import { DashboardHome } from '../features/dashboard/DashboardHome';
+
+// Terminal/Console style
+import { DashboardHome as DashboardHome } from '../features/dashboard/DashboardHome_Terminal';
+```
+
+All layouts share the same functionality and metrics - only visual presentation differs.
 
 ---
 
