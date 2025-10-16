@@ -314,27 +314,27 @@ export const Login: React.FC<LoginProps> = ({ onSuccess }) => {
 
           {/* Form */}
           <form className="space-y-5" onSubmit={handleSubmit}>
-            {/* Email Input DO NOT CHANGE THE onChange PROP */}
+            {/* Email Input */}
             <Input
               label="Email address"
               type="email"
               placeholder="you@example.com"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(value) => setEmail(String(value))}
               error={formErrors.email}
               required
               disabled={loading}
               className="w-full"
             />
 
-            {/* Password Input DO NOT CHANGE the onChange prop */}
+            {/* Password Input */}
             {mode !== "reset" && (
               <Input
                 label="Password"
                 type="password"
                 placeholder="Enter your password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(value) => setPassword(String(value))}
                 error={formErrors.password}
                 required
                 disabled={loading}
