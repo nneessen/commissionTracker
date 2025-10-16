@@ -8,7 +8,16 @@ export interface Client {
 }
 
 export type CommissionType = 'first_year' | 'renewal' | 'trail' | 'bonus' | 'override';
-export type CommissionStatus = 'pending' | 'paid' | 'clawback' | 'cancelled';
+
+/**
+ * Commission Status Lifecycle
+ * - pending: Policy not active yet, no commission owed
+ * - earned: Policy active, commission earned but not paid yet (money not received)
+ * - paid: Money actually received in bank account
+ * - clawback: Commission was paid but clawed back
+ * - cancelled: Commission cancelled (policy cancelled/lapsed)
+ */
+export type CommissionStatus = 'pending' | 'earned' | 'paid' | 'clawback' | 'cancelled';
 export type CalculationBasis = 'premium' | 'fixed' | 'tiered';
 
 export interface Commission {
@@ -29,15 +38,15 @@ export interface Commission {
   monthlyPremium?: number; // Optional for backward compatibility
 
   // ADVANCE (upfront payment) - Database field names
-  amount: number;                // Total commission amount (matches DB 'amount' field)
-  rate: number;                  // Commission rate as percentage (matches DB 'rate' field)
-  advanceMonths: number;         // Number of months in advance (default 9, matches DB 'advance_months')
+  amount: number;                // Total commission amount (maps to DB 'commission_amount' field)
+  rate: number;                  // Commission rate as percentage (maps to DB 'rate' field)
+  advanceMonths: number;         // Number of months in advance (default 9, maps to DB 'advance_months')
 
   // EARNING TRACKING (as client pays premiums) - Database field names
-  monthsPaid: number;            // How many premiums the client has paid (matches DB 'months_paid')
-  earnedAmount: number;          // Portion of advance that's been earned (matches DB 'earned_amount')
-  unearnedAmount: number;        // Portion of advance still at risk of chargeback (matches DB 'unearned_amount')
-  lastPaymentDate?: Date;        // When the last premium was paid (matches DB 'last_payment_date')
+  monthsPaid: number;            // How many premiums the client has paid (maps to DB 'months_paid')
+  earnedAmount: number;          // Portion of advance that's been earned (maps to DB 'earned_amount')
+  unearnedAmount: number;        // Portion of advance still at risk of chargeback (maps to DB 'unearned_amount')
+  lastPaymentDate?: Date;        // When the last premium was paid (maps to DB 'last_payment_date')
 
   // DEPRECATED: Use 'amount' instead
   /** @deprecated Use 'amount' field instead - kept for backward compatibility */

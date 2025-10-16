@@ -49,6 +49,10 @@ class CommissionService {
     return commissionCRUDService.getFiltered(filters);
   }
 
+  async markAsPaid(id: string, paymentDate?: Date): Promise<Commission> {
+    return commissionCRUDService.markAsPaid(id, paymentDate);
+  }
+
   // ===================================================================
   // Calculation Operations - Delegated to CommissionCalculationService
   // ===================================================================

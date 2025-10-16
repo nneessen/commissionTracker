@@ -348,6 +348,105 @@ class CommissionCRUDService {
   }
 
   /**
+   * Marks an earned commission as paid
+   *
+   * This method validates that:
+   * - Commission exists
+   * - Commission status is 'earned' (not pending or already paid)
+   * - Linked policy status is 'active'
+   *
+   * On success, sets:
+   * - status to 'paid'
+   * - payment_date to current date
+   *
+   * @param id - The unique identifier of the commission to mark as paid
+   * @param paymentDate - Optional payment date (defaults to today)
+   * @returns Promise resolving to the updated commission
+   * @throws {ValidationError} If the ID is invalid or status validation fails
+   * @throws {NotFoundError} If the commission does not exist
+   * @throws {DatabaseError} If the database operation fails
+   *
+   * @example
+   * ```ts
+   * const paidCommission = await commissionCRUDService.markAsPaid('123e4567-e89b-12d3');
+   * console.log(`Commission marked as paid on ${paidCommission.paymentDate}`);
+   * ```
+   */
+  async markAsPaid(id: string, paymentDate?: Date): Promise<Commission> {
+    if (!id) {
+      throw new ValidationError('Invalid commission ID', [
+        { field: 'id', message: 'ID is required' }
+      ]);
+    }
+
+    try {
+      // First, get the commission to validate status
+      const commission = await this.getById(id);
+      if (!commission) {
+        throw new NotFoundError('Commission', id);
+      }
+
+      // Validate commission status is 'earned'
+      if (commission.status !== 'earned') {
+        throw new ValidationError(`Cannot mark commission as paid. Current status is ${commission.status}, must be earned.`, [
+          { field: 'status', message: `Current status is ${commission.status}, must be earned`, value: commission.status }
+        ]);
+      }
+
+      // Get the linked policy to validate it's active
+      if (commission.policyId) {
+        const { data: policy, error: policyError } = await (this.repository as any).client
+          .from('policies')
+          .select('status')
+          .eq('id', commission.policyId)
+          .single();
+
+        if (policyError) {
+          throw new DatabaseError('markAsPaid', policyError);
+        }
+
+        if (policy.status !== 'active') {
+          throw new ValidationError(`Cannot mark commission as paid. Policy status is ${policy.status}, must be active.`, [
+            { field: 'policy.status', message: `Policy status is ${policy.status}, must be active`, value: policy.status }
+          ]);
+        }
+      }
+
+      // Update the commission status to 'paid' and set payment_date
+      const updateData = {
+        status: 'paid',
+        payment_date: paymentDate || new Date(),
+        updated_at: new Date()
+      };
+
+      const { data: updated, error: updateError } = await (this.repository as any).client
+        .from('commissions')
+        .update(updateData)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (updateError) {
+        throw new DatabaseError('markAsPaid', updateError);
+      }
+
+      // Transform and return the updated commission
+      const updatedCommission = this.transformFromDB(updated);
+
+      // Invalidate cache and update with new data
+      const cacheKey = `commission:${id}`;
+      caches.commissions.set(cacheKey, updatedCommission);
+
+      return updatedCommission;
+    } catch (error) {
+      if (error instanceof NotFoundError || error instanceof ValidationError) {
+        throw error;
+      }
+      throw this.handleError(error, 'markAsPaid', id);
+    }
+  }
+
+  /**
    * Retrieves commissions filtered by various criteria
    *
    * @param filters - Filter criteria for querying commissions

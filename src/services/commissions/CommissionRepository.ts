@@ -42,8 +42,10 @@ export class CommissionRepository extends BaseRepository<Commission, CreateCommi
       annualPremium: parseFloat(dbRecord.annual_premium || 0),
       monthlyPremium: parseFloat(dbRecord.monthly_premium || 0),
 
-      // ADVANCE (upfront payment) - Use commission_amount from DB
-      advanceAmount: parseFloat(dbRecord.commission_amount || dbRecord.advance_amount || dbRecord.amount || 0),
+      // ADVANCE (upfront payment) - Map DB amount field
+      // Remote DB uses 'amount', local might use 'commission_amount'
+      amount: parseFloat(dbRecord.amount || dbRecord.commission_amount || dbRecord.advance_amount || 0),
+      advanceAmount: parseFloat(dbRecord.amount || dbRecord.commission_amount || dbRecord.advance_amount || 0), // Deprecated, for backward compat
       advanceMonths: dbRecord.advance_months ?? 9,
 
       // EARNING TRACKING
@@ -366,8 +368,9 @@ export class CommissionRepository extends BaseRepository<Commission, CreateCommi
     if (data.annualPremium !== undefined) dbData.annual_premium = data.annualPremium;
     if (data.monthlyPremium !== undefined) dbData.monthly_premium = data.monthlyPremium;
 
-    // ADVANCE
-    if (data.advanceAmount !== undefined) dbData.advance_amount = data.advanceAmount;
+    // ADVANCE - Remote DB uses 'amount', not 'advance_amount' or 'commission_amount'
+    if (data.amount !== undefined) dbData.amount = data.amount;
+    if (data.advanceAmount !== undefined) dbData.amount = data.advanceAmount; // Backward compat
     if (data.advanceMonths !== undefined) dbData.advance_months = data.advanceMonths;
 
     // EARNING TRACKING

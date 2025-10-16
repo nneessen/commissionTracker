@@ -16,7 +16,8 @@ import { scaleToDisplayPeriod, getPeriodSuffix } from '../../../utils/dashboardC
 interface StatsConfigParams {
   timePeriod: TimePeriod;
   periodCommissions: {
-    earned: number;
+    earned: number; // Total entitled (earned + paid statuses)
+    paid: number; // Money actually received (paid status only)
     averageAmount: number;
     averageRate: number;
   };
@@ -77,16 +78,16 @@ export function generateStatsConfig(params: StatsConfigParams): StatItemConfig[]
 
   return [
     {
-      label: `${periodLabel} Commission Earned`,
-      value: formatCurrency(periodCommissions.earned),
+      label: `${periodLabel} Commission Paid`,
+      value: formatCurrency(periodCommissions.paid),
       trend: periodAnalytics.surplusDeficit >= 0 ? 'up' : 'down',
-      color: periodCommissions.earned > 0 ? METRIC_COLORS.COMMISSION_EARNED : METRIC_COLORS.NET_INCOME_NEGATIVE,
+      color: periodCommissions.paid > 0 ? METRIC_COLORS.COMMISSION_EARNED : METRIC_COLORS.NET_INCOME_NEGATIVE,
       tooltip: {
-        title: `${periodLabel} Commission Earned`,
-        description: `Total commission earned during the ${timePeriod.toLowerCase()} period.`,
-        formula: `SUM(amount) WHERE status='paid' AND date IN period`,
-        example: `Shows actual commissions received in this time period`,
-        note: `Filtered by ${timePeriod} date range - actual data, not projected`,
+        title: `${periodLabel} Commission Paid`,
+        description: `Total commission payments actually received (money deposited to your account) during the ${timePeriod.toLowerCase()} period.`,
+        formula: `Sum of commission amounts where status='paid' and payment date in period`,
+        example: `Shows actual money received in this time period`,
+        note: `Filtered by ${timePeriod} date range - actual cash received, not just entitled`,
       },
     },
     {
@@ -95,10 +96,10 @@ export function generateStatsConfig(params: StatsConfigParams): StatItemConfig[]
       color: METRIC_COLORS.PENDING_PIPELINE,
       tooltip: {
         title: 'Pending Pipeline',
-        description: 'Total value of ALL commissions awaiting payment (current state, not filtered by period).',
-        formula: 'SUM(advance_amount) WHERE status=pending',
-        example: 'Shows total amount you are currently owed',
-        note: 'This is a point-in-time metric - does NOT change with time period',
+        description: 'Total value of ALL commissions you are owed but have not yet received payment (includes pending policies + earned commissions awaiting payment).',
+        formula: 'Sum of all commissions where status is pending or earned',
+        example: 'Shows total amount you are currently owed but not paid yet',
+        note: 'Point-in-time metric showing money owed to you - does NOT change with time period filter',
       },
     },
     {

@@ -24,7 +24,8 @@ interface UseMetricsWithDateRangeOptions {
 }
 
 interface PeriodCommissionMetrics {
-  earned: number;
+  earned: number; // Total entitled (earned + paid statuses)
+  paid: number; // Money actually received (paid status only)
   pending: number;
   count: number;
   byCarrier: Record<string, number>;
@@ -152,7 +153,14 @@ export function useMetricsWithDateRange(
 
     // Calculate actual totals for the period (NO SCALING)
     // Use amount (total commission received), not earnedAmount (portion earned over time)
+
+    // Earned = Total entitled (both 'earned' and 'paid' statuses)
     const earned = filteredCommissions
+      .filter(c => c.status === 'earned' || c.status === 'paid')
+      .reduce((sum, c) => sum + (c.amount || 0), 0);
+
+    // Paid = Money actually received (only 'paid' status)
+    const paid = filteredCommissions
       .filter(c => c.status === 'paid')
       .reduce((sum, c) => sum + (c.amount || 0), 0);
 
@@ -160,7 +168,8 @@ export function useMetricsWithDateRange(
       .filter(c => c.status === 'pending')
       .reduce((sum, c) => sum + (c.amount || 0), 0);
 
-    console.log('💰 [METRICS] Commission Earned (paid):', earned);
+    console.log('💰 [METRICS] Commission Earned (entitled):', earned);
+    console.log('💰 [METRICS] Commission Paid (received):', paid);
     console.log('💰 [METRICS] Commission Pending:', pending);
 
     // Group by carrier - use amount (total commission value)
@@ -198,6 +207,7 @@ export function useMetricsWithDateRange(
 
     return {
       earned,
+      paid,
       pending,
       count,
       byCarrier,
@@ -354,9 +364,9 @@ export function useMetricsWithDateRange(
     const allClients = new Set(policies.map(p => p.client?.name || p.clientId));
     const totalClients = allClients.size;
 
-    // ✅ FIXED: Pending pipeline - all pending commissions regardless of date (total value)
+    // ✅ FIXED: Pending pipeline - all commissions not yet paid (pending + earned statuses)
     const pendingPipeline = commissions
-      .filter(c => c.status === 'pending')
+      .filter(c => c.status === 'pending' || c.status === 'earned')
       .reduce((sum, c) => sum + (c.amount || 0), 0);
 
     // Calculate retention rate
@@ -376,24 +386,26 @@ export function useMetricsWithDateRange(
 
   // Calculate period analytics
   const periodAnalytics = useMemo((): PeriodAnalytics => {
-    const surplusDeficit = periodCommissions.earned - periodExpenses.total;
+    // Use 'paid' (money received) for financial calculations, not 'earned' (entitled)
+    const surplusDeficit = periodCommissions.paid - periodExpenses.total;
     const netIncome = surplusDeficit;
     const breakevenNeeded = surplusDeficit < 0 ? Math.abs(surplusDeficit) : 0;
 
     // Calculate profit margin
-    const profitMargin = periodCommissions.earned > 0
-      ? (netIncome / periodCommissions.earned) * 100
+    const profitMargin = periodCommissions.paid > 0
+      ? (netIncome / periodCommissions.paid) * 100
       : 0;
 
     // Calculate average commission per policy
-    // Use actual EARNED commission if we have it, otherwise use target avg premium
-    // This handles the case where you have policies but haven't been PAID yet (pending commissions)
-    const avgCommissionPerPolicy = periodCommissions.earned > 0 && periodPolicies.newCount > 0
-      ? periodCommissions.earned / periodPolicies.newCount  // Use actual if paid
+    // Use actual PAID commission if we have it, otherwise use target avg premium
+    // This handles the case where you have policies but haven't been PAID yet (earned commissions)
+    const avgCommissionPerPolicy = periodCommissions.paid > 0 && periodPolicies.newCount > 0
+      ? periodCommissions.paid / periodPolicies.newCount  // Use actual if paid
       : targetAvgPremium * (periodCommissions.averageRate / 100 || 0.75); // Otherwise use target (default 75% FYC)
 
     console.log('💰 [ANALYTICS] Target Avg Premium:', targetAvgPremium);
-    console.log('💰 [ANALYTICS] Commission Earned:', periodCommissions.earned);
+    console.log('💰 [ANALYTICS] Commission Paid (received):', periodCommissions.paid);
+    console.log('💰 [ANALYTICS] Commission Earned (entitled):', periodCommissions.earned);
     console.log('💰 [ANALYTICS] Commission Avg Rate:', periodCommissions.averageRate);
     console.log('💰 [ANALYTICS] Policies Sold:', periodPolicies.newCount);
     console.log('💰 [ANALYTICS] Calculated Avg Commission Per Policy:', avgCommissionPerPolicy);

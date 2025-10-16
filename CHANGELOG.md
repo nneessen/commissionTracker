@@ -6,6 +6,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-10-16 11:00:35
+
+### Changed Files
+- `src/features/commissions/CommissionList.tsx`
+- `src/features/dashboard/config/statsConfig.ts`
+- `src/features/policies/PolicyList.tsx`
+- `src/hooks/commissions/useMarkCommissionPaid.ts`
+- `src/hooks/useMetricsWithDateRange.ts`
+- `src/services/commissions/CommissionCRUDService.ts`
+- `src/services/commissions/CommissionRepository.ts`
+- `src/services/commissions/commissionService.ts`
+- `src/styles/policy.css`
+- `src/types/commission.types.ts`
+- `supabase/migrations/20251016_001_add_earned_commission_status.sql`
+
+### Statistics
+```
+ 11 files changed, 705 insertions(+), 52 deletions(-)
+```
+
 ## [Checkpoint] - 2025-10-16 07:53:04
 
 ### Changed Files

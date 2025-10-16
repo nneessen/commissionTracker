@@ -686,3 +686,64 @@
 .text-xs {
   font-size: 11px;
 }
+/* Commission Status Badges */
+.status-badge-pending {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+  background-color: #FEF3C7;
+  color: #92400E;
+}
+
+.status-badge-earned {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+  background-color: #DBEAFE;
+  color: #1E40AF;
+}
+
+.status-badge-paid {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+  background-color: #D1FAE5;
+  color: #065F46;
+}
+
+/* Mark as Paid Button */
+.mark-paid-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #059669;
+  background-color: #D1FAE5;
+  border: 1px solid #059669;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.mark-paid-btn:hover:not(:disabled) {
+  background-color: #059669;
+  color: white;
+}
+
+.mark-paid-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.commission-status {
+  text-align: center;
+  min-width: 100px;
+}

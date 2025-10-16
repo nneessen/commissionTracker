@@ -8,8 +8,11 @@ import {
   Filter,
   ChevronUp,
   ChevronDown,
+  CheckCircle,
 } from "lucide-react";
 import { useCarriers } from "../../hooks/carriers";
+import { useCommissions } from "../../hooks/commissions/useCommissions";
+import { useMarkCommissionPaid } from "../../hooks/commissions/useMarkCommissionPaid";
 import { Policy, PolicyFilters, PolicyStatus } from "../../types/policy.types";
 import { ProductType } from "../../types/commission.types";
 import { calculateCommissionAdvance } from "../../utils/policyCalculations";
@@ -59,7 +62,17 @@ export const PolicyList: React.FC<PolicyListProps> = ({
   onEditPolicy,
 }) => {
   const { data: carriers = [] } = useCarriers();
+  const { data: commissions = [] } = useCommissions();
+  const { mutate: markAsPaid, isPending: isMarkingPaid } = useMarkCommissionPaid();
   const getCarrierById = (id: string) => carriers.find((c) => c.id === id);
+
+  // Create a map of policy_id -> commission for quick lookup
+  const commissionsByPolicy = commissions.reduce((acc, commission) => {
+    if (commission.policyId) {
+      acc[commission.policyId] = commission;
+    }
+    return acc;
+  }, {} as Record<string, typeof commissions[0]>);
 
   const [filters, setFilters] = useState<PolicyFilters>({});
   const [searchTerm, setSearchTerm] = useState("");
@@ -140,6 +153,22 @@ export const PolicyList: React.FC<PolicyListProps> = ({
     if (window.confirm("Are you sure you want to delete this policy?")) {
       deletePolicy(policyId);
     }
+  };
+
+  const handleMarkCommissionPaid = (commissionId: string, policyNumber: string) => {
+    if (window.confirm(`Mark commission for policy ${policyNumber} as PAID?\n\nThis records that you received payment.`)) {
+      markAsPaid({ commissionId });
+    }
+  };
+
+  const getCommissionStatusBadge = (status: string) => {
+    const badges: Record<string, { label: string; className: string }> = {
+      pending: { label: 'Pending', className: 'status-badge-pending' },
+      earned: { label: 'Earned', className: 'status-badge-earned' },
+      paid: { label: 'Paid', className: 'status-badge-paid' },
+    };
+    const badge = badges[status] || { label: status, className: 'status-badge' };
+    return <span className={badge.className}>{badge.label}</span>;
   };
 
   const SortHeader: React.FC<{
@@ -261,6 +290,7 @@ export const PolicyList: React.FC<PolicyListProps> = ({
               <SortHeader field="status">Status</SortHeader>
               <SortHeader field="premium">Premium</SortHeader>
               <SortHeader field="commission">Commission</SortHeader>
+              <th>Comm Status</th>
               <SortHeader field="effectiveDate">Effective</SortHeader>
               <th>Actions</th>
             </tr>
@@ -268,13 +298,15 @@ export const PolicyList: React.FC<PolicyListProps> = ({
           <tbody>
             {filteredAndSortedPolicies.length === 0 ? (
               <tr>
-                <td colSpan={8} className="empty-message">
+                <td colSpan={9} className="empty-message">
                   No policies found. Submit a policy to get started.
                 </td>
               </tr>
             ) : (
               filteredAndSortedPolicies.map((policy) => {
                 const carrier = getCarrierById(policy.carrierId);
+                const policyCommission = commissionsByPolicy[policy.id];
+
                 // Calculate commission advance: Monthly Premium × Advance Months × Commission Rate
                 // Note: Using default 9 months advance - actual advances are tracked in commissions table
                 const commission = calculateCommissionAdvance(
@@ -327,6 +359,28 @@ export const PolicyList: React.FC<PolicyListProps> = ({
                         <span className="commission-rate">
                           {(policy.commissionPercentage * 100).toFixed(0)}%
                         </span>
+                      </div>
+                    </td>
+                    <td className="commission-status">
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center' }}>
+                        {policyCommission ? (
+                          <>
+                            {getCommissionStatusBadge(policyCommission.status)}
+                            {policyCommission.status === 'earned' && (
+                              <button
+                                onClick={() => handleMarkCommissionPaid(policyCommission.id, policy.policyNumber)}
+                                disabled={isMarkingPaid}
+                                className="mark-paid-btn"
+                                title="Mark as paid"
+                              >
+                                <CheckCircle size={14} />
+                                Mark Paid
+                              </button>
+                            )}
+                          </>
+                        ) : (
+                          <span style={{ color: '#999', fontSize: '11px' }}>No commission</span>
+                        )}
                       </div>
                     </td>
                     <td className="date">{formatDate(policy.effectiveDate)}</td>

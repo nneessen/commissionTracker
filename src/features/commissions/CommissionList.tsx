@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
-import { Trash2, Plus } from 'lucide-react';
+import { Trash2, Plus, CheckCircle } from 'lucide-react';
 import { Button, DataTable } from '../../components/ui';
 import { Commission, DataTableColumn } from '../../types';
 import { useCommissions, useDeleteCommission, useCommissionMetrics, useCarriers } from '../../hooks';
+import { useMarkCommissionPaid } from '../../hooks/commissions/useMarkCommissionPaid';
 import { CommissionForm } from './CommissionForm';
 
 export const CommissionList: React.FC = () => {
   const { data: commissions = [] } = useCommissions();
   const { mutate: deleteCommission, isPending: isDeleting } = useDeleteCommission();
+  const { mutate: markAsPaid, isPending: isMarkingPaid } = useMarkCommissionPaid();
   const { data: commissionSummary } = useCommissionMetrics();
   const { data: carriers = [] } = useCarriers();
   const getCarrierById = (id: string) => carriers.find(c => c.id === id);
@@ -17,6 +19,32 @@ export const CommissionList: React.FC = () => {
     if (window.confirm('Are you sure you want to delete this commission?')) {
       deleteCommission(id);
     }
+  };
+
+  const handleMarkAsPaid = (commissionId: string) => {
+    if (window.confirm('Mark this commission as paid? This will record that you received payment.')) {
+      markAsPaid({ commissionId });
+    }
+  };
+
+  const getStatusBadge = (status: string) => {
+    const statusConfig: Record<string, { color: string; bg: string; label: string }> = {
+      pending: { color: 'text-yellow-700', bg: 'bg-yellow-100', label: 'Pending' },
+      earned: { color: 'text-blue-700', bg: 'bg-blue-100', label: 'Earned' },
+      paid: { color: 'text-green-700', bg: 'bg-green-100', label: 'Paid' },
+      clawback: { color: 'text-red-700', bg: 'bg-red-100', label: 'Clawback' },
+      cancelled: { color: 'text-gray-700', bg: 'bg-gray-100', label: 'Cancelled' },
+    };
+
+    const config = statusConfig[status] || { color: 'text-gray-700', bg: 'bg-gray-100', label: status };
+
+    return (
+      <span
+        className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${config.bg} ${config.color}`}
+      >
+        {config.label}
+      </span>
+    );
   };
 
   const columns: DataTableColumn<Commission>[] = [
@@ -74,6 +102,13 @@ export const CommissionList: React.FC = () => {
       },
     },
     {
+      key: 'status',
+      header: 'Status',
+      sortable: true,
+      accessor: (commission) => getStatusBadge(commission.status),
+      width: '24',
+    },
+    {
       key: 'annualPremium',
       header: 'Annual Premium',
       sortable: true,
@@ -126,21 +161,56 @@ export const CommissionList: React.FC = () => {
       ),
     },
     {
+      key: 'paymentDate',
+      header: 'Payment Date',
+      sortable: true,
+      accessor: (commission) => {
+        if (commission.status === 'paid' && commission.paymentDate) {
+          return new Date(commission.paymentDate).toLocaleDateString();
+        }
+        return <span className="text-gray-400">-</span>;
+      },
+      width: '28',
+    },
+    {
       key: 'actions',
       header: 'Actions',
-      width: '24',
+      width: '28',
       accessor: (commission) => (
-        <button
-          className="btn-delete"
-          onClick={(e) => {
-            e.stopPropagation();
-            handleDeleteCommission(commission.id);
-          }}
-          disabled={isDeleting}
-          title="Delete commission"
-        >
-          <Trash2 size={16} />
-        </button>
+        <div className="flex gap-2">
+          {commission.status === 'earned' && (
+            <button
+              className="btn-primary"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleMarkAsPaid(commission.id);
+              }}
+              disabled={isMarkingPaid}
+              title="Mark as paid"
+              style={{
+                padding: '4px 8px',
+                fontSize: '12px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+              }}
+            >
+              <CheckCircle size={14} />
+              Mark Paid
+            </button>
+          )}
+          <button
+            className="btn-delete"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDeleteCommission(commission.id);
+            }}
+            disabled={isDeleting}
+            title="Delete commission"
+          >
+            <Trash2 size={16} />
+          </button>
+        </div>
       ),
     },
   ];
