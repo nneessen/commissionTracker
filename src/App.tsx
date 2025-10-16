@@ -17,8 +17,15 @@ function App() {
   const navigate = useNavigate();
 
   // Public routes that don't require authentication
-  const publicPaths = ['/login', '/auth/callback', '/auth/verify-email', '/auth/reset-password'];
-  const isPublicPath = publicPaths.some(path => location.pathname.startsWith(path));
+  const publicPaths = [
+    "/login",
+    "/auth/callback",
+    "/auth/verify-email",
+    "/auth/reset-password",
+  ];
+  const isPublicPath = publicPaths.some((path) =>
+    location.pathname.startsWith(path),
+  );
 
   // Logout handler
   const handleLogout = async () => {
@@ -27,7 +34,11 @@ function App() {
         await signOut();
         navigate({ to: "/" });
       } catch (error) {
-        logger.error("Logout error", error instanceof Error ? error : String(error), "App");
+        logger.error(
+          "Logout error",
+          error instanceof Error ? error : String(error),
+          "App",
+        );
       }
     }
   };
@@ -40,7 +51,7 @@ function App() {
   // Protected routes - require authentication (MUST be before early returns!)
   useEffect(() => {
     // Only redirect if user is not authenticated and not already on login page
-    if (!user && !loading && !isPublicPath && location.pathname !== '/login') {
+    if (!user && !loading && !isPublicPath && location.pathname !== "/login") {
       navigate({ to: "/login" });
     }
   }, [user, loading, isPublicPath, location.pathname, navigate]);
@@ -82,8 +93,8 @@ function App() {
         <Sidebar
           isCollapsed={isSidebarCollapsed}
           onToggleCollapse={toggleSidebar}
-          userName={user.name || user.email?.split('@')[0] || 'User'}
-          userEmail={user.email || ''}
+          userName={user.name || user.email?.split("@")[0] || "User"}
+          userEmail={user.email || ""}
           onLogout={handleLogout}
         />
 
@@ -98,3 +109,4 @@ function App() {
 }
 
 export default App;
+

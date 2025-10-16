@@ -58,7 +58,10 @@ export const DashboardHome: React.FC = () => {
     currentState,
     periodAnalytics,
     dateRange,
-  } = useMetricsWithDateRange({ timePeriod });
+  } = useMetricsWithDateRange({
+    timePeriod,
+    targetAvgPremium: constants?.avgAP || 1500 // Use user's target avg premium
+  });
 
   const createExpense = useCreateExpense();
   const createPolicy = useCreatePolicy();

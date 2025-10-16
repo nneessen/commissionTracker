@@ -109,24 +109,24 @@ export function getPeriodSuffix(period: TimePeriod): string {
 }
 
 /**
- * Scale the breakeven amount to the selected display period
- * This shows how much needs to be earned per day/week/month/year
+ * Get the breakeven amount for display
+ * Shows the ACTUAL breakeven needed for the period (no scaling)
  *
- * @param breakevenNeeded Total breakeven amount needed
- * @param displayPeriod The time period to display
- * @returns Breakeven amount scaled to display period
+ * @param breakevenNeeded Actual breakeven amount needed for the period
+ * @param displayPeriod The time period being displayed (unused, for API compatibility)
+ * @returns Breakeven amount (no scaling - shows actual deficit)
  *
  * @example
- * getBreakevenDisplay(1000, 'daily') // 1000 / 30 = 33.33
- * getBreakevenDisplay(1000, 'yearly') // 1000 * 12 = 12000
+ * getBreakevenDisplay(4000, 'monthly') // 4000 (actual MTD deficit)
  */
 export function getBreakevenDisplay(
   breakevenNeeded: number,
   displayPeriod: TimePeriod
 ): number {
-  const daysInRange = getDaysInPeriod(displayPeriod);
-  const dailyBreakeven = breakevenNeeded / Math.max(1, daysInRange);
-  return dailyBreakeven * DAYS_PER_PERIOD[displayPeriod];
+  // Return the actual breakeven amount with no scaling
+  // When viewing MTD, we want to see the actual MTD deficit ($4,000)
+  // NOT a projection of what a full month would be ($8,117)
+  return breakevenNeeded;
 }
 
 /**

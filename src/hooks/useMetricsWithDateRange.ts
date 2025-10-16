@@ -20,6 +20,7 @@ import { Commission, Policy, Expense, ProductType } from '../types';
 interface UseMetricsWithDateRangeOptions {
   timePeriod: TimePeriod;
   enabled?: boolean;
+  targetAvgPremium?: number; // User's target average premium from settings
 }
 
 interface PeriodCommissionMetrics {
@@ -96,7 +97,7 @@ export interface DateFilteredMetrics {
 export function useMetricsWithDateRange(
   options: UseMetricsWithDateRangeOptions
 ): DateFilteredMetrics {
-  const { timePeriod, enabled = true } = options;
+  const { timePeriod, enabled = true, targetAvgPremium = 1500 } = options;
 
   // Get base data
   const { data: policies = [], isLoading: policiesLoading } = usePolicies();
@@ -112,9 +113,9 @@ export function useMetricsWithDateRange(
   // Filter commissions by date range
   const filteredCommissions = useMemo(() => {
     return commissions.filter(commission => {
-      const dateToCheck = commission.status === 'paid' && commission.paidDate
-        ? new Date(commission.paidDate)
-        : new Date(commission.createdAt);
+      const dateToCheck = commission.status === 'paid' && commission.paymentDate
+        ? commission.paymentDate  // Use paymentDate (matches DB field payment_date)
+        : commission.createdAt;
       return isInDateRange(dateToCheck, dateRange);
     });
   }, [commissions, dateRange]);
@@ -145,7 +146,7 @@ export function useMetricsWithDateRange(
       id: c.id.substring(0, 8),
       status: c.status,
       amount: c.amount,
-      paidDate: c.paidDate,
+      paymentDate: c.paymentDate,
       createdAt: c.createdAt
     })));
 
@@ -385,9 +386,17 @@ export function useMetricsWithDateRange(
       : 0;
 
     // Calculate average commission per policy
-    const avgCommissionPerPolicy = periodPolicies.newCount > 0
-      ? periodCommissions.earned / periodPolicies.newCount
-      : periodPolicies.averagePremium * (periodCommissions.averageRate / 100);
+    // Use actual EARNED commission if we have it, otherwise use target avg premium
+    // This handles the case where you have policies but haven't been PAID yet (pending commissions)
+    const avgCommissionPerPolicy = periodCommissions.earned > 0 && periodPolicies.newCount > 0
+      ? periodCommissions.earned / periodPolicies.newCount  // Use actual if paid
+      : targetAvgPremium * (periodCommissions.averageRate / 100 || 0.75); // Otherwise use target (default 75% FYC)
+
+    console.log('💰 [ANALYTICS] Target Avg Premium:', targetAvgPremium);
+    console.log('💰 [ANALYTICS] Commission Earned:', periodCommissions.earned);
+    console.log('💰 [ANALYTICS] Commission Avg Rate:', periodCommissions.averageRate);
+    console.log('💰 [ANALYTICS] Policies Sold:', periodPolicies.newCount);
+    console.log('💰 [ANALYTICS] Calculated Avg Commission Per Policy:', avgCommissionPerPolicy);
 
     // Calculate policies needed to break even
     const policiesNeeded = avgCommissionPerPolicy > 0

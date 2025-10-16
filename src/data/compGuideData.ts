@@ -1,12 +1,12 @@
 // src/data/compGuideData.ts
 
-import { Product } from '../types/product.types';
+import { Product } from "../types/product.types";
 
 export interface PDFCarrierData {
   carrierName: string;
   products: {
     productName: string;
-    productType: Product['productType'];
+    productType: Product["productType"];
     commissionRates: {
       contractLevel: number;
       percentage: number;
@@ -36,7 +36,7 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
           { contractLevel: 135, percentage: 125 },
           { contractLevel: 140, percentage: 130 },
           { contractLevel: 145, percentage: 135 },
-        ]
+        ],
       },
       {
         productName: "Express Issue Deluxe WL",
@@ -56,7 +56,7 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
           { contractLevel: 135, percentage: 125 },
           { contractLevel: 140, percentage: 130 },
           { contractLevel: 145, percentage: 135 },
-        ]
+        ],
       },
       {
         productName: "Express Issue Graded WL",
@@ -76,7 +76,7 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
           { contractLevel: 135, percentage: 125 },
           { contractLevel: 140, percentage: 130 },
           { contractLevel: 145, percentage: 135 },
-        ]
+        ],
       },
       {
         productName: "Guaranteed Issue Whole Life",
@@ -96,7 +96,7 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
           { contractLevel: 135, percentage: 75 },
           { contractLevel: 140, percentage: 80 },
           { contractLevel: 145, percentage: 85 },
-        ]
+        ],
       },
       {
         productName: "Provider Whole Life",
@@ -116,7 +116,7 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
           { contractLevel: 135, percentage: 110 },
           { contractLevel: 140, percentage: 115 },
           { contractLevel: 145, percentage: 120 },
-        ]
+        ],
       },
       {
         productName: "Term",
@@ -136,7 +136,7 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
           { contractLevel: 135, percentage: 110 },
           { contractLevel: 140, percentage: 115 },
           { contractLevel: 145, percentage: 120 },
-        ]
+        ],
       },
       {
         productName: "Accidental",
@@ -156,9 +156,9 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
           { contractLevel: 135, percentage: 100 },
           { contractLevel: 140, percentage: 105 },
           { contractLevel: 145, percentage: 110 },
-        ]
-      }
-    ]
+        ],
+      },
+    ],
   },
   {
     carrierName: "SBLI",
@@ -181,7 +181,7 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
           { contractLevel: 135, percentage: 140 },
           { contractLevel: 140, percentage: 145 },
           { contractLevel: 145, percentage: 150 },
-        ]
+        ],
       },
       {
         productName: "Silver Guard FE",
@@ -201,7 +201,7 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
           { contractLevel: 135, percentage: 110 },
           { contractLevel: 140, percentage: 115 },
           { contractLevel: 145, percentage: 115 },
-        ]
+        ],
       },
       {
         productName: "APriority Level Term (75K+)",
@@ -221,7 +221,7 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
           { contractLevel: 135, percentage: 85 },
           { contractLevel: 140, percentage: 90 },
           { contractLevel: 145, percentage: 90 },
-        ]
+        ],
       },
       {
         productName: "APriority Whole Life",
@@ -241,7 +241,7 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
           { contractLevel: 135, percentage: 110 },
           { contractLevel: 140, percentage: 115 },
           { contractLevel: 145, percentage: 115 },
-        ]
+        ],
       },
       {
         productName: "APriority Protector Term",
@@ -261,9 +261,9 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
           { contractLevel: 135, percentage: 85 },
           { contractLevel: 140, percentage: 90 },
           { contractLevel: 145, percentage: 90 },
-        ]
-      }
-    ]
+        ],
+      },
+    ],
   },
   {
     carrierName: "American Home Life",
@@ -286,9 +286,9 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
           { contractLevel: 135, percentage: 125 },
           { contractLevel: 140, percentage: 130 },
           { contractLevel: 145, percentage: 135 },
-        ]
-      }
-    ]
+        ],
+      },
+    ],
   },
   {
     carrierName: "John Hancock",
@@ -311,7 +311,7 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
           { contractLevel: 135, percentage: 140 },
           { contractLevel: 140, percentage: 145 },
           { contractLevel: 145, percentage: 150 },
-        ]
+        ],
       },
       {
         productName: "Path Setter",
@@ -331,7 +331,7 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
           { contractLevel: 135, percentage: 125 },
           { contractLevel: 140, percentage: 130 },
           { contractLevel: 145, percentage: 135 },
-        ]
+        ],
       },
       {
         productName: "Everlast",
@@ -351,7 +351,7 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
           { contractLevel: 135, percentage: 120 },
           { contractLevel: 140, percentage: 125 },
           { contractLevel: 145, percentage: 130 },
-        ]
+        ],
       },
       {
         productName: "Exccudex",
@@ -371,9 +371,9 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
           { contractLevel: 135, percentage: 125 },
           { contractLevel: 140, percentage: 130 },
           { contractLevel: 145, percentage: 135 },
-        ]
-      }
-    ]
+        ],
+      },
+    ],
   },
   {
     carrierName: "American-Amicable Group",
@@ -396,7 +396,7 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
           { contractLevel: 135, percentage: 100 },
           { contractLevel: 140, percentage: 105 },
           { contractLevel: 145, percentage: 110 },
-        ]
+        ],
       },
       {
         productName: "Home Protector",
@@ -416,7 +416,7 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
           { contractLevel: 135, percentage: 125 },
           { contractLevel: 140, percentage: 130 },
           { contractLevel: 145, percentage: 135 },
-        ]
+        ],
       },
       {
         productName: "OBA",
@@ -436,7 +436,7 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
           { contractLevel: 135, percentage: 95 },
           { contractLevel: 140, percentage: 100 },
           { contractLevel: 145, percentage: 105 },
-        ]
+        ],
       },
       {
         productName: "SecureLife Plus",
@@ -456,7 +456,7 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
           { contractLevel: 135, percentage: 125 },
           { contractLevel: 140, percentage: 130 },
           { contractLevel: 145, percentage: 135 },
-        ]
+        ],
       },
       {
         productName: "Security Protector",
@@ -476,7 +476,7 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
           { contractLevel: 135, percentage: 105 },
           { contractLevel: 140, percentage: 110 },
           { contractLevel: 145, percentage: 115 },
-        ]
+        ],
       },
       {
         productName: "Survivor Protector",
@@ -496,7 +496,7 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
           { contractLevel: 135, percentage: 125 },
           { contractLevel: 140, percentage: 130 },
           { contractLevel: 145, percentage: 135 },
-        ]
+        ],
       },
       {
         productName: "Term Made Simple",
@@ -516,7 +516,7 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
           { contractLevel: 135, percentage: 90 },
           { contractLevel: 140, percentage: 95 },
           { contractLevel: 145, percentage: 100 },
-        ]
+        ],
       },
       {
         productName: "Dignity Solutions & Family Legacy",
@@ -536,7 +536,7 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
           { contractLevel: 135, percentage: 115 },
           { contractLevel: 140, percentage: 120 },
           { contractLevel: 145, percentage: 125 },
-        ]
+        ],
       },
       {
         productName: "Express Term",
@@ -556,7 +556,7 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
           { contractLevel: 135, percentage: 105 },
           { contractLevel: 140, percentage: 110 },
           { contractLevel: 145, percentage: 115 },
-        ]
+        ],
       },
       {
         productName: "BonusMaster",
@@ -576,7 +576,7 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
           { contractLevel: 135, percentage: 5 },
           { contractLevel: 140, percentage: 5.25 },
           { contractLevel: 145, percentage: 5.5 },
-        ]
+        ],
       },
       {
         productName: "Guaranteed Guardian",
@@ -596,9 +596,9 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
           { contractLevel: 135, percentage: 75 },
           { contractLevel: 140, percentage: 75 },
           { contractLevel: 145, percentage: 80 },
-        ]
-      }
-    ]
+        ],
+      },
+    ],
   },
   {
     carrierName: "Corebridge Financial",
@@ -621,7 +621,7 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
           { contractLevel: 135, percentage: 95 },
           { contractLevel: 140, percentage: 95 },
           { contractLevel: 145, percentage: 95 },
-        ]
+        ],
       },
       {
         productName: "SimpliNow Legacy Max SIWL",
@@ -641,9 +641,9 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
           { contractLevel: 135, percentage: 127 },
           { contractLevel: 140, percentage: 132 },
           { contractLevel: 145, percentage: 137 },
-        ]
-      }
-    ]
+        ],
+      },
+    ],
   },
   {
     carrierName: "Transamerica",
@@ -666,7 +666,7 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
           { contractLevel: 135, percentage: 95 },
           { contractLevel: 140, percentage: 100 },
           { contractLevel: 145, percentage: 105 },
-        ]
+        ],
       },
       {
         productName: "Trendsetter LB Term",
@@ -686,7 +686,7 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
           { contractLevel: 135, percentage: 105 },
           { contractLevel: 140, percentage: 110 },
           { contractLevel: 145, percentage: 115 },
-        ]
+        ],
       },
       {
         productName: "Lifetime WL",
@@ -706,7 +706,7 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
           { contractLevel: 135, percentage: 120 },
           { contractLevel: 140, percentage: 140 },
           { contractLevel: 145, percentage: 145 },
-        ]
+        ],
       },
       {
         productName: "Immediate Solution WL",
@@ -726,7 +726,7 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
           { contractLevel: 135, percentage: 120 },
           { contractLevel: 140, percentage: 125 },
           { contractLevel: 145, percentage: 130 },
-        ]
+        ],
       },
       {
         productName: "10 Pay Solution WL",
@@ -746,7 +746,7 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
           { contractLevel: 135, percentage: 98 },
           { contractLevel: 140, percentage: 102 },
           { contractLevel: 145, percentage: 107 },
-        ]
+        ],
       },
       {
         productName: "Easy Solution WL",
@@ -766,7 +766,7 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
           { contractLevel: 135, percentage: 68 },
           { contractLevel: 140, percentage: 75 },
           { contractLevel: 145, percentage: 80 },
-        ]
+        ],
       },
       {
         productName: "Express Solution",
@@ -786,7 +786,7 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
           { contractLevel: 135, percentage: 125 },
           { contractLevel: 140, percentage: 130 },
           { contractLevel: 145, percentage: 135 },
-        ]
+        ],
       },
       {
         productName: "FFIUL",
@@ -806,9 +806,9 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
           { contractLevel: 135, percentage: 110 },
           { contractLevel: 140, percentage: 117 },
           { contractLevel: 145, percentage: 122 },
-        ]
-      }
-    ]
+        ],
+      },
+    ],
   },
   {
     carrierName: "ELCO Mutual",
@@ -831,7 +831,7 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
           { contractLevel: 135, percentage: 60 },
           { contractLevel: 140, percentage: 60 },
           { contractLevel: 145, percentage: 65 },
-        ]
+        ],
       },
       {
         productName: "FE Immediate",
@@ -851,7 +851,7 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
           { contractLevel: 135, percentage: 120 },
           { contractLevel: 140, percentage: 120 },
           { contractLevel: 145, percentage: 125 },
-        ]
+        ],
       },
       {
         productName: "Life Pay WL 0-75",
@@ -871,7 +871,7 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
           { contractLevel: 135, percentage: 105 },
           { contractLevel: 140, percentage: 105 },
           { contractLevel: 145, percentage: 110 },
-        ]
+        ],
       },
       {
         productName: "Limited Pay WL",
@@ -891,18 +891,20 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
           { contractLevel: 135, percentage: 85 },
           { contractLevel: 140, percentage: 85 },
           { contractLevel: 145, percentage: 90 },
-        ]
-      }
-    ]
-  }
+        ],
+      },
+    ],
+  },
 ];
 
 export const extractCarrierNames = (): string[] => {
-  return PDF_COMMISSION_DATA.map(carrier => carrier.carrierName);
+  return PDF_COMMISSION_DATA.map((carrier) => carrier.carrierName);
 };
 
 export const extractProductsByCarrier = (carrierName: string) => {
-  const carrier = PDF_COMMISSION_DATA.find(c => c.carrierName === carrierName);
+  const carrier = PDF_COMMISSION_DATA.find(
+    (c) => c.carrierName === carrierName,
+  );
   return carrier ? carrier.products : [];
 };
 
@@ -910,12 +912,12 @@ export const extractAllProducts = () => {
   const allProducts: Array<{
     carrierName: string;
     productName: string;
-    productType: Product['productType'];
+    productType: Product["productType"];
     commissionRates: { contractLevel: number; percentage: number }[];
   }> = [];
 
-  PDF_COMMISSION_DATA.forEach(carrier => {
-    carrier.products.forEach(product => {
+  PDF_COMMISSION_DATA.forEach((carrier) => {
+    carrier.products.forEach((product) => {
       allProducts.push({
         carrierName: carrier.carrierName,
         productName: product.productName,
@@ -927,3 +929,4 @@ export const extractAllProducts = () => {
 
   return allProducts;
 };
+

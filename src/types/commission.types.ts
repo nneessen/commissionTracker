@@ -59,7 +59,8 @@ export interface Commission {
   // Dates
   expectedDate?: Date;
   actualDate?: Date;
-  paidDate?: Date;
+  paymentDate?: Date | string; // Maps to DB field 'payment_date' - when commission was paid
+  paidDate?: Date; // @deprecated - use paymentDate instead (kept for backward compatibility)
   createdAt: Date;
   updatedAt?: Date; // Optional for backward compatibility
   created_at?: Date; // Optional for BaseEntity compatibility
