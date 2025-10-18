@@ -2,7 +2,6 @@
 
 import React, { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { PageLayout } from "../../components/layout";
 import { useConstants } from "../../hooks";
 import { useMetricsWithDateRange } from "../../hooks/useMetricsWithDateRange";
 import { useCreateExpense } from "../../hooks/expenses/useCreateExpense";
@@ -249,66 +248,69 @@ export const DashboardHome: React.FC = () => {
   };
 
   return (
-    <PageLayout>
-      {/* Header with time period switcher and date range */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-start",
-          marginBottom: "16px",
-        }}
-      >
-        <DashboardHeader monthProgress={monthProgress} />
+    <>
+      <div className="page-header">
+        {/* Header with time period switcher and date range */}
         <div
           style={{
             display: "flex",
-            flexDirection: "column",
-            alignItems: "flex-end",
-            gap: "8px",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
           }}
         >
-          <TimePeriodSwitcher
+          <DashboardHeader monthProgress={monthProgress} />
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "flex-end",
+              gap: "8px",
+            }}
+          >
+            <TimePeriodSwitcher
+              timePeriod={timePeriod}
+              onTimePeriodChange={setTimePeriod}
+            />
+            <DateRangeDisplay timePeriod={timePeriod} dateRange={dateRange} />
+          </div>
+        </div>
+      </div>
+
+      <div className="page-content">
+        {/* Main 3-column layout */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "280px 1fr 320px",
+            gap: "16px",
+            marginBottom: "16px",
+          }}
+        >
+          <QuickStatsPanel stats={statsConfig} timePeriod={timePeriod} />
+
+          <PerformanceOverviewCard
+            metrics={metricsConfig}
+            isBreakeven={isBreakeven}
             timePeriod={timePeriod}
-            onTimePeriodChange={setTimePeriod}
+            surplusDeficit={periodAnalytics.surplusDeficit}
+            breakevenDisplay={breakevenDisplay}
+            policiesNeeded={policiesNeededDisplay}
+            periodSuffix={periodSuffix}
           />
-          <DateRangeDisplay timePeriod={timePeriod} dateRange={dateRange} />
+
+          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+            <AlertsPanel alerts={alertsConfig} />
+            <QuickActionsPanel
+              actions={quickActions}
+              onActionClick={handleQuickAction}
+              isCreating={isCreating}
+            />
+          </div>
         </div>
+
+        {/* Bottom KPI grid */}
+        <DetailedKPIGrid_Compact sections={kpiConfig} />
       </div>
-
-      {/* Main 3-column layout */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "280px 1fr 320px",
-          gap: "16px",
-          marginBottom: "16px",
-        }}
-      >
-        <QuickStatsPanel stats={statsConfig} timePeriod={timePeriod} />
-
-        <PerformanceOverviewCard
-          metrics={metricsConfig}
-          isBreakeven={isBreakeven}
-          timePeriod={timePeriod}
-          surplusDeficit={periodAnalytics.surplusDeficit}
-          breakevenDisplay={breakevenDisplay}
-          policiesNeeded={policiesNeededDisplay}
-          periodSuffix={periodSuffix}
-        />
-
-        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-          <AlertsPanel alerts={alertsConfig} />
-          <QuickActionsPanel
-            actions={quickActions}
-            onActionClick={handleQuickAction}
-            isCreating={isCreating}
-          />
-        </div>
-      </div>
-
-      {/* Bottom KPI grid */}
-      <DetailedKPIGrid_Compact sections={kpiConfig} />
 
       {/* Dialogs */}
       <ExpenseDialog
@@ -339,6 +341,6 @@ export const DashboardHome: React.FC = () => {
           </div>
         </div>
       )}
-    </PageLayout>
+    </>
   );
 };

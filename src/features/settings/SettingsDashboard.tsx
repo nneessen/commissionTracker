@@ -1,5 +1,4 @@
 import React from 'react';
-import { PageLayout } from '../../components/layout';
 import {
   User,
   Settings,
@@ -17,13 +16,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export function SettingsDashboard() {
   return (
-    <PageLayout>
-      <div className="dashboard-header">
-        <h1>Settings</h1>
-        <p>Configure carriers, products, commission rates, and system settings</p>
+    <>
+      <div className="page-header">
+        <h1 className="page-title">Settings</h1>
+        <p className="page-subtitle">Configure carriers, products, commission rates, and system settings</p>
       </div>
 
-      <div className="dashboard-content">
+      <div className="page-content">
         <Tabs defaultValue="carriers" className="mt-6">
           <TabsList className="grid w-full grid-cols-5 mb-8">
             <TabsTrigger value="carriers" className="flex items-center gap-2">
@@ -71,6 +70,6 @@ export function SettingsDashboard() {
           </TabsContent>
         </Tabs>
       </div>
-    </PageLayout>
+    </>
   );
 }

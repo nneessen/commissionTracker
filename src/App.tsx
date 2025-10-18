@@ -8,15 +8,12 @@ import { logger } from "./services/base/logger";
 import "./App.css";
 
 function App() {
-  // Get authentication state from AuthContext
   const { user, loading, signOut } = useAuth();
   const location = useLocation();
 
-  // Sidebar state
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const navigate = useNavigate();
 
-  // Public routes that don't require authentication
   const publicPaths = [
     "/login",
     "/auth/callback",
@@ -27,7 +24,6 @@ function App() {
     location.pathname.startsWith(path),
   );
 
-  // Logout handler
   const handleLogout = async () => {
     if (window.confirm("Are you sure you want to logout?")) {
       try {
@@ -43,21 +39,16 @@ function App() {
     }
   };
 
-  // Sidebar toggle handler
   const toggleSidebar = () => {
     setIsSidebarCollapsed((prev) => !prev);
   };
 
-  // Protected routes - require authentication (MUST be before early returns!)
   useEffect(() => {
-    // Only redirect if user is not authenticated and not already on login page
     if (!user && !loading && !isPublicPath && location.pathname !== "/login") {
       navigate({ to: "/login" });
     }
   }, [user, loading, isPublicPath, location.pathname, navigate]);
 
-  // Show loading state while checking authentication
-  // BUT don't show it on public paths (login, auth callback, etc) to avoid unmounting forms
   if (loading && !isPublicPath) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -66,7 +57,6 @@ function App() {
     );
   }
 
-  // Allow public auth routes to render even without authentication
   if (isPublicPath) {
     return (
       <>
@@ -76,7 +66,6 @@ function App() {
     );
   }
 
-  // Show redirect message while navigating to login
   if (!user && !isPublicPath) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -85,7 +74,6 @@ function App() {
     );
   }
 
-  // Authenticated user - show app with sidebar and routes
   return (
     <>
       <Toaster />
@@ -99,7 +87,7 @@ function App() {
         />
 
         <div className="main-content">
-          <div className="app">
+          <div className="page-layout">
             <Outlet />
           </div>
         </div>
@@ -109,4 +97,3 @@ function App() {
 }
 
 export default App;
-

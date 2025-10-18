@@ -10,20 +10,10 @@
 }
 
 /* Compact Header with Inline Stats */
-.dashboard-header {
+.header-left {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-.header-left h1 {
-  font-size: 24px;
-  font-weight: 600;
-  color: #111827;
-  margin: 0 0 8px 0;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .quick-stats {

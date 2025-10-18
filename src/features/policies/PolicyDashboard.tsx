@@ -1,6 +1,5 @@
 import React, { useState, useMemo } from "react";
 import { Plus, AlertCircle } from "lucide-react";
-import { PageLayout } from "../../components/layout";
 import { PolicyForm } from "./PolicyForm";
 import { PolicyList } from "./PolicyList";
 import {
@@ -261,32 +260,28 @@ export const PolicyDashboard: React.FC = () => {
 
   if (isLoading) {
     return (
-      <PageLayout>
-        <div className="loading-spinner">Loading policies...</div>
-      </PageLayout>
+      <div className="loading-spinner">Loading policies...</div>
     );
   }
 
   if (error) {
     return (
-      <PageLayout>
-        <div className="error-message">
-          <AlertCircle size={20} />
-          <span>Error loading policies: {(error as Error).message}</span>
-          <button onClick={() => refetch()} className="btn-secondary">
-            Retry
-          </button>
-        </div>
-      </PageLayout>
+      <div className="error-message">
+        <AlertCircle size={20} />
+        <span>Error loading policies: {(error as Error).message}</span>
+        <button onClick={() => refetch()} className="btn-secondary">
+          Retry
+        </button>
+      </div>
     );
   }
 
   return (
-    <PageLayout>
+    <>
       {/* Compact Header with Stats */}
-      <div className="dashboard-header">
+      <div className="page-header">
         <div className="header-left">
-          <h1>Policy Management</h1>
+          <h1 className="page-title">Policy Management</h1>
           <div className="quick-stats">
             <div className="stat-item">
               <span className="stat-value">{summary.totalPolicies}</span>
@@ -338,7 +333,7 @@ export const PolicyDashboard: React.FC = () => {
       )}
 
       {/* Main Content Area */}
-      <div className="dashboard-content">
+      <div className="page-content">
         {/* Policy List with Actions - Passing adapter functions that maintain old interface */}
         <PolicyList
           policies={policies}
@@ -371,6 +366,6 @@ export const PolicyDashboard: React.FC = () => {
           </div>
         </div>
       )}
-    </PageLayout>
+    </>
   );
 };

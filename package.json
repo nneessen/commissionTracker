@@ -14,7 +14,8 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "preview": "vite preview",
-    "start": "npm run dev"
+    "start": "npm run dev",
+    "generate:types": "supabase gen types typescript --project-id pcyaqwodnyrpkaiojnpz --schema public > src/types/database.types.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

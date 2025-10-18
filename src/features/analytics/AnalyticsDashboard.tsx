@@ -88,31 +88,16 @@ export function AnalyticsDashboard() {
   }, [timePeriod, analyticsData.raw.policies.length, analyticsData.raw.commissions.length]);
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: '#f8f9fa',
-      padding: window.innerWidth < 768 ? '12px' : '24px',
-      overflowX: 'hidden',
-      width: '100%',
-      boxSizing: 'border-box'
-    }}>
+    <>
       {/* Page Header */}
-      <div style={{ marginBottom: '24px' }}>
-        <h1 style={{
-          fontSize: '24px',
-          fontWeight: 700,
-          color: '#1a1a1a',
-          marginBottom: '8px'
-        }}>
-          Analytics
-        </h1>
-        <p style={{
-          fontSize: '14px',
-          color: '#656d76',
-          marginBottom: '20px'
-        }}>
+      <div className="page-header">
+        <h1 className="page-title">Analytics</h1>
+        <p className="page-subtitle">
           Deep insights into performance, cohorts, segmentation, and forecasts
         </p>
+      </div>
+
+      <div className="page-content">
 
         {/* Time Period Selector and Export Controls */}
         <div style={{
@@ -184,10 +169,9 @@ export function AnalyticsDashboard() {
             onCustomRangeChange={setCustomRange}
           />
         </div>
-      </div>
 
-      {/* Loading State */}
-      {analyticsData.isLoading ? (
+        {/* Loading State */}
+        {analyticsData.isLoading ? (
         <div style={{
           padding: '40px',
           textAlign: 'center',
@@ -251,20 +235,21 @@ export function AnalyticsDashboard() {
         </div>
       )}
 
-      {/* Footer Note */}
-      <div style={{
-        marginTop: '32px',
-        padding: '16px',
-        background: '#ffffff',
-        borderRadius: '8px',
-        textAlign: 'center',
-        fontSize: '11px',
-        color: '#656d76',
-        maxWidth: '1600px'
-      }}>
-        <strong style={{ color: '#1a1a1a' }}>Note:</strong> All analytics are calculated in real-time from your policy and commission data.
-        Data is automatically refreshed when underlying records change.
+        {/* Footer Note */}
+        <div style={{
+          marginTop: '32px',
+          padding: '16px',
+          background: '#ffffff',
+          borderRadius: '8px',
+          textAlign: 'center',
+          fontSize: '11px',
+          color: '#656d76',
+          maxWidth: '1600px'
+        }}>
+          <strong style={{ color: '#1a1a1a' }}>Note:</strong> All analytics are calculated in real-time from your policy and commission data.
+          Data is automatically refreshed when underlying records change.
+        </div>
       </div>
-    </div>
+    </>
   );
 }

@@ -456,24 +456,6 @@ body {
   min-height: 100vh;
 }
 
-.dashboard-header {
-  margin-bottom: 32px;
-}
-
-.dashboard-header h1 {
-  font-size: 32px;
-  font-weight: 700;
-  color: #1a1a1a;
-  margin-bottom: 8px;
-  line-height: 1.2;
-}
-
-.dashboard-header p {
-  font-size: 16px;
-  color: #4a5568;
-  margin: 0;
-}
-
 .dashboard-metrics-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));

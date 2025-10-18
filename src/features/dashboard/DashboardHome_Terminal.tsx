@@ -2,7 +2,6 @@
 
 import React, { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { PageLayout } from "../../components/layout";
 import { useConstants } from "../../hooks";
 import { useMetricsWithDateRange } from "../../hooks/useMetricsWithDateRange";
 import { useCreateExpense } from "../../hooks/expenses/useCreateExpense";
@@ -283,7 +282,7 @@ export const DashboardHome_Terminal: React.FC = () => {
   };
 
   return (
-    <PageLayout>
+    <>
       <div
         style={{
           background: TERMINAL_COLORS.BG_MAIN,
@@ -622,6 +621,6 @@ export const DashboardHome_Terminal: React.FC = () => {
           </div>
         </div>
       )}
-    </PageLayout>
+    </>
   );
 };

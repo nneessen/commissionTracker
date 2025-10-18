@@ -1,6 +1,5 @@
 // src/features/expenses/ExpenseDashboard.tsx
 import { useState } from "react";
-import { PageLayout } from "../../components/layout";
 import { useExpenses } from "../../hooks/expenses/useExpenses";
 import { useCreateExpense } from "../../hooks/expenses/useCreateExpense";
 import { useUpdateExpense } from "../../hooks/expenses/useUpdateExpense";
@@ -222,17 +221,15 @@ export function ExpenseDashboard() {
   };
 
   return (
-    <PageLayout>
-      <div className="min-h-screen bg-background p-3 md:p-6 space-y-4">
-        {/* Page Header */}
-        <div className="space-y-2">
-          <Heading size="lg" as="h1">
-            Expenses
-          </Heading>
-          <p className="text-sm text-muted-foreground">
-            Track and manage business and personal expenses
-          </p>
-        </div>
+    <>
+      <div className="page-header">
+        <h1 className="page-title">Expenses</h1>
+        <p className="page-subtitle">
+          Track and manage business and personal expenses
+        </p>
+      </div>
+
+      <div className="page-content">
 
         {/* Month Selector */}
         <ExpenseMonthSelector
@@ -341,6 +338,6 @@ export function ExpenseDashboard() {
         onConfirm={handleConfirmDelete}
         isDeleting={deleteExpense.isPending}
       />
-    </PageLayout>
+    </>
   );
 }

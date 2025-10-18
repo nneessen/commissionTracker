@@ -43,29 +43,25 @@ export function CompGuide() {
   const productTypes = comps ? Array.from(new Set(comps.map(c => c.product_type))) : [];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <>
       {/* Header */}
-      <div className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center">
-              <Database className="h-6 w-6 text-blue-600 mr-3" />
-              <h1 className="text-xl font-semibold text-gray-900">Comp Guide</h1>
-            </div>
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={handleExport}
-                className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                <Download className="h-4 w-4 mr-2" />
-                Export
-              </button>
-            </div>
+      <div className="page-header">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="page-title">Comp Guide</h1>
+            <p className="page-subtitle">FFG compensation rates and contract settings</p>
           </div>
+          <button
+            onClick={handleExport}
+            className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Export
+          </button>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className="page-content">
         {/* Tabs */}
         <div className="mb-6">
           <nav className="flex space-x-8" aria-label="Tabs">
@@ -128,7 +124,7 @@ export function CompGuide() {
           )}
         </div>
       </div>
-    </div>
+    </>
   );
 }
 

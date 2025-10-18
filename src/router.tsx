@@ -1,24 +1,27 @@
 // src/router.tsx
-import React from "react";
 import {
-  RootRoute,
-  Route,
+  createRootRoute,
+  createRoute,
   createRouter,
   useNavigate,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import App from "./App";
 import { ExpenseDashboard } from "./features/expenses";
-import { CommissionList } from "./features/commissions";
 import { PolicyDashboard } from "./features/policies";
 import { AnalyticsDashboard } from "./features/analytics";
 import { DashboardHome } from "./features/dashboard";
 import { CompGuide } from "./features/comps";
 import { SettingsDashboard } from "./features/settings";
-import { Login, AuthCallback, ResetPassword, EmailVerificationPending } from "./features/auth";
+import {
+  Login,
+  AuthCallback,
+  ResetPassword,
+  EmailVerificationPending,
+} from "./features/auth";
 
 // Create root route with App layout
-const rootRoute = new RootRoute({
+const rootRoute = createRootRoute({
   component: () => (
     <>
       <App />
@@ -28,21 +31,21 @@ const rootRoute = new RootRoute({
 });
 
 // Dashboard/Home route
-const indexRoute = new Route({
+const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/",
   component: DashboardHome,
 });
 
 // Dashboard route (alias for home)
-const dashboardRoute = new Route({
+const dashboardRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "dashboard",
   component: DashboardHome,
 });
 
 // Login route with success handler
-const loginRoute = new Route({
+const loginRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "login",
   component: () => {
@@ -55,56 +58,56 @@ const loginRoute = new Route({
 });
 
 // Auth callback route (for email confirmation)
-const authCallbackRoute = new Route({
+const authCallbackRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "auth/callback",
   component: AuthCallback,
 });
 
 // Password reset route
-const resetPasswordRoute = new Route({
+const resetPasswordRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "auth/reset-password",
   component: ResetPassword,
 });
 
 // Email verification route
-const verifyEmailRoute = new Route({
+const verifyEmailRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "auth/verify-email",
   component: EmailVerificationPending,
 });
 
 // Policies route
-const policiesRoute = new Route({
+const policiesRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "policies",
   component: PolicyDashboard,
 });
 
 // Analytics route
-const analyticsRoute = new Route({
+const analyticsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "analytics",
   component: AnalyticsDashboard,
 });
 
 // Comp Guide route (replaces old settings)
-const compGuideRoute = new Route({
+const compGuideRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "comps",
   component: CompGuide,
 });
 
 // Settings route
-const settingsRoute = new Route({
+const settingsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "settings",
   component: SettingsDashboard,
 });
 
 // Targets route (coming soon)
-const targetsRoute = new Route({
+const targetsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "targets",
   component: () => (
@@ -116,7 +119,7 @@ const targetsRoute = new Route({
 });
 
 // Reports route (coming soon)
-const reportsRoute = new Route({
+const reportsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "reports",
   component: () => (
@@ -128,14 +131,14 @@ const reportsRoute = new Route({
 });
 
 // Expenses route
-const expensesRoute = new Route({
+const expensesRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "expenses",
   component: ExpenseDashboard,
 });
 
 // Clients route (coming soon)
-const clientsRoute = new Route({
+const clientsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "clients",
   component: () => (
@@ -176,3 +179,4 @@ declare module "@tanstack/react-router" {
     router: typeof router;
   }
 }
+

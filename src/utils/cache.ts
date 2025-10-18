@@ -1,7 +1,7 @@
 // src/utils/cache.ts
 // In-memory caching layer for database query results
 
-import { logger } from '../services/base/logger';
+import { logger } from "../services/base/logger";
 
 export interface CacheOptions {
   ttlMs?: number; // Time to live in milliseconds
@@ -126,7 +126,8 @@ export class Cache<T = any> {
       size: this.store.size,
       hits: this.hits,
       misses: this.misses,
-      hitRate: this.hits + this.misses > 0 ? this.hits / (this.hits + this.misses) : 0,
+      hitRate:
+        this.hits + this.misses > 0 ? this.hits / (this.hits + this.misses) : 0,
       maxSize: this.maxSize,
     };
   }
@@ -184,13 +185,16 @@ export function memoize<T extends (...args: any[]) => Promise<any>>(
     keyGenerator?: (...args: Parameters<T>) => string;
     ttlMs?: number;
     cache?: Cache<Awaited<ReturnType<T>>>;
-  } = {}
+  } = {},
 ): T {
-  const cache = options.cache ?? new Cache<Awaited<ReturnType<T>>>({
-    ttlMs: options.ttlMs,
-  });
+  const cache =
+    options.cache ??
+    new Cache<Awaited<ReturnType<T>>>({
+      ttlMs: options.ttlMs,
+    });
 
-  const keyGenerator = options.keyGenerator ?? ((...args: any[]) => JSON.stringify(args));
+  const keyGenerator =
+    options.keyGenerator ?? ((...args: any[]) => JSON.stringify(args));
 
   return (async (...args: Parameters<T>) => {
     const key = keyGenerator(...args);
@@ -198,12 +202,12 @@ export function memoize<T extends (...args: any[]) => Promise<any>>(
     // Check cache first
     const cached = cache.get(key);
     if (cached !== undefined) {
-      logger.debug('Cache hit', { function: fn.name, key });
+      logger.debug("Cache hit", { function: fn.name, key });
       return cached;
     }
 
     // Execute function and cache result
-    logger.debug('Cache miss', { function: fn.name, key });
+    logger.debug("Cache miss", { function: fn.name, key });
     const result = await fn(...args);
     cache.set(key, result);
 
@@ -229,7 +233,7 @@ export class DataLoader<K, V> {
       maxBatchSize?: number;
       batchWindowMs?: number;
       cacheKeyFn?: (key: K) => string;
-    } = {}
+    } = {},
   ) {}
 
   /**
@@ -263,7 +267,7 @@ export class DataLoader<K, V> {
    * Load multiple values by keys
    */
   loadMany(keys: K[]): Promise<V[]> {
-    return Promise.all(keys.map(key => this.load(key)));
+    return Promise.all(keys.map((key) => this.load(key)));
   }
 
   /**
@@ -301,7 +305,7 @@ export class DataLoader<K, V> {
     if (batch.length === 0) return;
 
     try {
-      const keys = batch.map(item => item.key);
+      const keys = batch.map((item) => item.key);
       const results = await this.batchFn(keys);
 
       // Resolve each promise with its result
@@ -315,7 +319,7 @@ export class DataLoader<K, V> {
       });
     } catch (error) {
       // Reject all promises in batch
-      batch.forEach(item => {
+      batch.forEach((item) => {
         item.reject(error instanceof Error ? error : new Error(String(error)));
       });
     }
@@ -343,11 +347,11 @@ export const caches = {
  * Helper to invalidate related caches
  */
 export function invalidateCaches(patterns: string[]): void {
-  patterns.forEach(pattern => {
+  patterns.forEach((pattern) => {
     const cache = (caches as any)[pattern];
     if (cache instanceof Cache) {
       cache.clear();
-      logger.debug('Cache cleared', { pattern });
+      logger.debug("Cache cleared", { pattern });
     }
   });
 }
