@@ -6,6 +6,7 @@ import { useConstants } from "../../hooks";
 import { useMetricsWithDateRange } from "../../hooks/useMetricsWithDateRange";
 import { useCreateExpense } from "../../hooks/expenses/useCreateExpense";
 import { useCreatePolicy } from "../../hooks/policies/useCreatePolicy";
+import { useChargebackSummary } from "../../hooks/commissions/useChargebackSummary";
 import { useAuth } from "../../contexts/AuthContext";
 import { TimePeriod } from "../../utils/dateRange";
 import showToast from "../../utils/toast";
@@ -66,6 +67,7 @@ export const DashboardHome: React.FC = () => {
 
   const createExpense = useCreateExpense();
   const createPolicy = useCreatePolicy();
+  const { data: chargebackSummary } = useChargebackSummary();
 
   // Calculate derived metrics
   const derivedMetrics = calculateDerivedMetrics(periodPolicies, periodClients);
@@ -113,6 +115,7 @@ export const DashboardHome: React.FC = () => {
     derivedMetrics,
     breakevenDisplay,
     policiesNeededDisplay,
+    chargebackSummary,
   });
 
   const metricsConfig = generateMetricsConfig({

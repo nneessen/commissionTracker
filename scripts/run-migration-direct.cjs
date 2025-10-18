@@ -22,7 +22,7 @@ async function runMigration() {
     await client.connect();
     console.log('Connected successfully!');
 
-    const migrationPath = path.join(__dirname, '..', 'supabase', 'migrations', '20251004_add_referral_source_to_policies.sql');
+    const migrationPath = path.join(__dirname, '..', 'supabase', 'migrations', '20251018_003_enhance_commission_chargeback_trigger.sql');
     const sql = fs.readFileSync(migrationPath, 'utf8');
 
     console.log('Executing migration...');
@@ -33,18 +33,19 @@ async function runMigration() {
     console.log('\n✅ Migration completed successfully!');
     console.log('Result:', result);
 
-    // Verify the column was added
+    // Verify the functions were created
     console.log('\nVerifying migration...');
     const verifyResult = await client.query(`
-      SELECT column_name, data_type, character_maximum_length
-      FROM information_schema.columns
-      WHERE table_name = 'policies' AND column_name = 'referral_source'
+      SELECT routine_name
+      FROM information_schema.routines
+      WHERE routine_schema = 'public'
+        AND routine_name IN ('calculate_months_paid', 'calculate_chargeback_on_policy_lapse', 'update_commission_on_policy_status')
     `);
 
     if (verifyResult.rows.length > 0) {
-      console.log('✅ Column verified:', verifyResult.rows[0]);
+      console.log('✅ Functions verified:', verifyResult.rows);
     } else {
-      console.log('❌ Column not found!');
+      console.log('❌ Functions not found!');
     }
 
   } catch (error) {

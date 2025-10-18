@@ -15,9 +15,10 @@ export type CommissionType = 'first_year' | 'renewal' | 'trail' | 'bonus' | 'ove
  * - earned: Policy active, commission earned but not paid yet (money not received)
  * - paid: Money actually received in bank account
  * - clawback: Commission was paid but clawed back
+ * - charged_back: Chargeback has been applied due to policy lapse/cancellation
  * - cancelled: Commission cancelled (policy cancelled/lapsed)
  */
-export type CommissionStatus = 'pending' | 'earned' | 'paid' | 'clawback' | 'cancelled';
+export type CommissionStatus = 'pending' | 'earned' | 'paid' | 'clawback' | 'charged_back' | 'cancelled';
 export type CalculationBasis = 'premium' | 'fixed' | 'tiered';
 
 export interface Commission {
@@ -47,6 +48,11 @@ export interface Commission {
   earnedAmount: number;          // Portion of advance that's been earned (maps to DB 'earned_amount')
   unearnedAmount: number;        // Portion of advance still at risk of chargeback (maps to DB 'unearned_amount')
   lastPaymentDate?: Date;        // When the last premium was paid (maps to DB 'last_payment_date')
+
+  // CHARGEBACK TRACKING (when policy lapses/cancels)
+  chargebackAmount?: number;     // Amount that must be repaid if policy cancels/lapses (maps to DB 'chargeback_amount')
+  chargebackDate?: Date;         // When the chargeback was applied (maps to DB 'chargeback_date')
+  chargebackReason?: string;     // Reason for chargeback (maps to DB 'chargeback_reason')
 
   // DEPRECATED: Use 'amount' instead
   /** @deprecated Use 'amount' field instead - kept for backward compatibility */

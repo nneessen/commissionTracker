@@ -1,19 +1,23 @@
 import React, { useState } from 'react';
-import { Trash2, Plus, CheckCircle } from 'lucide-react';
+import { Trash2, Plus, CheckCircle, Edit2, AlertCircle } from 'lucide-react';
 import { Button, DataTable } from '../../components/ui';
 import { Commission, DataTableColumn } from '../../types';
 import { useCommissions, useDeleteCommission, useCommissionMetrics, useCarriers } from '../../hooks';
 import { useMarkCommissionPaid } from '../../hooks/commissions/useMarkCommissionPaid';
+import { useUpdateMonthsPaid } from '../../hooks/commissions/useUpdateMonthsPaid';
 import { CommissionForm } from './CommissionForm';
 
 export const CommissionList: React.FC = () => {
   const { data: commissions = [] } = useCommissions();
   const { mutate: deleteCommission, isPending: isDeleting } = useDeleteCommission();
   const { mutate: markAsPaid, isPending: isMarkingPaid } = useMarkCommissionPaid();
+  const { mutate: updateMonthsPaid, isPending: isUpdatingMonths } = useUpdateMonthsPaid();
   const { data: commissionSummary } = useCommissionMetrics();
   const { data: carriers = [] } = useCarriers();
   const getCarrierById = (id: string) => carriers.find(c => c.id === id);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [editingMonthsPaid, setEditingMonthsPaid] = useState<string | null>(null);
+  const [monthsPaidValue, setMonthsPaidValue] = useState<number>(0);
 
   const handleDeleteCommission = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this commission?')) {
@@ -27,12 +31,36 @@ export const CommissionList: React.FC = () => {
     }
   };
 
+  const handleUpdateMonthsPaid = (commissionId: string, newValue: number) => {
+    if (newValue < 0 || newValue > 12) {
+      alert('Months paid must be between 0 and 12');
+      return;
+    }
+    updateMonthsPaid(
+      { commissionId, monthsPaid: newValue },
+      {
+        onSuccess: () => {
+          setEditingMonthsPaid(null);
+        },
+        onError: (error) => {
+          alert(`Failed to update months paid: ${error.message}`);
+        }
+      }
+    );
+  };
+
+  const startEditingMonthsPaid = (commissionId: string, currentValue: number) => {
+    setEditingMonthsPaid(commissionId);
+    setMonthsPaidValue(currentValue);
+  };
+
   const getStatusBadge = (status: string) => {
     const statusConfig: Record<string, { color: string; bg: string; label: string }> = {
       pending: { color: 'text-yellow-700', bg: 'bg-yellow-100', label: 'Pending' },
       earned: { color: 'text-blue-700', bg: 'bg-blue-100', label: 'Earned' },
       paid: { color: 'text-green-700', bg: 'bg-green-100', label: 'Paid' },
       clawback: { color: 'text-red-700', bg: 'bg-red-100', label: 'Clawback' },
+      charged_back: { color: 'text-red-700', bg: 'bg-red-100', label: 'Charged Back' },
       cancelled: { color: 'text-gray-700', bg: 'bg-gray-100', label: 'Cancelled' },
     };
 
@@ -159,6 +187,94 @@ export const CommissionList: React.FC = () => {
           })}
         </span>
       ),
+    },
+    {
+      key: 'monthsPaid',
+      header: 'Months Paid',
+      sortable: true,
+      accessor: (commission) => {
+        const monthsPaid = commission.monthsPaid || 0;
+        const isAtRisk = monthsPaid < 3 && commission.status === 'earned';
+
+        if (editingMonthsPaid === commission.id) {
+          return (
+            <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+              <input
+                type="number"
+                min="0"
+                max="12"
+                value={monthsPaidValue}
+                onChange={(e) => setMonthsPaidValue(parseInt(e.target.value) || 0)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleUpdateMonthsPaid(commission.id, monthsPaidValue);
+                  } else if (e.key === 'Escape') {
+                    setEditingMonthsPaid(null);
+                  }
+                }}
+                className="w-16 px-2 py-1 border rounded text-sm"
+                autoFocus
+                disabled={isUpdatingMonths}
+              />
+              <button
+                onClick={() => handleUpdateMonthsPaid(commission.id, monthsPaidValue)}
+                disabled={isUpdatingMonths}
+                className="btn-primary"
+                style={{ padding: '4px 6px', fontSize: '11px' }}
+              >
+                <CheckCircle size={12} />
+              </button>
+              <button
+                onClick={() => setEditingMonthsPaid(null)}
+                disabled={isUpdatingMonths}
+                className="btn-delete"
+                style={{ padding: '4px 6px', fontSize: '11px' }}
+              >
+                ×
+              </button>
+            </div>
+          );
+        }
+
+        return (
+          <div className="flex items-center gap-2">
+            <span className={isAtRisk ? 'font-semibold text-red-600' : ''}>
+              {monthsPaid} / 12
+            </span>
+            {isAtRisk && <AlertCircle size={14} className="text-red-600" title="At risk of chargeback" />}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                startEditingMonthsPaid(commission.id, monthsPaid);
+              }}
+              className="opacity-0 hover:opacity-100 transition-opacity"
+              title="Edit months paid"
+            >
+              <Edit2 size={14} className="text-gray-500" />
+            </button>
+          </div>
+        );
+      },
+      width: '28',
+    },
+    {
+      key: 'chargebackAmount',
+      header: 'Chargeback',
+      sortable: true,
+      accessor: (commission) => {
+        if (commission.chargebackAmount && commission.chargebackAmount > 0) {
+          return (
+            <span className="font-semibold text-red-600">
+              -${commission.chargebackAmount.toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
+            </span>
+          );
+        }
+        return <span className="text-gray-400">-</span>;
+      },
+      width: '24',
     },
     {
       key: 'paymentDate',

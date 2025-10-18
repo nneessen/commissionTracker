@@ -9,10 +9,12 @@ import {
   ChevronUp,
   ChevronDown,
   CheckCircle,
+  AlertCircle,
 } from "lucide-react";
 import { useCarriers } from "../../hooks/carriers";
 import { useCommissions } from "../../hooks/commissions/useCommissions";
-import { useMarkCommissionPaid } from "../../hooks/commissions/useMarkCommissionPaid";
+import { useUpdateCommissionStatus } from "../../hooks/commissions/useUpdateCommissionStatus";
+import { useProcessChargeback } from "../../hooks/commissions/useProcessChargeback";
 import { Policy, PolicyFilters, PolicyStatus } from "../../types/policy.types";
 import { ProductType } from "../../types/commission.types";
 import { calculateCommissionAdvance } from "../../utils/policyCalculations";
@@ -63,8 +65,13 @@ export const PolicyList: React.FC<PolicyListProps> = ({
 }) => {
   const { data: carriers = [] } = useCarriers();
   const { data: commissions = [] } = useCommissions();
-  const { mutate: markAsPaid, isPending: isMarkingPaid } = useMarkCommissionPaid();
+  const { mutate: updateCommissionStatus } = useUpdateCommissionStatus();
+  const { mutate: processChargeback } = useProcessChargeback();
   const getCarrierById = (id: string) => carriers.find((c) => c.id === id);
+
+  // Chargeback modal state
+  const [showChargebackModal, setShowChargebackModal] = useState(false);
+  const [selectedCommission, setSelectedCommission] = useState<any>(null);
 
   // Create a map of policy_id -> commission for quick lookup
   const commissionsByPolicy = commissions.reduce((acc, commission) => {
@@ -145,30 +152,50 @@ export const PolicyList: React.FC<PolicyListProps> = ({
     }
   };
 
-  const handleStatusChange = (policyId: string, newStatus: PolicyStatus) => {
-    updatePolicyStatus(policyId, newStatus);
-  };
-
   const handleDeletePolicy = (policyId: string) => {
     if (window.confirm("Are you sure you want to delete this policy?")) {
       deletePolicy(policyId);
     }
   };
 
-  const handleMarkCommissionPaid = (commissionId: string, policyNumber: string) => {
-    if (window.confirm(`Mark commission for policy ${policyNumber} as PAID?\n\nThis records that you received payment.`)) {
-      markAsPaid({ commissionId });
+  const handleStatusChange = (commission: any, newStatus: string, policy: Policy) => {
+    if (newStatus === 'cancelled') {
+      // Open modal to confirm chargeback and cancel policy
+      setSelectedCommission({ ...commission, policy });
+      setShowChargebackModal(true);
+    } else {
+      // Direct status update for 'paid' - includes policy status update
+      updateCommissionStatus({
+        commissionId: commission.id,
+        status: newStatus as any,
+        policyId: policy.id
+      });
     }
   };
 
-  const getCommissionStatusBadge = (status: string) => {
-    const badges: Record<string, { label: string; className: string }> = {
-      pending: { label: 'Pending', className: 'status-badge-pending' },
-      earned: { label: 'Earned', className: 'status-badge-earned' },
-      paid: { label: 'Paid', className: 'status-badge-paid' },
-    };
-    const badge = badges[status] || { label: status, className: 'status-badge' };
-    return <span className={badge.className}>{badge.label}</span>;
+  const handleChargeback = () => {
+    if (!selectedCommission) return;
+
+    // Process chargeback - calculates months_paid, chargeback_amount, and sets all fields atomically
+    processChargeback(
+      {
+        commissionId: selectedCommission.id,
+        policyId: selectedCommission.policyId
+      },
+      {
+        onSuccess: () => {
+          // Also update policy status to cancelled
+          if (selectedCommission.policy) {
+            updatePolicyStatus(selectedCommission.policy.id, 'cancelled');
+          }
+          setShowChargebackModal(false);
+          setSelectedCommission(null);
+        },
+        onError: (error) => {
+          alert(`Failed to apply chargeback: ${error.message}`);
+        }
+      }
+    );
   };
 
   const SortHeader: React.FC<{
@@ -362,26 +389,34 @@ export const PolicyList: React.FC<PolicyListProps> = ({
                       </div>
                     </td>
                     <td className="commission-status">
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center' }}>
-                        {policyCommission ? (
-                          <>
-                            {getCommissionStatusBadge(policyCommission.status)}
-                            {policyCommission.status === 'earned' && (
-                              <button
-                                onClick={() => handleMarkCommissionPaid(policyCommission.id, policy.policyNumber)}
-                                disabled={isMarkingPaid}
-                                className="mark-paid-btn"
-                                title="Mark as paid"
-                              >
-                                <CheckCircle size={14} />
-                                Mark Paid
-                              </button>
-                            )}
-                          </>
-                        ) : (
-                          <span style={{ color: '#999', fontSize: '11px' }}>No commission</span>
-                        )}
-                      </div>
+                      {policyCommission ? (
+                        <select
+                          value={
+                            policyCommission.status === 'charged_back' || policyCommission.status === 'cancelled'
+                              ? 'cancelled'
+                              : policyCommission.status === 'pending' || policyCommission.status === 'earned'
+                              ? 'paid'
+                              : policyCommission.status
+                          }
+                          onChange={(e) => handleStatusChange(policyCommission, e.target.value, policy)}
+                          className="status-select"
+                          style={{
+                            padding: '4px 6px',
+                            fontSize: '12px',
+                            borderRadius: '4px',
+                            border: '1px solid #e2e8f0',
+                            background: '#ffffff',
+                            cursor: 'pointer',
+                            fontWeight: 500,
+                            color: policyCommission.status === 'charged_back' || policyCommission.status === 'cancelled' ? '#dc2626' : '#1a1a1a'
+                          }}
+                        >
+                          <option value="paid">Paid</option>
+                          <option value="cancelled">Cancelled</option>
+                        </select>
+                      ) : (
+                        <span style={{ color: '#999', fontSize: '12px' }}>No commission</span>
+                      )}
                     </td>
                     <td className="date">{formatDate(policy.effectiveDate)}</td>
                     <td className="actions">
@@ -392,22 +427,6 @@ export const PolicyList: React.FC<PolicyListProps> = ({
                       >
                         <Edit size={14} />
                       </button>
-                      <select
-                        value={policy.status}
-                        onChange={(e) =>
-                          handleStatusChange(
-                            policy.id,
-                            e.target.value as PolicyStatus,
-                          )
-                        }
-                        className="status-select"
-                      >
-                        <option value="pending">Pending</option>
-                        <option value="active">Active</option>
-                        <option value="lapsed">Lapsed</option>
-                        <option value="cancelled">Cancelled</option>
-                        <option value="matured">Matured</option>
-                      </select>
                       <button
                         onClick={() => handleDeletePolicy(policy.id)}
                         className="action-btn delete"
@@ -423,6 +442,70 @@ export const PolicyList: React.FC<PolicyListProps> = ({
           </tbody>
         </table>
       </div>
+
+      {/* Chargeback Modal */}
+      {showChargebackModal && (
+        <div className="modal-overlay" onClick={() => setShowChargebackModal(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Cancel Commission</h3>
+              <button onClick={() => setShowChargebackModal(false)} className="modal-close">
+                ×
+              </button>
+            </div>
+            <div className="modal-body">
+              <div style={{ padding: '16px', background: '#fee', borderRadius: '8px', border: '1px solid #fcc', marginBottom: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'start', gap: '12px' }}>
+                  <AlertCircle size={20} color="#dc2626" style={{ flexShrink: 0, marginTop: '2px' }} />
+                  <div>
+                    <div style={{ fontWeight: 600, color: '#dc2626', marginBottom: '4px' }}>
+                      This will cancel the commission and policy
+                    </div>
+                    <div style={{ fontSize: '14px', color: '#991b1b', lineHeight: '1.5' }}>
+                      Chargeback amount will be calculated automatically: <strong>Advance - Earned</strong>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              {selectedCommission && (
+                <div style={{ padding: '12px', background: '#f8f9fa', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                    <div>
+                      <div style={{ fontSize: '12px', color: '#4a5568', marginBottom: '4px' }}>Advance Amount</div>
+                      <div style={{ fontSize: '16px', fontWeight: 600, color: '#1a1a1a' }}>
+                        {formatCurrency(selectedCommission.amount || 0)}
+                      </div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '12px', color: '#4a5568', marginBottom: '4px' }}>Current Status</div>
+                      <div style={{ fontSize: '16px', fontWeight: 600, color: '#1a1a1a', textTransform: 'capitalize' }}>
+                        {selectedCommission.status}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+            <div className="modal-footer">
+              <button
+                type="button"
+                onClick={() => setShowChargebackModal(false)}
+                className="btn"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleChargeback}
+                className="btn-primary"
+                style={{ background: '#dc2626', borderColor: '#dc2626', color: '#ffffff' }}
+              >
+                Cancel Commission
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

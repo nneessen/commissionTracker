@@ -6,6 +6,42 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-10-18 13:49:07
+
+### Changed Files
+- `MIGRATION_STATUS.md`
+- `apply_migration.mjs`
+- `plans/active/commission-status-dropdown.md`
+- `scripts/apply-migration-auto.sh`
+- `scripts/apply-migration-http.py`
+- `scripts/apply-migration-management-api.mjs`
+- `scripts/apply-migration-via-http-rpc.mjs`
+- `scripts/fix-wsl-network-and-migrate.sh`
+- `scripts/run-migration-direct.cjs`
+- `src/features/commissions/CommissionList.tsx`
+- `src/features/dashboard/DashboardHome.tsx`
+- `src/features/dashboard/config/statsConfig.ts`
+- `src/features/policies/PolicyList.tsx`
+- `src/hooks/commissions/useChargebackSummary.ts`
+- `src/hooks/commissions/useProcessChargeback.ts`
+- `src/hooks/commissions/useUpdateCommissionStatus.ts`
+- `src/hooks/commissions/useUpdateMonthsPaid.ts`
+- `src/hooks/policies/useCancelPolicy.ts`
+- `src/hooks/policies/useLapsePolicy.ts`
+- `src/hooks/policies/useReinstatePolicy.ts`
+- `src/index.css`
+- `src/services/commissions/CommissionStatusService.ts`
+- `src/services/policies/policyService.ts`
+- `src/types/commission.types.ts`
+- `supabase/migrations/20251018_001_enhance_commission_chargeback_trigger.sql`
+- `supabase/migrations/20251018_002_add_chargeback_columns_first.sql`
+- `supabase/migrations/20251018_003_enhance_commission_chargeback_trigger.sql`
+
+### Statistics
+```
+ 27 files changed, 3038 insertions(+), 69 deletions(-)
+```
+
 ## [Checkpoint] - 2025-10-16 18:00:18
 
 ### Changed Files

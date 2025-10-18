@@ -54,6 +54,16 @@ interface StatsConfigParams {
   };
   breakevenDisplay: number;
   policiesNeededDisplay: number;
+  chargebackSummary?: {
+    totalChargebacks: number;
+    totalChargebackAmount: number;
+    totalAdvances: number;
+    totalEarned: number;
+    chargebackRatePercentage: number;
+    chargedBackCount: number;
+    highRiskCount: number;
+    atRiskAmount: number;
+  };
 }
 
 /**
@@ -71,6 +81,7 @@ export function generateStatsConfig(params: StatsConfigParams): StatItemConfig[]
     derivedMetrics,
     breakevenDisplay,
     policiesNeededDisplay,
+    chargebackSummary,
   } = params;
 
   const periodSuffix = getPeriodSuffix(timePeriod);
@@ -195,6 +206,58 @@ export function generateStatsConfig(params: StatsConfigParams): StatItemConfig[]
         formula: '(Lapsed Policies in Period / New Policies in Period) × 100',
         example: '2 lapsed / 20 new = 10% lapse rate',
         note: 'Below 10% is good, above 20% is concerning',
+      },
+    },
+    {
+      label: 'Total Chargebacks',
+      value: formatCurrency(chargebackSummary?.totalChargebackAmount || 0),
+      color: METRIC_COLORS.NET_INCOME_NEGATIVE,
+      tooltip: {
+        title: 'Total Chargebacks',
+        description: 'Total dollar amount charged back across all commissions when policies cancel or lapse before advance is earned.',
+        formula: 'SUM(chargeback_amount) for all commissions',
+        example: 'If 3 policies lapsed with $500, $300, $200 unearned = $1,000 total chargebacks',
+        note: 'Lower is better - chargebacks reduce your actual earnings',
+      },
+    },
+    {
+      label: 'Chargeback Rate',
+      value: formatPercent(chargebackSummary?.chargebackRatePercentage || 0),
+      color: !chargebackSummary || chargebackSummary.chargebackRatePercentage < 5
+        ? METRIC_COLORS.LAPSE_GOOD
+        : chargebackSummary.chargebackRatePercentage < 10
+          ? METRIC_COLORS.RETENTION_WARNING
+          : METRIC_COLORS.LAPSE_BAD,
+      tooltip: {
+        title: 'Chargeback Rate',
+        description: 'Percentage of advance commissions that were charged back due to policy cancellations or lapses.',
+        formula: '(Total Chargebacks / Total Advances) × 100',
+        example: '$1,000 chargebacks / $10,000 advances = 10% chargeback rate',
+        note: 'Good: <5% | Warning: 5-10% | Danger: >10%',
+      },
+    },
+    {
+      label: 'At Risk Amount',
+      value: formatCurrency(chargebackSummary?.atRiskAmount || 0),
+      color: METRIC_COLORS.EXPENSES,
+      tooltip: {
+        title: 'At Risk Amount',
+        description: 'Total dollar amount of unearned commissions at risk of chargeback (policies with low months paid).',
+        formula: 'SUM(unearned_amount) for commissions with status=pending/earned and months_paid < advance_months',
+        example: 'If 5 policies with <3 months paid have $2,000 unearned each = $10,000 at risk',
+        note: 'Preventive metric - monitor to reduce future chargebacks',
+      },
+    },
+    {
+      label: 'High Risk Count',
+      value: (chargebackSummary?.highRiskCount || 0).toString(),
+      color: METRIC_COLORS.EXPENSES,
+      tooltip: {
+        title: 'High Risk Count',
+        description: 'Number of active commissions with fewer than 3 months paid - high probability of chargeback if policies lapse.',
+        formula: 'COUNT(commissions) WHERE months_paid < 3 AND status IN (pending, earned)',
+        example: '8 commissions with <3 months paid',
+        note: 'Action-oriented metric - contact these clients to prevent lapses',
       },
     },
     {
