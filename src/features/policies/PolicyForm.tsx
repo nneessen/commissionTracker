@@ -51,6 +51,7 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
     productId: "", // Use productId to link to products table
     product: "term_life" as ProductType,
     policyNumber: "",
+    submitDate: new Date().toISOString().split("T")[0],
     effectiveDate: new Date().toISOString().split("T")[0],
     premium: 0,
     paymentFrequency: "monthly" as PaymentFrequency,
@@ -98,6 +99,10 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
           productId: policy.productId || "",
           product: policy.product,
           policyNumber: policy.policyNumber,
+          submitDate:
+            policy.submitDate instanceof Date
+              ? policy.submitDate.toISOString().split("T")[0]
+              : policy.submitDate || new Date().toISOString().split("T")[0],
           effectiveDate:
             policy.effectiveDate instanceof Date
               ? policy.effectiveDate.toISOString().split("T")[0]
@@ -264,6 +269,8 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
     if (!formData.productId) newErrors.productId = "Product is required";
     if (!formData.policyNumber)
       newErrors.policyNumber = "Policy number is required";
+    if (!formData.submitDate)
+      newErrors.submitDate = "Submit date is required";
     if (!formData.effectiveDate)
       newErrors.effectiveDate = "Effective date is required";
 
@@ -466,6 +473,20 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
             />
             {errors.policyNumber && (
               <span className="error-msg">{errors.policyNumber}</span>
+            )}
+          </div>
+
+          <div className="form-group">
+            <label>Submit Date *</label>
+            <input
+              type="date"
+              name="submitDate"
+              value={formData.submitDate}
+              onChange={handleInputChange}
+              className={errors.submitDate ? "error" : ""}
+            />
+            {errors.submitDate && (
+              <span className="error-msg">{errors.submitDate}</span>
             )}
           </div>
 

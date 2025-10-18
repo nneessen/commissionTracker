@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-10-18 14:01:26
+
+### Changed Files
+- `src/features/policies/PolicyForm.tsx`
+- `src/types/policy.types.ts`
+- `supabase/migrations/20251018175655_add_submit_date_to_policies.sql`
+- `supabase/structure.sql`
+
+### Statistics
+```
+ 4 files changed, 36 insertions(+)
+```
+
 ## [Checkpoint] - 2025-10-18 13:49:07
 
 ### Changed Files

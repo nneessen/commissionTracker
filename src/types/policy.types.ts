@@ -41,6 +41,7 @@ export interface Policy {
   userId?: string; // Links to auth.users
   product: ProductType; // Product type enum (kept for backward compatibility)
   productDetails?: Product; // Full product object when joined (NEW)
+  submitDate?: Date; // Date when policy was submitted
   effectiveDate: Date;
   termLength?: number; // in years
   expirationDate?: Date;
@@ -76,6 +77,7 @@ export interface NewPolicyForm {
   carrierId: string;
   productId?: string; // NEW: Actual product selection
   product: ProductType; // Keep for backward compatibility
+  submitDate?: string; // ISO date string for form
   effectiveDate: string; // ISO date string for form
   expirationDate?: string;
   termLength?: number;
