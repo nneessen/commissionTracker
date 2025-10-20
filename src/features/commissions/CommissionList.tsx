@@ -219,16 +219,14 @@ export const CommissionList: React.FC = () => {
               <button
                 onClick={() => handleUpdateMonthsPaid(commission.id, monthsPaidValue)}
                 disabled={isUpdatingMonths}
-                className="btn-primary"
-                style={{ padding: '4px 6px', fontSize: '11px' }}
+                className="btn-primary px-1.5 py-1 text-[11px]"
               >
                 <CheckCircle size={12} />
               </button>
               <button
                 onClick={() => setEditingMonthsPaid(null)}
                 disabled={isUpdatingMonths}
-                className="btn-delete"
-                style={{ padding: '4px 6px', fontSize: '11px' }}
+                className="btn-delete px-1.5 py-1 text-[11px]"
               >
                 ×
               </button>
@@ -303,13 +301,7 @@ export const CommissionList: React.FC = () => {
               }}
               disabled={isMarkingPaid}
               title="Mark as paid"
-              style={{
-                padding: '4px 8px',
-                fontSize: '12px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-              }}
+              className="px-2 py-1 text-xs flex items-center gap-1"
             >
               <CheckCircle size={14} />
               Mark Paid

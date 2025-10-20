@@ -1,4 +1,4 @@
-// src/features/analytics/components/InfoButton.tsx
+// src/components/custom_ui/InfoButton.tsx
 
 import React, { useState } from 'react';
 
@@ -20,21 +20,7 @@ export function InfoButton({ title, children }: InfoButtonProps) {
       {/* Info Icon Button */}
       <button
         onClick={() => setShowInfo(!showInfo)}
-        style={{
-          background: '#f0f9ff',
-          border: '1px solid #e0f2fe',
-          borderRadius: '50%',
-          width: '24px',
-          height: '24px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          cursor: 'pointer',
-          fontSize: '12px',
-          fontWeight: 700,
-          color: '#3b82f6',
-          transition: 'all 0.2s ease',
-        }}
+        className="bg-blue-50 border border-blue-100"
         onMouseEnter={(e) => {
           e.currentTarget.style.background = '#dbeafe';
           e.currentTarget.style.transform = 'scale(1.1)';
@@ -50,18 +36,9 @@ export function InfoButton({ title, children }: InfoButtonProps) {
 
       {/* Info Panel */}
       {showInfo && (
-        <div style={{
-          marginBottom: '20px',
-          padding: '16px',
-          background: '#f0f9ff',
-          border: '1px solid #bfdbfe',
-          borderRadius: '8px',
-          fontSize: '12px',
-          lineHeight: '1.8',
-          color: '#1e40af'
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-            <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: '#1e40af' }}>
+        <div className="bg-blue-50 border border-blue-200">
+          <div className="flex justify-between items-start mb-3">
+            <h3 className="m-0 text-sm font-bold text-blue-800">
               {title}
             </h3>
             <button

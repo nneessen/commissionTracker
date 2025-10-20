@@ -19,7 +19,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/Select';
+} from '@/components/custom_ui/Select';
 import type { Expense, CreateExpenseData, RecurringFrequency } from '@/types/expense.types';
 import { DEFAULT_EXPENSE_CATEGORIES } from '@/types/expense.types';
 import { RECURRING_FREQUENCY_OPTIONS, TAX_DEDUCTIBLE_TOOLTIP } from '../config/recurringConfig';

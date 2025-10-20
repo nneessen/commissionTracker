@@ -449,7 +449,7 @@ export const PolicyFormUpdated: React.FC<PolicyFormProps> = ({
                 <span className="error-msg">{errors.premium}</span>
               )}
               {formData.premium > 0 && (
-                <div style={{ fontSize: '0.875rem', color: '#6b7280', marginTop: '0.25rem' }}>
+                <div className="text-sm text-muted-foreground mt-1">
                   Annual Premium: ${annualPremium.toFixed(2)}
                 </div>
               )}
@@ -488,17 +488,17 @@ export const PolicyFormUpdated: React.FC<PolicyFormProps> = ({
                 <span className="error-msg">{errors.commissionPercentage}</span>
               )}
               {rateLoading && (
-                <div style={{ fontSize: '0.875rem', color: '#6b7280', marginTop: '0.25rem' }}>
+                <div className="text-sm text-muted-foreground mt-1">
                   Loading commission rate...
                 </div>
               )}
               {commissionRate && !rateLoading && (
-                <div style={{ fontSize: '0.875rem', color: '#059669', marginTop: '0.25rem' }}>
+                <div className="text-sm text-success mt-1">
                   ✓ Rate for contract level {contractLevel}: {commissionRate.toFixed(1)}%
                 </div>
               )}
               {!formData.productId && !rateLoading && (
-                <div style={{ fontSize: '0.875rem', color: '#9ca3af', marginTop: '0.25rem' }}>
+                <div className="text-sm text-muted-foreground mt-1">
                   Select a product to load commission rate
                 </div>
               )}
@@ -535,7 +535,7 @@ export const PolicyFormUpdated: React.FC<PolicyFormProps> = ({
               </strong>
             </div>
             {formData.productId && (
-              <div className="calc-row" style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.5rem' }}>
+              <div className="calc-row text-xs text-muted-foreground mt-2">
                 <span>Contract Level:</span>
                 <span>{contractLevel}</span>
               </div>

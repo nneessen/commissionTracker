@@ -4,7 +4,7 @@ import React from 'react';
 import { TrendingUp, TrendingDown } from 'lucide-react';
 import { StatItemConfig } from '../../../types/dashboard.types';
 import { MetricTooltip } from '../../../components/ui/MetricTooltip';
-import { FONT_SIZES, TYPOGRAPHY } from '../../../constants/dashboard';
+import { cn } from '@/lib/utils';
 
 /**
  * Stat Item Component
@@ -12,6 +12,8 @@ import { FONT_SIZES, TYPOGRAPHY } from '../../../constants/dashboard';
  * Individual stat display with label, value, trend indicator, and optional tooltip.
  * Used within QuickStatsPanel.
  * Extracted from DashboardHome.tsx (lines 594-631).
+ *
+ * Refactored to use Tailwind CSS classes instead of inline styles.
  */
 export const StatItem: React.FC<{ stat: StatItemConfig; showBorder: boolean }> = ({
   stat,
@@ -19,34 +21,27 @@ export const StatItem: React.FC<{ stat: StatItemConfig; showBorder: boolean }> =
 }) => {
   return (
     <div
-      style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: '6px 0',
-        borderBottom: showBorder ? '1px solid #374151' : 'none',
-      }}
+      className={cn(
+        "flex justify-between items-center py-1.5",
+        showBorder && "border-b border-card/20"
+      )}
     >
-      <div style={{ display: 'flex', alignItems: 'center' }}>
-        <span style={{ fontSize: FONT_SIZES.STAT_LABEL, color: '#cbd5e0' }}>
+      <div className="flex items-center">
+        <span className="text-xs text-card/80">
           {stat.label}
         </span>
         {stat.tooltip && <MetricTooltip {...stat.tooltip} />}
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+      <div className="flex items-center gap-1">
         {stat.trend &&
           (stat.trend === 'up' ? (
-            <TrendingUp size={10} color="#10b981" />
+            <TrendingUp size={10} className="text-success" />
           ) : (
-            <TrendingDown size={10} color="#ef4444" />
+            <TrendingDown size={10} className="text-error" />
           ))}
         <span
-          style={{
-            fontSize: FONT_SIZES.STAT_VALUE,
-            fontWeight: TYPOGRAPHY.HEAVY_FONT_WEIGHT,
-            fontFamily: TYPOGRAPHY.MONO_FONT,
-            color: stat.color,
-          }}
+          className="text-xs font-extrabold font-mono"
+          style={{ color: stat.color }}
         >
           {stat.value}
         </span>

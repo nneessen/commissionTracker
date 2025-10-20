@@ -23,12 +23,7 @@ export function ForecastChart({
 }: ForecastChartProps) {
   if (!data || data.length === 0) {
     return (
-      <div style={{
-        padding: '40px',
-        textAlign: 'center',
-        color: '#94a3b8',
-        fontSize: '12px'
-      }}>
+      <div className="p-10 text-center text-gray-400 text-xs">
         No forecast data available
       </div>
     );
@@ -126,19 +121,12 @@ export function ForecastChart({
   return (
     <div>
       {/* Title */}
-      <div style={{
-        fontSize: '13px',
-        fontWeight: 600,
-        color: '#1a1a1a',
-        marginBottom: '16px',
-        textTransform: 'uppercase',
-        letterSpacing: '0.5px'
-      }}>
+      <div className="text-sm font-semibold text-gray-900 mb-4 uppercase tracking-wide">
         {title}
       </div>
 
       {/* Chart SVG */}
-      <svg width={width} height={height} style={{ overflow: 'visible' }}>
+      <svg width={width} height={height} className="overflow-visible">
         <g transform={`translate(${padding.left}, ${padding.top})`}>
           {/* Grid lines */}
           {yTicks.map((tick, i) => (
@@ -218,7 +206,7 @@ export function ForecastChart({
                   fill={color}
                   stroke="#ffffff"
                   strokeWidth="2"
-                  style={{ cursor: 'pointer' }}
+                  className="cursor-pointer"
                 />
                 <title>{`${d.periodLabel}: ${formatCurrency(d[valueKey] || 0)} (${d.confidence} confidence)`}</title>
               </g>

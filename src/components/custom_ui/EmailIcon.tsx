@@ -1,4 +1,4 @@
-// src/features/auth/components/EmailIcon.tsx
+// src/components/custom_ui/EmailIcon.tsx
 
 import React from 'react';
 

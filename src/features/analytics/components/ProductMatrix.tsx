@@ -12,13 +12,8 @@ export function ProductMatrix() {
 
   if (isLoading) {
     return (
-      <div style={{
-        background: '#ffffff',
-        borderRadius: '12px',
-        padding: '20px',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-      }}>
-        <div style={{ padding: '40px', textAlign: 'center', color: '#94a3b8', fontSize: '12px' }}>
+      <div className="bg-white rounded-xl p-5 shadow-sm">
+        <div className="p-10 text-center text-gray-400 text-xs">
           Loading product data...
         </div>
       </div>
@@ -38,39 +33,14 @@ export function ProductMatrix() {
   };
 
   return (
-    <div style={{
-      background: '#ffffff',
-      borderRadius: '12px',
-      padding: '20px',
-      boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-    }}>
+    <div className="bg-white rounded-xl p-5 shadow-sm">
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
-        <div style={{
-          fontSize: '13px',
-          fontWeight: 600,
-          color: '#1a1a1a',
-          textTransform: 'uppercase',
-          letterSpacing: '0.5px'
-        }}>
+        <div className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
           Product Mix - {latestMonth?.periodLabel}
         </div>
         <button
           onClick={() => setShowInfo(!showInfo)}
-          style={{
-            background: '#f0f9ff',
-            border: '1px solid #e0f2fe',
-            borderRadius: '50%',
-            width: '24px',
-            height: '24px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-            fontSize: '12px',
-            fontWeight: 700,
-            color: '#3b82f6',
-            transition: 'all 0.2s ease',
-          }}
+          className="bg-blue-50 border border-blue-100"
           onMouseEnter={(e) => {
             e.currentTarget.style.background = '#dbeafe';
             e.currentTarget.style.transform = 'scale(1.1)';
@@ -86,18 +56,9 @@ export function ProductMatrix() {
       </div>
 
       {showInfo && (
-        <div style={{
-          marginBottom: '20px',
-          padding: '16px',
-          background: '#f0f9ff',
-          border: '1px solid #bfdbfe',
-          borderRadius: '8px',
-          fontSize: '12px',
-          lineHeight: '1.8',
-          color: '#1e40af'
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-            <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: '#1e40af' }}>
+        <div className="bg-blue-50 border border-blue-200">
+          <div className="flex justify-between items-start mb-3">
+            <h3 className="m-0 text-sm font-bold text-blue-800">
               📦 Understanding Product Mix
             </h3>
             <button
@@ -116,14 +77,14 @@ export function ProductMatrix() {
             </button>
           </div>
 
-          <div style={{ marginBottom: '16px' }}>
+          <div className="mb-4">
             <strong>What is this?</strong> Product Mix shows which insurance products you're selling most and how your portfolio is balanced.
             This helps you identify gaps and opportunities in your product offerings.
           </div>
 
-          <div style={{ marginBottom: '16px', padding: '12px', background: '#ffffff', borderRadius: '6px' }}>
+          <div className="mb-4 p-3 bg-white rounded-md">
             <strong>Why It Matters:</strong>
-            <div style={{ fontSize: '11px', marginTop: '8px', color: '#475569' }}>
+            <div className="text-xs mt-2 text-gray-600">
               • <strong>Diversification:</strong> Relying too heavily on one product type is risky<br/>
               • <strong>Income Stability:</strong> Different products have different commission structures<br/>
               • <strong>Client Needs:</strong> Shows if you're serving all client segments<br/>
@@ -131,9 +92,9 @@ export function ProductMatrix() {
             </div>
           </div>
 
-          <div style={{ marginBottom: '16px', padding: '12px', background: '#ffffff', borderRadius: '6px' }}>
+          <div className="mb-4 p-3 bg-white rounded-md">
             <strong>Real Example:</strong>
-            <div style={{ fontSize: '11px', marginTop: '8px', color: '#475569' }}>
+            <div className="text-xs mt-2 text-gray-600">
               Your current mix:<br/>
               • 60% Term Life (30 policies, $180K premium)<br/>
               • 25% Whole Life (10 policies, $150K premium)<br/>
@@ -158,7 +119,7 @@ export function ProductMatrix() {
         </div>
       )}
 
-      <div style={{ display: 'grid', gap: '8px' }}>
+      <div className="grid gap-2">
         {latestMonth?.productBreakdown.map((product, idx) => (
           <div
             key={product.product}

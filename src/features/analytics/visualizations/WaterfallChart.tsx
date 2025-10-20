@@ -65,7 +65,7 @@ export function WaterfallChart({ data, title = 'Performance Attribution' }: Wate
       <svg
         width="100%"
         height={chartHeight + 60}
-        style={{ overflow: 'visible' }}
+        className="overflow-visible"
       >
         {/* Y-axis zero line */}
         <line

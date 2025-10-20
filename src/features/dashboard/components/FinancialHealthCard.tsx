@@ -1,5 +1,8 @@
+// src/features/dashboard/components/FinancialHealthCard.tsx
+
 import React, { useState } from 'react';
 import { TrendingUp, TrendingDown, DollarSign, AlertCircle } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 type TimePeriod = 'daily' | 'weekly' | 'monthly' | 'yearly';
 
@@ -28,7 +31,6 @@ export const FinancialHealthCard: React.FC<FinancialHealthCardProps> = ({
   const getAdjustedValue = (monthlyValue: number) => {
     const now = new Date();
     const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-    const dayOfMonth = now.getDate();
 
     switch (timePeriod) {
       case 'daily':
@@ -64,66 +66,34 @@ export const FinancialHealthCard: React.FC<FinancialHealthCardProps> = ({
   };
 
   return (
-    <div
-      className="financial-health-card"
-      style={{
-        background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
-        borderRadius: '16px',
-        padding: '24px',
-        boxShadow: '0 4px 20px rgba(26, 26, 26, 0.08)',
-        marginBottom: '24px',
-      }}
-    >
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div
-            style={{
-              padding: '12px',
-              borderRadius: '12px',
-              background: 'linear-gradient(135deg, #1a1a1a 0%, #2d3748 100%)',
-              boxShadow: '0 4px 12px rgba(26, 26, 26, 0.15)',
-            }}
-          >
-            <DollarSign size={24} color="#f8f9fa" />
+    <div className="bg-gradient-to-br from-card to-muted/20 rounded-lg p-6 shadow-md mb-6">
+      <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center gap-3">
+          <div className="p-3 rounded-lg bg-gradient-to-br from-primary to-primary/80 shadow-sm">
+            <DollarSign className="h-6 w-6 text-primary-foreground" />
           </div>
           <div>
-            <h3 style={{ fontSize: '20px', fontWeight: 600, color: '#1a1a1a', margin: 0 }}>
+            <h3 className="text-xl font-semibold text-foreground m-0">
               Financial Health
             </h3>
-            <p style={{ fontSize: '14px', color: '#4a5568', margin: 0 }}>
+            <p className="text-sm text-muted-foreground m-0">
               Breakeven tracking & income analysis
             </p>
           </div>
         </div>
 
         {/* Time Period Switcher */}
-        <div style={{
-          display: 'flex',
-          gap: '4px',
-          background: '#f1f5f9',
-          padding: '4px',
-          borderRadius: '8px',
-          boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.1)'
-        }}>
+        <div className="flex gap-1 bg-muted/50 p-1 rounded-lg shadow-inner">
           {(['daily', 'weekly', 'monthly', 'yearly'] as TimePeriod[]).map((period) => (
             <button
               key={period}
               onClick={() => setTimePeriod(period)}
-              style={{
-                padding: '6px 12px',
-                fontSize: '12px',
-                fontWeight: 600,
-                textTransform: 'capitalize',
-                border: 'none',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-                background: timePeriod === period
-                  ? 'linear-gradient(135deg, #1a1a1a 0%, #2d3748 100%)'
-                  : 'transparent',
-                color: timePeriod === period ? '#ffffff' : '#64748b',
-                boxShadow: timePeriod === period ? '0 2px 4px rgba(0,0,0,0.1)' : 'none',
-              }}
+              className={cn(
+                "px-3 py-1.5 text-xs font-semibold capitalize rounded-md transition-all",
+                timePeriod === period
+                  ? "bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-sm"
+                  : "bg-transparent text-muted-foreground hover:bg-background/50"
+              )}
             >
               {period}
             </button>
@@ -132,130 +102,81 @@ export const FinancialHealthCard: React.FC<FinancialHealthCardProps> = ({
       </div>
 
       {/* Main Metrics Grid */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-          gap: '16px',
-          marginBottom: '20px',
-        }}
-      >
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
         {/* Expenses */}
-        <div
-          style={{
-            padding: '16px',
-            borderRadius: '12px',
-            background: 'linear-gradient(135deg, #f8f9fa 0%, #e2e8f0 100%)',
-            boxShadow: '0 2px 8px rgba(26, 26, 26, 0.06)',
-          }}
-        >
-          <div style={{ fontSize: '12px', color: '#4a5568', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600 }}>
+        <div className="p-4 rounded-lg bg-gradient-to-br from-muted/30 to-muted/50 shadow-sm">
+          <div className="text-xs text-muted-foreground mb-2 uppercase tracking-wide font-semibold">
             {getPeriodLabel()} Expenses
           </div>
-          <div style={{ fontSize: '24px', fontWeight: 700, color: '#1a1a1a', fontFamily: 'Monaco, Menlo, monospace' }}>
+          <div className="text-2xl font-bold text-foreground font-mono">
             {formatCurrency(adjustedExpenses)}
           </div>
-          <div style={{ fontSize: '11px', color: '#656d76', marginTop: '4px' }}>
+          <div className="text-xs text-muted-foreground/80 mt-1">
             Break even target
           </div>
         </div>
 
         {/* Commission Earned */}
-        <div
-          style={{
-            padding: '16px',
-            borderRadius: '12px',
-            background: isSurplus
-              ? 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)'
-              : 'linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%)',
-            boxShadow: '0 2px 8px rgba(26, 26, 26, 0.06)',
-          }}
-        >
-          <div style={{ fontSize: '12px', color: '#4a5568', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600 }}>
+        <div className={cn(
+          "p-4 rounded-lg shadow-sm",
+          isSurplus
+            ? "bg-gradient-to-br from-success/10 to-success/20"
+            : "bg-gradient-to-br from-error/10 to-error/20"
+        )}>
+          <div className="text-xs text-muted-foreground mb-2 uppercase tracking-wide font-semibold">
             {getPeriodLabel()} Commission
           </div>
-          <div style={{ fontSize: '24px', fontWeight: 700, color: '#1a1a1a', fontFamily: 'Monaco, Menlo, monospace' }}>
+          <div className="text-2xl font-bold text-foreground font-mono">
             {formatCurrency(adjustedEarned)}
           </div>
-          <div
-            style={{
-              fontSize: '11px',
-              color: isSurplus ? '#15803d' : '#991b1b',
-              marginTop: '4px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-            }}
-          >
-            {isSurplus ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
+          <div className={cn(
+            "text-xs mt-1 flex items-center gap-1",
+            isSurplus ? "text-success" : "text-error"
+          )}>
+            {isSurplus ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
             {isSurplus ? `+${formatCurrency(adjustedSurplus)} surplus` : `${formatCurrency(Math.abs(adjustedSurplus))} deficit`}
           </div>
         </div>
 
         {/* Pipeline */}
-        <div
-          style={{
-            padding: '16px',
-            borderRadius: '12px',
-            background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)',
-            boxShadow: '0 2px 8px rgba(26, 26, 26, 0.06)',
-          }}
-        >
-          <div style={{ fontSize: '12px', color: '#4a5568', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600 }}>
+        <div className="p-4 rounded-lg bg-gradient-to-br from-info/10 to-info/20 shadow-sm">
+          <div className="text-xs text-muted-foreground mb-2 uppercase tracking-wide font-semibold">
             Pipeline Value
           </div>
-          <div style={{ fontSize: '24px', fontWeight: 700, color: '#1a1a1a', fontFamily: 'Monaco, Menlo, monospace' }}>
+          <div className="text-2xl font-bold text-foreground font-mono">
             {formatCurrency(totalPending)}
           </div>
-          <div style={{ fontSize: '11px', color: '#656d76', marginTop: '4px' }}>
+          <div className="text-xs text-muted-foreground/80 mt-1">
             Pending commissions
           </div>
         </div>
       </div>
 
       {/* Health Progress Bar */}
-      <div
-        style={{
-          padding: '16px',
-          borderRadius: '12px',
-          background: 'linear-gradient(135deg, #f8f9fa 0%, #e2e8f0 100%)',
-          boxShadow: '0 2px 8px rgba(26, 26, 26, 0.06)',
-        }}
-      >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-          <span style={{ fontSize: '12px', color: '#2d3748', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+      <div className="p-4 rounded-lg bg-gradient-to-br from-muted/30 to-muted/50 shadow-sm">
+        <div className="flex justify-between items-center mb-2">
+          <span className="text-xs text-foreground font-semibold uppercase tracking-wide">
             Breakeven Progress
           </span>
-          <span style={{ fontSize: '14px', color: '#1a1a1a', fontWeight: 700 }}>
+          <span className="text-sm text-foreground font-bold">
             {healthPercentage.toFixed(0)}%
           </span>
         </div>
 
         {/* Progress Bar */}
-        <div
-          style={{
-            width: '100%',
-            height: '12px',
-            background: '#e2e8f0',
-            borderRadius: '6px',
-            overflow: 'hidden',
-            boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.06)',
-          }}
-        >
+        <div className="w-full h-3 bg-muted rounded-md overflow-hidden shadow-inner">
           <div
-            style={{
-              width: `${healthPercentage}%`,
-              height: '100%',
-              background: healthPercentage >= 100
-                ? 'linear-gradient(90deg, #15803d 0%, #16a34a 100%)'
-                : 'linear-gradient(90deg, #1a1a1a 0%, #2d3748 100%)',
-              borderRadius: '6px',
-              transition: 'width 0.3s ease',
-            }}
+            className={cn(
+              "h-full rounded-md transition-all duration-300",
+              healthPercentage >= 100
+                ? "bg-gradient-to-r from-success to-success/80"
+                : "bg-gradient-to-r from-primary to-primary/80"
+            )}
+            style={{ width: `${healthPercentage}%` }}
           />
         </div>
 
-        <div style={{ fontSize: '11px', color: '#656d76', marginTop: '8px' }}>
+        <div className="text-xs text-muted-foreground/80 mt-2">
           {healthPercentage >= 100
             ? '✓ You have exceeded your breakeven target'
             : `${formatCurrency(adjustedExpenses - adjustedEarned)} needed to break even`}
@@ -264,21 +185,9 @@ export const FinancialHealthCard: React.FC<FinancialHealthCardProps> = ({
 
       {/* Alert if needed */}
       {healthPercentage < 50 && (
-        <div
-          style={{
-            marginTop: '16px',
-            padding: '12px 16px',
-            borderRadius: '8px',
-            background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
-            border: '1px solid #f59e0b',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-            boxShadow: '0 2px 8px rgba(245, 158, 11, 0.15)',
-          }}
-        >
-          <AlertCircle size={20} color="#92400e" />
-          <span style={{ fontSize: '13px', color: '#92400e', fontWeight: 500 }}>
+        <div className="mt-4 p-3 rounded-lg bg-gradient-to-br from-warning/20 to-warning/30 border border-warning/30 flex items-center gap-3 shadow-sm">
+          <AlertCircle className="h-5 w-5 text-warning" />
+          <span className="text-sm text-warning font-medium">
             You're below 50% of your breakeven target. Focus on production!
           </span>
         </div>

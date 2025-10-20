@@ -12,13 +12,8 @@ export function CommissionDeepDive() {
 
   if (isLoading) {
     return (
-      <div style={{
-        background: '#ffffff',
-        borderRadius: '12px',
-        padding: '20px',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-      }}>
-        <div style={{ padding: '40px', textAlign: 'center', color: '#94a3b8', fontSize: '12px' }}>
+      <div className="bg-white rounded-xl p-5 shadow-sm">
+        <div className="p-10 text-center text-gray-400 text-xs">
           Loading commission data...
         </div>
       </div>
@@ -41,42 +36,14 @@ export function CommissionDeepDive() {
   const totalUnearned = earningProgress.reduce((sum, p) => sum + p.totalUnearned, 0);
 
   return (
-    <div style={{
-      background: '#ffffff',
-      borderRadius: '12px',
-      padding: '20px',
-      boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-      width: '100%',
-      boxSizing: 'border-box',
-      overflow: 'hidden'
-    }}>
+    <div className="bg-white rounded-xl p-5 shadow-sm w-full box-border overflow-hidden">
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
-        <div style={{
-          fontSize: '13px',
-          fontWeight: 600,
-          color: '#1a1a1a',
-          textTransform: 'uppercase',
-          letterSpacing: '0.5px'
-        }}>
+        <div className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
           Commission Deep Dive
         </div>
         <button
           onClick={() => setShowInfo(!showInfo)}
-          style={{
-            background: '#f0f9ff',
-            border: '1px solid #e0f2fe',
-            borderRadius: '50%',
-            width: '24px',
-            height: '24px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-            fontSize: '12px',
-            fontWeight: 700,
-            color: '#3b82f6',
-            transition: 'all 0.2s ease',
-          }}
+          className="bg-blue-50 border border-blue-100"
           onMouseEnter={(e) => {
             e.currentTarget.style.background = '#dbeafe';
             e.currentTarget.style.transform = 'scale(1.1)';
@@ -92,18 +59,9 @@ export function CommissionDeepDive() {
       </div>
 
       {showInfo && (
-        <div style={{
-          marginBottom: '20px',
-          padding: '16px',
-          background: '#f0f9ff',
-          border: '1px solid #bfdbfe',
-          borderRadius: '8px',
-          fontSize: '12px',
-          lineHeight: '1.8',
-          color: '#1e40af'
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-            <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: '#1e40af' }}>
+        <div className="bg-blue-50 border border-blue-200">
+          <div className="flex justify-between items-start mb-3">
+            <h3 className="m-0 text-sm font-bold text-blue-800">
               💵 Understanding Commission Deep Dive
             </h3>
             <button
@@ -122,52 +80,52 @@ export function CommissionDeepDive() {
             </button>
           </div>
 
-          <div style={{ marginBottom: '16px' }}>
+          <div className="mb-4">
             <strong>What is this?</strong> Commission Deep Dive tracks your advance payments and shows how much you've actually earned versus what you still owe back.
             This is critical for managing cash flow and understanding your true income.
           </div>
 
-          <div style={{ marginBottom: '16px' }}>
+          <div className="mb-4">
             <strong>Key Terms:</strong>
           </div>
 
-          <div style={{ marginBottom: '12px', paddingLeft: '16px' }}>
-            <div style={{ marginBottom: '8px' }}>
-              <strong style={{ color: '#3b82f6' }}>💰 Total Advance:</strong>
-              <div style={{ marginTop: '4px', color: '#475569' }}>
+          <div className="mb-3 pl-4">
+            <div className="mb-2">
+              <strong className="text-blue-500">💰 Total Advance:</strong>
+              <div className="mt-1 text-gray-600">
                 Money you received upfront from the carrier
-                <div style={{ fontSize: '11px', marginTop: '2px' }}>
+                <div className="text-xs mt-0.5">
                   Example: $10,000 paid to you when policy was sold
                 </div>
               </div>
             </div>
 
-            <div style={{ marginBottom: '8px' }}>
-              <strong style={{ color: '#10b981' }}>✅ Total Earned:</strong>
-              <div style={{ marginTop: '4px', color: '#475569' }}>
+            <div className="mb-2">
+              <strong className="text-green-500">✅ Total Earned:</strong>
+              <div className="mt-1 text-gray-600">
                 Portion of the advance you've actually earned (policies still active)
-                <div style={{ fontSize: '11px', marginTop: '2px' }}>
+                <div className="text-xs mt-0.5">
                   As months pass and clients keep paying, you earn more
                 </div>
               </div>
             </div>
 
-            <div style={{ marginBottom: '8px' }}>
-              <strong style={{ color: '#ef4444' }}>⏳ Total Unearned:</strong>
-              <div style={{ marginTop: '4px', color: '#475569' }}>
+            <div className="mb-2">
+              <strong className="text-red-500">⏳ Total Unearned:</strong>
+              <div className="mt-1 text-gray-600">
                 Money you still owe back if policies lapse/cancel
-                <div style={{ fontSize: '11px', marginTop: '2px' }}>
+                <div className="text-xs mt-0.5">
                   Risk amount - this could be charged back
                 </div>
               </div>
             </div>
           </div>
 
-          <div style={{ marginBottom: '16px', padding: '12px', background: '#ffffff', borderRadius: '6px' }}>
+          <div className="mb-4 p-3 bg-white rounded-md">
             <strong>How It Works:</strong>
-            <div style={{ fontSize: '11px', marginTop: '8px', color: '#475569' }}>
+            <div className="text-xs mt-2 text-gray-600">
               Most insurance carriers pay you upfront but you only "earn" it over time:
-              <div style={{ paddingLeft: '12px', marginTop: '4px' }}>
+              <div className="pl-3 mt-1">
                 • <strong>Month 1:</strong> Get $1,000 advance (100% unearned)<br/>
                 • <strong>Month 6:</strong> Client still paying → 50% earned, 50% unearned<br/>
                 • <strong>Month 12:</strong> Client still paying → 100% earned, 0% unearned<br/>
@@ -176,9 +134,9 @@ export function CommissionDeepDive() {
             </div>
           </div>
 
-          <div style={{ marginBottom: '16px', padding: '12px', background: '#ffffff', borderRadius: '6px' }}>
+          <div className="mb-4 p-3 bg-white rounded-md">
             <strong>Real Example:</strong>
-            <div style={{ fontSize: '11px', marginTop: '8px', color: '#475569' }}>
+            <div className="text-xs mt-2 text-gray-600">
               You sell 10 policies, receive $50,000 in advances<br/>
               After 6 months:<br/>
               • 8 policies still active → $40,000 earned<br/>

@@ -1,4 +1,4 @@
-// src/components/ui/stat-card.tsx
+// src/components/custom_ui/stat-card.tsx
 import * as React from "react";
 import { cn } from "@/lib/utils";
 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Upload, X, Check, AlertCircle, Download, Eye } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { FFG_COMP_GUIDE_DATA, getUniqueCarriers, getProductsByCarrier } from '../data/ffgCompGuideData';
 import { Carrier } from '../../../types/carrier.types';
 import { Comp, CreateCompData } from '../../../types/comp.types';
@@ -239,69 +240,48 @@ export const CompGuideImporter: React.FC<CompGuideImporterProps> = ({
   const summary = getImportSummary();
 
   return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 1000
-    }}>
-      <div style={{
-        backgroundColor: 'white',
-        borderRadius: '12px',
-        padding: '24px',
-        width: step === 'preview' ? '800px' : '600px',
-        maxHeight: '80vh',
-        overflow: 'auto',
-        boxShadow: '0 20px 40px rgba(0, 0, 0, 0.15)'
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-          <h2 style={{ margin: 0, fontSize: '24px', fontWeight: '600' }}>
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1000]">
+      <div
+        className="bg-card rounded-xl p-6 max-h-[80vh] overflow-auto shadow-2xl"
+        style={{
+          width: step === 'preview' ? '800px' : '600px',
+        }}
+      >
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="m-0 text-2xl font-semibold">
             Import FFG Commission Guide
           </h2>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px' }}>
+          <button onClick={onClose} className="bg-transparent border-0 cursor-pointer p-2">
             <X size={20} />
           </button>
         </div>
 
         {step === 'preview' && (
           <>
-            <div style={{ marginBottom: '24px' }}>
-              <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '12px' }}>
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold mb-3">
                 Select Carriers to Import
               </h3>
-              <p style={{ color: '#6b7280', marginBottom: '16px' }}>
+              <p className="text-muted-foreground mb-4">
                 Choose which carriers from the FFG Comp Guide you want to import. This will import all products and contract levels for the selected carriers.
               </p>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '12px' }}>
+              <div className="grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-3">
                 {ffgCarriers.map(carrier => (
-                  <label key={carrier} style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    padding: '12px',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    backgroundColor: selectedCarriers.includes(carrier) ? '#f0f9ff' : 'white'
-                  }}>
+                  <label
+                    key={carrier}
+                    className={cn(
+                      "flex items-center gap-2 p-3 border border-border rounded-lg cursor-pointer",
+                      selectedCarriers.includes(carrier) ? "bg-blue-50" : "bg-card"
+                    )}
+                  >
                     <input
                       type="checkbox"
                       checked={selectedCarriers.includes(carrier)}
                       onChange={() => handleCarrierToggle(carrier)}
                     />
-                    <span style={{ fontWeight: '500' }}>{carrier}</span>
-                    <span style={{
-                      fontSize: '12px',
-                      color: '#6b7280',
-                      marginLeft: 'auto'
-                    }}>
+                    <span className="font-medium">{carrier}</span>
+                    <span className="text-xs text-muted-foreground ml-auto">
                       {getProductsByCarrier(carrier).length} products
                     </span>
                   </label>
@@ -309,86 +289,63 @@ export const CompGuideImporter: React.FC<CompGuideImporterProps> = ({
               </div>
             </div>
 
-            <div style={{
-              padding: '16px',
-              backgroundColor: '#f8f9fa',
-              borderRadius: '8px',
-              marginBottom: '24px'
-            }}>
-              <h4 style={{ margin: '0 0 12px 0', fontSize: '16px', fontWeight: '600' }}>Import Summary</h4>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '12px' }}>
+            <div className="p-4 bg-muted rounded-lg mb-6">
+              <h4 className="m-0 mb-3 text-base font-semibold">Import Summary</h4>
+              <div className="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-3">
                 <div>
-                  <span style={{ fontSize: '14px', color: '#6b7280' }}>Total Records</span>
-                  <div style={{ fontSize: '20px', fontWeight: '600' }}>{summary.totalRecords}</div>
+                  <span className="text-sm text-muted-foreground">Total Records</span>
+                  <div className="text-xl font-semibold">{summary.totalRecords}</div>
                 </div>
                 <div>
-                  <span style={{ fontSize: '14px', color: '#6b7280' }}>Carriers</span>
-                  <div style={{ fontSize: '20px', fontWeight: '600' }}>{selectedCarriers.length}</div>
+                  <span className="text-sm text-muted-foreground">Carriers</span>
+                  <div className="text-xl font-semibold">{selectedCarriers.length}</div>
                 </div>
                 <div>
-                  <span style={{ fontSize: '14px', color: '#6b7280' }}>Products</span>
-                  <div style={{ fontSize: '20px', fontWeight: '600' }}>{summary.productsToImport}</div>
+                  <span className="text-sm text-muted-foreground">Products</span>
+                  <div className="text-xl font-semibold">{summary.productsToImport}</div>
                 </div>
                 <div>
-                  <span style={{ fontSize: '14px', color: '#6b7280' }}>Contract Levels</span>
-                  <div style={{ fontSize: '20px', fontWeight: '600' }}>
+                  <span className="text-sm text-muted-foreground">Contract Levels</span>
+                  <div className="text-xl font-semibold">
                     {summary.contractLevels.length} ({summary.contractLevels[0]}-{summary.contractLevels[summary.contractLevels.length - 1]})
                   </div>
                 </div>
               </div>
 
               {summary.carriersToCreate.length > 0 && (
-                <div style={{ marginTop: '12px', padding: '8px', backgroundColor: '#fef3c7', borderRadius: '6px' }}>
-                  <div style={{ fontSize: '14px', fontWeight: '500', color: '#92400e' }}>
+                <div className="mt-3 p-2 bg-yellow-100 rounded-md">
+                  <div className="text-sm font-medium text-yellow-900">
                     New carriers to be created: {summary.carriersToCreate.join(', ')}
                   </div>
                 </div>
               )}
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px' }}>
+            <div className="flex justify-between gap-3">
               <button
                 onClick={exportData}
-                style={{
-                  padding: '12px 20px',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '8px',
-                  backgroundColor: 'white',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}
+                className="px-5 py-3 border border-border rounded-lg bg-card cursor-pointer flex items-center gap-2"
               >
                 <Download size={16} />
                 Export CSV
               </button>
 
-              <div style={{ display: 'flex', gap: '12px' }}>
+              <div className="flex gap-3">
                 <button
                   onClick={onClose}
-                  style={{
-                    padding: '12px 24px',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '8px',
-                    backgroundColor: 'white',
-                    cursor: 'pointer'
-                  }}
+                  className="px-6 py-3 border border-border rounded-lg bg-card cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={proceedToMapping}
                   disabled={selectedCarriers.length === 0}
-                  style={{
-                    padding: '12px 24px',
-                    border: 'none',
-                    borderRadius: '8px',
-                    backgroundColor: selectedCarriers.length > 0 ? '#3b82f6' : '#e2e8f0',
-                    color: selectedCarriers.length > 0 ? 'white' : '#6b7280',
-                    cursor: selectedCarriers.length > 0 ? 'pointer' : 'not-allowed',
-                    fontWeight: '500'
-                  }}
+                  className={cn(
+                    "px-6 py-3 border-0 rounded-lg font-medium",
+                    selectedCarriers.length > 0
+                      ? "bg-info text-white cursor-pointer"
+                      : "bg-border text-muted-foreground cursor-not-allowed"
+                  )}
                 >
                   Continue Import
                 </button>
@@ -399,34 +356,29 @@ export const CompGuideImporter: React.FC<CompGuideImporterProps> = ({
 
         {step === 'mapping' && (
           <>
-            <div style={{ marginBottom: '24px' }}>
-              <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '12px' }}>
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold mb-3">
                 Carrier Mapping
               </h3>
-              <p style={{ color: '#6b7280', marginBottom: '16px' }}>
+              <p className="text-muted-foreground mb-4">
                 Confirm how carriers should be handled during import.
               </p>
 
-              <div style={{ display: 'grid', gap: '12px' }}>
+              <div className="grid gap-3">
                 {selectedCarriers.map(carrier => {
                   const existingCarrier = existingCarriers.find(c => c.name === carrier);
                   return (
-                    <div key={carrier} style={{
-                      padding: '12px',
-                      border: '1px solid #e2e8f0',
-                      borderRadius: '8px',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center'
-                    }}>
-                      <span style={{ fontWeight: '500' }}>{carrier}</span>
-                      <span style={{
-                        fontSize: '14px',
-                        padding: '4px 8px',
-                        borderRadius: '4px',
-                        backgroundColor: existingCarrier ? '#dcfce7' : '#fef3c7',
-                        color: existingCarrier ? '#166534' : '#92400e'
-                      }}>
+                    <div
+                      key={carrier}
+                      className="p-3 border border-border rounded-lg flex justify-between items-center"
+                    >
+                      <span className="font-medium">{carrier}</span>
+                      <span className={cn(
+                        "text-sm px-2 py-1 rounded",
+                        existingCarrier
+                          ? "bg-green-100 text-green-900"
+                          : "bg-yellow-100 text-yellow-900"
+                      )}>
                         {existingCarrier ? 'Map to existing' : 'Create new'}
                       </span>
                     </div>
@@ -435,30 +387,16 @@ export const CompGuideImporter: React.FC<CompGuideImporterProps> = ({
               </div>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+            <div className="flex justify-end gap-3">
               <button
                 onClick={() => setStep('preview')}
-                style={{
-                  padding: '12px 24px',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '8px',
-                  backgroundColor: 'white',
-                  cursor: 'pointer'
-                }}
+                className="px-6 py-3 border border-border rounded-lg bg-card cursor-pointer"
               >
                 Back
               </button>
               <button
                 onClick={startImport}
-                style={{
-                  padding: '12px 24px',
-                  border: 'none',
-                  borderRadius: '8px',
-                  backgroundColor: '#3b82f6',
-                  color: 'white',
-                  cursor: 'pointer',
-                  fontWeight: '500'
-                }}
+                className="px-6 py-3 border-0 rounded-lg bg-info text-white cursor-pointer font-medium"
               >
                 Start Import
               </button>
@@ -467,32 +405,23 @@ export const CompGuideImporter: React.FC<CompGuideImporterProps> = ({
         )}
 
         {step === 'importing' && (
-          <div style={{ textAlign: 'center', padding: '40px' }}>
-            <Upload size={48} style={{ marginBottom: '16px', color: '#3b82f6' }} />
-            <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '8px' }}>
+          <div className="text-center p-10">
+            <Upload size={48} className="mb-4 text-info inline-block" />
+            <h3 className="text-lg font-semibold mb-2">
               Importing Commission Data...
             </h3>
-            <p style={{ color: '#6b7280', marginBottom: '24px' }}>
+            <p className="text-muted-foreground mb-6">
               Please wait while we import the commission guide data.
             </p>
 
-            <div style={{
-              width: '100%',
-              height: '8px',
-              backgroundColor: '#f1f5f9',
-              borderRadius: '4px',
-              overflow: 'hidden',
-              marginBottom: '8px'
-            }}>
-              <div style={{
-                width: `${progress}%`,
-                height: '100%',
-                backgroundColor: '#3b82f6',
-                transition: 'width 0.3s ease'
-              }} />
+            <div className="w-full h-2 bg-muted rounded overflow-hidden mb-2">
+              <div
+                className="h-full bg-info transition-all duration-300 ease-in-out"
+                style={{ width: `${progress}%` }}
+              />
             </div>
 
-            <span style={{ fontSize: '14px', color: '#6b7280' }}>
+            <span className="text-sm text-muted-foreground">
               {Math.round(progress)}% complete
             </span>
           </div>
@@ -500,34 +429,29 @@ export const CompGuideImporter: React.FC<CompGuideImporterProps> = ({
 
         {step === 'complete' && (
           <>
-            <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+            <div className="text-center mb-6">
               {importResults.success > 0 ? (
-                <Check size={48} style={{ color: '#10b981', marginBottom: '16px' }} />
+                <Check size={48} className="text-success mb-4 inline-block" />
               ) : (
-                <AlertCircle size={48} style={{ color: '#ef4444', marginBottom: '16px' }} />
+                <AlertCircle size={48} className="text-error mb-4 inline-block" />
               )}
 
-              <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '8px' }}>
+              <h3 className="text-lg font-semibold mb-2">
                 {importResults.success > 0 ? 'Import Completed' : 'Import Failed'}
               </h3>
             </div>
 
-            <div style={{
-              padding: '16px',
-              backgroundColor: '#f8f9fa',
-              borderRadius: '8px',
-              marginBottom: '24px'
-            }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '12px' }}>
+            <div className="p-4 bg-muted rounded-lg mb-6">
+              <div className="grid grid-cols-[repeat(auto-fit,minmax(120px,1fr))] gap-3">
                 <div>
-                  <span style={{ fontSize: '14px', color: '#6b7280' }}>Imported</span>
-                  <div style={{ fontSize: '20px', fontWeight: '600', color: '#10b981' }}>
+                  <span className="text-sm text-muted-foreground">Imported</span>
+                  <div className="text-xl font-semibold text-success">
                     {importResults.success}
                   </div>
                 </div>
                 <div>
-                  <span style={{ fontSize: '14px', color: '#6b7280' }}>Errors</span>
-                  <div style={{ fontSize: '20px', fontWeight: '600', color: '#ef4444' }}>
+                  <span className="text-sm text-muted-foreground">Errors</span>
+                  <div className="text-xl font-semibold text-error">
                     {importResults.errors.length}
                   </div>
                 </div>
@@ -535,38 +459,22 @@ export const CompGuideImporter: React.FC<CompGuideImporterProps> = ({
             </div>
 
             {importResults.errors.length > 0 && (
-              <div style={{
-                maxHeight: '200px',
-                overflow: 'auto',
-                padding: '12px',
-                backgroundColor: '#fef2f2',
-                border: '1px solid #fecaca',
-                borderRadius: '8px',
-                marginBottom: '24px'
-              }}>
-                <h4 style={{ fontSize: '14px', fontWeight: '600', color: '#dc2626', marginBottom: '8px' }}>
+              <div className="max-h-[200px] overflow-auto p-3 bg-red-50 border border-red-200 rounded-lg mb-6">
+                <h4 className="text-sm font-semibold text-error mb-2">
                   Import Errors:
                 </h4>
                 {importResults.errors.map((error, index) => (
-                  <div key={index} style={{ fontSize: '12px', color: '#dc2626', marginBottom: '4px' }}>
+                  <div key={index} className="text-xs text-error mb-1">
                     {error}
                   </div>
                 ))}
               </div>
             )}
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+            <div className="flex justify-end">
               <button
                 onClick={onClose}
-                style={{
-                  padding: '12px 24px',
-                  border: 'none',
-                  borderRadius: '8px',
-                  backgroundColor: '#3b82f6',
-                  color: 'white',
-                  cursor: 'pointer',
-                  fontWeight: '500'
-                }}
+                className="px-6 py-3 border-0 rounded-lg bg-info text-white cursor-pointer font-medium"
               >
                 Close
               </button>

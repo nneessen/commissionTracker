@@ -2,18 +2,15 @@
 
 import React from 'react';
 import { QuickActionsPanelProps } from '../../../types/dashboard.types';
-import {
-  BORDER_RADIUS,
-  SHADOWS,
-  FONT_SIZES,
-  QUICK_ACTION_BUTTON,
-} from '../../../constants/dashboard';
+import { cn } from '@/lib/utils';
 
 /**
  * Quick Actions Panel Component
  *
  * Displays quick action buttons (Add Policy, Add Expense, View Reports).
  * Extracted from DashboardHome.tsx (lines 1150-1214).
+ *
+ * Refactored to use Tailwind CSS classes instead of inline styles.
  */
 export const QuickActionsPanel: React.FC<QuickActionsPanelProps> = ({
   actions,
@@ -21,61 +18,22 @@ export const QuickActionsPanel: React.FC<QuickActionsPanelProps> = ({
   isCreating,
 }) => {
   return (
-    <div
-      style={{
-        background: '#ffffff',
-        borderRadius: BORDER_RADIUS.LARGE,
-        padding: '14px',
-        boxShadow: SHADOWS.CARD,
-      }}
-    >
-      <div
-        style={{
-          fontSize: FONT_SIZES.SUBSECTION_HEADER,
-          fontWeight: 600,
-          marginBottom: '10px',
-          color: '#1a1a1a',
-          textTransform: 'uppercase',
-          letterSpacing: '0.5px',
-        }}
-      >
+    <div className="bg-card rounded-lg p-3.5 shadow-sm">
+      <div className="text-sm font-semibold mb-2.5 text-foreground uppercase tracking-wide">
         Quick Actions
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+      <div className="flex flex-col gap-1.5">
         {actions.map((action, index) => (
           <button
             key={index}
             onClick={() => onActionClick(action.action)}
             disabled={isCreating}
-            style={{
-              padding: '8px 12px',
-              borderRadius: BORDER_RADIUS.SMALL,
-              border: `1px solid ${QUICK_ACTION_BUTTON.DEFAULT_BORDER}`,
-              background: isCreating
-                ? QUICK_ACTION_BUTTON.DISABLED_BG
-                : QUICK_ACTION_BUTTON.DEFAULT_BG,
-              fontSize: FONT_SIZES.STAT_LABEL,
-              fontWeight: 500,
-              cursor: isCreating ? 'not-allowed' : 'pointer',
-              textAlign: 'left',
-              color: isCreating
-                ? QUICK_ACTION_BUTTON.DISABLED_COLOR
-                : '#1a1a1a',
-              transition: 'all 0.2s ease',
-              opacity: isCreating ? QUICK_ACTION_BUTTON.DISABLED_OPACITY : 1,
-            }}
-            onMouseEnter={(e) => {
-              if (!isCreating) {
-                e.currentTarget.style.background = QUICK_ACTION_BUTTON.HOVER_BG;
-                e.currentTarget.style.borderColor = QUICK_ACTION_BUTTON.HOVER_BORDER;
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (!isCreating) {
-                e.currentTarget.style.background = QUICK_ACTION_BUTTON.DEFAULT_BG;
-                e.currentTarget.style.borderColor = QUICK_ACTION_BUTTON.DEFAULT_BORDER;
-              }
-            }}
+            className={cn(
+              "px-3 py-2 rounded-sm border text-xs font-medium text-left transition-all duration-200",
+              isCreating
+                ? "bg-muted/30 border-border/50 text-muted-foreground cursor-not-allowed opacity-60"
+                : "bg-card border-border text-foreground cursor-pointer hover:bg-muted/20 hover:border-border/80"
+            )}
           >
             {isCreating && action.label !== 'View Reports'
               ? `${action.label}...`

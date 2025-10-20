@@ -1,7 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/Input';
+import { Input } from '@/components/ui/input';
 import {
   Table,
   TableBody,
@@ -38,23 +38,19 @@ export function ProductsManagement() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
-  // Filter products based on search and carrier filter
-  const filteredProducts = useMemo(() => {
-    let result = products;
+  // Filter products based on search and carrier filter (React 19.1 optimizes automatically)
+  let filteredProducts = products;
 
-    if (filterCarrierId) {
-      result = result.filter(p => p.carrier_id === filterCarrierId);
-    }
+  if (filterCarrierId) {
+    filteredProducts = filteredProducts.filter(p => p.carrier_id === filterCarrierId);
+  }
 
-    if (searchTerm) {
-      const search = searchTerm.toLowerCase();
-      result = result.filter(
-        (product) => product.name.toLowerCase().includes(search)
-      );
-    }
-
-    return result;
-  }, [products, searchTerm, filterCarrierId]);
+  if (searchTerm) {
+    const search = searchTerm.toLowerCase();
+    filteredProducts = filteredProducts.filter(
+      (product) => product.name.toLowerCase().includes(search)
+    );
+  }
 
   // Get carrier name by ID
   const getCarrierName = (carrierId: string) => {

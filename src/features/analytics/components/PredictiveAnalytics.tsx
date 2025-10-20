@@ -15,13 +15,8 @@ export function PredictiveAnalytics() {
 
   if (isLoading) {
     return (
-      <div style={{
-        background: '#ffffff',
-        borderRadius: '12px',
-        padding: '20px',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-      }}>
-        <div style={{ padding: '40px', textAlign: 'center', color: '#94a3b8', fontSize: '12px' }}>
+      <div className="bg-white rounded-xl p-5 shadow-sm">
+        <div className="p-10 text-center text-gray-400 text-xs">
           Loading forecast data...
         </div>
       </div>
@@ -43,44 +38,16 @@ export function PredictiveAnalytics() {
   const next3MonthsRevenue = renewals.slice(0, 3).reduce((sum, r) => sum + r.expectedRevenue, 0);
 
   return (
-    <div style={{
-      background: '#ffffff',
-      borderRadius: '12px',
-      padding: '20px',
-      boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-      width: '100%',
-      boxSizing: 'border-box',
-      overflow: 'hidden'
-    }}>
+    <div className="bg-white rounded-xl p-5 shadow-sm w-full box-border overflow-hidden">
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
-        <div style={{
-          fontSize: '13px',
-          fontWeight: 600,
-          color: '#1a1a1a',
-          textTransform: 'uppercase',
-          letterSpacing: '0.5px'
-        }}>
+        <div className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
           Predictive Analytics
         </div>
         {/* Info Icon Button */}
         <button
           onClick={() => setShowInfo(!showInfo)}
-          style={{
-            background: '#f0f9ff',
-            border: '1px solid #e0f2fe',
-            borderRadius: '50%',
-            width: '24px',
-            height: '24px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-            fontSize: '12px',
-            fontWeight: 700,
-            color: '#3b82f6',
-            transition: 'all 0.2s ease',
-          }}
+          className="bg-blue-50 border border-blue-100"
           onMouseEnter={(e) => {
             e.currentTarget.style.background = '#dbeafe';
             e.currentTarget.style.transform = 'scale(1.1)';
@@ -97,18 +64,9 @@ export function PredictiveAnalytics() {
 
       {/* Info Panel */}
       {showInfo && (
-        <div style={{
-          marginBottom: '20px',
-          padding: '16px',
-          background: '#f0f9ff',
-          border: '1px solid #bfdbfe',
-          borderRadius: '8px',
-          fontSize: '12px',
-          lineHeight: '1.8',
-          color: '#1e40af'
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-            <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: '#1e40af' }}>
+        <div className="bg-blue-50 border border-blue-200">
+          <div className="flex justify-between items-start mb-3">
+            <h3 className="m-0 text-sm font-bold text-blue-800">
               🔮 Understanding Predictive Analytics
             </h3>
             <button
@@ -127,52 +85,52 @@ export function PredictiveAnalytics() {
             </button>
           </div>
 
-          <div style={{ marginBottom: '16px' }}>
+          <div className="mb-4">
             <strong>What is this?</strong> Predictive Analytics uses your historical data to forecast future performance and identify upcoming opportunities.
             Think of it as your business crystal ball - helping you plan ahead and spot potential issues before they happen.
           </div>
 
-          <div style={{ marginBottom: '16px' }}>
+          <div className="mb-4">
             <strong>Key Forecasts:</strong>
           </div>
 
-          <div style={{ marginBottom: '12px', paddingLeft: '16px' }}>
-            <div style={{ marginBottom: '8px' }}>
-              <strong style={{ color: '#3b82f6' }}>📊 Next 3 Months Renewals:</strong>
-              <div style={{ marginTop: '4px', color: '#475569' }}>
+          <div className="mb-3 pl-4">
+            <div className="mb-2">
+              <strong className="text-blue-500">📊 Next 3 Months Renewals:</strong>
+              <div className="mt-1 text-gray-600">
                 How many policies are coming up for renewal soon
-                <div style={{ fontSize: '11px', marginTop: '2px' }}>
+                <div className="text-xs mt-0.5">
                   Example: 25 policies = 25 opportunities to re-engage clients
                 </div>
               </div>
             </div>
 
-            <div style={{ marginBottom: '8px' }}>
-              <strong style={{ color: '#10b981' }}>💰 Expected Revenue:</strong>
-              <div style={{ marginTop: '4px', color: '#475569' }}>
+            <div className="mb-2">
+              <strong className="text-green-500">💰 Expected Revenue:</strong>
+              <div className="mt-1 text-gray-600">
                 Projected commission income from upcoming renewals
-                <div style={{ fontSize: '11px', marginTop: '2px' }}>
+                <div className="text-xs mt-0.5">
                   Based on current commission rates and premium amounts
                 </div>
               </div>
             </div>
 
-            <div style={{ marginBottom: '8px' }}>
-              <strong style={{ color: '#f59e0b' }}>📈 Growth Trajectory:</strong>
-              <div style={{ marginTop: '4px', color: '#475569' }}>
+            <div className="mb-2">
+              <strong className="text-amber-500">📈 Growth Trajectory:</strong>
+              <div className="mt-1 text-gray-600">
                 Projected business growth based on recent trends
-                <div style={{ fontSize: '11px', marginTop: '2px' }}>
+                <div className="text-xs mt-0.5">
                   Shows if you're trending up, down, or staying stable
                 </div>
               </div>
             </div>
           </div>
 
-          <div style={{ marginBottom: '16px', padding: '12px', background: '#ffffff', borderRadius: '6px' }}>
+          <div className="mb-4 p-3 bg-white rounded-md">
             <strong>How Predictions Work:</strong>
-            <div style={{ fontSize: '11px', marginTop: '8px', color: '#475569' }}>
+            <div className="text-xs mt-2 text-gray-600">
               The system analyzes:
-              <div style={{ paddingLeft: '12px', marginTop: '4px' }}>
+              <div className="pl-3 mt-1">
                 • Your last 6-12 months of policy data<br/>
                 • Seasonal patterns (busy months vs slow months)<br/>
                 • Renewal cycles and policy anniversaries<br/>
@@ -182,9 +140,9 @@ export function PredictiveAnalytics() {
             </div>
           </div>
 
-          <div style={{ marginBottom: '16px', padding: '12px', background: '#ffffff', borderRadius: '6px' }}>
+          <div className="mb-4 p-3 bg-white rounded-md">
             <strong>Real Example:</strong>
-            <div style={{ fontSize: '11px', marginTop: '8px', color: '#475569' }}>
+            <div className="text-xs mt-2 text-gray-600">
               Current date: October 2025<br/>
               Next 3 months (Nov, Dec, Jan):<br/>
               • 15 policies renewing in November<br/>

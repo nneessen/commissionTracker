@@ -1,6 +1,6 @@
 // src/hooks/useMetricsWithDateRange.ts
 
-import { useMemo } from 'react';
+// React 19.1 optimizes automatically - useMemo removed
 import { useQuery } from '@tanstack/react-query';
 import {
   TimePeriod,
@@ -109,36 +109,37 @@ export function useMetricsWithDateRange(
   const isLoading = policiesLoading || commissionsLoading || expensesLoading || carriersLoading;
 
   // Calculate date range
-  const dateRange = useMemo(() => getDateRange(timePeriod), [timePeriod]);
+  // React 19.1 optimizes automatically
+  const dateRange = getDateRange(timePeriod);
 
   // Filter commissions by date range
-  const filteredCommissions = useMemo(() => {
+  const filteredCommissions = (() => {
     return commissions.filter(commission => {
       const dateToCheck = commission.status === 'paid' && commission.paymentDate
         ? commission.paymentDate  // Use paymentDate (matches DB field payment_date)
         : commission.createdAt;
       return isInDateRange(dateToCheck, dateRange);
     });
-  }, [commissions, dateRange]);
+  })();
 
   // Filter expenses by date range
-  const filteredExpenses = useMemo(() => {
+  const filteredExpenses = (() => {
     return expenses.filter(expense => {
       const expenseDate = expense.date || expense.createdAt;
       return isInDateRange(expenseDate, dateRange);
     });
-  }, [expenses, dateRange]);
+  })();
 
   // Filter policies by date range (for new policies)
-  const filteredPolicies = useMemo(() => {
+  const filteredPolicies = (() => {
     return policies.filter(policy => {
       const policyDate = policy.effectiveDate || policy.createdAt;
       return isInDateRange(policyDate, dateRange);
     });
-  }, [policies, dateRange]);
+  })();
 
   // Calculate period commission metrics
-  const periodCommissions = useMemo((): PeriodCommissionMetrics => {
+  const periodCommissions = (() => {
     console.log('🔍 [METRICS] Calculating commission metrics for period:', timePeriod);
     console.log('🔍 [METRICS] Date range:', dateRange);
     console.log('🔍 [METRICS] Total commissions from DB:', commissions.length);
@@ -216,10 +217,10 @@ export function useMetricsWithDateRange(
       averageRate,
       averageAmount
     };
-  }, [filteredCommissions]);
+  })();
 
   // Calculate period expense metrics
-  const periodExpenses = useMemo((): PeriodExpenseMetrics => {
+  const periodExpenses = (() => {
     console.log('🔍 [EXPENSES] Calculating expense metrics');
     console.log('🔍 [EXPENSES] Filtered expenses:', filteredExpenses.length);
     console.log('🔍 [EXPENSES] Expense details:', filteredExpenses.map(e => ({
@@ -263,10 +264,10 @@ export function useMetricsWithDateRange(
       count,
       averageAmount
     };
-  }, [filteredExpenses]);
+  })();
 
   // Calculate period policy metrics
-  const periodPolicies = useMemo((): PeriodPolicyMetrics => {
+  const periodPolicies = (() => {
     console.log('🔍 [POLICIES] Calculating policy metrics');
     console.log('🔍 [POLICIES] Filtered policies:', filteredPolicies.length);
     console.log('🔍 [POLICIES] Policy details:', filteredPolicies.map(p => ({
@@ -306,10 +307,10 @@ export function useMetricsWithDateRange(
       lapsed,
       commissionableValue
     };
-  }, [filteredPolicies]);
+  })();
 
   // Calculate period client metrics
-  const periodClients = useMemo((): PeriodClientMetrics => {
+  const periodClients = (() => {
     // Get unique clients from filtered policies
     const clientsInPeriod = new Map<string, any>();
 
@@ -352,10 +353,10 @@ export function useMetricsWithDateRange(
       byState,
       totalValue
     };
-  }, [filteredPolicies]);
+  })();
 
   // Calculate current state metrics (point-in-time, not filtered by date)
-  const currentState = useMemo((): CurrentStateMetrics => {
+  const currentState = (() => {
     const activePolicies = policies.filter(p => p.status === 'active').length;
     const pendingPolicies = policies.filter(p => p.status === 'pending').length;
     const totalPolicies = policies.length;
@@ -382,10 +383,10 @@ export function useMetricsWithDateRange(
       retentionRate,
       totalPolicies
     };
-  }, [policies, commissions]);
+  })();
 
   // Calculate period analytics
-  const periodAnalytics = useMemo((): PeriodAnalytics => {
+  const periodAnalytics = (() => {
     // Use 'paid' (money received) for financial calculations, not 'earned' (entitled)
     const surplusDeficit = periodCommissions.paid - periodExpenses.total;
     const netIncome = surplusDeficit;
@@ -472,7 +473,7 @@ export function useMetricsWithDateRange(
         policiesPerDayNeeded
       }
     };
-  }, [periodCommissions, periodExpenses, periodPolicies, timePeriod, commissions]);
+  })();
 
   return {
     periodCommissions,

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { usePolicies } from './usePolicies';
 import { useSort } from '../base/useSort';
 import { usePagination } from '../base/usePagination';
@@ -17,19 +17,17 @@ export function usePoliciesView() {
   // Client-side filtering state
   const [filters, setFilters] = useState<PolicyFilters>({});
 
-  // Apply client-side filters
-  const filteredData = useMemo(() => {
-    return policies.filter(policy => {
-      if (filters.status && policy.status !== filters.status) return false;
-      if (filters.carrierId && policy.carrierId !== filters.carrierId) return false;
-      if (filters.product && policy.product !== filters.product) return false;
-      if (filters.startDate && new Date(policy.effectiveDate) < filters.startDate) return false;
-      if (filters.endDate && new Date(policy.effectiveDate) > filters.endDate) return false;
-      if (filters.minPremium && policy.annualPremium < filters.minPremium) return false;
-      if (filters.maxPremium && policy.annualPremium > filters.maxPremium) return false;
-      return true;
-    });
-  }, [policies, filters]);
+  // Apply client-side filters (React 19.1 optimizes automatically)
+  const filteredData = policies.filter(policy => {
+    if (filters.status && policy.status !== filters.status) return false;
+    if (filters.carrierId && policy.carrierId !== filters.carrierId) return false;
+    if (filters.product && policy.product !== filters.product) return false;
+    if (filters.startDate && new Date(policy.effectiveDate) < filters.startDate) return false;
+    if (filters.endDate && new Date(policy.effectiveDate) > filters.endDate) return false;
+    if (filters.minPremium && policy.annualPremium < filters.minPremium) return false;
+    if (filters.maxPremium && policy.annualPremium > filters.maxPremium) return false;
+    return true;
+  });
 
   const clearFilters = () => setFilters({});
   const filterCount = Object.keys(filters).filter(key =>

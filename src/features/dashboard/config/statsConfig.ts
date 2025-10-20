@@ -9,9 +9,31 @@
 
 import { TimePeriod, getPeriodLabel } from '../../../utils/dateRange';
 import { StatItemConfig } from '../../../types/dashboard.types';
-import { METRIC_COLORS } from '../../../constants/dashboard';
 import { formatCurrency, formatPercent } from '../../../utils/formatting';
 import { scaleToDisplayPeriod, getPeriodSuffix } from '../../../utils/dashboardCalculations';
+
+// Metric color constants (previously imported from constants/dashboard.ts)
+const METRIC_COLORS = {
+  COMMISSION_EARNED: '#10b981',
+  PENDING_PIPELINE: '#3b82f6',
+  EXPENSES: '#f59e0b',
+  NET_INCOME_POSITIVE: '#10b981',
+  NET_INCOME_NEGATIVE: '#ef4444',
+  BREAKEVEN: '#ef4444',
+  BREAKEVEN_MET: '#10b981',
+  POLICIES_NEEDED: '#8b5cf6',
+  ACTIVE_POLICIES: '#06b6d4',
+  TOTAL_POLICIES: '#64748b',
+  RETENTION_GOOD: '#10b981',
+  RETENTION_WARNING: '#f59e0b',
+  LAPSE_GOOD: '#10b981',
+  LAPSE_BAD: '#ef4444',
+  TOTAL_CLIENTS: '#ec4899',
+  POLICIES_PER_CLIENT: '#a855f7',
+  AVG_PREMIUM: '#0ea5e9',
+  AVG_COMMISSION: '#14b8a6',
+  AVG_CLIENT_LTV: '#f97316',
+} as const;
 
 interface StatsConfigParams {
   timePeriod: TimePeriod;

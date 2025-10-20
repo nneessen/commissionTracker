@@ -1,7 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/Input';
+import { Input } from '@/components/ui/input';
 import {
   Table,
   TableBody,
@@ -24,17 +24,17 @@ export function CarriersManagement() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedCarrier, setSelectedCarrier] = useState<Carrier | null>(null);
 
-  // Filter carriers based on search
-  const filteredCarriers = useMemo(() => {
-    if (!searchTerm) return carriers;
+  // Filter carriers based on search (React 19.1 optimizes automatically)
+  let filteredCarriers = carriers;
 
+  if (searchTerm) {
     const search = searchTerm.toLowerCase();
-    return carriers.filter(
+    filteredCarriers = carriers.filter(
       (carrier) =>
         carrier.name.toLowerCase().includes(search) ||
         carrier.short_name?.toLowerCase().includes(search)
     );
-  }, [carriers, searchTerm]);
+  }
 
   // Count products per carrier (this would come from a join query in real app)
   const getProductCount = (carrierId: string) => {

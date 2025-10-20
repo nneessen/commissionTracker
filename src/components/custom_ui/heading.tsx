@@ -1,4 +1,4 @@
-// src/components/ui/heading.tsx
+// src/components/custom_ui/heading.tsx
 import * as React from "react";
 import { cn } from "@/lib/utils";
 

@@ -1,4 +1,4 @@
-// src/components/ui/TimePeriodSelector.tsx
+// src/components/custom_ui/TimePeriodSelector.tsx
 
 import React from 'react';
 import { format } from 'date-fns';

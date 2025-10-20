@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import { Plus, AlertCircle } from "lucide-react";
 import { PolicyForm } from "./PolicyForm";
 import { PolicyList } from "./PolicyList";
@@ -209,39 +209,35 @@ export const PolicyDashboard: React.FC = () => {
     });
   };
 
-  // Calculate summary stats from loaded policies
-  const summary = useMemo(() => {
-    const activePolicies = policies.filter((p) => p.status === "active");
-    const totalAnnualPremium = policies.reduce(
-      (sum, p) => sum + (p.annualPremium || 0),
-      0,
-    );
-    const totalExpectedCommission = policies.reduce(
-      (sum, p) =>
-        sum + ((p.annualPremium || 0) * (p.commissionPercentage || 0)) / 100,
-      0,
-    );
+  // Calculate summary stats from loaded policies (React 19.1 optimizes automatically)
+  const activePolicies = policies.filter((p) => p.status === "active");
+  const totalAnnualPremium = policies.reduce(
+    (sum, p) => sum + (p.annualPremium || 0),
+    0,
+  );
+  const totalExpectedCommission = policies.reduce(
+    (sum, p) =>
+      sum + ((p.annualPremium || 0) * (p.commissionPercentage || 0)) / 100,
+    0,
+  );
 
-    return {
-      totalPolicies: policies.length,
-      activePolicies: activePolicies.length,
-      totalAnnualPremium,
-      totalExpectedCommission,
-    };
-  }, [policies]);
+  const summary = {
+    totalPolicies: policies.length,
+    activePolicies: activePolicies.length,
+    totalAnnualPremium,
+    totalExpectedCommission,
+  };
 
-  // Get expiring policies (within 30 days)
-  const expiringPolicies = useMemo(() => {
-    const futureDate = new Date();
-    futureDate.setDate(futureDate.getDate() + 30);
-    const now = new Date();
+  // Get expiring policies (within 30 days) (React 19.1 optimizes automatically)
+  const futureDate = new Date();
+  futureDate.setDate(futureDate.getDate() + 30);
+  const now = new Date();
 
-    return policies.filter((policy) => {
-      if (!policy.expirationDate) return false;
-      const expDate = new Date(policy.expirationDate).getTime();
-      return expDate >= now.getTime() && expDate <= futureDate.getTime();
-    });
-  }, [policies]);
+  const expiringPolicies = policies.filter((policy) => {
+    if (!policy.expirationDate) return false;
+    const expDate = new Date(policy.expirationDate).getTime();
+    return expDate >= now.getTime() && expDate <= futureDate.getTime();
+  });
 
   const handleEditPolicy = (policyId: string) => {
     setEditingPolicyId(policyId);

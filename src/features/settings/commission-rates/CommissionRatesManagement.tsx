@@ -1,7 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/Input';
+import { Input } from '@/components/ui/input';
 import {
   Table,
   TableBody,
@@ -52,33 +52,29 @@ export function CommissionRatesManagement() {
   const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<ProductWithRates | null>(null);
 
-  // Filter products
-  const filteredProducts = useMemo(() => {
-    let result = productsWithRates;
+  // Filter products (React 19.1 optimizes automatically)
+  let filteredProducts = productsWithRates;
 
-    if (filterCarrierId) {
-      result = result.filter(p => p.carrierId === filterCarrierId);
-    }
+  if (filterCarrierId) {
+    filteredProducts = filteredProducts.filter(p => p.carrierId === filterCarrierId);
+  }
 
-    if (filterProductType) {
-      result = result.filter(p => p.productType === filterProductType);
-    }
+  if (filterProductType) {
+    filteredProducts = filteredProducts.filter(p => p.productType === filterProductType);
+  }
 
-    if (showEmptyOnly) {
-      result = result.filter(p => Object.keys(p.rates).length === 0);
-    }
+  if (showEmptyOnly) {
+    filteredProducts = filteredProducts.filter(p => Object.keys(p.rates).length === 0);
+  }
 
-    if (searchTerm) {
-      const search = searchTerm.toLowerCase();
-      result = result.filter(
-        (product) =>
-          product.productName.toLowerCase().includes(search) ||
-          product.carrierName.toLowerCase().includes(search)
-      );
-    }
-
-    return result;
-  }, [productsWithRates, searchTerm, filterCarrierId, filterProductType, showEmptyOnly]);
+  if (searchTerm) {
+    const search = searchTerm.toLowerCase();
+    filteredProducts = filteredProducts.filter(
+      (product) =>
+        product.productName.toLowerCase().includes(search) ||
+        product.carrierName.toLowerCase().includes(search)
+    );
+  }
 
   const handleEditRates = (product: ProductWithRates) => {
     setSelectedProduct(product);

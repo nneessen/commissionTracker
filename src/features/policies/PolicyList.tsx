@@ -11,6 +11,7 @@ import {
   CheckCircle,
   AlertCircle,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { useCarriers } from "../../hooks/carriers";
 import { useCommissions } from "../../hooks/commissions/useCommissions";
 import { useUpdateCommissionStatus } from "../../hooks/commissions/useUpdateCommissionStatus";
@@ -399,23 +400,18 @@ export const PolicyList: React.FC<PolicyListProps> = ({
                               : policyCommission.status
                           }
                           onChange={(e) => handleStatusChange(policyCommission, e.target.value, policy)}
-                          className="status-select"
-                          style={{
-                            padding: '4px 6px',
-                            fontSize: '12px',
-                            borderRadius: '4px',
-                            border: '1px solid #e2e8f0',
-                            background: '#ffffff',
-                            cursor: 'pointer',
-                            fontWeight: 500,
-                            color: policyCommission.status === 'charged_back' || policyCommission.status === 'cancelled' ? '#dc2626' : '#1a1a1a'
-                          }}
+                          className={cn(
+                            "status-select px-1.5 py-1 text-xs rounded border border-border bg-card cursor-pointer font-medium",
+                            policyCommission.status === 'charged_back' || policyCommission.status === 'cancelled'
+                              ? "text-error"
+                              : "text-foreground"
+                          )}
                         >
                           <option value="paid">Paid</option>
                           <option value="cancelled">Cancelled</option>
                         </select>
                       ) : (
-                        <span style={{ color: '#999', fontSize: '12px' }}>No commission</span>
+                        <span className="text-muted-foreground/60 text-xs">No commission</span>
                       )}
                     </td>
                     <td className="date">{formatDate(policy.effectiveDate)}</td>
@@ -454,31 +450,31 @@ export const PolicyList: React.FC<PolicyListProps> = ({
               </button>
             </div>
             <div className="modal-body">
-              <div style={{ padding: '16px', background: '#fee', borderRadius: '8px', border: '1px solid #fcc', marginBottom: '16px' }}>
-                <div style={{ display: 'flex', alignItems: 'start', gap: '12px' }}>
-                  <AlertCircle size={20} color="#dc2626" style={{ flexShrink: 0, marginTop: '2px' }} />
+              <div className="p-4 bg-red-50 rounded-md border border-red-200 mb-4">
+                <div className="flex items-start gap-3">
+                  <AlertCircle size={20} className="text-error flex-shrink-0 mt-0.5" />
                   <div>
-                    <div style={{ fontWeight: 600, color: '#dc2626', marginBottom: '4px' }}>
+                    <div className="font-semibold text-error mb-1">
                       This will cancel the commission and policy
                     </div>
-                    <div style={{ fontSize: '14px', color: '#991b1b', lineHeight: '1.5' }}>
+                    <div className="text-sm text-red-700 leading-relaxed">
                       Chargeback amount will be calculated automatically: <strong>Advance - Earned</strong>
                     </div>
                   </div>
                 </div>
               </div>
               {selectedCommission && (
-                <div style={{ padding: '12px', background: '#f8f9fa', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div className="p-3 bg-muted/20 rounded-md border border-border">
+                  <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <div style={{ fontSize: '12px', color: '#4a5568', marginBottom: '4px' }}>Advance Amount</div>
-                      <div style={{ fontSize: '16px', fontWeight: 600, color: '#1a1a1a' }}>
+                      <div className="text-xs text-muted-foreground mb-1">Advance Amount</div>
+                      <div className="text-base font-semibold text-foreground">
                         {formatCurrency(selectedCommission.amount || 0)}
                       </div>
                     </div>
                     <div>
-                      <div style={{ fontSize: '12px', color: '#4a5568', marginBottom: '4px' }}>Current Status</div>
-                      <div style={{ fontSize: '16px', fontWeight: 600, color: '#1a1a1a', textTransform: 'capitalize' }}>
+                      <div className="text-xs text-muted-foreground mb-1">Current Status</div>
+                      <div className="text-base font-semibold text-foreground capitalize">
                         {selectedCommission.status}
                       </div>
                     </div>
@@ -497,8 +493,7 @@ export const PolicyList: React.FC<PolicyListProps> = ({
               <button
                 type="button"
                 onClick={handleChargeback}
-                className="btn-primary"
-                style={{ background: '#dc2626', borderColor: '#dc2626', color: '#ffffff' }}
+                className="btn-primary bg-error border-error text-white"
               >
                 Cancel Commission
               </button>

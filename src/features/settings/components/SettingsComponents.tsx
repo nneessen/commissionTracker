@@ -15,21 +15,10 @@ export const SettingsCard: React.FC<SettingsCardProps> = ({
 }) => {
   return (
     <div className={`metric-card ${className}`}>
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        marginBottom: '16px'
-      }}>
+      <div className="flex items-center justify-between mb-4">
         <h4>{title}</h4>
         {icon && (
-          <div style={{
-            padding: '8px',
-            borderRadius: '8px',
-            background: 'linear-gradient(135deg, #f8f9fa 0%, #e2e8f0 100%)',
-            border: '1px solid #e2e8f0',
-            color: '#1a1a1a'
-          }}>
+          <div className="p-2 rounded-lg bg-gradient-to-br from-card to-muted border border-border text-foreground">
             {icon}
           </div>
         )}
@@ -51,8 +40,8 @@ export const SettingsHeader: React.FC<SettingsHeaderProps> = ({
   children,
 }) => {
   return (
-    <div className="dashboard-header" style={{ marginBottom: '24px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+    <div className="dashboard-header mb-6">
+      <div className="flex items-center justify-between">
         <div>
           <h1>{title}</h1>
           {description && <p>{description}</p>}
@@ -74,11 +63,9 @@ export const SettingsGrid: React.FC<SettingsGridProps> = ({
 }) => {
   return (
     <div
-      className="dashboard-metrics-grid"
+      className="dashboard-metrics-grid gap-6 mb-6"
       style={{
         gridTemplateColumns: `repeat(${columns}, 1fr)`,
-        gap: '24px',
-        marginBottom: '24px'
       }}
     >
       {children}

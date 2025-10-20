@@ -12,7 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { EmptyState } from '@/components/ui/empty-state';
+import { EmptyState } from '@/components/custom_ui/empty-state';
 import { formatCurrency, formatDate } from '@/lib/format';
 import type { Expense } from '@/types/expense.types';
 

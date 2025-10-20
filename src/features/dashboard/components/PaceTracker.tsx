@@ -1,5 +1,8 @@
+// src/features/dashboard/components/PaceTracker.tsx
+
 import React from 'react';
 import { Target, Calendar, TrendingUp } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface PaceTrackerProps {
   policiesNeededPerWeek: number;
@@ -11,6 +14,12 @@ interface PaceTrackerProps {
   averageAP: number;
 }
 
+/**
+ * Pace Tracker Component
+ *
+ * Displays goal tracking metrics based on real average annual premium data.
+ * Refactored to use Tailwind CSS classes instead of inline styles.
+ */
 export const PaceTracker: React.FC<PaceTrackerProps> = ({
   policiesNeededPerWeek,
   policiesNeededPerMonth,
@@ -31,151 +40,87 @@ export const PaceTracker: React.FC<PaceTrackerProps> = ({
   const onPace = currentRunRate >= targetRunRate;
 
   return (
-    <div
-      style={{
-        background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
-        borderRadius: '16px',
-        padding: '24px',
-        boxShadow: '0 4px 20px rgba(26, 26, 26, 0.08)',
-        marginBottom: '24px',
-      }}
-    >
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-        <div
-          style={{
-            padding: '12px',
-            borderRadius: '12px',
-            background: 'linear-gradient(135deg, #1a1a1a 0%, #2d3748 100%)',
-            boxShadow: '0 4px 12px rgba(26, 26, 26, 0.15)',
-          }}
-        >
-          <Target size={24} color="#f8f9fa" />
+    <div className="bg-gradient-to-br from-card to-muted/20 rounded-lg p-6 shadow-md mb-6">
+      {/* Header Section */}
+      <div className="flex items-center gap-3 mb-5">
+        <div className="p-3 rounded-lg bg-gradient-to-br from-primary to-primary/80 shadow-md">
+          <Target size={24} className="text-card" />
         </div>
         <div>
-          <h3 style={{ fontSize: '20px', fontWeight: 600, color: '#1a1a1a', margin: 0 }}>
+          <h3 className="text-xl font-semibold text-foreground m-0">
             Pace Tracker
           </h3>
-          <p style={{ fontSize: '14px', color: '#4a5568', margin: 0 }}>
+          <p className="text-sm text-muted-foreground m-0">
             Goal tracking based on real average AP
           </p>
         </div>
       </div>
 
       {/* Pace Metrics Grid */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-          gap: '16px',
-          marginBottom: '20px',
-        }}
-      >
-        <div
-          style={{
-            padding: '16px',
-            borderRadius: '12px',
-            background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)',
-            boxShadow: '0 2px 8px rgba(26, 26, 26, 0.06)',
-          }}
-        >
-          <div style={{ fontSize: '11px', color: '#4a5568', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600 }}>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
+        {/* Policies/Week Needed */}
+        <div className="p-4 rounded-lg bg-gradient-to-br from-blue-50 to-blue-100 shadow-sm">
+          <div className="text-xs text-muted-foreground mb-2 uppercase tracking-wide font-semibold">
             Policies/Week Needed
           </div>
-          <div style={{ fontSize: '32px', fontWeight: 700, color: '#1a1a1a', fontFamily: 'Monaco, Menlo, monospace' }}>
+          <div className="text-4xl font-bold text-foreground font-mono">
             {policiesNeededPerWeek}
           </div>
-          <div style={{ fontSize: '11px', color: '#656d76', marginTop: '4px' }}>
+          <div className="text-xs text-muted-foreground/80 mt-1">
             To hit annual target
           </div>
         </div>
 
-        <div
-          style={{
-            padding: '16px',
-            borderRadius: '12px',
-            background: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)',
-            boxShadow: '0 2px 8px rgba(26, 26, 26, 0.06)',
-          }}
-        >
-          <div style={{ fontSize: '11px', color: '#4a5568', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600 }}>
+        {/* Policies/Month Needed */}
+        <div className="p-4 rounded-lg bg-gradient-to-br from-green-50 to-green-100 shadow-sm">
+          <div className="text-xs text-muted-foreground mb-2 uppercase tracking-wide font-semibold">
             Policies/Month Needed
           </div>
-          <div style={{ fontSize: '32px', fontWeight: 700, color: '#1a1a1a', fontFamily: 'Monaco, Menlo, monospace' }}>
+          <div className="text-4xl font-bold text-foreground font-mono">
             {policiesNeededPerMonth}
           </div>
-          <div style={{ fontSize: '11px', color: '#656d76', marginTop: '4px' }}>
+          <div className="text-xs text-muted-foreground/80 mt-1">
             Average monthly goal
           </div>
         </div>
 
-        <div
-          style={{
-            padding: '16px',
-            borderRadius: '12px',
-            background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
-            boxShadow: '0 2px 8px rgba(26, 26, 26, 0.06)',
-          }}
-        >
-          <div style={{ fontSize: '11px', color: '#4a5568', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600 }}>
+        {/* Average AP */}
+        <div className="p-4 rounded-lg bg-gradient-to-br from-amber-50 to-amber-100 shadow-sm">
+          <div className="text-xs text-muted-foreground mb-2 uppercase tracking-wide font-semibold">
             Average AP
           </div>
-          <div style={{ fontSize: '24px', fontWeight: 700, color: '#1a1a1a', fontFamily: 'Monaco, Menlo, monospace' }}>
+          <div className="text-2xl font-bold text-foreground font-mono">
             {formatCurrency(averageAP)}
           </div>
-          <div style={{ fontSize: '11px', color: '#656d76', marginTop: '4px' }}>
+          <div className="text-xs text-muted-foreground/80 mt-1">
             From real policy data
           </div>
         </div>
       </div>
 
       {/* Days Remaining */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
-          gap: '12px',
-          marginBottom: '20px',
-        }}
-      >
-        <div
-          style={{
-            padding: '12px',
-            borderRadius: '8px',
-            background: 'linear-gradient(135deg, #f8f9fa 0%, #e2e8f0 100%)',
-            boxShadow: '0 1px 4px rgba(26, 26, 26, 0.05)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-          }}
-        >
-          <Calendar size={16} color="#1a1a1a" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5">
+        {/* Quarter Days */}
+        <div className="p-3 rounded-md bg-gradient-to-br from-muted/20 to-muted/50 shadow-sm flex items-center gap-3">
+          <Calendar size={16} className="text-foreground" />
           <div>
-            <div style={{ fontSize: '20px', fontWeight: 700, color: '#1a1a1a' }}>
+            <div className="text-xl font-bold text-foreground">
               {daysRemainingInQuarter}
             </div>
-            <div style={{ fontSize: '10px', color: '#656d76', textTransform: 'uppercase' }}>
+            <div className="text-xs text-muted-foreground/80 uppercase">
               Days left (Quarter)
             </div>
           </div>
         </div>
 
-        <div
-          style={{
-            padding: '12px',
-            borderRadius: '8px',
-            background: 'linear-gradient(135deg, #f8f9fa 0%, #e2e8f0 100%)',
-            boxShadow: '0 1px 4px rgba(26, 26, 26, 0.05)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-          }}
-        >
-          <Calendar size={16} color="#1a1a1a" />
+        {/* Year Days */}
+        <div className="p-3 rounded-md bg-gradient-to-br from-muted/20 to-muted/50 shadow-sm flex items-center gap-3">
+          <Calendar size={16} className="text-foreground" />
           <div>
-            <div style={{ fontSize: '20px', fontWeight: 700, color: '#1a1a1a' }}>
+            <div className="text-xl font-bold text-foreground">
               {daysRemainingInYear}
             </div>
-            <div style={{ fontSize: '10px', color: '#656d76', textTransform: 'uppercase' }}>
+            <div className="text-xs text-muted-foreground/80 uppercase">
               Days left (Year)
             </div>
           </div>
@@ -184,98 +129,64 @@ export const PaceTracker: React.FC<PaceTrackerProps> = ({
 
       {/* Run Rate Progress */}
       <div
-        style={{
-          padding: '16px',
-          borderRadius: '12px',
-          background: onPace
-            ? 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)'
-            : 'linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%)',
-          boxShadow: '0 2px 8px rgba(26, 26, 26, 0.06)',
-        }}
+        className={cn(
+          "p-4 rounded-lg shadow-sm",
+          onPace
+            ? "bg-gradient-to-br from-green-50 to-green-100"
+            : "bg-gradient-to-br from-red-50 to-red-100"
+        )}
       >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <TrendingUp size={16} color={onPace ? '#15803d' : '#991b1b'} />
-            <span style={{ fontSize: '13px', color: '#1a1a1a', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+        {/* Header */}
+        <div className="flex justify-between items-center mb-3">
+          <div className="flex items-center gap-2">
+            <TrendingUp size={16} className={onPace ? "text-green-700" : "text-red-700"} />
+            <span className="text-sm text-foreground font-semibold uppercase tracking-wide">
               Current Run Rate
             </span>
           </div>
-          <span style={{ fontSize: '14px', color: '#1a1a1a', fontWeight: 700 }}>
+          <span className="text-sm text-foreground font-bold">
             {runRatePercentage.toFixed(0)}%
           </span>
         </div>
 
         {/* Progress Bar */}
-        <div
-          style={{
-            width: '100%',
-            height: '12px',
-            background: '#e2e8f0',
-            borderRadius: '6px',
-            overflow: 'hidden',
-            boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.06)',
-            marginBottom: '12px',
-          }}
-        >
+        <div className="w-full h-3 bg-muted/50 rounded-md overflow-hidden shadow-inner mb-3">
           <div
-            style={{
-              width: `${runRatePercentage}%`,
-              height: '100%',
-              background: onPace
-                ? 'linear-gradient(90deg, #15803d 0%, #16a34a 100%)'
-                : 'linear-gradient(90deg, #dc2626 0%, #ef4444 100%)',
-              borderRadius: '6px',
-              transition: 'width 0.3s ease',
-            }}
+            className={cn(
+              "h-full rounded-md transition-all duration-300",
+              onPace
+                ? "bg-gradient-to-r from-green-700 to-green-600"
+                : "bg-gradient-to-r from-red-600 to-red-500"
+            )}
+            style={{ width: `${runRatePercentage}%` }}
           />
         </div>
 
         {/* Run Rate Stats */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+        <div className="flex justify-between text-xs">
           <div>
-            <span style={{ color: '#656d76' }}>Current: </span>
-            <span style={{ color: '#1a1a1a', fontWeight: 700, fontFamily: 'Monaco, Menlo, monospace' }}>
+            <span className="text-muted-foreground/80">Current: </span>
+            <span className="text-foreground font-bold font-mono">
               {formatCurrency(currentRunRate)}
             </span>
           </div>
           <div>
-            <span style={{ color: '#656d76' }}>Target: </span>
-            <span style={{ color: '#1a1a1a', fontWeight: 700, fontFamily: 'Monaco, Menlo, monospace' }}>
+            <span className="text-muted-foreground/80">Target: </span>
+            <span className="text-foreground font-bold font-mono">
               {formatCurrency(targetRunRate)}
             </span>
           </div>
         </div>
 
+        {/* Status Messages */}
         {!onPace && (
-          <div
-            style={{
-              marginTop: '12px',
-              padding: '8px 12px',
-              borderRadius: '6px',
-              background: 'rgba(153, 27, 27, 0.1)',
-              border: '1px solid #dc2626',
-              fontSize: '12px',
-              color: '#991b1b',
-              fontWeight: 500,
-            }}
-          >
+          <div className="mt-3 px-3 py-2 rounded-md bg-red-700/10 border border-red-600 text-xs text-red-700 font-medium">
             📉 You're behind pace. Need to increase production to hit target.
           </div>
         )}
 
         {onPace && (
-          <div
-            style={{
-              marginTop: '12px',
-              padding: '8px 12px',
-              borderRadius: '6px',
-              background: 'rgba(21, 128, 61, 0.1)',
-              border: '1px solid #16a34a',
-              fontSize: '12px',
-              color: '#15803d',
-              fontWeight: 500,
-            }}
-          >
+          <div className="mt-3 px-3 py-2 rounded-md bg-green-700/10 border border-green-600 text-xs text-green-700 font-medium">
             ✓ You're on pace to exceed your annual target!
           </div>
         )}

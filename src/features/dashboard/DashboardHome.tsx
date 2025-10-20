@@ -21,7 +21,7 @@ import { QuickStatsPanel } from "./components/QuickStatsPanel";
 import { PerformanceOverviewCard } from "./components/PerformanceOverviewCard";
 import { AlertsPanel } from "./components/AlertsPanel";
 import { QuickActionsPanel } from "./components/QuickActionsPanel";
-import { DetailedKPIGrid_Compact } from "./components/DetailedKPIGrid_Compact";
+import { KPIGrid } from "./components/KPIGrid";
 import { ExpenseDialog } from "../expenses/components/ExpenseDialog";
 import { PolicyForm } from "../policies/PolicyForm";
 
@@ -85,25 +85,6 @@ export const DashboardHome: React.FC = () => {
   const isBreakeven = periodAnalytics.surplusDeficit >= 0;
   const isCreating = createPolicy.isPending || createExpense.isPending;
 
-  // 🔍 DEBUG: Log what's being displayed
-  console.log("📊 [DASHBOARD] ====== DISPLAY VALUES ======");
-  console.log("📊 [DASHBOARD] Time Period:", timePeriod);
-  console.log("📊 [DASHBOARD] Commission Earned:", periodCommissions.earned);
-  console.log(
-    "📊 [DASHBOARD] Commission Pending (pipeline):",
-    currentState.pendingPipeline,
-  );
-  console.log("📊 [DASHBOARD] Total Expenses:", periodExpenses.total);
-  console.log("📊 [DASHBOARD] Net Income:", periodAnalytics.netIncome);
-  console.log(
-    "📊 [DASHBOARD] Surplus/Deficit:",
-    periodAnalytics.surplusDeficit,
-  );
-  console.log("📊 [DASHBOARD] New Policies:", periodPolicies.newCount);
-  console.log("📊 [DASHBOARD] Premium Written:", periodPolicies.premiumWritten);
-  console.log("📊 [DASHBOARD] ====== END DISPLAY VALUES ======");
-
-  // Generate configurations
   const statsConfig = generateStatsConfig({
     timePeriod,
     periodCommissions,
@@ -254,22 +235,9 @@ export const DashboardHome: React.FC = () => {
     <>
       <div className="page-header">
         {/* Header with time period switcher and date range */}
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "flex-start",
-          }}
-        >
+        <div className="flex justify-between items-start">
           <DashboardHeader monthProgress={monthProgress} />
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "flex-end",
-              gap: "8px",
-            }}
-          >
+          <div className="flex flex-col items-end gap-2">
             <TimePeriodSwitcher
               timePeriod={timePeriod}
               onTimePeriodChange={setTimePeriod}
@@ -281,14 +249,7 @@ export const DashboardHome: React.FC = () => {
 
       <div className="page-content">
         {/* Main 3-column layout */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "280px 1fr 320px",
-            gap: "16px",
-            marginBottom: "16px",
-          }}
-        >
+        <div className="grid gap-4 mb-4" style={{ gridTemplateColumns: "280px 1fr 320px" }}>
           <QuickStatsPanel stats={statsConfig} timePeriod={timePeriod} />
 
           <PerformanceOverviewCard
@@ -301,7 +262,7 @@ export const DashboardHome: React.FC = () => {
             periodSuffix={periodSuffix}
           />
 
-          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+          <div className="flex flex-col gap-3">
             <AlertsPanel alerts={alertsConfig} />
             <QuickActionsPanel
               actions={quickActions}
@@ -312,7 +273,7 @@ export const DashboardHome: React.FC = () => {
         </div>
 
         {/* Bottom KPI grid */}
-        <DetailedKPIGrid_Compact sections={kpiConfig} />
+        <KPIGrid sections={kpiConfig} />
       </div>
 
       {/* Dialogs */}

@@ -1,5 +1,8 @@
+// src/features/dashboard/components/PerformanceMetrics.tsx
+
 import React from 'react';
 import { BarChart3, Trophy, TrendingUp } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface ProductPerformance {
   product: string;
@@ -23,6 +26,12 @@ interface PerformanceMetricsProps {
   topCarriers: CarrierPerformance[];
 }
 
+/**
+ * Performance Metrics Component
+ *
+ * Displays production KPIs and top performers (products & carriers).
+ * Refactored to use Tailwind CSS classes instead of inline styles.
+ */
 export const PerformanceMetrics: React.FC<PerformanceMetricsProps> = ({
   totalPolicies,
   activePolicies,
@@ -42,265 +51,173 @@ export const PerformanceMetrics: React.FC<PerformanceMetricsProps> = ({
       .join(' ');
   };
 
+  const getRankBadgeClass = (index: number): string => {
+    switch (index) {
+      case 0:
+        return 'bg-gradient-to-br from-amber-400 to-amber-500';
+      case 1:
+        return 'bg-gradient-to-br from-gray-400 to-gray-500';
+      case 2:
+        return 'bg-gradient-to-br from-orange-600 to-orange-700';
+      default:
+        return 'bg-gradient-to-br from-gray-400 to-gray-500';
+    }
+  };
+
   return (
-    <div
-      style={{
-        background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
-        borderRadius: '16px',
-        padding: '24px',
-        boxShadow: '0 4px 20px rgba(26, 26, 26, 0.08)',
-        marginBottom: '24px',
-      }}
-    >
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-        <div
-          style={{
-            padding: '12px',
-            borderRadius: '12px',
-            background: 'linear-gradient(135deg, #1a1a1a 0%, #2d3748 100%)',
-            boxShadow: '0 4px 12px rgba(26, 26, 26, 0.15)',
-          }}
-        >
-          <BarChart3 size={24} color="#f8f9fa" />
+    <div className="bg-gradient-to-br from-card to-muted/20 rounded-lg p-6 shadow-md mb-6">
+      {/* Header Section */}
+      <div className="flex items-center gap-3 mb-5">
+        <div className="p-3 rounded-lg bg-gradient-to-br from-primary to-primary/80 shadow-md">
+          <BarChart3 size={24} className="text-card" />
         </div>
         <div>
-          <h3 style={{ fontSize: '20px', fontWeight: 600, color: '#1a1a1a', margin: 0 }}>
+          <h3 className="text-xl font-semibold text-foreground m-0">
             Performance Metrics
           </h3>
-          <p style={{ fontSize: '14px', color: '#4a5568', margin: 0 }}>
+          <p className="text-sm text-muted-foreground m-0">
             Production KPIs and top performers
           </p>
         </div>
       </div>
 
       {/* Key Metrics Grid */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
-          gap: '16px',
-          marginBottom: '24px',
-        }}
-      >
-        <div
-          style={{
-            padding: '16px',
-            borderRadius: '12px',
-            background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)',
-            boxShadow: '0 2px 8px rgba(26, 26, 26, 0.06)',
-          }}
-        >
-          <div style={{ fontSize: '11px', color: '#4a5568', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600 }}>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        {/* Total Policies */}
+        <div className="p-4 rounded-lg bg-gradient-to-br from-blue-50 to-blue-100 shadow-sm">
+          <div className="text-xs text-muted-foreground mb-2 uppercase tracking-wide font-semibold">
             Total Policies
           </div>
-          <div style={{ fontSize: '28px', fontWeight: 700, color: '#1a1a1a', fontFamily: 'Monaco, Menlo, monospace' }}>
+          <div className="text-3xl font-bold text-foreground font-mono">
             {totalPolicies}
           </div>
         </div>
 
-        <div
-          style={{
-            padding: '16px',
-            borderRadius: '12px',
-            background: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)',
-            boxShadow: '0 2px 8px rgba(26, 26, 26, 0.06)',
-          }}
-        >
-          <div style={{ fontSize: '11px', color: '#4a5568', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600 }}>
+        {/* Active Policies */}
+        <div className="p-4 rounded-lg bg-gradient-to-br from-green-50 to-green-100 shadow-sm">
+          <div className="text-xs text-muted-foreground mb-2 uppercase tracking-wide font-semibold">
             Active Policies
           </div>
-          <div style={{ fontSize: '28px', fontWeight: 700, color: '#1a1a1a', fontFamily: 'Monaco, Menlo, monospace' }}>
+          <div className="text-3xl font-bold text-foreground font-mono">
             {activePolicies}
           </div>
         </div>
 
-        <div
-          style={{
-            padding: '16px',
-            borderRadius: '12px',
-            background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
-            boxShadow: '0 2px 8px rgba(26, 26, 26, 0.06)',
-          }}
-        >
-          <div style={{ fontSize: '11px', color: '#4a5568', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600 }}>
+        {/* Retention Rate */}
+        <div className="p-4 rounded-lg bg-gradient-to-br from-amber-50 to-amber-100 shadow-sm">
+          <div className="text-xs text-muted-foreground mb-2 uppercase tracking-wide font-semibold">
             Retention Rate
           </div>
-          <div style={{ fontSize: '28px', fontWeight: 700, color: '#1a1a1a', fontFamily: 'Monaco, Menlo, monospace' }}>
+          <div className="text-3xl font-bold text-foreground font-mono">
             {retentionRate.toFixed(0)}%
           </div>
         </div>
 
-        <div
-          style={{
-            padding: '16px',
-            borderRadius: '12px',
-            background: 'linear-gradient(135deg, #f8f9fa 0%, #e2e8f0 100%)',
-            boxShadow: '0 2px 8px rgba(26, 26, 26, 0.06)',
-          }}
-        >
-          <div style={{ fontSize: '11px', color: '#4a5568', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600 }}>
+        {/* Average Commission */}
+        <div className="p-4 rounded-lg bg-gradient-to-br from-muted/20 to-muted/50 shadow-sm">
+          <div className="text-xs text-muted-foreground mb-2 uppercase tracking-wide font-semibold">
             Avg Commission
           </div>
-          <div style={{ fontSize: '20px', fontWeight: 700, color: '#1a1a1a', fontFamily: 'Monaco, Menlo, monospace' }}>
+          <div className="text-xl font-bold text-foreground font-mono">
             {formatCurrency(averageCommissionPerPolicy)}
           </div>
-          <div style={{ fontSize: '10px', color: '#656d76', marginTop: '2px' }}>
+          <div className="text-xs text-muted-foreground/80 mt-0.5">
             per policy
           </div>
         </div>
       </div>
 
       {/* Top Performers Grid */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-          gap: '20px',
-        }}
-      >
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         {/* Top Products */}
-        <div
-          style={{
-            padding: '16px',
-            borderRadius: '12px',
-            background: 'linear-gradient(135deg, #f8f9fa 0%, #e2e8f0 100%)',
-            boxShadow: '0 2px 8px rgba(26, 26, 26, 0.06)',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-            <Trophy size={16} color="#1a1a1a" />
-            <span style={{ fontSize: '14px', fontWeight: 600, color: '#1a1a1a', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+        <div className="p-4 rounded-lg bg-gradient-to-br from-muted/20 to-muted/50 shadow-sm">
+          <div className="flex items-center gap-2 mb-4">
+            <Trophy size={16} className="text-foreground" />
+            <span className="text-sm font-semibold text-foreground uppercase tracking-wide">
               Top Products
             </span>
           </div>
 
           {topProducts && topProducts.length > 0 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div className="flex flex-col gap-3">
               {topProducts.slice(0, 3).map((product, index) => (
                 <div
                   key={product.product}
-                  style={{
-                    padding: '12px',
-                    borderRadius: '8px',
-                    background: '#ffffff',
-                    boxShadow: '0 1px 3px rgba(26, 26, 26, 0.05)',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                  }}
+                  className="p-3 rounded-md bg-card shadow-sm flex justify-between items-center"
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div className="flex items-center gap-3">
                     <div
-                      style={{
-                        width: '24px',
-                        height: '24px',
-                        borderRadius: '6px',
-                        background: index === 0
-                          ? 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)'
-                          : index === 1
-                          ? 'linear-gradient(135deg, #9ca3af 0%, #6b7280 100%)'
-                          : 'linear-gradient(135deg, #d97706 0%, #b45309 100%)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '12px',
-                        fontWeight: 700,
-                        color: '#ffffff',
-                      }}
+                      className={cn(
+                        "w-6 h-6 rounded-md flex items-center justify-center text-xs font-bold text-white",
+                        getRankBadgeClass(index)
+                      )}
                     >
                       {index + 1}
                     </div>
                     <div>
-                      <div style={{ fontSize: '13px', fontWeight: 600, color: '#1a1a1a' }}>
+                      <div className="text-sm font-semibold text-foreground">
                         {formatProductName(product.product)}
                       </div>
-                      <div style={{ fontSize: '11px', color: '#656d76' }}>
+                      <div className="text-xs text-muted-foreground/80">
                         {product.policies} {product.policies === 1 ? 'policy' : 'policies'}
                       </div>
                     </div>
                   </div>
-                  <div style={{ fontSize: '13px', fontWeight: 700, color: '#1a1a1a', fontFamily: 'Monaco, Menlo, monospace' }}>
+                  <div className="text-sm font-bold text-foreground font-mono">
                     {formatCurrency(product.revenue)}
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div style={{ textAlign: 'center', padding: '20px', color: '#9ca3af', fontSize: '13px' }}>
+            <div className="text-center p-5 text-muted-foreground text-sm">
               No product data available
             </div>
           )}
         </div>
 
         {/* Top Carriers */}
-        <div
-          style={{
-            padding: '16px',
-            borderRadius: '12px',
-            background: 'linear-gradient(135deg, #f8f9fa 0%, #e2e8f0 100%)',
-            boxShadow: '0 2px 8px rgba(26, 26, 26, 0.06)',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-            <TrendingUp size={16} color="#1a1a1a" />
-            <span style={{ fontSize: '14px', fontWeight: 600, color: '#1a1a1a', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+        <div className="p-4 rounded-lg bg-gradient-to-br from-muted/20 to-muted/50 shadow-sm">
+          <div className="flex items-center gap-2 mb-4">
+            <TrendingUp size={16} className="text-foreground" />
+            <span className="text-sm font-semibold text-foreground uppercase tracking-wide">
               Top Carriers
             </span>
           </div>
 
           {topCarriers && topCarriers.length > 0 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div className="flex flex-col gap-3">
               {topCarriers.slice(0, 3).map((carrier, index) => (
                 <div
                   key={carrier.carrierId}
-                  style={{
-                    padding: '12px',
-                    borderRadius: '8px',
-                    background: '#ffffff',
-                    boxShadow: '0 1px 3px rgba(26, 26, 26, 0.05)',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                  }}
+                  className="p-3 rounded-md bg-card shadow-sm flex justify-between items-center"
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div className="flex items-center gap-3">
                     <div
-                      style={{
-                        width: '24px',
-                        height: '24px',
-                        borderRadius: '6px',
-                        background: index === 0
-                          ? 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)'
-                          : index === 1
-                          ? 'linear-gradient(135deg, #9ca3af 0%, #6b7280 100%)'
-                          : 'linear-gradient(135deg, #d97706 0%, #b45309 100%)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '12px',
-                        fontWeight: 700,
-                        color: '#ffffff',
-                      }}
+                      className={cn(
+                        "w-6 h-6 rounded-md flex items-center justify-center text-xs font-bold text-white",
+                        getRankBadgeClass(index)
+                      )}
                     >
                       {index + 1}
                     </div>
                     <div>
-                      <div style={{ fontSize: '13px', fontWeight: 600, color: '#1a1a1a' }}>
+                      <div className="text-sm font-semibold text-foreground">
                         {carrier.carrierName}
                       </div>
-                      <div style={{ fontSize: '11px', color: '#656d76' }}>
+                      <div className="text-xs text-muted-foreground/80">
                         {carrier.policies} {carrier.policies === 1 ? 'policy' : 'policies'}
                       </div>
                     </div>
                   </div>
-                  <div style={{ fontSize: '13px', fontWeight: 700, color: '#1a1a1a', fontFamily: 'Monaco, Menlo, monospace' }}>
+                  <div className="text-sm font-bold text-foreground font-mono">
                     {formatCurrency(carrier.revenue)}
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div style={{ textAlign: 'center', padding: '20px', color: '#9ca3af', fontSize: '13px' }}>
+            <div className="text-center p-5 text-muted-foreground text-sm">
               No carrier data available
             </div>
           )}

@@ -57,7 +57,7 @@ export const ChartCard: React.FC<ChartCardProps> = ({
       {type === 'bar' ? (
         <div className="space-y-2">
           {/* Bar Chart */}
-          <div className="flex items-end justify-between gap-2" style={{ height }}>
+          <div className="flex items-end justify-between gap-2" style={{ height: `${height}px` }}>
             {data.map((item, index) => {
               const barHeight = ((item.value - minValue) / range) * 100;
               return (

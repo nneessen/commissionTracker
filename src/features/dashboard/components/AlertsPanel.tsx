@@ -2,13 +2,14 @@
 
 import React from 'react';
 import { AlertsPanelProps, AlertConfig } from '../../../types/dashboard.types';
-import { BORDER_RADIUS, SHADOWS, FONT_SIZES, ALERT_COLORS } from '../../../constants/dashboard';
 
 /**
  * Alerts Panel Component
  *
  * Displays conditional alerts based on dashboard state.
  * Extracted from DashboardHome.tsx (lines 939-1148).
+ *
+ * Refactored to use Tailwind CSS classes instead of inline styles.
  */
 export const AlertsPanel: React.FC<AlertsPanelProps> = ({ alerts }) => {
   const activeAlerts = alerts.filter((alert) => alert.condition);
@@ -17,71 +18,57 @@ export const AlertsPanel: React.FC<AlertsPanelProps> = ({ alerts }) => {
     return null;
   }
 
-  const getAlertStyle = (type: AlertConfig['type']) => {
+  const getAlertClasses = (type: AlertConfig['type']) => {
     switch (type) {
       case 'info':
-        return ALERT_COLORS.INFO;
+        return {
+          bg: 'bg-info/10',
+          border: 'border-info',
+          text: 'text-info',
+          textLight: 'text-info/80',
+        };
       case 'warning':
-        return ALERT_COLORS.WARNING;
+        return {
+          bg: 'bg-warning/10',
+          border: 'border-warning',
+          text: 'text-warning',
+          textLight: 'text-warning/80',
+        };
       case 'danger':
-        return ALERT_COLORS.DANGER;
       case 'error':
-        return ALERT_COLORS.ERROR;
+        return {
+          bg: 'bg-error/10',
+          border: 'border-error',
+          text: 'text-error',
+          textLight: 'text-error/80',
+        };
       default:
-        return ALERT_COLORS.INFO;
+        return {
+          bg: 'bg-info/10',
+          border: 'border-info',
+          text: 'text-info',
+          textLight: 'text-info/80',
+        };
     }
   };
 
   return (
-    <div
-      style={{
-        background: '#ffffff',
-        borderRadius: BORDER_RADIUS.LARGE,
-        padding: '14px',
-        boxShadow: SHADOWS.CARD,
-      }}
-    >
-      <div
-        style={{
-          fontSize: FONT_SIZES.SUBSECTION_HEADER,
-          fontWeight: 600,
-          marginBottom: '10px',
-          color: '#1a1a1a',
-          textTransform: 'uppercase',
-          letterSpacing: '0.5px',
-        }}
-      >
+    <div className="bg-card rounded-lg p-3.5 shadow-sm">
+      <div className="text-sm font-semibold mb-2.5 text-foreground uppercase tracking-wide">
         Alerts
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      <div className="flex flex-col gap-2">
         {activeAlerts.map((alert, index) => {
-          const style = getAlertStyle(alert.type);
+          const classes = getAlertClasses(alert.type);
           return (
             <div
               key={index}
-              style={{
-                padding: '8px',
-                borderRadius: BORDER_RADIUS.SMALL,
-                background: style.background,
-                borderLeft: `3px solid ${style.border}`,
-              }}
+              className={`p-2 rounded-sm ${classes.bg} border-l-[3px] ${classes.border}`}
             >
-              <div
-                style={{
-                  fontSize: FONT_SIZES.ALERT_TITLE,
-                  fontWeight: 600,
-                  color: style.text,
-                }}
-              >
+              <div className={`text-xs font-semibold ${classes.text}`}>
                 {alert.title}
               </div>
-              <div
-                style={{
-                  fontSize: FONT_SIZES.ALERT_TEXT,
-                  color: style.textLight,
-                  marginTop: '2px',
-                }}
-              >
+              <div className={`text-xs ${classes.textLight} mt-0.5`}>
                 {alert.message}
               </div>
             </div>

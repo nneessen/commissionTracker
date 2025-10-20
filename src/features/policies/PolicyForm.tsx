@@ -438,7 +438,7 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
             {formData.carrierId &&
               !productsLoading &&
               products.length === 0 && (
-                <span className="error-msg" style={{ color: "#ff6b6b" }}>
+                <span className="error-msg text-error">
                   ⚠️ This carrier has no products configured. Please contact
                   admin or select a different carrier.
                 </span>

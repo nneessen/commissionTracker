@@ -17,12 +17,7 @@ interface CohortHeatmapProps {
 export function CohortHeatmap({ data, maxMonths = 12 }: CohortHeatmapProps) {
   if (!data || data.length === 0) {
     return (
-      <div style={{
-        padding: '40px',
-        textAlign: 'center',
-        color: '#94a3b8',
-        fontSize: '12px'
-      }}>
+      <div className="p-10 text-center text-gray-400 text-xs">
         No cohort data available
       </div>
     );
@@ -48,11 +43,7 @@ export function CohortHeatmap({ data, maxMonths = 12 }: CohortHeatmapProps) {
 
   return (
     <div style={{ overflowX: 'auto', fontSize: '11px' }}>
-      <table style={{
-        width: '100%',
-        borderCollapse: 'collapse',
-        fontSize: '11px'
-      }}>
+      <table className="border-collapse">
         <thead>
           <tr>
             <th style={{

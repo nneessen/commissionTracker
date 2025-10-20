@@ -16,23 +16,11 @@ export function CohortAnalysis() {
 
   if (isLoading) {
     return (
-      <div style={{
-        background: '#ffffff',
-        borderRadius: '12px',
-        padding: '20px',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-      }}>
-        <div style={{
-          fontSize: '13px',
-          fontWeight: 600,
-          color: '#1a1a1a',
-          marginBottom: '16px',
-          textTransform: 'uppercase',
-          letterSpacing: '0.5px'
-        }}>
+      <div className="bg-white rounded-xl p-5 shadow-sm">
+        <div className="text-sm font-semibold text-gray-900 mb-4 uppercase tracking-wide">
           Cohort Analysis
         </div>
-        <div style={{ padding: '40px', textAlign: 'center', color: '#94a3b8', fontSize: '12px' }}>
+        <div className="p-10 text-center text-gray-400 text-xs">
           Loading cohort data...
         </div>
       </div>
@@ -42,53 +30,22 @@ export function CohortAnalysis() {
   const { retention, summary } = cohort;
 
   return (
-    <div style={{
-      background: '#ffffff',
-      borderRadius: '12px',
-      padding: '20px',
-      boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-    }}>
+    <div className="bg-white rounded-xl p-5 shadow-sm">
       {/* Header */}
-      <div style={{
-        marginBottom: '20px'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+      <div className="mb-5">
+        <div className="flex items-center gap-2">
           <div>
-            <div style={{
-              fontSize: '13px',
-              fontWeight: 600,
-              color: '#1a1a1a',
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px'
-            }}>
+            <div className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
               Cohort Analysis
             </div>
-            <div style={{
-              fontSize: '11px',
-              color: '#656d76',
-              marginTop: '4px'
-            }}>
+            <div className="text-xs text-gray-600 mt-1">
               Track retention by policy start month
             </div>
           </div>
           {/* Info Icon Button */}
           <button
             onClick={() => setShowInfo(!showInfo)}
-            style={{
-              background: '#f0f9ff',
-              border: '1px solid #e0f2fe',
-              borderRadius: '50%',
-              width: '24px',
-              height: '24px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              fontSize: '12px',
-              fontWeight: 700,
-              color: '#3b82f6',
-              transition: 'all 0.2s ease',
-            }}
+            className="bg-blue-50 border border-blue-100"
             onMouseEnter={(e) => {
               e.currentTarget.style.background = '#dbeafe';
               e.currentTarget.style.transform = 'scale(1.1)';
@@ -106,18 +63,9 @@ export function CohortAnalysis() {
 
       {/* Info Panel */}
       {showInfo && (
-        <div style={{
-          marginBottom: '20px',
-          padding: '16px',
-          background: '#f0f9ff',
-          border: '1px solid #bfdbfe',
-          borderRadius: '8px',
-          fontSize: '12px',
-          lineHeight: '1.8',
-          color: '#1e40af'
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-            <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: '#1e40af' }}>
+        <div className="bg-blue-50 border border-blue-200">
+          <div className="flex justify-between items-start mb-3">
+            <h3 className="m-0 text-sm font-bold text-blue-800">
               📅 Understanding Cohort Analysis
             </h3>
             <button
@@ -136,55 +84,55 @@ export function CohortAnalysis() {
             </button>
           </div>
 
-          <div style={{ marginBottom: '16px' }}>
+          <div className="mb-4">
             <strong>What is this?</strong> Cohort Analysis groups your policies by the month they started and tracks how well they stick around over time.
             Think of it like tracking different "graduating classes" of policies to see which months produced the most lasting relationships.
           </div>
 
-          <div style={{ marginBottom: '16px' }}>
+          <div className="mb-4">
             <strong>Key Metrics Explained:</strong>
           </div>
 
-          <div style={{ marginBottom: '12px', paddingLeft: '16px' }}>
-            <div style={{ marginBottom: '8px' }}>
-              <strong style={{ color: '#1a1a1a' }}>Total Cohorts:</strong>
-              <div style={{ marginTop: '4px', color: '#475569' }}>
+          <div className="mb-3 pl-4">
+            <div className="mb-2">
+              <strong className="text-gray-900">Total Cohorts:</strong>
+              <div className="mt-1 text-gray-600">
                 How many different "start months" you have policies from
               </div>
             </div>
 
-            <div style={{ marginBottom: '8px' }}>
-              <strong style={{ color: '#10b981' }}>Avg 9-Mo Retention:</strong>
-              <div style={{ marginTop: '4px', color: '#475569' }}>
+            <div className="mb-2">
+              <strong className="text-green-500">Avg 9-Mo Retention:</strong>
+              <div className="mt-1 text-gray-600">
                 What percentage of policies are still active after 9 months (industry benchmark)
-                <div style={{ fontSize: '11px', marginTop: '2px' }}>
+                <div className="text-xs mt-0.5">
                   Example: 85% means 85 out of 100 policies are still active at month 9
                 </div>
               </div>
             </div>
 
-            <div style={{ marginBottom: '8px' }}>
-              <strong style={{ color: '#3b82f6' }}>Best Cohort:</strong>
-              <div style={{ marginTop: '4px', color: '#475569' }}>
+            <div className="mb-2">
+              <strong className="text-blue-500">Best Cohort:</strong>
+              <div className="mt-1 text-gray-600">
                 Which start month has the best retention (your strongest group)
               </div>
             </div>
 
-            <div style={{ marginBottom: '8px' }}>
-              <strong style={{ color: '#ef4444' }}>Worst Cohort:</strong>
-              <div style={{ marginTop: '4px', color: '#475569' }}>
+            <div className="mb-2">
+              <strong className="text-red-500">Worst Cohort:</strong>
+              <div className="mt-1 text-gray-600">
                 Which start month has the lowest retention (needs attention)
               </div>
             </div>
           </div>
 
-          <div style={{ marginBottom: '16px', padding: '12px', background: '#ffffff', borderRadius: '6px' }}>
+          <div className="mb-4 p-3 bg-white rounded-md">
             <strong>How to Read the Heatmap:</strong>
-            <div style={{ fontSize: '11px', marginTop: '8px', color: '#475569' }}>
+            <div className="text-xs mt-2 text-gray-600">
               • <strong>Rows</strong> = Different cohorts (Jan 2025, Feb 2025, etc.)<br/>
               • <strong>Columns</strong> = Months elapsed (M0 = start, M3 = 3 months later, M9 = 9 months later)<br/>
               • <strong>Colors</strong> = Health indicator:<br/>
-              <div style={{ paddingLeft: '12px', marginTop: '4px' }}>
+              <div className="pl-3 mt-1">
                 🟢 Green (≥90%) = Excellent retention<br/>
                 🔵 Blue (80-89%) = Good retention<br/>
                 🟡 Amber (70-79%) = Fair retention<br/>
@@ -194,9 +142,9 @@ export function CohortAnalysis() {
             </div>
           </div>
 
-          <div style={{ marginBottom: '16px', padding: '12px', background: '#ffffff', borderRadius: '6px' }}>
+          <div className="mb-4 p-3 bg-white rounded-md">
             <strong>Real Example:</strong>
-            <div style={{ fontSize: '11px', marginTop: '8px', color: '#475569' }}>
+            <div className="text-xs mt-2 text-gray-600">
               Jan 2025 cohort: Started with 20 policies<br/>
               • M0 (Jan): 100% retention (20/20 active)<br/>
               • M3 (Apr): 90% retention (18/20 active) - 2 lapsed<br/>
@@ -329,9 +277,7 @@ export function CohortAnalysis() {
       </div>
 
       {/* Retention Heatmap */}
-      <div style={{
-        marginBottom: '20px'
-      }}>
+      <div className="mb-5">
         <div style={{
           fontSize: '12px',
           fontWeight: 600,

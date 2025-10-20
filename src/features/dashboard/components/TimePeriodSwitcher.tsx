@@ -3,13 +3,15 @@
 import React from 'react';
 import { TimePeriodSwitcherProps } from '../../../types/dashboard.types';
 import { TimePeriod } from '../../../utils/dateRange';
-import { TIME_PERIOD_BUTTON, BORDER_RADIUS } from '../../../constants/dashboard';
+import { cn } from '@/lib/utils';
 
 /**
  * Time Period Switcher Component
  *
  * Button group for selecting time period (daily/weekly/monthly/yearly).
  * Extracted from DashboardHome.tsx (lines 312-352).
+ *
+ * Refactored to use Tailwind CSS classes instead of inline styles.
  */
 export const TimePeriodSwitcher: React.FC<TimePeriodSwitcherProps> = ({
   timePeriod,
@@ -18,42 +20,17 @@ export const TimePeriodSwitcher: React.FC<TimePeriodSwitcherProps> = ({
   const periods: TimePeriod[] = ['daily', 'weekly', 'monthly', 'yearly'];
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        gap: '4px',
-        background: '#f1f5f9',
-        padding: '4px',
-        borderRadius: BORDER_RADIUS.MEDIUM,
-        boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.1)',
-      }}
-    >
+    <div className="flex gap-1 bg-muted/30 p-1 rounded-md shadow-inner">
       {periods.map((period) => (
         <button
           key={period}
           onClick={() => onTimePeriodChange(period)}
-          style={{
-            padding: '8px 16px',
-            fontSize: '12px',
-            fontWeight: 600,
-            textTransform: 'capitalize',
-            border: 'none',
-            borderRadius: BORDER_RADIUS.SMALL,
-            cursor: 'pointer',
-            transition: 'all 0.2s ease',
-            background:
-              timePeriod === period
-                ? TIME_PERIOD_BUTTON.ACTIVE_BG
-                : TIME_PERIOD_BUTTON.INACTIVE_BG,
-            color:
-              timePeriod === period
-                ? TIME_PERIOD_BUTTON.ACTIVE_COLOR
-                : TIME_PERIOD_BUTTON.INACTIVE_COLOR,
-            boxShadow:
-              timePeriod === period
-                ? TIME_PERIOD_BUTTON.HOVER_SHADOW
-                : 'none',
-          }}
+          className={cn(
+            "px-4 py-2 text-xs font-semibold capitalize border-none rounded-sm cursor-pointer transition-all duration-200",
+            timePeriod === period
+              ? "bg-card text-foreground shadow-sm"
+              : "bg-transparent text-muted-foreground hover:text-foreground"
+          )}
         >
           {period}
         </button>

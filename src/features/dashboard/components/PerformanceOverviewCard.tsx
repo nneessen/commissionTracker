@@ -6,20 +6,13 @@ import { PerformanceOverviewCardProps } from '../../../types/dashboard.types';
 import { formatCurrency, formatPercent } from '../../../utils/formatting';
 import { getPerformanceStatus, calculateTargetPercentage } from '../../../utils/dashboardCalculations';
 import { getPeriodLabel } from '../../../utils/dateRange';
-import {
-  BORDER_RADIUS,
-  SHADOWS,
-  FONT_SIZES,
-  TYPOGRAPHY,
-  STATUS_COLORS,
-  ALERT_COLORS,
-} from '../../../constants/dashboard';
+import { cn } from '@/lib/utils';
 
 /**
  * Performance Overview Card Component
  *
  * Center card displaying performance metrics table and breakeven status.
- * Extracted from DashboardHome.tsx (lines 634-929).
+ * Refactored to use Tailwind CSS classes instead of inline styles.
  */
 export const PerformanceOverviewCard: React.FC<PerformanceOverviewCardProps> = ({
   metrics,
@@ -32,68 +25,57 @@ export const PerformanceOverviewCard: React.FC<PerformanceOverviewCardProps> = (
 }) => {
   const periodLabel = getPeriodLabel(timePeriod);
 
+  const getStatusColorClass = (status: string): string => {
+    switch (status.toUpperCase()) {
+      case 'HIT':
+        return 'text-success';
+      case 'GOOD':
+        return 'text-info';
+      case 'FAIR':
+        return 'text-warning';
+      case 'POOR':
+        return 'text-error';
+      default:
+        return 'text-muted-foreground';
+    }
+  };
+
   return (
-    <div
-      style={{
-        background: '#ffffff',
-        borderRadius: BORDER_RADIUS.LARGE,
-        padding: '16px',
-        boxShadow: SHADOWS.CARD,
-      }}
-    >
-      <div
-        style={{
-          fontSize: FONT_SIZES.SECTION_HEADER,
-          fontWeight: 600,
-          marginBottom: '12px',
-          color: '#1a1a1a',
-          textTransform: 'uppercase',
-          letterSpacing: '0.5px',
-        }}
-      >
+    <div className="bg-card rounded-lg p-4 shadow-md">
+      <h3 className="text-sm font-semibold mb-3 text-foreground uppercase tracking-wide">
         Performance Overview
-      </div>
+      </h3>
 
       {/* Status Banner */}
       <div
-        style={{
-          padding: '12px',
-          borderRadius: BORDER_RADIUS.MEDIUM,
-          background: isBreakeven
-            ? ALERT_COLORS.SUCCESS.background
-            : ALERT_COLORS.WARNING_GRADIENT.background,
-          marginBottom: '16px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-        }}
+        className={cn(
+          "p-3 rounded-md mb-4 flex items-center gap-3",
+          isBreakeven
+            ? "bg-success/10 border border-success/20"
+            : "bg-warning/10 border border-warning/20"
+        )}
       >
         {isBreakeven ? (
-          <CheckCircle size={20} color={ALERT_COLORS.SUCCESS.textPrimary} />
+          <CheckCircle className="h-5 w-5 text-success" />
         ) : (
-          <AlertCircle size={20} color={ALERT_COLORS.WARNING_GRADIENT.textPrimary} />
+          <AlertCircle className="h-5 w-5 text-warning" />
         )}
-        <div>
+        <div className="flex-1">
           <div
-            style={{
-              fontSize: FONT_SIZES.SUBSECTION_HEADER,
-              fontWeight: 600,
-              color: isBreakeven
-                ? ALERT_COLORS.SUCCESS.textPrimary
-                : ALERT_COLORS.WARNING_GRADIENT.textPrimary,
-            }}
+            className={cn(
+              "text-sm font-semibold",
+              isBreakeven ? "text-success" : "text-warning"
+            )}
           >
             {isBreakeven
               ? `✓ Above Breakeven (${periodLabel})`
               : `⚠ Below Breakeven (${periodLabel})`}
           </div>
           <div
-            style={{
-              fontSize: FONT_SIZES.STAT_LABEL,
-              color: isBreakeven
-                ? ALERT_COLORS.SUCCESS.textSecondary
-                : ALERT_COLORS.WARNING_GRADIENT.textSecondary,
-            }}
+            className={cn(
+              "text-xs",
+              isBreakeven ? "text-success/80" : "text-warning/80"
+            )}
           >
             {isBreakeven
               ? `${periodLabel} surplus of ${formatCurrency(Math.abs(surplusDeficit))}`
@@ -103,157 +85,77 @@ export const PerformanceOverviewCard: React.FC<PerformanceOverviewCardProps> = (
       </div>
 
       {/* Performance Table */}
-      <table
-        style={{
-          width: '100%',
-          fontSize: FONT_SIZES.TABLE_CELL,
-          borderCollapse: 'collapse',
-        }}
-      >
-        <thead>
-          <tr style={{ borderBottom: '2px solid #e2e8f0' }}>
-            <th
-              style={{
-                textAlign: 'left',
-                padding: '8px 4px',
-                fontWeight: 600,
-                color: '#4a5568',
-                textTransform: 'uppercase',
-                fontSize: FONT_SIZES.TABLE_HEADER,
-                letterSpacing: '0.5px',
-              }}
-            >
-              Metric
-            </th>
-            <th
-              style={{
-                textAlign: 'right',
-                padding: '8px 4px',
-                fontWeight: 600,
-                color: '#4a5568',
-                textTransform: 'uppercase',
-                fontSize: FONT_SIZES.TABLE_HEADER,
-                letterSpacing: '0.5px',
-              }}
-            >
-              Current
-            </th>
-            <th
-              style={{
-                textAlign: 'right',
-                padding: '8px 4px',
-                fontWeight: 600,
-                color: '#4a5568',
-                textTransform: 'uppercase',
-                fontSize: FONT_SIZES.TABLE_HEADER,
-                letterSpacing: '0.5px',
-              }}
-            >
-              Target
-            </th>
-            <th
-              style={{
-                textAlign: 'right',
-                padding: '8px 4px',
-                fontWeight: 600,
-                color: '#4a5568',
-                textTransform: 'uppercase',
-                fontSize: FONT_SIZES.TABLE_HEADER,
-                letterSpacing: '0.5px',
-              }}
-            >
-              %
-            </th>
-            <th
-              style={{
-                textAlign: 'center',
-                padding: '8px 4px',
-                fontWeight: 600,
-                color: '#4a5568',
-                textTransform: 'uppercase',
-                fontSize: FONT_SIZES.TABLE_HEADER,
-                letterSpacing: '0.5px',
-              }}
-            >
-              Status
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {metrics.map((row, index) => {
-            const pct = calculateTargetPercentage(row.current, row.target);
-            const status = getPerformanceStatus(row.current, row.target, row.showTarget);
-            const statusColor = STATUS_COLORS[status.toUpperCase() as keyof typeof STATUS_COLORS];
+      <div className="overflow-x-auto">
+        <table className="w-full text-xs">
+          <thead>
+            <tr className="border-b-2 border-border">
+              <th className="text-left py-2 px-1 font-semibold text-muted-foreground uppercase tracking-wider">
+                Metric
+              </th>
+              <th className="text-right py-2 px-1 font-semibold text-muted-foreground uppercase tracking-wider">
+                Current
+              </th>
+              <th className="text-right py-2 px-1 font-semibold text-muted-foreground uppercase tracking-wider">
+                Target
+              </th>
+              <th className="text-right py-2 px-1 font-semibold text-muted-foreground uppercase tracking-wider">
+                %
+              </th>
+              <th className="text-center py-2 px-1 font-semibold text-muted-foreground uppercase tracking-wider">
+                Status
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {metrics.map((row, index) => {
+              const pct = calculateTargetPercentage(row.current, row.target);
+              const status = getPerformanceStatus(row.current, row.target, row.showTarget);
+              const statusColorClass = getStatusColorClass(status);
 
-            return (
-              <tr key={index} style={{ borderBottom: '1px solid #f3f4f6' }}>
-                <td
-                  style={{
-                    padding: '8px 4px',
-                    color: '#1a1a1a',
-                    fontWeight: TYPOGRAPHY.DEFAULT_FONT_WEIGHT,
-                  }}
-                >
-                  {row.metric}
-                </td>
-                <td
-                  style={{
-                    padding: '8px 4px',
-                    textAlign: 'right',
-                    fontFamily: TYPOGRAPHY.MONO_FONT,
-                    fontWeight: TYPOGRAPHY.BOLD_FONT_WEIGHT,
-                  }}
-                >
-                  {row.unit === '$'
-                    ? formatCurrency(row.current)
-                    : row.unit === '%'
-                      ? formatPercent(row.current)
-                      : row.current.toFixed(1)}
-                </td>
-                <td
-                  style={{
-                    padding: '8px 4px',
-                    textAlign: 'right',
-                    color: '#656d76',
-                    fontFamily: TYPOGRAPHY.MONO_FONT,
-                  }}
-                >
-                  {row.showTarget && row.target
-                    ? row.unit === '$'
-                      ? formatCurrency(row.target)
+              return (
+                <tr key={index} className="border-b border-border/50">
+                  <td className="py-2 px-1 text-foreground">
+                    {row.metric}
+                  </td>
+                  <td className="py-2 px-1 text-right font-mono font-semibold text-foreground">
+                    {row.unit === '$'
+                      ? formatCurrency(row.current)
                       : row.unit === '%'
-                        ? formatPercent(row.target)
-                        : row.target
-                    : '—'}
-                </td>
-                <td
-                  style={{
-                    padding: '8px 4px',
-                    textAlign: 'right',
-                    fontWeight: TYPOGRAPHY.BOLD_FONT_WEIGHT,
-                    color: statusColor,
-                  }}
-                >
-                  {row.showTarget ? `${pct.toFixed(0)}%` : '—'}
-                </td>
-                <td style={{ padding: '8px 4px', textAlign: 'center' }}>
-                  {row.showTarget && (
-                    <span
-                      style={{
-                        display: 'inline-block',
-                        width: '8px',
-                        height: '8px',
-                        borderRadius: '50%',
-                        background: statusColor,
-                      }}
-                    />
-                  )}
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+                        ? formatPercent(row.current)
+                        : row.current.toFixed(1)}
+                  </td>
+                  <td className="py-2 px-1 text-right text-muted-foreground font-mono">
+                    {row.showTarget && row.target
+                      ? row.unit === '$'
+                        ? formatCurrency(row.target)
+                        : row.unit === '%'
+                          ? formatPercent(row.target)
+                          : row.target
+                      : '—'}
+                  </td>
+                  <td className={cn("py-2 px-1 text-right font-semibold", statusColorClass)}>
+                    {row.showTarget ? `${pct.toFixed(0)}%` : '—'}
+                  </td>
+                  <td className="py-2 px-1 text-center">
+                    {row.showTarget && (
+                      <span
+                        className={cn(
+                          "inline-block w-2 h-2 rounded-full",
+                          status.toUpperCase() === 'HIT' && "bg-success",
+                          status.toUpperCase() === 'GOOD' && "bg-info",
+                          status.toUpperCase() === 'FAIR' && "bg-warning",
+                          status.toUpperCase() === 'POOR' && "bg-error",
+                          status.toUpperCase() === 'NEUTRAL' && "bg-muted-foreground"
+                        )}
+                      />
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };

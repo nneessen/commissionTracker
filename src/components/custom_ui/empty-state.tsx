@@ -1,4 +1,4 @@
-// src/components/ui/empty-state.tsx
+// src/components/custom_ui/empty-state.tsx
 import * as React from "react";
 import { cn } from "@/lib/utils";
 

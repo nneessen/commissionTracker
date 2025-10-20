@@ -12,13 +12,8 @@ export function EfficiencyMetrics() {
 
   if (isLoading) {
     return (
-      <div style={{
-        background: '#ffffff',
-        borderRadius: '12px',
-        padding: '20px',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-      }}>
-        <div style={{ padding: '40px', textAlign: 'center', color: '#94a3b8', fontSize: '12px' }}>
+      <div className="bg-white rounded-xl p-5 shadow-sm">
+        <div className="p-10 text-center text-gray-400 text-xs">
           Loading efficiency data...
         </div>
       </div>
@@ -38,12 +33,7 @@ export function EfficiencyMetrics() {
   }));
 
   return (
-    <div style={{
-      background: '#ffffff',
-      borderRadius: '12px',
-      padding: '20px',
-      boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-    }}>
+    <div className="bg-white rounded-xl p-5 shadow-sm">
       <div style={{
         fontSize: '13px',
         fontWeight: 600,

@@ -45,12 +45,7 @@ export function USMap({
 
   if (!data || data.length === 0) {
     return (
-      <div style={{
-        padding: '40px',
-        textAlign: 'center',
-        color: '#94a3b8',
-        fontSize: '12px'
-      }}>
+      <div className="p-10 text-center text-gray-400 text-xs">
         No geographic data available
       </div>
     );
@@ -86,14 +81,7 @@ export function USMap({
   return (
     <div>
       {/* Title */}
-      <div style={{
-        fontSize: '13px',
-        fontWeight: 600,
-        color: '#1a1a1a',
-        marginBottom: '16px',
-        textTransform: 'uppercase',
-        letterSpacing: '0.5px'
-      }}>
+      <div className="text-sm font-semibold text-gray-900 mb-4 uppercase tracking-wide">
         {title}
       </div>
 
@@ -200,7 +188,7 @@ export function USMap({
           }}>
             Top States
           </div>
-          <div style={{ display: 'grid', gap: '8px' }}>
+          <div className="grid gap-2">
             {[...data]
               .sort((a, b) => b.value - a.value)
               .slice(0, 5)
@@ -217,7 +205,7 @@ export function USMap({
                     fontSize: '11px'
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div className="flex items-center gap-2">
                     <span style={{
                       fontWeight: 600,
                       color: '#656d76',
@@ -229,7 +217,7 @@ export function USMap({
                       {state.state.toUpperCase()}
                     </span>
                     {state.label && (
-                      <span style={{ color: '#656d76' }}>
+                      <span className="text-gray-600">
                         {state.label}
                       </span>
                     )}

@@ -19,23 +19,11 @@ export function PerformanceAttribution() {
 
   if (isLoading) {
     return (
-      <div style={{
-        background: '#ffffff',
-        borderRadius: '12px',
-        padding: '20px',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-      }}>
-        <div style={{
-          fontSize: '13px',
-          fontWeight: 600,
-          color: '#1a1a1a',
-          marginBottom: '16px',
-          textTransform: 'uppercase',
-          letterSpacing: '0.5px'
-        }}>
+      <div className="bg-white rounded-xl p-5 shadow-sm">
+        <div className="text-sm font-semibold text-gray-900 mb-4 uppercase tracking-wide">
           Performance Attribution
         </div>
-        <div style={{ padding: '40px', textAlign: 'center', color: '#94a3b8', fontSize: '12px' }}>
+        <div className="p-10 text-center text-gray-400 text-xs">
           Loading attribution data...
         </div>
       </div>
@@ -62,59 +50,22 @@ export function PerformanceAttribution() {
   const totalDirection = getChangeDirection(contribution.totalChange);
 
   return (
-    <div style={{
-      background: '#ffffff',
-      borderRadius: '12px',
-      padding: '20px',
-      boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-      width: '100%',
-      boxSizing: 'border-box',
-      overflow: 'hidden'
-    }}>
+    <div className="bg-white rounded-xl p-5 shadow-sm w-full box-border overflow-hidden">
       {/* Header */}
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: '20px'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+      <div className="flex justify-between items-center mb-5">
+        <div className="flex items-center gap-2">
           <div>
-            <div style={{
-              fontSize: '13px',
-              fontWeight: 600,
-              color: '#1a1a1a',
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px'
-            }}>
+            <div className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
               Performance Attribution
             </div>
-            <div style={{
-              fontSize: '11px',
-              color: '#656d76',
-              marginTop: '4px'
-            }}>
+            <div className="text-xs text-gray-600 mt-1">
               Month-over-month change breakdown
             </div>
           </div>
           {/* Info Icon Button */}
           <button
             onClick={() => setShowInfo(!showInfo)}
-            style={{
-              background: '#f0f9ff',
-              border: '1px solid #e0f2fe',
-              borderRadius: '50%',
-              width: '24px',
-              height: '24px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              fontSize: '12px',
-              fontWeight: 700,
-              color: '#3b82f6',
-              transition: 'all 0.2s ease',
-            }}
+            className="bg-blue-50 border border-blue-100"
             onMouseEnter={(e) => {
               e.currentTarget.style.background = '#dbeafe';
               e.currentTarget.style.transform = 'scale(1.1)';
@@ -144,18 +95,9 @@ export function PerformanceAttribution() {
 
       {/* Info Panel - Shows when info button is clicked */}
       {showInfo && (
-        <div style={{
-          marginBottom: '20px',
-          padding: '16px',
-          background: '#f0f9ff',
-          border: '1px solid #bfdbfe',
-          borderRadius: '8px',
-          fontSize: '12px',
-          lineHeight: '1.8',
-          color: '#1e40af'
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-            <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: '#1e40af' }}>
+        <div className="bg-blue-50 border border-blue-200">
+          <div className="flex justify-between items-start mb-3">
+            <h3 className="m-0 text-sm font-bold text-blue-800">
               📊 Understanding Performance Attribution
             </h3>
             <button
@@ -174,50 +116,50 @@ export function PerformanceAttribution() {
             </button>
           </div>
 
-          <div style={{ marginBottom: '16px' }}>
+          <div className="mb-4">
             <strong>What is this?</strong> Performance Attribution breaks down exactly WHY your commission income changed from last month to this month.
             Think of it as detective work - finding out what drove your success (or decline).
           </div>
 
-          <div style={{ marginBottom: '16px' }}>
+          <div className="mb-4">
             <strong>The Three Factors:</strong>
           </div>
 
-          <div style={{ marginBottom: '12px', paddingLeft: '16px' }}>
-            <div style={{ marginBottom: '8px' }}>
-              <strong style={{ color: '#3b82f6' }}>📈 Volume Effect (Blue):</strong>
-              <div style={{ marginTop: '4px', color: '#475569' }}>
+          <div className="mb-3 pl-4">
+            <div className="mb-2">
+              <strong className="text-blue-500">📈 Volume Effect (Blue):</strong>
+              <div className="mt-1 text-gray-600">
                 Did you sell MORE or FEWER policies?
-                <div style={{ fontSize: '11px', marginTop: '2px' }}>
+                <div className="text-xs mt-0.5">
                   Example: Selling 10 policies instead of 5 = positive volume effect
                 </div>
               </div>
             </div>
 
-            <div style={{ marginBottom: '8px' }}>
-              <strong style={{ color: '#10b981' }}>💰 Rate Effect (Green):</strong>
-              <div style={{ marginTop: '4px', color: '#475569' }}>
+            <div className="mb-2">
+              <strong className="text-green-500">💰 Rate Effect (Green):</strong>
+              <div className="mt-1 text-gray-600">
                 Did your commission PERCENTAGE change?
-                <div style={{ fontSize: '11px', marginTop: '2px' }}>
+                <div className="text-xs mt-0.5">
                   Example: Moving from 50% to 75% commission rate = positive rate effect
                 </div>
               </div>
             </div>
 
-            <div style={{ marginBottom: '8px' }}>
-              <strong style={{ color: '#f59e0b' }}>🎯 Mix Effect (Yellow):</strong>
-              <div style={{ marginTop: '4px', color: '#475569' }}>
+            <div className="mb-2">
+              <strong className="text-amber-500">🎯 Mix Effect (Yellow):</strong>
+              <div className="mt-1 text-gray-600">
                 Did you sell different TYPES of products?
-                <div style={{ fontSize: '11px', marginTop: '2px' }}>
+                <div className="text-xs mt-0.5">
                   Example: Selling more whole life (higher premium) vs term = positive mix effect
                 </div>
               </div>
             </div>
           </div>
 
-          <div style={{ marginBottom: '16px', padding: '12px', background: '#ffffff', borderRadius: '6px' }}>
+          <div className="mb-4 p-3 bg-white rounded-md">
             <strong>Real Example:</strong>
-            <div style={{ fontSize: '11px', marginTop: '8px', color: '#475569' }}>
+            <div className="text-xs mt-2 text-gray-600">
               Last month: 5 term policies × $1,000 premium × 50% rate = $2,500 commission<br/>
               This month: 8 whole life × $2,000 premium × 60% rate = $9,600 commission<br/>
               <div style={{ marginTop: '8px', color: '#1e40af' }}>
@@ -250,12 +192,7 @@ export function PerformanceAttribution() {
         marginBottom: '24px'
       }}>
         {/* Volume Effect */}
-        <div style={{
-          padding: '12px',
-          background: '#f0f9ff',
-          borderRadius: '8px',
-          border: '1px solid #e0f2fe'
-        }}>
+        <div className="bg-blue-50 border border-blue-100">
           <div style={{
             fontSize: '10px',
             fontWeight: 600,

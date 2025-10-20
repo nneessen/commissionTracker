@@ -1,4 +1,4 @@
-// src/features/auth/components/Alert.tsx
+// src/components/custom_ui/Alert.tsx
 
 import React from 'react';
 

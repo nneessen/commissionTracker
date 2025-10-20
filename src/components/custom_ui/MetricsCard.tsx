@@ -25,32 +25,20 @@ export const MetricsCard: React.FC<MetricsCardProps> = ({
 }) => {
   return (
     <div className="metric-card">
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+      <div className="flex items-center justify-between mb-4">
         <h4>{title}</h4>
         {icon && (
-          <div style={{
-            padding: '8px',
-            borderRadius: '8px',
-            background: 'linear-gradient(135deg, #f8f9fa 0%, #e2e8f0 100%)',
-            border: '1px solid #e2e8f0',
-            color: '#1a1a1a'
-          }}>
+          <div className="p-2 rounded-lg bg-gradient-to-br from-gray-50 to-gray-200 border border-gray-200 text-gray-900">
             {icon}
           </div>
         )}
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+      <div className="flex flex-col gap-1">
+        <div className="flex items-baseline gap-2">
           <div className="metric-value">{value}</div>
           {trend && (
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-              fontSize: '12px',
-              color: trend.isPositive ? '#2d3748' : '#1a1a1a'
-            }}>
+            <div className="flex items-center gap-1 text-xs text-gray-800">
               {trend.isPositive ? (
                 <TrendingUp size={14} />
               ) : (

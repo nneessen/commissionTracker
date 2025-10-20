@@ -3,36 +3,19 @@
 import React from 'react';
 import { QuickStatsPanelProps } from '../../../types/dashboard.types';
 import { StatItem } from './StatItem';
-import { GRADIENTS, BORDER_RADIUS, SHADOWS, FONT_SIZES } from '../../../constants/dashboard';
 
 /**
  * Quick Stats Panel Component
  *
  * Left sidebar displaying key metrics with tooltips and trends.
  * Extracted from DashboardHome.tsx (lines 365-632).
+ *
+ * Refactored to use Tailwind CSS classes instead of inline styles.
  */
 export const QuickStatsPanel: React.FC<QuickStatsPanelProps> = ({ stats }) => {
   return (
-    <div
-      style={{
-        background: GRADIENTS.DARK_SIDEBAR,
-        borderRadius: BORDER_RADIUS.LARGE,
-        padding: '16px',
-        boxShadow: SHADOWS.SIDEBAR,
-        color: '#f8f9fa',
-      }}
-    >
-      <div
-        style={{
-          fontSize: FONT_SIZES.SUBSECTION_HEADER,
-          fontWeight: 600,
-          marginBottom: '12px',
-          paddingBottom: '8px',
-          borderBottom: '1px solid #4a5568',
-          textTransform: 'uppercase',
-          letterSpacing: '0.5px',
-        }}
-      >
+    <div className="bg-gradient-to-br from-primary to-primary/80 rounded-lg p-4 shadow-lg text-card">
+      <div className="text-sm font-semibold mb-3 pb-2 border-b border-card/30 uppercase tracking-wide">
         Key Metrics
       </div>
 
