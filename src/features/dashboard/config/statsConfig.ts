@@ -9,7 +9,7 @@
 
 import { TimePeriod, getPeriodLabel } from '../../../utils/dateRange';
 import { StatItemConfig } from '../../../types/dashboard.types';
-import { formatCurrency, formatPercent } from '../../../utils/formatting';
+import { formatCurrency, formatPercent } from '../../../lib/format';
 import { scaleToDisplayPeriod, getPeriodSuffix } from '../../../utils/dashboardCalculations';
 
 // Metric color constants (previously imported from constants/dashboard.ts)

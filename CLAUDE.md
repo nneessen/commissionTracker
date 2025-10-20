@@ -27,6 +27,7 @@ This is a full-stack application for insurance sales agents to track Key Perform
 **Design Principles:** Low concurrency, low cost, strong data safety, real-time KPI calculations
 
 **Recent Major Features (as of Oct 2025):**
+
 - ✅ Contract-level commission system with automatic calculations
 - ✅ Redesigned data-dense dashboard with quick actions
 - ✅ Multiple dashboard layouts (standard, compact, terminal/console)
@@ -194,4 +195,3 @@ GOLDEN RULES TO NEVER BREAK
 
 - when working on plans, do not forget to update them as you go and when completed, change the name to match the other files names and move to plans/completed/
 - always fetch my current db schema from my remote supabase before every new task
-

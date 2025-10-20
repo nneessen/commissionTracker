@@ -3,7 +3,7 @@
 import React from 'react';
 import { CheckCircle, AlertCircle } from 'lucide-react';
 import { PerformanceOverviewCardProps } from '../../../types/dashboard.types';
-import { formatCurrency, formatPercent } from '../../../utils/formatting';
+import { formatCurrency, formatPercent } from '../../../lib/format';
 import { getPerformanceStatus, calculateTargetPercentage } from '../../../utils/dashboardCalculations';
 import { getPeriodLabel } from '../../../utils/dateRange';
 import { cn } from '@/lib/utils';

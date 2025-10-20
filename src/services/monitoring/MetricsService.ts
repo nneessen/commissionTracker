@@ -2,8 +2,8 @@
 // Metrics collection and aggregation service
 
 import { logger } from '../base/logger';
-import { caches } from '../../utils/cache';
 import { performanceMonitor } from '../../utils/performance';
+import { QueryClient } from '@tanstack/react-query';
 
 /**
  * Metric types
@@ -35,9 +35,9 @@ export interface HealthStatus {
   uptime: number;
   metrics: {
     cache: {
-      commissions: { hitRate: number; size: number };
-      policies: { hitRate: number; size: number };
-      carriers: { hitRate: number; size: number };
+      size: number;
+      stale: number;
+      fetching: number;
     };
     performance: {
       avgResponseTime: number;
@@ -61,6 +61,14 @@ class MetricsService {
   private errorCount = 0;
   private readonly errorWindow = 60000; // 1 minute
   private recentErrors: Date[] = [];
+  private queryClient?: QueryClient;
+
+  /**
+   * Set the QueryClient instance for cache metrics
+   */
+  setQueryClient(client: QueryClient): void {
+    this.queryClient = client;
+  }
 
   /**
    * Record a counter metric (monotonically increasing)
@@ -127,6 +135,16 @@ class MetricsService {
     const perfSummary = performanceMonitor.getSummary();
     const errorRate = this.recentErrors.length / (this.errorWindow / 1000); // errors per second
 
+    // Get cache stats from TanStack Query
+    const queryCache = this.queryClient?.getQueryCache();
+    const queries = queryCache?.getAll() || [];
+
+    const cacheStats = {
+      size: queries.length,
+      stale: queries.filter(q => q.isStale()).length,
+      fetching: queries.filter(q => q.state.fetchStatus === 'fetching').length,
+    };
+
     // Determine overall health
     let status: 'healthy' | 'degraded' | 'unhealthy' = 'healthy';
     if (errorRate > 1 || perfSummary.slowOperations > 10) {
@@ -141,11 +159,7 @@ class MetricsService {
       timestamp: new Date(),
       uptime: Date.now() - this.startTime,
       metrics: {
-        cache: {
-          commissions: caches.commissions.getStats(),
-          policies: caches.policies.getStats(),
-          carriers: caches.carriers.getStats(),
-        },
+        cache: cacheStats,
         performance: {
           avgResponseTime: perfSummary.avgDuration,
           slowOperations: perfSummary.slowOperations,
@@ -317,7 +331,7 @@ class MetricsService {
 
     // Top metrics (most recent values)
     const topMetrics = [
-      { name: 'Cache Hit Rate', value: health.metrics.cache.commissions.hitRate * 100, trend: 'stable' as const },
+      { name: 'Cached Queries', value: health.metrics.cache.size, trend: 'stable' as const },
       { name: 'Avg Response Time', value: health.metrics.performance.avgResponseTime, trend: 'stable' as const },
       { name: 'Error Rate', value: health.metrics.errors.rate, trend: 'stable' as const },
     ];
