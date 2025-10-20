@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useConstants, useUpdateConstant } from '../../hooks/expenses/useConstants';
 import { Button } from '../../components/ui/button';
-import { Input } from '../../components/ui/Input';
+import { Input } from '../../components/ui/input';
 import { AlertCircle, CheckCircle, Settings, DollarSign } from 'lucide-react';
 
 export const ConstantsManagement: React.FC = () => {
@@ -123,7 +123,7 @@ export const ConstantsManagement: React.FC = () => {
                   <Input
                     type="number"
                     value={formData.avgAP}
-                    onChange={(value) => handleInputChange('avgAP', value)}
+                    onChange={(e) => handleInputChange('avgAP', e.target.value)}
                     onBlur={() => validateAndSave('avgAP')}
                     min={0}
                     step={100}
@@ -163,7 +163,7 @@ export const ConstantsManagement: React.FC = () => {
                   <Input
                     type="number"
                     value={formData.target1}
-                    onChange={(value) => handleInputChange('target1', value)}
+                    onChange={(e) => handleInputChange('target1', e.target.value)}
                     onBlur={() => validateAndSave('target1')}
                     min={0}
                     step={100}
@@ -203,7 +203,7 @@ export const ConstantsManagement: React.FC = () => {
                   <Input
                     type="number"
                     value={formData.target2}
-                    onChange={(value) => handleInputChange('target2', value)}
+                    onChange={(e) => handleInputChange('target2', e.target.value)}
                     onBlur={() => validateAndSave('target2')}
                     min={0}
                     step={100}

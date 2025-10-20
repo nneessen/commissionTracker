@@ -1,11 +1,11 @@
 // src/features/auth/EmailVerificationPending.tsx
 
-import React from 'react';
-import { Button } from '../../components/ui';
-import { MAX_RESEND_ATTEMPTS } from '../../constants/auth.constants';
-import { useEmailVerification } from './hooks/useEmailVerification';
-import { Alert } from './components/Alert';
-import { EmailIcon } from './components/EmailIcon';
+import React from "react";
+import { Button } from "../../components/ui";
+import { MAX_RESEND_ATTEMPTS } from "../../constants/auth.constants";
+import { useEmailVerification } from "./hooks/useEmailVerification";
+import { Alert } from "@/components/ui/alert";
+import { EmailIcon } from "@/components/custom_ui/EmailIcon";
 
 /**
  * EmailVerificationPending
@@ -54,9 +54,7 @@ export const EmailVerificationPending: React.FC = () => {
             We sent a verification link to
           </p>
           {email && (
-            <p className="text-sm font-semibold text-gray-900 mt-1">
-              {email}
-            </p>
+            <p className="text-sm font-semibold text-gray-900 mt-1">{email}</p>
           )}
         </div>
 
@@ -74,7 +72,8 @@ export const EmailVerificationPending: React.FC = () => {
           {/* Instructions */}
           <div className="text-center space-y-3">
             <p className="text-sm text-gray-700">
-              Click the link in the email to verify your account and get started.
+              Click the link in the email to verify your account and get
+              started.
             </p>
             <p className="text-xs text-gray-500">
               The link will expire in 24 hours for security reasons.

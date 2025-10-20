@@ -1,6 +1,15 @@
+// src/components/ui/index.ts
 export { Button } from './button';
 export { Input } from './input';
-// Components moved to custom_ui:
-// export { Select } from './Select';
-// export { Modal } from './Modal';
-// export { DataTable } from './DataTable';
+export {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectSeparator,
+  SelectScrollDownButton,
+  SelectScrollUpButton,
+  SelectTrigger,
+  SelectValue,
+} from './select';

@@ -12,7 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { EmptyState } from '@/components/custom_ui/empty-state';
+import { Empty, EmptyHeader, EmptyTitle, EmptyDescription, EmptyContent } from '@/components/ui/empty';
 import { formatCurrency, formatDate } from '@/lib/format';
 import type { Expense } from '@/types/expense.types';
 
@@ -49,21 +49,27 @@ export function ExpenseTable({
       </CardHeader>
       <CardContent>
         {isLoading ? (
-          <EmptyState title="Loading expenses..." />
+          <Empty>
+            <EmptyHeader>
+              <EmptyTitle>Loading expenses...</EmptyTitle>
+            </EmptyHeader>
+          </Empty>
         ) : expenses.length === 0 ? (
-          <EmptyState
-            title={
-              hasFiltersApplied
-                ? "No expenses match your filters"
-                : "No expenses for this month"
-            }
-            description={
-              hasFiltersApplied
-                ? "Try adjusting your filters or clearing them to see more results"
-                : `Add your first expense for ${monthYear}`
-            }
-            action={
-              hasFiltersApplied ? (
+          <Empty>
+            <EmptyHeader>
+              <EmptyTitle>
+                {hasFiltersApplied
+                  ? "No expenses match your filters"
+                  : "No expenses for this month"}
+              </EmptyTitle>
+              <EmptyDescription>
+                {hasFiltersApplied
+                  ? "Try adjusting your filters or clearing them to see more results"
+                  : `Add your first expense for ${monthYear}`}
+              </EmptyDescription>
+            </EmptyHeader>
+            <EmptyContent>
+              {hasFiltersApplied ? (
                 <Button variant="outline" size="sm" onClick={onClearFilters}>
                   Clear Filters
                 </Button>
@@ -71,9 +77,9 @@ export function ExpenseTable({
                 <Button size="sm" onClick={onAddExpense}>
                   Add First Expense
                 </Button>
-              )
-            }
-          />
+              )}
+            </EmptyContent>
+          </Empty>
         ) : (
           <div className="rounded-md border">
             <Table>

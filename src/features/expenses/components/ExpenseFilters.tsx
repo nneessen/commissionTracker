@@ -11,7 +11,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/custom_ui/Select';
+} from '@/components/ui/select';
 import type { ExpenseFilters as ExpenseFiltersType } from '@/types/expense.types';
 
 interface ExpenseFiltersProps {

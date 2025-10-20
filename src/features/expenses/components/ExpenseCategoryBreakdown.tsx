@@ -1,6 +1,11 @@
 // src/features/expenses/components/ExpenseCategoryBreakdown.tsx
-import { Card, CardHeader, CardContent, CardDescription } from "@/components/ui/card";
-import { EmptyState } from "@/components/ui/empty-state";
+import {
+  Card,
+  CardHeader,
+  CardContent,
+  CardDescription,
+} from "@/components/ui/card";
+import { Empty as EmptyState } from "@/components/ui/empty";
 import { formatCurrency } from "@/lib/format";
 
 interface CategoryData {
