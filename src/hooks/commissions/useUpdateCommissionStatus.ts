@@ -35,30 +35,34 @@ export const useUpdateCommissionStatus = () => {
         .select()
         .single();
 
-      if (commissionError) throw commissionError;
+      if (commissionError) {
+        throw commissionError;
+      }
 
-      // Also update policy status if policyId provided
+      // CRITICAL: Update policy status based on commission status
       if (policyId) {
         let policyStatus = 'active'; // default
 
-        if (status === 'paid' || status === 'earned') {
-          policyStatus = 'active';
-        } else if (status === 'cancelled' || status === 'charged_back') {
+        if (status === 'cancelled' || status === 'charged_back') {
           policyStatus = 'cancelled';
+        } else if (status === 'paid' || status === 'earned') {
+          policyStatus = 'active';
         } else if (status === 'pending') {
           policyStatus = 'pending';
         }
 
-        const { error: policyError } = await supabase
+        const { data: policyData, error: policyError } = await supabase
           .from('policies')
           .update({
             status: policyStatus,
             updated_at: new Date().toISOString()
           })
-          .eq('id', policyId);
+          .eq('id', policyId)
+          .select()
+          .single();
 
         if (policyError) {
-          console.error('Failed to update policy status:', policyError);
+          throw new Error(`Failed to update policy status: ${policyError.message}`);
         }
       }
 

@@ -9,3 +9,6 @@ export { useInfinitePolicies } from './useInfinitePolicies';
 export { useCreatePolicy } from './useCreatePolicy';
 export { useUpdatePolicy } from './useUpdatePolicy';
 export { useDeletePolicy } from './useDeletePolicy';
+export { useCancelPolicy } from './useCancelPolicy';
+export { useLapsePolicy } from './useLapsePolicy';
+export { useReinstatePolicy } from './useReinstatePolicy';

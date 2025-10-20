@@ -10,14 +10,32 @@ import {
   ChevronDown,
   CheckCircle,
   AlertCircle,
+  MoreVertical,
+  XCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
 import { useCarriers } from "../../hooks/carriers";
 import { useCommissions } from "../../hooks/commissions/useCommissions";
 import { useUpdateCommissionStatus } from "../../hooks/commissions/useUpdateCommissionStatus";
 import { useProcessChargeback } from "../../hooks/commissions/useProcessChargeback";
+import { useCancelPolicy, useLapsePolicy, useReinstatePolicy } from "../../hooks/policies";
 import { Policy, PolicyFilters, PolicyStatus } from "../../types/policy.types";
-import { ProductType } from "../../types/commission.types";
+import { ProductType, CommissionStatus } from "../../types/commission.types";
 import { calculateCommissionAdvance } from "../../utils/policyCalculations";
 import { formatCurrency, formatDate } from "../../lib/format";
 
@@ -49,11 +67,11 @@ const STATUS_BADGES: Record<PolicyStatus, string> = {
 
 const PRODUCT_ABBREV: Record<ProductType, string> = {
   whole_life: "Whole",
-  term: "Term",
+  term_life: "Term",
   universal_life: "UL",
-  indexed_universal_life: "IUL",
-  accidental: "Acc",
-  final_expense: "FE",
+  variable_life: "VL",
+  health: "Health",
+  disability: "Disability",
   annuity: "Ann",
 };
 
@@ -68,6 +86,9 @@ export const PolicyList: React.FC<PolicyListProps> = ({
   const { data: commissions = [] } = useCommissions();
   const { mutate: updateCommissionStatus } = useUpdateCommissionStatus();
   const { mutate: processChargeback } = useProcessChargeback();
+  const { mutate: cancelPolicy } = useCancelPolicy();
+  const { mutate: lapsePolicy } = useLapsePolicy();
+  const { mutate: reinstatePolicy } = useReinstatePolicy();
   const getCarrierById = (id: string) => carriers.find((c) => c.id === id);
 
   // Chargeback modal state
@@ -160,18 +181,16 @@ export const PolicyList: React.FC<PolicyListProps> = ({
   };
 
   const handleStatusChange = (commission: any, newStatus: string, policy: Policy) => {
-    if (newStatus === 'cancelled') {
-      // Open modal to confirm chargeback and cancel policy
-      setSelectedCommission({ ...commission, policy });
-      setShowChargebackModal(true);
-    } else {
-      // Direct status update for 'paid' - includes policy status update
-      updateCommissionStatus({
-        commissionId: commission.id,
-        status: newStatus as any,
-        policyId: policy.id
-      });
-    }
+    // The useUpdateCommissionStatus hook handles policy status updates
+    updateCommissionStatus({
+      commissionId: commission.id,
+      status: newStatus as 'pending' | 'earned' | 'paid' | 'charged_back' | 'cancelled',
+      policyId: policy.id  // This is the KEY - the hook handles the cascade
+    }, {
+      onError: (error) => {
+        alert(`Failed to update status: ${error.message}`);
+      }
+    });
   };
 
   const handleChargeback = () => {
@@ -194,6 +213,78 @@ export const PolicyList: React.FC<PolicyListProps> = ({
         },
         onError: (error) => {
           alert(`Failed to apply chargeback: ${error.message}`);
+        }
+      }
+    );
+  };
+
+  const handleCancelPolicy = (policyId: string) => {
+    if (!window.confirm("Are you sure you want to cancel this policy? This will calculate and apply any chargeback amounts.")) {
+      return;
+    }
+
+    cancelPolicy(
+      {
+        policyId,
+        reason: 'Manually cancelled by user',
+        cancelDate: new Date()
+      },
+      {
+        onSuccess: (result) => {
+          if (result.chargeback && result.chargeback.amount > 0) {
+            alert(`Policy cancelled. Chargeback amount: ${formatCurrency(result.chargeback.amount)}`);
+          } else {
+            alert('Policy cancelled successfully.');
+          }
+        },
+        onError: (error) => {
+          alert(`Failed to cancel policy: ${error.message}`);
+        }
+      }
+    );
+  };
+
+  const handleLapsePolicy = (policyId: string) => {
+    if (!window.confirm("Mark this policy as lapsed? This will calculate and apply any chargeback amounts.")) {
+      return;
+    }
+
+    lapsePolicy(
+      {
+        policyId,
+        lapseDate: new Date(),
+        reason: 'Client stopped paying premiums'
+      },
+      {
+        onSuccess: (result) => {
+          if (result.chargeback && result.chargeback.amount > 0) {
+            alert(`Policy marked as lapsed. Chargeback amount: ${formatCurrency(result.chargeback.amount)}`);
+          } else {
+            alert('Policy marked as lapsed.');
+          }
+        },
+        onError: (error) => {
+          alert(`Failed to mark policy as lapsed: ${error.message}`);
+        }
+      }
+    );
+  };
+
+  const handleReinstatePolicy = (policyId: string) => {
+    const reason = window.prompt("Please provide a reason for reinstating this policy:");
+    if (!reason) return;
+
+    reinstatePolicy(
+      {
+        policyId,
+        reason
+      },
+      {
+        onSuccess: () => {
+          alert('Policy reinstated successfully. Any previous chargebacks have been reversed.');
+        },
+        onError: (error) => {
+          alert(`Failed to reinstate policy: ${error.message}`);
         }
       }
     );
@@ -391,45 +482,115 @@ export const PolicyList: React.FC<PolicyListProps> = ({
                     </td>
                     <td className="commission-status">
                       {policyCommission ? (
-                        <select
-                          value={
-                            policyCommission.status === 'charged_back' || policyCommission.status === 'cancelled'
-                              ? 'cancelled'
-                              : policyCommission.status === 'pending' || policyCommission.status === 'earned'
-                              ? 'paid'
-                              : policyCommission.status
-                          }
-                          onChange={(e) => handleStatusChange(policyCommission, e.target.value, policy)}
-                          className={cn(
-                            "status-select px-1.5 py-1 text-xs rounded border border-border bg-card cursor-pointer font-medium",
-                            policyCommission.status === 'charged_back' || policyCommission.status === 'cancelled'
-                              ? "text-error"
-                              : "text-foreground"
-                          )}
+                        <Select
+                          value={policyCommission.status}
+                          onValueChange={(value) => handleStatusChange(policyCommission, value, policy)}
                         >
-                          <option value="paid">Paid</option>
-                          <option value="cancelled">Cancelled</option>
-                        </select>
+                          <SelectTrigger
+                            className={cn(
+                            "h-7 text-xs w-[110px] border-gray-300",
+                            policyCommission.status === 'charged_back' || policyCommission.status === 'cancelled'
+                              ? "text-destructive"
+                              : policyCommission.status === 'paid'
+                              ? "text-success"
+                              : policyCommission.status === 'earned'
+                              ? "text-info"
+                              : "text-warning"
+                          )}>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="border-gray-300">
+                            <SelectItem value="pending" className="text-xs">
+                              <span className="flex items-center gap-1">
+                                <span className="w-2 h-2 rounded-full bg-warning" />
+                                Pending
+                              </span>
+                            </SelectItem>
+                            <SelectItem value="earned" className="text-xs">
+                              <span className="flex items-center gap-1">
+                                <span className="w-2 h-2 rounded-full bg-info" />
+                                Earned
+                              </span>
+                            </SelectItem>
+                            <SelectItem value="paid" className="text-xs">
+                              <span className="flex items-center gap-1">
+                                <span className="w-2 h-2 rounded-full bg-success" />
+                                Paid
+                              </span>
+                            </SelectItem>
+                            <SelectItem value="charged_back" className="text-xs">
+                              <span className="flex items-center gap-1">
+                                <span className="w-2 h-2 rounded-full bg-destructive" />
+                                Charged Back
+                              </span>
+                            </SelectItem>
+                            <SelectItem value="cancelled" className="text-xs">
+                              <span className="flex items-center gap-1">
+                                <span className="w-2 h-2 rounded-full bg-destructive" />
+                                Cancelled
+                              </span>
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
                       ) : (
                         <span className="text-muted-foreground/60 text-xs">No commission</span>
                       )}
                     </td>
                     <td className="date">{formatDate(policy.effectiveDate)}</td>
                     <td className="actions">
-                      <button
-                        onClick={() => onEditPolicy(policy.id)}
-                        className="action-btn edit"
-                        title="Edit"
-                      >
-                        <Edit size={14} />
-                      </button>
-                      <button
-                        onClick={() => handleDeletePolicy(policy.id)}
-                        className="action-btn delete"
-                        title="Delete"
-                      >
-                        <Trash2 size={14} />
-                      </button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                          >
+                            <MoreVertical className="h-4 w-4" />
+                            <span className="sr-only">Open menu</span>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48 bg-white dark:bg-gray-900 border-gray-300">
+                          <DropdownMenuItem onClick={() => onEditPolicy(policy.id)}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            Edit Policy
+                          </DropdownMenuItem>
+                          {policy.status === 'active' && (
+                            <>
+                              <DropdownMenuItem
+                                onClick={() => handleCancelPolicy(policy.id)}
+                                className="text-warning"
+                              >
+                                <XCircle className="mr-2 h-4 w-4" />
+                                Cancel Policy
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => handleLapsePolicy(policy.id)}
+                                className="text-warning"
+                              >
+                                <AlertCircle className="mr-2 h-4 w-4" />
+                                Mark as Lapsed
+                              </DropdownMenuItem>
+                            </>
+                          )}
+                          {(policy.status === 'cancelled' || policy.status === 'lapsed') && (
+                            <DropdownMenuItem
+                              onClick={() => handleReinstatePolicy(policy.id)}
+                              className="text-success"
+                            >
+                              <CheckCircle className="mr-2 h-4 w-4" />
+                              Reinstate Policy
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onClick={() => handleDeletePolicy(policy.id)}
+                            className="text-destructive focus:text-destructive"
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Delete Policy
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </td>
                   </tr>
                 );

@@ -6,6 +6,30 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-10-20 18:55:06
+
+### Changed Files
+- `plans/active/01_fix_policies_crud_and_status_cascade.md`
+- `plans/completed/01_fix_policies_crud_and_status_cascade_COMPLETED.md`
+- `src/components/ui/button.tsx`
+- `src/components/ui/select.tsx`
+- `src/features/policies/PolicyList.tsx`
+- `src/hooks/commissions/useUpdateCommissionStatus.ts`
+- `src/hooks/policies/index.ts`
+- `src/index.css`
+- `src/test-status-update.ts`
+- `supabase/migrations/.archive/003_backfill_commissions_fixed.sql`
+- `supabase/migrations/.archive/003_backfill_simple.sql`
+- `supabase/migrations/.archive/003_functions_only.sql`
+- `supabase/migrations/.archive/003_trigger_fixed.sql`
+- `supabase/migrations/20251020_001_fix_commission_amount_field.sql`
+- `supabase/migrations/20251020_002_fix_commission_column_names.sql`
+
+### Statistics
+```
+ 15 files changed, 1416 insertions(+), 59 deletions(-)
+```
+
 ## [Checkpoint] - 2025-10-20 08:42:12
 
 ### Changed Files
