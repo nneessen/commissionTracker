@@ -141,34 +141,37 @@ export const ResetPassword: React.FC = () => {
           {hasToken && !success && (
             <form className="space-y-5" onSubmit={handleSubmit}>
               {/* Password Input */}
-              <Input
-                label="New password"
-                type="password"
-                placeholder="Enter your new password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                disabled={loading}
-                className="w-full"
-              />
+              <div className="space-y-1">
+                <label className="text-sm font-medium">New password</label>
+                <Input
+                  type="password"
+                  placeholder="Enter your new password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  disabled={loading}
+                  className="w-full"
+                />
+              </div>
 
               {/* Confirm Password Input */}
-              <Input
-                label="Confirm new password"
-                type="password"
-                placeholder="Confirm your new password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-                disabled={loading}
-                className="w-full"
-              />
+              <div className="space-y-1">
+                <label className="text-sm font-medium">Confirm new password</label>
+                <Input
+                  type="password"
+                  placeholder="Confirm your new password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                  disabled={loading}
+                  className="w-full"
+                />
+              </div>
 
               {/* Submit Button */}
               <Button
                 type="submit"
                 disabled={loading}
-                loading={loading}
                 className="w-full py-3 text-base font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white"
               >
                 {loading ? 'Updating password...' : 'Update password'}
@@ -179,14 +182,15 @@ export const ResetPassword: React.FC = () => {
 
         {/* Footer */}
         <div className="mt-8 text-center">
-          <button
+          <Button
             type="button"
             onClick={() => navigate({ to: '/login' })}
-            className="text-sm font-medium text-blue-600 hover:text-blue-500 transition-colors"
+            variant="link"
+            className="h-auto p-0 text-sm font-medium text-blue-600 hover:text-blue-500"
             disabled={loading}
           >
             ← Back to login
-          </button>
+          </Button>
         </div>
       </div>
     </div>

@@ -1,7 +1,7 @@
 // /home/nneessen/projects/commissionTracker/src/features/analytics/PerformanceTable.tsx
 
 import React from 'react';
-import { DataTable } from '../../components/ui';
+import { DataTable } from '@/components/custom_ui/DataTable';
 import { CarrierPerformance, StatePerformance, ProductPerformance } from '../../types/metrics.types';
 import { DataTableColumn } from '../../types/ui.types';
 

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Trash2, Plus, CheckCircle, Edit2, AlertCircle } from 'lucide-react';
-import { Button, DataTable } from '../../components/ui';
+import { Button } from '../../components/ui';
+import { DataTable } from '@/components/custom_ui/DataTable';
 import { Commission, DataTableColumn } from '../../types';
 import { useCommissions, useDeleteCommission, useCommissionMetrics, useCarriers } from '../../hooks';
 import { useMarkCommissionPaid } from '../../hooks/commissions/useMarkCommissionPaid';

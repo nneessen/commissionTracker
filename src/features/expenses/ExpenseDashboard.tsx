@@ -22,7 +22,7 @@ import type {
 import { formatCurrency, formatMonthYear } from "../../lib/format";
 import { parseLocalDate, isSameMonth } from "../../lib/date";
 import showToast from "../../utils/toast";
-import { Heading } from "../../components/ui/heading";
+import { Heading } from "@/components/custom_ui/heading";
 
 import { ExpenseDialog } from "./components/ExpenseDialog";
 import { ExpenseDeleteDialog } from "./components/ExpenseDeleteDialog";

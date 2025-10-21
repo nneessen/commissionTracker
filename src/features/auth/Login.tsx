@@ -290,13 +290,14 @@ export const Login: React.FC<LoginProps> = ({ onSuccess }) => {
                   <p className="text-sm font-medium text-red-800">{error}</p>
                   {/* Show "Create account" button for invalid credentials */}
                   {mode === "signin" && error.includes("No account found") && (
-                    <button
+                    <Button
                       type="button"
                       onClick={() => switchMode("signup")}
-                      className="mt-2 text-sm font-semibold text-red-700 hover:text-red-600 underline transition-colors"
+                      variant="link"
+                      className="mt-2 h-auto p-0 text-sm font-semibold text-red-700 hover:text-red-600 underline"
                     >
                       Create a new account
-                    </button>
+                    </Button>
                   )}
                   {/* Show support link for disabled accounts */}
                   {error.includes("disabled") && (
@@ -315,59 +316,72 @@ export const Login: React.FC<LoginProps> = ({ onSuccess }) => {
           {/* Form */}
           <form className="space-y-5" onSubmit={handleSubmit}>
             {/* Email Input */}
-            <Input
-              label="Email address"
-              type="email"
-              placeholder="you@example.com"
-              value={email}
-              onChange={(value) => setEmail(String(value))}
-              error={formErrors.email}
-              required
-              disabled={loading}
-              className="w-full"
-            />
-
-            {/* Password Input */}
-            {mode !== "reset" && (
+            <div className="space-y-1">
+              <label className="text-sm font-medium">Email address</label>
               <Input
-                label="Password"
-                type="password"
-                placeholder="Enter your password"
-                value={password}
-                onChange={(value) => setPassword(String(value))}
-                error={formErrors.password}
+                type="email"
+                placeholder="you@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 required
                 disabled={loading}
                 className="w-full"
               />
+              {formErrors.email && (
+                <p className="text-xs text-red-500">{formErrors.email}</p>
+              )}
+            </div>
+
+            {/* Password Input */}
+            {mode !== "reset" && (
+              <div className="space-y-1">
+                <label className="text-sm font-medium">Password</label>
+                <Input
+                  type="password"
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  disabled={loading}
+                  className="w-full"
+                />
+                {formErrors.password && (
+                  <p className="text-xs text-red-500">{formErrors.password}</p>
+                )}
+              </div>
             )}
 
             {/* Confirm Password Input (signup only) */}
             {mode === "signup" && (
-              <Input
-                label="Confirm password"
-                type="password"
-                placeholder="Confirm your password"
-                value={confirmPassword}
-                onChange={(value) => setConfirmPassword(String(value))}
-                error={formErrors.confirmPassword}
-                required
-                disabled={loading}
-                className="w-full"
-              />
+              <div className="space-y-1">
+                <label className="text-sm font-medium">Confirm password</label>
+                <Input
+                  type="password"
+                  placeholder="Confirm your password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                  disabled={loading}
+                  className="w-full"
+                />
+                {formErrors.confirmPassword && (
+                  <p className="text-xs text-red-500">{formErrors.confirmPassword}</p>
+                )}
+              </div>
             )}
 
             {/* Forgot Password Link (signin only) */}
             {mode === "signin" && (
               <div className="flex items-center justify-end">
-                <button
+                <Button
                   type="button"
                   onClick={() => switchMode("reset")}
-                  className="text-sm font-medium text-blue-600 hover:text-blue-500 transition-colors"
+                  variant="link"
+                  className="h-auto p-0 text-sm font-medium text-blue-600 hover:text-blue-500"
                   disabled={loading}
                 >
                   Forgot your password?
-                </button>
+                </Button>
               </div>
             )}
 
@@ -375,10 +389,9 @@ export const Login: React.FC<LoginProps> = ({ onSuccess }) => {
             <Button
               type="submit"
               disabled={loading}
-              loading={loading}
               className="w-full py-3 text-base font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white"
             >
-              {getButtonText()}
+              {loading ? 'Processing...' : getButtonText()}
             </Button>
           </form>
 
@@ -397,25 +410,27 @@ export const Login: React.FC<LoginProps> = ({ onSuccess }) => {
           </div>
 
           {mode === "signin" && (
-            <button
+            <Button
               type="button"
               onClick={() => switchMode("signup")}
-              className="w-full text-center text-sm font-medium text-blue-600 hover:text-blue-500 transition-colors py-2"
+              variant="link"
+              className="w-full text-center text-sm font-medium text-blue-600 hover:text-blue-500 py-2"
               disabled={loading}
             >
               Create a new account
-            </button>
+            </Button>
           )}
 
           {(mode === "signup" || mode === "reset") && (
-            <button
+            <Button
               type="button"
               onClick={() => switchMode("signin")}
-              className="w-full text-center text-sm font-medium text-blue-600 hover:text-blue-500 transition-colors py-2"
+              variant="link"
+              className="w-full text-center text-sm font-medium text-blue-600 hover:text-blue-500 py-2"
               disabled={loading}
             >
               Sign in instead
-            </button>
+            </Button>
           )}
         </div>
 

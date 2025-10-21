@@ -1,5 +1,19 @@
 import React, { useState } from 'react';
-import { Modal, Button, Input, Select } from '../../components/ui';
+import { Button, Input } from '../../components/ui';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { NewCommissionForm, ProductType, SelectOption } from '../../types';
 import { Carrier } from '../../types/carrier.types';
 import { useCarriers, useCreateCommission } from '../../hooks';
@@ -172,42 +186,66 @@ export const CommissionForm: React.FC<CommissionFormProps> = ({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} title="Log Commission" size="lg">
+    <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Log Commission</DialogTitle>
+        </DialogHeader>
       <div className="space-y-4">
         {/* Client Information */}
         <div className="border-b pb-4">
           <h4 className="font-semibold text-gray-900 mb-3">Client Information</h4>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Input
-              label="Client Name"
-              value={formData.clientName}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, clientName: e.target.value }))
-              }
-              error={errors.clientName}
-              required
-            />
-            <Input
-              label="Client Age"
-              type="number"
-              value={formData.clientAge}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, clientAge: Number(e.target.value) }))
-              }
-              error={errors.clientAge}
-              required
-            />
-            <Select
-              label="State"
-              value={formData.clientState}
-              onChange={(value) =>
-                setFormData((prev) => ({ ...prev, clientState: value }))
-              }
-              options={US_STATES}
-              placeholder="Select state"
-              error={errors.clientState}
-              required
-            />
+            <div className="space-y-1">
+              <label className="text-sm font-medium">Client Name</label>
+              <Input
+                value={formData.clientName}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, clientName: e.target.value }))
+                }
+                required
+              />
+              {errors.clientName && (
+                <p className="text-xs text-red-500">{errors.clientName}</p>
+              )}
+            </div>
+            <div className="space-y-1">
+              <label className="text-sm font-medium">Client Age</label>
+              <Input
+                type="number"
+                value={formData.clientAge}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, clientAge: Number(e.target.value) }))
+                }
+                required
+              />
+              {errors.clientAge && (
+                <p className="text-xs text-red-500">{errors.clientAge}</p>
+              )}
+            </div>
+            <div className="space-y-1">
+              <label className="text-sm font-medium">State</label>
+              <Select
+                value={formData.clientState}
+                onValueChange={(value) =>
+                  setFormData((prev) => ({ ...prev, clientState: value }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select state" />
+                </SelectTrigger>
+                <SelectContent>
+                  {US_STATES.map((state) => (
+                    <SelectItem key={state.value} value={state.value}>
+                      {state.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.clientState && (
+                <p className="text-xs text-red-500">{errors.clientState}</p>
+              )}
+            </div>
           </div>
         </div>
 
@@ -215,29 +253,52 @@ export const CommissionForm: React.FC<CommissionFormProps> = ({
         <div className="border-b pb-4">
           <h4 className="font-semibold text-gray-900 mb-3">Policy Information</h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Select
-              label="Carrier"
-              value={formData.carrierId}
-              onChange={(value) =>
-                setFormData((prev) => ({ ...prev, carrierId: value }))
-              }
-              options={carrierOptions}
-              placeholder="Select carrier"
-              error={errors.carrierId}
-              required
-            />
-            <Select
-              label="Product"
-              value={formData.product}
-              onChange={(value) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  product: value as ProductType,
-                }))
-              }
-              options={PRODUCT_OPTIONS}
-              required
-            />
+            <div className="space-y-1">
+              <label className="text-sm font-medium">Carrier</label>
+              <Select
+                value={formData.carrierId}
+                onValueChange={(value) =>
+                  setFormData((prev) => ({ ...prev, carrierId: value }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select carrier" />
+                </SelectTrigger>
+                <SelectContent>
+                  {carrierOptions.map((carrier) => (
+                    <SelectItem key={carrier.value} value={carrier.value}>
+                      {carrier.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.carrierId && (
+                <p className="text-xs text-red-500">{errors.carrierId}</p>
+              )}
+            </div>
+            <div className="space-y-1">
+              <label className="text-sm font-medium">Product</label>
+              <Select
+                value={formData.product}
+                onValueChange={(value) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    product: value as ProductType,
+                  }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select product" />
+                </SelectTrigger>
+                <SelectContent>
+                  {PRODUCT_OPTIONS.map((product) => (
+                    <SelectItem key={product.value} value={product.value}>
+                      {product.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
 
@@ -245,16 +306,20 @@ export const CommissionForm: React.FC<CommissionFormProps> = ({
         <div>
           <h4 className="font-semibold text-gray-900 mb-3">Premium Information</h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input
-              label="Annual Premium"
-              type="number"
-              value={formData.annualPremium}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, annualPremium: Number(e.target.value) }))
-              }
-              error={errors.annualPremium}
-              required
-            />
+            <div className="space-y-1">
+              <label className="text-sm font-medium">Annual Premium</label>
+              <Input
+                type="number"
+                value={formData.annualPremium}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, annualPremium: Number(e.target.value) }))
+                }
+                required
+              />
+              {errors.annualPremium && (
+                <p className="text-xs text-red-500">{errors.annualPremium}</p>
+              )}
+            </div>
             <div className="space-y-1">
               <label className="block text-sm font-medium text-gray-700">
                 Estimated Commission
@@ -285,15 +350,16 @@ export const CommissionForm: React.FC<CommissionFormProps> = ({
         )}
 
         {/* Actions */}
-        <div className="flex justify-end space-x-2 pt-4">
+        <DialogFooter>
           <Button variant="ghost" onClick={handleClose} disabled={isCreating}>
             Cancel
           </Button>
           <Button onClick={handleSubmit} disabled={isCreating}>
             {isCreating ? 'Adding...' : 'Add Commission'}
           </Button>
-        </div>
+        </DialogFooter>
       </div>
-    </Modal>
+      </DialogContent>
+    </Dialog>
   );
 };

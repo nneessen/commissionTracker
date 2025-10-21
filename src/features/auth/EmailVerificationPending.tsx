@@ -4,8 +4,9 @@ import React from 'react';
 import { Button } from '../../components/ui';
 import { MAX_RESEND_ATTEMPTS } from '../../constants/auth.constants';
 import { useEmailVerification } from './hooks/useEmailVerification';
-import { Alert } from './components/Alert';
-import { EmailIcon } from './components/EmailIcon';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { CheckCircle2, XCircle } from 'lucide-react';
+import { EmailIcon } from '@/components/custom_ui/EmailIcon';
 
 /**
  * EmailVerificationPending
@@ -66,10 +67,20 @@ export const EmailVerificationPending: React.FC = () => {
           <EmailIcon />
 
           {/* Success Message */}
-          {message && <Alert type="success" message={message} />}
+          {message && (
+            <Alert>
+              <CheckCircle2 className="h-4 w-4" />
+              <AlertDescription>{message}</AlertDescription>
+            </Alert>
+          )}
 
           {/* Error Message */}
-          {error && <Alert type="error" message={error} />}
+          {error && (
+            <Alert variant="destructive">
+              <XCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
 
           {/* Instructions */}
           <div className="text-center space-y-3">
@@ -84,12 +95,11 @@ export const EmailVerificationPending: React.FC = () => {
           {/* Resend Button */}
           <Button
             onClick={handleResend}
-            disabled={isResendDisabled}
-            loading={loading}
+            disabled={isResendDisabled || loading}
             className="w-full py-3 text-base font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
             aria-label={getResendButtonText()}
           >
-            {getResendButtonText()}
+            {loading ? 'Sending...' : getResendButtonText()}
           </Button>
 
           {/* Attempt counter */}
@@ -118,13 +128,14 @@ export const EmailVerificationPending: React.FC = () => {
           </div>
 
           {/* Back to login */}
-          <button
+          <Button
             type="button"
             onClick={handleBackToLogin}
-            className="w-full text-center text-sm font-medium text-blue-600 hover:text-blue-500 transition-colors py-2"
+            variant="link"
+            className="w-full text-center text-sm font-medium text-blue-600 hover:text-blue-500 py-2"
           >
             Back to login
-          </button>
+          </Button>
         </div>
 
         {/* Footer */}

@@ -1,6 +1,10 @@
 // src/features/expenses/components/ExpenseCategoryBreakdown.tsx
 import { Card, CardHeader, CardContent, CardDescription } from "@/components/ui/card";
-import { EmptyState } from "@/components/ui/empty-state";
+import {
+  Empty,
+  EmptyHeader,
+  EmptyTitle
+} from "@/components/ui/empty";
 import { formatCurrency } from "@/lib/format";
 
 interface CategoryData {
@@ -51,7 +55,11 @@ export function ExpenseCategoryBreakdown({
             ))}
           </div>
         ) : (
-          <EmptyState title="No data to display" />
+          <Empty>
+            <EmptyHeader>
+              <EmptyTitle>No data to display</EmptyTitle>
+            </EmptyHeader>
+          </Empty>
         )}
       </CardContent>
     </Card>
