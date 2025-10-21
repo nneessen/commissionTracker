@@ -117,13 +117,14 @@ export const EmailVerificationPending: React.FC = () => {
           </div>
 
           {/* Back to login */}
-          <button
+          <Button
             type="button"
             onClick={handleBackToLogin}
-            className="w-full text-center text-sm font-medium text-blue-600 hover:text-blue-500 transition-colors py-2"
+            variant="link"
+            className="w-full text-center text-sm font-medium text-blue-600 hover:text-blue-500 h-auto py-2"
           >
             Back to login
-          </button>
+          </Button>
         </div>
 
         {/* Footer */}

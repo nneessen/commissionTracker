@@ -136,7 +136,7 @@ export function ForecastChart({
               y1={tick.y}
               x2={chartWidth}
               y2={tick.y}
-              stroke="#f1f5f9"
+              stroke="rgb(241, 245, 249)"
               strokeWidth="1"
             />
           ))}
@@ -145,7 +145,7 @@ export function ForecastChart({
           {upperBandPath && lowerBandPath && lowerBandPathSegments.length > 0 && (
             <path
               d={`${upperBandPath} ${lowerBandPathSegments.reverse().map(seg => `L ${seg.x} ${seg.y}`).join(' ')} Z`}
-              fill="#3b82f6"
+              fill="rgb(59, 130, 246)"
               opacity={0.1}
             />
           )}
@@ -154,7 +154,7 @@ export function ForecastChart({
           {upperBandPath && (
             <path
               d={upperBandPath}
-              stroke="#3b82f6"
+              stroke="rgb(59, 130, 246)"
               strokeWidth="1"
               strokeDasharray="4,4"
               fill="none"
@@ -166,7 +166,7 @@ export function ForecastChart({
           {lowerBandPath && (
             <path
               d={lowerBandPath}
-              stroke="#3b82f6"
+              stroke="rgb(59, 130, 246)"
               strokeWidth="1"
               strokeDasharray="4,4"
               fill="none"
@@ -178,7 +178,7 @@ export function ForecastChart({
           {linePath && (
             <path
               d={linePath}
-              stroke="#3b82f6"
+              stroke="rgb(59, 130, 246)"
               strokeWidth="3"
               fill="none"
               strokeLinecap="round"
@@ -191,8 +191,8 @@ export function ForecastChart({
             const x = scaleX(i);
             const y = scaleY(d[valueKey] || 0);
             const color =
-              d.confidence === 'high' ? '#10b981' :
-              d.confidence === 'medium' ? '#f59e0b' : '#ef4444';
+              d.confidence === 'high' ? 'rgb(16, 185, 129)' :
+              d.confidence === 'medium' ? 'rgb(245, 158, 11)' : 'rgb(239, 68, 68)';
 
             // Skip if coordinates are invalid
             if (isNaN(x) || isNaN(y) || !isFinite(x) || !isFinite(y)) return null;
@@ -204,7 +204,7 @@ export function ForecastChart({
                   cy={y}
                   r={5}
                   fill={color}
-                  stroke="#ffffff"
+                  stroke="rgb(255, 255, 255)"
                   strokeWidth="2"
                   className="cursor-pointer"
                 />
@@ -219,7 +219,7 @@ export function ForecastChart({
             y1={chartHeight}
             x2={chartWidth}
             y2={chartHeight}
-            stroke="#2d3748"
+            stroke="rgb(45, 55, 72)"
             strokeWidth="2"
           />
           <line
@@ -227,7 +227,7 @@ export function ForecastChart({
             y1={0}
             x2={0}
             y2={chartHeight}
-            stroke="#2d3748"
+            stroke="rgb(45, 55, 72)"
             strokeWidth="2"
           />
 
@@ -239,7 +239,7 @@ export function ForecastChart({
                 y1={tick.y}
                 x2={0}
                 y2={tick.y}
-                stroke="#2d3748"
+                stroke="rgb(45, 55, 72)"
                 strokeWidth="2"
               />
               <text
@@ -247,7 +247,7 @@ export function ForecastChart({
                 y={tick.y + 4}
                 textAnchor="end"
                 fontSize="10px"
-                fill="#656d76"
+                fill="rgb(101, 109, 118)"
               >
                 {valueKey === 'projectedPolicies' ? tick.value.toFixed(0) : formatNumber(tick.value)}
               </text>
@@ -265,7 +265,7 @@ export function ForecastChart({
                   y1={chartHeight}
                   x2={x}
                   y2={chartHeight + 6}
-                  stroke="#2d3748"
+                  stroke="rgb(45, 55, 72)"
                   strokeWidth="2"
                 />
                 <text
@@ -273,7 +273,7 @@ export function ForecastChart({
                   y={chartHeight + 20}
                   textAnchor="middle"
                   fontSize="10px"
-                  fill="#656d76"
+                  fill="rgb(101, 109, 118)"
                 >
                   {d.periodLabel.split(' ')[0]}
                 </text>
@@ -288,7 +288,7 @@ export function ForecastChart({
             textAnchor="middle"
             fontSize="11px"
             fontWeight="600"
-            fill="#1a1a1a"
+            fill="rgb(26, 26, 26)"
             transform={`rotate(-90, ${-chartHeight / 2}, -45)`}
           >
             {valueLabel}
@@ -297,29 +297,22 @@ export function ForecastChart({
       </svg>
 
       {/* Legend */}
-      <div style={{
-        marginTop: '20px',
-        display: 'flex',
-        gap: '16px',
-        fontSize: '11px',
-        color: '#656d76',
-        flexWrap: 'wrap'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <div style={{ width: '12px', height: '12px', background: '#10b981', borderRadius: '50%' }} />
+      <div className="mt-5 flex gap-4 text-xs text-muted-foreground flex-wrap">
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-3 bg-success rounded-full" />
           <span>High Confidence</span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <div style={{ width: '12px', height: '12px', background: '#f59e0b', borderRadius: '50%' }} />
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-3 bg-warning rounded-full" />
           <span>Medium Confidence</span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <div style={{ width: '12px', height: '12px', background: '#ef4444', borderRadius: '50%' }} />
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-3 bg-error rounded-full" />
           <span>Low Confidence</span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginLeft: 'auto' }}>
+        <div className="flex items-center gap-1.5 ml-auto">
           <svg width="20" height="8">
-            <rect x="0" y="3" width="20" height="2" fill="#3b82f6" opacity="0.2" />
+            <rect x="0" y="3" width="20" height="2" fill="rgb(59, 130, 246)" opacity="0.2" />
           </svg>
           <span>Confidence Interval</span>
         </div>

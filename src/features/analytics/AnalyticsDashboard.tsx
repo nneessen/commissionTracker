@@ -6,6 +6,7 @@ import {
   AdvancedTimePeriod,
   getAdvancedDateRange,
 } from "@/components/custom_ui/TimePeriodSelector";
+import { Button } from "@/components/ui/button";
 import { useAnalyticsData } from "../../hooks/useAnalyticsData";
 import { downloadCSV, printAnalyticsToPDF } from "../../utils/exportHelpers";
 
@@ -118,40 +119,22 @@ export function AnalyticsDashboard() {
 
             {/* Export Buttons */}
             <div className="flex gap-2">
-              <button
+              <Button
                 onClick={handleExportCSV}
-                style={{
-                  padding: "6px 12px",
-                  background: "#10b981",
-                  color: "#ffffff",
-                  border: "none",
-                  borderRadius: "6px",
-                  fontSize: "11px",
-                  fontWeight: 600,
-                  cursor: "pointer",
-                  transition: "all 0.2s ease",
-                }}
+                size="sm"
+                className="bg-success hover:bg-success/90 text-white"
                 title="Export data to CSV"
               >
                 📊 Export CSV
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={handlePrintPDF}
-                style={{
-                  padding: "6px 12px",
-                  background: "#ef4444",
-                  color: "#ffffff",
-                  border: "none",
-                  borderRadius: "6px",
-                  fontSize: "11px",
-                  fontWeight: 600,
-                  cursor: "pointer",
-                  transition: "all 0.2s ease",
-                }}
+                size="sm"
+                variant="destructive"
                 title="Print report to PDF"
               >
                 📄 Print PDF
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -165,168 +148,39 @@ export function AnalyticsDashboard() {
 
         {/* Loading State */}
         {analyticsData.isLoading ? (
-          <div
-            style={{
-              padding: "40px",
-              textAlign: "center",
-              fontSize: "14px",
-              color: "#656d76",
-            }}
-          >
+          <div className="p-10 text-center text-sm text-muted-foreground">
             Loading analytics...
           </div>
         ) : (
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns:
-                window.innerWidth >= 1200 ? "1fr 1fr" : "1fr",
-              gap: "16px",
-              maxWidth: "1600px",
-              margin: "0 auto",
-              width: "100%",
-            }}
-          >
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 max-w-[1600px] mx-auto w-full">
             {/* Left Column */}
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: "16px",
-                minWidth: 0,
-                width: "100%",
-              }}
-            >
-              <Suspense
-                fallback={
-                  <div
-                    style={{
-                      padding: "20px",
-                      textAlign: "center",
-                      color: "#94a3b8",
-                    }}
-                  >
-                    Loading...
-                  </div>
-                }
-              >
+            <div className="flex flex-col gap-4 min-w-0 w-full">
+              <Suspense fallback={<div className="p-5 text-center text-slate-400">Loading...</div>}>
                 <PerformanceAttribution />
               </Suspense>
-              <Suspense
-                fallback={
-                  <div
-                    style={{
-                      padding: "20px",
-                      textAlign: "center",
-                      color: "#94a3b8",
-                    }}
-                  >
-                    Loading...
-                  </div>
-                }
-              >
+              <Suspense fallback={<div className="p-5 text-center text-slate-400">Loading...</div>}>
                 <CohortAnalysis />
               </Suspense>
-              <Suspense
-                fallback={
-                  <div
-                    style={{
-                      padding: "20px",
-                      textAlign: "center",
-                      color: "#94a3b8",
-                    }}
-                  >
-                    Loading...
-                  </div>
-                }
-              >
+              <Suspense fallback={<div className="p-5 text-center text-slate-400">Loading...</div>}>
                 <ProductMatrix />
               </Suspense>
-              <Suspense
-                fallback={
-                  <div
-                    style={{
-                      padding: "20px",
-                      textAlign: "center",
-                      color: "#94a3b8",
-                    }}
-                  >
-                    Loading...
-                  </div>
-                }
-              >
+              <Suspense fallback={<div className="p-5 text-center text-slate-400">Loading...</div>}>
                 <GeographicAnalysis />
               </Suspense>
             </div>
 
             {/* Right Column */}
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: "16px",
-                minWidth: 0,
-                width: "100%",
-              }}
-            >
-              <Suspense
-                fallback={
-                  <div
-                    style={{
-                      padding: "20px",
-                      textAlign: "center",
-                      color: "#94a3b8",
-                    }}
-                  >
-                    Loading...
-                  </div>
-                }
-              >
+            <div className="flex flex-col gap-4 min-w-0 w-full">
+              <Suspense fallback={<div className="p-5 text-center text-slate-400">Loading...</div>}>
                 <ClientSegmentation />
               </Suspense>
-              <Suspense
-                fallback={
-                  <div
-                    style={{
-                      padding: "20px",
-                      textAlign: "center",
-                      color: "#94a3b8",
-                    }}
-                  >
-                    Loading...
-                  </div>
-                }
-              >
+              <Suspense fallback={<div className="p-5 text-center text-slate-400">Loading...</div>}>
                 <PredictiveAnalytics />
               </Suspense>
-              <Suspense
-                fallback={
-                  <div
-                    style={{
-                      padding: "20px",
-                      textAlign: "center",
-                      color: "#94a3b8",
-                    }}
-                  >
-                    Loading...
-                  </div>
-                }
-              >
+              <Suspense fallback={<div className="p-5 text-center text-slate-400">Loading...</div>}>
                 <CommissionDeepDive />
               </Suspense>
-              <Suspense
-                fallback={
-                  <div
-                    style={{
-                      padding: "20px",
-                      textAlign: "center",
-                      color: "#94a3b8",
-                    }}
-                  >
-                    Loading...
-                  </div>
-                }
-              >
+              <Suspense fallback={<div className="p-5 text-center text-slate-400">Loading...</div>}>
                 <EfficiencyMetrics />
               </Suspense>
             </div>
@@ -334,19 +188,8 @@ export function AnalyticsDashboard() {
         )}
 
         {/* Footer Note */}
-        <div
-          style={{
-            marginTop: "32px",
-            padding: "16px",
-            background: "#ffffff",
-            borderRadius: "8px",
-            textAlign: "center",
-            fontSize: "11px",
-            color: "#656d76",
-            maxWidth: "1600px",
-          }}
-        >
-          <strong style={{ color: "#1a1a1a" }}>Note:</strong> All analytics are
+        <div className="mt-8 p-4 bg-white rounded-lg text-center text-xs text-muted-foreground max-w-[1600px]">
+          <strong className="text-foreground">Note:</strong> All analytics are
           calculated in real-time from your policy and commission data. Data is
           automatically refreshed when underlying records change.
         </div>

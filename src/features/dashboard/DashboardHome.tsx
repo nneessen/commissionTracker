@@ -14,6 +14,7 @@ import type { CreateExpenseData } from "../../types/expense.types";
 import type { NewPolicyForm, CreatePolicyData } from "../../types/policy.types";
 
 // Components
+import { Button } from "@/components/ui/button";
 import { DashboardHeader } from "./components/DashboardHeader";
 import { TimePeriodSwitcher } from "./components/TimePeriodSwitcher";
 import { DateRangeDisplay } from "./components/DateRangeDisplay";
@@ -249,7 +250,7 @@ export const DashboardHome: React.FC = () => {
 
       <div className="page-content">
         {/* Main 3-column layout */}
-        <div className="grid gap-4 mb-4" style={{ gridTemplateColumns: "280px 1fr 320px" }}>
+        <div className="grid gap-4 mb-4 grid-cols-[280px_1fr_320px]">
           <QuickStatsPanel stats={statsConfig} timePeriod={timePeriod} />
 
           <PerformanceOverviewCard
@@ -289,12 +290,14 @@ export const DashboardHome: React.FC = () => {
           <div className="modal-dialog" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h2>New Policy Submission</h2>
-              <button
+              <Button
+                variant="ghost"
+                size="icon"
                 className="modal-close"
                 onClick={() => setActiveDialog(null)}
               >
                 ×
-              </button>
+              </Button>
             </div>
             <PolicyForm
               onClose={() => setActiveDialog(null)}

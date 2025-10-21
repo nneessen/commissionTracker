@@ -1,6 +1,7 @@
 // src/features/dashboard/components/QuickActionsPanel.tsx
 
 import React from 'react';
+import { Button } from '@/components/ui/button';
 import { QuickActionsPanelProps } from '../../../types/dashboard.types';
 import { cn } from '@/lib/utils';
 
@@ -24,21 +25,23 @@ export const QuickActionsPanel: React.FC<QuickActionsPanelProps> = ({
       </div>
       <div className="flex flex-col gap-1.5">
         {actions.map((action, index) => (
-          <button
+          <Button
             key={index}
             onClick={() => onActionClick(action.action)}
             disabled={isCreating}
+            variant="outline"
+            size="sm"
             className={cn(
-              "px-3 py-2 rounded-sm border text-xs font-medium text-left transition-all duration-200",
+              "px-3 py-2 h-auto rounded-sm text-xs font-medium justify-start transition-all duration-200",
               isCreating
                 ? "bg-muted/30 border-border/50 text-muted-foreground cursor-not-allowed opacity-60"
-                : "bg-card border-border text-foreground cursor-pointer hover:bg-muted/20 hover:border-border/80"
+                : "bg-card border-border text-foreground hover:bg-muted/20 hover:border-border/80"
             )}
           >
             {isCreating && action.label !== 'View Reports'
               ? `${action.label}...`
               : action.label}
-          </button>
+          </Button>
         ))}
       </div>
     </div>

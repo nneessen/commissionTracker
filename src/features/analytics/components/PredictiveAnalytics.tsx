@@ -1,6 +1,7 @@
 // src/features/analytics/components/PredictiveAnalytics.tsx
 
 import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
 import { ForecastChart } from '../visualizations';
 import { useAnalyticsData } from '../../../hooks';
 
@@ -40,26 +41,20 @@ export function PredictiveAnalytics() {
   return (
     <div className="bg-white rounded-xl p-5 shadow-sm w-full box-border overflow-hidden">
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
+      <div className="flex items-center gap-2 mb-5">
         <div className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
           Predictive Analytics
         </div>
         {/* Info Icon Button */}
-        <button
+        <Button
           onClick={() => setShowInfo(!showInfo)}
-          className="bg-blue-50 border border-blue-100"
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = '#dbeafe';
-            e.currentTarget.style.transform = 'scale(1.1)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = '#f0f9ff';
-            e.currentTarget.style.transform = 'scale(1)';
-          }}
+          size="icon"
+          variant="ghost"
+          className="h-6 w-6 bg-blue-50 border border-blue-100 hover:bg-blue-200 hover:scale-110 transition-transform"
           title="Click for detailed explanation"
         >
           i
-        </button>
+        </Button>
       </div>
 
       {/* Info Panel */}
@@ -67,22 +62,16 @@ export function PredictiveAnalytics() {
         <div className="bg-blue-50 border border-blue-200">
           <div className="flex justify-between items-start mb-3">
             <h3 className="m-0 text-sm font-bold text-blue-800">
-              🔮 Understanding Predictive Analytics
+              Understanding Predictive Analytics
             </h3>
-            <button
+            <Button
               onClick={() => setShowInfo(false)}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                fontSize: '18px',
-                cursor: 'pointer',
-                color: '#64748b',
-                padding: '0',
-                lineHeight: 1
-              }}
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6 p-0 text-lg text-slate-600 hover:text-slate-900"
             >
               ×
-            </button>
+            </Button>
           </div>
 
           <div className="mb-4">
@@ -96,7 +85,7 @@ export function PredictiveAnalytics() {
 
           <div className="mb-3 pl-4">
             <div className="mb-2">
-              <strong className="text-blue-500">📊 Next 3 Months Renewals:</strong>
+              <strong className="text-blue-500">Next 3 Months Renewals:</strong>
               <div className="mt-1 text-gray-600">
                 How many policies are coming up for renewal soon
                 <div className="text-xs mt-0.5">
@@ -106,7 +95,7 @@ export function PredictiveAnalytics() {
             </div>
 
             <div className="mb-2">
-              <strong className="text-green-500">💰 Expected Revenue:</strong>
+              <strong className="text-green-500">Expected Revenue:</strong>
               <div className="mt-1 text-gray-600">
                 Projected commission income from upcoming renewals
                 <div className="text-xs mt-0.5">
@@ -116,7 +105,7 @@ export function PredictiveAnalytics() {
             </div>
 
             <div className="mb-2">
-              <strong className="text-amber-500">📈 Growth Trajectory:</strong>
+              <strong className="text-amber-500">Growth Trajectory:</strong>
               <div className="mt-1 text-gray-600">
                 Projected business growth based on recent trends
                 <div className="text-xs mt-0.5">
@@ -148,104 +137,44 @@ export function PredictiveAnalytics() {
               • 15 policies renewing in November<br/>
               • 12 policies renewing in December<br/>
               • 8 policies renewing in January<br/>
-              <div style={{ marginTop: '8px', color: '#1e40af' }}>
+              <div className="mt-2 text-blue-700">
                 <strong>Total:</strong> 35 renewal opportunities worth ~$18,000 in commissions<br/>
                 <strong>Action:</strong> Start reaching out 30 days before each renewal date!
               </div>
             </div>
           </div>
 
-          <div style={{
-            padding: '8px',
-            background: '#dbeafe',
-            borderRadius: '4px',
-            fontSize: '11px',
-            textAlign: 'center',
-            color: '#1e40af'
-          }}>
-            💡 <strong>Pro Tip:</strong> Contact clients 30-45 days before renewal to maximize retention and explore upsell opportunities!
+          <div className="p-2 bg-blue-100 rounded text-xs text-center text-blue-700">
+            <strong>Pro Tip:</strong> Contact clients 30-45 days before renewal to maximize retention and explore upsell opportunities!
           </div>
         </div>
       )}
 
       {/* Summary Cards */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
-        gap: '12px',
-        marginBottom: '24px'
-      }}>
-        <div style={{
-          padding: '12px',
-          background: '#f0f9ff',
-          borderRadius: '8px'
-        }}>
-          <div style={{
-            fontSize: '10px',
-            fontWeight: 600,
-            color: '#656d76',
-            textTransform: 'uppercase',
-            letterSpacing: '0.5px',
-            marginBottom: '6px'
-          }}>
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3 mb-6">
+        <div className="p-3 bg-blue-50 rounded-lg">
+          <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">
             Next 3 Months Renewals
           </div>
-          <div style={{
-            fontSize: '18px',
-            fontWeight: 700,
-            color: '#3b82f6',
-            fontFamily: 'Monaco, monospace'
-          }}>
+          <div className="text-lg font-bold text-info font-mono">
             {next3MonthsRenewals}
           </div>
         </div>
 
-        <div style={{
-          padding: '12px',
-          background: '#f0fdf4',
-          borderRadius: '8px'
-        }}>
-          <div style={{
-            fontSize: '10px',
-            fontWeight: 600,
-            color: '#656d76',
-            textTransform: 'uppercase',
-            letterSpacing: '0.5px',
-            marginBottom: '6px'
-          }}>
+        <div className="p-3 bg-green-50 rounded-lg">
+          <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">
             Expected Revenue
           </div>
-          <div style={{
-            fontSize: '18px',
-            fontWeight: 700,
-            color: '#10b981',
-            fontFamily: 'Monaco, monospace'
-          }}>
+          <div className="text-lg font-bold text-success font-mono">
             {formatCurrency(next3MonthsRevenue)}
           </div>
         </div>
 
-        <div style={{
-          padding: '12px',
-          background: '#fffbeb',
-          borderRadius: '8px'
-        }}>
-          <div style={{
-            fontSize: '10px',
-            fontWeight: 600,
-            color: '#656d76',
-            textTransform: 'uppercase',
-            letterSpacing: '0.5px',
-            marginBottom: '6px'
-          }}>
+        <div className="p-3 bg-amber-50 rounded-lg">
+          <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">
             Growth Rate
           </div>
-          <div style={{
-            fontSize: '18px',
-            fontWeight: 700,
-            color: '#f59e0b',
-            fontFamily: 'Monaco, monospace'
-          }}>
+          <div className="text-lg font-bold text-warning font-mono">
             {growth[0]?.growthRate.toFixed(1) || 0}%
           </div>
         </div>

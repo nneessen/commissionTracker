@@ -7,6 +7,7 @@ import { UserContractSettings } from './UserContractSettings';
 import { CompTable } from './CompTable';
 import { CompFiltersComponent } from './CompFilters';
 import { CompStats } from './CompStats';
+import { Button } from '@/components/ui/button';
 
 export function CompGuide() {
   const [activeTab, setActiveTab] = useState<'guide' | 'settings'>('guide');
@@ -51,13 +52,14 @@ export function CompGuide() {
             <h1 className="page-title">Comp Guide</h1>
             <p className="page-subtitle">FFG compensation rates and contract settings</p>
           </div>
-          <button
+          <Button
             onClick={handleExport}
-            className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            variant="outline"
+            size="sm"
           >
             <Download className="h-4 w-4 mr-2" />
             Export
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -70,10 +72,11 @@ export function CompGuide() {
               const isActive = activeTab === tab.id;
 
               return (
-                <button
+                <Button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id as 'guide' | 'settings')}
-                  className={`group flex items-center py-2 px-1 border-b-2 font-medium text-sm transition-colors duration-200 ${
+                  variant="ghost"
+                  className={`group flex items-center py-2 px-1 border-b-2 font-medium text-sm transition-colors duration-200 h-auto rounded-none ${
                     isActive
                       ? 'border-blue-500 text-blue-600'
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -89,7 +92,7 @@ export function CompGuide() {
                     <div>{tab.name}</div>
                     <div className="text-xs text-gray-500 font-normal">{tab.description}</div>
                   </div>
-                </button>
+                </Button>
               );
             })}
           </nav>

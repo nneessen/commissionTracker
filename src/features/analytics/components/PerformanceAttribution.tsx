@@ -1,6 +1,7 @@
 // src/features/analytics/components/PerformanceAttribution.tsx
 
 import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
 import { WaterfallChart } from '../visualizations';
 import { useAnalyticsData } from '../../../hooks';
 
@@ -42,9 +43,9 @@ export function PerformanceAttribution() {
   };
 
   const getChangeDirection = (value: number) => {
-    if (value > 0) return { color: '#10b981', symbol: '▲', text: 'increase' };
-    if (value < 0) return { color: '#ef4444', symbol: '▼', text: 'decrease' };
-    return { color: '#656d76', symbol: '━', text: 'no change' };
+    if (value > 0) return { colorClass: 'text-green-500', symbol: '▲', text: 'increase' };
+    if (value < 0) return { colorClass: 'text-red-500', symbol: '▼', text: 'decrease' };
+    return { colorClass: 'text-gray-600', symbol: '━', text: 'no change' };
   };
 
   const totalDirection = getChangeDirection(contribution.totalChange);
@@ -63,31 +64,17 @@ export function PerformanceAttribution() {
             </div>
           </div>
           {/* Info Icon Button */}
-          <button
+          <Button
             onClick={() => setShowInfo(!showInfo)}
-            className="bg-blue-50 border border-blue-100"
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = '#dbeafe';
-              e.currentTarget.style.transform = 'scale(1.1)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = '#f0f9ff';
-              e.currentTarget.style.transform = 'scale(1)';
-            }}
+            size="icon"
+            variant="ghost"
+            className="h-6 w-6 bg-blue-50 border border-blue-100 hover:bg-blue-200 hover:scale-110 transition-transform"
             title="Click for detailed explanation"
           >
             i
-          </button>
+          </Button>
         </div>
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          fontSize: '16px',
-          fontWeight: 700,
-          color: totalDirection.color,
-          fontFamily: 'Monaco, monospace'
-        }}>
+        <div className={`flex items-center gap-2 text-base font-bold font-mono ${totalDirection.colorClass}`}>
           <span>{totalDirection.symbol}</span>
           <span>{formatCurrency(Math.abs(contribution.totalChange))}</span>
         </div>
@@ -98,22 +85,16 @@ export function PerformanceAttribution() {
         <div className="bg-blue-50 border border-blue-200">
           <div className="flex justify-between items-start mb-3">
             <h3 className="m-0 text-sm font-bold text-blue-800">
-              📊 Understanding Performance Attribution
+              Understanding Performance Attribution
             </h3>
-            <button
+            <Button
               onClick={() => setShowInfo(false)}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                fontSize: '18px',
-                cursor: 'pointer',
-                color: '#64748b',
-                padding: '0',
-                lineHeight: 1
-              }}
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6 p-0 text-lg text-slate-600 hover:text-slate-900"
             >
               ×
-            </button>
+            </Button>
           </div>
 
           <div className="mb-4">
@@ -127,7 +108,7 @@ export function PerformanceAttribution() {
 
           <div className="mb-3 pl-4">
             <div className="mb-2">
-              <strong className="text-blue-500">📈 Volume Effect (Blue):</strong>
+              <strong className="text-blue-500">Volume Effect (Blue):</strong>
               <div className="mt-1 text-gray-600">
                 Did you sell MORE or FEWER policies?
                 <div className="text-xs mt-0.5">
@@ -137,7 +118,7 @@ export function PerformanceAttribution() {
             </div>
 
             <div className="mb-2">
-              <strong className="text-green-500">💰 Rate Effect (Green):</strong>
+              <strong className="text-green-500">Rate Effect (Green):</strong>
               <div className="mt-1 text-gray-600">
                 Did your commission PERCENTAGE change?
                 <div className="text-xs mt-0.5">
@@ -147,7 +128,7 @@ export function PerformanceAttribution() {
             </div>
 
             <div className="mb-2">
-              <strong className="text-amber-500">🎯 Mix Effect (Yellow):</strong>
+              <strong className="text-amber-500">Mix Effect (Yellow):</strong>
               <div className="mt-1 text-gray-600">
                 Did you sell different TYPES of products?
                 <div className="text-xs mt-0.5">
@@ -162,7 +143,7 @@ export function PerformanceAttribution() {
             <div className="text-xs mt-2 text-gray-600">
               Last month: 5 term policies × $1,000 premium × 50% rate = $2,500 commission<br/>
               This month: 8 whole life × $2,000 premium × 60% rate = $9,600 commission<br/>
-              <div style={{ marginTop: '8px', color: '#1e40af' }}>
+              <div className="mt-2 text-blue-700">
                 Total Change: +$7,100<br/>
                 • Volume: +3 policies worth ~$1,500<br/>
                 • Rate: +10% commission worth ~$1,600<br/>
@@ -171,119 +152,49 @@ export function PerformanceAttribution() {
             </div>
           </div>
 
-          <div style={{
-            padding: '8px',
-            background: '#dbeafe',
-            borderRadius: '4px',
-            fontSize: '11px',
-            textAlign: 'center',
-            color: '#1e40af'
-          }}>
-            💡 <strong>Pro Tip:</strong> Focus on the largest contributor to optimize your growth strategy!
+          <div className="p-2 bg-blue-100 rounded text-xs text-center text-blue-700">
+            <strong>Pro Tip:</strong> Focus on the largest contributor to optimize your growth strategy!
           </div>
         </div>
       )}
 
       {/* Summary Cards */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
-        gap: '12px',
-        marginBottom: '24px'
-      }}>
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3 mb-6">
         {/* Volume Effect */}
-        <div className="bg-blue-50 border border-blue-100">
-          <div style={{
-            fontSize: '10px',
-            fontWeight: 600,
-            color: '#656d76',
-            textTransform: 'uppercase',
-            letterSpacing: '0.5px',
-            marginBottom: '6px'
-          }}>
+        <div className="p-3 bg-blue-50 border border-blue-100 rounded-lg">
+          <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">
             Volume Effect
           </div>
-          <div style={{
-            fontSize: '14px',
-            fontWeight: 700,
-            color: '#3b82f6',
-            fontFamily: 'Monaco, monospace',
-            marginBottom: '4px'
-          }}>
+          <div className="text-sm font-bold text-info font-mono mb-1">
             {formatCurrency(contribution.volumeEffect)}
           </div>
-          <div style={{
-            fontSize: '11px',
-            color: '#656d76'
-          }}>
+          <div className="text-xs text-muted-foreground">
             {contribution.volumePercent.toFixed(0)}% of total change
           </div>
         </div>
 
         {/* Rate Effect */}
-        <div style={{
-          padding: '12px',
-          background: '#f0fdf4',
-          borderRadius: '8px',
-          border: '1px solid #dcfce7'
-        }}>
-          <div style={{
-            fontSize: '10px',
-            fontWeight: 600,
-            color: '#656d76',
-            textTransform: 'uppercase',
-            letterSpacing: '0.5px',
-            marginBottom: '6px'
-          }}>
+        <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+          <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">
             Rate Effect
           </div>
-          <div style={{
-            fontSize: '14px',
-            fontWeight: 700,
-            color: '#10b981',
-            fontFamily: 'Monaco, monospace',
-            marginBottom: '4px'
-          }}>
+          <div className="text-sm font-bold text-success font-mono mb-1">
             {formatCurrency(contribution.rateEffect)}
           </div>
-          <div style={{
-            fontSize: '11px',
-            color: '#656d76'
-          }}>
+          <div className="text-xs text-muted-foreground">
             {contribution.ratePercent.toFixed(0)}% of total change
           </div>
         </div>
 
         {/* Mix Effect */}
-        <div style={{
-          padding: '12px',
-          background: '#fffbeb',
-          borderRadius: '8px',
-          border: '1px solid #fef3c7'
-        }}>
-          <div style={{
-            fontSize: '10px',
-            fontWeight: 600,
-            color: '#656d76',
-            textTransform: 'uppercase',
-            letterSpacing: '0.5px',
-            marginBottom: '6px'
-          }}>
+        <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+          <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">
             Mix Effect
           </div>
-          <div style={{
-            fontSize: '14px',
-            fontWeight: 700,
-            color: '#f59e0b',
-            fontFamily: 'Monaco, monospace',
-            marginBottom: '4px'
-          }}>
+          <div className="text-sm font-bold text-warning font-mono mb-1">
             {formatCurrency(contribution.mixEffect)}
           </div>
-          <div style={{
-            fontSize: '11px',
-            color: '#656d76'
-          }}>
+          <div className="text-xs text-muted-foreground">
             {contribution.mixPercent.toFixed(0)}% of total change
           </div>
         </div>

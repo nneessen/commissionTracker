@@ -1,6 +1,7 @@
 // src/features/analytics/components/CohortAnalysis.tsx
 
 import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
 import { CohortHeatmap } from '../visualizations';
 import { useAnalyticsData } from '../../../hooks';
 
@@ -43,21 +44,15 @@ export function CohortAnalysis() {
             </div>
           </div>
           {/* Info Icon Button */}
-          <button
+          <Button
             onClick={() => setShowInfo(!showInfo)}
-            className="bg-blue-50 border border-blue-100"
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = '#dbeafe';
-              e.currentTarget.style.transform = 'scale(1.1)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = '#f0f9ff';
-              e.currentTarget.style.transform = 'scale(1)';
-            }}
+            size="icon"
+            variant="ghost"
+            className="h-6 w-6 bg-blue-50 border border-blue-100 hover:bg-blue-200 hover:scale-110 transition-transform"
             title="Click for detailed explanation"
           >
             i
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -66,22 +61,16 @@ export function CohortAnalysis() {
         <div className="bg-blue-50 border border-blue-200">
           <div className="flex justify-between items-start mb-3">
             <h3 className="m-0 text-sm font-bold text-blue-800">
-              📅 Understanding Cohort Analysis
+              Understanding Cohort Analysis
             </h3>
-            <button
+            <Button
               onClick={() => setShowInfo(false)}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                fontSize: '18px',
-                cursor: 'pointer',
-                color: '#64748b',
-                padding: '0',
-                lineHeight: 1
-              }}
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6 p-0 text-lg text-slate-600 hover:text-slate-900"
             >
               ×
-            </button>
+            </Button>
           </div>
 
           <div className="mb-4">
@@ -133,11 +122,11 @@ export function CohortAnalysis() {
               • <strong>Columns</strong> = Months elapsed (M0 = start, M3 = 3 months later, M9 = 9 months later)<br/>
               • <strong>Colors</strong> = Health indicator:<br/>
               <div className="pl-3 mt-1">
-                🟢 Green (≥90%) = Excellent retention<br/>
-                🔵 Blue (80-89%) = Good retention<br/>
-                🟡 Amber (70-79%) = Fair retention<br/>
-                🟠 Orange (60-69%) = Needs attention<br/>
-                🔴 Red (&lt;60%) = Critical - investigate!
+                Green (≥90%) = Excellent retention<br/>
+                Blue (80-89%) = Good retention<br/>
+                Amber (70-79%) = Fair retention<br/>
+                Orange (60-69%) = Needs attention<br/>
+                Red (&lt;60%) = Critical - investigate!
               </div>
             </div>
           </div>
@@ -149,128 +138,52 @@ export function CohortAnalysis() {
               • M0 (Jan): 100% retention (20/20 active)<br/>
               • M3 (Apr): 90% retention (18/20 active) - 2 lapsed<br/>
               • M9 (Oct): 85% retention (17/20 active) - 1 more lapsed<br/>
-              <div style={{ marginTop: '8px', color: '#1e40af' }}>
+              <div className="mt-2 text-blue-700">
                 This is a <strong>healthy cohort</strong> - losing only 3 policies in 9 months!
               </div>
             </div>
           </div>
 
-          <div style={{
-            padding: '8px',
-            background: '#dbeafe',
-            borderRadius: '4px',
-            fontSize: '11px',
-            textAlign: 'center',
-            color: '#1e40af'
-          }}>
-            💡 <strong>Pro Tip:</strong> Look for patterns - if certain months have worse retention, investigate what was different about those sales!
+          <div className="p-2 bg-blue-100 rounded text-xs text-center text-blue-700">
+            <strong>Pro Tip:</strong> Look for patterns - if certain months have worse retention, investigate what was different about those sales!
           </div>
         </div>
       )}
 
       {/* Summary Stats */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
-        gap: '12px',
-        marginBottom: '24px'
-      }}>
-        <div style={{
-          padding: '12px',
-          background: '#f8f9fa',
-          borderRadius: '8px'
-        }}>
-          <div style={{
-            fontSize: '10px',
-            fontWeight: 600,
-            color: '#656d76',
-            textTransform: 'uppercase',
-            letterSpacing: '0.5px',
-            marginBottom: '6px'
-          }}>
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(120px,1fr))] gap-3 mb-6">
+        <div className="p-3 bg-muted rounded-lg">
+          <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">
             Total Cohorts
           </div>
-          <div style={{
-            fontSize: '18px',
-            fontWeight: 700,
-            color: '#1a1a1a',
-            fontFamily: 'Monaco, monospace'
-          }}>
+          <div className="text-lg font-bold text-foreground font-mono">
             {summary.totalCohorts}
           </div>
         </div>
 
-        <div style={{
-          padding: '12px',
-          background: '#f0fdf4',
-          borderRadius: '8px'
-        }}>
-          <div style={{
-            fontSize: '10px',
-            fontWeight: 600,
-            color: '#656d76',
-            textTransform: 'uppercase',
-            letterSpacing: '0.5px',
-            marginBottom: '6px'
-          }}>
+        <div className="p-3 bg-green-50 rounded-lg">
+          <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">
             Avg 9-Mo Retention
           </div>
-          <div style={{
-            fontSize: '18px',
-            fontWeight: 700,
-            color: '#10b981',
-            fontFamily: 'Monaco, monospace'
-          }}>
+          <div className="text-lg font-bold text-success font-mono">
             {summary.avgRetention9Month?.toFixed(1) || 0}%
           </div>
         </div>
 
-        <div style={{
-          padding: '12px',
-          background: '#f0f9ff',
-          borderRadius: '8px'
-        }}>
-          <div style={{
-            fontSize: '10px',
-            fontWeight: 600,
-            color: '#656d76',
-            textTransform: 'uppercase',
-            letterSpacing: '0.5px',
-            marginBottom: '6px'
-          }}>
+        <div className="p-3 bg-blue-50 rounded-lg">
+          <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">
             Best Cohort
           </div>
-          <div style={{
-            fontSize: '14px',
-            fontWeight: 700,
-            color: '#3b82f6',
-            fontFamily: 'Monaco, monospace'
-          }}>
+          <div className="text-sm font-bold text-info font-mono">
             {summary.bestCohort || 'N/A'}
           </div>
         </div>
 
-        <div style={{
-          padding: '12px',
-          background: '#fef2f2',
-          borderRadius: '8px'
-        }}>
-          <div style={{
-            fontSize: '10px',
-            fontWeight: 600,
-            color: '#656d76',
-            textTransform: 'uppercase',
-            letterSpacing: '0.5px',
-            marginBottom: '6px'
-          }}>
+        <div className="p-3 bg-red-50 rounded-lg">
+          <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">
             Worst Cohort
           </div>
-          <div style={{
-            fontSize: '14px',
-            fontWeight: 700,
-            color: '#ef4444',
-            fontFamily: 'Monaco, monospace'
-          }}>
+          <div className="text-sm font-bold text-error font-mono">
             {summary.worstCohort || 'N/A'}
           </div>
         </div>
@@ -278,14 +191,7 @@ export function CohortAnalysis() {
 
       {/* Retention Heatmap */}
       <div className="mb-5">
-        <div style={{
-          fontSize: '12px',
-          fontWeight: 600,
-          color: '#1a1a1a',
-          marginBottom: '12px',
-          textTransform: 'uppercase',
-          letterSpacing: '0.5px'
-        }}>
+        <div className="text-xs font-semibold text-foreground mb-3 uppercase tracking-wide">
           Retention Heatmap
         </div>
         <CohortHeatmap data={retention} maxMonths={12} />

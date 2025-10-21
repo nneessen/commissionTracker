@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { TrendingUp, TrendingDown, DollarSign, AlertCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 type TimePeriod = 'daily' | 'weekly' | 'monthly' | 'yearly';
@@ -85,18 +86,20 @@ export const FinancialHealthCard: React.FC<FinancialHealthCardProps> = ({
         {/* Time Period Switcher */}
         <div className="flex gap-1 bg-muted/50 p-1 rounded-lg shadow-inner">
           {(['daily', 'weekly', 'monthly', 'yearly'] as TimePeriod[]).map((period) => (
-            <button
+            <Button
               key={period}
               onClick={() => setTimePeriod(period)}
+              variant="ghost"
+              size="sm"
               className={cn(
-                "px-3 py-1.5 text-xs font-semibold capitalize rounded-md transition-all",
+                "px-3 py-1.5 h-auto text-xs font-semibold capitalize rounded-md transition-all",
                 timePeriod === period
                   ? "bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-sm"
                   : "bg-transparent text-muted-foreground hover:bg-background/50"
               )}
             >
               {period}
-            </button>
+            </Button>
           ))}
         </div>
       </div>

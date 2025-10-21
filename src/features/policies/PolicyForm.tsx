@@ -14,6 +14,7 @@ import {
 } from "../../types/policy.types";
 import { ProductType } from "../../types/commission.types";
 import { US_STATES } from "../../types/agent.types";
+import { Button } from "@/components/ui/button";
 
 import {
   calculateAnnualPremium,
@@ -74,7 +75,7 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
 
   // Fetch commission rate from comp_guide based on product and user's contract level
   const { data: compGuideData } = useCompGuide(
-    formData.productId,
+    formData.productId || '',
     userContractLevel,
   );
 
@@ -327,35 +328,43 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
   );
 
   return (
-    <form onSubmit={handleSubmit} className="modal-form">
-      <div className="form-columns">
+    <form onSubmit={handleSubmit} className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6 p-6 overflow-y-auto">
         {/* Left Column - Client Information */}
-        <div className="form-column">
-          <h3>Client Information</h3>
+        <div className="flex flex-col gap-4">
+          <h3 className="text-sm font-semibold text-gray-900 m-0 mb-2 pb-2 border-b border-gray-200">Client Information</h3>
 
-          <div className="form-group">
-            <label>Client Name *</label>
+          <div className="flex flex-col gap-1">
+            <label className="text-[13px] font-medium text-gray-700">Client Name *</label>
             <input
               type="text"
               name="clientName"
               value={formData.clientName}
               onChange={handleInputChange}
-              className={errors.clientName ? "error" : ""}
+              className={`py-1.5 px-2.5 border rounded-md text-[13px] bg-white transition-colors outline-none ${
+                errors.clientName
+                  ? "border-red-500"
+                  : "border-gray-300 focus:border-blue-500 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.1)]"
+              }`}
               placeholder="John Smith"
             />
             {errors.clientName && (
-              <span className="error-msg">{errors.clientName}</span>
+              <span className="text-[11px] text-red-500 mt-0.5">{errors.clientName}</span>
             )}
           </div>
 
-          <div className="form-row">
-            <div className="form-group">
-              <label>State *</label>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="flex flex-col gap-1">
+              <label className="text-[13px] font-medium text-gray-700">State *</label>
               <select
                 name="clientState"
                 value={formData.clientState}
                 onChange={handleInputChange}
-                className={errors.clientState ? "error" : ""}
+                className={`py-1.5 px-2.5 border rounded-md text-[13px] bg-white transition-colors outline-none ${
+                  errors.clientState
+                    ? "border-red-500"
+                    : "border-gray-300 focus:border-blue-500 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.1)]"
+                }`}
               >
                 <option value="">Select</option>
                 {US_STATES.map((state) => (
@@ -365,34 +374,42 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
                 ))}
               </select>
               {errors.clientState && (
-                <span className="error-msg">{errors.clientState}</span>
+                <span className="text-[11px] text-red-500 mt-0.5">{errors.clientState}</span>
               )}
             </div>
-            <div className="form-group">
-              <label>Age *</label>
+            <div className="flex flex-col gap-1">
+              <label className="text-[13px] font-medium text-gray-700">Age *</label>
               <input
                 type="number"
                 name="clientAge"
                 value={formData.clientAge || ""}
                 onChange={handleInputChange}
-                className={errors.clientAge ? "error" : ""}
+                className={`py-1.5 px-2.5 border rounded-md text-[13px] bg-white transition-colors outline-none ${
+                  errors.clientAge
+                    ? "border-red-500"
+                    : "border-gray-300 focus:border-blue-500 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.1)]"
+                }`}
                 placeholder="45"
                 min="1"
                 max="120"
               />
               {errors.clientAge && (
-                <span className="error-msg">{errors.clientAge}</span>
+                <span className="text-[11px] text-red-500 mt-0.5">{errors.clientAge}</span>
               )}
             </div>
           </div>
 
-          <div className="form-group">
-            <label>Carrier *</label>
+          <div className="flex flex-col gap-1">
+            <label className="text-[13px] font-medium text-gray-700">Carrier *</label>
             <select
               name="carrierId"
               value={formData.carrierId}
               onChange={handleInputChange}
-              className={errors.carrierId ? "error" : ""}
+              className={`py-1.5 px-2.5 border rounded-md text-[13px] bg-white transition-colors outline-none ${
+                errors.carrierId
+                  ? "border-red-500"
+                  : "border-gray-300 focus:border-blue-500 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.1)]"
+              }`}
             >
               <option value="">Select Carrier</option>
               {carriers.map((carrier) => (
@@ -402,17 +419,21 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
               ))}
             </select>
             {errors.carrierId && (
-              <span className="error-msg">{errors.carrierId}</span>
+              <span className="text-[11px] text-red-500 mt-0.5">{errors.carrierId}</span>
             )}
           </div>
 
-          <div className="form-group">
-            <label>Product *</label>
+          <div className="flex flex-col gap-1">
+            <label className="text-[13px] font-medium text-gray-700">Product *</label>
             <select
               name="productId"
               value={formData.productId}
               onChange={handleInputChange}
-              className={errors.productId ? "error" : ""}
+              className={`py-1.5 px-2.5 border rounded-md text-[13px] bg-white transition-colors outline-none ${
+                errors.productId
+                  ? "border-red-500"
+                  : "border-gray-300 focus:border-blue-500 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.1)]"
+              }`}
               disabled={!formData.carrierId || productsLoading}
             >
               <option value="">
@@ -433,100 +454,118 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
               ))}
             </select>
             {errors.productId && (
-              <span className="error-msg">{errors.productId}</span>
+              <span className="text-[11px] text-red-500 mt-0.5">{errors.productId}</span>
             )}
             {formData.carrierId &&
               !productsLoading &&
               products.length === 0 && (
-                <span className="error-msg text-error">
+                <span className="text-[11px] text-red-500 mt-0.5">
                   ⚠️ This carrier has no products configured. Please contact
                   admin or select a different carrier.
                 </span>
               )}
           </div>
 
-          <div className="form-group">
-            <label>Notes</label>
+          <div className="flex flex-col gap-1">
+            <label className="text-[13px] font-medium text-gray-700">Notes</label>
             <textarea
               name="notes"
               value={formData.notes}
               onChange={handleInputChange}
               rows={3}
               placeholder="Optional notes..."
+              className="py-1.5 px-2.5 border border-gray-300 rounded-md text-[13px] bg-white transition-colors outline-none resize-vertical min-h-[60px] focus:border-blue-500 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.1)]"
             />
           </div>
         </div>
 
         {/* Right Column - Policy Details */}
-        <div className="form-column">
-          <h3>Policy Details</h3>
+        <div className="flex flex-col gap-4">
+          <h3 className="text-sm font-semibold text-gray-900 m-0 mb-2 pb-2 border-b border-gray-200">Policy Details</h3>
 
-          <div className="form-group">
-            <label>Policy Number *</label>
+          <div className="flex flex-col gap-1">
+            <label className="text-[13px] font-medium text-gray-700">Policy Number *</label>
             <input
               type="text"
               name="policyNumber"
               value={formData.policyNumber}
               onChange={handleInputChange}
-              className={errors.policyNumber ? "error" : ""}
+              className={`py-1.5 px-2.5 border rounded-md text-[13px] bg-white transition-colors outline-none ${
+                errors.policyNumber
+                  ? "border-red-500"
+                  : "border-gray-300 focus:border-blue-500 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.1)]"
+              }`}
               placeholder="POL-123456"
             />
             {errors.policyNumber && (
-              <span className="error-msg">{errors.policyNumber}</span>
+              <span className="text-[11px] text-red-500 mt-0.5">{errors.policyNumber}</span>
             )}
           </div>
 
-          <div className="form-group">
-            <label>Submit Date *</label>
+          <div className="flex flex-col gap-1">
+            <label className="text-[13px] font-medium text-gray-700">Submit Date *</label>
             <input
               type="date"
               name="submitDate"
               value={formData.submitDate}
               onChange={handleInputChange}
-              className={errors.submitDate ? "error" : ""}
+              className={`py-1.5 px-2.5 border rounded-md text-[13px] bg-white transition-colors outline-none ${
+                errors.submitDate
+                  ? "border-red-500"
+                  : "border-gray-300 focus:border-blue-500 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.1)]"
+              }`}
             />
             {errors.submitDate && (
-              <span className="error-msg">{errors.submitDate}</span>
+              <span className="text-[11px] text-red-500 mt-0.5">{errors.submitDate}</span>
             )}
           </div>
 
-          <div className="form-group">
-            <label>Effective Date *</label>
+          <div className="flex flex-col gap-1">
+            <label className="text-[13px] font-medium text-gray-700">Effective Date *</label>
             <input
               type="date"
               name="effectiveDate"
               value={formData.effectiveDate}
               onChange={handleInputChange}
-              className={errors.effectiveDate ? "error" : ""}
+              className={`py-1.5 px-2.5 border rounded-md text-[13px] bg-white transition-colors outline-none ${
+                errors.effectiveDate
+                  ? "border-red-500"
+                  : "border-gray-300 focus:border-blue-500 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.1)]"
+              }`}
             />
             {errors.effectiveDate && (
-              <span className="error-msg">{errors.effectiveDate}</span>
+              <span className="text-[11px] text-red-500 mt-0.5">{errors.effectiveDate}</span>
             )}
           </div>
 
-          <div className="form-row">
-            <div className="form-group">
-              <label>Premium Amount *</label>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="flex flex-col gap-1">
+              <label className="text-[13px] font-medium text-gray-700">Premium Amount *</label>
               <input
                 type="number"
                 name="premium"
                 value={formData.premium || ""}
                 onChange={handleInputChange}
-                className={errors.premium ? "error" : ""}
+                className={`py-1.5 px-2.5 border rounded-md text-[13px] bg-white transition-colors outline-none ${
+                  errors.premium
+                    ? "border-red-500"
+                    : "border-gray-300 focus:border-blue-500 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.1)]"
+                }`}
                 placeholder="250.00"
                 step="0.01"
                 min="0"
               />
               {errors.premium && (
-                <span className="error-msg">{errors.premium}</span>
+                <span className="text-[11px] text-red-500 mt-0.5">{errors.premium}</span>
               )}
             </div>
-            <div className="form-group">
-              <label>Payment Frequency *</label>
+            <div className="flex flex-col gap-1">
+              <label className="text-[13px] font-medium text-gray-700">Payment Frequency *</label>
               <select
                 name="paymentFrequency"
                 value={formData.paymentFrequency}
                 onChange={handleInputChange}
+                className="py-1.5 px-2.5 border border-gray-300 rounded-md text-[13px] bg-white transition-colors outline-none focus:border-blue-500 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.1)]"
               >
                 <option value="monthly">Monthly</option>
                 <option value="quarterly">Quarterly</option>
@@ -536,12 +575,13 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
             </div>
           </div>
 
-          <div className="form-group">
-            <label>Status</label>
+          <div className="flex flex-col gap-1">
+            <label className="text-[13px] font-medium text-gray-700">Status</label>
             <select
               name="status"
               value={formData.status}
               onChange={handleInputChange}
+              className="py-1.5 px-2.5 border border-gray-300 rounded-md text-[13px] bg-white transition-colors outline-none focus:border-blue-500 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.1)]"
             >
               <option value="pending">Pending</option>
               <option value="active">Active</option>
@@ -551,18 +591,18 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
           </div>
 
           {/* Calculated Values */}
-          <div className="calculated-values">
-            <div className="calc-row">
-              <span>Annual Premium:</span>
-              <strong>${annualPremium.toFixed(2)}</strong>
+          <div className="flex flex-col gap-2 p-3 bg-gray-50 rounded-md border border-gray-200">
+            <div className="flex justify-between items-center text-[13px]">
+              <span className="text-gray-600">Annual Premium:</span>
+              <strong className="text-gray-900">${annualPremium.toFixed(2)}</strong>
             </div>
-            <div className="calc-row">
-              <span>Commission Rate:</span>
-              <strong>{formData.commissionPercentage.toFixed(2)}%</strong>
+            <div className="flex justify-between items-center text-[13px]">
+              <span className="text-gray-600">Commission Rate:</span>
+              <strong className="text-gray-900">{formData.commissionPercentage.toFixed(2)}%</strong>
             </div>
-            <div className="calc-row">
-              <span>Expected Advance (9 months):</span>
-              <strong className="commission">
+            <div className="flex justify-between items-center text-[13px]">
+              <span className="text-gray-600">Expected Advance (9 months):</span>
+              <strong className="text-green-600">
                 ${expectedCommission.toFixed(2)}
               </strong>
             </div>
@@ -570,13 +610,13 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
         </div>
       </div>
 
-      <div className="form-actions">
-        <button type="button" onClick={onClose} className="btn-secondary">
+      <div className="flex justify-end gap-2 p-4 px-6 border-t border-gray-200 bg-gray-50">
+        <Button type="button" onClick={onClose} variant="outline" size="sm">
           Cancel
-        </button>
-        <button type="submit" className="btn-primary">
+        </Button>
+        <Button type="submit" size="sm">
           {policyId ? "Update Policy" : "Add Policy"}
-        </button>
+        </Button>
       </div>
     </form>
   );

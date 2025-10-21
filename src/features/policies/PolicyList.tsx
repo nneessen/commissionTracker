@@ -294,45 +294,53 @@ export const PolicyList: React.FC<PolicyListProps> = ({
     field: SortField;
     children: React.ReactNode;
   }> = ({ field, children }) => (
-    <th className="sortable" onClick={() => handleSort(field)}>
+    <th
+      className="py-2.5 px-3 text-left font-medium text-gray-500 whitespace-nowrap cursor-pointer select-none hover:text-gray-900"
+      onClick={() => handleSort(field)}
+    >
       {children}
       {sortField === field &&
         (sortDirection === "asc" ? (
-          <ChevronUp size={14} />
+          <ChevronUp size={14} className="inline-block ml-1 align-middle" />
         ) : (
-          <ChevronDown size={14} />
+          <ChevronDown size={14} className="inline-block ml-1 align-middle" />
         ))}
     </th>
   );
 
   return (
-    <div className="policy-list">
+    <div className="bg-white rounded-lg shadow-sm overflow-hidden">
       {/* Compact Search and Filter Bar */}
-      <div className="search-bar">
-        <div className="search-input-wrapper">
-          <Search size={16} />
+      <div className="flex gap-3 p-3 px-4 bg-gray-50 border-b border-gray-200">
+        <div className="flex-1 relative flex items-center">
+          <Search size={16} className="absolute left-2.5 text-gray-400" />
           <input
             type="text"
             placeholder="Search policies, clients, carriers..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="search-input"
+            className="w-full py-1.5 px-3 pl-9 border border-gray-300 rounded-md text-[13px] outline-none transition-colors focus:border-blue-500 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.1)]"
           />
         </div>
-        <button
+        <Button
           onClick={() => setShowFilters(!showFilters)}
-          className={`filter-toggle ${showFilters ? "active" : ""}`}
+          variant="outline"
+          size="sm"
+          className={cn(
+            "flex items-center gap-1.5 px-3 py-1.5 text-[13px]",
+            showFilters && "bg-blue-500 text-white border-blue-500 hover:bg-blue-600"
+          )}
         >
           <Filter size={16} />
           Filters
-        </button>
+        </Button>
       </div>
 
       {/* Collapsible Filter Panel */}
       {showFilters && (
-        <div className="filter-panel">
-          <div className="filter-group">
-            <label>Status</label>
+        <div className="flex gap-3 p-3 px-4 bg-gray-50 border-b border-gray-200">
+          <div className="flex flex-col gap-1 min-w-[120px]">
+            <label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">Status</label>
             <select
               value={filters.status || ""}
               onChange={(e) =>
@@ -341,6 +349,7 @@ export const PolicyList: React.FC<PolicyListProps> = ({
                   status: (e.target.value as PolicyStatus) || undefined,
                 }))
               }
+              className="py-1 px-2 border border-gray-300 rounded text-[13px] bg-white cursor-pointer outline-none focus:border-blue-500 focus:shadow-[0_0_0_2px_rgba(59,130,246,0.1)]"
             >
               <option value="">All</option>
               <option value="pending">Pending</option>
@@ -350,8 +359,8 @@ export const PolicyList: React.FC<PolicyListProps> = ({
               <option value="matured">Matured</option>
             </select>
           </div>
-          <div className="filter-group">
-            <label>Product</label>
+          <div className="flex flex-col gap-1 min-w-[120px]">
+            <label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">Product</label>
             <select
               value={filters.product || ""}
               onChange={(e) =>
@@ -360,6 +369,7 @@ export const PolicyList: React.FC<PolicyListProps> = ({
                   product: (e.target.value as ProductType) || undefined,
                 }))
               }
+              className="py-1 px-2 border border-gray-300 rounded text-[13px] bg-white cursor-pointer outline-none focus:border-blue-500 focus:shadow-[0_0_0_2px_rgba(59,130,246,0.1)]"
             >
               <option value="">All</option>
               <option value="whole_life">Whole Life</option>
@@ -371,8 +381,8 @@ export const PolicyList: React.FC<PolicyListProps> = ({
               <option value="annuity">Annuity</option>
             </select>
           </div>
-          <div className="filter-group">
-            <label>Carrier</label>
+          <div className="flex flex-col gap-1 min-w-[120px]">
+            <label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">Carrier</label>
             <select
               value={filters.carrierId || ""}
               onChange={(e) =>
@@ -381,6 +391,7 @@ export const PolicyList: React.FC<PolicyListProps> = ({
                   carrierId: e.target.value || undefined,
                 }))
               }
+              className="py-1 px-2 border border-gray-300 rounded text-[13px] bg-white cursor-pointer outline-none focus:border-blue-500 focus:shadow-[0_0_0_2px_rgba(59,130,246,0.1)]"
             >
               <option value="">All</option>
               {Array.from(new Set(policies.map((p) => p.carrierId))).map(
@@ -399,9 +410,9 @@ export const PolicyList: React.FC<PolicyListProps> = ({
       )}
 
       {/* Condensed Policy Table */}
-      <div className="policy-table-container">
-        <table className="policy-table">
-          <thead>
+      <div className="overflow-x-auto">
+        <table className="w-full text-[13px]">
+          <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
               <SortHeader field="policyNumber">Policy</SortHeader>
               <SortHeader field="client">Client</SortHeader>
@@ -409,15 +420,15 @@ export const PolicyList: React.FC<PolicyListProps> = ({
               <SortHeader field="status">Status</SortHeader>
               <SortHeader field="premium">Premium</SortHeader>
               <SortHeader field="commission">Commission</SortHeader>
-              <th>Comm Status</th>
+              <th className="py-2.5 px-3 text-left font-medium text-gray-500 whitespace-nowrap">Comm Status</th>
               <SortHeader field="effectiveDate">Effective</SortHeader>
-              <th>Actions</th>
+              <th className="py-2.5 px-3 text-left font-medium text-gray-500 whitespace-nowrap">Actions</th>
             </tr>
           </thead>
           <tbody>
             {filteredAndSortedPolicies.length === 0 ? (
               <tr>
-                <td colSpan={9} className="empty-message">
+                <td colSpan={9} className="text-center py-10 px-5 text-gray-500 text-sm">
                   No policies found. Submit a policy to get started.
                 </td>
               </tr>
@@ -435,52 +446,59 @@ export const PolicyList: React.FC<PolicyListProps> = ({
                 );
 
                 return (
-                  <tr key={policy.id}>
-                    <td className="policy-number">{policy.policyNumber}</td>
-                    <td>
-                      <div className="client-info">
-                        <span className="client-name">
+                  <tr key={policy.id} className="border-b border-gray-100 transition-colors hover:bg-gray-50">
+                    <td className="py-2.5 px-3 text-gray-900 font-medium">{policy.policyNumber}</td>
+                    <td className="py-2.5 px-3 text-gray-900">
+                      <div className="flex flex-col gap-0.5">
+                        <span className="font-medium text-gray-900">
                           {policy.client.name}
                         </span>
-                        <span className="client-details">
+                        <span className="text-[11px] text-gray-500">
                           {policy.client.age}y • {policy.client.state}
                         </span>
                       </div>
                     </td>
-                    <td>
-                      <div className="carrier-info">
-                        <span className="carrier-name">
+                    <td className="py-2.5 px-3 text-gray-900">
+                      <div className="flex flex-col gap-0.5">
+                        <span className="font-medium text-gray-900">
                           {carrier?.name || "Unknown"}
                         </span>
-                        <span className="product-type">
+                        <span className="text-[11px] text-gray-500">
                           {PRODUCT_ABBREV[policy.product]}
                         </span>
                       </div>
                     </td>
-                    <td>
+                    <td className="py-2.5 px-3 text-gray-900">
                       <span
-                        className={`status-badge ${STATUS_BADGES[policy.status]}`}
+                        className={cn(
+                          "inline-block py-0.5 px-2 rounded-xl text-[11px] font-medium capitalize",
+                          policy.status === "pending" && "bg-amber-100 text-amber-900",
+                          policy.status === "active" && "bg-green-100 text-green-900",
+                          policy.status === "lapsed" && "bg-red-100 text-red-900",
+                          policy.status === "cancelled" && "bg-gray-100 text-gray-700",
+                          policy.status === "matured" && "bg-blue-100 text-blue-900"
+                        )}
                       >
                         {policy.status}
                       </span>
                     </td>
-                    <td className="numeric">
-                      <div className="premium-info">
+                    <td className="py-2.5 px-3 text-right text-gray-900 tabular-nums">
+                      <div className="flex flex-col gap-0.5 items-end">
                         <span>{formatCurrency(policy.annualPremium)}</span>
-                        <span className="payment-freq">
+                        <span className="text-[11px] text-gray-500">
                           {policy.paymentFrequency}
                         </span>
                       </div>
                     </td>
-                    <td className="numeric commission">
-                      <div className="commission-info">
-                        <span>{formatCurrency(commission)}</span>
-                        <span className="commission-rate">
+                    <td className="py-2.5 px-3 text-right text-gray-900 tabular-nums">
+                      <div className="flex flex-col gap-0.5 items-end">
+                        <span className="text-green-600 font-medium">{formatCurrency(commission)}</span>
+                        <span className="text-[11px] text-gray-500">
                           {(policy.commissionPercentage * 100).toFixed(0)}%
                         </span>
                       </div>
                     </td>
-                    <td className="commission-status">
+                    <td className="py-2.5 px-3 text-center min-w-[100px]">
                       {policyCommission ? (
                         <Select
                           value={policyCommission.status}
@@ -536,8 +554,8 @@ export const PolicyList: React.FC<PolicyListProps> = ({
                         <span className="text-muted-foreground/60 text-xs">No commission</span>
                       )}
                     </td>
-                    <td className="date">{formatDate(policy.effectiveDate)}</td>
-                    <td className="actions">
+                    <td className="py-2.5 px-3 text-[12px] text-gray-500">{formatDate(policy.effectiveDate)}</td>
+                    <td className="py-2.5 px-3">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button
@@ -602,15 +620,20 @@ export const PolicyList: React.FC<PolicyListProps> = ({
 
       {/* Chargeback Modal */}
       {showChargebackModal && (
-        <div className="modal-overlay" onClick={() => setShowChargebackModal(false)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>Cancel Commission</h3>
-              <button onClick={() => setShowChargebackModal(false)} className="modal-close">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1000]" onClick={() => setShowChargebackModal(false)}>
+          <div className="bg-white rounded-xl shadow-2xl w-[90%] max-w-[500px] flex flex-col" onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-between items-center p-5 px-6 border-b border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900">Cancel Commission</h3>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowChargebackModal(false)}
+                className="h-8 w-8 text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+              >
                 ×
-              </button>
+              </Button>
             </div>
-            <div className="modal-body">
+            <div className="p-6">
               <div className="p-4 bg-red-50 rounded-md border border-red-200 mb-4">
                 <div className="flex items-start gap-3">
                   <AlertCircle size={20} className="text-error flex-shrink-0 mt-0.5" />
@@ -643,21 +666,23 @@ export const PolicyList: React.FC<PolicyListProps> = ({
                 </div>
               )}
             </div>
-            <div className="modal-footer">
-              <button
+            <div className="flex justify-end gap-3 p-4 px-6 border-t border-gray-200 bg-gray-50">
+              <Button
                 type="button"
                 onClick={() => setShowChargebackModal(false)}
-                className="btn"
+                variant="outline"
+                size="sm"
               >
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
                 onClick={handleChargeback}
-                className="btn-primary bg-error border-error text-white"
+                size="sm"
+                className="bg-error border-error text-white"
               >
                 Cancel Commission
-              </button>
+              </Button>
             </div>
           </div>
         </div>

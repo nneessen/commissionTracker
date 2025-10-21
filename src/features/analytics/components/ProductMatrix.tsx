@@ -1,7 +1,9 @@
 // src/features/analytics/components/ProductMatrix.tsx
 
 import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
 import { useAnalyticsData } from '../../../hooks';
+import { cn } from '@/lib/utils';
 
 /**
  * ProductMatrix - Product performance matrix
@@ -34,47 +36,35 @@ export function ProductMatrix() {
 
   return (
     <div className="bg-white rounded-xl p-5 shadow-sm">
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
+      <div className="flex items-center gap-2 mb-5">
         <div className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
           Product Mix - {latestMonth?.periodLabel}
         </div>
-        <button
+        <Button
           onClick={() => setShowInfo(!showInfo)}
-          className="bg-blue-50 border border-blue-100"
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = '#dbeafe';
-            e.currentTarget.style.transform = 'scale(1.1)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = '#f0f9ff';
-            e.currentTarget.style.transform = 'scale(1)';
-          }}
+          size="icon"
+          variant="ghost"
+          className="h-6 w-6 bg-blue-50 border border-blue-100 hover:bg-blue-200 hover:scale-110 transition-transform"
           title="Click for detailed explanation"
         >
           i
-        </button>
+        </Button>
       </div>
 
       {showInfo && (
         <div className="bg-blue-50 border border-blue-200">
           <div className="flex justify-between items-start mb-3">
             <h3 className="m-0 text-sm font-bold text-blue-800">
-              📦 Understanding Product Mix
+              Understanding Product Mix
             </h3>
-            <button
+            <Button
               onClick={() => setShowInfo(false)}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                fontSize: '18px',
-                cursor: 'pointer',
-                color: '#64748b',
-                padding: '0',
-                lineHeight: 1
-              }}
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6 p-0 text-lg text-slate-600 hover:text-slate-900"
             >
               ×
-            </button>
+            </Button>
           </div>
 
           <div className="mb-4">
@@ -100,21 +90,14 @@ export function ProductMatrix() {
               • 25% Whole Life (10 policies, $150K premium)<br/>
               • 10% Health (8 policies, $80K premium)<br/>
               • 5% Disability (2 policies, $20K premium)<br/>
-              <div style={{ marginTop: '8px', color: '#1e40af' }}>
+              <div className="mt-2 text-blue-700">
                 <strong>Insight:</strong> You're heavily term-focused. Consider pushing whole life and disability for better commission rates!
               </div>
             </div>
           </div>
 
-          <div style={{
-            padding: '8px',
-            background: '#dbeafe',
-            borderRadius: '4px',
-            fontSize: '11px',
-            textAlign: 'center',
-            color: '#1e40af'
-          }}>
-            💡 <strong>Pro Tip:</strong> Aim for a balanced mix - don't put all your eggs in one product basket!
+          <div className="p-2 bg-blue-100 rounded text-xs text-center text-blue-700">
+            <strong>Pro Tip:</strong> Aim for a balanced mix - don't put all your eggs in one product basket!
           </div>
         </div>
       )}
@@ -123,37 +106,20 @@ export function ProductMatrix() {
         {latestMonth?.productBreakdown.map((product, idx) => (
           <div
             key={product.product}
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              padding: '12px',
-              background: idx === 0 ? '#f0f9ff' : '#f8f9fa',
-              borderRadius: '6px'
-            }}
+            className={cn(
+              "flex justify-between items-center p-3 rounded-md",
+              idx === 0 ? "bg-blue-50" : "bg-muted"
+            )}
           >
             <div>
-              <div style={{
-                fontSize: '12px',
-                fontWeight: 600,
-                color: '#1a1a1a',
-                marginBottom: '4px'
-              }}>
+              <div className="text-xs font-semibold text-foreground mb-1">
                 {product.product}
               </div>
-              <div style={{
-                fontSize: '10px',
-                color: '#656d76'
-              }}>
+              <div className="text-[10px] text-muted-foreground">
                 {product.count} policies · {product.percentage.toFixed(1)}%
               </div>
             </div>
-            <div style={{
-              fontSize: '14px',
-              fontWeight: 700,
-              color: '#3b82f6',
-              fontFamily: 'Monaco, monospace'
-            }}>
+            <div className="text-sm font-bold text-info font-mono">
               {formatCurrency(product.revenue)}
             </div>
           </div>

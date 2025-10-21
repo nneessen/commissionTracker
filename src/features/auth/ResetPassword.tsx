@@ -179,14 +179,15 @@ export const ResetPassword: React.FC = () => {
 
         {/* Footer */}
         <div className="mt-8 text-center">
-          <button
+          <Button
             type="button"
             onClick={() => navigate({ to: '/login' })}
-            className="text-sm font-medium text-blue-600 hover:text-blue-500 transition-colors"
+            variant="link"
             disabled={loading}
+            className="h-auto p-0 text-sm font-medium text-blue-600 hover:text-blue-500"
           >
             ← Back to login
-          </button>
+          </Button>
         </div>
       </div>
     </div>

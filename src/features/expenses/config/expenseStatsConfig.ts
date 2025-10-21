@@ -8,26 +8,26 @@ import { parseLocalDate } from '../../../lib/date';
 const EXPENSE_COLORS = {
   // Category colors (10 distinct colors for charts/breakdowns)
   CATEGORIES: [
-    '#3b82f6', // Blue
-    '#10b981', // Green
-    '#f59e0b', // Amber
-    '#ef4444', // Red
-    '#8b5cf6', // Purple
-    '#ec4899', // Pink
-    '#06b6d4', // Cyan
-    '#14b8a6', // Teal
-    '#f97316', // Orange
-    '#a78bfa', // Violet
+    'rgb(59, 130, 246)', // Blue
+    'rgb(16, 185, 129)', // Green
+    'rgb(245, 158, 11)', // Amber
+    'rgb(239, 68, 68)', // Red
+    'rgb(139, 92, 246)', // Purple
+    'rgb(236, 72, 153)', // Pink
+    'rgb(6, 182, 212)', // Cyan
+    'rgb(20, 184, 166)', // Teal
+    'rgb(249, 115, 22)', // Orange
+    'rgb(167, 139, 250)', // Violet
   ],
   // Expense type colors
-  PERSONAL: '#8b5cf6', // Purple
-  BUSINESS: '#3b82f6', // Blue
-  TOTAL: '#64748b', // Slate
-  COUNT: '#94a3b8', // Slate light
+  PERSONAL: 'rgb(139, 92, 246)', // Purple
+  BUSINESS: 'rgb(59, 130, 246)', // Blue
+  TOTAL: 'rgb(100, 116, 139)', // Slate
+  COUNT: 'rgb(148, 163, 184)', // Slate light
   // Growth/trend colors
-  GROWTH_POSITIVE: '#10b981', // Green
-  GROWTH_NEGATIVE: '#ef4444', // Red
-  GROWTH_NEUTRAL: '#94a3b8', // Slate
+  GROWTH_POSITIVE: 'rgb(16, 185, 129)', // Green
+  GROWTH_NEGATIVE: 'rgb(239, 68, 68)', // Red
+  GROWTH_NEUTRAL: 'rgb(148, 163, 184)', // Slate
 };
 
 export interface ExpenseTrend {

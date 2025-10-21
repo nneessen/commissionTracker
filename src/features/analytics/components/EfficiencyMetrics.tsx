@@ -28,20 +28,13 @@ export function EfficiencyMetrics() {
     y: carrier.roi,
     label: carrier.carrierName,
     size: Math.max(6, Math.min(12, carrier.totalPolicies / 5)),
-    color: carrier.trend === 'improving' ? '#10b981' :
-           carrier.trend === 'declining' ? '#ef4444' : '#3b82f6'
+    color: carrier.trend === 'improving' ? 'rgb(16, 185, 129)' :
+           carrier.trend === 'declining' ? 'rgb(239, 68, 68)' : 'rgb(59, 130, 246)'
   }));
 
   return (
     <div className="bg-white rounded-xl p-5 shadow-sm">
-      <div style={{
-        fontSize: '13px',
-        fontWeight: 600,
-        color: '#1a1a1a',
-        marginBottom: '20px',
-        textTransform: 'uppercase',
-        letterSpacing: '0.5px'
-      }}>
+      <div className="text-sm font-semibold text-foreground mb-5 uppercase tracking-wide">
         Carrier Efficiency
       </div>
 

@@ -88,3 +88,16 @@ export function abbreviateNumber(value: number): string {
   }
   return value.toString();
 }
+
+/**
+ * Format product type string (convert snake_case to Title Case)
+ * @param productType Product type string (e.g., "term_life")
+ * @returns Formatted string (e.g., "Term Life")
+ *
+ * @example
+ * formatProductType("term_life") // "Term Life"
+ * formatProductType("whole_life") // "Whole Life"
+ */
+export function formatProductType(productType: string): string {
+  return productType.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+}
