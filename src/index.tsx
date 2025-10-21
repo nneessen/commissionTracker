@@ -8,6 +8,7 @@ import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { router } from "./router";
 import { AuthProvider } from "./contexts/AuthContext";
 import { Toaster } from "@/components/ui/sonner";
+import { metricsService } from "./services/monitoring/MetricsService";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -22,6 +23,9 @@ const queryClient = new QueryClient({
     },
   },
 });
+
+// Initialize MetricsService with queryClient for cache monitoring
+metricsService.setQueryClient(queryClient);
 
 const root = ReactDOM.createRoot(
   document.getElementById("root") as HTMLElement,

@@ -1,10 +1,11 @@
 // src/features/expenses/components/ExpenseTrendChart.tsx
-import { Card, CardHeader, CardContent, CardDescription } from "@/components/ui/card";
 import {
-  Empty,
-  EmptyHeader,
-  EmptyTitle
-} from "@/components/ui/empty";
+  Card,
+  CardHeader,
+  CardContent,
+  CardDescription,
+} from "@/components/ui/card";
+import { Empty as EmptyState } from "@/components/ui/empty";
 import { formatCurrency } from "@/lib/format";
 
 interface TrendDataPoint {
@@ -58,11 +59,7 @@ export function ExpenseTrendChart({ data }: ExpenseTrendChartProps) {
             })}
           </div>
         ) : (
-          <Empty>
-            <EmptyHeader>
-              <EmptyTitle>No trend data available</EmptyTitle>
-            </EmptyHeader>
-          </Empty>
+          <EmptyState title="No trend data available" />
         )}
       </CardContent>
     </Card>

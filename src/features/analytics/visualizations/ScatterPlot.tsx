@@ -111,7 +111,7 @@ export function ScatterPlot({
               y1={tick.y}
               x2={chartWidth}
               y2={tick.y}
-              stroke="#f1f5f9"
+              stroke="rgb(241, 245, 249)"
               strokeWidth="1"
             />
           ))}
@@ -123,7 +123,7 @@ export function ScatterPlot({
               y1={0}
               x2={tick.x}
               y2={chartHeight}
-              stroke="#f1f5f9"
+              stroke="rgb(241, 245, 249)"
               strokeWidth="1"
             />
           ))}
@@ -134,7 +134,7 @@ export function ScatterPlot({
             y1={chartHeight}
             x2={chartWidth}
             y2={chartHeight}
-            stroke="#2d3748"
+            stroke="rgb(45, 55, 72)"
             strokeWidth="2"
           />
           <line
@@ -142,7 +142,7 @@ export function ScatterPlot({
             y1={0}
             x2={0}
             y2={chartHeight}
-            stroke="#2d3748"
+            stroke="rgb(45, 55, 72)"
             strokeWidth="2"
           />
 
@@ -154,7 +154,7 @@ export function ScatterPlot({
                 y1={chartHeight}
                 x2={tick.x}
                 y2={chartHeight + 6}
-                stroke="#2d3748"
+                stroke="rgb(45, 55, 72)"
                 strokeWidth="2"
               />
               <text
@@ -162,7 +162,7 @@ export function ScatterPlot({
                 y={chartHeight + 20}
                 textAnchor="middle"
                 fontSize="10px"
-                fill="#656d76"
+                fill="rgb(101, 109, 118)"
               >
                 {formatNumber(tick.value)}
               </text>
@@ -177,7 +177,7 @@ export function ScatterPlot({
                 y1={tick.y}
                 x2={0}
                 y2={tick.y}
-                stroke="#2d3748"
+                stroke="rgb(45, 55, 72)"
                 strokeWidth="2"
               />
               <text
@@ -185,7 +185,7 @@ export function ScatterPlot({
                 y={tick.y + 4}
                 textAnchor="end"
                 fontSize="10px"
-                fill="#656d76"
+                fill="rgb(101, 109, 118)"
               >
                 {formatNumber(tick.value)}
               </text>
@@ -197,7 +197,7 @@ export function ScatterPlot({
             const cx = scaleX(point.x || 0);
             const cy = scaleY(point.y || 0);
             const radius = point.size || 6;
-            const color = point.color || '#3b82f6';
+            const color = point.color || 'rgb(59, 130, 246)';
 
             // Skip if coordinates are invalid
             if (isNaN(cx) || isNaN(cy) || !isFinite(cx) || !isFinite(cy)) return null;
@@ -226,7 +226,7 @@ export function ScatterPlot({
             textAnchor="middle"
             fontSize="11px"
             fontWeight="600"
-            fill="#1a1a1a"
+            fill="rgb(26, 26, 26)"
           >
             {xLabel}
           </text>
@@ -237,7 +237,7 @@ export function ScatterPlot({
             textAnchor="middle"
             fontSize="11px"
             fontWeight="600"
-            fill="#1a1a1a"
+            fill="rgb(26, 26, 26)"
             transform={`rotate(-90, ${-chartHeight / 2}, -45)`}
           >
             {yLabel}

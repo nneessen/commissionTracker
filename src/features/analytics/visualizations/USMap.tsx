@@ -60,15 +60,15 @@ export function USMap({
   const minValue = Math.min(...values);
 
   const getColor = (value: number): string => {
-    if (maxValue === minValue) return '#3b82f6';
+    if (maxValue === minValue) return 'rgb(59, 130, 246)';
 
     const normalized = (value - minValue) / (maxValue - minValue);
 
-    if (normalized >= 0.8) return '#10b981';
-    if (normalized >= 0.6) return '#3b82f6';
-    if (normalized >= 0.4) return '#f59e0b';
-    if (normalized >= 0.2) return '#fb923c';
-    return '#ef4444';
+    if (normalized >= 0.8) return 'rgb(16, 185, 129)';
+    if (normalized >= 0.6) return 'rgb(59, 130, 246)';
+    if (normalized >= 0.4) return 'rgb(245, 158, 11)';
+    if (normalized >= 0.2) return 'rgb(251, 146, 60)';
+    return 'rgb(239, 68, 68)';
   };
 
   const formatValue = (value: number) => {
@@ -90,14 +90,14 @@ export function USMap({
         width="100%"
         height="500"
         viewBox="0 0 1000 700"
-        style={{ background: '#f8f9fa', borderRadius: '8px' }}
+        className="bg-muted rounded-lg"
       >
         {/* Render states as circles */}
         {Object.entries(statePositions).map(([state, [x, y]]) => {
           const stateData = valueMap.get(state);
           const hasData = stateData !== undefined;
           const value = stateData?.value || 0;
-          const color = hasData ? getColor(value) : '#e2e8f0';
+          const color = hasData ? getColor(value) : 'rgb(226, 232, 240)';
           const opacity = hasData ? 0.8 : 0.3;
 
           return (
@@ -109,9 +109,9 @@ export function USMap({
                 r={hasData ? 20 : 15}
                 fill={color}
                 opacity={opacity}
-                stroke={hasData ? color : '#94a3b8'}
+                stroke={hasData ? color : 'rgb(148, 163, 184)'}
                 strokeWidth={hasData ? 2 : 1}
-                style={{ cursor: hasData ? 'pointer' : 'default' }}
+                className={hasData ? 'cursor-pointer' : 'cursor-default'}
               />
 
               {/* State abbreviation */}
@@ -121,7 +121,7 @@ export function USMap({
                 textAnchor="middle"
                 fontSize="10px"
                 fontWeight="600"
-                fill={hasData ? '#ffffff' : '#656d76'}
+                fill={hasData ? 'rgb(255, 255, 255)' : 'rgb(101, 109, 118)'}
                 pointerEvents="none"
               >
                 {state}
@@ -140,52 +140,38 @@ export function USMap({
       </svg>
 
       {/* Legend */}
-      <div style={{
-        marginTop: '20px',
-        display: 'flex',
-        gap: '12px',
-        alignItems: 'center',
-        fontSize: '11px',
-        color: '#656d76'
-      }}>
-        <span style={{ fontWeight: 600 }}>{valueLabel}:</span>
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          <div style={{ width: '12px', height: '12px', background: '#ef4444', borderRadius: '2px' }} />
+      <div className="mt-5 flex gap-3 items-center text-xs text-muted-foreground">
+        <span className="font-semibold">{valueLabel}:</span>
+        <div className="flex gap-2 items-center">
+          <div className="w-3 h-3 bg-error rounded-sm" />
           <span>Low</span>
         </div>
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          <div style={{ width: '12px', height: '12px', background: '#fb923c', borderRadius: '2px' }} />
+        <div className="flex gap-2 items-center">
+          <div className="w-3 h-3 bg-orange-400 rounded-sm" />
           <span>Below Avg</span>
         </div>
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          <div style={{ width: '12px', height: '12px', background: '#f59e0b', borderRadius: '2px' }} />
+        <div className="flex gap-2 items-center">
+          <div className="w-3 h-3 bg-warning rounded-sm" />
           <span>Average</span>
         </div>
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          <div style={{ width: '12px', height: '12px', background: '#3b82f6', borderRadius: '2px' }} />
+        <div className="flex gap-2 items-center">
+          <div className="w-3 h-3 bg-info rounded-sm" />
           <span>Above Avg</span>
         </div>
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          <div style={{ width: '12px', height: '12px', background: '#10b981', borderRadius: '2px' }} />
+        <div className="flex gap-2 items-center">
+          <div className="w-3 h-3 bg-success rounded-sm" />
           <span>High</span>
         </div>
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginLeft: 'auto' }}>
-          <div style={{ width: '12px', height: '12px', background: '#e2e8f0', borderRadius: '2px' }} />
+        <div className="flex gap-2 items-center ml-auto">
+          <div className="w-3 h-3 bg-gray-200 rounded-sm" />
           <span>No Data</span>
         </div>
       </div>
 
       {/* Top States List */}
       {data.length > 0 && (
-        <div style={{ marginTop: '20px' }}>
-          <div style={{
-            fontSize: '12px',
-            fontWeight: 600,
-            color: '#1a1a1a',
-            marginBottom: '12px',
-            textTransform: 'uppercase',
-            letterSpacing: '0.5px'
-          }}>
+        <div className="mt-5">
+          <div className="text-xs font-semibold text-foreground mb-3 uppercase tracking-wide">
             Top States
           </div>
           <div className="grid gap-2">
@@ -195,25 +181,13 @@ export function USMap({
               .map((state, idx) => (
                 <div
                   key={state.state}
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    padding: '8px 12px',
-                    background: idx === 0 ? '#f0fdf4' : '#f8f9fa',
-                    borderRadius: '6px',
-                    fontSize: '11px'
-                  }}
+                  className={`flex justify-between items-center px-3 py-2 rounded-md text-xs ${idx === 0 ? 'bg-green-50' : 'bg-gray-50'}`}
                 >
                   <div className="flex items-center gap-2">
-                    <span style={{
-                      fontWeight: 600,
-                      color: '#656d76',
-                      minWidth: '20px'
-                    }}>
+                    <span className="font-semibold text-muted-foreground min-w-[20px]">
                       #{idx + 1}
                     </span>
-                    <span style={{ fontWeight: 600, color: '#1a1a1a' }}>
+                    <span className="font-semibold text-foreground">
                       {state.state.toUpperCase()}
                     </span>
                     {state.label && (
@@ -222,11 +196,7 @@ export function USMap({
                       </span>
                     )}
                   </div>
-                  <span style={{
-                    fontWeight: 600,
-                    color: idx === 0 ? '#10b981' : '#1a1a1a',
-                    fontFamily: 'Monaco, monospace'
-                  }}>
+                  <span className={`font-semibold font-mono ${idx === 0 ? 'text-green-500' : 'text-gray-900'}`}>
                     {formatValue(state.value)}
                   </span>
                 </div>

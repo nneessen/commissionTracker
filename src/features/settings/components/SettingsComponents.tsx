@@ -61,13 +61,15 @@ export const SettingsGrid: React.FC<SettingsGridProps> = ({
   children,
   columns = 2,
 }) => {
+  const gridColsClass = {
+    1: 'grid-cols-1',
+    2: 'grid-cols-2',
+    3: 'grid-cols-3',
+    4: 'grid-cols-4',
+  }[columns] || 'grid-cols-2';
+
   return (
-    <div
-      className="dashboard-metrics-grid gap-6 mb-6"
-      style={{
-        gridTemplateColumns: `repeat(${columns}, 1fr)`,
-      }}
-    >
+    <div className={`dashboard-metrics-grid gap-6 mb-6 ${gridColsClass}`}>
       {children}
     </div>
   );

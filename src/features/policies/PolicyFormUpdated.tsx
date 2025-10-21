@@ -11,6 +11,7 @@ import {
   Policy,
 } from "../../types/policy.types";
 import { ProductType } from "../../types/commission.types";
+import { Button } from "@/components/ui/button";
 
 import {
   calculateAnnualPremium,
@@ -255,7 +256,9 @@ export const PolicyFormUpdated: React.FC<PolicyFormProps> = ({
     <div className="policy-form">
       <div className="modal-header">
         <h2>{policyId ? "Edit Policy" : "New Policy"}</h2>
-        <button className="close-btn" onClick={onClose}>×</button>
+        <Button variant="ghost" size="icon" className="close-btn" onClick={onClose}>
+          ×
+        </Button>
       </div>
 
       <div className="form-content">
@@ -546,12 +549,12 @@ export const PolicyFormUpdated: React.FC<PolicyFormProps> = ({
 
       {/* Form Actions */}
       <div className="modal-footer">
-        <button className="btn btn-secondary" onClick={onClose}>
+        <Button variant="outline" size="sm" onClick={onClose}>
           Cancel
-        </button>
-        <button className="btn btn-primary" onClick={handleSubmit}>
+        </Button>
+        <Button size="sm" onClick={handleSubmit}>
           {policyId ? "Update Policy" : "Submit Policy"}
-        </button>
+        </Button>
       </div>
     </div>
   );

@@ -1,7 +1,12 @@
+// src/features/comps/CompFilters.tsx
+
 import React, { useState } from 'react';
 import { Search, Filter, X, Building2, Package, BarChart3 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { CompFilters } from '../../types/comp.types';
 import { Database } from '../../types/database.types';
+import { ActiveFilterBadges } from './components/ActiveFilterBadges';
+import { formatProductType } from '../../lib/format';
 
 interface CompFiltersProps {
   filters: CompFilters;
@@ -63,7 +68,7 @@ export function CompFiltersComponent({
               <option value="">All Products</option>
               {productTypes.map((product) => (
                 <option key={product} value={product}>
-                  {product.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                  {formatProductType(product)}
                 </option>
               ))}
             </select>
@@ -72,11 +77,11 @@ export function CompFiltersComponent({
 
         <div className="flex items-center space-x-2 ml-4">
           {/* Advanced filters toggle */}
-          <button
+          <Button
             onClick={() => setIsExpanded(!isExpanded)}
-            className={`inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
-              isExpanded ? 'bg-gray-100' : ''
-            }`}
+            variant="outline"
+            size="sm"
+            className={isExpanded ? 'bg-gray-100' : ''}
           >
             <Filter className="h-4 w-4 mr-2" />
             Advanced
@@ -85,17 +90,18 @@ export function CompFiltersComponent({
                 {Object.keys(filters).length}
               </span>
             )}
-          </button>
+          </Button>
 
           {/* Clear filters */}
           {hasActiveFilters && (
-            <button
+            <Button
               onClick={clearAllFilters}
-              className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              variant="outline"
+              size="sm"
             >
               <X className="h-4 w-4 mr-2" />
               Clear
-            </button>
+            </Button>
           )}
         </div>
       </div>
@@ -158,7 +164,7 @@ export function CompFiltersComponent({
                 <option value="">All Products</option>
                 {productTypes.map((product) => (
                   <option key={product} value={product}>
-                    {product.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                    {formatProductType(product)}
                   </option>
                 ))}
               </select>
@@ -166,46 +172,10 @@ export function CompFiltersComponent({
           </div>
 
           {/* Active Filters Display */}
-          {hasActiveFilters && (
-            <div className="mt-4">
-              <h4 className="text-sm font-medium text-gray-700 mb-2">Active Filters:</h4>
-              <div className="flex flex-wrap gap-2">
-                {filters.carrier_id && (
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                    Carrier: {filters.carrier_id}
-                    <button
-                      onClick={() => handleFilterChange('carrier_id', undefined)}
-                      className="ml-1 text-green-600 hover:text-green-800"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </span>
-                )}
-                {filters.product_type && (
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                    Product: {filters.product_type.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
-                    <button
-                      onClick={() => handleFilterChange('product_type', undefined)}
-                      className="ml-1 text-purple-600 hover:text-purple-800"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </span>
-                )}
-                {filters.contract_level && (
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
-                    Contract Level: {filters.contract_level}
-                    <button
-                      onClick={() => handleFilterChange('contract_level', undefined)}
-                      className="ml-1 text-orange-600 hover:text-orange-800"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </span>
-                )}
-              </div>
-            </div>
-          )}
+          <ActiveFilterBadges
+            filters={filters}
+            onRemoveFilter={(key) => handleFilterChange(key, undefined)}
+          />
         </div>
       )}
     </div>

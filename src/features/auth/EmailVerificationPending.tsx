@@ -1,12 +1,11 @@
 // src/features/auth/EmailVerificationPending.tsx
 
-import React from 'react';
-import { Button } from '../../components/ui';
-import { MAX_RESEND_ATTEMPTS } from '../../constants/auth.constants';
-import { useEmailVerification } from './hooks/useEmailVerification';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { CheckCircle2, XCircle } from 'lucide-react';
-import { EmailIcon } from '@/components/custom_ui/EmailIcon';
+import React from "react";
+import { Button } from "../../components/ui";
+import { MAX_RESEND_ATTEMPTS } from "../../constants/auth.constants";
+import { useEmailVerification } from "./hooks/useEmailVerification";
+import { Alert } from "@/components/ui/alert";
+import { EmailIcon } from "@/components/custom_ui/EmailIcon";
 
 /**
  * EmailVerificationPending
@@ -55,9 +54,7 @@ export const EmailVerificationPending: React.FC = () => {
             We sent a verification link to
           </p>
           {email && (
-            <p className="text-sm font-semibold text-gray-900 mt-1">
-              {email}
-            </p>
+            <p className="text-sm font-semibold text-gray-900 mt-1">{email}</p>
           )}
         </div>
 
@@ -67,25 +64,16 @@ export const EmailVerificationPending: React.FC = () => {
           <EmailIcon />
 
           {/* Success Message */}
-          {message && (
-            <Alert>
-              <CheckCircle2 className="h-4 w-4" />
-              <AlertDescription>{message}</AlertDescription>
-            </Alert>
-          )}
+          {message && <Alert type="success" message={message} />}
 
           {/* Error Message */}
-          {error && (
-            <Alert variant="destructive">
-              <XCircle className="h-4 w-4" />
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
+          {error && <Alert type="error" message={error} />}
 
           {/* Instructions */}
           <div className="text-center space-y-3">
             <p className="text-sm text-gray-700">
-              Click the link in the email to verify your account and get started.
+              Click the link in the email to verify your account and get
+              started.
             </p>
             <p className="text-xs text-gray-500">
               The link will expire in 24 hours for security reasons.
@@ -95,11 +83,12 @@ export const EmailVerificationPending: React.FC = () => {
           {/* Resend Button */}
           <Button
             onClick={handleResend}
-            disabled={isResendDisabled || loading}
+            disabled={isResendDisabled}
+            loading={loading}
             className="w-full py-3 text-base font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
             aria-label={getResendButtonText()}
           >
-            {loading ? 'Sending...' : getResendButtonText()}
+            {getResendButtonText()}
           </Button>
 
           {/* Attempt counter */}
@@ -132,7 +121,7 @@ export const EmailVerificationPending: React.FC = () => {
             type="button"
             onClick={handleBackToLogin}
             variant="link"
-            className="w-full text-center text-sm font-medium text-blue-600 hover:text-blue-500 py-2"
+            className="w-full text-center text-sm font-medium text-blue-600 hover:text-blue-500 h-auto py-2"
           >
             Back to login
           </Button>

@@ -6,6 +6,208 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-10-21 15:01:36
+
+### Changed Files
+- `.serena/memories/inline_styles_audit_ISSUES_FOUND.md`
+- `.serena/memories/inline_styles_refactoring_COMPLETED.md`
+- `COLOR_PALETTE_GUIDE.md`
+- `FEATURE_COMPONENT_REFACTORING_PLAN.md`
+- `REFACTORING_PROGRESS.md`
+- `plans/ACTIVE/01_fix_policies_crud_and_status_cascade.md`
+- `plans/ACTIVE/commission-status-dropdown.md`
+- `plans/completed/01_fix_policies_crud_and_status_cascade_COMPLETED.md`
+- `src/constants/componentStyles.ts`
+- `src/features/analytics/AnalyticsDashboard.tsx`
+- `src/features/analytics/components/ClientSegmentation.tsx`
+- `src/features/analytics/components/ClientSegmentationInfoPanel.tsx`
+- `src/features/analytics/components/CohortAnalysis.tsx`
+- `src/features/analytics/components/CommissionDeepDive.tsx`
+- `src/features/analytics/components/CrossSellOpportunityCard.tsx`
+- `src/features/analytics/components/EfficiencyMetrics.tsx`
+- `src/features/analytics/components/PerformanceAttribution.tsx`
+- `src/features/analytics/components/PredictiveAnalytics.tsx`
+- `src/features/analytics/components/ProductMatrix.tsx`
+- `src/features/analytics/components/SegmentCard.tsx`
+- `src/features/analytics/visualizations/CohortHeatmap.tsx`
+- `src/features/analytics/visualizations/ForecastChart.tsx`
+- `src/features/analytics/visualizations/ScatterPlot.tsx`
+- `src/features/analytics/visualizations/USMap.tsx`
+- `src/features/analytics/visualizations/WaterfallChart.tsx`
+- `src/features/auth/EmailVerificationPending.tsx`
+- `src/features/auth/Login.tsx`
+- `src/features/auth/ResetPassword.tsx`
+- `src/features/auth/components/AuthErrorDisplay.tsx`
+- `src/features/auth/components/AuthSuccessMessage.tsx`
+- `src/features/auth/components/ResetPasswordForm.tsx`
+- `src/features/auth/components/SignInForm.tsx`
+- `src/features/auth/components/SignUpForm.tsx`
+- `src/features/auth/hooks/useAuthValidation.ts`
+- `src/features/comps/CompFilters.tsx`
+- `src/features/comps/CompGuide.tsx`
+- `src/features/comps/CompTable.tsx`
+- `src/features/comps/UserContractSettings.tsx`
+- `src/features/comps/components/ActiveFilterBadges.tsx`
+- `src/features/dashboard/DashboardHome.tsx`
+- `src/features/dashboard/components/FinancialHealthCard.tsx`
+- `src/features/dashboard/components/QuickActionsPanel.tsx`
+- `src/features/dashboard/components/StatItem.tsx`
+- `src/features/dashboard/components/TimePeriodSwitcher.tsx`
+- `src/features/dashboard/config/statsConfig.ts`
+- `src/features/expenses/components/ExpenseCategoryBreakdown.tsx`
+- `src/features/expenses/config/expenseColorsConfig.ts`
+- `src/features/expenses/config/expenseStatsConfig.ts`
+- `src/features/policies/PolicyDashboard.tsx`
+- `src/features/policies/PolicyForm.tsx`
+- `src/features/policies/PolicyFormUpdated.tsx`
+- `src/features/policies/PolicyList.tsx`
+- `src/features/policies/PolicyListInfinite.tsx`
+- `src/features/policies/components/PolicyDashboardHeader.tsx`
+- `src/features/policies/hooks/usePolicyMutations.ts`
+- `src/features/policies/hooks/usePolicySummary.ts`
+- `src/features/settings/components/CompGuideImporter.tsx`
+- `src/features/settings/components/SettingsComponents.tsx`
+- `src/features/settings/components/UserProfile.tsx`
+- `src/index.css`
+- `src/lib/format.ts`
+
+### Statistics
+```
+ 61 files changed, 3396 insertions(+), 2169 deletions(-)
+```
+
+## [Checkpoint] - 2025-10-20 18:55:06
+
+### Changed Files
+- `plans/active/01_fix_policies_crud_and_status_cascade.md`
+- `plans/completed/01_fix_policies_crud_and_status_cascade_COMPLETED.md`
+- `src/components/ui/button.tsx`
+- `src/components/ui/select.tsx`
+- `src/features/policies/PolicyList.tsx`
+- `src/hooks/commissions/useUpdateCommissionStatus.ts`
+- `src/hooks/policies/index.ts`
+- `src/index.css`
+- `src/test-status-update.ts`
+- `supabase/migrations/.archive/003_backfill_commissions_fixed.sql`
+- `supabase/migrations/.archive/003_backfill_simple.sql`
+- `supabase/migrations/.archive/003_functions_only.sql`
+- `supabase/migrations/.archive/003_trigger_fixed.sql`
+- `supabase/migrations/20251020_001_fix_commission_amount_field.sql`
+- `supabase/migrations/20251020_002_fix_commission_column_names.sql`
+
+### Statistics
+```
+ 15 files changed, 1416 insertions(+), 59 deletions(-)
+```
+
+## [Checkpoint] - 2025-10-20 08:42:12
+
+### Changed Files
+- `DASHBOARD_CALCULATION_FIXES.md`
+- `DASHBOARD_DATA_CHEATSHEET.md`
+- `DASHBOARD_FIXES_APPLIED.md`
+- `MIGRATION_STATUS.md`
+- `PROJECT_STATS.md`
+- `apply_migration.mjs`
+- `commission_tracker_package.zip`
+- `commission_tracker_package/README.md`
+- `commission_tracker_package/database/migrations/001_master_schema.sql`
+- `commission_tracker_package/database/migrations/002_fix_policies_commission.sql`
+- `commission_tracker_package/database/migrations/003_auto_commission_and_user_settings.sql`
+- `commission_tracker_package/database/migrations/003_backfill_commissions_fixed.sql`
+- `commission_tracker_package/database/migrations/003_backfill_simple.sql`
+- `commission_tracker_package/database/migrations/003_functions_only.sql`
+- `commission_tracker_package/database/migrations/003_trigger_fixed.sql`
+- `commission_tracker_package/database/migrations/20250927235242_create_missing_tables.sql`
+- `commission_tracker_package/database/migrations/20250930000002_remove_agents_use_users.sql`
+- `commission_tracker_package/database/migrations/20250930000004_user_metadata_setup.sql`
+- `commission_tracker_package/database/migrations/20251001_007_SAFE_users_view_corrected.sql`
+- `commission_tracker_package/database/migrations/20251001_008_SAFE_rls_policies.sql`
+- `commission_tracker_package/database/migrations/20251003_001_fix_carrier_and_add_products.sql`
+- `commission_tracker_package/database/migrations/20251003_002_sample_data_temp.sql`
+- `commission_tracker_package/database/migrations/20251003_003_ffg_import.sql`
+- `commission_tracker_package/database/migrations/20251003_004_enable_public_access.sql`
+- `commission_tracker_package/database/migrations/20251003_005_disable_rls_for_reference_tables.sql`
+- `commission_tracker_package/database/migrations/20251003_006_fix_anon_access.sql`
+- `commission_tracker_package/database/migrations/20251003_007_fix_ffg_products_correct_data.sql`
+- `commission_tracker_package/database/migrations/20251003_009_add_commission_earning_tracking.sql`
+- `commission_tracker_package/database/migrations/20251003_010_add_commission_earning_tracking_CORRECT.sql`
+- `commission_tracker_package/database/migrations/20251004_add_referral_source_to_policies.sql`
+- `commission_tracker_package/database/migrations/20251004_fix_carriers_products_rls.sql`
+- `commission_tracker_package/database/migrations/20251004_fix_products_commission_data.sql`
+- `commission_tracker_package/database/migrations/20251005_002_fix_remaining_product_commissions.sql`
+- `commission_tracker_package/database/migrations/20251007_001_add_expense_type_and_name.sql`
+- `commission_tracker_package/database/migrations/20251007_002_fix_expenses_rls_and_categories.sql`
+- `commission_tracker_package/database/migrations/20251008_001_reset_expenses_complete.sql`
+- `commission_tracker_package/database/migrations/20251009_001_fix_commission_schema.sql`
+- `commission_tracker_package/database/migrations/20251103_001_fix_carriers_products_comps.sql`
+- `commission_tracker_package/database/migrations/SKIP/20250930000003_rls_policies_auth.sql.SKIP`
+- `commission_tracker_package/database/migrations/SKIP/20250930000005_fix_rls_security.sql.SKIP`
+- `commission_tracker_package/database/migrations/SKIP/20251001_006_add_performance_indexes.sql`
+- `commission_tracker_package/database/schema.sql`
+- `commission_tracker_package/docs/CURRENT_ISSUES.md`
+- `commission_tracker_package/docs/DATA_MODEL.md`
+- `commission_tracker_package/docs/KPI_FORMULAS.md`
+- `commission_tracker_package/docs/PROJECT_OVERVIEW.md`
+- `commission_tracker_package/src/features/DashboardHome.tsx`
+- `commission_tracker_package/src/hooks/useMetricsWithDateRange.ts`
+- `commission_tracker_package/src/services/commissions/CommissionAnalyticsService.ts`
+- `commission_tracker_package/src/services/commissions/CommissionCRUDService.ts`
+- `commission_tracker_package/src/services/commissions/CommissionCalculationService.ts`
+- `commission_tracker_package/src/services/commissions/CommissionLifecycleService.ts`
+- `commission_tracker_package/src/services/commissions/CommissionRepository.ts`
+- `commission_tracker_package/src/services/commissions/chargebackService.ts`
+- `commission_tracker_package/src/services/commissions/commissionRateService.ts`
+- `commission_tracker_package/src/services/commissions/commissionService.old.ts`
+- `commission_tracker_package/src/services/commissions/commissionService.ts`
+- `commission_tracker_package/src/services/commissions/index.ts`
+- `commission_tracker_package/src/services/policyService.ts`
+- `commission_tracker_package/src/types/agent.types.ts`
+- `commission_tracker_package/src/types/carrier.types.ts`
+- `commission_tracker_package/src/types/commission.types.ts`
+- `commission_tracker_package/src/types/comp.types.ts`
+- `commission_tracker_package/src/types/database.ts`
+- `commission_tracker_package/src/types/database.types.ts`
+- `commission_tracker_package/src/types/expense.types.ts`
+- `commission_tracker_package/src/types/hooks.ts`
+- `commission_tracker_package/src/types/index.ts`
+- `commission_tracker_package/src/types/metrics.types.ts`
+- `commission_tracker_package/src/types/monitoring.types.ts`
+- `commission_tracker_package/src/types/policy.types.ts`
+- `commission_tracker_package/src/types/product.types.ts`
+- `commission_tracker_package/src/types/ui.types.ts`
+- `commission_tracker_package/src/types/user.types.ts`
+- `docs/COMPONENT_ORGANIZATION.md`
+- `package-lock.json`
+- `products`
+- `src/components/custom_ui/Alert.tsx`
+- `src/components/custom_ui/Modal.tsx`
+- `src/components/custom_ui/empty-state.tsx`
+- `src/components/custom_ui/index.ts`
+- `src/components/ui/Input.tsx`
+- `src/components/ui/alert.tsx`
+- `src/components/ui/empty.tsx`
+- `src/components/ui/index.ts`
+- `src/components/ui/select.tsx`
+- `src/features/analytics/PerformanceTable.tsx`
+- `src/features/auth/EmailVerificationPending.tsx`
+- `src/features/commissions/CommissionForm.tsx.OLD`
+- `src/features/commissions/CommissionList.tsx.OLD`
+- `src/features/commissions/index.ts`
+- `src/features/dashboard/components/StatItem.tsx`
+- `src/features/expenses/components/ExpenseCategoryBreakdown.tsx`
+- `src/features/expenses/components/ExpenseDialog.tsx`
+- `src/features/expenses/components/ExpenseFilters.tsx`
+- `src/features/expenses/components/ExpenseTable.tsx`
+- `src/features/expenses/components/ExpenseTrendChart.tsx`
+- `src/features/settings/ConstantsManagement.tsx`
+- `tailwind.config.js.backup-20251018-191752`
+
+### Statistics
+```
+ 99 files changed, 451 insertions(+), 19566 deletions(-)
+```
+
 ## [Checkpoint] - 2025-10-18 14:01:26
 
 ### Changed Files

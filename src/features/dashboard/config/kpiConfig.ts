@@ -9,7 +9,7 @@
 
 import { TimePeriod, getPeriodLabel } from '../../../utils/dateRange';
 import { KPISection } from '../../../types/dashboard.types';
-import { formatCurrency, formatPercent } from '../../../utils/formatting';
+import { formatCurrency, formatPercent } from '../../../lib/format';
 import { scaleToDisplayPeriod, scaleCountToDisplayPeriod, getPeriodSuffix } from '../../../utils/dashboardCalculations';
 
 interface KPIConfigParams {

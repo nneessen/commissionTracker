@@ -12,13 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import {
-  Empty,
-  EmptyHeader,
-  EmptyTitle,
-  EmptyDescription,
-  EmptyContent
-} from '@/components/ui/empty';
+import { Empty, EmptyHeader, EmptyTitle, EmptyDescription, EmptyContent } from '@/components/ui/empty';
 import { formatCurrency, formatDate } from '@/lib/format';
 import type { Expense } from '@/types/expense.types';
 

@@ -6,7 +6,6 @@ import { CommissionRepository } from './CommissionRepository';
 import { logger } from '../base/logger';
 import { NotFoundError, DatabaseError, ValidationError, getErrorMessage } from '../../errors/ServiceErrors';
 import { withRetry } from '../../utils/retry';
-import { caches } from '../../utils/cache';
 
 export interface CreateCommissionData {
   policyId?: string;
@@ -252,10 +251,6 @@ class CommissionCRUDService {
       const created = await this.repository.create(dbData);
       const commission = this.transformFromDB(created);
 
-      // Cache the newly created commission
-      const cacheKey = `commission:${commission.id}`;
-      caches.commissions.set(cacheKey, commission);
-
       return commission;
     } catch (error) {
       throw this.handleError(error, 'create');
@@ -295,10 +290,6 @@ class CommissionCRUDService {
       const updated = await this.repository.update(id, dbData);
       const commission = this.transformFromDB(updated);
 
-      // Invalidate cache and update with new data
-      const cacheKey = `commission:${id}`;
-      caches.commissions.set(cacheKey, commission);
-
       return commission;
     } catch (error) {
       if (error instanceof NotFoundError) {
@@ -335,10 +326,6 @@ class CommissionCRUDService {
       await this.getById(id);
 
       await this.repository.delete(id);
-
-      // Invalidate cache
-      const cacheKey = `commission:${id}`;
-      caches.commissions.delete(cacheKey);
     } catch (error) {
       if (error instanceof NotFoundError) {
         throw error;
@@ -432,10 +419,6 @@ class CommissionCRUDService {
 
       // Transform and return the updated commission
       const updatedCommission = this.transformFromDB(updated);
-
-      // Invalidate cache and update with new data
-      const cacheKey = `commission:${id}`;
-      caches.commissions.set(cacheKey, updatedCommission);
 
       return updatedCommission;
     } catch (error) {

@@ -1,191 +1,27 @@
+// src/features/policies/PolicyDashboard.tsx
+
 import React, { useState } from "react";
-import { Plus, AlertCircle } from "lucide-react";
+import { AlertCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { PolicyForm } from "./PolicyForm";
 import { PolicyList } from "./PolicyList";
-import {
-  usePolicies,
-  useCreatePolicy,
-  useUpdatePolicy,
-  useDeletePolicy,
-} from "../../hooks/policies";
+import { PolicyDashboardHeader } from "./components/PolicyDashboardHeader";
+import { usePolicies } from "../../hooks/policies";
 import { useCarriers } from "../../hooks/carriers";
-import { useAuth } from "../../contexts/AuthContext";
-import {
-  PolicyStatus,
-  PolicyFilters,
-  CreatePolicyData,
-} from "../../types/policy.types";
-import showToast from "../../utils/toast";
-import { clientService } from "../../services/clients/clientService";
-import "../../styles/policy.css";
+import { usePolicyMutations } from "./hooks/usePolicyMutations";
+import { usePolicySummary } from "./hooks/usePolicySummary";
+import { PolicyFilters } from "../../types/policy.types";
 
 export const PolicyDashboard: React.FC = () => {
   const [isPolicyFormOpen, setIsPolicyFormOpen] = useState(false);
   const [editingPolicyId, setEditingPolicyId] = useState<string | undefined>();
 
-  const { user } = useAuth();
   const { data: policies = [], isLoading, error, refetch } = usePolicies();
-
-  const createPolicyMutation = useCreatePolicy();
-  const updatePolicyMutation = useUpdatePolicy();
-  const deletePolicyMutation = useDeletePolicy();
-
   useCarriers();
 
-  // Adapter functions to match old interface that PolicyList/PolicyForm expect
-  const addPolicy = async (formData: any) => {
-    try {
-      // Verify user is authenticated
-      if (!user?.id) {
-        throw new Error('You must be logged in to create a policy');
-      }
-
-      // CRITICAL: Database uses client_id FK, not inline client data
-      // First, create or find the client (with user_id for RLS compliance)
-      const client = await clientService.createOrFind({
-        name: formData.clientName,
-        email: formData.clientEmail || undefined,
-        phone: formData.clientPhone || undefined,
-        address: {
-          state: formData.clientState,
-          age: formData.clientAge,
-        },
-      }, user.id);
-
-      // Calculate monthly premium based on payment frequency
-      const monthlyPremium = formData.paymentFrequency === 'annual'
-        ? (formData.annualPremium || 0) / 12
-        : formData.paymentFrequency === 'semi-annual'
-        ? (formData.annualPremium || 0) / 6
-        : formData.paymentFrequency === 'quarterly'
-        ? (formData.annualPremium || 0) / 3
-        : (formData.annualPremium || 0) / 12; // Default to monthly
-
-      // Validate commission percentage (database DECIMAL(5,4) = max 999.99%)
-      const commissionPercent = formData.commissionPercentage || 0;
-      if (commissionPercent < 0 || commissionPercent > 999.99) {
-        showToast.error('Commission percentage must be between 0 and 999.99');
-        throw new Error('Commission percentage must be between 0 and 999.99');
-      }
-
-      // Convert form data to match actual database schema
-      const policyData: CreatePolicyData = {
-        policyNumber: formData.policyNumber,
-        status: formData.status,
-        clientId: client.id, // Use client_id foreign key
-        userId: user.id, // CRITICAL: Set user_id for RLS compliance
-        carrierId: formData.carrierId,
-        product: formData.product, // Product enum, not product_id
-        effectiveDate: new Date(formData.effectiveDate),
-        termLength: formData.termLength,
-        expirationDate: formData.expirationDate
-          ? new Date(formData.expirationDate)
-          : undefined,
-        annualPremium: formData.annualPremium || 0,
-        monthlyPremium: monthlyPremium, // Required field!
-        paymentFrequency: formData.paymentFrequency,
-        commissionPercentage: commissionPercent / 100, // Convert percentage to decimal
-        notes: formData.notes || undefined,
-      };
-
-      createPolicyMutation.mutate(policyData, {
-        onSuccess: (data) => {
-          showToast.success(`Policy ${data.policyNumber} created successfully!`);
-          handleCloseForm(); // Close modal on success
-          refetch();
-        },
-        onError: (error: any) => {
-          const errorMessage = error?.message || 'Failed to create policy. Please try again.';
-          showToast.error(errorMessage);
-          // Keep modal open on error so user can fix and retry
-        },
-      });
-
-      // Return a mock policy for backwards compatibility
-      return { id: "temp", ...policyData } as any;
-    } catch (error) {
-      showToast.error('Failed to create policy. Please try again.');
-      throw error;
-    }
-  };
-
-  const updatePolicy = async (id: string, updates: any) => {
-    // If updates has clientName, we need to handle client separately
-    let policyData: Partial<CreatePolicyData>;
-
-    if ("clientName" in updates) {
-      // Verify user is authenticated
-      if (!user?.id) {
-        throw new Error('You must be logged in to update a policy');
-      }
-
-      // First, create or find the client (similar to addPolicy, with user_id for RLS)
-      const client = await clientService.createOrFind({
-        name: updates.clientName,
-        email: updates.clientEmail || undefined,
-        phone: updates.clientPhone || undefined,
-        address: {
-          state: updates.clientState,
-          age: updates.clientAge,
-        },
-      }, user.id);
-
-      // Validate commission percentage (database DECIMAL(5,4) = max 999.99%)
-      const updateCommissionPercent = updates.commissionPercentage || 0;
-      if (updateCommissionPercent < 0 || updateCommissionPercent > 999.99) {
-        showToast.error('Commission percentage must be between 0 and 999.99');
-        throw new Error('Commission percentage must be between 0 and 999.99');
-      }
-
-      policyData = {
-        policyNumber: updates.policyNumber,
-        status: updates.status,
-        clientId: client.id, // Use client_id foreign key
-        carrierId: updates.carrierId,
-        product: updates.product,
-        effectiveDate: new Date(updates.effectiveDate),
-        termLength: updates.termLength,
-        expirationDate: updates.expirationDate
-          ? new Date(updates.expirationDate)
-          : undefined,
-        annualPremium: updates.annualPremium || 0,
-        monthlyPremium: updates.monthlyPremium || (updates.annualPremium || 0) / 12,
-        paymentFrequency: updates.paymentFrequency,
-        commissionPercentage: updateCommissionPercent / 100, // Convert to decimal
-        notes: updates.notes,
-      };
-    } else {
-      policyData = updates;
-    }
-
-    updatePolicyMutation.mutate(
-      { id, updates: policyData },
-      {
-        onSuccess: () => {
-          refetch();
-        },
-      },
-    );
-  };
-
-  const updatePolicyStatus = (id: string, status: PolicyStatus) => {
-    updatePolicyMutation.mutate(
-      { id, updates: { status } as any },
-      {
-        onSuccess: () => {
-          refetch();
-        },
-      },
-    );
-  };
-
-  const deletePolicy = (id: string) => {
-    deletePolicyMutation.mutate(id, {
-      onSuccess: () => {
-        refetch();
-      },
-    });
-  };
+  // Use custom hooks for mutations and summary calculations
+  const { addPolicy, updatePolicy, updatePolicyStatus, deletePolicy } = usePolicyMutations(refetch);
+  const summary = usePolicySummary(policies);
 
   const getPolicyById = (id: string) => {
     return policies.find((p) => p.id === id);
@@ -209,36 +45,6 @@ export const PolicyDashboard: React.FC = () => {
     });
   };
 
-  // Calculate summary stats from loaded policies (React 19.1 optimizes automatically)
-  const activePolicies = policies.filter((p) => p.status === "active");
-  const totalAnnualPremium = policies.reduce(
-    (sum, p) => sum + (p.annualPremium || 0),
-    0,
-  );
-  const totalExpectedCommission = policies.reduce(
-    (sum, p) =>
-      sum + ((p.annualPremium || 0) * (p.commissionPercentage || 0)) / 100,
-    0,
-  );
-
-  const summary = {
-    totalPolicies: policies.length,
-    activePolicies: activePolicies.length,
-    totalAnnualPremium,
-    totalExpectedCommission,
-  };
-
-  // Get expiring policies (within 30 days) (React 19.1 optimizes automatically)
-  const futureDate = new Date();
-  futureDate.setDate(futureDate.getDate() + 30);
-  const now = new Date();
-
-  const expiringPolicies = policies.filter((policy) => {
-    if (!policy.expirationDate) return false;
-    const expDate = new Date(policy.expirationDate).getTime();
-    return expDate >= now.getTime() && expDate <= futureDate.getTime();
-  });
-
   const handleEditPolicy = (policyId: string) => {
     setEditingPolicyId(policyId);
     setIsPolicyFormOpen(true);
@@ -249,87 +55,43 @@ export const PolicyDashboard: React.FC = () => {
     setEditingPolicyId(undefined);
   };
 
-  const averageCommissionRate =
-    summary.totalAnnualPremium > 0
-      ? (summary.totalExpectedCommission / summary.totalAnnualPremium) * 100
-      : 0;
-
   if (isLoading) {
     return (
-      <div className="loading-spinner">Loading policies...</div>
+      <div className="flex items-center justify-center p-20 text-gray-600">Loading policies...</div>
     );
   }
 
   if (error) {
     return (
-      <div className="error-message">
+      <div className="flex items-center gap-3 p-4 bg-red-50 border border-red-200 rounded-lg text-red-800">
         <AlertCircle size={20} />
         <span>Error loading policies: {(error as Error).message}</span>
-        <button onClick={() => refetch()} className="btn-secondary">
+        <Button onClick={() => refetch()} variant="outline" size="sm">
           Retry
-        </button>
+        </Button>
       </div>
     );
   }
 
   return (
-    <>
-      {/* Compact Header with Stats */}
-      <div className="page-header">
-        <div className="header-left">
-          <h1 className="page-title">Policy Management</h1>
-          <div className="quick-stats">
-            <div className="stat-item">
-              <span className="stat-value">{summary.totalPolicies}</span>
-              <span className="stat-label">Policies</span>
-            </div>
-            <div className="stat-item">
-              <span className="stat-value">{summary.activePolicies}</span>
-              <span className="stat-label">Active</span>
-            </div>
-            <div className="stat-item">
-              <span className="stat-value">
-                ${(summary.totalAnnualPremium / 1000).toFixed(1)}K
-              </span>
-              <span className="stat-label">Premium</span>
-            </div>
-            <div className="stat-item">
-              <span className="stat-value">
-                ${(summary.totalExpectedCommission / 1000).toFixed(1)}K
-              </span>
-              <span className="stat-label">Commission</span>
-            </div>
-            <div className="stat-item">
-              <span className="stat-value">
-                {averageCommissionRate.toFixed(1)}%
-              </span>
-              <span className="stat-label">Avg Rate</span>
-            </div>
-          </div>
-        </div>
-        <div className="header-right">
-          <button
-            onClick={() => setIsPolicyFormOpen(true)}
-            className="btn-primary"
-          >
-            <Plus size={16} />
-            New Policy
-          </button>
-        </div>
-      </div>
+    <div className="p-5 max-w-[1400px] mx-auto">
+      <PolicyDashboardHeader
+        summary={summary}
+        onNewPolicy={() => setIsPolicyFormOpen(true)}
+      />
 
       {/* Alerts Bar */}
-      {expiringPolicies.length > 0 && (
-        <div className="alert-bar">
+      {summary.expiringPolicies.length > 0 && (
+        <div className="flex items-center gap-2 p-2 px-3 bg-amber-50 border border-amber-200 rounded-md mb-4 text-[13px] text-amber-900">
           <AlertCircle size={16} />
           <span>
-            {expiringPolicies.length} policies expiring in next 30 days
+            {summary.expiringPolicies.length} policies expiring in next 30 days
           </span>
         </div>
       )}
 
       {/* Main Content Area */}
-      <div className="page-content">
+      <div>
         {/* Policy List with Actions - Passing adapter functions that maintain old interface */}
         <PolicyList
           policies={policies}
@@ -342,15 +104,15 @@ export const PolicyDashboard: React.FC = () => {
 
       {/* Modal Dialog */}
       {isPolicyFormOpen && (
-        <div className="modal-overlay" onClick={handleCloseForm}>
-          <div className="modal-dialog" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1000]" onClick={handleCloseForm}>
+          <div className="bg-white rounded-xl shadow-2xl w-[90%] max-w-[900px] max-h-[85vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-between items-center p-5 px-6 border-b border-gray-200">
+              <h2 className="text-lg font-semibold text-gray-900 m-0">
                 {editingPolicyId ? "Edit Policy" : "New Policy Submission"}
               </h2>
-              <button className="modal-close" onClick={handleCloseForm}>
+              <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-500 hover:bg-gray-100 hover:text-gray-900" onClick={handleCloseForm}>
                 ×
-              </button>
+              </Button>
             </div>
             <PolicyForm
               policyId={editingPolicyId}
@@ -362,6 +124,6 @@ export const PolicyDashboard: React.FC = () => {
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 };

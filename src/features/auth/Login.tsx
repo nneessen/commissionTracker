@@ -3,24 +3,23 @@
 import React, { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useAuth } from "../../contexts/AuthContext";
-import { Button, Input } from "../../components/ui";
+import { Button } from "../../components/ui";
 import { SESSION_STORAGE_KEYS } from "../../constants/auth.constants";
+import { useAuthValidation, AuthMode } from "./hooks/useAuthValidation";
+import { AuthErrorDisplay } from "./components/AuthErrorDisplay";
+import { AuthSuccessMessage } from "./components/AuthSuccessMessage";
+import { SignInForm } from "./components/SignInForm";
+import { SignUpForm } from "./components/SignUpForm";
+import { ResetPasswordForm } from "./components/ResetPasswordForm";
 
 interface LoginProps {
   onSuccess?: () => void;
 }
 
-type AuthMode = "signin" | "signup" | "reset";
-
-interface FormErrors {
-  email?: string;
-  password?: string;
-  confirmPassword?: string;
-}
-
 export const Login: React.FC<LoginProps> = ({ onSuccess }) => {
   const { signIn, signUp, resetPassword } = useAuth();
   const navigate = useNavigate();
+  const { formErrors, validateForm, clearErrors } = useAuthValidation();
   const [mode, setMode] = useState<AuthMode>("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -28,44 +27,11 @@ export const Login: React.FC<LoginProps> = ({ onSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
-  const [formErrors, setFormErrors] = useState<FormErrors>({});
-
-  const validateForm = (): boolean => {
-    const errors: FormErrors = {};
-
-    // Email validation
-    if (!email) {
-      errors.email = "Email is required";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      errors.email = "Please enter a valid email address";
-    }
-
-    // Password validation
-    if (mode !== "reset") {
-      if (!password) {
-        errors.password = "Password is required";
-      } else if (password.length < 6) {
-        errors.password = "Password must be at least 6 characters";
-      }
-
-      // Confirm password validation (signup only)
-      if (mode === "signup") {
-        if (!confirmPassword) {
-          errors.confirmPassword = "Please confirm your password";
-        } else if (password !== confirmPassword) {
-          errors.confirmPassword = "Passwords do not match";
-        }
-      }
-    }
-
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!validateForm()) {
+    if (!validateForm(email, password, confirmPassword, mode)) {
       return;
     }
 
@@ -190,7 +156,7 @@ export const Login: React.FC<LoginProps> = ({ onSuccess }) => {
     setMode(newMode);
     setError(null);
     setMessage(null);
-    setFormErrors({});
+    clearErrors();
     setPassword("");
     setConfirmPassword("");
   };
@@ -217,18 +183,6 @@ export const Login: React.FC<LoginProps> = ({ onSuccess }) => {
     }
   };
 
-  const getButtonText = () => {
-    if (loading) return "Please wait...";
-    switch (mode) {
-      case "signup":
-        return "Create account";
-      case "reset":
-        return "Send reset link";
-      default:
-        return "Sign in";
-    }
-  };
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-indigo-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full">
@@ -245,155 +199,50 @@ export const Login: React.FC<LoginProps> = ({ onSuccess }) => {
 
         {/* Main Card */}
         <div className="bg-white rounded-2xl shadow-xl p-8 space-y-6">
-          {/* Success Message */}
-          {message && (
-            <div className="rounded-xl bg-green-50 border border-green-200 p-4 animate-fadeIn">
-              <div className="flex items-start">
-                <div className="flex-shrink-0">
-                  <svg
-                    className="h-5 w-5 text-green-600"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                </div>
-                <p className="ml-3 text-sm font-medium text-green-800">
-                  {message}
-                </p>
-              </div>
-            </div>
+          <AuthSuccessMessage message={message || ''} />
+
+          <AuthErrorDisplay
+            error={error || ''}
+            mode={mode}
+            onSwitchToSignup={() => switchMode("signup")}
+          />
+
+          {mode === "signin" && (
+            <SignInForm
+              email={email}
+              password={password}
+              loading={loading}
+              formErrors={formErrors}
+              onEmailChange={setEmail}
+              onPasswordChange={setPassword}
+              onSubmit={handleSubmit}
+              onForgotPassword={() => switchMode("reset")}
+            />
           )}
 
-          {/* Error Message */}
-          {error && (
-            <div className="rounded-xl bg-red-50 border border-red-200 p-4 animate-fadeIn">
-              <div className="flex items-start">
-                <div className="flex-shrink-0">
-                  <svg
-                    className="h-5 w-5 text-red-600"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                </div>
-                <div className="ml-3">
-                  <p className="text-sm font-medium text-red-800">{error}</p>
-                  {/* Show "Create account" button for invalid credentials */}
-                  {mode === "signin" && error.includes("No account found") && (
-                    <Button
-                      type="button"
-                      onClick={() => switchMode("signup")}
-                      variant="link"
-                      className="mt-2 h-auto p-0 text-sm font-semibold text-red-700 hover:text-red-600 underline"
-                    >
-                      Create a new account
-                    </Button>
-                  )}
-                  {/* Show support link for disabled accounts */}
-                  {error.includes("disabled") && (
-                    <a
-                      href="mailto:support@commissiontracker.com"
-                      className="mt-2 inline-block text-sm font-semibold text-red-700 hover:text-red-600 underline transition-colors"
-                    >
-                      Contact Support
-                    </a>
-                  )}
-                </div>
-              </div>
-            </div>
+          {mode === "signup" && (
+            <SignUpForm
+              email={email}
+              password={password}
+              confirmPassword={confirmPassword}
+              loading={loading}
+              formErrors={formErrors}
+              onEmailChange={setEmail}
+              onPasswordChange={setPassword}
+              onConfirmPasswordChange={setConfirmPassword}
+              onSubmit={handleSubmit}
+            />
           )}
 
-          {/* Form */}
-          <form className="space-y-5" onSubmit={handleSubmit}>
-            {/* Email Input */}
-            <div className="space-y-1">
-              <label className="text-sm font-medium">Email address</label>
-              <Input
-                type="email"
-                placeholder="you@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                disabled={loading}
-                className="w-full"
-              />
-              {formErrors.email && (
-                <p className="text-xs text-red-500">{formErrors.email}</p>
-              )}
-            </div>
-
-            {/* Password Input */}
-            {mode !== "reset" && (
-              <div className="space-y-1">
-                <label className="text-sm font-medium">Password</label>
-                <Input
-                  type="password"
-                  placeholder="Enter your password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  disabled={loading}
-                  className="w-full"
-                />
-                {formErrors.password && (
-                  <p className="text-xs text-red-500">{formErrors.password}</p>
-                )}
-              </div>
-            )}
-
-            {/* Confirm Password Input (signup only) */}
-            {mode === "signup" && (
-              <div className="space-y-1">
-                <label className="text-sm font-medium">Confirm password</label>
-                <Input
-                  type="password"
-                  placeholder="Confirm your password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
-                  disabled={loading}
-                  className="w-full"
-                />
-                {formErrors.confirmPassword && (
-                  <p className="text-xs text-red-500">{formErrors.confirmPassword}</p>
-                )}
-              </div>
-            )}
-
-            {/* Forgot Password Link (signin only) */}
-            {mode === "signin" && (
-              <div className="flex items-center justify-end">
-                <Button
-                  type="button"
-                  onClick={() => switchMode("reset")}
-                  variant="link"
-                  className="h-auto p-0 text-sm font-medium text-blue-600 hover:text-blue-500"
-                  disabled={loading}
-                >
-                  Forgot your password?
-                </Button>
-              </div>
-            )}
-
-            {/* Submit Button */}
-            <Button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3 text-base font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white"
-            >
-              {loading ? 'Processing...' : getButtonText()}
-            </Button>
-          </form>
+          {mode === "reset" && (
+            <ResetPasswordForm
+              email={email}
+              loading={loading}
+              formErrors={formErrors}
+              onEmailChange={setEmail}
+              onSubmit={handleSubmit}
+            />
+          )}
 
           {/* Mode Switcher */}
           <div className="relative">
@@ -414,8 +263,8 @@ export const Login: React.FC<LoginProps> = ({ onSuccess }) => {
               type="button"
               onClick={() => switchMode("signup")}
               variant="link"
-              className="w-full text-center text-sm font-medium text-blue-600 hover:text-blue-500 py-2"
               disabled={loading}
+              className="w-full text-center text-sm font-medium text-blue-600 hover:text-blue-500 h-auto py-2"
             >
               Create a new account
             </Button>
@@ -426,8 +275,8 @@ export const Login: React.FC<LoginProps> = ({ onSuccess }) => {
               type="button"
               onClick={() => switchMode("signin")}
               variant="link"
-              className="w-full text-center text-sm font-medium text-blue-600 hover:text-blue-500 py-2"
               disabled={loading}
+              className="w-full text-center text-sm font-medium text-blue-600 hover:text-blue-500 h-auto py-2"
             >
               Sign in instead
             </Button>

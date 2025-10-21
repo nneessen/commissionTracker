@@ -243,21 +243,16 @@ export const CompGuideImporter: React.FC<CompGuideImporterProps> = ({
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1000]">
       <div
-        className="bg-card rounded-xl p-6 max-h-[80vh] overflow-auto shadow-2xl"
-        style={{
-          width: step === 'preview' ? '800px' : '600px',
-        }}
+        className={cn(
+          "bg-card rounded-xl p-6 max-h-[80vh] overflow-auto shadow-2xl",
+          step === 'preview' ? 'w-[800px]' : 'w-[600px]'
+        )}
       >
         <div className="flex justify-between items-center mb-6">
           <h2 className="m-0 text-2xl font-semibold">
             Import FFG Commission Guide
           </h2>
-          <Button
-            onClick={onClose}
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8"
-          >
+          <Button onClick={onClose} variant="ghost" size="icon">
             <X size={20} />
           </Button>
         </div>
@@ -347,6 +342,7 @@ export const CompGuideImporter: React.FC<CompGuideImporterProps> = ({
                 <Button
                   onClick={proceedToMapping}
                   disabled={selectedCarriers.length === 0}
+                  className="bg-info text-white hover:bg-info/90"
                 >
                   Continue Import
                 </Button>
@@ -397,6 +393,7 @@ export const CompGuideImporter: React.FC<CompGuideImporterProps> = ({
               </Button>
               <Button
                 onClick={startImport}
+                className="bg-info text-white hover:bg-info/90"
               >
                 Start Import
               </Button>
@@ -414,9 +411,9 @@ export const CompGuideImporter: React.FC<CompGuideImporterProps> = ({
               Please wait while we import the commission guide data.
             </p>
 
-            <div className="w-full h-2 bg-muted rounded overflow-hidden mb-2">
+            <div className="w-full h-2 bg-muted rounded overflow-hidden mb-2 relative">
               <div
-                className="h-full bg-info transition-all duration-300 ease-in-out"
+                className="absolute top-0 left-0 h-full bg-info transition-all duration-300 ease-in-out"
                 style={{ width: `${progress}%` }}
               />
             </div>
@@ -474,6 +471,7 @@ export const CompGuideImporter: React.FC<CompGuideImporterProps> = ({
             <div className="flex justify-end">
               <Button
                 onClick={onClose}
+                className="bg-info text-white hover:bg-info/90"
               >
                 Close
               </Button>

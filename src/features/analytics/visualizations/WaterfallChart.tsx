@@ -25,9 +25,9 @@ export function WaterfallChart({ data, title = 'Performance Attribution' }: Wate
   };
 
   const bars = [
-    { label: 'Volume Effect', value: data.volumeEffect || 0, color: '#3b82f6', percent: data.volumePercent || 0 },
-    { label: 'Rate Effect', value: data.rateEffect || 0, color: '#10b981', percent: data.ratePercent || 0 },
-    { label: 'Mix Effect', value: data.mixEffect || 0, color: '#f59e0b', percent: data.mixPercent || 0 },
+    { label: 'Volume Effect', value: data.volumeEffect || 0, color: 'rgb(59, 130, 246)', percent: data.volumePercent || 0 },
+    { label: 'Rate Effect', value: data.rateEffect || 0, color: 'rgb(16, 185, 129)', percent: data.ratePercent || 0 },
+    { label: 'Mix Effect', value: data.mixEffect || 0, color: 'rgb(245, 158, 11)', percent: data.mixPercent || 0 },
   ];
 
   const maxValue = Math.max(...bars.map(b => Math.abs(b.value)), Math.abs(data.totalChange || 0), 1); // Minimum 1 to avoid division by zero
@@ -50,14 +50,7 @@ export function WaterfallChart({ data, title = 'Performance Attribution' }: Wate
   return (
     <div>
       {/* Title */}
-      <div style={{
-        fontSize: '13px',
-        fontWeight: 600,
-        color: '#1a1a1a',
-        marginBottom: '20px',
-        textTransform: 'uppercase',
-        letterSpacing: '0.5px'
-      }}>
+      <div className="text-sm font-semibold text-foreground mb-5 uppercase tracking-wide">
         {title}
       </div>
 
@@ -73,7 +66,7 @@ export function WaterfallChart({ data, title = 'Performance Attribution' }: Wate
           y1={chartHeight / 2}
           x2="100%"
           y2={chartHeight / 2}
-          stroke="#e2e8f0"
+          stroke="rgb(226, 232, 240)"
           strokeWidth="2"
         />
 
@@ -119,7 +112,7 @@ export function WaterfallChart({ data, title = 'Performance Attribution' }: Wate
                 textAnchor="middle"
                 fontSize="10px"
                 fontWeight="500"
-                fill="#656d76"
+                fill="rgb(101, 109, 118)"
               >
                 {bar.percent.toFixed(0)}%
               </text>
@@ -131,7 +124,7 @@ export function WaterfallChart({ data, title = 'Performance Attribution' }: Wate
                 textAnchor="middle"
                 fontSize="11px"
                 fontWeight="500"
-                fill="#1a1a1a"
+                fill="rgb(26, 26, 26)"
               >
                 {bar.label}
               </text>
@@ -143,7 +136,7 @@ export function WaterfallChart({ data, title = 'Performance Attribution' }: Wate
                   y1={yEnd}
                   x2={x + barWidth + gap}
                   y2={yEnd}
-                  stroke="#94a3b8"
+                  stroke="rgb(148, 163, 184)"
                   strokeWidth="2"
                   strokeDasharray="4,4"
                 />
@@ -171,7 +164,7 @@ export function WaterfallChart({ data, title = 'Performance Attribution' }: Wate
                     y={y}
                     width={barWidth}
                     height={height}
-                    fill={isPositive ? '#10b981' : '#ef4444'}
+                    fill={isPositive ? 'rgb(16, 185, 129)' : 'rgb(239, 68, 68)'}
                     opacity={0.9}
                     rx="4"
                   />
@@ -183,7 +176,7 @@ export function WaterfallChart({ data, title = 'Performance Attribution' }: Wate
                     textAnchor="middle"
                     fontSize="12px"
                     fontWeight="700"
-                    fill={isPositive ? '#10b981' : '#ef4444'}
+                    fill={isPositive ? 'rgb(16, 185, 129)' : 'rgb(239, 68, 68)'}
                     fontFamily="Monaco, monospace"
                   >
                     {formatCurrency(data.totalChange)}
@@ -196,7 +189,7 @@ export function WaterfallChart({ data, title = 'Performance Attribution' }: Wate
                     textAnchor="middle"
                     fontSize="11px"
                     fontWeight="600"
-                    fill="#1a1a1a"
+                    fill="rgb(26, 26, 26)"
                   >
                     Total Change
                   </text>
@@ -208,24 +201,17 @@ export function WaterfallChart({ data, title = 'Performance Attribution' }: Wate
       </svg>
 
       {/* Legend */}
-      <div style={{
-        marginTop: '20px',
-        display: 'flex',
-        gap: '16px',
-        fontSize: '11px',
-        color: '#656d76',
-        flexWrap: 'wrap'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <div style={{ width: '12px', height: '12px', background: '#3b82f6', borderRadius: '2px' }} />
+      <div className="mt-5 flex gap-4 text-xs text-muted-foreground flex-wrap">
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-3 bg-info rounded-sm" />
           <span>Volume Effect: More/fewer policies</span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <div style={{ width: '12px', height: '12px', background: '#10b981', borderRadius: '2px' }} />
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-3 bg-success rounded-sm" />
           <span>Rate Effect: Commission % changes</span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <div style={{ width: '12px', height: '12px', background: '#f59e0b', borderRadius: '2px' }} />
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-3 bg-warning rounded-sm" />
           <span>Mix Effect: Product composition shifts</span>
         </div>
       </div>

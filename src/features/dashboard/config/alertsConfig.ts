@@ -9,7 +9,7 @@
 
 import { AlertConfig } from '../../../types/dashboard.types';
 import { TimePeriod, getPeriodLabel } from '../../../utils/dateRange';
-import { formatPercent, formatCurrency } from '../../../utils/formatting';
+import { formatPercent, formatCurrency } from '../../../lib/format';
 
 interface AlertsConfigParams {
   timePeriod: TimePeriod;

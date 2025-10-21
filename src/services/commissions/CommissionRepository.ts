@@ -3,23 +3,9 @@ import { logger } from '../base/logger';
 import { BaseRepository } from '../base/BaseRepository';
 import { TABLES } from '../base/supabase';
 import { Commission, CreateCommissionData, UpdateCommissionData } from '../../types/commission.types';
-import { caches, DataLoader } from '../../utils/cache';
-import { batchLoadByIds, batchLoadByForeignKey } from '../../utils/queryBatch';
 import { queryPerformance, measureAsync } from '../../utils/performance';
 
 export class CommissionRepository extends BaseRepository<Commission, CreateCommissionData, UpdateCommissionData> {
-  // DataLoader for batching findById requests
-  private idLoader = new DataLoader<string, Commission>(
-    async (ids: string[]) => {
-      const resultMap = await batchLoadByIds<any>(TABLES.COMMISSIONS, ids);
-      return ids.map(id => {
-        const data = resultMap.get(id);
-        return data ? this.transformFromDB(data) : null as any;
-      });
-    },
-    { maxBatchSize: 100, batchWindowMs: 10 }
-  );
-
   constructor() {
     super(TABLES.COMMISSIONS);
   }
@@ -71,49 +57,8 @@ export class CommissionRepository extends BaseRepository<Commission, CreateCommi
     } as Commission;
   }
 
-  /**
-   * Override findById to use caching and batching
-   */
-  async findById(id: string): Promise<Commission | null> {
-    // Check cache first
-    const cacheKey = `commission:${id}`;
-    const cached = caches.commissions.get(cacheKey);
-    if (cached) {
-      return cached as Commission;
-    }
-
-    try {
-      // Use DataLoader for automatic batching
-      const commission = await this.idLoader.load(id);
-
-      // Cache the result
-      if (commission) {
-        caches.commissions.set(cacheKey, commission);
-      }
-
-      return commission;
-    } catch (error) {
-      // Fallback to base implementation
-      return super.findById(id);
-    }
-  }
-
-  /**
-   * Batch load commissions by IDs
-   */
-  async findByIds(ids: string[]): Promise<Commission[]> {
-    if (ids.length === 0) return [];
-
-    try {
-      const resultMap = await batchLoadByIds<any>(TABLES.COMMISSIONS, ids);
-      return ids
-        .map(id => resultMap.get(id))
-        .filter(Boolean)
-        .map(data => this.transformFromDB(data));
-    } catch (error) {
-      throw this.wrapError(error, 'findByIds');
-    }
-  }
+  // findById() and findByIds() removed - using base implementation
+  // TanStack Query handles caching and request deduplication automatically
 
   async findByPolicy(policyId: string): Promise<Commission[]> {
     return queryPerformance.trackQuery('findByPolicy', 'commissions', async () => {

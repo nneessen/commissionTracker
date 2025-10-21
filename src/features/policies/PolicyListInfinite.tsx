@@ -9,6 +9,7 @@ import {
   ChevronDown,
   Loader2,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { useCarriers } from "../../hooks/carriers";
 import { useInfinitePolicies, usePolicyCount } from "../../hooks/policies/useInfinitePolicies";
 import { Policy, PolicyFilters, PolicyStatus } from "../../types/policy.types";
@@ -140,9 +141,9 @@ export const PolicyListInfinite: React.FC<PolicyListInfiniteProps> = ({
       <div className="policy-list">
         <div className="error-container">
           <p>Error loading policies: {error?.message}</p>
-          <button onClick={() => refetch()} className="btn btn-primary">
+          <Button onClick={() => refetch()} size="sm">
             Retry
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -163,13 +164,15 @@ export const PolicyListInfinite: React.FC<PolicyListInfiniteProps> = ({
         </div>
 
         <div className="header-actions">
-          <button
+          <Button
+            variant="outline"
+            size="sm"
             className="filter-toggle"
             onClick={() => setShowFilters(!showFilters)}
           >
             <Filter size={16} />
             Filters {showFilters ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-          </button>
+          </Button>
           <div className="policy-count">
             {totalFetched} of {count || '...'} policies loaded
           </div>
@@ -299,13 +302,15 @@ export const PolicyListInfinite: React.FC<PolicyListInfiniteProps> = ({
                     </td>
                     <td className="date">{formatDate(policy.effectiveDate)}</td>
                     <td className="actions">
-                      <button
+                      <Button
                         onClick={() => onEditPolicy(policy.id)}
-                        className="action-btn edit"
+                        variant="ghost"
+                        size="icon"
+                        className="action-btn edit h-8 w-8"
                         title="Edit"
                       >
                         <Edit size={14} />
-                      </button>
+                      </Button>
                       <select
                         value={policy.status}
                         onChange={(e) =>
@@ -320,13 +325,15 @@ export const PolicyListInfinite: React.FC<PolicyListInfiniteProps> = ({
                         <option value="cancelled">Cancelled</option>
                         <option value="matured">Matured</option>
                       </select>
-                      <button
+                      <Button
                         onClick={() => handleDelete(policy.id)}
-                        className="action-btn delete"
+                        variant="ghost"
+                        size="icon"
+                        className="action-btn delete h-8 w-8"
                         title="Delete"
                       >
                         <Trash2 size={14} />
-                      </button>
+                      </Button>
                     </td>
                   </tr>
                 );
