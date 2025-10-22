@@ -4,7 +4,7 @@
  * Only logs in development mode, silent in production
  */
 
-type LogLevel = 'debug' | 'info' | 'warn' | 'error';
+type LogLevel = "debug" | "info" | "warn" | "error";
 
 interface LogEntry {
   level: LogLevel;
@@ -15,22 +15,22 @@ interface LogEntry {
 }
 
 class Logger {
-  private isDevelopment = import.meta.env.MODE === 'development';
-  private isDebugEnabled = import.meta.env.VITE_DEBUG === 'true';
+  private isDevelopment = import.meta.env.MODE === "development";
+  private isDebugEnabled = import.meta.env.VITE_DEBUG === "true";
 
   private formatMessage(entry: LogEntry): string {
     const timestamp = entry.timestamp.toISOString();
-    const context = entry.context ? `[${entry.context}]` : '';
+    const context = entry.context ? `[${entry.context}]` : "";
     return `${timestamp} ${context} ${entry.level.toUpperCase()}: ${entry.message}`;
   }
 
   private shouldLog(level: LogLevel): boolean {
     if (!this.isDevelopment) {
       // In production, only log errors
-      return level === 'error';
+      return level === "error";
     }
 
-    if (!this.isDebugEnabled && level === 'debug') {
+    if (!this.isDebugEnabled && level === "debug") {
       // Debug logs only when explicitly enabled
       return false;
     }
@@ -38,7 +38,12 @@ class Logger {
     return true;
   }
 
-  private log(level: LogLevel, message: string, data?: Record<string, unknown> | string | number | boolean | null | Error, context?: string): void {
+  private log(
+    level: LogLevel,
+    message: string,
+    data?: Record<string, unknown> | string | number | boolean | null | Error,
+    context?: string,
+  ): void {
     if (!this.shouldLog(level)) {
       return;
     }
@@ -54,28 +59,28 @@ class Logger {
     const formattedMessage = this.formatMessage(entry);
 
     switch (level) {
-      case 'debug':
+      case "debug":
         if (data) {
           console.debug(formattedMessage, data);
         } else {
           console.debug(formattedMessage);
         }
         break;
-      case 'info':
+      case "info":
         if (data) {
           console.info(formattedMessage, data);
         } else {
           console.info(formattedMessage);
         }
         break;
-      case 'warn':
+      case "warn":
         if (data) {
           console.warn(formattedMessage, data);
         } else {
           console.warn(formattedMessage);
         }
         break;
-      case 'error':
+      case "error":
         if (data) {
           console.error(formattedMessage, data);
         } else {
@@ -85,25 +90,45 @@ class Logger {
     }
   }
 
-  debug(message: string, data?: Record<string, unknown> | string | number | boolean | null | Error, context?: string): void {
-    this.log('debug', message, data, context);
+  debug(
+    message: string,
+    data?: Record<string, unknown> | string | number | boolean | null | Error,
+    context?: string,
+  ): void {
+    this.log("debug", message, data, context);
   }
 
-  info(message: string, data?: Record<string, unknown> | string | number | boolean | null | Error, context?: string): void {
-    this.log('info', message, data, context);
+  info(
+    message: string,
+    data?: Record<string, unknown> | string | number | boolean | null | Error,
+    context?: string,
+  ): void {
+    this.log("info", message, data, context);
   }
 
-  warn(message: string, data?: Record<string, unknown> | string | number | boolean | null | Error, context?: string): void {
-    this.log('warn', message, data, context);
+  warn(
+    message: string,
+    data?: Record<string, unknown> | string | number | boolean | null | Error,
+    context?: string,
+  ): void {
+    this.log("warn", message, data, context);
   }
 
-  error(message: string, data?: Record<string, unknown> | string | number | boolean | null | Error, context?: string): void {
-    this.log('error', message, data, context);
+  error(
+    message: string,
+    data?: Record<string, unknown> | string | number | boolean | null | Error,
+    context?: string,
+  ): void {
+    this.log("error", message, data, context);
   }
 
-  // Specific auth-related logging
-  auth(event: string, data?: Record<string, unknown> | string | number | boolean | null | Error): void {
-    this.info(`Auth event: ${event}`, data, 'Auth');
+  // Specific auth-related logging - DISABLED (too noisy)
+  auth(
+    event: string,
+    data?: Record<string, unknown> | string | number | boolean | null | Error,
+  ): void {
+    // Disabled - auth logging was too verbose
+    // this.info(`Auth event: ${event}`, data, "Auth");
   }
 
   // Track performance
@@ -139,3 +164,4 @@ export const logger = new Logger();
 // Export for testing or custom instances
 export { Logger };
 export type { LogLevel, LogEntry };
+

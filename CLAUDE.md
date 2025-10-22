@@ -120,6 +120,40 @@ This is a full-stack application for insurance sales agents to track Key Perform
 2. Verify no duplicate directories exist (`database/`, `db/`, etc.)
 3. Use `git status` to see if migrations are already in progress
 
+**CRITICAL: Debugging Database Trigger Conflicts**
+
+If you encounter errors like "record 'v_commission' has no field 'commission_amount'":
+
+1. **Check for duplicate triggers** (multiple triggers on same table for same event):
+   ```sql
+   SELECT trigger_name, event_object_table, event_manipulation, action_statement
+   FROM information_schema.triggers
+   WHERE event_object_table IN ('policies', 'commissions')
+   ORDER BY event_object_table, trigger_name;
+   ```
+
+2. **Find functions with wrong field references**:
+   ```sql
+   SELECT proname, prosrc
+   FROM pg_proc
+   WHERE prosrc LIKE '%commission_amount%'
+   AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public');
+   ```
+
+3. **Identify the OLD broken function** - It will reference non-existent field names like `commission_amount` or `advance_amount`
+
+4. **Remove only the OLD one** (keep the newer, corrected version):
+   ```sql
+   DROP TRIGGER IF EXISTS old_trigger_name ON table_name;
+   DROP FUNCTION IF EXISTS old_function_name();
+   ```
+
+5. **Verify correct field names** in commissions table are:
+   - `amount` (NOT commission_amount, NOT advance_amount)
+   - `advance_months`, `months_paid`, `earned_amount`, `unearned_amount`, `chargeback_amount`, `status`
+
+**Root Cause**: Old migrations create functions with wrong field names, new migrations create corrected versions, but BOTH exist in database. The OLD one executes FIRST and fails, blocking the corrected one. Solution: DELETE the old broken function and trigger, keep only the corrected version.
+
 ## Code Quality Rules
 
 - TypeScript strict mode on.
