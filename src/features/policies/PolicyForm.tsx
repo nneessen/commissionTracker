@@ -28,7 +28,7 @@ interface PolicyFormProps {
   policyId?: string;
   onClose: () => void;
   addPolicy: (form: NewPolicyForm) => Promise<Policy | null>;
-  updatePolicy: (id: string, updates: any) => Promise<void>;
+  updatePolicy: (id: string, updates: Partial<NewPolicyForm>) => Promise<void>;
   getPolicyById: (id: string) => Policy | undefined;
 }
 

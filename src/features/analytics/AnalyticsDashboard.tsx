@@ -125,7 +125,7 @@ export function AnalyticsDashboard() {
                 className="bg-success hover:bg-success/90 text-white"
                 title="Export data to CSV"
               >
-                📊 Export CSV
+                Export CSV
               </Button>
               <Button
                 onClick={handlePrintPDF}
@@ -133,7 +133,7 @@ export function AnalyticsDashboard() {
                 variant="destructive"
                 title="Print report to PDF"
               >
-                📄 Print PDF
+                Print PDF
               </Button>
             </div>
           </div>

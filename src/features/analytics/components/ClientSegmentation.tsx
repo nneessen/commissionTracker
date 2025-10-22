@@ -1,6 +1,6 @@
 // src/features/analytics/components/ClientSegmentation.tsx
 
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useAnalyticsData } from '../../../hooks';
 import { ClientSegmentationInfoPanel } from './ClientSegmentationInfoPanel';
@@ -17,9 +17,8 @@ export function ClientSegmentation() {
   const [showInfo, setShowInfo] = useState(false);
 
   // Transform segmentation data into displayable format
-  const segments = useMemo(() => {
-    if (!segmentation) return [];
-
+  // React 19.1 optimizes automatically - no need for useMemo
+  const segments = !segmentation ? [] : (() => {
     const { segments: segmentData } = segmentation;
     const totalRevenue = segmentData.totalPremiumByTier.high + segmentData.totalPremiumByTier.medium + segmentData.totalPremiumByTier.low;
 
@@ -46,7 +45,7 @@ export function ClientSegmentation() {
         percentage: totalRevenue > 0 ? (segmentData.totalPremiumByTier.low / totalRevenue) * 100 : 0,
       },
     ];
-  }, [segmentation]);
+  })();
 
   if (isLoading) {
     return (

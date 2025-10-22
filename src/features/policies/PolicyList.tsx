@@ -113,7 +113,8 @@ export const PolicyList: React.FC<PolicyListProps> = ({
     const filtered = filterPolicies({ ...filters, searchTerm });
 
     return [...filtered].sort((a, b) => {
-      let aVal: any, bVal: any;
+      let aVal: string | number;
+      let bVal: string | number;
 
       switch (sortField) {
         case "policyNumber":
@@ -180,7 +181,7 @@ export const PolicyList: React.FC<PolicyListProps> = ({
     }
   };
 
-  const handleStatusChange = (commission: any, newStatus: string, policy: Policy) => {
+  const handleStatusChange = (commission: { id: string }, newStatus: string, policy: Policy) => {
     // The useUpdateCommissionStatus hook handles policy status updates
     updateCommissionStatus({
       commissionId: commission.id,

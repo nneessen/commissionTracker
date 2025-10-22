@@ -86,7 +86,7 @@ export const usePolicyMutations = (refetch: () => void) => {
             refetch();
             resolve(data);
           },
-          onError: (error: any) => {
+          onError: (error: Error) => {
             const errorMessage = error?.message || 'Failed to create policy. Please try again.';
             showToast.error(errorMessage);
             reject(error);

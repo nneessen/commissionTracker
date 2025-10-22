@@ -15,6 +15,7 @@ import { Plus, Search, Edit, Trash2 } from 'lucide-react';
 import { useCarriers, Carrier } from './hooks/useCarriers';
 import { CarrierForm } from './components/CarrierForm';
 import { CarrierDeleteDialog } from './components/CarrierDeleteDialog';
+import { NewCarrierForm } from '../../../types/carrier.types';
 
 export function CarriersManagement() {
   const { carriers, isLoading, createCarrier, updateCarrier, deleteCarrier } = useCarriers();
@@ -57,7 +58,7 @@ export function CarriersManagement() {
     setIsDeleteDialogOpen(true);
   };
 
-  const handleFormSubmit = async (data: any) => {
+  const handleFormSubmit = async (data: NewCarrierForm) => {
     if (selectedCarrier) {
       await updateCarrier.mutateAsync({ id: selectedCarrier.id, data });
     } else {

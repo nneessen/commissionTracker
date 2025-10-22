@@ -26,6 +26,7 @@ import { useProducts, Product } from './hooks/useProducts';
 import { useCarriers } from '../carriers/hooks/useCarriers';
 import { ProductForm } from './components/ProductForm';
 import { ProductBulkImport } from './components/ProductBulkImport';
+import { ProductFormData } from '../../../types/product.types';
 
 export function ProductsManagement() {
   const { products, isLoading, createProduct, updateProduct, deleteProduct, bulkImportProducts } = useProducts();
@@ -72,7 +73,7 @@ export function ProductsManagement() {
     setIsDeleteDialogOpen(true);
   };
 
-  const handleFormSubmit = async (data: any) => {
+  const handleFormSubmit = async (data: ProductFormData) => {
     if (selectedProduct) {
       await updateProduct.mutateAsync({ id: selectedProduct.id, data });
     } else {
@@ -90,7 +91,7 @@ export function ProductsManagement() {
     }
   };
 
-  const handleBulkImport = async (productsData: any[]) => {
+  const handleBulkImport = async (productsData: ProductFormData[]) => {
     await bulkImportProducts.mutateAsync(productsData);
     setIsBulkImportOpen(false);
   };
