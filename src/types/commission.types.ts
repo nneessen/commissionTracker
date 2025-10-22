@@ -11,12 +11,22 @@ export type CommissionType = 'first_year' | 'renewal' | 'trail' | 'bonus' | 'ove
 
 /**
  * Commission Status Lifecycle
+ *
+ * USER-CONTROLLABLE STATUSES (Normal lifecycle):
  * - pending: Policy not active yet, no commission owed
  * - earned: Policy active, commission earned but not paid yet (money not received)
  * - paid: Money actually received in bank account
- * - clawback: Commission was paid but clawed back
- * - charged_back: Chargeback has been applied due to policy lapse/cancellation
- * - cancelled: Commission cancelled (policy cancelled/lapsed)
+ *
+ * AUTOMATIC TERMINAL STATUSES (Set by database triggers only):
+ * - charged_back: Chargeback applied when policy lapses/cancels before fully earned (AUTOMATIC)
+ * - cancelled: Commission cancelled when policy cancelled/lapsed (AUTOMATIC)
+ * - clawback: Commission was paid but later clawed back (AUTOMATIC)
+ *
+ * IMPORTANT:
+ * - charged_back, cancelled, and clawback should NEVER be set manually via UI
+ * - These statuses are set automatically by database triggers when policies lapse/cancel
+ * - User should use policy action buttons (Cancel Policy, Mark as Lapsed) instead
+ * - Commission status FOLLOWS policy status, not vice versa
  */
 export type CommissionStatus = 'pending' | 'earned' | 'paid' | 'clawback' | 'charged_back' | 'cancelled';
 export type CalculationBasis = 'premium' | 'fixed' | 'tiered';

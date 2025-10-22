@@ -287,7 +287,7 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (validateForm()) {
@@ -304,11 +304,12 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
 
       try {
         if (policyId) {
-          updatePolicy(policyId, submissionData);
+          await updatePolicy(policyId, submissionData);
+          onClose(); // Close dialog after successful update
         } else {
-          addPolicy(submissionData);
+          await addPolicy(submissionData);
+          onClose(); // Close dialog after successful add
         }
-        // Don't close immediately - let the mutation handler close on success
       } catch (error) {
         alert(
           `Error: ${error instanceof Error ? error.message : "Failed to save policy"}`,

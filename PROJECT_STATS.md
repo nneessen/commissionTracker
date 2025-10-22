@@ -1,15 +1,15 @@
 # Project Statistics
 
-Last Updated: 2025-10-21 15:01:36
+Last Updated: 2025-10-22 12:48:20
 
 ## Metrics
-- Total Files: 21723
-- Total Lines of Code: 287112
-- Total Commits: 99
+- Total Files: 21724
+- Total Lines of Code: 287204
+- Total Commits: 107
 
 ## Recent Activity
-9c9ba83 docs: multiple changes in .,plans/active,plans/completed
-4644431 refactor(services): remove redundant caching layer and consolidate utilities
-640cd3c docs: multiple changes in .,commission_tracker_package,commission_tracker_package/database
-128a31c refactor(ui): reorganize components into custom_ui directory
-24628ce docs: multiple changes in .,src/features/policies,src/types
+965ee02 docs: add migration fix guide and update workflow documentation
+9a8f740 fix: remove duplicate trigger and disable auth logging
+0da1880 a
+4e09b6e refactor(components): remove useMemo, fix any types, and clean up code quality
+d49617c Merge remote main branch into local

@@ -502,18 +502,16 @@ export const PolicyList: React.FC<PolicyListProps> = ({
                     <td className="py-2.5 px-3 text-center min-w-[100px]">
                       {policyCommission ? (
                         <Select
-                          value={policyCommission.status}
+                          value={policyCommission.status === 'charged_back' || policyCommission.status === 'earned' ? 'cancelled' : policyCommission.status}
                           onValueChange={(value) => handleStatusChange(policyCommission, value, policy)}
                         >
                           <SelectTrigger
                             className={cn(
                             "h-7 text-xs w-[110px] border-gray-300",
-                            policyCommission.status === 'charged_back' || policyCommission.status === 'cancelled'
-                              ? "text-destructive"
-                              : policyCommission.status === 'paid'
+                            policyCommission.status === 'paid'
                               ? "text-success"
-                              : policyCommission.status === 'earned'
-                              ? "text-info"
+                              : policyCommission.status === 'cancelled' || policyCommission.status === 'charged_back'
+                              ? "text-destructive"
                               : "text-warning"
                           )}>
                             <SelectValue />
@@ -525,22 +523,10 @@ export const PolicyList: React.FC<PolicyListProps> = ({
                                 Pending
                               </span>
                             </SelectItem>
-                            <SelectItem value="earned" className="text-xs">
-                              <span className="flex items-center gap-1">
-                                <span className="w-2 h-2 rounded-full bg-info" />
-                                Earned
-                              </span>
-                            </SelectItem>
                             <SelectItem value="paid" className="text-xs">
                               <span className="flex items-center gap-1">
                                 <span className="w-2 h-2 rounded-full bg-success" />
                                 Paid
-                              </span>
-                            </SelectItem>
-                            <SelectItem value="charged_back" className="text-xs">
-                              <span className="flex items-center gap-1">
-                                <span className="w-2 h-2 rounded-full bg-destructive" />
-                                Charged Back
                               </span>
                             </SelectItem>
                             <SelectItem value="cancelled" className="text-xs">

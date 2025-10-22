@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-10-22 12:48:20
+
+### Changed Files
+- `package-lock.json`
+- `src/features/policies/PolicyForm.tsx`
+- `src/features/policies/PolicyList.tsx`
+- `src/hooks/commissions/useUpdateCommissionStatus.ts`
+- `src/types/commission.types.ts`
+
+### Statistics
+```
+ 5 files changed, 69 insertions(+), 43 deletions(-)
+```
+
 ## [Checkpoint] - 2025-10-21 15:01:36
 
 ### Changed Files

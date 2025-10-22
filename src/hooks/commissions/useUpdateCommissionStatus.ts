@@ -9,6 +9,17 @@ interface UpdateCommissionStatusParams {
   policyId?: string;
 }
 
+/**
+ * Commission Status Architecture
+ *
+ * This hook handles manual commission status updates for the normal lifecycle:
+ * - pending → earned → paid
+ *
+ * IMPORTANT: Terminal states (charged_back, cancelled, clawback) should NOT be set manually.
+ * They are set automatically by database triggers when policies lapse/cancel.
+ *
+ * To cancel/lapse a policy, use policy action buttons which trigger database automation.
+ */
 export const useUpdateCommissionStatus = () => {
   const queryClient = useQueryClient();
 
@@ -39,27 +50,25 @@ export const useUpdateCommissionStatus = () => {
         throw commissionError;
       }
 
-      // CRITICAL: Update policy status based on commission status
+      // Update policy status when commission status changes
       if (policyId) {
         let policyStatus = 'active'; // default
 
-        if (status === 'cancelled' || status === 'charged_back') {
+        if (status === 'cancelled') {
           policyStatus = 'cancelled';
-        } else if (status === 'paid' || status === 'earned') {
+        } else if (status === 'paid') {
           policyStatus = 'active';
         } else if (status === 'pending') {
           policyStatus = 'pending';
         }
 
-        const { data: policyData, error: policyError } = await supabase
+        const { error: policyError } = await supabase
           .from('policies')
           .update({
             status: policyStatus,
             updated_at: new Date().toISOString()
           })
-          .eq('id', policyId)
-          .select()
-          .single();
+          .eq('id', policyId);
 
         if (policyError) {
           throw new Error(`Failed to update policy status: ${policyError.message}`);
