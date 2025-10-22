@@ -14,7 +14,6 @@ import type { CreateExpenseData } from "../../types/expense.types";
 import type { NewPolicyForm, CreatePolicyData } from "../../types/policy.types";
 
 // Components
-import { Button } from "@/components/ui/button";
 import { DashboardHeader } from "./components/DashboardHeader";
 import { TimePeriodSwitcher } from "./components/TimePeriodSwitcher";
 import { DateRangeDisplay } from "./components/DateRangeDisplay";
@@ -24,7 +23,7 @@ import { AlertsPanel } from "./components/AlertsPanel";
 import { QuickActionsPanel } from "./components/QuickActionsPanel";
 import { KPIGrid } from "./components/KPIGrid";
 import { ExpenseDialog } from "../expenses/components/ExpenseDialog";
-import { PolicyForm } from "../policies/PolicyForm";
+import { PolicyDialog } from "../policies/components/PolicyDialog";
 
 // Configuration
 import { generateStatsConfig } from "./config/statsConfig";
@@ -285,29 +284,11 @@ export const DashboardHome: React.FC = () => {
         isSubmitting={createExpense.isPending}
       />
 
-      {activeDialog === "policy" && (
-        <div className="modal-overlay" onClick={() => setActiveDialog(null)}>
-          <div className="modal-dialog" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>New Policy Submission</h2>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="modal-close"
-                onClick={() => setActiveDialog(null)}
-              >
-                ×
-              </Button>
-            </div>
-            <PolicyForm
-              onClose={() => setActiveDialog(null)}
-              addPolicy={handleAddPolicy}
-              updatePolicy={() => Promise.resolve()}
-              getPolicyById={() => undefined}
-            />
-          </div>
-        </div>
-      )}
+      <PolicyDialog
+        open={activeDialog === "policy"}
+        onOpenChange={(open) => setActiveDialog(open ? "policy" : null)}
+        onSave={handleAddPolicy}
+      />
     </>
   );
 };

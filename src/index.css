@@ -84,12 +84,12 @@
     --grey-950: #030712;
 
     /* ==================== BORDER RADIUS ==================== */
-    --radius-xs: 0.25rem;   /* 4px */
-    --radius-sm: 0.375rem;  /* 6px */
-    --radius-md: 0.5rem;    /* 8px */
-    --radius-lg: 0.75rem;   /* 12px */
-    --radius-xl: 1rem;      /* 16px */
-    --radius-2xl: 1.5rem;   /* 24px */
+    --radius-xs: 0.25rem; /* 4px */
+    --radius-sm: 0.375rem; /* 6px */
+    --radius-md: 0.5rem; /* 8px */
+    --radius-lg: 0.75rem; /* 12px */
+    --radius-xl: 1rem; /* 16px */
+    --radius-2xl: 1.5rem; /* 24px */
     --radius-full: 9999px;
 
     /* Semantic colors for application use */
@@ -103,21 +103,21 @@
     --info-foreground: oklch(1 0 0);
 
     /* Status Colors for Policies and Commissions */
-    --status-pending: oklch(0.7007 0.1408 84.9326);      /* Yellow/Amber */
+    --status-pending: oklch(0.7007 0.1408 84.9326); /* Yellow/Amber */
     --status-pending-bg: oklch(0.9507 0.0408 84.9326);
-    --status-active: oklch(0.6421 0.1902 146.6154);      /* Green */
+    --status-active: oklch(0.6421 0.1902 146.6154); /* Green */
     --status-active-bg: oklch(0.9221 0.0502 146.6154);
-    --status-earned: oklch(0.6082 0.1468 238.6587);      /* Blue */
+    --status-earned: oklch(0.6082 0.1468 238.6587); /* Blue */
     --status-earned-bg: oklch(0.9082 0.0368 238.6587);
-    --status-paid: oklch(0.5421 0.1902 146.6154);        /* Dark Green */
+    --status-paid: oklch(0.5421 0.1902 146.6154); /* Dark Green */
     --status-paid-bg: oklch(0.8921 0.0502 146.6154);
-    --status-lapsed: oklch(0.7915 0.0491 39.241);        /* Orange */
+    --status-lapsed: oklch(0.7915 0.0491 39.241); /* Orange */
     --status-lapsed-bg: oklch(0.9415 0.0191 39.241);
-    --status-cancelled: oklch(0.6627 0.0978 20.0041);    /* Red */
+    --status-cancelled: oklch(0.6627 0.0978 20.0041); /* Red */
     --status-cancelled-bg: oklch(0.9127 0.0278 20.0041);
     --status-charged-back: oklch(0.5627 0.0978 20.0041); /* Dark Red */
     --status-charged-back-bg: oklch(0.8627 0.0278 20.0041);
-    --status-matured: oklch(0.7058 0 0);                 /* Gray */
+    --status-matured: oklch(0.7058 0 0); /* Gray */
     --status-matured-bg: oklch(0.9058 0 0);
 
     /* Commission Performance Colors */
@@ -125,9 +125,13 @@
     --commission-negative: oklch(0.6627 0.0978 20.0041);
     --commission-neutral: oklch(0.7058 0 0);
 
-    --font-sans: Inter, SF Pro Display, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --font-sans:
+      Inter, SF Pro Display, -apple-system, BlinkMacSystemFont, "Segoe UI",
+      Roboto, "Helvetica Neue", Arial, sans-serif;
     --font-serif: Georgia, Cambria, "Times New Roman", Times, serif;
-    --font-mono: "SF Mono", Monaco, "Cascadia Code", "Fira Code", Consolas, "Courier New", monospace;
+    --font-mono:
+      "SF Mono", Monaco, "Cascadia Code", "Fira Code", Consolas, "Courier New",
+      monospace;
     --radius: 0.625rem;
     --shadow-x: 1px;
     --shadow-y: 4px;
@@ -219,9 +223,13 @@
     --commission-negative: oklch(0.7127 0.0978 20.0041);
     --commission-neutral: oklch(0.8078 0 0);
 
-    --font-sans: Inter, SF Pro Display, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --font-sans:
+      Inter, SF Pro Display, -apple-system, BlinkMacSystemFont, "Segoe UI",
+      Roboto, "Helvetica Neue", Arial, sans-serif;
     --font-serif: Georgia, serif;
-    --font-mono: "SF Mono", Monaco, "Cascadia Code", "Fira Code", Consolas, "Courier New", monospace;
+    --font-mono:
+      "SF Mono", Monaco, "Cascadia Code", "Fira Code", Consolas, "Courier New",
+      monospace;
     --radius: 0.625rem;
     --shadow-x: 1px;
     --shadow-y: 4px;
@@ -440,112 +448,305 @@ code {
 
 /* ==================== CUSTOM COLOR UTILITIES ==================== */
 /* Brand Color Utilities */
-.text-brand-50 { color: var(--brand-50); }
-.text-brand-100 { color: var(--brand-100); }
-.text-brand-200 { color: var(--brand-200); }
-.text-brand-300 { color: var(--brand-300); }
-.text-brand-400 { color: var(--brand-400); }
-.text-brand-500 { color: var(--brand-500); }
-.text-brand-600 { color: var(--brand-600); }
-.text-brand-700 { color: var(--brand-700); }
-.text-brand-800 { color: var(--brand-800); }
-.text-brand-900 { color: var(--brand-900); }
+.text-brand-50 {
+  color: var(--brand-50);
+}
+.text-brand-100 {
+  color: var(--brand-100);
+}
+.text-brand-200 {
+  color: var(--brand-200);
+}
+.text-brand-300 {
+  color: var(--brand-300);
+}
+.text-brand-400 {
+  color: var(--brand-400);
+}
+.text-brand-500 {
+  color: var(--brand-500);
+}
+.text-brand-600 {
+  color: var(--brand-600);
+}
+.text-brand-700 {
+  color: var(--brand-700);
+}
+.text-brand-800 {
+  color: var(--brand-800);
+}
+.text-brand-900 {
+  color: var(--brand-900);
+}
 
-.bg-brand-50 { background-color: var(--brand-50); }
-.bg-brand-100 { background-color: var(--brand-100); }
-.bg-brand-200 { background-color: var(--brand-200); }
-.bg-brand-300 { background-color: var(--brand-300); }
-.bg-brand-400 { background-color: var(--brand-400); }
-.bg-brand-500 { background-color: var(--brand-500); }
-.bg-brand-600 { background-color: var(--brand-600); }
-.bg-brand-700 { background-color: var(--brand-700); }
-.bg-brand-800 { background-color: var(--brand-800); }
-.bg-brand-900 { background-color: var(--brand-900); }
+.bg-brand-50 {
+  background-color: var(--brand-50);
+}
+.bg-brand-100 {
+  background-color: var(--brand-100);
+}
+.bg-brand-200 {
+  background-color: var(--brand-200);
+}
+.bg-brand-300 {
+  background-color: var(--brand-300);
+}
+.bg-brand-400 {
+  background-color: var(--brand-400);
+}
+.bg-brand-500 {
+  background-color: var(--brand-500);
+}
+.bg-brand-600 {
+  background-color: var(--brand-600);
+}
+.bg-brand-700 {
+  background-color: var(--brand-700);
+}
+.bg-brand-800 {
+  background-color: var(--brand-800);
+}
+.bg-brand-900 {
+  background-color: var(--brand-900);
+}
 
-.border-brand-50 { border-color: var(--brand-50); }
-.border-brand-100 { border-color: var(--brand-100); }
-.border-brand-200 { border-color: var(--brand-200); }
-.border-brand-300 { border-color: var(--brand-300); }
-.border-brand-400 { border-color: var(--brand-400); }
-.border-brand-500 { border-color: var(--brand-500); }
-.border-brand-600 { border-color: var(--brand-600); }
-.border-brand-700 { border-color: var(--brand-700); }
-.border-brand-800 { border-color: var(--brand-800); }
-.border-brand-900 { border-color: var(--brand-900); }
+.border-brand-50 {
+  border-color: var(--brand-50);
+}
+.border-brand-100 {
+  border-color: var(--brand-100);
+}
+.border-brand-200 {
+  border-color: var(--brand-200);
+}
+.border-brand-300 {
+  border-color: var(--brand-300);
+}
+.border-brand-400 {
+  border-color: var(--brand-400);
+}
+.border-brand-500 {
+  border-color: var(--brand-500);
+}
+.border-brand-600 {
+  border-color: var(--brand-600);
+}
+.border-brand-700 {
+  border-color: var(--brand-700);
+}
+.border-brand-800 {
+  border-color: var(--brand-800);
+}
+.border-brand-900 {
+  border-color: var(--brand-900);
+}
 
 /* Accent Color Utilities */
-.text-accent-red { color: var(--accent-red); }
-.text-accent-orange { color: var(--accent-orange); }
-.text-accent-yellow { color: var(--accent-yellow); }
-.text-accent-green { color: var(--accent-green); }
-.text-accent-blue { color: var(--accent-blue); }
-.text-accent-indigo { color: var(--accent-indigo); }
-.text-accent-purple { color: var(--accent-purple); }
-.text-accent-pink { color: var(--accent-pink); }
+.text-accent-red {
+  color: var(--accent-red);
+}
+.text-accent-orange {
+  color: var(--accent-orange);
+}
+.text-accent-yellow {
+  color: var(--accent-yellow);
+}
+.text-accent-green {
+  color: var(--accent-green);
+}
+.text-accent-blue {
+  color: var(--accent-blue);
+}
+.text-accent-indigo {
+  color: var(--accent-indigo);
+}
+.text-accent-purple {
+  color: var(--accent-purple);
+}
+.text-accent-pink {
+  color: var(--accent-pink);
+}
 
-.bg-accent-red { background-color: var(--accent-red); }
-.bg-accent-red-light { background-color: var(--accent-red-light); }
-.bg-accent-orange { background-color: var(--accent-orange); }
-.bg-accent-orange-light { background-color: var(--accent-orange-light); }
-.bg-accent-yellow { background-color: var(--accent-yellow); }
-.bg-accent-yellow-light { background-color: var(--accent-yellow-light); }
-.bg-accent-green { background-color: var(--accent-green); }
-.bg-accent-green-light { background-color: var(--accent-green-light); }
-.bg-accent-blue { background-color: var(--accent-blue); }
-.bg-accent-blue-light { background-color: var(--accent-blue-light); }
-.bg-accent-indigo { background-color: var(--accent-indigo); }
-.bg-accent-indigo-light { background-color: var(--accent-indigo-light); }
-.bg-accent-purple { background-color: var(--accent-purple); }
-.bg-accent-purple-light { background-color: var(--accent-purple-light); }
-.bg-accent-pink { background-color: var(--accent-pink); }
-.bg-accent-pink-light { background-color: var(--accent-pink-light); }
+.bg-accent-red {
+  background-color: var(--accent-red);
+}
+.bg-accent-red-light {
+  background-color: var(--accent-red-light);
+}
+.bg-accent-orange {
+  background-color: var(--accent-orange);
+}
+.bg-accent-orange-light {
+  background-color: var(--accent-orange-light);
+}
+.bg-accent-yellow {
+  background-color: var(--accent-yellow);
+}
+.bg-accent-yellow-light {
+  background-color: var(--accent-yellow-light);
+}
+.bg-accent-green {
+  background-color: var(--accent-green);
+}
+.bg-accent-green-light {
+  background-color: var(--accent-green-light);
+}
+.bg-accent-blue {
+  background-color: var(--accent-blue);
+}
+.bg-accent-blue-light {
+  background-color: var(--accent-blue-light);
+}
+.bg-accent-indigo {
+  background-color: var(--accent-indigo);
+}
+.bg-accent-indigo-light {
+  background-color: var(--accent-indigo-light);
+}
+.bg-accent-purple {
+  background-color: var(--accent-purple);
+}
+.bg-accent-purple-light {
+  background-color: var(--accent-purple-light);
+}
+.bg-accent-pink {
+  background-color: var(--accent-pink);
+}
+.bg-accent-pink-light {
+  background-color: var(--accent-pink-light);
+}
 
 /* Grey Scale Utilities */
-.text-grey-0 { color: var(--grey-0); }
-.text-grey-50 { color: var(--grey-50); }
-.text-grey-100 { color: var(--grey-100); }
-.text-grey-200 { color: var(--grey-200); }
-.text-grey-300 { color: var(--grey-300); }
-.text-grey-400 { color: var(--grey-400); }
-.text-grey-500 { color: var(--grey-500); }
-.text-grey-600 { color: var(--grey-600); }
-.text-grey-700 { color: var(--grey-700); }
-.text-grey-800 { color: var(--grey-800); }
-.text-grey-900 { color: var(--grey-900); }
-.text-grey-950 { color: var(--grey-950); }
+.text-grey-0 {
+  color: var(--grey-0);
+}
+.text-grey-50 {
+  color: var(--grey-50);
+}
+.text-grey-100 {
+  color: var(--grey-100);
+}
+.text-grey-200 {
+  color: var(--grey-200);
+}
+.text-grey-300 {
+  color: var(--grey-300);
+}
+.text-grey-400 {
+  color: var(--grey-400);
+}
+.text-grey-500 {
+  color: var(--grey-500);
+}
+.text-grey-600 {
+  color: var(--grey-600);
+}
+.text-grey-700 {
+  color: var(--grey-700);
+}
+.text-grey-800 {
+  color: var(--grey-800);
+}
+.text-grey-900 {
+  color: var(--grey-900);
+}
+.text-grey-950 {
+  color: var(--grey-950);
+}
 
-.bg-grey-0 { background-color: var(--grey-0); }
-.bg-grey-50 { background-color: var(--grey-50); }
-.bg-grey-100 { background-color: var(--grey-100); }
-.bg-grey-200 { background-color: var(--grey-200); }
-.bg-grey-300 { background-color: var(--grey-300); }
-.bg-grey-400 { background-color: var(--grey-400); }
-.bg-grey-500 { background-color: var(--grey-500); }
-.bg-grey-600 { background-color: var(--grey-600); }
-.bg-grey-700 { background-color: var(--grey-700); }
-.bg-grey-800 { background-color: var(--grey-800); }
-.bg-grey-900 { background-color: var(--grey-900); }
-.bg-grey-950 { background-color: var(--grey-950); }
+.bg-grey-0 {
+  background-color: var(--grey-0);
+}
+.bg-grey-50 {
+  background-color: var(--grey-50);
+}
+.bg-grey-100 {
+  background-color: var(--grey-100);
+}
+.bg-grey-200 {
+  background-color: var(--grey-200);
+}
+.bg-grey-300 {
+  background-color: var(--grey-300);
+}
+.bg-grey-400 {
+  background-color: var(--grey-400);
+}
+.bg-grey-500 {
+  background-color: var(--grey-500);
+}
+.bg-grey-600 {
+  background-color: var(--grey-600);
+}
+.bg-grey-700 {
+  background-color: var(--grey-700);
+}
+.bg-grey-800 {
+  background-color: var(--grey-800);
+}
+.bg-grey-900 {
+  background-color: var(--grey-900);
+}
+.bg-grey-950 {
+  background-color: var(--grey-950);
+}
 
-.border-grey-0 { border-color: var(--grey-0); }
-.border-grey-50 { border-color: var(--grey-50); }
-.border-grey-100 { border-color: var(--grey-100); }
-.border-grey-200 { border-color: var(--grey-200); }
-.border-grey-300 { border-color: var(--grey-300); }
-.border-grey-400 { border-color: var(--grey-400); }
-.border-grey-500 { border-color: var(--grey-500); }
-.border-grey-600 { border-color: var(--grey-600); }
-.border-grey-700 { border-color: var(--grey-700); }
-.border-grey-800 { border-color: var(--grey-800); }
-.border-grey-900 { border-color: var(--grey-900); }
-.border-grey-950 { border-color: var(--grey-950); }
+.border-grey-0 {
+  border-color: var(--grey-0);
+}
+.border-grey-50 {
+  border-color: var(--grey-50);
+}
+.border-grey-100 {
+  border-color: var(--grey-100);
+}
+.border-grey-200 {
+  border-color: var(--grey-200);
+}
+.border-grey-300 {
+  border-color: var(--grey-300);
+}
+.border-grey-400 {
+  border-color: var(--grey-400);
+}
+.border-grey-500 {
+  border-color: var(--grey-500);
+}
+.border-grey-600 {
+  border-color: var(--grey-600);
+}
+.border-grey-700 {
+  border-color: var(--grey-700);
+}
+.border-grey-800 {
+  border-color: var(--grey-800);
+}
+.border-grey-900 {
+  border-color: var(--grey-900);
+}
+.border-grey-950 {
+  border-color: var(--grey-950);
+}
 
 /* Border Radius Utilities */
-.rounded-xs { border-radius: var(--radius-xs); }
-.rounded-sm { border-radius: var(--radius-sm); }
-.rounded-md { border-radius: var(--radius-md); }
-.rounded-lg { border-radius: var(--radius-lg); }
-.rounded-xl { border-radius: var(--radius-xl); }
-.rounded-2xl { border-radius: var(--radius-2xl); }
-.rounded-full { border-radius: var(--radius-full); }
-
+.rounded-xs {
+  border-radius: var(--radius-xs);
+}
+.rounded-sm {
+  border-radius: var(--radius-sm);
+}
+.rounded-md {
+  border-radius: var(--radius-md);
+}
+.rounded-lg {
+  border-radius: var(--radius-lg);
+}
+.rounded-xl {
+  border-radius: var(--radius-xl);
+}
+.rounded-2xl {
+  border-radius: var(--radius-2xl);
+}
+.rounded-full {
+  border-radius: var(--radius-full);
+}

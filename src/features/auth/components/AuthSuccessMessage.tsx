@@ -1,12 +1,14 @@
 // src/features/auth/components/AuthSuccessMessage.tsx
 
-import React from 'react';
+import React from "react";
 
 interface AuthSuccessMessageProps {
   message: string;
 }
 
-export const AuthSuccessMessage: React.FC<AuthSuccessMessageProps> = ({ message }) => {
+export const AuthSuccessMessage: React.FC<AuthSuccessMessageProps> = ({
+  message,
+}) => {
   if (!message) return null;
 
   return (
@@ -25,9 +27,7 @@ export const AuthSuccessMessage: React.FC<AuthSuccessMessageProps> = ({ message 
             />
           </svg>
         </div>
-        <p className="ml-3 text-sm font-medium text-green-800">
-          {message}
-        </p>
+        <p className="ml-3 text-sm font-medium text-green-800">{message}</p>
       </div>
     </div>
   );

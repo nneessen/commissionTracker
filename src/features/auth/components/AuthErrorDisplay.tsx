@@ -1,11 +1,11 @@
 // src/features/auth/components/AuthErrorDisplay.tsx
 
-import React from 'react';
-import { Button } from '@/components/ui/button';
+import React from "react";
+import { Button } from "@/components/ui/button";
 
 interface AuthErrorDisplayProps {
   error: string;
-  mode: 'signin' | 'signup' | 'reset';
+  mode: "signin" | "signup" | "reset";
   onSwitchToSignup: () => void;
 }
 
@@ -34,7 +34,7 @@ export const AuthErrorDisplay: React.FC<AuthErrorDisplayProps> = ({
         </div>
         <div className="ml-3">
           <p className="text-sm font-medium text-red-800">{error}</p>
-          {mode === 'signin' && error.includes('No account found') && (
+          {mode === "signin" && error.includes("No account found") && (
             <Button
               type="button"
               onClick={onSwitchToSignup}
@@ -44,7 +44,7 @@ export const AuthErrorDisplay: React.FC<AuthErrorDisplayProps> = ({
               Create a new account
             </Button>
           )}
-          {error.includes('disabled') && (
+          {error.includes("disabled") && (
             <a
               href="mailto:support@commissiontracker.com"
               className="mt-2 inline-block text-sm font-semibold text-red-700 hover:text-red-600 underline transition-colors"

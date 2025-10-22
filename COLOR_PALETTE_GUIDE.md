@@ -1,6 +1,7 @@
 # Color Palette Usage Guide
 
 ## Overview
+
 This project now has a comprehensive color system with easy-to-use CSS variables and Tailwind utility classes. You no longer need to memorize hex codes!
 
 ---
@@ -8,6 +9,7 @@ This project now has a comprehensive color system with easy-to-use CSS variables
 ## Available Color Palettes
 
 ### 1. Brand Colors (Blue Palette)
+
 **Range:** `brand-50` to `brand-900`
 
 ```tsx
@@ -21,6 +23,7 @@ This project now has a comprehensive color system with easy-to-use CSS variables
 ```
 
 **Use Cases:**
+
 - Primary buttons: `bg-brand-600`
 - Hover states: `hover:bg-brand-700`
 - Light backgrounds: `bg-brand-50`
@@ -29,6 +32,7 @@ This project now has a comprehensive color system with easy-to-use CSS variables
 ---
 
 ### 2. Accent Colors
+
 **Available:** red, orange, yellow, green, blue, indigo, purple, pink
 
 ```tsx
@@ -53,6 +57,7 @@ This project now has a comprehensive color system with easy-to-use CSS variables
 ```
 
 **Use Cases:**
+
 - Alerts: `bg-accent-red-light text-accent-red`
 - Success messages: `bg-accent-green-light text-accent-green`
 - Warning badges: `bg-accent-yellow-light text-accent-orange`
@@ -60,6 +65,7 @@ This project now has a comprehensive color system with easy-to-use CSS variables
 ---
 
 ### 3. Grey Scale
+
 **Range:** `grey-0` (white) to `grey-950` (near black)
 
 ```tsx
@@ -79,6 +85,7 @@ This project now has a comprehensive color system with easy-to-use CSS variables
 ```
 
 **Use Cases:**
+
 - Card backgrounds: `bg-grey-50`
 - Text hierarchy: `text-grey-900` (primary), `text-grey-600` (secondary)
 - Disabled states: `bg-grey-200 text-grey-500`
@@ -87,6 +94,7 @@ This project now has a comprehensive color system with easy-to-use CSS variables
 ---
 
 ### 4. Border Radius
+
 **Sizes:** xs, sm, md, lg, xl, 2xl, full
 
 ```tsx
@@ -104,6 +112,7 @@ This project now has a comprehensive color system with easy-to-use CSS variables
 ## Real-World Examples
 
 ### Example 1: Alert Component
+
 ```tsx
 // Success alert
 <div className="bg-accent-green-light border-l-4 border-accent-green p-4 rounded-md">
@@ -119,6 +128,7 @@ This project now has a comprehensive color system with easy-to-use CSS variables
 ```
 
 ### Example 2: Button Variants
+
 ```tsx
 // Primary button
 <button className="bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 rounded-lg">
@@ -137,6 +147,7 @@ This project now has a comprehensive color system with easy-to-use CSS variables
 ```
 
 ### Example 3: Card Component
+
 ```tsx
 <div className="bg-grey-0 border border-grey-200 rounded-xl p-6 shadow-sm">
   <h3 className="text-grey-900 text-xl font-semibold mb-2">Card Title</h3>
@@ -153,6 +164,7 @@ This project now has a comprehensive color system with easy-to-use CSS variables
 ```
 
 ### Example 4: Badge Component
+
 ```tsx
 // Status badges using accent colors
 <span className="bg-accent-green-light text-accent-green px-2 py-1 rounded-full text-xs font-medium">
@@ -169,6 +181,7 @@ This project now has a comprehensive color system with easy-to-use CSS variables
 ```
 
 ### Example 5: Input Field
+
 ```tsx
 <div className="space-y-2">
   <label className="text-grey-700 font-medium text-sm">Email</label>
@@ -191,13 +204,14 @@ If you need to use the variables in inline styles or JavaScript:
 
 ```tsx
 // In inline styles
-<div style={{ backgroundColor: 'var(--brand-500)', color: 'var(--grey-0)' }}>
+<div style={{ backgroundColor: "var(--brand-500)", color: "var(--grey-0)" }}>
   Custom styled div
-</div>
+</div>;
 
 // In JavaScript
-const brandColor = getComputedStyle(document.documentElement)
-  .getPropertyValue('--brand-500');
+const brandColor = getComputedStyle(document.documentElement).getPropertyValue(
+  "--brand-500",
+);
 ```
 
 ---
@@ -229,11 +243,13 @@ const brandColor = getComputedStyle(document.documentElement)
 ## Color Contrast Tips
 
 ✅ **Good Contrast:**
+
 - `text-grey-900` on `bg-grey-0` (white)
 - `text-grey-0` (white) on `bg-brand-600`
 - `text-accent-red` on `bg-accent-red-light`
 
 ❌ **Poor Contrast (avoid):**
+
 - `text-grey-400` on `bg-grey-50`
 - `text-brand-300` on `bg-brand-200`
 
@@ -243,14 +259,14 @@ const brandColor = getComputedStyle(document.documentElement)
 
 If you previously used hex codes, here's the mapping:
 
-| Old Hex Code | New Class |
-|--------------|-----------|
-| `#ef4444` | `text-accent-red` or `bg-accent-red` |
-| `#22c55e` | `text-accent-green` or `bg-accent-green` |
-| `#3b82f6` | `text-accent-blue` or `bg-accent-blue` |
-| `#f97316` | `text-accent-orange` or `bg-accent-orange` |
-| `#6b7280` | `text-grey-500` or `bg-grey-500` |
-| `#1f2937` | `text-grey-800` or `bg-grey-800` |
+| Old Hex Code | New Class                                  |
+| ------------ | ------------------------------------------ |
+| `#ef4444`    | `text-accent-red` or `bg-accent-red`       |
+| `#22c55e`    | `text-accent-green` or `bg-accent-green`   |
+| `#3b82f6`    | `text-accent-blue` or `bg-accent-blue`     |
+| `#f97316`    | `text-accent-orange` or `bg-accent-orange` |
+| `#6b7280`    | `text-grey-500` or `bg-grey-500`           |
+| `#1f2937`    | `text-grey-800` or `bg-grey-800`           |
 
 ---
 

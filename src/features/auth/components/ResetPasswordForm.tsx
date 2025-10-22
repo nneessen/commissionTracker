@@ -1,9 +1,10 @@
 // src/features/auth/components/ResetPasswordForm.tsx
+// TODO: label type issue in Input component
 
-import React from 'react';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { FormErrors } from '../hooks/useAuthValidation';
+import React from "react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { FormErrors } from "../hooks/useAuthValidation";
 
 interface ResetPasswordFormProps {
   email: string;
@@ -40,7 +41,7 @@ export const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
         loading={loading}
         className="w-full py-3 text-base font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white"
       >
-        {loading ? 'Please wait...' : 'Send reset link'}
+        {loading ? "Please wait..." : "Send reset link"}
       </Button>
     </form>
   );

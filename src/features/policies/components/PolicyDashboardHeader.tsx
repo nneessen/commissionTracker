@@ -23,57 +23,83 @@ export const PolicyDashboardHeader: React.FC<PolicyDashboardHeaderProps> = ({
   onNewPolicy,
 }) => {
   return (
-    <div className="flex justify-between items-start mb-5">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-2xl font-bold text-gray-900">Policy Management</h1>
-        <div className="flex gap-6">
-          <div className="flex flex-col items-center min-w-[60px]">
-            <span className="text-xl font-semibold text-gray-900 leading-none">
+    <div className="mb-6">
+      {/* Title and Action Row */}
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-3xl font-bold text-grey-900 tracking-tight">
+          Policy Management
+        </h1>
+        <Button
+          onClick={onNewPolicy}
+          size="sm"
+          className="bg-brand-600 hover:bg-brand-700 text-white shadow-sm"
+        >
+          <Plus size={16} className="mr-1.5" />
+          New Policy
+        </Button>
+      </div>
+
+      {/* Stats Grid */}
+      <div className="grid grid-cols-5 gap-4">
+        {/* Total Policies */}
+        <div className="bg-white border border-grey-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex flex-col">
+            <span className="text-xs font-medium text-grey-500 uppercase tracking-wider mb-2">
+              Total Policies
+            </span>
+            <span className="text-2xl font-bold text-grey-900">
               {summary.totalPolicies}
-            </span>
-            <span className="text-[11px] text-gray-500 uppercase tracking-wide mt-0.5">
-              Policies
-            </span>
-          </div>
-          <div className="flex flex-col items-center min-w-[60px]">
-            <span className="text-xl font-semibold text-gray-900 leading-none">
-              {summary.activePolicies}
-            </span>
-            <span className="text-[11px] text-gray-500 uppercase tracking-wide mt-0.5">
-              Active
-            </span>
-          </div>
-          <div className="flex flex-col items-center min-w-[60px]">
-            <span className="text-xl font-semibold text-gray-900 leading-none">
-              ${(summary.totalAnnualPremium / 1000).toFixed(1)}K
-            </span>
-            <span className="text-[11px] text-gray-500 uppercase tracking-wide mt-0.5">
-              Premium
-            </span>
-          </div>
-          <div className="flex flex-col items-center min-w-[60px]">
-            <span className="text-xl font-semibold text-gray-900 leading-none">
-              ${(summary.totalExpectedCommission / 1000).toFixed(1)}K
-            </span>
-            <span className="text-[11px] text-gray-500 uppercase tracking-wide mt-0.5">
-              Commission
-            </span>
-          </div>
-          <div className="flex flex-col items-center min-w-[60px]">
-            <span className="text-xl font-semibold text-gray-900 leading-none">
-              {summary.averageCommissionRate.toFixed(1)}%
-            </span>
-            <span className="text-[11px] text-gray-500 uppercase tracking-wide mt-0.5">
-              Avg Rate
             </span>
           </div>
         </div>
-      </div>
-      <div>
-        <Button onClick={onNewPolicy} size="sm">
-          <Plus size={16} />
-          New Policy
-        </Button>
+
+        {/* Active Policies */}
+        <div className="bg-gradient-to-br from-brand-50 to-white border border-brand-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex flex-col">
+            <span className="text-xs font-medium text-brand-700 uppercase tracking-wider mb-2">
+              Active
+            </span>
+            <span className="text-2xl font-bold text-brand-900">
+              {summary.activePolicies}
+            </span>
+          </div>
+        </div>
+
+        {/* Total Premium */}
+        <div className="bg-white border border-grey-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex flex-col">
+            <span className="text-xs font-medium text-grey-500 uppercase tracking-wider mb-2">
+              Total Premium
+            </span>
+            <span className="text-2xl font-bold text-grey-900">
+              ${(summary.totalAnnualPremium / 1000).toFixed(1)}K
+            </span>
+          </div>
+        </div>
+
+        {/* Expected Commission */}
+        <div className="bg-gradient-to-br from-accent-green/5 to-white border border-accent-green/20 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex flex-col">
+            <span className="text-xs font-medium text-accent-green uppercase tracking-wider mb-2">
+              Commission
+            </span>
+            <span className="text-2xl font-bold text-grey-900">
+              ${(summary.totalExpectedCommission / 1000).toFixed(1)}K
+            </span>
+          </div>
+        </div>
+
+        {/* Average Rate */}
+        <div className="bg-white border border-grey-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex flex-col">
+            <span className="text-xs font-medium text-grey-500 uppercase tracking-wider mb-2">
+              Avg Rate
+            </span>
+            <span className="text-2xl font-bold text-grey-900">
+              {summary.averageCommissionRate.toFixed(1)}%
+            </span>
+          </div>
+        </div>
       </div>
     </div>
   );

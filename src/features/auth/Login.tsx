@@ -199,10 +199,10 @@ export const Login: React.FC<LoginProps> = ({ onSuccess }) => {
 
         {/* Main Card */}
         <div className="bg-white rounded-2xl shadow-xl p-8 space-y-6">
-          <AuthSuccessMessage message={message || ''} />
+          <AuthSuccessMessage message={message || ""} />
 
           <AuthErrorDisplay
-            error={error || ''}
+            error={error || ""}
             mode={mode}
             onSwitchToSignup={() => switchMode("signup")}
           />
