@@ -15,6 +15,7 @@ import {
   ChevronLeft,
   X,
 } from "lucide-react";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 interface NavigationItem {
   icon: React.ElementType;
@@ -141,6 +142,10 @@ export default function Sidebar({
 
         {/* Footer */}
         <div className="sidebar-footer">
+          <div className="sidebar-nav-item" title={isCollapsed ? "Toggle theme" : ""}>
+            <ThemeToggle />
+            {!isCollapsed && <span>Theme</span>}
+          </div>
           <button
             className="sidebar-nav-item logout"
             onClick={onLogout}
