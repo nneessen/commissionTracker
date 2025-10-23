@@ -24,14 +24,12 @@ export const AlertsPanel: React.FC<AlertsPanelProps> = ({ alerts }) => {
       case 'info':
         return {
           bg: 'bg-info/10',
-          border: 'border-info',
           text: 'text-info',
           textLight: 'text-info/80',
         };
       case 'warning':
         return {
           bg: 'bg-warning/10',
-          border: 'border-warning',
           text: 'text-warning',
           textLight: 'text-warning/80',
         };
@@ -39,14 +37,12 @@ export const AlertsPanel: React.FC<AlertsPanelProps> = ({ alerts }) => {
       case 'error':
         return {
           bg: 'bg-error/10',
-          border: 'border-error',
           text: 'text-error',
           textLight: 'text-error/80',
         };
       default:
         return {
           bg: 'bg-info/10',
-          border: 'border-info',
           text: 'text-info',
           textLight: 'text-info/80',
         };
@@ -67,7 +63,7 @@ export const AlertsPanel: React.FC<AlertsPanelProps> = ({ alerts }) => {
             return (
               <div
                 key={index}
-                className={`${classes.bg} rounded-lg p-2 border ${classes.border}`}
+                className={`${classes.bg} rounded-lg p-2 shadow-sm`}
               >
                 <div className={`text-xs font-semibold ${classes.text}`}>
                   {alert.title}

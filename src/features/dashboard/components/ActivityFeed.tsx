@@ -88,11 +88,10 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({
 
                 <div className="flex flex-col gap-2.5">
                   {recentPolicies.slice(0, 5).map((policy) => (
-                    <Card
+                    <div
                       key={policy.id}
-                      className="bg-gradient-to-r from-card to-info/5 shadow-md transition-all duration-200 cursor-pointer hover:-translate-y-0.5 hover:shadow-lg"
+                      className="bg-gradient-to-r from-card to-info/5 shadow-md rounded-lg p-3 transition-all duration-200 cursor-pointer hover:-translate-y-0.5 hover:shadow-lg"
                     >
-                      <CardContent className="p-3">
                         <div className="flex justify-between items-start mb-1.5">
                           <div>
                             <div className="text-sm font-semibold text-foreground mb-0.5">
@@ -114,8 +113,7 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({
                             {formatDate(policy.createdAt)}
                           </div>
                         </div>
-                      </CardContent>
-                    </Card>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -133,16 +131,15 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({
 
                 <div className="flex flex-col gap-2.5">
                   {recentCommissions.slice(0, 5).map((commission) => (
-                    <Card
+                    <div
                       key={commission.id}
                       className={cn(
-                        "shadow-md transition-all duration-200 cursor-pointer hover:-translate-y-0.5 hover:shadow-lg",
+                        "shadow-md rounded-lg p-3 transition-all duration-200 cursor-pointer hover:-translate-y-0.5 hover:shadow-lg",
                         commission.status === "paid"
                           ? "bg-gradient-to-r from-card to-success/10"
                           : "bg-gradient-to-r from-card to-warning/10"
                       )}
                     >
-                      <CardContent className="p-3">
                         <div className="flex justify-between items-start mb-1.5">
                           <div>
                             <div className="text-sm font-bold text-foreground font-mono">
@@ -168,8 +165,7 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({
                             ? formatDate(commission.paidDate)
                             : formatDate(commission.createdAt)}
                         </div>
-                      </CardContent>
-                    </Card>
+                    </div>
                   ))}
                 </div>
               </div>

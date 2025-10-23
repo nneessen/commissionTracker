@@ -108,89 +108,81 @@ export const FinancialHealthCard: React.FC<FinancialHealthCardProps> = ({
 
         {/* Main Metrics Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
-          <Card className="bg-gradient-to-br from-muted/30 to-card shadow-md">
-            <CardContent className="p-4">
-              <div className="text-xs text-muted-foreground mb-2 uppercase tracking-wide font-semibold">
-                {getPeriodLabel()} Expenses
-              </div>
-              <div className="text-2xl font-bold text-foreground font-mono">
-                {formatCurrency(adjustedExpenses)}
-              </div>
-              <div className="text-xs text-muted-foreground/80 mt-1">
-                Break even target
-              </div>
-            </CardContent>
-          </Card>
+          <div className="bg-gradient-to-br from-muted/30 to-card shadow-md rounded-lg p-4">
+            <div className="text-xs text-muted-foreground mb-2 uppercase tracking-wide font-semibold">
+              {getPeriodLabel()} Expenses
+            </div>
+            <div className="text-2xl font-bold text-foreground font-mono">
+              {formatCurrency(adjustedExpenses)}
+            </div>
+            <div className="text-xs text-muted-foreground/80 mt-1">
+              Break even target
+            </div>
+          </div>
 
-          <Card className={cn(
-            "shadow-md",
+          <div className={cn(
+            "shadow-md rounded-lg p-4",
             isSurplus
               ? "bg-gradient-to-br from-success/25 via-status-active/15 to-card"
               : "bg-gradient-to-br from-destructive/25 via-error/15 to-card"
           )}>
-            <CardContent className="p-4">
-              <div className="text-xs text-muted-foreground mb-2 uppercase tracking-wide font-semibold">
-                {getPeriodLabel()} Commission
-              </div>
-              <div className="text-2xl font-bold text-foreground font-mono">
-                {formatCurrency(adjustedEarned)}
-              </div>
-              <div className={cn(
-                "text-xs mt-1 flex items-center gap-1",
-                isSurplus ? "text-success" : "text-destructive"
-              )}>
-                {isSurplus ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-                {isSurplus ? `+${formatCurrency(adjustedSurplus)} surplus` : `${formatCurrency(Math.abs(adjustedSurplus))} deficit`}
-              </div>
-            </CardContent>
-          </Card>
+            <div className="text-xs text-muted-foreground mb-2 uppercase tracking-wide font-semibold">
+              {getPeriodLabel()} Commission
+            </div>
+            <div className="text-2xl font-bold text-foreground font-mono">
+              {formatCurrency(adjustedEarned)}
+            </div>
+            <div className={cn(
+              "text-xs mt-1 flex items-center gap-1",
+              isSurplus ? "text-success" : "text-destructive"
+            )}>
+              {isSurplus ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+              {isSurplus ? `+${formatCurrency(adjustedSurplus)} surplus` : `${formatCurrency(Math.abs(adjustedSurplus))} deficit`}
+            </div>
+          </div>
 
-          <Card className="bg-gradient-to-br from-info/20 via-status-earned/15 to-card shadow-md">
-            <CardContent className="p-4">
-              <div className="text-xs text-muted-foreground mb-2 uppercase tracking-wide font-semibold">
-                Pipeline Value
-              </div>
-              <div className="text-2xl font-bold text-info font-mono">
-                {formatCurrency(totalPending)}
-              </div>
-              <div className="text-xs text-muted-foreground/80 mt-1">
-                Pending commissions
-              </div>
-            </CardContent>
-          </Card>
+          <div className="bg-gradient-to-br from-info/20 via-status-earned/15 to-card shadow-md rounded-lg p-4">
+            <div className="text-xs text-muted-foreground mb-2 uppercase tracking-wide font-semibold">
+              Pipeline Value
+            </div>
+            <div className="text-2xl font-bold text-info font-mono">
+              {formatCurrency(totalPending)}
+            </div>
+            <div className="text-xs text-muted-foreground/80 mt-1">
+              Pending commissions
+            </div>
+          </div>
         </div>
 
         {/* Health Progress Bar */}
-        <Card className="bg-gradient-to-br from-accent/10 to-card shadow-md">
-          <CardContent className="p-4">
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-xs text-foreground font-semibold uppercase tracking-wide">
-                Breakeven Progress
-              </span>
-              <span className="text-sm text-foreground font-bold">
-                {healthPercentage.toFixed(0)}%
-              </span>
-            </div>
+        <div className="bg-gradient-to-br from-accent/10 to-card shadow-md rounded-lg p-4">
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-xs text-foreground font-semibold uppercase tracking-wide">
+              Breakeven Progress
+            </span>
+            <span className="text-sm text-foreground font-bold">
+              {healthPercentage.toFixed(0)}%
+            </span>
+          </div>
 
-            <div className="w-full h-3 bg-muted rounded-md overflow-hidden shadow-inner">
-              <div
-                className={cn(
-                  "h-full rounded-md transition-all duration-300",
-                  healthPercentage >= 100
-                    ? "bg-gradient-to-r from-success via-status-active to-success/80"
-                    : "bg-gradient-to-r from-primary via-info to-primary/80"
-                )}
-                style={{ width: `${healthPercentage}%` }}
-              />
-            </div>
+          <div className="w-full h-3 bg-muted rounded-md overflow-hidden shadow-inner">
+            <div
+              className={cn(
+                "h-full rounded-md transition-all duration-300",
+                healthPercentage >= 100
+                  ? "bg-gradient-to-r from-success via-status-active to-success/80"
+                  : "bg-gradient-to-r from-primary via-info to-primary/80"
+              )}
+              style={{ width: `${healthPercentage}%` }}
+            />
+          </div>
 
-            <div className="text-xs text-muted-foreground/80 mt-2">
-              {healthPercentage >= 100
-                ? '✓ You have exceeded your breakeven target'
-                : `${formatCurrency(adjustedExpenses - adjustedEarned)} needed to break even`}
-            </div>
-          </CardContent>
-        </Card>
+          <div className="text-xs text-muted-foreground/80 mt-2">
+            {healthPercentage >= 100
+              ? '✓ You have exceeded your breakeven target'
+              : `${formatCurrency(adjustedExpenses - adjustedEarned)} needed to break even`}
+          </div>
+        </div>
 
         {/* Alert if needed */}
         {healthPercentage < 50 && (

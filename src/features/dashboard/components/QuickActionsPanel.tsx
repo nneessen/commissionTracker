@@ -1,10 +1,10 @@
 // src/features/dashboard/components/QuickActionsPanel.tsx
 
-import React from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { QuickActionsPanelProps } from '../../../types/dashboard.types';
-import { cn } from '@/lib/utils';
+import React from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { QuickActionsPanelProps } from "../../../types/dashboard.types";
+import { cn } from "@/lib/utils";
 
 /**
  * Quick Actions Panel Component
@@ -39,10 +39,10 @@ export const QuickActionsPanel: React.FC<QuickActionsPanelProps> = ({
                 "px-3 py-2 h-auto rounded-md text-xs font-medium justify-start transition-all duration-200 w-full",
                 isCreating
                   ? "bg-muted/30 text-muted-foreground cursor-not-allowed opacity-60"
-                  : "bg-muted/10 text-foreground hover:bg-muted/20"
+                  : "bg-muted/10 text-foreground hover:bg-muted/20",
               )}
             >
-              {isCreating && action.label !== 'View Reports'
+              {isCreating && action.label !== "View Reports"
                 ? `${action.label}...`
                 : action.label}
             </Button>
