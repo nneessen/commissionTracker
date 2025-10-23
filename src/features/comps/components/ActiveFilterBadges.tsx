@@ -23,42 +23,42 @@ export function ActiveFilterBadges({ filters, onRemoveFilter }: ActiveFilterBadg
 
   return (
     <div className="mt-4">
-      <h4 className="text-sm font-medium text-gray-700 mb-2">Active Filters:</h4>
+      <h4 className="text-sm font-medium text-muted-foreground mb-2">Active Filters:</h4>
       <div className="flex flex-wrap gap-2">
         {filters.carrier_id && (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gradient-to-r from-success/20 to-status-active/10 text-success shadow-sm">
             Carrier: {filters.carrier_id}
             <Button
               onClick={() => onRemoveFilter('carrier_id')}
               variant="ghost"
               size="icon"
-              className="ml-1 h-auto w-auto p-0 text-green-600 hover:text-green-800 hover:bg-transparent"
+              className="ml-1 h-auto w-auto p-0 text-success hover:text-success/80 hover:bg-transparent"
             >
               <X className="h-3 w-3" />
             </Button>
           </span>
         )}
         {filters.product_type && (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gradient-to-r from-primary/20 to-accent/10 text-primary shadow-sm">
             Product: {formatProductType(filters.product_type)}
             <Button
               onClick={() => onRemoveFilter('product_type')}
               variant="ghost"
               size="icon"
-              className="ml-1 h-auto w-auto p-0 text-purple-600 hover:text-purple-800 hover:bg-transparent"
+              className="ml-1 h-auto w-auto p-0 text-primary hover:text-primary/80 hover:bg-transparent"
             >
               <X className="h-3 w-3" />
             </Button>
           </span>
         )}
         {filters.contract_level && (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gradient-to-r from-warning/20 to-status-pending/10 text-warning shadow-sm">
             Contract Level: {filters.contract_level}
             <Button
               onClick={() => onRemoveFilter('contract_level')}
               variant="ghost"
               size="icon"
-              className="ml-1 h-auto w-auto p-0 text-orange-600 hover:text-orange-800 hover:bg-transparent"
+              className="ml-1 h-auto w-auto p-0 text-warning hover:text-warning/80 hover:bg-transparent"
             >
               <X className="h-3 w-3" />
             </Button>

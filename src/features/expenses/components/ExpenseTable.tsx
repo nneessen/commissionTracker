@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/table';
 import { Empty, EmptyHeader, EmptyTitle, EmptyDescription, EmptyContent } from '@/components/ui/empty';
 import { formatCurrency, formatDate } from '@/lib/format';
+import { cn } from '@/lib/utils';
 import type { Expense } from '@/types/expense.types';
 
 interface ExpenseTableProps {
@@ -110,11 +111,11 @@ export function ExpenseTable({
               <TableCell>
                 <Badge
                   variant="outline"
-                  className={
+                  className={cn(
                     expense.expense_type === 'business'
-                      ? 'border-green-500 text-green-700'
-                      : 'border-blue-500 text-blue-700'
-                  }
+                      ? 'border-status-active text-status-active'
+                      : 'border-status-earned text-status-earned'
+                  )}
                 >
                   {expense.expense_type === 'business' ? 'Business' : 'Personal'}
                 </Badge>
@@ -125,12 +126,12 @@ export function ExpenseTable({
               <TableCell>
                 <div className="flex flex-wrap gap-1">
                   {expense.is_tax_deductible && (
-                    <Badge variant="secondary" className="text-purple-700">
+                    <Badge variant="secondary" className="text-primary">
                       Tax Deductible
                     </Badge>
                   )}
                   {expense.is_recurring && (
-                    <Badge variant="secondary" className="text-orange-700">
+                    <Badge variant="secondary" className="text-status-lapsed">
                       Recurring
                     </Badge>
                   )}

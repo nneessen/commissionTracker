@@ -63,10 +63,10 @@ export const PolicyDashboard: React.FC = () => {
 
   if (error) {
     return (
-      <div className="flex items-center gap-3 p-4 bg-red-50 border border-red-200 rounded-lg text-red-800">
-        <AlertCircle size={20} />
-        <span>Error loading policies: {(error as Error).message}</span>
-        <Button onClick={() => refetch()} variant="outline" size="sm">
+      <div className="flex items-center gap-3 p-4 bg-gradient-to-br from-destructive/20 via-error/10 to-card rounded-lg shadow-md">
+        <AlertCircle size={20} className="text-destructive" />
+        <span className="text-destructive font-medium">Error loading policies: {(error as Error).message}</span>
+        <Button onClick={() => refetch()} variant="outline" size="sm" className="ml-auto">
           Retry
         </Button>
       </div>
@@ -82,9 +82,9 @@ export const PolicyDashboard: React.FC = () => {
 
       {/* Alerts Bar */}
       {summary.expiringPolicies.length > 0 && (
-        <div className="flex items-center gap-2 p-2 px-3 bg-amber-50 border border-amber-200 rounded-md mb-4 text-[13px] text-amber-900">
-          <AlertCircle size={16} />
-          <span>
+        <div className="flex items-center gap-2 p-2 px-3 bg-gradient-to-r from-warning/20 via-status-pending/10 to-card rounded-md shadow-md mb-4">
+          <AlertCircle size={16} className="text-warning" />
+          <span className="text-[13px] text-warning font-medium">
             {summary.expiringPolicies.length} policies expiring in next 30 days
           </span>
         </div>
@@ -105,12 +105,12 @@ export const PolicyDashboard: React.FC = () => {
       {/* Modal Dialog */}
       {isPolicyFormOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1000]" onClick={handleCloseForm}>
-          <div className="bg-white rounded-xl shadow-2xl w-[90%] max-w-[900px] max-h-[85vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
-            <div className="flex justify-between items-center p-5 px-6 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-900 m-0">
+          <div className="bg-gradient-to-br from-card to-muted/10 rounded-xl shadow-2xl w-[90%] max-w-[900px] max-h-[85vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-between items-center p-5 px-6 bg-gradient-to-r from-muted/30 to-card shadow-sm">
+              <h2 className="text-lg font-semibold text-foreground m-0">
                 {editingPolicyId ? "Edit Policy" : "New Policy Submission"}
               </h2>
-              <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-500 hover:bg-gray-100 hover:text-gray-900" onClick={handleCloseForm}>
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleCloseForm}>
                 ×
               </Button>
             </div>

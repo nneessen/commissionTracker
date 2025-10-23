@@ -1,6 +1,7 @@
 // src/features/analytics/components/GeographicAnalysis.tsx
 
 import React from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import { USMap, StateData } from '../visualizations';
 import { useAnalyticsData } from '../../../hooks';
 
@@ -12,11 +13,11 @@ export function GeographicAnalysis() {
 
   if (isLoading) {
     return (
-      <div className="bg-white rounded-xl p-5 shadow-sm">
-        <div className="p-10 text-center text-gray-400 text-xs">
+      <Card>
+        <CardContent className="p-10 text-center text-muted-foreground text-xs">
           Loading geographic data...
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     );
   }
 
@@ -40,8 +41,10 @@ export function GeographicAnalysis() {
     }));
 
   return (
-    <div className="bg-white rounded-xl p-5 shadow-sm">
-      <USMap data={stateData} title="Premium by State" valueLabel="Annual Premium" />
-    </div>
+    <Card>
+      <CardContent className="p-5">
+        <USMap data={stateData} title="Premium by State" valueLabel="Annual Premium" />
+      </CardContent>
+    </Card>
   );
 }

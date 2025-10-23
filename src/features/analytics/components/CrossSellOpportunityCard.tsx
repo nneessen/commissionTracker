@@ -1,7 +1,9 @@
 // src/features/analytics/components/CrossSellOpportunityCard.tsx
 
 import React from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import { formatCurrency } from '../../../lib/format';
+import { cn } from '@/lib/utils';
 
 export interface CrossSellOpportunity {
   clientName: string;
@@ -20,31 +22,37 @@ interface CrossSellOpportunityCardProps {
  */
 export function CrossSellOpportunityCard({ opportunity, isTopRanked }: CrossSellOpportunityCardProps) {
   return (
-    <div
-      className={`flex justify-between items-center p-3 rounded-md ${
-        isTopRanked ? 'bg-green-50' : 'bg-gray-50'
-      }`}
+    <Card
+      className={cn(
+        "shadow-md hover:shadow-lg transition-all duration-200",
+        isTopRanked
+          ? 'bg-gradient-to-r from-success/25 via-status-active/15 to-card'
+          : 'bg-gradient-to-r from-info/15 via-status-earned/10 to-card'
+      )}
     >
-      <div>
-        <div className="text-xs font-semibold text-foreground mb-1">
-          {opportunity.clientName}
+      <CardContent className="flex justify-between items-center p-3">
+        <div>
+          <div className="text-xs font-semibold text-foreground mb-1">
+            {opportunity.clientName}
+          </div>
+          <div className="text-[10px] text-muted-foreground">
+            {opportunity.currentPolicies} policies · <span className="text-success font-semibold">{formatCurrency(opportunity.estimatedValue)}</span> potential
+          </div>
         </div>
-        <div className="text-[10px] text-muted-foreground">
-          {opportunity.currentPolicies} policies · {formatCurrency(opportunity.estimatedValue)} potential
+        <div className="flex items-center gap-2">
+          <div
+            className={cn(
+              "text-sm font-bold font-mono",
+              isTopRanked ? 'text-success' : 'text-info'
+            )}
+          >
+            {opportunity.opportunityScore}
+          </div>
+          <div className="text-[10px] font-semibold text-muted-foreground uppercase">
+            Score
+          </div>
         </div>
-      </div>
-      <div className="flex items-center gap-2">
-        <div
-          className={`text-sm font-bold font-mono ${
-            isTopRanked ? 'text-green-500' : 'text-blue-500'
-          }`}
-        >
-          {opportunity.opportunityScore}
-        </div>
-        <div className="text-[10px] font-semibold text-muted-foreground uppercase">
-          Score
-        </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }

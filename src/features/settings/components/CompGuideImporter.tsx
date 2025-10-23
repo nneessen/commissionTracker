@@ -272,8 +272,10 @@ export const CompGuideImporter: React.FC<CompGuideImporterProps> = ({
                   <label
                     key={carrier}
                     className={cn(
-                      "flex items-center gap-2 p-3 border border-border rounded-lg cursor-pointer",
-                      selectedCarriers.includes(carrier) ? "bg-blue-50" : "bg-card"
+                      "flex items-center gap-2 p-3 rounded-lg cursor-pointer transition-all duration-200 shadow-sm hover:shadow-md",
+                      selectedCarriers.includes(carrier)
+                        ? "bg-gradient-to-r from-primary/15 via-info/10 to-card"
+                        : "bg-card"
                     )}
                   >
                     <input
@@ -314,8 +316,8 @@ export const CompGuideImporter: React.FC<CompGuideImporterProps> = ({
               </div>
 
               {summary.carriersToCreate.length > 0 && (
-                <div className="mt-3 p-2 bg-yellow-100 rounded-md">
-                  <div className="text-sm font-medium text-yellow-900">
+                <div className="mt-3 p-2 bg-gradient-to-r from-warning/20 via-status-pending/10 to-card rounded-md shadow-sm">
+                  <div className="text-sm font-medium text-warning">
                     New carriers to be created: {summary.carriersToCreate.join(', ')}
                   </div>
                 </div>
@@ -342,7 +344,7 @@ export const CompGuideImporter: React.FC<CompGuideImporterProps> = ({
                 <Button
                   onClick={proceedToMapping}
                   disabled={selectedCarriers.length === 0}
-                  className="bg-info text-white hover:bg-info/90"
+                  className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground hover:from-primary/90 hover:to-primary/70 shadow-md"
                 >
                   Continue Import
                 </Button>
@@ -367,14 +369,14 @@ export const CompGuideImporter: React.FC<CompGuideImporterProps> = ({
                   return (
                     <div
                       key={carrier}
-                      className="p-3 border border-border rounded-lg flex justify-between items-center"
+                      className="p-3 rounded-lg flex justify-between items-center shadow-sm bg-card"
                     >
                       <span className="font-medium">{carrier}</span>
                       <span className={cn(
-                        "text-sm px-2 py-1 rounded",
+                        "text-sm px-2 py-1 rounded shadow-sm",
                         existingCarrier
-                          ? "bg-green-100 text-green-900"
-                          : "bg-yellow-100 text-yellow-900"
+                          ? "bg-gradient-to-r from-success/20 to-status-active/10 text-success"
+                          : "bg-gradient-to-r from-warning/20 to-status-pending/10 text-warning"
                       )}>
                         {existingCarrier ? 'Map to existing' : 'Create new'}
                       </span>
@@ -393,7 +395,7 @@ export const CompGuideImporter: React.FC<CompGuideImporterProps> = ({
               </Button>
               <Button
                 onClick={startImport}
-                className="bg-info text-white hover:bg-info/90"
+                className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground hover:from-primary/90 hover:to-primary/70 shadow-md"
               >
                 Start Import
               </Button>
@@ -403,7 +405,7 @@ export const CompGuideImporter: React.FC<CompGuideImporterProps> = ({
 
         {step === 'importing' && (
           <div className="text-center p-10">
-            <Upload size={48} className="mb-4 text-info inline-block" />
+            <Upload size={48} className="mb-4 text-primary inline-block" />
             <h3 className="text-lg font-semibold mb-2">
               Importing Commission Data...
             </h3>
@@ -411,9 +413,9 @@ export const CompGuideImporter: React.FC<CompGuideImporterProps> = ({
               Please wait while we import the commission guide data.
             </p>
 
-            <div className="w-full h-2 bg-muted rounded overflow-hidden mb-2 relative">
+            <div className="w-full h-2 bg-muted rounded overflow-hidden mb-2 relative shadow-inner">
               <div
-                className="absolute top-0 left-0 h-full bg-info transition-all duration-300 ease-in-out"
+                className="absolute top-0 left-0 h-full bg-gradient-to-r from-primary via-info to-primary/80 transition-all duration-300 ease-in-out shadow-sm"
                 style={{ width: `${progress}%` }}
               />
             </div>
@@ -456,12 +458,12 @@ export const CompGuideImporter: React.FC<CompGuideImporterProps> = ({
             </div>
 
             {importResults.errors.length > 0 && (
-              <div className="max-h-[200px] overflow-auto p-3 bg-red-50 border border-red-200 rounded-lg mb-6">
-                <h4 className="text-sm font-semibold text-error mb-2">
+              <div className="max-h-[200px] overflow-auto p-3 bg-gradient-to-r from-destructive/20 via-error/10 to-card rounded-lg mb-6 shadow-md">
+                <h4 className="text-sm font-semibold text-destructive mb-2">
                   Import Errors:
                 </h4>
                 {importResults.errors.map((error, index) => (
-                  <div key={index} className="text-xs text-error mb-1">
+                  <div key={index} className="text-xs text-destructive mb-1">
                     {error}
                   </div>
                 ))}
@@ -471,7 +473,7 @@ export const CompGuideImporter: React.FC<CompGuideImporterProps> = ({
             <div className="flex justify-end">
               <Button
                 onClick={onClose}
-                className="bg-info text-white hover:bg-info/90"
+                className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground hover:from-primary/90 hover:to-primary/70 shadow-md"
               >
                 Close
               </Button>

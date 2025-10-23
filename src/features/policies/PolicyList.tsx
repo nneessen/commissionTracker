@@ -310,9 +310,9 @@ export const PolicyList: React.FC<PolicyListProps> = ({
   );
 
   return (
-    <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+    <div className="bg-gradient-to-br from-card to-muted/10 rounded-lg shadow-md overflow-hidden">
       {/* Compact Search and Filter Bar */}
-      <div className="flex gap-3 p-3 px-4 bg-gray-50 border-b border-gray-200">
+      <div className="flex gap-3 p-3 px-4 bg-gradient-to-r from-muted/50 to-card shadow-sm">
         <div className="flex-1 relative flex items-center">
           <Search size={16} className="absolute left-2.5 text-gray-400" />
           <input
@@ -320,7 +320,7 @@ export const PolicyList: React.FC<PolicyListProps> = ({
             placeholder="Search policies, clients, carriers..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full py-1.5 px-3 pl-9 border border-gray-300 rounded-md text-[13px] outline-none transition-colors focus:border-blue-500 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.1)]"
+            className="w-full py-1.5 px-3 pl-9 border border-border rounded-md text-[13px] outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
           />
         </div>
         <Button
@@ -329,7 +329,7 @@ export const PolicyList: React.FC<PolicyListProps> = ({
           size="sm"
           className={cn(
             "flex items-center gap-1.5 px-3 py-1.5 text-[13px]",
-            showFilters && "bg-blue-500 text-white border-blue-500 hover:bg-blue-600"
+            showFilters && "bg-primary text-primary-foreground border-primary hover:bg-primary/90"
           )}
         >
           <Filter size={16} />
@@ -339,7 +339,7 @@ export const PolicyList: React.FC<PolicyListProps> = ({
 
       {/* Collapsible Filter Panel */}
       {showFilters && (
-        <div className="flex gap-3 p-3 px-4 bg-gray-50 border-b border-gray-200">
+        <div className="flex gap-3 p-3 px-4 bg-gradient-to-r from-muted/50 to-card shadow-sm">
           <div className="flex flex-col gap-1 min-w-[120px]">
             <label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">Status</label>
             <select
@@ -350,7 +350,7 @@ export const PolicyList: React.FC<PolicyListProps> = ({
                   status: (e.target.value as PolicyStatus) || undefined,
                 }))
               }
-              className="py-1 px-2 border border-gray-300 rounded text-[13px] bg-white cursor-pointer outline-none focus:border-blue-500 focus:shadow-[0_0_0_2px_rgba(59,130,246,0.1)]"
+              className="py-1 px-2 border border-border rounded text-[13px] bg-card cursor-pointer outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
             >
               <option value="">All</option>
               <option value="pending">Pending</option>
@@ -370,7 +370,7 @@ export const PolicyList: React.FC<PolicyListProps> = ({
                   product: (e.target.value as ProductType) || undefined,
                 }))
               }
-              className="py-1 px-2 border border-gray-300 rounded text-[13px] bg-white cursor-pointer outline-none focus:border-blue-500 focus:shadow-[0_0_0_2px_rgba(59,130,246,0.1)]"
+              className="py-1 px-2 border border-border rounded text-[13px] bg-card cursor-pointer outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
             >
               <option value="">All</option>
               <option value="whole_life">Whole Life</option>
@@ -392,7 +392,7 @@ export const PolicyList: React.FC<PolicyListProps> = ({
                   carrierId: e.target.value || undefined,
                 }))
               }
-              className="py-1 px-2 border border-gray-300 rounded text-[13px] bg-white cursor-pointer outline-none focus:border-blue-500 focus:shadow-[0_0_0_2px_rgba(59,130,246,0.1)]"
+              className="py-1 px-2 border border-border rounded text-[13px] bg-card cursor-pointer outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
             >
               <option value="">All</option>
               {Array.from(new Set(policies.map((p) => p.carrierId))).map(
@@ -413,7 +413,7 @@ export const PolicyList: React.FC<PolicyListProps> = ({
       {/* Condensed Policy Table */}
       <div className="overflow-x-auto">
         <table className="w-full text-[13px]">
-          <thead className="bg-gray-50 border-b border-gray-200">
+          <thead className="bg-gradient-to-r from-muted/50 to-card shadow-sm">
             <tr>
               <SortHeader field="policyNumber">Policy</SortHeader>
               <SortHeader field="client">Client</SortHeader>
@@ -621,7 +621,7 @@ export const PolicyList: React.FC<PolicyListProps> = ({
               </Button>
             </div>
             <div className="p-6">
-              <div className="p-4 bg-red-50 rounded-md border border-red-200 mb-4">
+              <div className="p-4 bg-gradient-to-br from-destructive/20 via-error/10 to-card rounded-md shadow-sm mb-4">
                 <div className="flex items-start gap-3">
                   <AlertCircle size={20} className="text-error flex-shrink-0 mt-0.5" />
                   <div>
@@ -635,7 +635,7 @@ export const PolicyList: React.FC<PolicyListProps> = ({
                 </div>
               </div>
               {selectedCommission && (
-                <div className="p-3 bg-muted/20 rounded-md border border-border">
+                <div className="p-3 bg-gradient-to-br from-muted/30 to-card rounded-md shadow-sm">
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <div className="text-xs text-muted-foreground mb-1">Advance Amount</div>
@@ -666,7 +666,7 @@ export const PolicyList: React.FC<PolicyListProps> = ({
                 type="button"
                 onClick={handleChargeback}
                 size="sm"
-                className="bg-error border-error text-white"
+                className="bg-destructive border-destructive text-destructive-foreground hover:bg-destructive/90"
               >
                 Cancel Commission
               </Button>

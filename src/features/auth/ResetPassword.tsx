@@ -3,8 +3,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { useAuth } from '../../contexts/AuthContext';
-import { Button, Input } from '../../components/ui';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent } from '@/components/ui/card';
 import { logger } from '../../services/base/logger';
+import { AuthErrorDisplay } from './components/AuthErrorDisplay';
+import { AuthSuccessMessage } from './components/AuthSuccessMessage';
 
 /**
  * ResetPassword - Handle password reset after user clicks email link
@@ -88,94 +93,77 @@ export const ResetPassword: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-indigo-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center bg-background py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full">
         {/* Logo/Brand */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white text-2xl font-bold mb-4 shadow-lg">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary text-primary-foreground text-2xl font-bold mb-4 shadow-lg">
             CT
           </div>
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">
+          <h2 className="text-3xl font-bold text-foreground mb-2">
             Reset your password
           </h2>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-muted-foreground">
             Enter your new password below
           </p>
         </div>
 
         {/* Main Card */}
-        <div className="bg-white rounded-2xl shadow-xl p-8 space-y-6">
-          {/* Success Message */}
-          {success && (
-            <div className="rounded-xl bg-green-50 border border-green-200 p-4 animate-fadeIn">
-              <div className="flex items-start">
-                <div className="flex-shrink-0">
-                  <svg className="h-5 w-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
+        <Card className="shadow-xl">
+          <CardContent className="p-8 space-y-6">
+            {/* Success Message */}
+            {success && (
+              <AuthSuccessMessage message="Password updated successfully! Redirecting to dashboard..." />
+            )}
+
+            {/* Error Message */}
+            {error && (
+              <AuthErrorDisplay error={error} mode="signin" onSwitchToSignup={() => {}} />
+            )}
+
+            {/* Form */}
+            {hasToken && !success && (
+              <form className="space-y-5" onSubmit={handleSubmit}>
+                {/* Password Input */}
+                <div className="space-y-2">
+                  <Label htmlFor="password">New password</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="Enter your new password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    disabled={loading}
+                  />
                 </div>
-                <p className="ml-3 text-sm font-medium text-green-800">
-                  Password updated successfully! Redirecting to dashboard...
-                </p>
-              </div>
-            </div>
-          )}
 
-          {/* Error Message */}
-          {error && (
-            <div className="rounded-xl bg-red-50 border border-red-200 p-4 animate-fadeIn">
-              <div className="flex items-start">
-                <div className="flex-shrink-0">
-                  <svg className="h-5 w-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                  </svg>
+                {/* Confirm Password Input */}
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword">Confirm new password</Label>
+                  <Input
+                    id="confirmPassword"
+                    type="password"
+                    placeholder="Confirm your new password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                    disabled={loading}
+                  />
                 </div>
-                <p className="ml-3 text-sm font-medium text-red-800">
-                  {error}
-                </p>
-              </div>
-            </div>
-          )}
 
-          {/* Form */}
-          {hasToken && !success && (
-            <form className="space-y-5" onSubmit={handleSubmit}>
-              {/* Password Input */}
-              <Input
-                label="New password"
-                type="password"
-                placeholder="Enter your new password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                disabled={loading}
-                className="w-full"
-              />
-
-              {/* Confirm Password Input */}
-              <Input
-                label="Confirm new password"
-                type="password"
-                placeholder="Confirm your new password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-                disabled={loading}
-                className="w-full"
-              />
-
-              {/* Submit Button */}
-              <Button
-                type="submit"
-                disabled={loading}
-                loading={loading}
-                className="w-full py-3 text-base font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white"
-              >
-                {loading ? 'Updating password...' : 'Update password'}
-              </Button>
-            </form>
-          )}
-        </div>
+                {/* Submit Button */}
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full py-3 text-base font-semibold rounded-xl"
+                >
+                  {loading ? 'Updating password...' : 'Update password'}
+                </Button>
+              </form>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Footer */}
         <div className="mt-8 text-center">
@@ -184,7 +172,7 @@ export const ResetPassword: React.FC = () => {
             onClick={() => navigate({ to: '/login' })}
             variant="link"
             disabled={loading}
-            className="h-auto p-0 text-sm font-medium text-blue-600 hover:text-blue-500"
+            className="h-auto p-0 text-sm font-medium"
           >
             ← Back to login
           </Button>

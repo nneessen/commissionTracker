@@ -18,7 +18,7 @@ export const SettingsCard: React.FC<SettingsCardProps> = ({
       <div className="flex items-center justify-between mb-4">
         <h4>{title}</h4>
         {icon && (
-          <div className="p-2 rounded-lg bg-gradient-to-br from-card to-muted border border-border text-foreground">
+          <div className="p-2 rounded-lg bg-gradient-to-br from-primary/20 via-accent/10 to-card shadow-md text-primary">
             {icon}
           </div>
         )}

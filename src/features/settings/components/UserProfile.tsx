@@ -72,36 +72,36 @@ export function UserProfile() {
         {/* User Information */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-muted-foreground mb-2">
               Email
             </label>
-            <div className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-md text-gray-600">
+            <div className="px-3 py-2 bg-gradient-to-r from-muted/30 to-card rounded-md text-foreground shadow-sm">
               {user.email}
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-muted-foreground mb-2">
               Name
             </label>
-            <div className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-md text-gray-600">
+            <div className="px-3 py-2 bg-gradient-to-r from-muted/30 to-card rounded-md text-foreground shadow-sm">
               {user.name || 'Not set'}
             </div>
           </div>
         </div>
 
         {/* Contract Level Editor */}
-        <form onSubmit={handleSubmit} className="border-t pt-6">
+        <form onSubmit={handleSubmit} className="pt-6">
           <div className="mb-6">
             <h3 className="text-lg font-semibold mb-2">Commission Settings</h3>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-muted-foreground">
               Your contract level determines your commission rates. This setting only affects
               new commissions and does not change existing policies or commission calculations.
             </p>
           </div>
 
           <div className="max-w-xs">
-            <label htmlFor="contractLevel" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="contractLevel" className="block text-sm font-medium text-muted-foreground mb-2">
               Contract Level (80-145)
             </label>
             <input
@@ -111,12 +111,12 @@ export function UserProfile() {
               max="145"
               value={contractLevel}
               onChange={handleContractLevelChange}
-              className={`block w-full px-3 py-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 ${
-                validationError ? 'border-red-300' : 'border-gray-300'
+              className={`block w-full px-3 py-2 rounded-md shadow-sm bg-card text-foreground focus:ring-2 focus:ring-primary ${
+                validationError ? 'ring-2 ring-destructive' : ''
               }`}
             />
             {validationError && (
-              <div className="mt-2 flex items-center gap-2 text-sm text-red-600">
+              <div className="mt-2 flex items-center gap-2 text-sm text-destructive">
                 <AlertCircle className="h-4 w-4" />
                 {validationError}
               </div>
@@ -135,14 +135,14 @@ export function UserProfile() {
             </Button>
 
             {showSuccess && (
-              <div className="flex items-center gap-2 text-sm text-green-600">
+              <div className="flex items-center gap-2 text-sm text-success">
                 <CheckCircle2 className="h-5 w-5" />
                 Contract level updated successfully!
               </div>
             )}
 
             {updateProfile.isError && (
-              <div className="flex items-center gap-2 text-sm text-red-600">
+              <div className="flex items-center gap-2 text-sm text-destructive">
                 <AlertCircle className="h-5 w-5" />
                 Failed to update contract level
               </div>
@@ -151,12 +151,12 @@ export function UserProfile() {
         </form>
 
         {/* Info Box */}
-        <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-md">
+        <div className="mt-6 p-4 bg-gradient-to-r from-info/15 via-status-earned/10 to-card rounded-md shadow-md">
           <div className="flex items-start gap-3">
-            <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
-            <div className="text-sm text-blue-800">
+            <AlertCircle className="h-5 w-5 text-info mt-0.5 flex-shrink-0" />
+            <div className="text-sm text-foreground">
               <p className="font-medium mb-1">About Contract Levels</p>
-              <p>
+              <p className="text-muted-foreground">
                 Your contract level represents your commission tier with insurance carriers.
                 Higher levels typically earn higher commission percentages. When you create new
                 policies or commissions, your current contract level will be used to calculate

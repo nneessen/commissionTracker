@@ -122,7 +122,7 @@ export function AnalyticsDashboard() {
               <Button
                 onClick={handleExportCSV}
                 size="sm"
-                className="bg-success hover:bg-success/90 text-white"
+                variant="default"
                 title="Export data to CSV"
               >
                 Export CSV
@@ -130,7 +130,7 @@ export function AnalyticsDashboard() {
               <Button
                 onClick={handlePrintPDF}
                 size="sm"
-                variant="destructive"
+                variant="outline"
                 title="Print report to PDF"
               >
                 Print PDF

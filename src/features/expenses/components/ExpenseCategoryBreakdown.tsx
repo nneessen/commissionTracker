@@ -19,21 +19,21 @@ interface ExpenseCategoryBreakdownProps {
   categories: CategoryData[];
 }
 
-// Map colors to Tailwind background classes
+// Map colors to semantic CSS variable classes
 const colorToBgClass = (color: string): string => {
   const colorMap: Record<string, string> = {
-    'rgb(59, 130, 246)': 'bg-blue-500',
-    'rgb(16, 185, 129)': 'bg-green-500',
-    'rgb(245, 158, 11)': 'bg-amber-500',
-    'rgb(239, 68, 68)': 'bg-red-500',
-    'rgb(139, 92, 246)': 'bg-purple-500',
-    'rgb(236, 72, 153)': 'bg-pink-500',
-    'rgb(6, 182, 212)': 'bg-cyan-500',
-    'rgb(20, 184, 166)': 'bg-teal-500',
-    'rgb(249, 115, 22)': 'bg-orange-500',
-    'rgb(100, 116, 139)': 'bg-slate-500',
+    'rgb(59, 130, 246)': 'bg-status-earned',
+    'rgb(16, 185, 129)': 'bg-status-active',
+    'rgb(245, 158, 11)': 'bg-status-pending',
+    'rgb(239, 68, 68)': 'bg-destructive',
+    'rgb(139, 92, 246)': 'bg-primary',
+    'rgb(236, 72, 153)': 'bg-primary',
+    'rgb(6, 182, 212)': 'bg-primary',
+    'rgb(20, 184, 166)': 'bg-status-active',
+    'rgb(249, 115, 22)': 'bg-status-lapsed',
+    'rgb(100, 116, 139)': 'bg-muted-foreground',
   };
-  return colorMap[color] || 'bg-blue-500';
+  return colorMap[color] || 'bg-status-earned';
 };
 
 export function ExpenseCategoryBreakdown({

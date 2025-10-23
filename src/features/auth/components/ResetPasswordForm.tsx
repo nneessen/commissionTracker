@@ -1,10 +1,11 @@
 // src/features/auth/components/ResetPasswordForm.tsx
-// TODO: label type issue in Input component
 
 import React from "react";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { FormErrors } from "../hooks/useAuthValidation";
+import { AlertCircle } from "lucide-react";
 
 interface ResetPasswordFormProps {
   email: string;
@@ -23,23 +24,30 @@ export const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
 }) => {
   return (
     <form className="space-y-5" onSubmit={onSubmit}>
-      <Input
-        label="Email address"
-        type="email"
-        placeholder="you@example.com"
-        value={email}
-        onChange={(value) => onEmailChange(String(value))}
-        error={formErrors.email}
-        required
-        disabled={loading}
-        className="w-full"
-      />
+      <div className="space-y-2">
+        <Label htmlFor="email">Email address</Label>
+        <Input
+          id="email"
+          type="email"
+          placeholder="you@example.com"
+          value={email}
+          onChange={(e) => onEmailChange(e.target.value)}
+          required
+          disabled={loading}
+          className={formErrors.email ? "border-destructive" : ""}
+        />
+        {formErrors.email && (
+          <div className="flex items-center gap-1 text-xs text-destructive">
+            <AlertCircle className="h-3 w-3" />
+            {formErrors.email}
+          </div>
+        )}
+      </div>
 
       <Button
         type="submit"
         disabled={loading}
-        loading={loading}
-        className="w-full py-3 text-base font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white"
+        className="w-full py-3 text-base font-semibold rounded-xl"
       >
         {loading ? "Please wait..." : "Send reset link"}
       </Button>

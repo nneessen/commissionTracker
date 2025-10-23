@@ -1,6 +1,7 @@
 // src/components/dashboard/CommissionPipeline.tsx
 
 import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TrendingUp, DollarSign, Clock } from 'lucide-react';
 
 interface CommissionPipelineProps {
@@ -26,175 +27,72 @@ export const CommissionPipeline: React.FC<CommissionPipelineProps> = ({
   };
 
   return (
-    <div className="commission-pipeline">
-      <h2 className="pipeline-title">
-        <TrendingUp size={20} />
-        Commission Pipeline
-      </h2>
-
-      <div className="pipeline-visual">
+    <Card className="bg-gradient-to-br from-primary via-primary to-primary/80 text-primary-foreground border-primary">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-lg">
+          <TrendingUp className="h-5 w-5" />
+          Commission Pipeline
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-5">
         {/* Total Pipeline */}
-        <div className="pipeline-stage">
-          <div className="stage-header">
-            <span className="stage-label">Total Pipeline</span>
-            <span className="stage-value">{formatCurrency(total)}</span>
+        <div className="bg-primary-foreground/10 rounded-lg p-4">
+          <div className="flex justify-between items-center mb-3">
+            <span className="text-sm opacity-90">Total Pipeline</span>
+            <span className="text-xl font-bold">{formatCurrency(total)}</span>
           </div>
-          <div className="progress-bar">
+          <div className="h-8 bg-primary-foreground/20 rounded-full overflow-hidden flex mb-3">
             <div
-              className="progress-segment paid"
+              className="h-full bg-status-active transition-all duration-300"
               style={{ width: `${paidPercentage}%` }}
               title={`Paid: ${formatCurrency(paid)}`}
             />
             <div
-              className="progress-segment pending"
+              className="h-full bg-status-pending transition-all duration-300"
               style={{ width: `${pendingPercentage}%` }}
               title={`Pending: ${formatCurrency(pending)}`}
             />
           </div>
-          <div className="stage-breakdown">
-            <span className="breakdown-item paid">
-              <DollarSign size={14} />
+          <div className="flex justify-between text-xs opacity-95">
+            <span className="flex items-center gap-1">
+              <DollarSign className="h-3.5 w-3.5" />
               Paid: {formatCurrency(paid)}
             </span>
-            <span className="breakdown-item pending">
-              <Clock size={14} />
+            <span className="flex items-center gap-1">
+              <Clock className="h-3.5 w-3.5" />
               Pending: {formatCurrency(pending)}
             </span>
           </div>
         </div>
 
         {/* Earned vs Unearned */}
-        <div className="pipeline-stage">
-          <div className="stage-header">
-            <span className="stage-label">Paid Commissions</span>
-            <span className="stage-value">{formatCurrency(paid)}</span>
+        <div className="bg-primary-foreground/10 rounded-lg p-4">
+          <div className="flex justify-between items-center mb-3">
+            <span className="text-sm opacity-90">Paid Commissions</span>
+            <span className="text-xl font-bold">{formatCurrency(paid)}</span>
           </div>
-          <div className="progress-bar">
+          <div className="h-8 bg-primary-foreground/20 rounded-full overflow-hidden flex mb-3">
             <div
-              className="progress-segment earned"
+              className="h-full bg-status-earned transition-all duration-300"
               style={{ width: `${earnedPercentage}%` }}
               title={`Earned: ${formatCurrency(earned)}`}
             />
             <div
-              className="progress-segment unearned"
+              className="h-full bg-destructive transition-all duration-300"
               style={{ width: `${100 - earnedPercentage}%` }}
               title={`Unearned (At Risk): ${formatCurrency(unearned)}`}
             />
           </div>
-          <div className="stage-breakdown">
-            <span className="breakdown-item earned">
+          <div className="flex justify-between text-xs opacity-95">
+            <span className="flex items-center gap-1">
               ✓ Earned: {formatCurrency(earned)}
             </span>
-            <span className="breakdown-item unearned">
+            <span className="flex items-center gap-1">
               ⚠ At Risk: {formatCurrency(unearned)}
             </span>
           </div>
         </div>
-      </div>
-
-      <style jsx>{`
-        .commission-pipeline {
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          border-radius: 12px;
-          padding: 24px;
-          color: white;
-          margin-bottom: 24px;
-        }
-
-        .pipeline-title {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          font-size: 18px;
-          font-weight: 600;
-          margin-bottom: 20px;
-        }
-
-        .pipeline-visual {
-          display: flex;
-          flex-direction: column;
-          gap: 20px;
-        }
-
-        .pipeline-stage {
-          background: rgba(255, 255, 255, 0.1);
-          border-radius: 8px;
-          padding: 16px;
-        }
-
-        .stage-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 12px;
-        }
-
-        .stage-label {
-          font-size: 14px;
-          opacity: 0.9;
-        }
-
-        .stage-value {
-          font-size: 20px;
-          font-weight: 700;
-        }
-
-        .progress-bar {
-          height: 32px;
-          background: rgba(255, 255, 255, 0.2);
-          border-radius: 16px;
-          overflow: hidden;
-          display: flex;
-          margin-bottom: 12px;
-        }
-
-        .progress-segment {
-          height: 100%;
-          transition: width 0.3s ease;
-        }
-
-        .progress-segment.paid {
-          background: linear-gradient(90deg, #10b981, #34d399);
-        }
-
-        .progress-segment.pending {
-          background: linear-gradient(90deg, #f59e0b, #fbbf24);
-        }
-
-        .progress-segment.earned {
-          background: linear-gradient(90deg, #3b82f6, #60a5fa);
-        }
-
-        .progress-segment.unearned {
-          background: linear-gradient(90deg, #ef4444, #f87171);
-        }
-
-        .stage-breakdown {
-          display: flex;
-          justify-content: space-between;
-          font-size: 13px;
-        }
-
-        .breakdown-item {
-          display: flex;
-          align-items: center;
-          gap: 4px;
-          opacity: 0.95;
-        }
-
-        .breakdown-item.paid,
-        .breakdown-item.earned {
-          color: #d1fae5;
-        }
-
-        .breakdown-item.pending {
-          color: #fde68a;
-        }
-
-        .breakdown-item.unearned {
-          color: #fecaca;
-        }
-      `}</style>
-    </div>
+      </CardContent>
+    </Card>
   );
 };

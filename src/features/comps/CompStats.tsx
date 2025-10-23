@@ -19,11 +19,11 @@ export function CompStats() {
       <div className="mb-6">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="bg-white rounded-lg shadow p-6 border border-gray-200">
+            <div key={i} className="bg-card rounded-lg shadow-md p-6">
               <div className="animate-pulse">
-                <div className="h-4 bg-gray-200 rounded w-3/4 mb-3"></div>
-                <div className="h-8 bg-gray-200 rounded w-1/2 mb-2"></div>
-                <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                <div className="h-4 bg-muted/50 rounded w-3/4 mb-3"></div>
+                <div className="h-8 bg-muted/50 rounded w-1/2 mb-2"></div>
+                <div className="h-3 bg-muted/50 rounded w-1/2"></div>
               </div>
             </div>
           ))}
@@ -34,8 +34,8 @@ export function CompStats() {
 
   if (error || !stats) {
     return (
-      <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-        <p className="text-sm text-red-600">Failed to load comp statistics</p>
+      <div className="mb-6 p-4 bg-gradient-to-r from-destructive/20 via-error/10 to-card rounded-lg shadow-md">
+        <p className="text-sm text-destructive">Failed to load comp statistics</p>
       </div>
     );
   }
@@ -46,40 +46,40 @@ export function CompStats() {
       value: stats.totalProducts.toLocaleString(),
       description: 'Compensation rates in database',
       icon: BarChart3,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-50'
+      color: 'text-info',
+      bgColor: 'bg-gradient-to-br from-info/20 via-status-earned/10 to-card'
     },
     {
       name: 'Carriers',
       value: stats.activeCarriers.toLocaleString(),
       description: 'Insurance carriers',
       icon: Building2,
-      color: 'text-green-600',
-      bgColor: 'bg-green-50'
+      color: 'text-success',
+      bgColor: 'bg-gradient-to-br from-success/20 via-status-active/10 to-card'
     },
     {
       name: 'Product Types',
       value: stats.productTypes.toLocaleString(),
       description: 'Different product categories',
       icon: Package,
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-50'
+      color: 'text-primary',
+      bgColor: 'bg-gradient-to-br from-primary/20 via-accent/10 to-card'
     },
     {
       name: 'Average Commission',
       value: `${stats.avgCommission.toFixed(1)}%`,
       description: 'Across all products & carriers',
       icon: TrendingUp,
-      color: 'text-orange-600',
-      bgColor: 'bg-orange-50'
+      color: 'text-warning',
+      bgColor: 'bg-gradient-to-br from-warning/20 via-status-pending/10 to-card'
     }
   ];
 
   return (
     <div className="mb-6">
       <div className="mb-4">
-        <h3 className="text-lg font-medium text-gray-900">Comp Guide Overview</h3>
-        <p className="text-sm text-gray-500">Current FFG compensation data summary</p>
+        <h3 className="text-lg font-medium text-foreground">Comp Guide Overview</h3>
+        <p className="text-sm text-muted-foreground">Current FFG compensation data summary</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -88,22 +88,22 @@ export function CompStats() {
           return (
             <div
               key={stat.name}
-              className="bg-white rounded-lg shadow border border-gray-200 p-6 transition-transform duration-200 hover:scale-105"
+              className={`rounded-lg shadow-md p-6 transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 ${stat.bgColor}`}
             >
               <div className="flex items-center">
-                <div className={`flex-shrink-0 ${stat.bgColor} rounded-md p-3`}>
+                <div className="flex-shrink-0 rounded-md p-3 shadow-sm bg-card">
                   <Icon className={`h-6 w-6 ${stat.color}`} />
                 </div>
                 <div className="ml-4 flex-1">
                   <div className="flex items-baseline">
-                    <p className={`text-2xl font-semibold ${stat.color}`}>
+                    <p className={`text-2xl font-semibold font-mono ${stat.color}`}>
                       {stat.value}
                     </p>
                   </div>
-                  <p className="text-sm font-medium text-gray-900 truncate">
+                  <p className="text-sm font-medium text-foreground truncate">
                     {stat.name}
                   </p>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-muted-foreground">
                     {stat.description}
                   </p>
                 </div>
@@ -115,22 +115,22 @@ export function CompStats() {
 
       {/* Additional insights */}
       <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="bg-gradient-to-r from-info/15 via-status-earned/10 to-card rounded-lg p-4 shadow-md">
           <div className="flex items-center">
-            <Percent className="h-5 w-5 text-blue-600 mr-2" />
-            <h4 className="text-sm font-medium text-blue-900">Commission Range</h4>
+            <Percent className="h-5 w-5 text-info mr-2" />
+            <h4 className="text-sm font-medium text-foreground">Commission Range</h4>
           </div>
-          <p className="text-sm text-blue-700 mt-1">
+          <p className="text-sm text-muted-foreground mt-1">
             Commission rates typically range from 50% to 150% depending on carrier, product, and contract level.
           </p>
         </div>
 
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+        <div className="bg-gradient-to-r from-success/15 via-status-active/10 to-card rounded-lg p-4 shadow-md">
           <div className="flex items-center">
-            <TrendingUp className="h-5 w-5 text-green-600 mr-2" />
-            <h4 className="text-sm font-medium text-green-900">Rate Updates</h4>
+            <TrendingUp className="h-5 w-5 text-success mr-2" />
+            <h4 className="text-sm font-medium text-foreground">Rate Updates</h4>
           </div>
-          <p className="text-sm text-green-700 mt-1">
+          <p className="text-sm text-muted-foreground mt-1">
             Commission rates are updated regularly to reflect current carrier offerings and contract terms.
           </p>
         </div>

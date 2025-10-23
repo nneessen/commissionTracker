@@ -1,10 +1,11 @@
 // src/features/auth/components/SignUpForm.tsx
-// TODO: label type issue in Input component
 
 import React from "react";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { FormErrors } from "../hooks/useAuthValidation";
+import { AlertCircle } from "lucide-react";
 
 interface SignUpFormProps {
   email: string;
@@ -31,47 +32,70 @@ export const SignUpForm: React.FC<SignUpFormProps> = ({
 }) => {
   return (
     <form className="space-y-5" onSubmit={onSubmit}>
-      <Input
-        label="Email address"
-        type="email"
-        placeholder="you@example.com"
-        value={email}
-        onChange={(value) => onEmailChange(String(value))}
-        error={formErrors.email}
-        required
-        disabled={loading}
-        className="w-full"
-      />
+      <div className="space-y-2">
+        <Label htmlFor="email">Email address</Label>
+        <Input
+          id="email"
+          type="email"
+          placeholder="you@example.com"
+          value={email}
+          onChange={(e) => onEmailChange(e.target.value)}
+          required
+          disabled={loading}
+          className={formErrors.email ? "border-destructive" : ""}
+        />
+        {formErrors.email && (
+          <div className="flex items-center gap-1 text-xs text-destructive">
+            <AlertCircle className="h-3 w-3" />
+            {formErrors.email}
+          </div>
+        )}
+      </div>
 
-      <Input
-        label="Password"
-        type="password"
-        placeholder="Enter your password"
-        value={password}
-        onChange={(value) => onPasswordChange(String(value))}
-        error={formErrors.password}
-        required
-        disabled={loading}
-        className="w-full"
-      />
+      <div className="space-y-2">
+        <Label htmlFor="password">Password</Label>
+        <Input
+          id="password"
+          type="password"
+          placeholder="Enter your password"
+          value={password}
+          onChange={(e) => onPasswordChange(e.target.value)}
+          required
+          disabled={loading}
+          className={formErrors.password ? "border-destructive" : ""}
+        />
+        {formErrors.password && (
+          <div className="flex items-center gap-1 text-xs text-destructive">
+            <AlertCircle className="h-3 w-3" />
+            {formErrors.password}
+          </div>
+        )}
+      </div>
 
-      <Input
-        label="Confirm password"
-        type="password"
-        placeholder="Confirm your password"
-        value={confirmPassword}
-        onChange={(value) => onConfirmPasswordChange(String(value))}
-        error={formErrors.confirmPassword}
-        required
-        disabled={loading}
-        className="w-full"
-      />
+      <div className="space-y-2">
+        <Label htmlFor="confirmPassword">Confirm password</Label>
+        <Input
+          id="confirmPassword"
+          type="password"
+          placeholder="Confirm your password"
+          value={confirmPassword}
+          onChange={(e) => onConfirmPasswordChange(e.target.value)}
+          required
+          disabled={loading}
+          className={formErrors.confirmPassword ? "border-destructive" : ""}
+        />
+        {formErrors.confirmPassword && (
+          <div className="flex items-center gap-1 text-xs text-destructive">
+            <AlertCircle className="h-3 w-3" />
+            {formErrors.confirmPassword}
+          </div>
+        )}
+      </div>
 
       <Button
         type="submit"
         disabled={loading}
-        loading={loading}
-        className="w-full py-3 text-base font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white"
+        className="w-full py-3 text-base font-semibold rounded-xl"
       >
         {loading ? "Please wait..." : "Create account"}
       </Button>

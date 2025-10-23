@@ -1,7 +1,10 @@
 // src/features/analytics/components/ProductMatrix.tsx
 
 import React, { useState } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { Info, X } from 'lucide-react';
 import { useAnalyticsData } from '../../../hooks';
 import { cn } from '@/lib/utils';
 
@@ -14,11 +17,11 @@ export function ProductMatrix() {
 
   if (isLoading) {
     return (
-      <div className="bg-white rounded-xl p-5 shadow-sm">
-        <div className="p-10 text-center text-gray-400 text-xs">
+      <Card>
+        <CardContent className="p-10 text-center text-muted-foreground text-xs">
           Loading product data...
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     );
   }
 
@@ -35,96 +38,115 @@ export function ProductMatrix() {
   };
 
   return (
-    <div className="bg-white rounded-xl p-5 shadow-sm">
-      <div className="flex items-center gap-2 mb-5">
-        <div className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
-          Product Mix - {latestMonth?.periodLabel}
-        </div>
-        <Button
-          onClick={() => setShowInfo(!showInfo)}
-          size="icon"
-          variant="ghost"
-          className="h-6 w-6 bg-blue-50 border border-blue-100 hover:bg-blue-200 hover:scale-110 transition-transform"
-          title="Click for detailed explanation"
-        >
-          i
-        </Button>
-      </div>
-
-      {showInfo && (
-        <div className="bg-blue-50 border border-blue-200">
-          <div className="flex justify-between items-start mb-3">
-            <h3 className="m-0 text-sm font-bold text-blue-800">
-              Understanding Product Mix
-            </h3>
-            <Button
-              onClick={() => setShowInfo(false)}
-              variant="ghost"
-              size="icon"
-              className="h-6 w-6 p-0 text-lg text-slate-600 hover:text-slate-900"
-            >
-              ×
-            </Button>
+    <Card>
+      <CardContent className="p-5">
+        <div className="flex items-center gap-2 mb-5">
+          <div className="text-sm font-semibold text-foreground uppercase tracking-wide">
+            Product Mix - {latestMonth?.periodLabel}
           </div>
-
-          <div className="mb-4">
-            <strong>What is this?</strong> Product Mix shows which insurance products you're selling most and how your portfolio is balanced.
-            This helps you identify gaps and opportunities in your product offerings.
-          </div>
-
-          <div className="mb-4 p-3 bg-white rounded-md">
-            <strong>Why It Matters:</strong>
-            <div className="text-xs mt-2 text-gray-600">
-              • <strong>Diversification:</strong> Relying too heavily on one product type is risky<br/>
-              • <strong>Income Stability:</strong> Different products have different commission structures<br/>
-              • <strong>Client Needs:</strong> Shows if you're serving all client segments<br/>
-              • <strong>Growth Opportunities:</strong> Identifies underutilized product lines
-            </div>
-          </div>
-
-          <div className="mb-4 p-3 bg-white rounded-md">
-            <strong>Real Example:</strong>
-            <div className="text-xs mt-2 text-gray-600">
-              Your current mix:<br/>
-              • 60% Term Life (30 policies, $180K premium)<br/>
-              • 25% Whole Life (10 policies, $150K premium)<br/>
-              • 10% Health (8 policies, $80K premium)<br/>
-              • 5% Disability (2 policies, $20K premium)<br/>
-              <div className="mt-2 text-blue-700">
-                <strong>Insight:</strong> You're heavily term-focused. Consider pushing whole life and disability for better commission rates!
-              </div>
-            </div>
-          </div>
-
-          <div className="p-2 bg-blue-100 rounded text-xs text-center text-blue-700">
-            <strong>Pro Tip:</strong> Aim for a balanced mix - don't put all your eggs in one product basket!
-          </div>
-        </div>
-      )}
-
-      <div className="grid gap-2">
-        {latestMonth?.productBreakdown.map((product, idx) => (
-          <div
-            key={product.product}
-            className={cn(
-              "flex justify-between items-center p-3 rounded-md",
-              idx === 0 ? "bg-blue-50" : "bg-muted"
-            )}
+          <Button
+            onClick={() => setShowInfo(!showInfo)}
+            size="icon"
+            variant="ghost"
+            className="h-6 w-6 hover:scale-110 transition-transform"
+            title="Click for detailed explanation"
           >
-            <div>
-              <div className="text-xs font-semibold text-foreground mb-1">
-                {product.product}
+            <Info className="h-4 w-4" />
+          </Button>
+        </div>
+
+        {showInfo && (
+          <Alert className="bg-gradient-to-r from-primary/20 via-info/10 to-card shadow-md mb-4">
+            <AlertDescription>
+              <div className="flex justify-between items-start mb-3">
+                <h3 className="m-0 text-sm font-bold text-foreground">
+                  Understanding Product Mix
+                </h3>
+                <Button
+                  onClick={() => setShowInfo(false)}
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 p-0"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
               </div>
-              <div className="text-[10px] text-muted-foreground">
-                {product.count} policies · {product.percentage.toFixed(1)}%
+
+              <div className="mb-4 text-foreground">
+                <strong>What is this?</strong> Product Mix shows which insurance products you're selling most and how your portfolio is balanced.
+                This helps you identify gaps and opportunities in your product offerings.
               </div>
-            </div>
-            <div className="text-sm font-bold text-info font-mono">
-              {formatCurrency(product.revenue)}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
+
+              <div className="mb-4 p-3 bg-gradient-to-r from-info/15 to-card rounded-md shadow-sm">
+                <strong>Why It Matters:</strong>
+                <div className="text-xs mt-2 text-muted-foreground">
+                  • <strong>Diversification:</strong> Relying too heavily on one product type is risky<br/>
+                  • <strong>Income Stability:</strong> Different products have different commission structures<br/>
+                  • <strong>Client Needs:</strong> Shows if you're serving all client segments<br/>
+                  • <strong>Growth Opportunities:</strong> Identifies underutilized product lines
+                </div>
+              </div>
+
+              <div className="mb-4 p-3 bg-gradient-to-r from-success/15 to-card rounded-md shadow-sm">
+                <strong className="text-foreground">Real Example:</strong>
+                <div className="text-xs mt-2 text-muted-foreground">
+                  Your current mix:<br/>
+                  • <span className="text-success font-bold">60% Term Life</span> (30 policies, $180K premium)<br/>
+                  • <span className="text-info font-bold">25% Whole Life</span> (10 policies, $150K premium)<br/>
+                  • <span className="text-warning font-bold">10% Health</span> (8 policies, $80K premium)<br/>
+                  • <span className="text-destructive font-bold">5% Disability</span> (2 policies, $20K premium)<br/>
+                  <div className="mt-2 text-primary font-semibold">
+                    <strong>Insight:</strong> You're heavily term-focused. Consider pushing whole life and disability for better commission rates!
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-2 bg-gradient-to-r from-primary/20 to-accent/10 rounded text-xs text-center text-primary font-semibold shadow-sm">
+                <strong>Pro Tip:</strong> Aim for a balanced mix - don't put all your eggs in one product basket!
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        <div className="grid gap-2">
+          {latestMonth?.productBreakdown.map((product, idx) => {
+            const getProductColor = (index: number) => {
+              const colors = [
+                { bg: "bg-gradient-to-r from-success/20 via-status-active/10 to-card", text: "text-success" },
+                { bg: "bg-gradient-to-r from-info/20 via-status-earned/10 to-card", text: "text-info" },
+                { bg: "bg-gradient-to-r from-primary/20 via-accent/10 to-card", text: "text-primary" },
+                { bg: "bg-gradient-to-r from-warning/20 via-status-pending/10 to-card", text: "text-warning" },
+              ];
+              return colors[index % colors.length];
+            };
+
+            const colorScheme = getProductColor(idx);
+
+            return (
+              <Card
+                key={product.product}
+                className={cn("shadow-md hover:shadow-lg transition-all duration-200", colorScheme.bg)}
+              >
+                <CardContent className="p-3">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <div className="text-xs font-semibold text-foreground mb-1">
+                        {product.product}
+                      </div>
+                      <div className="text-[10px] text-muted-foreground">
+                        {product.count} policies · {product.percentage.toFixed(1)}%
+                      </div>
+                    </div>
+                    <div className={cn("text-sm font-bold font-mono", colorScheme.text)}>
+                      {formatCurrency(product.revenue)}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      </CardContent>
+    </Card>
   );
 }

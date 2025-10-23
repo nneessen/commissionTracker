@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { QuickActionsPanelProps } from '../../../types/dashboard.types';
 import { cn } from '@/lib/utils';
 
@@ -19,31 +20,35 @@ export const QuickActionsPanel: React.FC<QuickActionsPanelProps> = ({
   isCreating,
 }) => {
   return (
-    <div className="bg-card rounded-lg p-3.5 shadow-sm">
-      <div className="text-sm font-semibold mb-2.5 text-foreground uppercase tracking-wide">
-        Quick Actions
-      </div>
-      <div className="flex flex-col gap-1.5">
-        {actions.map((action, index) => (
-          <Button
-            key={index}
-            onClick={() => onActionClick(action.action)}
-            disabled={isCreating}
-            variant="outline"
-            size="sm"
-            className={cn(
-              "px-3 py-2 h-auto rounded-sm text-xs font-medium justify-start transition-all duration-200",
-              isCreating
-                ? "bg-muted/30 border-border/50 text-muted-foreground cursor-not-allowed opacity-60"
-                : "bg-card border-border text-foreground hover:bg-muted/20 hover:border-border/80"
-            )}
-          >
-            {isCreating && action.label !== 'View Reports'
-              ? `${action.label}...`
-              : action.label}
-          </Button>
-        ))}
-      </div>
-    </div>
+    <Card>
+      <CardHeader className="p-4 pb-3">
+        <CardTitle className="text-sm uppercase tracking-wide">
+          Quick Actions
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="p-4 pt-0">
+        <div className="flex flex-col gap-1.5">
+          {actions.map((action, index) => (
+            <Button
+              key={index}
+              onClick={() => onActionClick(action.action)}
+              disabled={isCreating}
+              variant="outline"
+              size="sm"
+              className={cn(
+                "px-3 py-2 h-auto rounded-md text-xs font-medium justify-start transition-all duration-200 w-full",
+                isCreating
+                  ? "bg-muted/30 text-muted-foreground cursor-not-allowed opacity-60"
+                  : "bg-muted/10 text-foreground hover:bg-muted/20"
+              )}
+            >
+              {isCreating && action.label !== 'View Reports'
+                ? `${action.label}...`
+                : action.label}
+            </Button>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
   );
 };

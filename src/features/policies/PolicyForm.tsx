@@ -15,6 +15,16 @@ import {
 import { ProductType } from "../../types/commission.types";
 import { US_STATES } from "../../types/agent.types";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 import {
   calculateAnnualPremium,
@@ -213,12 +223,25 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
   }, [formData.productId, compGuideData, products, policyId]);
 
   const handleInputChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-    >,
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     const { name, value } = e.target;
 
+    // Handle other fields
+    setFormData((prev) => ({
+      ...prev,
+      [name]: ["clientAge", "premium"].includes(name)
+        ? parseFloat(value) || 0
+        : value,
+    }));
+
+    // Clear error when user types
+    if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: "" }));
+    }
+  };
+
+  const handleSelectChange = (name: string, value: string) => {
     // Handle carrier change - reset product selection
     if (name === "carrierId") {
       setFormData((prev) => ({
@@ -238,17 +261,15 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
         commissionPercentage: 0, // Will be updated by useEffect
       }));
     }
-    // Handle other fields
+    // Handle other select fields
     else {
       setFormData((prev) => ({
         ...prev,
-        [name]: ["clientAge", "premium"].includes(name)
-          ? parseFloat(value) || 0
-          : value,
+        [name]: value,
       }));
     }
 
-    // Clear error when user types
+    // Clear error when user changes
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: "" }));
     }
@@ -333,277 +354,260 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
       <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6 p-6 overflow-y-auto">
         {/* Left Column - Client Information */}
         <div className="flex flex-col gap-4">
-          <h3 className="text-sm font-semibold text-gray-900 m-0 mb-2 pb-2 border-b border-gray-200">Client Information</h3>
+          <h3 className="text-sm font-semibold text-foreground m-0 mb-2 pb-2 border-b border-border">Client Information</h3>
 
-          <div className="flex flex-col gap-1">
-            <label className="text-[13px] font-medium text-gray-700">Client Name *</label>
-            <input
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="clientName" className="text-[13px]">Client Name *</Label>
+            <Input
+              id="clientName"
               type="text"
               name="clientName"
               value={formData.clientName}
               onChange={handleInputChange}
-              className={`py-1.5 px-2.5 border rounded-md text-[13px] bg-white transition-colors outline-none ${
-                errors.clientName
-                  ? "border-red-500"
-                  : "border-gray-300 focus:border-blue-500 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.1)]"
-              }`}
+              className={errors.clientName ? "border-destructive" : ""}
               placeholder="John Smith"
             />
             {errors.clientName && (
-              <span className="text-[11px] text-red-500 mt-0.5">{errors.clientName}</span>
+              <span className="text-[11px] text-destructive">{errors.clientName}</span>
             )}
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1">
-              <label className="text-[13px] font-medium text-gray-700">State *</label>
-              <select
-                name="clientState"
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="clientState" className="text-[13px]">State *</Label>
+              <Select
                 value={formData.clientState}
-                onChange={handleInputChange}
-                className={`py-1.5 px-2.5 border rounded-md text-[13px] bg-white transition-colors outline-none ${
-                  errors.clientState
-                    ? "border-red-500"
-                    : "border-gray-300 focus:border-blue-500 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.1)]"
-                }`}
+                onValueChange={(value) => handleSelectChange("clientState", value)}
               >
-                <option value="">Select</option>
-                {US_STATES.map((state) => (
-                  <option key={state.value} value={state.value}>
-                    {state.label}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger id="clientState" className={errors.clientState ? "border-destructive" : ""}>
+                  <SelectValue placeholder="Select" />
+                </SelectTrigger>
+                <SelectContent>
+                  {US_STATES.map((state) => (
+                    <SelectItem key={state.value} value={state.value}>
+                      {state.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               {errors.clientState && (
-                <span className="text-[11px] text-red-500 mt-0.5">{errors.clientState}</span>
+                <span className="text-[11px] text-destructive">{errors.clientState}</span>
               )}
             </div>
-            <div className="flex flex-col gap-1">
-              <label className="text-[13px] font-medium text-gray-700">Age *</label>
-              <input
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="clientAge" className="text-[13px]">Age *</Label>
+              <Input
+                id="clientAge"
                 type="number"
                 name="clientAge"
                 value={formData.clientAge || ""}
                 onChange={handleInputChange}
-                className={`py-1.5 px-2.5 border rounded-md text-[13px] bg-white transition-colors outline-none ${
-                  errors.clientAge
-                    ? "border-red-500"
-                    : "border-gray-300 focus:border-blue-500 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.1)]"
-                }`}
+                className={errors.clientAge ? "border-destructive" : ""}
                 placeholder="45"
                 min="1"
                 max="120"
               />
               {errors.clientAge && (
-                <span className="text-[11px] text-red-500 mt-0.5">{errors.clientAge}</span>
+                <span className="text-[11px] text-destructive">{errors.clientAge}</span>
               )}
             </div>
           </div>
 
-          <div className="flex flex-col gap-1">
-            <label className="text-[13px] font-medium text-gray-700">Carrier *</label>
-            <select
-              name="carrierId"
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="carrierId" className="text-[13px]">Carrier *</Label>
+            <Select
               value={formData.carrierId}
-              onChange={handleInputChange}
-              className={`py-1.5 px-2.5 border rounded-md text-[13px] bg-white transition-colors outline-none ${
-                errors.carrierId
-                  ? "border-red-500"
-                  : "border-gray-300 focus:border-blue-500 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.1)]"
-              }`}
+              onValueChange={(value) => handleSelectChange("carrierId", value)}
             >
-              <option value="">Select Carrier</option>
-              {carriers.map((carrier) => (
-                <option key={carrier.id} value={carrier.id}>
-                  {carrier.name}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger id="carrierId" className={errors.carrierId ? "border-destructive" : ""}>
+                <SelectValue placeholder="Select Carrier" />
+              </SelectTrigger>
+              <SelectContent>
+                {carriers.map((carrier) => (
+                  <SelectItem key={carrier.id} value={carrier.id}>
+                    {carrier.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             {errors.carrierId && (
-              <span className="text-[11px] text-red-500 mt-0.5">{errors.carrierId}</span>
+              <span className="text-[11px] text-destructive">{errors.carrierId}</span>
             )}
           </div>
 
-          <div className="flex flex-col gap-1">
-            <label className="text-[13px] font-medium text-gray-700">Product *</label>
-            <select
-              name="productId"
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="productId" className="text-[13px]">Product *</Label>
+            <Select
               value={formData.productId}
-              onChange={handleInputChange}
-              className={`py-1.5 px-2.5 border rounded-md text-[13px] bg-white transition-colors outline-none ${
-                errors.productId
-                  ? "border-red-500"
-                  : "border-gray-300 focus:border-blue-500 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.1)]"
-              }`}
+              onValueChange={(value) => handleSelectChange("productId", value)}
               disabled={!formData.carrierId || productsLoading}
             >
-              <option value="">
-                {!formData.carrierId
-                  ? "Select a carrier first"
-                  : productsLoading
-                    ? "Loading products..."
-                    : products.length === 0
-                      ? "No products available for this carrier"
-                      : "Select Product"}
-              </option>
-              {products.map((product) => (
-                <option key={product.id} value={product.id}>
-                  {product.name}
-                  {productCommissionRates[product.id] &&
-                    ` (${(productCommissionRates[product.id] * 100).toFixed(1)}% commission)`}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger id="productId" className={errors.productId ? "border-destructive" : ""}>
+                <SelectValue placeholder={
+                  !formData.carrierId
+                    ? "Select a carrier first"
+                    : productsLoading
+                      ? "Loading products..."
+                      : products.length === 0
+                        ? "No products available for this carrier"
+                        : "Select Product"
+                } />
+              </SelectTrigger>
+              <SelectContent>
+                {products.map((product) => (
+                  <SelectItem key={product.id} value={product.id}>
+                    {product.name}
+                    {productCommissionRates[product.id] &&
+                      ` (${(productCommissionRates[product.id] * 100).toFixed(1)}% commission)`}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             {errors.productId && (
-              <span className="text-[11px] text-red-500 mt-0.5">{errors.productId}</span>
+              <span className="text-[11px] text-destructive">{errors.productId}</span>
             )}
             {formData.carrierId &&
               !productsLoading &&
               products.length === 0 && (
-                <span className="text-[11px] text-red-500 mt-0.5">
+                <span className="text-[11px] text-destructive">
                   ⚠️ This carrier has no products configured. Please contact
                   admin or select a different carrier.
                 </span>
               )}
           </div>
 
-          <div className="flex flex-col gap-1">
-            <label className="text-[13px] font-medium text-gray-700">Notes</label>
-            <textarea
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="notes" className="text-[13px]">Notes</Label>
+            <Textarea
+              id="notes"
               name="notes"
               value={formData.notes}
               onChange={handleInputChange}
               rows={3}
               placeholder="Optional notes..."
-              className="py-1.5 px-2.5 border border-gray-300 rounded-md text-[13px] bg-white transition-colors outline-none resize-vertical min-h-[60px] focus:border-blue-500 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.1)]"
+              className="resize-vertical min-h-[60px]"
             />
           </div>
         </div>
 
         {/* Right Column - Policy Details */}
         <div className="flex flex-col gap-4">
-          <h3 className="text-sm font-semibold text-gray-900 m-0 mb-2 pb-2 border-b border-gray-200">Policy Details</h3>
+          <h3 className="text-sm font-semibold text-foreground m-0 mb-2 pb-2 border-b border-border">Policy Details</h3>
 
-          <div className="flex flex-col gap-1">
-            <label className="text-[13px] font-medium text-gray-700">Policy Number *</label>
-            <input
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="policyNumber" className="text-[13px]">Policy Number *</Label>
+            <Input
+              id="policyNumber"
               type="text"
               name="policyNumber"
               value={formData.policyNumber}
               onChange={handleInputChange}
-              className={`py-1.5 px-2.5 border rounded-md text-[13px] bg-white transition-colors outline-none ${
-                errors.policyNumber
-                  ? "border-red-500"
-                  : "border-gray-300 focus:border-blue-500 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.1)]"
-              }`}
+              className={errors.policyNumber ? "border-destructive" : ""}
               placeholder="POL-123456"
             />
             {errors.policyNumber && (
-              <span className="text-[11px] text-red-500 mt-0.5">{errors.policyNumber}</span>
+              <span className="text-[11px] text-destructive">{errors.policyNumber}</span>
             )}
           </div>
 
-          <div className="flex flex-col gap-1">
-            <label className="text-[13px] font-medium text-gray-700">Submit Date *</label>
-            <input
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="submitDate" className="text-[13px]">Submit Date *</Label>
+            <Input
+              id="submitDate"
               type="date"
               name="submitDate"
               value={formData.submitDate}
               onChange={handleInputChange}
-              className={`py-1.5 px-2.5 border rounded-md text-[13px] bg-white transition-colors outline-none ${
-                errors.submitDate
-                  ? "border-red-500"
-                  : "border-gray-300 focus:border-blue-500 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.1)]"
-              }`}
+              className={errors.submitDate ? "border-destructive" : ""}
             />
             {errors.submitDate && (
-              <span className="text-[11px] text-red-500 mt-0.5">{errors.submitDate}</span>
+              <span className="text-[11px] text-destructive">{errors.submitDate}</span>
             )}
           </div>
 
-          <div className="flex flex-col gap-1">
-            <label className="text-[13px] font-medium text-gray-700">Effective Date *</label>
-            <input
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="effectiveDate" className="text-[13px]">Effective Date *</Label>
+            <Input
+              id="effectiveDate"
               type="date"
               name="effectiveDate"
               value={formData.effectiveDate}
               onChange={handleInputChange}
-              className={`py-1.5 px-2.5 border rounded-md text-[13px] bg-white transition-colors outline-none ${
-                errors.effectiveDate
-                  ? "border-red-500"
-                  : "border-gray-300 focus:border-blue-500 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.1)]"
-              }`}
+              className={errors.effectiveDate ? "border-destructive" : ""}
             />
             {errors.effectiveDate && (
-              <span className="text-[11px] text-red-500 mt-0.5">{errors.effectiveDate}</span>
+              <span className="text-[11px] text-destructive">{errors.effectiveDate}</span>
             )}
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1">
-              <label className="text-[13px] font-medium text-gray-700">Premium Amount *</label>
-              <input
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="premium" className="text-[13px]">Premium Amount *</Label>
+              <Input
+                id="premium"
                 type="number"
                 name="premium"
                 value={formData.premium || ""}
                 onChange={handleInputChange}
-                className={`py-1.5 px-2.5 border rounded-md text-[13px] bg-white transition-colors outline-none ${
-                  errors.premium
-                    ? "border-red-500"
-                    : "border-gray-300 focus:border-blue-500 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.1)]"
-                }`}
+                className={errors.premium ? "border-destructive" : ""}
                 placeholder="250.00"
                 step="0.01"
                 min="0"
               />
               {errors.premium && (
-                <span className="text-[11px] text-red-500 mt-0.5">{errors.premium}</span>
+                <span className="text-[11px] text-destructive">{errors.premium}</span>
               )}
             </div>
-            <div className="flex flex-col gap-1">
-              <label className="text-[13px] font-medium text-gray-700">Payment Frequency *</label>
-              <select
-                name="paymentFrequency"
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="paymentFrequency" className="text-[13px]">Payment Frequency *</Label>
+              <Select
                 value={formData.paymentFrequency}
-                onChange={handleInputChange}
-                className="py-1.5 px-2.5 border border-gray-300 rounded-md text-[13px] bg-white transition-colors outline-none focus:border-blue-500 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.1)]"
+                onValueChange={(value) => handleSelectChange("paymentFrequency", value as PaymentFrequency)}
               >
-                <option value="monthly">Monthly</option>
-                <option value="quarterly">Quarterly</option>
-                <option value="semi-annual">Semi-Annual</option>
-                <option value="annual">Annual</option>
-              </select>
+                <SelectTrigger id="paymentFrequency">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="monthly">Monthly</SelectItem>
+                  <SelectItem value="quarterly">Quarterly</SelectItem>
+                  <SelectItem value="semi_annual">Semi-Annual</SelectItem>
+                  <SelectItem value="annual">Annual</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
-          <div className="flex flex-col gap-1">
-            <label className="text-[13px] font-medium text-gray-700">Status</label>
-            <select
-              name="status"
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="status" className="text-[13px]">Status</Label>
+            <Select
               value={formData.status}
-              onChange={handleInputChange}
-              className="py-1.5 px-2.5 border border-gray-300 rounded-md text-[13px] bg-white transition-colors outline-none focus:border-blue-500 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.1)]"
+              onValueChange={(value) => handleSelectChange("status", value as PolicyStatus)}
             >
-              <option value="pending">Pending</option>
-              <option value="active">Active</option>
-              <option value="lapsed">Lapsed</option>
-              <option value="cancelled">Cancelled</option>
-            </select>
+              <SelectTrigger id="status">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="lapsed">Lapsed</SelectItem>
+                <SelectItem value="cancelled">Cancelled</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Calculated Values */}
-          <div className="flex flex-col gap-2 p-3 bg-gray-50 rounded-md border border-gray-200">
+          <div className="flex flex-col gap-2 p-3 bg-gradient-to-br from-info/20 via-status-earned/10 to-card rounded-md shadow-md">
             <div className="flex justify-between items-center text-[13px]">
-              <span className="text-gray-600">Annual Premium:</span>
-              <strong className="text-gray-900">${annualPremium.toFixed(2)}</strong>
+              <span className="text-muted-foreground">Annual Premium:</span>
+              <strong className="text-info font-semibold font-mono">${annualPremium.toFixed(2)}</strong>
             </div>
             <div className="flex justify-between items-center text-[13px]">
-              <span className="text-gray-600">Commission Rate:</span>
-              <strong className="text-gray-900">{formData.commissionPercentage.toFixed(2)}%</strong>
+              <span className="text-muted-foreground">Commission Rate:</span>
+              <strong className="text-primary font-semibold">{formData.commissionPercentage.toFixed(2)}%</strong>
             </div>
             <div className="flex justify-between items-center text-[13px]">
-              <span className="text-gray-600">Expected Advance (9 months):</span>
-              <strong className="text-green-600">
+              <span className="text-muted-foreground">Expected Advance (9 months):</span>
+              <strong className="text-success font-semibold font-mono">
                 ${expectedCommission.toFixed(2)}
               </strong>
             </div>
@@ -611,7 +615,7 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
         </div>
       </div>
 
-      <div className="flex justify-end gap-2 p-4 px-6 border-t border-gray-200 bg-gray-50">
+      <div className="flex justify-end gap-2 p-4 px-6 bg-gradient-to-r from-muted/30 to-card shadow-sm">
         <Button type="button" onClick={onClose} variant="outline" size="sm">
           Cancel
         </Button>

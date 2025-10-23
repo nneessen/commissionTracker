@@ -3,6 +3,7 @@
 import React from 'react';
 import { QuickStatsPanelProps } from '../../../types/dashboard.types';
 import { StatItem } from './StatItem';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 /**
  * Quick Stats Panel Component
@@ -14,14 +15,18 @@ import { StatItem } from './StatItem';
  */
 export const QuickStatsPanel: React.FC<QuickStatsPanelProps> = ({ stats }) => {
   return (
-    <div className="bg-gradient-to-br from-primary to-primary/80 rounded-lg p-4 shadow-lg text-card">
-      <div className="text-sm font-semibold mb-3 pb-2 border-b border-card/30 uppercase tracking-wide">
-        Key Metrics
-      </div>
+    <Card>
+      <CardHeader className="p-4 pb-3">
+        <CardTitle className="text-sm uppercase tracking-wide">
+          Key Metrics
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="p-4 pt-0">
 
-      {stats.map((stat, index) => (
-        <StatItem key={index} stat={stat} showBorder={index < stats.length - 1} />
-      ))}
-    </div>
+        {stats.map((stat, index) => (
+          <StatItem key={index} stat={stat} showBorder={index < stats.length - 1} />
+        ))}
+      </CardContent>
+    </Card>
   );
 };

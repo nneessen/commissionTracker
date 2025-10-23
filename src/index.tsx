@@ -35,7 +35,7 @@ root.render(
   <React.StrictMode>
     <ThemeProvider
       attribute="class"
-      defaultTheme="system"
+      defaultTheme="dark"
       enableSystem
       storageKey="commission-tracker-theme"
     >

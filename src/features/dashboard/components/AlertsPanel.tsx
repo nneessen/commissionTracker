@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { AlertsPanelProps, AlertConfig } from '../../../types/dashboard.types';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 /**
  * Alerts Panel Component
@@ -53,28 +54,32 @@ export const AlertsPanel: React.FC<AlertsPanelProps> = ({ alerts }) => {
   };
 
   return (
-    <div className="bg-card rounded-lg p-3.5 shadow-sm">
-      <div className="text-sm font-semibold mb-2.5 text-foreground uppercase tracking-wide">
-        Alerts
-      </div>
-      <div className="flex flex-col gap-2">
-        {activeAlerts.map((alert, index) => {
-          const classes = getAlertClasses(alert.type);
-          return (
-            <div
-              key={index}
-              className={`p-2 rounded-sm ${classes.bg} border-l-[3px] ${classes.border}`}
-            >
-              <div className={`text-xs font-semibold ${classes.text}`}>
-                {alert.title}
+    <Card>
+      <CardHeader className="p-4 pb-3">
+        <CardTitle className="text-sm uppercase tracking-wide">
+          Alerts
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="p-4 pt-0">
+        <div className="flex flex-col gap-2">
+          {activeAlerts.map((alert, index) => {
+            const classes = getAlertClasses(alert.type);
+            return (
+              <div
+                key={index}
+                className={`${classes.bg} rounded-lg p-2 border ${classes.border}`}
+              >
+                <div className={`text-xs font-semibold ${classes.text}`}>
+                  {alert.title}
+                </div>
+                <div className={`text-xs ${classes.textLight} mt-0.5`}>
+                  {alert.message}
+                </div>
               </div>
-              <div className={`text-xs ${classes.textLight} mt-0.5`}>
-                {alert.message}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
+            );
+          })}
+        </div>
+      </CardContent>
+    </Card>
   );
 };

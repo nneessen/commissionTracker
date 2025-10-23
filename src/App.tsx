@@ -5,7 +5,6 @@ import { Toaster } from "react-hot-toast";
 import { Sidebar } from "./components/layout";
 import { useAuth } from "./contexts/AuthContext";
 import { logger } from "./services/base/logger";
-import "./App.css";
 
 function App() {
   const { user, loading, signOut } = useAuth();

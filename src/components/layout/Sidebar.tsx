@@ -16,6 +16,7 @@ import {
   X,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { Button } from "@/components/ui/button";
 
 interface NavigationItem {
   icon: React.ElementType;
@@ -72,9 +73,14 @@ export default function Sidebar({
     <>
       {/* Mobile Menu Button */}
       {isMobile && (
-        <button className="mobile-menu-btn" onClick={toggleMobile}>
+        <Button
+          variant="default"
+          size="icon"
+          className="fixed top-4 left-4 z-[101]"
+          onClick={toggleMobile}
+        >
           <Menu size={20} />
-        </button>
+        </Button>
       )}
 
       {/* Mobile Overlay */}
@@ -105,13 +111,13 @@ export default function Sidebar({
             </div>
           )}
           {isMobile ? (
-            <button className="sidebar-toggle" onClick={closeMobile}>
+            <Button variant="default" size="icon" onClick={closeMobile}>
               <X size={16} />
-            </button>
+            </Button>
           ) : (
-            <button className="sidebar-toggle" onClick={onToggleCollapse}>
+            <Button variant="default" size="icon" onClick={onToggleCollapse}>
               {isCollapsed ? <Menu size={16} /> : <ChevronLeft size={16} />}
-            </button>
+            </Button>
           )}
         </div>
 
@@ -123,18 +129,22 @@ export default function Sidebar({
               <Link
                 key={item.href}
                 to={item.href}
-                className="sidebar-nav-item"
-                activeOptions={{ exact: false }}
-                activeProps={{
-                  className: "sidebar-nav-item active",
-                }}
-                title={isCollapsed ? item.label : ""}
                 onClick={() => {
                   if (isMobile) closeMobile();
                 }}
               >
-                <Icon size={16} />
-                {!isCollapsed && <span>{item.label}</span>}
+                {({ isActive }) => (
+                  <Button
+                    variant="default"
+                    className={`sidebar-nav-item ${isCollapsed ? "w-auto" : "w-full justify-start"}`}
+                    title={isCollapsed ? item.label : ""}
+                    data-active={isActive}
+                    size={isCollapsed ? "icon" : "default"}
+                  >
+                    <Icon size={isCollapsed ? 20 : 16} />
+                    {!isCollapsed && <span>{item.label}</span>}
+                  </Button>
+                )}
               </Link>
             );
           })}
@@ -142,21 +152,21 @@ export default function Sidebar({
 
         {/* Footer */}
         <div className="sidebar-footer">
-          <div className="sidebar-nav-item" title={isCollapsed ? "Toggle theme" : ""}>
+          <div className="flex items-center gap-2 mb-2">
             <ThemeToggle />
-            {!isCollapsed && <span>Theme</span>}
+            {!isCollapsed && <span className="text-sm">Theme</span>}
           </div>
-          <button
-            className="sidebar-nav-item logout"
+          <Button
+            variant="destructive"
+            className="w-full justify-start"
             onClick={onLogout}
             title={isCollapsed ? "Logout" : ""}
           >
             <LogOut size={16} />
             {!isCollapsed && <span>Logout</span>}
-          </button>
+          </Button>
         </div>
       </div>
     </>
   );
 }
-

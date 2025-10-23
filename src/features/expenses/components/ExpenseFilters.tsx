@@ -70,7 +70,7 @@ export function ExpenseFilters({ filters, onFiltersChange, categories }: Expense
 
       {/* Filter Options */}
       {showFilters && (
-        <div className="grid gap-4 rounded-lg border p-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 rounded-lg bg-gradient-to-br from-accent/10 to-card shadow-md p-4 md:grid-cols-2 lg:grid-cols-4">
           {/* Expense Type */}
           <div className="space-y-2">
             <Label>Expense Type</Label>

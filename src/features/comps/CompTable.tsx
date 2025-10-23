@@ -108,7 +108,7 @@ export function CompTable({ data, isLoading, error }: CompTableProps) {
     const endItem = Math.min(page * pageSize, total);
 
     return (
-      <div className="bg-card px-4 py-3 flex items-center justify-between border-t border-border sm:px-6">
+      <div className="bg-gradient-to-r from-card to-muted/20 shadow-sm px-4 py-3 flex items-center justify-between sm:px-6">
         <div className="flex-1 flex justify-between sm:hidden">
           <Button
             onClick={() => handlePageChange(page - 1)}
@@ -232,7 +232,7 @@ export function CompTable({ data, isLoading, error }: CompTableProps) {
   }
 
   return (
-    <div className="bg-card shadow-sm overflow-hidden sm:rounded-md border border-border">
+    <div className="bg-gradient-to-br from-card to-muted/10 shadow-md overflow-hidden sm:rounded-md">
       <div className="overflow-x-auto">
         <Table>
           <TableHeader>

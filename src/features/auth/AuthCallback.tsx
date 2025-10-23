@@ -143,25 +143,25 @@ export const AuthCallback: React.FC = () => {
   }, [navigate]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-indigo-50">
+    <div className="min-h-screen flex items-center justify-center bg-background">
       <div className="max-w-md w-full px-4">
-        <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
+        <div className="bg-gradient-to-br from-card to-muted/10 rounded-2xl shadow-2xl p-8 text-center">
           {/* Logo */}
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white text-2xl font-bold mb-6 shadow-lg">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-primary via-primary/90 to-primary/70 text-primary-foreground text-2xl font-bold mb-6 shadow-lg">
             CT
           </div>
 
           {/* Status Icon */}
           {status === "loading" && (
             <div className="flex justify-center mb-6">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
             </div>
           )}
 
           {status === "success" && (
             <div className="flex justify-center mb-6">
               <svg
-                className="h-12 w-12 text-green-600"
+                className="h-12 w-12 text-status-active"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -179,7 +179,7 @@ export const AuthCallback: React.FC = () => {
           {status === "error" && (
             <div className="flex justify-center mb-6">
               <svg
-                className="h-12 w-12 text-red-600"
+                className="h-12 w-12 text-destructive"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -195,7 +195,7 @@ export const AuthCallback: React.FC = () => {
           )}
 
           {/* Message */}
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+          <h2 className="text-2xl font-bold text-foreground mb-2">
             {status === "loading" &&
               (authType === AUTH_CALLBACK_TYPES.SIGNUP
                 ? "Verifying Email"
@@ -205,7 +205,7 @@ export const AuthCallback: React.FC = () => {
             {status === "success" && "Success!"}
             {status === "error" && "Verification Failed"}
           </h2>
-          <p className="text-gray-600">{message}</p>
+          <p className="text-muted-foreground">{message}</p>
         </div>
       </div>
     </div>

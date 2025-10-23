@@ -3,7 +3,9 @@
 import React, { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useAuth } from "../../contexts/AuthContext";
-import { Button } from "../../components/ui";
+import { Button } from "../../components/ui/button";
+import { Card, CardContent } from "../../components/ui/card";
+import { Separator } from "../../components/ui/separator";
 import { SESSION_STORAGE_KEYS } from "../../constants/auth.constants";
 import { useAuthValidation, AuthMode } from "./hooks/useAuthValidation";
 import { AuthErrorDisplay } from "./components/AuthErrorDisplay";
@@ -184,107 +186,109 @@ export const Login: React.FC<LoginProps> = ({ onSuccess }) => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-indigo-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center bg-background py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full">
         {/* Logo/Brand */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white text-2xl font-bold mb-4 shadow-lg">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary text-primary-foreground text-2xl font-bold mb-4 shadow-lg">
             CT
           </div>
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">
+          <h2 className="text-3xl font-bold text-foreground mb-2">
             {getTitle()}
           </h2>
-          <p className="text-sm text-gray-600">{getSubtitle()}</p>
+          <p className="text-sm text-muted-foreground">{getSubtitle()}</p>
         </div>
 
         {/* Main Card */}
-        <div className="bg-white rounded-2xl shadow-xl p-8 space-y-6">
-          <AuthSuccessMessage message={message || ""} />
+        <Card className="shadow-xl">
+          <CardContent className="p-8 space-y-6">
+            <AuthSuccessMessage message={message || ""} />
 
-          <AuthErrorDisplay
-            error={error || ""}
-            mode={mode}
-            onSwitchToSignup={() => switchMode("signup")}
-          />
-
-          {mode === "signin" && (
-            <SignInForm
-              email={email}
-              password={password}
-              loading={loading}
-              formErrors={formErrors}
-              onEmailChange={setEmail}
-              onPasswordChange={setPassword}
-              onSubmit={handleSubmit}
-              onForgotPassword={() => switchMode("reset")}
+            <AuthErrorDisplay
+              error={error || ""}
+              mode={mode}
+              onSwitchToSignup={() => switchMode("signup")}
             />
-          )}
 
-          {mode === "signup" && (
-            <SignUpForm
-              email={email}
-              password={password}
-              confirmPassword={confirmPassword}
-              loading={loading}
-              formErrors={formErrors}
-              onEmailChange={setEmail}
-              onPasswordChange={setPassword}
-              onConfirmPasswordChange={setConfirmPassword}
-              onSubmit={handleSubmit}
-            />
-          )}
+            {mode === "signin" && (
+              <SignInForm
+                email={email}
+                password={password}
+                loading={loading}
+                formErrors={formErrors}
+                onEmailChange={setEmail}
+                onPasswordChange={setPassword}
+                onSubmit={handleSubmit}
+                onForgotPassword={() => switchMode("reset")}
+              />
+            )}
 
-          {mode === "reset" && (
-            <ResetPasswordForm
-              email={email}
-              loading={loading}
-              formErrors={formErrors}
-              onEmailChange={setEmail}
-              onSubmit={handleSubmit}
-            />
-          )}
+            {mode === "signup" && (
+              <SignUpForm
+                email={email}
+                password={password}
+                confirmPassword={confirmPassword}
+                loading={loading}
+                formErrors={formErrors}
+                onEmailChange={setEmail}
+                onPasswordChange={setPassword}
+                onConfirmPasswordChange={setConfirmPassword}
+                onSubmit={handleSubmit}
+              />
+            )}
 
-          {/* Mode Switcher */}
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-200"></div>
+            {mode === "reset" && (
+              <ResetPasswordForm
+                email={email}
+                loading={loading}
+                formErrors={formErrors}
+                onEmailChange={setEmail}
+                onSubmit={handleSubmit}
+              />
+            )}
+
+            {/* Mode Switcher */}
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <Separator className="w-full" />
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-4 bg-card text-muted-foreground">
+                  {mode === "signin" && "Don't have an account?"}
+                  {mode === "signup" && "Already have an account?"}
+                  {mode === "reset" && "Remember your password?"}
+                </span>
+              </div>
             </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-4 bg-white text-gray-500">
-                {mode === "signin" && "Don't have an account?"}
-                {mode === "signup" && "Already have an account?"}
-                {mode === "reset" && "Remember your password?"}
-              </span>
-            </div>
-          </div>
 
-          {mode === "signin" && (
-            <Button
-              type="button"
-              onClick={() => switchMode("signup")}
-              variant="link"
-              disabled={loading}
-              className="w-full text-center text-sm font-medium text-blue-600 hover:text-blue-500 h-auto py-2"
-            >
-              Create a new account
-            </Button>
-          )}
+            {mode === "signin" && (
+              <Button
+                type="button"
+                onClick={() => switchMode("signup")}
+                variant="link"
+                disabled={loading}
+                className="w-full text-center text-sm font-medium text-primary hover:text-primary/80 h-auto py-2"
+              >
+                Create a new account
+              </Button>
+            )}
 
-          {(mode === "signup" || mode === "reset") && (
-            <Button
-              type="button"
-              onClick={() => switchMode("signin")}
-              variant="link"
-              disabled={loading}
-              className="w-full text-center text-sm font-medium text-blue-600 hover:text-blue-500 h-auto py-2"
-            >
-              Sign in instead
-            </Button>
-          )}
-        </div>
+            {(mode === "signup" || mode === "reset") && (
+              <Button
+                type="button"
+                onClick={() => switchMode("signin")}
+                variant="link"
+                disabled={loading}
+                className="w-full text-center text-sm font-medium text-primary hover:text-primary/80 h-auto py-2"
+              >
+                Sign in instead
+              </Button>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Footer */}
-        <p className="mt-8 text-center text-xs text-gray-500">
+        <p className="mt-8 text-center text-xs text-muted-foreground">
           By continuing, you agree to our Terms of Service and Privacy Policy
         </p>
       </div>

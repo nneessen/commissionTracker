@@ -1,7 +1,9 @@
 // src/components/dashboard/PerformanceMetricCard.tsx
 
 import React from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import { LucideIcon } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface PerformanceMetricCardProps {
   title: string;
@@ -25,130 +27,76 @@ export const PerformanceMetricCard: React.FC<PerformanceMetricCardProps> = ({
   color = 'blue',
   onClick,
 }) => {
-  const colorSchemes = {
+  const colorClasses = {
     blue: {
-      bg: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-      light: 'rgba(59, 130, 246, 0.1)',
+      bg: 'bg-gradient-to-br from-status-earned to-primary',
+      light: 'bg-primary/10',
     },
     green: {
-      bg: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-      light: 'rgba(16, 185, 129, 0.1)',
+      bg: 'bg-gradient-to-br from-status-active to-status-active/80',
+      light: 'bg-status-active-bg',
     },
     purple: {
-      bg: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
-      light: 'rgba(139, 92, 246, 0.1)',
+      bg: 'bg-gradient-to-br from-primary to-primary/80',
+      light: 'bg-primary/10',
     },
     orange: {
-      bg: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-      light: 'rgba(245, 158, 11, 0.1)',
+      bg: 'bg-gradient-to-br from-status-lapsed to-status-pending',
+      light: 'bg-status-pending-bg',
     },
     red: {
-      bg: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-      light: 'rgba(239, 68, 68, 0.1)',
+      bg: 'bg-gradient-to-br from-destructive to-destructive/80',
+      light: 'bg-destructive/10',
     },
     yellow: {
-      bg: 'linear-gradient(135deg, #eab308 0%, #ca8a04 100%)',
-      light: 'rgba(234, 179, 8, 0.1)',
+      bg: 'bg-gradient-to-br from-status-pending to-status-earned',
+      light: 'bg-status-pending-bg',
     },
   };
 
-  const scheme = colorSchemes[color];
+  const scheme = colorClasses[color];
 
   return (
-    <div className={`performance-metric-card ${onClick ? 'clickable' : ''}`} onClick={onClick}>
-      <div className="card-header">
-        <div className="icon-container" style={{ background: scheme.bg }}>
-          <Icon size={20} color="white" />
-        </div>
-        <h3 className="card-title">{title}</h3>
-      </div>
-
-      <div className="card-body">
-        <div className="metric-value">{value}</div>
-        {subtitle && <div className="metric-subtitle">{subtitle}</div>}
-        {trend && (
-          <div className={`trend ${trend.isPositive ? 'positive' : 'negative'}`}>
-            {trend.isPositive ? '↑' : '↓'} {Math.abs(trend.value)}%
+    <Card
+      className={cn(
+        "transition-all duration-200",
+        onClick && "cursor-pointer hover:-translate-y-1 hover:shadow-lg"
+      )}
+      onClick={onClick}
+    >
+      <CardContent className="p-5">
+        <div className="flex items-center gap-3 mb-4">
+          <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center", scheme.bg)}>
+            <Icon className="h-5 w-5 text-primary-foreground" />
           </div>
-        )}
-      </div>
+          <h3 className="text-sm font-medium text-muted-foreground">
+            {title}
+          </h3>
+        </div>
 
-      <style jsx>{`
-        .performance-metric-card {
-          background: white;
-          border-radius: 12px;
-          padding: 20px;
-          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-          transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-
-        .performance-metric-card.clickable {
-          cursor: pointer;
-        }
-
-        .performance-metric-card.clickable:hover {
-          transform: translateY(-4px);
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        }
-
-        .card-header {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          margin-bottom: 16px;
-        }
-
-        .icon-container {
-          width: 40px;
-          height: 40px;
-          border-radius: 10px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        .card-title {
-          font-size: 14px;
-          font-weight: 500;
-          color: #6b7280;
-          margin: 0;
-        }
-
-        .card-body {
-          margin-top: 12px;
-        }
-
-        .metric-value {
-          font-size: 28px;
-          font-weight: 700;
-          color: #1a1a1a;
-          margin-bottom: 4px;
-        }
-
-        .metric-subtitle {
-          font-size: 13px;
-          color: #9ca3af;
-        }
-
-        .trend {
-          display: inline-block;
-          font-size: 12px;
-          font-weight: 600;
-          padding: 4px 8px;
-          border-radius: 6px;
-          margin-top: 8px;
-        }
-
-        .trend.positive {
-          color: #059669;
-          background: #d1fae5;
-        }
-
-        .trend.negative {
-          color: #dc2626;
-          background: #fee2e2;
-        }
-      `}</style>
-    </div>
+        <div className="mt-3">
+          <div className="text-3xl font-bold text-foreground mb-1">
+            {value}
+          </div>
+          {subtitle && (
+            <div className="text-xs text-muted-foreground">
+              {subtitle}
+            </div>
+          )}
+          {trend && (
+            <div
+              className={cn(
+                "inline-block text-xs font-semibold px-2 py-1 rounded-md mt-2",
+                trend.isPositive
+                  ? "text-status-active bg-status-active-bg"
+                  : "text-destructive bg-destructive/10"
+              )}
+            >
+              {trend.isPositive ? '↑' : '↓'} {Math.abs(trend.value)}%
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 };

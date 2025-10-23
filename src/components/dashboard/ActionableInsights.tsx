@@ -1,7 +1,9 @@
 // src/components/dashboard/ActionableInsights.tsx
 
 import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Lightbulb, TrendingUp, AlertCircle, Target } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export interface Insight {
   type: 'success' | 'warning' | 'info' | 'target';
@@ -17,137 +19,86 @@ export const ActionableInsights: React.FC<ActionableInsightsProps> = ({ insights
   const getIcon = (type: Insight['type']) => {
     switch (type) {
       case 'success':
-        return <TrendingUp size={18} />;
+        return <TrendingUp className="h-[18px] w-[18px]" />;
       case 'warning':
-        return <AlertCircle size={18} />;
+        return <AlertCircle className="h-[18px] w-[18px]" />;
       case 'target':
-        return <Target size={18} />;
+        return <Target className="h-[18px] w-[18px]" />;
       default:
-        return <Lightbulb size={18} />;
+        return <Lightbulb className="h-[18px] w-[18px]" />;
     }
   };
 
-  const getColor = (type: Insight['type']) => {
+  const getColorClasses = (type: Insight['type']) => {
     switch (type) {
       case 'success':
-        return '#10b981';
+        return {
+          border: 'border-l-status-active',
+          icon: 'text-status-active',
+        };
       case 'warning':
-        return '#f59e0b';
+        return {
+          border: 'border-l-status-pending',
+          icon: 'text-status-pending',
+        };
       case 'target':
-        return '#8b5cf6';
+        return {
+          border: 'border-l-primary',
+          icon: 'text-primary',
+        };
       default:
-        return '#3b82f6';
+        return {
+          border: 'border-l-status-earned',
+          icon: 'text-status-earned',
+        };
     }
   };
 
   return (
-    <div className="actionable-insights">
-      <h2 className="insights-title">
-        <Lightbulb size={20} />
-        Actionable Insights
-      </h2>
-
-      <div className="insights-list">
+    <Card>
+      <CardHeader className="pb-4">
+        <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+          <Lightbulb className="h-5 w-5" />
+          Actionable Insights
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-3">
         {insights.length === 0 ? (
-          <div className="empty-state">
-            <Lightbulb size={32} className="empty-icon" />
-            <p>No insights available yet. Add more policies to see recommendations.</p>
+          <div className="flex flex-col items-center justify-center py-10 px-5 text-center">
+            <Lightbulb className="h-8 w-8 opacity-30 mb-4 text-muted-foreground" />
+            <p className="text-muted-foreground text-sm">
+              No insights available yet. Add more policies to see recommendations.
+            </p>
           </div>
         ) : (
-          insights.map((insight, index) => (
-            <div key={index} className="insight-card" style={{ borderLeftColor: getColor(insight.type) }}>
-              <div className="insight-icon" style={{ color: getColor(insight.type) }}>
-                {getIcon(insight.type)}
-              </div>
-              <div className="insight-content">
-                <p className="insight-message">{insight.message}</p>
-                {insight.action && (
-                  <p className="insight-action">{insight.action}</p>
+          insights.map((insight, index) => {
+            const colors = getColorClasses(insight.type);
+            return (
+              <div
+                key={index}
+                className={cn(
+                  "flex items-start gap-3 p-4 bg-muted border-l-4 rounded-lg transition-all hover:translate-x-1 hover:shadow-md",
+                  colors.border
                 )}
+              >
+                <div className={cn("flex-shrink-0 mt-0.5", colors.icon)}>
+                  {getIcon(insight.type)}
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-foreground mb-1">
+                    {insight.message}
+                  </p>
+                  {insight.action && (
+                    <p className="text-xs text-muted-foreground italic">
+                      {insight.action}
+                    </p>
+                  )}
+                </div>
               </div>
-            </div>
-          ))
+            );
+          })
         )}
-      </div>
-
-      <style jsx>{`
-        .actionable-insights {
-          background: white;
-          border-radius: 12px;
-          padding: 24px;
-          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        }
-
-        .insights-title {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          font-size: 18px;
-          font-weight: 600;
-          margin-bottom: 20px;
-          color: #1a1a1a;
-        }
-
-        .insights-list {
-          display: flex;
-          flex-direction: column;
-          gap: 12px;
-        }
-
-        .empty-state {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          padding: 40px 20px;
-          text-align: center;
-          color: #6b7280;
-        }
-
-        .empty-icon {
-          opacity: 0.3;
-          margin-bottom: 16px;
-        }
-
-        .insight-card {
-          display: flex;
-          align-items: flex-start;
-          gap: 12px;
-          padding: 16px;
-          background: #f9fafb;
-          border-left: 4px solid;
-          border-radius: 8px;
-          transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-
-        .insight-card:hover {
-          transform: translateX(4px);
-          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-        }
-
-        .insight-icon {
-          flex-shrink: 0;
-          margin-top: 2px;
-        }
-
-        .insight-content {
-          flex: 1;
-        }
-
-        .insight-message {
-          font-size: 14px;
-          font-weight: 500;
-          color: #1f2937;
-          margin: 0 0 4px 0;
-        }
-
-        .insight-action {
-          font-size: 13px;
-          color: #6b7280;
-          margin: 0;
-          font-style: italic;
-        }
-      `}</style>
-    </div>
+      </CardContent>
+    </Card>
   );
 };

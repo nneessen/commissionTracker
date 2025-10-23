@@ -33,9 +33,9 @@ export function ExpenseTemplatesPanel({
             <div
               key={template.id}
               onClick={() => onUseTemplate(template)}
-              className="flex flex-col p-3 bg-muted/50 rounded-lg border border-border cursor-pointer transition-all hover:bg-muted hover:border-primary"
+              className="flex flex-col p-3 bg-gradient-to-br from-primary/15 via-accent/10 to-card rounded-lg shadow-md cursor-pointer transition-all hover:shadow-lg hover:from-primary/20"
             >
-              <div className="text-xs font-semibold mb-1">
+              <div className="text-xs font-semibold text-foreground mb-1">
                 {template.template_name}
               </div>
               <div className="text-sm font-bold text-primary font-mono">
@@ -51,7 +51,7 @@ export function ExpenseTemplatesPanel({
                   e.stopPropagation();
                   onDeleteTemplate(template);
                 }}
-                className="mt-2 h-7 text-[9px] text-destructive border-destructive hover:bg-destructive/10"
+                className="mt-2 h-7 text-[9px] text-destructive hover:bg-destructive/10"
               >
                 Delete
               </Button>

@@ -317,7 +317,7 @@ export function ExpenseDialog({
                 </p>
               </div>
 
-              <p className="text-xs text-muted-foreground border-l-2 border-primary pl-3 py-2 bg-primary/10">
+              <p className="text-xs text-foreground pl-3 py-2 bg-gradient-to-r from-primary/20 via-info/10 to-card shadow-sm rounded-md">
                 ⚡ <strong>Auto-generation:</strong> When you create this recurring expense, the next 12 occurrences will be automatically generated for you (or up to the end date if sooner).
               </p>
             </div>
@@ -348,7 +348,7 @@ export function ExpenseDialog({
 
           {/* Save as Template (only for new expenses) */}
           {!expense && (
-            <div className="space-y-3 pt-4 border-t border-border">
+            <div className="space-y-3 pt-4">
               <div className="flex items-center space-x-2">
                 <Checkbox
                   id="save_as_template"
