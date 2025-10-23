@@ -1,3 +1,5 @@
+// src/features/comps/CompTable.tsx
+
 import React, { useState } from "react";
 import {
   ChevronLeft,
@@ -12,6 +14,21 @@ import {
 } from "lucide-react";
 import { Comp } from "../../types/comp.types";
 import { Button } from "@/components/ui/button";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface CompTableProps {
   data: Comp[];
@@ -34,17 +51,19 @@ export function CompTable({ data, isLoading, error }: CompTableProps) {
   const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
 
   // Sort data (React 19 doesn't need useMemo)
-  const sortedData = !data ? [] : [...data].sort((a, b) => {
-    let aVal = a[sortBy];
-    let bVal = b[sortBy];
+  const sortedData = !data
+    ? []
+    : [...data].sort((a, b) => {
+        let aVal = a[sortBy];
+        let bVal = b[sortBy];
 
-    if (typeof aVal === "string") aVal = aVal.toLowerCase();
-    if (typeof bVal === "string") bVal = bVal.toLowerCase();
+        if (typeof aVal === "string") aVal = aVal.toLowerCase();
+        if (typeof bVal === "string") bVal = bVal.toLowerCase();
 
-    if (aVal < bVal) return sortOrder === "asc" ? -1 : 1;
-    if (aVal > bVal) return sortOrder === "asc" ? 1 : -1;
-    return 0;
-  });
+        if (aVal < bVal) return sortOrder === "asc" ? -1 : 1;
+        if (aVal > bVal) return sortOrder === "asc" ? 1 : -1;
+        return 0;
+      });
 
   // Client-side pagination (React 19 doesn't need useMemo)
   const startIndex = (page - 1) * pageSize;
@@ -64,8 +83,8 @@ export function CompTable({ data, isLoading, error }: CompTableProps) {
     setPage(newPage);
   };
 
-  const handlePageSizeChange = (newPageSize: number) => {
-    setPageSize(newPageSize);
+  const handlePageSizeChange = (value: string) => {
+    setPageSize(parseInt(value));
     setPage(1); // Reset to first page when changing page size
   };
 
@@ -82,8 +101,6 @@ export function CompTable({ data, isLoading, error }: CompTableProps) {
     return `${rate.toFixed(2)}%`;
   };
 
-  // Removed unnecessary badge categorization - contract level is just a number
-
   const renderPagination = () => {
     if (!data || data.length === 0) return null;
 
@@ -91,7 +108,7 @@ export function CompTable({ data, isLoading, error }: CompTableProps) {
     const endItem = Math.min(page * pageSize, total);
 
     return (
-      <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+      <div className="bg-card px-4 py-3 flex items-center justify-between border-t border-border sm:px-6">
         <div className="flex-1 flex justify-between sm:hidden">
           <Button
             onClick={() => handlePageChange(page - 1)}
@@ -113,25 +130,25 @@ export function CompTable({ data, isLoading, error }: CompTableProps) {
         </div>
         <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
           <div className="flex items-center space-x-4">
-            <p className="text-sm text-gray-700">
+            <p className="text-sm text-muted-foreground">
               Showing <span className="font-medium">{startItem}</span> to{" "}
               <span className="font-medium">{endItem}</span> of{" "}
               <span className="font-medium">{total}</span> results
             </p>
             <div className="flex items-center space-x-2">
-              <label htmlFor="pageSize" className="text-sm text-gray-700">
+              <label htmlFor="pageSize" className="text-sm text-muted-foreground">
                 Per page:
               </label>
-              <select
-                id="pageSize"
-                value={pageSize}
-                onChange={(e) => handlePageSizeChange(parseInt(e.target.value))}
-                className="border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value={25}>25</option>
-                <option value={50}>50</option>
-                <option value={100}>100</option>
-              </select>
+              <Select value={pageSize.toString()} onValueChange={handlePageSizeChange}>
+                <SelectTrigger className="w-20">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="25">25</SelectItem>
+                  <SelectItem value="50">50</SelectItem>
+                  <SelectItem value="100">100</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <div>
@@ -171,8 +188,8 @@ export function CompTable({ data, isLoading, error }: CompTableProps) {
                     size="sm"
                     className={`rounded-none ${
                       pageNum === page
-                        ? "z-10 bg-blue-50 border-blue-500 text-blue-600"
-                        : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
+                        ? "z-10 bg-primary/10 border-primary text-primary"
+                        : ""
                     }`}
                   >
                     {pageNum}
@@ -200,18 +217,14 @@ export function CompTable({ data, isLoading, error }: CompTableProps) {
   if (error) {
     return (
       <div className="text-center py-12">
-        <AlertCircle className="mx-auto h-12 w-12 text-red-400 mb-4" />
-        <h3 className="text-lg font-medium text-gray-900 mb-2">
+        <AlertCircle className="mx-auto h-12 w-12 text-destructive mb-4" />
+        <h3 className="text-lg font-medium text-foreground mb-2">
           Error Loading Comp Data
         </h3>
-        <p className="text-sm text-gray-500 mb-4">
-          {error ||
-            "An unexpected error occurred while loading the comp guide."}
+        <p className="text-sm text-muted-foreground mb-4">
+          {error || "An unexpected error occurred while loading the comp guide."}
         </p>
-        <Button
-          onClick={() => window.location.reload()}
-          size="sm"
-        >
+        <Button onClick={() => window.location.reload()} size="sm">
           Retry
         </Button>
       </div>
@@ -219,14 +232,13 @@ export function CompTable({ data, isLoading, error }: CompTableProps) {
   }
 
   return (
-    <div className="bg-white shadow overflow-hidden sm:rounded-md">
+    <div className="bg-card shadow-sm overflow-hidden sm:rounded-md border border-border">
       <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th
-                scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead
+                className="cursor-pointer hover:bg-muted/50"
                 onClick={() => handleSort("carrier_id")}
               >
                 <div className="flex items-center">
@@ -234,10 +246,9 @@ export function CompTable({ data, isLoading, error }: CompTableProps) {
                   Carrier
                   {getSortIcon("carrier_id")}
                 </div>
-              </th>
-              <th
-                scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+              </TableHead>
+              <TableHead
+                className="cursor-pointer hover:bg-muted/50"
                 onClick={() => handleSort("product_type")}
               >
                 <div className="flex items-center">
@@ -245,20 +256,18 @@ export function CompTable({ data, isLoading, error }: CompTableProps) {
                   Product
                   {getSortIcon("product_type")}
                 </div>
-              </th>
-              <th
-                scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+              </TableHead>
+              <TableHead
+                className="cursor-pointer hover:bg-muted/50"
                 onClick={() => handleSort("contract_level")}
               >
                 <div className="flex items-center">
                   Contract Level
                   {getSortIcon("contract_level")}
                 </div>
-              </th>
-              <th
-                scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+              </TableHead>
+              <TableHead
+                className="cursor-pointer hover:bg-muted/50"
                 onClick={() => handleSort("commission_percentage")}
               >
                 <div className="flex items-center">
@@ -266,103 +275,100 @@ export function CompTable({ data, isLoading, error }: CompTableProps) {
                   Commission Rate
                   {getSortIcon("commission_percentage")}
                 </div>
-              </th>
-              <th
-                scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
+              </TableHead>
+              <TableHead>
                 <div className="flex items-center">
                   <Calendar className="h-4 w-4 mr-2" />
                   Effective Date
                 </div>
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {isLoading ? (
-              <tr>
-                <td colSpan={5} className="px-6 py-12 text-center">
+              <TableRow>
+                <TableCell colSpan={5} className="h-32 text-center">
                   <div className="flex items-center justify-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mr-3"></div>
-                    <span className="text-gray-500">Loading comp data...</span>
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mr-3"></div>
+                    <span className="text-muted-foreground">Loading comp data...</span>
                   </div>
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ) : paginatedData.length === 0 ? (
-              <tr>
-                <td colSpan={5} className="px-6 py-12 text-center">
-                  <div className="text-gray-500">
-                    <Package className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">
+              <TableRow>
+                <TableCell colSpan={5} className="h-32 text-center">
+                  <div className="text-muted-foreground">
+                    <Package className="mx-auto h-12 w-12 mb-4" />
+                    <h3 className="text-lg font-medium text-foreground mb-2">
                       No Comp Data Found
                     </h3>
                     <p className="text-sm">
                       Try adjusting your search filters or check back later.
                     </p>
                   </div>
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ) : (
               paginatedData.map((record) => {
                 return (
-                  <tr key={record.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
+                  <TableRow key={record.id}>
+                    <TableCell>
                       <div className="flex items-center">
                         <div>
-                          <div className="text-sm font-medium text-gray-900">
+                          <div className="text-sm font-medium text-foreground">
                             {record.carrier_id}
                           </div>
                         </div>
                       </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    </TableCell>
+                    <TableCell>
                       <div>
-                        <div className="text-sm font-medium text-gray-900">
+                        <div className="text-sm font-medium text-foreground">
                           {record.product_type
                             .split("_")
                             .map(
                               (word) =>
-                                word.charAt(0).toUpperCase() + word.slice(1),
+                                word.charAt(0).toUpperCase() + word.slice(1)
                             )
                             .join(" ")}
                         </div>
-                        <div className="text-sm text-gray-500">
+                        <div className="text-sm text-muted-foreground">
                           {record.product_type}
                         </div>
                       </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-lg font-semibold text-gray-900">
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-lg font-semibold text-foreground">
                         {record.contract_level}%
                       </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-lg font-semibold text-blue-600">
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-lg font-semibold text-primary">
                         {formatCommissionRate(record.commission_percentage)}
                       </div>
                       {record.bonus_percentage && (
-                        <div className="text-xs text-green-600">
+                        <div className="text-xs text-success">
                           +{record.bonus_percentage}% bonus
                         </div>
                       )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
                       {new Date(record.effective_date).toLocaleDateString()}
                       {record.expiration_date && (
-                        <div className="text-xs text-gray-400">
+                        <div className="text-xs text-muted-foreground/70">
                           Expires:{" "}
                           {new Date(
-                            record.expiration_date,
+                            record.expiration_date
                           ).toLocaleDateString()}
                         </div>
                       )}
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 );
               })
             )}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
 
       {paginatedData.length > 0 && renderPagination()}

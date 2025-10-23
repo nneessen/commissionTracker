@@ -13,15 +13,15 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "bg-primary text-primary-foreground shadow-[0_2px_8px_rgba(0,0,0,0.12)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.3)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.15)] dark:hover:shadow-[0_4px_12px_rgba(0,0,0,0.4)] hover:-translate-y-0.5 active:translate-y-0 active:shadow-[0_1px_4px_rgba(0,0,0,0.12)]",
+          "bg-primary text-primary-foreground shadow-sm hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 active:shadow-sm hover:bg-primary/90",
         destructive:
-          "bg-destructive text-destructive-foreground shadow-[0_2px_8px_rgba(220,38,38,0.2)] dark:shadow-[0_2px_8px_rgba(220,38,38,0.3)] hover:shadow-[0_4px_12px_rgba(220,38,38,0.25)] dark:hover:shadow-[0_4px_12px_rgba(220,38,38,0.4)] hover:-translate-y-0.5 active:translate-y-0 active:shadow-[0_1px_4px_rgba(220,38,38,0.2)]",
+          "bg-destructive text-destructive-foreground shadow-sm hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 active:shadow-sm hover:bg-destructive/90",
         outline:
-          "bg-background text-foreground shadow-[0_0_0_1px_rgba(0,0,0,0.1),0_2px_6px_rgba(0,0,0,0.08)] dark:shadow-[0_0_0_1px_rgba(255,255,255,0.1),0_2px_6px_rgba(0,0,0,0.3)] hover:bg-accent hover:shadow-[0_0_0_1px_rgba(0,0,0,0.15),0_4px_10px_rgba(0,0,0,0.12)] dark:hover:shadow-[0_0_0_1px_rgba(255,255,255,0.15),0_4px_10px_rgba(0,0,0,0.4)] hover:-translate-y-0.5 active:translate-y-0 active:shadow-[0_0_0_1px_rgba(0,0,0,0.1),0_1px_3px_rgba(0,0,0,0.08)]",
+          "border border-input bg-background text-foreground shadow-sm hover:bg-accent hover:text-accent-foreground hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 active:shadow-sm",
         secondary:
-          "bg-secondary text-secondary-foreground shadow-[0_2px_8px_rgba(0,0,0,0.1)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.25)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.14)] dark:hover:shadow-[0_4px_12px_rgba(0,0,0,0.35)] hover:-translate-y-0.5 active:translate-y-0 active:shadow-[0_1px_4px_rgba(0,0,0,0.1)]",
+          "bg-secondary text-secondary-foreground shadow-sm hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 active:shadow-sm hover:bg-secondary/90",
         ghost:
-          "bg-gray-50 dark:bg-gray-800 text-foreground shadow-[0_1px_4px_rgba(0,0,0,0.06)] dark:shadow-[0_1px_4px_rgba(0,0,0,0.2)] hover:bg-gray-100 dark:hover:bg-gray-700 hover:shadow-[0_2px_6px_rgba(0,0,0,0.08)] dark:hover:shadow-[0_2px_6px_rgba(0,0,0,0.25)] hover:-translate-y-0.5 active:translate-y-0 active:shadow-[0_1px_2px_rgba(0,0,0,0.06)]",
+          "bg-muted/50 text-foreground shadow-sm hover:bg-muted hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 active:shadow-xs",
         link: "text-primary underline-offset-4 hover:underline",
       },
       size: {

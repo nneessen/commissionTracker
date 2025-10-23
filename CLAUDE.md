@@ -125,6 +125,7 @@ This is a full-stack application for insurance sales agents to track Key Perform
 If you encounter errors like "record 'v_commission' has no field 'commission_amount'":
 
 1. **Check for duplicate triggers** (multiple triggers on same table for same event):
+
    ```sql
    SELECT trigger_name, event_object_table, event_manipulation, action_statement
    FROM information_schema.triggers
@@ -133,6 +134,7 @@ If you encounter errors like "record 'v_commission' has no field 'commission_amo
    ```
 
 2. **Find functions with wrong field references**:
+
    ```sql
    SELECT proname, prosrc
    FROM pg_proc
@@ -143,6 +145,7 @@ If you encounter errors like "record 'v_commission' has no field 'commission_amo
 3. **Identify the OLD broken function** - It will reference non-existent field names like `commission_amount` or `advance_amount`
 
 4. **Remove only the OLD one** (keep the newer, corrected version):
+
    ```sql
    DROP TRIGGER IF EXISTS old_trigger_name ON table_name;
    DROP FUNCTION IF EXISTS old_function_name();
@@ -229,3 +232,4 @@ GOLDEN RULES TO NEVER BREAK
 
 - when working on plans, do not forget to update them as you go and when completed, change the name to match the other files names and move to plans/completed/
 - always fetch my current db schema from my remote supabase before every new task
+- DO NOT PUT ANY additional .md files in the root of this project. i do not care what the file is. i have a docs/ and a plans/ directory for a reason. i want to stay organized.

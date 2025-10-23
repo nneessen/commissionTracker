@@ -13,6 +13,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -239,18 +240,16 @@ export function ExpenseDialog({
           <div className="grid gap-4 md:grid-cols-2">
             {/* Recurring Expense */}
             <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
+              <Checkbox
                 id="is_recurring"
                 checked={formData.is_recurring || false}
-                onChange={(e) =>
+                onCheckedChange={(checked) =>
                   setFormData({
                     ...formData,
-                    is_recurring: e.target.checked,
-                    recurring_frequency: e.target.checked ? formData.recurring_frequency : null,
+                    is_recurring: checked as boolean,
+                    recurring_frequency: checked ? formData.recurring_frequency : null,
                   })
                 }
-                className="h-4 w-4 rounded border-gray-300"
               />
               <Label htmlFor="is_recurring" className="cursor-pointer font-normal">
                 Recurring Expense
@@ -259,14 +258,12 @@ export function ExpenseDialog({
 
             {/* Tax Deductible */}
             <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
+              <Checkbox
                 id="is_tax_deductible"
                 checked={formData.is_tax_deductible || false}
-                onChange={(e) =>
-                  setFormData({ ...formData, is_tax_deductible: e.target.checked })
+                onCheckedChange={(checked) =>
+                  setFormData({ ...formData, is_tax_deductible: checked as boolean })
                 }
-                className="h-4 w-4 rounded border-gray-300"
               />
               <Label
                 htmlFor="is_tax_deductible"
@@ -320,7 +317,7 @@ export function ExpenseDialog({
                 </p>
               </div>
 
-              <p className="text-xs text-muted-foreground border-l-2 border-blue-500 pl-3 py-2 bg-blue-50">
+              <p className="text-xs text-muted-foreground border-l-2 border-primary pl-3 py-2 bg-primary/10">
                 ⚡ <strong>Auto-generation:</strong> When you create this recurring expense, the next 12 occurrences will be automatically generated for you (or up to the end date if sooner).
               </p>
             </div>
@@ -351,14 +348,12 @@ export function ExpenseDialog({
 
           {/* Save as Template (only for new expenses) */}
           {!expense && (
-            <div className="space-y-3 pt-4 border-t">
+            <div className="space-y-3 pt-4 border-t border-border">
               <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
+                <Checkbox
                   id="save_as_template"
                   checked={saveAsTemplate}
-                  onChange={(e) => setSaveAsTemplate(e.target.checked)}
-                  className="h-4 w-4 rounded border-gray-300"
+                  onCheckedChange={(checked) => setSaveAsTemplate(checked as boolean)}
                 />
                 <Label htmlFor="save_as_template" className="cursor-pointer font-normal">
                   💾 Save as template for quick re-use

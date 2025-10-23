@@ -34,7 +34,7 @@ export const SignInForm: React.FC<SignInFormProps> = ({
         type="email"
         placeholder="you@example.com"
         value={email}
-        onChange={(value) => onEmailChange(String(value))}
+        onChange={(e) => onEmailChange(e.target.value)}
         error={formErrors.email}
         required
         disabled={loading}
@@ -46,7 +46,7 @@ export const SignInForm: React.FC<SignInFormProps> = ({
         type="password"
         placeholder="Enter your password"
         value={password}
-        onChange={(value) => onPasswordChange(String(value))}
+        onChange={(e) => onPasswordChange(e.target.value)}
         error={formErrors.password}
         required
         disabled={loading}
@@ -59,7 +59,7 @@ export const SignInForm: React.FC<SignInFormProps> = ({
           onClick={onForgotPassword}
           variant="link"
           disabled={loading}
-          className="h-auto p-0 text-sm font-medium text-blue-600 hover:text-blue-500"
+          className="h-auto p-0 text-sm font-medium"
         >
           Forgot your password?
         </Button>
@@ -69,7 +69,7 @@ export const SignInForm: React.FC<SignInFormProps> = ({
         type="submit"
         disabled={loading}
         loading={loading}
-        className="w-full py-3 text-base font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white"
+        className="w-full py-3 text-base font-semibold rounded-xl"
       >
         {loading ? "Please wait..." : "Sign in"}
       </Button>

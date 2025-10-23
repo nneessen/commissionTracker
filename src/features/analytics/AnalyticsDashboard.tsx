@@ -106,13 +106,13 @@ export function AnalyticsDashboard() {
       <div className="page-content">
         {/* Time Period Selector and Export Controls */}
         <div
-          className="mb-4 p-4 bg-white rounded-lg shadow-sm"
+          className="mb-4 p-4 bg-card rounded-lg shadow-sm border border-border"
         >
           <div
             className="flex justify-between items-center mb-3"
           >
             <div
-              className="text-xs font-semibold text-gray-900 uppercase tracking-wide"
+              className="text-xs font-semibold text-foreground uppercase tracking-wide"
             >
               Time Period
             </div>
@@ -155,32 +155,32 @@ export function AnalyticsDashboard() {
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 max-w-[1600px] mx-auto w-full">
             {/* Left Column */}
             <div className="flex flex-col gap-4 min-w-0 w-full">
-              <Suspense fallback={<div className="p-5 text-center text-slate-400">Loading...</div>}>
+              <Suspense fallback={<div className="p-5 text-center text-muted-foreground">Loading...</div>}>
                 <PerformanceAttribution />
               </Suspense>
-              <Suspense fallback={<div className="p-5 text-center text-slate-400">Loading...</div>}>
+              <Suspense fallback={<div className="p-5 text-center text-muted-foreground">Loading...</div>}>
                 <CohortAnalysis />
               </Suspense>
-              <Suspense fallback={<div className="p-5 text-center text-slate-400">Loading...</div>}>
+              <Suspense fallback={<div className="p-5 text-center text-muted-foreground">Loading...</div>}>
                 <ProductMatrix />
               </Suspense>
-              <Suspense fallback={<div className="p-5 text-center text-slate-400">Loading...</div>}>
+              <Suspense fallback={<div className="p-5 text-center text-muted-foreground">Loading...</div>}>
                 <GeographicAnalysis />
               </Suspense>
             </div>
 
             {/* Right Column */}
             <div className="flex flex-col gap-4 min-w-0 w-full">
-              <Suspense fallback={<div className="p-5 text-center text-slate-400">Loading...</div>}>
+              <Suspense fallback={<div className="p-5 text-center text-muted-foreground">Loading...</div>}>
                 <ClientSegmentation />
               </Suspense>
-              <Suspense fallback={<div className="p-5 text-center text-slate-400">Loading...</div>}>
+              <Suspense fallback={<div className="p-5 text-center text-muted-foreground">Loading...</div>}>
                 <PredictiveAnalytics />
               </Suspense>
-              <Suspense fallback={<div className="p-5 text-center text-slate-400">Loading...</div>}>
+              <Suspense fallback={<div className="p-5 text-center text-muted-foreground">Loading...</div>}>
                 <CommissionDeepDive />
               </Suspense>
-              <Suspense fallback={<div className="p-5 text-center text-slate-400">Loading...</div>}>
+              <Suspense fallback={<div className="p-5 text-center text-muted-foreground">Loading...</div>}>
                 <EfficiencyMetrics />
               </Suspense>
             </div>
@@ -188,7 +188,7 @@ export function AnalyticsDashboard() {
         )}
 
         {/* Footer Note */}
-        <div className="mt-8 p-4 bg-white rounded-lg text-center text-xs text-muted-foreground max-w-[1600px]">
+        <div className="mt-8 p-4 bg-card rounded-lg border border-border text-center text-xs text-muted-foreground max-w-[1600px]">
           <strong className="text-foreground">Note:</strong> All analytics are
           calculated in real-time from your policy and commission data. Data is
           automatically refreshed when underlying records change.

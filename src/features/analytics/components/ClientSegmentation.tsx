@@ -49,8 +49,8 @@ export function ClientSegmentation() {
 
   if (isLoading) {
     return (
-      <div className="bg-white rounded-xl p-5 shadow-sm">
-        <div className="p-10 text-center text-gray-400 text-xs">
+      <div className="bg-card rounded-xl p-5 shadow-sm border border-border">
+        <div className="p-10 text-center text-muted-foreground text-xs">
           Loading segmentation data...
         </div>
       </div>
@@ -60,10 +60,10 @@ export function ClientSegmentation() {
   const { crossSell } = segmentation;
 
   return (
-    <div className="bg-white rounded-xl p-5 shadow-sm w-full box-border overflow-hidden">
+    <div className="bg-card rounded-xl p-5 shadow-sm border border-border w-full box-border overflow-hidden">
       {/* Header */}
       <div className="flex items-center gap-2 mb-5">
-        <div className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
+        <div className="text-sm font-semibold text-foreground uppercase tracking-wide">
           Client Segmentation
         </div>
         {/* Info Icon Button */}
@@ -71,7 +71,7 @@ export function ClientSegmentation() {
           onClick={() => setShowInfo(!showInfo)}
           size="icon"
           variant="ghost"
-          className="h-6 w-6 bg-blue-50 border border-blue-100 hover:bg-blue-200 hover:scale-110 transition-transform"
+          className="h-6 w-6 hover:scale-110 transition-transform"
           title="Click for detailed explanation"
         >
           i

@@ -28,7 +28,7 @@ export const MetricsCard: React.FC<MetricsCardProps> = ({
       <div className="flex items-center justify-between mb-4">
         <h4>{title}</h4>
         {icon && (
-          <div className="p-2 rounded-lg bg-gradient-to-br from-gray-50 to-gray-200 border border-gray-200 text-gray-900">
+          <div className="p-2 rounded-lg bg-muted border border-border text-foreground">
             {icon}
           </div>
         )}
@@ -38,7 +38,7 @@ export const MetricsCard: React.FC<MetricsCardProps> = ({
         <div className="flex items-baseline gap-2">
           <div className="metric-value">{value}</div>
           {trend && (
-            <div className="flex items-center gap-1 text-xs text-gray-800">
+            <div className="flex items-center gap-1 text-xs text-muted-foreground">
               {trend.isPositive ? (
                 <TrendingUp size={14} />
               ) : (

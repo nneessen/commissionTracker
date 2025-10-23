@@ -157,71 +157,84 @@
   }
 
   .dark {
-    --background: oklch(0.2891 0 0);
-    --foreground: oklch(0.8945 0 0);
-    --card: oklch(0.3211 0 0);
-    --card-foreground: oklch(0.8945 0 0);
-    --popover: oklch(0.3211 0 0);
-    --popover-foreground: oklch(0.8945 0 0);
-    --primary: oklch(0.7572 0 0);
-    --primary-foreground: oklch(0.2891 0 0);
-    --secondary: oklch(0.4676 0 0);
-    --secondary-foreground: oklch(0.8078 0 0);
-    --muted: oklch(0.3904 0 0);
-    --muted-foreground: oklch(0.7058 0 0);
-    --accent: oklch(0.9067 0 0);
-    --accent-foreground: oklch(0.3211 0 0);
-    --destructive: oklch(0.7915 0.0491 18.241);
-    --destructive-foreground: oklch(0.2891 0 0);
-    --border: oklch(0.4276 0 0);
-    --input: oklch(0.3211 0 0);
-    --ring: oklch(0.8078 0 0);
-    --chart-1: oklch(0.9521 0 0);
-    --chart-2: oklch(0.8576 0 0);
-    --chart-3: oklch(0.7572 0 0);
-    --chart-4: oklch(0.6534 0 0);
-    --chart-5: oklch(0.5452 0 0);
-    --sidebar: oklch(0.2478 0 0);
-    --sidebar-foreground: oklch(0.8945 0 0);
-    --sidebar-primary: oklch(0.7572 0 0);
-    --sidebar-primary-foreground: oklch(0.2478 0 0);
-    --sidebar-accent: oklch(0.9067 0 0);
-    --sidebar-accent-foreground: oklch(0.3211 0 0);
-    --sidebar-border: oklch(0.4276 0 0);
-    --sidebar-ring: oklch(0.8078 0 0);
+    /* Modern dark grayish blue background */
+    --background: oklch(0.18 0.01 240);
+    --foreground: oklch(0.92 0.005 240);
+    /* Cards slightly lighter than background with subtle grayish tone */
+    --card: oklch(0.22 0.012 240);
+    --card-foreground: oklch(0.92 0.005 240);
+    /* Popovers match cards */
+    --popover: oklch(0.22 0.012 240);
+    --popover-foreground: oklch(0.92 0.005 240);
+    /* Primary stays relatively neutral but with subtle warmth */
+    --primary: oklch(0.76 0.01 240);
+    --primary-foreground: oklch(0.18 0.01 240);
+    /* Secondary with grayish tone */
+    --secondary: oklch(0.28 0.015 240);
+    --secondary-foreground: oklch(0.85 0.008 240);
+    /* Muted backgrounds for subtle UI elements */
+    --muted: oklch(0.26 0.015 240);
+    --muted-foreground: oklch(0.72 0.01 240);
+    /* Accent with slightly more saturation for emphasis */
+    --accent: oklch(0.30 0.02 240);
+    --accent-foreground: oklch(0.92 0.005 240);
+    /* Destructive stays vibrant for warnings */
+    --destructive: oklch(0.72 0.12 20);
+    --destructive-foreground: oklch(0.98 0 0);
+    /* Borders subtle but visible */
+    --border: oklch(0.32 0.015 240);
+    /* Input fields slightly darker than cards */
+    --input: oklch(0.20 0.012 240);
+    /* Ring for focus states */
+    --ring: oklch(0.65 0.015 240);
+    /* Chart colors with grayish undertones */
+    --chart-1: oklch(0.85 0.015 240);
+    --chart-2: oklch(0.75 0.018 240);
+    --chart-3: oklch(0.65 0.02 240);
+    --chart-4: oklch(0.55 0.022 240);
+    --chart-5: oklch(0.45 0.025 240);
+    /* Sidebar with distinct grayish tone */
+    --sidebar: oklch(0.19 0.012 240);
+    --sidebar-foreground: oklch(0.90 0.008 240);
+    --sidebar-primary: oklch(0.75 0.012 240);
+    --sidebar-primary-foreground: oklch(0.19 0.012 240);
+    --sidebar-accent: oklch(0.28 0.018 240);
+    --sidebar-accent-foreground: oklch(0.90 0.008 240);
+    --sidebar-border: oklch(0.30 0.015 240);
+    --sidebar-ring: oklch(0.65 0.015 240);
 
     /* Semantic colors for application use - dark mode */
-    --success: oklch(0.6421 0.1902 146.6154);
-    --success-foreground: oklch(0.2891 0 0);
-    --warning: oklch(0.7007 0.1408 84.9326);
-    --warning-foreground: oklch(0.2891 0 0);
-    --error: oklch(0.7915 0.0491 18.241);
-    --error-foreground: oklch(0.2891 0 0);
-    --info: oklch(0.6082 0.1468 238.6587);
-    --info-foreground: oklch(0.2891 0 0);
+    --success: oklch(0.65 0.16 146);
+    --success-foreground: oklch(0.18 0.01 240);
+    --warning: oklch(0.72 0.14 85);
+    --warning-foreground: oklch(0.18 0.01 240);
+    --error: oklch(0.72 0.12 20);
+    --error-foreground: oklch(0.98 0 0);
+    --info: oklch(0.64 0.14 240);
+    --info-foreground: oklch(0.18 0.01 240);
 
     /* Status Colors for Policies and Commissions - Dark Mode */
-    --status-pending: oklch(0.7507 0.1408 84.9326);
-    --status-pending-bg: oklch(0.3507 0.0408 84.9326);
-    --status-active: oklch(0.6921 0.1902 146.6154);
-    --status-active-bg: oklch(0.3221 0.0502 146.6154);
-    --status-earned: oklch(0.6582 0.1468 238.6587);
-    --status-earned-bg: oklch(0.3082 0.0368 238.6587);
-    --status-paid: oklch(0.5921 0.1902 146.6154);
-    --status-paid-bg: oklch(0.2921 0.0502 146.6154);
-    --status-lapsed: oklch(0.8415 0.0491 39.241);
-    --status-lapsed-bg: oklch(0.3415 0.0191 39.241);
-    --status-cancelled: oklch(0.7127 0.0978 20.0041);
-    --status-cancelled-bg: oklch(0.3127 0.0278 20.0041);
-    --status-charged-back: oklch(0.6127 0.0978 20.0041);
-    --status-charged-back-bg: oklch(0.2627 0.0278 20.0041);
-    --status-matured: oklch(0.7558 0 0);
-    --status-matured-bg: oklch(0.3558 0 0);
+    --status-pending: oklch(0.75 0.14 85);
+    --status-pending-bg: oklch(0.25 0.025 85);
+    --status-active: oklch(0.68 0.16 146);
+    --status-active-bg: oklch(0.24 0.03 146);
+    --status-earned: oklch(0.66 0.14 240);
+    --status-earned-bg: oklch(0.23 0.025 240);
+    --status-paid: oklch(0.62 0.16 146);
+    --status-paid-bg: oklch(0.22 0.03 146);
+    --status-lapsed: oklch(0.78 0.10 40);
+    --status-lapsed-bg: oklch(0.26 0.02 40);
+    --status-cancelled: oklch(0.70 0.12 20);
+    --status-cancelled-bg: oklch(0.24 0.025 20);
+    --status-charged-back: oklch(0.65 0.12 20);
+    --status-charged-back-bg: oklch(0.22 0.025 20);
+    --status-matured: oklch(0.70 0.015 240);
+    --status-matured-bg: oklch(0.26 0.015 240);
 
     /* Commission Performance Colors - Dark Mode */
-    --commission-positive: oklch(0.6921 0.1902 146.6154);
-    --commission-negative: oklch(0.7127 0.0978 20.0041);
-    --commission-neutral: oklch(0.8078 0 0);
+    --commission-positive: oklch(0.68 0.16 146);
+    --commission-negative: oklch(0.70 0.12 20);
+    --commission-neutral: oklch(0.70 0.015 240);
 
     --font-sans:
       Inter, SF Pro Display, -apple-system, BlinkMacSystemFont, "Segoe UI",
