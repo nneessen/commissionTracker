@@ -1,13 +1,18 @@
 // src/features/dashboard/components/FinancialHealthCard.tsx
 
-import React, { useState } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { TrendingUp, TrendingDown, DollarSign, AlertCircle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import React, { useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  TrendingUp,
+  TrendingDown,
+  DollarSign,
+  AlertCircle,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
-type TimePeriod = 'daily' | 'weekly' | 'monthly' | 'yearly';
+type TimePeriod = "daily" | "weekly" | "monthly" | "yearly";
 
 interface FinancialHealthCardProps {
   monthlyExpenses: number;
@@ -21,27 +26,29 @@ export const FinancialHealthCard: React.FC<FinancialHealthCardProps> = ({
   monthlyExpenses,
   totalEarned,
   totalPending,
-  breakevenCommission,
-  surplusDeficit,
 }) => {
-  const [timePeriod, setTimePeriod] = useState<TimePeriod>('monthly');
+  const [timePeriod, setTimePeriod] = useState<TimePeriod>("monthly");
 
   const formatCurrency = (value: number) => {
-    return `$${value.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+    return `$${value.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
   };
 
   const getAdjustedValue = (monthlyValue: number) => {
     const now = new Date();
-    const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    const daysInMonth = new Date(
+      now.getFullYear(),
+      now.getMonth() + 1,
+      0,
+    ).getDate();
 
     switch (timePeriod) {
-      case 'daily':
+      case "daily":
         return monthlyValue / daysInMonth;
-      case 'weekly':
+      case "weekly":
         return (monthlyValue / daysInMonth) * 7;
-      case 'monthly':
+      case "monthly":
         return monthlyValue;
-      case 'yearly':
+      case "yearly":
         return monthlyValue * 12;
       default:
         return monthlyValue;
@@ -53,17 +60,23 @@ export const FinancialHealthCard: React.FC<FinancialHealthCardProps> = ({
   const adjustedSurplus = adjustedEarned - adjustedExpenses;
 
   const isSurplus = adjustedSurplus >= 0;
-  const healthPercentage = adjustedExpenses > 0
-    ? Math.min(100, (adjustedEarned / adjustedExpenses) * 100)
-    : 0;
+  const healthPercentage =
+    adjustedExpenses > 0
+      ? Math.min(100, (adjustedEarned / adjustedExpenses) * 100)
+      : 0;
 
   const getPeriodLabel = () => {
     switch (timePeriod) {
-      case 'daily': return 'Daily';
-      case 'weekly': return 'Weekly';
-      case 'monthly': return 'Monthly';
-      case 'yearly': return 'Yearly';
-      default: return 'Monthly';
+      case "daily":
+        return "Daily";
+      case "weekly":
+        return "Weekly";
+      case "monthly":
+        return "Monthly";
+      case "yearly":
+        return "Yearly";
+      default:
+        return "Monthly";
     }
   };
 
@@ -87,22 +100,24 @@ export const FinancialHealthCard: React.FC<FinancialHealthCardProps> = ({
 
           {/* Time Period Switcher */}
           <div className="flex gap-1 bg-muted/50 p-1 rounded-lg shadow-inner">
-            {(['daily', 'weekly', 'monthly', 'yearly'] as TimePeriod[]).map((period) => (
-              <Button
-                key={period}
-                onClick={() => setTimePeriod(period)}
-                variant="ghost"
-                size="sm"
-                className={cn(
-                  "px-3 py-1.5 h-auto text-xs font-semibold capitalize rounded-md transition-all",
-                  timePeriod === period
-                    ? "bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-sm"
-                    : "bg-transparent text-muted-foreground hover:bg-background/50"
-                )}
-              >
-                {period}
-              </Button>
-            ))}
+            {(["daily", "weekly", "monthly", "yearly"] as TimePeriod[]).map(
+              (period) => (
+                <Button
+                  key={period}
+                  onClick={() => setTimePeriod(period)}
+                  variant="ghost"
+                  size="sm"
+                  className={cn(
+                    "px-3 py-1.5 h-auto text-xs font-semibold capitalize rounded-md transition-all",
+                    timePeriod === period
+                      ? "bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-sm"
+                      : "bg-transparent text-muted-foreground hover:bg-background/50",
+                  )}
+                >
+                  {period}
+                </Button>
+              ),
+            )}
           </div>
         </div>
 
@@ -120,24 +135,34 @@ export const FinancialHealthCard: React.FC<FinancialHealthCardProps> = ({
             </div>
           </div>
 
-          <div className={cn(
-            "shadow-md rounded-lg p-4",
-            isSurplus
-              ? "bg-gradient-to-br from-success/25 via-status-active/15 to-card"
-              : "bg-gradient-to-br from-destructive/25 via-error/15 to-card"
-          )}>
+          <div
+            className={cn(
+              "shadow-md rounded-lg p-4",
+              isSurplus
+                ? "bg-gradient-to-br from-success/25 via-status-active/15 to-card"
+                : "bg-gradient-to-br from-destructive/25 via-error/15 to-card",
+            )}
+          >
             <div className="text-xs text-muted-foreground mb-2 uppercase tracking-wide font-semibold">
               {getPeriodLabel()} Commission
             </div>
             <div className="text-2xl font-bold text-foreground font-mono">
               {formatCurrency(adjustedEarned)}
             </div>
-            <div className={cn(
-              "text-xs mt-1 flex items-center gap-1",
-              isSurplus ? "text-success" : "text-destructive"
-            )}>
-              {isSurplus ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-              {isSurplus ? `+${formatCurrency(adjustedSurplus)} surplus` : `${formatCurrency(Math.abs(adjustedSurplus))} deficit`}
+            <div
+              className={cn(
+                "text-xs mt-1 flex items-center gap-1",
+                isSurplus ? "text-success" : "text-destructive",
+              )}
+            >
+              {isSurplus ? (
+                <TrendingUp className="h-3 w-3" />
+              ) : (
+                <TrendingDown className="h-3 w-3" />
+              )}
+              {isSurplus
+                ? `+${formatCurrency(adjustedSurplus)} surplus`
+                : `${formatCurrency(Math.abs(adjustedSurplus))} deficit`}
             </div>
           </div>
 
@@ -171,7 +196,7 @@ export const FinancialHealthCard: React.FC<FinancialHealthCardProps> = ({
                 "h-full rounded-md transition-all duration-300",
                 healthPercentage >= 100
                   ? "bg-gradient-to-r from-success via-status-active to-success/80"
-                  : "bg-gradient-to-r from-primary via-info to-primary/80"
+                  : "bg-gradient-to-r from-primary via-info to-primary/80",
               )}
               style={{ width: `${healthPercentage}%` }}
             />
@@ -179,7 +204,7 @@ export const FinancialHealthCard: React.FC<FinancialHealthCardProps> = ({
 
           <div className="text-xs text-muted-foreground/80 mt-2">
             {healthPercentage >= 100
-              ? '✓ You have exceeded your breakeven target'
+              ? "✓ You have exceeded your breakeven target"
               : `${formatCurrency(adjustedExpenses - adjustedEarned)} needed to break even`}
           </div>
         </div>

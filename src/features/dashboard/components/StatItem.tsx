@@ -3,7 +3,7 @@
 import React from 'react';
 import { TrendingUp, TrendingDown } from 'lucide-react';
 import { StatItemConfig } from '../../../types/dashboard.types';
-import { MetricTooltip } from '../../../components/custom_ui/MetricTooltip';
+import { MetricTooltip } from '../../../components/ui/MetricTooltip';
 import { cn } from '@/lib/utils';
 
 /**

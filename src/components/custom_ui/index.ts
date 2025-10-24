@@ -1,13 +1,31 @@
 // src/components/custom_ui/index.ts
-// Custom reusable components - NOT shadcn primitives
 
-// Custom components
-export { EmailIcon } from '@/components/custom_ui/EmailIcon';
-export { InfoButton } from './InfoButton';
-export { ChartCard } from './ChartCard';
-export { MetricsCard } from './MetricsCard';
-export { DataTable } from './DataTable';
-export { TimePeriodSelector } from './TimePeriodSelector';
-export { MetricTooltip } from './MetricTooltip';
-export { StatCard } from './stat-card';
-export { Heading } from './heading';
+/**
+ * Custom UI Components - Dense Design System
+ *
+ * This folder contains customized versions of shadcn/ui components
+ * optimized for high-density layouts.
+ *
+ * Usage:
+ * - Import from here when you need compact, dense components
+ * - Import from @/components/ui for standard components
+ *
+ * Example:
+ * import { DenseButton } from "@/components/custom_ui/button";  // Dense version
+ * import { Button } from "@/components/ui/button";              // Standard version
+ */
+
+export { DenseButton, buttonVariants } from "./button";
+export type { ButtonProps } from "./button";
+
+export {
+  DenseCard,
+  DenseCardHeader,
+  DenseCardFooter,
+  DenseCardTitle,
+  DenseCardDescription,
+  DenseCardContent,
+} from "./card";
+
+export { DenseInput } from "./input";
+export type { InputProps } from "./input";

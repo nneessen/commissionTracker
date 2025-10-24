@@ -1,6 +1,6 @@
 // src/features/expenses/components/ExpenseSummaryStats.tsx
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
-import { StatCard } from "@/components/custom_ui/stat-card";
+import { StatCard } from "@/components/shared/StatCard";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/lib/format";
 

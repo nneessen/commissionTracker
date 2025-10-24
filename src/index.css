@@ -388,9 +388,9 @@ code {
   min-height: 100vh;
 }
 
-/* Sidebar Styles */
+/* Sidebar Styles - Compact Design */
 .sidebar {
-  width: 240px;
+  width: 220px; /* Reduced from 240px */
   background: hsl(var(--sidebar));
   border-right: 1px solid hsl(var(--sidebar-border));
   display: flex;
@@ -408,13 +408,13 @@ code {
 }
 
 .sidebar-header {
-  padding: 16px;
+  padding: 12px; /* Reduced from 16px */
   border-bottom: 1px solid hsl(var(--sidebar-border));
   background: hsl(var(--sidebar) / 0.8);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 8px; /* Reduced from 12px */
 }
 
 .sidebar-user {
@@ -426,15 +426,15 @@ code {
 }
 
 .sidebar-avatar {
-  width: 36px;
-  height: 36px;
+  width: 32px; /* Reduced from 36px */
+  height: 32px; /* Reduced from 36px */
   background: hsl(var(--sidebar-accent));
   color: hsl(var(--sidebar-accent-foreground));
-  border-radius: 8px;
+  border-radius: 6px; /* Slightly smaller radius */
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 14px;
+  font-size: 13px; /* Reduced from 14px */
   font-weight: 700;
   flex-shrink: 0;
   border: 1px solid hsl(var(--sidebar-border));
@@ -468,7 +468,7 @@ code {
 
 .sidebar-nav {
   flex: 1;
-  padding: 16px 12px;
+  padding: 12px 8px; /* Reduced padding */
   overflow-y: auto;
 }
 
@@ -476,8 +476,8 @@ code {
   width: 100%;
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 6px;
+  gap: 10px; /* Reduced from 12px */
+  margin-bottom: 4px; /* Reduced from 6px */
   text-align: left;
   position: relative;
 }
@@ -502,7 +502,7 @@ code {
 }
 
 .sidebar-footer {
-  padding: 16px 12px;
+  padding: 12px 8px; /* Reduced padding */
   border-top: 1px solid hsl(var(--sidebar-border));
   background: hsl(var(--sidebar) / 0.8);
 }
@@ -510,7 +510,7 @@ code {
 .main-content {
   flex: 1;
   min-width: 0;
-  margin-left: 240px;
+  margin-left: 220px; /* Updated to match new sidebar width */
   transition: margin-left 0.2s ease;
   background: hsl(var(--background));
 }
@@ -578,7 +578,7 @@ code {
 
 .page-layout {
   /* Container that wraps ALL page content from App.tsx - Applied to ALL routes */
-  padding: 24px;
+  padding: 16px; /* Reduced from 24px for desktop */
   max-width: 1400px;
   margin: 0 auto;
   width: 100%;
@@ -623,11 +623,11 @@ code {
 
 @media (max-width: 768px) {
   .page-layout {
-    padding: 16px;
+    padding: 12px; /* Reduced from 16px for tablet */
   }
 
   .page-header {
-    margin-bottom: 16px;
+    margin-bottom: 12px; /* Reduced from 16px */
   }
 
   .page-title {
@@ -641,7 +641,7 @@ code {
 
 @media (max-width: 480px) {
   .page-layout {
-    padding: 12px;
+    padding: 8px; /* Reduced from 12px for mobile */
   }
 
   .page-title {

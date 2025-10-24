@@ -11,13 +11,8 @@ import { User } from "../types";
 import { userService } from "../services/settings/userService";
 import { logger } from "../services/base/logger";
 
-/**
- * Result of sign up operation
- */
 export interface SignUpResult {
-  /** Whether email verification is required before login */
   requiresVerification: boolean;
-  /** User's email address */
   email: string;
 }
 
@@ -59,10 +54,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    // Check for existing session
     checkSession();
 
-    // Set up auth state listener
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(
@@ -187,8 +180,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setSession(data.session);
       setSupabaseUser(data.user);
 
-      // Get full user data with metadata
-      // ✅ OPTIMIZED: Map directly from auth user (no database query!)
       if (data.user) {
         const fullUser = userService.mapAuthUserToUser(data.user);
         setUser(fullUser);
@@ -202,7 +193,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         "Auth",
       );
       setError(err instanceof Error ? err : new Error("Failed to sign in"));
-      // Re-throw the original error so Login.tsx can handle it with proper message
       throw err;
     } finally {
       setLoading(false);
@@ -230,22 +220,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       if (error) throw error;
 
-      // Check if email confirmation is required
       const requiresVerification = data.user && !data.session;
 
       if (requiresVerification) {
         logger.auth("Email confirmation required", { email });
-        // Don't throw error - this is expected behavior
         return { requiresVerification: true, email };
       }
 
-      // Auto-confirm is enabled - set session immediately
       if (data.session && data.user) {
         setSession(data.session);
         setSupabaseUser(data.user);
 
-        // Get full user data with metadata
-        // ✅ OPTIMIZED: Map directly from auth user (no database query!)
         const fullUser = userService.mapAuthUserToUser(data.user);
         setUser(fullUser);
 
@@ -429,4 +414,3 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
-

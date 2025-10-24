@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { MAX_RESEND_ATTEMPTS } from "../../constants/auth.constants";
 import { useEmailVerification } from "./hooks/useEmailVerification";
-import { EmailIcon } from "@/components/custom_ui/EmailIcon";
+import { EmailIcon } from "./components/EmailIcon";
 import { AuthErrorDisplay } from "./components/AuthErrorDisplay";
 import { AuthSuccessMessage } from "./components/AuthSuccessMessage";
 

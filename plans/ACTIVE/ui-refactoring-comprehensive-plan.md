@@ -1,4 +1,5 @@
 # Comprehensive UI Refactoring Plan
+
 **Project:** Commission Tracker
 **Objective:** Refactor all components across 8 feature directories to use shadcn components exclusively, eliminate hardcoded colors, ensure dark/light mode compatibility
 **Status:** In Progress (Phase 2 of 9 Complete)
@@ -9,6 +10,7 @@
 ## Requirements
 
 ### Core Requirements
+
 1. **Shadcn Components Only** - Replace ALL manual HTML elements with shadcn components
 2. **No Hardcoded Colors** - Use only CSS variables from index.css (semantic tokens)
 3. **Dark/Light Mode Compatible** - All components must work in both themes
@@ -17,6 +19,7 @@
 6. **Proper Props** - All reusable components must have necessary props
 
 ### Manual HTML → Shadcn Replacements
+
 - `<input>` → `Input` + `Label`
 - `<select>` → `Select`, `SelectTrigger`, `SelectContent`, `SelectItem`, `SelectValue`
 - `<textarea>` → `Textarea` + `Label`
@@ -28,7 +31,9 @@
 - Manual buttons → `Button`
 
 ### Color Variable Mappings
+
 **Semantic Colors:**
+
 - `bg-white` → `bg-card` or implicit
 - `bg-gray-50` → `bg-muted`
 - `text-gray-900` → `text-foreground`
@@ -39,6 +44,7 @@
 - `border-gray-300` → `border-input`
 
 **Status Colors:**
+
 - `text-green-600`, `bg-green-50` → `text-status-active`, `bg-status-active-bg`
 - `text-red-600`, `bg-red-50` → `text-destructive`, `bg-destructive` or Alert variant
 - `text-blue-600`, `bg-blue-50` → `text-primary`, `bg-primary`
@@ -46,10 +52,12 @@
 - `text-orange-600`, `bg-orange-50` → `text-status-earned`, `bg-status-earned-bg`
 
 **Gradients → Semantic:**
+
 - `bg-gradient-to-br from-blue-50 via-white to-indigo-50` → `bg-background`
 - `bg-gradient-to-br from-blue-600 to-indigo-600` → `bg-primary text-primary-foreground`
 
 ### Common Pitfalls to Avoid
+
 1. **Button `loading` prop** - NOT supported. Use manual text like `{loading ? "Saving..." : "Save"}`
 2. **Input `label` prop** - NOT supported. Use separate `<Label>` component
 3. **Input `error` prop** - NOT supported. Display errors manually with conditional rendering
@@ -61,6 +69,7 @@
 ## Phase Summary
 
 ### ✅ Phase 1: Tier 1 Critical Files (COMPLETED)
+
 **Files:** 5 | **Lines:** ~800 | **Colors Fixed:** 50+
 
 1. ✅ `src/features/policies/PolicyForm.tsx` (620 lines)
@@ -90,6 +99,7 @@
    - Manual badge → shadcn Badge
 
 ### ✅ Phase 2: Auth Feature (COMPLETED)
+
 **Files:** 8 | **Lines:** ~1,000 | **Colors Fixed:** 50+
 
 1. ✅ `src/features/auth/components/SignInForm.tsx` (95 lines)
@@ -134,6 +144,7 @@
 ---
 
 ## ⏳ Phase 3: Analytics Feature (PENDING)
+
 **Files:** 13 | **Estimated Lines:** ~1,500
 
 ### Components to Refactor:
@@ -201,6 +212,7 @@
     - [ ] Icons should use lucide-react
 
 **Key Patterns for Analytics:**
+
 - Chart libraries (recharts/visx) colors should use `var(--primary)`, `var(--status-active)`, etc.
 - Table components should use shadcn Table, TableHeader, TableBody, TableRow, TableCell
 - All metric cards should use consistent Card structure
@@ -209,6 +221,7 @@
 ---
 
 ## ⏳ Phase 4: Dashboard Feature (PENDING)
+
 **Files:** 13 | **Estimated Lines:** ~2,000
 
 ### Components to Refactor:
@@ -279,6 +292,7 @@
     - [ ] Progress indicators → proper styling
 
 **Key Patterns for Dashboard:**
+
 - Consistent Card structure across all widgets
 - Status badges should use Badge with semantic variants
 - All tables should use shadcn Table
@@ -287,6 +301,7 @@
 ---
 
 ## ⏳ Phase 5: Expenses Feature (PENDING)
+
 **Files:** 11 | **Estimated Lines:** ~1,200
 
 ### Components to Refactor:
@@ -349,6 +364,7 @@
     - [ ] Status messages → Alert
 
 **Key Patterns for Expenses:**
+
 - Category badges need consistent Badge usage with colors
 - All forms must use Input + Label pattern
 - Deductible indicators should use status-earned color
@@ -357,6 +373,7 @@
 ---
 
 ## ⏳ Phase 6: Policies Feature (PENDING)
+
 **Files:** 6 remaining | **Estimated Lines:** ~800
 
 ### Components to Refactor:
@@ -395,6 +412,7 @@
    - [ ] Ensure all policy statuses have mappings
 
 **Key Patterns for Policies:**
+
 - Policy status badges critical for visual clarity
 - Large forms need careful Input + Label refactoring
 - Tables need shadcn Table for consistency
@@ -403,6 +421,7 @@
 ---
 
 ## ⏳ Phase 7: Settings Feature (PENDING)
+
 **Files:** 15 | **Estimated Lines:** ~2,000
 
 ### Components to Refactor:
@@ -484,6 +503,7 @@
     - [ ] Security options → Card
 
 **Key Patterns for Settings:**
+
 - Forms are critical - must use Input + Label
 - Toggle switches should use shadcn Switch
 - Tables need shadcn Table
@@ -493,6 +513,7 @@
 ---
 
 ## ⏳ Phase 8: Comps Feature (PENDING)
+
 **Files:** 6 | **Estimated Lines:** ~600
 
 ### Components to Refactor:
@@ -530,6 +551,7 @@
    - [ ] Carrier/product info → Badge
 
 **Key Patterns for Comps:**
+
 - Contract levels need Badge with consistent colors
 - Percentage displays should be standardized
 - Remove useMemo from CompTable.tsx
@@ -598,6 +620,7 @@
 Use this checklist for each component:
 
 ### HTML Elements
+
 - [ ] All `<input>` replaced with `Input` + `Label`
 - [ ] All `<select>` replaced with shadcn `Select` components
 - [ ] All `<textarea>` replaced with `Textarea` + `Label`
@@ -608,6 +631,7 @@ Use this checklist for each component:
 - [ ] All manual dividers replaced with `Separator`
 
 ### Colors
+
 - [ ] No `text-gray-*` classes remain
 - [ ] No `bg-gray-*` classes remain (except in index.css)
 - [ ] No `border-gray-*` classes remain
@@ -617,6 +641,7 @@ Use this checklist for each component:
 - [ ] All colors use CSS variables or semantic classes
 
 ### Props & APIs
+
 - [ ] No `loading` prop on Button (use manual text)
 - [ ] No `label` prop on Input (use separate Label)
 - [ ] No `error` prop on Input (use manual error display)
@@ -624,12 +649,14 @@ Use this checklist for each component:
 - [ ] All form fields have proper `id` attributes for labels
 
 ### Styling
+
 - [ ] No manual focus styles (let shadcn handle)
 - [ ] No transparent backgrounds
 - [ ] Component works in both dark and light mode
 - [ ] Proper spacing using Tailwind utilities
 
 ### Testing
+
 - [ ] Component renders without errors
 - [ ] TypeScript errors resolved
 - [ ] Visual appearance matches design in both themes
@@ -644,6 +671,7 @@ Use this checklist for each component:
 **Files Remaining:** 64 (83%)
 
 **By Phase:**
+
 - ✅ Phase 1 (Tier 1): 5/5 files (100%)
 - ✅ Phase 2 (Auth): 8/8 files (100%)
 - ⏳ Phase 3 (Analytics): 0/13 files (0%)
@@ -658,6 +686,7 @@ Use this checklist for each component:
 **Lines Refactored:** ~1,800 lines (18%)
 
 **Estimated Completion:**
+
 - Phase 3-4: 2-3 hours
 - Phase 5-6: 1-2 hours
 - Phase 7-8: 2-3 hours
@@ -669,6 +698,7 @@ Use this checklist for each component:
 ## Notes & Learnings
 
 ### Key Patterns Established
+
 1. **Input Pattern:** Always wrap Input with separate Label, display errors manually below
 2. **Select Pattern:** Use onValueChange handler, not onChange
 3. **Button Pattern:** No loading prop, use conditional text
@@ -676,6 +706,7 @@ Use this checklist for each component:
 5. **Card Pattern:** Card → CardContent for most cases, add CardHeader when needed
 
 ### Common Issues Fixed
+
 1. Button `loading` prop removed (not in shadcn API)
 2. Input `label` and `error` props removed (not in shadcn API)
 3. Select onChange → onValueChange API change
@@ -683,12 +714,14 @@ Use this checklist for each component:
 5. Gradient backgrounds → semantic color variables
 
 ### TypeScript Notes
+
 - All refactoring maintained type safety
 - Zero new errors introduced through Phase 2
 - Pre-existing errors documented in typecheck output
 - Form resolver errors in Settings feature need attention
 
 ### Performance Notes
+
 - Removed useMemo from some components (React 19 best practice)
 - No performance regressions expected
 - Bundle size may decrease slightly (fewer custom styles)

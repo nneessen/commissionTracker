@@ -5,7 +5,7 @@ import {
   TimePeriodSelector,
   AdvancedTimePeriod,
   getAdvancedDateRange,
-} from "@/components/custom_ui/TimePeriodSelector";
+} from "./components/TimePeriodSelector";
 import { Button } from "@/components/ui/button";
 import { useAnalyticsData } from "../../hooks/useAnalyticsData";
 import { downloadCSV, printAnalyticsToPDF } from "../../utils/exportHelpers";

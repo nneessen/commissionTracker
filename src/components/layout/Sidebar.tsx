@@ -76,10 +76,10 @@ export default function Sidebar({
         <Button
           variant="default"
           size="icon"
-          className="fixed top-4 left-4 z-[101]"
+          className="fixed top-3 left-3 z-[101] h-9 w-9"
           onClick={toggleMobile}
         >
-          <Menu size={20} />
+          <Menu size={18} />
         </Button>
       )}
 
@@ -111,11 +111,11 @@ export default function Sidebar({
             </div>
           )}
           {isMobile ? (
-            <Button variant="default" size="icon" onClick={closeMobile}>
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={closeMobile}>
               <X size={16} />
             </Button>
           ) : (
-            <Button variant="default" size="icon" onClick={onToggleCollapse}>
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onToggleCollapse}>
               {isCollapsed ? <Menu size={16} /> : <ChevronLeft size={16} />}
             </Button>
           )}
@@ -135,14 +135,13 @@ export default function Sidebar({
               >
                 {({ isActive }) => (
                   <Button
-                    variant="default"
-                    className={`sidebar-nav-item ${isCollapsed ? "w-auto" : "w-full justify-start"}`}
+                    variant={isActive ? "secondary" : "ghost"}
+                    className={`sidebar-nav-item h-9 ${isCollapsed ? "w-9 p-0" : "w-full justify-start px-3"}`}
                     title={isCollapsed ? item.label : ""}
                     data-active={isActive}
-                    size={isCollapsed ? "icon" : "default"}
                   >
-                    <Icon size={isCollapsed ? 20 : 16} />
-                    {!isCollapsed && <span>{item.label}</span>}
+                    <Icon size={16} className={isCollapsed ? "" : "mr-2"} />
+                    {!isCollapsed && <span className="text-sm">{item.label}</span>}
                   </Button>
                 )}
               </Link>
@@ -154,16 +153,16 @@ export default function Sidebar({
         <div className="sidebar-footer">
           <div className="flex items-center gap-2 mb-2">
             <ThemeToggle />
-            {!isCollapsed && <span className="text-sm">Theme</span>}
+            {!isCollapsed && <span className="text-xs text-muted-foreground">Theme</span>}
           </div>
           <Button
             variant="destructive"
-            className="w-full justify-start"
+            className={`h-9 ${isCollapsed ? "w-9 p-0" : "w-full justify-start px-3"}`}
             onClick={onLogout}
             title={isCollapsed ? "Logout" : ""}
           >
-            <LogOut size={16} />
-            {!isCollapsed && <span>Logout</span>}
+            <LogOut size={16} className={isCollapsed ? "" : "mr-2"} />
+            {!isCollapsed && <span className="text-sm">Logout</span>}
           </Button>
         </div>
       </div>
