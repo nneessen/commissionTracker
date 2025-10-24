@@ -126,20 +126,20 @@ export function ExpenseDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{expense ? 'Edit Expense' : 'Add Expense'}</DialogTitle>
-          <DialogDescription>
+      <DialogContent className="max-w-xl max-h-[85vh] overflow-y-auto">
+        <DialogHeader className="pb-2">
+          <DialogTitle className="text-lg font-semibold">{expense ? 'Edit Expense' : 'Add Expense'}</DialogTitle>
+          <DialogDescription className="text-xs mt-1">
             {expense
-              ? 'Update the expense details below.'
-              : 'Fill in the details to add a new expense.'}
+              ? 'Update the expense details'
+              : 'Fill in the details to add a new expense'}
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2">
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <div className="grid gap-3 md:grid-cols-2">
             {/* Name */}
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <Label htmlFor="name">
                 Name <span className="text-destructive">*</span>
               </Label>
@@ -152,7 +152,7 @@ export function ExpenseDialog({
             </div>
 
             {/* Amount */}
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <Label htmlFor="amount">
                 Amount <span className="text-destructive">*</span>
               </Label>
@@ -168,7 +168,7 @@ export function ExpenseDialog({
             </div>
 
             {/* Date */}
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <Label htmlFor="date">
                 Date <span className="text-destructive">*</span>
               </Label>
@@ -182,7 +182,7 @@ export function ExpenseDialog({
             </div>
 
             {/* Expense Type */}
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <Label htmlFor="expense_type">
                 Type <span className="text-destructive">*</span>
               </Label>
@@ -203,7 +203,7 @@ export function ExpenseDialog({
             </div>
 
             {/* Category */}
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <Label htmlFor="category">
                 Category <span className="text-destructive">*</span>
               </Label>
@@ -226,7 +226,7 @@ export function ExpenseDialog({
           </div>
 
           {/* Description */}
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <Label htmlFor="description">Description</Label>
             <Textarea
               id="description"
@@ -278,7 +278,7 @@ export function ExpenseDialog({
           {/* Recurring Frequency (only shown if is_recurring is true) */}
           {formData.is_recurring && (
             <div className="space-y-4">
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label htmlFor="recurring_frequency">
                   How Often? <span className="text-destructive">*</span>
                 </Label>
@@ -301,7 +301,7 @@ export function ExpenseDialog({
                 </Select>
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label htmlFor="recurring_end_date">
                   End Date (Optional)
                 </Label>
@@ -324,7 +324,7 @@ export function ExpenseDialog({
           )}
 
           {/* Receipt URL */}
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <Label htmlFor="receipt_url">Receipt URL</Label>
             <Input
               id="receipt_url"
@@ -336,7 +336,7 @@ export function ExpenseDialog({
           </div>
 
           {/* Notes */}
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <Label htmlFor="notes">Notes</Label>
             <Textarea
               id="notes"

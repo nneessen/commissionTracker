@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-10-24 17:34:40
+
+### Changed Files
+- `src/components/ui/dialog.tsx`
+- `src/components/ui/input.tsx`
+- `src/components/ui/select.tsx`
+- `src/components/ui/textarea.tsx`
+- `src/features/expenses/components/ExpenseDialog.tsx`
+- `src/features/policies/components/PolicyDialog.tsx`
+- `src/index.css`
+
+### Statistics
+```
+ 7 files changed, 97 insertions(+), 108 deletions(-)
+```
+
 ## [Checkpoint] - 2025-10-24 11:39:18
 
 ### Changed Files

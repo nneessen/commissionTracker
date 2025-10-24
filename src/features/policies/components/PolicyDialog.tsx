@@ -34,19 +34,19 @@ export function PolicyDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-card border-border">
-        <DialogHeader className="pb-4">
-          <DialogTitle className="text-xl font-semibold text-foreground">
-            {policyId ? 'Edit Policy' : 'New Policy Submission'}
+      <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+        <DialogHeader className="pb-2">
+          <DialogTitle className="text-lg font-semibold text-foreground">
+            {policyId ? 'Edit Policy' : 'New Policy'}
           </DialogTitle>
-          <DialogDescription className="text-sm text-muted-foreground mt-2">
+          <DialogDescription className="text-xs text-muted-foreground mt-1">
             {policyId
-              ? 'Update the policy details below.'
-              : 'Fill in the details to add a new policy.'}
+              ? 'Update the policy details below'
+              : 'Fill in the details to add a new policy'}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="mt-2">
+        <div className="mt-1">
           <PolicyForm
             policyId={policyId}
             onClose={handleClose}
