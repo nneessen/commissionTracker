@@ -578,7 +578,7 @@ code {
 
 .page-layout {
   /* Container that wraps ALL page content from App.tsx - Applied to ALL routes */
-  padding: 16px; /* Reduced from 24px for desktop */
+  padding: 10px; /* Reduced from 24px for desktop */
   max-width: 1400px;
   margin: 0 auto;
   width: 100%;

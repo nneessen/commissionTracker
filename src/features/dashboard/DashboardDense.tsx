@@ -184,8 +184,15 @@ export const DashboardDense: React.FC = () => {
   };
 
   const handleAddPolicy = async (formData: any) => {
-    // Implementation from DashboardHome.tsx
-    setActiveDialog(null);
+    try {
+      const result = await createPolicy.mutateAsync(formData);
+      showToast.success("Policy created successfully!");
+      setActiveDialog(null);
+      return result || null;
+    } catch (error) {
+      showToast.error("Failed to create policy");
+      return null;
+    }
   };
 
   return (

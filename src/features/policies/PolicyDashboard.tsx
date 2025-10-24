@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { PolicyForm } from "./PolicyForm";
+import { PolicyDialog } from "./components/PolicyDialog";
 import { PolicyList } from "./PolicyList";
 import { PolicyDashboardHeader } from "./components/PolicyDashboardHeader";
 import { usePolicies } from "../../hooks/policies";
@@ -48,11 +48,6 @@ export const PolicyDashboard: React.FC = () => {
   const handleEditPolicy = (policyId: string) => {
     setEditingPolicyId(policyId);
     setIsPolicyFormOpen(true);
-  };
-
-  const handleCloseForm = () => {
-    setIsPolicyFormOpen(false);
-    setEditingPolicyId(undefined);
   };
 
   if (isLoading) {
@@ -102,28 +97,27 @@ export const PolicyDashboard: React.FC = () => {
         />
       </div>
 
-      {/* Modal Dialog */}
-      {isPolicyFormOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1000]" onClick={handleCloseForm}>
-          <div className="bg-gradient-to-br from-card to-muted/10 rounded-xl shadow-2xl w-[90%] max-w-[900px] max-h-[85vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
-            <div className="flex justify-between items-center p-5 px-6 bg-gradient-to-r from-muted/30 to-card shadow-sm">
-              <h2 className="text-lg font-semibold text-foreground m-0">
-                {editingPolicyId ? "Edit Policy" : "New Policy Submission"}
-              </h2>
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleCloseForm}>
-                ×
-              </Button>
-            </div>
-            <PolicyForm
-              policyId={editingPolicyId}
-              onClose={handleCloseForm}
-              addPolicy={addPolicy}
-              updatePolicy={updatePolicy}
-              getPolicyById={getPolicyById}
-            />
-          </div>
-        </div>
-      )}
+      {/* Policy Dialog */}
+      <PolicyDialog
+        open={isPolicyFormOpen}
+        onOpenChange={(open) => {
+          setIsPolicyFormOpen(open);
+          if (!open) {
+            setEditingPolicyId(undefined);
+          }
+        }}
+        onSave={async (formData) => {
+          if (editingPolicyId) {
+            const result = await updatePolicy(editingPolicyId, formData);
+            return result || null;
+          } else {
+            const result = await addPolicy(formData);
+            return result || null;
+          }
+        }}
+        policyId={editingPolicyId}
+        getPolicyById={getPolicyById}
+      />
     </div>
   );
 };

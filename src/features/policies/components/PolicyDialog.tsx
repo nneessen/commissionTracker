@@ -34,25 +34,29 @@ export function PolicyDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{policyId ? 'Edit Policy' : 'New Policy Submission'}</DialogTitle>
-          <DialogDescription>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-card border-border">
+        <DialogHeader className="pb-4">
+          <DialogTitle className="text-xl font-semibold text-foreground">
+            {policyId ? 'Edit Policy' : 'New Policy Submission'}
+          </DialogTitle>
+          <DialogDescription className="text-sm text-muted-foreground mt-2">
             {policyId
               ? 'Update the policy details below.'
               : 'Fill in the details to add a new policy.'}
           </DialogDescription>
         </DialogHeader>
 
-        <PolicyForm
-          policyId={policyId}
-          onClose={handleClose}
-          addPolicy={onSave}
-          updatePolicy={async () => {
-            /* handled by PolicyForm internally */
-          }}
-          getPolicyById={getPolicyById || (() => undefined)}
-        />
+        <div className="mt-2">
+          <PolicyForm
+            policyId={policyId}
+            onClose={handleClose}
+            addPolicy={onSave}
+            updatePolicy={async () => {
+              /* handled by PolicyForm internally */
+            }}
+            getPolicyById={getPolicyById || (() => undefined)}
+          />
+        </div>
       </DialogContent>
     </Dialog>
   );
