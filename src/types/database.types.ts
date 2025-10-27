@@ -119,6 +119,13 @@ export type Database = {
             foreignKeyName: "chargebacks_commission_id_fkey"
             columns: ["commission_id"]
             isOneToOne: false
+            referencedRelation: "commission_earning_detail"
+            referencedColumns: ["commission_id"]
+          },
+          {
+            foreignKeyName: "chargebacks_commission_id_fkey"
+            columns: ["commission_id"]
+            isOneToOne: false
             referencedRelation: "commission_earning_status"
             referencedColumns: ["id"]
           },
@@ -837,6 +844,50 @@ export type Database = {
       }
     }
     Views: {
+      commission_chargeback_summary: {
+        Row: {
+          at_risk_amount: number | null
+          chargeback_rate_percentage: number | null
+          charged_back_count: number | null
+          high_risk_count: number | null
+          total_advances: number | null
+          total_chargeback_amount: number | null
+          total_chargebacks: number | null
+          total_earned: number | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
+      commission_earning_detail: {
+        Row: {
+          advance_amount: number | null
+          advance_months: number | null
+          annual_premium: number | null
+          chargeback_amount: number | null
+          chargeback_risk_level: string | null
+          commission_id: string | null
+          earned_amount: number | null
+          effective_date: string | null
+          is_fully_earned: boolean | null
+          monthly_earning_rate: number | null
+          months_paid: number | null
+          months_remaining: number | null
+          policy_id: string | null
+          policy_status: string | null
+          status: string | null
+          unearned_amount: number | null
+          user_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commissions_policy_id_fkey"
+            columns: ["policy_id"]
+            isOneToOne: false
+            referencedRelation: "policies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       commission_earning_status: {
         Row: {
           advance_amount: number | null
@@ -917,6 +968,21 @@ export type Database = {
           },
         ]
       }
+      commission_earning_summary: {
+        Row: {
+          at_risk_count: number | null
+          avg_months_paid: number | null
+          fully_earned_count: number | null
+          portfolio_earned_percentage: number | null
+          total_advances: number | null
+          total_chargebacks: number | null
+          total_commissions: number | null
+          total_earned: number | null
+          total_unearned: number | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
       unearned_commission_summary: {
         Row: {
           at_risk_count: number | null
@@ -979,6 +1045,10 @@ export type Database = {
       }
     }
     Functions: {
+      calculate_chargeback_on_policy_lapse: {
+        Args: { p_lapse_date?: string; p_policy_id: string }
+        Returns: Json
+      }
       calculate_commission_advance: {
         Args: {
           p_advance_months: number
@@ -996,6 +1066,10 @@ export type Database = {
         }
         Returns: number
       }
+      calculate_months_paid: {
+        Args: { p_effective_date: string; p_end_date?: string }
+        Returns: number
+      }
       calculate_unearned_amount: {
         Args: {
           p_advance_months: number
@@ -1003,6 +1077,20 @@ export type Database = {
           p_months_paid: number
         }
         Returns: number
+      }
+      get_at_risk_commissions: {
+        Args: { p_risk_threshold?: number; p_user_id: string }
+        Returns: {
+          advance_amount: number
+          commission_id: string
+          earned_amount: number
+          effective_date: string
+          months_paid: number
+          policy_id: string
+          policy_status: string
+          risk_level: string
+          unearned_amount: number
+        }[]
       }
       get_policies_paginated: {
         Args: {
@@ -1094,6 +1182,7 @@ export type Database = {
         | "reversed"
         | "disputed"
         | "clawback"
+        | "charged_back"
       comp_level: "street" | "release" | "enhanced" | "premium"
       expense_category:
         | "insurance_leads"
@@ -1248,6 +1337,7 @@ export const Constants = {
         "reversed",
         "disputed",
         "clawback",
+        "charged_back",
       ],
       comp_level: ["street", "release", "enhanced", "premium"],
       expense_category: [

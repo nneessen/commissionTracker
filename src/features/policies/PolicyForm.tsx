@@ -85,16 +85,19 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
 
   // Fetch commission rate from comp_guide based on product and user's contract level
   const { data: compGuideData } = useCompGuide(
-    formData.productId || '',
+    formData.productId || "",
     userContractLevel,
   );
 
   useEffect(() => {
     if (policyId) {
       const policy = getPolicyById(policyId);
-      console.log('🔍 PolicyForm: Loading policy for edit', { policyId, policy });
+      console.log("🔍 PolicyForm: Loading policy for edit", {
+        policyId,
+        policy,
+      });
       if (policy) {
-        console.log('📝 PolicyForm: Setting form data', {
+        console.log("📝 PolicyForm: Setting form data", {
           clientName: policy.client.name,
           clientState: policy.client.state,
           clientAge: policy.client.age,
@@ -128,40 +131,53 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
           notes: policy.notes || "",
         });
       } else {
-        console.error('❌ PolicyForm: Policy not found for id:', policyId);
+        console.error("❌ PolicyForm: Policy not found for id:", policyId);
       }
     }
   }, [policyId, getPolicyById]);
 
   // When products load and we're editing a policy without productId, try to find matching product
   useEffect(() => {
-    if (policyId && formData.carrierId && !formData.productId && formData.product && products.length > 0) {
-      console.log('🔎 Looking for product matching carrier and product type', {
+    if (
+      policyId &&
+      formData.carrierId &&
+      !formData.productId &&
+      formData.product &&
+      products.length > 0
+    ) {
+      console.log("🔎 Looking for product matching carrier and product type", {
         carrierId: formData.carrierId,
         productType: formData.product,
-        availableProducts: products
+        availableProducts: products,
       });
 
       // Try to find a product that matches the carrier and product type
-      const matchingProduct = products.find(p =>
-        p.carrier_id === formData.carrierId &&
-        p.product_type === formData.product
+      const matchingProduct = products.find(
+        (p) =>
+          p.carrier_id === formData.carrierId &&
+          p.product_type === formData.product,
       );
 
       if (matchingProduct) {
-        console.log('✅ Found matching product:', matchingProduct);
-        setFormData(prev => ({
+        console.log("✅ Found matching product:", matchingProduct);
+        setFormData((prev) => ({
           ...prev,
-          productId: matchingProduct.id
+          productId: matchingProduct.id,
         }));
       } else {
-        console.warn('⚠️ No matching product found for carrier/type', {
+        console.warn("⚠️ No matching product found for carrier/type", {
           carrierId: formData.carrierId,
-          productType: formData.product
+          productType: formData.product,
         });
       }
     }
-  }, [policyId, formData.carrierId, formData.productId, formData.product, products]);
+  }, [
+    policyId,
+    formData.carrierId,
+    formData.productId,
+    formData.product,
+    products,
+  ]);
 
   // Fetch commission rates for all products when products change
   useEffect(() => {
@@ -198,12 +214,15 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
   useEffect(() => {
     // Don't override commission percentage when editing an existing policy
     if (policyId) {
-      console.log('⏭️  Skipping commission auto-update for existing policy');
+      console.log("⏭️  Skipping commission auto-update for existing policy");
       return;
     }
 
     if (formData.productId && compGuideData) {
-      console.log('💰 Auto-setting commission from comp_guide', compGuideData.commission_percentage * 100);
+      console.log(
+        "💰 Auto-setting commission from comp_guide",
+        compGuideData.commission_percentage * 100,
+      );
       // Use comp_guide commission rate (contract-level based)
       setFormData((prev) => ({
         ...prev,
@@ -212,7 +231,12 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
     } else if (formData.productId && !compGuideData) {
       // Fallback to product commission rate
       const selectedProduct = products.find((p) => p.id === formData.productId);
-      console.log('💰 Auto-setting commission from product', selectedProduct?.commission_percentage ? selectedProduct.commission_percentage * 100 : 0);
+      console.log(
+        "💰 Auto-setting commission from product",
+        selectedProduct?.commission_percentage
+          ? selectedProduct.commission_percentage * 100
+          : 0,
+      );
       setFormData((prev) => ({
         ...prev,
         commissionPercentage: selectedProduct?.commission_percentage
@@ -291,8 +315,7 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
     if (!formData.productId) newErrors.productId = "Product is required";
     if (!formData.policyNumber)
       newErrors.policyNumber = "Policy number is required";
-    if (!formData.submitDate)
-      newErrors.submitDate = "Submit date is required";
+    if (!formData.submitDate) newErrors.submitDate = "Submit date is required";
     if (!formData.effectiveDate)
       newErrors.effectiveDate = "Effective date is required";
 
@@ -350,14 +373,22 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
   );
 
   return (
-    <form onSubmit={handleSubmit} className="flex-1 flex flex-col overflow-hidden">
+    <form
+      onSubmit={handleSubmit}
+      className="flex-1 flex flex-col overflow-hidden"
+    >
       <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6 p-6 overflow-y-auto">
         {/* Left Column - Client Information */}
         <div className="flex flex-col gap-4">
-          <h3 className="text-sm font-semibold text-foreground m-0 mb-2 pb-2 border-b border-border">Client Information</h3>
+          <h3 className="text-sm font-semibold text-foreground m-0 mb-2 pb-2">
+            Client Information
+          </h3>
+          <div className="h-px bg-gradient-to-r from-muted/50 via-muted/30 to-transparent mb-3"></div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="clientName" className="text-[13px]">Client Name *</Label>
+            <Label htmlFor="clientName" className="text-[13px]">
+              Client Name *
+            </Label>
             <Input
               id="clientName"
               type="text"
@@ -368,18 +399,27 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
               placeholder="John Smith"
             />
             {errors.clientName && (
-              <span className="text-[11px] text-destructive">{errors.clientName}</span>
+              <span className="text-[11px] text-destructive">
+                {errors.clientName}
+              </span>
             )}
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="clientState" className="text-[13px]">State *</Label>
+              <Label htmlFor="clientState" className="text-[13px]">
+                State *
+              </Label>
               <Select
                 value={formData.clientState}
-                onValueChange={(value) => handleSelectChange("clientState", value)}
+                onValueChange={(value) =>
+                  handleSelectChange("clientState", value)
+                }
               >
-                <SelectTrigger id="clientState" className={errors.clientState ? "border-destructive" : ""}>
+                <SelectTrigger
+                  id="clientState"
+                  className={errors.clientState ? "border-destructive" : ""}
+                >
                   <SelectValue placeholder="Select" />
                 </SelectTrigger>
                 <SelectContent>
@@ -391,11 +431,15 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
                 </SelectContent>
               </Select>
               {errors.clientState && (
-                <span className="text-[11px] text-destructive">{errors.clientState}</span>
+                <span className="text-[11px] text-destructive">
+                  {errors.clientState}
+                </span>
               )}
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="clientAge" className="text-[13px]">Age *</Label>
+              <Label htmlFor="clientAge" className="text-[13px]">
+                Age *
+              </Label>
               <Input
                 id="clientAge"
                 type="number"
@@ -408,18 +452,25 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
                 max="120"
               />
               {errors.clientAge && (
-                <span className="text-[11px] text-destructive">{errors.clientAge}</span>
+                <span className="text-[11px] text-destructive">
+                  {errors.clientAge}
+                </span>
               )}
             </div>
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="carrierId" className="text-[13px]">Carrier *</Label>
+            <Label htmlFor="carrierId" className="text-[13px]">
+              Carrier *
+            </Label>
             <Select
               value={formData.carrierId}
               onValueChange={(value) => handleSelectChange("carrierId", value)}
             >
-              <SelectTrigger id="carrierId" className={errors.carrierId ? "border-destructive" : ""}>
+              <SelectTrigger
+                id="carrierId"
+                className={errors.carrierId ? "border-destructive" : ""}
+              >
                 <SelectValue placeholder="Select Carrier" />
               </SelectTrigger>
               <SelectContent>
@@ -431,27 +482,36 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
               </SelectContent>
             </Select>
             {errors.carrierId && (
-              <span className="text-[11px] text-destructive">{errors.carrierId}</span>
+              <span className="text-[11px] text-destructive">
+                {errors.carrierId}
+              </span>
             )}
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="productId" className="text-[13px]">Product *</Label>
+            <Label htmlFor="productId" className="text-[13px]">
+              Product *
+            </Label>
             <Select
               value={formData.productId}
               onValueChange={(value) => handleSelectChange("productId", value)}
               disabled={!formData.carrierId || productsLoading}
             >
-              <SelectTrigger id="productId" className={errors.productId ? "border-destructive" : ""}>
-                <SelectValue placeholder={
-                  !formData.carrierId
-                    ? "Select a carrier first"
-                    : productsLoading
-                      ? "Loading products..."
-                      : products.length === 0
-                        ? "No products available for this carrier"
-                        : "Select Product"
-                } />
+              <SelectTrigger
+                id="productId"
+                className={errors.productId ? "border-destructive" : ""}
+              >
+                <SelectValue
+                  placeholder={
+                    !formData.carrierId
+                      ? "Select a carrier first"
+                      : productsLoading
+                        ? "Loading products..."
+                        : products.length === 0
+                          ? "No products available for this carrier"
+                          : "Select Product"
+                  }
+                />
               </SelectTrigger>
               <SelectContent>
                 {products.map((product) => (
@@ -464,7 +524,9 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
               </SelectContent>
             </Select>
             {errors.productId && (
-              <span className="text-[11px] text-destructive">{errors.productId}</span>
+              <span className="text-[11px] text-destructive">
+                {errors.productId}
+              </span>
             )}
             {formData.carrierId &&
               !productsLoading &&
@@ -477,7 +539,9 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="notes" className="text-[13px]">Notes</Label>
+            <Label htmlFor="notes" className="text-[13px]">
+              Notes
+            </Label>
             <Textarea
               id="notes"
               name="notes"
@@ -492,10 +556,15 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
 
         {/* Right Column - Policy Details */}
         <div className="flex flex-col gap-4">
-          <h3 className="text-sm font-semibold text-foreground m-0 mb-2 pb-2 border-b border-border">Policy Details</h3>
+          <h3 className="text-sm font-semibold text-foreground m-0 mb-2 pb-2">
+            Policy Details
+          </h3>
+          <div className="h-px bg-gradient-to-r from-muted/50 via-muted/30 to-transparent mb-3"></div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="policyNumber" className="text-[13px]">Policy Number *</Label>
+            <Label htmlFor="policyNumber" className="text-[13px]">
+              Policy Number *
+            </Label>
             <Input
               id="policyNumber"
               type="text"
@@ -506,12 +575,16 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
               placeholder="POL-123456"
             />
             {errors.policyNumber && (
-              <span className="text-[11px] text-destructive">{errors.policyNumber}</span>
+              <span className="text-[11px] text-destructive">
+                {errors.policyNumber}
+              </span>
             )}
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="submitDate" className="text-[13px]">Submit Date *</Label>
+            <Label htmlFor="submitDate" className="text-[13px]">
+              Submit Date *
+            </Label>
             <Input
               id="submitDate"
               type="date"
@@ -521,12 +594,16 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
               className={errors.submitDate ? "border-destructive" : ""}
             />
             {errors.submitDate && (
-              <span className="text-[11px] text-destructive">{errors.submitDate}</span>
+              <span className="text-[11px] text-destructive">
+                {errors.submitDate}
+              </span>
             )}
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="effectiveDate" className="text-[13px]">Effective Date *</Label>
+            <Label htmlFor="effectiveDate" className="text-[13px]">
+              Effective Date *
+            </Label>
             <Input
               id="effectiveDate"
               type="date"
@@ -536,13 +613,17 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
               className={errors.effectiveDate ? "border-destructive" : ""}
             />
             {errors.effectiveDate && (
-              <span className="text-[11px] text-destructive">{errors.effectiveDate}</span>
+              <span className="text-[11px] text-destructive">
+                {errors.effectiveDate}
+              </span>
             )}
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="premium" className="text-[13px]">Premium Amount *</Label>
+              <Label htmlFor="premium" className="text-[13px]">
+                Premium Amount *
+              </Label>
               <Input
                 id="premium"
                 type="number"
@@ -555,14 +636,23 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
                 min="0"
               />
               {errors.premium && (
-                <span className="text-[11px] text-destructive">{errors.premium}</span>
+                <span className="text-[11px] text-destructive">
+                  {errors.premium}
+                </span>
               )}
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="paymentFrequency" className="text-[13px]">Payment Frequency *</Label>
+              <Label htmlFor="paymentFrequency" className="text-[13px]">
+                Payment Frequency *
+              </Label>
               <Select
                 value={formData.paymentFrequency}
-                onValueChange={(value) => handleSelectChange("paymentFrequency", value as PaymentFrequency)}
+                onValueChange={(value) =>
+                  handleSelectChange(
+                    "paymentFrequency",
+                    value as PaymentFrequency,
+                  )
+                }
               >
                 <SelectTrigger id="paymentFrequency">
                   <SelectValue />
@@ -578,10 +668,14 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="status" className="text-[13px]">Status</Label>
+            <Label htmlFor="status" className="text-[13px]">
+              Status
+            </Label>
             <Select
               value={formData.status}
-              onValueChange={(value) => handleSelectChange("status", value as PolicyStatus)}
+              onValueChange={(value) =>
+                handleSelectChange("status", value as PolicyStatus)
+              }
             >
               <SelectTrigger id="status">
                 <SelectValue />
@@ -599,14 +693,20 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
           <div className="flex flex-col gap-2 p-3 bg-gradient-to-br from-info/20 via-status-earned/10 to-card rounded-md shadow-md">
             <div className="flex justify-between items-center text-[13px]">
               <span className="text-muted-foreground">Annual Premium:</span>
-              <strong className="text-info font-semibold font-mono">${annualPremium.toFixed(2)}</strong>
+              <strong className="text-info font-semibold font-mono">
+                ${annualPremium.toFixed(2)}
+              </strong>
             </div>
             <div className="flex justify-between items-center text-[13px]">
               <span className="text-muted-foreground">Commission Rate:</span>
-              <strong className="text-primary font-semibold">{formData.commissionPercentage.toFixed(2)}%</strong>
+              <strong className="text-primary font-semibold">
+                {formData.commissionPercentage.toFixed(2)}%
+              </strong>
             </div>
             <div className="flex justify-between items-center text-[13px]">
-              <span className="text-muted-foreground">Expected Advance (9 months):</span>
+              <span className="text-muted-foreground">
+                Expected Advance (9 months):
+              </span>
               <strong className="text-success font-semibold font-mono">
                 ${expectedCommission.toFixed(2)}
               </strong>

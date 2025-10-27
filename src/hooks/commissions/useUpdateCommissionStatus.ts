@@ -25,20 +25,49 @@ export const useUpdateCommissionStatus = () => {
 
   return useMutation({
     mutationFn: async ({ commissionId, status, policyId }: UpdateCommissionStatusParams) => {
+      // First, get the commission record to access advance_months
+      const { data: existingCommission, error: fetchError } = await supabase
+        .from('commissions')
+        .select('advance_months, amount')
+        .eq('id', commissionId)
+        .single();
+
+      if (fetchError) {
+        throw new Error(`Failed to fetch commission: ${fetchError.message}`);
+      }
+
       // Prepare update data based on status
       const updateData: any = {
         status,
         updated_at: new Date().toISOString()
       };
 
-      // If changing to 'paid', clear all chargeback fields
+      // CRITICAL: Update months_paid based on status to trigger earned/unearned recalculation
+      // The database trigger 'trigger_update_commission_earned' fires when months_paid changes
       if (status === 'paid') {
+        // Fully earned - set months_paid to advance_months
+        updateData.months_paid = existingCommission.advance_months;
+        // Clear all chargeback fields since commission is paid
         updateData.chargeback_amount = 0;
         updateData.chargeback_date = null;
         updateData.chargeback_reason = null;
+        // Explicitly set payment_date
+        updateData.payment_date = new Date().toISOString();
+      } else if (status === 'pending') {
+        // Not yet earned - reset months_paid to 0
+        updateData.months_paid = 0;
+        // Clear chargeback fields (in case transitioning from cancelled)
+        updateData.chargeback_amount = 0;
+        updateData.chargeback_date = null;
+        updateData.chargeback_reason = null;
+        updateData.payment_date = null;
+      } else if (status === 'cancelled') {
+        // For cancelled status, the policy cancel/lapse handlers should calculate chargebacks
+        // But if manually setting to cancelled, reset to 0 months paid
+        updateData.months_paid = 0;
       }
 
-      // Update commission
+      // Update commission (this will trigger the database trigger to recalculate amounts)
       const { data: commissionData, error: commissionError } = await supabase
         .from('commissions')
         .update(updateData)

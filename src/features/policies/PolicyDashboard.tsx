@@ -52,7 +52,7 @@ export const PolicyDashboard: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center p-20 text-gray-600">Loading policies...</div>
+      <div className="flex items-center justify-center p-20 text-muted-foreground">Loading policies...</div>
     );
   }
 
