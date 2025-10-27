@@ -76,7 +76,7 @@ function App() {
   return (
     <>
       <Toaster />
-      <div className="app-container">
+      <div className="flex min-h-screen">
         <Sidebar
           isCollapsed={isSidebarCollapsed}
           onToggleCollapse={toggleSidebar}
@@ -85,8 +85,8 @@ function App() {
           onLogout={handleLogout}
         />
 
-        <div className="main-content">
-          <div className="page-layout">
+        <div className="main-content flex-1 min-w-0">
+          <div className="p-6 w-full min-h-screen">
             <Outlet />
           </div>
         </div>

@@ -23,28 +23,28 @@ export const AlertsPanel: React.FC<AlertsPanelProps> = ({ alerts }) => {
     switch (type) {
       case 'info':
         return {
-          bg: 'bg-info/10',
-          text: 'text-info',
-          textLight: 'text-info/80',
+          bg: 'bg-gradient-to-br from-blue-50/50 to-sky-50/40 dark:from-blue-950/10 dark:to-sky-950/8 shadow-sm',
+          text: 'text-blue-700 dark:text-blue-300',
+          textLight: 'text-blue-600/80 dark:text-blue-400/70',
         };
       case 'warning':
         return {
-          bg: 'bg-warning/10',
-          text: 'text-warning',
-          textLight: 'text-warning/80',
+          bg: 'bg-gradient-to-br from-amber-50/50 to-yellow-50/40 dark:from-amber-950/10 dark:to-yellow-950/8 shadow-sm',
+          text: 'text-amber-700 dark:text-amber-300',
+          textLight: 'text-amber-600/80 dark:text-amber-400/70',
         };
       case 'danger':
       case 'error':
         return {
-          bg: 'bg-error/10',
-          text: 'text-error',
-          textLight: 'text-error/80',
+          bg: 'bg-gradient-to-br from-red-50/50 to-rose-50/40 dark:from-red-950/10 dark:to-rose-950/8 shadow-sm',
+          text: 'text-red-700 dark:text-red-300',
+          textLight: 'text-red-600/80 dark:text-red-400/70',
         };
       default:
         return {
-          bg: 'bg-info/10',
-          text: 'text-info',
-          textLight: 'text-info/80',
+          bg: 'bg-gradient-to-br from-blue-50/50 to-sky-50/40 dark:from-blue-950/10 dark:to-sky-950/8 shadow-sm',
+          text: 'text-blue-700 dark:text-blue-300',
+          textLight: 'text-blue-600/80 dark:text-blue-400/70',
         };
     }
   };
@@ -57,18 +57,18 @@ export const AlertsPanel: React.FC<AlertsPanelProps> = ({ alerts }) => {
         </CardTitle>
       </CardHeader>
       <CardContent className="p-4 pt-0">
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-3">
           {activeAlerts.map((alert, index) => {
             const classes = getAlertClasses(alert.type);
             return (
               <div
                 key={index}
-                className={`${classes.bg} rounded-lg p-2 shadow-sm`}
+                className={`${classes.bg} rounded-lg p-3`}
               >
                 <div className={`text-xs font-semibold ${classes.text}`}>
                   {alert.title}
                 </div>
-                <div className={`text-xs ${classes.textLight} mt-0.5`}>
+                <div className={`text-xs ${classes.textLight} mt-1`}>
                   {alert.message}
                 </div>
               </div>

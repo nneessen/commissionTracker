@@ -23,12 +23,12 @@ interface PolicyListInfiniteProps {
   updatePolicyStatus: (id: string, status: PolicyStatus) => void;
 }
 
-const STATUS_BADGES: Record<PolicyStatus, string> = {
-  pending: "pending",
-  active: "active",
-  lapsed: "lapsed",
-  cancelled: "cancelled",
-  matured: "matured",
+const STATUS_BADGE_CLASSES: Record<PolicyStatus, string> = {
+  pending: "text-yellow-700 bg-yellow-50 ring-1 ring-inset ring-yellow-600/20 dark:text-yellow-400 dark:bg-yellow-950/50 dark:ring-yellow-800/40",
+  active: "text-green-700 bg-green-50 ring-1 ring-inset ring-green-600/20 dark:text-green-400 dark:bg-green-950/50 dark:ring-green-800/40",
+  lapsed: "text-orange-700 bg-orange-50 ring-1 ring-inset ring-orange-600/20 dark:text-orange-400 dark:bg-orange-950/50 dark:ring-orange-800/40",
+  cancelled: "text-red-700 bg-red-50 ring-1 ring-inset ring-red-600/20 dark:text-red-400 dark:bg-red-950/50 dark:ring-red-800/40",
+  matured: "text-zinc-700 bg-zinc-50 ring-1 ring-inset ring-zinc-600/20 dark:text-zinc-400 dark:bg-zinc-800/50 dark:ring-zinc-700/40",
 };
 
 const PRODUCT_ABBREV: Record<ProductType, string> = {
@@ -225,18 +225,18 @@ export const PolicyListInfinite: React.FC<PolicyListInfiniteProps> = ({
       )}
 
       {/* Policy Table */}
-      <div className="policy-table-container">
-        <table className="policy-table">
-          <thead>
+      <div className="w-full overflow-x-auto bg-card rounded-lg shadow-sm">
+        <table className="w-full text-sm">
+          <thead className="bg-muted/30">
             <tr>
-              <th>Policy</th>
-              <th>Client</th>
-              <th>Carrier/Product</th>
-              <th>Status</th>
-              <th>Premium</th>
-              <th>Commission</th>
-              <th>Effective</th>
-              <th>Actions</th>
+              <th className="py-3 px-4 text-left font-semibold" style={{color: '#f5f5f5'}}>Policy</th>
+              <th className="py-3 px-4 text-left font-semibold" style={{color: '#f5f5f5'}}>Client</th>
+              <th className="py-3 px-4 text-left font-semibold" style={{color: '#f5f5f5'}}>Carrier/Product</th>
+              <th className="py-3 px-4 text-left font-semibold" style={{color: '#f5f5f5'}}>Status</th>
+              <th className="py-3 px-4 text-right font-semibold" style={{color: '#f5f5f5'}}>Premium</th>
+              <th className="py-3 px-4 text-right font-semibold" style={{color: '#f5f5f5'}}>Commission</th>
+              <th className="py-3 px-4 text-left font-semibold" style={{color: '#f5f5f5'}}>Effective</th>
+              <th className="py-3 px-4 text-center font-semibold" style={{color: '#f5f5f5'}}>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -259,49 +259,51 @@ export const PolicyListInfinite: React.FC<PolicyListInfiniteProps> = ({
                 const productName = policy.productDetails?.name || PRODUCT_ABBREV[policy.product];
 
                 return (
-                  <tr key={policy.id}>
-                    <td className="policy-number">{policy.policyNumber}</td>
-                    <td>
-                      <div className="client-info">
-                        <span className="client-name">{policy.client.name}</span>
-                        <span className="client-details">
+                  <tr key={policy.id} className="hover:bg-muted/30 transition-colors border-b border-border/50">
+                    <td className="py-3 px-4">
+                      <span className="text-sm font-medium" style={{color: '#f5f5f5'}}>{policy.policyNumber}</span>
+                    </td>
+                    <td className="py-3 px-4">
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-sm font-medium" style={{color: '#f5f5f5'}}>{policy.client.name}</span>
+                        <span className="text-xs" style={{color: '#d4d4d8'}}>
                           {policy.client.age}y • {policy.client.state}
                         </span>
                       </div>
                     </td>
-                    <td>
-                      <div className="carrier-info">
-                        <span className="carrier-name">
+                    <td className="py-3 px-4">
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-sm font-medium" style={{color: '#f5f5f5'}}>
                           {carrier?.name || "Unknown"}
                         </span>
-                        <span className="product-type" title={productName}>
+                        <span className="text-xs" style={{color: '#d4d4d8'}} title={productName}>
                           {productName}
                         </span>
                       </div>
                     </td>
-                    <td>
-                      <span className={`status-badge ${STATUS_BADGES[policy.status]}`}>
+                    <td className="py-3 px-4">
+                      <span className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ${STATUS_BADGE_CLASSES[policy.status]}`}>
                         {policy.status}
                       </span>
                     </td>
-                    <td className="numeric">
-                      <div className="premium-info">
-                        <span>{formatCurrency(policy.annualPremium)}</span>
-                        <span className="payment-freq">
+                    <td className="py-3 px-4 text-right">
+                      <div className="flex flex-col gap-0.5 items-end">
+                        <span className="text-sm font-medium" style={{color: '#f5f5f5'}}>{formatCurrency(policy.annualPremium)}</span>
+                        <span className="text-xs" style={{color: '#d4d4d8'}}>
                           {policy.paymentFrequency}
                         </span>
                       </div>
                     </td>
-                    <td className="numeric commission">
-                      <div className="commission-info">
-                        <span>{formatCurrency(commission)}</span>
-                        <span className="commission-rate">
+                    <td className="py-3 px-4 text-right">
+                      <div className="flex flex-col gap-0.5 items-end">
+                        <span className="text-sm font-medium" style={{color: '#f5f5f5'}}>{formatCurrency(commission)}</span>
+                        <span className="text-xs" style={{color: '#d4d4d8'}}>
                           {(policy.commissionPercentage * 100).toFixed(0)}%
                         </span>
                       </div>
                     </td>
-                    <td className="date">{formatDate(policy.effectiveDate)}</td>
-                    <td className="actions">
+                    <td className="py-3 px-4 text-sm" style={{color: '#f5f5f5'}}>{formatDate(policy.effectiveDate)}</td>
+                    <td className="py-3 px-4">
                       <Button
                         onClick={() => onEditPolicy(policy.id)}
                         variant="ghost"

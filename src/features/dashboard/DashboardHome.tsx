@@ -21,7 +21,7 @@ import { QuickStatsPanel } from "./components/QuickStatsPanel";
 import { PerformanceOverviewCard } from "./components/PerformanceOverviewCard";
 import { AlertsPanel } from "./components/AlertsPanel";
 import { QuickActionsPanel } from "./components/QuickActionsPanel";
-import { KPIGrid } from "./components/KPIGrid";
+import { KPIGrid_Option1 as KPIGrid } from "./components/KPIGrid_Option1_Cards";
 import { ExpenseDialog } from "../expenses/components/ExpenseDialog";
 import { PolicyDialog } from "../policies/components/PolicyDialog";
 
@@ -249,7 +249,7 @@ export const DashboardHome: React.FC = () => {
 
       <div className="page-content">
         {/* Main 3-column layout */}
-        <div className="grid gap-4 mb-4 grid-cols-[280px_1fr_320px]">
+        <div className="grid gap-6 mb-6 grid-cols-[280px_1fr_320px]">
           <QuickStatsPanel stats={statsConfig} timePeriod={timePeriod} />
 
           <PerformanceOverviewCard
@@ -262,7 +262,7 @@ export const DashboardHome: React.FC = () => {
             periodSuffix={periodSuffix}
           />
 
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-4">
             <AlertsPanel alerts={alertsConfig} />
             <QuickActionsPanel
               actions={quickActions}

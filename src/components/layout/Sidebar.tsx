@@ -74,7 +74,7 @@ export default function Sidebar({
       {/* Mobile Menu Button */}
       {isMobile && (
         <Button
-          variant="default"
+          variant="secondary"
           size="icon"
           className="fixed top-3 left-3 z-[101] h-9 w-9"
           onClick={toggleMobile}
@@ -86,43 +86,66 @@ export default function Sidebar({
       {/* Mobile Overlay */}
       {isMobile && (
         <div
-          className={`mobile-overlay ${isMobileOpen ? "active" : ""}`}
+          className={`fixed inset-0 bg-background/90 backdrop-blur-sm z-[99] transition-all duration-300 ${
+            isMobileOpen ? "opacity-100 visible" : "opacity-0 invisible"
+          }`}
           onClick={closeMobile}
         />
       )}
 
+      {/* Sidebar */}
       <div
-        className={`sidebar ${isCollapsed ? "sidebar-collapsed" : ""} ${isMobile && isMobileOpen ? "mobile-open" : ""}`}
+        className={`
+          fixed left-0 top-0 h-screen bg-card border-r border-border flex flex-col z-[100]
+          transition-all duration-200
+          ${isCollapsed ? "w-[72px]" : "w-[220px]"}
+          ${isMobile ? (isMobileOpen ? "translate-x-0" : "-translate-x-full") : ""}
+          ${isMobile && !isCollapsed ? "w-[280px]" : ""}
+        `}
       >
         {/* Header */}
-        <div className="sidebar-header">
+        <div className="p-3 border-b border-border bg-card/80 flex items-center justify-between gap-2">
           {!isCollapsed && (
-            <div className="sidebar-user">
-              <div className="sidebar-avatar">
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <div className="w-8 h-8 bg-secondary text-secondary-foreground rounded-md flex items-center justify-center text-xs font-bold flex-shrink-0 border border-border shadow-sm">
                 {userName
                   .split(" ")
                   .map((n) => n[0])
                   .join("")}
               </div>
-              <div className="sidebar-user-info">
-                <div className="sidebar-user-name">{userName}</div>
-                <div className="sidebar-user-email">{userEmail}</div>
+              <div className="min-w-0 flex-1">
+                <div className="text-sm font-semibold text-foreground truncate tracking-tight">
+                  {userName}
+                </div>
+                <div className="text-[11px] text-muted-foreground truncate">
+                  {userEmail}
+                </div>
               </div>
             </div>
           )}
           {isMobile ? (
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={closeMobile}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 flex-shrink-0"
+              onClick={closeMobile}
+            >
               <X size={16} />
             </Button>
           ) : (
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onToggleCollapse}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 flex-shrink-0"
+              onClick={onToggleCollapse}
+            >
               {isCollapsed ? <Menu size={16} /> : <ChevronLeft size={16} />}
             </Button>
           )}
         </div>
 
         {/* Navigation */}
-        <nav className="sidebar-nav">
+        <nav className="flex-1 p-2 overflow-y-auto">
           {navigationItems.map((item) => {
             const Icon = item.icon;
             return (
@@ -136,12 +159,14 @@ export default function Sidebar({
                 {({ isActive }) => (
                   <Button
                     variant={isActive ? "secondary" : "ghost"}
-                    className={`sidebar-nav-item h-9 ${isCollapsed ? "w-9 p-0" : "w-full justify-start px-3"}`}
+                    className={`mb-1 h-9 ${isCollapsed ? "w-9 p-0 mx-auto" : "w-full justify-start px-3"}`}
                     title={isCollapsed ? item.label : ""}
                     data-active={isActive}
                   >
-                    <Icon size={16} className={isCollapsed ? "" : "mr-2"} />
-                    {!isCollapsed && <span className="text-sm">{item.label}</span>}
+                    <Icon size={16} className={isCollapsed ? "" : "mr-2.5"} />
+                    {!isCollapsed && (
+                      <span className="text-sm">{item.label}</span>
+                    )}
                   </Button>
                 )}
               </Link>
@@ -150,22 +175,37 @@ export default function Sidebar({
         </nav>
 
         {/* Footer */}
-        <div className="sidebar-footer">
+        <div className="p-2 border-t border-border bg-card/80">
           <div className="flex items-center gap-2 mb-2">
             <ThemeToggle />
-            {!isCollapsed && <span className="text-xs text-muted-foreground">Theme</span>}
+            {!isCollapsed && (
+              <span className="text-xs text-muted-foreground">Theme</span>
+            )}
           </div>
           <Button
             variant="destructive"
-            className={`h-9 ${isCollapsed ? "w-9 p-0" : "w-full justify-start px-3"}`}
+            className={`h-9 ${isCollapsed ? "w-9 p-0 mx-auto" : "w-full justify-start px-3"}`}
             onClick={onLogout}
             title={isCollapsed ? "Logout" : ""}
           >
-            <LogOut size={16} className={isCollapsed ? "" : "mr-2"} />
+            <LogOut size={16} className={isCollapsed ? "" : "mr-2.5"} />
             {!isCollapsed && <span className="text-sm">Logout</span>}
           </Button>
         </div>
       </div>
+
+      {/* Main content margin helper - this pushes content when sidebar is visible */}
+      <style>{`
+        .main-content {
+          margin-left: ${isCollapsed ? "72px" : "220px"};
+          transition: margin-left 0.2s ease;
+        }
+        @media (max-width: 768px) {
+          .main-content {
+            margin-left: 0;
+          }
+        }
+      `}</style>
     </>
   );
 }

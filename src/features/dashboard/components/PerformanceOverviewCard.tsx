@@ -53,10 +53,10 @@ export const PerformanceOverviewCard: React.FC<
         {/* Status Banner */}
         <div
           className={cn(
-            "p-3 rounded-lg mb-4 flex items-center gap-3",
+            "p-4 rounded-lg mb-4 flex items-center gap-3 shadow-sm",
             isBreakeven
-              ? "bg-gradient-to-br from-success/20 via-status-active/15 to-card"
-              : "bg-gradient-to-br from-warning/20 via-status-pending/15 to-card",
+              ? "bg-gradient-to-br from-green-100 to-emerald-100 dark:from-green-900/40 dark:to-emerald-900/35"
+              : "bg-gradient-to-br from-amber-100 to-yellow-100 dark:from-amber-900/40 dark:to-yellow-900/35",
           )}
         >
           {isBreakeven ? (
@@ -89,7 +89,7 @@ export const PerformanceOverviewCard: React.FC<
         </div>
 
         {/* Performance Table */}
-        <div className="overflow-x-auto bg-gradient-to-br from-muted/10 to-card rounded-lg p-3">
+        <div className="overflow-x-auto bg-gradient-to-br from-slate-50/50 to-zinc-50/40 dark:from-slate-950/10 dark:to-zinc-950/8 rounded-lg p-4 shadow-sm">
           <table className="w-full text-xs">
             <thead>
               <tr className="mb-2">
