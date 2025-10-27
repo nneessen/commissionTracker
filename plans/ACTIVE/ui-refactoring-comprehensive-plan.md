@@ -379,10 +379,12 @@
 ### Components to Refactor:
 
 1. `src/features/policies/PolicyList.tsx`
-   - [ ] Table → shadcn Table
-   - [ ] Status badges → Badge with variants
-   - [ ] Filter section → shadcn Select
-   - [ ] Action buttons → Button
+   - [x] Commission status dropdown → shadcn Select (COMPLETED 2025-10-27)
+   - [x] Fixed critical bug: commission status updates now properly trigger amount recalculations
+   - [ ] Table → shadcn Table (PENDING)
+   - [ ] Status badges → Badge with variants (PENDING)
+   - [ ] Filter section → shadcn Select (PENDING)
+   - [ ] Action buttons → Button (PENDING)
    - [ ] Fix TypeScript Date errors (seen in typecheck)
 
 2. `src/features/policies/PolicyListInfinite.tsx`
