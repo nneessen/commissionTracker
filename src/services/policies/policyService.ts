@@ -34,8 +34,8 @@ class PolicyService {
     const policy = await this.repository.create(policyData);
 
     // 2. Calculate advance amount
-    const monthlyPremium = policyData.monthly_premium || 0;
-    const commissionRate = policyData.commission_percentage || 0;
+    const monthlyPremium = policyData.monthlyPremium || 0;
+    const commissionRate = policyData.commissionPercentage || 0;
     const advanceMonths = 9; // Industry standard
     const advanceAmount = monthlyPremium * advanceMonths * commissionRate;
 
@@ -44,11 +44,11 @@ class PolicyService {
       const { error: commissionError } = await supabase
         .from('commissions')
         .insert([{
-          user_id: policy.user_id,
+          user_id: policy.userId,
           policy_id: policy.id,
-          carrier_id: policy.carrier_id,
+          carrier_id: policy.carrierId,
           commission_amount: advanceAmount,
-          payment_date: policy.effective_date,
+          payment_date: policy.effectiveDate,
           status: 'pending',
           is_advance: true,
           advance_months: advanceMonths,
@@ -101,6 +101,59 @@ class PolicyService {
       if (filters.maxPremium && policy.annualPremium > filters.maxPremium) return false;
       return true;
     });
+  }
+
+  /**
+   * Get paginated policies with filters and sorting
+   * @param page - Current page number (1-based)
+   * @param pageSize - Number of items per page
+   * @param filters - Optional filters to apply
+   * @param sortConfig - Optional sorting configuration
+   * @returns Array of policies for the current page
+   */
+  async getPaginated(
+    page: number,
+    pageSize: number,
+    filters?: PolicyFilters,
+    sortConfig?: { field: string; direction: 'asc' | 'desc' }
+  ): Promise<Policy[]> {
+    // Convert PolicyFilters to repository filter format
+    const repoFilters = filters ? {
+      status: filters.status,
+      carrierId: filters.carrierId,
+      product: filters.product,
+      effectiveDateFrom: filters.effectiveDateFrom,
+      effectiveDateTo: filters.effectiveDateTo,
+      searchTerm: filters.searchTerm
+    } : undefined;
+
+    const options = {
+      page,
+      pageSize,
+      orderBy: sortConfig?.field || 'created_at',
+      orderDirection: sortConfig?.direction || 'desc' as 'desc'
+    };
+
+    return this.repository.findAll(options, repoFilters);
+  }
+
+  /**
+   * Get count of policies matching filters
+   * @param filters - Optional filters to apply
+   * @returns Total count of matching policies
+   */
+  async getCount(filters?: PolicyFilters): Promise<number> {
+    // Convert PolicyFilters to repository filter format
+    const repoFilters = filters ? {
+      status: filters.status,
+      carrierId: filters.carrierId,
+      product: filters.product,
+      effectiveDateFrom: filters.effectiveDateFrom,
+      effectiveDateTo: filters.effectiveDateTo,
+      searchTerm: filters.searchTerm
+    } : undefined;
+
+    return this.repository.countPolicies(repoFilters);
   }
 
   /**

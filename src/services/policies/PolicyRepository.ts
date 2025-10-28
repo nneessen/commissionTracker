@@ -8,8 +8,23 @@ export class PolicyRepository extends BaseRepository<Policy, CreatePolicyData, U
     super(TABLES.POLICIES);
   }
 
-  // Override findAll to include client join
-  async findAll(options?: any, filters?: any): Promise<Policy[]> {
+  // Override findAll to include client join and support pagination + date filtering
+  async findAll(options?: {
+    page?: number;
+    pageSize?: number;
+    orderBy?: string;
+    orderDirection?: "asc" | "desc";
+    limit?: number;
+    offset?: number;
+  }, filters?: {
+    status?: string;
+    carrierId?: string;
+    product?: string;
+    effectiveDateFrom?: string;  // YYYY-MM-DD format
+    effectiveDateTo?: string;    // YYYY-MM-DD format
+    searchTerm?: string;
+    [key: string]: any;
+  }): Promise<Policy[]> {
     try {
       let query = this.client
         .from(this.tableName)
@@ -26,11 +41,35 @@ export class PolicyRepository extends BaseRepository<Policy, CreatePolicyData, U
 
       // Apply filters
       if (filters) {
-        Object.entries(filters).forEach(([key, value]) => {
+        // Handle standard equality filters
+        const { effectiveDateFrom, effectiveDateTo, searchTerm, ...equalityFilters } = filters;
+
+        Object.entries(equalityFilters).forEach(([key, value]) => {
           if (value !== undefined && value !== null) {
-            query = query.eq(key, value);
+            // Map filter keys to database columns
+            const columnMap: { [key: string]: string } = {
+              carrierId: 'carrier_id',
+              product: 'product',
+              status: 'status'
+            };
+            const column = columnMap[key] || key;
+            query = query.eq(column, value);
           }
         });
+
+        // Apply date range filters
+        if (effectiveDateFrom) {
+          query = query.gte('effective_date', effectiveDateFrom);
+        }
+        if (effectiveDateTo) {
+          query = query.lte('effective_date', effectiveDateTo);
+        }
+
+        // Apply search term filter (searches in policy number and client name)
+        if (searchTerm) {
+          // This requires a more complex filter - we'll implement this with OR conditions
+          query = query.or(`policy_number.ilike.%${searchTerm}%`);
+        }
       }
 
       // Apply sorting
@@ -42,15 +81,20 @@ export class PolicyRepository extends BaseRepository<Policy, CreatePolicyData, U
         query = query.order("created_at", { ascending: false });
       }
 
-      // Apply pagination
-      if (options?.limit) {
+      // Apply pagination (support both old style and new style)
+      if (options?.page && options?.pageSize) {
+        // New style: page-based pagination
+        const offset = (options.page - 1) * options.pageSize;
+        query = query.range(offset, offset + options.pageSize - 1);
+      } else if (options?.limit) {
+        // Old style: limit/offset pagination
         query = query.limit(options.limit);
-      }
-      if (options?.offset) {
-        query = query.range(
-          options.offset,
-          options.offset + (options.limit || 10) - 1,
-        );
+        if (options?.offset) {
+          query = query.range(
+            options.offset,
+            options.offset + (options.limit || 10) - 1,
+          );
+        }
       }
 
       const { data, error } = await query;
@@ -292,7 +336,11 @@ export class PolicyRepository extends BaseRepository<Policy, CreatePolicyData, U
     status?: string;
     carrierId?: string;
     productId?: string;
+    product?: string;
     userId?: string;
+    effectiveDateFrom?: string;  // YYYY-MM-DD format
+    effectiveDateTo?: string;    // YYYY-MM-DD format
+    searchTerm?: string;
   }): Promise<number> {
     try {
       let query = this.client
@@ -300,10 +348,25 @@ export class PolicyRepository extends BaseRepository<Policy, CreatePolicyData, U
         .select('id', { count: 'exact', head: true }); // Only count, don't fetch data
 
       if (filters) {
+        // Standard equality filters
         if (filters.status) query = query.eq('status', filters.status);
         if (filters.carrierId) query = query.eq('carrier_id', filters.carrierId);
         if (filters.productId) query = query.eq('product_id', filters.productId);
+        if (filters.product) query = query.eq('product', filters.product);
         if (filters.userId) query = query.eq('user_id', filters.userId);
+
+        // Date range filters
+        if (filters.effectiveDateFrom) {
+          query = query.gte('effective_date', filters.effectiveDateFrom);
+        }
+        if (filters.effectiveDateTo) {
+          query = query.lte('effective_date', filters.effectiveDateTo);
+        }
+
+        // Search term filter
+        if (filters.searchTerm) {
+          query = query.or(`policy_number.ilike.%${filters.searchTerm}%`);
+        }
       }
 
       const { count, error } = await query;

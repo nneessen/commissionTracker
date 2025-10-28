@@ -1,39 +1,60 @@
 // src/features/policies/hooks/usePolicySummary.ts
 
 import { Policy } from "../../../types/policy.types";
+import { Commission } from "../../../types/commission.types";
 
 interface PolicySummary {
   totalPolicies: number;
   activePolicies: number;
+  pendingPolicies: number;
   totalAnnualPremium: number;
-  totalExpectedCommission: number;
-  averageCommissionRate: number;
+  totalPaidCommission: number;
+  totalPendingCommission: number;
   expiringPolicies: Policy[];
+  dateRangeLabel?: string;
 }
 
 /**
- * Custom hook to calculate policy summary statistics
+ * Custom hook to calculate policy summary statistics with actual commission data
  * React 19.1 optimizes automatically - no need for useMemo
  * @param policies - Array of policies to analyze
+ * @param commissions - Array of commissions for calculating actual earned amounts
+ * @param dateRangeLabel - Optional label showing the current date filter range
  * @returns Summary object with calculated metrics
  */
-export const usePolicySummary = (policies: Policy[]): PolicySummary => {
-  // Calculate summary stats
+export const usePolicySummary = (
+  policies: Policy[],
+  commissions: Commission[] = [],
+  dateRangeLabel?: string
+): PolicySummary => {
+  // Calculate policy counts by status
   const activePolicies = policies.filter((p) => p.status === "active");
+  const pendingPolicies = policies.filter((p) => p.status === "pending");
+
+  // Calculate total annual premium
   const totalAnnualPremium = policies.reduce(
     (sum, p) => sum + (p.annualPremium || 0),
     0,
   );
-  const totalExpectedCommission = policies.reduce(
-    (sum, p) =>
-      sum + ((p.annualPremium || 0) * (p.commissionPercentage || 0)) / 100,
-    0,
+
+  // Get policy IDs from filtered policies
+  const policyIds = new Set(policies.map(p => p.id));
+
+  // Filter commissions for the current policies
+  const relevantCommissions = commissions.filter(c =>
+    c.policyId && policyIds.has(c.policyId)
   );
 
-  const averageCommissionRate =
-    totalAnnualPremium > 0
-      ? (totalExpectedCommission / totalAnnualPremium) * 100
-      : 0;
+  // Calculate actual commission amounts from database
+  // Paid commissions: status = 'paid' or earned_amount > 0
+  const totalPaidCommission = relevantCommissions
+    .filter(c => c.status === 'paid' || (c.earnedAmount && c.earnedAmount > 0))
+    .reduce((sum, c) => sum + (c.earnedAmount || 0), 0);
+
+  // Pending commissions: status = 'pending' and amount > 0
+  const totalPendingCommission = relevantCommissions
+    .filter(c => c.status === 'pending')
+    .reduce((sum, c) => sum + (c.amount || 0), 0);
 
   // Get expiring policies (within 30 days)
   const futureDate = new Date();
@@ -49,9 +70,11 @@ export const usePolicySummary = (policies: Policy[]): PolicySummary => {
   return {
     totalPolicies: policies.length,
     activePolicies: activePolicies.length,
+    pendingPolicies: pendingPolicies.length,
     totalAnnualPremium,
-    totalExpectedCommission,
-    averageCommissionRate,
+    totalPaidCommission,
+    totalPendingCommission,
     expiringPolicies,
+    dateRangeLabel,
   };
 };

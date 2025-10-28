@@ -102,6 +102,9 @@ export interface PolicyFilters {
   searchTerm?: string;
   startDate?: Date;
   endDate?: Date;
+  // Date range filters for effective date (YYYY-MM-DD format strings)
+  effectiveDateFrom?: string;
+  effectiveDateTo?: string;
   minPremium?: number;
   maxPremium?: number;
 }

@@ -8,6 +8,7 @@ import { PolicyList } from "./PolicyList";
 import { PolicyDashboardHeader } from "./components/PolicyDashboardHeader";
 import { usePolicies } from "../../hooks/policies";
 import { useCarriers } from "../../hooks/carriers";
+import { useCommissions } from "../../hooks/commissions/useCommissions";
 import { usePolicyMutations } from "./hooks/usePolicyMutations";
 import { usePolicySummary } from "./hooks/usePolicySummary";
 import { PolicyFilters } from "../../types/policy.types";
@@ -19,9 +20,12 @@ export const PolicyDashboard: React.FC = () => {
   const { data: policies = [], isLoading, error, refetch } = usePolicies();
   useCarriers();
 
+  // Import commission data to calculate actual commission metrics
+  const { data: commissions = [] } = useCommissions();
+
   // Use custom hooks for mutations and summary calculations
   const { addPolicy, updatePolicy, updatePolicyStatus, deletePolicy } = usePolicyMutations(refetch);
-  const summary = usePolicySummary(policies);
+  const summary = usePolicySummary(policies, commissions);
 
   const getPolicyById = (id: string) => {
     return policies.find((p) => p.id === id);
