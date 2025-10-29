@@ -1,6 +1,6 @@
-// /home/nneessen/projects/commissionTracker/src/features/policies/PolicyList.tsx
+// src/features/policies/PolicyList.tsx
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Edit,
   Trash2,
@@ -10,12 +10,17 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
   CheckCircle,
   AlertCircle,
   MoreVertical,
   XCircle,
+  Plus,
+  FileText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { formatDateForDB, parseLocalDate } from "@/lib/date";
 import {
   Select,
   SelectContent,
@@ -23,6 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -47,61 +53,61 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useCarriers } from "../../hooks/carriers";
 import { useCommissions } from "../../hooks/commissions/useCommissions";
 import { useUpdateCommissionStatus } from "../../hooks/commissions/useUpdateCommissionStatus";
 import { useProcessChargeback } from "../../hooks/commissions/useProcessChargeback";
-import { useCancelPolicy, useLapsePolicy, useReinstatePolicy } from "../../hooks/policies";
+import { useCancelPolicy, useLapsePolicy, useReinstatePolicy, useDeletePolicy } from "../../hooks/policies";
+import { usePoliciesView } from "../../hooks/policies/usePoliciesView";
 import { Policy, PolicyFilters, PolicyStatus } from "../../types/policy.types";
 import { ProductType, CommissionStatus } from "../../types/commission.types";
 import { calculateCommissionAdvance } from "../../utils/policyCalculations";
 import { formatCurrency, formatDate } from "../../lib/format";
 
 interface PolicyListProps {
-  policies: Policy[];
-  deletePolicy: (id: string) => void;
-  updatePolicyStatus: (id: string, status: PolicyStatus) => void;
-  filterPolicies: (filters: PolicyFilters) => Policy[];
   onEditPolicy: (policyId: string) => void;
+  onNewPolicy: () => void;
 }
 
-type SortField =
-  | "policyNumber"
-  | "client"
-  | "carrier"
-  | "status"
-  | "premium"
-  | "commission"
-  | "effectiveDate";
-type SortDirection = "asc" | "desc";
-
-const STATUS_BADGES: Record<PolicyStatus, string> = {
-  pending: "pending",
-  active: "active",
-  lapsed: "lapsed",
-  cancelled: "cancelled",
-  matured: "matured",
-};
-
-const PRODUCT_ABBREV: Record<ProductType, string> = {
+const PRODUCT_ABBREV: Record<string, string> = {
   whole_life: "Whole",
   term_life: "Term",
   universal_life: "UL",
+  indexed_universal_life: "IUL",
   variable_life: "VL",
+  variable_universal_life: "VUL",
+  final_expense: "Final",
+  accidental: "AD&D",
   health: "Health",
   disability: "Disability",
   annuity: "Ann",
 };
 
-const ITEMS_PER_PAGE = 25;
+export const PolicyList: React.FC<PolicyListProps> = ({ onEditPolicy, onNewPolicy }) => {
+  // Use server-side pagination hook
+  const {
+    policies,
+    isLoading,
+    isFetching,
+    error,
+    currentPage,
+    totalPages,
+    pageSize,
+    totalItems,
+    goToPage,
+    nextPage,
+    previousPage,
+    setPageSize,
+    filters,
+    setFilters,
+    clearFilters,
+    filterCount,
+    sortConfig,
+    toggleSort,
+    refresh,
+  } = usePoliciesView();
 
-export const PolicyList: React.FC<PolicyListProps> = ({
-  policies,
-  deletePolicy,
-  updatePolicyStatus,
-  filterPolicies,
-  onEditPolicy,
-}) => {
   const { data: carriers = [] } = useCarriers();
   const { data: commissions = [] } = useCommissions();
   const { mutate: updateCommissionStatus } = useUpdateCommissionStatus();
@@ -109,15 +115,14 @@ export const PolicyList: React.FC<PolicyListProps> = ({
   const { mutate: cancelPolicy } = useCancelPolicy();
   const { mutate: lapsePolicy } = useLapsePolicy();
   const { mutate: reinstatePolicy } = useReinstatePolicy();
+  const { mutate: deletePolicy } = useDeletePolicy();
   const getCarrierById = (id: string) => carriers.find((c) => c.id === id);
 
-  // Chargeback modal state
+  // UI state
+  const [showFilters, setShowFilters] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
   const [showChargebackModal, setShowChargebackModal] = useState(false);
   const [selectedCommission, setSelectedCommission] = useState<any>(null);
-
-  // Pagination state
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(ITEMS_PER_PAGE);
 
   // Create a map of policy_id -> commission for quick lookup
   const commissionsByPolicy = commissions.reduce((acc, commission) => {
@@ -127,101 +132,64 @@ export const PolicyList: React.FC<PolicyListProps> = ({
     return acc;
   }, {} as Record<string, typeof commissions[0]>);
 
-  const [filters, setFilters] = useState<PolicyFilters>({});
-  const [searchTerm, setSearchTerm] = useState("");
-  const [sortField, setSortField] = useState<SortField>("effectiveDate");
-  const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
-  const [showFilters, setShowFilters] = useState(false);
+  // Calculate metrics from current page data
+  const calculateMetrics = () => {
+    const activePolicies = policies.filter(p => p.status === 'active');
+    const pendingPolicies = policies.filter(p => p.status === 'pending');
+    const totalPremium = policies.reduce((sum, p) => sum + (p.annualPremium || 0), 0);
+    const avgPremium = policies.length > 0 ? totalPremium / policies.length : 0;
 
-  const filteredAndSortedPolicies = (() => {
-    const filtered = filterPolicies({ ...filters, searchTerm });
+    // Get commissions for current policies
+    const policyIds = new Set(policies.map(p => p.id));
+    const relevantCommissions = commissions.filter(c => c.policyId && policyIds.has(c.policyId));
+    const totalCommission = relevantCommissions.reduce((sum, c) => sum + (c.amount || 0), 0);
+    const earnedCommission = relevantCommissions.reduce((sum, c) => sum + (c.earnedAmount || 0), 0);
+    const pendingCommission = relevantCommissions.filter(c => c.status === 'pending')
+      .reduce((sum, c) => sum + (c.amount || 0), 0);
 
-    return [...filtered].sort((a, b) => {
-      let aVal: string | number;
-      let bVal: string | number;
+    // Calculate YTD metrics
+    const currentYear = new Date().getFullYear();
+    const ytdPolicies = policies.filter(p =>
+      new Date(p.effectiveDate).getFullYear() === currentYear
+    );
+    const ytdPremium = ytdPolicies.reduce((sum, p) => sum + (p.annualPremium || 0), 0);
 
-      switch (sortField) {
-        case "policyNumber":
-          aVal = a.policyNumber;
-          bVal = b.policyNumber;
-          break;
-        case "client":
-          aVal = a.client.name;
-          bVal = b.client.name;
-          break;
-        case "carrier":
-          aVal = getCarrierById(a.carrierId)?.name || "";
-          bVal = getCarrierById(b.carrierId)?.name || "";
-          break;
-        case "status":
-          aVal = a.status;
-          bVal = b.status;
-          break;
-        case "premium":
-          aVal = a.annualPremium;
-          bVal = b.annualPremium;
-          break;
-        case "commission":
-          aVal = calculateCommissionAdvance(
-            a.annualPremium,
-            a.commissionPercentage,
-            9, // Default advance months
-          );
-          bVal = calculateCommissionAdvance(
-            b.annualPremium,
-            b.commissionPercentage,
-            9, // Default advance months
-          );
-          break;
-        case "effectiveDate":
-          aVal = new Date(a.effectiveDate).getTime();
-          bVal = new Date(b.effectiveDate).getTime();
-          break;
-        default:
-          aVal = new Date(a.effectiveDate).getTime();
-          bVal = new Date(b.effectiveDate).getTime();
-      }
-
-      if (sortDirection === "asc") {
-        return aVal > bVal ? 1 : -1;
-      } else {
-        return aVal < bVal ? 1 : -1;
-      }
-    });
-  })();
-
-  // Pagination calculations
-  const totalPages = Math.ceil(filteredAndSortedPolicies.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const paginatedPolicies = filteredAndSortedPolicies.slice(startIndex, endIndex);
-
-  // Reset to page 1 when filters change
-  React.useEffect(() => {
-    setCurrentPage(1);
-  }, [filters, searchTerm]);
-
-  const handleSort = (field: SortField) => {
-    if (sortField === field) {
-      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
-    } else {
-      setSortField(field);
-      setSortDirection("asc");
-    }
+    return {
+      totalPolicies: totalItems,
+      activePolicies: activePolicies.length,
+      pendingPolicies: pendingPolicies.length,
+      totalPremium,
+      avgPremium,
+      totalCommission,
+      earnedCommission,
+      pendingCommission,
+      ytdPolicies: ytdPolicies.length,
+      ytdPremium,
+      pageShowing: policies.length,
+    };
   };
+
+  const metrics = calculateMetrics();
+
+  // Handle search with debounce
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setFilters(prev => ({ ...prev, searchTerm }));
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchTerm, setFilters]);
 
   const handleDeletePolicy = (policyId: string) => {
     if (window.confirm("Are you sure you want to delete this policy?")) {
-      deletePolicy(policyId);
+      deletePolicy({ id: policyId });
     }
   };
 
   const handleStatusChange = (commission: { id: string }, newStatus: string, policy: Policy) => {
-    // The useUpdateCommissionStatus hook handles policy status updates
     updateCommissionStatus({
       commissionId: commission.id,
       status: newStatus as 'pending' | 'earned' | 'paid' | 'charged_back' | 'cancelled',
-      policyId: policy.id  // This is the KEY - the hook handles the cascade
+      policyId: policy.id
     }, {
       onError: (error) => {
         alert(`Failed to update status: ${error.message}`);
@@ -232,7 +200,6 @@ export const PolicyList: React.FC<PolicyListProps> = ({
   const handleChargeback = () => {
     if (!selectedCommission) return;
 
-    // Process chargeback - calculates months_paid, chargeback_amount, and sets all fields atomically
     processChargeback(
       {
         commissionId: selectedCommission.id,
@@ -240,10 +207,6 @@ export const PolicyList: React.FC<PolicyListProps> = ({
       },
       {
         onSuccess: () => {
-          // Also update policy status to cancelled
-          if (selectedCommission.policy) {
-            updatePolicyStatus(selectedCommission.policy.id, 'cancelled');
-          }
           setShowChargebackModal(false);
           setSelectedCommission(null);
         },
@@ -255,7 +218,7 @@ export const PolicyList: React.FC<PolicyListProps> = ({
   };
 
   const handleCancelPolicy = (policyId: string) => {
-    if (!window.confirm("Are you sure you want to cancel this policy? This will calculate and apply any chargeback amounts.")) {
+    if (!window.confirm("Are you sure you want to cancel this policy?")) {
       return;
     }
 
@@ -281,7 +244,7 @@ export const PolicyList: React.FC<PolicyListProps> = ({
   };
 
   const handleLapsePolicy = (policyId: string) => {
-    if (!window.confirm("Mark this policy as lapsed? This will calculate and apply any chargeback amounts.")) {
+    if (!window.confirm("Mark this policy as lapsed?")) {
       return;
     }
 
@@ -317,7 +280,7 @@ export const PolicyList: React.FC<PolicyListProps> = ({
       },
       {
         onSuccess: () => {
-          alert('Policy reinstated successfully. Any previous chargebacks have been reversed.');
+          alert('Policy reinstated successfully.');
         },
         onError: (error) => {
           alert(`Failed to reinstate policy: ${error.message}`);
@@ -326,459 +289,577 @@ export const PolicyList: React.FC<PolicyListProps> = ({
     );
   };
 
-  const SortHeader: React.FC<{
-    field: SortField;
-    children: React.ReactNode;
-  }> = ({ field, children }) => (
-    <TableHead
-      className="py-2.5 px-3 font-medium text-muted-foreground whitespace-nowrap cursor-pointer select-none hover:text-foreground"
-      onClick={() => handleSort(field)}
-    >
-      {children}
-      {sortField === field &&
-        (sortDirection === "asc" ? (
-          <ChevronUp size={14} className="inline-block ml-1 align-middle" />
-        ) : (
-          <ChevronDown size={14} className="inline-block ml-1 align-middle" />
-        ))}
-    </TableHead>
-  );
-
   return (
-    <div className="space-y-4">
-      {/* Compact Search and Filter Bar */}
-      <div className="bg-gradient-to-br from-card to-muted/10 rounded-lg shadow-md overflow-hidden">
-        <div className="flex gap-3 p-3 px-4 bg-gradient-to-r from-muted/50 to-card shadow-sm">
+    <div className="h-full w-full flex flex-col">
+      {/* Header with Title and Metrics Bar */}
+      <div className="bg-background border-b border-border/50">
+        {/* Title and New Policy Button */}
+        <div className="flex items-center justify-between px-6 py-3">
+          <h1 className="text-2xl font-semibold">Policies</h1>
+          <Button onClick={onNewPolicy} size="sm">
+            <Plus className="h-4 w-4 mr-1.5" />
+            New Policy
+          </Button>
+        </div>
+
+        {/* Compact Metrics Bar */}
+        <div className="px-6 pb-3">
+          <div className="flex items-center justify-between gap-8 text-sm">
+            {/* Count metrics */}
+            <div className="flex items-center gap-6">
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-xl font-bold">{metrics.totalPolicies}</span>
+                <span className="text-xs text-muted-foreground">total</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 rounded-full bg-green-500" />
+                <span className="font-medium">{metrics.activePolicies}</span>
+                <span className="text-muted-foreground">active</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 rounded-full bg-yellow-500" />
+                <span className="font-medium">{metrics.pendingPolicies}</span>
+                <span className="text-muted-foreground">pending</span>
+              </div>
+            </div>
+
+            {/* Premium metrics */}
+            <div className="flex items-center gap-4">
+              <div>
+                <span className="font-semibold">${(metrics.totalPremium / 1000).toFixed(1)}k</span>
+                <span className="text-muted-foreground ml-1">premium</span>
+              </div>
+              <div className="text-muted-foreground">•</div>
+              <div>
+                <span className="font-semibold">${(metrics.avgPremium / 1000).toFixed(1)}k</span>
+                <span className="text-muted-foreground ml-1">avg</span>
+              </div>
+            </div>
+
+            {/* Commission metrics */}
+            <div className="flex items-center gap-4">
+              <div>
+                <span className="font-semibold text-green-600">${(metrics.earnedCommission / 1000).toFixed(1)}k</span>
+                <span className="text-muted-foreground ml-1">earned</span>
+              </div>
+              <div className="text-muted-foreground">•</div>
+              <div>
+                <span className="font-semibold text-yellow-600">${(metrics.pendingCommission / 1000).toFixed(1)}k</span>
+                <span className="text-muted-foreground ml-1">pending</span>
+              </div>
+            </div>
+
+            {/* YTD metrics */}
+            <div className="flex items-center gap-4">
+              <div>
+                <span className="font-medium">{metrics.ytdPolicies}</span>
+                <span className="text-muted-foreground ml-1">YTD</span>
+              </div>
+              <div>
+                <span className="font-medium">${(metrics.ytdPremium / 1000).toFixed(1)}k</span>
+                <span className="text-muted-foreground ml-1">YTD premium</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Filters and Search Bar */}
+      <div className="bg-background border-b border-border/50">
+        <div className="flex gap-3 p-2 px-4">
           <div className="flex-1 relative flex items-center">
             <Search size={16} className="absolute left-2.5 text-muted-foreground/60" />
-            <input
+            <Input
               type="text"
               placeholder="Search policies, clients, carriers..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full py-1.5 px-3 pl-9 bg-background/50 rounded-md text-[13px] outline-none transition-colors focus:bg-background focus:ring-2 focus:ring-primary/20"
+              className="h-8 pl-9 text-sm"
             />
           </div>
           <Button
             onClick={() => setShowFilters(!showFilters)}
-            variant="outline"
+            variant={showFilters ? "default" : "outline"}
             size="sm"
-            className={cn(
-              "flex items-center gap-1.5 px-3 py-1.5 text-[13px] shadow-sm",
-              showFilters && "bg-primary text-primary-foreground hover:bg-primary/90"
-            )}
+            className="h-8"
           >
-            <Filter size={16} />
-            Filters
+            <Filter size={14} className="mr-1" />
+            Filters {filterCount > 0 && `(${filterCount})`}
           </Button>
+          {filterCount > 0 && (
+            <Button
+              onClick={clearFilters}
+              variant="ghost"
+              size="sm"
+              className="h-8 text-xs"
+            >
+              Clear
+            </Button>
+          )}
         </div>
 
         {/* Collapsible Filter Panel */}
         {showFilters && (
-          <div className="flex gap-3 p-3 px-4 bg-gradient-to-r from-muted/30 to-card shadow-sm">
-            <div className="flex flex-col gap-1 min-w-[120px]">
-              <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Status</label>
-              <select
-                value={filters.status || ""}
-                onChange={(e) =>
-                  setFilters((prev) => ({
-                    ...prev,
-                    status: (e.target.value as PolicyStatus) || undefined,
-                  }))
-                }
-                className="py-1 px-2 bg-background/50 rounded text-[13px] cursor-pointer outline-none focus:bg-background focus:ring-2 focus:ring-primary/20"
-              >
-                <option value="">All</option>
-                <option value="pending">Pending</option>
-                <option value="active">Active</option>
-                <option value="lapsed">Lapsed</option>
-                <option value="cancelled">Cancelled</option>
-                <option value="matured">Matured</option>
-              </select>
-            </div>
-            <div className="flex flex-col gap-1 min-w-[120px]">
-              <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Product</label>
-              <select
-                value={filters.product || ""}
-                onChange={(e) =>
-                  setFilters((prev) => ({
-                    ...prev,
-                    product: (e.target.value as ProductType) || undefined,
-                  }))
-                }
-                className="py-1 px-2 bg-background/50 rounded text-[13px] cursor-pointer outline-none focus:bg-background focus:ring-2 focus:ring-primary/20"
-              >
-                <option value="">All</option>
-                <option value="whole_life">Whole Life</option>
-                <option value="term">Term Life</option>
-                <option value="universal_life">Universal Life</option>
-                <option value="indexed_universal_life">IUL</option>
-                <option value="accidental">Accidental Death</option>
-                <option value="final_expense">Final Expense</option>
-                <option value="annuity">Annuity</option>
-              </select>
-            </div>
-            <div className="flex flex-col gap-1 min-w-[120px]">
-              <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Carrier</label>
-              <select
-                value={filters.carrierId || ""}
-                onChange={(e) =>
-                  setFilters((prev) => ({
-                    ...prev,
-                    carrierId: e.target.value || undefined,
-                  }))
-                }
-                className="py-1 px-2 bg-background/50 rounded text-[13px] cursor-pointer outline-none focus:bg-background focus:ring-2 focus:ring-primary/20"
-              >
-                <option value="">All</option>
-                {Array.from(new Set(policies.map((p) => p.carrierId))).map(
-                  (carrierId) => {
-                    const carrier = getCarrierById(carrierId);
-                    return carrier ? (
-                      <option key={carrierId} value={carrierId}>
-                        {carrier.name}
-                      </option>
-                    ) : null;
-                  },
-                )}
-              </select>
-            </div>
+          <div className="flex gap-3 p-2 px-4 bg-muted/50">
+            <Select
+              value={filters.status || "all"}
+              onValueChange={(value) =>
+                setFilters(prev => ({
+                  ...prev,
+                  status: value === "all" ? undefined : value as PolicyStatus
+                }))
+              }
+            >
+              <SelectTrigger className="h-8 w-[140px]">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="lapsed">Lapsed</SelectItem>
+                <SelectItem value="cancelled">Cancelled</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select
+              value={filters.product || "all"}
+              onValueChange={(value) =>
+                setFilters(prev => ({
+                  ...prev,
+                  product: value === "all" ? undefined : value as ProductType
+                }))
+              }
+            >
+              <SelectTrigger className="h-8 w-[140px]">
+                <SelectValue placeholder="Product" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Products</SelectItem>
+                <SelectItem value="whole_life">Whole Life</SelectItem>
+                <SelectItem value="term_life">Term Life</SelectItem>
+                <SelectItem value="universal_life">Universal Life</SelectItem>
+                <SelectItem value="indexed_universal_life">IUL</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select
+              value={filters.carrierId || "all"}
+              onValueChange={(value) =>
+                setFilters(prev => ({
+                  ...prev,
+                  carrierId: value === "all" ? undefined : value
+                }))
+              }
+            >
+              <SelectTrigger className="h-8 w-[160px]">
+                <SelectValue placeholder="Carrier" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Carriers</SelectItem>
+                {carriers.map(carrier => (
+                  <SelectItem key={carrier.id} value={carrier.id}>
+                    {carrier.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <DateRangePicker
+              value={{
+                from: filters.effectiveDateFrom ? parseLocalDate(filters.effectiveDateFrom) : undefined,
+                to: filters.effectiveDateTo ? parseLocalDate(filters.effectiveDateTo) : undefined
+              }}
+              onChange={(range) => {
+                setFilters(prev => ({
+                  ...prev,
+                  effectiveDateFrom: range.from ? formatDateForDB(range.from) : undefined,
+                  effectiveDateTo: range.to ? formatDateForDB(range.to) : undefined
+                }));
+              }}
+              placeholder="Effective Date Range"
+              className="h-8"
+            />
           </div>
         )}
       </div>
 
-      {/* Policy Table */}
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <SortHeader field="policyNumber">Policy</SortHeader>
-            <SortHeader field="client">Client</SortHeader>
-            <SortHeader field="carrier">Carrier/Product</SortHeader>
-            <SortHeader field="status">Status</SortHeader>
-            <SortHeader field="premium">Premium</SortHeader>
-            <SortHeader field="commission">Commission</SortHeader>
-            <TableHead className="py-2.5 px-3 font-medium text-muted-foreground whitespace-nowrap">Comm Status</TableHead>
-            <SortHeader field="effectiveDate">Effective</SortHeader>
-            <TableHead className="py-2.5 px-3 font-medium text-muted-foreground whitespace-nowrap">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {paginatedPolicies.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={9} className="text-center py-10 px-5 text-muted-foreground text-sm">
-                No policies found. Submit a policy to get started.
-              </TableCell>
+      {/* Table Container - Scrollable */}
+      <div className="flex-1 overflow-auto">
+        <Table>
+          <TableHeader className="sticky top-0 bg-background z-10 border-b border-border/50">
+            <TableRow className="hover:bg-transparent">
+              <TableHead
+                className="h-10 px-3 cursor-pointer hover:text-foreground transition-colors"
+                onClick={() => toggleSort('policy_number')}
+              >
+                <div className="flex items-center gap-1">
+                  Policy
+                  {sortConfig.field === 'policy_number' && (
+                    sortConfig.direction === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
+                  )}
+                </div>
+              </TableHead>
+              <TableHead
+                className="h-10 px-3 cursor-pointer hover:text-foreground transition-colors"
+                onClick={() => toggleSort('client')}
+              >
+                <div className="flex items-center gap-1">
+                  Client
+                  {sortConfig.field === 'client' && (
+                    sortConfig.direction === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
+                  )}
+                </div>
+              </TableHead>
+              <TableHead className="h-10 px-3">Carrier/Product</TableHead>
+              <TableHead
+                className="h-10 px-3 cursor-pointer hover:text-foreground transition-colors"
+                onClick={() => toggleSort('status')}
+              >
+                <div className="flex items-center gap-1">
+                  Status
+                  {sortConfig.field === 'status' && (
+                    sortConfig.direction === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
+                  )}
+                </div>
+              </TableHead>
+              <TableHead
+                className="h-10 px-3 text-right cursor-pointer hover:text-foreground transition-colors"
+                onClick={() => toggleSort('annual_premium')}
+              >
+                <div className="flex items-center justify-end gap-1">
+                  Premium
+                  {sortConfig.field === 'annual_premium' && (
+                    sortConfig.direction === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
+                  )}
+                </div>
+              </TableHead>
+              <TableHead className="h-10 px-3 text-right">Commission</TableHead>
+              <TableHead className="h-10 px-3 text-center">Comm Status</TableHead>
+              <TableHead
+                className="h-10 px-3 cursor-pointer hover:text-foreground transition-colors"
+                onClick={() => toggleSort('effective_date')}
+              >
+                <div className="flex items-center gap-1">
+                  Effective
+                  {sortConfig.field === 'effective_date' && (
+                    sortConfig.direction === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
+                  )}
+                </div>
+              </TableHead>
+              <TableHead className="h-10 px-3 text-right">Actions</TableHead>
             </TableRow>
-          ) : (
-            paginatedPolicies.map((policy) => {
-              const carrier = getCarrierById(policy.carrierId);
-              const policyCommission = commissionsByPolicy[policy.id];
-
-              // Calculate commission advance: Monthly Premium × Advance Months × Commission Rate
-              // Note: Using default 9 months advance - actual advances are tracked in commissions table
-              const commission = calculateCommissionAdvance(
-                policy.annualPremium,
-                policy.commissionPercentage,
-                9, // Default advance months
-              );
-
-              return (
-                <TableRow key={policy.id} className="transition-all duration-200 hover:bg-accent/10">
-                  <TableCell className="py-2.5 px-3 text-foreground font-medium">{policy.policyNumber}</TableCell>
-                  <TableCell className="py-2.5 px-3 text-foreground">
-                    <div className="flex flex-col gap-0.5">
-                      <span className="font-medium text-foreground">
-                        {policy.client.name}
-                      </span>
-                      <span className="text-[11px] text-muted-foreground">
-                        {policy.client.age}y • {policy.client.state}
-                      </span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="py-2.5 px-3 text-foreground">
-                    <div className="flex flex-col gap-0.5">
-                      <span className="font-medium text-foreground">
-                        {carrier?.name || "Unknown"}
-                      </span>
-                      <span className="text-[11px] text-muted-foreground">
-                        {PRODUCT_ABBREV[policy.product]}
-                      </span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="py-2.5 px-3 text-foreground">
-                    <span
-                      className={cn(
-                        "inline-block py-0.5 px-2 rounded-xl text-[11px] font-medium capitalize",
-                        policy.status === "pending" && "bg-warning/20 text-warning",
-                        policy.status === "active" && "bg-success/20 text-success",
-                        policy.status === "lapsed" && "bg-destructive/20 text-destructive",
-                        policy.status === "cancelled" && "bg-muted/30 text-muted-foreground",
-                        policy.status === "matured" && "bg-info/20 text-info"
-                      )}
-                    >
-                      {policy.status}
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
+              <TableRow>
+                <TableCell colSpan={9} className="text-center py-20">
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                    <span className="text-sm text-muted-foreground">Loading policies...</span>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ) : error ? (
+              <TableRow>
+                <TableCell colSpan={9} className="text-center py-20">
+                  <div className="flex flex-col items-center gap-2">
+                    <AlertCircle className="h-8 w-8 text-destructive" />
+                    <span className="text-sm text-destructive">Error: {error}</span>
+                    <Button onClick={refresh} size="sm" variant="outline">Retry</Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ) : policies.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={9} className="text-center py-20">
+                  <div className="flex flex-col items-center gap-2">
+                    <FileText className="h-8 w-8 text-muted-foreground/50" />
+                    <span className="text-sm text-muted-foreground">
+                      {filterCount > 0 ? 'No policies match your filters' : 'No policies found'}
                     </span>
-                  </TableCell>
-                  <TableCell className="py-2.5 px-3 text-right text-foreground tabular-nums">
-                    <div className="flex flex-col gap-0.5 items-end">
-                      <span>{formatCurrency(policy.annualPremium)}</span>
-                      <span className="text-[11px] text-muted-foreground">
-                        {policy.paymentFrequency}
-                      </span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="py-2.5 px-3 text-right text-foreground tabular-nums">
-                    <div className="flex flex-col gap-0.5 items-end">
-                      <span className="text-success font-medium">{formatCurrency(commission)}</span>
-                      <span className="text-[11px] text-muted-foreground">
-                        {(policy.commissionPercentage * 100).toFixed(0)}%
-                      </span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="py-2.5 px-3 text-center min-w-[100px]">
-                    {policyCommission ? (
-                      <Select
-                        value={policyCommission.status === 'charged_back' || policyCommission.status === 'earned' ? 'cancelled' : policyCommission.status}
-                        onValueChange={(value) => handleStatusChange(policyCommission, value, policy)}
-                      >
-                        <SelectTrigger
-                          className={cn(
-                          "h-7 text-xs w-[110px] shadow-md hover:shadow-lg transition-shadow",
-                          policyCommission.status === 'paid'
-                            ? "bg-success/10 text-success"
-                            : policyCommission.status === 'cancelled' || policyCommission.status === 'charged_back'
-                            ? "bg-destructive/10 text-destructive"
-                            : "bg-warning/10 text-warning"
-                        )}>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="pending" className="text-xs">
-                            <span className="flex items-center gap-1">
-                              <span className="w-2 h-2 rounded-full bg-warning" />
-                              Pending
-                            </span>
-                          </SelectItem>
-                          <SelectItem value="paid" className="text-xs">
-                            <span className="flex items-center gap-1">
-                              <span className="w-2 h-2 rounded-full bg-success" />
-                              Paid
-                            </span>
-                          </SelectItem>
-                          <SelectItem value="cancelled" className="text-xs">
-                            <span className="flex items-center gap-1">
-                              <span className="w-2 h-2 rounded-full bg-destructive" />
-                              Cancelled
-                            </span>
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                    ) : (
-                      <span className="text-muted-foreground/60 text-xs">No commission</span>
-                    )}
-                  </TableCell>
-                  <TableCell className="py-2.5 px-3 text-[12px] text-muted-foreground">{formatDate(policy.effectiveDate)}</TableCell>
-                  <TableCell className="py-2.5 px-3">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 w-8 p-0"
-                        >
-                          <MoreVertical className="h-4 w-4" />
-                          <span className="sr-only">Open menu</span>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-48">
-                        <DropdownMenuItem onClick={() => onEditPolicy(policy.id)}>
-                          <Edit className="mr-2 h-4 w-4" />
-                          Edit Policy
-                        </DropdownMenuItem>
-                        {policy.status === 'active' && (
-                          <>
-                            <DropdownMenuItem
-                              onClick={() => handleCancelPolicy(policy.id)}
-                              className="text-warning"
-                            >
-                              <XCircle className="mr-2 h-4 w-4" />
-                              Cancel Policy
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => handleLapsePolicy(policy.id)}
-                              className="text-warning"
-                            >
-                              <AlertCircle className="mr-2 h-4 w-4" />
-                              Mark as Lapsed
-                            </DropdownMenuItem>
-                          </>
-                        )}
-                        {(policy.status === 'cancelled' || policy.status === 'lapsed') && (
-                          <DropdownMenuItem
-                            onClick={() => handleReinstatePolicy(policy.id)}
-                            className="text-success"
-                          >
-                            <CheckCircle className="mr-2 h-4 w-4" />
-                            Reinstate Policy
-                          </DropdownMenuItem>
-                        )}
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          onClick={() => handleDeletePolicy(policy.id)}
-                          className="text-destructive focus:text-destructive"
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Delete Policy
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              );
-            })
-          )}
-        </TableBody>
-      </Table>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ) : (
+              policies.map((policy) => {
+                const carrier = getCarrierById(policy.carrierId);
+                const policyCommission = commissionsByPolicy[policy.id];
+                const commission = calculateCommissionAdvance(
+                  policy.annualPremium,
+                  policy.commissionPercentage,
+                  9
+                );
 
-      {/* Pagination Controls */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between p-4 bg-gradient-to-r from-muted/30 to-card rounded-lg shadow-sm">
-          <div className="text-sm text-muted-foreground">
-            Showing {startIndex + 1} to {Math.min(endIndex, filteredAndSortedPolicies.length)} of {filteredAndSortedPolicies.length} policies
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              variant="outline"
-              size="sm"
-              className="h-8 w-8 p-0"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-
-            {/* Page numbers */}
-            <div className="flex items-center gap-1">
-              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                let pageNum;
-                if (totalPages <= 5) {
-                  pageNum = i + 1;
-                } else if (currentPage <= 3) {
-                  pageNum = i + 1;
-                } else if (currentPage >= totalPages - 2) {
-                  pageNum = totalPages - 4 + i;
-                } else {
-                  pageNum = currentPage - 2 + i;
-                }
                 return (
-                  <Button
-                    key={i}
-                    onClick={() => setCurrentPage(pageNum)}
-                    variant={currentPage === pageNum ? "default" : "outline"}
-                    size="sm"
-                    className="h-8 w-8 p-0"
+                  <TableRow
+                    key={policy.id}
                   >
-                    {pageNum}
+                    <TableCell className="py-2.5 px-3 text-foreground font-medium">
+                      {policy.policyNumber}
+                    </TableCell>
+                    <TableCell className="py-2.5 px-3">
+                      <div className="flex flex-col gap-0.5">
+                        <span className="font-medium text-foreground">
+                          {policy.client.name}
+                        </span>
+                        <span className="text-[11px] text-muted-foreground">
+                          {policy.client.age}y • {policy.client.state}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="py-2.5 px-3">
+                      <div className="flex flex-col gap-0.5">
+                        <span className="font-medium text-foreground">
+                          {carrier?.name || "Unknown"}
+                        </span>
+                        <span className="text-[11px] text-muted-foreground">
+                          {PRODUCT_ABBREV[policy.product] || policy.product}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="py-2.5 px-3">
+                      <span
+                        className={cn(
+                          "inline-block py-0.5 px-2 rounded-xl text-[11px] font-medium capitalize",
+                          policy.status === "pending" && "bg-warning/20 text-warning",
+                          policy.status === "active" && "bg-success/20 text-success",
+                          policy.status === "lapsed" && "bg-destructive/20 text-destructive",
+                          policy.status === "cancelled" && "bg-muted/30 text-muted-foreground",
+                          policy.status === "matured" && "bg-info/20 text-info"
+                        )}
+                      >
+                        {policy.status}
+                      </span>
+                    </TableCell>
+                    <TableCell className="py-2.5 px-3 text-right tabular-nums">
+                      <div className="flex flex-col gap-0.5 items-end">
+                        <span>{formatCurrency(policy.annualPremium)}</span>
+                        <span className="text-[11px] text-muted-foreground">
+                          {policy.paymentFrequency}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="py-2.5 px-3 text-right tabular-nums">
+                      <div className="flex flex-col gap-0.5 items-end">
+                        <span className="text-success font-medium">{formatCurrency(commission)}</span>
+                        <span className="text-[11px] text-muted-foreground">
+                          {(policy.commissionPercentage * 100).toFixed(0)}%
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="py-2.5 px-3 text-center">
+                      {policyCommission ? (
+                        <span
+                          className={cn(
+                            "inline-block py-0.5 px-2 rounded text-[11px] font-medium",
+                            policyCommission.status === 'paid' && "bg-success/20 text-success",
+                            policyCommission.status === 'pending' && "bg-warning/20 text-warning",
+                            (policyCommission.status === 'cancelled' || policyCommission.status === 'charged_back') && "bg-destructive/20 text-destructive"
+                          )}
+                        >
+                          {policyCommission.status}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground/60 text-xs">No commission</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="py-2.5 px-3 text-[12px] text-muted-foreground">
+                      {formatDate(policy.effectiveDate)}
+                    </TableCell>
+                    <TableCell className="py-2.5 px-3">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                          >
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48">
+                          <DropdownMenuItem onClick={() => onEditPolicy(policy.id)}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            Edit Policy
+                          </DropdownMenuItem>
+                          {policy.status === 'active' && (
+                            <>
+                              <DropdownMenuItem
+                                onClick={() => handleCancelPolicy(policy.id)}
+                                className="text-warning"
+                              >
+                                <XCircle className="mr-2 h-4 w-4" />
+                                Cancel Policy
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => handleLapsePolicy(policy.id)}
+                                className="text-warning"
+                              >
+                                <AlertCircle className="mr-2 h-4 w-4" />
+                                Mark as Lapsed
+                              </DropdownMenuItem>
+                            </>
+                          )}
+                          {(policy.status === 'cancelled' || policy.status === 'lapsed') && (
+                            <DropdownMenuItem
+                              onClick={() => handleReinstatePolicy(policy.id)}
+                              className="text-success"
+                            >
+                              <CheckCircle className="mr-2 h-4 w-4" />
+                              Reinstate Policy
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onClick={() => handleDeletePolicy(policy.id)}
+                            className="text-destructive"
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Delete Policy
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                );
+              })
+            )}
+          </TableBody>
+        </Table>
+      </div>
+
+      {/* Server-side Pagination Controls */}
+      <div className="flex items-center justify-between px-4 py-3 bg-background border-t border-border/50">
+        <div className="flex items-center gap-4">
+          <div className="text-sm text-muted-foreground">
+            Showing <span className="font-medium text-foreground">{((currentPage - 1) * pageSize) + 1}</span> to{' '}
+            <span className="font-medium text-foreground">
+              {Math.min(currentPage * pageSize, totalItems)}
+            </span> of{' '}
+            <span className="font-medium text-foreground">{totalItems}</span> policies
+          </div>
+          <Select
+            value={pageSize.toString()}
+            onValueChange={(value) => setPageSize(Number(value))}
+          >
+            <SelectTrigger className="h-8 w-[100px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="10">10 / page</SelectItem>
+              <SelectItem value="25">25 / page</SelectItem>
+              <SelectItem value="50">50 / page</SelectItem>
+              <SelectItem value="100">100 / page</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={() => goToPage(1)}
+            disabled={currentPage === 1}
+            variant="outline"
+            size="sm"
+            className="h-8 w-8 p-0"
+          >
+            <ChevronsLeft className="h-4 w-4" />
+          </Button>
+
+          <Button
+            onClick={previousPage}
+            disabled={currentPage === 1}
+            variant="outline"
+            size="sm"
+            className="h-8 w-8 p-0"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+
+          <div className="flex items-center gap-1">
+            {(() => {
+              const pages = [];
+              const maxVisible = 5;
+              let start = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+              let end = Math.min(totalPages, start + maxVisible - 1);
+
+              if (end - start < maxVisible - 1) {
+                start = Math.max(1, end - maxVisible + 1);
+              }
+
+              if (start > 1) {
+                pages.push(
+                  <Button
+                    key={1}
+                    onClick={() => goToPage(1)}
+                    variant="outline"
+                    size="sm"
+                    className="h-8 min-w-8 px-2"
+                  >
+                    1
                   </Button>
                 );
-              })}
-            </div>
+                if (start > 2) {
+                  pages.push(<span key="dots1" className="px-1 text-muted-foreground">...</span>);
+                }
+              }
 
-            <Button
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
-              variant="outline"
-              size="sm"
-              className="h-8 w-8 p-0"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
+              for (let i = start; i <= end; i++) {
+                pages.push(
+                  <Button
+                    key={i}
+                    onClick={() => goToPage(i)}
+                    variant={currentPage === i ? "default" : "outline"}
+                    size="sm"
+                    className="h-8 min-w-8 px-2"
+                  >
+                    {i}
+                  </Button>
+                );
+              }
 
-            {/* Items per page selector */}
-            <Select
-              value={itemsPerPage.toString()}
-              onValueChange={(value) => {
-                setItemsPerPage(Number(value));
-                setCurrentPage(1);
-              }}
-            >
-              <SelectTrigger className="h-8 w-[70px] text-xs ml-4">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="10">10</SelectItem>
-                <SelectItem value="25">25</SelectItem>
-                <SelectItem value="50">50</SelectItem>
-                <SelectItem value="100">100</SelectItem>
-              </SelectContent>
-            </Select>
+              if (end < totalPages) {
+                if (end < totalPages - 1) {
+                  pages.push(<span key="dots2" className="px-1 text-muted-foreground">...</span>);
+                }
+                pages.push(
+                  <Button
+                    key={totalPages}
+                    onClick={() => goToPage(totalPages)}
+                    variant="outline"
+                    size="sm"
+                    className="h-8 min-w-8 px-2"
+                  >
+                    {totalPages}
+                  </Button>
+                );
+              }
+
+              return pages;
+            })()}
           </div>
+
+          <Button
+            onClick={nextPage}
+            disabled={currentPage === totalPages}
+            variant="outline"
+            size="sm"
+            className="h-8 w-8 p-0"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+
+          <Button
+            onClick={() => goToPage(totalPages)}
+            disabled={currentPage === totalPages}
+            variant="outline"
+            size="sm"
+            className="h-8 w-8 p-0"
+          >
+            <ChevronsRight className="h-4 w-4" />
+          </Button>
         </div>
-      )}
-
-      {/* Chargeback Modal - Using shadcn Dialog */}
-      <Dialog open={showChargebackModal} onOpenChange={setShowChargebackModal}>
-        <DialogContent className="w-[90%] max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>Cancel Commission</DialogTitle>
-            <DialogDescription>
-              This will cancel the commission and policy
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="p-4 bg-gradient-to-br from-destructive/20 via-error/10 to-card rounded-md shadow-sm mb-4">
-            <div className="flex items-start gap-3">
-              <AlertCircle size={20} className="text-error flex-shrink-0 mt-0.5" />
-              <div>
-                <div className="font-semibold text-error mb-1">
-                  This will cancel the commission and policy
-                </div>
-                <div className="text-sm text-destructive/80 leading-relaxed">
-                  Chargeback amount will be calculated automatically: <strong>Advance - Earned</strong>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {selectedCommission && (
-            <div className="p-3 bg-gradient-to-br from-muted/30 to-card rounded-md shadow-sm">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <div className="text-xs text-muted-foreground mb-1">Advance Amount</div>
-                  <div className="text-base font-semibold text-foreground">
-                    {formatCurrency(selectedCommission.amount || 0)}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-xs text-muted-foreground mb-1">Current Status</div>
-                  <div className="text-base font-semibold text-foreground capitalize">
-                    {selectedCommission.status}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          <DialogFooter>
-            <Button
-              type="button"
-              onClick={() => setShowChargebackModal(false)}
-              variant="outline"
-              size="sm"
-            >
-              Cancel
-            </Button>
-            <Button
-              type="button"
-              onClick={handleChargeback}
-              variant="destructive"
-              size="sm"
-            >
-              Cancel Commission
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      </div>
     </div>
   );
 };

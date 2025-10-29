@@ -1,81 +1,157 @@
-import { useState } from 'react';
-import { usePolicies } from './usePolicies';
-import { useSort } from '../base/useSort';
-import { usePagination } from '../base/usePagination';
+import { useState, useCallback } from 'react';
+import { useQuery, useQueries } from '@tanstack/react-query';
 import { Policy, PolicyFilters } from '../../types/policy.types';
+import { policyService } from '../../services/policies/policyService';
+
+interface SortConfig {
+  field: string;
+  direction: 'asc' | 'desc';
+}
 
 /**
- * Comprehensive hook for viewing policies with filtering, sorting, and pagination
- * Uses TanStack Query for data fetching with client-side operations for UX
+ * Server-side pagination hook for viewing policies with filtering, sorting, and pagination
+ * Uses TanStack Query for data fetching with server-side operations for performance
  *
  * @returns Complete policies view with data, loading states, and control functions
  */
 export function usePoliciesView() {
-  // Fetch all policies using TanStack Query
-  const { data: policies = [], isLoading, error, refetch } = usePolicies();
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
 
-  // Client-side filtering state
+  // Filtering state
   const [filters, setFilters] = useState<PolicyFilters>({});
 
-  // Apply client-side filters (React 19.1 optimizes automatically)
-  const filteredData = policies.filter(policy => {
-    if (filters.status && policy.status !== filters.status) return false;
-    if (filters.carrierId && policy.carrierId !== filters.carrierId) return false;
-    if (filters.product && policy.product !== filters.product) return false;
-    if (filters.startDate && new Date(policy.effectiveDate) < filters.startDate) return false;
-    if (filters.endDate && new Date(policy.effectiveDate) > filters.endDate) return false;
-    if (filters.minPremium && policy.annualPremium < filters.minPremium) return false;
-    if (filters.maxPremium && policy.annualPremium > filters.maxPremium) return false;
-    return true;
+  // Sorting state
+  const [sortConfig, setSortConfig] = useState<SortConfig>({
+    field: 'created_at',
+    direction: 'desc'
   });
 
-  const clearFilters = () => setFilters({});
-  const filterCount = Object.keys(filters).filter(key =>
-    filters[key as keyof PolicyFilters] !== undefined
+  // Separate searchTerm from filters for client-side filtering
+  const { searchTerm, ...serverFilters } = filters;
+
+  // Use parallel queries for data and count
+  const [dataQuery, countQuery] = useQueries({
+    queries: [
+      {
+        queryKey: ['policies', 'data', currentPage, pageSize, serverFilters, sortConfig],
+        queryFn: () => policyService.getPaginated(
+          currentPage,
+          pageSize,
+          serverFilters,
+          sortConfig
+        ),
+        staleTime: 5 * 60 * 1000, // 5 minutes
+        keepPreviousData: true, // Smooth page transitions
+      },
+      {
+        queryKey: ['policies', 'count', serverFilters],
+        queryFn: () => policyService.getCount(serverFilters),
+        staleTime: 5 * 60 * 1000, // 5 minutes
+      }
+    ]
+  });
+
+  const allPolicies = dataQuery.data || [];
+
+  // Client-side filtering for search term (since Supabase can't search joined tables easily)
+  const policies = searchTerm
+    ? allPolicies.filter(policy => {
+        const searchLower = searchTerm.toLowerCase();
+        return (
+          policy.policyNumber?.toLowerCase().includes(searchLower) ||
+          policy.client?.name?.toLowerCase().includes(searchLower) ||
+          policy.client?.state?.toLowerCase().includes(searchLower)
+        );
+      })
+    : allPolicies;
+
+  const totalItems = countQuery.data || 0;
+  const totalPages = Math.ceil(totalItems / pageSize);
+
+  // Pagination controls
+  const goToPage = useCallback((page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  }, [totalPages]);
+
+  const nextPage = useCallback(() => {
+    if (currentPage < totalPages) {
+      setCurrentPage(prev => prev + 1);
+    }
+  }, [currentPage, totalPages]);
+
+  const previousPage = useCallback(() => {
+    if (currentPage > 1) {
+      setCurrentPage(prev => prev - 1);
+    }
+  }, [currentPage]);
+
+  const handlePageSizeChange = useCallback((newPageSize: number) => {
+    setPageSize(newPageSize);
+    setCurrentPage(1); // Reset to first page when page size changes
+  }, []);
+
+  // Filter controls
+  const updateFilters = useCallback((newFilters: PolicyFilters) => {
+    setFilters(newFilters);
+    setCurrentPage(1); // Reset to first page when filters change
+  }, []);
+
+  const clearFilters = useCallback(() => {
+    setFilters({});
+    setCurrentPage(1);
+  }, []);
+
+  const filterCount = Object.entries(filters).filter(
+    ([_, value]) => value !== undefined && value !== null && value !== ''
   ).length;
 
-  // Apply sorting
-  const { sortedData, sortConfig, setSortConfig, toggleSort, clearSort } =
-    useSort<Policy>(filteredData, {
-      initialSort: { field: 'createdAt', direction: 'desc' }
-    });
+  // Sort controls
+  const toggleSort = useCallback((field: string) => {
+    setSortConfig(prev => ({
+      field,
+      direction: prev.field === field && prev.direction === 'asc' ? 'desc' : 'asc'
+    }));
+    setCurrentPage(1); // Reset to first page when sorting changes
+  }, []);
 
-  // Apply pagination
-  const {
-    paginatedData,
-    pagination,
-    goToPage,
-    nextPage,
-    previousPage,
-    setPageSize
-  } = usePagination<Policy>(sortedData, {
-    initialPageSize: 10,
-    pageSizeOptions: [10, 25, 50, 100]
-  });
+  const clearSort = useCallback(() => {
+    setSortConfig({ field: 'created_at', direction: 'desc' });
+    setCurrentPage(1);
+  }, []);
+
+  // Loading and error states
+  const isLoading = dataQuery.isLoading || countQuery.isLoading;
+  const isFetching = dataQuery.isFetching || countQuery.isFetching;
+  const error = dataQuery.error || countQuery.error;
 
   return {
     // Data
-    policies: sortedData,
-    paginatedPolicies: paginatedData,
+    policies,
+    paginatedPolicies: policies, // For compatibility
 
     // Loading states
     isLoading,
+    isFetching,
     error: error ? (error as Error).message : null,
 
     // Pagination
-    currentPage: pagination.currentPage,
-    totalPages: pagination.totalPages,
-    pageSize: pagination.pageSize,
-    totalItems: pagination.totalItems,
+    currentPage,
+    totalPages,
+    pageSize,
+    totalItems,
     pageSizeOptions: [10, 25, 50, 100],
     goToPage,
     nextPage,
     previousPage,
-    setPageSize,
+    setPageSize: handlePageSizeChange,
 
     // Filtering
     filters,
-    setFilters,
+    setFilters: updateFilters,
     clearFilters,
     filterCount,
 
@@ -86,6 +162,9 @@ export function usePoliciesView() {
     clearSort,
 
     // Refresh
-    refresh: refetch,
+    refresh: () => {
+      dataQuery.refetch();
+      countQuery.refetch();
+    },
   };
 }

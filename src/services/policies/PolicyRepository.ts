@@ -65,10 +65,9 @@ export class PolicyRepository extends BaseRepository<Policy, CreatePolicyData, U
           query = query.lte('effective_date', effectiveDateTo);
         }
 
-        // Apply search term filter (searches in policy number and client name)
+        // Apply search term filter (searches in policy number)
         if (searchTerm) {
-          // This requires a more complex filter - we'll implement this with OR conditions
-          query = query.or(`policy_number.ilike.%${searchTerm}%`);
+          query = query.ilike('policy_number', `%${searchTerm}%`);
         }
       }
 
