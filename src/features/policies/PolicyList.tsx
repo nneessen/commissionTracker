@@ -484,8 +484,8 @@ export const PolicyList: React.FC<PolicyListProps> = ({ onEditPolicy, onNewPolic
         )}
       </div>
 
-      {/* Table Container - Scrollable */}
-      <div className="flex-1 overflow-auto min-h-0">
+      {/* Table Container - Scrollable with Fixed Height */}
+      <div className="overflow-auto" style={{ maxHeight: 'calc(100vh - 380px)' }}>
         <Table>
           <TableHeader className="sticky top-0 bg-background z-10 border-b border-border/50">
             <TableRow className="hover:bg-transparent">
@@ -730,7 +730,7 @@ export const PolicyList: React.FC<PolicyListProps> = ({ onEditPolicy, onNewPolic
       </div>
 
       {/* Server-side Pagination Controls */}
-      <div className="flex items-center justify-between px-4 py-3 bg-background border-t border-border/50">
+      <div className="flex items-center justify-between px-4 py-2 bg-background border-t border-border/50 flex-shrink-0">
         <div className="flex items-center gap-4">
           <div className="text-sm text-muted-foreground">
             Showing <span className="font-medium text-foreground">{((currentPage - 1) * pageSize) + 1}</span> to{' '}
