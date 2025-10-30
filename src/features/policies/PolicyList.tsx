@@ -294,7 +294,7 @@ export const PolicyList: React.FC<PolicyListProps> = ({ onEditPolicy, onNewPolic
       {/* Header with Title and Metrics Bar */}
       <div className="bg-background border-b border-border/50">
         {/* Title and New Policy Button */}
-        <div className="flex items-center justify-between px-6 py-2">
+        <div className="flex items-center justify-between px-6 py-3">
           <h1 className="text-2xl font-semibold">Policies</h1>
           <Button onClick={onNewPolicy} size="sm">
             <Plus className="h-4 w-4 mr-1.5" />
@@ -303,7 +303,7 @@ export const PolicyList: React.FC<PolicyListProps> = ({ onEditPolicy, onNewPolic
         </div>
 
         {/* Compact Metrics Bar */}
-        <div className="px-6 pb-2">
+        <div className="px-6 pb-3">
           <div className="flex items-center justify-between gap-8 text-sm">
             {/* Count metrics */}
             <div className="flex items-center gap-6">
@@ -484,8 +484,8 @@ export const PolicyList: React.FC<PolicyListProps> = ({ onEditPolicy, onNewPolic
         )}
       </div>
 
-      {/* Table Container - Scrollable */}
-      <div className="flex-1 overflow-auto">
+      {/* Table Container - Scrollable with Fixed Height */}
+      <div className="overflow-auto" style={{ maxHeight: 'calc(100vh - 380px)' }}>
         <Table>
           <TableHeader className="sticky top-0 bg-background z-10 border-b border-border/50">
             <TableRow className="hover:bg-transparent">
