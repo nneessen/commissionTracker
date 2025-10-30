@@ -595,10 +595,10 @@ export const PolicyList: React.FC<PolicyListProps> = ({ onEditPolicy, onNewPolic
                   <TableRow
                     key={policy.id}
                   >
-                    <TableCell className="py-2.5 px-3 text-foreground font-medium">
+                    <TableCell className="py-1.5 px-3 text-foreground font-medium">
                       {policy.policyNumber}
                     </TableCell>
-                    <TableCell className="py-2.5 px-3">
+                    <TableCell className="py-1.5 px-3">
                       <div className="flex flex-col gap-0.5">
                         <span className="font-medium text-foreground">
                           {policy.client.name}
@@ -608,7 +608,7 @@ export const PolicyList: React.FC<PolicyListProps> = ({ onEditPolicy, onNewPolic
                         </span>
                       </div>
                     </TableCell>
-                    <TableCell className="py-2.5 px-3">
+                    <TableCell className="py-1.5 px-3">
                       <div className="flex flex-col gap-0.5">
                         <span className="font-medium text-foreground">
                           {carrier?.name || "Unknown"}
@@ -618,7 +618,7 @@ export const PolicyList: React.FC<PolicyListProps> = ({ onEditPolicy, onNewPolic
                         </span>
                       </div>
                     </TableCell>
-                    <TableCell className="py-2.5 px-3">
+                    <TableCell className="py-1.5 px-3">
                       <span
                         className={cn(
                           "inline-block py-0.5 px-2 rounded-xl text-[11px] font-medium capitalize",
@@ -632,7 +632,7 @@ export const PolicyList: React.FC<PolicyListProps> = ({ onEditPolicy, onNewPolic
                         {policy.status}
                       </span>
                     </TableCell>
-                    <TableCell className="py-2.5 px-3 text-right tabular-nums">
+                    <TableCell className="py-1.5 px-3 text-right tabular-nums">
                       <div className="flex flex-col gap-0.5 items-end">
                         <span>{formatCurrency(policy.annualPremium)}</span>
                         <span className="text-[11px] text-muted-foreground">
@@ -640,7 +640,7 @@ export const PolicyList: React.FC<PolicyListProps> = ({ onEditPolicy, onNewPolic
                         </span>
                       </div>
                     </TableCell>
-                    <TableCell className="py-2.5 px-3 text-right tabular-nums">
+                    <TableCell className="py-1.5 px-3 text-right tabular-nums">
                       <div className="flex flex-col gap-0.5 items-end">
                         <span className="text-success font-medium">{formatCurrency(commission)}</span>
                         <span className="text-[11px] text-muted-foreground">
@@ -648,7 +648,7 @@ export const PolicyList: React.FC<PolicyListProps> = ({ onEditPolicy, onNewPolic
                         </span>
                       </div>
                     </TableCell>
-                    <TableCell className="py-2.5 px-3 text-center">
+                    <TableCell className="py-1.5 px-3 text-center">
                       {policyCommission ? (
                         <span
                           className={cn(
@@ -664,10 +664,10 @@ export const PolicyList: React.FC<PolicyListProps> = ({ onEditPolicy, onNewPolic
                         <span className="text-muted-foreground/60 text-xs">No commission</span>
                       )}
                     </TableCell>
-                    <TableCell className="py-2.5 px-3 text-[12px] text-muted-foreground">
+                    <TableCell className="py-1.5 px-3 text-[12px] text-muted-foreground">
                       {formatDate(policy.effectiveDate)}
                     </TableCell>
-                    <TableCell className="py-2.5 px-3">
+                    <TableCell className="py-1.5 px-3">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button

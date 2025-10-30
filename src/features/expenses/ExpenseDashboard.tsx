@@ -574,19 +574,19 @@ export function ExpenseDashboard() {
                 ) : (
                   paginatedExpenses.map((expense) => (
                     <TableRow key={expense.id}>
-                      <TableCell className="py-2.5 px-3 text-[12px] text-muted-foreground">
+                      <TableCell className="py-1.5 px-3 text-[12px] text-muted-foreground">
                         {formatDate(expense.date)}
                       </TableCell>
-                      <TableCell className="py-2.5 px-3 text-foreground font-medium">
+                      <TableCell className="py-1.5 px-3 text-foreground font-medium">
                         {expense.name}
                       </TableCell>
-                      <TableCell className="py-2.5 px-3 text-sm text-muted-foreground max-w-xs truncate">
+                      <TableCell className="py-1.5 px-3 text-sm text-muted-foreground max-w-xs truncate">
                         {expense.description || '—'}
                       </TableCell>
-                      <TableCell className="py-2.5 px-3 text-sm">
+                      <TableCell className="py-1.5 px-3 text-sm">
                         {expense.category}
                       </TableCell>
-                      <TableCell className="py-2.5 px-3 text-center">
+                      <TableCell className="py-1.5 px-3 text-center">
                         <span
                           className={cn(
                             "inline-block py-0.5 px-2 rounded-xl text-[11px] font-medium capitalize",
@@ -597,10 +597,10 @@ export function ExpenseDashboard() {
                           {expense.expense_type}
                         </span>
                       </TableCell>
-                      <TableCell className="py-2.5 px-3 text-right tabular-nums font-semibold">
+                      <TableCell className="py-1.5 px-3 text-right tabular-nums font-semibold">
                         {formatCurrency(expense.amount)}
                       </TableCell>
-                      <TableCell className="py-2.5 px-3">
+                      <TableCell className="py-1.5 px-3">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
