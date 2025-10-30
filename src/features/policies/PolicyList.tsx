@@ -649,6 +649,9 @@ export const PolicyList: React.FC<PolicyListProps> = ({ onEditPolicy, onNewPolic
                       </div>
                     </TableCell>
                     <TableCell className="py-1.5 px-3 text-center">
+                      {/* CRITICAL: DO NOT MODIFY THIS COMMISSION STATUS DROPDOWN WITHOUT EXPLICIT USER REQUEST
+                          This functionality is working exactly as intended - clickable pills with dropdown to update status.
+                          Never add or change functionality that wasn't explicitly requested. */}
                       {policyCommission ? (
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
