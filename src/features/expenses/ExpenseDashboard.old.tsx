@@ -1,4 +1,4 @@
-// src/features/expenses/ExpenseDashboard.tsx - REDESIGNED
+// src/features/expenses/ExpenseDashboard.tsx
 import { useState } from "react";
 import { useExpenses } from "../../hooks/expenses/useExpenses";
 import { useCreateExpense } from "../../hooks/expenses/useCreateExpense";
@@ -18,53 +18,29 @@ import type {
   AdvancedExpenseFilters,
   CreateExpenseData,
   ExpenseTemplate,
-  CategoryBreakdownData,
-  ExpenseTrendData,
 } from "../../types/expense.types";
-import { isSameMonth } from "../../lib/date";
+import { formatCurrency, formatMonthYear } from "../../lib/format";
+import { parseLocalDate, isSameMonth } from "../../lib/date";
 import showToast from "../../utils/toast";
+import { Heading } from "@/components/shared/Heading";
 
-// NEW COMPONENTS
-import { ExpensePageHeader } from "./components/ExpensePageHeader";
-import { ExpenseSummaryCard } from "./components/ExpenseSummaryCard";
-import { ExpenseBudgetCard } from "./components/ExpenseBudgetCard";
-import { ExpenseCategoryCard } from "./components/ExpenseCategoryCard";
-import { ExpenseTrendCard } from "./components/ExpenseTrendCard";
-import { ExpenseQuickAdd } from "./components/ExpenseQuickAdd";
-import { ExpenseTableCard } from "./components/ExpenseTableCard";
-
-// KEEP OLD DIALOGS (styling update can be done later)
 import { ExpenseDialog } from "./components/ExpenseDialog";
 import { ExpenseDeleteDialog } from "./components/ExpenseDeleteDialog";
+import { ExpenseMonthSelector } from "./components/ExpenseMonthSelector";
+import { ExpenseSummaryStats } from "./components/ExpenseSummaryStats";
+import { ExpenseCategoryBreakdown } from "./components/ExpenseCategoryBreakdown";
+import { ExpenseFilters } from "./components/ExpenseFilters";
+import { ExpenseTrendChart } from "./components/ExpenseTrendChart";
+import { ExpenseTemplatesPanel } from "./components/ExpenseTemplatesPanel";
+import { ExpenseRecurringBanner } from "./components/ExpenseRecurringBanner";
+import { ExpenseTable } from "./components/ExpenseTable";
 
-// CONFIG
-import { calculateSummaryMetrics } from "./config/expenseSummaryConfig";
-import { calculateBudgetStatus, DEFAULT_BUDGETS } from "./config/expenseBudgetConfig";
-import { EXPENSE_DASHBOARD_LAYOUT } from "./config/expenseDashboardConfig";
+import {
+  generateCategoryBreakdownConfig,
+  generateTrendData,
+} from "./config/expenseStatsConfig";
 import { DEFAULT_EXPENSE_CATEGORIES } from "../../types/expense.types";
 
-/**
- * ExpenseDashboard - Completely Redesigned
- *
- * NEW LAYOUT: Hybrid design matching dashboard + analytics
- * - Full-width header with time period controls
- * - 2-column responsive grid for cards
- * - Full-width table with integrated filters
- *
- * NEW FEATURES:
- * - Budget tracking with progress bars
- * - Improved visual hierarchy
- * - Better category breakdown
- * - Simplified trend chart
- * - Quick-add templates
- *
- * DESIGN SYSTEM:
- * - Matches dashboard/analytics patterns exactly
- * - NO nested cards
- * - NO hard borders
- * - Semantic colors and gradients
- * - Consistent typography
- */
 export function ExpenseDashboard() {
   // State
   const [filters, setFilters] = useState<AdvancedExpenseFilters>({
@@ -89,7 +65,7 @@ export function ExpenseDashboard() {
   const deleteTemplate = useDeleteExpenseTemplate();
   const generateRecurring = useGenerateRecurringExpenses();
 
-  // Filter expenses for selected month
+  // Calculate filtered data (NO useMemo - React 19.1 optimizes automatically)
   let filteredExpenses = expenseAnalyticsService.applyAdvancedFilters(
     expenses,
     filters
@@ -98,61 +74,48 @@ export function ExpenseDashboard() {
     return isSameMonth(expense.date, selectedMonth);
   });
 
-  // Previous month for MoM calculation
-  const previousMonth = new Date(selectedMonth);
-  previousMonth.setMonth(previousMonth.getMonth() - 1);
-  const previousMonthExpenses = expenses.filter((expense) =>
-    isSameMonth(expense.date, previousMonth)
-  );
+  const expensesForMonth = expenses.filter((expense) => {
+    return isSameMonth(expense.date, selectedMonth);
+  });
 
-  // Calculate metrics
-  const summary = calculateSummaryMetrics(filteredExpenses, previousMonthExpenses);
-  const deductibleAmount = filteredExpenses
-    .filter((e) => e.is_tax_deductible)
+  // Analytics calculations (NO useMemo)
+  const momGrowthData = expenseAnalyticsService.getMoMGrowth(filteredExpenses);
+  const categoryBreakdown = generateCategoryBreakdownConfig({
+    expenses: filteredExpenses.map((e) => ({
+      category: e.category,
+      amount: e.amount,
+    })),
+    totalAmount: filteredExpenses.reduce((sum, e) => sum + e.amount, 0),
+  });
+  const trendData = generateTrendData({
+    expenses: filteredExpenses.map((e) => ({
+      date: e.date,
+      amount: e.amount,
+    })),
+    months: 6,
+  });
+
+  // Totals
+  const totalAmount = filteredExpenses.reduce((sum, e) => sum + e.amount, 0);
+  const businessAmount = filteredExpenses
+    .filter((e) => e.expense_type === "business")
+    .reduce((sum, e) => sum + e.amount, 0);
+  const personalAmount = filteredExpenses
+    .filter((e) => e.expense_type === "personal")
     .reduce((sum, e) => sum + e.amount, 0);
 
-  // Budget status (using monthly as example - can be configured)
-  const budgetStatus = calculateBudgetStatus('monthly', summary.total, DEFAULT_BUDGETS.monthlyLimit);
-
-  // Category breakdown
-  const categoryMap = new Map<string, { amount: number; count: number }>();
-  filteredExpenses.forEach((expense) => {
-    const existing = categoryMap.get(expense.category) || { amount: 0, count: 0 };
-    categoryMap.set(expense.category, {
-      amount: existing.amount + expense.amount,
-      count: existing.count + 1,
-    });
-  });
-  const categoryBreakdown: CategoryBreakdownData[] = Array.from(categoryMap.entries())
-    .map(([category, data]) => ({
-      category,
-      amount: data.amount,
-      percentage: summary.total > 0 ? (data.amount / summary.total) * 100 : 0,
-      count: data.count,
-    }))
-    .sort((a, b) => b.amount - a.amount);
-
-  // Trend data (last 6 months)
-  const trendData: ExpenseTrendData[] = [];
-  for (let i = 5; i >= 0; i--) {
-    const month = new Date(selectedMonth);
-    month.setMonth(month.getMonth() - i);
-    const monthExpenses = expenses.filter((e) => isSameMonth(e.date, month));
-    const business = monthExpenses
-      .filter((e) => e.expense_type === 'business')
-      .reduce((sum, e) => sum + e.amount, 0);
-    const personal = monthExpenses
-      .filter((e) => e.expense_type === 'personal')
-      .reduce((sum, e) => sum + e.amount, 0);
-    trendData.push({
-      month: month.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
-      personal,
-      business,
-      total: business + personal,
-    });
-  }
+  const monthYear = formatMonthYear(selectedMonth);
 
   // Derived state
+  const recurringTemplates = templates.filter(
+    (t) => t.recurring_frequency !== null
+  );
+  const hasRecurringExpensesThisMonth = expensesForMonth.some(
+    (e) => e.recurring_group_id
+  );
+  const needsRecurringGeneration =
+    recurringTemplates.length > 0 && !hasRecurringExpensesThisMonth;
+
   const hasFiltersApplied =
     filters.expenseType !== "all" ||
     filters.category !== "all" ||
@@ -238,7 +201,9 @@ export function ExpenseDashboard() {
     const today = new Date().toISOString().split("T")[0];
     try {
       await createExpense.mutateAsync({ ...expenseData, date: today });
-      showToast.success(`✓ Added: ${template.template_name}`);
+      showToast.success(
+        `✓ Added: ${template.template_name} - ${formatCurrency(template.amount)}`
+      );
     } catch (error) {
       showToast.error("Failed to create expense. Please try again.");
     }
@@ -257,17 +222,17 @@ export function ExpenseDashboard() {
 
   return (
     <>
-      {/* Page Header */}
       <div className="page-header">
         <h1 className="page-title">Expenses</h1>
         <p className="page-subtitle">
-          Track and manage business and personal expenses with budget insights
+          Track and manage business and personal expenses
         </p>
       </div>
 
       <div className="page-content">
-        {/* Header Controls */}
-        <ExpensePageHeader
+
+        {/* Month Selector */}
+        <ExpenseMonthSelector
           selectedMonth={selectedMonth}
           onPrevMonth={() => {
             const newDate = new Date(selectedMonth);
@@ -280,53 +245,54 @@ export function ExpenseDashboard() {
             setSelectedMonth(newDate);
           }}
           onToday={() => setSelectedMonth(new Date())}
-          onExportCSV={handleExportCSV}
-          onAddExpense={() => {
-            setSelectedExpense(null);
-            setIsAddDialogOpen(true);
-          }}
+          onExport={handleExportCSV}
         />
 
-        {/* Main Grid - 2 columns responsive */}
-        <div className={`grid ${EXPENSE_DASHBOARD_LAYOUT.gridCols.desktop} ${EXPENSE_DASHBOARD_LAYOUT.gaps.card} mb-6`}>
-          {/* Left Column */}
-          <div className="flex flex-col gap-4">
-            <ExpenseSummaryCard
-              totalAmount={summary.total}
-              businessAmount={summary.business}
-              personalAmount={summary.personal}
-              deductibleAmount={deductibleAmount}
-              transactionCount={summary.count}
-              momGrowthPercentage={summary.momGrowth}
-            />
-            <ExpenseCategoryCard
-              categories={categoryBreakdown}
-              totalAmount={summary.total}
-            />
-          </div>
-
-          {/* Right Column */}
-          <div className="flex flex-col gap-4">
-            <ExpenseBudgetCard budgetStatus={budgetStatus} />
-            <ExpenseTrendCard data={trendData} />
-          </div>
-        </div>
-
-        {/* Quick Add Templates */}
-        <div className="mb-6">
-          <ExpenseQuickAdd
-            templates={templates}
-            onUseTemplate={handleUseTemplate}
-            onDeleteTemplate={handleDeleteTemplate}
+        {/* Summary + Category Breakdown */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <ExpenseSummaryStats
+            totalAmount={totalAmount}
+            businessAmount={businessAmount}
+            personalAmount={personalAmount}
+            transactionCount={filteredExpenses.length}
+            momGrowthPercentage={momGrowthData.growthPercentage}
           />
+          <ExpenseCategoryBreakdown categories={categoryBreakdown} />
         </div>
+
+        {/* Filters + Trend Chart */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <ExpenseFilters
+            filters={filters}
+            onFiltersChange={setFilters}
+            categories={DEFAULT_EXPENSE_CATEGORIES.map((c) => c.name)}
+          />
+          <ExpenseTrendChart data={trendData} />
+        </div>
+
+        {/* Templates */}
+        <ExpenseTemplatesPanel
+          templates={templates}
+          onUseTemplate={handleUseTemplate}
+          onDeleteTemplate={handleDeleteTemplate}
+        />
+
+        {/* Recurring Banner */}
+        {needsRecurringGeneration && (
+          <ExpenseRecurringBanner
+            templateCount={recurringTemplates.length}
+            monthYear={monthYear}
+            onGenerate={() => generateRecurring.mutateAsync(selectedMonth)}
+            isGenerating={generateRecurring.isPending}
+          />
+        )}
 
         {/* Expense Table */}
-        <ExpenseTableCard
+        <ExpenseTable
           expenses={filteredExpenses}
           isLoading={isLoading}
-          filters={filters}
-          onFiltersChange={setFilters}
+          hasFiltersApplied={hasFiltersApplied}
+          monthYear={monthYear}
           onAddExpense={() => {
             setSelectedExpense(null);
             setIsAddDialogOpen(true);
@@ -339,8 +305,6 @@ export function ExpenseDashboard() {
             setSelectedExpense(expense);
             setIsDeleteDialogOpen(true);
           }}
-          categories={DEFAULT_EXPENSE_CATEGORIES.map((c) => c.name)}
-          hasFiltersApplied={hasFiltersApplied}
           onClearFilters={() =>
             setFilters({
               expenseType: "all",
