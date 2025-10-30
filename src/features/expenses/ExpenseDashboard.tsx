@@ -298,7 +298,7 @@ export function ExpenseDashboard() {
       {/* Header with Title and Metrics Bar - MATCHING POLICIES */}
       <div className="bg-background border-b border-border/50">
         {/* Title and New Expense Button */}
-        <div className="flex items-center justify-between px-6 py-3">
+        <div className="flex items-center justify-between px-6 py-2">
           <h1 className="text-2xl font-semibold">Expenses</h1>
           <div className="flex items-center gap-2">
             <Button onClick={handleExportCSV} variant="outline" size="sm">
@@ -313,7 +313,7 @@ export function ExpenseDashboard() {
         </div>
 
         {/* Compact Metrics Bar - MATCHING POLICIES PATTERN */}
-        <div className="px-6 pb-3">
+        <div className="px-6 pb-2">
           <div className="flex items-center justify-between gap-8 text-sm">
             {/* Month Navigation */}
             <div className="flex items-center gap-2">
@@ -495,9 +495,9 @@ export function ExpenseDashboard() {
         </TabsList>
 
         {/* EXPENSES TAB - FULL HEIGHT TABLE */}
-        <TabsContent value="expenses" className="flex flex-col m-0">
+        <TabsContent value="expenses" className="flex-1 flex flex-col m-0">
           {/* Table Container - Scrollable with Fixed Height */}
-          <div className="overflow-auto" style={{ maxHeight: 'calc(100vh - 420px)' }}>
+          <div className="flex-1 overflow-auto">
             <Table>
               <TableHeader className="sticky top-0 bg-background z-10 border-b border-border/50">
                 <TableRow className="hover:bg-transparent">

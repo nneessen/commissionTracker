@@ -234,7 +234,6 @@ export const DashboardHome: React.FC = () => {
   return (
     <>
       <div className="page-header">
-        {/* Header with time period switcher and date range */}
         <div className="flex justify-between items-start">
           <DashboardHeader monthProgress={monthProgress} />
           <div className="flex flex-col items-end gap-2">
