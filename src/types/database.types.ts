@@ -489,9 +489,8 @@ export type Database = {
           description: string
           expense_type: Database["public"]["Enums"]["expense_type"]
           id: string
-          is_deductible: boolean
           is_recurring: boolean | null
-          is_tax_deductible: boolean | null
+          is_tax_deductible: boolean
           name: string
           notes: string | null
           receipt_url: string | null
@@ -509,9 +508,8 @@ export type Database = {
           description: string
           expense_type?: Database["public"]["Enums"]["expense_type"]
           id?: string
-          is_deductible?: boolean
           is_recurring?: boolean | null
-          is_tax_deductible?: boolean | null
+          is_tax_deductible?: boolean
           name: string
           notes?: string | null
           receipt_url?: string | null
@@ -529,9 +527,8 @@ export type Database = {
           description?: string
           expense_type?: Database["public"]["Enums"]["expense_type"]
           id?: string
-          is_deductible?: boolean
           is_recurring?: boolean | null
-          is_tax_deductible?: boolean | null
+          is_tax_deductible?: boolean
           name?: string
           notes?: string | null
           receipt_url?: string | null

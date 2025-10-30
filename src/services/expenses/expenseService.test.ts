@@ -28,7 +28,7 @@ describe('ExpenseService', () => {
     is_recurring: false,
     recurring_frequency: null,
     receipt_url: null,
-    is_deductible: true,
+    is_tax_deductible: true,
     notes: null,
     created_at: '2025-01-15T10:00:00Z',
     updated_at: '2025-01-15T10:00:00Z',
@@ -46,7 +46,7 @@ describe('ExpenseService', () => {
     is_recurring: false,
     recurring_frequency: null,
     receipt_url: null,
-    is_deductible: true,
+    is_tax_deductible: true,
     notes: null,
     created_at: '2025-01-15T10:00:00Z',
     updated_at: '2025-01-15T10:00:00Z',
@@ -126,7 +126,7 @@ describe('ExpenseService', () => {
         category: 'office',
         expense_type: 'business',
         date: '2025-01-15',
-        is_deductible: true,
+        is_tax_deductible: true,
       };
 
       const mockFrom = vi.fn().mockReturnValue({
@@ -231,9 +231,9 @@ describe('ExpenseService', () => {
   describe('getTotals', () => {
     it('should calculate totals correctly', async () => {
       const mockExpenses = [
-        { amount: '100.00', expense_type: 'business', is_deductible: true },
-        { amount: '50.00', expense_type: 'personal', is_deductible: false },
-        { amount: '75.00', expense_type: 'business', is_deductible: true },
+        { amount: '100.00', expense_type: 'business', is_tax_deductible: true },
+        { amount: '50.00', expense_type: 'personal', is_tax_deductible: false },
+        { amount: '75.00', expense_type: 'business', is_tax_deductible: true },
       ];
 
       const mockFrom = vi.fn().mockReturnValue({

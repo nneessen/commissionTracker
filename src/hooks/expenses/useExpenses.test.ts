@@ -23,7 +23,7 @@ const mockExpense: Expense = {
   is_recurring: false,
   recurring_frequency: null,
   receipt_url: null,
-  is_deductible: true,
+  is_tax_deductible: true,
   notes: null,
   created_at: '2025-01-15T10:00:00Z',
   updated_at: '2025-01-15T10:00:00Z',
