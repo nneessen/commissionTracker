@@ -485,7 +485,7 @@ export const PolicyList: React.FC<PolicyListProps> = ({ onEditPolicy, onNewPolic
       </div>
 
       {/* Table Container - Scrollable */}
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 overflow-auto min-h-0">
         <Table>
           <TableHeader className="sticky top-0 bg-background z-10 border-b border-border/50">
             <TableRow className="hover:bg-transparent">

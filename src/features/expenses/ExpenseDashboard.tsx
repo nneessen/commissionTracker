@@ -97,7 +97,7 @@ export function ExpenseDashboard() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(25);
+  const [pageSize, setPageSize] = useState(10);
   const [sortField, setSortField] = useState<'date' | 'amount' | 'name' | 'category'>('date');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
@@ -495,9 +495,9 @@ export function ExpenseDashboard() {
         </TabsList>
 
         {/* EXPENSES TAB - FULL HEIGHT TABLE */}
-        <TabsContent value="expenses" className="flex-1 flex flex-col m-0">
+        <TabsContent value="expenses" className="flex-1 flex flex-col m-0 min-h-0">
           {/* Table Container - Scrollable */}
-          <div className="flex-1 overflow-auto">
+          <div className="flex-1 overflow-auto min-h-0">
             <Table>
               <TableHeader className="sticky top-0 bg-background z-10 border-b border-border/50">
                 <TableRow className="hover:bg-transparent">
