@@ -290,7 +290,7 @@ export const PolicyList: React.FC<PolicyListProps> = ({ onEditPolicy, onNewPolic
   };
 
   return (
-    <div className="h-full w-full flex flex-col">
+    <div className="h-full w-full flex flex-col overflow-hidden">
       {/* Header with Title and Metrics Bar */}
       <div className="bg-background border-b border-border/50">
         {/* Title and New Policy Button */}

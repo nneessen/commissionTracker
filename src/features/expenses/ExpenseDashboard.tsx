@@ -294,7 +294,7 @@ export function ExpenseDashboard() {
   });
 
   return (
-    <div className="h-screen flex flex-col">
+    <div className="h-[calc(100vh-1rem)] flex flex-col overflow-hidden">
       {/* Header with Title and Metrics Bar - MATCHING POLICIES */}
       <div className="bg-background border-b border-border/50">
         {/* Title and New Expense Button */}
