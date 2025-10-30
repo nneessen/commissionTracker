@@ -650,16 +650,75 @@ export const PolicyList: React.FC<PolicyListProps> = ({ onEditPolicy, onNewPolic
                     </TableCell>
                     <TableCell className="py-1.5 px-3 text-center">
                       {policyCommission ? (
-                        <span
-                          className={cn(
-                            "inline-block py-0.5 px-2 rounded text-[11px] font-medium",
-                            policyCommission.status === 'paid' && "bg-success/20 text-success",
-                            policyCommission.status === 'pending' && "bg-warning/20 text-warning",
-                            (policyCommission.status === 'cancelled' || policyCommission.status === 'charged_back') && "bg-destructive/20 text-destructive"
-                          )}
-                        >
-                          {policyCommission.status}
-                        </span>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button
+                              className={cn(
+                                "inline-block py-0.5 px-2 rounded text-[11px] font-medium cursor-pointer hover:opacity-80 transition-opacity",
+                                policyCommission.status === 'paid' && "bg-success/20 text-success",
+                                policyCommission.status === 'earned' && "bg-blue-500/20 text-blue-600",
+                                policyCommission.status === 'pending' && "bg-warning/20 text-warning",
+                                (policyCommission.status === 'cancelled' || policyCommission.status === 'charged_back') && "bg-destructive/20 text-destructive"
+                              )}
+                            >
+                              {policyCommission.status}
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="center" className="w-36">
+                            <DropdownMenuItem
+                              onClick={() => handleStatusChange(policyCommission, 'pending', policy)}
+                              className={policyCommission.status === 'pending' ? 'bg-accent' : ''}
+                            >
+                              <div className="flex items-center gap-2">
+                                <div className="w-2 h-2 rounded-full bg-warning" />
+                                <span className="text-xs">Pending</span>
+                              </div>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleStatusChange(policyCommission, 'earned', policy)}
+                              className={policyCommission.status === 'earned' ? 'bg-accent' : ''}
+                            >
+                              <div className="flex items-center gap-2">
+                                <div className="w-2 h-2 rounded-full bg-blue-600" />
+                                <span className="text-xs">Earned</span>
+                              </div>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleStatusChange(policyCommission, 'paid', policy)}
+                              className={policyCommission.status === 'paid' ? 'bg-accent' : ''}
+                            >
+                              <div className="flex items-center gap-2">
+                                <div className="w-2 h-2 rounded-full bg-success" />
+                                <span className="text-xs">Paid</span>
+                              </div>
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() => handleStatusChange(policyCommission, 'charged_back', policy)}
+                              className={cn(
+                                "text-destructive",
+                                policyCommission.status === 'charged_back' ? 'bg-accent' : ''
+                              )}
+                            >
+                              <div className="flex items-center gap-2">
+                                <div className="w-2 h-2 rounded-full bg-destructive" />
+                                <span className="text-xs">Chargeback</span>
+                              </div>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleStatusChange(policyCommission, 'cancelled', policy)}
+                              className={cn(
+                                "text-muted-foreground",
+                                policyCommission.status === 'cancelled' ? 'bg-accent' : ''
+                              )}
+                            >
+                              <div className="flex items-center gap-2">
+                                <div className="w-2 h-2 rounded-full bg-muted-foreground" />
+                                <span className="text-xs">Cancelled</span>
+                              </div>
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       ) : (
                         <span className="text-muted-foreground/60 text-xs">No commission</span>
                       )}

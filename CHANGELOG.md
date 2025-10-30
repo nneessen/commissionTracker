@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-10-30 14:54:00
+
+### Changed Files
+- `src/features/policies/PolicyList.tsx`
+
+### Statistics
+```
+ 1 file changed, 69 insertions(+), 10 deletions(-)
+```
+
 ## [Checkpoint] - 2025-10-27 14:32:38
 
 ### Changed Files
