@@ -1,5 +1,6 @@
 // src/hooks/commissions/__tests__/useUpdateCommissionStatus.test.ts
 
+import React from 'react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { renderHook, waitFor } from '@testing/react-hooks';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';

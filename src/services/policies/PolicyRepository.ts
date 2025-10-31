@@ -427,6 +427,103 @@ export class PolicyRepository extends BaseRepository<Policy, CreatePolicyData, U
     }
   }
 
+  /**
+   * Get aggregate metrics for policies matching filters
+   * Returns totals across ALL matching policies (not just current page)
+   */
+  async getAggregateMetrics(filters?: {
+    status?: string;
+    carrierId?: string;
+    product?: string;
+    effectiveDateFrom?: string;
+    effectiveDateTo?: string;
+    searchTerm?: string;
+    [key: string]: any;
+  }): Promise<{
+    totalPolicies: number;
+    activePolicies: number;
+    pendingPolicies: number;
+    lapsedPolicies: number;
+    cancelledPolicies: number;
+    totalPremium: number;
+    avgPremium: number;
+    ytdPolicies: number;
+    ytdPremium: number;
+  }> {
+    try {
+      // Build base query with filters
+      let query = this.client
+        .from(this.tableName)
+        .select('status, annual_premium, effective_date', { count: 'exact' });
+
+      // Apply filters (same logic as findAll)
+      if (filters) {
+        const { effectiveDateFrom, effectiveDateTo, searchTerm, ...equalityFilters } = filters;
+
+        Object.entries(equalityFilters).forEach(([key, value]) => {
+          if (value !== undefined && value !== null) {
+            const columnMap: { [key: string]: string } = {
+              status: 'status',
+              carrierId: 'carrier_id',
+              product: 'product'
+            };
+            const column = columnMap[key] || key;
+            query = query.eq(column, value);
+          }
+        });
+
+        // Date range filters
+        if (effectiveDateFrom) {
+          query = query.gte('effective_date', effectiveDateFrom);
+        }
+        if (effectiveDateTo) {
+          query = query.lte('effective_date', effectiveDateTo);
+        }
+      }
+
+      const { data, count, error } = await query;
+
+      if (error) {
+        console.error('PolicyRepository.getAggregateMetrics error:', error);
+        throw error;
+      }
+
+      // Calculate aggregates from returned data
+      const currentYear = new Date().getFullYear();
+      const policies = data || [];
+
+      const activePolicies = policies.filter(p => p.status === 'active').length;
+      const pendingPolicies = policies.filter(p => p.status === 'pending').length;
+      const lapsedPolicies = policies.filter(p => p.status === 'lapsed').length;
+      const cancelledPolicies = policies.filter(p => p.status === 'cancelled').length;
+      
+      const totalPremium = policies.reduce((sum, p) => sum + (parseFloat(p.annual_premium) || 0), 0);
+      const avgPremium = policies.length > 0 ? totalPremium / policies.length : 0;
+
+      const ytdPolicies = policies.filter(p => 
+        p.effective_date && new Date(p.effective_date).getFullYear() === currentYear
+      ).length;
+      const ytdPremium = policies
+        .filter(p => p.effective_date && new Date(p.effective_date).getFullYear() === currentYear)
+        .reduce((sum, p) => sum + (parseFloat(p.annual_premium) || 0), 0);
+
+      return {
+        totalPolicies: count || 0,
+        activePolicies,
+        pendingPolicies,
+        lapsedPolicies,
+        cancelledPolicies,
+        totalPremium,
+        avgPremium,
+        ytdPolicies,
+        ytdPremium,
+      };
+    } catch (error) {
+      console.error('PolicyRepository.getAggregateMetrics error:', error);
+      throw error;
+    }
+  }
+
   protected transformFromDB(dbRecord: any): Policy {
     // Handle joined client data from foreign key relationship
     let clientData;

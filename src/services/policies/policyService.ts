@@ -157,6 +157,36 @@ class PolicyService {
   }
 
   /**
+   * Get aggregate metrics for policies matching filters
+   * Returns totals across ALL matching policies (not just current page)
+   * @param filters - Optional filters to apply
+   * @returns Aggregate metrics including counts, premiums, and YTD data
+   */
+  async getAggregateMetrics(filters?: PolicyFilters): Promise<{
+    totalPolicies: number;
+    activePolicies: number;
+    pendingPolicies: number;
+    lapsedPolicies: number;
+    cancelledPolicies: number;
+    totalPremium: number;
+    avgPremium: number;
+    ytdPolicies: number;
+    ytdPremium: number;
+  }> {
+    // Convert PolicyFilters to repository filter format
+    const repoFilters = filters ? {
+      status: filters.status,
+      carrierId: filters.carrierId,
+      product: filters.product,
+      effectiveDateFrom: filters.effectiveDateFrom,
+      effectiveDateTo: filters.effectiveDateTo,
+      searchTerm: filters.searchTerm
+    } : undefined;
+
+    return this.repository.getAggregateMetrics(repoFilters);
+  }
+
+  /**
    * Business logic: Get monthly metrics for a given month/year
    */
   async getMonthlyMetrics(year: number, month: number) {

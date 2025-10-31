@@ -31,8 +31,8 @@ export function usePoliciesView() {
   // Separate searchTerm from filters for client-side filtering
   const { searchTerm, ...serverFilters } = filters;
 
-  // Use parallel queries for data and count
-  const [dataQuery, countQuery] = useQueries({
+  // Use parallel queries for data, count, and metrics
+  const [dataQuery, countQuery, metricsQuery] = useQueries({
     queries: [
       {
         queryKey: ['policies', 'data', currentPage, pageSize, serverFilters, sortConfig],
@@ -48,6 +48,11 @@ export function usePoliciesView() {
       {
         queryKey: ['policies', 'count', serverFilters],
         queryFn: () => policyService.getCount(serverFilters),
+        staleTime: 5 * 60 * 1000, // 5 minutes
+      },
+      {
+        queryKey: ['policies', 'metrics', serverFilters],
+        queryFn: () => policyService.getAggregateMetrics(serverFilters),
         staleTime: 5 * 60 * 1000, // 5 minutes
       }
     ]
@@ -124,9 +129,12 @@ export function usePoliciesView() {
   }, []);
 
   // Loading and error states
-  const isLoading = dataQuery.isLoading || countQuery.isLoading;
-  const isFetching = dataQuery.isFetching || countQuery.isFetching;
-  const error = dataQuery.error || countQuery.error;
+  const isLoading = dataQuery.isLoading || countQuery.isLoading || metricsQuery.isLoading;
+  const isFetching = dataQuery.isFetching || countQuery.isFetching || metricsQuery.isFetching;
+  const error = dataQuery.error || countQuery.error || metricsQuery.error;
+
+  // Aggregate metrics (global or filtered)
+  const metrics = metricsQuery.data;
 
   return {
     // Data
@@ -161,10 +169,14 @@ export function usePoliciesView() {
     toggleSort,
     clearSort,
 
+    // Metrics (global or filtered across all pages)
+    metrics,
+
     // Refresh
     refresh: () => {
       dataQuery.refetch();
       countQuery.refetch();
+      metricsQuery.refetch();
     },
   };
 }

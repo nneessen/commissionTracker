@@ -497,7 +497,7 @@ export function ExpenseDashboard() {
         {/* EXPENSES TAB - FULL HEIGHT TABLE */}
         <TabsContent value="expenses" className="flex flex-col m-0">
           {/* Table Container - Scrollable with Fixed Height */}
-          <div className="overflow-auto" style={{ maxHeight: 'calc(100vh - 420px)' }}>
+          <div className="overflow-auto" style={{ maxHeight: 'calc(100vh - 280px)' }}>
             <Table>
               <TableHeader className="sticky top-0 bg-background z-10 border-b border-border/50">
                 <TableRow className="hover:bg-transparent">

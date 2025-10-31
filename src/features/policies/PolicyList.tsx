@@ -106,6 +106,7 @@ export const PolicyList: React.FC<PolicyListProps> = ({ onEditPolicy, onNewPolic
     sortConfig,
     toggleSort,
     refresh,
+    metrics,
   } = usePoliciesView();
 
   const { data: carriers = [] } = useCarriers();
@@ -132,56 +133,24 @@ export const PolicyList: React.FC<PolicyListProps> = ({ onEditPolicy, onNewPolic
     return acc;
   }, {} as Record<string, typeof commissions[0]>);
 
-  // Calculate metrics from current page data
-  const calculateMetrics = () => {
-    const activePolicies = policies.filter(p => p.status === 'active');
-    const pendingPolicies = policies.filter(p => p.status === 'pending');
-    const totalPremium = policies.reduce((sum, p) => sum + (p.annualPremium || 0), 0);
-    const avgPremium = policies.length > 0 ? totalPremium / policies.length : 0;
-
-    // Get commissions for current policies
-    const policyIds = new Set(policies.map(p => p.id));
-    const relevantCommissions = commissions.filter(c => c.policyId && policyIds.has(c.policyId));
-    const totalCommission = relevantCommissions.reduce((sum, c) => sum + (c.amount || 0), 0);
-    const earnedCommission = relevantCommissions.reduce((sum, c) => sum + (c.earnedAmount || 0), 0);
-    const pendingCommission = relevantCommissions.filter(c => c.status === 'pending')
-      .reduce((sum, c) => sum + (c.amount || 0), 0);
-
-    // Calculate YTD metrics
-    const currentYear = new Date().getFullYear();
-    const ytdPolicies = policies.filter(p =>
-      new Date(p.effectiveDate).getFullYear() === currentYear
-    );
-    const ytdPremium = ytdPolicies.reduce((sum, p) => sum + (p.annualPremium || 0), 0);
-
-    return {
-      totalPolicies: totalItems,
-      activePolicies: activePolicies.length,
-      pendingPolicies: pendingPolicies.length,
-      totalPremium,
-      avgPremium,
-      totalCommission,
-      earnedCommission,
-      pendingCommission,
-      ytdPolicies: ytdPolicies.length,
-      ytdPremium,
-      pageShowing: policies.length,
-    };
-  };
-
-  const metrics = calculateMetrics();
+  // Get commissions for current page policies to calculate commission metrics
+  const policyIds = new Set(policies.map(p => p.id));
+  const relevantCommissions = commissions.filter(c => c.policyId && policyIds.has(c.policyId));
+  const earnedCommission = relevantCommissions.reduce((sum, c) => sum + (c.earnedAmount || 0), 0);
+  const pendingCommission = relevantCommissions.filter(c => c.status === 'pending')
+    .reduce((sum, c) => sum + (c.amount || 0), 0);
 
   // Handle search with debounce
   useEffect(() => {
     const timer = setTimeout(() => {
-      setFilters(prev => ({ ...prev, searchTerm }));
+      setFilters({ ...filters, searchTerm });
     }, 300);
     return () => clearTimeout(timer);
-  }, [searchTerm, setFilters]);
+  }, [searchTerm]);
 
   const handleDeletePolicy = (policyId: string) => {
     if (window.confirm("Are you sure you want to delete this policy?")) {
-      deletePolicy({ id: policyId });
+      deletePolicy(policyId);
     }
   };
 
@@ -302,65 +271,83 @@ export const PolicyList: React.FC<PolicyListProps> = ({ onEditPolicy, onNewPolic
           </Button>
         </div>
 
-        {/* Compact Metrics Bar */}
+        {/* Smart Contextual Metrics Bar */}
         <div className="px-6 pb-3">
-          <div className="flex items-center justify-between gap-8 text-sm">
-            {/* Count metrics */}
-            <div className="flex items-center gap-6">
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-xl font-bold">{metrics.totalPolicies}</span>
-                <span className="text-xs text-muted-foreground">total</span>
+          {metrics ? (
+            <>
+              {/* Scope Indicator */}
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                  {filterCount > 0 ? 'Filtered Results' : 'All Policies'}
+                </span>
+                {filterCount > 0 && (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary font-medium">
+                    {filterCount} {filterCount === 1 ? 'filter' : 'filters'} active
+                  </span>
+                )}
               </div>
-              <div className="flex items-center gap-1">
-                <div className="w-2 h-2 rounded-full bg-green-500" />
-                <span className="font-medium">{metrics.activePolicies}</span>
-                <span className="text-muted-foreground">active</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <div className="w-2 h-2 rounded-full bg-yellow-500" />
-                <span className="font-medium">{metrics.pendingPolicies}</span>
-                <span className="text-muted-foreground">pending</span>
-              </div>
-            </div>
 
-            {/* Premium metrics */}
-            <div className="flex items-center gap-4">
-              <div>
-                <span className="font-semibold">${(metrics.totalPremium / 1000).toFixed(1)}k</span>
-                <span className="text-muted-foreground ml-1">premium</span>
-              </div>
-              <div className="text-muted-foreground">•</div>
-              <div>
-                <span className="font-semibold">${(metrics.avgPremium / 1000).toFixed(1)}k</span>
-                <span className="text-muted-foreground ml-1">avg</span>
-              </div>
-            </div>
+              <div className="flex items-center justify-between gap-8 text-sm">
+                {/* Count metrics */}
+                <div className="flex items-center gap-6">
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-xl font-bold">{metrics.totalPolicies}</span>
+                    <span className="text-xs text-muted-foreground">total</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-2 h-2 rounded-full bg-green-500" />
+                    <span className="font-medium">{metrics.activePolicies}</span>
+                    <span className="text-muted-foreground">active</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-2 h-2 rounded-full bg-yellow-500" />
+                    <span className="font-medium">{metrics.pendingPolicies}</span>
+                    <span className="text-muted-foreground">pending</span>
+                  </div>
+                </div>
 
-            {/* Commission metrics */}
-            <div className="flex items-center gap-4">
-              <div>
-                <span className="font-semibold text-green-600">${(metrics.earnedCommission / 1000).toFixed(1)}k</span>
-                <span className="text-muted-foreground ml-1">earned</span>
-              </div>
-              <div className="text-muted-foreground">•</div>
-              <div>
-                <span className="font-semibold text-yellow-600">${(metrics.pendingCommission / 1000).toFixed(1)}k</span>
-                <span className="text-muted-foreground ml-1">pending</span>
-              </div>
-            </div>
+                {/* Premium metrics */}
+                <div className="flex items-center gap-4">
+                  <div>
+                    <span className="font-semibold">${(metrics.totalPremium / 1000).toFixed(1)}k</span>
+                    <span className="text-muted-foreground ml-1">total premium</span>
+                  </div>
+                  <div className="text-muted-foreground">•</div>
+                  <div>
+                    <span className="font-semibold">${(metrics.avgPremium / 1000).toFixed(1)}k</span>
+                    <span className="text-muted-foreground ml-1">avg</span>
+                  </div>
+                </div>
 
-            {/* YTD metrics */}
-            <div className="flex items-center gap-4">
-              <div>
-                <span className="font-medium">{metrics.ytdPolicies}</span>
-                <span className="text-muted-foreground ml-1">YTD</span>
+                {/* Commission metrics - Page-specific */}
+                <div className="flex items-center gap-4">
+                  <div>
+                    <span className="font-semibold text-green-600">${(earnedCommission / 1000).toFixed(1)}k</span>
+                    <span className="text-muted-foreground ml-1">earned (page)</span>
+                  </div>
+                  <div className="text-muted-foreground">•</div>
+                  <div>
+                    <span className="font-semibold text-yellow-600">${(pendingCommission / 1000).toFixed(1)}k</span>
+                    <span className="text-muted-foreground ml-1">pending (page)</span>
+                  </div>
+                </div>
+
+                {/* YTD metrics */}
+                <div className="flex items-center gap-4">
+                  <div>
+                    <span className="font-medium">{metrics.ytdPolicies}</span>
+                    <span className="text-muted-foreground ml-1">YTD policies</span>
+                  </div>
+                  <div>
+                    <span className="font-medium">${(metrics.ytdPremium / 1000).toFixed(1)}k</span>
+                    <span className="text-muted-foreground ml-1">YTD premium</span>
+                  </div>
+                </div>
               </div>
-              <div>
-                <span className="font-medium">${(metrics.ytdPremium / 1000).toFixed(1)}k</span>
-                <span className="text-muted-foreground ml-1">YTD premium</span>
-              </div>
-            </div>
-          </div>
+            </>
+          ) : (
+            <div className="text-sm text-muted-foreground">Loading metrics...</div>
+          )}
         </div>
       </div>
 
@@ -404,10 +391,10 @@ export const PolicyList: React.FC<PolicyListProps> = ({ onEditPolicy, onNewPolic
             <Select
               value={filters.status || "all"}
               onValueChange={(value) =>
-                setFilters(prev => ({
-                  ...prev,
+                setFilters({
+                  ...filters,
                   status: value === "all" ? undefined : value as PolicyStatus
-                }))
+                })
               }
             >
               <SelectTrigger className="h-8 w-[140px]">
@@ -425,10 +412,10 @@ export const PolicyList: React.FC<PolicyListProps> = ({ onEditPolicy, onNewPolic
             <Select
               value={filters.product || "all"}
               onValueChange={(value) =>
-                setFilters(prev => ({
-                  ...prev,
+                setFilters({
+                  ...filters,
                   product: value === "all" ? undefined : value as ProductType
-                }))
+                })
               }
             >
               <SelectTrigger className="h-8 w-[140px]">
@@ -446,10 +433,10 @@ export const PolicyList: React.FC<PolicyListProps> = ({ onEditPolicy, onNewPolic
             <Select
               value={filters.carrierId || "all"}
               onValueChange={(value) =>
-                setFilters(prev => ({
-                  ...prev,
+                setFilters({
+                  ...filters,
                   carrierId: value === "all" ? undefined : value
-                }))
+                })
               }
             >
               <SelectTrigger className="h-8 w-[160px]">
@@ -471,11 +458,11 @@ export const PolicyList: React.FC<PolicyListProps> = ({ onEditPolicy, onNewPolic
                 to: filters.effectiveDateTo ? parseLocalDate(filters.effectiveDateTo) : undefined
               }}
               onChange={(range) => {
-                setFilters(prev => ({
-                  ...prev,
+                setFilters({
+                  ...filters,
                   effectiveDateFrom: range.from ? formatDateForDB(range.from) : undefined,
                   effectiveDateTo: range.to ? formatDateForDB(range.to) : undefined
-                }));
+                });
               }}
               placeholder="Effective Date Range"
               className="h-8"
@@ -485,7 +472,7 @@ export const PolicyList: React.FC<PolicyListProps> = ({ onEditPolicy, onNewPolic
       </div>
 
       {/* Table Container - Scrollable with Fixed Height */}
-      <div className="overflow-auto" style={{ maxHeight: 'calc(100vh - 380px)' }}>
+      <div className="overflow-auto" style={{ maxHeight: 'calc(100vh - 280px)' }}>
         <Table>
           <TableHeader className="sticky top-0 bg-background z-10 border-b border-border/50">
             <TableRow className="hover:bg-transparent">
@@ -656,15 +643,15 @@ export const PolicyList: React.FC<PolicyListProps> = ({ onEditPolicy, onNewPolic
                         >
                           <SelectTrigger
                             className={cn(
-                              "h-7 text-xs w-[110px] shadow-sm",
-                              policyCommission.status === 'paid' && "bg-success/20 text-success border-success/30",
-                              policyCommission.status === 'pending' && "bg-warning/20 text-warning border-warning/30",
-                              (policyCommission.status === 'cancelled' || policyCommission.status === 'charged_back') && "bg-destructive/20 text-destructive border-destructive/30"
+                              "h-7 text-xs w-[110px] !px-2 !gap-1 font-medium border-2",
+                              policyCommission.status === 'paid' && "!bg-green-100 !text-green-800 !border-green-300 hover:!bg-green-200",
+                              policyCommission.status === 'pending' && "!bg-yellow-100 !text-yellow-800 !border-yellow-300 hover:!bg-yellow-200",
+                              (policyCommission.status === 'cancelled' || policyCommission.status === 'charged_back') && "!bg-red-100 !text-red-800 !border-red-300 hover:!bg-red-200"
                             )}
                           >
                             <SelectValue />
                           </SelectTrigger>
-                          <SelectContent>
+                          <SelectContent className="!bg-white dark:!bg-gray-800 border-2">
                             <SelectItem value="pending">Pending</SelectItem>
                             <SelectItem value="paid">Paid</SelectItem>
                             <SelectItem value="cancelled">Cancelled</SelectItem>
