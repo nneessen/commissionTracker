@@ -24,4 +24,5 @@ export const TABLES = {
   AGENT_SETTINGS: 'agent_settings',
   COMP_GUIDE: 'comp_guide',
   CHARGEBACKS: 'chargebacks',
+  USER_TARGETS: 'user_targets',
 } as const;

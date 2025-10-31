@@ -13,6 +13,7 @@ import { AnalyticsDashboard } from "./features/analytics";
 import { DashboardHome } from "./features/dashboard";
 import { CompGuide } from "./features/comps";
 import { SettingsDashboard } from "./features/settings";
+import { TargetsPage } from "./features/targets";
 import {
   Login,
   AuthCallback,
@@ -106,16 +107,11 @@ const settingsRoute = createRoute({
   component: SettingsDashboard,
 });
 
-// Targets route (coming soon)
+// Targets route
 const targetsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "targets",
-  component: () => (
-    <div className="coming-soon-container p-8">
-      <h2 className="text-2xl font-bold text-gray-900 mb-4">Targets</h2>
-      <p className="text-gray-600">This feature is coming soon!</p>
-    </div>
-  ),
+  component: TargetsPage,
 });
 
 // Reports route (coming soon)

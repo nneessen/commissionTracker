@@ -7,3 +7,4 @@ export * from './ui.types';
 export * from './user.types';
 export * from './policy.types';
 export * from './metrics.types';
+export * from './targets.types';
