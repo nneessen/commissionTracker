@@ -623,7 +623,7 @@ export const PolicyList: React.FC<PolicyListProps> = ({ onEditPolicy, onNewPolic
                       <div className="flex flex-col gap-0.5 items-end">
                         <span>{formatCurrency(policy.annualPremium)}</span>
                         <span className="text-[11px] text-muted-foreground">
-                          {policy.paymentFrequency}
+                          annual
                         </span>
                       </div>
                     </TableCell>

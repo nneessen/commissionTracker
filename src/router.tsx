@@ -14,6 +14,7 @@ import { DashboardHome } from "./features/dashboard";
 import { CompGuide } from "./features/comps";
 import { SettingsDashboard } from "./features/settings";
 import { TargetsPage } from "./features/targets";
+import { TestCompGuide } from "./features/test/TestCompGuide";
 import {
   Login,
   AuthCallback,
@@ -145,6 +146,13 @@ const clientsRoute = createRoute({
   ),
 });
 
+// Test route for debugging comp guide
+const testCompGuideRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "test-comp",
+  component: TestCompGuide,
+});
+
 // Create the route tree - all routes are already linked via getParentRoute
 const routeTree = rootRoute.addChildren([
   indexRoute,
@@ -161,6 +169,7 @@ const routeTree = rootRoute.addChildren([
   reportsRoute,
   expensesRoute,
   clientsRoute,
+  testCompGuideRoute,
 ]);
 
 // Create and export the router

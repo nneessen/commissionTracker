@@ -6,6 +6,30 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-11-01 14:31:22
+
+### Changed Files
+- `CONTINUE_FIX_PROMPT.md`
+- `FIXES_COMPLETED.md`
+- `comp_guide_data.sql`
+- `scripts/CHECK_COMMISSION_DISCREPANCY.sql`
+- `scripts/CHECK_COMP_GUIDE_DATA.sql`
+- `scripts/COMPLETE_DATABASE_RESET.sql`
+- `scripts/EMERGENCY_FIX_RUN_IN_SUPABASE.sql`
+- `scripts/FIX_COMP_GUIDE_DATA.sql`
+- `scripts/FIX_RLS_POLICIES.sql`
+- `scripts/UPDATE_DATA_TO_2025.sql`
+- `scripts/fix-remote-database.sh`
+- `src/features/policies/PolicyList.tsx`
+- `src/features/test/TestCompGuide.tsx`
+- `src/hooks/useMetricsWithDateRange.ts`
+- `src/router.tsx`
+
+### Statistics
+```
+ 15 files changed, 1149 insertions(+), 136 deletions(-)
+```
+
 ## [Checkpoint] - 2025-10-31 14:02:49
 
 ### Changed Files
