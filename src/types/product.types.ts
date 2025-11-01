@@ -87,3 +87,58 @@ export interface ProductOption {
   product_type: ProductType;
   commission_percentage?: number;
 }
+
+// ============================================================================
+// User Commission Profile Types
+// ============================================================================
+
+// Data quality levels for commission rate calculations
+export type CommissionDataQuality = 'HIGH' | 'MEDIUM' | 'LOW' | 'INSUFFICIENT';
+
+// Individual product's contribution to weighted average
+export interface ProductCommissionBreakdown {
+  productId: string;
+  productName: string;
+  carrierName: string;
+  commissionRate: number; // e.g., 0.85 for 85%
+  premiumWeight: number; // e.g., 0.35 for 35% of total premium volume
+  totalPremium: number; // Total premium for this product in lookback period
+  policyCount: number; // Number of policies sold for this product
+  effectiveDate: Date; // When this commission rate became effective
+}
+
+// Complete commission rate profile for a user
+export interface UserCommissionProfile {
+  userId: string;
+  contractLevel: number; // e.g., 100, 105, 110
+  simpleAverageRate: number; // Simple avg of all products at contract level
+  weightedAverageRate: number; // Premium-weighted avg based on user's mix
+  recommendedRate: number; // Either weighted or simple based on data quality
+  productBreakdown: ProductCommissionBreakdown[]; // Detailed product-level breakdown
+  dataQuality: CommissionDataQuality; // Quality indicator for the calculation
+  calculatedAt: Date; // Timestamp of calculation
+  lookbackMonths: number; // How many months of history used (typically 12)
+}
+
+// Commission rate interface
+export interface CommissionRate {
+  id: string;
+  carrierId: string;
+  productId: string;
+  contractLevel: number;
+  commissionPercentage: number;
+  createdAt: Date;
+  updatedAt?: Date;
+}
+
+// Form types for commission rates
+export interface NewCommissionRateForm {
+  carrierId: string;
+  productId: string;
+  contractLevel: number;
+  commissionPercentage: number;
+}
+
+export interface UpdateCommissionRateForm extends Partial<NewCommissionRateForm> {
+  id: string;
+}
