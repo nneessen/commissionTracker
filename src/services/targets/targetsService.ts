@@ -90,9 +90,43 @@ class TargetsService {
     userId: string,
     updates: UpdateUserTargetsData
   ): Promise<UserTargets> {
+    // Convert camelCase to snake_case for database
+    const dbUpdates: Partial<UserTargetsUpdate> = {};
+
+    if (updates.annualIncomeTarget !== undefined) {
+      dbUpdates.annual_income_target = updates.annualIncomeTarget;
+    }
+    if (updates.monthlyIncomeTarget !== undefined) {
+      dbUpdates.monthly_income_target = updates.monthlyIncomeTarget;
+    }
+    if (updates.quarterlyIncomeTarget !== undefined) {
+      dbUpdates.quarterly_income_target = updates.quarterlyIncomeTarget;
+    }
+    if (updates.annualPoliciesTarget !== undefined) {
+      dbUpdates.annual_policies_target = updates.annualPoliciesTarget;
+    }
+    if (updates.monthlyPoliciesTarget !== undefined) {
+      dbUpdates.monthly_policies_target = updates.monthlyPoliciesTarget;
+    }
+    if (updates.avgPremiumTarget !== undefined) {
+      dbUpdates.avg_premium_target = updates.avgPremiumTarget;
+    }
+    if (updates.persistency13MonthTarget !== undefined) {
+      dbUpdates.persistency_13_month_target = updates.persistency13MonthTarget;
+    }
+    if (updates.persistency25MonthTarget !== undefined) {
+      dbUpdates.persistency_25_month_target = updates.persistency25MonthTarget;
+    }
+    if (updates.monthlyExpenseTarget !== undefined) {
+      dbUpdates.monthly_expense_target = updates.monthlyExpenseTarget;
+    }
+    if (updates.expenseRatioTarget !== undefined) {
+      dbUpdates.expense_ratio_target = updates.expenseRatioTarget;
+    }
+
     const { data, error } = await supabase
       .from(TABLES.USER_TARGETS)
-      .update(updates as UserTargetsUpdate)
+      .update(dbUpdates)
       .eq('user_id', userId)
       .select()
       .single();

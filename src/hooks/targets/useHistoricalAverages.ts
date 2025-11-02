@@ -1,5 +1,6 @@
 // src/hooks/targets/useHistoricalAverages.ts
 
+import { useMemo } from 'react';
 import { usePolicies } from '../policies/usePolicies';
 import { useExpenses } from '../expenses/useExpenses';
 import { useUserCommissionProfile } from '../commissions/useUserCommissionProfile';
@@ -27,8 +28,8 @@ export function useHistoricalAverages(): {
 
   const isLoading = policiesLoading || expensesLoading || profileLoading;
 
-  // Calculate averages from historical data
-  const averages: HistoricalAverages = (() => {
+  // Calculate averages from historical data - MEMOIZED to prevent infinite loops
+  const averages: HistoricalAverages = useMemo(() => {
     // CRITICAL: No arbitrary fallbacks! If no commission data, show error
     if (!commissionProfile) {
       return {
@@ -138,7 +139,7 @@ export function useHistoricalAverages(): {
       persistency25Month,
       hasData: true,
     };
-  })();
+  }, [commissionProfile, policies, expenses]);
 
   return {
     averages,

@@ -16,6 +16,7 @@ import { Policy, PolicyFilters, PolicyStatus } from "../../types/policy.types";
 import { ProductType } from "../../types/commission.types";
 import { calculateCommissionAdvance } from "../../utils/policyCalculations";
 import { formatCurrency, formatDate } from "../../lib/format";
+import { normalizeDatabaseDate } from "../../lib/date";
 
 interface PolicyListInfiniteProps {
   onEditPolicy: (policyId: string) => void;

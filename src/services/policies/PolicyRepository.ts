@@ -571,18 +571,18 @@ export class PolicyRepository extends BaseRepository<Policy, CreatePolicyData, U
       userId: dbRecord.user_id,
       product: dbRecord.product,
       productDetails: dbRecord.products || undefined, // NEW: Joined product data if available
-      effectiveDate: new Date(dbRecord.effective_date),
+      effectiveDate: dbRecord.effective_date, // Keep as string to avoid timezone issues
       termLength: dbRecord.term_length,
-      expirationDate: dbRecord.expiration_date ? new Date(dbRecord.expiration_date) : undefined,
+      expirationDate: dbRecord.expiration_date || undefined, // Keep as string
       annualPremium: parseFloat(dbRecord.annual_premium || '0'),
       monthlyPremium: parseFloat(dbRecord.monthly_premium || '0'),
       paymentFrequency: dbRecord.payment_frequency,
       commissionPercentage: parseFloat(dbRecord.commission_percentage || '0'),
       // advanceMonths removed - now only in commissions table
-      createdAt: new Date(dbRecord.created_at),
-      updatedAt: new Date(dbRecord.updated_at),
-      created_at: new Date(dbRecord.created_at),
-      updated_at: new Date(dbRecord.updated_at),
+      createdAt: dbRecord.created_at,
+      updatedAt: dbRecord.updated_at,
+      created_at: dbRecord.created_at,
+      updated_at: dbRecord.updated_at,
       createdBy: dbRecord.created_by,
       notes: dbRecord.notes,
     };

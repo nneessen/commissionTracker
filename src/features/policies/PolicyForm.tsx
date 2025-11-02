@@ -14,6 +14,7 @@ import {
 } from "../../types/policy.types";
 import { ProductType } from "../../types/commission.types";
 import { US_STATES } from "../../types/agent.types";
+import { formatDateForDB } from "../../lib/date";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -62,8 +63,8 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
     productId: "", // Use productId to link to products table
     product: "term_life" as ProductType,
     policyNumber: "",
-    submitDate: new Date().toISOString().split("T")[0],
-    effectiveDate: new Date().toISOString().split("T")[0],
+    submitDate: formatDateForDB(new Date()),
+    effectiveDate: formatDateForDB(new Date()),
     premium: 0,
     paymentFrequency: "monthly" as PaymentFrequency,
     commissionPercentage: 0,
@@ -115,11 +116,11 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
           policyNumber: policy.policyNumber,
           submitDate:
             policy.submitDate instanceof Date
-              ? policy.submitDate.toISOString().split("T")[0]
-              : policy.submitDate || new Date().toISOString().split("T")[0],
+              ? formatDateForDB(policy.submitDate)
+              : policy.submitDate || formatDateForDB(new Date()),
           effectiveDate:
             policy.effectiveDate instanceof Date
-              ? policy.effectiveDate.toISOString().split("T")[0]
+              ? formatDateForDB(policy.effectiveDate)
               : policy.effectiveDate,
           premium: calculatePaymentAmount(
             policy.annualPremium,
@@ -184,7 +185,7 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
     const fetchProductCommissionRates = async () => {
       if (products.length === 0) return;
 
-      const today = new Date().toISOString().split("T")[0];
+      const today = formatDateForDB(new Date());
       const rates: Record<string, number> = {};
 
       for (const product of products) {

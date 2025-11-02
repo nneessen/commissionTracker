@@ -36,6 +36,34 @@ export function parseLocalDate(dateString: string): Date {
 }
 
 /**
+ * Normalize a date value from Supabase to ensure it's always a YYYY-MM-DD string
+ * Handles both Date objects (which may have timezone issues) and strings
+ *
+ * @param date - Date object or string from database
+ * @returns Normalized date string in YYYY-MM-DD format
+ *
+ * @example
+ * normalizeDatabaseDate(new Date("2024-10-01T00:00:00Z")) // "2024-10-01"
+ * normalizeDatabaseDate("2024-10-01") // "2024-10-01"
+ */
+export function normalizeDatabaseDate(date: Date | string | null | undefined): string {
+  if (!date) return '';
+
+  // If it's already a string in YYYY-MM-DD format, return as-is
+  if (typeof date === 'string') {
+    // Check if it's already in YYYY-MM-DD format
+    if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      return date;
+    }
+    // If it has time component, parse and format
+    return formatDateForDB(parseLocalDate(date.split('T')[0]));
+  }
+
+  // For Date objects, format to YYYY-MM-DD in local timezone
+  return formatDateForDB(date);
+}
+
+/**
  * Format a Date object to YYYY-MM-DD string in LOCAL timezone
  * Use this when sending dates to the database or displaying in date inputs
  *

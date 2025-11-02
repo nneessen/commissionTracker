@@ -21,7 +21,7 @@ import { QuickStatsPanel } from "./components/QuickStatsPanel";
 import { PerformanceOverviewCard } from "./components/PerformanceOverviewCard";
 import { AlertsPanel } from "./components/AlertsPanel";
 import { QuickActionsPanel } from "./components/QuickActionsPanel";
-import { KPIGrid_Option1 as KPIGrid } from "./components/KPIGrid_Option1_Cards";
+import { KPIGrid } from "./components/KPIGrid";
 import { ExpenseDialog } from "../expenses/components/ExpenseDialog";
 import { PolicyDialog } from "../policies/components/PolicyDialog";
 

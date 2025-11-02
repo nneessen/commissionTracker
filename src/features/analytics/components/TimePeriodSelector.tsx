@@ -205,7 +205,9 @@ export function TimePeriodSelector({
                 type="date"
                 value={customRange ? format(customRange.startDate, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd')}
                 onChange={(e) => {
-                  const newStart = new Date(e.target.value);
+                  // Parse date string to create local date at start of day
+                  const [year, month, day] = e.target.value.split('-').map(Number);
+                  const newStart = new Date(year, month - 1, day, 0, 0, 0, 0);
                   onCustomRangeChange({
                     startDate: newStart,
                     endDate: customRange?.endDate || new Date()
@@ -234,7 +236,9 @@ export function TimePeriodSelector({
                 type="date"
                 value={customRange ? format(customRange.endDate, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd')}
                 onChange={(e) => {
-                  const newEnd = new Date(e.target.value);
+                  // Parse date string to create local date at end of day
+                  const [year, month, day] = e.target.value.split('-').map(Number);
+                  const newEnd = new Date(year, month - 1, day, 23, 59, 59, 999);
                   onCustomRangeChange({
                     startDate: customRange?.startDate || new Date(),
                     endDate: newEnd

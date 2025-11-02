@@ -1,0 +1,243 @@
+// src/services/targets/targetsCalculationService.ts
+
+export interface HistoricalAverages {
+  avgCommissionRate: number; // As decimal (e.g., 0.50 for 50%)
+  avgPolicyPremium: number; // Average annual premium per policy
+  avgPoliciesPerMonth: number; // Historical average policies written per month
+  avgExpensesPerMonth: number; // Historical average monthly expenses
+  persistency13Month: number; // As decimal
+  persistency25Month: number; // As decimal
+  hasData: boolean; // Whether we have enough historical data
+}
+
+export interface CalculatedTargets {
+  // Income breakdowns
+  annualIncomeTarget: number;
+  quarterlyIncomeTarget: number;
+  monthlyIncomeTarget: number;
+  weeklyIncomeTarget: number;
+  dailyIncomeTarget: number;
+
+  // Premium requirements
+  totalPremiumNeeded: number;
+
+  // Policy requirements
+  annualPoliciesTarget: number;
+  quarterlyPoliciesTarget: number;
+  monthlyPoliciesTarget: number;
+  weeklyPoliciesTarget: number;
+  dailyPoliciesTarget: number;
+
+  // Averages used
+  avgCommissionRate: number;
+  avgPolicyPremium: number;
+
+  // Other metrics
+  persistency13MonthTarget: number;
+  persistency25MonthTarget: number;
+  monthlyExpenseTarget: number;
+  expenseRatio: number;
+
+  // Calculation metadata
+  calculationMethod: 'historical' | 'default';
+  confidence: 'high' | 'medium' | 'low';
+  dataPoints: number;
+}
+
+export interface TargetCalculationOptions {
+  annualIncomeTarget: number;
+  historicalAverages?: HistoricalAverages;
+  overrides?: {
+    avgCommissionRate?: number;
+    avgPolicyPremium?: number;
+    monthlyExpenseTarget?: number;
+  };
+}
+
+// Default values when no historical data exists
+const DEFAULTS = {
+  avgCommissionRate: 0.50, // 50% commission rate
+  avgPolicyPremium: 2000, // $2,000 average annual premium
+  avgExpensesPerMonth: 5000, // $5,000 monthly expenses
+  persistency13Month: 0.85, // 85% persistency at 13 months
+  persistency25Month: 0.75, // 75% persistency at 25 months
+};
+
+class TargetsCalculationService {
+  /**
+   * Calculate all targets from a single annual income target
+   */
+  calculateTargets(options: TargetCalculationOptions): CalculatedTargets {
+    const { annualIncomeTarget, historicalAverages, overrides } = options;
+
+    // Determine which values to use (overrides > historical > defaults)
+    const avgCommissionRate =
+      overrides?.avgCommissionRate ??
+      historicalAverages?.avgCommissionRate ??
+      DEFAULTS.avgCommissionRate;
+
+    const avgPolicyPremium =
+      overrides?.avgPolicyPremium ??
+      historicalAverages?.avgPolicyPremium ??
+      DEFAULTS.avgPolicyPremium;
+
+    const monthlyExpenseTarget =
+      overrides?.monthlyExpenseTarget ??
+      historicalAverages?.avgExpensesPerMonth ??
+      DEFAULTS.avgExpensesPerMonth;
+
+    // Income breakdowns (simple division)
+    const quarterlyIncomeTarget = annualIncomeTarget / 4;
+    const monthlyIncomeTarget = annualIncomeTarget / 12;
+    const weeklyIncomeTarget = annualIncomeTarget / 52;
+    const dailyIncomeTarget = annualIncomeTarget / 365;
+
+    // Calculate total premium needed
+    // Formula: Annual Income Target / Average Commission Rate = Total Premium Needed
+    const totalPremiumNeeded = avgCommissionRate > 0
+      ? annualIncomeTarget / avgCommissionRate
+      : 0;
+
+    // Calculate policies needed
+    // Formula: Total Premium Needed / Average Policy Premium = Policies Needed
+    const annualPoliciesTarget = avgPolicyPremium > 0
+      ? Math.ceil(totalPremiumNeeded / avgPolicyPremium)
+      : 0;
+
+    // Break down policies by time period
+    const quarterlyPoliciesTarget = Math.ceil(annualPoliciesTarget / 4);
+    const monthlyPoliciesTarget = Math.ceil(annualPoliciesTarget / 12);
+    const weeklyPoliciesTarget = Math.ceil(annualPoliciesTarget / 52);
+    const dailyPoliciesTarget = Math.max(1, Math.ceil(annualPoliciesTarget / 365));
+
+    // Calculate expense ratio
+    const annualExpenses = monthlyExpenseTarget * 12;
+    const expenseRatio = annualIncomeTarget > 0
+      ? annualExpenses / annualIncomeTarget
+      : 0;
+
+    // Use historical persistency or defaults
+    const persistency13MonthTarget =
+      historicalAverages?.persistency13Month ??
+      DEFAULTS.persistency13Month;
+
+    const persistency25MonthTarget =
+      historicalAverages?.persistency25Month ??
+      DEFAULTS.persistency25Month;
+
+    // Determine calculation confidence
+    let confidence: 'high' | 'medium' | 'low' = 'low';
+    let dataPoints = 0;
+
+    if (historicalAverages?.hasData) {
+      // Count how many months of data we have
+      dataPoints = historicalAverages.avgPoliciesPerMonth > 0 ? 12 : 0; // Simplified
+
+      if (dataPoints >= 12) {
+        confidence = 'high';
+      } else if (dataPoints >= 6) {
+        confidence = 'medium';
+      }
+    }
+
+    return {
+      // Income targets
+      annualIncomeTarget,
+      quarterlyIncomeTarget,
+      monthlyIncomeTarget,
+      weeklyIncomeTarget,
+      dailyIncomeTarget,
+
+      // Premium requirement
+      totalPremiumNeeded,
+
+      // Policy targets
+      annualPoliciesTarget,
+      quarterlyPoliciesTarget,
+      monthlyPoliciesTarget,
+      weeklyPoliciesTarget,
+      dailyPoliciesTarget,
+
+      // Averages used in calculations
+      avgCommissionRate,
+      avgPolicyPremium,
+
+      // Other metrics
+      persistency13MonthTarget,
+      persistency25MonthTarget,
+      monthlyExpenseTarget,
+      expenseRatio,
+
+      // Metadata
+      calculationMethod: historicalAverages?.hasData ? 'historical' : 'default',
+      confidence,
+      dataPoints,
+    };
+  }
+
+  /**
+   * Format the calculation breakdown for display
+   */
+  getCalculationBreakdown(targets: CalculatedTargets): string[] {
+    const breakdown: string[] = [];
+    const commissionPercent = (targets.avgCommissionRate * 100).toFixed(1);
+
+    breakdown.push(
+      `Annual Income Target: $${targets.annualIncomeTarget.toLocaleString()}`,
+      `÷ Average Commission Rate: ${commissionPercent}%`,
+      `= Total Premium Needed: $${targets.totalPremiumNeeded.toLocaleString()}`,
+      '',
+      `Total Premium Needed: $${targets.totalPremiumNeeded.toLocaleString()}`,
+      `÷ Average Policy Premium: $${targets.avgPolicyPremium.toLocaleString()}`,
+      `= Policies Needed: ${targets.annualPoliciesTarget} per year`,
+      '',
+      `${targets.annualPoliciesTarget} policies ÷ 12 months = ${targets.monthlyPoliciesTarget} per month`,
+      `${targets.annualPoliciesTarget} policies ÷ 52 weeks = ${targets.weeklyPoliciesTarget} per week`,
+      `${targets.annualPoliciesTarget} policies ÷ 365 days = ${targets.dailyPoliciesTarget} per day`
+    );
+
+    return breakdown;
+  }
+
+  /**
+   * Validate if the targets are achievable based on historical performance
+   */
+  validateTargets(
+    targets: CalculatedTargets,
+    historicalAverages?: HistoricalAverages
+  ): {
+    isAchievable: boolean;
+    warnings: string[];
+    recommendations: string[];
+  } {
+    const warnings: string[] = [];
+    const recommendations: string[] = [];
+
+    if (!historicalAverages?.hasData) {
+      warnings.push('No historical data available. Using default values for calculations.');
+      recommendations.push('Start tracking policies to get more accurate target calculations.');
+      return { isAchievable: true, warnings, recommendations };
+    }
+
+    // Check if monthly policy target is more than 2x historical average
+    if (targets.monthlyPoliciesTarget > historicalAverages.avgPoliciesPerMonth * 2) {
+      warnings.push(
+        `Target requires ${targets.monthlyPoliciesTarget} policies/month, ` +
+        `but your historical average is ${historicalAverages.avgPoliciesPerMonth.toFixed(1)}.`
+      );
+      recommendations.push('Consider adjusting your income target or improving your average policy size.');
+    }
+
+    // Check expense ratio
+    if (targets.expenseRatio > 0.5) {
+      warnings.push(`Expenses are ${(targets.expenseRatio * 100).toFixed(1)}% of income target.`);
+      recommendations.push('Consider reducing expenses or increasing income target for better margins.');
+    }
+
+    const isAchievable = warnings.length === 0;
+
+    return { isAchievable, warnings, recommendations };
+  }
+}
+
+export const targetsCalculationService = new TargetsCalculationService();

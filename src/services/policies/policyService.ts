@@ -2,6 +2,7 @@ import { Policy, PolicyFilters, CreatePolicyData } from '../../types/policy.type
 import { PolicyRepository } from './PolicyRepository';
 import { supabase } from '../base/supabase';
 import { logger } from '../base/logger';
+import { formatDateForDB } from '../../lib/date';
 import { commissionStatusService } from '../commissions/CommissionStatusService';
 import { DatabaseError, NotFoundError, ValidationError } from '../../errors/ServiceErrors';
 
@@ -95,8 +96,16 @@ class PolicyService {
       if (filters.status && policy.status !== filters.status) return false;
       if (filters.carrierId && policy.carrierId !== filters.carrierId) return false;
       if (filters.product && policy.product !== filters.product) return false;
-      if (filters.startDate && new Date(policy.effectiveDate) < filters.startDate) return false;
-      if (filters.endDate && new Date(policy.effectiveDate) > filters.endDate) return false;
+      if (filters.startDate) {
+        const policyDate = policy.effectiveDate; // Already in YYYY-MM-DD format
+        const startDateString = formatDateForDB(filters.startDate);
+        if (policyDate < startDateString) return false;
+      }
+      if (filters.endDate) {
+        const policyDate = policy.effectiveDate; // Already in YYYY-MM-DD format
+        const endDateString = formatDateForDB(filters.endDate);
+        if (policyDate > endDateString) return false;
+      }
       if (filters.minPremium && policy.annualPremium < filters.minPremium) return false;
       if (filters.maxPremium && policy.annualPremium > filters.maxPremium) return false;
       return true;

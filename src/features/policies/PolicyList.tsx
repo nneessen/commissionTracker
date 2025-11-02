@@ -64,6 +64,7 @@ import { Policy, PolicyFilters, PolicyStatus } from "../../types/policy.types";
 import { ProductType, CommissionStatus } from "../../types/commission.types";
 import { calculateCommissionAdvance } from "../../utils/policyCalculations";
 import { formatCurrency, formatDate } from "../../lib/format";
+import { normalizeDatabaseDate } from "../../lib/date";
 
 interface PolicyListProps {
   onEditPolicy: (policyId: string) => void;

@@ -89,7 +89,7 @@ export const PerformanceOverviewCard: React.FC<
         </div>
 
         {/* Performance Table */}
-        <div className="overflow-x-auto bg-gradient-to-br from-slate-50/50 to-zinc-50/40 dark:from-slate-950/10 dark:to-zinc-950/8 rounded-lg p-4 shadow-sm">
+        <div className="overflow-x-auto bg-gradient-to-br from-slate-50/50 to-zinc-50/40 dark:from-slate-100/10 dark:to-zinc-950/8 rounded-lg p-4 shadow-sm">
           <table className="w-full text-xs">
             <thead>
               <tr className="mb-2">
@@ -175,4 +175,3 @@ export const PerformanceOverviewCard: React.FC<
     </Card>
   );
 };
-

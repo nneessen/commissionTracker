@@ -7,36 +7,18 @@ export type Json =
   | Json[]
 
 export type Database = {
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          operationName?: string
-          query?: string
-          variables?: Json
-          extensions?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "13.0.5"
   }
   public: {
     Tables: {
       carriers: {
         Row: {
-          commission_rates: Json | null
+          code: string | null
+          commission_structure: Json | null
+          contact_info: Json | null
           created_at: string | null
           id: string
           is_active: boolean | null
@@ -44,7 +26,9 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
-          commission_rates?: Json | null
+          code?: string | null
+          commission_structure?: Json | null
+          contact_info?: Json | null
           created_at?: string | null
           id?: string
           is_active?: boolean | null
@@ -52,11 +36,43 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
-          commission_rates?: Json | null
+          code?: string | null
+          commission_structure?: Json | null
+          contact_info?: Json | null
           created_at?: string | null
           id?: string
           is_active?: boolean | null
           name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      carriers_backup_20251103: {
+        Row: {
+          code: string | null
+          commission_structure: Json | null
+          contact_info: Json | null
+          created_at: string | null
+          id: string | null
+          name: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          code?: string | null
+          commission_structure?: Json | null
+          contact_info?: Json | null
+          created_at?: string | null
+          id?: string | null
+          name?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          code?: string | null
+          commission_structure?: Json | null
+          contact_info?: Json | null
+          created_at?: string | null
+          id?: string | null
+          name?: string | null
           updated_at?: string | null
         }
         Relationships: []
@@ -68,11 +84,11 @@ export type Database = {
           commission_id: string | null
           created_at: string | null
           id: string
-          policy_id: string | null
           reason: string | null
-          status: string | null
+          resolution_date: string | null
+          resolution_notes: string | null
+          status: Database["public"]["Enums"]["chargeback_status"] | null
           updated_at: string | null
-          user_id: string | null
         }
         Insert: {
           chargeback_amount: number
@@ -80,11 +96,11 @@ export type Database = {
           commission_id?: string | null
           created_at?: string | null
           id?: string
-          policy_id?: string | null
           reason?: string | null
-          status?: string | null
+          resolution_date?: string | null
+          resolution_notes?: string | null
+          status?: Database["public"]["Enums"]["chargeback_status"] | null
           updated_at?: string | null
-          user_id?: string | null
         }
         Update: {
           chargeback_amount?: number
@@ -92,13 +108,27 @@ export type Database = {
           commission_id?: string | null
           created_at?: string | null
           id?: string
-          policy_id?: string | null
           reason?: string | null
-          status?: string | null
+          resolution_date?: string | null
+          resolution_notes?: string | null
+          status?: Database["public"]["Enums"]["chargeback_status"] | null
           updated_at?: string | null
-          user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "chargebacks_commission_id_fkey"
+            columns: ["commission_id"]
+            isOneToOne: false
+            referencedRelation: "commission_earning_detail"
+            referencedColumns: ["commission_id"]
+          },
+          {
+            foreignKeyName: "chargebacks_commission_id_fkey"
+            columns: ["commission_id"]
+            isOneToOne: false
+            referencedRelation: "commission_earning_status"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "chargebacks_commission_id_fkey"
             columns: ["commission_id"]
@@ -106,135 +136,114 @@ export type Database = {
             referencedRelation: "commissions"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "chargebacks_policy_id_fkey"
-            columns: ["policy_id"]
-            isOneToOne: false
-            referencedRelation: "policies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "chargebacks_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
         ]
       }
       clients: {
         Row: {
-          address: Json | null
+          address: string | null
           created_at: string | null
           email: string | null
           id: string
           name: string
+          notes: string | null
           phone: string | null
           updated_at: string | null
           user_id: string | null
         }
         Insert: {
-          address?: Json | null
+          address?: string | null
           created_at?: string | null
           email?: string | null
           id?: string
           name: string
+          notes?: string | null
           phone?: string | null
           updated_at?: string | null
           user_id?: string | null
         }
         Update: {
-          address?: Json | null
+          address?: string | null
           created_at?: string | null
           email?: string | null
           id?: string
           name?: string
+          notes?: string | null
           phone?: string | null
           updated_at?: string | null
           user_id?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "clients_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       commissions: {
         Row: {
-          advance_months: number | null
-          carrier_id: string | null
-          commission_amount: number
+          advance_months: number
+          amount: number
+          chargeback_amount: number | null
+          chargeback_date: string | null
+          chargeback_reason: string | null
           created_at: string | null
-          earned_amount: number | null
+          earned_amount: number
           id: string
-          is_advance: boolean | null
-          months_paid: number | null
+          last_payment_date: string | null
+          months_paid: number
           notes: string | null
           payment_date: string | null
           policy_id: string | null
-          status: string | null
+          rate: number | null
+          status: string
+          type: string
           unearned_amount: number | null
           updated_at: string | null
           user_id: string | null
         }
         Insert: {
-          advance_months?: number | null
-          carrier_id?: string | null
-          commission_amount: number
+          advance_months?: number
+          amount: number
+          chargeback_amount?: number | null
+          chargeback_date?: string | null
+          chargeback_reason?: string | null
           created_at?: string | null
-          earned_amount?: number | null
+          earned_amount?: number
           id?: string
-          is_advance?: boolean | null
-          months_paid?: number | null
+          last_payment_date?: string | null
+          months_paid?: number
           notes?: string | null
           payment_date?: string | null
           policy_id?: string | null
-          status?: string | null
+          rate?: number | null
+          status?: string
+          type: string
           unearned_amount?: number | null
           updated_at?: string | null
           user_id?: string | null
         }
         Update: {
-          advance_months?: number | null
-          carrier_id?: string | null
-          commission_amount?: number
+          advance_months?: number
+          amount?: number
+          chargeback_amount?: number | null
+          chargeback_date?: string | null
+          chargeback_reason?: string | null
           created_at?: string | null
-          earned_amount?: number | null
+          earned_amount?: number
           id?: string
-          is_advance?: boolean | null
-          months_paid?: number | null
+          last_payment_date?: string | null
+          months_paid?: number
           notes?: string | null
           payment_date?: string | null
           policy_id?: string | null
-          status?: string | null
+          rate?: number | null
+          status?: string
+          type?: string
           unearned_amount?: number | null
           updated_at?: string | null
           user_id?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "commissions_carrier_id_fkey"
-            columns: ["carrier_id"]
-            isOneToOne: false
-            referencedRelation: "carriers"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "commissions_policy_id_fkey"
             columns: ["policy_id"]
             isOneToOne: false
             referencedRelation: "policies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "commissions_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
@@ -249,8 +258,10 @@ export type Database = {
           effective_date: string
           expiration_date: string | null
           id: string
+          maximum_premium: number | null
+          minimum_premium: number | null
           product_id: string | null
-          product_type: string | null
+          product_type: Database["public"]["Enums"]["product_type"]
           updated_at: string | null
         }
         Insert: {
@@ -259,11 +270,13 @@ export type Database = {
           commission_percentage: number
           contract_level: number
           created_at?: string | null
-          effective_date?: string
+          effective_date: string
           expiration_date?: string | null
           id?: string
+          maximum_premium?: number | null
+          minimum_premium?: number | null
           product_id?: string | null
-          product_type?: string | null
+          product_type: Database["public"]["Enums"]["product_type"]
           updated_at?: string | null
         }
         Update: {
@@ -275,8 +288,10 @@ export type Database = {
           effective_date?: string
           expiration_date?: string | null
           id?: string
+          maximum_premium?: number | null
+          minimum_premium?: number | null
           product_id?: string | null
-          product_type?: string | null
+          product_type?: Database["public"]["Enums"]["product_type"]
           updated_at?: string | null
         }
         Relationships: [
@@ -296,8 +311,54 @@ export type Database = {
           },
         ]
       }
+      comp_guide_backup_20251103: {
+        Row: {
+          bonus_percentage: number | null
+          carrier_id: string | null
+          commission_percentage: number | null
+          comp_level: Database["public"]["Enums"]["comp_level"] | null
+          created_at: string | null
+          effective_date: string | null
+          expiration_date: string | null
+          id: string | null
+          maximum_premium: number | null
+          minimum_premium: number | null
+          product_type: Database["public"]["Enums"]["product_type"] | null
+          updated_at: string | null
+        }
+        Insert: {
+          bonus_percentage?: number | null
+          carrier_id?: string | null
+          commission_percentage?: number | null
+          comp_level?: Database["public"]["Enums"]["comp_level"] | null
+          created_at?: string | null
+          effective_date?: string | null
+          expiration_date?: string | null
+          id?: string | null
+          maximum_premium?: number | null
+          minimum_premium?: number | null
+          product_type?: Database["public"]["Enums"]["product_type"] | null
+          updated_at?: string | null
+        }
+        Update: {
+          bonus_percentage?: number | null
+          carrier_id?: string | null
+          commission_percentage?: number | null
+          comp_level?: Database["public"]["Enums"]["comp_level"] | null
+          created_at?: string | null
+          effective_date?: string | null
+          expiration_date?: string | null
+          id?: string | null
+          maximum_premium?: number | null
+          minimum_premium?: number | null
+          product_type?: Database["public"]["Enums"]["product_type"] | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       constants: {
         Row: {
+          category: string | null
           created_at: string | null
           description: string | null
           id: string
@@ -306,14 +367,16 @@ export type Database = {
           value: number
         }
         Insert: {
+          category?: string | null
           created_at?: string | null
           description?: string | null
           id?: string
           key: string
           updated_at?: string | null
-          value?: number
+          value: number
         }
         Update: {
+          category?: string | null
           created_at?: string | null
           description?: string | null
           id?: string
@@ -323,49 +386,40 @@ export type Database = {
         }
         Relationships: []
       }
-      expenses: {
+      expense_categories: {
         Row: {
-          amount: number
-          category: string | null
-          created_at: string | null
+          created_at: string
           description: string | null
-          expense_date: string
-          expense_type: string | null
           id: string
-          is_recurring: boolean | null
-          name: string | null
-          updated_at: string | null
-          user_id: string | null
+          is_active: boolean
+          name: string
+          sort_order: number
+          updated_at: string
+          user_id: string
         }
         Insert: {
-          amount: number
-          category?: string | null
-          created_at?: string | null
+          created_at?: string
           description?: string | null
-          expense_date: string
-          expense_type?: string | null
           id?: string
-          is_recurring?: boolean | null
-          name?: string | null
-          updated_at?: string | null
-          user_id?: string | null
+          is_active?: boolean
+          name: string
+          sort_order?: number
+          updated_at?: string
+          user_id: string
         }
         Update: {
-          amount?: number
-          category?: string | null
-          created_at?: string | null
+          created_at?: string
           description?: string | null
-          expense_date?: string
-          expense_type?: string | null
           id?: string
-          is_recurring?: boolean | null
-          name?: string | null
-          updated_at?: string | null
-          user_id?: string | null
+          is_active?: boolean
+          name?: string
+          sort_order?: number
+          updated_at?: string
+          user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "expenses_user_id_fkey"
+            foreignKeyName: "expense_categories_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
@@ -373,72 +427,191 @@ export type Database = {
           },
         ]
       }
+      expense_templates: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string | null
+          description: string | null
+          expense_type: Database["public"]["Enums"]["expense_type"]
+          id: string
+          is_tax_deductible: boolean
+          notes: string | null
+          recurring_frequency: string | null
+          template_name: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          category: string
+          created_at?: string | null
+          description?: string | null
+          expense_type?: Database["public"]["Enums"]["expense_type"]
+          id?: string
+          is_tax_deductible?: boolean
+          notes?: string | null
+          recurring_frequency?: string | null
+          template_name: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string | null
+          description?: string | null
+          expense_type?: Database["public"]["Enums"]["expense_type"]
+          id?: string
+          is_tax_deductible?: boolean
+          notes?: string | null
+          recurring_frequency?: string | null
+          template_name?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_expense_templates_user"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      expenses: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string | null
+          date: string
+          description: string
+          expense_type: Database["public"]["Enums"]["expense_type"]
+          id: string
+          is_recurring: boolean | null
+          is_tax_deductible: boolean
+          name: string
+          notes: string | null
+          receipt_url: string | null
+          recurring_end_date: string | null
+          recurring_frequency: string | null
+          recurring_group_id: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          amount: number
+          category: string
+          created_at?: string | null
+          date: string
+          description: string
+          expense_type?: Database["public"]["Enums"]["expense_type"]
+          id?: string
+          is_recurring?: boolean | null
+          is_tax_deductible?: boolean
+          name: string
+          notes?: string | null
+          receipt_url?: string | null
+          recurring_end_date?: string | null
+          recurring_frequency?: string | null
+          recurring_group_id?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string | null
+          date?: string
+          description?: string
+          expense_type?: Database["public"]["Enums"]["expense_type"]
+          id?: string
+          is_recurring?: boolean | null
+          is_tax_deductible?: boolean
+          name?: string
+          notes?: string | null
+          receipt_url?: string | null
+          recurring_end_date?: string | null
+          recurring_frequency?: string | null
+          recurring_group_id?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       policies: {
         Row: {
-          advance_months: number | null
-          annual_premium: number
+          annual_premium: number | null
+          cancellation_date: string | null
+          cancellation_reason: string | null
           carrier_id: string
           client_id: string | null
           commission_percentage: number | null
           created_at: string | null
-          created_by: string | null
           effective_date: string
           expiration_date: string | null
           id: string
-          monthly_premium: number | null
+          monthly_premium: number
           notes: string | null
-          payment_frequency: string | null
+          payment_frequency:
+            | Database["public"]["Enums"]["payment_frequency"]
+            | null
           policy_number: string
-          product: string | null
+          product: Database["public"]["Enums"]["product_type"]
           product_id: string | null
           referral_source: string | null
-          status: string | null
+          status: string
           term_length: number | null
           updated_at: string | null
           user_id: string | null
         }
         Insert: {
-          advance_months?: number | null
-          annual_premium: number
+          annual_premium?: number | null
+          cancellation_date?: string | null
+          cancellation_reason?: string | null
           carrier_id: string
           client_id?: string | null
           commission_percentage?: number | null
           created_at?: string | null
-          created_by?: string | null
           effective_date: string
           expiration_date?: string | null
           id?: string
-          monthly_premium?: number | null
+          monthly_premium: number
           notes?: string | null
-          payment_frequency?: string | null
+          payment_frequency?:
+            | Database["public"]["Enums"]["payment_frequency"]
+            | null
           policy_number: string
-          product?: string | null
+          product: Database["public"]["Enums"]["product_type"]
           product_id?: string | null
           referral_source?: string | null
-          status?: string | null
+          status?: string
           term_length?: number | null
           updated_at?: string | null
           user_id?: string | null
         }
         Update: {
-          advance_months?: number | null
-          annual_premium?: number
+          annual_premium?: number | null
+          cancellation_date?: string | null
+          cancellation_reason?: string | null
           carrier_id?: string
           client_id?: string | null
           commission_percentage?: number | null
           created_at?: string | null
-          created_by?: string | null
           effective_date?: string
           expiration_date?: string | null
           id?: string
-          monthly_premium?: number | null
+          monthly_premium?: number
           notes?: string | null
-          payment_frequency?: string | null
+          payment_frequency?:
+            | Database["public"]["Enums"]["payment_frequency"]
+            | null
           policy_number?: string
-          product?: string | null
+          product?: Database["public"]["Enums"]["product_type"]
           product_id?: string | null
           referral_source?: string | null
-          status?: string | null
+          status?: string
           term_length?: number | null
           updated_at?: string | null
           user_id?: string | null
@@ -459,24 +632,57 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "policies_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "policies_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
             referencedColumns: ["id"]
           },
+        ]
+      }
+      product_commission_overrides: {
+        Row: {
+          bonus_percentage: number | null
+          commission_percentage: number
+          comp_level: Database["public"]["Enums"]["comp_level"]
+          created_at: string | null
+          effective_date: string
+          expiration_date: string | null
+          id: string
+          notes: string | null
+          product_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          bonus_percentage?: number | null
+          commission_percentage: number
+          comp_level: Database["public"]["Enums"]["comp_level"]
+          created_at?: string | null
+          effective_date?: string
+          expiration_date?: string | null
+          id?: string
+          notes?: string | null
+          product_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          bonus_percentage?: number | null
+          commission_percentage?: number
+          comp_level?: Database["public"]["Enums"]["comp_level"]
+          created_at?: string | null
+          effective_date?: string
+          expiration_date?: string | null
+          id?: string
+          notes?: string | null
+          product_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
           {
-            foreignKeyName: "policies_user_id_fkey"
-            columns: ["user_id"]
+            foreignKeyName: "product_commission_overrides_product_id_fkey"
+            columns: ["product_id"]
             isOneToOne: false
-            referencedRelation: "users"
+            referencedRelation: "products"
             referencedColumns: ["id"]
           },
         ]
@@ -490,8 +696,13 @@ export type Database = {
           description: string | null
           id: string
           is_active: boolean | null
+          max_age: number | null
+          max_premium: number | null
+          metadata: Json | null
+          min_age: number | null
+          min_premium: number | null
           name: string
-          product_type: string
+          product_type: Database["public"]["Enums"]["product_type"]
           updated_at: string | null
         }
         Insert: {
@@ -502,8 +713,13 @@ export type Database = {
           description?: string | null
           id?: string
           is_active?: boolean | null
+          max_age?: number | null
+          max_premium?: number | null
+          metadata?: Json | null
+          min_age?: number | null
+          min_premium?: number | null
           name: string
-          product_type: string
+          product_type: Database["public"]["Enums"]["product_type"]
           updated_at?: string | null
         }
         Update: {
@@ -514,8 +730,13 @@ export type Database = {
           description?: string | null
           id?: string
           is_active?: boolean | null
+          max_age?: number | null
+          max_premium?: number | null
+          metadata?: Json | null
+          min_age?: number | null
+          min_premium?: number | null
           name?: string
-          product_type?: string
+          product_type?: Database["public"]["Enums"]["product_type"]
           updated_at?: string | null
         }
         Relationships: [
@@ -528,40 +749,95 @@ export type Database = {
           },
         ]
       }
+      products_backup_20251103: {
+        Row: {
+          carrier_id: string | null
+          code: string | null
+          commission_percentage: number | null
+          created_at: string | null
+          description: string | null
+          id: string | null
+          is_active: boolean | null
+          max_age: number | null
+          max_premium: number | null
+          metadata: Json | null
+          min_age: number | null
+          min_premium: number | null
+          name: string | null
+          product_type: Database["public"]["Enums"]["product_type"] | null
+          updated_at: string | null
+        }
+        Insert: {
+          carrier_id?: string | null
+          code?: string | null
+          commission_percentage?: number | null
+          created_at?: string | null
+          description?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          max_age?: number | null
+          max_premium?: number | null
+          metadata?: Json | null
+          min_age?: number | null
+          min_premium?: number | null
+          name?: string | null
+          product_type?: Database["public"]["Enums"]["product_type"] | null
+          updated_at?: string | null
+        }
+        Update: {
+          carrier_id?: string | null
+          code?: string | null
+          commission_percentage?: number | null
+          created_at?: string | null
+          description?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          max_age?: number | null
+          max_premium?: number | null
+          metadata?: Json | null
+          min_age?: number | null
+          min_premium?: number | null
+          name?: string | null
+          product_type?: Database["public"]["Enums"]["product_type"] | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       settings: {
         Row: {
           created_at: string | null
+          currency: string | null
+          default_commission_rate: number | null
+          fiscal_year_start: number | null
           id: string
-          key: string
+          notifications_enabled: boolean | null
+          tax_rate: number | null
           updated_at: string | null
           user_id: string | null
-          value: Json | null
         }
         Insert: {
           created_at?: string | null
+          currency?: string | null
+          default_commission_rate?: number | null
+          fiscal_year_start?: number | null
           id?: string
-          key: string
+          notifications_enabled?: boolean | null
+          tax_rate?: number | null
           updated_at?: string | null
           user_id?: string | null
-          value?: Json | null
         }
         Update: {
           created_at?: string | null
+          currency?: string | null
+          default_commission_rate?: number | null
+          fiscal_year_start?: number | null
           id?: string
-          key?: string
+          notifications_enabled?: boolean | null
+          tax_rate?: number | null
           updated_at?: string | null
           user_id?: string | null
-          value?: Json | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "settings_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       user_targets: {
         Row: {
@@ -630,6 +906,160 @@ export type Database = {
       }
     }
     Views: {
+      commission_chargeback_summary: {
+        Row: {
+          at_risk_amount: number | null
+          chargeback_rate_percentage: number | null
+          charged_back_count: number | null
+          high_risk_count: number | null
+          total_advances: number | null
+          total_chargeback_amount: number | null
+          total_chargebacks: number | null
+          total_earned: number | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
+      commission_earning_detail: {
+        Row: {
+          advance_amount: number | null
+          advance_months: number | null
+          annual_premium: number | null
+          chargeback_amount: number | null
+          chargeback_risk_level: string | null
+          commission_id: string | null
+          earned_amount: number | null
+          effective_date: string | null
+          is_fully_earned: boolean | null
+          monthly_earning_rate: number | null
+          months_paid: number | null
+          months_remaining: number | null
+          policy_id: string | null
+          policy_status: string | null
+          status: string | null
+          unearned_amount: number | null
+          user_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commissions_policy_id_fkey"
+            columns: ["policy_id"]
+            isOneToOne: false
+            referencedRelation: "policies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      commission_earning_status: {
+        Row: {
+          advance_amount: number | null
+          advance_months: number | null
+          chargeback_amount: number | null
+          chargeback_date: string | null
+          chargeback_reason: string | null
+          chargeback_risk: string | null
+          created_at: string | null
+          earned_amount: number | null
+          id: string | null
+          is_fully_earned: boolean | null
+          last_payment_date: string | null
+          monthly_earning_rate: number | null
+          months_paid: number | null
+          months_remaining: number | null
+          percentage_earned: number | null
+          policy_id: string | null
+          status: string | null
+          type: string | null
+          unearned_amount: number | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          advance_amount?: number | null
+          advance_months?: number | null
+          chargeback_amount?: number | null
+          chargeback_date?: string | null
+          chargeback_reason?: string | null
+          chargeback_risk?: never
+          created_at?: string | null
+          earned_amount?: number | null
+          id?: string | null
+          is_fully_earned?: never
+          last_payment_date?: string | null
+          monthly_earning_rate?: never
+          months_paid?: number | null
+          months_remaining?: never
+          percentage_earned?: never
+          policy_id?: string | null
+          status?: string | null
+          type?: string | null
+          unearned_amount?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          advance_amount?: number | null
+          advance_months?: number | null
+          chargeback_amount?: number | null
+          chargeback_date?: string | null
+          chargeback_reason?: string | null
+          chargeback_risk?: never
+          created_at?: string | null
+          earned_amount?: number | null
+          id?: string | null
+          is_fully_earned?: never
+          last_payment_date?: string | null
+          monthly_earning_rate?: never
+          months_paid?: number | null
+          months_remaining?: never
+          percentage_earned?: never
+          policy_id?: string | null
+          status?: string | null
+          type?: string | null
+          unearned_amount?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commissions_policy_id_fkey"
+            columns: ["policy_id"]
+            isOneToOne: false
+            referencedRelation: "policies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      commission_earning_summary: {
+        Row: {
+          at_risk_count: number | null
+          avg_months_paid: number | null
+          fully_earned_count: number | null
+          portfolio_earned_percentage: number | null
+          total_advances: number | null
+          total_chargebacks: number | null
+          total_commissions: number | null
+          total_earned: number | null
+          total_unearned: number | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
+      unearned_commission_summary: {
+        Row: {
+          at_risk_count: number | null
+          avg_months_paid: number | null
+          fully_earned_count: number | null
+          portfolio_earned_percentage: number | null
+          total_advances: number | null
+          total_chargebacks: number | null
+          total_commissions: number | null
+          total_earned: number | null
+          total_unearned: number | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
       users: {
         Row: {
           agent_code: string | null
@@ -677,44 +1107,175 @@ export type Database = {
       }
     }
     Functions: {
+      calculate_chargeback_on_policy_lapse: {
+        Args: { p_lapse_date?: string; p_policy_id: string }
+        Returns: Json
+      }
       calculate_commission_advance: {
         Args: {
+          p_advance_months: number
           p_annual_premium: number
           p_commission_percentage: number
-          p_advance_months: number
           p_contract_level?: number
         }
         Returns: number
       }
-      get_user_profile: {
+      calculate_earned_amount: {
         Args: {
-          user_id: string
+          p_advance_months: number
+          p_amount: number
+          p_months_paid: number
+        }
+        Returns: number
+      }
+      calculate_months_paid: {
+        Args: { p_effective_date: string; p_end_date?: string }
+        Returns: number
+      }
+      calculate_unearned_amount: {
+        Args: {
+          p_advance_months: number
+          p_amount: number
+          p_months_paid: number
+        }
+        Returns: number
+      }
+      get_at_risk_commissions: {
+        Args: { p_risk_threshold?: number; p_user_id: string }
+        Returns: {
+          advance_amount: number
+          commission_id: string
+          earned_amount: number
+          effective_date: string
+          months_paid: number
+          policy_id: string
+          policy_status: string
+          risk_level: string
+          unearned_amount: number
+        }[]
+      }
+      get_policies_paginated: {
+        Args: {
+          p_carrier_id?: string
+          p_cursor?: string
+          p_limit?: number
+          p_product_id?: string
+          p_status?: string
+          p_user_id?: string
         }
         Returns: {
+          annual_premium: number
+          carrier_id: string
+          carrier_name: string
+          client: Json
+          commission_percentage: number
+          created_at: string
+          effective_date: string
           id: string
-          email: string
-          name: string
-          phone: string
-          contract_comp_level: number
-          is_active: boolean
+          payment_frequency: Database["public"]["Enums"]["payment_frequency"]
+          policy_number: string
+          product: Database["public"]["Enums"]["product_type"]
+          product_id: string
+          product_name: string
+          status: Database["public"]["Enums"]["policy_status"]
+          user_id: string
+        }[]
+      }
+      get_policy_count: {
+        Args: {
+          p_carrier_id?: string
+          p_product_id?: string
+          p_status?: string
+          p_user_id?: string
+        }
+        Returns: number
+      }
+      get_product_commission_rate: {
+        Args: {
+          p_comp_level: Database["public"]["Enums"]["comp_level"]
+          p_date?: string
+          p_product_id: string
+        }
+        Returns: number
+      }
+      get_user_commission_profile: {
+        Args: { p_lookback_months?: number; p_user_id: string }
+        Returns: {
+          calculated_at: string
+          contract_level: number
+          data_quality: string
+          product_breakdown: Json
+          simple_avg_rate: number
+          weighted_avg_rate: number
+        }[]
+      }
+      get_user_profile: {
+        Args: { user_id: string }
+        Returns: {
           agent_code: string
+          contract_comp_level: number
+          created_at: string
+          email: string
+          id: string
+          is_active: boolean
           license_number: string
           license_state: string
+          name: string
           notes: string
-          created_at: string
+          phone: string
           updated_at: string
         }[]
       }
-      update_user_metadata: {
+      mark_policy_cancelled: {
         Args: {
-          user_id: string
-          metadata: Json
+          p_cancellation_date?: string
+          p_cancellation_reason?: string
+          p_policy_id: string
         }
+        Returns: Json
+      }
+      mark_policy_lapsed: {
+        Args: {
+          p_lapse_date?: string
+          p_lapse_reason?: string
+          p_policy_id: string
+        }
+        Returns: Json
+      }
+      update_user_metadata: {
+        Args: { metadata: Json; user_id: string }
         Returns: undefined
       }
     }
     Enums: {
-      [_ in never]: never
+      chargeback_status: "pending" | "resolved" | "disputed"
+      commission_status:
+        | "pending"
+        | "paid"
+        | "reversed"
+        | "disputed"
+        | "clawback"
+        | "charged_back"
+      comp_level: "street" | "release" | "enhanced" | "premium"
+      expense_category:
+        | "insurance_leads"
+        | "software_tools"
+        | "office_remote"
+        | "professional_services"
+        | "marketing"
+        | "uncategorized"
+      expense_type: "personal" | "business"
+      file_type: "csv" | "pdf" | "xlsx"
+      payment_frequency: "monthly" | "quarterly" | "semi_annual" | "annual"
+      policy_status: "active" | "pending" | "lapsed" | "cancelled" | "expired"
+      product_type:
+        | "term_life"
+        | "whole_life"
+        | "universal_life"
+        | "variable_life"
+        | "health"
+        | "disability"
+        | "annuity"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -722,27 +1283,33 @@ export type Database = {
   }
 }
 
-type PublicSchema = Database[Extract<keyof Database, "public">]
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
 
 export type Tables<
-  PublicTableNameOrOptions extends
-    | keyof (PublicSchema["Tables"] & PublicSchema["Views"])
-    | { schema: keyof Database },
-  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
-    ? keyof (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
-        Database[PublicTableNameOrOptions["schema"]]["Views"])
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
     : never = never,
-> = PublicTableNameOrOptions extends { schema: keyof Database }
-  ? (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
-      Database[PublicTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
       Row: infer R
     }
     ? R
     : never
-  : PublicTableNameOrOptions extends keyof (PublicSchema["Tables"] &
-        PublicSchema["Views"])
-    ? (PublicSchema["Tables"] &
-        PublicSchema["Views"])[PublicTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
         Row: infer R
       }
       ? R
@@ -750,20 +1317,24 @@ export type Tables<
     : never
 
 export type TablesInsert<
-  PublicTableNameOrOptions extends
-    | keyof PublicSchema["Tables"]
-    | { schema: keyof Database },
-  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
-    ? keyof Database[PublicTableNameOrOptions["schema"]]["Tables"]
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
-> = PublicTableNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Insert: infer I
     }
     ? I
     : never
-  : PublicTableNameOrOptions extends keyof PublicSchema["Tables"]
-    ? PublicSchema["Tables"][PublicTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
         Insert: infer I
       }
       ? I
@@ -771,20 +1342,24 @@ export type TablesInsert<
     : never
 
 export type TablesUpdate<
-  PublicTableNameOrOptions extends
-    | keyof PublicSchema["Tables"]
-    | { schema: keyof Database },
-  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
-    ? keyof Database[PublicTableNameOrOptions["schema"]]["Tables"]
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
-> = PublicTableNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Update: infer U
     }
     ? U
     : never
-  : PublicTableNameOrOptions extends keyof PublicSchema["Tables"]
-    ? PublicSchema["Tables"][PublicTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
         Update: infer U
       }
       ? U
@@ -792,30 +1367,73 @@ export type TablesUpdate<
     : never
 
 export type Enums<
-  PublicEnumNameOrOptions extends
-    | keyof PublicSchema["Enums"]
-    | { schema: keyof Database },
-  EnumName extends PublicEnumNameOrOptions extends { schema: keyof Database }
-    ? keyof Database[PublicEnumNameOrOptions["schema"]]["Enums"]
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
     : never = never,
-> = PublicEnumNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicEnumNameOrOptions["schema"]]["Enums"][EnumName]
-  : PublicEnumNameOrOptions extends keyof PublicSchema["Enums"]
-    ? PublicSchema["Enums"][PublicEnumNameOrOptions]
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
     : never
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
-    | keyof PublicSchema["CompositeTypes"]
-    | { schema: keyof Database },
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
-    schema: keyof Database
+    schema: keyof DatabaseWithoutInternals
   }
-    ? keyof Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
     : never = never,
-> = PublicCompositeTypeNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
-  : PublicCompositeTypeNameOrOptions extends keyof PublicSchema["CompositeTypes"]
-    ? PublicSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never
 
+export const Constants = {
+  public: {
+    Enums: {
+      chargeback_status: ["pending", "resolved", "disputed"],
+      commission_status: [
+        "pending",
+        "paid",
+        "reversed",
+        "disputed",
+        "clawback",
+        "charged_back",
+      ],
+      comp_level: ["street", "release", "enhanced", "premium"],
+      expense_category: [
+        "insurance_leads",
+        "software_tools",
+        "office_remote",
+        "professional_services",
+        "marketing",
+        "uncategorized",
+      ],
+      expense_type: ["personal", "business"],
+      file_type: ["csv", "pdf", "xlsx"],
+      payment_frequency: ["monthly", "quarterly", "semi_annual", "annual"],
+      policy_status: ["active", "pending", "lapsed", "cancelled", "expired"],
+      product_type: [
+        "term_life",
+        "whole_life",
+        "universal_life",
+        "variable_life",
+        "health",
+        "disability",
+        "annuity",
+      ],
+    },
+  },
+} as const

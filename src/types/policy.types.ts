@@ -41,10 +41,10 @@ export interface Policy {
   userId?: string; // Links to auth.users
   product: ProductType; // Product type enum (kept for backward compatibility)
   productDetails?: Product; // Full product object when joined (NEW)
-  submitDate?: Date; // Date when policy was submitted
-  effectiveDate: Date;
+  submitDate?: string; // Date string in YYYY-MM-DD format to avoid timezone issues
+  effectiveDate: string; // Date string in YYYY-MM-DD format to avoid timezone issues
   termLength?: number; // in years
-  expirationDate?: Date;
+  expirationDate?: string; // Date string in YYYY-MM-DD format to avoid timezone issues
 
   // Financial Details
   annualPremium: number;
@@ -54,10 +54,10 @@ export interface Policy {
   // Note: advanceMonths removed - now only stored in commissions table
 
   // Metadata
-  createdAt: Date;
-  updatedAt: Date;
-  created_at?: Date; // Optional for BaseEntity compatibility
-  updated_at?: Date; // Optional for BaseEntity compatibility
+  createdAt: string;
+  updatedAt: string;
+  created_at?: string; // Optional for BaseEntity compatibility
+  updated_at?: string; // Optional for BaseEntity compatibility
   createdBy?: string;
   notes?: string;
 }

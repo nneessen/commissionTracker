@@ -21,6 +21,7 @@ import {
   ResetPassword,
   EmailVerificationPending,
 } from "./features/auth";
+import { ReportsPage } from "./features/reports";
 
 // Create root route with App layout
 const rootRoute = createRootRoute({
@@ -115,16 +116,11 @@ const targetsRoute = createRoute({
   component: TargetsPage,
 });
 
-// Reports route (coming soon)
+// Reports route
 const reportsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "reports",
-  component: () => (
-    <div className="coming-soon-container p-8">
-      <h2 className="text-2xl font-bold text-gray-900 mb-4">Reports</h2>
-      <p className="text-gray-600">This feature is coming soon!</p>
-    </div>
-  ),
+  component: ReportsPage,
 });
 
 // Expenses route
