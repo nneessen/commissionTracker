@@ -121,7 +121,7 @@ export function ForecastChart({
   return (
     <div>
       {/* Title */}
-      <div className="text-sm font-semibold text-gray-900 mb-4 uppercase tracking-wide">
+      <div className="text-sm font-semibold text-foreground mb-4 uppercase tracking-wide">
         {title}
       </div>
 

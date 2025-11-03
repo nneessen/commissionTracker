@@ -74,8 +74,9 @@ export function calculateContribution(
   const currentPolicies = currentPeriodPolicies.length;
   const currentCommission = currentPeriodCommissions.reduce((sum, c) => sum + (c.amount || 0), 0);
   // Commission rate is already stored as decimal (0.95 for 95%) in database
-  const currentAvgRate = currentPolicies > 0
-    ? currentPeriodCommissions.reduce((sum, c) => sum + (c.commissionRate || 0), 0) / currentPolicies
+  // FIX: Divide by commission count, not policy count for accurate average
+  const currentAvgRate = currentPeriodCommissions.length > 0
+    ? currentPeriodCommissions.reduce((sum, c) => sum + (c.commissionRate || 0), 0) / currentPeriodCommissions.length
     : 0;
   const currentAvgPremium = currentPolicies > 0
     ? currentPeriodPolicies.reduce((sum, p) => sum + (p.annualPremium || 0), 0) / currentPolicies
@@ -85,8 +86,9 @@ export function calculateContribution(
   const previousPolicies = previousPeriodPolicies.length;
   const previousCommission = previousPeriodCommissions.reduce((sum, c) => sum + (c.amount || 0), 0);
   // Commission rate is already stored as decimal (0.95 for 95%) in database
-  const previousAvgRate = previousPolicies > 0
-    ? previousPeriodCommissions.reduce((sum, c) => sum + (c.commissionRate || 0), 0) / previousPolicies
+  // FIX: Divide by commission count, not policy count for accurate average
+  const previousAvgRate = previousPeriodCommissions.length > 0
+    ? previousPeriodCommissions.reduce((sum, c) => sum + (c.commissionRate || 0), 0) / previousPeriodCommissions.length
     : 0;
   const previousAvgPremium = previousPolicies > 0
     ? previousPeriodPolicies.reduce((sum, p) => sum + (p.annualPremium || 0), 0) / previousPolicies
@@ -103,11 +105,12 @@ export function calculateContribution(
   // Mix effect: Change in average premium (product mix shift)
   const mixEffect = currentPolicies * (currentAvgPremium - previousAvgPremium) * currentAvgRate;
 
-  // Calculate percentages
-  const totalAbsoluteChange = Math.abs(volumeEffect) + Math.abs(rateEffect) + Math.abs(mixEffect);
-  const volumePercent = totalAbsoluteChange > 0 ? (Math.abs(volumeEffect) / totalAbsoluteChange) * 100 : 0;
-  const ratePercent = totalAbsoluteChange > 0 ? (Math.abs(rateEffect) / totalAbsoluteChange) * 100 : 0;
-  const mixPercent = totalAbsoluteChange > 0 ? (Math.abs(mixEffect) / totalAbsoluteChange) * 100 : 0;
+  // Calculate percentages - preserve signs to show positive/negative contributions
+  // FIX: Use actual total change for percentage calculations, not sum of absolutes
+  // This way, negative effects are properly shown as reducing total commission
+  const volumePercent = totalChange !== 0 ? (volumeEffect / Math.abs(totalChange)) * 100 : 0;
+  const ratePercent = totalChange !== 0 ? (rateEffect / Math.abs(totalChange)) * 100 : 0;
+  const mixPercent = totalChange !== 0 ? (mixEffect / Math.abs(totalChange)) * 100 : 0;
 
   return {
     totalChange,

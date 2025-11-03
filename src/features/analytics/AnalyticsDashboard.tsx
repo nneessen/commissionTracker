@@ -1,14 +1,13 @@
 // src/features/analytics/AnalyticsDashboard.tsx
 
-import React, { useState, lazy, Suspense } from "react";
+import React, { lazy, Suspense } from "react";
 import {
   TimePeriodSelector,
-  AdvancedTimePeriod,
-  getAdvancedDateRange,
 } from "./components/TimePeriodSelector";
 import { Button } from "@/components/ui/button";
 import { useAnalyticsData } from "../../hooks/useAnalyticsData";
 import { downloadCSV, printAnalyticsToPDF } from "../../utils/exportHelpers";
+import { AnalyticsDateProvider, useAnalyticsDateRange } from "./context/AnalyticsDateContext";
 
 // Lazy load analytics components for better performance
 const PerformanceAttribution = lazy(() =>
@@ -26,28 +25,21 @@ const CommissionDeepDive = lazy(() =>
 const ProductMatrix = lazy(() =>
   import("./components").then((m) => ({ default: m.ProductMatrix })),
 );
+const CarriersProductsBreakdown = lazy(() =>
+  import("./components").then((m) => ({ default: m.CarriersProductsBreakdown })),
+);
 const GeographicAnalysis = lazy(() =>
   import("./components").then((m) => ({ default: m.GeographicAnalysis })),
 );
 const PredictiveAnalytics = lazy(() =>
   import("./components").then((m) => ({ default: m.PredictiveAnalytics })),
 );
-const EfficiencyMetrics = lazy(() =>
+const CarrierPerformance = lazy(() =>
   import("./components").then((m) => ({ default: m.EfficiencyMetrics })),
 );
 
-export function AnalyticsDashboard() {
-  const [timePeriod, setTimePeriod] = useState<AdvancedTimePeriod>("MTD");
-  const [customRange, setCustomRange] = useState<{
-    startDate: Date;
-    endDate: Date;
-  }>({
-    startDate: new Date(),
-    endDate: new Date(),
-  });
-
-  // React 19.1 optimizes automatically - no need for useMemo
-  const dateRange = getAdvancedDateRange(timePeriod, customRange);
+function AnalyticsDashboardContent() {
+  const { timePeriod, setTimePeriod, customRange, setCustomRange, dateRange } = useAnalyticsDateRange();
 
   const analyticsData = useAnalyticsData({
     startDate: dateRange.startDate,
@@ -165,6 +157,9 @@ export function AnalyticsDashboard() {
                 <ProductMatrix />
               </Suspense>
               <Suspense fallback={<div className="p-5 text-center text-muted-foreground">Loading...</div>}>
+                <CarriersProductsBreakdown />
+              </Suspense>
+              <Suspense fallback={<div className="p-5 text-center text-muted-foreground">Loading...</div>}>
                 <GeographicAnalysis />
               </Suspense>
             </div>
@@ -181,7 +176,7 @@ export function AnalyticsDashboard() {
                 <CommissionDeepDive />
               </Suspense>
               <Suspense fallback={<div className="p-5 text-center text-muted-foreground">Loading...</div>}>
-                <EfficiencyMetrics />
+                <CarrierPerformance />
               </Suspense>
             </div>
           </div>
@@ -195,5 +190,13 @@ export function AnalyticsDashboard() {
         </div>
       </div>
     </>
+  );
+}
+
+export function AnalyticsDashboard() {
+  return (
+    <AnalyticsDateProvider>
+      <AnalyticsDashboardContent />
+    </AnalyticsDateProvider>
   );
 }

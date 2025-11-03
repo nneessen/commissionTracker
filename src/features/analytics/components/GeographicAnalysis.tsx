@@ -4,12 +4,17 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { USMap, StateData } from '../visualizations';
 import { useAnalyticsData } from '../../../hooks';
+import { useAnalyticsDateRange } from '../context/AnalyticsDateContext';
 
 /**
  * GeographicAnalysis - State-level performance analysis
  */
 export function GeographicAnalysis() {
-  const { raw, isLoading } = useAnalyticsData();
+  const { dateRange } = useAnalyticsDateRange();
+  const { raw, isLoading } = useAnalyticsData({
+    startDate: dateRange.startDate,
+    endDate: dateRange.endDate,
+  });
 
   if (isLoading) {
     return (

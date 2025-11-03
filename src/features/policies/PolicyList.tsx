@@ -62,7 +62,6 @@ import { useCancelPolicy, useLapsePolicy, useReinstatePolicy, useDeletePolicy } 
 import { usePoliciesView } from "../../hooks/policies/usePoliciesView";
 import { Policy, PolicyFilters, PolicyStatus } from "../../types/policy.types";
 import { ProductType, CommissionStatus } from "../../types/commission.types";
-import { calculateCommissionAdvance } from "../../utils/policyCalculations";
 import { formatCurrency, formatDate } from "../../lib/format";
 import { normalizeDatabaseDate } from "../../lib/date";
 
@@ -573,11 +572,9 @@ export const PolicyList: React.FC<PolicyListProps> = ({ onEditPolicy, onNewPolic
               policies.map((policy) => {
                 const carrier = getCarrierById(policy.carrierId);
                 const policyCommission = commissionsByPolicy[policy.id];
-                const commission = calculateCommissionAdvance(
-                  policy.annualPremium,
-                  policy.commissionPercentage,
-                  9
-                );
+                // Use actual commission amount from database (includes contract level multiplier)
+                // Fallback to 0 if no commission record exists
+                const commission = policyCommission?.amount || 0;
 
                 return (
                   <TableRow

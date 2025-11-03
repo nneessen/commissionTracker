@@ -8,6 +8,7 @@ import { Info, X } from 'lucide-react';
 import { WaterfallChart } from '../visualizations';
 import { useAnalyticsData } from '../../../hooks';
 import { cn } from '@/lib/utils';
+import { useAnalyticsDateRange } from '../context/AnalyticsDateContext';
 
 /**
  * PerformanceAttribution - Contribution breakdown analysis
@@ -18,8 +19,12 @@ import { cn } from '@/lib/utils';
  * - Mix effects (product composition shifts)
  */
 export function PerformanceAttribution() {
-  // Don't pass date range - parent handles filtering via React Context or we accept all data
-  const { attribution, isLoading } = useAnalyticsData();
+  // Use the shared date range from context
+  const { dateRange } = useAnalyticsDateRange();
+  const { attribution, isLoading } = useAnalyticsData({
+    startDate: dateRange.startDate,
+    endDate: dateRange.endDate,
+  });
   const [showInfo, setShowInfo] = useState(false);
 
   if (isLoading) {
@@ -27,7 +32,7 @@ export function PerformanceAttribution() {
       <Card>
         <CardContent className="p-5">
           <div className="text-sm font-semibold text-foreground mb-4 uppercase tracking-wide">
-            Performance Attribution
+            What Changed My Income?
           </div>
           <div className="p-10 text-center text-muted-foreground text-xs">
             Loading attribution data...
@@ -64,10 +69,10 @@ export function PerformanceAttribution() {
           <div className="flex items-center gap-2">
             <div>
               <div className="text-sm font-semibold text-foreground uppercase tracking-wide">
-                Performance Attribution
+                What Changed My Income?
               </div>
               <div className="text-xs text-muted-foreground mt-1">
-                Month-over-month change breakdown
+                Understanding your commission changes
               </div>
             </div>
             {/* Info Icon Button */}
@@ -116,9 +121,9 @@ export function PerformanceAttribution() {
 
               <div className="mb-3 pl-4">
                 <div className="mb-2">
-                  <strong className="text-primary">Volume Effect (Purple):</strong>
+                  <strong className="text-primary">Policy Count Impact (Purple):</strong>
                   <div className="mt-1 text-muted-foreground">
-                    Did you sell MORE or FEWER policies?
+                    How did the number of policies you sold affect your income?
                     <div className="text-xs mt-0.5">
                       Example: Selling <span className="text-success font-bold">10 policies</span> instead of 5 = positive volume effect
                     </div>
@@ -126,9 +131,9 @@ export function PerformanceAttribution() {
                 </div>
 
                 <div className="mb-2">
-                  <strong className="text-success">Rate Effect (Green):</strong>
+                  <strong className="text-success">Commission % Change (Green):</strong>
                   <div className="mt-1 text-muted-foreground">
-                    Did your commission PERCENTAGE change?
+                    How did changes in commission rates affect your income?
                     <div className="text-xs mt-0.5">
                       Example: Moving from 50% to <span className="text-success font-bold">75% commission rate</span> = positive rate effect
                     </div>
@@ -136,9 +141,9 @@ export function PerformanceAttribution() {
                 </div>
 
                 <div className="mb-2">
-                  <strong className="text-info">Mix Effect (Blue):</strong>
+                  <strong className="text-info">Product Type Impact (Blue):</strong>
                   <div className="mt-1 text-muted-foreground">
-                    Did you sell different TYPES of products?
+                    How did selling different product types affect your income?
                     <div className="text-xs mt-0.5">
                       Example: Selling more <span className="text-info font-bold">whole life</span> (higher premium) vs term = positive mix effect
                     </div>
@@ -170,12 +175,12 @@ export function PerformanceAttribution() {
         {/* Summary Cards */}
         <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3 mb-6">
           {/* Volume Effect */}
-          <Card className="bg-gradient-to-br from-primary/20 via-accent/10 to-card shadow-md hover:shadow-lg transition-all duration-200">
+          <Card className="bg-muted/30 border-primary/20 shadow-sm hover:shadow-md transition-all duration-200">
             <CardContent className="p-3">
               <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">
-                Volume Effect
+                Policy Count Impact
               </div>
-              <div className="text-sm font-bold text-primary font-mono mb-1">
+              <div className="text-sm font-bold text-foreground font-mono mb-1">
                 {formatCurrency(contribution.volumeEffect)}
               </div>
               <div className="text-xs text-muted-foreground">
@@ -185,12 +190,12 @@ export function PerformanceAttribution() {
           </Card>
 
           {/* Rate Effect */}
-          <Card className="bg-gradient-to-br from-success/20 via-status-active/10 to-card shadow-md hover:shadow-lg transition-all duration-200">
+          <Card className="bg-muted/30 border-success/20 shadow-sm hover:shadow-md transition-all duration-200">
             <CardContent className="p-3">
               <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">
-                Rate Effect
+                Commission % Change
               </div>
-              <div className="text-sm font-bold text-success font-mono mb-1">
+              <div className="text-sm font-bold text-foreground font-mono mb-1">
                 {formatCurrency(contribution.rateEffect)}
               </div>
               <div className="text-xs text-muted-foreground">
@@ -200,12 +205,12 @@ export function PerformanceAttribution() {
           </Card>
 
           {/* Mix Effect */}
-          <Card className="bg-gradient-to-br from-info/20 via-status-earned/10 to-card shadow-md hover:shadow-lg transition-all duration-200">
+          <Card className="bg-muted/30 border-info/20 shadow-sm hover:shadow-md transition-all duration-200">
             <CardContent className="p-3">
               <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">
-                Mix Effect
+                Product Type Impact
               </div>
-              <div className="text-sm font-bold text-info font-mono mb-1">
+              <div className="text-sm font-bold text-foreground font-mono mb-1">
                 {formatCurrency(contribution.mixEffect)}
               </div>
               <div className="text-xs text-muted-foreground">

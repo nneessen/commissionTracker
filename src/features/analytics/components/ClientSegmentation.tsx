@@ -8,6 +8,7 @@ import { useAnalyticsData } from '../../../hooks';
 import { ClientSegmentationInfoPanel } from './ClientSegmentationInfoPanel';
 import { SegmentCard, SegmentTier } from './SegmentCard';
 import { CrossSellOpportunityCard } from './CrossSellOpportunityCard';
+import { useAnalyticsDateRange } from '../context/AnalyticsDateContext';
 
 /**
  * ClientSegmentation - Client value segmentation and opportunities
@@ -15,7 +16,11 @@ import { CrossSellOpportunityCard } from './CrossSellOpportunityCard';
  * Segments clients by value (High/Medium/Low) and identifies cross-sell opportunities
  */
 export function ClientSegmentation() {
-  const { segmentation, isLoading } = useAnalyticsData();
+  const { dateRange } = useAnalyticsDateRange();
+  const { segmentation, isLoading } = useAnalyticsData({
+    startDate: dateRange.startDate,
+    endDate: dateRange.endDate,
+  });
   const [showInfo, setShowInfo] = useState(false);
 
   // Transform segmentation data into displayable format

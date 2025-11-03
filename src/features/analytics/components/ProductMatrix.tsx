@@ -7,12 +7,17 @@ import { Button } from '@/components/ui/button';
 import { Info, X } from 'lucide-react';
 import { useAnalyticsData } from '../../../hooks';
 import { cn } from '@/lib/utils';
+import { useAnalyticsDateRange } from '../context/AnalyticsDateContext';
 
 /**
  * ProductMatrix - Product performance matrix
  */
 export function ProductMatrix() {
-  const { attribution, isLoading } = useAnalyticsData();
+  const { dateRange } = useAnalyticsDateRange();
+  const { attribution, isLoading } = useAnalyticsData({
+    startDate: dateRange.startDate,
+    endDate: dateRange.endDate,
+  });
   const [showInfo, setShowInfo] = useState(false);
 
   if (isLoading) {
@@ -27,6 +32,14 @@ export function ProductMatrix() {
 
   const { productMix } = attribution;
   const latestMonth = productMix[productMix.length - 1];
+
+  // Helper function to format product names (whole_life -> Whole Life)
+  const formatProductName = (product: string): string => {
+    return product
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  };
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -131,7 +144,7 @@ export function ProductMatrix() {
                   <div className="flex justify-between items-center">
                     <div>
                       <div className="text-xs font-semibold text-foreground mb-1">
-                        {product.product}
+                        {formatProductName(product.product)}
                       </div>
                       <div className="text-[10px] text-muted-foreground">
                         {product.count} policies · {product.percentage.toFixed(1)}%

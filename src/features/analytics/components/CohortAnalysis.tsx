@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Info, X } from 'lucide-react';
 import { CohortHeatmap } from '../visualizations';
 import { useAnalyticsData } from '../../../hooks';
+import { useAnalyticsDateRange } from '../context/AnalyticsDateContext';
 
 /**
  * CohortAnalysis - Retention and cohort performance tracking
@@ -15,7 +16,11 @@ import { useAnalyticsData } from '../../../hooks';
  * Tracks retention, chargebacks, and earning progress over time
  */
 export function CohortAnalysis() {
-  const { cohort, isLoading } = useAnalyticsData();
+  const { dateRange } = useAnalyticsDateRange();
+  const { cohort, isLoading } = useAnalyticsData({
+    startDate: dateRange.startDate,
+    endDate: dateRange.endDate,
+  });
   const [showInfo, setShowInfo] = useState(false);
 
   if (isLoading) {
@@ -23,7 +28,7 @@ export function CohortAnalysis() {
       <Card>
         <CardContent className="p-5">
           <div className="text-sm font-semibold text-foreground mb-4 uppercase tracking-wide">
-            Cohort Analysis
+            Policy Survival Rates
           </div>
           <div className="p-10 text-center text-muted-foreground text-xs">
             Loading cohort data...
@@ -43,10 +48,10 @@ export function CohortAnalysis() {
           <div className="flex items-center gap-2">
             <div>
               <div className="text-sm font-semibold text-foreground uppercase tracking-wide">
-                Cohort Analysis
+                Policy Survival Rates
               </div>
               <div className="text-xs text-muted-foreground mt-1">
-                Track retention by policy start month
+                How long policies stay active by start month
               </div>
             </div>
             {/* Info Icon Button */}
@@ -68,7 +73,7 @@ export function CohortAnalysis() {
             <AlertDescription>
               <div className="flex justify-between items-start mb-3">
                 <h3 className="m-0 text-sm font-bold text-foreground">
-                  Understanding Cohort Analysis
+                  Understanding Policy Survival Rates
                 </h3>
                 <Button
                   onClick={() => setShowInfo(false)}
@@ -81,8 +86,8 @@ export function CohortAnalysis() {
               </div>
 
               <div className="mb-4">
-                <strong>What is this?</strong> Cohort Analysis groups your policies by the month they started and tracks how well they stick around over time.
-                Think of it like tracking different "graduating classes" of policies to see which months produced the most lasting relationships.
+                <strong>What is this?</strong> This shows how many of your policies are still active after different periods of time.
+                Think of it like tracking how long customers stay with you - which months had the best "stickiness"?
               </div>
 
               <div className="mb-4">

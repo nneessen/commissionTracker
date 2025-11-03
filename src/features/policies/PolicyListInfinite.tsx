@@ -11,10 +11,10 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCarriers } from "../../hooks/carriers";
+import { useCommissions } from "../../hooks/commissions/useCommissions";
 import { useInfinitePolicies, usePolicyCount } from "../../hooks/policies/useInfinitePolicies";
 import { Policy, PolicyFilters, PolicyStatus } from "../../types/policy.types";
 import { ProductType } from "../../types/commission.types";
-import { calculateCommissionAdvance } from "../../utils/policyCalculations";
 import { formatCurrency, formatDate } from "../../lib/format";
 import { normalizeDatabaseDate } from "../../lib/date";
 
@@ -81,6 +81,15 @@ export const PolicyListInfinite: React.FC<PolicyListInfiniteProps> = ({
 
   // Get total count separately
   const { data: count = 0 } = usePolicyCount(filters);
+
+  // Get commissions data
+  const { data: commissions = [] } = useCommissions();
+  const commissionsByPolicy = commissions.reduce((acc, commission) => {
+    if (commission.policyId) {
+      acc[commission.policyId] = commission;
+    }
+    return acc;
+  }, {} as Record<string, typeof commissions[0]>);
 
   // Intersection observer for infinite scroll
   useEffect(() => {
@@ -250,13 +259,10 @@ export const PolicyListInfinite: React.FC<PolicyListInfiniteProps> = ({
             ) : (
               displayPolicies.map((policy) => {
                 const carrier = getCarrierById(policy.carrierId);
-                // Calculate commission advance: Monthly Premium × Advance Months × Commission Rate
-                // Note: Using default 9 months advance - actual advances are tracked in commissions table
-                const commission = calculateCommissionAdvance(
-                  policy.annualPremium,
-                  policy.commissionPercentage,
-                  9 // Default advance months
-                );
+                const policyCommission = commissionsByPolicy[policy.id];
+                // Use actual commission amount from database (includes contract level multiplier)
+                // Fallback to 0 if no commission record exists
+                const commission = policyCommission?.amount || 0;
                 const productName = policy.productDetails?.name || PRODUCT_ABBREV[policy.product];
 
                 return (

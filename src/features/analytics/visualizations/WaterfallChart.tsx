@@ -112,7 +112,8 @@ export function WaterfallChart({ data, title = 'Performance Attribution' }: Wate
                 textAnchor="middle"
                 fontSize="10px"
                 fontWeight="500"
-                fill="rgb(101, 109, 118)"
+                fill="currentColor"
+                className="text-muted-foreground"
               >
                 {bar.percent.toFixed(0)}%
               </text>
@@ -124,7 +125,8 @@ export function WaterfallChart({ data, title = 'Performance Attribution' }: Wate
                 textAnchor="middle"
                 fontSize="11px"
                 fontWeight="500"
-                fill="rgb(26, 26, 26)"
+                fill="currentColor"
+                className="text-muted-foreground"
               >
                 {bar.label}
               </text>
@@ -189,7 +191,8 @@ export function WaterfallChart({ data, title = 'Performance Attribution' }: Wate
                     textAnchor="middle"
                     fontSize="11px"
                     fontWeight="600"
-                    fill="rgb(26, 26, 26)"
+                    fill="currentColor"
+                className="text-muted-foreground"
                   >
                     Total Change
                   </text>

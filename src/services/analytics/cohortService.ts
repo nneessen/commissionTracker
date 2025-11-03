@@ -74,25 +74,42 @@ export function getCohortRetention(policies: Policy[]): CohortRetentionData[] {
 
     // For each month elapsed, calculate retention
     for (let monthsElapsed = 0; monthsElapsed <= Math.min(maxMonths, 24); monthsElapsed++) {
+      // FIX: Check if policy was still active at the specific point in time
+      // A policy is considered active at month X if:
+      // 1. It's currently active, OR
+      // 2. It was cancelled/lapsed AFTER month X
       const active = cohortPolicies.filter(p => {
-        const policyMonths = differenceInMonths(now, new Date(p.effectiveDate));
-        return policyMonths >= monthsElapsed && p.status === 'active';
+        if (p.status === 'active') {
+          // Currently active policies are active at all past points
+          return true;
+        }
+
+        // For cancelled/lapsed policies, check if they were still active at monthsElapsed
+        if ((p.status === 'cancelled' || p.status === 'lapsed') && p.updatedAt) {
+          const statusChangeMonth = differenceInMonths(new Date(p.updatedAt), new Date(p.effectiveDate));
+          // Policy was active if status change happened after this month
+          return statusChangeMonth > monthsElapsed;
+        }
+
+        return false;
       }).length;
 
+      // Count policies that lapsed in this specific month
       const lapsed = cohortPolicies.filter(p => {
-        const policyMonths = differenceInMonths(now, new Date(p.effectiveDate));
-        const lapsedMonth = p.status === 'lapsed' && p.updatedAt
-          ? differenceInMonths(new Date(p.updatedAt), new Date(p.effectiveDate))
-          : -1;
-        return lapsedMonth === monthsElapsed;
+        if (p.status === 'lapsed' && p.updatedAt) {
+          const lapsedMonth = differenceInMonths(new Date(p.updatedAt), new Date(p.effectiveDate));
+          return lapsedMonth === monthsElapsed;
+        }
+        return false;
       }).length;
 
+      // Count policies that were cancelled in this specific month
       const cancelled = cohortPolicies.filter(p => {
-        const policyMonths = differenceInMonths(now, new Date(p.effectiveDate));
-        const cancelledMonth = p.status === 'cancelled' && p.updatedAt
-          ? differenceInMonths(new Date(p.updatedAt), new Date(p.effectiveDate))
-          : -1;
-        return cancelledMonth === monthsElapsed;
+        if (p.status === 'cancelled' && p.updatedAt) {
+          const cancelledMonth = differenceInMonths(new Date(p.updatedAt), new Date(p.effectiveDate));
+          return cancelledMonth === monthsElapsed;
+        }
+        return false;
       }).length;
 
       activeCount[monthsElapsed] = active;

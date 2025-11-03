@@ -6,12 +6,17 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Info, X } from 'lucide-react';
 import { useAnalyticsData } from '../../../hooks';
+import { useAnalyticsDateRange } from '../context/AnalyticsDateContext';
 
 /**
  * CommissionDeepDive - Detailed commission analysis
  */
 export function CommissionDeepDive() {
-  const { cohort, isLoading } = useAnalyticsData();
+  const { dateRange } = useAnalyticsDateRange();
+  const { cohort, isLoading } = useAnalyticsData({
+    startDate: dateRange.startDate,
+    endDate: dateRange.endDate,
+  });
   const [showInfo, setShowInfo] = useState(false);
 
   if (isLoading) {

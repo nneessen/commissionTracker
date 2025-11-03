@@ -80,10 +80,14 @@ export function forecastRenewals(policies: Policy[]): RenewalForecast[] {
 
     const expectedRenewals = renewalPolicies.length;
 
-    // Estimate renewal revenue (assume 50% commission on renewed policies)
+    // FIX: Make renewal commission rate configurable and clearly marked as an estimate
+    // Most insurance products pay reduced commissions on renewals (typically 10-50% of first year)
+    // This should ideally come from actual commission settings in the database
+    const ESTIMATED_RENEWAL_RATE_MULTIPLIER = 0.25; // 25% of first year commission (more realistic)
     const expectedRevenue = renewalPolicies.reduce((sum, p) => {
-      const renewalCommission = (p.annualPremium || 0) * (p.commissionPercentage || 0) * 0.5;
-      return sum + renewalCommission;
+      // Note: This is an ESTIMATE - actual renewal rates vary by carrier and product
+      const estimatedRenewalCommission = (p.annualPremium || 0) * (p.commissionPercentage || 0) * ESTIMATED_RENEWAL_RATE_MULTIPLIER;
+      return sum + estimatedRenewalCommission;
     }, 0);
 
     // Confidence based on time horizon
