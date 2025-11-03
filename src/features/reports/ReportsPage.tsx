@@ -1,6 +1,6 @@
 // src/features/reports/ReportsPage.tsx
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { ReportType, ReportFilters } from '../../types/reports.types';
 import { ReportSelector } from './components/ReportSelector';
 import { ReportSection } from './components/ReportSection';
@@ -19,14 +19,20 @@ export function ReportsPage() {
     endDate: new Date(),
   });
 
-  // Get date range from time period
-  const dateRange = getAdvancedDateRange(timePeriod, customRange);
+  // Get date range from time period (memoized to prevent infinite loop)
+  const dateRange = useMemo(
+    () => getAdvancedDateRange(timePeriod, customRange),
+    [timePeriod, customRange]
+  );
 
-  // Build report filters
-  const filters: ReportFilters = {
-    startDate: dateRange.startDate,
-    endDate: dateRange.endDate,
-  };
+  // Build report filters (memoized to prevent infinite loop)
+  const filters: ReportFilters = useMemo(
+    () => ({
+      startDate: dateRange.startDate,
+      endDate: dateRange.endDate,
+    }),
+    [dateRange.startDate, dateRange.endDate]
+  );
 
   // Fetch report data using React Query
   const { data: report, isLoading, error } = useReport(selectedType, filters);

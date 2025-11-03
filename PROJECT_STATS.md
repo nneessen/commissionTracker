@@ -1,15 +1,15 @@
 # Project Statistics
 
-Last Updated: 2025-11-01 14:31:23
+Last Updated: 2025-11-03 08:04:14
 
 ## Metrics
-- Total Files: 21756
-- Total Lines of Code: 294474
-- Total Commits: 140
+- Total Files: 21776
+- Total Lines of Code: 300294
+- Total Commits: 145
 
 ## Recent Activity
-ff76089 docs: multiple changes in .,plans,plans/ARCHIVED
-f211417 feat(policies): add smart contextual metrics with global/filtered totals
-60d354d fix: restore commission status dropdown for updating status
-b8d1954 feat: add CRITICAL warning comment to commission status dropdown
-d4291f3 docs: CHANGELOG.md,PROJECT_STATS.md,PolicyList.tsx
+d73836b fix(commissions): resolve critical data discrepancy between dashboard and policies pages
+bed47e5 feat(reports): add comprehensive reporting system with insights & fix critical date display bug
+b40d4cb Merge branch 'main' of https://github.com/nneessen/commissionTracker
+1ecc35f docs: multiple changes in .,scripts,src
+8dd5f56 feat(commissions): implement accurate commission rate calculation system
