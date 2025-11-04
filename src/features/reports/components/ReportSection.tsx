@@ -4,10 +4,143 @@ import React from 'react';
 import { ReportSection as ReportSectionType } from '../../../types/reports.types';
 import { Card } from '../../../components/ui/card';
 import { InsightCard } from './InsightCard';
+import {
+  TrendLineChart,
+  BarComparisonChart,
+  PieBreakdownChart,
+  AreaStackedChart,
+} from './charts';
 
 interface ReportSectionProps {
   section: ReportSectionType;
   className?: string;
+}
+
+/**
+ * Determine chart type and render appropriate component
+ */
+function renderChart(chartData: any, sectionId: string) {
+  if (!chartData || !chartData.datasets || chartData.datasets.length === 0) {
+    return null;
+  }
+
+  // Prepare data for Recharts format
+  const data = chartData.labels.map((label: string, index: number) => {
+    const dataPoint: any = { label };
+    chartData.datasets.forEach((dataset: any) => {
+      dataPoint[dataset.label] = dataset.data[index];
+    });
+    return dataPoint;
+  });
+
+  // Determine chart type based on section ID or data characteristics
+  const chartType = determineChartType(sectionId, chartData);
+
+  switch (chartType) {
+    case 'pie':
+      // For pie charts, convert to name/value format
+      const pieData = chartData.labels.map((label: string, index: number) => ({
+        name: label,
+        value: chartData.datasets[0].data[index],
+        color: chartData.datasets[0].color?.[index],
+      }));
+      return (
+        <PieBreakdownChart
+          data={pieData}
+          height={350}
+          showLegend
+          format={getFormatFromSectionId(sectionId)}
+        />
+      );
+
+    case 'bar':
+      const bars = chartData.datasets.map((dataset: any) => ({
+        dataKey: dataset.label,
+        name: dataset.label,
+        color: dataset.color || '#3b82f6',
+        format: getFormatFromSectionId(sectionId),
+      }));
+      return (
+        <BarComparisonChart
+          data={data}
+          bars={bars}
+          height={350}
+          showGrid
+          showLegend={chartData.datasets.length > 1}
+        />
+      );
+
+    case 'area':
+      const areas = chartData.datasets.map((dataset: any) => ({
+        dataKey: dataset.label,
+        name: dataset.label,
+        color: dataset.color || '#3b82f6',
+        format: getFormatFromSectionId(sectionId),
+      }));
+      return (
+        <AreaStackedChart
+          data={data}
+          areas={areas}
+          height={350}
+          showGrid
+          showLegend
+        />
+      );
+
+    case 'line':
+    default:
+      const lines = chartData.datasets.map((dataset: any) => ({
+        dataKey: dataset.label,
+        name: dataset.label,
+        color: dataset.color || '#3b82f6',
+        format: getFormatFromSectionId(sectionId),
+      }));
+      return (
+        <TrendLineChart
+          data={data}
+          lines={lines}
+          height={350}
+          showGrid
+          showLegend={chartData.datasets.length > 1}
+        />
+      );
+  }
+}
+
+/**
+ * Determine appropriate chart type based on section ID
+ */
+function determineChartType(sectionId: string, chartData: any): 'line' | 'bar' | 'pie' | 'area' {
+  // Pie chart for breakdowns/distributions
+  if (sectionId.includes('breakdown') || sectionId.includes('distribution')) {
+    return 'pie';
+  }
+
+  // Area chart for cumulative/stacked metrics
+  if (sectionId.includes('cumulative') || sectionId.includes('stacked')) {
+    return 'area';
+  }
+
+  // Bar chart for comparisons
+  if (sectionId.includes('comparison') || sectionId.includes('carrier-performance')) {
+    return 'bar';
+  }
+
+  // Line chart for trends (default)
+  return 'line';
+}
+
+/**
+ * Get data format based on section ID
+ */
+function getFormatFromSectionId(sectionId: string): 'currency' | 'number' | 'percent' {
+  if (sectionId.includes('income') || sectionId.includes('revenue') || sectionId.includes('commission') || sectionId.includes('expense')) {
+    return 'currency';
+  }
+  if (sectionId.includes('rate') || sectionId.includes('percent') || sectionId.includes('ratio')) {
+    return 'percent';
+  }
+  return 'number';
 }
 
 export function ReportSection({ section, className = '' }: ReportSectionProps) {
@@ -110,12 +243,10 @@ export function ReportSection({ section, className = '' }: ReportSectionProps) {
         </div>
       )}
 
-      {/* Chart Data (placeholder for future enhancement) */}
+      {/* Chart Visualization */}
       {section.chartData && (
-        <div className="mt-6 p-4 bg-muted rounded-lg border border-border">
-          <p className="text-sm text-muted-foreground text-center">
-            Chart visualization coming soon
-          </p>
+        <div className="mt-6">
+          {renderChart(section.chartData, section.id)}
         </div>
       )}
     </Card>
