@@ -17,15 +17,24 @@ interface DateRangeContextValue {
 
 const AnalyticsDateContext = createContext<DateRangeContextValue | undefined>(undefined);
 
+// Helper function to create stable initial dates
+function getInitialCustomRange() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const endDate = new Date();
+  endDate.setHours(23, 59, 59, 999);
+  return {
+    startDate: today,
+    endDate: endDate,
+  };
+}
+
 export function AnalyticsDateProvider({ children }: { children: ReactNode }) {
   const [timePeriod, setTimePeriod] = useState<AdvancedTimePeriod>('MTD');
   const [customRange, setCustomRange] = useState<{
     startDate: Date;
     endDate: Date;
-  }>({
-    startDate: new Date(),
-    endDate: new Date(),
-  });
+  }>(getInitialCustomRange);
 
   // Calculate the actual date range based on the selected period
   const dateRange = getAdvancedDateRange(timePeriod, customRange);
