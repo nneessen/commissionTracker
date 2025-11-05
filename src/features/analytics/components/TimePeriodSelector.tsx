@@ -29,8 +29,13 @@ interface TimePeriodSelectorProps {
  * Get date range for advanced time period
  */
 export function getAdvancedDateRange(period: AdvancedTimePeriod, customRange?: { startDate: Date; endDate: Date }): AdvancedDateRange {
+  // Create stable dates at midnight to prevent re-renders
   const now = new Date();
+  now.setHours(0, 0, 0, 0);
+
   const endDate = new Date();
+  endDate.setHours(23, 59, 59, 999); // End of day for proper date range
+
   let startDate: Date;
 
   switch (period) {
@@ -48,24 +53,28 @@ export function getAdvancedDateRange(period: AdvancedTimePeriod, customRange?: {
       // Last 30 days
       startDate = new Date(now);
       startDate.setDate(startDate.getDate() - 30);
+      startDate.setHours(0, 0, 0, 0);
       break;
 
     case 'L60':
       // Last 60 days
       startDate = new Date(now);
       startDate.setDate(startDate.getDate() - 60);
+      startDate.setHours(0, 0, 0, 0);
       break;
 
     case 'L90':
       // Last 90 days
       startDate = new Date(now);
       startDate.setDate(startDate.getDate() - 90);
+      startDate.setHours(0, 0, 0, 0);
       break;
 
     case 'L12M':
       // Last 12 months
       startDate = new Date(now);
       startDate.setFullYear(startDate.getFullYear() - 1);
+      startDate.setHours(0, 0, 0, 0);
       break;
 
     case 'CUSTOM':

@@ -11,13 +11,22 @@ import { ReportExportService } from '../../services/reports/reportExportService'
 import { Download, Loader2, FileText, Table, Printer } from 'lucide-react';
 import { Card } from '../../components/ui/card';
 
+// Helper function to create stable initial dates
+function getInitialDateRange() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const endDate = new Date();
+  endDate.setHours(23, 59, 59, 999);
+  return {
+    startDate: today,
+    endDate: endDate,
+  };
+}
+
 export function ReportsPage() {
   const [selectedType, setSelectedType] = useState<ReportType>('executive-dashboard');
   const [timePeriod, setTimePeriod] = useState<AdvancedTimePeriod>('MTD');
-  const [customRange, setCustomRange] = useState<{ startDate: Date; endDate: Date }>({
-    startDate: new Date(),
-    endDate: new Date(),
-  });
+  const [customRange, setCustomRange] = useState<{ startDate: Date; endDate: Date }>(getInitialDateRange);
 
   // Get date range from time period (memoized to prevent infinite loop)
   const dateRange = useMemo(
