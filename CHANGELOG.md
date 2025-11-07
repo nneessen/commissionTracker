@@ -6,6 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-11-07 12:13:37
+
+### Changed Files
+- `.serena/memories/expense_calculation_bug_fix_nov2025.md`
+- `main.tsx`
+- `package-lock.json`
+- `scripts/test-dashboard-calculation.ts`
+- `scripts/test-fixed-calculation.ts`
+- `scripts/verify-expense-data.ts`
+- `src/hooks/useMetricsWithDateRange.ts`
+- `src/utils/dateRange.ts`
+
+### Statistics
+```
+ 8 files changed, 467 insertions(+), 29 deletions(-)
+```
+
 ## [Checkpoint] - 2025-11-04 13:03:00
 
 ### Changed Files

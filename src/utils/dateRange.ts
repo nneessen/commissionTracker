@@ -16,35 +16,41 @@ export interface DateRange {
  */
 export function getDateRange(period: TimePeriod): DateRange {
   const now = new Date();
-  const endDate = new Date();
+  let endDate: Date;
   let startDate: Date;
 
   switch (period) {
     case 'daily':
-      // Today from 00:00:00 to now
+      // Today from 00:00:00 to end of day
       startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+      endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
       break;
 
     case 'weekly':
       // Last 7 days from now
       startDate = new Date(now);
       startDate.setDate(startDate.getDate() - 7);
-      startDate.setHours(now.getHours(), now.getMinutes(), now.getSeconds(), now.getMilliseconds());
+      startDate.setHours(0, 0, 0, 0);
+      endDate = new Date();
       break;
 
     case 'monthly':
-      // Current month from 1st at 00:00:00 to now
+      // ENTIRE current month from 1st to last day (includes future dates within the month)
       startDate = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+      // Last day of current month at 23:59:59
+      endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
       break;
 
     case 'yearly':
-      // Year-to-date from Jan 1 at 00:00:00 to now
+      // Year-to-date from Jan 1 at 00:00:00 to now (not entire year)
       startDate = new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0);
+      endDate = new Date();
       break;
 
     default:
-      // Default to monthly
+      // Default to monthly (entire month)
       startDate = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+      endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
   }
 
   return { startDate, endDate };
@@ -53,15 +59,35 @@ export function getDateRange(period: TimePeriod): DateRange {
 /**
  * Check if a date falls within a date range
  * @param date The date to check
- * @param range The date range to check against
+ * @param range The date range to check against (can have startDate/endDate or start/end)
  * @returns boolean indicating if date is in range
  *
  * IMPORTANT: Uses parseLocalDate to avoid UTC timezone shifting bugs
  * (e.g., "2025-10-01" stays as Oct 1, not becoming Sept 30)
  */
-export function isInDateRange(date: Date | string, range: DateRange): boolean {
+export function isInDateRange(date: Date | string | null, range: DateRange | { start: string | null; end: string | null }): boolean {
+  if (!date) return false;
+
   const checkDate = typeof date === 'string' ? parseLocalDate(date) : date;
-  return checkDate >= range.startDate && checkDate <= range.endDate;
+
+  // Handle both formats - DateRange with Date objects or range with string dates
+  let startDate: Date | null = null;
+  let endDate: Date | null = null;
+
+  if ('startDate' in range && 'endDate' in range) {
+    // Original DateRange format
+    startDate = range.startDate;
+    endDate = range.endDate;
+  } else if ('start' in range && 'end' in range) {
+    // String format from useMetricsWithDateRange
+    startDate = range.start ? parseLocalDate(range.start) : null;
+    endDate = range.end ? parseLocalDate(range.end) : null;
+  }
+
+  if (startDate && checkDate < startDate) return false;
+  if (endDate && checkDate > endDate) return false;
+
+  return true;
 }
 
 /**

@@ -113,6 +113,11 @@ export function useMetricsWithDateRange(
   // Calculate date range
   // React 19.1 optimizes automatically
   const dateRange = getDateRange(timePeriod);
+  // Create a string-based version for internal filtering
+  const dateRangeForFiltering = {
+    start: dateRange.startDate.toISOString().split('T')[0],
+    end: dateRange.endDate.toISOString().split('T')[0]
+  };
 
   // Filter commissions by date range
   const filteredCommissions = (() => {
@@ -126,8 +131,8 @@ export function useMetricsWithDateRange(
 
     if (
       !hasCurrentYearData &&
-      dateRange.start &&
-      new Date(dateRange.start).getFullYear() === new Date().getFullYear()
+      dateRangeForFiltering.start &&
+      new Date(dateRangeForFiltering.start).getFullYear() === new Date().getFullYear()
     ) {
       // System is in 2025 but data is from 2024 - show all data
       return commissions;
@@ -138,7 +143,7 @@ export function useMetricsWithDateRange(
         commission.status === "paid" && commission.paymentDate
           ? commission.paymentDate // Use paymentDate (matches DB field payment_date)
           : commission.createdAt;
-      return isInDateRange(dateToCheck, dateRange);
+      return isInDateRange(dateToCheck, dateRangeForFiltering);
     });
   })();
 
@@ -152,8 +157,8 @@ export function useMetricsWithDateRange(
 
     if (
       !hasCurrentYearData &&
-      dateRange.start &&
-      new Date(dateRange.start).getFullYear() === new Date().getFullYear()
+      dateRangeForFiltering.start &&
+      new Date(dateRangeForFiltering.start).getFullYear() === new Date().getFullYear()
     ) {
       // System is in 2025 but data is from 2024 - show all data
       return expenses;
@@ -161,7 +166,7 @@ export function useMetricsWithDateRange(
 
     return expenses.filter((expense) => {
       const expenseDate = expense.date || expense.createdAt;
-      return isInDateRange(expenseDate, dateRange);
+      return isInDateRange(expenseDate, dateRangeForFiltering);
     });
   })();
 
@@ -175,8 +180,8 @@ export function useMetricsWithDateRange(
 
     if (
       !hasCurrentYearData &&
-      dateRange.start &&
-      new Date(dateRange.start).getFullYear() === new Date().getFullYear()
+      dateRangeForFiltering.start &&
+      new Date(dateRangeForFiltering.start).getFullYear() === new Date().getFullYear()
     ) {
       // System is in 2025 but data is from 2024 - show all data
       return policies;
@@ -184,7 +189,7 @@ export function useMetricsWithDateRange(
 
     return policies.filter((policy) => {
       const policyDate = policy.effectiveDate || policy.createdAt;
-      return isInDateRange(policyDate, dateRange);
+      return isInDateRange(policyDate, dateRangeForFiltering);
     });
   })();
 
