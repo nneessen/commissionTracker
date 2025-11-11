@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-11-11 13:19:31
+
+### Changed Files
+- `.serena/memories/dashboard_expense_calculation_fix_nov2025.md`
+- `plans/COMPLETED/fix-dashboard-expense-calculation-bug-nov2025.md`
+- `scripts/test-date-ranges.js`
+- `src/utils/dateRange.ts`
+
+### Statistics
+```
+ 4 files changed, 377 insertions(+), 49 deletions(-)
+```
+
 ## [Checkpoint] - 2025-11-07 12:13:37
 
 ### Changed Files

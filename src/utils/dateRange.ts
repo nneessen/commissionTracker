@@ -1,8 +1,8 @@
 // src/utils/dateRange.ts
 
-import { parseLocalDate } from '../lib/date';
+import { parseLocalDate } from "../lib/date";
 
-export type TimePeriod = 'daily' | 'weekly' | 'monthly' | 'yearly';
+export type TimePeriod = "daily" | "weekly" | "monthly" | "yearly";
 
 export interface DateRange {
   startDate: Date;
@@ -20,13 +20,29 @@ export function getDateRange(period: TimePeriod): DateRange {
   let startDate: Date;
 
   switch (period) {
-    case 'daily':
+    case "daily":
       // Today from 00:00:00 to end of day
-      startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
-      endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+      startDate = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate(),
+        0,
+        0,
+        0,
+        0,
+      );
+      endDate = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate(),
+        23,
+        59,
+        59,
+        999,
+      );
       break;
 
-    case 'weekly':
+    case "weekly":
       // Last 7 days from now
       startDate = new Date(now);
       startDate.setDate(startDate.getDate() - 7);
@@ -34,23 +50,40 @@ export function getDateRange(period: TimePeriod): DateRange {
       endDate = new Date();
       break;
 
-    case 'monthly':
+    case "monthly":
       // ENTIRE current month from 1st to last day (includes future dates within the month)
       startDate = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
       // Last day of current month at 23:59:59
-      endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+      // Entire current month from 1st at 00:00:00 to last day at 23:59:59
+      startDate = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+      endDate = new Date(
+        now.getFullYear(),
+        now.getMonth() + 1,
+        0,
+        23,
+        59,
+        59,
+        999,
+      );
       break;
 
-    case 'yearly':
+    case "yearly":
       // Year-to-date from Jan 1 at 00:00:00 to now (not entire year)
       startDate = new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0);
       endDate = new Date();
       break;
 
     default:
-      // Default to monthly (entire month)
       startDate = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
-      endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+      endDate = new Date(
+        now.getFullYear(),
+        now.getMonth() + 1,
+        0,
+        23,
+        59,
+        59,
+        999,
+      );
   }
 
   return { startDate, endDate };
@@ -65,20 +98,23 @@ export function getDateRange(period: TimePeriod): DateRange {
  * IMPORTANT: Uses parseLocalDate to avoid UTC timezone shifting bugs
  * (e.g., "2025-10-01" stays as Oct 1, not becoming Sept 30)
  */
-export function isInDateRange(date: Date | string | null, range: DateRange | { start: string | null; end: string | null }): boolean {
+export function isInDateRange(
+  date: Date | string | null,
+  range: DateRange | { start: string | null; end: string | null },
+): boolean {
   if (!date) return false;
 
-  const checkDate = typeof date === 'string' ? parseLocalDate(date) : date;
+  const checkDate = typeof date === "string" ? parseLocalDate(date) : date;
 
   // Handle both formats - DateRange with Date objects or range with string dates
   let startDate: Date | null = null;
   let endDate: Date | null = null;
 
-  if ('startDate' in range && 'endDate' in range) {
+  if ("startDate" in range && "endDate" in range) {
     // Original DateRange format
     startDate = range.startDate;
     endDate = range.endDate;
-  } else if ('start' in range && 'end' in range) {
+  } else if ("start" in range && "end" in range) {
     // String format from useMetricsWithDateRange
     startDate = range.start ? parseLocalDate(range.start) : null;
     endDate = range.end ? parseLocalDate(range.end) : null;
@@ -98,7 +134,9 @@ export function isInDateRange(date: Date | string | null, range: DateRange | { s
 export function getDaysInPeriod(period: TimePeriod): number {
   const range = getDateRange(period);
   const msPerDay = 24 * 60 * 60 * 1000;
-  return Math.ceil((range.endDate.getTime() - range.startDate.getTime()) / msPerDay);
+  return Math.ceil(
+    (range.endDate.getTime() - range.startDate.getTime()) / msPerDay,
+  );
 }
 
 /**
@@ -106,17 +144,28 @@ export function getDaysInPeriod(period: TimePeriod): number {
  * @param period The time period
  * @returns Object with days and hours remaining
  */
-export function getTimeRemaining(period: TimePeriod): { days: number; hours: number } {
+export function getTimeRemaining(period: TimePeriod): {
+  days: number;
+  hours: number;
+} {
   const now = new Date();
   let endOfPeriod: Date;
 
   switch (period) {
-    case 'daily':
+    case "daily":
       // End of today
-      endOfPeriod = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+      endOfPeriod = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate(),
+        23,
+        59,
+        59,
+        999,
+      );
       break;
 
-    case 'weekly':
+    case "weekly":
       // 7 days from start of period
       const weekStart = new Date(now);
       weekStart.setDate(weekStart.getDate() - 7);
@@ -124,27 +173,45 @@ export function getTimeRemaining(period: TimePeriod): { days: number; hours: num
       endOfPeriod.setDate(endOfPeriod.getDate() + 7);
       break;
 
-    case 'monthly':
+    case "monthly":
       // End of current month
-      endOfPeriod = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+      endOfPeriod = new Date(
+        now.getFullYear(),
+        now.getMonth() + 1,
+        0,
+        23,
+        59,
+        59,
+        999,
+      );
       break;
 
-    case 'yearly':
+    case "yearly":
       // End of current year
       endOfPeriod = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999);
       break;
 
     default:
-      endOfPeriod = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+      endOfPeriod = new Date(
+        now.getFullYear(),
+        now.getMonth() + 1,
+        0,
+        23,
+        59,
+        59,
+        999,
+      );
   }
 
   const msRemaining = endOfPeriod.getTime() - now.getTime();
   const daysRemaining = Math.floor(msRemaining / (24 * 60 * 60 * 1000));
-  const hoursRemaining = Math.floor((msRemaining % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
+  const hoursRemaining = Math.floor(
+    (msRemaining % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000),
+  );
 
   return {
     days: Math.max(0, daysRemaining),
-    hours: Math.max(0, hoursRemaining)
+    hours: Math.max(0, hoursRemaining),
   };
 }
 
@@ -155,16 +222,16 @@ export function getTimeRemaining(period: TimePeriod): { days: number; hours: num
  */
 export function getPeriodLabel(period: TimePeriod): string {
   switch (period) {
-    case 'daily':
-      return 'Daily';
-    case 'weekly':
-      return 'Weekly';
-    case 'monthly':
-      return 'Monthly';
-    case 'yearly':
-      return 'Yearly';
+    case "daily":
+      return "Daily";
+    case "weekly":
+      return "Weekly";
+    case "monthly":
+      return "Monthly";
+    case "yearly":
+      return "Yearly";
     default:
-      return 'Monthly';
+      return "Monthly";
   }
 }
 
@@ -175,13 +242,13 @@ export function getPeriodLabel(period: TimePeriod): string {
  */
 export function formatDateRange(range: DateRange): string {
   const formatOptions: Intl.DateTimeFormatOptions = {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric'
+    month: "short",
+    day: "numeric",
+    year: "numeric",
   };
 
-  const start = range.startDate.toLocaleDateString('en-US', formatOptions);
-  const end = range.endDate.toLocaleDateString('en-US', formatOptions);
+  const start = range.startDate.toLocaleDateString("en-US", formatOptions);
+  const end = range.endDate.toLocaleDateString("en-US", formatOptions);
 
   // If same day, just show one date
   if (start === end) {
@@ -190,7 +257,10 @@ export function formatDateRange(range: DateRange): string {
 
   // If same year, don't repeat the year
   if (range.startDate.getFullYear() === range.endDate.getFullYear()) {
-    const startNoYear = range.startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const startNoYear = range.startDate.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+    });
     return `${startNoYear} - ${end}`;
   }
 
@@ -204,8 +274,8 @@ export function formatDateRange(range: DateRange): string {
 export const DAYS_PER_PERIOD: Record<TimePeriod, number> = {
   daily: 1,
   weekly: 7,
-  monthly: 30.44,  // Average month length (365.25 / 12)
-  yearly: 365.25   // Account for leap years
+  monthly: 30.44, // Average month length (365.25 / 12)
+  yearly: 365.25, // Account for leap years
 };
 
 /**
@@ -218,7 +288,7 @@ export const DAYS_PER_PERIOD: Record<TimePeriod, number> = {
 export function scaleMetricByPeriod(
   value: number,
   fromPeriod: TimePeriod,
-  toPeriod: TimePeriod
+  toPeriod: TimePeriod,
 ): number {
   const fromDays = DAYS_PER_PERIOD[fromPeriod];
   const toDays = DAYS_PER_PERIOD[toPeriod];
@@ -241,13 +311,16 @@ export function scaleMetricByPeriod(
 export function getAveragePeriodValue(
   totalValue: number,
   dateRange: DateRange,
-  displayPeriod: TimePeriod
+  displayPeriod: TimePeriod,
 ): number {
   // Calculate number of days in the actual date range
   const msPerDay = 24 * 60 * 60 * 1000;
-  const rangeDays = Math.max(1, Math.ceil(
-    (dateRange.endDate.getTime() - dateRange.startDate.getTime()) / msPerDay
-  ));
+  const rangeDays = Math.max(
+    1,
+    Math.ceil(
+      (dateRange.endDate.getTime() - dateRange.startDate.getTime()) / msPerDay,
+    ),
+  );
 
   // Calculate daily average from the total
   const dailyAverage = totalValue / rangeDays;
