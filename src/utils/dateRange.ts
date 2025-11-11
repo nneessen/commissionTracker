@@ -16,7 +16,7 @@ export interface DateRange {
  */
 export function getDateRange(period: TimePeriod): DateRange {
   const now = new Date();
-  const endDate = new Date();
+  let endDate = new Date();
   let startDate: Date;
 
   switch (period) {
@@ -33,8 +33,9 @@ export function getDateRange(period: TimePeriod): DateRange {
       break;
 
     case 'monthly':
-      // Current month from 1st at 00:00:00 to now
+      // Entire current month from 1st at 00:00:00 to last day at 23:59:59
       startDate = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+      endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
       break;
 
     case 'yearly':
@@ -43,8 +44,9 @@ export function getDateRange(period: TimePeriod): DateRange {
       break;
 
     default:
-      // Default to monthly
+      // Default to monthly - entire current month
       startDate = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+      endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
   }
 
   return { startDate, endDate };
