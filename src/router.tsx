@@ -15,6 +15,7 @@ import { CompGuide } from "./features/comps";
 import { SettingsDashboard } from "./features/settings";
 import { TargetsPage } from "./features/targets";
 import { TestCompGuide } from "./features/test/TestCompGuide";
+import { ClientsDashboard, ClientDetailView } from "./features/clients";
 import {
   Login,
   AuthCallback,
@@ -130,16 +131,18 @@ const expensesRoute = createRoute({
   component: ExpenseDashboard,
 });
 
-// Clients route (coming soon)
+// Clients route
 const clientsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "clients",
-  component: () => (
-    <div className="coming-soon-container p-8">
-      <h2 className="text-2xl font-bold text-gray-900 mb-4">Clients</h2>
-      <p className="text-gray-600">This feature is coming soon!</p>
-    </div>
-  ),
+  component: ClientsDashboard,
+});
+
+// Client Detail route
+const clientDetailRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "clients/$clientId",
+  component: ClientDetailView,
 });
 
 // Test route for debugging comp guide
@@ -165,6 +168,7 @@ const routeTree = rootRoute.addChildren([
   reportsRoute,
   expensesRoute,
   clientsRoute,
+  clientDetailRoute,
   testCompGuideRoute,
 ]);
 

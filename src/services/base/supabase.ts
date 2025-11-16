@@ -18,6 +18,7 @@ export const TABLES = {
   EXPENSES: 'expenses',
   CARRIERS: 'carriers',
   PRODUCTS: 'products',
+  CLIENTS: 'clients',
   COMMISSION_RATES: 'commission_rates',
   CONSTANTS: 'constants',
   AGENTS: 'agents',

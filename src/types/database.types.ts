@@ -47,36 +47,6 @@ export type Database = {
         }
         Relationships: []
       }
-      carriers_backup_20251103: {
-        Row: {
-          code: string | null
-          commission_structure: Json | null
-          contact_info: Json | null
-          created_at: string | null
-          id: string | null
-          name: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          code?: string | null
-          commission_structure?: Json | null
-          contact_info?: Json | null
-          created_at?: string | null
-          id?: string | null
-          name?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          code?: string | null
-          commission_structure?: Json | null
-          contact_info?: Json | null
-          created_at?: string | null
-          id?: string | null
-          name?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
       chargebacks: {
         Row: {
           chargeback_amount: number
@@ -142,33 +112,39 @@ export type Database = {
         Row: {
           address: string | null
           created_at: string | null
+          date_of_birth: string | null
           email: string | null
           id: string
           name: string
           notes: string | null
           phone: string | null
+          status: string | null
           updated_at: string | null
           user_id: string | null
         }
         Insert: {
           address?: string | null
           created_at?: string | null
+          date_of_birth?: string | null
           email?: string | null
           id?: string
           name: string
           notes?: string | null
           phone?: string | null
+          status?: string | null
           updated_at?: string | null
           user_id?: string | null
         }
         Update: {
           address?: string | null
           created_at?: string | null
+          date_of_birth?: string | null
           email?: string | null
           id?: string
           name?: string
           notes?: string | null
           phone?: string | null
+          status?: string | null
           updated_at?: string | null
           user_id?: string | null
         }
@@ -310,51 +286,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      comp_guide_backup_20251103: {
-        Row: {
-          bonus_percentage: number | null
-          carrier_id: string | null
-          commission_percentage: number | null
-          comp_level: Database["public"]["Enums"]["comp_level"] | null
-          created_at: string | null
-          effective_date: string | null
-          expiration_date: string | null
-          id: string | null
-          maximum_premium: number | null
-          minimum_premium: number | null
-          product_type: Database["public"]["Enums"]["product_type"] | null
-          updated_at: string | null
-        }
-        Insert: {
-          bonus_percentage?: number | null
-          carrier_id?: string | null
-          commission_percentage?: number | null
-          comp_level?: Database["public"]["Enums"]["comp_level"] | null
-          created_at?: string | null
-          effective_date?: string | null
-          expiration_date?: string | null
-          id?: string | null
-          maximum_premium?: number | null
-          minimum_premium?: number | null
-          product_type?: Database["public"]["Enums"]["product_type"] | null
-          updated_at?: string | null
-        }
-        Update: {
-          bonus_percentage?: number | null
-          carrier_id?: string | null
-          commission_percentage?: number | null
-          comp_level?: Database["public"]["Enums"]["comp_level"] | null
-          created_at?: string | null
-          effective_date?: string | null
-          expiration_date?: string | null
-          id?: string | null
-          maximum_premium?: number | null
-          minimum_premium?: number | null
-          product_type?: Database["public"]["Enums"]["product_type"] | null
-          updated_at?: string | null
-        }
-        Relationships: []
       }
       constants: {
         Row: {
@@ -749,60 +680,6 @@ export type Database = {
           },
         ]
       }
-      products_backup_20251103: {
-        Row: {
-          carrier_id: string | null
-          code: string | null
-          commission_percentage: number | null
-          created_at: string | null
-          description: string | null
-          id: string | null
-          is_active: boolean | null
-          max_age: number | null
-          max_premium: number | null
-          metadata: Json | null
-          min_age: number | null
-          min_premium: number | null
-          name: string | null
-          product_type: Database["public"]["Enums"]["product_type"] | null
-          updated_at: string | null
-        }
-        Insert: {
-          carrier_id?: string | null
-          code?: string | null
-          commission_percentage?: number | null
-          created_at?: string | null
-          description?: string | null
-          id?: string | null
-          is_active?: boolean | null
-          max_age?: number | null
-          max_premium?: number | null
-          metadata?: Json | null
-          min_age?: number | null
-          min_premium?: number | null
-          name?: string | null
-          product_type?: Database["public"]["Enums"]["product_type"] | null
-          updated_at?: string | null
-        }
-        Update: {
-          carrier_id?: string | null
-          code?: string | null
-          commission_percentage?: number | null
-          created_at?: string | null
-          description?: string | null
-          id?: string | null
-          is_active?: boolean | null
-          max_age?: number | null
-          max_premium?: number | null
-          metadata?: Json | null
-          min_age?: number | null
-          min_premium?: number | null
-          name?: string | null
-          product_type?: Database["public"]["Enums"]["product_type"] | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
       settings: {
         Row: {
           created_at: string | null
@@ -1111,6 +988,7 @@ export type Database = {
         Args: { p_lapse_date?: string; p_policy_id: string }
         Returns: Json
       }
+      calculate_client_age: { Args: { birth_date: string }; Returns: number }
       calculate_commission_advance: {
         Args: {
           p_advance_months: number
@@ -1152,6 +1030,27 @@ export type Database = {
           policy_status: string
           risk_level: string
           unearned_amount: number
+        }[]
+      }
+      get_clients_with_stats: {
+        Args: never
+        Returns: {
+          active_policy_count: number
+          address: string
+          avg_premium: number
+          created_at: string
+          date_of_birth: string
+          email: string
+          id: string
+          last_policy_date: string
+          name: string
+          notes: string
+          phone: string
+          policy_count: number
+          status: string
+          total_premium: number
+          updated_at: string
+          user_id: string
         }[]
       }
       get_policies_paginated: {
