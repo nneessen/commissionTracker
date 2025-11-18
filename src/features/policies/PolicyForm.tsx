@@ -5,7 +5,6 @@ import { useAuth } from "../../contexts/AuthContext";
 import { useCarriers } from "../../hooks/carriers";
 import { useProducts } from "../../hooks/products/useProducts";
 import { useCompGuide } from "../../hooks/comps";
-import { useClientSelectOptions } from "../../hooks/clients";
 import { supabase } from "../../services/base/supabase";
 import {
   NewPolicyForm,
@@ -53,17 +52,13 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
 }) => {
   const { user } = useAuth();
   const { data: carriers = [] } = useCarriers();
-  const { data: clientOptions = [] } = useClientSelectOptions();
 
   const userContractLevel = user?.contractCompLevel || 100;
 
-  const [selectedClientId, setSelectedClientId] = useState<string>("new");
   const [formData, setFormData] = useState<NewPolicyForm>({
     clientName: "",
     clientState: "",
     clientAge: 0,
-    clientEmail: "",
-    clientPhone: "",
     carrierId: "",
     productId: "", // Use productId to link to products table
     product: "term_life" as ProductType,
@@ -305,38 +300,6 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
     }
   };
 
-  const handleClientChange = (value: string) => {
-    setSelectedClientId(value);
-
-    if (value === "new") {
-      // Clear client fields for new client
-      setFormData((prev) => ({
-        ...prev,
-        clientName: "",
-        clientState: "",
-        clientAge: 0,
-        clientEmail: "",
-        clientPhone: "",
-      }));
-    } else {
-      // Find selected client and populate fields
-      const selectedClient = clientOptions.find(opt => opt.value === value);
-      if (selectedClient) {
-        // Calculate age if date of birth is available
-        const age = selectedClient.age || 0;
-
-        setFormData((prev) => ({
-          ...prev,
-          clientName: selectedClient.label,
-          clientState: "", // We'll need to fetch this separately or add to options
-          clientAge: age,
-          clientEmail: selectedClient.email || "",
-          clientPhone: selectedClient.phone || "",
-        }));
-      }
-    }
-  };
-
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
 
@@ -424,88 +387,24 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
           <div className="h-px bg-gradient-to-r from-muted/50 via-muted/30 to-transparent mb-3"></div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="clientSelect" className="text-[13px]">
-              Select Client *
+            <Label htmlFor="clientName" className="text-[13px]">
+              Client Name *
             </Label>
-            <Select
-              value={selectedClientId}
-              onValueChange={handleClientChange}
-            >
-              <SelectTrigger
-                id="clientSelect"
-                className={errors.clientName ? "border-destructive" : ""}
-              >
-                <SelectValue placeholder="Select a client or create new" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="new">+ Create New Client</SelectItem>
-                {clientOptions.map((client) => (
-                  <SelectItem key={client.value} value={client.value}>
-                    {client.label}
-                    {client.email && ` (${client.email})`}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {errors.clientName && selectedClientId === "new" && (
+            <Input
+              id="clientName"
+              type="text"
+              name="clientName"
+              value={formData.clientName}
+              onChange={handleInputChange}
+              className={errors.clientName ? "border-destructive" : ""}
+              placeholder="John Smith"
+            />
+            {errors.clientName && (
               <span className="text-[11px] text-destructive">
                 {errors.clientName}
               </span>
             )}
           </div>
-
-          {selectedClientId === "new" && (
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="clientName" className="text-[13px]">
-                Client Name *
-              </Label>
-              <Input
-                id="clientName"
-                type="text"
-                name="clientName"
-                value={formData.clientName}
-                onChange={handleInputChange}
-                className={errors.clientName ? "border-destructive" : ""}
-                placeholder="John Smith"
-              />
-              {errors.clientName && (
-                <span className="text-[11px] text-destructive">
-                  {errors.clientName}
-                </span>
-              )}
-            </div>
-          )}
-
-          {selectedClientId === "new" && (
-            <div className="grid grid-cols-2 gap-3">
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="clientEmail" className="text-[13px]">
-                  Email
-                </Label>
-                <Input
-                  id="clientEmail"
-                  type="email"
-                  name="clientEmail"
-                  value={formData.clientEmail || ""}
-                  onChange={handleInputChange}
-                  placeholder="john@example.com"
-                />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="clientPhone" className="text-[13px]">
-                  Phone
-                </Label>
-                <Input
-                  id="clientPhone"
-                  type="tel"
-                  name="clientPhone"
-                  value={formData.clientPhone || ""}
-                  onChange={handleInputChange}
-                  placeholder="(555) 123-4567"
-                />
-              </div>
-            </div>
-          )}
 
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1.5">
@@ -517,7 +416,6 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
                 onValueChange={(value) =>
                   handleSelectChange("clientState", value)
                 }
-                disabled={selectedClientId !== "new"}
               >
                 <SelectTrigger
                   id="clientState"
@@ -553,7 +451,6 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
                 placeholder="45"
                 min="1"
                 max="120"
-                disabled={selectedClientId !== "new"}
               />
               {errors.clientAge && (
                 <span className="text-[11px] text-destructive">

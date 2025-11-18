@@ -39,7 +39,6 @@ const navigationItems: NavigationItem[] = [
   { icon: BarChart3, label: "Reports", href: "/reports" },
   { icon: CreditCard, label: "Expenses", href: "/expenses" },
   { icon: FileText, label: "Policies", href: "/policies" },
-  { icon: Users, label: "Clients", href: "/clients" },
   { icon: Settings, label: "Settings", href: "/settings" },
 ];
 
