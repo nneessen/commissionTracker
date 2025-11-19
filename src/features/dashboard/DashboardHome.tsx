@@ -14,7 +14,6 @@ import type { CreateExpenseData } from "../../types/expense.types";
 import type { NewPolicyForm, CreatePolicyData } from "../../types/policy.types";
 
 // Components
-import { DashboardHeader } from "./components/DashboardHeader";
 import { TimePeriodSwitcher } from "./components/TimePeriodSwitcher";
 import { PeriodNavigator } from "./components/PeriodNavigator";
 import { DateRangeDisplay } from "./components/DateRangeDisplay";
@@ -35,7 +34,6 @@ import { generateAlertsConfig } from "./config/alertsConfig";
 // Utils
 import {
   calculateDerivedMetrics,
-  calculateMonthProgress,
   getBreakevenDisplay,
   getPoliciesNeededDisplay,
   getPeriodSuffix,
@@ -80,7 +78,6 @@ export const DashboardHome: React.FC = () => {
 
   // Calculate derived metrics
   const derivedMetrics = calculateDerivedMetrics(periodPolicies, periodClients);
-  const monthProgress = calculateMonthProgress();
   const breakevenDisplay = getBreakevenDisplay(
     periodAnalytics.breakevenNeeded,
     timePeriod,
@@ -244,8 +241,7 @@ export const DashboardHome: React.FC = () => {
     <>
       <div className="page-header">
         {/* Header with time period switcher and date range */}
-        <div className="flex justify-between items-start">
-          <DashboardHeader monthProgress={monthProgress} />
+        <div className="flex justify-end items-start">
           <div className="flex flex-col items-end gap-2">
             <TimePeriodSwitcher
               timePeriod={timePeriod}
