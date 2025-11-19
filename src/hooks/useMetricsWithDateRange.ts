@@ -19,6 +19,7 @@ import { Commission, Policy, Expense, ProductType } from "../types";
 
 interface UseMetricsWithDateRangeOptions {
   timePeriod: TimePeriod;
+  periodOffset?: number; // Offset from current period (0 = current, -1 = previous, etc.)
   enabled?: boolean;
   targetAvgPremium?: number; // User's target average premium from settings
 }
@@ -98,7 +99,7 @@ export interface DateFilteredMetrics {
 export function useMetricsWithDateRange(
   options: UseMetricsWithDateRangeOptions,
 ): DateFilteredMetrics {
-  const { timePeriod, enabled = true, targetAvgPremium = 1500 } = options;
+  const { timePeriod, periodOffset = 0, enabled = true, targetAvgPremium = 1500 } = options;
 
   // Get base data
   const { data: policies = [], isLoading: policiesLoading } = usePolicies();
@@ -110,9 +111,9 @@ export function useMetricsWithDateRange(
   const isLoading =
     policiesLoading || commissionsLoading || expensesLoading || carriersLoading;
 
-  // Calculate date range
+  // Calculate date range with offset
   // React 19.1 optimizes automatically
-  const dateRange = getDateRange(timePeriod);
+  const dateRange = getDateRange(timePeriod, periodOffset);
   // Create a string-based version for internal filtering
   const dateRangeForFiltering = {
     start: dateRange.startDate.toISOString().split('T')[0],

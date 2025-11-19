@@ -10,31 +10,37 @@ export interface DateRange {
 }
 
 /**
- * Get the date range for a given time period
+ * Get the date range for a given time period with optional offset
  * @param period The time period to get the range for
+ * @param offset Number of periods to offset (negative = past, 0 = current, positive = future)
  * @returns DateRange with start and end dates
  */
-export function getDateRange(period: TimePeriod): DateRange {
+export function getDateRange(period: TimePeriod, offset: number = 0): DateRange {
   const now = new Date();
   let endDate: Date;
   let startDate: Date;
 
+  // Create a reference date adjusted by the offset
+  let referenceDate = new Date(now);
+
   switch (period) {
     case "daily":
-      // Today from 00:00:00 to end of day
+      // Adjust reference date by offset days
+      referenceDate.setDate(referenceDate.getDate() + offset);
+      // Get that specific day from 00:00:00 to 23:59:59
       startDate = new Date(
-        now.getFullYear(),
-        now.getMonth(),
-        now.getDate(),
+        referenceDate.getFullYear(),
+        referenceDate.getMonth(),
+        referenceDate.getDate(),
         0,
         0,
         0,
         0,
       );
       endDate = new Date(
-        now.getFullYear(),
-        now.getMonth(),
-        now.getDate(),
+        referenceDate.getFullYear(),
+        referenceDate.getMonth(),
+        referenceDate.getDate(),
         23,
         59,
         59,
@@ -43,22 +49,31 @@ export function getDateRange(period: TimePeriod): DateRange {
       break;
 
     case "weekly":
-      // Last 7 days from now
-      startDate = new Date(now);
+      // Adjust reference date by offset weeks
+      referenceDate.setDate(referenceDate.getDate() + (offset * 7));
+      // Last 7 days from reference date
+      startDate = new Date(referenceDate);
       startDate.setDate(startDate.getDate() - 7);
       startDate.setHours(0, 0, 0, 0);
-      endDate = new Date();
+      endDate = new Date(referenceDate);
       break;
 
     case "monthly":
-      // ENTIRE current month from 1st to last day (includes future dates within the month)
-      startDate = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
-      // Last day of current month at 23:59:59
-      // Entire current month from 1st at 00:00:00 to last day at 23:59:59
-      startDate = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+      // Adjust reference date by offset months
+      referenceDate.setMonth(referenceDate.getMonth() + offset);
+      // Entire month from 1st at 00:00:00 to last day at 23:59:59
+      startDate = new Date(
+        referenceDate.getFullYear(),
+        referenceDate.getMonth(),
+        1,
+        0,
+        0,
+        0,
+        0,
+      );
       endDate = new Date(
-        now.getFullYear(),
-        now.getMonth() + 1,
+        referenceDate.getFullYear(),
+        referenceDate.getMonth() + 1,
         0,
         23,
         59,
@@ -68,9 +83,11 @@ export function getDateRange(period: TimePeriod): DateRange {
       break;
 
     case "yearly":
-      // Year-to-date from Jan 1 at 00:00:00 to now (not entire year)
-      startDate = new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0);
-      endDate = new Date();
+      // Adjust reference date by offset years
+      referenceDate.setFullYear(referenceDate.getFullYear() + offset);
+      // Year-to-date from Jan 1 at 00:00:00 to end of year at 23:59:59
+      startDate = new Date(referenceDate.getFullYear(), 0, 1, 0, 0, 0, 0);
+      endDate = new Date(referenceDate.getFullYear(), 11, 31, 23, 59, 59, 999);
       break;
 
     default:
@@ -87,6 +104,62 @@ export function getDateRange(period: TimePeriod): DateRange {
   }
 
   return { startDate, endDate };
+}
+
+/**
+ * Get a human-readable descriptor for a time period with offset
+ * @param period The time period type
+ * @param offset The offset from current period (0 = current, -1 = previous, etc.)
+ * @param dateRange The calculated date range for formatting
+ * @returns Human-readable string like "This Month", "Last Month", "2 Months Ago"
+ */
+export function getPeriodDescriptor(
+  period: TimePeriod,
+  offset: number,
+  dateRange: DateRange,
+): string {
+  // Format month/year from date range
+  const monthYear = dateRange.startDate.toLocaleDateString("en-US", {
+    month: "long",
+    year: "numeric",
+  });
+  const year = dateRange.startDate.getFullYear();
+
+  switch (period) {
+    case "daily":
+      if (offset === 0) return "Today";
+      if (offset === -1) return "Yesterday";
+      if (offset === 1) return "Tomorrow";
+      if (offset < 0)
+        return `${Math.abs(offset)} Days Ago - ${dateRange.startDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`;
+      return `In ${offset} Days - ${dateRange.startDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`;
+
+    case "weekly":
+      if (offset === 0) return "This Week";
+      if (offset === -1) return "Last Week";
+      if (offset === 1) return "Next Week";
+      if (offset < 0)
+        return `${Math.abs(offset)} Weeks Ago - ${dateRange.startDate.toLocaleDateString("en-US", { month: "short", day: "numeric" })} to ${dateRange.endDate.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`;
+      return `In ${offset} Weeks - ${dateRange.startDate.toLocaleDateString("en-US", { month: "short", day: "numeric" })} to ${dateRange.endDate.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`;
+
+    case "monthly":
+      if (offset === 0) return `This Month - ${monthYear}`;
+      if (offset === -1) return `Last Month - ${monthYear}`;
+      if (offset === 1) return `Next Month - ${monthYear}`;
+      if (offset < 0)
+        return `${Math.abs(offset)} Months Ago - ${monthYear}`;
+      return `In ${offset} Months - ${monthYear}`;
+
+    case "yearly":
+      if (offset === 0) return `This Year - ${year}`;
+      if (offset === -1) return `Last Year - ${year}`;
+      if (offset === 1) return `Next Year - ${year}`;
+      if (offset < 0) return `${Math.abs(offset)} Years Ago - ${year}`;
+      return `In ${offset} Years - ${year}`;
+
+    default:
+      return monthYear;
+  }
 }
 
 /**

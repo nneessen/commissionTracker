@@ -16,6 +16,7 @@ import type { NewPolicyForm, CreatePolicyData } from "../../types/policy.types";
 // Components
 import { DashboardHeader } from "./components/DashboardHeader";
 import { TimePeriodSwitcher } from "./components/TimePeriodSwitcher";
+import { PeriodNavigator } from "./components/PeriodNavigator";
 import { DateRangeDisplay } from "./components/DateRangeDisplay";
 import { QuickStatsPanel } from "./components/QuickStatsPanel";
 import { PerformanceOverviewCard } from "./components/PerformanceOverviewCard";
@@ -47,9 +48,16 @@ export const DashboardHome: React.FC = () => {
   const { user } = useAuth();
   const { data: constants } = useConstants();
   const [timePeriod, setTimePeriod] = useState<TimePeriod>("monthly");
+  const [periodOffset, setPeriodOffset] = useState<number>(0);
   const [activeDialog, setActiveDialog] = useState<"policy" | "expense" | null>(
     null,
   );
+
+  // Handler to change time period and reset offset to current period
+  const handleTimePeriodChange = (newPeriod: TimePeriod) => {
+    setTimePeriod(newPeriod);
+    setPeriodOffset(0); // Reset to current period when granularity changes
+  };
 
   // Fetch metrics for the selected time period (no scaling needed)
   const {
@@ -62,6 +70,7 @@ export const DashboardHome: React.FC = () => {
     dateRange,
   } = useMetricsWithDateRange({
     timePeriod,
+    periodOffset,
     targetAvgPremium: constants?.avgAP || 1500, // Use user's target avg premium
   });
 
@@ -240,7 +249,13 @@ export const DashboardHome: React.FC = () => {
           <div className="flex flex-col items-end gap-2">
             <TimePeriodSwitcher
               timePeriod={timePeriod}
-              onTimePeriodChange={setTimePeriod}
+              onTimePeriodChange={handleTimePeriodChange}
+            />
+            <PeriodNavigator
+              timePeriod={timePeriod}
+              periodOffset={periodOffset}
+              onOffsetChange={setPeriodOffset}
+              dateRange={dateRange}
             />
             <DateRangeDisplay timePeriod={timePeriod} dateRange={dateRange} />
           </div>

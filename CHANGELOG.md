@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-11-19 13:03:17
+
+### Changed Files
+- `src/features/dashboard/DashboardHome.tsx`
+- `src/features/dashboard/components/PeriodNavigator.tsx`
+- `src/hooks/useMetricsWithDateRange.ts`
+- `src/utils/dateRange.ts`
+
+### Statistics
+```
+ 4 files changed, 253 insertions(+), 26 deletions(-)
+```
+
 ## [Checkpoint] - 2025-11-19 12:08:23
 
 ### Changed Files
