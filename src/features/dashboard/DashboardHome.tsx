@@ -8,7 +8,6 @@ import { useCreateExpense } from "../../hooks/expenses/useCreateExpense";
 import { useCreatePolicy } from "../../hooks/policies/useCreatePolicy";
 import { useChargebackSummary } from "../../hooks/commissions/useChargebackSummary";
 import { useAuth } from "../../contexts/AuthContext";
-import { useKPILayout } from "../../hooks/useKPILayout";
 import { TimePeriod } from "../../utils/dateRange";
 import showToast from "../../utils/toast";
 import type { CreateExpenseData } from "../../types/expense.types";
@@ -17,16 +16,12 @@ import type { NewPolicyForm, CreatePolicyData } from "../../types/policy.types";
 // Components
 import { DashboardHeader } from "./components/DashboardHeader";
 import { TimePeriodSwitcher } from "./components/TimePeriodSwitcher";
-import { KPILayoutSwitcher } from "./components/KPILayoutSwitcher";
 import { DateRangeDisplay } from "./components/DateRangeDisplay";
 import { QuickStatsPanel } from "./components/QuickStatsPanel";
 import { PerformanceOverviewCard } from "./components/PerformanceOverviewCard";
 import { AlertsPanel } from "./components/AlertsPanel";
 import { QuickActionsPanel } from "./components/QuickActionsPanel";
-import { KPIGrid } from "./components/KPIGrid";
 import { KPIGridHeatmap } from "./components/KPIGridHeatmap";
-import { KPIGridNarrative } from "./components/KPIGridNarrative";
-import { KPIGridMatrix } from "./components/KPIGridMatrix";
 import { ExpenseDialog } from "../expenses/components/ExpenseDialog";
 import { PolicyDialog } from "../policies/components/PolicyDialog";
 
@@ -52,7 +47,6 @@ export const DashboardHome: React.FC = () => {
   const { user } = useAuth();
   const { data: constants } = useConstants();
   const [timePeriod, setTimePeriod] = useState<TimePeriod>("monthly");
-  const [kpiLayout, setKpiLayout] = useKPILayout();
   const [activeDialog, setActiveDialog] = useState<"policy" | "expense" | null>(
     null,
   );
@@ -244,13 +238,10 @@ export const DashboardHome: React.FC = () => {
         <div className="flex justify-between items-start">
           <DashboardHeader monthProgress={monthProgress} />
           <div className="flex flex-col items-end gap-2">
-            <div className="flex items-center gap-2">
-              <KPILayoutSwitcher layout={kpiLayout} onLayoutChange={setKpiLayout} />
-              <TimePeriodSwitcher
-                timePeriod={timePeriod}
-                onTimePeriodChange={setTimePeriod}
-              />
-            </div>
+            <TimePeriodSwitcher
+              timePeriod={timePeriod}
+              onTimePeriodChange={setTimePeriod}
+            />
             <DateRangeDisplay timePeriod={timePeriod} dateRange={dateRange} />
           </div>
         </div>
@@ -281,10 +272,8 @@ export const DashboardHome: React.FC = () => {
           </div>
         </div>
 
-        {/* Bottom KPI grid - Conditional rendering based on layout */}
-        {kpiLayout === 'heatmap' && <KPIGridHeatmap sections={kpiConfig} />}
-        {kpiLayout === 'narrative' && <KPIGridNarrative sections={kpiConfig} />}
-        {kpiLayout === 'matrix' && <KPIGridMatrix sections={kpiConfig} />}
+        {/* KPI Heatmap Dashboard */}
+        <KPIGridHeatmap sections={kpiConfig} />
       </div>
 
       {/* Dialogs */}
