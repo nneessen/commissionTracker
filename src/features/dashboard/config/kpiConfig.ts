@@ -91,18 +91,6 @@ export function generateKPIConfig(params: KPIConfigParams): KPISection[] {
       category: `${periodLabel} Financial`,
       kpis: [
         {
-          label: 'Commission Earned',
-          value: formatCurrency(periodCommissions.earned),
-        },
-        {
-          label: 'Total Expenses',
-          value: formatCurrency(periodExpenses.total),
-        },
-        {
-          label: 'Net Income',
-          value: formatCurrency(periodAnalytics.netIncome),
-        },
-        {
           label: 'Profit Margin',
           value: formatPercent(periodAnalytics.profitMargin),
         },
@@ -124,18 +112,6 @@ export function generateKPIConfig(params: KPIConfigParams): KPISection[] {
       category: `${periodLabel} Production`,
       kpis: [
         {
-          label: 'New Policies',
-          value: periodPolicies.newCount,
-        },
-        {
-          label: 'Premium Written',
-          value: formatCurrency(periodPolicies.premiumWritten),
-        },
-        {
-          label: 'Avg Premium/Policy',
-          value: formatCurrency(periodPolicies.averagePremium),
-        },
-        {
           label: 'Cancelled',
           value: periodPolicies.cancelled,
         },
@@ -153,10 +129,6 @@ export function generateKPIConfig(params: KPIConfigParams): KPISection[] {
       category: `${periodLabel} Metrics`,
       kpis: [
         {
-          label: 'Lapse Rate',
-          value: formatPercent(derivedMetrics.lapsedRate),
-        },
-        {
           label: 'Cancel Rate',
           value: formatPercent(derivedMetrics.cancellationRate),
         },
@@ -169,10 +141,6 @@ export function generateKPIConfig(params: KPIConfigParams): KPISection[] {
           value: formatCurrency(periodCommissions.averageAmount),
         },
         {
-          label: 'Avg Comm Rate',
-          value: formatPercent(periodCommissions.averageRate),
-        },
-        {
           label: 'Expense Count',
           value: periodExpenses.count,
         },
@@ -182,10 +150,6 @@ export function generateKPIConfig(params: KPIConfigParams): KPISection[] {
       category: `${periodLabel} Clients`,
       kpis: [
         {
-          label: 'New Clients',
-          value: periodClients.newCount,
-        },
-        {
           label: 'Avg Client Age',
           value: periodClients.averageAge > 0 ? periodClients.averageAge.toFixed(1) : '—',
         },
@@ -193,48 +157,11 @@ export function generateKPIConfig(params: KPIConfigParams): KPISection[] {
           label: 'Total Value',
           value: formatCurrency(periodClients.totalValue),
         },
-        {
-          label: 'Avg Value/Client',
-          value: formatCurrency(derivedMetrics.avgClientValue),
-        },
-      ],
-    },
-    {
-      category: 'Current Status',
-      kpis: [
-        {
-          label: 'Active Policies',
-          value: currentState.activePolicies,
-        },
-        {
-          label: 'Total Policies',
-          value: currentState.totalPolicies,
-        },
-        {
-          label: 'Total Clients',
-          value: currentState.totalClients,
-        },
-        {
-          label: 'Pending Pipeline',
-          value: formatCurrency(currentState.pendingPipeline),
-        },
-        {
-          label: 'Retention Rate',
-          value: formatPercent(currentState.retentionRate),
-        },
       ],
     },
     {
       category: 'Targets & Pace',
       kpis: [
-        {
-          label: 'Breakeven Needed' + periodSuffix,
-          value: formatCurrency(Math.max(0, breakevenDisplay)),
-        },
-        {
-          label: 'Policies Needed' + periodSuffix,
-          value: Math.ceil(policiesNeededDisplay),
-        },
         {
           label: 'Daily Target',
           value: periodAnalytics.paceMetrics.dailyTarget,
