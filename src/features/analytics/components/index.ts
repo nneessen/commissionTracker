@@ -1,6 +1,7 @@
 // src/features/analytics/components/index.ts
 
 export { PerformanceAttribution } from './PerformanceAttribution';
+export { PaceMetrics } from './PaceMetrics';
 export { CohortAnalysis } from './CohortAnalysis';
 export { ClientSegmentation } from './ClientSegmentation';
 export { CommissionDeepDive } from './CommissionDeepDive';

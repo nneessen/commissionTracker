@@ -10,8 +10,8 @@ import { downloadCSV, printAnalyticsToPDF } from "../../utils/exportHelpers";
 import { AnalyticsDateProvider, useAnalyticsDateRange } from "./context/AnalyticsDateContext";
 
 // Lazy load analytics components for better performance
-const PerformanceAttribution = lazy(() =>
-  import("./components").then((m) => ({ default: m.PerformanceAttribution })),
+const PaceMetrics = lazy(() =>
+  import("./components").then((m) => ({ default: m.PaceMetrics })),
 );
 const CohortAnalysis = lazy(() =>
   import("./components").then((m) => ({ default: m.CohortAnalysis })),
@@ -148,7 +148,7 @@ function AnalyticsDashboardContent() {
             {/* Left Column */}
             <div className="flex flex-col gap-4 min-w-0 w-full">
               <Suspense fallback={<div className="p-5 text-center text-muted-foreground">Loading...</div>}>
-                <PerformanceAttribution />
+                <PaceMetrics />
               </Suspense>
               <Suspense fallback={<div className="p-5 text-center text-muted-foreground">Loading...</div>}>
                 <CohortAnalysis />
