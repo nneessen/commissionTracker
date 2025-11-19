@@ -209,3 +209,16 @@ export type PerformanceStatus = 'hit' | 'good' | 'fair' | 'poor' | 'neutral';
  * Color scheme type for metrics
  */
 export type MetricColor = keyof typeof import('../constants/dashboard').METRIC_COLORS;
+
+/**
+ * KPI layout variant type
+ */
+export type KPILayout = 'heatmap' | 'narrative' | 'matrix';
+
+/**
+ * KPI layout switcher props
+ */
+export interface KPILayoutSwitcherProps {
+  layout: KPILayout;
+  onLayoutChange: (layout: KPILayout) => void;
+}

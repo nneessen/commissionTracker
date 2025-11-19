@@ -6,6 +6,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-11-19 10:27:42
+
+### Changed Files
+- `plans/ACTIVE/kpi_redesign_three_layouts.md`
+- `src/features/dashboard/DashboardHome.tsx`
+- `src/features/dashboard/components/KPIGridHeatmap.tsx`
+- `src/features/dashboard/components/KPIGridMatrix.tsx`
+- `src/features/dashboard/components/KPIGridNarrative.tsx`
+- `src/features/dashboard/components/KPILayoutSwitcher.tsx`
+- `src/features/dashboard/components/index.ts`
+- `src/features/dashboard/components/kpi-layouts/CircularGauge.tsx`
+- `src/features/dashboard/components/kpi-layouts/MiniSparkline.tsx`
+- `src/features/dashboard/components/kpi-layouts/NarrativeInsight.tsx`
+- `src/hooks/useKPILayout.ts`
+- `src/types/dashboard.types.ts`
+
+### Statistics
+```
+ 12 files changed, 1383 insertions(+), 6 deletions(-)
+```
+
 ## [Checkpoint] - 2025-11-11 13:19:31
 
 ### Changed Files

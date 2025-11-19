@@ -1,15 +1,15 @@
 # Project Statistics
 
-Last Updated: 2025-11-11 13:19:31
+Last Updated: 2025-11-19 10:27:42
 
 ## Metrics
-- Total Files: 21800
-- Total Lines of Code: 336560
-- Total Commits: 150
+- Total Files: 21813
+- Total Lines of Code: 338652
+- Total Commits: 155
 
 ## Recent Activity
-30baa86 docs: multiple changes in .,.serena/memories,scripts
-eeafd09 Merge branch 'main' of https://github.com/nneessen/commissionTracker
-c11d091 fix(reports): resolve infinite query loop causing page freeze
-292fb17 docs: multiple changes in .,src/features/reports/components,src/features/reports/components/charts
-d71ab49 docs: CHANGELOG.md,PROJECT_STATS.md,ReportsPage.tsx
+fca828f refactor(dashboard): remove 17 duplicate metrics from KPI breakdown
+f46546a refactor: remove client management feature from application
+5b779f8 feat(clients): implement comprehensive client management system
+f5c3ed3 docs: multiple changes in .,.serena/memories,plans/COMPLETED
+bb9232e fix(dashboard): correct monthly expense calculation to include entire month
