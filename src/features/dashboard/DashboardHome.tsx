@@ -239,22 +239,20 @@ export const DashboardHome: React.FC = () => {
 
   return (
     <>
-      <div className="page-header">
-        {/* Header with time period switcher and date range */}
-        <div className="flex justify-end items-start">
-          <div className="flex flex-col items-end gap-2">
-            <TimePeriodSwitcher
-              timePeriod={timePeriod}
-              onTimePeriodChange={handleTimePeriodChange}
-            />
-            <PeriodNavigator
-              timePeriod={timePeriod}
-              periodOffset={periodOffset}
-              onOffsetChange={setPeriodOffset}
-              dateRange={dateRange}
-            />
-            <DateRangeDisplay timePeriod={timePeriod} dateRange={dateRange} />
-          </div>
+      {/* Time Period Controls - Full Width */}
+      <div className="mb-6">
+        <div className="flex items-center justify-between gap-4 w-full">
+          <TimePeriodSwitcher
+            timePeriod={timePeriod}
+            onTimePeriodChange={handleTimePeriodChange}
+          />
+          <PeriodNavigator
+            timePeriod={timePeriod}
+            periodOffset={periodOffset}
+            onOffsetChange={setPeriodOffset}
+            dateRange={dateRange}
+          />
+          <DateRangeDisplay timePeriod={timePeriod} dateRange={dateRange} />
         </div>
       </div>
 
