@@ -320,7 +320,7 @@ export class PolicyRepository extends BaseRepository<Policy, CreatePolicyData, U
 
       return {
         data: policies,
-        nextCursor: nextCursor instanceof Date ? nextCursor.toISOString() : nextCursor,
+        nextCursor: typeof nextCursor === 'string' ? nextCursor : null,
         hasMore
       };
     } catch (error) {
@@ -529,7 +529,7 @@ export class PolicyRepository extends BaseRepository<Policy, CreatePolicyData, U
     let clientData;
     if (dbRecord.clients) {
       // Client was joined - parse address JSONB field
-      let address = {};
+      let address: any = {};
       if (dbRecord.clients.address) {
         if (typeof dbRecord.clients.address === 'string') {
           try {

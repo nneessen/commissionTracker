@@ -14,9 +14,11 @@ import {
   Menu,
   ChevronLeft,
   X,
+  Shield,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Button } from "@/components/ui/button";
+import { useIsAdmin } from "@/hooks/admin/useUserApproval";
 
 interface NavigationItem {
   icon: React.ElementType;
@@ -51,6 +53,7 @@ export default function Sidebar({
 }: SidebarProps) {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const { data: isAdmin } = useIsAdmin();
 
   useEffect(() => {
     const checkMobile = () => {
@@ -171,6 +174,28 @@ export default function Sidebar({
               </Link>
             );
           })}
+          {isAdmin && (
+            <Link
+              to="/admin/users"
+              onClick={() => {
+                if (isMobile) closeMobile();
+              }}
+            >
+              {({ isActive }) => (
+                <Button
+                  variant={isActive ? "secondary" : "ghost"}
+                  className={`mb-1 h-9 ${isCollapsed ? "w-9 p-0 mx-auto" : "w-full justify-start px-3"}`}
+                  title={isCollapsed ? "User Management" : ""}
+                  data-active={isActive}
+                >
+                  <Shield size={16} className={isCollapsed ? "" : "mr-2.5"} />
+                  {!isCollapsed && (
+                    <span className="text-sm">User Management</span>
+                  )}
+                </Button>
+              )}
+            </Link>
+          )}
         </nav>
 
         {/* Footer */}

@@ -296,17 +296,17 @@ class PolicyService {
         .single();
 
       if (commissionError) {
-        logger.warn('PolicyService.cancelPolicy', 'Could not fetch chargeback details', {
+        logger.warn('Could not fetch chargeback details', {
           policyId,
           error: commissionError
-        });
+        }, 'PolicyService.cancelPolicy');
       }
 
-      logger.info('PolicyService', 'Policy cancelled', {
+      logger.info('Policy cancelled', {
         policyId,
         reason,
         chargebackAmount: commission?.chargeback_amount || 0
-      });
+      }, 'PolicyService');
 
       // Transform and return
       const updatedPolicy = this.repository['transformFromDB'](updated);
@@ -395,17 +395,17 @@ class PolicyService {
         .single();
 
       if (commissionError) {
-        logger.warn('PolicyService.lapsePolicy', 'Could not fetch chargeback details', {
+        logger.warn('Could not fetch chargeback details', {
           policyId,
           error: commissionError
-        });
+        }, 'PolicyService.lapsePolicy');
       }
 
-      logger.info('PolicyService', 'Policy lapsed', {
+      logger.info('Policy lapsed', {
         policyId,
         lapseDate,
         chargebackAmount: commission?.chargeback_amount || 0
-      });
+      }, 'PolicyService');
 
       // Transform and return
       const updatedPolicy = this.repository['transformFromDB'](updated);
@@ -491,10 +491,10 @@ class PolicyService {
         throw new DatabaseError('reinstatePolicy', updateError);
       }
 
-      logger.info('PolicyService', 'Policy reinstated', {
+      logger.info('Policy reinstated', {
         policyId,
         reason
-      });
+      }, 'PolicyService');
 
       // Transform and return
       return this.repository['transformFromDB'](updated);

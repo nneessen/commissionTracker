@@ -152,7 +152,7 @@ export function useMetricsWithDateRange(
   const filteredExpenses = (() => {
     // Check for year mismatch
     const hasCurrentYearData = expenses.some((e) => {
-      const date = e.date || e.createdAt;
+      const date = e.date || e.created_at;
       return date && new Date(date).getFullYear() === new Date().getFullYear();
     });
 
@@ -166,7 +166,7 @@ export function useMetricsWithDateRange(
     }
 
     return expenses.filter((expense) => {
-      const expenseDate = expense.date || expense.createdAt;
+      const expenseDate = expense.date || expense.created_at;
       return isInDateRange(expenseDate, dateRangeForFiltering);
     });
   })();
@@ -336,7 +336,7 @@ export function useMetricsWithDateRange(
     const clientsInPeriod = new Map<string, any>();
 
     filteredPolicies.forEach((p) => {
-      const clientKey = p.client?.name || p.clientId;
+      const clientKey = p.client?.name;
       if (clientKey && !clientsInPeriod.has(clientKey)) {
         clientsInPeriod.set(clientKey, p.client);
       }
@@ -386,7 +386,7 @@ export function useMetricsWithDateRange(
 
     // Get unique clients from all policies
     const allClients = new Set(
-      policies.map((p) => p.client?.name || p.clientId),
+      policies.map((p) => p.client?.name),
     );
     const totalClients = allClients.size;
 

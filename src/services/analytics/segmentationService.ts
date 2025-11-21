@@ -72,7 +72,7 @@ export function segmentClientsByValue(policies: Policy[]): ClientSegmentationSum
   const clientMap = new Map<string, Policy[]>();
 
   policies.forEach(policy => {
-    const clientKey = policy.clientId || policy.client?.name || 'unknown';
+    const clientKey = policy.client?.name || 'unknown';
     if (!clientMap.has(clientKey)) {
       clientMap.set(clientKey, []);
     }
@@ -181,7 +181,7 @@ export function calculateCrossSellOpportunities(policies: Policy[]): CrossSellOp
   const clientMap = new Map<string, Policy[]>();
 
   policies.forEach(policy => {
-    const clientKey = policy.clientId || policy.client?.name || 'unknown';
+    const clientKey = policy.client?.name || 'unknown';
     if (!clientMap.has(clientKey)) {
       clientMap.set(clientKey, []);
     }
@@ -247,7 +247,7 @@ export function getClientLifetimeValue(policies: Policy[]): ClientLifetimeValue[
   const clientMap = new Map<string, Policy[]>();
 
   policies.forEach(policy => {
-    const clientKey = policy.clientId || policy.client?.name || 'unknown';
+    const clientKey = policy.client?.name || 'unknown';
     if (!clientMap.has(clientKey)) {
       clientMap.set(clientKey, []);
     }

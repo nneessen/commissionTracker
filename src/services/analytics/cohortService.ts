@@ -152,6 +152,7 @@ export function getChargebacksByCohort(
   }>();
 
   commissions.forEach(commission => {
+    if (!commission.policyId) return;
     const policy = policyMap.get(commission.policyId);
     if (!policy) return;
 
@@ -189,6 +190,7 @@ export function getChargebacksByCohort(
     const chargebacksByMonth: { [monthsElapsed: number]: number } = {};
 
     cohortInfo.chargebacks.forEach(commission => {
+      if (!commission.policyId) return;
       const policy = policyMap.get(commission.policyId);
       if (policy && commission.chargebackDate) {
         const monthsToChargeback = differenceInMonths(
@@ -235,6 +237,7 @@ export function getEarningProgressByCohort(
   const cohortMap = new Map<string, Commission[]>();
 
   commissions.forEach(commission => {
+    if (!commission.policyId) return;
     const policy = policyMap.get(commission.policyId);
     if (!policy) return;
 

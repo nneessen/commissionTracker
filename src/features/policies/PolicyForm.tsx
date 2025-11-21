@@ -115,13 +115,9 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
           product: policy.product,
           policyNumber: policy.policyNumber,
           submitDate:
-            policy.submitDate instanceof Date
-              ? formatDateForDB(policy.submitDate)
-              : policy.submitDate || formatDateForDB(new Date()),
+            policy.submitDate || formatDateForDB(new Date()),
           effectiveDate:
-            policy.effectiveDate instanceof Date
-              ? formatDateForDB(policy.effectiveDate)
-              : policy.effectiveDate,
+            policy.effectiveDate || formatDateForDB(new Date()),
           premium: calculatePaymentAmount(
             policy.annualPremium,
             policy.paymentFrequency,

@@ -180,13 +180,13 @@ class CommissionStatusService {
         throw new DatabaseError('updateMonthsPaid', updateError);
       }
 
-      logger.info('CommissionStatusService', 'Months paid auto-calculated and updated', {
+      logger.info('Months paid auto-calculated and updated', {
         commissionId,
         effectiveDate,
         monthsPaid: cappedMonthsPaid,
         earnedAmount: updated.earned_amount,
         unearnedAmount: updated.unearned_amount
-      });
+      }, 'CommissionStatusService');
 
       return {
         success: true,
@@ -252,10 +252,10 @@ class CommissionStatusService {
         throw new DatabaseError('markAsCancelled', updateError);
       }
 
-      logger.info('CommissionStatusService', 'Commission marked as cancelled', {
+      logger.info('Commission marked as cancelled', {
         commissionId,
         reason
-      });
+      }, 'CommissionStatusService');
 
       return {
         success: true,
@@ -297,12 +297,12 @@ class CommissionStatusService {
         throw new Error(`Chargeback calculation failed: ${result.error}`);
       }
 
-      logger.info('CommissionStatusService', 'Chargeback processed', {
+      logger.info('Chargeback processed', {
         commissionId,
         policyId,
         chargebackAmount: result.chargeback_amount,
         monthsPaid: result.months_paid
-      });
+      }, 'CommissionStatusService');
 
       return {
         success: true,
@@ -369,10 +369,10 @@ class CommissionStatusService {
         throw new DatabaseError('reverseChargeback', updateError);
       }
 
-      logger.info('CommissionStatusService', 'Chargeback reversed', {
+      logger.info('Chargeback reversed', {
         commissionId,
         originalChargebackAmount: commission.chargeback_amount
-      });
+      }, 'CommissionStatusService');
 
       return {
         success: true,

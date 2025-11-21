@@ -65,8 +65,8 @@ export const PolicyDashboard: React.FC = () => {
         }}
         onSave={async (formData) => {
           if (editingPolicyId) {
-            const result = await updatePolicy(editingPolicyId, formData);
-            return result || null;
+            await updatePolicy(editingPolicyId, formData);
+            return null;
           } else {
             const result = await addPolicy(formData);
             return result || null;

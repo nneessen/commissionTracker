@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { useQuery, useQueries } from '@tanstack/react-query';
+import { useQuery, useQueries, keepPreviousData } from '@tanstack/react-query';
 import { Policy, PolicyFilters } from '../../types/policy.types';
 import { policyService } from '../../services/policies/policyService';
 
@@ -43,7 +43,7 @@ export function usePoliciesView() {
           sortConfig
         ),
         staleTime: 5 * 60 * 1000, // 5 minutes
-        keepPreviousData: true, // Smooth page transitions
+        placeholderData: keepPreviousData, // Smooth page transitions
       },
       {
         queryKey: ['policies', 'count', serverFilters],

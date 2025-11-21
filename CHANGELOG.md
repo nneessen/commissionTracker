@@ -6,6 +6,73 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-11-21 07:31:49
+
+### Changed Files
+- `.env.example`
+- `.serena/memories/user_approval_system_implementation.md`
+- `scripts/fix-admin-account.ts`
+- `src/App.tsx`
+- `src/components/auth/ApprovalGuard.tsx`
+- `src/components/layout/Sidebar.tsx`
+- `src/constants/dashboard.ts`
+- `src/data/compGuideData.ts`
+- `src/features/admin/components/UserManagementDashboard.tsx`
+- `src/features/analytics/visualizations/ForecastChart.tsx`
+- `src/features/auth/DeniedAccess.tsx`
+- `src/features/auth/PendingApproval.tsx`
+- `src/features/auth/index.ts`
+- `src/features/comps/UserContractSettings.tsx`
+- `src/features/dashboard/DashboardHome.tsx`
+- `src/features/expenses/config/expenseStatsConfig.ts`
+- `src/features/policies/PolicyDashboard.tsx`
+- `src/features/policies/PolicyForm.tsx`
+- `src/features/policies/PolicyListInfinite.tsx`
+- `src/features/settings/carriers/components/CarrierForm.tsx`
+- `src/features/settings/commission-rates/hooks/useCommissionRates.ts`
+- `src/features/settings/products/components/ProductForm.tsx`
+- `src/features/settings/products/hooks/useProducts.ts`
+- `src/hooks/admin/index.ts`
+- `src/hooks/admin/useUserApproval.ts`
+- `src/hooks/admin/useUsersView.ts`
+- `src/hooks/commissions/useCommissionMetrics.ts`
+- `src/hooks/expenses/useConstants.ts`
+- `src/hooks/expenses/useGenerateRecurring.ts`
+- `src/hooks/policies/usePoliciesView.ts`
+- `src/hooks/targets/useActualMetrics.ts`
+- `src/hooks/useAnalyticsData.ts`
+- `src/hooks/useCommissions.ts`
+- `src/hooks/useMetrics.ts`
+- `src/hooks/useMetricsWithDateRange.ts`
+- `src/router.tsx`
+- `src/services/admin/userApprovalService.ts`
+- `src/services/agents/agentService.ts`
+- `src/services/analytics/breakevenService.ts`
+- `src/services/analytics/cohortService.ts`
+- `src/services/analytics/segmentationService.ts`
+- `src/services/clients/clientService.ts`
+- `src/services/commissions/CommissionAnalyticsService.ts`
+- `src/services/commissions/CommissionLifecycleService.ts`
+- `src/services/commissions/CommissionStatusService.ts`
+- `src/services/index.ts`
+- `src/services/policies/PolicyRepository.ts`
+- `src/services/policies/policyService.ts`
+- `src/services/settings/AgentRepository.ts`
+- `src/services/settings/userService.optimized.ts`
+- `src/services/settings/userService.ts`
+- `src/types/client.types.ts`
+- `src/types/expense.types.ts`
+- `src/types/policy.types.ts`
+- `src/utils/dataMigration.ts`
+- `supabase/migrations/20251120144703_add_user_approval_system.sql`
+- `supabase/migrations/20251120150000_fix_user_profiles_rls.sql`
+- `tsconfig.tsbuildinfo`
+
+### Statistics
+```
+ 58 files changed, 2701 insertions(+), 140 deletions(-)
+```
+
 ## [Checkpoint] - 2025-11-19 16:48:56
 
 ### Changed Files

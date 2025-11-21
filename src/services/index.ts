@@ -31,4 +31,4 @@ export { expenseService } from './expenses/expenseService';
 export type { CreatePolicyData, UpdatePolicyData } from '../types/policy.types';
 export type { CreateCommissionData, UpdateCommissionData } from '../types/commission.types';
 export type { CreateExpenseData, UpdateExpenseData } from '../types/expense.types';
-export type { NewProductForm as CreateProductData, NewCommissionRateForm as CreateCommissionRateData } from '../types/product.types';
+export type { ProductFormData as CreateProductData, NewCommissionRateForm as CreateCommissionRateData } from '../types/product.types';

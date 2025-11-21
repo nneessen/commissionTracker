@@ -185,7 +185,7 @@ export const DashboardHome: React.FC = () => {
           name: formData.clientName,
           email: formData.clientEmail || undefined,
           phone: formData.clientPhone || undefined,
-          address: { state: formData.clientState },
+          address: formData.clientState || undefined,
         },
         user.id,
       );

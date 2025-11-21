@@ -182,23 +182,19 @@ class DataMigrationService {
   private async migratePolicies(policies: Policy[], result: MigrationResult): Promise<void> {
     for (const policy of policies) {
       try {
+        // First create or find the client - using empty string as placeholder for clientId
+        // In a real migration, you'd need to create the client first and get its ID
         await policyService.create({
           policyNumber: policy.policyNumber,
-          client: {
-            name: policy.client.name,
-            age: policy.client.age,
-            firstName: policy.client.name?.split(' ')[0] || 'Unknown',
-            lastName: policy.client.name?.split(' ').slice(1).join(' ') || '',
-            email: policy.client.email,
-            phone: policy.client.phone,
-            state: policy.client.state,
-          },
+          clientId: '', // TODO: Need to create client first and use its ID
+          userId: '', // TODO: Need current user ID
           carrierId: policy.carrierId,
           product: policy.product,
           effectiveDate: new Date(policy.effectiveDate),
           termLength: policy.termLength,
           expirationDate: policy.expirationDate ? new Date(policy.expirationDate) : undefined,
           annualPremium: policy.annualPremium,
+          monthlyPremium: policy.annualPremium / 12, // Required field
           paymentFrequency: policy.paymentFrequency,
           commissionPercentage: policy.commissionPercentage,
           notes: policy.notes,

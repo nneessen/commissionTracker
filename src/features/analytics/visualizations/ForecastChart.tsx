@@ -105,7 +105,7 @@ export function ForecastChart({
       if (isNaN(x) || isNaN(y) || !isFinite(x) || !isFinite(y)) return null;
       return { x, y, isFirst: i === 0 };
     })
-    .filter(Boolean);
+    .filter((seg): seg is { x: number; y: number; isFirst: boolean } => seg !== null);
 
   const lowerBandPath = lowerBandPathSegments
     .map((seg, i) => seg.isFirst ? `M ${seg.x} ${seg.y}` : `L ${seg.x} ${seg.y}`)

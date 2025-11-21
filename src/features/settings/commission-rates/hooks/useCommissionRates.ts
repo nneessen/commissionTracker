@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { compGuideService } from '@/services/settings/compGuideService';
+import { compGuideService, type CompGuideCreateData } from '@/services/settings/compGuideService';
 import { toast } from 'sonner';
 import type { Database } from '@/types/database.types';
 
@@ -90,12 +90,12 @@ export function useCommissionRates() {
     mutationFn: async (data: CreateRateData) => {
       const result = await compGuideService.createEntry({
         carrier_id: data.carrier_id,
-        product_id: data.product_id,
-        product_type: data.product_type,
+        product_id: data.product_id || undefined,
+        product_type: data.product_type || undefined,
         contract_level: data.contract_level,
         commission_percentage: data.commission_percentage,
         effective_date: data.effective_date,
-        expiration_date: data.expiration_date,
+        expiration_date: data.expiration_date || undefined,
       });
       if (result.error) throw new Error(result.error.message);
       return result.data;
@@ -112,7 +112,12 @@ export function useCommissionRates() {
   // Update rate mutation
   const updateRate = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: UpdateRateData }) => {
-      const result = await compGuideService.updateEntry(id, data);
+      const updateData: Partial<CompGuideCreateData> = {
+        commission_percentage: data.commission_percentage,
+        effective_date: data.effective_date,
+        expiration_date: data.expiration_date || undefined,
+      };
+      const result = await compGuideService.updateEntry(id, updateData);
       if (result.error) throw new Error(result.error.message);
       return result.data;
     },
@@ -147,12 +152,12 @@ export function useCommissionRates() {
       const result = await compGuideService.createBulkEntries(
         rates.map(r => ({
           carrier_id: r.carrier_id,
-          product_id: r.product_id,
-          product_type: r.product_type,
+          product_id: r.product_id || undefined,
+          product_type: r.product_type || undefined,
           contract_level: r.contract_level,
           commission_percentage: r.commission_percentage,
           effective_date: r.effective_date,
-          expiration_date: r.expiration_date,
+          expiration_date: r.expiration_date || undefined,
         }))
       );
       if (result.error) throw new Error(result.error.message);

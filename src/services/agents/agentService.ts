@@ -121,6 +121,7 @@ class AgentService {
       isActive: dbRecord.is_active,
       createdAt: new Date(dbRecord.created_at),
       updatedAt: new Date(dbRecord.updated_at),
+      raw_user_meta_data: {}
     };
   }
 

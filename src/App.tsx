@@ -5,6 +5,7 @@ import { Toaster } from "react-hot-toast";
 import { Sidebar } from "./components/layout";
 import { useAuth } from "./contexts/AuthContext";
 import { logger } from "./services/base/logger";
+import { ApprovalGuard } from "./components/auth/ApprovalGuard";
 
 function App() {
   const { user, loading, signOut } = useAuth();
@@ -18,6 +19,8 @@ function App() {
     "/auth/callback",
     "/auth/verify-email",
     "/auth/reset-password",
+    "/auth/pending",
+    "/auth/denied",
   ];
   const isPublicPath = publicPaths.some((path) =>
     location.pathname.startsWith(path),
@@ -73,6 +76,11 @@ function App() {
     );
   }
 
+  // Guard: user must be non-null here
+  if (!user) {
+    return null;
+  }
+
   return (
     <>
       <Toaster />
@@ -87,7 +95,9 @@ function App() {
 
         <div className="main-content flex-1 min-w-0">
           <div className="p-6 w-full min-h-screen">
-            <Outlet />
+            <ApprovalGuard>
+              <Outlet />
+            </ApprovalGuard>
           </div>
         </div>
       </div>

@@ -7,8 +7,3 @@ export { useCreateCommission } from './commissions/useCreateCommission';
 export { useDeleteCommission } from './commissions/useDeleteCommission';
 export { useCommissionMetrics } from './commissions/useCommissionMetrics';
 
-// For backward compatibility, export types
-export type { UseCommissionsResult } from './commissions/useCommissions';
-export type { UseCommissionResult } from './commissions/useCommission';
-export type { UseCommissionMetricsResult } from './commissions/useCommissionMetrics';
-

@@ -20,8 +20,11 @@ import {
   AuthCallback,
   ResetPassword,
   EmailVerificationPending,
+  PendingApproval,
+  DeniedAccess,
 } from "./features/auth";
 import { ReportsPage } from "./features/reports";
+import { UserManagementDashboard } from "./features/admin/components/UserManagementDashboard";
 
 // Create root route with App layout
 const rootRoute = createRootRoute({
@@ -137,6 +140,27 @@ const testCompGuideRoute = createRoute({
   component: TestCompGuide,
 });
 
+// Pending approval route
+const pendingApprovalRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "auth/pending",
+  component: PendingApproval,
+});
+
+// Denied access route
+const deniedAccessRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "auth/denied",
+  component: DeniedAccess,
+});
+
+// Admin users management route
+const adminUsersRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "admin/users",
+  component: UserManagementDashboard,
+});
+
 // Create the route tree - all routes are already linked via getParentRoute
 const routeTree = rootRoute.addChildren([
   indexRoute,
@@ -145,6 +169,9 @@ const routeTree = rootRoute.addChildren([
   authCallbackRoute,
   resetPasswordRoute,
   verifyEmailRoute,
+  pendingApprovalRoute,
+  deniedAccessRoute,
+  adminUsersRoute,
   policiesRoute,
   analyticsRoute,
   compGuideRoute,

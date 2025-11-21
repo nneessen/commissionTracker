@@ -221,7 +221,6 @@ export function UserContractSettings() {
           <Button
             onClick={handleSave}
             disabled={saving}
-            loading={saving}
             size="sm"
           >
             {!saving && <Save className="h-4 w-4 mr-2" />}

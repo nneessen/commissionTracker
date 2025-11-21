@@ -25,8 +25,8 @@ import { Carrier } from '../hooks/useCarriers';
 
 const carrierFormSchema = z.object({
   name: z.string().min(1, 'Carrier name is required').max(100, 'Name is too long'),
-  short_name: z.string().max(50, 'Short name is too long').optional(),
-  is_active: z.boolean().default(true),
+  short_name: z.string().max(50, 'Short name is too long').optional().or(z.literal('')),
+  is_active: z.boolean(),
 });
 
 type CarrierFormValues = z.infer<typeof carrierFormSchema>;
@@ -50,7 +50,7 @@ export function CarrierForm({
     resolver: zodResolver(carrierFormSchema),
     defaultValues: {
       name: '',
-      short_name: '',
+      short_name: undefined,
       is_active: true,
     },
   });
@@ -60,13 +60,13 @@ export function CarrierForm({
     if (carrier) {
       form.reset({
         name: carrier.name || '',
-        short_name: carrier.short_name || '',
+        short_name: carrier.short_name || undefined,
         is_active: carrier.is_active ?? true,
       });
     } else {
       form.reset({
         name: '',
-        short_name: '',
+        short_name: undefined,
         is_active: true,
       });
     }

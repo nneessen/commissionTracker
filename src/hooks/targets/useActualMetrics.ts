@@ -10,7 +10,7 @@ import type { ActualMetrics } from '../../types/targets.types';
 export const useActualMetrics = (): ActualMetrics => {
   // Fetch metrics for each time period
   const ytdMetrics = useMetricsWithDateRange({ timePeriod: 'yearly' });
-  const qtdMetrics = useMetricsWithDateRange({ timePeriod: 'quarterly' });
+  const qtdMetrics = useMetricsWithDateRange({ timePeriod: 'monthly', periodOffset: 0 }); // Quarterly not supported, using monthly
   const mtdMetrics = useMetricsWithDateRange({ timePeriod: 'monthly' });
 
   // Extract actual values

@@ -106,6 +106,7 @@ export interface MonthlyExpenseBreakdown {
   total: number;
   personal: number;
   business: number;
+  deductible: number;
   byCategory: Record<string, number>;
 }
 
@@ -117,6 +118,7 @@ export interface YearlyExpenseSummary {
   total: number;
   personal: number;
   business: number;
+  deductible: number;
   monthlyBreakdown: MonthlyExpenseBreakdown[];
   byCategory: Record<string, number>;
 }

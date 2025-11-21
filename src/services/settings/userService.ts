@@ -214,6 +214,7 @@ export class UserService {
       ytdPremium: metadata.ytd_premium,
       createdAt: new Date(supabaseUser.created_at),
       updatedAt: supabaseUser.updated_at ? new Date(supabaseUser.updated_at) : undefined,
+      raw_user_meta_data: metadata
     };
   }
 
@@ -235,6 +236,7 @@ export class UserService {
       notes: dbUser.notes,
       createdAt: dbUser.created_at ? new Date(dbUser.created_at) : undefined,
       updatedAt: dbUser.updated_at ? new Date(dbUser.updated_at) : undefined,
+      raw_user_meta_data: {}
     };
   }
 }

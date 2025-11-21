@@ -58,7 +58,8 @@ export class AgentRepository extends BaseRepository<
       licenseStates: agentRecord.license_states || [],
       hireDate: agentRecord.hire_date ? new Date(agentRecord.hire_date) : undefined,
       ytdCommission: agentRecord.ytd_commission || 0,
-      ytdPremium: agentRecord.ytd_premium || 0
+      ytdPremium: agentRecord.ytd_premium || 0,
+      raw_user_meta_data: {}
     };
   }
 

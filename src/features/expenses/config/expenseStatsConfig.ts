@@ -234,7 +234,7 @@ export const generateTrendData = ({
 
   // Aggregate expenses by month
   expenses.forEach((expense) => {
-    const expenseDate = parseLocalDate(expense.date);
+    const expenseDate = expense.date instanceof Date ? expense.date : parseLocalDate(expense.date);
     const monthsAgo =
       (currentYear - expenseDate.getFullYear()) * 12 +
       (currentMonth - expenseDate.getMonth());

@@ -72,7 +72,7 @@ export function useAnalyticsData(options?: UseAnalyticsDataOptions) {
   const segmentationData = {
     segments: segmentClientsByValue(policies),
     crossSell: calculateCrossSellOpportunities(policies),
-    ltv: getClientLifetimeValue(policies, commissions),
+    ltv: getClientLifetimeValue(policies),
   };
 
   // Predictive Analytics - forecasting and risk (React 19.1 optimizes automatically)

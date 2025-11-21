@@ -185,7 +185,7 @@ class CommissionAnalyticsService {
       }
 
       // Commission amount risk
-      if (commission.advanceAmount > 5000) {
+      if ((commission.advanceAmount ?? 0) > 5000) {
         riskFactors.push('High commission amount');
         riskScore += 2;
       }
@@ -217,7 +217,7 @@ class CommissionAnalyticsService {
         monthsSincePaid,
         chargebackGracePeriod,
         hasActiveChargebacks,
-        potentialChargebackAmount: commission.advanceAmount,
+        potentialChargebackAmount: commission.advanceAmount ?? 0,
         riskFactors,
       };
     } catch (error) {
@@ -271,7 +271,7 @@ class CommissionAnalyticsService {
     }
 
     // Commission amount risk
-    if (commission.advanceAmount > CHARGEBACK_THRESHOLDS.HIGH_COMMISSION_AMOUNT) {
+    if ((commission.advanceAmount ?? 0) > CHARGEBACK_THRESHOLDS.HIGH_COMMISSION_AMOUNT) {
       riskFactors.push('High commission amount');
       riskScore += RISK_SCORE_WEIGHTS.HIGH_COMMISSION_AMOUNT;
     }
@@ -303,7 +303,7 @@ class CommissionAnalyticsService {
       monthsSincePaid,
       chargebackGracePeriod,
       hasActiveChargebacks,
-      potentialChargebackAmount: commission.advanceAmount,
+      potentialChargebackAmount: commission.advanceAmount ?? 0,
       riskFactors,
     };
   }
@@ -357,7 +357,7 @@ class CommissionAnalyticsService {
         commissionId: commission.id,
         userId: commission.userId,
         chargebackType: chargebackData.chargebackType,
-        chargebackAmount: chargebackData.chargebackAmount || commission.advanceAmount,
+        chargebackAmount: chargebackData.chargebackAmount || commission.advanceAmount || 0,
         chargebackReason: chargebackData.chargebackReason,
         policyLapseDate: chargebackData.policyLapseDate,
         chargebackDate: chargebackData.chargebackDate,

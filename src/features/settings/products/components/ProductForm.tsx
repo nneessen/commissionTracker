@@ -58,7 +58,7 @@ const productFormSchema = z.object({
     'disability',
     'annuity'
   ]),
-  is_active: z.boolean().default(true),
+  is_active: z.boolean(),
 });
 
 type ProductFormValues = z.infer<typeof productFormSchema>;

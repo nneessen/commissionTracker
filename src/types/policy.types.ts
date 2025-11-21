@@ -56,8 +56,8 @@ export interface Policy {
   // Metadata
   createdAt: string;
   updatedAt: string;
-  created_at?: string; // Optional for BaseEntity compatibility
-  updated_at?: string; // Optional for BaseEntity compatibility
+  created_at?: Date; // Optional for BaseEntity compatibility
+  updated_at?: Date; // Optional for BaseEntity compatibility
   createdBy?: string;
   notes?: string;
 }

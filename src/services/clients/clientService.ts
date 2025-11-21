@@ -103,11 +103,11 @@ class ClientService {
       }
 
       if (filters.minPremium !== undefined) {
-        results = results.filter(c => c.total_premium >= filters.minPremium);
+        results = results.filter(c => c.total_premium >= filters.minPremium!);
       }
 
       if (filters.maxPremium !== undefined) {
-        results = results.filter(c => c.total_premium <= filters.maxPremium);
+        results = results.filter(c => c.total_premium <= filters.maxPremium!);
       }
 
       if (filters.status && filters.status !== 'all') {

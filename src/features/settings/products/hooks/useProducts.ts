@@ -37,9 +37,19 @@ export function useProducts() {
   // Fetch all products
   const { data: products = [], isLoading, error } = useQuery({
     queryKey: ['products'],
-    queryFn: async () => {
+    queryFn: async (): Promise<Product[]> => {
       const result = await productService.getAllProducts();
-      return result || [];
+      // Transform database rows to Product interface
+      return (result || []).map(row => ({
+        id: row.id,
+        carrier_id: row.carrier_id,
+        name: row.name,
+        product_type: row.product_type,
+        is_active: row.is_active ?? true,
+        commission_percentage: row.commission_percentage ?? undefined,
+        created_at: row.created_at ?? undefined,
+        updated_at: row.updated_at ?? undefined,
+      }));
     },
   });
 

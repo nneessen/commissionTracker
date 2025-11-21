@@ -40,7 +40,6 @@ const PRODUCT_ABBREV: Record<ProductType, string> = {
   health: "Health",
   disability: "Disability",
   annuity: "Ann",
-  other: "Other",
 };
 
 export const PolicyListInfinite: React.FC<PolicyListInfiniteProps> = ({

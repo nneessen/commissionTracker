@@ -284,7 +284,7 @@ export function isClient(obj: any): obj is Client {
 export function hasClientStats(obj: any): obj is ClientWithStats {
   return (
     isClient(obj) &&
-    typeof obj.policy_count === 'number' &&
-    typeof obj.total_premium === 'number'
+    typeof (obj as any).policy_count === 'number' &&
+    typeof (obj as any).total_premium === 'number'
   );
 }

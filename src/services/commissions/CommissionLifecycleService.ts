@@ -331,13 +331,13 @@ class CommissionLifecycleService {
       chargebackReason = 'No chargeback - advance fully earned';
     }
 
-    logger.info('CommissionLifecycle', 'Chargeback calculated', {
+    logger.info('Chargeback calculated', {
       advanceAmount,
       monthsPaid,
       earnedAmount: earnedResult.earnedAmount,
       chargebackAmount,
       reason: chargebackReason
-    });
+    }, 'CommissionLifecycle');
 
     return {
       chargebackAmount,
