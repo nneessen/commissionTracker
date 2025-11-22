@@ -57,24 +57,29 @@ Created a test script to validate builds after changes:
 ## Security Note
 The admin email bypass is hardcoded in the component for security. This ensures the admin can never be locked out, even if there are database or service issues.
 
-## Critical Fix: RLS Policies (2025-11-22)
+## Critical Fix: RLS Policies - Infinite Recursion (2025-11-22)
 
-**Issue Found:** The initial implementation had a 403 error because RLS policies on user_profiles were blocking profile queries.
+**Issue 1 - 403 Forbidden:** RLS policies were querying auth.users table which users don't have access to.
 
-**Root Cause:** The RLS policies were working, but there was no INSERT policy, and the SELECT policies might have had timing issues.
+**Issue 2 - 500 Infinite Recursion:** The admin policy created a circular dependency:
+```sql
+CREATE POLICY "user_profiles_admin_all"
+  ON user_profiles FOR ALL
+  USING (EXISTS (SELECT 1 FROM user_profiles WHERE id = auth.uid() AND is_admin = true));
+```
+This caused infinite recursion because checking the policy required querying the same table the policy protects.
 
-**Fix Applied:**
-- Created migration: `20251122012713_fix_user_profiles_rls_policies.sql`
-- Dropped old policies and created new, simpler ones
-- Added 6 policies:
-  1. Users can read own profile (SELECT)
-  2. Admins can read all profiles (SELECT)
-  3. Users can update own profile (UPDATE)
-  4. Admins can update all profiles (UPDATE)
-  5. Admins can delete profiles (DELETE)
-  6. Users can insert own profile during signup (INSERT)
+**Root Cause:** Policy was trying to check if user is admin by reading user_profiles table, which triggers the policy again, creating an infinite loop.
 
-**Result:** Users can now query their own profile without 403 errors.
+**Final Fix Applied:**
+- Created migration: `20251122015832_remove_infinite_recursion_policy.sql`
+- Dropped the broken `user_profiles_admin_all` policy
+- Kept only 3 simple, non-recursive policies:
+  1. `user_profiles_select_own` - Users can read their own profile
+  2. `user_profiles_update_own` - Users can update their own profile
+  3. `user_profiles_insert_own` - Users can insert their own profile during signup
+
+**Result:** No more 403 or 500 errors. Admin user can access their profile using the "select own" policy, and the frontend ApprovalGuard already has admin bypass logic.
 
 ## Files Modified
 - `src/components/auth/ApprovalGuard.tsx` - Added admin email bypass
