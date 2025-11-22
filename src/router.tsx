@@ -1,4 +1,5 @@
 // src/router.tsx
+import { lazy } from "react";
 import {
   createRootRoute,
   createRoute,
@@ -160,6 +161,16 @@ const adminUsersRoute = createRoute({
   path: "admin/users",
   component: UserManagementDashboard,
 });
+// Diagnostic route for troubleshooting auth issues
+const authDiagnosticRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "admin/auth-diagnostic",
+  component: lazy(() =>
+    import("./features/admin/components/AuthDiagnostic").then((m) => ({
+      default: m.AuthDiagnostic,
+    }))
+  ),
+});
 
 // Create the route tree - all routes are already linked via getParentRoute
 const routeTree = rootRoute.addChildren([
@@ -172,6 +183,7 @@ const routeTree = rootRoute.addChildren([
   pendingApprovalRoute,
   deniedAccessRoute,
   adminUsersRoute,
+  authDiagnosticRoute,
   policiesRoute,
   analyticsRoute,
   compGuideRoute,

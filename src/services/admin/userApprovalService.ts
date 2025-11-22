@@ -36,6 +36,9 @@ export class UserApprovalService {
         return null;
       }
 
+      // Log user details for debugging
+      console.log('Auth user retrieved:', { id: user.id, email: user.email });
+
       const { data, error } = await supabase
         .from('user_profiles')
         .select('*')
@@ -44,9 +47,26 @@ export class UserApprovalService {
 
       if (error) {
         logger.error('Failed to fetch user profile', error, 'UserApprovalService');
+        console.error('Profile fetch error details:', { userId: user.id, error });
+
+        // Special case for admin user - create a fallback profile
+        if (user.email === 'nick@nickneessen.com') {
+          console.warn('Admin user profile not found, using fallback');
+          return {
+            id: user.id,
+            email: user.email,
+            approval_status: 'approved',
+            is_admin: true,
+            approved_at: new Date().toISOString(),
+            created_at: user.created_at,
+            updated_at: new Date().toISOString(),
+          } as UserProfile;
+        }
+
         return null;
       }
 
+      console.log('Profile retrieved:', { id: data.id, email: data.email, status: data.approval_status, isAdmin: data.is_admin });
       return data as UserProfile;
     } catch (error) {
       logger.error('Error in getCurrentUserProfile', error instanceof Error ? error : String(error), 'UserApprovalService');
