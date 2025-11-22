@@ -57,6 +57,25 @@ Created a test script to validate builds after changes:
 ## Security Note
 The admin email bypass is hardcoded in the component for security. This ensures the admin can never be locked out, even if there are database or service issues.
 
+## Critical Fix: RLS Policies (2025-11-22)
+
+**Issue Found:** The initial implementation had a 403 error because RLS policies on user_profiles were blocking profile queries.
+
+**Root Cause:** The RLS policies were working, but there was no INSERT policy, and the SELECT policies might have had timing issues.
+
+**Fix Applied:**
+- Created migration: `20251122012713_fix_user_profiles_rls_policies.sql`
+- Dropped old policies and created new, simpler ones
+- Added 6 policies:
+  1. Users can read own profile (SELECT)
+  2. Admins can read all profiles (SELECT)
+  3. Users can update own profile (UPDATE)
+  4. Admins can update all profiles (UPDATE)
+  5. Admins can delete profiles (DELETE)
+  6. Users can insert own profile during signup (INSERT)
+
+**Result:** Users can now query their own profile without 403 errors.
+
 ## Files Modified
 - `src/components/auth/ApprovalGuard.tsx` - Added admin email bypass
 - `src/services/admin/userApprovalService.ts` - Added fallback for admin user
@@ -64,3 +83,4 @@ The admin email bypass is hardcoded in the component for security. This ensures 
 - `src/router.tsx` - Added route for diagnostic component
 - `scripts/test-build.sh` - New build test script
 - `plans/fix-admin-pending-approval-issue.md` - Comprehensive fix plan
+- `supabase/migrations/20251122012713_fix_user_profiles_rls_policies.sql` - RLS policy fix migration
