@@ -14,6 +14,7 @@ import { supabase } from '../base/supabase';
 import { logger } from '../base/logger';
 import { commissionLifecycleService } from './CommissionLifecycleService';
 import { DatabaseError, NotFoundError, ValidationError } from '../../errors/ServiceErrors';
+import { formatDateForDB } from '../../lib/date';
 
 export interface UpdateMonthsPaidParams {
   commissionId: string;
@@ -140,7 +141,7 @@ class CommissionStatusService {
       const { data: monthsPaidData, error: calcError } = await supabase
         .rpc('calculate_months_paid', {
           p_effective_date: effectiveDate,
-          p_end_date: (lastPaymentDate || new Date()).toISOString().split('T')[0]
+          p_end_date: formatDateForDB(lastPaymentDate || new Date())
         });
 
       if (calcError) {
@@ -166,7 +167,7 @@ class CommissionStatusService {
       };
 
       if (lastPaymentDate) {
-        updateData.last_payment_date = lastPaymentDate.toISOString().split('T')[0];
+        updateData.last_payment_date = formatDateForDB(lastPaymentDate);
       }
 
       const { data: updated, error: updateError } = await supabase
@@ -243,7 +244,7 @@ class CommissionStatusService {
         .update({
           status: 'cancelled',
           chargeback_reason: reason,
-          chargeback_date: (cancelledDate || new Date()).toISOString().split('T')[0],
+          chargeback_date: formatDateForDB(cancelledDate || new Date()),
           updated_at: new Date().toISOString()
         })
         .eq('id', commissionId);
@@ -284,7 +285,7 @@ class CommissionStatusService {
       // Call the database function to calculate chargeback
       const { data, error } = await supabase.rpc('calculate_chargeback_on_policy_lapse', {
         p_policy_id: policyId,
-        p_lapse_date: (lapseDate || new Date()).toISOString().split('T')[0]
+        p_lapse_date: formatDateForDB(lapseDate || new Date())
       });
 
       if (error) {

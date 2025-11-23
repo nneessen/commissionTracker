@@ -4,6 +4,7 @@ import { BaseRepository } from '../base/BaseRepository';
 import { TABLES } from '../base/supabase';
 import { Commission, CreateCommissionData, UpdateCommissionData } from '../../types/commission.types';
 import { queryPerformance, measureAsync } from '../../utils/performance';
+import { formatDateForDB } from '../../lib/date';
 
 export class CommissionRepository extends BaseRepository<Commission, CreateCommissionData, UpdateCommissionData> {
   constructor() {
@@ -139,8 +140,8 @@ export class CommissionRepository extends BaseRepository<Commission, CreateCommi
       const { data, error } = await this.client
         .from(this.tableName)
         .select('*')
-        .gte(dateField, startDate.toISOString().split('T')[0])
-        .lte(dateField, endDate.toISOString().split('T')[0])
+        .gte(dateField, formatDateForDB(startDate))
+        .lte(dateField, formatDateForDB(endDate))
         .order(dateField, { ascending: false });
 
       if (error) {
@@ -331,17 +332,17 @@ export class CommissionRepository extends BaseRepository<Commission, CreateCommi
     if (data.quarterEarned !== undefined) dbData.quarter_earned = data.quarterEarned;
     if (data.expectedDate !== undefined) {
       dbData.expected_date = data.expectedDate instanceof Date
-        ? data.expectedDate.toISOString().split('T')[0]
+        ? formatDateForDB(data.expectedDate)
         : data.expectedDate;
     }
     if (data.actualDate !== undefined) {
       dbData.actual_date = data.actualDate instanceof Date
-        ? data.actualDate.toISOString().split('T')[0]
+        ? formatDateForDB(data.actualDate)
         : data.actualDate;
     }
     if (data.paidDate !== undefined) {
       dbData.paid_date = data.paidDate instanceof Date
-        ? data.paidDate.toISOString().split('T')[0]
+        ? formatDateForDB(data.paidDate)
         : data.paidDate;
     }
     if (data.notes !== undefined) dbData.notes = data.notes;

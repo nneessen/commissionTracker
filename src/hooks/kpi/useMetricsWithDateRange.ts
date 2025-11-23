@@ -11,7 +11,7 @@ import {
   getDaysInPeriod,
   getAveragePeriodValue,
 } from "../../utils/dateRange";
-import { parseLocalDate } from "../../lib/date";
+import { parseLocalDate, formatDateForDB } from "../../lib/date";
 import { usePolicies } from "../policies/usePolicies";
 import { useCommissions } from "../commissions/useCommissions";
 import { useExpenses } from "../expenses/useExpenses";
@@ -115,10 +115,10 @@ export function useMetricsWithDateRange(
   // Calculate date range with offset
   // React 19.1 optimizes automatically
   const dateRange = getDateRange(timePeriod, periodOffset);
-  // Create a string-based version for internal filtering
+  // Create a string-based version for internal filtering (using local timezone to avoid UTC shift)
   const dateRangeForFiltering = {
-    start: dateRange.startDate.toISOString().split('T')[0],
-    end: dateRange.endDate.toISOString().split('T')[0]
+    start: formatDateForDB(dateRange.startDate),
+    end: formatDateForDB(dateRange.endDate)
   };
 
   // Filter commissions by date range

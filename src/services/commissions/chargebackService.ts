@@ -3,6 +3,7 @@ import { logger } from '../base/logger';
 
 import { supabase, TABLES } from '../base/supabase';
 import { Chargeback, CreateChargebackData } from '../../types/user.types';
+import { formatDateForDB } from '../../lib/date';
 
 export type { CreateChargebackData };
 
@@ -131,11 +132,11 @@ class ChargebackService {
     }
 
     if (startDate) {
-      query = query.gte('chargeback_date', startDate.toISOString().split('T')[0]);
+      query = query.gte('chargeback_date', formatDateForDB(startDate));
     }
 
     if (endDate) {
-      query = query.lte('chargeback_date', endDate.toISOString().split('T')[0]);
+      query = query.lte('chargeback_date', formatDateForDB(endDate));
     }
 
     const { data, error } = await query;
@@ -151,8 +152,8 @@ class ChargebackService {
     const { data, error } = await supabase
       .from(TABLES.CHARGEBACKS)
       .select('*')
-      .gte('chargeback_date', startDate.toISOString().split('T')[0])
-      .lte('chargeback_date', endDate.toISOString().split('T')[0])
+      .gte('chargeback_date', formatDateForDB(startDate))
+      .lte('chargeback_date', formatDateForDB(endDate))
       .order('chargeback_date', { ascending: false });
 
     if (error) {
@@ -258,8 +259,8 @@ class ChargebackService {
       chargeback_type: data.chargebackType,
       chargeback_amount: data.chargebackAmount,
       chargeback_reason: data.chargebackReason,
-      policy_lapse_date: data.policyLapseDate?.toISOString().split('T')[0],
-      chargeback_date: data.chargebackDate.toISOString().split('T')[0],
+      policy_lapse_date: data.policyLapseDate ? formatDateForDB(data.policyLapseDate) : null,
+      chargeback_date: formatDateForDB(data.chargebackDate),
       status: data.status || 'pending',
     };
   }

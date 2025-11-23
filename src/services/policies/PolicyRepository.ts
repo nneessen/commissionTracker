@@ -2,6 +2,7 @@
 import { BaseRepository } from '../base/BaseRepository';
 import { TABLES } from '../base/supabase';
 import { Policy, CreatePolicyData, UpdatePolicyData } from '../../types/policy.types';
+import { formatDateForDB } from '../../lib/date';
 
 export class PolicyRepository extends BaseRepository<Policy, CreatePolicyData, UpdatePolicyData> {
   constructor() {
@@ -207,8 +208,8 @@ export class PolicyRepository extends BaseRepository<Policy, CreatePolicyData, U
           )
         `)
         .eq('status', 'active')
-        .gte('effective_date', startDate.toISOString().split('T')[0])
-        .lte('effective_date', endDate.toISOString().split('T')[0])
+        .gte('effective_date', formatDateForDB(startDate))
+        .lte('effective_date', formatDateForDB(endDate))
         .order('effective_date', { ascending: false });
 
       if (error) {
@@ -395,12 +396,12 @@ export class PolicyRepository extends BaseRepository<Policy, CreatePolicyData, U
           .from(this.tableName)
           .select('annual_premium')
           .eq('status', 'active')
-          .lte('effective_date', endDate.toISOString().split('T')[0]),
+          .lte('effective_date', formatDateForDB(endDate)),
         this.client
           .from(this.tableName)
           .select('annual_premium')
-          .gte('effective_date', startDate.toISOString().split('T')[0])
-          .lte('effective_date', endDate.toISOString().split('T')[0])
+          .gte('effective_date', formatDateForDB(startDate))
+          .lte('effective_date', formatDateForDB(endDate))
       ]);
 
       if (allPolicies.error) {
@@ -601,13 +602,13 @@ export class PolicyRepository extends BaseRepository<Policy, CreatePolicyData, U
     if (data.product !== undefined) dbData.product = data.product;
     if (data.effectiveDate !== undefined) {
       dbData.effective_date = data.effectiveDate instanceof Date
-        ? data.effectiveDate.toISOString().split('T')[0]
+        ? formatDateForDB(data.effectiveDate)
         : data.effectiveDate;
     }
     if (data.termLength !== undefined) dbData.term_length = data.termLength;
     if (data.expirationDate !== undefined) {
       dbData.expiration_date = data.expirationDate instanceof Date
-        ? data.expirationDate.toISOString().split('T')[0]
+        ? formatDateForDB(data.expirationDate)
         : data.expirationDate;
     }
     if (data.annualPremium !== undefined) dbData.annual_premium = data.annualPremium;
