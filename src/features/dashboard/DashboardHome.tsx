@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useConstants } from "../../hooks";
-import { useMetricsWithDateRange } from "../../hooks/useMetricsWithDateRange";
+import { useMetricsWithDateRange } from '@/hooks';
 import { useCreateExpense } from "../../hooks/expenses/useCreateExpense";
 import { useCreatePolicy } from "../../hooks/policies/useCreatePolicy";
 import { useChargebackSummary } from "../../hooks/commissions/useChargebackSummary";

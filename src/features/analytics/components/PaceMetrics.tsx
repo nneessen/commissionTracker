@@ -4,7 +4,7 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { TrendingUp, TrendingDown, Target, DollarSign, CheckCircle2 } from 'lucide-react';
 import { useAnalyticsDateRange } from '../context/AnalyticsDateContext';
-import { useAnalyticsData } from '../../../hooks/useAnalyticsData';
+import { useAnalyticsData } from '@/hooks';
 import { cn } from '@/lib/utils';
 
 /**

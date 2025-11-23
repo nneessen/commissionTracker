@@ -1,5 +1,4 @@
 // src/services/agentService.ts
-// TODO: check CLAUDE.md in this folder
 
 import { supabase, TABLES } from "../base/supabase";
 import {
@@ -121,7 +120,7 @@ class AgentService {
       isActive: dbRecord.is_active,
       createdAt: new Date(dbRecord.created_at),
       updatedAt: new Date(dbRecord.updated_at),
-      raw_user_meta_data: {}
+      raw_user_meta_data: {},
     };
   }
 
@@ -139,4 +138,3 @@ class AgentService {
 }
 
 export const agentService = new AgentService();
-

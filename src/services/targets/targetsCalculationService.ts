@@ -86,16 +86,21 @@ class TargetsCalculationService {
       historicalAverages?.avgExpensesPerMonth ??
       DEFAULTS.avgExpensesPerMonth;
 
-    // Income breakdowns (simple division)
+    // CRITICAL: annualIncomeTarget is NET income (after expenses)
+    // We need to calculate GROSS commission income needed (before expenses)
+    const annualExpenses = monthlyExpenseTarget * 12;
+    const grossCommissionNeeded = annualIncomeTarget + annualExpenses;
+
+    // Income breakdowns (based on NET income target)
     const quarterlyIncomeTarget = annualIncomeTarget / 4;
     const monthlyIncomeTarget = annualIncomeTarget / 12;
     const weeklyIncomeTarget = annualIncomeTarget / 52;
     const dailyIncomeTarget = annualIncomeTarget / 365;
 
-    // Calculate total premium needed
-    // Formula: Annual Income Target / Average Commission Rate = Total Premium Needed
+    // Calculate total premium needed (using GROSS commission needed, not net)
+    // Formula: Gross Commission Needed / Average Commission Rate = Total Premium Needed
     const totalPremiumNeeded = avgCommissionRate > 0
-      ? annualIncomeTarget / avgCommissionRate
+      ? grossCommissionNeeded / avgCommissionRate
       : 0;
 
     // Calculate policies needed
@@ -110,10 +115,9 @@ class TargetsCalculationService {
     const weeklyPoliciesTarget = Math.ceil(annualPoliciesTarget / 52);
     const dailyPoliciesTarget = Math.max(1, Math.ceil(annualPoliciesTarget / 365));
 
-    // Calculate expense ratio
-    const annualExpenses = monthlyExpenseTarget * 12;
-    const expenseRatio = annualIncomeTarget > 0
-      ? annualExpenses / annualIncomeTarget
+    // Calculate expense ratio (expenses as % of GROSS commission income)
+    const expenseRatio = grossCommissionNeeded > 0
+      ? annualExpenses / grossCommissionNeeded
       : 0;
 
     // Use historical persistency or defaults
@@ -181,9 +185,15 @@ class TargetsCalculationService {
   getCalculationBreakdown(targets: CalculatedTargets): string[] {
     const breakdown: string[] = [];
     const commissionPercent = (targets.avgCommissionRate * 100).toFixed(1);
+    const annualExpenses = targets.monthlyExpenseTarget * 12;
+    const grossCommissionNeeded = targets.annualIncomeTarget + annualExpenses;
 
     breakdown.push(
-      `Annual Income Target: $${targets.annualIncomeTarget.toLocaleString()}`,
+      `NET Income Target (after expenses): $${targets.annualIncomeTarget.toLocaleString()}`,
+      `+ Annual Business Expenses: $${annualExpenses.toLocaleString()}`,
+      `= GROSS Commission Needed: $${grossCommissionNeeded.toLocaleString()}`,
+      '',
+      `Gross Commission Needed: $${grossCommissionNeeded.toLocaleString()}`,
       `÷ Average Commission Rate: ${commissionPercent}%`,
       `= Total Premium Needed: $${targets.totalPremiumNeeded.toLocaleString()}`,
       '',

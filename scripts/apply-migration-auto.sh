@@ -11,7 +11,7 @@ RED='\033[0;31m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
-MIGRATION_FILE="supabase/migrations/20251018_001_enhance_commission_chargeback_trigger.sql"
+MIGRATION_FILE="supabase/migrations/20251222_005_fix_commission_auto_paid_status.sql"
 DB_PASSWORD="N123j234n345!$!$"
 DB_HOST="aws-1-us-east-2.pooler.supabase.com"
 DB_PORT="6543"

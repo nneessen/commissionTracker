@@ -1,6 +1,7 @@
 // src/services/expenses/expenseService.ts
 
 import { supabase, TABLES } from '../base/supabase';
+import { isSameMonth, isSameYear } from '../../lib/date';
 import type {
   Expense,
   CreateExpenseData,
@@ -200,8 +201,6 @@ class ExpenseService {
     const expenses = await this.getAll(filters);
 
     const now = new Date();
-    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-    const currentYear = now.getFullYear();
 
     const totals = expenses.reduce((acc, expense) => {
       acc.total += expense.amount;
@@ -216,13 +215,13 @@ class ExpenseService {
         acc.deductible += expense.amount;
       }
 
-      // Check if expense is in current month
-      if (expense.date.startsWith(currentMonth)) {
+      // Check if expense is in current month using proper date comparison
+      if (isSameMonth(expense.date, now)) {
         acc.monthlyTotal += expense.amount;
       }
 
-      // Check if expense is in current year
-      if (expense.date.startsWith(String(currentYear))) {
+      // Check if expense is in current year using proper date comparison
+      if (isSameYear(expense.date, now)) {
         acc.yearlyTotal += expense.amount;
       }
 

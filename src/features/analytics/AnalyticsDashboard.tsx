@@ -5,7 +5,7 @@ import {
   TimePeriodSelector,
 } from "./components/TimePeriodSelector";
 import { Button } from "@/components/ui/button";
-import { useAnalyticsData } from "../../hooks/useAnalyticsData";
+import { useAnalyticsData } from '@/hooks';
 import { downloadCSV, printAnalyticsToPDF } from "../../utils/exportHelpers";
 import { AnalyticsDateProvider, useAnalyticsDateRange } from "./context/AnalyticsDateContext";
 

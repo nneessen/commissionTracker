@@ -2,8 +2,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { CircularProgressGauge } from '../visualizations/CircularProgressGauge';
-import { useUserTargets } from '@/hooks/useUserTargets';
-import { useCommissions } from '@/hooks/useCommissions';
+import { useUserTargets, useCommissions } from '@/hooks';
 import { calculateGoalTracking, getGoalStatusLabel, getGoalStatusBadgeColor } from '@/services/analytics/goalTrackingService';
 import { formatCurrency } from '@/utils/formatters';
 import { TrendingUp, TrendingDown, Target, Calendar, DollarSign, Activity } from 'lucide-react';

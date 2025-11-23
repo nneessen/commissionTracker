@@ -175,10 +175,10 @@ export function TargetsPage() {
                   Annual Income Target
                 </span>
                 <MetricTooltip
-                  title="Annual Income Target"
-                  description="Your total commission income goal for the year. All other metrics are calculated automatically from this single target."
-                  formula="This is the only value you need to input"
-                  note="Everything else is calculated based on your historical data"
+                  title="Annual Income Target (NET)"
+                  description="Your NET take-home income goal AFTER business expenses. The system automatically calculates how much gross commission you need to earn to hit this target after paying expenses."
+                  formula="Gross Commission Needed = NET Income Target + Annual Expenses"
+                  note="Everything else is calculated based on your historical averages and expense data"
                 />
               </CardTitle>
             </CardHeader>

@@ -26,6 +26,13 @@ import {
 } from "./features/auth";
 import { ReportsPage } from "./features/reports";
 import { UserManagementDashboard } from "./features/admin/components/UserManagementDashboard";
+import {
+  HierarchyTree,
+  OverrideDashboard,
+  DownlinePerformance,
+  HierarchyManagement,
+  HierarchyDashboard,
+} from "./features/hierarchy";
 
 // Create root route with App layout
 const rootRoute = createRootRoute({
@@ -172,6 +179,37 @@ const authDiagnosticRoute = createRoute({
   ),
 });
 
+// Hierarchy routes - Agency hierarchy and override commissions
+const hierarchyIndexRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "hierarchy",
+  component: HierarchyDashboard,
+});
+
+const hierarchyTreeRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "hierarchy/tree",
+  component: HierarchyTree,
+});
+
+const hierarchyOverridesRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "hierarchy/overrides",
+  component: OverrideDashboard,
+});
+
+const hierarchyDownlinesRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "hierarchy/downlines",
+  component: DownlinePerformance,
+});
+
+const hierarchyManageRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "hierarchy/manage",
+  component: HierarchyManagement,
+});
+
 // Create the route tree - all routes are already linked via getParentRoute
 const routeTree = rootRoute.addChildren([
   indexRoute,
@@ -192,6 +230,11 @@ const routeTree = rootRoute.addChildren([
   reportsRoute,
   expensesRoute,
   testCompGuideRoute,
+  hierarchyIndexRoute,
+  hierarchyTreeRoute,
+  hierarchyOverridesRoute,
+  hierarchyDownlinesRoute,
+  hierarchyManageRoute,
 ]);
 
 // Create and export the router

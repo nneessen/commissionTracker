@@ -1,20 +1,55 @@
 // src/features/settings/components/UserProfile.tsx
-import React, { useState } from 'react';
-import { User, Save, AlertCircle, CheckCircle2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { User, Save, AlertCircle, CheckCircle2, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useUpdateUserProfile } from '../../../hooks/settings/useUpdateUserProfile';
+import { useUpdateAgentHierarchy } from '../../../hooks/hierarchy/useUpdateAgentHierarchy';
 import { SettingsCard } from './SettingsComponents';
+import { supabase } from '@/services/base/supabase';
 
 export function UserProfile() {
   const { user } = useAuth();
   const updateProfile = useUpdateUserProfile();
+  const updateHierarchy = useUpdateAgentHierarchy();
 
   const [contractLevel, setContractLevel] = useState<string>(
     user?.contractCompLevel?.toString() || '100'
   );
+  const [uplineEmail, setUplineEmail] = useState<string>('');
+  const [currentUplineEmail, setCurrentUplineEmail] = useState<string>('');
   const [validationError, setValidationError] = useState<string>('');
+  const [uplineError, setUplineError] = useState<string>('');
   const [showSuccess, setShowSuccess] = useState(false);
+  const [showUplineSuccess, setShowUplineSuccess] = useState(false);
+
+  // Load current upline email on mount
+  useEffect(() => {
+    const loadUplineInfo = async () => {
+      if (!user?.id) return;
+
+      const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('upline_id')
+        .eq('id', user.id)
+        .single();
+
+      if (profile?.upline_id) {
+        const { data: upline } = await supabase
+          .from('user_profiles')
+          .select('email')
+          .eq('id', profile.upline_id)
+          .single();
+
+        if (upline?.email) {
+          setCurrentUplineEmail(upline.email);
+          setUplineEmail(upline.email);
+        }
+      }
+    };
+
+    loadUplineInfo();
+  }, [user?.id]);
 
   const validateContractLevel = (value: string): boolean => {
     const num = parseInt(value, 10);
@@ -37,6 +72,12 @@ export function UserProfile() {
     validateContractLevel(value);
   };
 
+  const handleUplineEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setUplineEmail(e.target.value);
+    setUplineError('');
+    setShowUplineSuccess(false);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setShowSuccess(false);
@@ -53,6 +94,62 @@ export function UserProfile() {
       setTimeout(() => setShowSuccess(false), 3000);
     } catch (error) {
       console.error('Failed to update contract level:', error);
+    }
+  };
+
+  const handleUplineSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setShowUplineSuccess(false);
+    setUplineError('');
+
+    if (!user?.id) return;
+
+    // Allow clearing upline by submitting empty email
+    if (!uplineEmail.trim()) {
+      try {
+        await updateHierarchy.mutateAsync({
+          agent_id: user.id,
+          new_upline_id: null,
+        });
+        setCurrentUplineEmail('');
+        setShowUplineSuccess(true);
+        setTimeout(() => setShowUplineSuccess(false), 3000);
+        return;
+      } catch (error: any) {
+        setUplineError(error.message || 'Failed to remove upline');
+        return;
+      }
+    }
+
+    // Validate upline email exists
+    try {
+      const { data: upline, error } = await supabase
+        .from('user_profiles')
+        .select('id, email')
+        .eq('email', uplineEmail.trim())
+        .single();
+
+      if (error || !upline) {
+        setUplineError('No user found with that email address');
+        return;
+      }
+
+      if (upline.id === user.id) {
+        setUplineError('You cannot set yourself as your own upline');
+        return;
+      }
+
+      // Update hierarchy
+      await updateHierarchy.mutateAsync({
+        agent_id: user.id,
+        new_upline_id: upline.id,
+      });
+
+      setCurrentUplineEmail(upline.email);
+      setShowUplineSuccess(true);
+      setTimeout(() => setShowUplineSuccess(false), 3000);
+    } catch (error: any) {
+      setUplineError(error.message || 'Failed to update upline');
     }
   };
 
@@ -90,8 +187,67 @@ export function UserProfile() {
           </div>
         </div>
 
+        {/* Upline Assignment */}
+        <form onSubmit={handleUplineSubmit} className="pt-6 border-t">
+          <div className="mb-6">
+            <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Team Hierarchy
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              Specify who your upline is. This determines who earns override commissions on your policies.
+              {currentUplineEmail && (
+                <span className="block mt-1 text-foreground font-medium">
+                  Current upline: {currentUplineEmail}
+                </span>
+              )}
+            </p>
+          </div>
+
+          <div className="max-w-md">
+            <label htmlFor="uplineEmail" className="block text-sm font-medium text-muted-foreground mb-2">
+              Upline Email (leave blank to remove)
+            </label>
+            <input
+              id="uplineEmail"
+              type="email"
+              value={uplineEmail}
+              onChange={handleUplineEmailChange}
+              placeholder="upline@example.com"
+              className={`block w-full px-3 py-2 rounded-md shadow-sm bg-card text-foreground focus:ring-2 focus:ring-primary ${
+                uplineError ? 'ring-2 ring-destructive' : ''
+              }`}
+            />
+            {uplineError && (
+              <div className="mt-2 flex items-center gap-2 text-sm text-destructive">
+                <AlertCircle className="h-4 w-4" />
+                {uplineError}
+              </div>
+            )}
+          </div>
+
+          <div className="mt-6 flex items-center gap-4">
+            <Button
+              type="submit"
+              disabled={updateHierarchy.isPending}
+              size="sm"
+              variant="outline"
+            >
+              <Save className="h-4 w-4 mr-2" />
+              {updateHierarchy.isPending ? 'Updating...' : 'Update Upline'}
+            </Button>
+
+            {showUplineSuccess && (
+              <div className="flex items-center gap-2 text-sm text-success">
+                <CheckCircle2 className="h-5 w-5" />
+                Upline updated successfully!
+              </div>
+            )}
+          </div>
+        </form>
+
         {/* Contract Level Editor */}
-        <form onSubmit={handleSubmit} className="pt-6">
+        <form onSubmit={handleSubmit} className="pt-6 border-t">
           <div className="mb-6">
             <h3 className="text-lg font-semibold mb-2">Commission Settings</h3>
             <p className="text-sm text-muted-foreground">

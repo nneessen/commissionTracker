@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useUserTargets, useUpdateUserTargets } from '@/hooks/useUserTargets';
+import { useUserTargets, useUpdateUserTargets } from '@/hooks';
 import { formatCurrency } from '@/utils/formatters';
 
 export function GoalsManagement() {

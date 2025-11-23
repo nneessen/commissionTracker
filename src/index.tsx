@@ -9,7 +9,7 @@ import { ThemeProvider } from "next-themes";
 import { router } from "./router";
 import { AuthProvider } from "./contexts/AuthContext";
 import { Toaster } from "@/components/ui/sonner";
-import { metricsService } from "./services/monitoring/MetricsService";
+import { metricsService } from "./services/observability/MetricsService";
 
 const queryClient = new QueryClient({
   defaultOptions: {
