@@ -47,14 +47,19 @@ export function InviteDownline() {
     }
 
     try {
-      // Find user by email
-      const { data: downline, error: lookupError } = await supabase
-        .from('user_profiles')
-        .select('id, email, upline_id')
-        .eq('email', downlineEmail.trim())
-        .single();
+      // Find user by email using secure RPC function
+      const { data, error: lookupError } = await supabase
+        .rpc('lookup_user_by_email', { p_email: downlineEmail.trim() });
 
-      if (lookupError || !downline) {
+      if (lookupError) {
+        setError('Failed to lookup user. Please try again.');
+        console.error('Lookup error:', lookupError);
+        return;
+      }
+
+      const downline = data?.[0]; // RPC returns array
+
+      if (!downline) {
         setError('No user found with that email. They need to sign up first.');
         return;
       }

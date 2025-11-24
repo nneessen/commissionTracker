@@ -112,9 +112,9 @@ class OverrideService {
         .from('override_commission_summary')
         .select('*')
         .eq('override_agent_id', user.id)
-        .single();
+        .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') { // PGRST116 = no rows
+      if (error) {
         throw new DatabaseError('getMyOverrideSummary', error);
       }
 
