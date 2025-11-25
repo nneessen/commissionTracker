@@ -21,6 +21,10 @@ export function CalculationBreakdown({
   const commissionPercent = (targets.avgCommissionRate * 100).toFixed(1);
   const expenseRatioPercent = (targets.expenseRatio * 100).toFixed(1);
 
+  // Calculate gross commission needed (income + expenses)
+  const annualExpenses = targets.monthlyExpenseTarget * 12;
+  const grossCommissionNeeded = targets.annualIncomeTarget + annualExpenses;
+
   return (
     <Card>
       <CardHeader
@@ -60,15 +64,23 @@ export function CalculationBreakdown({
             </Alert>
           )}
 
-          {/* Income to Premium Calculation */}
+          {/* Income to Premium Calculation - NOW INCLUDES EXPENSES */}
           <div className="space-y-2 p-4 bg-muted/30 rounded-lg">
             <h4 className="text-sm font-semibold">Income → Premium Needed</h4>
             <div className="space-y-1 text-sm font-mono">
               <div className="flex justify-between">
-                <span>Annual Target:</span>
+                <span className="text-muted-foreground">NET Income Target (after expenses):</span>
                 <span>{formatCurrency(targets.annualIncomeTarget)}</span>
               </div>
               <div className="flex justify-between text-muted-foreground">
+                <span>+ Annual Business Expenses:</span>
+                <span>{formatCurrency(annualExpenses)}</span>
+              </div>
+              <div className="border-t pt-1 flex justify-between font-semibold">
+                <span>= GROSS Commission Needed:</span>
+                <span>{formatCurrency(grossCommissionNeeded)}</span>
+              </div>
+              <div className="flex justify-between text-muted-foreground mt-2">
                 <span>÷ Commission Rate:</span>
                 <span>{commissionPercent}%</span>
               </div>
