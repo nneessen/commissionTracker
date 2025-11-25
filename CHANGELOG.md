@@ -6,6 +6,57 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-11-25 17:02:41
+
+### Changed Files
+- `.claude/commands/autocommit.md`
+- `.serena/memories/NO_COOKIE_CUTTER_4_CARD_GRIDS.md`
+- `.serena/memories/agent_detail_modal_complete_redesign_nov2025.md`
+- `.serena/memories/hierarchy_agent_detail_system.md`
+- `docs/invitation-system-verification.md`
+- `docs/plans/completed/hierarchy_agent_management_crud_20251125.md`
+- `package-lock.json`
+- `package.json`
+- `scripts/apply-invitation-migrations.sh`
+- `scripts/check-invitation.mjs`
+- `scripts/test-invitation-system.mjs`
+- `src/components/ui/progress.tsx`
+- `src/features/hierarchy/HierarchyDashboard.tsx`
+- `src/features/hierarchy/components/AgentDetailModal.backup.tsx`
+- `src/features/hierarchy/components/AgentDetailModal.old.tsx`
+- `src/features/hierarchy/components/AgentDetailModal.tsx`
+- `src/features/hierarchy/components/DownlinePerformance.tsx`
+- `src/features/hierarchy/components/HierarchyManagement.tsx`
+- `src/features/hierarchy/components/HierarchyTree.tsx`
+- `src/features/hierarchy/components/OverrideDashboard.tsx`
+- `src/features/hierarchy/components/PendingInvitationBanner.tsx`
+- `src/features/hierarchy/components/SendInvitationModal.tsx`
+- `src/features/hierarchy/components/SentInvitationsCard.tsx`
+- `src/hooks/hierarchy/index.ts`
+- `src/hooks/hierarchy/useAgentCommissions.ts`
+- `src/hooks/hierarchy/useAgentDetails.ts`
+- `src/hooks/hierarchy/useAgentOverrides.ts`
+- `src/hooks/hierarchy/useAgentPolicies.ts`
+- `src/hooks/hierarchy/useAllDownlinePerformance.ts`
+- `src/hooks/hierarchy/useInvitations.ts`
+- `src/hooks/hierarchy/useTeamComparison.ts`
+- `src/lib/date.ts`
+- `src/services/hierarchy/hierarchyService.ts`
+- `src/services/hierarchy/invitationService.ts`
+- `src/types/agent-detail.types.ts`
+- `src/types/hierarchy.types.ts`
+- `src/types/invitation.types.ts`
+- `supabase/.temp/cli-latest`
+- `supabase/migrations/20251125_001_add_agent_management_fields.sql`
+- `supabase/migrations/20251125_002_fix_agent_management_schema.sql`
+- `supabase/migrations/20251125_003_create_hierarchy_invitations.sql`
+- `supabase/migrations/20251125_004_add_invitation_validation_functions.sql`
+
+### Statistics
+```
+ 42 files changed, 7875 insertions(+), 620 deletions(-)
+```
+
 ## [Checkpoint] - 2025-11-23 15:32:20
 
 ### Changed Files

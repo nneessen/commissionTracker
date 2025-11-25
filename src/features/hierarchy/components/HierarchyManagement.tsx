@@ -1,7 +1,7 @@
 // src/features/hierarchy/components/HierarchyManagement.tsx
 
 import React, { useState } from 'react';
-import { Users, Shield, AlertCircle, CheckCircle, Edit } from 'lucide-react';
+import { Users, Shield, AlertCircle, CheckCircle, Edit, UserPlus } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -184,95 +184,99 @@ export function HierarchyManagement({ className }: HierarchyManagementProps) {
     );
   }
 
+  // Group agents by hierarchy level
+  const agentsByLevel = (downlines || []).reduce((acc, agent) => {
+    const level = agent.hierarchy_depth;
+    if (!acc[level]) acc[level] = [];
+    acc[level].push(agent);
+    return acc;
+  }, {} as Record<number, UserProfile[]>);
+
+  const levels = Object.keys(agentsByLevel).map(Number).sort((a, b) => a - b);
+
   return (
-    <div className={className}>
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Hierarchy Management</CardTitle>
-              <p className="text-sm text-muted-foreground mt-1">
-                Manage agent hierarchy assignments and organizational structure
-              </p>
-            </div>
-            <Badge variant="outline" className="text-primary border-primary">
-              <Shield className="h-3 w-3 mr-1" />
-              Admin Only
-            </Badge>
+    <Card className={className}>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <Shield className="h-5 w-5 text-amber-600" />
+              Hierarchy Management
+            </CardTitle>
+            <p className="text-sm text-muted-foreground mt-1">
+              {downlines?.length || 0} agents across {levels.length} levels
+            </p>
           </div>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <Empty>
-              <EmptyHeader>
-                <EmptyTitle>Loading agents...</EmptyTitle>
-              </EmptyHeader>
-            </Empty>
-          ) : !downlines || downlines.length === 0 ? (
-            <Empty>
-              <EmptyHeader>
-                <EmptyTitle>No agents in hierarchy</EmptyTitle>
-                <EmptyDescription>
-                  Agents will appear here once they are added to the system
-                </EmptyDescription>
-              </EmptyHeader>
-            </Empty>
-          ) : (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Agent Email</TableHead>
-                    <TableHead>Current Upline</TableHead>
-                    <TableHead>Hierarchy Level</TableHead>
-                    <TableHead>Direct Downlines</TableHead>
-                    <TableHead>Total Downlines</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {downlines.map((agent) => (
+          <div className="flex items-center gap-2">
+            <Badge variant="outline">Admin Only</Badge>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <Empty>
+            <EmptyHeader>
+              <EmptyTitle>Loading agents...</EmptyTitle>
+            </EmptyHeader>
+          </Empty>
+        ) : !downlines || downlines.length === 0 ? (
+          <Empty>
+            <EmptyHeader>
+              <EmptyTitle>No agents in hierarchy</EmptyTitle>
+              <EmptyDescription>
+                Agents will appear here once they are added to the system
+              </EmptyDescription>
+            </EmptyHeader>
+          </Empty>
+        ) : (
+          <div className="rounded-lg shadow-sm">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Agent</TableHead>
+                  <TableHead>Level</TableHead>
+                  <TableHead>Reports To</TableHead>
+                  <TableHead className="text-right">Direct</TableHead>
+                  <TableHead className="text-right">Total Down</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {downlines.map((agent) => {
+                  const directDownlines = downlines.filter(d => d.upline_id === agent.id).length;
+                  const totalDownlines = downlines.filter(d => d.hierarchy_path.includes(agent.id) && d.id !== agent.id).length;
+                  const uplineEmail = agent.upline_id
+                    ? downlines.find(d => d.id === agent.upline_id)?.email
+                    : null;
+
+                  return (
                     <TableRow key={agent.id}>
                       <TableCell className="font-medium">{agent.email}</TableCell>
                       <TableCell>
-                        {agent.upline_id ? (
-                          <span className="text-sm text-muted-foreground">
-                            {downlines.find((d) => d.id === agent.upline_id)?.email ||
-                              'Unknown'}
-                          </span>
-                        ) : (
-                          <Badge variant="outline">Root Agent</Badge>
-                        )}
+                        <span className="text-xs">L{agent.hierarchy_depth}</span>
                       </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="text-xs">
-                          Level {agent.hierarchy_depth}
-                        </Badge>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {uplineEmail || <Badge variant="outline" className="text-xs">Root</Badge>}
                       </TableCell>
-                      <TableCell className="text-center">
-                        {downlines.filter((d) => d.upline_id === agent.id).length}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        {downlines.filter((d) => d.hierarchy_path.includes(agent.id)).length}
-                      </TableCell>
+                      <TableCell className="text-right">{directDownlines}</TableCell>
+                      <TableCell className="text-right">{totalDownlines}</TableCell>
                       <TableCell className="text-right">
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => handleEditAgent(agent)}
                         >
-                          <Edit className="h-4 w-4 mr-1" />
-                          Edit
+                          <Edit className="h-4 w-4" />
                         </Button>
                       </TableCell>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </CardContent>
 
       {/* Edit Dialog */}
       <EditHierarchyDialog
@@ -282,6 +286,6 @@ export function HierarchyManagement({ className }: HierarchyManagementProps) {
         onOpenChange={setDialogOpen}
         onSave={handleSaveHierarchy}
       />
-    </div>
+    </Card>
   );
 }

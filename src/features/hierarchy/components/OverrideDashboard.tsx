@@ -26,71 +26,22 @@ interface OverrideDashboardProps {
  * Status badge for override commissions
  */
 function OverrideStatusBadge({ status }: { status: string }) {
-  const variants: Record<string, { label: string; className: string }> = {
-    pending: {
-      label: 'Pending',
-      className: 'border-status-pending text-status-pending',
-    },
-    earned: {
-      label: 'Earned',
-      className: 'border-status-earned text-status-earned',
-    },
-    paid: {
-      label: 'Paid',
-      className: 'border-status-active text-status-active',
-    },
-    chargedback: {
-      label: 'Chargedback',
-      className: 'border-destructive text-destructive',
-    },
+  const variants: Record<string, { label: string }> = {
+    pending: { label: 'Pending' },
+    earned: { label: 'Earned' },
+    paid: { label: 'Paid' },
+    chargedback: { label: 'Chargedback' },
   };
 
   const config = variants[status] || variants.pending;
 
   return (
-    <Badge variant="outline" className={cn('font-medium', config.className)}>
+    <Badge variant="outline">
       {config.label}
     </Badge>
   );
 }
 
-/**
- * Summary card component for override metrics
- */
-function SummaryCard({
-  title,
-  amount,
-  icon: Icon,
-  variant = 'default',
-}: {
-  title: string;
-  amount: number;
-  icon: React.ElementType;
-  variant?: 'default' | 'success' | 'warning' | 'info';
-}) {
-  const variantStyles = {
-    default: 'text-muted-foreground',
-    success: 'text-green-600',
-    warning: 'text-yellow-600',
-    info: 'text-blue-600',
-  };
-
-  return (
-    <Card>
-      <CardContent className="pt-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium text-muted-foreground">{title}</p>
-            <p className="text-2xl font-bold mt-1">{formatCurrency(amount)}</p>
-          </div>
-          <div className={cn('p-3 rounded-lg bg-muted/50', variantStyles[variant])}>
-            <Icon className="h-5 w-5" />
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
 
 /**
  * OverrideDashboard - Displays override commission table with filters and summary cards
@@ -103,33 +54,40 @@ export function OverrideDashboard({ className }: OverrideDashboardProps) {
   const { data: summary } = useMyOverrideSummary();
 
   return (
-    <div className={cn('space-y-6', className)}>
-      {/* Summary Cards */}
-      <div className="grid gap-4 md:grid-cols-4">
-        <SummaryCard
-          title="Total Overrides"
-          amount={summary?.total_override_amount || 0}
-          icon={DollarSign}
-          variant="default"
-        />
-        <SummaryCard
-          title="Pending"
-          amount={summary?.pending_amount || 0}
-          icon={Clock}
-          variant="warning"
-        />
-        <SummaryCard
-          title="Earned"
-          amount={summary?.earned_amount || 0}
-          icon={TrendingUp}
-          variant="success"
-        />
-        <SummaryCard
-          title="Paid"
-          amount={summary?.paid_amount || 0}
-          icon={CheckCircle}
-          variant="info"
-        />
+    <div className={cn('space-y-4', className)}>
+      {/* Summary Stats - Consolidated Single Box */}
+      <div className="rounded-lg p-4 bg-gradient-to-br from-blue-50/50 to-violet-50/50 shadow-sm">
+        <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-3">Override Summary</h3>
+        <div className="space-y-2">
+          <div className="flex justify-between items-baseline">
+            <span className="text-xs text-muted-foreground flex items-center gap-1.5">
+              <DollarSign className="h-3.5 w-3.5 text-blue-600" />
+              Total Override Amount
+            </span>
+            <span className="text-lg font-bold font-mono">{formatCurrency(summary?.total_override_amount || 0)}</span>
+          </div>
+          <div className="flex justify-between items-baseline">
+            <span className="text-xs text-muted-foreground flex items-center gap-1.5">
+              <Clock className="h-3.5 w-3.5 text-amber-600" />
+              Pending
+            </span>
+            <span className="text-lg font-bold font-mono">{formatCurrency(summary?.pending_amount || 0)}</span>
+          </div>
+          <div className="flex justify-between items-baseline">
+            <span className="text-xs text-muted-foreground flex items-center gap-1.5">
+              <TrendingUp className="h-3.5 w-3.5 text-emerald-600" />
+              Earned
+            </span>
+            <span className="text-lg font-bold font-mono">{formatCurrency(summary?.earned_amount || 0)}</span>
+          </div>
+          <div className="flex justify-between items-baseline">
+            <span className="text-xs text-muted-foreground flex items-center gap-1.5">
+              <CheckCircle className="h-3.5 w-3.5 text-violet-600" />
+              Paid
+            </span>
+            <span className="text-lg font-bold font-mono">{formatCurrency(summary?.paid_amount || 0)}</span>
+          </div>
+        </div>
       </div>
 
       {/* Overrides Table */}
@@ -157,7 +115,7 @@ export function OverrideDashboard({ className }: OverrideDashboardProps) {
               </EmptyHeader>
             </Empty>
           ) : (
-            <div className="rounded-md border">
+            <div className="rounded-lg shadow-sm">
               <Table>
                 <TableHeader>
                   <TableRow>

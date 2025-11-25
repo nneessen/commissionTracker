@@ -28,8 +28,20 @@ export function parseLocalDate(dateString: string): Date {
     return new Date();
   }
 
+  // Handle ISO timestamp format (YYYY-MM-DDTHH:MM:SS.sssZ) by extracting date part
+  let datePart = dateString;
+  if (dateString.includes('T')) {
+    datePart = dateString.split('T')[0];
+  }
+
   // Split the date string to avoid timezone interpretation
-  const [year, month, day] = dateString.split('-').map(Number);
+  const [year, month, day] = datePart.split('-').map(Number);
+
+  // Validate the parsed values
+  if (isNaN(year) || isNaN(month) || isNaN(day)) {
+    console.warn('Invalid date string format:', dateString);
+    return new Date(); // Return current date as fallback
+  }
 
   // Create date in local timezone (month is 0-indexed)
   return new Date(year, month - 1, day, 0, 0, 0, 0);

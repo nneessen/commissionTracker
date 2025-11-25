@@ -26,6 +26,7 @@ export interface HierarchyNode extends UserProfile {
   downline_count: number; // Total count of all descendants
   direct_downline_count: number; // Immediate children only
   contractCompLevel?: number; // From auth.users metadata
+  override_earnings?: number; // Total override earnings from this agent
 }
 
 /**
