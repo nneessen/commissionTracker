@@ -198,12 +198,14 @@ export function PredictiveAnalytics() {
         </div>
 
         {/* Forecast Chart */}
-        <ForecastChart
-          data={growth}
-          title="12-Month Growth Projection"
-          valueKey="projectedCommission"
-          valueLabel="Projected Commission"
-        />
+        <div className="w-full overflow-hidden">
+          <ForecastChart
+            data={growth}
+            title="12-Month Growth Projection"
+            valueKey="projectedCommission"
+            valueLabel="Projected Commission"
+          />
+        </div>
 
         {/* Disclaimer Note */}
         <div className="mt-4 p-2 bg-muted/20 rounded-lg">

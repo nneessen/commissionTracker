@@ -50,11 +50,13 @@ export function ForecastChart({
   const minValue = Math.min(...values, 0);
   const valueRange = Math.max(maxValue - minValue, 1); // Minimum range of 1 to avoid division by zero
 
-  const width = 600;
-  const height = 300;
+  // Use 100% width for responsive behavior
   const padding = { top: 40, right: 60, bottom: 60, left: 60 };
-  const chartWidth = width - padding.left - padding.right;
-  const chartHeight = height - padding.top - padding.bottom;
+  // Chart dimensions will be managed by viewBox for responsive scaling
+  const viewBoxWidth = 600;
+  const viewBoxHeight = 300;
+  const chartWidth = viewBoxWidth - padding.left - padding.right;
+  const chartHeight = viewBoxHeight - padding.top - padding.bottom;
 
   // Scale functions with safety checks
   const dataLength = Math.max(data.length - 1, 1); // Prevent division by zero
@@ -119,15 +121,20 @@ export function ForecastChart({
   });
 
   return (
-    <div>
+    <div className="w-full">
       {/* Title */}
       <div className="text-sm font-semibold text-foreground mb-4 uppercase tracking-wide">
         {title}
       </div>
 
-      {/* Chart SVG */}
-      <svg width={width} height={height} className="overflow-visible">
-        <g transform={`translate(${padding.left}, ${padding.top})`}>
+      {/* Chart SVG - responsive with viewBox */}
+      <div className="w-full overflow-hidden">
+        <svg
+          viewBox={`0 0 ${viewBoxWidth} ${viewBoxHeight}`}
+          className="w-full h-auto max-w-full"
+          preserveAspectRatio="xMidYMid meet"
+        >
+          <g transform={`translate(${padding.left}, ${padding.top})`}>
           {/* Grid lines */}
           {yTicks.map((tick, i) => (
             <line
@@ -295,6 +302,7 @@ export function ForecastChart({
           </text>
         </g>
       </svg>
+      </div>
 
       {/* Legend */}
       <div className="mt-5 flex gap-4 text-xs text-muted-foreground flex-wrap">

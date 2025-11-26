@@ -31,8 +31,8 @@ const CarriersProductsBreakdown = lazy(() =>
 const GeographicAnalysis = lazy(() =>
   import("./components").then((m) => ({ default: m.GeographicAnalysis })),
 );
-const PredictiveAnalytics = lazy(() =>
-  import("./components").then((m) => ({ default: m.PredictiveAnalytics })),
+const GamePlan = lazy(() =>
+  import("./components").then((m) => ({ default: m.GamePlan })),
 );
 const CarrierPerformance = lazy(() =>
   import("./components").then((m) => ({ default: m.EfficiencyMetrics })),
@@ -170,7 +170,7 @@ function AnalyticsDashboardContent() {
                 <ClientSegmentation />
               </Suspense>
               <Suspense fallback={<div className="p-5 text-center text-muted-foreground">Loading...</div>}>
-                <PredictiveAnalytics />
+                <GamePlan />
               </Suspense>
               <Suspense fallback={<div className="p-5 text-center text-muted-foreground">Loading...</div>}>
                 <CommissionDeepDive />

@@ -9,4 +9,5 @@ export { ProductMatrix } from './ProductMatrix';
 export { CarriersProductsBreakdown } from './CarriersProductsBreakdown';
 export { GeographicAnalysis } from './GeographicAnalysis';
 export { PredictiveAnalytics } from './PredictiveAnalytics';
+export { GamePlan } from './GamePlan';
 export { EfficiencyMetrics } from './EfficiencyMetrics';
