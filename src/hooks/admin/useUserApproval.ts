@@ -154,6 +154,26 @@ export function useApprovalStatus() {
 }
 
 /**
+ * Hook to set admin role for a user (admin only)
+ */
+export function useSetAdminRole() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ userId, isAdmin }: { userId: string; isAdmin: boolean }) =>
+      userApprovalService.setAdminRole(userId, isAdmin),
+    onSuccess: () => {
+      // Invalidate and refetch all user-related queries
+      queryClient.invalidateQueries({ queryKey: userApprovalKeys.allUsers() });
+      queryClient.invalidateQueries({ queryKey: userApprovalKeys.pendingUsers() });
+      queryClient.invalidateQueries({ queryKey: userApprovalKeys.stats() });
+      queryClient.invalidateQueries({ queryKey: ['users-paginated'] });
+      queryClient.invalidateQueries({ queryKey: ['users-metrics'] });
+    },
+  });
+}
+
+/**
  * Combined hook for auth guard - gets both admin status and approval status
  */
 export function useAuthorizationStatus() {
@@ -168,4 +188,24 @@ export function useAuthorizationStatus() {
     isLoading: profileLoading,
     profile,
   };
+}
+
+/**
+ * Hook to update a user's contract level (admin only)
+ */
+export function useUpdateContractLevel() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ userId, contractLevel }: { userId: string; contractLevel: number | null }) =>
+      userApprovalService.updateContractLevel(userId, contractLevel),
+    onSuccess: () => {
+      // Invalidate and refetch all user-related queries
+      queryClient.invalidateQueries({ queryKey: userApprovalKeys.allUsers() });
+      queryClient.invalidateQueries({ queryKey: userApprovalKeys.pendingUsers() });
+      queryClient.invalidateQueries({ queryKey: userApprovalKeys.stats() });
+      queryClient.invalidateQueries({ queryKey: ['users-paginated'] });
+      queryClient.invalidateQueries({ queryKey: ['users-metrics'] });
+    },
+  });
 }

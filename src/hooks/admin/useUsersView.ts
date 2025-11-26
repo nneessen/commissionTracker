@@ -33,7 +33,7 @@ export function useUsersView() {
     direction: 'desc',
   });
 
-  // Fetch paginated users
+  // Fetch paginated users using admin RPC function (bypasses RLS)
   const {
     data: paginatedData,
     isLoading,
@@ -42,52 +42,82 @@ export function useUsersView() {
   } = useQuery({
     queryKey: ['users-paginated', currentPage, pageSize, filters, sortConfig],
     queryFn: async () => {
-      let query = supabase
-        .from('user_profiles')
-        .select('*', { count: 'exact' });
+      console.log('[useUsersView] Fetching users via admin_get_all_users()');
 
-      // Apply filters
+      // Get ALL users via RPC function (bypasses RLS)
+      const { data: allUsers, error } = await supabase.rpc('admin_get_all_users');
+
+      if (error) {
+        console.error('[useUsersView] Error fetching users:', error);
+        throw error;
+      }
+
+      console.log('[useUsersView] Fetched', allUsers?.length || 0, 'total users');
+
+      let filteredUsers = (allUsers as UserProfile[]) || [];
+
+      // Apply filters client-side
       if (filters.searchTerm) {
-        query = query.ilike('email', `%${filters.searchTerm}%`);
+        const searchLower = filters.searchTerm.toLowerCase();
+        filteredUsers = filteredUsers.filter(u =>
+          u.email.toLowerCase().includes(searchLower)
+        );
       }
       if (filters.approvalStatus) {
-        query = query.eq('approval_status', filters.approvalStatus);
+        filteredUsers = filteredUsers.filter(u =>
+          u.approval_status === filters.approvalStatus
+        );
       }
 
-      // Apply sorting
-      query = query.order(sortConfig.field, { ascending: sortConfig.direction === 'asc' });
+      // Apply sorting client-side
+      filteredUsers.sort((a, b) => {
+        const aVal = a[sortConfig.field];
+        const bVal = b[sortConfig.field];
 
-      // Apply pagination
+        if (aVal === null || aVal === undefined) return 1;
+        if (bVal === null || bVal === undefined) return -1;
+
+        if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
+        if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
+        return 0;
+      });
+
+      // Apply pagination client-side
+      const totalCount = filteredUsers.length;
       const from = (currentPage - 1) * pageSize;
-      const to = from + pageSize - 1;
-      query = query.range(from, to);
+      const to = from + pageSize;
+      const paginatedUsers = filteredUsers.slice(from, to);
 
-      const { data, error, count } = await query;
-
-      if (error) throw error;
+      console.log('[useUsersView] After filtering/pagination:', paginatedUsers.length, 'users on page', currentPage);
 
       return {
-        users: (data as UserProfile[]) || [],
-        totalCount: count || 0,
+        users: paginatedUsers,
+        totalCount,
       };
     },
     staleTime: 30000, // 30 seconds
   });
 
-  // Fetch overall metrics (not paginated)
+  // Fetch overall metrics using admin RPC function (bypasses RLS)
   const { data: metrics } = useQuery({
     queryKey: ['users-metrics'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .select('approval_status');
+      console.log('[useUsersView] Fetching metrics via admin_get_all_users()');
 
-      if (error) throw error;
+      const { data, error } = await supabase.rpc('admin_get_all_users');
 
-      const totalUsers = data.length;
-      const pendingUsers = data.filter(u => u.approval_status === 'pending').length;
-      const approvedUsers = data.filter(u => u.approval_status === 'approved').length;
-      const deniedUsers = data.filter(u => u.approval_status === 'denied').length;
+      if (error) {
+        console.error('[useUsersView] Error fetching metrics:', error);
+        throw error;
+      }
+
+      const users = (data as UserProfile[]) || [];
+      const totalUsers = users.length;
+      const pendingUsers = users.filter(u => u.approval_status === 'pending').length;
+      const approvedUsers = users.filter(u => u.approval_status === 'approved').length;
+      const deniedUsers = users.filter(u => u.approval_status === 'denied').length;
+
+      console.log('[useUsersView] Metrics:', { totalUsers, pendingUsers, approvedUsers, deniedUsers });
 
       return {
         totalUsers,

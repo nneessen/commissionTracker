@@ -46,8 +46,9 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { useUsersView } from '../../../hooks/admin/useUsersView';
-import { useApproveUser, useDenyUser, useSetPendingUser } from '../../../hooks/admin/useUserApproval';
-import { UserProfile } from '../../../services/admin/userApprovalService';
+import { useApproveUser, useDenyUser, useSetPendingUser, useSetAdminRole, useCurrentUserProfile, useUpdateContractLevel } from '../../../hooks/admin/useUserApproval';
+import { UserProfile, VALID_CONTRACT_LEVELS } from '../../../services/admin/userApprovalService';
+import { Checkbox } from '@/components/ui/checkbox';
 
 export const UserManagementDashboard: React.FC = () => {
   const {
@@ -76,6 +77,9 @@ export const UserManagementDashboard: React.FC = () => {
   const approveUser = useApproveUser();
   const denyUser = useDenyUser();
   const setPendingUser = useSetPendingUser();
+  const setAdminRole = useSetAdminRole();
+  const updateContractLevel = useUpdateContractLevel();
+  const { data: currentUserProfile } = useCurrentUserProfile();
 
   const [showFilters, setShowFilters] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -123,6 +127,31 @@ export const UserManagementDashboard: React.FC = () => {
       setDenyDialogOpen(false);
       setSelectedUser(null);
       setDenialReason('');
+      refresh();
+    }
+  };
+
+  const handleAdminToggle = async (userId: string, currentIsAdmin: boolean) => {
+    // Prevent users from removing their own admin status
+    if (userId === currentUserProfile?.id && currentIsAdmin) {
+      console.warn('Cannot remove your own admin privileges');
+      return;
+    }
+
+    const result = await setAdminRole.mutateAsync({
+      userId,
+      isAdmin: !currentIsAdmin,
+    });
+
+    if (result.success) {
+      refresh();
+    }
+  };
+
+  const handleContractLevelChange = async (userId: string, contractLevel: string) => {
+    const level = contractLevel === 'none' ? null : parseInt(contractLevel);
+    const result = await updateContractLevel.mutateAsync({ userId, contractLevel: level });
+    if (result.success) {
       refresh();
     }
   };
@@ -282,7 +311,8 @@ export const UserManagementDashboard: React.FC = () => {
                   )}
                 </div>
               </TableHead>
-              <TableHead className="h-10 px-3">Role</TableHead>
+              <TableHead className="h-10 px-3">Admin Role</TableHead>
+              <TableHead className="h-10 px-3">Contract Level</TableHead>
               <TableHead
                 className="h-10 px-3 cursor-pointer hover:text-foreground transition-colors"
                 onClick={() => toggleSort('created_at')}
@@ -312,7 +342,7 @@ export const UserManagementDashboard: React.FC = () => {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-20">
+                <TableCell colSpan={8} className="text-center py-20">
                   <div className="flex flex-col items-center gap-2">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                     <span className="text-sm text-muted-foreground">Loading users...</span>
@@ -321,7 +351,7 @@ export const UserManagementDashboard: React.FC = () => {
               </TableRow>
             ) : error ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-20">
+                <TableCell colSpan={8} className="text-center py-20">
                   <div className="flex flex-col items-center gap-2">
                     <AlertCircle className="h-8 w-8 text-destructive" />
                     <span className="text-sm text-destructive">Error: {error}</span>
@@ -331,7 +361,7 @@ export const UserManagementDashboard: React.FC = () => {
               </TableRow>
             ) : users.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-20">
+                <TableCell colSpan={8} className="text-center py-20">
                   <div className="flex flex-col items-center gap-2">
                     <Shield className="h-8 w-8 text-muted-foreground/50" />
                     <span className="text-sm text-muted-foreground">
@@ -363,12 +393,40 @@ export const UserManagementDashboard: React.FC = () => {
                     </Badge>
                   </TableCell>
                   <TableCell className="py-1.5 px-3">
-                    {user.is_admin && (
-                      <Badge variant="outline" className="border-primary text-primary">
-                        <Shield className="h-3 w-3 mr-1" />
-                        Admin
-                      </Badge>
-                    )}
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        checked={user.is_admin}
+                        onCheckedChange={() => handleAdminToggle(user.id, user.is_admin)}
+                        disabled={user.id === currentUserProfile?.id && user.is_admin}
+                      />
+                      {user.is_admin && (
+                        <Badge variant="outline" className="border-primary text-primary text-xs">
+                          <Shield className="h-3 w-3 mr-1" />
+                          Admin
+                        </Badge>
+                      )}
+                      {user.id === currentUserProfile?.id && user.is_admin && (
+                        <span className="text-[10px] text-muted-foreground">(You)</span>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell className="py-1.5 px-3">
+                    <Select
+                      value={user.contract_level?.toString() || 'none'}
+                      onValueChange={(value) => handleContractLevelChange(user.id, value)}
+                    >
+                      <SelectTrigger className="h-7 text-xs w-[90px]">
+                        <SelectValue placeholder="Not set" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Not set</SelectItem>
+                        {VALID_CONTRACT_LEVELS.map((level) => (
+                          <SelectItem key={level} value={level.toString()}>
+                            {level}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </TableCell>
                   <TableCell className="py-1.5 px-3 text-[12px] text-muted-foreground">
                     {format(new Date(user.created_at), 'MMM d, yyyy h:mm a')}
