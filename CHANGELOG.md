@@ -6,6 +6,64 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-11-26 18:38:41
+
+### Changed Files
+- `.serena/memories/recruiting_pipeline_redesign_nov2025.md`
+- `CONTINUE_RECRUITING_PROMPT.md`
+- `CONTINUE_RECRUITING_REFACTOR.md`
+- `docs/RECRUITING_CONTINUATION_PROMPT.md`
+- `docs/RECRUITING_IMPLEMENTATION_IN_PROGRESS.md`
+- `docs/RECRUITING_IMPLEMENTATION_STATUS.md`
+- `docs/RECRUITING_SYSTEM_REDESIGN.md`
+- `package-lock.json`
+- `package.json`
+- `plans/active/RECRUITING_PIPELINE_IMPLEMENTATION.md`
+- `plans/active/recruiting-page.md`
+- `src/components/layout/Sidebar.tsx`
+- `src/components/ui/avatar.tsx`
+- `src/features/recruiting/RecruitingDashboard.tsx`
+- `src/features/recruiting/components/AddRecruitDialog.tsx`
+- `src/features/recruiting/components/PhaseChecklist.tsx`
+- `src/features/recruiting/components/PhaseTimeline.tsx`
+- `src/features/recruiting/components/RecruitDetailPanel.tsx`
+- `src/features/recruiting/components/RecruitListTable.tsx`
+- `src/features/recruiting/hooks/index.ts`
+- `src/features/recruiting/hooks/usePipeline.ts`
+- `src/features/recruiting/hooks/useRecruitActivity.ts`
+- `src/features/recruiting/hooks/useRecruitDocuments.ts`
+- `src/features/recruiting/hooks/useRecruitEmails.ts`
+- `src/features/recruiting/hooks/useRecruitMutations.ts`
+- `src/features/recruiting/hooks/useRecruitPhases.ts`
+- `src/features/recruiting/hooks/useRecruitProgress.ts`
+- `src/features/recruiting/hooks/useRecruits.ts`
+- `src/router.tsx`
+- `src/services/recruiting/checklistService.ts`
+- `src/services/recruiting/index.ts`
+- `src/services/recruiting/pipelineService.ts`
+- `src/services/recruiting/recruitingService.ts`
+- `src/types/hierarchy.types.ts`
+- `src/types/recruiting.ts`
+- `supabase/.temp/cli-latest`
+- `supabase/migrations/20251126205759_alter_user_profiles_add_onboarding.sql`
+- `supabase/migrations/20251126205833_create_onboarding_phases.sql`
+- `supabase/migrations/20251126205911_create_user_documents.sql`
+- `supabase/migrations/20251126205947_create_user_emails.sql`
+- `supabase/migrations/20251126210028_create_user_activity_log.sql`
+- `supabase/migrations/20251126215444_add_user_profile_basic_fields.sql`
+- `supabase/migrations/20251126222255_create_pipeline_templates.sql`
+- `supabase/migrations/20251126222339_create_pipeline_phases.sql`
+- `supabase/migrations/20251126222410_create_phase_checklist_items.sql`
+- `supabase/migrations/20251126222444_create_recruit_phase_progress.sql`
+- `supabase/migrations/20251126224011_create_recruit_checklist_progress.sql`
+- `supabase/migrations/20251126224052_seed_default_pipeline_template.sql`
+- `tsconfig.tsbuildinfo`
+
+### Statistics
+```
+ 49 files changed, 9666 insertions(+), 14 deletions(-)
+```
+
 ## [Checkpoint] - 2025-11-25 17:15:10
 
 ### Changed Files

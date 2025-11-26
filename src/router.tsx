@@ -33,6 +33,7 @@ import {
   HierarchyManagement,
   HierarchyDashboard,
 } from "./features/hierarchy";
+import { RecruitingDashboard } from "./features/recruiting/RecruitingDashboard";
 
 // Create root route with App layout
 const rootRoute = createRootRoute({
@@ -210,6 +211,13 @@ const hierarchyManageRoute = createRoute({
   component: HierarchyManagement,
 });
 
+// Recruiting route
+const recruitingRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "recruiting",
+  component: RecruitingDashboard,
+});
+
 // Create the route tree - all routes are already linked via getParentRoute
 const routeTree = rootRoute.addChildren([
   indexRoute,
@@ -235,6 +243,7 @@ const routeTree = rootRoute.addChildren([
   hierarchyOverridesRoute,
   hierarchyDownlinesRoute,
   hierarchyManageRoute,
+  recruitingRoute,
 ]);
 
 // Create and export the router

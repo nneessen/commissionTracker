@@ -9,6 +9,7 @@ import {
   CreditCard,
   FileText,
   Users,
+  UserPlus,
   Settings,
   LogOut,
   Menu,
@@ -42,6 +43,7 @@ const navigationItems: NavigationItem[] = [
   { icon: CreditCard, label: "Expenses", href: "/expenses" },
   { icon: FileText, label: "Policies", href: "/policies" },
   { icon: Users, label: "Team", href: "/hierarchy" },
+  { icon: UserPlus, label: "Recruiting", href: "/recruiting" },
   { icon: Settings, label: "Settings", href: "/settings" },
 ];
 

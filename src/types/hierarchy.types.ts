@@ -5,15 +5,40 @@ import type { CommissionStatus } from './commission.types';
 
 /**
  * User profile with hierarchy information
+ * NOTE: Recruits are just users with onboarding_status='lead' or 'active'
+ * No separate table needed - single source of truth
  */
 export interface UserProfile {
   id: string;
+  user_id?: string | null; // References auth.users.id (can be NULL for leads)
   email: string;
+  first_name?: string | null;
+  last_name?: string | null;
+  phone?: string | null;
+  profile_photo_url?: string | null;
+
+  // Hierarchy fields
   upline_id: string | null;
   hierarchy_path: string;
   hierarchy_depth: number;
   approval_status: 'pending' | 'approved' | 'denied';
   is_admin: boolean;
+
+  // Onboarding/recruiting fields
+  onboarding_status?: 'lead' | 'active' | 'completed' | 'dropped';
+  current_onboarding_phase?: string | null;
+  recruiter_id?: string | null; // Who recruited them (different from upline_id)
+  onboarding_started_at?: string | null;
+  onboarding_completed_at?: string | null;
+  referral_source?: string | null;
+
+  // Social media
+  instagram_username?: string | null;
+  instagram_url?: string | null;
+  linkedin_username?: string | null;
+  linkedin_url?: string | null;
+
+  // Timestamps
   created_at: Date;
   updated_at: Date;
 }
