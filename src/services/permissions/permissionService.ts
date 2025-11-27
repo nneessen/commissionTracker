@@ -9,6 +9,7 @@ import type {
   PermissionCode,
   RoleName,
   PermissionCheckResult,
+  PermissionWithSource,
 } from '@/types/permissions.types';
 
 /**
@@ -199,7 +200,7 @@ export async function getRoleByName(roleName: RoleName): Promise<Role | null> {
 }
 
 /**
- * Get permissions for a specific role
+ * Get permissions for a specific role (direct permissions only, no inheritance)
  */
 export async function getRolePermissions(roleId: string): Promise<Permission[]> {
   const { data, error } = await supabase
@@ -217,6 +218,35 @@ export async function getRolePermissions(roleId: string): Promise<Permission[]> 
   }
 
   return (data || []).map((row: any) => row.permission);
+}
+
+/**
+ * Get all permissions for a role including inherited permissions
+ * Uses database recursive CTE for efficient single-query fetching
+ */
+export async function getRolePermissionsWithInheritance(
+  roleId: string
+): Promise<PermissionWithSource[]> {
+  const { data, error } = await supabase.rpc('get_role_permissions_with_inheritance', {
+    p_role_id: roleId,
+  });
+
+  if (error) {
+    console.error('Error fetching role permissions with inheritance:', error);
+    throw new Error(`Failed to fetch role permissions: ${error.message}`);
+  }
+
+  return (data || []).map((row: any) => ({
+    id: row.permission_id,
+    code: row.permission_code,
+    resource: row.permission_resource,
+    action: row.permission_action,
+    scope: row.permission_scope,
+    description: row.permission_description,
+    created_at: new Date().toISOString(), // Not returned by function, use placeholder
+    permissionType: row.permission_type,
+    inheritedFromRoleName: row.inherited_from_role_name,
+  }));
 }
 
 /**
@@ -314,6 +344,7 @@ export async function getPermissionByCode(code: PermissionCode): Promise<Permiss
 
 /**
  * Assign permission to role (admin only)
+ * Backend validation via database trigger prevents system role modification
  */
 export async function assignPermissionToRole(
   roleId: string,
@@ -324,13 +355,18 @@ export async function assignPermissionToRole(
     .insert({ role_id: roleId, permission_id: permissionId });
 
   if (error) {
+    // Check if it's a system role error from our trigger
+    if (error.message.includes('system role')) {
+      throw new Error('Cannot modify permissions for system roles');
+    }
     console.error('Error assigning permission to role:', error);
-    throw new Error(`Failed to assign permission to role: ${error.message}`);
+    throw new Error(`Failed to assign permission: ${error.message}`);
   }
 }
 
 /**
  * Remove permission from role (admin only)
+ * Backend validation via database trigger prevents system role modification
  */
 export async function removePermissionFromRole(
   roleId: string,
@@ -343,7 +379,11 @@ export async function removePermissionFromRole(
     .eq('permission_id', permissionId);
 
   if (error) {
+    // Check if it's a system role error from our trigger
+    if (error.message.includes('system role')) {
+      throw new Error('Cannot modify permissions for system roles');
+    }
     console.error('Error removing permission from role:', error);
-    throw new Error(`Failed to remove permission from role: ${error.message}`);
+    throw new Error(`Failed to remove permission: ${error.message}`);
   }
 }

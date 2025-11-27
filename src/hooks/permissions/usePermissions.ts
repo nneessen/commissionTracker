@@ -8,6 +8,7 @@ import type {
   RoleName,
   Role,
   Permission,
+  PermissionWithSource,
 } from '@/types/permissions.types';
 import {
   getUserPermissionsContext,
@@ -20,6 +21,7 @@ import {
   hasAllPermissions,
   getAllRoles,
   getAllPermissions,
+  getRolePermissionsWithInheritance,
   setUserRoles,
   assignPermissionToRole,
   removePermissionFromRole,
@@ -40,6 +42,9 @@ export const permissionKeys = {
     ['permissions', 'has', userId, code] as const,
   hasRole: (userId: string, role: RoleName) => ['permissions', 'has-role', userId, role] as const,
   isAdmin: (userId: string) => ['permissions', 'is-admin', userId] as const,
+  role: (id: string) => ['roles', id] as const,
+  rolePermissions: (id: string) => ['roles', id, 'permissions'] as const,
+  rolePermissionsInherited: (id: string) => ['roles', id, 'permissions', 'inherited'] as const,
 };
 
 // ============================================
@@ -208,6 +213,20 @@ export function useAllPermissions() {
 }
 
 /**
+ * Get permissions for a specific role with inheritance
+ * Uses efficient database recursive CTE for single-query fetching
+ */
+export function useRolePermissionsWithInheritance(roleId: string | undefined) {
+  return useQuery({
+    queryKey: roleId ? permissionKeys.rolePermissionsInherited(roleId) : ['empty'],
+    queryFn: () => getRolePermissionsWithInheritance(roleId!),
+    enabled: !!roleId,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    gcTime: 1000 * 60 * 10, // 10 minutes
+  });
+}
+
+/**
  * Mutation to update user roles (admin only)
  */
 export function useUpdateUserRoles() {
@@ -232,7 +251,8 @@ export function useUpdateUserRoles() {
 }
 
 /**
- * Mutation to assign permission to role (admin only)
+ * Mutation: Assign permission to role with optimistic updates
+ * Provides instant UI feedback and automatic rollback on error
  */
 export function useAssignPermissionToRole() {
   const queryClient = useQueryClient();
@@ -240,15 +260,65 @@ export function useAssignPermissionToRole() {
   return useMutation({
     mutationFn: ({ roleId, permissionId }: { roleId: string; permissionId: string }) =>
       assignPermissionToRole(roleId, permissionId),
-    onSuccess: () => {
-      // Invalidate all permission-related queries
+
+    // Optimistic update - instant feedback
+    onMutate: async ({ roleId, permissionId }) => {
+      // Cancel outgoing queries for this role
+      await queryClient.cancelQueries({
+        queryKey: permissionKeys.rolePermissionsInherited(roleId),
+      });
+
+      // Snapshot previous value for rollback
+      const previousData = queryClient.getQueryData<PermissionWithSource[]>(
+        permissionKeys.rolePermissionsInherited(roleId)
+      );
+
+      // Optimistically add permission to cache
+      if (previousData) {
+        const allPermissions = queryClient.getQueryData<Permission[]>(
+          permissionKeys.allPermissions
+        );
+        const newPermission = allPermissions?.find((p) => p.id === permissionId);
+
+        if (newPermission) {
+          queryClient.setQueryData<PermissionWithSource[]>(
+            permissionKeys.rolePermissionsInherited(roleId),
+            [...previousData, { ...newPermission, permissionType: 'direct' }]
+          );
+        }
+      }
+
+      return { previousData };
+    },
+
+    // Rollback on error
+    onError: (err, { roleId }, context) => {
+      if (context?.previousData) {
+        queryClient.setQueryData(
+          permissionKeys.rolePermissionsInherited(roleId),
+          context.previousData
+        );
+      }
+      console.error('Failed to assign permission:', err);
+    },
+
+    // Refetch on success to ensure consistency
+    onSuccess: (_, { roleId }) => {
+      queryClient.invalidateQueries({
+        queryKey: permissionKeys.rolePermissionsInherited(roleId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: permissionKeys.rolePermissions(roleId),
+      });
+      // Invalidate all user permission queries as their effective permissions may have changed
       queryClient.invalidateQueries({ queryKey: permissionKeys.all });
     },
   });
 }
 
 /**
- * Mutation to remove permission from role (admin only)
+ * Mutation: Remove permission from role with optimistic updates
+ * Provides instant UI feedback and automatic rollback on error
  */
 export function useRemovePermissionFromRole() {
   const queryClient = useQueryClient();
@@ -256,8 +326,48 @@ export function useRemovePermissionFromRole() {
   return useMutation({
     mutationFn: ({ roleId, permissionId }: { roleId: string; permissionId: string }) =>
       removePermissionFromRole(roleId, permissionId),
-    onSuccess: () => {
-      // Invalidate all permission-related queries
+
+    // Optimistic update
+    onMutate: async ({ roleId, permissionId }) => {
+      await queryClient.cancelQueries({
+        queryKey: permissionKeys.rolePermissionsInherited(roleId),
+      });
+
+      const previousData = queryClient.getQueryData<PermissionWithSource[]>(
+        permissionKeys.rolePermissionsInherited(roleId)
+      );
+
+      // Optimistically remove permission from cache
+      if (previousData) {
+        queryClient.setQueryData<PermissionWithSource[]>(
+          permissionKeys.rolePermissionsInherited(roleId),
+          previousData.filter((p) => p.id !== permissionId)
+        );
+      }
+
+      return { previousData };
+    },
+
+    // Rollback on error
+    onError: (err, { roleId }, context) => {
+      if (context?.previousData) {
+        queryClient.setQueryData(
+          permissionKeys.rolePermissionsInherited(roleId),
+          context.previousData
+        );
+      }
+      console.error('Failed to remove permission:', err);
+    },
+
+    // Refetch on success
+    onSuccess: (_, { roleId }) => {
+      queryClient.invalidateQueries({
+        queryKey: permissionKeys.rolePermissionsInherited(roleId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: permissionKeys.rolePermissions(roleId),
+      });
+      // Invalidate all user permission queries as their effective permissions may have changed
       queryClient.invalidateQueries({ queryKey: permissionKeys.all });
     },
   });

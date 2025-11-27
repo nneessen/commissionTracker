@@ -148,3 +148,12 @@ export interface PermissionGroup {
   label: string;
   permissions: Permission[];
 }
+
+/**
+ * Permission with source information (direct vs inherited)
+ * Used for role management UI to show where permissions come from
+ */
+export interface PermissionWithSource extends Permission {
+  permissionType: 'direct' | 'inherited';
+  inheritedFromRoleName?: string;
+}

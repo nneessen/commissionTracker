@@ -1,18 +1,20 @@
 // src/features/admin/components/RoleManagementPage.tsx
 
 import React, { useState } from 'react';
-import { useAllRoles, useAllPermissions } from '@/hooks/permissions/usePermissions';
+import { useAllRoles, useAllPermissions, useIsAdmin } from '@/hooks/permissions/usePermissions';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Shield, Users, Lock, ChevronDown, ChevronRight, CheckCircle2 } from 'lucide-react';
+import { Shield, Users, Lock, ChevronDown, ChevronRight } from 'lucide-react';
 import type { Role, Permission } from '@/types/permissions.types';
+import { RolePermissionsDisplay } from './RolePermissionsDisplay';
 
 export function RoleManagementPage() {
   const { data: roles, isLoading: rolesLoading, error: rolesError } = useAllRoles();
   const { data: permissions, isLoading: permissionsLoading } = useAllPermissions();
+  const { data: isAdmin, isLoading: isAdminLoading } = useIsAdmin();
   const [expandedRoles, setExpandedRoles] = useState<Set<string>>(new Set());
 
   const toggleRole = (roleId: string) => {
@@ -25,7 +27,7 @@ export function RoleManagementPage() {
     setExpandedRoles(newExpanded);
   };
 
-  if (rolesLoading || permissionsLoading) {
+  if (rolesLoading || permissionsLoading || isAdminLoading) {
     return (
       <div className="p-6 space-y-6">
         <div className="space-y-2">
@@ -54,24 +56,18 @@ export function RoleManagementPage() {
   }
 
   // Group permissions by category for display
-  const permissionsByCategory = permissions?.reduce((acc, perm) => {
-    const category = perm.resource;
-    if (!acc[category]) {
-      acc[category] = [];
-    }
-    acc[category].push(perm);
-    return acc;
-  }, {} as Record<string, Permission[]>) || {};
-
-  // Get permissions for a specific role (including inherited)
-  const getRolePermissions = (role: Role): Permission[] => {
-    // TODO: This should use the get_user_permissions function with a user who has this role
-    // For now, we'll show direct permissions only
-    return permissions?.filter(p => {
-      // This is a simplified version - in production you'd query role_permissions table
-      return true; // Placeholder
-    }) || [];
-  };
+  const permissionsByCategory =
+    permissions?.reduce(
+      (acc, perm) => {
+        const category = perm.resource;
+        if (!acc[category]) {
+          acc[category] = [];
+        }
+        acc[category].push(perm);
+        return acc;
+      },
+      {} as Record<string, Permission[]>
+    ) || {};
 
   const getRoleColor = (roleName: string): string => {
     const colors: Record<string, string> = {
@@ -223,27 +219,18 @@ export function RoleManagementPage() {
 
                 {isExpanded && (
                   <CardContent className="pt-0 border-t">
-                    <div className="space-y-4 mt-4">
-                      <div className="flex items-center justify-between">
-                        <h3 className="text-sm font-semibold">Permissions</h3>
-                        <Badge variant="secondary">
-                          Coming Soon: View/Edit Permissions
-                        </Badge>
-                      </div>
-
-                      <Alert>
-                        <CheckCircle2 className="h-4 w-4" />
-                        <AlertDescription>
-                          Permission management interface will be available in the next update.
-                          For now, permissions are managed via database migrations.
-                        </AlertDescription>
-                      </Alert>
-
-                      {/* Placeholder for permission list */}
-                      <div className="text-sm text-muted-foreground">
-                        This role has permissions for: {role.name === 'admin' ? 'All resources (full access)' : 'See database for details'}
-                      </div>
-                    </div>
+                    <RolePermissionsDisplay
+                      role={role}
+                      isAdmin={isAdmin || false}
+                      onEditClick={
+                        isAdmin && !role.is_system_role
+                          ? () => {
+                              // TODO: Implement permission edit dialog
+                              console.log('Edit permissions for role:', role.name);
+                            }
+                          : undefined
+                      }
+                    />
                   </CardContent>
                 )}
               </Card>
