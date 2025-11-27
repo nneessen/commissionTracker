@@ -21,6 +21,8 @@ import {
 } from 'lucide-react';
 import { PhaseTimeline } from './PhaseTimeline';
 import { PhaseChecklist } from './PhaseChecklist';
+import { DocumentManager } from './DocumentManager';
+import { EmailManager } from './EmailManager';
 import {
   useRecruitPhaseProgress,
   useCurrentPhase,
@@ -48,6 +50,7 @@ interface RecruitDetailPanelProps {
 
 export function RecruitDetailPanel({ recruit, currentUserId, isUpline = false }: RecruitDetailPanelProps) {
   const [activeTab, setActiveTab] = useState('progress');
+  const [selectedPhaseId, setSelectedPhaseId] = useState<string | null>(null);
 
   // Fetch recruit's progress data
   const { data: phaseProgress, isLoading: progressLoading } = useRecruitPhaseProgress(recruit.id);
@@ -55,7 +58,7 @@ export function RecruitDetailPanel({ recruit, currentUserId, isUpline = false }:
   const { data: template, isLoading: templateLoading } = useActiveTemplate();
   const { data: checklistProgress, isLoading: checklistLoading } = useChecklistProgress(
     recruit.id,
-    currentPhase?.phase_id
+    selectedPhaseId || currentPhase?.phase_id
   );
   const { data: documents } = useRecruitDocuments(recruit.id);
   const { data: emails } = useRecruitEmails(recruit.id);
@@ -99,6 +102,11 @@ export function RecruitDetailPanel({ recruit, currentUserId, isUpline = false }:
       status: 'in_progress',
       notes: 'Unblocked by admin',
     });
+  };
+
+  const handlePhaseClick = (phaseId: string) => {
+    setSelectedPhaseId(phaseId);
+    setActiveTab('checklist'); // Auto-switch to checklist tab
   };
 
   const isLoading = progressLoading || currentPhaseLoading || templateLoading;
@@ -280,68 +288,55 @@ export function RecruitDetailPanel({ recruit, currentUserId, isUpline = false }:
           <PhaseTimeline
             phaseProgress={phaseProgress}
             phases={(template.phases || []) as any}
+            onPhaseClick={handlePhaseClick}
           />
         </TabsContent>
 
         <TabsContent value="checklist" className="space-y-4">
-          {currentPhase && 'phase' in currentPhase && (currentPhase.phase as { checklist_items?: any[] })?.checklist_items ? (
-            <PhaseChecklist
-              userId={recruit.id}
-              checklistItems={(currentPhase.phase as { checklist_items: any[] }).checklist_items}
-              checklistProgress={checklistProgress || []}
-              isUpline={isUpline}
-              currentUserId={currentUserId}
-            />
-          ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              No current phase or checklist items
-            </div>
-          )}
+          {(() => {
+            // Find the phase to display (selected or current)
+            const targetPhaseId = selectedPhaseId || currentPhase?.phase_id;
+            const targetPhase = template.phases?.find((p: any) => p.id === targetPhaseId);
+            const targetChecklistItems = targetPhase?.checklist_items;
+
+            if (!targetChecklistItems || targetChecklistItems.length === 0) {
+              return (
+                <div className="text-center py-8 text-muted-foreground">
+                  {selectedPhaseId ? 'No checklist items for selected phase' : 'No current phase or checklist items'}
+                </div>
+              );
+            }
+
+            return (
+              <PhaseChecklist
+                userId={recruit.id}
+                checklistItems={targetChecklistItems}
+                checklistProgress={checklistProgress || []}
+                isUpline={isUpline}
+                currentUserId={currentUserId}
+              />
+            );
+          })()}
         </TabsContent>
 
         <TabsContent value="documents" className="space-y-4">
-          {documents && documents.length > 0 ? (
-            <div className="space-y-2">
-              {documents.map((doc) => (
-                <Card key={doc.id} className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <FileText className="h-5 w-5 text-muted-foreground" />
-                      <div>
-                        <p className="font-medium">{doc.document_name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {doc.document_type} • Uploaded {new Date(doc.uploaded_at).toLocaleDateString()}
-                        </p>
-                      </div>
-                    </div>
-                    <Badge variant="secondary">{doc.status}</Badge>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-8 text-muted-foreground">No documents uploaded yet</div>
-          )}
+          <DocumentManager
+            userId={recruit.id}
+            documents={documents}
+            isUpline={isUpline}
+            currentUserId={currentUserId}
+          />
         </TabsContent>
 
         <TabsContent value="emails" className="space-y-4">
-          {emails && emails.length > 0 ? (
-            <div className="space-y-2">
-              {emails.map((email) => (
-                <Card key={email.id} className="p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <p className="font-medium">{email.subject}</p>
-                    <Badge variant="secondary">{email.status}</Badge>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Sent {email.sent_at ? new Date(email.sent_at).toLocaleDateString() : 'Not sent'}
-                  </p>
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-8 text-muted-foreground">No emails sent yet</div>
-          )}
+          <EmailManager
+            recruitId={recruit.id}
+            recruitEmail={recruit.email}
+            recruitName={displayName}
+            emails={emails}
+            isUpline={isUpline}
+            currentUserId={currentUserId}
+          />
         </TabsContent>
 
         <TabsContent value="activity" className="space-y-4">

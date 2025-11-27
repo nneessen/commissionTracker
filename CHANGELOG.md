@@ -6,6 +6,32 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-11-27 12:01:58
+
+### Changed Files
+- `.serena/memories/supabase-credentials.md`
+- `docs/rbac-implementation-guide.md`
+- `src/components/layout/Sidebar.tsx`
+- `src/components/permissions/PermissionGate.tsx`
+- `src/features/recruiting/components/ComposeEmailDialog.tsx`
+- `src/features/recruiting/components/DocumentManager.tsx`
+- `src/features/recruiting/components/DocumentViewerDialog.tsx`
+- `src/features/recruiting/components/EmailManager.tsx`
+- `src/features/recruiting/components/PhaseChecklist.tsx`
+- `src/features/recruiting/components/RecruitDetailPanel.tsx`
+- `src/features/recruiting/components/UploadDocumentDialog.tsx`
+- `src/hooks/permissions/usePermissions.ts`
+- `src/services/permissions/permissionService.ts`
+- `src/types/permissions.types.ts`
+- `supabase/migrations/20251127155707_add_recruit_visibility_rls.sql`
+- `supabase/migrations/20251127163855_create_rbac_system.sql`
+- `supabase/migrations/20251127164036_update_rls_for_rbac.sql`
+
+### Statistics
+```
+ 17 files changed, 3514 insertions(+), 156 deletions(-)
+```
+
 ## [Checkpoint] - 2025-11-26 18:38:41
 
 ### Changed Files

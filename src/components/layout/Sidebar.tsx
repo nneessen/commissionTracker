@@ -16,15 +16,22 @@ import {
   ChevronLeft,
   X,
   Shield,
+  UserCog,
+  ScrollText,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Button } from "@/components/ui/button";
-import { useIsAdmin } from "@/hooks/admin/useUserApproval";
+import { usePermissionCheck } from "@/hooks/permissions/usePermissions";
+import type { PermissionCode } from "@/types/permissions.types";
 
 interface NavigationItem {
   icon: React.ElementType;
   label: string;
   href: string;
+  /** Permission required to see this nav item */
+  permission?: PermissionCode;
+  /** If true, show to everyone (no permission check) */
+  public?: boolean;
 }
 
 interface SidebarProps {
@@ -36,15 +43,22 @@ interface SidebarProps {
 }
 
 const navigationItems: NavigationItem[] = [
-  { icon: Home, label: "Dashboard", href: "/dashboard" },
-  { icon: TrendingUp, label: "Analytics", href: "/analytics" },
-  { icon: Target, label: "Targets", href: "/targets" },
-  { icon: BarChart3, label: "Reports", href: "/reports" },
-  { icon: CreditCard, label: "Expenses", href: "/expenses" },
-  { icon: FileText, label: "Policies", href: "/policies" },
-  { icon: Users, label: "Team", href: "/hierarchy" },
-  { icon: UserPlus, label: "Recruiting", href: "/recruiting" },
-  { icon: Settings, label: "Settings", href: "/settings" },
+  { icon: Home, label: "Dashboard", href: "/dashboard", permission: "nav.dashboard" },
+  { icon: TrendingUp, label: "Analytics", href: "/analytics", permission: "nav.dashboard" },
+  { icon: Target, label: "Targets", href: "/targets", permission: "nav.dashboard" },
+  { icon: BarChart3, label: "Reports", href: "/reports", permission: "nav.downline_reports" },
+  { icon: CreditCard, label: "Expenses", href: "/expenses", permission: "expenses.read.own" },
+  { icon: FileText, label: "Policies", href: "/policies", permission: "nav.policies" },
+  { icon: Users, label: "Team", href: "/hierarchy", permission: "nav.team_dashboard" },
+  { icon: UserPlus, label: "Recruiting", href: "/recruiting", permission: "nav.recruiting_pipeline" },
+  { icon: Settings, label: "Settings", href: "/settings", public: true },
+];
+
+// Admin-only navigation items
+const adminNavigationItems: NavigationItem[] = [
+  { icon: Shield, label: "User Management", href: "/admin/users", permission: "nav.user_management" },
+  { icon: UserCog, label: "Role Management", href: "/admin/roles", permission: "nav.role_management" },
+  { icon: ScrollText, label: "Audit Logs", href: "/admin/audit", permission: "nav.audit_logs" },
 ];
 
 export default function Sidebar({
@@ -56,7 +70,7 @@ export default function Sidebar({
 }: SidebarProps) {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const { data: isAdmin } = useIsAdmin();
+  const { can, isLoading } = usePermissionCheck();
 
   useEffect(() => {
     const checkMobile = () => {
@@ -73,6 +87,20 @@ export default function Sidebar({
 
   const toggleMobile = () => setIsMobileOpen(!isMobileOpen);
   const closeMobile = () => setIsMobileOpen(false);
+
+  // Filter navigation items based on permissions
+  const visibleNavItems = navigationItems.filter((item) => {
+    if (item.public) return true;
+    if (!item.permission) return true;
+    if (isLoading) return false;
+    return can(item.permission);
+  });
+
+  const visibleAdminItems = adminNavigationItems.filter((item) => {
+    if (!item.permission) return false;
+    if (isLoading) return false;
+    return can(item.permission);
+  });
 
   return (
     <>
@@ -151,7 +179,8 @@ export default function Sidebar({
 
         {/* Navigation */}
         <nav className="flex-1 p-2 overflow-y-auto">
-          {navigationItems.map((item) => {
+          {/* Main Navigation Items */}
+          {visibleNavItems.map((item) => {
             const Icon = item.icon;
             return (
               <Link
@@ -177,28 +206,39 @@ export default function Sidebar({
               </Link>
             );
           })}
-          {isAdmin && (
-            <Link
-              to="/admin/users"
-              onClick={() => {
-                if (isMobile) closeMobile();
-              }}
-            >
-              {({ isActive }) => (
-                <Button
-                  variant={isActive ? "secondary" : "ghost"}
-                  className={`mb-1 h-9 ${isCollapsed ? "w-9 p-0 mx-auto" : "w-full justify-start px-3"}`}
-                  title={isCollapsed ? "User Management" : ""}
-                  data-active={isActive}
-                >
-                  <Shield size={16} className={isCollapsed ? "" : "mr-2.5"} />
-                  {!isCollapsed && (
-                    <span className="text-sm">User Management</span>
-                  )}
-                </Button>
-              )}
-            </Link>
+
+          {/* Separator for admin section if there are admin items */}
+          {visibleAdminItems.length > 0 && !isCollapsed && (
+            <div className="my-2 border-t border-border" />
           )}
+
+          {/* Admin Navigation Items */}
+          {visibleAdminItems.map((item) => {
+            const Icon = item.icon;
+            return (
+              <Link
+                key={item.href}
+                to={item.href}
+                onClick={() => {
+                  if (isMobile) closeMobile();
+                }}
+              >
+                {({ isActive }) => (
+                  <Button
+                    variant={isActive ? "secondary" : "ghost"}
+                    className={`mb-1 h-9 ${isCollapsed ? "w-9 p-0 mx-auto" : "w-full justify-start px-3"}`}
+                    title={isCollapsed ? item.label : ""}
+                    data-active={isActive}
+                  >
+                    <Icon size={16} className={isCollapsed ? "" : "mr-2.5"} />
+                    {!isCollapsed && (
+                      <span className="text-sm">{item.label}</span>
+                    )}
+                  </Button>
+                )}
+              </Link>
+            );
+          })}
         </nav>
 
         {/* Footer */}
