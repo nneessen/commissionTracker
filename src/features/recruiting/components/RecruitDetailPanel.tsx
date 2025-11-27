@@ -16,6 +16,8 @@ import {
   ArrowRight,
   AlertCircle,
   User,
+  Instagram,
+  Linkedin,
 } from 'lucide-react';
 import { PhaseTimeline } from './PhaseTimeline';
 import { PhaseChecklist } from './PhaseChecklist';
@@ -25,12 +27,18 @@ import {
   useChecklistProgress,
   useAdvancePhase,
   useBlockPhase,
+  useUpdatePhaseStatus,
+  useInitializeRecruitProgress,
 } from '../hooks/useRecruitProgress';
 import { useActiveTemplate } from '../hooks/usePipeline';
+
 import { useRecruitDocuments } from '../hooks/useRecruitDocuments';
 import { useRecruitEmails } from '../hooks/useRecruitEmails';
 import { useRecruitActivityLog } from '../hooks/useRecruitActivity';
 import { ONBOARDING_STATUS_COLORS } from '@/types/recruiting';
+
+// Default pipeline template ID (from seed migration)
+const DEFAULT_TEMPLATE_ID = '00000000-0000-0000-0000-000000000001';
 
 interface RecruitDetailPanelProps {
   recruit: UserProfile;
@@ -56,6 +64,8 @@ export function RecruitDetailPanel({ recruit, currentUserId, isUpline = false }:
   // Mutations
   const advancePhase = useAdvancePhase();
   const blockPhase = useBlockPhase();
+  const updatePhaseStatus = useUpdatePhaseStatus();
+  const initializeProgress = useInitializeRecruitProgress();
 
   const handleAdvancePhase = async () => {
     if (!currentPhase) return;
@@ -79,6 +89,18 @@ export function RecruitDetailPanel({ recruit, currentUserId, isUpline = false }:
     });
   };
 
+  const handleUnblockPhase = async () => {
+    if (!currentPhase) return;
+    if (!confirm('Are you sure you want to unblock this phase and resume progress?')) return;
+
+    await updatePhaseStatus.mutateAsync({
+      userId: recruit.id,
+      phaseId: currentPhase.phase_id,
+      status: 'in_progress',
+      notes: 'Unblocked by admin',
+    });
+  };
+
   const isLoading = progressLoading || currentPhaseLoading || templateLoading;
 
   if (isLoading) {
@@ -91,6 +113,30 @@ export function RecruitDetailPanel({ recruit, currentUserId, isUpline = false }:
     );
   }
 
+  const handleInitializeProgress = async () => {
+    await initializeProgress.mutateAsync({
+      userId: recruit.id,
+      templateId: DEFAULT_TEMPLATE_ID,
+    });
+  };
+
+  // Handle case where recruit has no phase progress
+  if ((!phaseProgress || phaseProgress.length === 0) && template) {
+    return (
+      <div className="p-6 text-center text-muted-foreground space-y-4">
+        <p>This recruit has no pipeline progress initialized.</p>
+        {isUpline && (
+          <Button
+            onClick={handleInitializeProgress}
+            disabled={initializeProgress.isPending}
+          >
+            {initializeProgress.isPending ? 'Initializing...' : 'Initialize Pipeline Progress'}
+          </Button>
+        )}
+      </div>
+    );
+  }
+
   if (!phaseProgress || !template) {
     return (
       <div className="p-6 text-center text-muted-foreground">
@@ -99,90 +145,135 @@ export function RecruitDetailPanel({ recruit, currentUserId, isUpline = false }:
     );
   }
 
-  const initials = `${recruit.first_name?.[0] || ''}${recruit.last_name?.[0] || ''}`.toUpperCase();
+  const displayName = recruit.first_name && recruit.last_name
+    ? `${recruit.first_name} ${recruit.last_name}`
+    : recruit.email;
+  const initials = recruit.first_name && recruit.last_name
+    ? `${recruit.first_name[0]}${recruit.last_name[0]}`.toUpperCase()
+    : recruit.email.substring(0, 2).toUpperCase();
 
   return (
-    <div className="h-full overflow-auto">
+    <div className="h-full overflow-y-auto overflow-x-hidden p-3">
       {/* Header */}
-      <Card className="p-6 mb-4">
-        <div className="flex items-start gap-4">
-          <Avatar className="h-16 w-16">
-            <AvatarImage src={recruit.profile_photo_url || undefined} alt={`${recruit.first_name} ${recruit.last_name}`} />
-            <AvatarFallback>{initials || <User className="h-8 w-8" />}</AvatarFallback>
+      <Card className="p-3 mb-2">
+        <div className="flex items-start gap-2">
+          <Avatar className="h-10 w-10 shrink-0">
+            <AvatarImage src={recruit.profile_photo_url || undefined} alt={displayName} />
+            <AvatarFallback>{initials || <User className="h-6 w-6" />}</AvatarFallback>
           </Avatar>
 
-          <div className="flex-1">
-            <h2 className="text-2xl font-bold mb-1">
-              {recruit.first_name} {recruit.last_name}
+          <div className="flex-1 min-w-0">
+            <h2 className="text-base font-bold truncate">
+              {displayName}
             </h2>
 
-            <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground mb-1">
               {recruit.email && (
-                <div className="flex items-center gap-1">
-                  <Mail className="h-4 w-4" />
-                  <span>{recruit.email}</span>
+                <div className="flex items-center gap-1 truncate">
+                  <Mail className="h-3 w-3 shrink-0" />
+                  <span className="truncate">{recruit.email}</span>
                 </div>
               )}
               {recruit.phone && (
                 <div className="flex items-center gap-1">
-                  <Phone className="h-4 w-4" />
+                  <Phone className="h-3 w-3 shrink-0" />
                   <span>{recruit.phone}</span>
                 </div>
               )}
             </div>
 
-            <div className="flex items-center gap-2">
-              <Badge variant="secondary" className={recruit.onboarding_status ? ONBOARDING_STATUS_COLORS[recruit.onboarding_status] : ONBOARDING_STATUS_COLORS.lead}>
-                {recruit.onboarding_status || 'lead'}
+            {/* Social Media Links */}
+            {(recruit.instagram_url || recruit.linkedin_url) && (
+              <div className="flex flex-wrap items-center gap-2 text-xs mb-2">
+                {recruit.instagram_url && (
+                  <a
+                    href={recruit.instagram_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 text-blue-600 hover:text-blue-700 hover:underline"
+                  >
+                    <Instagram className="h-3 w-3" />
+                    <span className="truncate max-w-[100px]">@{recruit.instagram_username || 'IG'}</span>
+                  </a>
+                )}
+                {recruit.linkedin_url && (
+                  <a
+                    href={recruit.linkedin_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 text-blue-600 hover:text-blue-700 hover:underline"
+                  >
+                    <Linkedin className="h-3 w-3" />
+                    <span className="truncate max-w-[100px]">{recruit.linkedin_username || 'LI'}</span>
+                  </a>
+                )}
+              </div>
+            )}
+
+            <div className="flex flex-wrap items-center gap-1">
+              <Badge variant="secondary" className={`text-xs ${recruit.onboarding_status ? ONBOARDING_STATUS_COLORS[recruit.onboarding_status] : ONBOARDING_STATUS_COLORS.interview_1}`}>
+                {recruit.onboarding_status?.replace(/_/g, ' ') || 'Interview 1'}
               </Badge>
-              {currentPhase && 'phase' in currentPhase && (
-                <Badge variant="outline">
-                  {(currentPhase.phase as { phase_name?: string })?.phase_name || 'Unknown Phase'}
+              {currentPhase && currentPhase.status === 'blocked' && (
+                <Badge variant="destructive" className="text-xs">
+                  Blocked
                 </Badge>
               )}
             </div>
           </div>
+        </div>
 
-          {/* Quick Actions */}
-          {isUpline && (
-            <div className="flex gap-2">
+        {/* Quick Actions - moved below header for better fit */}
+        {isUpline && (
+          <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleAdvancePhase}
+              disabled={!currentPhase || currentPhase.status === 'blocked'}
+              className="text-xs h-7"
+            >
+              <ArrowRight className="h-3 w-3 mr-1" />
+              Advance
+            </Button>
+            {currentPhase?.status === 'blocked' ? (
               <Button
                 size="sm"
-                variant="outline"
-                onClick={handleAdvancePhase}
-                disabled={!currentPhase || currentPhase.status === 'blocked'}
+                variant="default"
+                onClick={handleUnblockPhase}
+                className="text-xs h-7"
               >
-                <ArrowRight className="h-4 w-4 mr-1" />
-                Advance Phase
+                <AlertCircle className="h-3 w-3 mr-1" />
+                Unblock
               </Button>
+            ) : (
               <Button
                 size="sm"
                 variant="outline"
                 onClick={handleBlockPhase}
-                disabled={!currentPhase || currentPhase.status === 'blocked'}
+                disabled={!currentPhase}
+                className="text-xs h-7"
               >
-                <AlertCircle className="h-4 w-4 mr-1" />
-                Mark Blocked
+                <AlertCircle className="h-3 w-3 mr-1" />
+                Block
               </Button>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
       </Card>
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="mb-4">
-          <TabsTrigger value="progress">Progress</TabsTrigger>
-          <TabsTrigger value="checklist">Current Checklist</TabsTrigger>
-          <TabsTrigger value="documents">
-            Documents
-            {documents && documents.length > 0 && ` (${documents.length})`}
+        <TabsList className="mb-2 w-full flex overflow-x-auto">
+          <TabsTrigger value="progress" className="text-xs px-2">Progress</TabsTrigger>
+          <TabsTrigger value="checklist" className="text-xs px-2">Checklist</TabsTrigger>
+          <TabsTrigger value="documents" className="text-xs px-2">
+            Docs{documents && documents.length > 0 && ` (${documents.length})`}
           </TabsTrigger>
-          <TabsTrigger value="emails">
-            Emails
-            {emails && emails.length > 0 && ` (${emails.length})`}
+          <TabsTrigger value="emails" className="text-xs px-2">
+            Email{emails && emails.length > 0 && ` (${emails.length})`}
           </TabsTrigger>
-          <TabsTrigger value="activity">Activity Log</TabsTrigger>
+          <TabsTrigger value="activity" className="text-xs px-2">Activity</TabsTrigger>
         </TabsList>
 
         <TabsContent value="progress" className="space-y-4">

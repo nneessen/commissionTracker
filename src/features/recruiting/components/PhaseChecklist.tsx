@@ -191,21 +191,21 @@ export function PhaseChecklist({
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-1">
       {sortedItems.map((item) => {
         const progress = progressMap.get(item.id);
         const status = progress?.status || 'not_started';
 
         return (
-          <Card key={item.id} className="p-4">
-            <div className="flex items-start gap-3">
-              <div className="flex-shrink-0 mt-1 text-2xl">{CHECKLIST_STATUS_ICONS[status]}</div>
+          <div key={item.id} className="py-1 px-2 hover:bg-muted/30 rounded-sm mb-1">
+            <div className="flex items-start gap-1">
+              <div className="flex-shrink-0 text-sm">{CHECKLIST_STATUS_ICONS[status]}</div>
 
               <div className="flex-1 min-w-0">
-                <div className="flex items-start justify-between gap-2 mb-2">
+                <div className="flex items-start justify-between gap-2 mb-1">
                   <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h4 className="font-medium">{item.item_name}</h4>
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-medium text-sm">{item.item_name}</h4>
                       {item.is_required && (
                         <Badge variant="outline" className="text-xs">
                           Required
@@ -226,7 +226,7 @@ export function PhaseChecklist({
                 )}
 
                 {progress?.rejection_reason && (
-                  <div className="mb-3 p-2 bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-800 rounded text-sm">
+                  <div className="mb-3 p-2 bg-red-100/50 dark:bg-red-950/50 rounded-sm text-sm">
                     <span className="font-medium text-red-900 dark:text-red-100">Rejected: </span>
                     <span className="text-red-800 dark:text-red-200">{progress.rejection_reason}</span>
                   </div>
@@ -254,7 +254,7 @@ export function PhaseChecklist({
                 </div>
               </div>
             </div>
-          </Card>
+          </div>
         );
       })}
     </div>

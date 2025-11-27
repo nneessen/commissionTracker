@@ -34,6 +34,7 @@ import {
   HierarchyDashboard,
 } from "./features/hierarchy";
 import { RecruitingDashboard } from "./features/recruiting/RecruitingDashboard";
+import { PipelineAdminPage } from "./features/recruiting/admin/PipelineAdminPage";
 
 // Create root route with App layout
 const rootRoute = createRootRoute({
@@ -218,6 +219,13 @@ const recruitingRoute = createRoute({
   component: RecruitingDashboard,
 });
 
+// Recruiting admin route - pipeline management
+const recruitingAdminRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "recruiting/admin/pipelines",
+  component: PipelineAdminPage,
+});
+
 // Create the route tree - all routes are already linked via getParentRoute
 const routeTree = rootRoute.addChildren([
   indexRoute,
@@ -244,6 +252,7 @@ const routeTree = rootRoute.addChildren([
   hierarchyDownlinesRoute,
   hierarchyManageRoute,
   recruitingRoute,
+  recruitingAdminRoute,
 ]);
 
 // Create and export the router

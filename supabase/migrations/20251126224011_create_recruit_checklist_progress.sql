@@ -87,10 +87,11 @@ CREATE POLICY "Recruiters can update their recruits' checklist progress"
     )
   );
 
--- System can insert checklist progress (via triggers)
+-- Authenticated users can insert checklist progress
 CREATE POLICY "Authenticated users can insert checklist progress"
   ON recruit_checklist_progress FOR INSERT
-  WITH CHECK (auth.role() = 'authenticated');
+  TO authenticated
+  WITH CHECK (true);
 
 -- Add updated_at trigger
 CREATE OR REPLACE FUNCTION update_recruit_checklist_progress_updated_at()
@@ -112,7 +113,7 @@ COMMENT ON TABLE recruit_checklist_progress IS
   'Tracks completion status of individual checklist items per recruit. Links to user_documents for document_upload items.';
 
 COMMENT ON COLUMN recruit_checklist_progress.status IS
-  'Workflow: not_started ’ in_progress ’ completed ’ (if verification required) ’ approved/rejected ’ (if rejected) ’ needs_resubmission';
+  'Workflow: not_started ï¿½ in_progress ï¿½ completed ï¿½ (if verification required) ï¿½ approved/rejected ï¿½ (if rejected) ï¿½ needs_resubmission';
 
 COMMENT ON COLUMN recruit_checklist_progress.completed_by IS
   'Who completed the item (recruit, upline, or system)';

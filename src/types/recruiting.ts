@@ -1,17 +1,27 @@
 // src/types/recruiting.ts
 // TypeScript types for recruiting system
 
-export type OnboardingStatus = 'lead' | 'active' | 'completed' | 'dropped';
-
-export type PhaseName =
-  | 'initial_contact'
-  | 'application'
-  | 'background_check'
+// OnboardingStatus mirrors the 7 pipeline phases + completed/dropped
+export type OnboardingStatus =
+  | 'interview_1'
+  | 'zoom_interview'
   | 'pre_licensing'
   | 'exam'
-  | 'state_license'
+  | 'npn_received'
   | 'contracting'
-  | 'complete';
+  | 'bootcamp'
+  | 'completed'
+  | 'dropped';
+
+// PhaseName matches database pipeline_phases.phase_name values
+export type PhaseName =
+  | 'Interview 1'
+  | 'Zoom Interview'
+  | 'Pre-Licensing'
+  | 'Exam'
+  | 'NPN Received'
+  | 'Contracting'
+  | 'Bootcamp';
 
 export type PhaseStatus = 'not_started' | 'in_progress' | 'completed' | 'blocked';
 
@@ -188,16 +198,15 @@ export interface UploadDocumentInput {
   expires_at?: string;
 }
 
-// Phase display names for UI
+// Phase display names for UI (matches database phase_name values)
 export const PHASE_DISPLAY_NAMES: Record<PhaseName, string> = {
-  initial_contact: 'Initial Contact',
-  application: 'Application',
-  background_check: 'Background Check',
-  pre_licensing: 'Pre-Licensing',
-  exam: 'Licensing Exam',
-  state_license: 'State License',
-  contracting: 'Carrier Contracting',
-  complete: 'Complete',
+  'Interview 1': 'Interview 1',
+  'Zoom Interview': 'Zoom Interview',
+  'Pre-Licensing': 'Pre-Licensing',
+  'Exam': 'Exam',
+  'NPN Received': 'NPN Received',
+  'Contracting': 'Contracting',
+  'Bootcamp': 'Bootcamp',
 };
 
 // Document type display names for UI
@@ -220,9 +229,15 @@ export const STATUS_COLORS: Record<PhaseStatus, string> = {
   blocked: 'text-red-700 bg-red-100 dark:text-red-400 dark:bg-red-950',
 };
 
+// Colors for each onboarding status/phase - progresses from cool to warm colors
 export const ONBOARDING_STATUS_COLORS: Record<OnboardingStatus, string> = {
-  lead: 'text-blue-700 bg-blue-100 dark:text-blue-400 dark:bg-blue-950',
-  active: 'text-yellow-700 bg-yellow-100 dark:text-yellow-400 dark:bg-yellow-950',
+  interview_1: 'text-slate-700 bg-slate-100 dark:text-slate-400 dark:bg-slate-950',
+  zoom_interview: 'text-blue-700 bg-blue-100 dark:text-blue-400 dark:bg-blue-950',
+  pre_licensing: 'text-indigo-700 bg-indigo-100 dark:text-indigo-400 dark:bg-indigo-950',
+  exam: 'text-purple-700 bg-purple-100 dark:text-purple-400 dark:bg-purple-950',
+  npn_received: 'text-violet-700 bg-violet-100 dark:text-violet-400 dark:bg-violet-950',
+  contracting: 'text-amber-700 bg-amber-100 dark:text-amber-400 dark:bg-amber-950',
+  bootcamp: 'text-orange-700 bg-orange-100 dark:text-orange-400 dark:bg-orange-950',
   completed: 'text-green-700 bg-green-100 dark:text-green-400 dark:bg-green-950',
   dropped: 'text-gray-700 bg-gray-100 dark:text-gray-400 dark:bg-gray-950',
 };

@@ -5,7 +5,23 @@ import type {
   RecruitPhaseProgress,
   RecruitChecklistProgress,
   UpdateChecklistItemStatusInput,
+  OnboardingStatus,
 } from '@/types/recruiting';
+
+// Convert phase name to onboarding status key
+const phaseNameToStatus = (phaseName: string): OnboardingStatus => {
+  const normalized = phaseName.toLowerCase().replace(/[- ]/g, '_');
+  const mapping: Record<string, OnboardingStatus> = {
+    'interview_1': 'interview_1',
+    'zoom_interview': 'zoom_interview',
+    'pre_licensing': 'pre_licensing',
+    'exam': 'exam',
+    'npn_received': 'npn_received',
+    'contracting': 'contracting',
+    'bootcamp': 'bootcamp',
+  };
+  return mapping[normalized] || 'interview_1';
+};
 
 export const checklistService = {
   // ========================================
@@ -21,15 +37,23 @@ export const checklistService = {
         phase:phase_id(*)
       `
       )
-      .eq('user_id', userId)
-      .order('phase.phase_order', { ascending: true });
+      .eq('user_id', userId);
 
     if (error) throw error;
-    return data as RecruitPhaseProgress[];
+
+    // Sort by phase_order in JavaScript (Supabase doesn't support ordering by related fields)
+    const sorted = (data ?? []).sort((a, b) => {
+      const orderA = (a.phase as any)?.phase_order ?? 0;
+      const orderB = (b.phase as any)?.phase_order ?? 0;
+      return orderA - orderB;
+    });
+
+    return sorted as RecruitPhaseProgress[];
   },
 
   async getCurrentPhase(userId: string) {
-    const { data, error } = await supabase
+    // First try to find an in_progress phase
+    let { data, error } = await supabase
       .from('recruit_phase_progress')
       .select(
         `
@@ -42,15 +66,32 @@ export const checklistService = {
       )
       .eq('user_id', userId)
       .eq('status', 'in_progress')
-      .single();
+      .maybeSingle();
 
-    if (error) {
-      // If no in_progress phase found, return null
-      if (error.code === 'PGRST116') return null;
-      throw error;
+    if (error) throw error;
+
+    // If no in_progress phase, look for a blocked phase (so we can show unblock button)
+    if (!data) {
+      const { data: blockedData, error: blockedError } = await supabase
+        .from('recruit_phase_progress')
+        .select(
+          `
+          *,
+          phase:phase_id(
+            *,
+            checklist_items:phase_checklist_items(*)
+          )
+        `
+        )
+        .eq('user_id', userId)
+        .eq('status', 'blocked')
+        .maybeSingle();
+
+      if (blockedError) throw blockedError;
+      data = blockedData;
     }
 
-    return data as RecruitPhaseProgress;
+    return data as RecruitPhaseProgress | null;
   },
 
   async initializeRecruitProgress(userId: string, templateId: string) {
@@ -81,9 +122,19 @@ export const checklistService = {
 
     if (error) throw error;
 
-    // Initialize checklist progress for first phase
+    // Initialize checklist progress for first phase and update user status
     if (phases[0]) {
       await this.initializeChecklistProgress(userId, phases[0].id);
+
+      // Update user's onboarding status to match first phase
+      const firstPhaseStatus = phaseNameToStatus(phases[0].phase_name);
+      await supabase
+        .from('user_profiles')
+        .update({
+          onboarding_status: firstPhaseStatus,
+          current_onboarding_phase: phases[0].phase_name,
+        })
+        .eq('id', userId);
     }
 
     return data as RecruitPhaseProgress[];
@@ -149,6 +200,14 @@ export const checklistService = {
 
     if (nextPhaseError) {
       // No next phase found - recruiting is complete!
+      // Update user status to 'completed'
+      await supabase
+        .from('user_profiles')
+        .update({
+          onboarding_status: 'completed',
+          onboarding_completed_at: new Date().toISOString(),
+        })
+        .eq('id', userId);
       return null;
     }
 
@@ -158,10 +217,14 @@ export const checklistService = {
     // Initialize checklist progress for next phase
     await this.initializeChecklistProgress(userId, nextPhase.id);
 
-    // Update user_profiles.current_onboarding_phase
+    // Update user_profiles with new phase and status
+    const nextPhaseStatus = phaseNameToStatus(nextPhase.phase_name);
     await supabase
       .from('user_profiles')
-      .update({ current_onboarding_phase: nextPhase.phase_name })
+      .update({
+        onboarding_status: nextPhaseStatus,
+        current_onboarding_phase: nextPhase.phase_name,
+      })
       .eq('id', userId);
 
     return nextProgress;

@@ -73,10 +73,11 @@ CREATE POLICY "Recruiters can update their recruits' phase progress"
     )
   );
 
--- System can insert phase progress (via triggers when recruit is created)
+-- Authenticated users can insert phase progress
 CREATE POLICY "Authenticated users can insert phase progress"
   ON recruit_phase_progress FOR INSERT
-  WITH CHECK (auth.role() = 'authenticated');
+  TO authenticated
+  WITH CHECK (true);
 
 -- Add updated_at trigger
 CREATE OR REPLACE FUNCTION update_recruit_phase_progress_updated_at()

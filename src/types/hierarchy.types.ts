@@ -24,8 +24,8 @@ export interface UserProfile {
   approval_status: 'pending' | 'approved' | 'denied';
   is_admin: boolean;
 
-  // Onboarding/recruiting fields
-  onboarding_status?: 'lead' | 'active' | 'completed' | 'dropped';
+  // Onboarding/recruiting fields - status mirrors the 7 phases
+  onboarding_status?: 'interview_1' | 'zoom_interview' | 'pre_licensing' | 'exam' | 'npn_received' | 'contracting' | 'bootcamp' | 'completed' | 'dropped';
   current_onboarding_phase?: string | null;
   recruiter_id?: string | null; // Who recruited them (different from upline_id)
   onboarding_started_at?: string | null;

@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS pipeline_phases (
   phase_name TEXT NOT NULL,
   phase_description TEXT,
   phase_order INTEGER NOT NULL CHECK (phase_order > 0),
-  estimated_days INTEGER CHECK (estimated_days > 0),
+  estimated_days INTEGER CHECK (estimated_days >= 0 OR estimated_days IS NULL),
   auto_advance BOOLEAN DEFAULT false,
   required_approver_role TEXT CHECK (required_approver_role IN ('upline', 'admin', 'system', NULL)),
   is_active BOOLEAN DEFAULT true,

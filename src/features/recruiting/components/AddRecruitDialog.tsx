@@ -24,8 +24,12 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useCreateRecruit } from '../hooks/useRecruitMutations';
+import { useInitializeRecruitProgress } from '../hooks/useRecruitProgress';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2, UserPlus } from 'lucide-react';
+
+// Default pipeline template ID (from seed migration)
+const DEFAULT_TEMPLATE_ID = '00000000-0000-0000-0000-000000000001';
 
 const createRecruitSchema = z.object({
   first_name: z.string().min(1, 'First name is required'),
@@ -53,6 +57,7 @@ export function AddRecruitDialog({
 }: AddRecruitDialogProps) {
   const { user } = useAuth();
   const createRecruitMutation = useCreateRecruit();
+  const initializeProgressMutation = useInitializeRecruitProgress();
 
   const form = useForm({
     defaultValues: {
@@ -85,6 +90,17 @@ export function AddRecruitDialog({
       });
 
       if (recruit) {
+        // Initialize phase progress for the new recruit
+        try {
+          await initializeProgressMutation.mutateAsync({
+            userId: recruit.id,
+            templateId: DEFAULT_TEMPLATE_ID,
+          });
+        } catch (error) {
+          console.error('Failed to initialize recruit progress:', error);
+          // Don't block the success flow - the recruit was created
+        }
+
         onOpenChange(false);
         form.reset();
         onSuccess?.(recruit.id);
@@ -115,7 +131,12 @@ export function AddRecruitDialog({
           <div className="grid gap-4 py-4">
             {/* Basic Info */}
             <div className="grid grid-cols-2 gap-4">
-              <form.Field name="first_name">
+              <form.Field
+                name="first_name"
+                validators={{
+                  onChange: createRecruitSchema.shape.first_name,
+                }}
+              >
                 {(field) => (
                   <div className="grid gap-2">
                     <Label htmlFor="first_name" className="font-semibold">
@@ -127,6 +148,7 @@ export function AddRecruitDialog({
                       onChange={(e) => field.handleChange(e.target.value)}
                       onBlur={field.handleBlur}
                       autoFocus
+                      required
                     />
                     {field.state.meta.errors && field.state.meta.errors.length > 0 && (
                       <p className="text-sm text-destructive">
@@ -137,7 +159,12 @@ export function AddRecruitDialog({
                 )}
               </form.Field>
 
-              <form.Field name="last_name">
+              <form.Field
+                name="last_name"
+                validators={{
+                  onChange: createRecruitSchema.shape.last_name,
+                }}
+              >
                 {(field) => (
                   <div className="grid gap-2">
                     <Label htmlFor="last_name" className="font-semibold">
@@ -148,6 +175,7 @@ export function AddRecruitDialog({
                       value={field.state.value}
                       onChange={(e) => field.handleChange(e.target.value)}
                       onBlur={field.handleBlur}
+                      required
                     />
                     {field.state.meta.errors && field.state.meta.errors.length > 0 && (
                       <p className="text-sm text-destructive">
@@ -252,15 +280,15 @@ export function AddRecruitDialog({
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
-              disabled={createRecruitMutation.isPending}
+              disabled={createRecruitMutation.isPending || initializeProgressMutation.isPending}
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={createRecruitMutation.isPending}>
-              {createRecruitMutation.isPending && (
+            <Button type="submit" disabled={createRecruitMutation.isPending || initializeProgressMutation.isPending}>
+              {(createRecruitMutation.isPending || initializeProgressMutation.isPending) && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               )}
-              {!createRecruitMutation.isPending && (
+              {!(createRecruitMutation.isPending || initializeProgressMutation.isPending) && (
                 <UserPlus className="mr-2 h-4 w-4" />
               )}
               Add Recruit

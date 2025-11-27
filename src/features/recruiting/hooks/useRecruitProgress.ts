@@ -70,7 +70,9 @@ export function useAdvancePhase() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['recruit-phase-progress', variables.userId] });
       queryClient.invalidateQueries({ queryKey: ['recruit-current-phase', variables.userId] });
-      queryClient.invalidateQueries({ queryKey: ['recruits'] });
+      // Invalidate all recruits queries (the key starts with 'recruits')
+      queryClient.invalidateQueries({ predicate: (query) => query.queryKey[0] === 'recruits' });
+      queryClient.invalidateQueries({ queryKey: ['recruiting-stats'] });
     },
   });
 }

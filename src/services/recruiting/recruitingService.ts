@@ -364,15 +364,18 @@ export const recruitingService = {
 
     const recruits = data as UserProfile[];
 
+    // Count active recruits (all phases except completed/dropped)
+    const activePhases = ['interview_1', 'zoom_interview', 'pre_licensing', 'exam', 'npn_received', 'contracting', 'bootcamp'];
+    const activeCount = recruits.filter((r) => r.onboarding_status && activePhases.includes(r.onboarding_status)).length;
+
     return {
       total: count || 0,
-      lead: recruits.filter((r) => r.onboarding_status === 'lead').length,
-      active: recruits.filter((r) => r.onboarding_status === 'active').length,
+      active: activeCount,
       completed: recruits.filter((r) => r.onboarding_status === 'completed').length,
       dropped: recruits.filter((r) => r.onboarding_status === 'dropped').length,
       byPhase: recruits.reduce((acc, recruit) => {
-        const phase = recruit.current_onboarding_phase || 'unknown';
-        acc[phase] = (acc[phase] || 0) + 1;
+        const status = recruit.onboarding_status || 'interview_1';
+        acc[status] = (acc[status] || 0) + 1;
         return acc;
       }, {} as Record<string, number>),
     };
@@ -383,10 +386,12 @@ export const recruitingService = {
   // ========================================
 
   async searchRecruits(searchTerm: string, limit = 10) {
+    // Search recruits in any active phase (not completed/dropped)
+    const activePhases = ['interview_1', 'zoom_interview', 'pre_licensing', 'exam', 'npn_received', 'contracting', 'bootcamp'];
     const { data, error } = await supabase
       .from('user_profiles')
       .select('id, first_name, last_name, email, profile_photo_url, onboarding_status')
-      .in('onboarding_status', ['lead', 'active'])
+      .in('onboarding_status', activePhases)
       .or(
         `first_name.ilike.%${searchTerm}%,last_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`
       )

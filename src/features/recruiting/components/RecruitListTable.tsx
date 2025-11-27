@@ -1,6 +1,6 @@
 // src/features/recruiting/components/RecruitListTable.tsx
 
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { UserProfile } from '@/types/hierarchy.types';
 import {
   Table,
@@ -10,10 +10,32 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ONBOARDING_STATUS_COLORS } from '@/types/recruiting';
 import { formatDistanceToNow } from 'date-fns';
+
+// Extended type for recruits with joined data
+type RecruitWithRelations = UserProfile & {
+  recruiter?: { id: string; first_name?: string; last_name?: string; email: string } | null;
+  upline?: { id: string; first_name?: string; last_name?: string; email: string } | null;
+};
+
+// All pipeline phases (these match the database pipeline_phases table)
+const ALL_PHASES = [
+  'Interview 1',
+  'Zoom Interview',
+  'Pre-Licensing',
+  'Exam',
+  'NPN Received',
+  'Contracting',
+  'Bootcamp',
+];
 
 interface RecruitListTableProps {
   recruits: UserProfile[];
@@ -28,20 +50,62 @@ export function RecruitListTable({
   selectedRecruitId,
   onSelectRecruit,
 }: RecruitListTableProps) {
+  // Filter states
+  const [phaseFilter, setPhaseFilter] = useState<string>('all');
+  const [recruiterFilter, setRecruiterFilter] = useState<string>('all');
+  const [uplineFilter, setUplineFilter] = useState<string>('all');
+
+  // Extract unique recruiters and uplines for filter dropdowns
+  const { recruiters, uplines } = useMemo(() => {
+    const recruiterMap = new Map<string, { id: string; name: string }>();
+    const uplineMap = new Map<string, { id: string; name: string }>();
+
+    recruits.forEach((r) => {
+      const recruit = r as RecruitWithRelations;
+      if (recruit.recruiter?.id) {
+        const name = recruit.recruiter.first_name && recruit.recruiter.last_name
+          ? `${recruit.recruiter.first_name} ${recruit.recruiter.last_name}`
+          : recruit.recruiter.email.split('@')[0];
+        recruiterMap.set(recruit.recruiter.id, { id: recruit.recruiter.id, name });
+      }
+      if (recruit.upline?.id) {
+        const name = recruit.upline.first_name && recruit.upline.last_name
+          ? `${recruit.upline.first_name} ${recruit.upline.last_name}`
+          : recruit.upline.email.split('@')[0];
+        uplineMap.set(recruit.upline.id, { id: recruit.upline.id, name });
+      }
+    });
+
+    return {
+      recruiters: Array.from(recruiterMap.values()),
+      uplines: Array.from(uplineMap.values()),
+    };
+  }, [recruits]);
+
+  // Apply filters - filter by current_onboarding_phase
+  const filteredRecruits = useMemo(() => {
+    return recruits.filter((r) => {
+      const recruit = r as RecruitWithRelations;
+
+      if (phaseFilter !== 'all' && recruit.current_onboarding_phase !== phaseFilter) {
+        return false;
+      }
+      if (recruiterFilter !== 'all' && recruit.recruiter?.id !== recruiterFilter) {
+        return false;
+      }
+      if (uplineFilter !== 'all' && recruit.upline?.id !== uplineFilter) {
+        return false;
+      }
+      return true;
+    });
+  }, [recruits, phaseFilter, recruiterFilter, uplineFilter]);
+
   if (isLoading) {
     return (
-      <div className="space-y-2 p-4">
-        {[...Array(10)].map((_, i) => (
-          <Skeleton key={i} className="h-12 w-full" />
+      <div className="space-y-1 p-2">
+        {[...Array(8)].map((_, i) => (
+          <Skeleton key={i} className="h-6 w-full" />
         ))}
-      </div>
-    );
-  }
-
-  if (recruits.length === 0) {
-    return (
-      <div className="flex items-center justify-center p-8 text-muted-foreground">
-        No recruits found
       </div>
     );
   }
@@ -51,67 +115,141 @@ export function RecruitListTable({
     const updatedAt = new Date(recruit.updated_at || recruit.created_at);
     const daysSinceUpdate = Math.floor((Date.now() - updatedAt.getTime()) / (1000 * 60 * 60 * 24));
 
-    // 🟢 on-track: active, updated within 7 days
-    // 🟡 needs attention: updated 7-14 days ago OR lead status
-    // 🔴 blocked/dropped OR stale (>14 days no update)
-
     if (status === 'dropped') return '🔴';
     if (status === 'completed') return '✅';
     if (daysSinceUpdate > 14) return '🔴';
-    if (daysSinceUpdate > 7 || status === 'lead') return '🟡';
+    if (daysSinceUpdate > 7) return '🟡';
     return '🟢';
   };
 
   return (
-    <div className="border rounded-lg overflow-auto max-h-[calc(100vh-200px)]">
-      <Table>
+    <div className="h-full flex flex-col">
+      <Table className="table-fixed w-full">
         <TableHeader className="sticky top-0 bg-background z-10">
-          <TableRow>
-            <TableHead className="w-8"></TableHead>
-            <TableHead>Name</TableHead>
-            <TableHead>Current Phase</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Last Activity</TableHead>
+          {/* Filter Row */}
+          <TableRow className="h-7 border-b-0">
+            <TableHead className="w-5 p-0"></TableHead>
+            <TableHead className="p-0.5"></TableHead>
+            <TableHead className="p-0.5 w-28">
+              <Select value={phaseFilter} onValueChange={setPhaseFilter}>
+                <SelectTrigger className="h-5 text-[10px] px-1 border-dashed">
+                  <SelectValue placeholder="Phase" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all" className="text-xs">All Phases</SelectItem>
+                  {ALL_PHASES.map(phase => (
+                    <SelectItem key={phase} value={phase} className="text-xs">{phase}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </TableHead>
+            <TableHead className="p-0.5">
+              <Select value={recruiterFilter} onValueChange={setRecruiterFilter}>
+                <SelectTrigger className="h-5 text-[10px] px-1 border-dashed">
+                  <SelectValue placeholder="Recruiter" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all" className="text-xs">All Recruiters</SelectItem>
+                  {recruiters.map(r => (
+                    <SelectItem key={r.id} value={r.id} className="text-xs">{r.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </TableHead>
+            <TableHead className="p-0.5">
+              <Select value={uplineFilter} onValueChange={setUplineFilter}>
+                <SelectTrigger className="h-5 text-[10px] px-1 border-dashed">
+                  <SelectValue placeholder="Upline" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all" className="text-xs">All Uplines</SelectItem>
+                  {uplines.map(u => (
+                    <SelectItem key={u.id} value={u.id} className="text-xs">{u.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </TableHead>
+            <TableHead className="w-8 p-0"></TableHead>
+            <TableHead className="w-14 p-0"></TableHead>
+          </TableRow>
+          {/* Header Row */}
+          <TableRow className="h-6">
+            <TableHead className="w-5 p-0.5 text-[10px]"></TableHead>
+            <TableHead className="p-0.5 text-[10px] font-semibold">Name</TableHead>
+            <TableHead className="p-0.5 text-[10px] font-semibold w-28">Phase</TableHead>
+            <TableHead className="p-0.5 text-[10px] font-semibold">Recruiter</TableHead>
+            <TableHead className="p-0.5 text-[10px] font-semibold">Upline</TableHead>
+            <TableHead className="p-0.5 text-[10px] font-semibold w-8 text-center">D</TableHead>
+            <TableHead className="p-0.5 text-[10px] font-semibold w-14">Last</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {recruits.map((recruit) => (
-            <TableRow
-              key={recruit.id}
-              className={`cursor-pointer hover:bg-muted/50 transition-colors ${
-                selectedRecruitId === recruit.id ? 'bg-muted' : ''
-              }`}
-              onClick={() => onSelectRecruit(recruit)}
-            >
-              <TableCell className="text-center">
-                <span className="text-lg">{getStatusIndicator(recruit)}</span>
-              </TableCell>
-              <TableCell className="font-medium">
-                {recruit.first_name} {recruit.last_name}
-              </TableCell>
-              <TableCell>
-                <span className="text-sm text-muted-foreground">
-                  {recruit.current_onboarding_phase?.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()) ||
-                    'Not started'}
-                </span>
-              </TableCell>
-              <TableCell>
-                <Badge
-                  variant="secondary"
-                  className={recruit.onboarding_status ? ONBOARDING_STATUS_COLORS[recruit.onboarding_status] : ONBOARDING_STATUS_COLORS.lead}
-                >
-                  {recruit.onboarding_status || 'lead'}
-                </Badge>
-              </TableCell>
-              <TableCell className="text-sm text-muted-foreground">
-                {recruit.updated_at
-                  ? formatDistanceToNow(new Date(recruit.updated_at), { addSuffix: true })
-                  : 'Never'}
+          {filteredRecruits.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={7} className="text-center text-xs text-muted-foreground py-8">
+                No recruits match the current filters
               </TableCell>
             </TableRow>
-          ))}
+          ) : (
+            filteredRecruits.map((recruit) => {
+              const updatedDate = new Date(recruit.updated_at || recruit.created_at);
+              const daysInPhase = Math.floor((Date.now() - updatedDate.getTime()) / (1000 * 60 * 60 * 24));
+              const recruitWithRelations = recruit as RecruitWithRelations;
+
+              return (
+                <TableRow
+                  key={recruit.id}
+                  className={`h-6 cursor-pointer hover:bg-muted/50 ${
+                    selectedRecruitId === recruit.id ? 'bg-muted' : ''
+                  }`}
+                  onClick={() => onSelectRecruit(recruit)}
+                >
+                  <TableCell className="p-0.5 text-center text-xs">
+                    {getStatusIndicator(recruit)}
+                  </TableCell>
+                  <TableCell className="p-0.5 text-xs font-mono truncate">
+                    {recruit.first_name && recruit.last_name
+                      ? `${recruit.first_name} ${recruit.last_name}`
+                      : recruit.email?.split('@')[0]}
+                  </TableCell>
+                  <TableCell className="p-0.5 text-xs font-mono truncate">
+                    {recruit.current_onboarding_phase || 'Not Started'}
+                  </TableCell>
+                  <TableCell className="p-0.5 text-[10px] text-muted-foreground font-mono truncate">
+                    {recruitWithRelations.recruiter?.first_name && recruitWithRelations.recruiter?.last_name
+                      ? `${recruitWithRelations.recruiter.first_name[0]}. ${recruitWithRelations.recruiter.last_name}`
+                      : recruitWithRelations.recruiter?.email?.split('@')[0] || '-'}
+                  </TableCell>
+                  <TableCell className="p-0.5 text-[10px] text-muted-foreground font-mono truncate">
+                    {recruitWithRelations.upline?.first_name && recruitWithRelations.upline?.last_name
+                      ? `${recruitWithRelations.upline.first_name[0]}. ${recruitWithRelations.upline.last_name}`
+                      : recruitWithRelations.upline?.email?.split('@')[0] || '-'}
+                  </TableCell>
+                  <TableCell className="p-0.5 text-[10px] text-muted-foreground text-center font-mono">
+                    {daysInPhase}
+                  </TableCell>
+                  <TableCell className="p-0.5 text-[10px] text-muted-foreground font-mono truncate">
+                    {recruit.updated_at
+                      ? formatDistanceToNow(new Date(recruit.updated_at), { addSuffix: false })
+                          .replace('about ', '')
+                          .replace(' days', 'd')
+                          .replace(' day', 'd')
+                          .replace(' hours', 'h')
+                          .replace(' hour', 'h')
+                          .replace(' minutes', 'm')
+                          .replace(' minute', 'm')
+                      : '-'}
+                  </TableCell>
+                </TableRow>
+              );
+            })
+          )}
         </TableBody>
       </Table>
+      {/* Footer with count */}
+      <div className="text-[10px] text-muted-foreground px-2 py-1 border-t">
+        {filteredRecruits.length} of {recruits.length} recruits
+      </div>
     </div>
   );
 }
