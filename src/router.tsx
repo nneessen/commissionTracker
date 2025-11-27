@@ -26,6 +26,8 @@ import {
 } from "./features/auth";
 import { ReportsPage } from "./features/reports";
 import { UserManagementDashboard } from "./features/admin/components/UserManagementDashboard";
+import { RoleManagementPage } from "./features/admin/components/RoleManagementPage";
+import { PermissionGuard } from "./components/auth/PermissionGuard";
 import {
   HierarchyTree,
   OverrideDashboard,
@@ -108,11 +110,15 @@ const analyticsRoute = createRoute({
   component: AnalyticsDashboard,
 });
 
-// Comp Guide route (replaces old settings)
+// Comp Guide route - Admin only (manages carriers, products, commission rates)
 const compGuideRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "comps",
-  component: CompGuide,
+  component: () => (
+    <PermissionGuard permission="carriers.manage">
+      <CompGuide />
+    </PermissionGuard>
+  ),
 });
 
 // Settings route
@@ -143,11 +149,15 @@ const expensesRoute = createRoute({
   component: ExpenseDashboard,
 });
 
-// Test route for debugging comp guide
+// Test route for debugging comp guide - Super-admin only
 const testCompGuideRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "test-comp",
-  component: TestCompGuide,
+  component: () => (
+    <PermissionGuard requireEmail="nick@nickneessen.com">
+      <TestCompGuide />
+    </PermissionGuard>
+  ),
 });
 
 // Pending approval route
@@ -164,21 +174,47 @@ const deniedAccessRoute = createRoute({
   component: DeniedAccess,
 });
 
-// Admin users management route
+// Admin users management route - protected by permission
 const adminUsersRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "admin/users",
-  component: UserManagementDashboard,
+  component: () => (
+    <PermissionGuard permission="nav.user_management">
+      <UserManagementDashboard />
+    </PermissionGuard>
+  ),
 });
-// Diagnostic route for troubleshooting auth issues
+
+// Admin roles management route - protected by permission and email
+const adminRolesRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "admin/roles",
+  component: () => (
+    <PermissionGuard
+      permission="nav.role_management"
+      requireEmail="nick@nickneessen.com"
+    >
+      <RoleManagementPage />
+    </PermissionGuard>
+  ),
+});
+
+// Diagnostic route for troubleshooting auth issues - Super-admin only
 const authDiagnosticRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "admin/auth-diagnostic",
-  component: lazy(() =>
-    import("./features/admin/components/AuthDiagnostic").then((m) => ({
-      default: m.AuthDiagnostic,
-    }))
-  ),
+  component: () => {
+    const AuthDiagnostic = lazy(() =>
+      import("./features/admin/components/AuthDiagnostic").then((m) => ({
+        default: m.AuthDiagnostic,
+      }))
+    );
+    return (
+      <PermissionGuard requireEmail="nick@nickneessen.com">
+        <AuthDiagnostic />
+      </PermissionGuard>
+    );
+  },
 });
 
 // Hierarchy routes - Agency hierarchy and override commissions
@@ -219,11 +255,15 @@ const recruitingRoute = createRoute({
   component: RecruitingDashboard,
 });
 
-// Recruiting admin route - pipeline management
+// Recruiting admin route - pipeline management - Super-admin only
 const recruitingAdminRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "recruiting/admin/pipelines",
-  component: PipelineAdminPage,
+  component: () => (
+    <PermissionGuard requireEmail="nick@nickneessen.com">
+      <PipelineAdminPage />
+    </PermissionGuard>
+  ),
 });
 
 // Create the route tree - all routes are already linked via getParentRoute
@@ -237,6 +277,7 @@ const routeTree = rootRoute.addChildren([
   pendingApprovalRoute,
   deniedAccessRoute,
   adminUsersRoute,
+  adminRolesRoute,
   authDiagnosticRoute,
   policiesRoute,
   analyticsRoute,

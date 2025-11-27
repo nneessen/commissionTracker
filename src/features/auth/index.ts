@@ -6,3 +6,4 @@ export { ResetPassword } from './ResetPassword';
 export { EmailVerificationPending } from './EmailVerificationPending';
 export { PendingApproval } from './PendingApproval';
 export { DeniedAccess } from './DeniedAccess';
+export { PermissionDenied } from './PermissionDenied';
