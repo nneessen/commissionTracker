@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-11-27 13:44:33
+
+### Changed Files
+- `.serena/memories/working-migration-script.md`
+- `apply-rbac-direct.cjs`
+- `apply-rbac-mgmt-api.mjs`
+- `apply-rbac-migration.mjs`
+- `apply-rbac-python.py`
+- `verify-rbac.cjs`
+
+### Statistics
+```
+ 6 files changed, 409 insertions(+)
+```
+
 ## [Checkpoint] - 2025-11-27 13:22:59
 
 ### Changed Files
