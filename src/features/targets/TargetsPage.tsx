@@ -75,13 +75,14 @@ export function TargetsPage() {
       });
 
       // Save to database
+      // NOTE: avgPremiumTarget removed - always calculated from actual policies
       await updateTargets.mutateAsync({
         annualIncomeTarget: newAnnualTarget,
         quarterlyIncomeTarget: calculated.quarterlyIncomeTarget,
         monthlyIncomeTarget: calculated.monthlyIncomeTarget,
         annualPoliciesTarget: calculated.annualPoliciesTarget,
         monthlyPoliciesTarget: calculated.monthlyPoliciesTarget,
-        avgPremiumTarget: calculated.avgPolicyPremium,
+        // REMOVED: avgPremiumTarget - always calculated from actual policies
         persistency13MonthTarget: calculated.persistency13MonthTarget,
         persistency25MonthTarget: calculated.persistency25MonthTarget,
         monthlyExpenseTarget: calculated.monthlyExpenseTarget,

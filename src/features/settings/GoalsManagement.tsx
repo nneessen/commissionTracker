@@ -17,7 +17,7 @@ export function GoalsManagement() {
   const [monthlyIncomeTarget, setMonthlyIncomeTarget] = useState<string>('10000');
   const [annualPoliciesTarget, setAnnualPoliciesTarget] = useState<string>('100');
   const [monthlyPoliciesTarget, setMonthlyPoliciesTarget] = useState<string>('9');
-  const [avgPremiumTarget, setAvgPremiumTarget] = useState<string>('1500');
+  // REMOVED: avgPremiumTarget - now always calculated from actual policies
   const [persistency13Target, setPersistency13Target] = useState<string>('85');
 
   const [validationError, setValidationError] = useState<string>('');
@@ -30,7 +30,7 @@ export function GoalsManagement() {
       setMonthlyIncomeTarget(userTargets.monthly_income_target?.toString() || '10000');
       setAnnualPoliciesTarget(userTargets.annual_policies_target?.toString() || '100');
       setMonthlyPoliciesTarget(userTargets.monthly_policies_target?.toString() || '9');
-      setAvgPremiumTarget(userTargets.avg_premium_target?.toString() || '1500');
+      // REMOVED: setAvgPremiumTarget - calculated from actual policies instead
       setPersistency13Target(((userTargets.persistency_13_month_target || 0.85) * 100).toString());
     }
   }, [userTargets]);
@@ -64,12 +64,7 @@ export function GoalsManagement() {
       return false;
     }
 
-    // Validate avg premium
-    const avgPremium = Number(avgPremiumTarget);
-    if (isNaN(avgPremium) || avgPremium < 0) {
-      setValidationError('Average premium target must be a positive number');
-      return false;
-    }
+    // REMOVED: Validate avg premium - now calculated from actual policies
 
     // Validate persistency
     const persistency = Number(persistency13Target);
@@ -96,7 +91,7 @@ export function GoalsManagement() {
         monthly_income_target: Number(monthlyIncomeTarget),
         annual_policies_target: parseInt(annualPoliciesTarget, 10),
         monthly_policies_target: parseInt(monthlyPoliciesTarget, 10),
-        avg_premium_target: Number(avgPremiumTarget),
+        // REMOVED: avg_premium_target - calculated from actual policies instead
         persistency_13_month_target: Number(persistency13Target) / 100,
       });
 
@@ -222,24 +217,8 @@ export function GoalsManagement() {
             {/* Quality Targets */}
             <div className="space-y-4">
               <h3 className="text-sm font-semibold text-foreground">Quality Targets</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="avgPremium">Average Premium Goal</Label>
-                  <Input
-                    id="avgPremium"
-                    type="number"
-                    value={avgPremiumTarget}
-                    onChange={(e) => {
-                      setAvgPremiumTarget(e.target.value);
-                      setShowSuccess(false);
-                    }}
-                    placeholder="1500"
-                    step="50"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Target avg annual premium: {formatCurrency(Number(avgPremiumTarget) || 0)}
-                  </p>
-                </div>
+              <div className="grid grid-cols-1 gap-4">
+                {/* REMOVED: Average Premium Goal - This is now ALWAYS calculated from actual policies */}
 
                 <div className="space-y-2">
                   <Label htmlFor="persistency">13-Month Persistency Goal (%)</Label>
