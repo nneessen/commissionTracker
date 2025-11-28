@@ -57,11 +57,10 @@ export function useUsersView() {
       let filteredUsers = (allUsers as UserProfile[]) || [];
 
       // CRITICAL: Exclude recruits (users in onboarding pipeline) from users table
-      // Only show active agents (NOT recruits)
-      // Per src/types/recruiting.ts line 56: "Recruits are just users with onboarding_status = 'lead' or 'active'"
+      // Only show active agents (users with 'agent' role)
+      // Per GraduateToAgentDialog.tsx: Graduation sets roles=['agent'] AND onboarding_status='completed'
       filteredUsers = filteredUsers.filter(u =>
-        u.onboarding_status !== 'lead' &&
-        u.onboarding_status !== 'active'
+        u.roles?.includes('agent')
       );
 
       // Apply filters client-side
@@ -122,11 +121,10 @@ export function useUsersView() {
       const allUsers = (data as UserProfile[]) || [];
 
       // CRITICAL: Exclude recruits from metrics (same logic as main query)
-      // Only count active agents (NOT recruits)
-      // Per src/types/recruiting.ts line 56: "Recruits are just users with onboarding_status = 'lead' or 'active'"
+      // Only count active agents (users with 'agent' role)
+      // Per GraduateToAgentDialog.tsx: Graduation sets roles=['agent'] AND onboarding_status='completed'
       const users = allUsers.filter(u =>
-        u.onboarding_status !== 'lead' &&
-        u.onboarding_status !== 'active'
+        u.roles?.includes('agent')
       );
 
       const totalUsers = users.length;

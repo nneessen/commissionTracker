@@ -73,19 +73,17 @@ export default function AdminControlCenter() {
     return false;
   });
 
-  // CRITICAL: Separate active agents from recruits based on ONBOARDING_STATUS
-  // Active agents: users who are NOT recruits (onboarding_status != 'lead' AND != 'active')
-  // Recruits: users with onboarding_status = 'lead' OR 'active'
-  // Per src/types/recruiting.ts line 56: "Recruits are just users with onboarding_status = 'lead' or 'active'"
+  // CRITICAL: Separate active agents from recruits based on ROLES
+  // Active agents: users with 'agent' role (graduated from recruiting pipeline)
+  // Recruits: users WITHOUT 'agent' role (still in recruiting pipeline)
+  // Per GraduateToAgentDialog.tsx: Graduation sets roles=['agent'] AND onboarding_status='completed'
   const activeAgents = hierarchyFilteredUsers?.filter((u: UserProfile) =>
-    u.onboarding_status !== 'lead' &&
-    u.onboarding_status !== 'active'
+    u.roles?.includes('agent' as RoleName)
   );
 
-  // Filter recruits from hierarchyFilteredUsers
+  // Filter recruits from hierarchyFilteredUsers (users without 'agent' role)
   const recruitsInPipeline = hierarchyFilteredUsers?.filter((u: UserProfile) =>
-    u.onboarding_status === 'lead' ||
-    u.onboarding_status === 'active'
+    !u.roles?.includes('agent' as RoleName)
   ) || [];
 
   // Calculate stats based on ACTIVE AGENTS only

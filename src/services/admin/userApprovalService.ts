@@ -24,7 +24,9 @@ export interface UserProfile {
   hierarchy_path?: string;
   hierarchy_depth?: number;
   // Recruiting fields
-  // Per src/types/recruiting.ts line 56: "Recruits are just users with onboarding_status = 'lead' or 'active'"
+  // Recruits = users WITHOUT 'agent' in roles array (still in recruiting pipeline)
+  // Active Agents = users WITH 'agent' in roles array (graduated from recruiting pipeline)
+  // onboarding_status tracks pipeline progress, NOT user type (roles determines user type)
   onboarding_status?: 'lead' | 'active' | 'interview_1' | 'zoom_interview' | 'pre_licensing' | 'exam' | 'npn_received' | 'contracting' | 'bootcamp' | 'completed' | 'dropped' | null;
   current_onboarding_phase?: string;
   onboarding_completed_at?: string;

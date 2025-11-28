@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-11-28 18:12:53
+
+### Changed Files
+- `src/features/admin/components/AdminControlCenter.tsx`
+- `src/hooks/admin/__tests__/useUsersView.recruit-filter.test.ts`
+- `src/hooks/admin/__tests__/useUsersView.role-based-filter.test.ts`
+- `src/hooks/admin/useUsersView.ts`
+- `src/services/admin/userApprovalService.ts`
+
+### Statistics
+```
+ 5 files changed, 224 insertions(+), 144 deletions(-)
+```
+
 ## [Checkpoint] - 2025-11-28 18:08:54
 
 ### Changed Files
