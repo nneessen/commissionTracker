@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-11-28 18:08:54
+
+### Changed Files
+- `docs/ADMIN_FILTERING_FIX_PLAN.md`
+- `src/features/admin/components/AdminControlCenter.tsx`
+- `src/hooks/admin/__tests__/useUsersView.recruit-filter.test.ts`
+- `src/hooks/admin/useUsersView.ts`
+- `src/services/admin/userApprovalService.ts`
+- `supabase/migrations/20251128230740_fix_admin_rpc_check_user_profiles_is_admin.sql`
+
+### Statistics
+```
+ 6 files changed, 626 insertions(+), 8 deletions(-)
+```
+
 ## [Checkpoint] - 2025-11-28 17:45:50
 
 ### Changed Files

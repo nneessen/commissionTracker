@@ -56,6 +56,14 @@ export function useUsersView() {
 
       let filteredUsers = (allUsers as UserProfile[]) || [];
 
+      // CRITICAL: Exclude recruits (users in onboarding pipeline) from users table
+      // Only show active agents (NOT recruits)
+      // Per src/types/recruiting.ts line 56: "Recruits are just users with onboarding_status = 'lead' or 'active'"
+      filteredUsers = filteredUsers.filter(u =>
+        u.onboarding_status !== 'lead' &&
+        u.onboarding_status !== 'active'
+      );
+
       // Apply filters client-side
       if (filters.searchTerm) {
         const searchLower = filters.searchTerm.toLowerCase();
@@ -111,7 +119,16 @@ export function useUsersView() {
         throw error;
       }
 
-      const users = (data as UserProfile[]) || [];
+      const allUsers = (data as UserProfile[]) || [];
+
+      // CRITICAL: Exclude recruits from metrics (same logic as main query)
+      // Only count active agents (NOT recruits)
+      // Per src/types/recruiting.ts line 56: "Recruits are just users with onboarding_status = 'lead' or 'active'"
+      const users = allUsers.filter(u =>
+        u.onboarding_status !== 'lead' &&
+        u.onboarding_status !== 'active'
+      );
+
       const totalUsers = users.length;
       const pendingUsers = users.filter(u => u.approval_status === 'pending').length;
       const approvedUsers = users.filter(u => u.approval_status === 'approved').length;

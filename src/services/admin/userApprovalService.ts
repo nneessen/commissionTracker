@@ -24,7 +24,8 @@ export interface UserProfile {
   hierarchy_path?: string;
   hierarchy_depth?: number;
   // Recruiting fields
-  onboarding_status?: 'interview_1' | 'zoom_interview' | 'pre_licensing' | 'exam' | 'npn_received' | 'contracting' | 'bootcamp' | 'completed' | 'dropped' | null;
+  // Per src/types/recruiting.ts line 56: "Recruits are just users with onboarding_status = 'lead' or 'active'"
+  onboarding_status?: 'lead' | 'active' | 'interview_1' | 'zoom_interview' | 'pre_licensing' | 'exam' | 'npn_received' | 'contracting' | 'bootcamp' | 'completed' | 'dropped' | null;
   current_onboarding_phase?: string;
   onboarding_completed_at?: string;
   phone?: string;
