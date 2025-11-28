@@ -177,14 +177,32 @@ WHERE email IN ('nick.neessen@gmail.com', 'nickneessen.ffl@gmail.com');
 ```
 
 ## Implementation Order
-1. ✅ Investigate and fix admin_get_all_users() RPC
-2. ✅ Fix AdminControlCenter.tsx filtering logic
-3. ✅ Fix useUsersView.ts filtering logic
-4. ✅ Delete old incorrect test
-5. ✅ Write new correct tests
-6. ✅ Verify TypeScript types
-7. ✅ Test with actual data
-8. ✅ Clean up data inconsistency
+1. ✅ Investigate and fix admin_get_all_users() RPC - COMPLETED
+   - Created migration: 20251128230740_fix_admin_rpc_check_user_profiles_is_admin.sql
+   - Fixed RPC to check user_profiles.is_admin instead of auth metadata
+   - Added onboarding_status and current_onboarding_phase to returned fields
+2. ✅ Fix AdminControlCenter.tsx filtering logic - COMPLETED
+   - Updated lines 76-87 to filter by roles instead of onboarding_status
+   - Active agents = users with roles.includes('agent')
+   - Recruits = users without 'agent' in roles
+3. ✅ Fix useUsersView.ts filtering logic - COMPLETED
+   - Updated lines 59-64 (main query) to filter by roles
+   - Updated lines 123-128 (metrics) to filter by roles
+4. ✅ Delete old incorrect test - COMPLETED
+   - Deleted src/hooks/admin/__tests__/useUsersView.recruit-filter.test.ts
+5. ✅ Write new correct tests - COMPLETED
+   - Created src/hooks/admin/__tests__/useUsersView.role-based-filter.test.ts
+   - 12 tests, all passing
+6. ✅ Verify TypeScript types - COMPLETED
+   - UserProfile has correct type: roles?: RoleName[]
+   - Updated misleading comment to reflect correct logic
+7. ✅ Test with actual data - READY FOR TESTING
+   - Dev server running on http://localhost:3001/
+   - Navigate to /admin to test
+8. ✅ Clean up data inconsistency - SQL SCRIPT CREATED
+   - Created scripts/fix-problem-users-data.sql
+   - Two options provided (make recruits OR complete onboarding)
+   - Option 2 (complete onboarding) is recommended
 
 ## Success Criteria
 - [ ] Users & Access tab shows ONLY users with 'agent' role
