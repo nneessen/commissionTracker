@@ -4,11 +4,14 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { TrendingUp, TrendingDown, Target, DollarSign, CheckCircle2 } from 'lucide-react';
 import { useAnalyticsDateRange } from '../context/AnalyticsDateContext';
-import { useAnalyticsData } from '@/hooks';
+import { useMetricsWithDateRange } from '@/hooks/kpi/useMetricsWithDateRange';
 import { cn } from '@/lib/utils';
 
 /**
  * PaceMetrics - Shows what you need to do to hit your goals
+ *
+ * CRITICAL: This component now uses useMetricsWithDateRange (same as dashboard)
+ * to ensure calculations are consistent across the entire app.
  *
  * Simple, actionable metrics:
  * - Are you profitable or behind?
@@ -18,12 +21,34 @@ import { cn } from '@/lib/utils';
  */
 export function PaceMetrics() {
   const { dateRange, timePeriod } = useAnalyticsDateRange();
-  const analyticsData = useAnalyticsData({
-    startDate: dateRange.startDate,
-    endDate: dateRange.endDate,
+
+  // Map analytics time period to dashboard time period for useMetricsWithDateRange
+  // Default to 'monthly' for most cases
+  const dashboardTimePeriod = (() => {
+    switch (timePeriod) {
+      case 'MTD':
+      case 'L30':
+        return 'monthly' as const;
+      case 'YTD':
+      case 'L12M':
+        return 'yearly' as const;
+      case 'L7':
+        return 'weekly' as const;
+      case 'L60':
+      case 'L90':
+      case 'CUSTOM':
+      default:
+        return 'monthly' as const;
+    }
+  })();
+
+  // USE THE SAME HOOK AS THE DASHBOARD - Single source of truth!
+  const metrics = useMetricsWithDateRange({
+    timePeriod: dashboardTimePeriod,
+    periodOffset: 0,
   });
 
-  if (analyticsData.isLoading) {
+  if (metrics.isLoading) {
     return (
       <Card>
         <CardContent className="p-5">
@@ -38,49 +63,15 @@ export function PaceMetrics() {
     );
   }
 
-  // Calculate metrics from raw data
-  const { commissions, policies } = analyticsData.raw;
-
-  // Filter data by date range
-  const periodCommissions = commissions.filter((c) => {
-    const date = new Date(c.createdAt);
-    return date >= dateRange.startDate && date <= dateRange.endDate;
-  });
-
-  const periodPolicies = policies.filter((p) => {
-    const date = new Date(p.effectiveDate);
-    return date >= dateRange.startDate && date <= dateRange.endDate;
-  });
-
-  // Calculate income and expenses
-  const commissionEarned = periodCommissions
-    .filter((c) => c.status === 'paid')
-    .reduce((sum, c) => sum + (c.amount || 0), 0);
-
-  // For expenses, we'd need to fetch them - for now, assume zero
-  // TODO: Add expenses to analyticsData.raw
-  const totalExpenses = 0;
-
-  const netIncome = commissionEarned - totalExpenses;
-  const surplusDeficit = netIncome;
+  // Extract the data from the SAME calculations as dashboard
+  const { periodAnalytics, periodPolicies, periodCommissions } = metrics;
+  const { surplusDeficit, breakevenNeeded, policiesNeeded, netIncome } = periodAnalytics;
   const isProfitable = surplusDeficit >= 0;
-  const breakevenNeeded = surplusDeficit < 0 ? Math.abs(surplusDeficit) : 0;
 
-  // Calculate average commission per policy
-  const avgCommissionPerPolicy = periodPolicies.length > 0
-    ? commissionEarned / periodPolicies.length
-    : 1000; // Fallback estimate
-
-  // Calculate policies needed
-  const policiesNeeded = avgCommissionPerPolicy > 0
-    ? Math.ceil(breakevenNeeded / avgCommissionPerPolicy)
-    : 0;
-
-  // Calculate time remaining
+  // Calculate time remaining based on selected period
   const now = new Date();
   const msRemaining = dateRange.endDate.getTime() - now.getTime();
   const daysRemaining = Math.max(1, Math.floor(msRemaining / (24 * 60 * 60 * 1000)));
-  const hoursRemaining = Math.floor((msRemaining % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
 
   // Calculate pace targets
   const policiesPerDayNeeded = policiesNeeded > 0 ? policiesNeeded / daysRemaining : 0;
@@ -113,6 +104,17 @@ export function PaceMetrics() {
       default: return 'This Period';
     }
   };
+
+  // Debug logging to verify we're using same calculations as dashboard
+  console.log('[PaceMetrics] Using useMetricsWithDateRange (same as dashboard):', {
+    surplusDeficit,
+    netIncome,
+    breakevenNeeded,
+    policiesNeeded,
+    isProfitable,
+    commissionPaid: periodCommissions.paid,
+    totalExpenses: metrics.periodExpenses.total,
+  });
 
   return (
     <Card className="w-full">
