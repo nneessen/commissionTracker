@@ -110,10 +110,9 @@ export function generateStatsConfig(
           : METRIC_COLORS.NET_INCOME_NEGATIVE,
       tooltip: {
         title: `${periodLabel} Commission Paid`,
-        description: `Total commission payments actually received (money deposited to your account) during the ${timePeriod.toLowerCase()} period.`,
+        description: `Commission payments actually received in your account during the ${timePeriod.toLowerCase()} period.`,
         formula: `Sum of commission amounts where status='paid' and payment date in period`,
-        example: `Shows actual money received in this time period`,
-        note: `Filtered by ${timePeriod} date range - actual cash received, not just entitled`,
+        note: `Actual cash received, not just entitled`,
       },
     },
     {
@@ -123,10 +122,9 @@ export function generateStatsConfig(
       tooltip: {
         title: "Pending Pipeline",
         description:
-          "Total value of ALL commissions you are owed but have not yet received payment (includes pending policies + earned commissions awaiting payment).",
+          "Total commissions owed to you but not yet paid.",
         formula: "Sum of all commissions where status is pending or earned",
-        example: "Shows total amount you are currently owed but not paid yet",
-        note: "Point-in-time metric showing money owed to you - does NOT change with time period filter",
+        note: "Point-in-time metric - does NOT change with time period filter",
       },
     },
     {
@@ -137,8 +135,6 @@ export function generateStatsConfig(
         title: `${periodLabel} Total Expenses`,
         description: `Total expenses during the ${timePeriod.toLowerCase()} period.`,
         formula: `SUM(amount) WHERE date IN period`,
-        example: `Shows actual expenses incurred in this time period`,
-        note: `Filtered by ${timePeriod} date range - actual data, not projected`,
       },
     },
     {
@@ -153,8 +149,6 @@ export function generateStatsConfig(
         title: `${periodLabel} Net Income`,
         description: `Net income (Commission - Expenses) for the ${timePeriod.toLowerCase()} period.`,
         formula: `Commission Earned - Total Expenses`,
-        example: `$450 commission - $5,450 expenses = -$5,000 deficit`,
-        note: `Actual ${timePeriod} performance, not projected`,
       },
     },
     {
@@ -166,10 +160,9 @@ export function generateStatsConfig(
           : METRIC_COLORS.BREAKEVEN,
       tooltip: {
         title: "Breakeven Needed" + periodSuffix,
-        description: `Additional commission needed ${timePeriod === "daily" ? "per day" : timePeriod === "weekly" ? "per week" : timePeriod === "monthly" ? "per month" : "per year"} to cover expenses. Scales with timeframe to show per-period breakdown.`,
+        description: `Commission needed ${timePeriod === "daily" ? "per day" : timePeriod === "weekly" ? "per week" : timePeriod === "monthly" ? "per month" : "per year"} to cover expenses.`,
         formula: "IF deficit: (Expenses - Commission) / Days, ELSE: 0",
-        example: "Need $1,000 monthly ÷ 30 days = $33.33 per day",
-        note: "Green ($0) means you are profitable. Scales with timeframe selection.",
+        note: "Green ($0) means you are profitable",
       },
     },
     {
@@ -178,11 +171,10 @@ export function generateStatsConfig(
       color: METRIC_COLORS.POLICIES_NEEDED,
       tooltip: {
         title: "Policies Needed" + periodSuffix,
-        description: `Number of new policies to sell ${timePeriod === "daily" ? "today" : timePeriod === "weekly" ? "this week" : timePeriod === "monthly" ? "this month" : "this year"} to reach breakeven. Changes with timeframe selection to show per-period breakdown.`,
+        description: `Policies to sell ${timePeriod === "daily" ? "today" : timePeriod === "weekly" ? "this week" : timePeriod === "monthly" ? "this month" : "this year"} to reach breakeven.`,
         formula:
           "Breakeven Needed / Avg Commission per Policy / Days in Period",
-        example: "Need 60 policies monthly ÷ 30 days = 2 policies per day",
-        note: "Scales with selected timeframe to make goals achievable",
+        note: "Scales with selected timeframe",
       },
     },
     {
@@ -192,9 +184,9 @@ export function generateStatsConfig(
       tooltip: {
         title: "Active Policies",
         description:
-          "Total number of CURRENTLY active insurance policies (point-in-time).",
+          "Currently active insurance policies.",
         formula: "COUNT(policies) WHERE status=active",
-        note: "Does NOT change with time period - shows current state",
+        note: "Point-in-time metric - does NOT change with time period",
       },
     },
     {
@@ -204,9 +196,9 @@ export function generateStatsConfig(
       tooltip: {
         title: "Total Policies",
         description:
-          "Lifetime total of ALL policies ever written (active, lapsed, cancelled).",
+          "Lifetime total of all policies ever written.",
         formula: "COUNT(all policies)",
-        note: "Does NOT change with time period - shows lifetime total",
+        note: "Point-in-time metric - does NOT change with time period",
       },
     },
     {
@@ -219,9 +211,8 @@ export function generateStatsConfig(
       tooltip: {
         title: "Retention Rate",
         description:
-          "Percentage of policies that remain active vs total ever written.",
+          "Percentage of policies that remain active.",
         formula: "(Active Policies / Total Policies) × 100",
-        example: "80 active / 100 total = 80% retention",
         note: "Above 80% is good, below 70% needs attention",
       },
     },
@@ -236,7 +227,6 @@ export function generateStatsConfig(
         title: "Lapse Rate",
         description: `Percentage of policies that lapsed in the ${timePeriod.toLowerCase()} period.`,
         formula: "(Lapsed Policies in Period / New Policies in Period) × 100",
-        example: "2 lapsed / 20 new = 10% lapse rate",
         note: "Below 10% is good, above 20% is concerning",
       },
     },
@@ -247,11 +237,9 @@ export function generateStatsConfig(
       tooltip: {
         title: "Total Chargebacks",
         description:
-          "Total dollar amount charged back across all commissions when policies cancel or lapse before advance is earned.",
+          "Total charged back when policies cancel or lapse before advance is earned.",
         formula: "SUM(chargeback_amount) for all commissions",
-        example:
-          "If 3 policies lapsed with $500, $300, $200 unearned = $1,000 total chargebacks",
-        note: "Lower is better - chargebacks reduce your actual earnings",
+        note: "Lower is better - chargebacks reduce actual earnings",
       },
     },
     {
@@ -266,9 +254,8 @@ export function generateStatsConfig(
       tooltip: {
         title: "Chargeback Rate",
         description:
-          "Percentage of advance commissions that were charged back due to policy cancellations or lapses.",
+          "Percentage of advances charged back due to cancellations or lapses.",
         formula: "(Total Chargebacks / Total Advances) × 100",
-        example: "$1,000 chargebacks / $10,000 advances = 10% chargeback rate",
         note: "Good: <5% | Warning: 5-10% | Danger: >10%",
       },
     },
@@ -279,12 +266,10 @@ export function generateStatsConfig(
       tooltip: {
         title: "At Risk Amount",
         description:
-          "Total dollar amount of unearned commissions at risk of chargeback (policies with low months paid).",
+          "Unearned commissions at risk of chargeback (policies with low months paid).",
         formula:
           "SUM(unearned_amount) for commissions with status=pending/earned and months_paid < advance_months",
-        example:
-          "If 5 policies with <3 months paid have $2,000 unearned each = $10,000 at risk",
-        note: "Preventive metric - monitor to reduce future chargebacks",
+        note: "Monitor to reduce future chargebacks",
       },
     },
     {
@@ -294,11 +279,10 @@ export function generateStatsConfig(
       tooltip: {
         title: "High Risk Count",
         description:
-          "Number of active commissions with fewer than 3 months paid - high probability of chargeback if policies lapse.",
+          "Policies with <3 months paid (high chargeback risk).",
         formula:
           "COUNT(commissions) WHERE months_paid < 3 AND status IN (pending, earned)",
-        example: "8 commissions with <3 months paid",
-        note: "Action-oriented metric - contact these clients to prevent lapses",
+        note: "Contact these clients to prevent lapses",
       },
     },
     {
@@ -307,9 +291,9 @@ export function generateStatsConfig(
       color: METRIC_COLORS.TOTAL_CLIENTS,
       tooltip: {
         title: "Total Clients",
-        description: "Lifetime total of unique clients across all policies.",
+        description: "Lifetime total of unique clients.",
         formula: "COUNT(DISTINCT clients)",
-        note: "Point-in-time metric - shows total client base",
+        note: "Point-in-time metric - does NOT change with time period",
       },
     },
     {
@@ -322,9 +306,8 @@ export function generateStatsConfig(
       tooltip: {
         title: "Policies per Client",
         description:
-          "Average number of policies per client (cross-sell metric).",
+          "Average policies per client (cross-sell metric).",
         formula: "Total Policies / Total Clients",
-        example: "150 policies / 100 clients = 1.5 policies/client",
         note: "Higher is better - shows cross-sell success",
       },
     },
@@ -334,9 +317,8 @@ export function generateStatsConfig(
       color: METRIC_COLORS.AVG_PREMIUM,
       tooltip: {
         title: "Average Premium",
-        description: `Average annual premium of new policies written in ${timePeriod.toLowerCase()} period.`,
+        description: `Average annual premium of new policies in ${timePeriod.toLowerCase()} period.`,
         formula: "AVG(annual_premium) for policies in period",
-        example: "Total premiums $100,000 / 50 policies = $2,000 avg",
       },
     },
     {
@@ -350,9 +332,8 @@ export function generateStatsConfig(
       color: METRIC_COLORS.AVG_COMMISSION,
       tooltip: {
         title: "Average Commission per Policy",
-        description: `Average commission earned per policy in ${timePeriod.toLowerCase()} period.`,
+        description: `Average commission per policy in ${timePeriod.toLowerCase()} period.`,
         formula: "Total Commission Earned / New Policies Written",
-        example: "$450 commission / 2 policies = $225/policy",
       },
     },
     {
@@ -361,10 +342,9 @@ export function generateStatsConfig(
       color: METRIC_COLORS.AVG_CLIENT_LTV,
       tooltip: {
         title: "Average Client Lifetime Value",
-        description: `Average total premium value per new client in ${timePeriod.toLowerCase()} period.`,
+        description: `Average premium value per new client in ${timePeriod.toLowerCase()} period.`,
         formula: "Total Premium Written / New Clients",
-        example: "$100,000 premium / 25 new clients = $4,000 LTV",
-        note: "Higher LTV means more valuable clients",
+        note: "Higher is better",
       },
     },
   ];
