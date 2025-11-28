@@ -5,13 +5,16 @@ import { usePolicies } from '../policies/usePolicies';
 import { useExpenses } from '../expenses/useExpenses';
 import { useUserCommissionProfile } from '../commissions/useUserCommissionProfile';
 import { HistoricalAverages } from '../../services/targets/targetsCalculationService';
+import { currentMonthMetricsService } from '../../services/targets/currentMonthMetricsService';
 
 /**
  * Hook to calculate historical averages from user's actual data
  * Used for intelligent target calculations
  *
- * CRITICAL: Now uses REAL commission rates from comp_guide table
- * based on user's contract level and historical product mix
+ * CRITICAL:
+ * - Uses REAL commission rates from comp_guide table based on user's contract level
+ * - Calculates avgPolicyPremium from CURRENT MONTH's policies for real-time accuracy
+ * - Falls back to recent months/all policies if current month has insufficient data
  */
 export function useHistoricalAverages(): {
   averages: HistoricalAverages;
@@ -48,14 +51,22 @@ export function useHistoricalAverages(): {
     // This is premium-weighted based on user's actual product mix
     const avgCommissionRate = commissionProfile.recommendedRate;
 
-    // Calculate average policy premium from ACTIVE policies first, then all policies
-    // CRITICAL: This must recalculate every time policies change!
-    const activePolicies = policies.filter(p => p.status === 'active');
-    const avgPolicyPremium = activePolicies.length > 0
-      ? activePolicies.reduce((sum, p) => sum + (p.annualPremium || 0), 0) / activePolicies.length
-      : policies.length > 0
-        ? policies.reduce((sum, p) => sum + (p.annualPremium || 0), 0) / policies.length
-        : 2000; // Default to $2,000 only if NO policies exist
+    // CRITICAL: Calculate average premium from CURRENT MONTH's policies
+    // This gives real-time accuracy for target calculations
+    // Falls back to recent months/all policies if current month has insufficient data
+    const currentMonthMetrics = currentMonthMetricsService.calculateCurrentMonthAvgPremium(policies);
+    const avgPolicyPremium = currentMonthMetrics.avgPolicyPremium ||
+      // Fallback: calculate from all active policies if current month has no data
+      (() => {
+        const activePolicies = policies.filter(p => p.status === 'active');
+        if (activePolicies.length > 0) {
+          return activePolicies.reduce((sum, p) => sum + (p.annualPremium || 0), 0) / activePolicies.length;
+        }
+        if (policies.length > 0) {
+          return policies.reduce((sum, p) => sum + (p.annualPremium || 0), 0) / policies.length;
+        }
+        return 0; // NO defaults - show zero if no policies
+      })();
 
     // Calculate average policies per month
     // Look at the last 12 months of data
@@ -80,7 +91,7 @@ export function useHistoricalAverages(): {
 
     const avgPoliciesPerMonth = monthlyPolicyCounts.length > 0
       ? monthlyPolicyCounts.reduce((sum, count) => sum + count, 0) / monthlyPolicyCounts.length
-      : 8; // Default to 8 policies per month
+      : 0; // NO defaults - show zero if no data
 
     // Calculate average monthly expenses
     const monthlyExpenseTotals: number[] = [];
@@ -101,7 +112,7 @@ export function useHistoricalAverages(): {
 
     const avgExpensesPerMonth = monthlyExpenseTotals.length > 0
       ? monthlyExpenseTotals.reduce((sum, total) => sum + total, 0) / monthlyExpenseTotals.length
-      : 5000; // Default to $5,000
+      : 0; // NO defaults - show zero if no expense data
 
     // Calculate persistency rates
     // 13-month persistency: policies still active after 13 months
@@ -116,7 +127,7 @@ export function useHistoricalAverages(): {
     const still_active_13Month = policiesFrom13MonthsAgo.filter(p => p.status === 'active').length;
     const persistency13Month = policiesFrom13MonthsAgo.length > 0
       ? still_active_13Month / policiesFrom13MonthsAgo.length
-      : 0.85; // Default to 85%
+      : 0; // NO defaults - show zero if no data
 
     // 25-month persistency
     const twentyFiveMonthsAgo = new Date();
@@ -130,7 +141,7 @@ export function useHistoricalAverages(): {
     const stillActive25Month = policiesFrom25MonthsAgo.filter(p => p.status === 'active').length;
     const persistency25Month = policiesFrom25MonthsAgo.length > 0
       ? stillActive25Month / policiesFrom25MonthsAgo.length
-      : 0.75; // Default to 75%
+      : 0; // NO defaults - show zero if no data
 
     return {
       avgCommissionRate,

@@ -54,18 +54,19 @@ class TargetsService {
    * Create default targets for a new user
    */
   private async createDefaultTargets(userId: string): Promise<UserTargets> {
+    // CRITICAL: NO hardcoded values - all zeros until user sets their target
     const defaultData: UserTargetsInsert = {
       user_id: userId,
-      annual_income_target: 120000,
-      monthly_income_target: 10000,
-      quarterly_income_target: 30000,
-      annual_policies_target: 100,
-      monthly_policies_target: 9,
-      avg_premium_target: 1500,
-      persistency_13_month_target: 0.85,
-      persistency_25_month_target: 0.75,
-      monthly_expense_target: 5000,
-      expense_ratio_target: 0.30,
+      annual_income_target: 0,
+      monthly_income_target: 0,
+      quarterly_income_target: 0,
+      annual_policies_target: 0,
+      monthly_policies_target: 0,
+      // REMOVED: avg_premium_target - always calculated from actual policies
+      persistency_13_month_target: 0,
+      persistency_25_month_target: 0,
+      monthly_expense_target: 0,
+      expense_ratio_target: 0,
       achievements: [],
       last_milestone_date: null,
     };
@@ -108,9 +109,7 @@ class TargetsService {
     if (updates.monthlyPoliciesTarget !== undefined) {
       dbUpdates.monthly_policies_target = updates.monthlyPoliciesTarget;
     }
-    if (updates.avgPremiumTarget !== undefined) {
-      dbUpdates.avg_premium_target = updates.avgPremiumTarget;
-    }
+    // REMOVED: avgPremiumTarget - always calculated from actual policies, never stored
     if (updates.persistency13MonthTarget !== undefined) {
       dbUpdates.persistency_13_month_target = updates.persistency13MonthTarget;
     }
@@ -251,10 +250,12 @@ class TargetsService {
       daysInMonth
     );
 
+    // REMOVED: avgPremium target progress - always calculated from actual policies
+    // No longer needed as a stored target since it's dynamically calculated
     const avgPremium = this.calculateTargetProgress(
-      targets.avgPremiumTarget,
+      actuals.currentAvgPremium, // Use current as both target and actual
       actuals.currentAvgPremium,
-      0, // Premium target is not time-based
+      0, // Not time-based
       1
     );
 
@@ -455,16 +456,17 @@ class TargetsService {
     return {
       id: row.id,
       userId: row.user_id || '',
-      annualIncomeTarget: row.annual_income_target || 120000,
-      monthlyIncomeTarget: row.monthly_income_target || 10000,
-      quarterlyIncomeTarget: row.quarterly_income_target || 30000,
-      annualPoliciesTarget: row.annual_policies_target || 100,
-      monthlyPoliciesTarget: row.monthly_policies_target || 9,
-      avgPremiumTarget: row.avg_premium_target || 1500,
-      persistency13MonthTarget: row.persistency_13_month_target || 0.85,
-      persistency25MonthTarget: row.persistency_25_month_target || 0.75,
-      monthlyExpenseTarget: row.monthly_expense_target || 5000,
-      expenseRatioTarget: row.expense_ratio_target || 0.30,
+      annualIncomeTarget: row.annual_income_target || 0,
+      monthlyIncomeTarget: row.monthly_income_target || 0,
+      quarterlyIncomeTarget: row.quarterly_income_target || 0,
+      annualPoliciesTarget: row.annual_policies_target || 0,
+      monthlyPoliciesTarget: row.monthly_policies_target || 0,
+      // REMOVED: avgPremiumTarget - always calculated dynamically from current month's policies
+      avgPremiumTarget: 0, // Deprecated field, kept for type compatibility but not used
+      persistency13MonthTarget: row.persistency_13_month_target || 0,
+      persistency25MonthTarget: row.persistency_25_month_target || 0,
+      monthlyExpenseTarget: row.monthly_expense_target || 0,
+      expenseRatioTarget: row.expense_ratio_target || 0,
       achievements: (row.achievements as unknown as Achievement[]) || [],
       lastMilestoneDate: row.last_milestone_date ? new Date(row.last_milestone_date) : null,
       createdAt: new Date(row.created_at || ''),

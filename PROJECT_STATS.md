@@ -1,15 +1,15 @@
 # Project Statistics
 
-Last Updated: 2025-11-27 13:44:33
+Last Updated: 2025-11-28 09:24:19
 
 ## Metrics
-- Total Files: 22307
-- Total Lines of Code: 375434
-- Total Commits: 182
+- Total Files: 22308
+- Total Lines of Code: 375799
+- Total Commits: 194
 
 ## Recent Activity
-f3b5839 docs: multiple changes in .,docs,src/features/admin/components
-01e617a feat(admin): add Role Management and User Management pages
-d05818e fix(rbac): grant agents access to recruiting navigation
-3e4013f docs: multiple changes in .,.serena/memories,docs
-cf44f9e feat(recruiting): redesign pipeline with phase-based status tracking
+1633967 fix(targets): remove hardcoded avgPremiumTarget, always calculate from actual policies
+7f4a7fb fix(targets): avgPolicyPremium now updates immediately when policies added
+e44f583 fix(analytics): remove misleading 'Choose Your Path' section from GamePlan
+8b576cc refactor(analytics): redesign dashboard with intuitive metrics and dynamic goal tracking
+c7a8d4d docs: add plan for policy survival rates section replacement

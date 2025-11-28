@@ -54,15 +54,6 @@ export interface TargetCalculationOptions {
   };
 }
 
-// Default values when no historical data exists
-const DEFAULTS = {
-  avgCommissionRate: 0.50, // 50% commission rate
-  avgPolicyPremium: 2000, // $2,000 average annual premium
-  avgExpensesPerMonth: 5000, // $5,000 monthly expenses
-  persistency13Month: 0.85, // 85% persistency at 13 months
-  persistency25Month: 0.75, // 75% persistency at 25 months
-};
-
 class TargetsCalculationService {
   /**
    * Calculate all targets from a single annual income target
@@ -70,21 +61,22 @@ class TargetsCalculationService {
   calculateTargets(options: TargetCalculationOptions): CalculatedTargets {
     const { annualIncomeTarget, historicalAverages, overrides } = options;
 
-    // Determine which values to use (overrides > historical > defaults)
+    // CRITICAL: NO hardcoded defaults - only use actual data
+    // Determine which values to use (overrides > historical > zero)
     const avgCommissionRate =
       overrides?.avgCommissionRate ??
       historicalAverages?.avgCommissionRate ??
-      DEFAULTS.avgCommissionRate;
+      0;
 
     const avgPolicyPremium =
       overrides?.avgPolicyPremium ??
       historicalAverages?.avgPolicyPremium ??
-      DEFAULTS.avgPolicyPremium;
+      0;
 
     const monthlyExpenseTarget =
       overrides?.monthlyExpenseTarget ??
       historicalAverages?.avgExpensesPerMonth ??
-      DEFAULTS.avgExpensesPerMonth;
+      0;
 
     // CRITICAL: annualIncomeTarget is NET income (after expenses)
     // We need to calculate GROSS commission income needed (before expenses)
@@ -120,14 +112,14 @@ class TargetsCalculationService {
       ? annualExpenses / grossCommissionNeeded
       : 0;
 
-    // Use historical persistency or defaults
+    // Use historical persistency or zero
     const persistency13MonthTarget =
       historicalAverages?.persistency13Month ??
-      DEFAULTS.persistency13Month;
+      0;
 
     const persistency25MonthTarget =
       historicalAverages?.persistency25Month ??
-      DEFAULTS.persistency25Month;
+      0;
 
     // Determine calculation confidence
     let confidence: 'high' | 'medium' | 'low' = 'low';
