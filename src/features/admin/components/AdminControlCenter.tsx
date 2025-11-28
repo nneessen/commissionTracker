@@ -49,7 +49,7 @@ export default function AdminControlCenter() {
 
   // Hierarchy-based filtering for non-admin users
   // Admin sees all users, non-admin only sees their own hierarchy
-  const users = isAdmin ? allUsers : allUsers?.filter((u: UserProfile) => {
+  const hierarchyFilteredUsers = isAdmin ? allUsers : allUsers?.filter((u: UserProfile) => {
     // User can see themselves
     if (u.id === currentUser?.id) return true;
 
@@ -59,14 +59,26 @@ export default function AdminControlCenter() {
     return false;
   });
 
-  // Calculate stats
-  const totalUsers = users?.length || 0;
-  const admins = users?.filter((u: UserProfile) => u.roles?.includes("admin")).length || 0;
-  const agents = users?.filter((u: UserProfile) => u.roles?.includes("agent") && !u.roles?.includes("admin")).length || 0;
-  const pending = users?.filter((u: UserProfile) => u.approval_status === "pending").length || 0;
-  const approved = users?.filter((u: UserProfile) => u.approval_status === "approved").length || 0;
+  // CRITICAL: Separate active agents from recruits based on onboarding_status
+  // Active agents: onboarding_status = 'completed' AND approval_status = 'approved'
+  // Recruits: onboarding_status != 'completed' (includes null/undefined for backwards compatibility)
+  const activeAgents = hierarchyFilteredUsers?.filter((u: UserProfile) =>
+    u.onboarding_status === 'completed' && u.approval_status === 'approved'
+  );
 
-  const filteredUsers = users?.filter((user: UserProfile) => {
+  const recruitsInPipeline = hierarchyFilteredUsers?.filter((u: UserProfile) =>
+    u.onboarding_status !== 'completed' // Includes null/undefined
+  );
+
+  // Calculate stats based on ACTIVE AGENTS only
+  const totalUsers = activeAgents?.length || 0;
+  const admins = activeAgents?.filter((u: UserProfile) => u.roles?.includes("admin")).length || 0;
+  const agents = activeAgents?.filter((u: UserProfile) => u.roles?.includes("agent") && !u.roles?.includes("admin")).length || 0;
+  const approved = activeAgents?.length || 0; // All active agents are approved by definition
+  const pending = recruitsInPipeline?.filter((u: UserProfile) => u.approval_status === "pending").length || 0;
+
+  // Search filtering for active agents (Users & Access tab)
+  const filteredUsers = activeAgents?.filter((user: UserProfile) => {
     if (!searchQuery) return true;
     const query = searchQuery.toLowerCase();
     return (
@@ -75,15 +87,15 @@ export default function AdminControlCenter() {
     );
   });
 
-  // Pagination
+  // Pagination for Users & Access tab
   const totalPages = Math.ceil((filteredUsers?.length || 0) / itemsPerPage);
   const paginatedUsers = filteredUsers?.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
 
-  // Recruits (pending users)
-  const pendingRecruits = users?.filter((u: UserProfile) => u.approval_status === "pending");
+  // Recruits (users still in recruiting pipeline)
+  const pendingRecruits = recruitsInPipeline;
 
   const getRoleColor = (roleName: RoleName): string => {
     const colors: Record<string, string> = {
@@ -444,13 +456,13 @@ export default function AdminControlCenter() {
                       <TableHead className="h-8 text-[11px] font-semibold">Recruit</TableHead>
                       <TableHead className="h-8 text-[11px] font-semibold w-[120px]">Upline</TableHead>
                       <TableHead className="h-8 text-[11px] font-semibold w-[100px]">Applied</TableHead>
-                      <TableHead className="h-8 text-[11px] font-semibold w-[80px]">Status</TableHead>
+                      <TableHead className="h-8 text-[11px] font-semibold w-[120px]">Phase</TableHead>
                       <TableHead className="h-8 text-[11px] font-semibold w-[120px] text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {pendingRecruits?.map((recruit: UserProfile) => {
-                      const upline = users?.find((u: UserProfile) => u.id === recruit.upline_id);
+                      const upline = hierarchyFilteredUsers?.find((u: UserProfile) => u.id === recruit.upline_id);
                       return (
                         <TableRow key={recruit.id} className="hover:bg-muted/30 border-b">
                           <TableCell className="py-1.5">
@@ -479,8 +491,8 @@ export default function AdminControlCenter() {
                             </span>
                           </TableCell>
                           <TableCell className="py-1.5">
-                            <Badge variant="outline" className="text-yellow-600 text-[10px] h-4 px-1">
-                              Pending
+                            <Badge variant="outline" className="text-blue-600 text-[10px] h-4 px-1">
+                              {recruit.onboarding_status?.replace(/_/g, ' ') || 'Not Started'}
                             </Badge>
                           </TableCell>
                           <TableCell className="py-1.5 text-right">
@@ -488,24 +500,30 @@ export default function AdminControlCenter() {
                               <Button
                                 size="sm"
                                 variant="ghost"
-                                className="h-5 px-1.5 text-green-600 hover:text-green-700 hover:bg-green-50"
+                                className="h-5 px-1.5 text-[10px] text-green-600 hover:text-green-700 hover:bg-green-50"
+                                title="Approve recruit"
                               >
-                                <CheckCircle2 className="h-3 w-3" />
+                                <CheckCircle2 className="h-3 w-3 mr-0.5" />
+                                Approve
                               </Button>
                               <Button
                                 size="sm"
                                 variant="ghost"
-                                className="h-5 px-1.5 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                className="h-5 px-1.5 text-[10px] text-red-600 hover:text-red-700 hover:bg-red-50"
+                                title="Deny recruit"
                               >
-                                <XCircle className="h-3 w-3" />
+                                <XCircle className="h-3 w-3 mr-0.5" />
+                                Deny
                               </Button>
                               <Button
                                 size="sm"
                                 variant="ghost"
-                                className="h-5 px-1.5"
+                                className="h-5 px-1.5 text-[10px]"
                                 onClick={() => handleEditRoles(recruit)}
+                                title="Edit user"
                               >
-                                <Edit className="h-2.5 w-2.5" />
+                                <Edit className="h-2.5 w-2.5 mr-0.5" />
+                                Edit
                               </Button>
                             </div>
                           </TableCell>
@@ -567,7 +585,7 @@ export default function AdminControlCenter() {
                       </TableCell>
                       <TableCell>
                         <span className="text-sm">
-                          {users?.filter((u: any) => u.roles?.includes(role.name as RoleName)).length || 0}
+                          {activeAgents?.filter((u: any) => u.roles?.includes(role.name as RoleName)).length || 0}
                         </span>
                       </TableCell>
                       <TableCell>
@@ -598,51 +616,58 @@ export default function AdminControlCenter() {
         )}
       </div>
 
-      {/* Edit Roles Dialog - Compact, NO nested cards */}
+      {/* Edit User Dialog - Ultra Compact */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-lg">Edit User Roles</DialogTitle>
-            <DialogDescription className="text-sm">
+        <DialogContent className="max-w-md p-3">
+          <DialogHeader className="space-y-1">
+            <DialogTitle className="text-sm font-semibold">Edit User</DialogTitle>
+            <DialogDescription className="text-[10px]">
               {editingUser?.full_name || editingUser?.email}
             </DialogDescription>
           </DialogHeader>
-          
-          <div className="py-4 space-y-3">
-            {roles?.map((role) => {
-              const isChecked = editingUser?.roles?.includes(role.name as RoleName);
-              return (
-                <div
-                  key={role.id}
-                  className="flex items-start gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors"
-                >
-                  <input
-                    type="checkbox"
-                    id={`role-${role.id}`}
-                    checked={isChecked}
-                    onChange={(e) => {
-                      if (!editingUser) return;
-                      const currentRoles = editingUser.roles || [];
-                      const newRoles = e.target.checked
-                        ? [...currentRoles, role.name as RoleName]
-                        : currentRoles.filter(r => r !== role.name);
-                      setEditingUser({ ...editingUser, roles: newRoles });
-                    }}
-                    className="mt-1 h-4 w-4 rounded"
-                  />
-                  <label htmlFor={`role-${role.id}`} className="flex-1 cursor-pointer">
-                    <div className="font-medium text-sm">{role.display_name}</div>
-                    <div className="text-xs text-muted-foreground">{role.description}</div>
-                  </label>
-                </div>
-              );
-            })}
+
+          <div className="py-2 space-y-2">
+            {/* Roles Section */}
+            <div className="space-y-1">
+              <div className="text-[11px] font-semibold text-muted-foreground uppercase">Roles</div>
+              <div className="space-y-1">
+                {roles?.map((role) => {
+                  const isChecked = editingUser?.roles?.includes(role.name as RoleName);
+                  return (
+                    <div
+                      key={role.id}
+                      className="flex items-start gap-2 p-1 rounded hover:bg-muted/30 transition-colors"
+                    >
+                      <input
+                        type="checkbox"
+                        id={`role-${role.id}`}
+                        checked={isChecked}
+                        onChange={(e) => {
+                          if (!editingUser) return;
+                          const currentRoles = editingUser.roles || [];
+                          const newRoles = e.target.checked
+                            ? [...currentRoles, role.name as RoleName]
+                            : currentRoles.filter(r => r !== role.name);
+                          setEditingUser({ ...editingUser, roles: newRoles });
+                        }}
+                        className="mt-0.5 h-3 w-3 rounded"
+                      />
+                      <label htmlFor={`role-${role.id}`} className="flex-1 cursor-pointer">
+                        <div className="font-medium text-[11px]">{role.display_name}</div>
+                        <div className="text-[10px] text-muted-foreground leading-tight">{role.description}</div>
+                      </label>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           </div>
 
-          <DialogFooter className="gap-2">
+          <DialogFooter className="gap-1 pt-2">
             <Button
               variant="outline"
               size="sm"
+              className="h-6 text-[10px]"
               onClick={() => {
                 setIsEditDialogOpen(false);
                 setEditingUser(null);
@@ -652,9 +677,10 @@ export default function AdminControlCenter() {
             </Button>
             <Button
               size="sm"
+              className="h-6 text-[10px]"
               onClick={() => handleSaveRoles(editingUser?.roles || [])}
             >
-              Save Changes
+              Save
             </Button>
           </DialogFooter>
         </DialogContent>

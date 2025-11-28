@@ -8,6 +8,8 @@ export interface UserProfile {
   id: string;
   email: string;
   full_name?: string | null; // Computed from first_name + last_name in RPC
+  first_name?: string;
+  last_name?: string;
   roles?: RoleName[]; // User roles from RBAC system
   approval_status: "pending" | "approved" | "denied";
   is_admin: boolean;
@@ -21,6 +23,16 @@ export interface UserProfile {
   upline_id?: string; // ID of upline agent in hierarchy
   hierarchy_path?: string;
   hierarchy_depth?: number;
+  // Recruiting fields
+  onboarding_status?: 'interview_1' | 'zoom_interview' | 'pre_licensing' | 'exam' | 'npn_received' | 'contracting' | 'bootcamp' | 'completed' | 'dropped' | null;
+  current_onboarding_phase?: string;
+  onboarding_completed_at?: string;
+  phone?: string;
+  profile_photo_url?: string;
+  instagram_url?: string;
+  instagram_username?: string;
+  linkedin_url?: string;
+  linkedin_username?: string;
 }
 
 export interface ApprovalStats {

@@ -29,8 +29,9 @@ export const recruitingService = {
       `,
         { count: 'exact' }
       )
-      // CRITICAL: Only show recruits (leads or active in onboarding)
-      .in('onboarding_status', ['lead', 'active']);
+      // CRITICAL: Only show recruits currently in onboarding (NOT completed, NOT null)
+      .not('onboarding_status', 'is', null)
+      .neq('onboarding_status', 'completed');
 
     // Apply filters
     if (filters?.onboarding_status && filters.onboarding_status.length > 0) {
@@ -352,7 +353,7 @@ export const recruitingService = {
     let query = supabase
       .from('user_profiles')
       .select('*', { count: 'exact', head: false })
-      .in('onboarding_status', ['lead', 'active', 'completed', 'dropped']);
+      .in('onboarding_status', ['interview_1', 'zoom_interview', 'pre_licensing', 'exam', 'npn_received', 'contracting', 'bootcamp', 'completed', 'dropped']);
 
     if (recruiterId) {
       query = query.eq('recruiter_id', recruiterId);

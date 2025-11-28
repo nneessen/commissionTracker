@@ -27,7 +27,10 @@ export function RecruitingDashboard() {
   const [selectedRecruit, setSelectedRecruit] = useState<UserProfile | null>(null);
   const [addRecruitDialogOpen, setAddRecruitDialogOpen] = useState(false);
 
-  const recruits = (recruitsData?.data || []) as RecruitWithRelations[];
+  // Filter out the current user (upline) from the recruits list
+  const recruits = ((recruitsData?.data || []) as RecruitWithRelations[]).filter(
+    (recruit) => recruit.id !== user?.id
+  );
 
   const handleSelectRecruit = (recruit: UserProfile) => {
     setSelectedRecruit(recruit);

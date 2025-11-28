@@ -184,19 +184,23 @@ export function PhaseChecklist({
 
         if (item.item_type === 'task_completion') {
           // Task completion: check who can complete it
-          canToggleCheckbox =
-            (item.can_be_completed_by === 'recruit' && !isUpline) ||
-            (item.can_be_completed_by === 'upline' && isUpline) ||
-            (item.can_be_completed_by === 'either');
+          // If can_be_completed_by is 'system', then neither can toggle it (system-only tasks)
+          if (item.can_be_completed_by === 'recruit') {
+            canToggleCheckbox = !isUpline;
+          } else if (item.can_be_completed_by === 'upline') {
+            canToggleCheckbox = isUpline;
+          } else if (item.can_be_completed_by === 'system') {
+            canToggleCheckbox = false; // System-only tasks cannot be manually toggled
+          }
         } else if (item.item_type === 'training_module') {
           // Training modules: recruit can toggle after viewing
           canToggleCheckbox = !isUpline;
         } else if (item.item_type === 'document_upload') {
-          // Document uploads: upline can approve/reject (which completes it)
-          canToggleCheckbox = isUpline && (status === 'completed' || status === 'in_progress');
+          // Document uploads: handled by action buttons, not checkbox
+          canToggleCheckbox = false;
         } else if (item.item_type === 'manual_approval') {
-          // Manual approvals: upline only
-          canToggleCheckbox = isUpline;
+          // Manual approvals: upline can check the box to approve
+          canToggleCheckbox = isUpline && status === 'not_started';
         }
 
         return (
@@ -210,10 +214,14 @@ export function PhaseChecklist({
           >
             {/* Row 1: Checkbox + Item name + Status badge + Action button */}
             <div className="flex items-start gap-3 mb-2">
-              <Checkbox 
+              <Checkbox
                 checked={isCompleted}
                 disabled={!canToggleCheckbox}
-                onCheckedChange={() => canToggleCheckbox && handleToggleComplete(item.id, status)}
+                onCheckedChange={() => {
+                  if (canToggleCheckbox) {
+                    handleToggleComplete(item.id, status);
+                  }
+                }}
                 className="mt-0.5"
               />
               
