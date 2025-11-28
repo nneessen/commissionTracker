@@ -13,14 +13,11 @@ import { AnalyticsDateProvider, useAnalyticsDateRange } from "./context/Analytic
 const PaceMetrics = lazy(() =>
   import("./components").then((m) => ({ default: m.PaceMetrics })),
 );
-const CohortAnalysis = lazy(() =>
-  import("./components").then((m) => ({ default: m.CohortAnalysis })),
+const PolicyStatusBreakdown = lazy(() =>
+  import("./components").then((m) => ({ default: m.PolicyStatusBreakdown })),
 );
 const ClientSegmentation = lazy(() =>
   import("./components").then((m) => ({ default: m.ClientSegmentation })),
-);
-const CommissionDeepDive = lazy(() =>
-  import("./components").then((m) => ({ default: m.CommissionDeepDive })),
 );
 const ProductMatrix = lazy(() =>
   import("./components").then((m) => ({ default: m.ProductMatrix })),
@@ -33,9 +30,6 @@ const GeographicAnalysis = lazy(() =>
 );
 const GamePlan = lazy(() =>
   import("./components").then((m) => ({ default: m.GamePlan })),
-);
-const CarrierPerformance = lazy(() =>
-  import("./components").then((m) => ({ default: m.EfficiencyMetrics })),
 );
 
 function AnalyticsDashboardContent() {
@@ -97,15 +91,9 @@ function AnalyticsDashboardContent() {
 
       <div className="page-content">
         {/* Time Period Selector and Export Controls */}
-        <div
-          className="mb-4 p-4 bg-card rounded-lg shadow-sm border border-border"
-        >
-          <div
-            className="flex justify-between items-center mb-3"
-          >
-            <div
-              className="text-xs font-semibold text-foreground uppercase tracking-wide"
-            >
+        <div className="border-b border-border pb-4 mb-6">
+          <div className="flex items-center justify-between mb-3">
+            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
               Time Period
             </div>
 
@@ -114,7 +102,7 @@ function AnalyticsDashboardContent() {
               <Button
                 onClick={handleExportCSV}
                 size="sm"
-                variant="default"
+                variant="ghost"
                 title="Export data to CSV"
               >
                 Export CSV
@@ -122,7 +110,7 @@ function AnalyticsDashboardContent() {
               <Button
                 onClick={handlePrintPDF}
                 size="sm"
-                variant="outline"
+                variant="ghost"
                 title="Print report to PDF"
               >
                 Print PDF
@@ -151,7 +139,7 @@ function AnalyticsDashboardContent() {
                 <PaceMetrics />
               </Suspense>
               <Suspense fallback={<div className="p-5 text-center text-muted-foreground">Loading...</div>}>
-                <CohortAnalysis />
+                <PolicyStatusBreakdown />
               </Suspense>
               <Suspense fallback={<div className="p-5 text-center text-muted-foreground">Loading...</div>}>
                 <ProductMatrix />
@@ -171,12 +159,6 @@ function AnalyticsDashboardContent() {
               </Suspense>
               <Suspense fallback={<div className="p-5 text-center text-muted-foreground">Loading...</div>}>
                 <GamePlan />
-              </Suspense>
-              <Suspense fallback={<div className="p-5 text-center text-muted-foreground">Loading...</div>}>
-                <CommissionDeepDive />
-              </Suspense>
-              <Suspense fallback={<div className="p-5 text-center text-muted-foreground">Loading...</div>}>
-                <CarrierPerformance />
               </Suspense>
             </div>
           </div>

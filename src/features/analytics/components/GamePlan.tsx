@@ -64,6 +64,13 @@ export function GamePlan() {
     mtdExpenses
   );
 
+  // Calculate annual progress
+  const annualProgress = gamePlanService.calculateAnnualProgress(
+    raw.policies,
+    raw.commissions,
+    userTargets || null
+  );
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -100,6 +107,87 @@ export function GamePlan() {
           </div>
           <div className="text-xs text-muted-foreground mt-1">
             What you need to do to hit your target for {gamePlan.currentMonth}
+          </div>
+        </div>
+
+        {/* Annual Goal Tracker */}
+        <div className="mb-5 p-4 bg-gradient-to-r from-primary/5 to-accent/5 rounded-lg border border-primary/20">
+          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+            Annual Goal Tracker
+          </div>
+
+          {/* YTD Progress Bar */}
+          <div className="mb-3">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xs text-muted-foreground">Year-to-Date Progress</span>
+              <span className="text-xs font-bold text-foreground font-mono">
+                {Math.round(annualProgress.progressPercent)}%
+              </span>
+            </div>
+            <div className="h-2 bg-muted rounded-full overflow-hidden">
+              <div
+                className={cn(
+                  "h-full transition-all duration-300",
+                  annualProgress.onTrackForYear
+                    ? "bg-gradient-to-r from-success to-success/80"
+                    : "bg-gradient-to-r from-amber-500 to-amber-600"
+                )}
+                style={{ width: `${Math.min(100, annualProgress.progressPercent)}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Stats Grid */}
+          <div className="grid grid-cols-2 gap-2 mb-3">
+            <div className="p-2 bg-background/50 rounded text-center">
+              <div className="text-[10px] text-muted-foreground">Annual Goal</div>
+              <div className="text-sm font-bold text-foreground font-mono">
+                {formatCurrency(annualProgress.annualGoal)}
+              </div>
+            </div>
+            <div className="p-2 bg-background/50 rounded text-center">
+              <div className="text-[10px] text-muted-foreground">YTD Earned</div>
+              <div className="text-sm font-bold text-success font-mono">
+                {formatCurrency(annualProgress.ytdCommissions)}
+              </div>
+            </div>
+            <div className="p-2 bg-background/50 rounded text-center">
+              <div className="text-[10px] text-muted-foreground">Remaining</div>
+              <div className="text-sm font-bold text-destructive font-mono">
+                {formatCurrency(annualProgress.remainingNeeded)}
+              </div>
+            </div>
+            <div className="p-2 bg-background/50 rounded text-center">
+              <div className="text-[10px] text-muted-foreground">Months Left</div>
+              <div className="text-sm font-bold text-foreground font-mono">
+                {annualProgress.monthsRemaining}
+              </div>
+            </div>
+          </div>
+
+          {/* Key Metrics */}
+          <div className="p-3 bg-primary/10 rounded-lg border border-primary/30">
+            <div className="grid grid-cols-2 gap-3 text-center">
+              <div>
+                <div className="text-[10px] text-muted-foreground mb-1">
+                  Monthly Average Needed
+                </div>
+                <div className="text-lg font-bold text-foreground font-mono">
+                  {formatCurrency(annualProgress.avgMonthlyNeeded)}
+                </div>
+              </div>
+              <div>
+                <div className="text-[10px] text-muted-foreground mb-1">
+                  Policies Per Month
+                </div>
+                <div className="text-lg font-bold text-primary font-mono">
+                  ~{annualProgress.policiesNeededPerMonth}
+                </div>
+                <div className="text-[10px] text-muted-foreground mt-0.5">
+                  based on avg ${Math.round(annualProgress.avgCommissionPerPolicy).toLocaleString()} commission
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 

@@ -1,11 +1,11 @@
 // src/features/analytics/components/CarriersProductsBreakdown.tsx
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { useAnalyticsData } from '../../../hooks';
 import { useAnalyticsDateRange } from '../context/AnalyticsDateContext';
-import { Building2, Package, TrendingUp, TrendingDown } from 'lucide-react';
+import { Building2, Package, ArrowUpDown } from 'lucide-react';
 
 interface CarrierProductData {
   carrier: string;
@@ -19,11 +19,14 @@ interface CarrierProductData {
   totalPolicies: number;
   totalPremium: number;
   totalCommissions: number;
+  avgCommissionRate: number;
 }
 
+type SortColumn = 'carrier' | 'policies' | 'premium' | 'avgRate' | 'commission';
+
 /**
- * CarriersProductsBreakdown - Hierarchical display of carriers and their products
- * Shows products grouped by carrier with clear metrics
+ * CarriersProductsBreakdown - Compact table view of carriers and products
+ * Always shows products (no expand/collapse) for quick scanning
  */
 export function CarriersProductsBreakdown() {
   const { dateRange } = useAnalyticsDateRange();
@@ -32,12 +35,15 @@ export function CarriersProductsBreakdown() {
     endDate: dateRange.endDate,
   });
 
+  const [sortColumn, setSortColumn] = useState<SortColumn>('premium');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+
   if (isLoading) {
     return (
       <Card>
         <CardContent className="p-5">
           <div className="text-sm font-semibold text-foreground mb-4 uppercase tracking-wide">
-            Carriers & Products Performance
+            Carriers & Products
           </div>
           <div className="p-10 text-center text-muted-foreground text-xs">
             Loading carrier data...
@@ -53,7 +59,7 @@ export function CarriersProductsBreakdown() {
     carrierIdToName.set(carrier.id, carrier.name);
   });
 
-  // Helper function to format product names (whole_life -> Whole Life)
+  // Helper function to format product names
   const formatProductName = (product: string): string => {
     return product
       .split('_')
@@ -78,6 +84,7 @@ export function CarriersProductsBreakdown() {
         totalPolicies: 0,
         totalPremium: 0,
         totalCommissions: 0,
+        avgCommissionRate: 0,
       });
     }
 
@@ -102,7 +109,6 @@ export function CarriersProductsBreakdown() {
 
     if (commission) {
       productData.totalCommissions += commission.amount || 0;
-      // Calculate average commission rate
       if (productData.totalPremium > 0) {
         productData.avgCommissionRate = (productData.totalCommissions / productData.totalPremium) * 100;
       }
@@ -114,10 +120,39 @@ export function CarriersProductsBreakdown() {
     carrierData.totalCommissions += commission?.amount || 0;
   });
 
-  // Sort carriers by total premium (descending)
-  const sortedCarriers = Array.from(carrierMap.values()).sort(
-    (a, b) => b.totalPremium - a.totalPremium
-  );
+  // Calculate carrier average commission rates
+  carrierMap.forEach((carrier) => {
+    if (carrier.totalPremium > 0) {
+      carrier.avgCommissionRate = (carrier.totalCommissions / carrier.totalPremium) * 100;
+    }
+  });
+
+  // Sort carriers
+  const sortCarriers = (carriers: CarrierProductData[]) => {
+    return carriers.sort((a, b) => {
+      let comparison = 0;
+      switch (sortColumn) {
+        case 'carrier':
+          comparison = a.carrier.localeCompare(b.carrier);
+          break;
+        case 'policies':
+          comparison = a.totalPolicies - b.totalPolicies;
+          break;
+        case 'premium':
+          comparison = a.totalPremium - b.totalPremium;
+          break;
+        case 'avgRate':
+          comparison = a.avgCommissionRate - b.avgCommissionRate;
+          break;
+        case 'commission':
+          comparison = a.totalCommissions - b.totalCommissions;
+          break;
+      }
+      return sortDirection === 'asc' ? comparison : -comparison;
+    });
+  };
+
+  const sortedCarriers = sortCarriers(Array.from(carrierMap.values()));
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -132,167 +167,139 @@ export function CarriersProductsBreakdown() {
     return `${value.toFixed(1)}%`;
   };
 
-  // Calculate grand totals
-  const grandTotals = sortedCarriers.reduce(
-    (totals, carrier) => ({
-      policies: totals.policies + carrier.totalPolicies,
-      premium: totals.premium + carrier.totalPremium,
-      commissions: totals.commissions + carrier.totalCommissions,
-    }),
-    { policies: 0, premium: 0, commissions: 0 }
-  );
+  const handleSort = (column: SortColumn) => {
+    if (sortColumn === column) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortColumn(column);
+      setSortDirection('desc');
+    }
+  };
 
   return (
     <Card className="w-full">
       <CardContent className="p-5">
         {/* Header */}
-        <div className="mb-5">
+        <div className="mb-4">
           <div className="text-sm font-semibold text-foreground uppercase tracking-wide">
-            Carriers & Products Breakdown
+            Carriers & Products
           </div>
           <div className="text-xs text-muted-foreground mt-1">
-            Products organized by insurance carrier
+            {sortedCarriers.length} carriers with nested products
           </div>
         </div>
 
-        {/* Summary Stats */}
-        <div className="grid grid-cols-3 gap-2 mb-5">
-          <div className="bg-gradient-to-br from-primary/10 to-card p-2 rounded-lg">
-            <div className="text-[10px] text-muted-foreground uppercase tracking-wide">
-              Total Carriers
-            </div>
-            <div className="text-lg font-bold text-foreground">
-              {sortedCarriers.length}
-            </div>
-          </div>
-          <div className="bg-gradient-to-br from-success/10 to-card p-2 rounded-lg">
-            <div className="text-[10px] text-muted-foreground uppercase tracking-wide">
-              Total Premium
-            </div>
-            <div className="text-lg font-bold text-success">
-              {formatCurrency(grandTotals.premium)}
-            </div>
-          </div>
-          <div className="bg-gradient-to-br from-info/10 to-card p-2 rounded-lg">
-            <div className="text-[10px] text-muted-foreground uppercase tracking-wide">
-              Total Commissions
-            </div>
-            <div className="text-lg font-bold text-info">
-              {formatCurrency(grandTotals.commissions)}
-            </div>
-          </div>
-        </div>
-
-        {/* Carriers List */}
-        <div className="space-y-3">
-          {sortedCarriers.slice(0, 5).map((carrier, index) => {
-            const avgCarrierCommissionRate = carrier.totalPremium > 0
-              ? (carrier.totalCommissions / carrier.totalPremium) * 100
-              : 0;
-
-            return (
-              <div
-                key={carrier.carrier}
-                className="border border-border rounded-lg overflow-hidden"
-              >
-                {/* Carrier Header */}
-                <div className="bg-muted/30 p-3 border-b border-border">
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center gap-2">
-                      <Building2 className="h-4 w-4 text-primary" />
-                      <span className="font-semibold text-sm text-foreground">
-                        {carrier.carrier}
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        ({carrier.totalPolicies} policies)
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div className="text-right">
-                        <div className="text-xs text-muted-foreground">Premium</div>
-                        <div className="text-sm font-semibold text-foreground">
-                          {formatCurrency(carrier.totalPremium)}
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-xs text-muted-foreground">Avg Rate</div>
-                        <div className="text-sm font-semibold text-success">
-                          {formatPercent(avgCarrierCommissionRate)}
-                        </div>
-                      </div>
-                    </div>
+        {/* Table */}
+        <div className="border border-border rounded-lg overflow-hidden">
+          <table className="w-full text-xs">
+            <thead className="bg-muted sticky top-0">
+              <tr>
+                <th
+                  className="text-left p-2 font-semibold cursor-pointer hover:bg-muted-foreground/10 transition-colors"
+                  onClick={() => handleSort('carrier')}
+                  style={{ width: '30%' }}
+                >
+                  <div className="flex items-center gap-1">
+                    <span>Carrier / Product</span>
+                    {sortColumn === 'carrier' && <ArrowUpDown className="h-3 w-3" />}
                   </div>
-                </div>
+                </th>
+                <th
+                  className="text-right p-2 font-semibold cursor-pointer hover:bg-muted-foreground/10 transition-colors"
+                  onClick={() => handleSort('policies')}
+                  style={{ width: '15%' }}
+                >
+                  <div className="flex items-center justify-end gap-1">
+                    <span>Policies</span>
+                    {sortColumn === 'policies' && <ArrowUpDown className="h-3 w-3" />}
+                  </div>
+                </th>
+                <th
+                  className="text-right p-2 font-semibold cursor-pointer hover:bg-muted-foreground/10 transition-colors"
+                  onClick={() => handleSort('premium')}
+                  style={{ width: '20%' }}
+                >
+                  <div className="flex items-center justify-end gap-1">
+                    <span>Premium</span>
+                    {sortColumn === 'premium' && <ArrowUpDown className="h-3 w-3" />}
+                  </div>
+                </th>
+                <th
+                  className="text-right p-2 font-semibold cursor-pointer hover:bg-muted-foreground/10 transition-colors"
+                  onClick={() => handleSort('avgRate')}
+                  style={{ width: '15%' }}
+                >
+                  <div className="flex items-center justify-end gap-1">
+                    <span>Avg Rate</span>
+                    {sortColumn === 'avgRate' && <ArrowUpDown className="h-3 w-3" />}
+                  </div>
+                </th>
+                <th
+                  className="text-right p-2 font-semibold cursor-pointer hover:bg-muted-foreground/10 transition-colors"
+                  onClick={() => handleSort('commission')}
+                  style={{ width: '20%' }}
+                >
+                  <div className="flex items-center justify-end gap-1">
+                    <span>Commission</span>
+                    {sortColumn === 'commission' && <ArrowUpDown className="h-3 w-3" />}
+                  </div>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {sortedCarriers.map((carrier) => (
+                <React.Fragment key={carrier.carrier}>
+                  {/* Carrier Row */}
+                  <tr className="bg-muted/50 border-t border-border hover:bg-muted/70 transition-colors">
+                    <td className="p-2 font-bold">
+                      <div className="flex items-center gap-2">
+                        <Building2 className="h-3 w-3 text-primary" />
+                        <span>{carrier.carrier}</span>
+                      </div>
+                    </td>
+                    <td className="p-2 text-right font-semibold">{carrier.totalPolicies}</td>
+                    <td className="p-2 text-right font-semibold">{formatCurrency(carrier.totalPremium)}</td>
+                    <td className="p-2 text-right font-semibold text-success">
+                      {formatPercent(carrier.avgCommissionRate)}
+                    </td>
+                    <td className="p-2 text-right font-semibold">{formatCurrency(carrier.totalCommissions)}</td>
+                  </tr>
 
-                {/* Products List */}
-                <div className="divide-y divide-border">
+                  {/* Product Rows (Always Expanded) */}
                   {carrier.products
                     .sort((a, b) => b.totalPremium - a.totalPremium)
-                    .map(product => {
-                      const percentOfCarrier = carrier.totalPremium > 0
-                        ? (product.totalPremium / carrier.totalPremium) * 100
-                        : 0;
-
-                      return (
-                        <div
-                          key={`${carrier.carrier}-${product.name}`}
-                          className="p-2 pl-8 hover:bg-muted/20 transition-colors"
-                        >
-                          <div className="flex justify-between items-center">
-                            <div className="flex items-center gap-2">
-                              <Package className="h-3 w-3 text-muted-foreground" />
-                              <span className="text-xs font-medium text-foreground">
-                                {product.name}
-                              </span>
-                              <span className="text-xs text-muted-foreground">
-                                ({product.policyCount} {product.policyCount === 1 ? 'policy' : 'policies'})
-                              </span>
-                            </div>
-
-                            <div className="flex items-center gap-4">
-                              {/* Percentage of Carrier */}
-                              <div className="text-xs text-muted-foreground">
-                                {formatPercent(percentOfCarrier)} of carrier
-                              </div>
-
-                              {/* Premium */}
-                              <div className="text-xs font-semibold text-foreground font-mono">
-                                {formatCurrency(product.totalPremium)}
-                              </div>
-
-                              {/* Commission Rate with Trend */}
-                              <div className="flex items-center gap-1">
-                                {product.avgCommissionRate >= avgCarrierCommissionRate ? (
-                                  <TrendingUp className="h-3 w-3 text-success" />
-                                ) : (
-                                  <TrendingDown className="h-3 w-3 text-destructive" />
-                                )}
-                                <span className={cn(
-                                  "text-xs font-semibold",
-                                  product.avgCommissionRate >= avgCarrierCommissionRate
-                                    ? "text-success"
-                                    : "text-destructive"
-                                )}>
-                                  {formatPercent(product.avgCommissionRate)}
-                                </span>
-                              </div>
-                            </div>
+                    .map((product) => (
+                      <tr
+                        key={`${carrier.carrier}-${product.name}`}
+                        className="border-t border-border/50 hover:bg-accent/20 transition-colors"
+                      >
+                        <td className="p-2 pl-8 text-muted-foreground">
+                          <div className="flex items-center gap-2">
+                            <Package className="h-3 w-3" />
+                            <span>{product.name}</span>
                           </div>
-                        </div>
-                      );
-                    })}
-                </div>
-              </div>
-            );
-          })}
+                        </td>
+                        <td className="p-2 text-right text-muted-foreground">{product.policyCount}</td>
+                        <td className="p-2 text-right text-muted-foreground font-mono">
+                          {formatCurrency(product.totalPremium)}
+                        </td>
+                        <td className="p-2 text-right text-muted-foreground">
+                          {formatPercent(product.avgCommissionRate)}
+                        </td>
+                        <td className="p-2 text-right text-muted-foreground font-mono">
+                          {formatCurrency(product.totalCommissions)}
+                        </td>
+                      </tr>
+                    ))}
+                </React.Fragment>
+              ))}
+            </tbody>
+          </table>
         </div>
 
-        {/* Footer Note */}
-        {sortedCarriers.length > 5 && (
-          <div className="mt-4 p-3 bg-muted/20 rounded-lg">
-            <div className="text-xs text-muted-foreground">
-              Showing top 5 of {sortedCarriers.length} carriers by premium volume
-            </div>
+        {sortedCarriers.length === 0 && (
+          <div className="text-center text-xs text-muted-foreground py-8">
+            No carrier data available for the selected time period
           </div>
         )}
       </CardContent>

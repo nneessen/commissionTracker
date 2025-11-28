@@ -59,6 +59,20 @@ export interface Scenario {
   isRealistic: boolean;
 }
 
+export interface AnnualProgress {
+  annualGoal: number; // Annual income target
+  ytdCommissions: number; // Year-to-date commissions
+  ytdPolicies: number; // Year-to-date policy count
+  remainingNeeded: number; // How much more needed
+  monthsElapsed: number; // Months completed so far
+  monthsRemaining: number; // Months left in year
+  avgMonthlyNeeded: number; // Average monthly commission needed
+  avgCommissionPerPolicy: number; // Average commission per policy YTD
+  policiesNeededPerMonth: number; // Policies needed per month to hit goal
+  progressPercent: number; // % of annual goal achieved
+  onTrackForYear: boolean; // Whether on track to hit annual goal
+}
+
 class GamePlanService {
   /**
    * Calculate the game plan for hitting targets
@@ -377,6 +391,83 @@ class GamePlanService {
       name: best[0],
       avgCommission,
       count: best[1].count,
+    };
+  }
+
+  /**
+   * Calculate annual progress and dynamic policies needed
+   *
+   * @param policies - All policies
+   * @param commissions - All commissions
+   * @param userTargets - User's annual/monthly targets
+   * @returns AnnualProgress with year-to-date metrics
+   */
+  calculateAnnualProgress(
+    policies: Policy[],
+    commissions: Commission[],
+    userTargets: UserTargets | null
+  ): AnnualProgress {
+    const now = new Date();
+    const yearStart = new Date(now.getFullYear(), 0, 1);
+    const yearEnd = new Date(now.getFullYear(), 11, 31);
+
+    // Calculate months elapsed and remaining
+    const monthsElapsed = now.getMonth() + 1; // JavaScript months are 0-indexed
+    const monthsRemaining = 12 - monthsElapsed;
+
+    // Get annual goal from user targets
+    const annualGoal = userTargets?.annualIncomeTarget ?? 120000;
+
+    // Filter YTD policies
+    const ytdPolicies = policies.filter((p) => {
+      const effectiveDate = new Date(p.effectiveDate);
+      return effectiveDate >= yearStart && effectiveDate <= now;
+    });
+
+    // Filter YTD commissions (paid only)
+    const ytdCommissionsData = commissions.filter((c) => {
+      const createdDate = new Date(c.createdAt);
+      return createdDate >= yearStart && createdDate <= now && c.status === 'paid';
+    });
+
+    // Calculate YTD totals
+    const ytdCommissions = ytdCommissionsData.reduce((sum, c) => sum + (c.amount || 0), 0);
+
+    // Calculate remaining needed
+    const remainingNeeded = Math.max(0, annualGoal - ytdCommissions);
+
+    // Calculate average monthly commission needed for remainder of year
+    const avgMonthlyNeeded = monthsRemaining > 0 ? remainingNeeded / monthsRemaining : 0;
+
+    // Calculate average commission per policy YTD
+    const avgCommissionPerPolicy = ytdPolicies.length > 0
+      ? ytdCommissions / ytdPolicies.length
+      : 1500; // Fallback estimate
+
+    // Calculate policies needed per month to hit annual goal
+    const policiesNeededPerMonth = avgCommissionPerPolicy > 0
+      ? Math.ceil(avgMonthlyNeeded / avgCommissionPerPolicy)
+      : 0;
+
+    // Calculate progress percentage
+    const progressPercent = annualGoal > 0 ? (ytdCommissions / annualGoal) * 100 : 0;
+
+    // Determine if on track (>=75% of expected progress)
+    const expectedProgress = (monthsElapsed / 12) * 100;
+    const onTrackForYear = progressPercent >= (expectedProgress * 0.75);
+
+    return {
+      annualGoal,
+      ytdCommissions,
+      ytdPolicies: ytdPolicies.length,
+      remainingNeeded,
+      monthsElapsed,
+      monthsRemaining,
+      avgMonthlyNeeded,
+      avgCommissionPerPolicy,
+      policiesNeededPerMonth,
+      progressPercent,
+      onTrackForYear,
     };
   }
 }
