@@ -73,37 +73,37 @@ describe('useUsersView role-based filtering logic', () => {
   ];
 
   describe('Users & Access tab (Active Agents)', () => {
-    it('should INCLUDE users with roles containing "agent"', () => {
+    it('should INCLUDE users with roles containing "agent" OR is_admin=true', () => {
       // Filter logic from useUsersView.ts line 62-64
       const filteredUsers = mockUsers.filter(u =>
-        u.roles?.includes('agent')
+        u.roles?.includes('agent') || u.is_admin === true
       );
 
       expect(filteredUsers.length).toBe(3); // agent1, admin, problem-user
-      expect(filteredUsers.every(u => u.roles?.includes('agent'))).toBe(true);
+      expect(filteredUsers.every(u => u.roles?.includes('agent') || u.is_admin === true)).toBe(true);
     });
 
-    it('should EXCLUDE users with roles = undefined', () => {
+    it('should EXCLUDE users with roles = undefined AND is_admin = false', () => {
       const filteredUsers = mockUsers.filter(u =>
-        u.roles?.includes('agent')
+        u.roles?.includes('agent') || u.is_admin === true
       );
 
-      const recruitsFound = filteredUsers.filter(u => u.roles === undefined);
+      const recruitsFound = filteredUsers.filter(u => u.roles === undefined && !u.is_admin);
       expect(recruitsFound.length).toBe(0);
     });
 
-    it('should EXCLUDE users without "agent" role', () => {
+    it('should EXCLUDE users without "agent" role AND is_admin = false', () => {
       const filteredUsers = mockUsers.filter(u =>
-        u.roles?.includes('agent')
+        u.roles?.includes('agent') || u.is_admin === true
       );
 
-      const nonAgents = filteredUsers.filter(u => !u.roles?.includes('agent'));
+      const nonAgents = filteredUsers.filter(u => !u.roles?.includes('agent') && !u.is_admin);
       expect(nonAgents.length).toBe(0);
     });
 
     it('should include users with "agent" role regardless of onboarding_status', () => {
       const filteredUsers = mockUsers.filter(u =>
-        u.roles?.includes('agent')
+        u.roles?.includes('agent') || u.is_admin === true
       );
 
       // Problem user has agent role but onboarding_status='lead'
@@ -114,10 +114,10 @@ describe('useUsersView role-based filtering logic', () => {
   });
 
   describe('Recruiting Pipeline tab (Recruits)', () => {
-    it('should INCLUDE users with roles = undefined', () => {
+    it('should INCLUDE users with roles = undefined AND is_admin = false', () => {
       // Filter logic from AdminControlCenter.tsx line 85-87
       const recruitsInPipeline = mockUsers.filter(u =>
-        !u.roles?.includes('agent')
+        !u.roles?.includes('agent') && u.is_admin !== true
       );
 
       const undefinedRoleUsers = recruitsInPipeline.filter(u => u.roles === undefined);
@@ -126,25 +126,34 @@ describe('useUsersView role-based filtering logic', () => {
 
     it('should EXCLUDE users with "agent" role', () => {
       const recruitsInPipeline = mockUsers.filter(u =>
-        !u.roles?.includes('agent')
+        !u.roles?.includes('agent') && u.is_admin !== true
       );
 
       const agentUsers = recruitsInPipeline.filter(u => u.roles?.includes('agent'));
       expect(agentUsers.length).toBe(0);
     });
 
-    it('should filter correctly: 2 recruits (undefined roles)', () => {
+    it('should EXCLUDE users with is_admin = true', () => {
       const recruitsInPipeline = mockUsers.filter(u =>
-        !u.roles?.includes('agent')
+        !u.roles?.includes('agent') && u.is_admin !== true
       );
 
-      expect(recruitsInPipeline.length).toBe(2); // Only users with no agent role
-      expect(recruitsInPipeline.every(u => u.roles === undefined)).toBe(true);
+      const adminUsers = recruitsInPipeline.filter(u => u.is_admin === true);
+      expect(adminUsers.length).toBe(0);
+    });
+
+    it('should filter correctly: 2 recruits (undefined roles, not admin)', () => {
+      const recruitsInPipeline = mockUsers.filter(u =>
+        !u.roles?.includes('agent') && u.is_admin !== true
+      );
+
+      expect(recruitsInPipeline.length).toBe(2); // Only users with no agent role and not admin
+      expect(recruitsInPipeline.every(u => u.roles === undefined && u.is_admin !== true)).toBe(true);
     });
 
     it('should exclude problem user with agent role despite onboarding_status', () => {
       const recruitsInPipeline = mockUsers.filter(u =>
-        !u.roles?.includes('agent')
+        !u.roles?.includes('agent') && u.is_admin !== true
       );
 
       // Problem user should NOT appear in recruiting pipeline because they have agent role
@@ -155,8 +164,8 @@ describe('useUsersView role-based filtering logic', () => {
 
   describe('Role-based separation (no overlap)', () => {
     it('should ensure no user appears in both tabs', () => {
-      const activeAgents = mockUsers.filter(u => u.roles?.includes('agent'));
-      const recruits = mockUsers.filter(u => !u.roles?.includes('agent'));
+      const activeAgents = mockUsers.filter(u => u.roles?.includes('agent') || u.is_admin === true);
+      const recruits = mockUsers.filter(u => !u.roles?.includes('agent') && u.is_admin !== true);
 
       // Check no overlap
       const overlap = activeAgents.filter(agent =>
@@ -167,8 +176,8 @@ describe('useUsersView role-based filtering logic', () => {
     });
 
     it('should account for all users (no users lost)', () => {
-      const activeAgents = mockUsers.filter(u => u.roles?.includes('agent'));
-      const recruits = mockUsers.filter(u => !u.roles?.includes('agent'));
+      const activeAgents = mockUsers.filter(u => u.roles?.includes('agent') || u.is_admin === true);
+      const recruits = mockUsers.filter(u => !u.roles?.includes('agent') && u.is_admin !== true);
 
       const totalCategorized = activeAgents.length + recruits.length;
       expect(totalCategorized).toBe(mockUsers.length);
@@ -177,7 +186,7 @@ describe('useUsersView role-based filtering logic', () => {
 
   describe('Edge cases', () => {
     it('should handle users with multiple roles including agent', () => {
-      const filteredUsers = mockUsers.filter(u => u.roles?.includes('agent'));
+      const filteredUsers = mockUsers.filter(u => u.roles?.includes('agent') || u.is_admin === true);
 
       const adminUser = filteredUsers.find(u => u.email === 'admin@test.com');
       expect(adminUser).toBeDefined();
@@ -185,7 +194,7 @@ describe('useUsersView role-based filtering logic', () => {
       expect(adminUser?.roles).toContain('admin');
     });
 
-    it('should handle empty roles array as recruit', () => {
+    it('should handle empty roles array as recruit (if not admin)', () => {
       const userWithEmptyRoles: UserProfile = {
         id: '6',
         email: 'empty-roles@test.com',
@@ -197,12 +206,33 @@ describe('useUsersView role-based filtering logic', () => {
         updated_at: '2025-01-06',
       };
 
-      const isAgent = userWithEmptyRoles.roles?.includes('agent');
+      const isAgent = userWithEmptyRoles.roles?.includes('agent') || userWithEmptyRoles.is_admin === true;
       expect(isAgent).toBe(false);
 
       // Should appear in recruiting pipeline
-      const shouldBeInPipeline = !userWithEmptyRoles.roles?.includes('agent');
+      const shouldBeInPipeline = !userWithEmptyRoles.roles?.includes('agent') && userWithEmptyRoles.is_admin !== true;
       expect(shouldBeInPipeline).toBe(true);
+    });
+
+    it('should include admin users even without agent role', () => {
+      const adminWithoutAgentRole: UserProfile = {
+        id: '7',
+        email: 'admin-only@test.com',
+        roles: undefined, // No roles but is admin
+        onboarding_status: null,
+        approval_status: 'approved',
+        is_admin: true,
+        created_at: '2025-01-07',
+        updated_at: '2025-01-07',
+      };
+
+      // Should appear in Users & Access tab because is_admin=true
+      const shouldBeInUsers = adminWithoutAgentRole.roles?.includes('agent') || adminWithoutAgentRole.is_admin === true;
+      expect(shouldBeInUsers).toBe(true);
+
+      // Should NOT appear in recruiting pipeline
+      const shouldBeInPipeline = !adminWithoutAgentRole.roles?.includes('agent') && adminWithoutAgentRole.is_admin !== true;
+      expect(shouldBeInPipeline).toBe(false);
     });
   });
 });

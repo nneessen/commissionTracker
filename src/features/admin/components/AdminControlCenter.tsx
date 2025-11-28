@@ -74,16 +74,16 @@ export default function AdminControlCenter() {
   });
 
   // CRITICAL: Separate active agents from recruits based on ROLES
-  // Active agents: users with 'agent' role (graduated from recruiting pipeline)
-  // Recruits: users WITHOUT 'agent' role (still in recruiting pipeline)
+  // Active agents: users with 'agent' role OR admins (is_admin=true)
+  // Recruits: users WITHOUT 'agent' role AND NOT admins
   // Per GraduateToAgentDialog.tsx: Graduation sets roles=['agent'] AND onboarding_status='completed'
   const activeAgents = hierarchyFilteredUsers?.filter((u: UserProfile) =>
-    u.roles?.includes('agent' as RoleName)
+    u.roles?.includes('agent' as RoleName) || u.is_admin === true
   );
 
-  // Filter recruits from hierarchyFilteredUsers (users without 'agent' role)
+  // Filter recruits from hierarchyFilteredUsers (users without 'agent' role and not admin)
   const recruitsInPipeline = hierarchyFilteredUsers?.filter((u: UserProfile) =>
-    !u.roles?.includes('agent' as RoleName)
+    !u.roles?.includes('agent' as RoleName) && u.is_admin !== true
   ) || [];
 
   // Calculate stats based on ACTIVE AGENTS only
