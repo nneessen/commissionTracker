@@ -1,8 +1,8 @@
 // src/features/admin/components/UserManagementPage.tsx
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useAllUsers } from '@/hooks/admin/useUserApproval';
-import { useAllRoles, useUpdateUserRoles } from '@/hooks/permissions/usePermissions';
+import { useAllRolesWithPermissions, useUpdateUserRoles } from '@/hooks/permissions/usePermissions';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -19,21 +19,19 @@ import {
 } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import { Users, Shield, Search, UserCog, CheckCircle2, XCircle } from 'lucide-react';
-import type { RoleName } from '@/types/permissions.types';
-
-interface UserProfile {
-  id: string;
-  email: string;
-  full_name?: string;
-  roles: RoleName[];
-  created_at: string;
-  is_approved?: boolean;
-}
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
+import { Separator } from '@/components/ui/separator';
+import { Users, Shield, Search, UserCog, CheckCircle2, XCircle, ChevronDown, ChevronRight, Info } from 'lucide-react';
+import type { RoleName, Permission } from '@/types/permissions.types';
+import type { UserProfile } from '@/services/admin/userApprovalService';
 
 export function UserManagementPage() {
   const { data: users, isLoading: usersLoading, error: usersError } = useAllUsers();
-  const { data: roles, isLoading: rolesLoading } = useAllRoles();
+  const { data: roles, isLoading: rolesLoading } = useAllRolesWithPermissions();
   const updateUserRoles = useUpdateUserRoles();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -105,6 +103,42 @@ export function UserManagementPage() {
     return role?.display_name || roleName;
   };
 
+  // Calculate permission changes when roles are modified
+  const permissionPreview = useMemo(() => {
+    if (!selectedUser || !roles) return { added: [], removed: [], total: 0 };
+
+    // Get current permissions from user's current roles
+    const currentPermissions = new Set<string>();
+    selectedUser.roles?.forEach((roleName) => {
+      const role = roles.find(r => r.name === roleName);
+      role?.permissions?.forEach((perm) => currentPermissions.add(perm.code));
+    });
+
+    // Get new permissions from selected roles
+    const newPermissions = new Set<string>();
+    const newPermissionObjects: Permission[] = [];
+    Array.from(selectedRoles).forEach((roleName) => {
+      const role = roles.find(r => r.name === roleName);
+      role?.permissions?.forEach((perm) => {
+        newPermissions.add(perm.code);
+        if (!newPermissionObjects.find(p => p.code === perm.code)) {
+          newPermissionObjects.push(perm);
+        }
+      });
+    });
+
+    // Calculate diff
+    const added = Array.from(newPermissions).filter(code => !currentPermissions.has(code));
+    const removed = Array.from(currentPermissions).filter(code => !newPermissions.has(code));
+
+    return {
+      added,
+      removed,
+      total: newPermissions.size,
+      allPermissions: newPermissionObjects,
+    };
+  }, [selectedUser, selectedRoles, roles]);
+
   if (usersLoading || rolesLoading) {
     return (
       <div className="p-6 space-y-6">
@@ -158,7 +192,7 @@ export function UserManagementPage() {
           <CardContent>
             <div className="text-2xl font-bold">{users?.length || 0}</div>
             <p className="text-xs text-muted-foreground">
-              {users?.filter((u: UserProfile) => u.is_approved).length || 0} approved
+              {users?.filter((u: UserProfile) => u.approval_status === "approved").length || 0} approved
             </p>
           </CardContent>
         </Card>
@@ -246,7 +280,7 @@ export function UserManagementPage() {
                   </div>
 
                   <div className="flex items-center gap-2">
-                    {user.is_approved ? (
+                    {user.approval_status === "approved" ? (
                       <Badge variant="outline" className="text-green-600">
                         <CheckCircle2 className="h-3 w-3 mr-1" />
                         Approved
@@ -283,7 +317,7 @@ export function UserManagementPage() {
 
       {/* Edit Roles Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit User Roles</DialogTitle>
             <DialogDescription>
@@ -291,34 +325,153 @@ export function UserManagementPage() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 py-4">
-            {roles?.map((role) => (
-              <div key={role.id} className="flex items-start space-x-3 space-y-0">
-                <Checkbox
-                  id={`role-${role.id}`}
-                  checked={selectedRoles.has(role.name)}
-                  onCheckedChange={() => handleRoleToggle(role.name)}
-                />
-                <div className="flex-1 space-y-1">
-                  <Label
-                    htmlFor={`role-${role.id}`}
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                  >
-                    <div className="flex items-center gap-2">
-                      <span>{role.display_name}</span>
-                      <Badge className={getRoleColor(role.name)} variant="secondary">
-                        {role.name}
-                      </Badge>
+          <div className="space-y-6 py-4">
+            {/* Role Selection */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-semibold">Available Roles</h3>
+              {roles?.map((role) => {
+                const permissionCount = role.permissions?.length || 0;
+                const isSelected = selectedRoles.has(role.name);
+
+                return (
+                  <div key={role.id} className="border rounded-lg p-3">
+                    <div className="flex items-start space-x-3 space-y-0">
+                      <Checkbox
+                        id={`role-${role.id}`}
+                        checked={isSelected}
+                        onCheckedChange={() => handleRoleToggle(role.name)}
+                      />
+                      <div className="flex-1 space-y-2">
+                        <Label
+                          htmlFor={`role-${role.id}`}
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                        >
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span>{role.display_name}</span>
+                            <Badge className={getRoleColor(role.name)} variant="secondary">
+                              {role.name}
+                            </Badge>
+                            <Badge variant="outline" className="text-xs">
+                              {permissionCount} permission{permissionCount !== 1 ? 's' : ''}
+                            </Badge>
+                          </div>
+                        </Label>
+                        {role.description && (
+                          <p className="text-sm text-muted-foreground">
+                            {role.description}
+                          </p>
+                        )}
+
+                        {/* Show permissions for this role */}
+                        {isSelected && role.permissions && role.permissions.length > 0 && (
+                          <Collapsible>
+                            <CollapsibleTrigger className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
+                              <ChevronRight className="h-3 w-3" />
+                              View {permissionCount} permission{permissionCount !== 1 ? 's' : ''}
+                            </CollapsibleTrigger>
+                            <CollapsibleContent className="mt-2 pl-4 space-y-1">
+                              {role.permissions.map((perm) => (
+                                <div key={perm.id} className="text-xs">
+                                  <code className="bg-muted px-1.5 py-0.5 rounded">
+                                    {perm.code}
+                                  </code>
+                                  {perm.description && (
+                                    <span className="text-muted-foreground ml-2">
+                                      - {perm.description}
+                                    </span>
+                                  )}
+                                </div>
+                              ))}
+                            </CollapsibleContent>
+                          </Collapsible>
+                        )}
+                      </div>
                     </div>
-                  </Label>
-                  {role.description && (
-                    <p className="text-sm text-muted-foreground">
-                      {role.description}
-                    </p>
+                  </div>
+                );
+              })}
+            </div>
+
+            <Separator />
+
+            {/* Permission Preview */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Info className="h-4 w-4 text-muted-foreground" />
+                <h3 className="text-sm font-semibold">Permission Summary</h3>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <Card>
+                  <CardContent className="pt-4">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold">{permissionPreview.total}</div>
+                      <div className="text-xs text-muted-foreground">Total Permissions</div>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="pt-4">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-green-600">
+                        +{permissionPreview.added.length}
+                      </div>
+                      <div className="text-xs text-muted-foreground">Added</div>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="pt-4">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-red-600">
+                        -{permissionPreview.removed.length}
+                      </div>
+                      <div className="text-xs text-muted-foreground">Removed</div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Show added/removed permissions */}
+              {(permissionPreview.added.length > 0 || permissionPreview.removed.length > 0) && (
+                <div className="space-y-2 text-xs">
+                  {permissionPreview.added.length > 0 && (
+                    <div>
+                      <div className="font-medium text-green-600 mb-1">
+                        ✓ Permissions to be added:
+                      </div>
+                      <div className="flex flex-wrap gap-1">
+                        {permissionPreview.added.map(code => (
+                          <code key={code} className="bg-green-50 text-green-700 px-1.5 py-0.5 rounded">
+                            {code}
+                          </code>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {permissionPreview.removed.length > 0 && (
+                    <div>
+                      <div className="font-medium text-red-600 mb-1">
+                        ✗ Permissions to be removed:
+                      </div>
+                      <div className="flex flex-wrap gap-1">
+                        {permissionPreview.removed.map(code => (
+                          <code key={code} className="bg-red-50 text-red-700 px-1.5 py-0.5 rounded">
+                            {code}
+                          </code>
+                        ))}
+                      </div>
+                    </div>
                   )}
                 </div>
-              </div>
-            ))}
+              )}
+
+              {permissionPreview.added.length === 0 && permissionPreview.removed.length === 0 && (
+                <p className="text-xs text-muted-foreground text-center">
+                  No permission changes
+                </p>
+              )}
+            </div>
           </div>
 
           <DialogFooter>

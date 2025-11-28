@@ -2,10 +2,13 @@
 
 import { supabase } from "../base/supabase";
 import { logger } from "../base/logger";
+import type { RoleName } from "@/types/permissions.types";
 
 export interface UserProfile {
   id: string;
   email: string;
+  full_name?: string | null; // Computed from first_name + last_name in RPC
+  roles?: RoleName[]; // User roles from RBAC system
   approval_status: "pending" | "approved" | "denied";
   is_admin: boolean;
   approved_by?: string;
@@ -16,6 +19,8 @@ export interface UserProfile {
   updated_at: string;
   contract_level?: number; // Insurance agent contract compensation level (80-145)
   upline_id?: string; // ID of upline agent in hierarchy
+  hierarchy_path?: string;
+  hierarchy_depth?: number;
 }
 
 export interface ApprovalStats {

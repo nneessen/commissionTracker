@@ -45,12 +45,21 @@ export function getScopeAriaLabel(scope: string, code: string): string {
 }
 
 /**
+ * Deduplicated permission with multiple sources
+ * Handles case where permission is both direct AND inherited
+ */
+export interface DeduplicatedPermission extends PermissionWithSource {
+  sources: Array<'direct' | 'inherited'>;
+  inheritedFromRoles: string[];
+}
+
+/**
  * Group permissions by category (resource)
  * Organizes permissions for cleaner UI display
  */
 export function groupPermissionsByCategory(
-  permissions: PermissionWithSource[]
-): Record<string, PermissionWithSource[]> {
+  permissions: DeduplicatedPermission[]
+): Record<string, DeduplicatedPermission[]> {
   return permissions.reduce(
     (acc, perm) => {
       const category = perm.resource;
@@ -60,17 +69,8 @@ export function groupPermissionsByCategory(
       acc[category].push(perm);
       return acc;
     },
-    {} as Record<string, PermissionWithSource[]>
+    {} as Record<string, DeduplicatedPermission[]>
   );
-}
-
-/**
- * Deduplicated permission with multiple sources
- * Handles case where permission is both direct AND inherited
- */
-export interface DeduplicatedPermission extends PermissionWithSource {
-  sources: Array<'direct' | 'inherited'>;
-  inheritedFromRoles: string[];
 }
 
 /**

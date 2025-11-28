@@ -64,6 +64,14 @@ export interface Role {
   is_system_role: boolean;
   created_at: string;
   updated_at: string;
+  permissions?: PermissionWithSource[]; // Optional - populated when needed for UI
+}
+
+/**
+ * Role with permissions populated (for UI display)
+ */
+export interface RoleWithPermissions extends Role {
+  permissions: PermissionWithSource[];
 }
 
 /**
@@ -76,6 +84,7 @@ export interface Permission {
   action: PermissionAction;
   scope: PermissionScope;
   description: string | null;
+  is_system_permission?: boolean; // Optional - system permissions cannot be modified
   created_at: string;
 }
 

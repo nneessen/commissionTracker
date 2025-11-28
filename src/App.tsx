@@ -12,12 +12,7 @@ function App() {
   const location = useLocation();
 
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [userOverrideSidebar, setUserOverrideSidebar] = useState(false);
   const navigate = useNavigate();
-
-  // Auto-collapse sidebar on recruiting page for more horizontal space
-  const isRecruitingPage = location.pathname.startsWith('/recruiting');
-  const effectiveCollapsed = userOverrideSidebar ? isSidebarCollapsed : (isRecruitingPage || isSidebarCollapsed);
 
   const publicPaths = [
     "/login",
@@ -47,7 +42,6 @@ function App() {
   };
 
   const toggleSidebar = () => {
-    setUserOverrideSidebar(true); // User manually toggled, so respect their choice
     setIsSidebarCollapsed((prev) => !prev);
   };
 
@@ -92,7 +86,7 @@ function App() {
       <Toaster />
       <div className="flex min-h-screen">
         <Sidebar
-          isCollapsed={effectiveCollapsed}
+          isCollapsed={isSidebarCollapsed}
           onToggleCollapse={toggleSidebar}
           userName={user.name || user.email?.split("@")[0] || "User"}
           userEmail={user.email || ""}

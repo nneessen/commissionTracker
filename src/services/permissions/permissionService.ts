@@ -186,6 +186,25 @@ export async function getAllRoles(): Promise<Role[]> {
 }
 
 /**
+ * Get all roles with their permissions populated (for UI display)
+ */
+export async function getAllRolesWithPermissions(): Promise<Role[]> {
+  const roles = await getAllRoles();
+
+  const rolesWithPermissions = await Promise.all(
+    roles.map(async (role) => {
+      const permissions = await getRolePermissionsWithInheritance(role.id);
+      return {
+        ...role,
+        permissions,
+      };
+    })
+  );
+
+  return rolesWithPermissions;
+}
+
+/**
  * Get role by name
  */
 export async function getRoleByName(roleName: RoleName): Promise<Role | null> {
@@ -299,6 +318,62 @@ export async function removeRoleFromUser(userId: string, roleName: RoleName): Pr
  * Set user roles (replaces all existing roles)
  */
 export async function setUserRoles(userId: string, roles: RoleName[]): Promise<void> {
+  // Get current user ID
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  // Check if user is trying to modify their own roles
+  if (user && userId === user.id) {
+    // Get current roles for this user
+    const { data: currentUserProfile } = await supabase
+      .from('user_profiles')
+      .select('roles')
+      .eq('id', userId)
+      .single();
+      
+    const currentRoles = currentUserProfile?.roles || [];
+    const wasAdmin = currentRoles.includes('admin');
+    const willBeAdmin = roles.includes('admin');
+    
+    // Prevent admin from removing their own admin role
+    if (wasAdmin && !willBeAdmin) {
+      // Check if there are other admins
+      const { count } = await supabase
+        .from('user_profiles')
+        .select('id', { count: 'exact', head: true })
+        .contains('roles', ['admin'])
+        .neq('id', userId);
+        
+      if (count === 0) {
+        throw new Error('Cannot remove your admin role: You are the last admin in the system. Promote another user to admin first.');
+      }
+      
+      throw new Error('Cannot remove your own admin role. Ask another admin to change your role if needed.');
+    }
+  }
+  
+  // Check if trying to remove admin role from any user when they're the last admin
+  const { data: targetUserProfile } = await supabase
+    .from('user_profiles')
+    .select('roles')
+    .eq('id', userId)
+    .single();
+    
+  const targetCurrentRoles = targetUserProfile?.roles || [];
+  const targetWasAdmin = targetCurrentRoles.includes('admin');
+  const targetWillBeAdmin = roles.includes('admin');
+  
+  if (targetWasAdmin && !targetWillBeAdmin) {
+    // Check total admin count
+    const { count } = await supabase
+      .from('user_profiles')
+      .select('id', { count: 'exact', head: true })
+      .contains('roles', ['admin']);
+      
+    if (count === 1) {
+      throw new Error('Cannot remove admin role: This is the last admin in the system. Promote another user to admin first.');
+    }
+  }
+  
   // Ensure at least one role
   const finalRoles = roles.length > 0 ? roles : ['agent'];
 
@@ -385,5 +460,222 @@ export async function removePermissionFromRole(
     }
     console.error('Error removing permission from role:', error);
     throw new Error(`Failed to remove permission: ${error.message}`);
+  }
+}
+
+// ============================================
+// ROLE CRUD OPERATIONS (ADMIN ONLY)
+// ============================================
+
+export interface CreateRoleInput {
+  name: string;
+  display_name: string;
+  description?: string;
+  parent_role_id?: string | null;
+  respects_hierarchy?: boolean;
+}
+
+export interface UpdateRoleInput {
+  display_name?: string;
+  description?: string;
+  parent_role_id?: string | null;
+  respects_hierarchy?: boolean;
+}
+
+/**
+ * Create a new role (admin only)
+ * System roles cannot be created via this function
+ */
+export async function createRole(input: CreateRoleInput): Promise<Role> {
+  const { data, error } = await supabase
+    .from('roles')
+    .insert({
+      ...input,
+      is_system_role: false, // Custom roles are never system roles
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error creating role:', error);
+    throw new Error(`Failed to create role: ${error.message}`);
+  }
+
+  return data;
+}
+
+/**
+ * Update an existing role (admin only)
+ * Cannot update system roles or change the name field
+ */
+export async function updateRole(roleId: string, input: UpdateRoleInput): Promise<Role> {
+  // First check if it's a system role
+  const { data: existingRole, error: fetchError } = await supabase
+    .from('roles')
+    .select('is_system_role')
+    .eq('id', roleId)
+    .single();
+
+  if (fetchError) {
+    console.error('Error fetching role:', fetchError);
+    throw new Error(`Failed to fetch role: ${fetchError.message}`);
+  }
+
+  if (existingRole.is_system_role) {
+    throw new Error('Cannot modify system roles');
+  }
+
+  const { data, error } = await supabase
+    .from('roles')
+    .update({
+      ...input,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', roleId)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error updating role:', error);
+    throw new Error(`Failed to update role: ${error.message}`);
+  }
+
+  return data;
+}
+
+/**
+ * Delete a role (admin only)
+ * Cannot delete system roles or roles assigned to users
+ */
+export async function deleteRole(roleId: string): Promise<void> {
+  // First check if it's a system role
+  const { data: existingRole, error: fetchError } = await supabase
+    .from('roles')
+    .select('is_system_role, name')
+    .eq('id', roleId)
+    .single();
+
+  if (fetchError) {
+    console.error('Error fetching role:', fetchError);
+    throw new Error(`Failed to fetch role: ${fetchError.message}`);
+  }
+
+  if (existingRole.is_system_role) {
+    throw new Error('Cannot delete system roles');
+  }
+
+  // Check if role is assigned to any users
+  const { data: users, error: usersError } = await supabase
+    .from('user_profiles')
+    .select('id')
+    .contains('roles', [existingRole.name]);
+
+  if (usersError) {
+    console.error('Error checking role usage:', usersError);
+    throw new Error(`Failed to check role usage: ${usersError.message}`);
+  }
+
+  if (users && users.length > 0) {
+    throw new Error(
+      `Cannot delete role: ${users.length} user(s) currently have this role. Remove the role from all users first.`
+    );
+  }
+
+  const { error } = await supabase.from('roles').delete().eq('id', roleId);
+
+  if (error) {
+    console.error('Error deleting role:', error);
+    throw new Error(`Failed to delete role: ${error.message}`);
+  }
+}
+
+// ============================================
+// PERMISSION CRUD OPERATIONS (ADMIN ONLY)
+// ============================================
+
+export interface CreatePermissionInput {
+  code: string;
+  resource: string;
+  action: string;
+  scope?: string;
+  description?: string;
+}
+
+export interface UpdatePermissionInput {
+  resource?: string;
+  action?: string;
+  scope?: string;
+  description?: string;
+}
+
+/**
+ * Create a new permission (admin only)
+ */
+export async function createPermission(input: CreatePermissionInput): Promise<Permission> {
+  // Validate permission code format: resource.action.scope
+  if (!/^[a-z_.]+$/.test(input.code)) {
+    throw new Error('Permission code must use lowercase letters, underscores, and dots only');
+  }
+  
+  const parts = input.code.split('.');
+  if (parts.length !== 3) {
+    throw new Error('Permission code must follow format: resource.action.scope (e.g., policies.read.own)');
+  }
+  
+  // Validate that resource, action, and scope match the code
+  const [codeResource, codeAction, codeScope] = parts;
+  if (input.resource !== codeResource) {
+    throw new Error(`Resource "${input.resource}" doesn't match code resource "${codeResource}"`);
+  }
+  if (input.action !== codeAction) {
+    throw new Error(`Action "${input.action}" doesn't match code action "${codeAction}"`);
+  }
+  if (input.scope !== codeScope) {
+    throw new Error(`Scope "${input.scope}" doesn't match code scope "${codeScope}"`);
+  }
+  
+  const { data, error } = await supabase.from('permissions').insert(input).select().single();
+
+  if (error) {
+    console.error('Error creating permission:', error);
+    throw new Error(`Failed to create permission: ${error.message}`);
+  }
+
+  return data;
+}
+
+/**
+ * Update an existing permission (admin only)
+ * Cannot update the code field (permission identifier)
+ */
+export async function updatePermission(
+  permissionId: string,
+  input: UpdatePermissionInput
+): Promise<Permission> {
+  const { data, error } = await supabase
+    .from('permissions')
+    .update(input)
+    .eq('id', permissionId)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error updating permission:', error);
+    throw new Error(`Failed to update permission: ${error.message}`);
+  }
+
+  return data;
+}
+
+/**
+ * Delete a permission (admin only)
+ * Will cascade delete from role_permissions due to foreign key constraint
+ */
+export async function deletePermission(permissionId: string): Promise<void> {
+  const { error } = await supabase.from('permissions').delete().eq('id', permissionId);
+
+  if (error) {
+    console.error('Error deleting permission:', error);
+    throw new Error(`Failed to delete permission: ${error.message}`);
   }
 }

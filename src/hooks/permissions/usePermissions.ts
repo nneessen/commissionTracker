@@ -20,12 +20,26 @@ import {
   hasAnyPermission,
   hasAllPermissions,
   getAllRoles,
+  getAllRolesWithPermissions,
   getAllPermissions,
   getRolePermissionsWithInheritance,
   setUserRoles,
   assignPermissionToRole,
   removePermissionFromRole,
+  createRole,
+  updateRole,
+  deleteRole,
+  createPermission,
+  updatePermission,
+  deletePermission,
+  type CreateRoleInput,
+  type UpdateRoleInput,
+  type CreatePermissionInput,
+  type UpdatePermissionInput,
 } from '@/services/permissions/permissionService';
+
+// Re-export types for convenience
+export type { CreateRoleInput, UpdateRoleInput, CreatePermissionInput, UpdatePermissionInput };
 
 // ============================================
 // QUERY KEYS
@@ -202,6 +216,17 @@ export function useAllRoles() {
 }
 
 /**
+ * Get all system roles with permissions populated (admin only)
+ */
+export function useAllRolesWithPermissions() {
+  return useQuery({
+    queryKey: [...permissionKeys.allRoles, 'with-permissions'],
+    queryFn: getAllRolesWithPermissions,
+    staleTime: 1000 * 60 * 10, // Cache for 10 minutes
+  });
+}
+
+/**
  * Get all system permissions (admin only)
  */
 export function useAllPermissions() {
@@ -368,6 +393,109 @@ export function useRemovePermissionFromRole() {
         queryKey: permissionKeys.rolePermissions(roleId),
       });
       // Invalidate all user permission queries as their effective permissions may have changed
+      queryClient.invalidateQueries({ queryKey: permissionKeys.all });
+    },
+  });
+}
+
+// ============================================
+// ROLE CRUD MUTATIONS
+// ============================================
+
+/**
+ * Create a new role
+ */
+export function useCreateRole() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: CreateRoleInput) => createRole(input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: permissionKeys.allRoles });
+    },
+  });
+}
+
+/**
+ * Update an existing role
+ */
+export function useUpdateRole() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ roleId, input }: { roleId: string; input: UpdateRoleInput }) =>
+      updateRole(roleId, input),
+    onSuccess: (_, { roleId }) => {
+      queryClient.invalidateQueries({ queryKey: permissionKeys.allRoles });
+      queryClient.invalidateQueries({ queryKey: permissionKeys.role(roleId) });
+      // Invalidate all user permissions as role changes affect users
+      queryClient.invalidateQueries({ queryKey: permissionKeys.all });
+    },
+  });
+}
+
+/**
+ * Delete a role
+ */
+export function useDeleteRole() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (roleId: string) => deleteRole(roleId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: permissionKeys.allRoles });
+      // Invalidate all user permissions as deleting a role affects users
+      queryClient.invalidateQueries({ queryKey: permissionKeys.all });
+    },
+  });
+}
+
+// ============================================
+// PERMISSION CRUD MUTATIONS
+// ============================================
+
+/**
+ * Create a new permission
+ */
+export function useCreatePermission() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: CreatePermissionInput) => createPermission(input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: permissionKeys.allPermissions });
+    },
+  });
+}
+
+/**
+ * Update an existing permission
+ */
+export function useUpdatePermission() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ permissionId, input }: { permissionId: string; input: UpdatePermissionInput }) =>
+      updatePermission(permissionId, input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: permissionKeys.allPermissions });
+      // Invalidate all queries as permission changes affect everyone
+      queryClient.invalidateQueries({ queryKey: permissionKeys.all });
+    },
+  });
+}
+
+/**
+ * Delete a permission
+ */
+export function useDeletePermission() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (permissionId: string) => deletePermission(permissionId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: permissionKeys.allPermissions });
+      // Invalidate all queries as permission deletions affect everyone
       queryClient.invalidateQueries({ queryKey: permissionKeys.all });
     },
   });
