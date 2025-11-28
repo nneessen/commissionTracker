@@ -11,21 +11,21 @@ import { useAuthValidation, AuthMode } from "./hooks/useAuthValidation";
 import { AuthErrorDisplay } from "./components/AuthErrorDisplay";
 import { AuthSuccessMessage } from "./components/AuthSuccessMessage";
 import { SignInForm } from "./components/SignInForm";
-import { SignUpForm } from "./components/SignUpForm";
 import { ResetPasswordForm } from "./components/ResetPasswordForm";
+import { Alert, AlertDescription } from "../../components/ui/alert";
+import { Info } from "lucide-react";
 
 interface LoginProps {
   onSuccess?: () => void;
 }
 
 export const Login: React.FC<LoginProps> = ({ onSuccess }) => {
-  const { signIn, signUp, resetPassword } = useAuth();
+  const { signIn, resetPassword } = useAuth();
   const navigate = useNavigate();
   const { formErrors, validateForm, clearErrors } = useAuthValidation();
-  const [mode, setMode] = useState<AuthMode>("signin");
+  const [mode, setMode] = useState<"signin" | "reset">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -33,7 +33,7 @@ export const Login: React.FC<LoginProps> = ({ onSuccess }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!validateForm(email, password, confirmPassword, mode)) {
+    if (!validateForm(email, password, "", mode)) {
       return;
     }
 
@@ -45,25 +45,6 @@ export const Login: React.FC<LoginProps> = ({ onSuccess }) => {
       if (mode === "signin") {
         await signIn(email, password);
         onSuccess?.();
-      } else if (mode === "signup") {
-        const result = await signUp(email, password);
-
-        if (result.requiresVerification) {
-          // Store email in sessionStorage for verification screen
-          sessionStorage.setItem(
-            SESSION_STORAGE_KEYS.VERIFICATION_EMAIL,
-            result.email,
-          );
-
-          // Navigate to verification screen
-          navigate({
-            to: "/auth/verify-email",
-          } as any); // Type assertion needed for router state
-        } else {
-          // Auto-confirm is enabled, user is logged in
-          setMessage("Account created successfully!");
-          onSuccess?.();
-        }
       } else if (mode === "reset") {
         await resetPassword(email);
         setMessage("Password reset email sent! Check your inbox.");
@@ -132,18 +113,7 @@ export const Login: React.FC<LoginProps> = ({ onSuccess }) => {
         setError("Connection error. Please check your internet and try again.");
       }
 
-      // 6. Password requirements (Signup only)
-      else if (
-        mode === "signup" &&
-        errorLower.includes("password") &&
-        (errorLower.includes("weak") ||
-          errorLower.includes("requirements") ||
-          errorLower.includes("too short"))
-      ) {
-        setError(
-          "Password must be at least 6 characters with a mix of letters and numbers.",
-        );
-      }
+      // 6. Password requirements (removed signup mode)
 
       // 7. Generic fallback
       else {
@@ -154,19 +124,16 @@ export const Login: React.FC<LoginProps> = ({ onSuccess }) => {
     }
   };
 
-  const switchMode = (newMode: AuthMode) => {
+  const switchMode = (newMode: "signin" | "reset") => {
     setMode(newMode);
     setError(null);
     setMessage(null);
     clearErrors();
     setPassword("");
-    setConfirmPassword("");
   };
 
   const getTitle = () => {
     switch (mode) {
-      case "signup":
-        return "Create your account";
       case "reset":
         return "Reset your password";
       default:
@@ -176,8 +143,6 @@ export const Login: React.FC<LoginProps> = ({ onSuccess }) => {
 
   const getSubtitle = () => {
     switch (mode) {
-      case "signup":
-        return "Start tracking your commissions today";
       case "reset":
         return "Enter your email and we'll send you a reset link";
       default:
@@ -207,34 +172,29 @@ export const Login: React.FC<LoginProps> = ({ onSuccess }) => {
             <AuthErrorDisplay
               error={error || ""}
               mode={mode}
-              onSwitchToSignup={() => switchMode("signup")}
+              onSwitchToSignup={() => {}}
             />
 
             {mode === "signin" && (
-              <SignInForm
-                email={email}
-                password={password}
-                loading={loading}
-                formErrors={formErrors}
-                onEmailChange={setEmail}
-                onPasswordChange={setPassword}
-                onSubmit={handleSubmit}
-                onForgotPassword={() => switchMode("reset")}
-              />
-            )}
+              <>
+                <SignInForm
+                  email={email}
+                  password={password}
+                  loading={loading}
+                  formErrors={formErrors}
+                  onEmailChange={setEmail}
+                  onPasswordChange={setPassword}
+                  onSubmit={handleSubmit}
+                  onForgotPassword={() => switchMode("reset")}
+                />
 
-            {mode === "signup" && (
-              <SignUpForm
-                email={email}
-                password={password}
-                confirmPassword={confirmPassword}
-                loading={loading}
-                formErrors={formErrors}
-                onEmailChange={setEmail}
-                onPasswordChange={setPassword}
-                onConfirmPasswordChange={setConfirmPassword}
-                onSubmit={handleSubmit}
-              />
+                <Alert className="mt-4 bg-muted/50">
+                  <Info className="h-4 w-4" />
+                  <AlertDescription>
+                    This system is invitation-only. Contact your manager for access.
+                  </AlertDescription>
+                </Alert>
+              </>
             )}
 
             {mode === "reset" && (
@@ -248,41 +208,29 @@ export const Login: React.FC<LoginProps> = ({ onSuccess }) => {
             )}
 
             {/* Mode Switcher */}
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <Separator className="w-full" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-4 bg-card text-muted-foreground">
-                  {mode === "signin" && "Don't have an account?"}
-                  {mode === "signup" && "Already have an account?"}
-                  {mode === "reset" && "Remember your password?"}
-                </span>
-              </div>
-            </div>
+            {mode === "reset" && (
+              <>
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <Separator className="w-full" />
+                  </div>
+                  <div className="relative flex justify-center text-sm">
+                    <span className="px-4 bg-card text-muted-foreground">
+                      Remember your password?
+                    </span>
+                  </div>
+                </div>
 
-            {mode === "signin" && (
-              <Button
-                type="button"
-                onClick={() => switchMode("signup")}
-                variant="link"
-                disabled={loading}
-                className="w-full text-center text-sm font-medium text-primary hover:text-primary/80 h-auto py-2"
-              >
-                Create a new account
-              </Button>
-            )}
-
-            {(mode === "signup" || mode === "reset") && (
-              <Button
-                type="button"
-                onClick={() => switchMode("signin")}
-                variant="link"
-                disabled={loading}
-                className="w-full text-center text-sm font-medium text-primary hover:text-primary/80 h-auto py-2"
-              >
-                Sign in instead
-              </Button>
+                <Button
+                  type="button"
+                  onClick={() => switchMode("signin")}
+                  variant="link"
+                  disabled={loading}
+                  className="w-full text-center text-sm font-medium text-primary hover:text-primary/80 h-auto py-2"
+                >
+                  Sign in instead
+                </Button>
+              </>
             )}
           </CardContent>
         </Card>

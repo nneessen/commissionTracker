@@ -25,8 +25,7 @@ import {
   DeniedAccess,
 } from "./features/auth";
 import { ReportsPage } from "./features/reports";
-import { UserManagementDashboard } from "./features/admin/components/UserManagementDashboard";
-import { RoleManagementPage } from "./features/admin/components/RoleManagementPage";
+import AdminControlCenter from "./features/admin/components/AdminControlCenter";
 import { PermissionGuard } from "./components/auth/PermissionGuard";
 import {
   HierarchyTree,
@@ -174,27 +173,13 @@ const deniedAccessRoute = createRoute({
   component: DeniedAccess,
 });
 
-// Admin users management route - protected by permission
-const adminUsersRoute = createRoute({
+// Admin Control Center route - consolidated admin interface
+const adminRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: "admin/users",
+  path: "admin",
   component: () => (
     <PermissionGuard permission="nav.user_management">
-      <UserManagementDashboard />
-    </PermissionGuard>
-  ),
-});
-
-// Admin roles management route - protected by permission and email
-const adminRolesRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "admin/roles",
-  component: () => (
-    <PermissionGuard
-      permission="nav.role_management"
-      requireEmail="nick@nickneessen.com"
-    >
-      <RoleManagementPage />
+      <AdminControlCenter />
     </PermissionGuard>
   ),
 });
@@ -276,8 +261,7 @@ const routeTree = rootRoute.addChildren([
   verifyEmailRoute,
   pendingApprovalRoute,
   deniedAccessRoute,
-  adminUsersRoute,
-  adminRolesRoute,
+  adminRoute,
   authDiagnosticRoute,
   policiesRoute,
   analyticsRoute,

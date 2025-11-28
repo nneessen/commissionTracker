@@ -18,6 +18,7 @@ import {
   Shield,
   UserCog,
   ScrollText,
+  Lock,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Button } from "@/components/ui/button";
@@ -56,9 +57,7 @@ const navigationItems: NavigationItem[] = [
 
 // Admin-only navigation items
 const adminNavigationItems: NavigationItem[] = [
-  { icon: Shield, label: "User Management", href: "/admin/users", permission: "nav.user_management" },
-  { icon: UserCog, label: "Role Management", href: "/admin/roles", permission: "nav.role_management" },
-  { icon: ScrollText, label: "Audit Logs", href: "/admin/audit", permission: "nav.audit_logs" },
+  { icon: Shield, label: "Admin", href: "/admin", permission: "nav.user_management" },
 ];
 
 export default function Sidebar({
