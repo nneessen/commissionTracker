@@ -45,16 +45,19 @@ export function TargetsPage() {
   const isFirstTime = targets && targets.annualIncomeTarget === 0;
 
   // Calculate targets whenever annual target or averages change
+  // CRITICAL: Force recalculation when averages object changes (including avgPolicyPremium)
   useEffect(() => {
     if (targets && targets.annualIncomeTarget > 0 && !averagesLoading) {
       const calculated = targetsCalculationService.calculateTargets({
         annualIncomeTarget: targets.annualIncomeTarget,
         historicalAverages: averages,
+        // Never use overrides - always use fresh calculated averages
+        overrides: undefined,
       });
       setCalculatedTargets(calculated);
       setAnnualTarget(targets.annualIncomeTarget);
     }
-  }, [targets, averages, averagesLoading]);
+  }, [targets, averages, averagesLoading, averages.avgPolicyPremium]);
 
   // Show welcome dialog on first visit
   useEffect(() => {

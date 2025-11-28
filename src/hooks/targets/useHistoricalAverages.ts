@@ -29,6 +29,7 @@ export function useHistoricalAverages(): {
   const isLoading = policiesLoading || expensesLoading || profileLoading;
 
   // Calculate averages from historical data - MEMOIZED to prevent infinite loops
+  // FORCE RECALCULATION when policies change by including policies.length in deps
   const averages: HistoricalAverages = useMemo(() => {
     // CRITICAL: No arbitrary fallbacks! If no commission data, show error
     if (!commissionProfile) {
@@ -47,13 +48,14 @@ export function useHistoricalAverages(): {
     // This is premium-weighted based on user's actual product mix
     const avgCommissionRate = commissionProfile.recommendedRate;
 
-    // Calculate average policy premium
+    // Calculate average policy premium from ACTIVE policies first, then all policies
+    // CRITICAL: This must recalculate every time policies change!
     const activePolicies = policies.filter(p => p.status === 'active');
     const avgPolicyPremium = activePolicies.length > 0
       ? activePolicies.reduce((sum, p) => sum + (p.annualPremium || 0), 0) / activePolicies.length
       : policies.length > 0
         ? policies.reduce((sum, p) => sum + (p.annualPremium || 0), 0) / policies.length
-        : 2000; // Default to $2,000
+        : 2000; // Default to $2,000 only if NO policies exist
 
     // Calculate average policies per month
     // Look at the last 12 months of data
@@ -139,7 +141,7 @@ export function useHistoricalAverages(): {
       persistency25Month,
       hasData: true,
     };
-  }, [commissionProfile, policies, expenses]);
+  }, [commissionProfile, policies, expenses, policies.length, expenses.length]);
 
   return {
     averages,
