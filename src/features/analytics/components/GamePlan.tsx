@@ -247,38 +247,6 @@ export function GamePlan() {
           </div>
         </div>
 
-        {/* Path to Goal */}
-        {gamePlan.gap > 0 && (
-          <div className="mb-5">
-            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
-              Choose Your Path
-            </div>
-            <div className="grid grid-cols-1 gap-2">
-              {gamePlan.pathOptions.map((option) => (
-                <Card
-                  key={option.id}
-                  className="bg-gradient-to-r from-primary/10 to-accent/5 border-primary/20 hover:border-primary/40 transition-colors cursor-pointer"
-                >
-                  <CardContent className="p-3 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      {option.icon === 'dollar' && <DollarSign className="h-5 w-5 text-primary" />}
-                      {option.icon === 'policy' && <Target className="h-5 w-5 text-success" />}
-                      {option.icon === 'mixed' && <TrendingUp className="h-5 w-5 text-info" />}
-                      {option.icon === 'trophy' && <Trophy className="h-5 w-5 text-warning" />}
-                      <div>
-                        <div className="text-xs font-semibold text-foreground">{option.label}</div>
-                        <div className="text-[10px] text-muted-foreground">{option.description}</div>
-                      </div>
-                    </div>
-                    <div className="text-sm font-bold text-foreground font-mono">
-                      {option.target}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        )}
 
         {/* Smart Moves */}
         {gamePlan.smartMoves.length > 0 && (
