@@ -19,11 +19,16 @@ import {
   UserCog,
   ScrollText,
   Lock,
+  ClipboardList,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { usePermissionCheck } from "@/hooks/permissions/usePermissions";
+import { useAuth } from "@/contexts/AuthContext";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/services/base/supabase";
 import type { PermissionCode } from "@/types/permissions.types";
+import type { RoleName } from "@/types/permissions.types";
 
 interface NavigationItem {
   icon: React.ElementType;
@@ -60,6 +65,11 @@ const adminNavigationItems: NavigationItem[] = [
   { icon: Shield, label: "Admin", href: "/admin", permission: "nav.user_management" },
 ];
 
+// Recruit-only navigation items
+const recruitNavigationItems: NavigationItem[] = [
+  { icon: ClipboardList, label: "My Progress", href: "/recruiting/my-pipeline", public: true },
+];
+
 export default function Sidebar({
   isCollapsed,
   onToggleCollapse,
@@ -70,6 +80,29 @@ export default function Sidebar({
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const { can, isLoading } = usePermissionCheck();
+  const { user } = useAuth();
+
+  // Fetch user roles from profile
+  const { data: userProfile } = useQuery({
+    queryKey: ['user-profile-roles', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select('roles')
+        .eq('id', user.id)
+        .single();
+      if (error) throw error;
+      return data as { roles: RoleName[] };
+    },
+    enabled: !!user?.id,
+  });
+
+  const hasRole = (role: RoleName) => {
+    return userProfile?.roles?.includes(role) || false;
+  };
+
+  const isRecruit = hasRole('recruit' as RoleName);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -87,19 +120,23 @@ export default function Sidebar({
   const toggleMobile = () => setIsMobileOpen(!isMobileOpen);
   const closeMobile = () => setIsMobileOpen(false);
 
-  // Filter navigation items based on permissions
-  const visibleNavItems = navigationItems.filter((item) => {
-    if (item.public) return true;
-    if (!item.permission) return true;
-    if (isLoading) return false;
-    return can(item.permission);
-  });
+  // If user is a recruit, show ONLY recruit navigation
+  const visibleNavItems = isRecruit
+    ? recruitNavigationItems
+    : navigationItems.filter((item) => {
+        if (item.public) return true;
+        if (!item.permission) return true;
+        if (isLoading) return false;
+        return can(item.permission);
+      });
 
-  const visibleAdminItems = adminNavigationItems.filter((item) => {
-    if (!item.permission) return false;
-    if (isLoading) return false;
-    return can(item.permission);
-  });
+  const visibleAdminItems = isRecruit
+    ? []
+    : adminNavigationItems.filter((item) => {
+        if (!item.permission) return false;
+        if (isLoading) return false;
+        return can(item.permission);
+      });
 
   return (
     <>

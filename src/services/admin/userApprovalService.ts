@@ -561,6 +561,120 @@ export class UserApprovalService {
       return { success: false, error: "Failed to update contract level" };
     }
   }
+
+  /**
+   * Create a new user (admin only)
+   * Creates record in both auth.users and user_profiles
+   */
+  async createUser(userData: {
+    email: string;
+    password?: string;
+    first_name: string;
+    last_name: string;
+    phone?: string;
+    upline_id?: string | null;
+    roles?: RoleName[];
+    approval_status?: 'pending' | 'approved';
+    onboarding_status?: 'lead' | 'active' | null;
+  }): Promise<{ success: boolean; userId?: string; error?: string }> {
+    try {
+      // Step 1: Create auth.users record (requires service role key)
+      // For now, use direct Supabase Admin API or RPC function
+      const { data, error } = await supabase.rpc("admin_create_user", {
+        user_email: userData.email,
+        user_password: userData.password || null,
+        user_first_name: userData.first_name,
+        user_last_name: userData.last_name,
+        user_phone: userData.phone || null,
+        user_upline_id: userData.upline_id || null,
+        user_roles: userData.roles || [],
+        user_approval_status: userData.approval_status || 'approved',
+        user_onboarding_status: userData.onboarding_status || null,
+      });
+
+      if (error) {
+        logger.error("Failed to create user", error, "UserApprovalService");
+        console.error("[UserApprovalService] Create user error:", error);
+        return { success: false, error: error.message };
+      }
+
+      logger.info(`User created: ${userData.email}`, "UserApprovalService");
+      return { success: true, userId: data?.user_id };
+    } catch (error) {
+      logger.error(
+        "Error in createUser",
+        error instanceof Error ? error : String(error),
+        "UserApprovalService",
+      );
+      console.error("[UserApprovalService] Unexpected error creating user:", error);
+      return { success: false, error: "Failed to create user" };
+    }
+  }
+
+  /**
+   * Update user profile (admin only)
+   * Updates fields in user_profiles table
+   */
+  async updateUser(
+    userId: string,
+    updates: Partial<Omit<UserProfile, 'id' | 'created_at' | 'updated_at'>>
+  ): Promise<{ success: boolean; error?: string }> {
+    try {
+      const { data, error } = await supabase
+        .from("user_profiles")
+        .update(updates)
+        .eq("id", userId)
+        .select()
+        .single();
+
+      if (error) {
+        logger.error("Failed to update user", error, "UserApprovalService");
+        console.error("[UserApprovalService] Update user error:", error);
+        return { success: false, error: error.message };
+      }
+
+      logger.info(`User ${userId} updated`, "UserApprovalService");
+      return { success: true };
+    } catch (error) {
+      logger.error(
+        "Error in updateUser",
+        error instanceof Error ? error : String(error),
+        "UserApprovalService",
+      );
+      console.error("[UserApprovalService] Unexpected error updating user:", error);
+      return { success: false, error: "Failed to update user" };
+    }
+  }
+
+  /**
+   * Delete user (admin only)
+   * Soft delete by setting deleted_at timestamp
+   */
+  async deleteUser(userId: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      // Use RPC function for proper deletion (cascades to user_profiles)
+      const { data, error } = await supabase.rpc("admin_delete_user", {
+        target_user_id: userId,
+      });
+
+      if (error) {
+        logger.error("Failed to delete user", error, "UserApprovalService");
+        console.error("[UserApprovalService] Delete user error:", error);
+        return { success: false, error: error.message };
+      }
+
+      logger.info(`User ${userId} deleted`, "UserApprovalService");
+      return { success: true };
+    } catch (error) {
+      logger.error(
+        "Error in deleteUser",
+        error instanceof Error ? error : String(error),
+        "UserApprovalService",
+      );
+      console.error("[UserApprovalService] Unexpected error deleting user:", error);
+      return { success: false, error: "Failed to delete user" };
+    }
+  }
 }
 
 // Export singleton instance

@@ -1,13 +1,17 @@
 // src/features/admin/components/AdminControlCenter.tsx
 import { useState } from "react";
 import {
-  Users, Shield, Settings, Search, Plus, Edit,
+  Users, Shield, Settings, Search, Plus, Edit, Trash2,
   CheckCircle2, XCircle, UserCog, ScrollText, UserPlus,
-  ChevronLeft, ChevronRight
+  ChevronLeft, ChevronRight, GraduationCap
 } from "lucide-react";
 import { useAllUsers } from "@/hooks/admin/useUserApproval";
 import { useAllRolesWithPermissions, useUpdateUserRoles, useIsAdmin } from "@/hooks/permissions/usePermissions";
 import { useAuth } from "@/contexts/AuthContext";
+import { userApprovalService } from "@/services/admin/userApprovalService";
+import { useQueryClient } from "@tanstack/react-query";
+import AddUserDialog, { type NewUserData } from "./AddUserDialog";
+import { GraduateToAgentDialog } from "./GraduateToAgentDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -38,6 +42,9 @@ export default function AdminControlCenter() {
   const [searchQuery, setSearchQuery] = useState("");
   const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isAddUserDialogOpen, setIsAddUserDialogOpen] = useState(false);
+  const [graduatingRecruit, setGraduatingRecruit] = useState<UserProfile | null>(null);
+  const [isGraduateDialogOpen, setIsGraduateDialogOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(50);
 
@@ -46,6 +53,13 @@ export default function AdminControlCenter() {
   const { data: allUsers, isLoading: usersLoading } = useAllUsers();
   const { data: roles } = useAllRolesWithPermissions();
   const { mutate: updateUserRoles } = useUpdateUserRoles();
+  const queryClient = useQueryClient();
+
+  // Check if current user can graduate recruits (Admin, Trainer, or Contracting Manager)
+  const currentUserProfile = allUsers?.find(u => u.id === currentUser?.id);
+  const canGraduateRecruits = currentUserProfile?.roles?.some((role: RoleName) =>
+    ['admin', 'trainer', 'contracting_manager'].includes(role)
+  );
 
   // Hierarchy-based filtering for non-admin users
   // Admin sees all users, non-admin only sees their own hierarchy
@@ -59,23 +73,24 @@ export default function AdminControlCenter() {
     return false;
   });
 
-  // CRITICAL: Separate active agents from recruits based on onboarding_status
-  // Active agents: onboarding_status = 'completed' AND approval_status = 'approved'
-  // Recruits: onboarding_status != 'completed' (includes null/undefined for backwards compatibility)
+  // CRITICAL: Separate active agents from recruits based on ROLES
+  // Active agents: users with role = 'agent' OR 'admin' (completed onboarding, licensed)
+  // Recruits: users with role = 'recruit' (still in onboarding pipeline)
   const activeAgents = hierarchyFilteredUsers?.filter((u: UserProfile) =>
-    u.onboarding_status === 'completed' && u.approval_status === 'approved'
+    u.roles?.includes('agent' as RoleName) || u.roles?.includes('admin' as RoleName)
   );
 
+  // Filter recruits from hierarchyFilteredUsers (users with 'recruit' role)
   const recruitsInPipeline = hierarchyFilteredUsers?.filter((u: UserProfile) =>
-    u.onboarding_status !== 'completed' // Includes null/undefined
-  );
+    u.roles?.includes('recruit' as RoleName)
+  ) || [];
 
   // Calculate stats based on ACTIVE AGENTS only
   const totalUsers = activeAgents?.length || 0;
   const admins = activeAgents?.filter((u: UserProfile) => u.roles?.includes("admin")).length || 0;
   const agents = activeAgents?.filter((u: UserProfile) => u.roles?.includes("agent") && !u.roles?.includes("admin")).length || 0;
   const approved = activeAgents?.length || 0; // All active agents are approved by definition
-  const pending = recruitsInPipeline?.filter((u: UserProfile) => u.approval_status === "pending").length || 0;
+  const pending = recruitsInPipeline?.length || 0;
 
   // Search filtering for active agents (Users & Access tab)
   const filteredUsers = activeAgents?.filter((user: UserProfile) => {
@@ -94,7 +109,7 @@ export default function AdminControlCenter() {
     currentPage * itemsPerPage
   );
 
-  // Recruits (users still in recruiting pipeline)
+  // Recruits (users still in recruiting pipeline) - already set above from recruiting service
   const pendingRecruits = recruitsInPipeline;
 
   const getRoleColor = (roleName: RoleName): string => {
@@ -113,23 +128,48 @@ export default function AdminControlCenter() {
     return role?.display_name || roleName;
   };
 
-  const handleEditRoles = (user: UserProfile) => {
+  const handleEditUser = (user: UserProfile) => {
     setEditingUser(user);
     setIsEditDialogOpen(true);
   };
 
-  const handleSaveRoles = (selectedRoles: RoleName[]) => {
+  const handleSaveUser = async (updates: Partial<UserProfile>) => {
     if (!editingUser) return;
-    
-    updateUserRoles(
-      { userId: editingUser.id, roles: selectedRoles },
-      {
-        onSuccess: () => {
-          setIsEditDialogOpen(false);
-          setEditingUser(null);
-        },
-      }
-    );
+
+    const result = await userApprovalService.updateUser(editingUser.id, updates);
+    if (result.success) {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      queryClient.invalidateQueries({ queryKey: ['recruits'] });
+      setIsEditDialogOpen(false);
+      setEditingUser(null);
+    } else {
+      alert(`Error: ${result.error}`);
+    }
+  };
+
+  const handleAddUser = async (userData: NewUserData) => {
+    const result = await userApprovalService.createUser(userData);
+    if (result.success) {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      queryClient.invalidateQueries({ queryKey: ['recruits'] });
+      setIsAddUserDialogOpen(false);
+    } else {
+      alert(`Error: ${result.error}`);
+    }
+  };
+
+  const handleDeleteUser = async (userId: string, userName: string) => {
+    if (!confirm(`Are you sure you want to delete ${userName}? This cannot be undone.`)) {
+      return;
+    }
+
+    const result = await userApprovalService.deleteUser(userId);
+    if (result.success) {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      queryClient.invalidateQueries({ queryKey: ['recruits'] });
+    } else {
+      alert(`Error: ${result.error}`);
+    }
   };
 
   return (
@@ -175,16 +215,7 @@ export default function AdminControlCenter() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <Button size="sm" variant="outline">
-            <Plus className="h-3.5 w-3.5 mr-1.5" />
-            Invite User
-          </Button>
-          <Button size="sm">
-            <Plus className="h-3.5 w-3.5 mr-1.5" />
-            Create User
-          </Button>
-        </div>
+        {/* Actions moved to tab-specific headers */}
       </div>
 
       {/* Compact tabs */}
@@ -246,34 +277,40 @@ export default function AdminControlCenter() {
           <div className="flex flex-col h-full space-y-2">
             {/* Compact controls row */}
             <div className="flex items-center justify-between">
-              <div className="relative w-64">
-                <Search className="absolute left-2 top-1/2 h-3 w-3 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  placeholder="Search users..."
-                  value={searchQuery}
-                  onChange={(e) => {
-                    setSearchQuery(e.target.value);
+              <div className="flex items-center gap-2">
+                <div className="relative w-64">
+                  <Search className="absolute left-2 top-1/2 h-3 w-3 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    placeholder="Search users..."
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    className="pl-7 h-7 text-xs"
+                  />
+                </div>
+                <div className="flex items-center gap-2 text-xs">
+                  <span className="text-muted-foreground">Show</span>
+                  <Select value={String(itemsPerPage)} onValueChange={(v) => {
+                    setItemsPerPage(Number(v));
                     setCurrentPage(1);
-                  }}
-                  className="pl-7 h-7 text-xs"
-                />
+                  }}>
+                    <SelectTrigger className="h-7 w-16 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="25">25</SelectItem>
+                      <SelectItem value="50">50</SelectItem>
+                      <SelectItem value="100">100</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-              <div className="flex items-center gap-2 text-xs">
-                <span className="text-muted-foreground">Show</span>
-                <Select value={String(itemsPerPage)} onValueChange={(v) => {
-                  setItemsPerPage(Number(v));
-                  setCurrentPage(1);
-                }}>
-                  <SelectTrigger className="h-7 w-16 text-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="25">25</SelectItem>
-                    <SelectItem value="50">50</SelectItem>
-                    <SelectItem value="100">100</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              <Button size="sm">
+                <Plus className="h-3.5 w-3.5 mr-1.5" />
+                Add User
+              </Button>
             </div>
 
             {/* Data table - ultra compact for hundreds of users */}
@@ -288,7 +325,7 @@ export default function AdminControlCenter() {
                 <Table>
                   <TableHeader className="sticky top-0 bg-background z-10">
                     <TableRow className="bg-muted/50 border-b">
-                      <TableHead className="h-8 text-[11px] font-semibold">User</TableHead>
+                      <TableHead className="h-8 text-[11px] font-semibold w-[200px]">User</TableHead>
                       <TableHead className="h-8 text-[11px] font-semibold w-[140px]">Roles</TableHead>
                       <TableHead className="h-8 text-[11px] font-semibold w-[80px]">Status</TableHead>
                       <TableHead className="h-8 text-[11px] font-semibold w-[70px]">Level</TableHead>
@@ -352,7 +389,7 @@ export default function AdminControlCenter() {
                             size="sm"
                             variant="ghost"
                             className="h-5 px-1.5"
-                            onClick={() => handleEditRoles(user)}
+                            onClick={() => handleEditUser(user)}
                           >
                             <Edit className="h-2.5 w-2.5" />
                           </Button>
@@ -435,10 +472,6 @@ export default function AdminControlCenter() {
                   <span className="text-muted-foreground">pending recruits</span>
                 </div>
               </div>
-              <Button size="sm">
-                <Plus className="h-3.5 w-3.5 mr-1.5" />
-                Add Recruit
-              </Button>
             </div>
 
             {/* Recruits table - ultra compact */}
@@ -453,37 +486,56 @@ export default function AdminControlCenter() {
                 <Table>
                   <TableHeader className="sticky top-0 bg-background z-10">
                     <TableRow className="bg-muted/50 border-b">
-                      <TableHead className="h-8 text-[11px] font-semibold">Recruit</TableHead>
-                      <TableHead className="h-8 text-[11px] font-semibold w-[120px]">Upline</TableHead>
-                      <TableHead className="h-8 text-[11px] font-semibold w-[100px]">Applied</TableHead>
-                      <TableHead className="h-8 text-[11px] font-semibold w-[120px]">Phase</TableHead>
-                      <TableHead className="h-8 text-[11px] font-semibold w-[120px] text-right">Actions</TableHead>
+                      <TableHead className="h-8 text-[11px] font-semibold w-[180px]">Recruit</TableHead>
+                      <TableHead className="h-8 text-[11px] font-semibold w-[130px]">Upline</TableHead>
+                      <TableHead className="h-8 text-[11px] font-semibold w-[100px]">Resident State</TableHead>
+                      <TableHead className="h-8 text-[11px] font-semibold w-[90px]">Applied</TableHead>
+                      <TableHead className="h-8 text-[11px] font-semibold w-[100px]">Phase</TableHead>
+                      <TableHead className="h-8 text-[11px] font-semibold w-[100px] text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {pendingRecruits?.map((recruit: UserProfile) => {
-                      const upline = hierarchyFilteredUsers?.find((u: UserProfile) => u.id === recruit.upline_id);
+                    {pendingRecruits?.map((recruit: any) => {
+                      // Get full names from nested objects if available
+                      const recruitName = recruit.first_name && recruit.last_name
+                        ? `${recruit.first_name} ${recruit.last_name}`
+                        : recruit.email;
+
+                      const uplineName = recruit.upline
+                        ? (recruit.upline.first_name && recruit.upline.last_name
+                            ? `${recruit.upline.first_name} ${recruit.upline.last_name}`
+                            : recruit.upline.email)
+                        : null;
+
+                      // Get the current phase - this should be from current_onboarding_phase
+                      const currentPhase = recruit.current_onboarding_phase || recruit.onboarding_status || 'Not Started';
+
                       return (
                         <TableRow key={recruit.id} className="hover:bg-muted/30 border-b">
                           <TableCell className="py-1.5">
                             <div className="flex items-center gap-1.5">
                               <div className="h-5 w-5 rounded-full bg-yellow-100 flex items-center justify-center text-[10px] font-semibold shrink-0">
-                                {recruit.full_name?.charAt(0) || recruit.email?.charAt(0).toUpperCase()}
+                                {recruitName.charAt(0).toUpperCase()}
                               </div>
                               <div className="min-w-0">
-                                <div className="font-medium text-[11px] truncate leading-tight">{recruit.full_name || "No name"}</div>
+                                <div className="font-medium text-[11px] truncate leading-tight">{recruitName}</div>
                                 <div className="text-[10px] text-muted-foreground truncate leading-tight">{recruit.email}</div>
                               </div>
                             </div>
                           </TableCell>
                           <TableCell className="py-1.5">
-                            {upline ? (
+                            {uplineName ? (
                               <div className="text-[10px] text-muted-foreground truncate">
-                                {upline.full_name || upline.email}
+                                {uplineName}
                               </div>
                             ) : (
                               <span className="text-[10px] text-muted-foreground">-</span>
                             )}
+                          </TableCell>
+                          <TableCell className="py-1.5">
+                            <span className="text-[10px] text-muted-foreground">
+                              {recruit.resident_state || "-"}
+                            </span>
                           </TableCell>
                           <TableCell className="py-1.5">
                             <span className="text-[10px] text-muted-foreground">
@@ -492,7 +544,7 @@ export default function AdminControlCenter() {
                           </TableCell>
                           <TableCell className="py-1.5">
                             <Badge variant="outline" className="text-blue-600 text-[10px] h-4 px-1">
-                              {recruit.onboarding_status?.replace(/_/g, ' ') || 'Not Started'}
+                              {currentPhase.replace(/_/g, ' ')}
                             </Badge>
                           </TableCell>
                           <TableCell className="py-1.5 text-right">
@@ -500,31 +552,32 @@ export default function AdminControlCenter() {
                               <Button
                                 size="sm"
                                 variant="ghost"
-                                className="h-5 px-1.5 text-[10px] text-green-600 hover:text-green-700 hover:bg-green-50"
-                                title="Approve recruit"
-                              >
-                                <CheckCircle2 className="h-3 w-3 mr-0.5" />
-                                Approve
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                className="h-5 px-1.5 text-[10px] text-red-600 hover:text-red-700 hover:bg-red-50"
-                                title="Deny recruit"
-                              >
-                                <XCircle className="h-3 w-3 mr-0.5" />
-                                Deny
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="ghost"
                                 className="h-5 px-1.5 text-[10px]"
-                                onClick={() => handleEditRoles(recruit)}
-                                title="Edit user"
+                                onClick={() => handleEditUser(recruit)}
+                                title="View/Edit full profile"
                               >
                                 <Edit className="h-2.5 w-2.5 mr-0.5" />
                                 Edit
                               </Button>
+                              {/* Show Graduate button only if:
+                                  1. User has permission (Admin, Trainer, or Contracting Manager)
+                                  2. Recruit is in bootcamp phase or later
+                              */}
+                              {canGraduateRecruits && ['bootcamp', 'npn_received', 'contracting'].includes(recruit.current_onboarding_phase || '') && (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-5 px-1.5 text-[10px] text-green-600 hover:text-green-700"
+                                  onClick={() => {
+                                    setGraduatingRecruit(recruit);
+                                    setIsGraduateDialogOpen(true);
+                                  }}
+                                  title="Graduate to Agent"
+                                >
+                                  <GraduationCap className="h-2.5 w-2.5 mr-0.5" />
+                                  Graduate
+                                </Button>
+                              )}
                             </div>
                           </TableCell>
                         </TableRow>
@@ -678,13 +731,25 @@ export default function AdminControlCenter() {
             <Button
               size="sm"
               className="h-6 text-[10px]"
-              onClick={() => handleSaveRoles(editingUser?.roles || [])}
+              onClick={() => handleSaveUser({ roles: editingUser?.roles || [] })}
             >
               Save
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Graduate to Agent Dialog */}
+      {graduatingRecruit && (
+        <GraduateToAgentDialog
+          recruit={graduatingRecruit}
+          open={isGraduateDialogOpen}
+          onOpenChange={(open) => {
+            setIsGraduateDialogOpen(open);
+            if (!open) setGraduatingRecruit(null);
+          }}
+        />
+      )}
     </div>
   );
 }

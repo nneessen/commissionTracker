@@ -6,6 +6,39 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-11-28 15:35:09
+
+### Changed Files
+- `.serena/memories/NEXT_COMPREHENSIVE_PROMPT_recruit_enhancement.md`
+- `.serena/memories/NO_PLACEHOLDER_UI_FEATURES.md`
+- `.serena/memories/recruit_role_and_graduation_completed.md`
+- `CLAUDE.md`
+- `CONTINUE_ADMIN_REDESIGN.md`
+- `plans/admin-user-management-completion.md`
+- `src/components/layout/Sidebar.tsx`
+- `src/features/admin/components/AddUserDialog.tsx`
+- `src/features/admin/components/AdminControlCenter.tsx`
+- `src/features/admin/components/GraduateToAgentDialog.tsx`
+- `src/features/recruiting/components/AddRecruitDialog.tsx`
+- `src/features/recruiting/pages/MyRecruitingPipeline.tsx`
+- `src/router.tsx`
+- `src/services/admin/userApprovalService.ts`
+- `src/services/recruiting/recruitingService.ts`
+- `src/types/permissions.types.ts`
+- `src/types/recruiting.ts`
+- `supabase/migrations/20251128185644_add_user_profiles_recruiting_fields.sql`
+- `supabase/migrations/20251128202412_create_notifications_table.sql`
+- `supabase/migrations/20251128_006_insert_recruit_role.sql`
+- `supabase/migrations/20251128_007_insert_recruit_role_fixed.sql`
+- `supabase/migrations/20251128_008_insert_recruit_role_simple.sql`
+- `supabase/migrations/20251128_add_recruit_role.sql`
+- `supabase/migrations/20251128_add_recruit_role_simple.sql`
+
+### Statistics
+```
+ 24 files changed, 3093 insertions(+), 384 deletions(-)
+```
+
 ## [Checkpoint] - 2025-11-28 13:39:50
 
 ### Changed Files

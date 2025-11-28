@@ -151,16 +151,38 @@ export interface SendEmailRequest {
 }
 
 export interface CreateRecruitInput {
+  // Basic Info (required)
   first_name: string;
   last_name: string;
   email: string;
   phone?: string;
+  date_of_birth?: string; // ISO date string (YYYY-MM-DD)
+
+  // Address (optional initially, required for contracting)
+  street_address?: string;
+  city?: string;
+  state?: string; // 2-letter state code (mailing address)
+  zip?: string;
+
+  // Professional/Licensing (optional initially)
+  resident_state?: string; // 2-letter state code (primary licensed state)
+  license_number?: string;
+  npn?: string; // National Producer Number
+  license_expiration?: string; // ISO date string
+
+  // Social Media / Marketing
   instagram_username?: string;
   instagram_url?: string;
   linkedin_username?: string;
   linkedin_url?: string;
-  recruiter_id: string; // ID of person recruiting them
+  facebook_handle?: string;
+  personal_website?: string;
+
+  // Assignment
+  recruiter_id: string; // ID of person recruiting them (auto-set to current user)
   upline_id?: string; // ID of person who will manage them (can be different from recruiter)
+
+  // Referral
   referral_source?: string;
 }
 

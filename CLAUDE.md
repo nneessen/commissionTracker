@@ -234,3 +234,4 @@ GOLDEN RULES TO NEVER BREAK
 - always fetch my current db schema from my remote supabase before every new task
 - DO NOT PUT ANY additional .md files in the root of this project. i do not care what the file is. i have a docs/ and a plans/ directory for a reason. i want to stay organized.
 - add to memory. stop asking me to continue working on anything that is still incomplete. if there already is a comprehensive plan typed up that you can keep track of whats been completed and what hasn't, then if its not completed, you don't need to keep asking me to continue. continue until its complete, and when context gets to 10% remaining, write a prompt that i can copy/paste into a new conversation to continue where we left off
+- add to memory. no fake/mock/placeholder period anywhere in this application. do not put in any ui features that don't actually do anything. it makes things confusing.

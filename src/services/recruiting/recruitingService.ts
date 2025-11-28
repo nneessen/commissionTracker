@@ -29,9 +29,7 @@ export const recruitingService = {
       `,
         { count: 'exact' }
       )
-      // CRITICAL: Only show recruits currently in onboarding (NOT completed, NOT null)
-      .not('onboarding_status', 'is', null)
-      .neq('onboarding_status', 'completed');
+      // No filtering here - let the component filter by roles
 
     // Apply filters
     if (filters?.onboarding_status && filters.onboarding_status.length > 0) {
@@ -100,7 +98,8 @@ export const recruitingService = {
       .from('user_profiles')
       .insert({
         ...recruit,
-        onboarding_status: 'lead', // Always start as lead
+        roles: ['recruit'], // CRITICAL: Set recruit role
+        onboarding_status: 'interview_1', // Default starting phase (not 'lead')
         current_onboarding_phase: 'initial_contact',
         onboarding_started_at: new Date().toISOString(),
         // Note: user_id can be NULL for leads without login
