@@ -73,7 +73,19 @@ export function PaceMetrics() {
   const msRemaining = dateRange.endDate.getTime() - now.getTime();
   const daysRemaining = Math.max(1, Math.floor(msRemaining / (24 * 60 * 60 * 1000)));
 
-  // Calculate pace targets
+  // Calculate days elapsed in period
+  const msElapsed = now.getTime() - dateRange.startDate.getTime();
+  const daysElapsed = Math.max(1, Math.floor(msElapsed / (24 * 60 * 60 * 1000)));
+  const totalDaysInPeriod = daysElapsed + daysRemaining;
+
+  // Calculate current pace and projections
+  const currentAPPace = periodPolicies.premiumWritten / daysElapsed; // AP per day currently
+  const projectedAPTotal = currentAPPace * totalDaysInPeriod; // Projected total AP by period end
+
+  const currentPolicyPace = periodPolicies.newCount / daysElapsed; // Policies per day currently
+  const projectedPolicyTotal = Math.round(currentPolicyPace * totalDaysInPeriod); // Projected total policies
+
+  // Calculate pace targets (what's needed to break even)
   const policiesPerDayNeeded = policiesNeeded > 0 ? policiesNeeded / daysRemaining : 0;
   const dailyTarget = Math.ceil(policiesPerDayNeeded);
   const weeklyTarget = Math.ceil(policiesPerDayNeeded * 7);
@@ -119,161 +131,112 @@ export function PaceMetrics() {
   return (
     <Card className="w-full">
       <CardContent className="p-5">
-        {/* Header */}
-        <div className="mb-5">
-          <div className="text-sm font-semibold text-foreground uppercase tracking-wide">
-            Your Pace Metrics
+        {/* Header with Status */}
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <div className="text-sm font-semibold text-foreground uppercase tracking-wide">
+              Pace Metrics
+            </div>
+            <div className="text-xs text-muted-foreground mt-0.5">
+              {getTimePeriodLabel()}
+            </div>
           </div>
-          <div className="text-xs text-muted-foreground mt-1">
-            Track your progress and daily goals for {getTimePeriodLabel().toLowerCase()}
-          </div>
-        </div>
-
-        {/* Status Banner */}
-        <div className={cn(
-          "p-4 rounded-lg mb-5 border-2 flex items-center justify-between",
-          isProfitable
-            ? "bg-success/10 border-success/30"
-            : "bg-destructive/10 border-destructive/30"
-        )}>
-          <div className="flex items-center gap-3">
+          <div className={cn(
+            "flex items-center gap-2 px-3 py-1.5 rounded-full",
+            isProfitable ? "bg-success/20 text-success" : "bg-destructive/20 text-destructive"
+          )}>
             {isProfitable ? (
-              <CheckCircle2 className="h-8 w-8 text-success" />
+              <CheckCircle2 className="h-4 w-4" />
             ) : (
-              <Target className="h-8 w-8 text-destructive" />
+              <Target className="h-4 w-4" />
             )}
-            <div>
-              <div className={cn(
-                "text-lg font-bold",
-                isProfitable ? "text-success" : "text-destructive"
-              )}>
-                {isProfitable ? "You're Profitable!" : "Need to Catch Up"}
-              </div>
-              <div className="text-xs text-muted-foreground mt-0.5">
-                {isProfitable
-                  ? `${formatCurrency(Math.abs(surplusDeficit))} ahead this period`
-                  : `${formatCurrency(Math.abs(surplusDeficit))} behind this period`
-                }
-              </div>
-            </div>
-          </div>
-          <div className="text-right">
-            <div className="text-2xl font-bold font-mono">{isProfitable ? '✓' : '!'}</div>
+            <span className="text-xs font-semibold">
+              {isProfitable ? "Profitable" : "Deficit"}
+            </span>
           </div>
         </div>
 
-        {/* Breakeven Section - Only show if behind */}
-        {!isProfitable && (
-          <div className="mb-5 p-4 bg-muted/30 rounded-lg border border-border">
-            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
-              To Break Even
+        {/* Unified Metrics Grid */}
+        <div className="grid grid-cols-2 gap-3">
+          {/* Current AP Pace (Projection Highlight) */}
+          <div className="col-span-2 p-4 bg-gradient-to-br from-primary/20 via-primary/10 to-primary/5 rounded-lg border-2 border-primary/40">
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                Projected AP (at current pace)
+              </div>
+              <TrendingUp className="h-4 w-4 text-primary" />
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              {/* Money Needed */}
-              <div className="flex items-center gap-2">
-                <DollarSign className="h-5 w-5 text-primary" />
-                <div>
-                  <div className="text-xs text-muted-foreground">Need to Earn</div>
-                  <div className="text-lg font-bold text-foreground font-mono">
-                    {formatCurrency(breakevenNeeded)}
-                  </div>
-                </div>
-              </div>
-              {/* Policies Needed */}
-              <div className="flex items-center gap-2">
-                <Target className="h-5 w-5 text-success" />
-                <div>
-                  <div className="text-xs text-muted-foreground">Policies Needed</div>
-                  <div className="text-lg font-bold text-foreground font-mono">
-                    {formatNumber(policiesNeeded)}
-                  </div>
-                </div>
-              </div>
+            <div className="text-3xl font-bold font-mono text-foreground mb-1">
+              {formatCurrency(projectedAPTotal)}
+            </div>
+            <div className="flex items-center gap-4 text-xs text-muted-foreground">
+              <span>Written: {formatCurrency(periodPolicies.premiumWritten)}</span>
+              <span>•</span>
+              <span>Daily pace: {formatCurrency(currentAPPace)}</span>
+              <span>•</span>
+              <span>{daysRemaining}d remaining</span>
             </div>
           </div>
-        )}
 
-        {/* Policy Targets Grid */}
-        <div className="grid grid-cols-3 gap-3 mb-5">
-          {/* Daily Target */}
-          <Card className="bg-gradient-to-br from-primary/20 to-primary/5 border-primary/30 shadow-sm">
-            <CardContent className="p-3">
-              <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">
-                Daily Target
-              </div>
-              <div className="text-2xl font-bold text-foreground font-mono mb-1">
-                {formatNumber(dailyTarget)}
-              </div>
-              <div className="text-xs text-muted-foreground">
-                policies per day
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Weekly Target */}
-          <Card className="bg-gradient-to-br from-success/20 to-success/5 border-success/30 shadow-sm">
-            <CardContent className="p-3">
-              <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">
-                Weekly Target
-              </div>
-              <div className="text-2xl font-bold text-foreground font-mono mb-1">
-                {formatNumber(weeklyTarget)}
-              </div>
-              <div className="text-xs text-muted-foreground">
-                policies per week
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Monthly Target */}
-          <Card className="bg-gradient-to-br from-info/20 to-info/5 border-info/30 shadow-sm">
-            <CardContent className="p-3">
-              <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">
-                Monthly Target
-              </div>
-              <div className="text-2xl font-bold text-foreground font-mono mb-1">
-                {formatNumber(monthlyTarget)}
-              </div>
-              <div className="text-xs text-muted-foreground">
-                policies per month
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Net Income Summary */}
-        <div className="flex items-center justify-between p-3 bg-muted/20 rounded-lg border border-border">
-          <div className="flex items-center gap-2">
-            {isProfitable ? (
-              <TrendingUp className="h-5 w-5 text-success" />
-            ) : (
-              <TrendingDown className="h-5 w-5 text-destructive" />
-            )}
-            <div>
-              <div className="text-xs text-muted-foreground">Net Income {getTimePeriodLabel()}</div>
-              <div className={cn(
-                "text-sm font-bold font-mono",
-                isProfitable ? "text-success" : "text-destructive"
-              )}>
-                {formatCurrency(netIncome)}
-              </div>
+          {/* AP Written So Far */}
+          <div className="p-3 bg-gradient-to-br from-success/15 to-success/5 rounded-lg border border-success/20">
+            <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1">
+              AP Written
+            </div>
+            <div className="text-xl font-bold font-mono text-foreground">
+              {formatCurrency(periodPolicies.premiumWritten)}
+            </div>
+            <div className="text-[10px] text-muted-foreground mt-0.5">
+              {periodPolicies.newCount} policies • {daysElapsed}d elapsed
             </div>
           </div>
-          <div className="text-xs text-muted-foreground text-right">
-            {isProfitable
-              ? "Keep it up! You're on track."
-              : `Write ${formatNumber(dailyTarget)} policies/day to catch up`
-            }
-          </div>
-        </div>
 
-        {/* Help Text */}
-        <div className="mt-4 p-3 bg-gradient-to-r from-primary/10 to-accent/5 rounded-lg text-xs text-muted-foreground">
-          <strong className="text-foreground">What this means:</strong>{' '}
-          {isProfitable
-            ? `Your commission income exceeds your expenses this period. You're ${formatCurrency(Math.abs(surplusDeficit))} ahead!`
-            : `To break even, you need to earn ${formatCurrency(breakevenNeeded)} more. That's about ${formatNumber(policiesNeeded)} policies, or ${formatNumber(dailyTarget)} per day.`
-          }
+          {/* Projected Policies by Period End */}
+          <div className="p-3 bg-gradient-to-br from-info/15 to-info/5 rounded-lg border border-info/20">
+            <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1">
+              Projected Policies
+            </div>
+            <div className="text-xl font-bold font-mono text-foreground">
+              {projectedPolicyTotal}
+            </div>
+            <div className="text-[10px] text-muted-foreground mt-0.5">
+              {currentPolicyPace.toFixed(1)} per day pace
+            </div>
+          </div>
+
+          {/* Average AP per Policy */}
+          <div className="p-3 bg-muted/20 rounded-lg border border-border">
+            <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1">
+              Avg AP
+            </div>
+            <div className="text-xl font-bold font-mono text-foreground">
+              {formatCurrency(periodPolicies.averagePremium)}
+            </div>
+            <div className="text-[10px] text-muted-foreground mt-0.5">
+              per policy
+            </div>
+          </div>
+
+          {/* Breakeven Status */}
+          <div className={cn(
+            "p-3 rounded-lg border",
+            isProfitable
+              ? "bg-success/15 border-success/30"
+              : "bg-destructive/15 border-destructive/30"
+          )}>
+            <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1">
+              {isProfitable ? "Surplus" : "Deficit"}
+            </div>
+            <div className={cn(
+              "text-xl font-bold font-mono",
+              isProfitable ? "text-success" : "text-destructive"
+            )}>
+              {formatCurrency(Math.abs(netIncome))}
+            </div>
+            <div className="text-[10px] text-muted-foreground mt-0.5">
+              {isProfitable ? "ahead" : `${formatNumber(dailyTarget)}/day needed`}
+            </div>
+          </div>
         </div>
       </CardContent>
     </Card>
