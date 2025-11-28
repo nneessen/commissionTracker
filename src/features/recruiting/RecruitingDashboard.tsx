@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { UserPlus, Mail, Download, Settings2 } from 'lucide-react';
-import { useRecruits, useRecruitingStats } from './hooks/useRecruits';
+import { useRecruits } from './hooks/useRecruits';
 import { RecruitListTable } from './components/RecruitListTable';
 import { RecruitDetailPanel } from './components/RecruitDetailPanel';
 import { AddRecruitDialog } from './components/AddRecruitDialog';
@@ -22,7 +22,6 @@ type RecruitWithRelations = UserProfile & {
 export function RecruitingDashboard() {
   const { user } = useAuth();
   const { data: recruitsData, isLoading: recruitsLoading } = useRecruits();
-  const { data: stats } = useRecruitingStats(user?.id);
 
   const [selectedRecruit, setSelectedRecruit] = useState<UserProfile | null>(null);
   const [addRecruitDialogOpen, setAddRecruitDialogOpen] = useState(false);
@@ -31,6 +30,15 @@ export function RecruitingDashboard() {
   const recruits = ((recruitsData?.data || []) as RecruitWithRelations[]).filter(
     (recruit) => recruit.id !== user?.id
   );
+
+  // Calculate stats from recruits data directly
+  const activePhases = ['interview_1', 'zoom_interview', 'pre_licensing', 'exam', 'npn_received', 'contracting', 'bootcamp'];
+  const stats = {
+    total: recruits.length,
+    active: recruits.filter((r) => r.onboarding_status && activePhases.includes(r.onboarding_status)).length,
+    completed: recruits.filter((r) => r.onboarding_status === 'completed').length,
+    dropped: recruits.filter((r) => r.onboarding_status === 'dropped').length,
+  };
 
   const handleSelectRecruit = (recruit: UserProfile) => {
     setSelectedRecruit(recruit);
@@ -97,26 +105,26 @@ export function RecruitingDashboard() {
       </div>
 
       {/* Quick Stats */}
-      <Card className="p-2 bg-muted/30">
+      <div className="p-2 bg-muted/30 rounded-lg">
         <div className="grid grid-cols-4 gap-3">
           <div>
             <div className="text-[10px] text-muted-foreground uppercase">Total</div>
-            <div className="text-lg font-bold font-mono">{stats?.total || 0}</div>
+            <div className="text-lg font-bold font-mono">{stats.total}</div>
           </div>
           <div>
             <div className="text-[10px] text-muted-foreground uppercase">Active</div>
-            <div className="text-lg font-bold font-mono">{stats?.active || 0}</div>
+            <div className="text-lg font-bold font-mono">{stats.active}</div>
           </div>
           <div>
             <div className="text-[10px] text-muted-foreground uppercase">Complete</div>
-            <div className="text-lg font-bold font-mono">{stats?.completed || 0}</div>
+            <div className="text-lg font-bold font-mono">{stats.completed}</div>
           </div>
           <div>
             <div className="text-[10px] text-muted-foreground uppercase">Dropped</div>
-            <div className="text-lg font-bold font-mono">{stats?.dropped || 0}</div>
+            <div className="text-lg font-bold font-mono">{stats.dropped}</div>
           </div>
         </div>
-      </Card>
+      </div>
 
       {/* Master-Detail Layout */}
       <div className="flex-1 flex gap-2 min-h-0 overflow-hidden">

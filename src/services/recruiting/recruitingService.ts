@@ -349,10 +349,11 @@ export const recruitingService = {
   // ========================================
 
   async getRecruitingStats(recruiterId?: string) {
+    // Query all user_profiles with recruit role
     let query = supabase
       .from('user_profiles')
       .select('*', { count: 'exact', head: false })
-      .in('onboarding_status', ['interview_1', 'zoom_interview', 'pre_licensing', 'exam', 'npn_received', 'contracting', 'bootcamp', 'completed', 'dropped']);
+      .contains('roles', ['recruit']); // Filter for users with recruit role
 
     if (recruiterId) {
       query = query.eq('recruiter_id', recruiterId);
