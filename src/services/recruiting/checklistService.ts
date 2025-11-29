@@ -266,6 +266,17 @@ export const checklistService = {
   },
 
   async getChecklistProgress(userId: string, phaseId: string) {
+    // First get all checklist items for the phase
+    const { data: phaseChecklistItems, error: itemsError } = await supabase
+      .from('phase_checklist_items')
+      .select('id')
+      .eq('phase_id', phaseId);
+
+    if (itemsError) throw itemsError;
+    if (!phaseChecklistItems || phaseChecklistItems.length === 0) return [];
+
+    // Get progress for these items
+    const checklistItemIds = phaseChecklistItems.map(item => item.id);
     const { data, error } = await supabase
       .from('recruit_checklist_progress')
       .select(
@@ -275,7 +286,7 @@ export const checklistService = {
       `
       )
       .eq('user_id', userId)
-      .eq('checklist_item.phase_id', phaseId);
+      .in('checklist_item_id', checklistItemIds);
 
     if (error) throw error;
     return data as RecruitChecklistProgress[];
@@ -343,19 +354,35 @@ export const checklistService = {
     // Only auto-advance if phase allows it
     if (!phase.auto_advance) return;
 
-    // Get all checklist progress for this phase
+    // First get all checklist items for this phase
+    const { data: phaseChecklistItems, error: itemsError } = await supabase
+      .from('phase_checklist_items')
+      .select('*')
+      .eq('phase_id', phase.id);
+
+    if (itemsError) throw itemsError;
+    if (!phaseChecklistItems || phaseChecklistItems.length === 0) return;
+
+    // Get all checklist progress for these items
+    const checklistItemIds = phaseChecklistItems.map(item => item.id);
     const { data: allProgress, error: progressError } = await supabase
       .from('recruit_checklist_progress')
-      .select('*, checklist_item:checklist_item_id(*)')
+      .select('*')
       .eq('user_id', userId)
-      .eq('checklist_item.phase_id', phase.id);
+      .in('checklist_item_id', checklistItemIds);
 
     if (progressError) throw progressError;
 
-    // Check if all required items are approved
-    const allRequiredApproved = allProgress.every((progress) => {
-      const item = progress.checklist_item as any;
+    // Create a map of item_id to progress for quick lookup
+    const progressMap = new Map(allProgress?.map(p => [p.checklist_item_id, p]) || []);
+
+    // Check if all required items are approved/completed
+    const allRequiredApproved = phaseChecklistItems.every((item) => {
       if (!item.is_required) return true; // Optional items don't block advancement
+
+      const progress = progressMap.get(item.id);
+      if (!progress) return false; // No progress means not completed
+
       return progress.status === 'approved' || progress.status === 'completed';
     });
 

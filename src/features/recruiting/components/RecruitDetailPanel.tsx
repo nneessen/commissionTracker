@@ -33,6 +33,7 @@ import {
   useInitializeRecruitProgress,
 } from '../hooks/useRecruitProgress';
 import { useActiveTemplate } from '../hooks/usePipeline';
+import { useCurrentUserProfile } from '@/hooks/admin/useUserApproval';
 
 import { useRecruitDocuments } from '../hooks/useRecruitDocuments';
 import { useRecruitEmails } from '../hooks/useRecruitEmails';
@@ -51,6 +52,9 @@ interface RecruitDetailPanelProps {
 export function RecruitDetailPanel({ recruit, currentUserId, isUpline = false }: RecruitDetailPanelProps) {
   const [activeTab, setActiveTab] = useState('progress');
   const [selectedPhaseId, setSelectedPhaseId] = useState<string | null>(null);
+
+  // Get current user profile to check roles
+  const { data: currentUserProfile } = useCurrentUserProfile();
 
   // Fetch recruit's progress data
   const { data: phaseProgress, isLoading: progressLoading } = useRecruitPhaseProgress(recruit.id);
@@ -314,6 +318,10 @@ export function RecruitDetailPanel({ recruit, currentUserId, isUpline = false }:
                 checklistProgress={checklistProgress || []}
                 isUpline={isUpline}
                 currentUserId={currentUserId}
+                currentPhaseId={currentPhase?.phase_id}
+                viewedPhaseId={targetPhaseId}
+                isAdmin={currentUserProfile?.is_admin || false}
+                onPhaseComplete={() => setActiveTab('progress')}
               />
             );
           })()}

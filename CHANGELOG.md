@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-11-29 15:47:55
+
+### Changed Files
+- `.serena/memories/recruiting_checklist_fix_20241129.md`
+- `src/features/recruiting/components/PhaseChecklist.tsx`
+- `src/features/recruiting/components/RecruitDetailPanel.tsx`
+- `src/features/recruiting/pages/MyRecruitingPipeline.tsx`
+- `src/services/recruiting/checklistService.ts`
+
+### Statistics
+```
+ 5 files changed, 290 insertions(+), 42 deletions(-)
+```
+
 ## [Checkpoint] - 2025-11-29 10:34:12
 
 ### Changed Files

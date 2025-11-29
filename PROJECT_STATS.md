@@ -1,15 +1,15 @@
 # Project Statistics
 
-Last Updated: 2025-11-29 10:34:12
+Last Updated: 2025-11-29 15:47:55
 
 ## Metrics
 - Total Files: 22318
-- Total Lines of Code: 381114
-- Total Commits: 207
+- Total Lines of Code: 381626
+- Total Commits: 212
 
 ## Recent Activity
-885d95d fix(auth): resolve recruit dashboard access by using user_id column
-d7840b8 docs: multiple changes in .,docs,src/features/recruiting/components
-cf49223 fix(admin): include admins in Users tab filtering logic
-ec6bfa5 docs: CHANGELOG.md,PROJECT_STATS.md,admin-role-based-filtering-fix-2025-11-28.md
-edd19eb docs: multiple changes in .,docs,scripts
+c48daf5 docs: add professional PDF design pattern memory
+9774b2d feat(pdf): professional executive-level PDF redesign
+a49c65a chore: archive completed session and move plans to completed/
+5e5ef69 feat(reports): ultra-compact redesign + export utilities consolidation
+d8ca3fb docs: multiple changes in .,src/features/recruiting,src/features/recruiting/components

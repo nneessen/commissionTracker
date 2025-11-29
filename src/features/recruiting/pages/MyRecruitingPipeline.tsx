@@ -28,6 +28,7 @@ import { useActiveTemplate } from '../hooks/usePipeline';
 import { PhaseChecklist } from '../components/PhaseChecklist';
 import { DocumentManager } from '../components/DocumentManager';
 import { useRecruitDocuments } from '../hooks/useRecruitDocuments';
+import { useCurrentUserProfile } from '@/hooks/admin/useUserApproval';
 import type { UserProfile } from '@/types/hierarchy.types';
 
 const PHASE_NAMES = [
@@ -43,6 +44,9 @@ const PHASE_NAMES = [
 export function MyRecruitingPipeline() {
   const { user } = useAuth();
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+
+  // Get current user profile to check roles
+  const { data: currentUserProfile } = useCurrentUserProfile();
 
   // Fetch current user's profile
   const { data: profile, isLoading: profileLoading } = useQuery<UserProfile>({
@@ -241,6 +245,16 @@ export function MyRecruitingPipeline() {
                   checklistProgress={checklistProgress || []}
                   isUpline={false}
                   currentUserId={profile.id}
+                  currentPhaseId={currentPhase?.phase_id}
+                  viewedPhaseId={currentPhase?.phase_id}
+                  isAdmin={currentUserProfile?.is_admin || false}
+                  onPhaseComplete={() => {
+                    // Scroll to the phase progress timeline section
+                    const phaseProgressEl = document.getElementById('phase-progress-timeline');
+                    if (phaseProgressEl) {
+                      phaseProgressEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                  }}
                 />
               ) : (
                 <p className="text-xs text-muted-foreground font-mono py-4 text-center">
@@ -269,7 +283,7 @@ export function MyRecruitingPipeline() {
           )}
 
           {/* Phase Progress Timeline */}
-          <div className="border rounded-sm p-2 bg-card">
+          <div id="phase-progress-timeline" className="border rounded-sm p-2 bg-card">
             <h3 className="text-xs font-semibold uppercase text-muted-foreground font-mono mb-2">
               Onboarding Progress
             </h3>
