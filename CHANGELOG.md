@@ -6,6 +6,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-11-28 19:17:22
+
+### Changed Files
+- `CLAUDE.md`
+- `docs/bugs.md`
+- `docs/remove-enum-constraints-plan.md`
+- `src/features/recruiting/components/AddRecruitDialog.tsx`
+- `src/types/database.types.ts`
+- `supabase/migrations/20251128235427_add_recruit_form_fields.sql`
+- `supabase/migrations/20251128235859_add_all_missing_recruit_fields.sql`
+- `supabase/migrations/20251129000407_remove_onboarding_status_constraint.sql`
+- `supabase/migrations/20251129001407_remove_all_enum_check_constraints.sql`
+- `supabase/migrations/20251129001553_remove_remaining_enum_constraints.sql`
+
+### Statistics
+```
+ 10 files changed, 3022 insertions(+), 2128 deletions(-)
+```
+
 ## [Checkpoint] - 2025-11-28 18:15:02
 
 ### Changed Files

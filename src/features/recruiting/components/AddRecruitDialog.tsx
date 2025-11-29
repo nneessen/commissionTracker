@@ -94,6 +94,23 @@ const US_STATES = [
   { value: 'WY', label: 'Wyoming' },
 ];
 
+// Helper function to auto-prepend https:// to URLs
+const normalizeUrl = (url: string): string => {
+  if (!url) return '';
+  const trimmed = url.trim();
+  if (!trimmed) return '';
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    return trimmed;
+  }
+  return `https://${trimmed}`;
+};
+
+// Helper to extract error message from Zod error
+const getErrorMessage = (errors: any[]): string => {
+  if (!errors || errors.length === 0) return '';
+  return errors.map((err) => (typeof err === 'string' ? err : err?.message || String(err))).join(', ');
+};
+
 // Validation schema
 const createRecruitSchema = z.object({
   first_name: z.string().min(1, 'First name is required'),
@@ -125,7 +142,7 @@ const createRecruitSchema = z.object({
   linkedin_username: z.string().optional(),
   linkedin_url: z.string().optional(),
   facebook_handle: z.string().optional(),
-  personal_website: z.string().url('Invalid URL').optional().or(z.literal('')),
+  personal_website: z.string().optional(),
 
   // Assignment
   upline_id: z.string().optional(),
@@ -214,6 +231,9 @@ export function AddRecruitDialog({
         return;
       }
 
+      // Normalize URL fields (auto-prepend https://)
+      const normalizedWebsite = value.personal_website ? normalizeUrl(value.personal_website) : undefined;
+
       const recruit = await createRecruitMutation.mutateAsync({
         first_name: value.first_name,
         last_name: value.last_name,
@@ -233,7 +253,7 @@ export function AddRecruitDialog({
         linkedin_username: value.linkedin_username || undefined,
         linkedin_url: value.linkedin_url || undefined,
         facebook_handle: value.facebook_handle || undefined,
-        personal_website: value.personal_website || undefined,
+        personal_website: normalizedWebsite,
         recruiter_id: user.id,
         upline_id: value.upline_id || undefined,
         referral_source: value.referral_source || undefined,
@@ -261,14 +281,14 @@ export function AddRecruitDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <UserPlus className="h-5 w-5" />
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-3">
+        <DialogHeader className="space-y-1">
+          <DialogTitle className="flex items-center gap-1.5 text-sm font-semibold">
+            <UserPlus className="h-4 w-4" />
             Add New Recruit
           </DialogTitle>
-          <DialogDescription>
-            Enter recruit details to begin the onboarding process. Only basic info is required initially.
+          <DialogDescription className="text-[10px]">
+            Enter recruit details to begin onboarding. Only basic info required initially.
           </DialogDescription>
         </DialogHeader>
 
@@ -280,17 +300,17 @@ export function AddRecruitDialog({
           }}
         >
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-5">
-              <TabsTrigger value="basic">Basic</TabsTrigger>
-              <TabsTrigger value="address">Address</TabsTrigger>
-              <TabsTrigger value="professional">Professional</TabsTrigger>
-              <TabsTrigger value="assignment">Assignment</TabsTrigger>
-              <TabsTrigger value="social">Social/Referral</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-5 h-7">
+              <TabsTrigger value="basic" className="text-[10px] px-1">Basic</TabsTrigger>
+              <TabsTrigger value="address" className="text-[10px] px-1">Address</TabsTrigger>
+              <TabsTrigger value="professional" className="text-[10px] px-1">Professional</TabsTrigger>
+              <TabsTrigger value="assignment" className="text-[10px] px-1">Assignment</TabsTrigger>
+              <TabsTrigger value="social" className="text-[10px] px-1">Social/Referral</TabsTrigger>
             </TabsList>
 
             {/* Basic Info Tab */}
-            <TabsContent value="basic" className="space-y-4 py-4">
-              <div className="grid grid-cols-2 gap-4">
+            <TabsContent value="basic" className="space-y-2 py-2">
+              <div className="grid grid-cols-2 gap-2">
                 <form.Field
                   name="first_name"
                   validators={{
@@ -298,12 +318,11 @@ export function AddRecruitDialog({
                   }}
                 >
                   {(field) => (
-                    <div className="grid gap-2">
-                      <Label htmlFor="first_name" className="font-semibold">
+                    <div className="grid gap-1">
+                      <Label htmlFor="first_name" className="text-[11px] font-semibold">
                         First Name *
                       </Label>
-                      <Input
-                        id="first_name"
+                      <Input id="first_name" className="h-7 text-[11px]"
                         value={field.state.value}
                         onChange={(e) => field.handleChange(e.target.value)}
                         onBlur={field.handleBlur}
@@ -311,8 +330,8 @@ export function AddRecruitDialog({
                         required
                       />
                       {field.state.meta.errors && field.state.meta.errors.length > 0 && (
-                        <p className="text-sm text-destructive">
-                          {field.state.meta.errors.join(', ')}
+                        <p className="text-[10px] text-destructive">
+                          {getErrorMessage(field.state.meta.errors)}
                         </p>
                       )}
                     </div>
@@ -326,20 +345,19 @@ export function AddRecruitDialog({
                   }}
                 >
                   {(field) => (
-                    <div className="grid gap-2">
-                      <Label htmlFor="last_name" className="font-semibold">
+                    <div className="grid gap-1">
+                      <Label htmlFor="last_name" className="text-[11px] font-semibold">
                         Last Name *
                       </Label>
-                      <Input
-                        id="last_name"
+                      <Input id="last_name" className="h-7 text-[11px]"
                         value={field.state.value}
                         onChange={(e) => field.handleChange(e.target.value)}
                         onBlur={field.handleBlur}
                         required
                       />
                       {field.state.meta.errors && field.state.meta.errors.length > 0 && (
-                        <p className="text-sm text-destructive">
-                          {field.state.meta.errors.join(', ')}
+                        <p className="text-[10px] text-destructive">
+                          {getErrorMessage(field.state.meta.errors)}
                         </p>
                       )}
                     </div>
@@ -347,7 +365,7 @@ export function AddRecruitDialog({
                 </form.Field>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-2">
                 <form.Field
                   name="email"
                   validators={{
@@ -355,21 +373,19 @@ export function AddRecruitDialog({
                   }}
                 >
                   {(field) => (
-                    <div className="grid gap-2">
-                      <Label htmlFor="email" className="font-semibold">
+                    <div className="grid gap-1">
+                      <Label htmlFor="email" className="text-[11px] font-semibold">
                         Email *
                       </Label>
-                      <Input
-                        id="email"
-                        type="email"
+                      <Input id="email" type="email" className="h-7 text-[11px]"
                         value={field.state.value}
                         onChange={(e) => field.handleChange(e.target.value)}
                         onBlur={field.handleBlur}
                         required
                       />
                       {field.state.meta.errors && field.state.meta.errors.length > 0 && (
-                        <p className="text-sm text-destructive">
-                          {field.state.meta.errors.join(', ')}
+                        <p className="text-[10px] text-destructive">
+                          {getErrorMessage(field.state.meta.errors)}
                         </p>
                       )}
                     </div>
@@ -378,11 +394,9 @@ export function AddRecruitDialog({
 
                 <form.Field name="phone">
                   {(field) => (
-                    <div className="grid gap-2">
-                      <Label htmlFor="phone">Phone</Label>
-                      <Input
-                        id="phone"
-                        type="tel"
+                    <div className="grid gap-1">
+                      <Label htmlFor="phone" className="text-[11px]">Phone</Label>
+                      <Input id="phone" type="tel" className="h-7 text-[11px]"
                         placeholder="(555) 555-5555"
                         value={field.state.value}
                         onChange={(e) => field.handleChange(e.target.value)}
@@ -400,18 +414,16 @@ export function AddRecruitDialog({
                 }}
               >
                 {(field) => (
-                  <div className="grid gap-2">
-                    <Label htmlFor="date_of_birth">Date of Birth</Label>
-                    <Input
-                      id="date_of_birth"
-                      type="date"
+                  <div className="grid gap-1">
+                    <Label htmlFor="date_of_birth" className="text-[11px]">Date of Birth</Label>
+                    <Input id="date_of_birth" type="date" className="h-7 text-[11px]"
                       value={field.state.value}
                       onChange={(e) => field.handleChange(e.target.value)}
                       onBlur={field.handleBlur}
                     />
                     {field.state.meta.errors && field.state.meta.errors.length > 0 && (
-                      <p className="text-sm text-destructive">
-                        {field.state.meta.errors.join(', ')}
+                      <p className="text-[10px] text-destructive">
+                        {getErrorMessage(field.state.meta.errors)}
                       </p>
                     )}
                   </div>
@@ -420,13 +432,12 @@ export function AddRecruitDialog({
             </TabsContent>
 
             {/* Address Tab */}
-            <TabsContent value="address" className="space-y-4 py-4">
+            <TabsContent value="address" className="space-y-2 py-2">
               <form.Field name="street_address">
                 {(field) => (
-                  <div className="grid gap-2">
-                    <Label htmlFor="street_address">Street Address</Label>
-                    <Input
-                      id="street_address"
+                  <div className="grid gap-1">
+                    <Label htmlFor="street_address" className="text-[11px]">Street Address</Label>
+                    <Input id="street_address" className="h-7 text-[11px]"
                       placeholder="123 Main St"
                       value={field.state.value}
                       onChange={(e) => field.handleChange(e.target.value)}
@@ -436,13 +447,12 @@ export function AddRecruitDialog({
                 )}
               </form.Field>
 
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-3 gap-2">
                 <form.Field name="city">
                   {(field) => (
-                    <div className="grid gap-2">
-                      <Label htmlFor="city">City</Label>
-                      <Input
-                        id="city"
+                    <div className="grid gap-1">
+                      <Label htmlFor="city" className="text-[11px]">City</Label>
+                      <Input id="city" className="h-7 text-[11px]"
                         value={field.state.value}
                         onChange={(e) => field.handleChange(e.target.value)}
                         onBlur={field.handleBlur}
@@ -453,13 +463,13 @@ export function AddRecruitDialog({
 
                 <form.Field name="state">
                   {(field) => (
-                    <div className="grid gap-2">
-                      <Label htmlFor="state">State</Label>
+                    <div className="grid gap-1">
+                      <Label htmlFor="state" className="text-[11px]">State</Label>
                       <Select
                         value={field.state.value}
                         onValueChange={(value) => field.handleChange(value)}
                       >
-                        <SelectTrigger id="state">
+                        <SelectTrigger id="state" className="h-7 text-[11px]">
                           <SelectValue placeholder="Select state" />
                         </SelectTrigger>
                         <SelectContent>
@@ -476,10 +486,9 @@ export function AddRecruitDialog({
 
                 <form.Field name="zip">
                   {(field) => (
-                    <div className="grid gap-2">
-                      <Label htmlFor="zip">ZIP Code</Label>
-                      <Input
-                        id="zip"
+                    <div className="grid gap-1">
+                      <Label htmlFor="zip" className="text-[11px]">ZIP Code</Label>
+                      <Input id="zip" className="h-7 text-[11px]"
                         placeholder="12345"
                         value={field.state.value}
                         onChange={(e) => field.handleChange(e.target.value)}
@@ -492,11 +501,11 @@ export function AddRecruitDialog({
             </TabsContent>
 
             {/* Professional Tab */}
-            <TabsContent value="professional" className="space-y-4 py-4">
+            <TabsContent value="professional" className="space-y-2 py-2">
               <form.Field name="resident_state">
                 {(field) => (
-                  <div className="grid gap-2">
-                    <Label htmlFor="resident_state">Resident State (Primary Licensed State)</Label>
+                  <div className="grid gap-1">
+                    <Label htmlFor="resident_state" className="text-[11px]">Resident State (Primary Licensed State)</Label>
                     <Select
                       value={field.state.value}
                       onValueChange={(value) => field.handleChange(value)}
@@ -516,12 +525,12 @@ export function AddRecruitDialog({
                 )}
               </form.Field>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-2">
                 <form.Field name="license_number">
                   {(field) => (
-                    <div className="grid gap-2">
-                      <Label htmlFor="license_number">License Number</Label>
-                      <Input
+                    <div className="grid gap-1">
+                      <Label htmlFor="license_number" className="text-[11px]">License Number</Label>
+                      <Input className="h-7 text-[11px]"
                         id="license_number"
                         placeholder="If already licensed"
                         value={field.state.value}
@@ -534,9 +543,9 @@ export function AddRecruitDialog({
 
                 <form.Field name="npn">
                   {(field) => (
-                    <div className="grid gap-2">
-                      <Label htmlFor="npn">NPN (National Producer Number)</Label>
-                      <Input
+                    <div className="grid gap-1">
+                      <Label htmlFor="npn" className="text-[11px]">NPN (National Producer Number)</Label>
+                      <Input className="h-7 text-[11px]"
                         id="npn"
                         placeholder="If has NPN"
                         value={field.state.value}
@@ -550,9 +559,9 @@ export function AddRecruitDialog({
 
               <form.Field name="license_expiration">
                 {(field) => (
-                  <div className="grid gap-2">
-                    <Label htmlFor="license_expiration">License Expiration Date</Label>
-                    <Input
+                  <div className="grid gap-1">
+                    <Label htmlFor="license_expiration" className="text-[11px]">License Expiration Date</Label>
+                    <Input className="h-7 text-[11px]"
                       id="license_expiration"
                       type="date"
                       value={field.state.value}
@@ -565,11 +574,11 @@ export function AddRecruitDialog({
             </TabsContent>
 
             {/* Assignment Tab */}
-            <TabsContent value="assignment" className="space-y-4 py-4">
+            <TabsContent value="assignment" className="space-y-2 py-2">
               <form.Field name="upline_id">
                 {(field) => (
-                  <div className="grid gap-2">
-                    <Label htmlFor="upline_id">Assign Upline/Trainer</Label>
+                  <div className="grid gap-1">
+                    <Label htmlFor="upline_id" className="text-[11px]">Assign Upline/Trainer</Label>
                     <Select
                       value={field.state.value || undefined}
                       onValueChange={(value) => field.handleChange(value === 'none' ? '' : value)}
@@ -585,7 +594,7 @@ export function AddRecruitDialog({
                         ))}
                       </SelectContent>
                     </Select>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-[10px] text-muted-foreground">
                       Upline/trainer who will manage this recruit's onboarding. Leave blank to assign later.
                     </p>
                   </div>
@@ -594,13 +603,13 @@ export function AddRecruitDialog({
             </TabsContent>
 
             {/* Social/Referral Tab */}
-            <TabsContent value="social" className="space-y-4 py-4">
-              <div className="grid grid-cols-2 gap-4">
+            <TabsContent value="social" className="space-y-2 py-2">
+              <div className="grid grid-cols-2 gap-2">
                 <form.Field name="instagram_username">
                   {(field) => (
-                    <div className="grid gap-2">
-                      <Label htmlFor="instagram_username">Instagram Username</Label>
-                      <Input
+                    <div className="grid gap-1">
+                      <Label htmlFor="instagram_username" className="text-[11px]">Instagram Username</Label>
+                      <Input className="h-7 text-[11px]"
                         id="instagram_username"
                         placeholder="@username"
                         value={field.state.value}
@@ -613,9 +622,9 @@ export function AddRecruitDialog({
 
                 <form.Field name="linkedin_username">
                   {(field) => (
-                    <div className="grid gap-2">
-                      <Label htmlFor="linkedin_username">LinkedIn Username</Label>
-                      <Input
+                    <div className="grid gap-1">
+                      <Label htmlFor="linkedin_username" className="text-[11px]">LinkedIn Username</Label>
+                      <Input className="h-7 text-[11px]"
                         id="linkedin_username"
                         value={field.state.value}
                         onChange={(e) => field.handleChange(e.target.value)}
@@ -626,12 +635,12 @@ export function AddRecruitDialog({
                 </form.Field>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-2">
                 <form.Field name="facebook_handle">
                   {(field) => (
-                    <div className="grid gap-2">
-                      <Label htmlFor="facebook_handle">Facebook Handle</Label>
-                      <Input
+                    <div className="grid gap-1">
+                      <Label htmlFor="facebook_handle" className="text-[11px]">Facebook Handle</Label>
+                      <Input className="h-7 text-[11px]"
                         id="facebook_handle"
                         value={field.state.value}
                         onChange={(e) => field.handleChange(e.target.value)}
@@ -643,26 +652,18 @@ export function AddRecruitDialog({
 
                 <form.Field
                   name="personal_website"
-                  validators={{
-                    onChange: createRecruitSchema.shape.personal_website,
-                  }}
                 >
                   {(field) => (
-                    <div className="grid gap-2">
-                      <Label htmlFor="personal_website">Personal Website</Label>
-                      <Input
+                    <div className="grid gap-1">
+                      <Label htmlFor="personal_website" className="text-[11px]">Personal Website</Label>
+                      <Input className="h-7 text-[11px]"
                         id="personal_website"
-                        type="url"
-                        placeholder="https://example.com"
+                        type="text"
+                        placeholder="example.com (https:// added automatically)"
                         value={field.state.value}
                         onChange={(e) => field.handleChange(e.target.value)}
                         onBlur={field.handleBlur}
                       />
-                      {field.state.meta.errors && field.state.meta.errors.length > 0 && (
-                        <p className="text-sm text-destructive">
-                          {field.state.meta.errors.join(', ')}
-                        </p>
-                      )}
                     </div>
                   )}
                 </form.Field>
@@ -670,8 +671,8 @@ export function AddRecruitDialog({
 
               <form.Field name="referral_source">
                 {(field) => (
-                  <div className="grid gap-2">
-                    <Label htmlFor="referral_source">Referral Source</Label>
+                  <div className="grid gap-1">
+                    <Label htmlFor="referral_source" className="text-[11px]">Referral Source</Label>
                     <Textarea
                       id="referral_source"
                       placeholder="How did they find us?"
@@ -686,10 +687,8 @@ export function AddRecruitDialog({
             </TabsContent>
           </Tabs>
 
-          <DialogFooter className="mt-6">
-            <Button
-              type="button"
-              variant="outline"
+          <DialogFooter className="mt-3 gap-1">
+            <Button type="button" variant="outline" className="h-6 text-[10px]"
               onClick={() => {
                 onOpenChange(false);
                 setActiveTab('basic');
@@ -698,12 +697,12 @@ export function AddRecruitDialog({
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={createRecruitMutation.isPending || initializeProgressMutation.isPending}>
+            <Button type="submit" className="h-6 text-[10px]" disabled={createRecruitMutation.isPending || initializeProgressMutation.isPending}>
               {(createRecruitMutation.isPending || initializeProgressMutation.isPending) && (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className="mr-1 h-3 w-3 animate-spin" />
               )}
               {!(createRecruitMutation.isPending || initializeProgressMutation.isPending) && (
-                <UserPlus className="mr-2 h-4 w-4" />
+                <UserPlus className="mr-1 h-3 w-3" />
               )}
               Add Recruit
             </Button>

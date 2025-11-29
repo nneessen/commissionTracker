@@ -157,6 +157,53 @@ If you encounter errors like "record 'v_commission' has no field 'commission_amo
 
 **Root Cause**: Old migrations create functions with wrong field names, new migrations create corrected versions, but BOTH exist in database. The OLD one executes FIRST and fails, blocking the corrected one. Solution: DELETE the old broken function and trigger, keep only the corrected version.
 
+## Database Constraint Philosophy
+
+**CRITICAL: DO NOT create enum-style CHECK constraints on TEXT fields**
+
+❌ **BAD** (rigid, requires migration to add values):
+```sql
+ALTER TABLE foo ADD COLUMN status TEXT CHECK (status IN ('active', 'inactive'));
+```
+
+✅ **GOOD** (flexible, validation in TypeScript):
+```sql
+ALTER TABLE foo ADD COLUMN status TEXT; -- Validated at application layer
+```
+
+**When to use database constraints:**
+
+- ✅ **Foreign keys** - Referential integrity (e.g., `REFERENCES user_profiles(id)`)
+- ✅ **NOT NULL** - Required fields
+- ✅ **UNIQUE** - Prevent duplicates
+- ✅ **Numeric ranges** - Business rules (e.g., `contract_level BETWEEN 80 AND 145`)
+- ✅ **Non-negative amounts** - Mathematical validity (e.g., `amount >= 0`)
+- ✅ **Self-reference prevention** - Logical impossibility (e.g., `recruiter_id != id`)
+
+**When NOT to use database constraints:**
+
+- ❌ **Enum-style TEXT validation** - Use TypeScript types instead
+- ❌ **Pattern matching** - Email/phone formats (use TypeScript)
+- ❌ **Business logic** - Anything that may evolve (use TypeScript)
+- ❌ **Role/status/type arrays** - Hardcoded values that will change
+
+**Why?**
+
+TypeScript provides:
+- ✅ Compile-time type safety
+- ✅ Runtime flexibility (add new values without migrations)
+- ✅ Better IDE support
+- ✅ Easier to test and maintain
+- ✅ Single source of truth (types in `/src/types/`)
+
+Database constraints provide:
+- ❌ Friction when adding new enum values
+- ❌ Requires migrations for simple changes
+- ❌ Duplicates validation already in TypeScript
+- ❌ No value in single-user application
+
+**Migration 20251129001407**: Removed all enum-style constraints. Validation now handled exclusively at TypeScript layer.
+
 ## Code Quality Rules
 
 - TypeScript strict mode on.
