@@ -101,7 +101,7 @@ export async function getUserRoles(userId: string): Promise<RoleName[]> {
   const { data, error } = await supabase
     .from('user_profiles')
     .select('roles')
-    .eq('id', userId)
+    .eq('user_id', userId)
     .single();
 
   if (error) {
@@ -282,7 +282,7 @@ export async function assignRoleToUser(userId: string, roleName: RoleName): Prom
     const { error } = await supabase
       .from('user_profiles')
       .update({ roles: updatedRoles })
-      .eq('id', userId);
+      .eq('user_id', userId);
 
     if (error) {
       console.error('Error assigning role:', error);
@@ -306,7 +306,7 @@ export async function removeRoleFromUser(userId: string, roleName: RoleName): Pr
   const { error } = await supabase
     .from('user_profiles')
     .update({ roles: updatedRoles })
-    .eq('id', userId);
+    .eq('user_id', userId);
 
   if (error) {
     console.error('Error removing role:', error);
@@ -327,7 +327,7 @@ export async function setUserRoles(userId: string, roles: RoleName[]): Promise<v
     const { data: currentUserProfile } = await supabase
       .from('user_profiles')
       .select('roles')
-      .eq('id', userId)
+      .eq('user_id', userId)
       .single();
       
     const currentRoles = currentUserProfile?.roles || [];
@@ -341,7 +341,7 @@ export async function setUserRoles(userId: string, roles: RoleName[]): Promise<v
         .from('user_profiles')
         .select('id', { count: 'exact', head: true })
         .contains('roles', ['admin'])
-        .neq('id', userId);
+        .neq('user_id', userId);
         
       if (count === 0) {
         throw new Error('Cannot remove your admin role: You are the last admin in the system. Promote another user to admin first.');
@@ -355,7 +355,7 @@ export async function setUserRoles(userId: string, roles: RoleName[]): Promise<v
   const { data: targetUserProfile } = await supabase
     .from('user_profiles')
     .select('roles')
-    .eq('id', userId)
+    .eq('user_id', userId)
     .single();
     
   const targetCurrentRoles = targetUserProfile?.roles || [];
@@ -377,7 +377,7 @@ export async function setUserRoles(userId: string, roles: RoleName[]): Promise<v
   // Ensure at least one role
   const finalRoles = roles.length > 0 ? roles : ['agent'];
 
-  const { error } = await supabase.from('user_profiles').update({ roles: finalRoles }).eq('id', userId);
+  const { error } = await supabase.from('user_profiles').update({ roles: finalRoles }).eq('user_id', userId);
 
   if (error) {
     console.error('Error setting user roles:', error);

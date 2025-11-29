@@ -90,7 +90,7 @@ export default function Sidebar({
       const { data, error } = await supabase
         .from('user_profiles')
         .select('roles')
-        .eq('id', user.id)
+        .eq('user_id', user.id)
         .single();
       if (error) throw error;
       return data as { roles: RoleName[] };

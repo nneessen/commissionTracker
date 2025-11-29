@@ -1,10 +1,12 @@
 // /home/nneessen/projects/commissionTracker/src/components/auth/ApprovalGuard.tsx
 
 import React, { useEffect, useState } from 'react';
+import { Navigate } from '@tanstack/react-router';
 import { useAuthorizationStatus } from '../../hooks/admin/useUserApproval';
 import { PendingApproval } from '../../features/auth/PendingApproval';
 import { DeniedAccess } from '../../features/auth/DeniedAccess';
 import { supabase } from '@/services/base/supabase';
+import { usePermissionCheck } from '@/hooks/permissions/usePermissions';
 
 interface ApprovalGuardProps {
   children: React.ReactNode;
@@ -13,7 +15,8 @@ interface ApprovalGuardProps {
 /**
  * ApprovalGuard component
  * Wraps protected routes and checks user approval status
- * - Shows PendingApproval screen if user is pending
+ * - Shows PendingApproval screen if user is pending (EXCEPT for recruits)
+ * - Recruits with pending approval are routed directly to /recruiting/my-pipeline
  * - Shows DeniedAccess screen if user is denied
  * - Allows access if user is approved or is admin
  */
@@ -26,6 +29,9 @@ export const ApprovalGuard: React.FC<ApprovalGuardProps> = ({ children }) => {
     isLoading,
     profile,
   } = useAuthorizationStatus();
+
+  const { is, isLoading: permissionsLoading } = usePermissionCheck();
+  const isRecruit = is('recruit');
 
   const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
   const [authCheckLoading, setAuthCheckLoading] = useState(true);
@@ -43,8 +49,8 @@ export const ApprovalGuard: React.FC<ApprovalGuardProps> = ({ children }) => {
     });
   }, []);
 
-  // Show loading state while checking approval status or auth
-  if (isLoading || authCheckLoading) {
+  // Show loading state while checking approval status, auth, or permissions
+  if (isLoading || authCheckLoading || permissionsLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">
@@ -62,7 +68,21 @@ export const ApprovalGuard: React.FC<ApprovalGuardProps> = ({ children }) => {
     return <>{children}</>;
   }
 
-  // Show pending approval screen
+  // NEW: Recruit handling - recruits should only see their onboarding pipeline
+  // Check if we're already on the pipeline page to avoid infinite redirect
+  const currentPath = window.location.pathname;
+  const isOnPipelinePage = currentPath === '/recruiting/my-pipeline';
+
+  if (isRecruit) {
+    // If already on pipeline page, render children (the pipeline component)
+    if (isOnPipelinePage) {
+      return <>{children}</>;
+    }
+    // Otherwise, redirect recruits to their pipeline
+    return <Navigate to="/recruiting/my-pipeline" replace />;
+  }
+
+  // Show pending approval screen (for non-recruits)
   if (isPending) {
     return <PendingApproval email={profile?.email || currentUserEmail || undefined} />;
   }

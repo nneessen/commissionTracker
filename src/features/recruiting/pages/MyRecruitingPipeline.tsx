@@ -53,7 +53,7 @@ export function MyRecruitingPipeline() {
       const { data, error } = await supabase
         .from('user_profiles')
         .select('*')
-        .eq('id', user!.id)
+        .eq('user_id', user!.id)
         .single();
 
       if (error) throw error;
@@ -80,12 +80,12 @@ export function MyRecruitingPipeline() {
     enabled: !!profile?.upline_id,
   });
 
-  // Fetch phase progress
-  const { data: phaseProgress } = useRecruitPhaseProgress(user?.id);
-  const { data: currentPhase } = useCurrentPhase(user?.id);
+  // Fetch phase progress - uses profile.id (not auth user ID)
+  const { data: phaseProgress } = useRecruitPhaseProgress(profile?.id);
+  const { data: currentPhase } = useCurrentPhase(profile?.id);
 
-  // Fetch documents
-  const { data: documents } = useRecruitDocuments(user?.id);
+  // Fetch documents - uses profile.id (not auth user ID)
+  const { data: documents } = useRecruitDocuments(profile?.id);
 
   // Calculate progress percentage
   const calculateProgress = () => {
@@ -129,7 +129,7 @@ export function MyRecruitingPipeline() {
       const { error: updateError } = await supabase
         .from('user_profiles')
         .update({ profile_photo_url: urlData.publicUrl })
-        .eq('id', user.id);
+        .eq('user_id', user.id);
 
       if (updateError) throw updateError;
 

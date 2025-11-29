@@ -72,7 +72,7 @@ export class UserApprovalService {
       const { data, error } = await supabase
         .from("user_profiles")
         .select("*")
-        .eq("id", user.id)
+        .eq("user_id", user.id)
         .single();
 
       // FIX: Only use fallback when query FAILS (error), not when it succeeds with null data
