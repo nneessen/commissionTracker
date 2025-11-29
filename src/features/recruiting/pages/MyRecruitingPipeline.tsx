@@ -4,33 +4,31 @@ import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/services/base/supabase';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import {
   User,
   Mail,
   Phone,
-  MapPin,
-  Calendar,
   Upload,
   CheckCircle2,
   Circle,
   Clock,
   AlertCircle,
-  FileText,
   MessageSquare,
-  Target,
-  TrendingUp,
 } from 'lucide-react';
 import { format } from 'date-fns';
-import { useRecruitPhaseProgress, useCurrentPhase } from '../hooks/useRecruitProgress';
+import {
+  useRecruitPhaseProgress,
+  useCurrentPhase,
+  useChecklistProgress,
+} from '../hooks/useRecruitProgress';
+import { useActiveTemplate } from '../hooks/usePipeline';
+import { PhaseChecklist } from '../components/PhaseChecklist';
+import { DocumentManager } from '../components/DocumentManager';
 import { useRecruitDocuments } from '../hooks/useRecruitDocuments';
 import type { UserProfile } from '@/types/hierarchy.types';
-import type { ONBOARDING_STATUS_COLORS, PHASE_PROGRESS_COLORS } from '@/types/recruiting';
 
 const PHASE_NAMES = [
   'Interview 1',
@@ -80,11 +78,14 @@ export function MyRecruitingPipeline() {
     enabled: !!profile?.upline_id,
   });
 
-  // Fetch phase progress - uses profile.id (not auth user ID)
+  // Fetch phase progress
   const { data: phaseProgress } = useRecruitPhaseProgress(profile?.id);
   const { data: currentPhase } = useCurrentPhase(profile?.id);
-
-  // Fetch documents - uses profile.id (not auth user ID)
+  const { data: template } = useActiveTemplate();
+  const { data: checklistProgress } = useChecklistProgress(
+    profile?.id,
+    currentPhase?.phase_id
+  );
   const { data: documents } = useRecruitDocuments(profile?.id);
 
   // Calculate progress percentage
@@ -99,13 +100,11 @@ export function MyRecruitingPipeline() {
     const file = event.target.files?.[0];
     if (!file || !user?.id) return;
 
-    // Validate file type
     if (!file.type.startsWith('image/')) {
       alert('Please upload an image file');
       return;
     }
 
-    // Validate file size (5MB max)
     if (file.size > 5 * 1024 * 1024) {
       alert('File size must be less than 5MB');
       return;
@@ -114,7 +113,6 @@ export function MyRecruitingPipeline() {
     setUploadingPhoto(true);
 
     try {
-      // Upload to Supabase Storage
       const fileName = `${user.id}_${Date.now()}.${file.name.split('.').pop()}`;
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('avatars')
@@ -122,10 +120,8 @@ export function MyRecruitingPipeline() {
 
       if (uploadError) throw uploadError;
 
-      // Get public URL
       const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(fileName);
 
-      // Update user profile
       const { error: updateError } = await supabase
         .from('user_profiles')
         .update({ profile_photo_url: urlData.publicUrl })
@@ -133,7 +129,6 @@ export function MyRecruitingPipeline() {
 
       if (updateError) throw updateError;
 
-      // Refresh profile
       window.location.reload();
     } catch (error) {
       console.error('Error uploading photo:', error);
@@ -148,7 +143,7 @@ export function MyRecruitingPipeline() {
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading your progress...</p>
+          <p className="text-muted-foreground text-xs">Loading...</p>
         </div>
       </div>
     );
@@ -159,173 +154,155 @@ export function MyRecruitingPipeline() {
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
-          <p className="text-muted-foreground">Failed to load your profile. Please try refreshing.</p>
+          <p className="text-muted-foreground text-xs">Failed to load profile. Please refresh.</p>
         </div>
       </div>
     );
   }
 
   const progressPercentage = calculateProgress();
+  const initials = profile.first_name && profile.last_name
+    ? `${profile.first_name[0]}${profile.last_name[0]}`.toUpperCase()
+    : profile.email.substring(0, 2).toUpperCase();
+
+  // Get current phase checklist items
+  const currentPhaseData = template?.phases?.find((p: any) => p.id === currentPhase?.phase_id);
+  const currentChecklistItems = currentPhaseData?.checklist_items || [];
 
   return (
-    <div className="container mx-auto p-6 max-w-6xl space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">My Onboarding Progress</h1>
-          <p className="text-muted-foreground">Track your journey to becoming a licensed agent</p>
+    <div className="h-screen flex flex-col bg-background">
+      {/* Compact Header */}
+      <div className="flex items-center justify-between p-2 border-b bg-muted/10">
+        <div className="flex items-center gap-2">
+          <Avatar className="h-10 w-10">
+            <AvatarImage src={profile.profile_photo_url || undefined} alt={profile.first_name || 'User'} />
+            <AvatarFallback className="text-xs font-mono">{initials}</AvatarFallback>
+          </Avatar>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold truncate">
+              {profile.first_name} {profile.last_name}
+            </p>
+            <p className="text-[10px] text-muted-foreground font-mono truncate">
+              {profile.email} · {profile.phone || 'No phone'}
+            </p>
+          </div>
         </div>
-        <Badge variant="outline" className="text-lg px-4 py-2">
-          {progressPercentage}% Complete
-        </Badge>
+        <div className="flex items-center gap-2">
+          <Badge variant="outline" className="text-xs px-2 py-0.5 font-mono">
+            {progressPercentage}% Complete
+          </Badge>
+          <label htmlFor="photo-upload">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-6 text-[10px] cursor-pointer"
+              disabled={uploadingPhoto}
+              asChild
+            >
+              <span>
+                <Upload className="h-3 w-3 mr-1" />
+                {uploadingPhoto ? 'Uploading...' : 'Photo'}
+              </span>
+            </Button>
+          </label>
+          <input
+            id="photo-upload"
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handlePhotoUpload}
+            disabled={uploadingPhoto}
+          />
+        </div>
       </div>
 
-      {/* Profile Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <User className="h-5 w-5" />
-            Your Profile
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-start gap-6">
-            {/* Avatar */}
-            <div className="flex flex-col items-center gap-2">
-              <Avatar className="h-24 w-24">
-                <AvatarImage src={profile.profile_photo_url || undefined} alt={profile.first_name || 'User'} />
-                <AvatarFallback className="text-2xl">
-                  {profile.first_name?.[0]}
-                  {profile.last_name?.[0]}
-                </AvatarFallback>
-              </Avatar>
-              <label htmlFor="photo-upload">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="cursor-pointer"
-                  disabled={uploadingPhoto}
-                  asChild
-                >
-                  <span>
-                    <Upload className="h-4 w-4 mr-2" />
-                    {uploadingPhoto ? 'Uploading...' : 'Upload Photo'}
-                  </span>
-                </Button>
-              </label>
-              <input
-                id="photo-upload"
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handlePhotoUpload}
-                disabled={uploadingPhoto}
-              />
-            </div>
-
-            {/* Profile Info */}
-            <div className="flex-1 grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-muted-foreground">Name</p>
-                <p className="font-medium">
-                  {profile.first_name} {profile.last_name}
-                </p>
+      {/* Two-Column Grid Layout */}
+      <div className="flex-1 grid grid-cols-3 gap-2 p-2 overflow-hidden">
+        {/* Left Column - Current Phase & Checklist */}
+        <div className="col-span-2 space-y-2 overflow-auto">
+          {/* Current Phase Checklist */}
+          {currentPhase && template ? (
+            <div className="border rounded-sm p-2 bg-card">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-xs font-semibold uppercase text-muted-foreground font-mono">
+                  Current Phase: {currentPhaseData?.phase_name || 'Unknown'}
+                </h3>
+                <Badge variant="secondary" className="text-[10px] px-1 py-0 font-mono">
+                  {currentChecklistItems.length > 0
+                    ? `${checklistProgress?.filter(p => p.status === 'completed').length || 0}/${currentChecklistItems.length}`
+                    : 'No items'}
+                </Badge>
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground flex items-center gap-1">
-                  <Mail className="h-3 w-3" />
-                  Email
+
+              {currentChecklistItems.length > 0 ? (
+                <PhaseChecklist
+                  userId={profile.id}
+                  checklistItems={currentChecklistItems}
+                  checklistProgress={checklistProgress || []}
+                  isUpline={false}
+                  currentUserId={profile.id}
+                />
+              ) : (
+                <p className="text-xs text-muted-foreground font-mono py-4 text-center">
+                  No checklist items for this phase
                 </p>
-                <p className="font-medium">{profile.email}</p>
-              </div>
-              {profile.phone && (
-                <div>
-                  <p className="text-sm text-muted-foreground flex items-center gap-1">
-                    <Phone className="h-3 w-3" />
-                    Phone
-                  </p>
-                  <p className="font-medium">{profile.phone}</p>
+              )}
+
+              {currentPhase.notes && (
+                <div className="mt-2 p-2 bg-muted/50 rounded-sm">
+                  <p className="text-[10px] text-muted-foreground font-mono">{currentPhase.notes}</p>
                 </div>
               )}
-              {profile.resident_state && (
-                <div>
-                  <p className="text-sm text-muted-foreground flex items-center gap-1">
-                    <MapPin className="h-3 w-3" />
-                    Resident State
-                  </p>
-                  <p className="font-medium">{profile.resident_state}</p>
-                </div>
-              )}
-              {profile.onboarding_started_at && (
-                <div>
-                  <p className="text-sm text-muted-foreground flex items-center gap-1">
-                    <Calendar className="h-3 w-3" />
-                    Started
-                  </p>
-                  <p className="font-medium">
-                    {format(new Date(profile.onboarding_started_at), 'MMM d, yyyy')}
+
+              {currentPhase.status === 'blocked' && currentPhase.blocked_reason && (
+                <div className="mt-2 p-2 bg-destructive/10 rounded-sm border border-destructive/20">
+                  <p className="text-[10px] text-destructive font-mono">
+                    <strong>Blocked:</strong> {currentPhase.blocked_reason}
                   </p>
                 </div>
               )}
             </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Progress Overview */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5" />
-            Overall Progress
-          </CardTitle>
-          <CardDescription>Your journey through the onboarding phases</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span className="font-medium">Completion Status</span>
-              <span className="text-muted-foreground">{progressPercentage}%</span>
+          ) : (
+            <div className="border rounded-sm p-4 bg-card text-center">
+              <p className="text-xs text-muted-foreground font-mono">No active phase</p>
             </div>
-            <Progress value={progressPercentage} className="h-3" />
-          </div>
+          )}
 
-          <Separator />
-
-          {/* Phase Timeline */}
-          <div className="space-y-3">
-            <h4 className="font-semibold text-sm">Onboarding Phases</h4>
-            <div className="space-y-2">
+          {/* Phase Progress Timeline */}
+          <div className="border rounded-sm p-2 bg-card">
+            <h3 className="text-xs font-semibold uppercase text-muted-foreground font-mono mb-2">
+              Onboarding Progress
+            </h3>
+            <div className="space-y-1">
               {phaseProgress?.map((phase, index) => {
                 const isCompleted = phase.status === 'completed';
                 const isInProgress = phase.status === 'in_progress';
                 const isBlocked = phase.status === 'blocked';
 
                 return (
-                  <div key={phase.id} className="flex items-center gap-3">
+                  <div key={phase.id} className="flex items-center gap-2 p-1 hover:bg-muted/30 rounded-sm transition-colors">
                     {isCompleted ? (
-                      <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />
+                      <CheckCircle2 className="h-4 w-4 text-green-600 flex-shrink-0" />
                     ) : isInProgress ? (
-                      <Clock className="h-5 w-5 text-yellow-600 flex-shrink-0" />
+                      <Clock className="h-4 w-4 text-yellow-600 flex-shrink-0" />
                     ) : isBlocked ? (
-                      <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0" />
+                      <AlertCircle className="h-4 w-4 text-red-600 flex-shrink-0" />
                     ) : (
-                      <Circle className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                      <Circle className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                     )}
-                    <div className="flex-1">
-                      <p className="font-medium text-sm">{PHASE_NAMES[index] || `Phase ${index + 1}`}</p>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-mono font-medium truncate">
+                        {PHASE_NAMES[index] || `Phase ${index + 1}`}
+                      </p>
                       {phase.started_at && (
-                        <p className="text-xs text-muted-foreground">
-                          Started {format(new Date(phase.started_at), 'MMM d, yyyy')}
+                        <p className="text-[10px] text-muted-foreground font-mono">
+                          Started {format(new Date(phase.started_at), 'MMM d')}
                         </p>
-                      )}
-                      {phase.blocked_reason && (
-                        <p className="text-xs text-destructive">Blocked: {phase.blocked_reason}</p>
                       )}
                     </div>
                     <Badge
                       variant={isCompleted ? 'default' : isInProgress ? 'secondary' : 'outline'}
-                      className="capitalize"
+                      className="text-[10px] px-1 py-0 font-mono capitalize"
                     >
                       {phase.status.replace('_', ' ')}
                     </Badge>
@@ -334,144 +311,79 @@ export function MyRecruitingPipeline() {
               })}
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* Current Phase & Next Steps */}
-      {currentPhase && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Target className="h-5 w-5" />
-              Current Phase: {currentPhase.phase_name}
-            </CardTitle>
-            <CardDescription>What you need to do next</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {currentPhase.notes && (
-                <div className="bg-muted p-4 rounded-lg">
-                  <p className="text-sm">{currentPhase.notes}</p>
-                </div>
-              )}
+        {/* Right Column - Documents & Upline */}
+        <div className="space-y-2 overflow-auto">
+          {/* Documents Section */}
+          <div className="border rounded-sm p-2 bg-card">
+            <h3 className="text-xs font-semibold uppercase text-muted-foreground font-mono mb-2">
+              Required Documents
+            </h3>
+            <DocumentManager
+              userId={profile.id}
+              documents={documents}
+              isUpline={false}
+              currentUserId={profile.id}
+            />
+          </div>
+
+          {/* Upline Contact */}
+          {upline ? (
+            <div className="border rounded-sm p-2 bg-card">
+              <h3 className="text-xs font-semibold uppercase text-muted-foreground font-mono mb-2">
+                Your Trainer
+              </h3>
               <div className="space-y-2">
-                <h4 className="font-semibold text-sm">Next Steps:</h4>
-                <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
-                  <li>Complete required documents for this phase</li>
-                  <li>Stay in contact with your trainer</li>
-                  <li>Follow the phase checklist items</li>
-                </ul>
+                <div className="flex items-center gap-2">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={upline.profile_photo_url || undefined} alt={upline.first_name || 'Trainer'} />
+                    <AvatarFallback className="text-[10px] font-mono">
+                      {upline.first_name?.[0]}
+                      {upline.last_name?.[0]}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-semibold font-mono truncate">
+                      {upline.first_name} {upline.last_name}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground font-mono truncate flex items-center gap-1">
+                      <Mail className="h-2.5 w-2.5" />
+                      {upline.email}
+                    </p>
+                    {upline.phone && (
+                      <p className="text-[10px] text-muted-foreground font-mono flex items-center gap-1">
+                        <Phone className="h-2.5 w-2.5" />
+                        {upline.phone}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full h-6 text-[10px] font-mono"
+                  asChild
+                >
+                  <a href={`mailto:${upline.email}`}>
+                    <MessageSquare className="h-3 w-3 mr-1" />
+                    Contact Trainer
+                  </a>
+                </Button>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Documents Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5" />
-            Required Documents
-          </CardTitle>
-          <CardDescription>
-            {documents?.length || 0} document{documents?.length !== 1 ? 's' : ''} uploaded
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {!documents || documents.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <FileText className="h-12 w-12 mx-auto mb-2 opacity-50" />
-              <p>No documents uploaded yet</p>
-              <p className="text-sm">Your trainer will let you know what documents are required</p>
             </div>
           ) : (
-            <div className="space-y-2">
-              {documents.map((doc) => (
-                <div key={doc.id} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div>
-                    <p className="font-medium text-sm">{doc.document_name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      Uploaded {format(new Date(doc.uploaded_at), 'MMM d, yyyy')}
-                    </p>
-                  </div>
-                  <Badge
-                    variant={
-                      doc.status === 'approved'
-                        ? 'default'
-                        : doc.status === 'rejected'
-                          ? 'destructive'
-                          : 'secondary'
-                    }
-                    className="capitalize"
-                  >
-                    {doc.status}
-                  </Badge>
-                </div>
-              ))}
+            <div className="border rounded-sm p-2 bg-card">
+              <h3 className="text-xs font-semibold uppercase text-muted-foreground font-mono mb-2">
+                Your Trainer
+              </h3>
+              <p className="text-[10px] text-muted-foreground font-mono text-center py-4">
+                No trainer assigned yet
+              </p>
             </div>
           )}
-        </CardContent>
-      </Card>
-
-      {/* Upline Contact Card */}
-      {upline && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <MessageSquare className="h-5 w-5" />
-              Your Trainer
-            </CardTitle>
-            <CardDescription>Reach out if you have questions or need help</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-4">
-              <Avatar className="h-12 w-12">
-                <AvatarImage src={upline.profile_photo_url || undefined} alt={upline.first_name || 'Trainer'} />
-                <AvatarFallback>
-                  {upline.first_name?.[0]}
-                  {upline.last_name?.[0]}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-1">
-                <p className="font-medium">
-                  {upline.first_name} {upline.last_name}
-                </p>
-                <p className="text-sm text-muted-foreground flex items-center gap-1">
-                  <Mail className="h-3 w-3" />
-                  {upline.email}
-                </p>
-                {upline.phone && (
-                  <p className="text-sm text-muted-foreground flex items-center gap-1">
-                    <Phone className="h-3 w-3" />
-                    {upline.phone}
-                  </p>
-                )}
-              </div>
-              <Button variant="outline" asChild>
-                <a href={`mailto:${upline.email}`}>Contact</a>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {!upline && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <MessageSquare className="h-5 w-5" />
-              Your Trainer
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-center py-4 text-muted-foreground">
-              <p>No trainer assigned yet</p>
-              <p className="text-sm">An admin will assign you a trainer soon</p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+        </div>
+      </div>
     </div>
   );
 }

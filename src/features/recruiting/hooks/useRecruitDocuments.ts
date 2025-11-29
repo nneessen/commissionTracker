@@ -2,10 +2,10 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { recruitingService } from '@/services/recruiting';
 
-export function useRecruitDocuments(recruitId: string) {
+export function useRecruitDocuments(recruitId: string | undefined) {
   return useQuery({
     queryKey: ['recruits', recruitId, 'documents'],
-    queryFn: () => recruitingService.getRecruitDocuments(recruitId),
+    queryFn: () => recruitingService.getRecruitDocuments(recruitId!),
     enabled: !!recruitId,
   });
 }

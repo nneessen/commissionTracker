@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ExternalLink, Upload, CheckCircle2, XCircle, FileText } from 'lucide-react';
 import { useUpdateChecklistItemStatus } from '../hooks/useRecruitProgress';
+import { showToast } from '@/utils/toast';
 
 interface PhaseChecklistProps {
   userId: string;
@@ -41,41 +42,59 @@ export function PhaseChecklist({
     // Toggle between completed and not_started
     const newStatus = currentStatus === 'completed' ? 'not_started' : 'completed';
 
-    await updateItemStatus.mutateAsync({
-      userId,
-      itemId,
-      statusData: {
-        status: newStatus as any,
-        completed_by: newStatus === 'completed' ? currentUserId : undefined,
-      },
-    });
+    try {
+      await updateItemStatus.mutateAsync({
+        userId,
+        itemId,
+        statusData: {
+          status: newStatus as any,
+          completed_by: newStatus === 'completed' ? currentUserId : undefined,
+        },
+      });
+      showToast.success(newStatus === 'completed' ? 'Task marked as complete' : 'Task unmarked');
+    } catch (error: any) {
+      console.error('Failed to update checklist item:', error);
+      showToast.error(error?.message || 'Failed to update task. Please try again.');
+    }
   };
 
   const handleApprove = async (itemId: string) => {
     if (!currentUserId || !isUpline) return;
 
-    await updateItemStatus.mutateAsync({
-      userId,
-      itemId,
-      statusData: {
-        status: 'approved',
-        verified_by: currentUserId,
-      },
-    });
+    try {
+      await updateItemStatus.mutateAsync({
+        userId,
+        itemId,
+        statusData: {
+          status: 'approved',
+          verified_by: currentUserId,
+        },
+      });
+      showToast.success('Item approved successfully');
+    } catch (error: any) {
+      console.error('Failed to approve item:', error);
+      showToast.error(error?.message || 'Failed to approve item. Please try again.');
+    }
   };
 
   const handleReject = async (itemId: string, reason: string) => {
     if (!currentUserId || !isUpline) return;
 
-    await updateItemStatus.mutateAsync({
-      userId,
-      itemId,
-      statusData: {
-        status: 'rejected',
-        verified_by: currentUserId,
-        rejection_reason: reason,
-      },
-    });
+    try {
+      await updateItemStatus.mutateAsync({
+        userId,
+        itemId,
+        statusData: {
+          status: 'rejected',
+          verified_by: currentUserId,
+          rejection_reason: reason,
+        },
+      });
+      showToast.success('Item rejected');
+    } catch (error: any) {
+      console.error('Failed to reject item:', error);
+      showToast.error(error?.message || 'Failed to reject item. Please try again.');
+    }
   };
 
   const getActionButton = (item: PhaseChecklistItem, progress: RecruitChecklistProgress | undefined) => {
@@ -183,24 +202,19 @@ export function PhaseChecklist({
         let canToggleCheckbox = false;
 
         if (item.item_type === 'task_completion') {
-          // Task completion: check who can complete it
-          // If can_be_completed_by is 'system', then neither can toggle it (system-only tasks)
-          if (item.can_be_completed_by === 'recruit') {
-            canToggleCheckbox = !isUpline;
-          } else if (item.can_be_completed_by === 'upline') {
-            canToggleCheckbox = isUpline;
-          } else if (item.can_be_completed_by === 'system') {
-            canToggleCheckbox = false; // System-only tasks cannot be manually toggled
-          }
+          // Task completion: ANYONE can toggle (recruit or upline)
+          // The can_be_completed_by field is just metadata about who SHOULD do it
+          // But we allow both to check it off
+          canToggleCheckbox = true;
         } else if (item.item_type === 'training_module') {
-          // Training modules: recruit can toggle after viewing
-          canToggleCheckbox = !isUpline;
+          // Training modules: ANYONE can toggle
+          canToggleCheckbox = true;
         } else if (item.item_type === 'document_upload') {
           // Document uploads: handled by action buttons, not checkbox
           canToggleCheckbox = false;
         } else if (item.item_type === 'manual_approval') {
-          // Manual approvals: upline can check the box to approve
-          canToggleCheckbox = isUpline && status === 'not_started';
+          // Manual approvals: ANYONE can toggle
+          canToggleCheckbox = true;
         }
 
         return (

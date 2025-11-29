@@ -8,6 +8,7 @@ import { useRecruits } from './hooks/useRecruits';
 import { RecruitListTable } from './components/RecruitListTable';
 import { RecruitDetailPanel } from './components/RecruitDetailPanel';
 import { AddRecruitDialog } from './components/AddRecruitDialog';
+import { StatusLegend } from './components/StatusLegend';
 import type { UserProfile } from '@/types/hierarchy.types';
 import { useAuth } from '@/contexts/AuthContext';
 import { showToast } from '@/utils/toast';
@@ -131,6 +132,7 @@ export function RecruitingDashboard() {
         {/* Left Panel: Recruit List */}
         <div className="flex-[5] min-w-0 max-w-[700px]">
           <Card className="h-full flex flex-col overflow-hidden">
+            <StatusLegend />
             <div className="flex-1 overflow-auto">
               <RecruitListTable
                 recruits={recruits}
