@@ -88,12 +88,20 @@ export function downloadAnalyticsSections(sections: AnalyticsSectionExport[]): v
 
 /**
  * Generate PDF-friendly HTML for printing
- * (Browser's native print-to-PDF will be used)
  *
- * DESIGN GOALS:
- * - Ultra-compact: fit maximum content on one page
- * - Modern: professional gradient backgrounds, proper visual hierarchy
- * - Data-dense: no wasted space, efficient layout
+ * PROFESSIONAL BUSINESS DESIGN INSPIRED BY:
+ * - Goldman Sachs financial reports
+ * - McKinsey executive summaries
+ * - Bloomberg terminal analytics
+ * - Deloitte audit reports
+ *
+ * DESIGN PRINCIPLES:
+ * - Executive-level typography (Garamond, Georgia serif family)
+ * - Sophisticated color palette (navy, charcoal, gold accents)
+ * - Financial report structure (header block, sections with rules)
+ * - Data-dense tables with proper accounting alignment
+ * - Professional visual hierarchy with strategic whitespace
+ * - Clean, authoritative presentation suitable for C-suite
  */
 export function generatePrintableHTML(
   title: string,
@@ -108,158 +116,390 @@ export function generatePrintableHTML(
   <style>
     @media print {
       @page {
-        margin: 0.4in 0.5in;
+        margin: 0.65in 0.75in;
         size: letter;
       }
 
+      * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+
       body {
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-        font-size: 8.5pt;
+        font-family: 'Garamond', 'Georgia', 'Times New Roman', serif;
+        font-size: 9.5pt;
         color: #1a1a1a;
-        line-height: 1.3;
+        line-height: 1.35;
+        background: white;
+      }
+
+      /* EXECUTIVE HEADER */
+      .report-header {
+        border-top: 4pt solid #1e3a5f;
+        border-bottom: 1.5pt solid #1e3a5f;
+        padding: 12pt 0 10pt 0;
+        margin-bottom: 14pt;
+        position: relative;
+      }
+
+      .report-header::after {
+        content: '';
+        position: absolute;
+        bottom: -3pt;
+        left: 0;
+        width: 120pt;
+        height: 0.75pt;
+        background: #c9a961;
       }
 
       h1 {
-        font-size: 16pt;
+        font-family: 'Garamond', 'Georgia', serif;
+        font-size: 20pt;
+        font-weight: 500;
+        letter-spacing: 0.02em;
+        color: #1e3a5f;
         margin: 0 0 6pt 0;
-        padding-bottom: 4pt;
-        border-bottom: 1.5pt solid #2563eb;
-        font-weight: 700;
-        letter-spacing: -0.02em;
-        color: #0f172a;
+        text-transform: uppercase;
       }
 
-      h2 {
-        font-size: 11pt;
-        margin: 10pt 0 4pt 0;
+      .report-subtitle {
+        font-size: 9pt;
+        color: #4a5568;
+        font-weight: 400;
+        font-style: italic;
+        margin: 4pt 0 0 0;
+        letter-spacing: 0.01em;
+      }
+
+      .report-metadata {
+        display: flex;
+        justify-content: space-between;
+        font-size: 8pt;
+        color: #6b7280;
+        margin: 8pt 0 0 0;
+        font-family: 'Arial', sans-serif;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      .report-metadata .confidential {
+        color: #991b1b;
         font-weight: 600;
-        color: #374151;
+      }
+
+      /* SECTION HEADERS */
+      h2 {
+        font-family: 'Garamond', 'Georgia', serif;
+        font-size: 13pt;
+        font-weight: 600;
+        color: #1e3a5f;
+        margin: 16pt 0 8pt 0;
+        padding-bottom: 4pt;
+        border-bottom: 1.25pt solid #2d3748;
+        letter-spacing: 0.015em;
         page-break-after: avoid;
-        border-left: 3pt solid #2563eb;
-        padding-left: 6pt;
+        position: relative;
+      }
+
+      h2::after {
+        content: '';
+        position: absolute;
+        bottom: -2.5pt;
+        left: 0;
+        width: 50pt;
+        height: 1pt;
+        background: #c9a961;
       }
 
       h3 {
-        font-size: 9pt;
-        margin: 6pt 0 3pt 0;
+        font-size: 10pt;
         font-weight: 600;
-        color: #4b5563;
+        color: #2d3748;
+        margin: 10pt 0 5pt 0;
+        letter-spacing: 0.01em;
+        text-transform: uppercase;
+        font-family: 'Arial', sans-serif;
+        font-size: 8.5pt;
       }
 
+      /* FINANCIAL TABLES */
       table {
         width: 100%;
         border-collapse: collapse;
-        margin: 6pt 0 10pt 0;
+        margin: 8pt 0 12pt 0;
         page-break-inside: avoid;
-        font-size: 8pt;
+        font-family: 'Arial', sans-serif;
+        font-size: 8.5pt;
+      }
+
+      thead {
+        border-top: 1.5pt solid #1e3a5f;
+        border-bottom: 1pt solid #2d3748;
       }
 
       th {
-        background: linear-gradient(to bottom, #f3f4f6, #e5e7eb);
+        background: #f8f9fa;
         font-weight: 600;
         font-size: 7.5pt;
         text-transform: uppercase;
-        letter-spacing: 0.03em;
-        color: #374151;
-        padding: 3pt 4pt;
-        border: 0.5pt solid #d1d5db;
+        letter-spacing: 0.06em;
+        color: #1e3a5f;
+        padding: 5pt 6pt;
         text-align: left;
+        border-bottom: 0.75pt solid #cbd5e0;
+      }
+
+      th:last-child,
+      td:last-child {
+        text-align: right;
       }
 
       td {
-        padding: 2.5pt 4pt;
-        border: 0.5pt solid #e5e7eb;
-        color: #1f2937;
+        padding: 4pt 6pt;
+        border-bottom: 0.5pt solid #e2e8f0;
+        color: #1a202c;
+        font-size: 8.5pt;
       }
 
-      tbody tr:nth-child(even) {
-        background-color: #f9fafb;
+      tbody tr:hover {
+        background-color: #f7fafc;
       }
 
+      tbody tr:last-child td {
+        border-bottom: 1.5pt solid #2d3748;
+        font-weight: 600;
+      }
+
+      /* NUMERIC FORMATTING */
+      .numeric {
+        font-family: 'Courier New', 'Consolas', monospace;
+        font-weight: 500;
+        text-align: right;
+        letter-spacing: -0.01em;
+      }
+
+      .currency::before {
+        content: '$';
+        margin-right: 1pt;
+      }
+
+      .positive {
+        color: #065f46;
+      }
+
+      .negative {
+        color: #991b1b;
+      }
+
+      /* EXECUTIVE METRICS GRID */
       .metrics-grid {
         display: grid;
-        grid-template-columns: 1fr 1fr 1fr;
-        gap: 6pt 8pt;
-        margin: 6pt 0 10pt 0;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 8pt 12pt;
+        margin: 10pt 0 14pt 0;
+        padding: 10pt;
+        background: #fafbfc;
+        border: 0.75pt solid #cbd5e0;
+        border-left: 3pt solid #1e3a5f;
       }
 
-      .metrics-grid > div {
-        font-size: 8pt;
-        line-height: 1.3;
+      .metric-card {
+        padding: 6pt 8pt;
+        background: white;
+        border: 0.5pt solid #e2e8f0;
       }
 
-      .metrics-grid .metric-label {
-        color: #64748b;
-        font-weight: 500;
-        display: inline;
+      .metric-label {
+        font-family: 'Arial', sans-serif;
+        font-size: 7pt;
+        color: #4a5568;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        font-weight: 600;
+        margin-bottom: 3pt;
+        display: block;
       }
 
-      .metrics-grid .metric-value {
-        color: #0f172a;
+      .metric-value {
+        font-family: 'Courier New', monospace;
+        font-size: 12pt;
         font-weight: 700;
-        font-family: 'SF Mono', Monaco, 'Courier New', monospace;
-        display: inline;
-        margin-left: 3pt;
+        color: #1e3a5f;
+        display: block;
+        margin: 2pt 0;
+        letter-spacing: -0.02em;
       }
 
+      .metric-change {
+        font-family: 'Arial', sans-serif;
+        font-size: 6.5pt;
+        font-weight: 600;
+        margin-top: 2pt;
+        display: block;
+      }
+
+      .metric-change.up {
+        color: #065f46;
+      }
+
+      .metric-change.up::before {
+        content: '▲ ';
+      }
+
+      .metric-change.down {
+        color: #991b1b;
+      }
+
+      .metric-change.down::before {
+        content: '▼ ';
+      }
+
+      /* EXECUTIVE INSIGHTS */
       .insight {
-        border-left: 2.5pt solid #ea580c;
-        background-color: #fef3c7;
-        padding: 4pt 6pt;
-        margin: 4pt 0;
+        border-left: 3pt solid #c9a961;
+        background: linear-gradient(to right, #fffbf0 0%, #ffffff 15%);
+        padding: 8pt 10pt 8pt 12pt;
+        margin: 8pt 0;
         page-break-inside: avoid;
+        border-top: 0.5pt solid #e6dcc8;
+        border-bottom: 0.5pt solid #e6dcc8;
+      }
+
+      .insight.critical {
+        border-left-color: #991b1b;
+        background: linear-gradient(to right, #fef2f2 0%, #ffffff 15%);
+        border-top-color: #fecaca;
+        border-bottom-color: #fecaca;
+      }
+
+      .insight.high {
+        border-left-color: #d97706;
+        background: linear-gradient(to right, #fffbeb 0%, #ffffff 15%);
+        border-top-color: #fed7aa;
+        border-bottom-color: #fed7aa;
+      }
+
+      .insight-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        margin-bottom: 4pt;
+      }
+
+      .insight-severity {
+        font-family: 'Arial', sans-serif;
+        font-size: 6.5pt;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        padding: 2pt 6pt;
+        border-radius: 2pt;
+        background: #1e3a5f;
+        color: white;
+      }
+
+      .insight-severity.critical {
+        background: #991b1b;
+      }
+
+      .insight-severity.high {
+        background: #d97706;
       }
 
       .insight-title {
         font-weight: 600;
-        font-size: 8pt;
-        color: #92400e;
-        margin-bottom: 2pt;
+        font-size: 9pt;
+        color: #1a202c;
+        margin-bottom: 3pt;
+        flex: 1;
       }
 
       .insight-description {
-        font-size: 7.5pt;
-        color: #78350f;
-        margin: 2pt 0;
-        line-height: 1.3;
+        font-size: 8pt;
+        color: #2d3748;
+        margin: 3pt 0;
+        line-height: 1.4;
       }
 
       .insight-impact {
-        font-size: 7pt;
-        color: #a16207;
+        font-size: 7.5pt;
+        color: #4a5568;
         font-weight: 600;
+        margin: 4pt 0;
+        padding: 3pt 6pt;
+        background: rgba(30, 58, 95, 0.04);
+        border-left: 2pt solid #cbd5e0;
+        font-family: 'Arial', sans-serif;
       }
 
       .insight-actions {
-        margin: 3pt 0 0 8pt;
-        padding: 0;
-        font-size: 7pt;
-        color: #713f12;
+        margin: 5pt 0 0 0;
+        padding: 0 0 0 14pt;
+        font-size: 7.5pt;
+        color: #2d3748;
+        line-height: 1.5;
       }
 
       .insight-actions li {
-        margin: 1pt 0;
+        margin: 2pt 0;
+        font-weight: 500;
       }
 
-      .report-metadata {
-        font-size: 7pt;
-        color: #6b7280;
-        margin: 3pt 0 8pt 0;
-        padding: 3pt 0;
-        border-bottom: 0.5pt solid #e5e7eb;
+      .insight-actions li::marker {
+        color: #c9a961;
+        font-weight: 700;
+      }
+
+      /* FOOTER */
+      .report-footer {
+        margin-top: 16pt;
+        padding-top: 8pt;
+        border-top: 1pt solid #cbd5e0;
+        font-size: 6.5pt;
+        color: #718096;
+        text-align: center;
+        font-family: 'Arial', sans-serif;
+        letter-spacing: 0.04em;
+      }
+
+      .report-footer .disclaimer {
+        margin-top: 4pt;
+        font-style: italic;
+      }
+
+      /* PAGE BREAKS */
+      .page-break {
+        page-break-before: always;
+      }
+
+      .no-break {
+        page-break-inside: avoid;
       }
     }
   </style>
 </head>
 <body>
-  <h1>${title}</h1>
-  <div class="report-metadata">
-    Generated on ${format(new Date(), 'MMMM d, yyyy')} at ${format(new Date(), 'h:mm a')}
+  <div class="report-header">
+    <h1>${title}</h1>
+    <div class="report-subtitle">Performance Analytics & Strategic Insights</div>
+    <div class="report-metadata">
+      <span>Report Date: ${format(new Date(), 'MMMM d, yyyy')}</span>
+      <span>Generated: ${format(new Date(), 'h:mm a')}</span>
+      <span class="confidential">Confidential</span>
+    </div>
   </div>
+
   ${sections.map((section, index) => `
-    <h2>${section.title}</h2>
-    ${section.content}
+    <div class="no-break">
+      <h2>${section.title}</h2>
+      ${section.content}
+    </div>
   `).join('\n')}
+
+  <div class="report-footer">
+    <div>This report contains confidential business information. Distribution is restricted to authorized personnel only.</div>
+    <div class="disclaimer">All figures are system-generated and subject to verification. Past performance does not guarantee future results.</div>
+  </div>
 </body>
 </html>
   `;

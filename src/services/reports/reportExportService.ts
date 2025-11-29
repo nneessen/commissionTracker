@@ -38,14 +38,17 @@ export class ReportExportService {
           content += `<p style="color: #666; margin-bottom: 12pt;">${section.description}</p>`;
         }
 
-        // Add metrics (compact 3-column grid)
+        // Add metrics (executive metric cards)
         if (section.metrics && section.metrics.length > 0) {
           content += '<div class="metrics-grid">';
           section.metrics.forEach(metric => {
+            const trendClass = metric.trend === 'up' ? 'up' : metric.trend === 'down' ? 'down' : '';
+            const trendHTML = metric.change ? `<span class="metric-change ${trendClass}">${metric.change > 0 ? '+' : ''}${metric.change}%</span>` : '';
             content += `
-              <div>
-                <span class="metric-label">${metric.label}:</span>
+              <div class="metric-card">
+                <span class="metric-label">${metric.label}</span>
                 <span class="metric-value">${metric.value}</span>
+                ${trendHTML}
               </div>
             `;
           });
@@ -70,20 +73,24 @@ export class ReportExportService {
           content += '</tbody></table>';
         }
 
-        // Add insights
+        // Add insights (professional executive format)
         if (options.includeInsights !== false && section.insights && section.insights.length > 0) {
-          content += '<div style="margin-top: 8pt;">';
-          content += '<h3>Key Insights</h3>';
+          content += '<div style="margin-top: 10pt;">';
+          content += '<h3>Strategic Insights & Recommendations</h3>';
           section.insights.forEach(insight => {
-            const severityColor = this.getSeverityColor(insight.severity);
+            const severityClass = insight.severity === 'critical' ? 'critical' : insight.severity === 'high' ? 'high' : '';
             content += `
-              <div class="insight" style="border-left-color: ${severityColor};">
-                <div class="insight-title">${insight.title}</div>
+              <div class="insight ${severityClass}">
+                <div class="insight-header">
+                  <div class="insight-title">${insight.title}</div>
+                  <span class="insight-severity ${severityClass}">${insight.severity.toUpperCase()}</span>
+                </div>
                 <div class="insight-description">${insight.description}</div>
-                <div class="insight-impact">Impact: ${insight.impact}</div>
+                <div class="insight-impact"><strong>Business Impact:</strong> ${insight.impact}</div>
                 ${insight.recommendedActions && insight.recommendedActions.length > 0 ? `
+                  <strong style="font-size: 7.5pt; color: #2d3748; display: block; margin-top: 4pt;">Recommended Actions:</strong>
                   <ul class="insight-actions">
-                    ${insight.recommendedActions.map(action => `<li>→ ${action}</li>`).join('')}
+                    ${insight.recommendedActions.map(action => `<li>${action}</li>`).join('')}
                   </ul>
                 ` : ''}
               </div>
@@ -98,16 +105,21 @@ export class ReportExportService {
         };
       });
 
-    // Add summary if requested
+    // Add summary if requested (executive metric cards)
     if (options.includeSummary !== false) {
       const summaryContent = `
         <div class="metrics-grid">
-          ${report.summary.keyMetrics.map(m => `
-            <div>
-              <span class="metric-label">${m.label}:</span>
-              <span class="metric-value">${m.value}</span>
-            </div>
-          `).join('')}
+          ${report.summary.keyMetrics.map(m => {
+            const trendClass = m.trend === 'up' ? 'up' : m.trend === 'down' ? 'down' : '';
+            const trendHTML = m.change ? `<span class="metric-change ${trendClass}">${m.change > 0 ? '+' : ''}${m.change}%</span>` : '';
+            return `
+              <div class="metric-card">
+                <span class="metric-label">${m.label}</span>
+                <span class="metric-value">${m.value}</span>
+                ${trendHTML}
+              </div>
+            `;
+          }).join('')}
         </div>
       `;
 
