@@ -8,6 +8,11 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
+import {
   User,
   Mail,
   Phone,
@@ -17,6 +22,11 @@ import {
   Clock,
   AlertCircle,
   MessageSquare,
+  ChevronDown,
+  ChevronRight,
+  Slack,
+  Send,
+  Inbox,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import {
@@ -27,23 +37,16 @@ import {
 import { useActiveTemplate } from '../hooks/usePipeline';
 import { PhaseChecklist } from '../components/PhaseChecklist';
 import { DocumentManager } from '../components/DocumentManager';
+import { CommunicationPanel } from '../components/CommunicationPanel';
 import { useRecruitDocuments } from '../hooks/useRecruitDocuments';
 import { useCurrentUserProfile } from '@/hooks/admin/useUserApproval';
 import type { UserProfile } from '@/types/hierarchy.types';
 
-const PHASE_NAMES = [
-  'Interview 1',
-  'Zoom Interview',
-  'Pre-Licensing',
-  'Exam',
-  'NPN Received',
-  'Contracting',
-  'Bootcamp',
-];
-
 export function MyRecruitingPipeline() {
   const { user } = useAuth();
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [expandedPhase, setExpandedPhase] = useState<string | null>(null);
+  const [selectedCommunicationTab, setSelectedCommunicationTab] = useState<'compose' | 'inbox'>('compose');
 
   // Get current user profile to check roles
   const { data: currentUserProfile } = useCurrentUserProfile();
@@ -86,11 +89,30 @@ export function MyRecruitingPipeline() {
   const { data: phaseProgress } = useRecruitPhaseProgress(profile?.id);
   const { data: currentPhase } = useCurrentPhase(profile?.id);
   const { data: template } = useActiveTemplate();
-  const { data: checklistProgress } = useChecklistProgress(
+  const { data: documents } = useRecruitDocuments(profile?.id);
+
+  // Fetch all checklist progress for all phases (not just current)
+  const { data: allChecklistProgress } = useQuery({
+    queryKey: ['all-checklist-progress', profile?.id],
+    queryFn: async () => {
+      if (!profile?.id) return [];
+
+      const { data, error } = await supabase
+        .from('recruit_checklist_progress')
+        .select('*')
+        .eq('user_id', profile.id);
+
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!profile?.id,
+  });
+
+  // Use current phase checklist for the current phase section
+  const { data: currentChecklistProgress } = useChecklistProgress(
     profile?.id,
     currentPhase?.phase_id
   );
-  const { data: documents } = useRecruitDocuments(profile?.id);
 
   // Calculate progress percentage
   const calculateProgress = () => {
@@ -180,19 +202,19 @@ export function MyRecruitingPipeline() {
         <div className="flex items-center gap-2">
           <Avatar className="h-10 w-10">
             <AvatarImage src={profile.profile_photo_url || undefined} alt={profile.first_name || 'User'} />
-            <AvatarFallback className="text-xs font-mono">{initials}</AvatarFallback>
+            <AvatarFallback className="text-xs font-medium">{initials}</AvatarFallback>
           </Avatar>
           <div className="min-w-0">
             <p className="text-sm font-semibold truncate">
               {profile.first_name} {profile.last_name}
             </p>
-            <p className="text-[10px] text-muted-foreground font-mono truncate">
+            <p className="text-[10px] text-muted-foreground font-sans truncate">
               {profile.email} · {profile.phone || 'No phone'}
             </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Badge variant="outline" className="text-xs px-2 py-0.5 font-mono">
+          <Badge variant="outline" className="text-xs px-2 py-0.5 font-sans">
             {progressPercentage}% Complete
           </Badge>
           <label htmlFor="photo-upload">
@@ -228,12 +250,12 @@ export function MyRecruitingPipeline() {
           {currentPhase && template ? (
             <div className="border rounded-sm p-2 bg-card">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-xs font-semibold uppercase text-muted-foreground font-mono">
+                <h3 className="text-xs font-semibold uppercase text-muted-foreground font-sans">
                   Current Phase: {currentPhaseData?.phase_name || 'Unknown'}
                 </h3>
-                <Badge variant="secondary" className="text-[10px] px-1 py-0 font-mono">
+                <Badge variant="secondary" className="text-[10px] px-1 py-0 font-sans">
                   {currentChecklistItems.length > 0
-                    ? `${checklistProgress?.filter(p => p.status === 'completed').length || 0}/${currentChecklistItems.length}`
+                    ? `${currentChecklistProgress?.filter(p => p.status === 'completed').length || 0}/${currentChecklistItems.length}`
                     : 'No items'}
                 </Badge>
               </div>
@@ -242,7 +264,7 @@ export function MyRecruitingPipeline() {
                 <PhaseChecklist
                   userId={profile.id}
                   checklistItems={currentChecklistItems}
-                  checklistProgress={checklistProgress || []}
+                  checklistProgress={currentChecklistProgress || []}
                   isUpline={false}
                   currentUserId={profile.id}
                   currentPhaseId={currentPhase?.phase_id}
@@ -257,20 +279,20 @@ export function MyRecruitingPipeline() {
                   }}
                 />
               ) : (
-                <p className="text-xs text-muted-foreground font-mono py-4 text-center">
+                <p className="text-xs text-muted-foreground font-sans py-4 text-center">
                   No checklist items for this phase
                 </p>
               )}
 
               {currentPhase.notes && (
                 <div className="mt-2 p-2 bg-muted/50 rounded-sm">
-                  <p className="text-[10px] text-muted-foreground font-mono">{currentPhase.notes}</p>
+                  <p className="text-[10px] text-muted-foreground font-sans">{currentPhase.notes}</p>
                 </div>
               )}
 
               {currentPhase.status === 'blocked' && currentPhase.blocked_reason && (
                 <div className="mt-2 p-2 bg-destructive/10 rounded-sm border border-destructive/20">
-                  <p className="text-[10px] text-destructive font-mono">
+                  <p className="text-[10px] text-destructive font-sans">
                     <strong>Blocked:</strong> {currentPhase.blocked_reason}
                   </p>
                 </div>
@@ -278,49 +300,123 @@ export function MyRecruitingPipeline() {
             </div>
           ) : (
             <div className="border rounded-sm p-4 bg-card text-center">
-              <p className="text-xs text-muted-foreground font-mono">No active phase</p>
+              <p className="text-xs text-muted-foreground font-sans">No active phase</p>
             </div>
           )}
 
           {/* Phase Progress Timeline */}
           <div id="phase-progress-timeline" className="border rounded-sm p-2 bg-card">
-            <h3 className="text-xs font-semibold uppercase text-muted-foreground font-mono mb-2">
+            <h3 className="text-xs font-semibold uppercase text-muted-foreground font-sans mb-2">
               Onboarding Progress
             </h3>
             <div className="space-y-1">
-              {phaseProgress?.map((phase, index) => {
+              {phaseProgress?.map((phase) => {
                 const isCompleted = phase.status === 'completed';
                 const isInProgress = phase.status === 'in_progress';
                 const isBlocked = phase.status === 'blocked';
+                const isExpanded = expandedPhase === phase.id;
+
+                // Get the phase data and checklist from template
+                const phaseData = template?.phases?.find((p: any) => p.id === phase.phase_id);
+                const phaseName = phaseData?.phase_name || 'Unknown Phase';
+                const phaseChecklistItems = phaseData?.checklist_items || [];
 
                 return (
-                  <div key={phase.id} className="flex items-center gap-2 p-1 hover:bg-muted/30 rounded-sm transition-colors">
-                    {isCompleted ? (
-                      <CheckCircle2 className="h-4 w-4 text-green-600 flex-shrink-0" />
-                    ) : isInProgress ? (
-                      <Clock className="h-4 w-4 text-yellow-600 flex-shrink-0" />
-                    ) : isBlocked ? (
-                      <AlertCircle className="h-4 w-4 text-red-600 flex-shrink-0" />
-                    ) : (
-                      <Circle className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-mono font-medium truncate">
-                        {PHASE_NAMES[index] || `Phase ${index + 1}`}
-                      </p>
-                      {phase.started_at && (
-                        <p className="text-[10px] text-muted-foreground font-mono">
-                          Started {format(new Date(phase.started_at), 'MMM d')}
-                        </p>
-                      )}
-                    </div>
-                    <Badge
-                      variant={isCompleted ? 'default' : isInProgress ? 'secondary' : 'outline'}
-                      className="text-[10px] px-1 py-0 font-mono capitalize"
-                    >
-                      {phase.status.replace('_', ' ')}
-                    </Badge>
-                  </div>
+                  <Collapsible
+                    key={phase.id}
+                    open={isExpanded}
+                    onOpenChange={(open) => setExpandedPhase(open ? phase.id : null)}
+                  >
+                    <CollapsibleTrigger className="w-full">
+                      <div className="flex items-center gap-2 p-1 hover:bg-muted/30 rounded-sm transition-colors cursor-pointer">
+                        {isExpanded ? (
+                          <ChevronDown className="h-3 w-3 text-muted-foreground" />
+                        ) : (
+                          <ChevronRight className="h-3 w-3 text-muted-foreground" />
+                        )}
+                        {isCompleted ? (
+                          <CheckCircle2 className="h-4 w-4 text-green-600 flex-shrink-0" />
+                        ) : isInProgress ? (
+                          <Clock className="h-4 w-4 text-yellow-600 flex-shrink-0" />
+                        ) : isBlocked ? (
+                          <AlertCircle className="h-4 w-4 text-red-600 flex-shrink-0" />
+                        ) : (
+                          <Circle className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                        )}
+                        <div className="flex-1 min-w-0 text-left">
+                          <p className="text-xs font-sans font-medium truncate">
+                            {phaseName}
+                          </p>
+                          {phase.started_at && (
+                            <p className="text-[10px] text-muted-foreground font-sans">
+                              Started {format(new Date(phase.started_at), 'MMM d')}
+                            </p>
+                          )}
+                        </div>
+                        <Badge
+                          variant={isCompleted ? 'default' : isInProgress ? 'secondary' : 'outline'}
+                          className="text-[10px] px-1 py-0 font-sans capitalize"
+                        >
+                          {phase.status.replace('_', ' ')}
+                        </Badge>
+                      </div>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <div className="ml-7 mt-2 p-2 bg-muted/20 rounded-sm">
+                        {phaseChecklistItems.length > 0 ? (
+                          <div className="space-y-1">
+                            <p className="text-[10px] font-semibold text-muted-foreground mb-2">
+                              Checklist Items:
+                            </p>
+                            {phaseChecklistItems.map((item: any) => {
+                              const progressItem = allChecklistProgress?.find(
+                                (p: any) => p.checklist_item_id === item.id
+                              );
+                              const itemCompleted = progressItem?.status === 'completed';
+
+                              return (
+                                <div key={item.id} className="flex items-start gap-2 py-0.5">
+                                  {itemCompleted ? (
+                                    <CheckCircle2 className="h-3 w-3 text-green-600 mt-0.5" />
+                                  ) : (
+                                    <Circle className="h-3 w-3 text-muted-foreground mt-0.5" />
+                                  )}
+                                  <div className="flex-1">
+                                    <p className="text-[10px] font-sans">{item.item_name}</p>
+                                    {item.item_description && (
+                                      <p className="text-[9px] text-muted-foreground">
+                                        {item.item_description}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <p className="text-[10px] text-muted-foreground font-sans">
+                            No checklist items for this phase
+                          </p>
+                        )}
+
+                        {phase.notes && (
+                          <div className="mt-2 pt-2 border-t">
+                            <p className="text-[10px] text-muted-foreground">
+                              <strong>Notes:</strong> {phase.notes}
+                            </p>
+                          </div>
+                        )}
+
+                        {phase.blocked_reason && (
+                          <div className="mt-2 pt-2 border-t">
+                            <p className="text-[10px] text-destructive">
+                              <strong>Blocked:</strong> {phase.blocked_reason}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
                 );
               })}
             </div>
@@ -331,7 +427,7 @@ export function MyRecruitingPipeline() {
         <div className="space-y-2 overflow-auto">
           {/* Documents Section */}
           <div className="border rounded-sm p-2 bg-card">
-            <h3 className="text-xs font-semibold uppercase text-muted-foreground font-mono mb-2">
+            <h3 className="text-xs font-semibold uppercase text-muted-foreground font-sans mb-2">
               Required Documents
             </h3>
             <DocumentManager
@@ -342,60 +438,19 @@ export function MyRecruitingPipeline() {
             />
           </div>
 
-          {/* Upline Contact */}
-          {upline ? (
-            <div className="border rounded-sm p-2 bg-card">
-              <h3 className="text-xs font-semibold uppercase text-muted-foreground font-mono mb-2">
-                Your Trainer
-              </h3>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={upline.profile_photo_url || undefined} alt={upline.first_name || 'Trainer'} />
-                    <AvatarFallback className="text-[10px] font-mono">
-                      {upline.first_name?.[0]}
-                      {upline.last_name?.[0]}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold font-mono truncate">
-                      {upline.first_name} {upline.last_name}
-                    </p>
-                    <p className="text-[10px] text-muted-foreground font-mono truncate flex items-center gap-1">
-                      <Mail className="h-2.5 w-2.5" />
-                      {upline.email}
-                    </p>
-                    {upline.phone && (
-                      <p className="text-[10px] text-muted-foreground font-mono flex items-center gap-1">
-                        <Phone className="h-2.5 w-2.5" />
-                        {upline.phone}
-                      </p>
-                    )}
-                  </div>
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full h-6 text-[10px] font-mono"
-                  asChild
-                >
-                  <a href={`mailto:${upline.email}`}>
-                    <MessageSquare className="h-3 w-3 mr-1" />
-                    Contact Trainer
-                  </a>
-                </Button>
-              </div>
+          {/* Communication Panel */}
+          <div className="border rounded-sm bg-card">
+            <h3 className="text-xs font-semibold uppercase text-muted-foreground mb-2 p-2 pb-0">
+              Communication
+            </h3>
+            <div className="h-[400px]">
+              <CommunicationPanel
+                userId={profile.id}
+                upline={upline}
+                currentUserProfile={currentUserProfile}
+              />
             </div>
-          ) : (
-            <div className="border rounded-sm p-2 bg-card">
-              <h3 className="text-xs font-semibold uppercase text-muted-foreground font-mono mb-2">
-                Your Trainer
-              </h3>
-              <p className="text-[10px] text-muted-foreground font-mono text-center py-4">
-                No trainer assigned yet
-              </p>
-            </div>
-          )}
+          </div>
         </div>
       </div>
     </div>

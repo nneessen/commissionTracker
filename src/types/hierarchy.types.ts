@@ -23,6 +23,7 @@ export interface UserProfile {
   hierarchy_depth: number;
   approval_status: 'pending' | 'approved' | 'denied';
   is_admin: boolean;
+  roles?: string[] | null; // Array of role names from RBAC system
 
   // Onboarding/recruiting fields - status mirrors the 7 phases
   onboarding_status?: 'interview_1' | 'zoom_interview' | 'pre_licensing' | 'exam' | 'npn_received' | 'contracting' | 'bootcamp' | 'completed' | 'dropped';
