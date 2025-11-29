@@ -13,6 +13,7 @@ import type { UserProfile } from '@/types/hierarchy.types';
 import { useAuth } from '@/contexts/AuthContext';
 import { showToast } from '@/utils/toast';
 import { Link } from '@tanstack/react-router';
+import { downloadCSV } from '@/utils/exportHelpers';
 
 // Extended type for recruits with joined data
 type RecruitWithRelations = UserProfile & {
@@ -46,32 +47,21 @@ export function RecruitingDashboard() {
   };
 
   const handleExportCSV = () => {
-    const headers = ['Name', 'Email', 'Phone', 'Status', 'Recruiter', 'Upline', 'Created'];
-    const rows = recruits.map((r) => [
-      r.first_name && r.last_name ? `${r.first_name} ${r.last_name}` : '',
-      r.email,
-      r.phone || '',
-      r.onboarding_status || '',
-      r.recruiter?.first_name && r.recruiter?.last_name
+    const exportData = recruits.map((r) => ({
+      Name: r.first_name && r.last_name ? `${r.first_name} ${r.last_name}` : '',
+      Email: r.email,
+      Phone: r.phone || '',
+      Status: r.onboarding_status || '',
+      Recruiter: r.recruiter?.first_name && r.recruiter?.last_name
         ? `${r.recruiter.first_name} ${r.recruiter.last_name}`
         : r.recruiter?.email || '',
-      r.upline?.first_name && r.upline?.last_name
+      Upline: r.upline?.first_name && r.upline?.last_name
         ? `${r.upline.first_name} ${r.upline.last_name}`
         : r.upline?.email || '',
-      r.created_at ? new Date(r.created_at).toLocaleDateString() : '',
-    ]);
+      Created: r.created_at ? new Date(r.created_at).toLocaleDateString() : '',
+    }));
 
-    const csvContent =
-      'data:text/csv;charset=utf-8,' +
-      [headers, ...rows].map((row) => row.map((cell) => `"${cell}"`).join(',')).join('\n');
-
-    const link = document.createElement('a');
-    link.setAttribute('href', encodeURI(csvContent));
-    link.setAttribute('download', `recruits-${new Date().toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
+    downloadCSV(exportData, 'recruits');
     showToast.success(`Exported ${recruits.length} recruits to CSV`);
   };
 

@@ -117,17 +117,6 @@ export function PaceMetrics() {
     }
   };
 
-  // Debug logging to verify we're using same calculations as dashboard
-  console.log('[PaceMetrics] Using useMetricsWithDateRange (same as dashboard):', {
-    surplusDeficit,
-    netIncome,
-    breakevenNeeded,
-    policiesNeeded,
-    isProfitable,
-    commissionPaid: periodCommissions.paid,
-    totalExpenses: metrics.periodExpenses.total,
-  });
-
   return (
     <Card className="w-full">
       <CardContent className="p-5">

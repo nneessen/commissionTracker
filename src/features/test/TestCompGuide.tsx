@@ -30,11 +30,6 @@ export const TestCompGuide: React.FC = () => {
       if (!selectedProductId) return;
 
       const today = new Date().toISOString().split('T')[0];
-      console.log('🔍 Testing direct query for:', {
-        productId: selectedProductId,
-        contractLevel: userContractLevel,
-        today
-      });
 
       const { data, error } = await supabase
         .from('comp_guide')
@@ -47,7 +42,6 @@ export const TestCompGuide: React.FC = () => {
         .limit(1)
         .maybeSingle();
 
-      console.log('📊 Direct query result:', { data, error });
       setDirectQuery({ data, error });
     };
 
@@ -74,10 +68,7 @@ export const TestCompGuide: React.FC = () => {
         .order('product_id', { ascending: true })
         .order('contract_level', { ascending: true });
 
-      if (error) {
-        console.error('❌ Error loading comp_guide:', error);
-      } else {
-        console.log('✅ Comp guide data:', data);
+      if (!error) {
         setCompGuideData(data || []);
       }
     };

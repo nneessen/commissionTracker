@@ -105,7 +105,6 @@ export function HierarchyDashboard() {
         nodes={hierarchyTree || []}
         onNodeClick={(node) => {
           // Could navigate to agent detail view or do nothing for now
-          console.log('Clicked node:', node);
         }}
       />
 

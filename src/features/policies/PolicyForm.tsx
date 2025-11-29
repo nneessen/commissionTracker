@@ -93,19 +93,7 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
   useEffect(() => {
     if (policyId) {
       const policy = getPolicyById(policyId);
-      console.log("🔍 PolicyForm: Loading policy for edit", {
-        policyId,
-        policy,
-      });
       if (policy) {
-        console.log("📝 PolicyForm: Setting form data", {
-          clientName: policy.client.name,
-          clientState: policy.client.state,
-          clientAge: policy.client.age,
-          carrierId: policy.carrierId,
-          productId: policy.productId,
-          product: policy.product,
-        });
         setFormData({
           clientName: policy.client.name,
           clientState: policy.client.state,
@@ -142,12 +130,6 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
       formData.product &&
       products.length > 0
     ) {
-      console.log("🔎 Looking for product matching carrier and product type", {
-        carrierId: formData.carrierId,
-        productType: formData.product,
-        availableProducts: products,
-      });
-
       // Try to find a product that matches the carrier and product type
       const matchingProduct = products.find(
         (p) =>
@@ -156,16 +138,10 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
       );
 
       if (matchingProduct) {
-        console.log("✅ Found matching product:", matchingProduct);
         setFormData((prev) => ({
           ...prev,
           productId: matchingProduct.id,
         }));
-      } else {
-        console.warn("⚠️ No matching product found for carrier/type", {
-          carrierId: formData.carrierId,
-          productType: formData.product,
-        });
       }
     }
   }, [
@@ -211,15 +187,10 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
   useEffect(() => {
     // Don't override commission percentage when editing an existing policy
     if (policyId) {
-      console.log("⏭️  Skipping commission auto-update for existing policy");
       return;
     }
 
     if (formData.productId && compGuideData) {
-      console.log(
-        "💰 Auto-setting commission from comp_guide",
-        compGuideData.commission_percentage * 100,
-      );
       // Use comp_guide commission rate (contract-level based)
       setFormData((prev) => ({
         ...prev,
@@ -228,12 +199,6 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
     } else if (formData.productId && !compGuideData) {
       // Fallback to product commission rate
       const selectedProduct = products.find((p) => p.id === formData.productId);
-      console.log(
-        "💰 Auto-setting commission from product",
-        selectedProduct?.commission_percentage
-          ? selectedProduct.commission_percentage * 100
-          : 0,
-      );
       setFormData((prev) => ({
         ...prev,
         commissionPercentage: selectedProduct?.commission_percentage

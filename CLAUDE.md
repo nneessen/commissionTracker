@@ -5,6 +5,38 @@ Target app: small-scale personal + business expense tracker. React 19.1, TypeScr
 
 ---
 
+## CRITICAL: Auto-Resume Active Sessions
+
+**IMPORTANT - Check this FIRST in every new conversation:**
+
+If the memory `ACTIVE_SESSION_CONTINUATION` exists:
+
+1. **Read the memory immediately** using `mcp__serena__read_memory`
+2. **Check the timestamp** - If less than 72 hours old, this is likely the session to resume
+3. **Acknowledge the previous session** to the user:
+   ```
+   I found an active session from [DATE]. The last session was working on:
+   - [Summary of active plans from memory]
+   - [Git status summary]
+
+   Would you like me to continue from where that session left off, or start fresh?
+   ```
+4. **If user wants to continue:**
+   - Review the active plans from the memory
+   - Check current git status to see what changed since
+   - Resume work on the tasks from the active plans
+   - Delete or archive the `ACTIVE_SESSION_CONTINUATION` memory when session is truly complete
+
+5. **If user wants to start fresh:**
+   - Archive the memory: rename to `ACTIVE_SESSION_CONTINUATION_ARCHIVED_[TIMESTAMP]`
+   - Proceed with the user's new request
+
+**This enables ZERO-TOUCH continuation across context windows!**
+
+The `ACTIVE_SESSION_CONTINUATION` memory is automatically created by the PreCompact hook when context fills up. It contains the complete state needed to seamlessly resume work.
+
+---
+
 # Project summary
 
 **Insurance Sales KPI Tracking System**

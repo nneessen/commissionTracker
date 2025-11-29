@@ -29,3 +29,9 @@ yarn-error.log*
 # Sensitive documents
 public/*.pdf
 *.pdf:Zone.Identifier
+
+# Auto-generated continuation prompts
+plans/continuation-prompts/
+
+# PreCompact hook logs
+.claude/hooks/pre-compact.log

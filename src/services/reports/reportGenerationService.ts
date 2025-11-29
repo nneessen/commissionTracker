@@ -9,6 +9,7 @@ import {
 } from '../../types/reports.types';
 import { supabase } from '../base/supabase';
 import { InsightsService } from './insightsService';
+import { ForecastingService } from './forecastingService';
 import { formatCurrency, formatPercent } from '../../lib/format';
 
 interface GenerateReportOptions {
@@ -130,10 +131,10 @@ export class ReportGenerationService {
         description: 'Revenue, expenses, and net income for the selected period',
         metrics: [
           { label: 'Commission Revenue', value: formatCurrency(totalCommissionPaid) },
-          { label: 'Operating Expenses', value: formatCurrency(totalExpenses) },
+          { label: 'Business Expenses', value: formatCurrency(totalExpenses) },
           { label: 'Net Income', value: formatCurrency(netIncome) },
           {
-            label: 'Expense Ratio',
+            label: 'Expense Ratio (Expenses/Revenue)',
             value: formatPercent(totalCommissionPaid > 0 ? totalExpenses / totalCommissionPaid : 0),
           },
         ],
@@ -161,7 +162,7 @@ export class ReportGenerationService {
     return {
       id: `exec-${Date.now()}`,
       type: 'executive-dashboard',
-      title: 'Executive Dashboard Report',
+      title: 'Executive Report',
       subtitle: `Generated for ${filters.startDate.toLocaleDateString()} - ${filters.endDate.toLocaleDateString()}`,
       generatedAt: new Date(),
       filters,
@@ -268,7 +269,7 @@ export class ReportGenerationService {
     return {
       id: `comm-${Date.now()}`,
       type: 'commission-performance',
-      title: 'Commission Performance Report',
+      title: 'Commission Report',
       subtitle: `Commission analysis for ${filters.startDate.toLocaleDateString()} - ${filters.endDate.toLocaleDateString()}`,
       generatedAt: new Date(),
       filters,
@@ -324,7 +325,7 @@ export class ReportGenerationService {
     return {
       id: `policy-${Date.now()}`,
       type: 'policy-performance',
-      title: 'Policy Performance Report',
+      title: 'Policy Report',
       subtitle: `Policy analysis for ${filters.startDate.toLocaleDateString()} - ${filters.endDate.toLocaleDateString()}`,
       generatedAt: new Date(),
       filters,
@@ -393,7 +394,7 @@ export class ReportGenerationService {
     return {
       id: `client-${Date.now()}`,
       type: 'client-relationship',
-      title: 'Client Relationship Report',
+      title: 'Client Report',
       subtitle: `Client analysis for ${filters.startDate.toLocaleDateString()} - ${filters.endDate.toLocaleDateString()}`,
       generatedAt: new Date(),
       filters,
@@ -465,24 +466,79 @@ export class ReportGenerationService {
     userId: string,
     filters: ReportFilters,
   ): Promise<Report> {
-    // This would include forecasting logic
+    // Get forecasting data
+    const forecast = await ForecastingService.forecastCommission(userId);
+
+    // Get insights for recommendations
+    const insights = await InsightsService.generateInsights({
+      userId,
+      startDate: filters.startDate,
+      endDate: filters.endDate,
+    });
+
+    // Build sections
     const sections: ReportSection[] = [
       {
         id: 'forecast',
         title: 'Revenue Forecast',
         description: 'Projected commission income for next 3 months',
         metrics: [
-          { label: 'Next Month Projection', value: formatCurrency(0) },
-          { label: '3-Month Projection', value: formatCurrency(0) },
-          { label: 'Confidence Level', value: formatPercent(0.85) },
+          {
+            label: 'Next Month Projection',
+            value: formatCurrency(forecast.nextMonth),
+            trend: forecast.trend === 'stable' ? 'neutral' : forecast.trend,
+          },
+          {
+            label: '3-Month Projection',
+            value: formatCurrency(forecast.threeMonth),
+          },
+          {
+            label: 'Confidence Level',
+            value: formatPercent(forecast.confidence),
+          },
         ],
       },
     ];
 
-    const insights = await InsightsService.generateInsights({
-      userId,
-      startDate: filters.startDate,
-      endDate: filters.endDate,
+    // Add warnings section if any exist
+    if (forecast.warnings.length > 0) {
+      sections.push({
+        id: 'forecast-warnings',
+        title: 'Forecasting Notes',
+        description: 'Important information about these predictions',
+        insights: forecast.warnings.map((warning, index) => ({
+          id: `warning-${index}`,
+          severity: 'medium',
+          category: 'performance',
+          title: 'Forecasting Limitation',
+          description: warning,
+          impact: 'May affect prediction accuracy',
+          recommendedActions: ['Add more historical data', 'Review forecast methodology'],
+          priority: 5,
+        })),
+      });
+    }
+
+    // Add trend analysis section
+    sections.push({
+      id: 'trend-analysis',
+      title: 'Trend Analysis',
+      description: `Based on ${forecast.historicalMonths} months of historical data`,
+      metrics: [
+        {
+          label: 'Trend Direction',
+          value: forecast.trend === 'up' ? 'Growing' : forecast.trend === 'down' ? 'Declining' : 'Stable',
+          trend: forecast.trend === 'stable' ? undefined : forecast.trend,
+        },
+        {
+          label: 'Historical Months',
+          value: forecast.historicalMonths,
+        },
+        {
+          label: 'Prediction Quality',
+          value: forecast.confidence > 0.7 ? 'High' : forecast.confidence > 0.4 ? 'Medium' : 'Low',
+        },
+      ],
     });
 
     return {
@@ -493,7 +549,7 @@ export class ReportGenerationService {
       generatedAt: new Date(),
       filters,
       summary: {
-        healthScore: 70,
+        healthScore: Math.round(forecast.confidence * 100),
         keyMetrics: sections[0].metrics || [],
         topInsights: insights.slice(0, 3),
       },

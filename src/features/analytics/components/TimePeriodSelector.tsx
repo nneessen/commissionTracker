@@ -142,10 +142,10 @@ export function TimePeriodSelector({
   return (
     <div style={{ position: 'relative' }}>
       <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
-        gap: '8px',
-        alignItems: 'center'
+        display: 'flex',
+        gap: '4px',
+        alignItems: 'center',
+        flexWrap: 'nowrap'
       }}>
         {periods.map(({ value, label }) => (
           <button
@@ -159,13 +159,13 @@ export function TimePeriodSelector({
               }
             }}
             style={{
-              padding: '6px 12px',
+              padding: '4px 8px',
               background: selectedPeriod === value ? '#3b82f6' : '#ffffff',
               color: selectedPeriod === value ? '#ffffff' : '#656d76',
               border: selectedPeriod === value ? 'none' : '1px solid #e2e8f0',
-              borderRadius: '6px',
+              borderRadius: '4px',
               fontSize: '11px',
-              fontWeight: 600,
+              fontWeight: 500,
               cursor: 'pointer',
               transition: 'all 0.2s ease',
               whiteSpace: 'nowrap'
@@ -174,16 +174,6 @@ export function TimePeriodSelector({
             {label}
           </button>
         ))}
-      </div>
-
-      {/* Display current range */}
-      <div style={{
-        marginTop: '8px',
-        fontSize: '11px',
-        color: '#656d76',
-        fontWeight: 500
-      }}>
-        {displayRange}
       </div>
 
       {/* Custom date picker */}

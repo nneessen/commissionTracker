@@ -56,44 +56,43 @@ export class InsightsService {
   }
 
   /**
-   * Detect policies at risk of chargeback
+   * Detect ACTUAL chargeback events (not every policy)
+   * Only show insights if there are REAL chargebacks in the period
    */
   private static async detectChargebackRisks(
     context: InsightContext,
   ): Promise<ActionableInsight[]> {
-    const { data: atRiskPolicies } = await supabase
-      .from('commission_earning_detail')
+    const { data: chargebacks } = await supabase
+      .from('commissions')
       .select('*')
       .eq('user_id', context.userId)
-      .lt('months_paid', 3)
-      .gt('unearned_amount', 0)
-      .eq('policy_status', 'active')
-      .order('unearned_amount', { ascending: false });
+      .eq('status', 'charged_back')
+      .gte('payment_date', context.startDate.toISOString())
+      .lte('payment_date', context.endDate.toISOString());
 
-    if (!atRiskPolicies || atRiskPolicies.length === 0) return [];
+    if (!chargebacks || chargebacks.length === 0) return [];
 
-    const totalAtRisk = atRiskPolicies.reduce((sum: number, p: any) => sum + (p.unearned_amount || 0), 0);
-    const criticalPolicies = atRiskPolicies.filter((p: any) => (p.months_paid || 0) < 2);
+    const totalChargedBack = chargebacks.reduce((sum: number, c: any) => sum + Math.abs(c.chargeback_amount || c.amount || 0), 0);
 
     const insights: ActionableInsight[] = [];
 
-    if (criticalPolicies.length > 0) {
+    if (totalChargedBack > 0) {
       insights.push({
-        id: 'chargeback-critical-risk',
+        id: 'chargeback-actual',
         severity: 'critical',
         category: 'chargeback',
-        title: `${criticalPolicies.length} Policies at Critical Chargeback Risk`,
-        description: `You have ${criticalPolicies.length} policies with less than 2 months paid that could result in chargebacks if they lapse.`,
-        impact: `$${totalAtRisk.toFixed(2)} at risk of chargeback`,
+        title: `${chargebacks.length} Chargebacks This Period`,
+        description: `You had ${chargebacks.length} commission chargebacks in this period.`,
+        impact: `$${totalChargedBack.toFixed(2)} charged back`,
         recommendedActions: [
-          `Contact the ${Math.min(5, criticalPolicies.length)} highest-risk clients this week`,
-          'Set up automated 30/60/90 day follow-up reminders',
-          'Review onboarding process to improve early retention',
-          'Consider offering payment assistance or policy review calls',
+          'Review why these policies lapsed',
+          'Improve client follow-up in first 90 days',
+          'Set up automated retention reminders',
+          'Focus on better product fit during sales process',
         ],
         priority: 10,
         affectedEntities: {
-          policies: criticalPolicies.map(p => p.policy_id).filter(Boolean),
+          commissions: chargebacks.map(c => c.id).filter(Boolean),
         },
       });
     }

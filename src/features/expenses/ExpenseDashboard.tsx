@@ -53,9 +53,9 @@ import {
   useDeleteExpenseTemplate,
 } from "../../hooks/expenses/useExpenseTemplates";
 import { expenseAnalyticsService } from "../../services/expenses/expenseAnalyticsService";
-import { expenseService } from "../../services/expenses/expenseService";
 import { expenseTemplateService } from "../../services/expenses/expenseTemplateService";
 import { supabase } from "../../services/base/supabase";
+import { downloadCSV } from "../../utils/exportHelpers";
 import type {
   Expense,
   AdvancedExpenseFilters,
@@ -250,16 +250,20 @@ export function ExpenseDashboard() {
 
   const handleExportCSV = () => {
     try {
-      const csv = expenseService.exportToCSV(filteredExpenses);
-      const blob = new Blob([csv], { type: "text/csv" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `expenses-${new Date().toISOString().split("T")[0]}.csv`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      const exportData = filteredExpenses.map(expense => ({
+        Date: expense.date,
+        Name: expense.name,
+        Description: expense.description || '',
+        Amount: expense.amount.toFixed(2),
+        Category: expense.category,
+        Type: expense.expense_type,
+        'Tax Deductible': expense.is_tax_deductible ? 'Yes' : 'No',
+        Recurring: expense.is_recurring ? 'Yes' : 'No',
+        'Recurring Frequency': expense.recurring_frequency || '',
+        Notes: expense.notes || '',
+      }));
+
+      downloadCSV(exportData, 'expenses');
       showToast.success("Expenses exported to CSV!");
     } catch (error) {
       showToast.error("Failed to export CSV. Please try again.");

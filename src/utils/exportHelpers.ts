@@ -89,6 +89,11 @@ export function downloadAnalyticsSections(sections: AnalyticsSectionExport[]): v
 /**
  * Generate PDF-friendly HTML for printing
  * (Browser's native print-to-PDF will be used)
+ *
+ * DESIGN GOALS:
+ * - Ultra-compact: fit maximum content on one page
+ * - Modern: professional gradient backgrounds, proper visual hierarchy
+ * - Data-dense: no wasted space, efficient layout
  */
 export function generatePrintableHTML(
   title: string,
@@ -103,67 +108,155 @@ export function generatePrintableHTML(
   <style>
     @media print {
       @page {
-        margin: 1in;
+        margin: 0.4in 0.5in;
         size: letter;
       }
+
       body {
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-        font-size: 10pt;
-        color: #000;
+        font-size: 8.5pt;
+        color: #1a1a1a;
+        line-height: 1.3;
       }
+
       h1 {
-        font-size: 18pt;
-        margin-bottom: 0.5in;
-        border-bottom: 2px solid #000;
-        padding-bottom: 8pt;
+        font-size: 16pt;
+        margin: 0 0 6pt 0;
+        padding-bottom: 4pt;
+        border-bottom: 1.5pt solid #2563eb;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        color: #0f172a;
       }
+
       h2 {
-        font-size: 12pt;
-        margin-top: 0.3in;
-        margin-bottom: 8pt;
+        font-size: 11pt;
+        margin: 10pt 0 4pt 0;
+        font-weight: 600;
+        color: #374151;
         page-break-after: avoid;
+        border-left: 3pt solid #2563eb;
+        padding-left: 6pt;
       }
+
+      h3 {
+        font-size: 9pt;
+        margin: 6pt 0 3pt 0;
+        font-weight: 600;
+        color: #4b5563;
+      }
+
       table {
         width: 100%;
         border-collapse: collapse;
-        margin-bottom: 0.2in;
+        margin: 6pt 0 10pt 0;
         page-break-inside: avoid;
+        font-size: 8pt;
       }
-      th, td {
-        padding: 4pt;
-        border: 1px solid #ccc;
+
+      th {
+        background: linear-gradient(to bottom, #f3f4f6, #e5e7eb);
+        font-weight: 600;
+        font-size: 7.5pt;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        color: #374151;
+        padding: 3pt 4pt;
+        border: 0.5pt solid #d1d5db;
         text-align: left;
       }
-      th {
-        background-color: #f0f0f0;
-        font-weight: 600;
+
+      td {
+        padding: 2.5pt 4pt;
+        border: 0.5pt solid #e5e7eb;
+        color: #1f2937;
       }
-      .metric {
-        display: inline-block;
-        margin: 4pt 8pt 4pt 0;
+
+      tbody tr:nth-child(even) {
+        background-color: #f9fafb;
       }
-      .metric-label {
+
+      .metrics-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 6pt 8pt;
+        margin: 6pt 0 10pt 0;
+      }
+
+      .metrics-grid > div {
         font-size: 8pt;
-        color: #666;
-        text-transform: uppercase;
+        line-height: 1.3;
       }
-      .metric-value {
-        font-size: 11pt;
+
+      .metrics-grid .metric-label {
+        color: #64748b;
+        font-weight: 500;
+        display: inline;
+      }
+
+      .metrics-grid .metric-value {
+        color: #0f172a;
+        font-weight: 700;
+        font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+        display: inline;
+        margin-left: 3pt;
+      }
+
+      .insight {
+        border-left: 2.5pt solid #ea580c;
+        background-color: #fef3c7;
+        padding: 4pt 6pt;
+        margin: 4pt 0;
+        page-break-inside: avoid;
+      }
+
+      .insight-title {
+        font-weight: 600;
+        font-size: 8pt;
+        color: #92400e;
+        margin-bottom: 2pt;
+      }
+
+      .insight-description {
+        font-size: 7.5pt;
+        color: #78350f;
+        margin: 2pt 0;
+        line-height: 1.3;
+      }
+
+      .insight-impact {
+        font-size: 7pt;
+        color: #a16207;
         font-weight: 600;
       }
-      .page-break {
-        page-break-before: always;
+
+      .insight-actions {
+        margin: 3pt 0 0 8pt;
+        padding: 0;
+        font-size: 7pt;
+        color: #713f12;
+      }
+
+      .insight-actions li {
+        margin: 1pt 0;
+      }
+
+      .report-metadata {
+        font-size: 7pt;
+        color: #6b7280;
+        margin: 3pt 0 8pt 0;
+        padding: 3pt 0;
+        border-bottom: 0.5pt solid #e5e7eb;
       }
     }
   </style>
 </head>
 <body>
   <h1>${title}</h1>
-  <p style="font-size: 9pt; color: #666; margin-bottom: 0.3in;">
+  <div class="report-metadata">
     Generated on ${format(new Date(), 'MMMM d, yyyy')} at ${format(new Date(), 'h:mm a')}
-  </p>
+  </div>
   ${sections.map((section, index) => `
-    ${index > 0 ? '<div class="page-break"></div>' : ''}
     <h2>${section.title}</h2>
     ${section.content}
   `).join('\n')}

@@ -38,14 +38,14 @@ export class ReportExportService {
           content += `<p style="color: #666; margin-bottom: 12pt;">${section.description}</p>`;
         }
 
-        // Add metrics
+        // Add metrics (compact 3-column grid)
         if (section.metrics && section.metrics.length > 0) {
-          content += '<div style="margin-bottom: 16pt;">';
+          content += '<div class="metrics-grid">';
           section.metrics.forEach(metric => {
             content += `
-              <div class="metric">
-                <div class="metric-label">${metric.label}</div>
-                <div class="metric-value">${metric.value}</div>
+              <div>
+                <span class="metric-label">${metric.label}:</span>
+                <span class="metric-value">${metric.value}</span>
               </div>
             `;
           });
@@ -72,18 +72,20 @@ export class ReportExportService {
 
         // Add insights
         if (options.includeInsights !== false && section.insights && section.insights.length > 0) {
-          content += '<div style="margin-top: 16pt;">';
-          content += '<h3 style="font-size: 10pt; margin-bottom: 8pt;">Insights</h3>';
+          content += '<div style="margin-top: 8pt;">';
+          content += '<h3>Key Insights</h3>';
           section.insights.forEach(insight => {
             const severityColor = this.getSeverityColor(insight.severity);
             content += `
-              <div style="border-left: 3px solid ${severityColor}; padding-left: 8pt; margin-bottom: 12pt;">
-                <strong style="color: ${severityColor};">${insight.title}</strong>
-                <p style="font-size: 9pt; margin: 4pt 0;">${insight.description}</p>
-                <p style="font-size: 8pt; color: #666;">Impact: ${insight.impact}</p>
-                <ul style="font-size: 8pt; margin-top: 4pt;">
-                  ${insight.recommendedActions.map(action => `<li>${action}</li>`).join('')}
-                </ul>
+              <div class="insight" style="border-left-color: ${severityColor};">
+                <div class="insight-title">${insight.title}</div>
+                <div class="insight-description">${insight.description}</div>
+                <div class="insight-impact">Impact: ${insight.impact}</div>
+                ${insight.recommendedActions && insight.recommendedActions.length > 0 ? `
+                  <ul class="insight-actions">
+                    ${insight.recommendedActions.map(action => `<li>→ ${action}</li>`).join('')}
+                  </ul>
+                ` : ''}
               </div>
             `;
           });
@@ -99,16 +101,14 @@ export class ReportExportService {
     // Add summary if requested
     if (options.includeSummary !== false) {
       const summaryContent = `
-        <div class="metric">
-          <div class="metric-label">Health Score</div>
-          <div class="metric-value">${report.summary.healthScore}%</div>
+        <div class="metrics-grid">
+          ${report.summary.keyMetrics.map(m => `
+            <div>
+              <span class="metric-label">${m.label}:</span>
+              <span class="metric-value">${m.value}</span>
+            </div>
+          `).join('')}
         </div>
-        ${report.summary.keyMetrics.map(m => `
-          <div class="metric">
-            <div class="metric-label">${m.label}</div>
-            <div class="metric-value">${m.value}</div>
-          </div>
-        `).join('')}
       `;
 
       sections.unshift({

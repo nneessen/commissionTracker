@@ -156,7 +156,7 @@ export const DashboardHome: React.FC = () => {
         setActiveDialog("expense");
         break;
       case "View Reports":
-        navigate({ to: "/analytics" });
+        navigate({ to: "/reports" });
         break;
       default:
         console.warn(`Unknown action: ${action}`);

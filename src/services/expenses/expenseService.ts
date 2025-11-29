@@ -320,52 +320,6 @@ class ExpenseService {
   }
 
   /**
-   * Export expenses to CSV format
-   */
-  exportToCSV(expenses: Expense[]): string {
-    if (!expenses || expenses.length === 0) {
-      return '';
-    }
-
-    const headers = [
-      'Date',
-      'Name',
-      'Description',
-      'Amount',
-      'Category',
-      'Type',
-      'Tax Deductible',
-      'Recurring',
-      'Recurring Frequency',
-      'Notes',
-    ];
-
-    const rows = expenses.map(expense => [
-      expense.date,
-      expense.name,
-      expense.description || '',
-      expense.amount.toFixed(2),
-      expense.category,
-      expense.expense_type,
-      expense.is_tax_deductible ? 'Yes' : 'No',
-      expense.is_recurring ? 'Yes' : 'No',
-      expense.recurring_frequency || '',
-      expense.notes || '',
-    ]);
-
-    const csvContent = [
-      headers.join(','),
-      ...rows.map(row =>
-        row.map(cell =>
-          `"${String(cell).replace(/"/g, '""')}"`
-        ).join(',')
-      ),
-    ].join('\n');
-
-    return csvContent;
-  }
-
-  /**
    * Import expenses from CSV data
    */
   async importFromCSV(csvData: string): Promise<{ imported: number; errors: string[] }> {
