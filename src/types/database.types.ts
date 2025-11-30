@@ -2015,6 +2015,145 @@ export type Database = {
         }
         Relationships: []
       }
+      // Materialized Views for Reporting
+      mv_carrier_performance: {
+        Row: {
+          user_id: string | null
+          carrier_id: string | null
+          carrier_name: string | null
+          total_policies: number | null
+          active_policies: number | null
+          lapsed_policies: number | null
+          cancelled_policies: number | null
+          total_premium: number | null
+          avg_premium: number | null
+          persistency_rate: number | null
+          commission_count: number | null
+          total_commission_amount: number | null
+          avg_commission_amount: number | null
+          avg_commission_rate_pct: number | null
+          policies_13mo_plus: number | null
+          latest_policy_update: string | null
+        }
+        Relationships: []
+      }
+      mv_client_ltv: {
+        Row: {
+          user_id: string | null
+          client_id: string | null
+          client_name: string | null
+          email: string | null
+          total_policies: number | null
+          active_policies: number | null
+          lapsed_policies: number | null
+          cancelled_policies: number | null
+          total_premium: number | null
+          active_premium: number | null
+          avg_premium_per_policy: number | null
+          total_commission: number | null
+          paid_commission: number | null
+          avg_commission_per_policy: number | null
+          first_policy_date: string | null
+          latest_policy_date: string | null
+          avg_policy_age_months: number | null
+          client_tier: string | null
+          cross_sell_opportunity: boolean | null
+        }
+        Relationships: []
+      }
+      mv_cohort_retention: {
+        Row: {
+          user_id: string | null
+          cohort_month: string | null
+          months_since_issue: number | null
+          cohort_size: number | null
+          still_active: number | null
+          lapsed_count: number | null
+          cancelled_count: number | null
+          total_premium: number | null
+          active_premium: number | null
+          retention_rate: number | null
+        }
+        Relationships: []
+      }
+      mv_commission_aging: {
+        Row: {
+          user_id: string | null
+          aging_bucket: string | null
+          bucket_order: number | null
+          commission_count: number | null
+          policy_count: number | null
+          total_at_risk: number | null
+          total_earned: number | null
+          total_commission: number | null
+          avg_at_risk: number | null
+          risk_level: string | null
+        }
+        Relationships: []
+      }
+      mv_daily_production: {
+        Row: {
+          user_id: string | null
+          production_date: string | null
+          total_policies: number | null
+          active_policies: number | null
+          lapsed_policies: number | null
+          cancelled_policies: number | null
+          total_premium: number | null
+          avg_premium: number | null
+          min_premium: number | null
+          max_premium: number | null
+        }
+        Relationships: []
+      }
+      mv_expense_summary: {
+        Row: {
+          user_id: string | null
+          category: string | null
+          expense_type: string | null
+          expense_month: string | null
+          transaction_count: number | null
+          total_amount: number | null
+          avg_amount: number | null
+          min_amount: number | null
+          max_amount: number | null
+          recurring_count: number | null
+          recurring_amount: number | null
+        }
+        Relationships: []
+      }
+      mv_product_performance: {
+        Row: {
+          user_id: string | null
+          product_id: string | null
+          product_name: string | null
+          product_type: string | null
+          total_policies: number | null
+          active_policies: number | null
+          lapsed_policies: number | null
+          total_premium: number | null
+          avg_premium: number | null
+          persistency_rate: number | null
+          total_commission: number | null
+          avg_commission: number | null
+          avg_commission_rate_pct: number | null
+        }
+        Relationships: []
+      }
+      mv_production_velocity: {
+        Row: {
+          user_id: string | null
+          week_start: string | null
+          month_start: string | null
+          weekly_policies: number | null
+          weekly_premium: number | null
+          weekly_avg_premium: number | null
+          monthly_policies: number | null
+          monthly_premium: number | null
+          monthly_avg_premium: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       admin_approve_user: {

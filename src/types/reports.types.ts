@@ -46,6 +46,7 @@ export interface ActionableInsight {
 export interface ReportMetric {
   label: string;
   value: string | number;
+  description?: string; // Optional explanation of the metric
   change?: number; // Percentage change from previous period
   trend?: 'up' | 'down' | 'neutral';
   target?: number;

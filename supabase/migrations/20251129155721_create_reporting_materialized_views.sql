@@ -47,12 +47,12 @@ SELECT
   ) as persistency_rate,
   -- Commission metrics
   COUNT(DISTINCT co.id) as commission_count,
-  COALESCE(SUM(co.commission_amount), 0) as total_commission_amount,
-  COALESCE(AVG(co.commission_amount), 0) as avg_commission_amount,
+  COALESCE(SUM(co.amount), 0) as total_commission_amount,
+  COALESCE(AVG(co.amount), 0) as avg_commission_amount,
   -- Average commission rate
   CASE
     WHEN SUM(p.annual_premium) > 0
-    THEN ROUND(100.0 * COALESCE(SUM(co.commission_amount), 0) / SUM(p.annual_premium), 2)
+    THEN ROUND(100.0 * COALESCE(SUM(co.amount), 0) / SUM(p.annual_premium), 2)
     ELSE 0
   END as avg_commission_rate_pct,
   -- Count policies by age
@@ -137,7 +137,7 @@ SELECT
   COUNT(DISTINCT c.policy_id) as policy_count,
   SUM(c.unearned_amount) as total_at_risk,
   SUM(c.earned_amount) as total_earned,
-  SUM(c.commission_amount) as total_commission,
+  SUM(c.amount) as total_commission,
   AVG(c.unearned_amount) as avg_at_risk,
   -- Risk level based on months paid
   CASE
@@ -166,7 +166,7 @@ SELECT
   p.client_id,
   cl.name as client_name,
   cl.email,
-  cl.address->>'state' as state,
+  -- Note: address is TEXT, not JSONB - stored as full string
   -- Policy counts
   COUNT(p.id) as total_policies,
   COUNT(*) FILTER (WHERE p.status = 'active') as active_policies,
@@ -177,9 +177,9 @@ SELECT
   SUM(p.annual_premium) FILTER (WHERE p.status = 'active') as active_premium,
   AVG(p.annual_premium) as avg_premium_per_policy,
   -- Commission metrics
-  COALESCE(SUM(c.commission_amount), 0) as total_commission,
-  COALESCE(SUM(c.commission_amount) FILTER (WHERE c.status = 'paid'), 0) as paid_commission,
-  COALESCE(AVG(c.commission_amount), 0) as avg_commission_per_policy,
+  COALESCE(SUM(c.amount), 0) as total_commission,
+  COALESCE(SUM(c.amount) FILTER (WHERE c.status = 'paid'), 0) as paid_commission,
+  COALESCE(AVG(c.amount), 0) as avg_commission_per_policy,
   -- Client age and tenure
   MIN(p.effective_date) as first_policy_date,
   MAX(p.effective_date) as latest_policy_date,
@@ -205,7 +205,7 @@ SELECT
 FROM policies p
 INNER JOIN clients cl ON cl.id = p.client_id
 LEFT JOIN commissions c ON c.policy_id = p.id
-GROUP BY p.user_id, p.client_id, cl.name, cl.email, (cl.address->>'state');
+GROUP BY p.user_id, p.client_id, cl.name, cl.email;
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_mv_client_ltv_user_client ON mv_client_ltv(user_id, client_id);
 CREATE INDEX IF NOT EXISTS idx_mv_client_ltv_user_tier ON mv_client_ltv(user_id, client_tier);
@@ -231,11 +231,11 @@ SELECT
     2
   ) as persistency_rate,
   -- Commission metrics
-  COALESCE(SUM(c.commission_amount), 0) as total_commission,
-  COALESCE(AVG(c.commission_amount), 0) as avg_commission,
+  COALESCE(SUM(c.amount), 0) as total_commission,
+  COALESCE(AVG(c.amount), 0) as avg_commission,
   CASE
     WHEN SUM(p.annual_premium) > 0
-    THEN ROUND(100.0 * COALESCE(SUM(c.commission_amount), 0) / SUM(p.annual_premium), 2)
+    THEN ROUND(100.0 * COALESCE(SUM(c.amount), 0) / SUM(p.annual_premium), 2)
     ELSE 0
   END as avg_commission_rate_pct
 FROM policies p
@@ -255,7 +255,7 @@ SELECT
   e.user_id,
   e.category,
   e.expense_type,
-  DATE_TRUNC('month', e.expense_date) as expense_month,
+  DATE_TRUNC('month', e.date) as expense_month,
   COUNT(*) as transaction_count,
   SUM(e.amount) as total_amount,
   AVG(e.amount) as avg_amount,
@@ -264,7 +264,7 @@ SELECT
   COUNT(*) FILTER (WHERE e.is_recurring = true) as recurring_count,
   SUM(e.amount) FILTER (WHERE e.is_recurring = true) as recurring_amount
 FROM expenses e
-GROUP BY e.user_id, e.category, e.expense_type, DATE_TRUNC('month', e.expense_date);
+GROUP BY e.user_id, e.category, e.expense_type, DATE_TRUNC('month', e.date);
 
 CREATE INDEX IF NOT EXISTS idx_mv_expense_summary_user_month ON mv_expense_summary(user_id, expense_month);
 CREATE INDEX IF NOT EXISTS idx_mv_expense_summary_user_category ON mv_expense_summary(user_id, category);

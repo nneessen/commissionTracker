@@ -1,13 +1,14 @@
 // src/features/reports/ReportsPage.tsx
 
 import React, { useState, useMemo } from 'react';
-import { ReportType, ReportFilters } from '../../types/reports.types';
+import { ReportType, ReportFilters, ReportSection } from '../../types/reports.types';
 import { Button } from '../../components/ui/button';
 import { TimePeriodSelector, AdvancedTimePeriod, getAdvancedDateRange } from '../analytics/components/TimePeriodSelector';
 import { useReport } from '../../hooks/reports/useReport';
 import { ReportExportService } from '../../services/reports/reportExportService';
 import { Download, Loader2, FileText, Table, Printer, ChevronRight, TrendingUp, AlertTriangle, CheckCircle } from 'lucide-react';
 import { Card } from '../../components/ui/card';
+import { CommissionAgingChart, ClientTierChart } from './components/charts';
 
 // Helper function to create stable initial dates
 function getInitialDateRange() {
@@ -19,6 +20,31 @@ function getInitialDateRange() {
     startDate: today,
     endDate: endDate,
   };
+}
+
+// Helper to parse currency string to number
+function parseCurrency(value: string | number): number {
+  if (typeof value === 'number') return value;
+  return parseFloat(value.replace(/[$,]/g, '')) || 0;
+}
+
+// Helper to extract chart data from table data
+function getAgingChartData(section: ReportSection) {
+  if (!section.tableData) return [];
+  return section.tableData.rows.map(row => ({
+    bucket: String(row[0]),
+    atRisk: parseCurrency(row[2]),
+    earned: 0, // Aging table doesn't have earned column
+    riskLevel: String(row[3]),
+  }));
+}
+
+function getTierChartData(section: ReportSection) {
+  if (!section.tableData) return [];
+  return section.tableData.rows.map(row => ({
+    tier: String(row[0]).replace(/^.*Tier\s*/, '').replace(/\s*-.*$/, '').trim().charAt(0),
+    count: typeof row[1] === 'number' ? row[1] : parseInt(String(row[1])) || 0,
+  }));
 }
 
 // Report categories for navigation
@@ -313,10 +339,22 @@ export function ReportsPage() {
                       </div>
                     )}
 
-                    {/* Section Table */}
+                    {/* Section Table with Optional Chart */}
                     {section.tableData && (
-                      <div className="mb-3 space-y-1">
-                        <h4 className="text-xs font-semibold text-foreground">Detailed Data</h4>
+                      <div className="mb-3 space-y-2">
+                        {/* Render chart for specific sections */}
+                        {section.id === 'commission-aging' && (
+                          <div className="mb-2">
+                            <CommissionAgingChart data={getAgingChartData(section)} height={160} />
+                          </div>
+                        )}
+                        {section.id === 'client-tiers' && (
+                          <div className="mb-2">
+                            <ClientTierChart data={getTierChartData(section)} height={140} />
+                          </div>
+                        )}
+
+                        {/* Data Table */}
                         <div className="overflow-x-auto">
                           <table className="w-full text-xs">
                             <thead className="bg-muted border-b border-border">

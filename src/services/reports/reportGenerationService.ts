@@ -48,13 +48,14 @@ export class ReportGenerationService {
 
   /**
    * Generate Executive Dashboard Report
-   * High-level overview with key metrics and top insights
+   * HIGH-LEVEL SNAPSHOT ONLY - no detailed tables
+   * Designed to give quick overview and drive to detailed reports
    */
   private static async generateExecutiveDashboard(
     userId: string,
     filters: ReportFilters,
   ): Promise<Report> {
-    // Fetch all data in parallel
+    // Fetch core data in parallel - minimal queries for snapshot
     const [commissions, expenses, policies, insights] = await Promise.all([
       this.fetchCommissionData(userId, filters),
       this.fetchExpenseData(userId, filters),
@@ -71,15 +72,13 @@ export class ReportGenerationService {
       .filter(c => c.status === 'paid')
       .reduce((sum, c) => sum + (c.amount || 0), 0);
 
-    const totalCommissionEarned = commissions
-      .filter(c => c.status === 'earned' || c.status === 'paid')
-      .reduce((sum, c) => sum + (c.amount || 0), 0);
-
     const totalExpenses = expenses.reduce((sum, e) => sum + (e.amount || 0), 0);
     const netIncome = totalCommissionPaid - totalExpenses;
 
     const activePolicies = policies.filter(p => p.status === 'active').length;
     const totalPolicies = policies.length;
+    const totalPremium = policies.reduce((sum, p) => sum + (p.annual_premium || 0), 0);
+    const retentionRate = totalPolicies > 0 ? activePolicies / totalPolicies : 0;
 
     const healthScore = this.calculateHealthScore({
       netIncome,
@@ -88,82 +87,31 @@ export class ReportGenerationService {
       insights,
     });
 
-    // Build summary metrics
+    // Executive summary - 6 key numbers only
     const keyMetrics: ReportMetric[] = [
-      {
-        label: 'Commission Paid',
-        value: formatCurrency(totalCommissionPaid),
-        format: 'currency',
-      },
-      {
-        label: 'Commission Earned',
-        value: formatCurrency(totalCommissionEarned),
-        format: 'currency',
-      },
-      {
-        label: 'Total Expenses',
-        value: formatCurrency(totalExpenses),
-        format: 'currency',
-      },
-      {
-        label: 'Net Income',
-        value: formatCurrency(netIncome),
-        trend: netIncome >= 0 ? 'up' : 'down',
-        format: 'currency',
-      },
-      {
-        label: 'Active Policies',
-        value: activePolicies,
-        format: 'number',
-      },
-      {
-        label: 'Health Score',
-        value: formatPercent(healthScore / 100),
-        format: 'percent',
-      },
+      { label: 'Net Income', value: formatCurrency(netIncome), trend: netIncome >= 0 ? 'up' : 'down' },
+      { label: 'Commission Paid', value: formatCurrency(totalCommissionPaid) },
+      { label: 'Expenses', value: formatCurrency(totalExpenses) },
+      { label: 'Active Policies', value: activePolicies },
+      { label: 'Total Premium', value: formatCurrency(totalPremium) },
+      { label: 'Retention', value: formatPercent(retentionRate) },
     ];
 
-    // Build sections
+    // Single section with top insights - no redundant tables
     const sections: ReportSection[] = [
       {
-        id: 'income-statement',
-        title: 'Income Statement',
-        description: 'Revenue, expenses, and net income for the selected period',
-        metrics: [
-          { label: 'Commission Revenue', value: formatCurrency(totalCommissionPaid) },
-          { label: 'Business Expenses', value: formatCurrency(totalExpenses) },
-          { label: 'Net Income', value: formatCurrency(netIncome) },
-          {
-            label: 'Expense Ratio (Expenses/Revenue)',
-            value: formatPercent(totalCommissionPaid > 0 ? totalExpenses / totalCommissionPaid : 0),
-          },
-        ],
-      },
-      {
         id: 'key-insights',
-        title: 'Top Actionable Insights',
-        description: 'Most important recommendations based on your data',
-        insights: insights.slice(0, 5), // Top 5 insights
-      },
-      {
-        id: 'policy-overview',
-        title: 'Policy Portfolio Overview',
-        metrics: [
-          { label: 'Total Policies', value: totalPolicies },
-          { label: 'Active Policies', value: activePolicies },
-          {
-            label: 'Retention Rate',
-            value: formatPercent(totalPolicies > 0 ? activePolicies / totalPolicies : 0),
-          },
-        ],
+        title: 'Action Items',
+        description: 'Top priorities requiring attention',
+        insights: insights.slice(0, 3),
       },
     ];
 
     return {
       id: `exec-${Date.now()}`,
       type: 'executive-dashboard',
-      title: 'Executive Report',
-      subtitle: `Generated for ${filters.startDate.toLocaleDateString()} - ${filters.endDate.toLocaleDateString()}`,
+      title: 'Executive Summary',
+      subtitle: `${filters.startDate.toLocaleDateString()} - ${filters.endDate.toLocaleDateString()}`,
       generatedAt: new Date(),
       filters,
       summary: {
@@ -177,78 +125,78 @@ export class ReportGenerationService {
 
   /**
    * Generate Commission Performance Report
+   * DEEP DIVE: Commission risk, carrier profitability, chargebacks
+   * NOT for basic totals (see Executive Dashboard)
    */
   private static async generateCommissionReport(
     userId: string,
     filters: ReportFilters,
   ): Promise<Report> {
-    const commissions = await this.fetchCommissionData(userId, filters);
+    // Fetch MVs for deep analysis
+    const [chargebackSummaryResult, carrierPerformance, commissionAging] = await Promise.all([
+      supabase
+        .from('commission_chargeback_summary')
+        .select('*')
+        .eq('user_id', userId)
+        .single(),
+      this.fetchCarrierPerformance(userId),
+      this.fetchCommissionAging(userId),
+    ]);
 
-    // Get chargeback summary
-    const { data: chargebackSummary } = await supabase
-      .from('commission_chargeback_summary')
-      .select('*')
-      .eq('user_id', userId)
-      .single();
+    const chargebackSummary = chargebackSummaryResult.data;
 
-    // Calculate metrics by carrier
-    const { data: byCarrier } = await supabase
-      .from('policies')
-      .select('carrier_id, carriers(name), annual_premium, commissions(*)')
-      .eq('user_id', userId)
-      .eq('status', 'active');
+    // Risk metrics from aging MV
+    const totalAtRisk = commissionAging.reduce((sum, bucket) => sum + (bucket.total_at_risk || 0), 0);
+    const totalEarned = commissionAging.reduce((sum, bucket) => sum + (bucket.total_earned || 0), 0);
+    const criticalRisk = commissionAging.find(b => b.risk_level === 'Critical');
+    const highRisk = commissionAging.find(b => b.risk_level === 'High');
 
-    const carrierBreakdown: Record<string, { premium: number; commission: number; policies: number }> = {};
+    // Carrier profitability table
+    const carrierTableRows = carrierPerformance
+      .sort((a, b) => (b.total_commission_amount || 0) - (a.total_commission_amount || 0))
+      .map(carrier => [
+        carrier.carrier_name || 'Unknown',
+        formatCurrency(carrier.total_commission_amount || 0),
+        formatPercent((carrier.avg_commission_rate_pct || 0) / 100),
+        formatPercent((carrier.persistency_rate || 0) / 100),
+        carrier.total_policies || 0,
+      ]);
 
-    byCarrier?.forEach((policy: any) => {
-      const carrierData = Array.isArray(policy.carriers) ? policy.carriers[0] : policy.carriers;
-      const carrierName = carrierData?.name || 'Unknown';
-      if (!carrierBreakdown[carrierName]) {
-        carrierBreakdown[carrierName] = { premium: 0, commission: 0, policies: 0 };
-      }
-      carrierBreakdown[carrierName].premium += policy.annual_premium || 0;
-      carrierBreakdown[carrierName].policies += 1;
-      policy.commissions?.forEach((c: any) => {
-        carrierBreakdown[carrierName].commission += c.amount || 0;
-      });
-    });
+    // Aging risk table
+    const agingTableRows = commissionAging.map(bucket => [
+      bucket.aging_bucket || 'Unknown',
+      bucket.commission_count || 0,
+      formatCurrency(bucket.total_at_risk || 0),
+      bucket.risk_level || 'Unknown',
+    ]);
 
     const sections: ReportSection[] = [
       {
-        id: 'commission-summary',
-        title: 'Commission Summary',
+        id: 'risk-summary',
+        title: 'Chargeback Risk Summary',
         metrics: [
-          {
-            label: 'Total Commission Paid',
-            value: formatCurrency(commissions.filter(c => c.status === 'paid').reduce((sum, c) => sum + (c.amount || 0), 0)),
-          },
-          {
-            label: 'Pending Commission',
-            value: formatCurrency(commissions.filter(c => c.status === 'pending').reduce((sum, c) => sum + (c.amount || 0), 0)),
-          },
-          {
-            label: 'Total Chargebacks',
-            value: formatCurrency(chargebackSummary?.total_chargeback_amount || 0),
-          },
-          {
-            label: 'Chargeback Rate',
-            value: formatPercent((chargebackSummary?.chargeback_rate_percentage || 0) / 100),
-          },
+          { label: 'Total At-Risk', value: formatCurrency(totalAtRisk) },
+          { label: 'Total Earned (Safe)', value: formatCurrency(totalEarned) },
+          { label: 'Critical Risk', value: formatCurrency(criticalRisk?.total_at_risk || 0), description: 'Policies < 3 months' },
+          { label: 'Chargeback Rate', value: formatPercent((chargebackSummary?.chargeback_rate_percentage || 0) / 100) },
         ],
       },
       {
-        id: 'carrier-performance',
-        title: 'Performance by Carrier',
+        id: 'commission-aging',
+        title: 'Risk by Policy Age',
+        description: 'Younger policies = higher chargeback risk',
         tableData: {
-          headers: ['Carrier', 'Policies', 'Total Premium', 'Total Commission'],
-          rows: Object.entries(carrierBreakdown)
-            .sort((a, b) => b[1].commission - a[1].commission)
-            .map(([carrier, data]) => [
-              carrier,
-              data.policies,
-              formatCurrency(data.premium),
-              formatCurrency(data.commission),
-            ]),
+          headers: ['Age Bucket', 'Count', 'At-Risk Amount', 'Risk Level'],
+          rows: agingTableRows,
+        },
+      },
+      {
+        id: 'carrier-profitability',
+        title: 'Carrier Profitability',
+        description: 'Commission rates and persistency by carrier',
+        tableData: {
+          headers: ['Carrier', 'Commission', 'Comm Rate', 'Persistency', 'Policies'],
+          rows: carrierTableRows,
         },
       },
     ];
@@ -259,24 +207,28 @@ export class ReportGenerationService {
       endDate: filters.endDate,
     });
 
+    // Calculate totals from MV data
+    const totalPolicies = carrierPerformance.reduce((sum, c) => sum + (c.total_policies || 0), 0);
+    const activePolicies = carrierPerformance.reduce((sum, c) => sum + (c.active_policies || 0), 0);
+
     const healthScore = this.calculateHealthScore({
       netIncome: 0,
-      activePolicies: byCarrier?.length || 0,
-      totalPolicies: byCarrier?.length || 0,
+      activePolicies,
+      totalPolicies,
       insights,
     });
 
     return {
       id: `comm-${Date.now()}`,
       type: 'commission-performance',
-      title: 'Commission Report',
-      subtitle: `Commission analysis for ${filters.startDate.toLocaleDateString()} - ${filters.endDate.toLocaleDateString()}`,
+      title: 'Commission Risk Analysis',
+      subtitle: `${filters.startDate.toLocaleDateString()} - ${filters.endDate.toLocaleDateString()}`,
       generatedAt: new Date(),
       filters,
       summary: {
         healthScore,
         keyMetrics: sections[0].metrics || [],
-        topInsights: insights.filter(i => i.category === 'chargeback' || i.category === 'revenue').slice(0, 3),
+        topInsights: insights.filter(i => i.category === 'chargeback').slice(0, 2),
       },
       sections,
     };
@@ -284,55 +236,107 @@ export class ReportGenerationService {
 
   /**
    * Generate Policy Performance Report
+   * DEEP DIVE: Cohort retention, persistency trends, lapse analysis
+   * NOT for basic policy counts (see Executive Dashboard)
    */
   private static async generatePolicyReport(
     userId: string,
     filters: ReportFilters,
   ): Promise<Report> {
-    const policies = await this.fetchPolicyData(userId, filters);
+    // Fetch cohort retention MV + carrier performance for persistency breakdown
+    const [cohortRetention, carrierPerformance, insights] = await Promise.all([
+      this.fetchCohortRetention(userId),
+      this.fetchCarrierPerformance(userId),
+      InsightsService.generateInsights({
+        userId,
+        startDate: filters.startDate,
+        endDate: filters.endDate,
+      }),
+    ]);
 
-    // Calculate persistency
-    const thirteenMonthsAgo = new Date();
-    thirteenMonthsAgo.setMonth(thirteenMonthsAgo.getMonth() - 13);
-
-    const cohortPolicies = policies.filter(
-      p => new Date(p.effective_date) <= thirteenMonthsAgo,
-    );
-    const stillActive = cohortPolicies.filter(p => p.status === 'active');
-    const persistency13Month = cohortPolicies.length > 0
-      ? (stillActive.length / cohortPolicies.length) * 100
+    // Calculate 13-month persistency from mature cohorts
+    const matureCohorts = cohortRetention.filter(c => (c.months_since_issue || 0) >= 13);
+    const avgPersistency13Month = matureCohorts.length > 0
+      ? matureCohorts.reduce((sum, c) => sum + (c.retention_rate || 0), 0) / matureCohorts.length
       : 0;
+
+    // Get unique cohort months for retention table
+    const uniqueCohorts = [...new Map(
+      cohortRetention.map(c => [c.cohort_month, c])
+    ).values()].slice(0, 6);
+
+    // Cohort retention table
+    const cohortTableRows = uniqueCohorts.map(cohort => {
+      const cohortDate = cohort.cohort_month ? new Date(cohort.cohort_month) : new Date();
+      return [
+        cohortDate.toLocaleDateString('en-US', { year: 'numeric', month: 'short' }),
+        cohort.cohort_size || 0,
+        cohort.still_active || 0,
+        formatPercent((cohort.retention_rate || 0) / 100),
+      ];
+    });
+
+    // Persistency by carrier table
+    const persistencyByCarrier = carrierPerformance
+      .filter(c => (c.total_policies || 0) > 0)
+      .sort((a, b) => (b.persistency_rate || 0) - (a.persistency_rate || 0))
+      .map(carrier => [
+        carrier.carrier_name || 'Unknown',
+        formatPercent((carrier.persistency_rate || 0) / 100),
+        carrier.active_policies || 0,
+        carrier.lapsed_policies || 0,
+      ]);
 
     const sections: ReportSection[] = [
       {
-        id: 'policy-metrics',
-        title: 'Policy Metrics',
+        id: 'persistency-summary',
+        title: 'Persistency Overview',
         metrics: [
-          { label: 'Total Policies', value: policies.length },
-          { label: 'Active Policies', value: policies.filter(p => p.status === 'active').length },
-          { label: 'Lapsed Policies', value: policies.filter(p => p.status === 'lapsed').length },
-          { label: '13-Month Persistency', value: formatPercent(persistency13Month / 100) },
+          { label: '13-Month Persistency', value: formatPercent(avgPersistency13Month / 100) },
+          { label: 'Total Cohorts Tracked', value: uniqueCohorts.length },
         ],
+      },
+      {
+        id: 'cohort-retention',
+        title: 'Cohort Retention',
+        description: 'How each month\'s policies retain over time',
+        tableData: {
+          headers: ['Cohort Month', 'Initial', 'Active', 'Retention'],
+          rows: cohortTableRows,
+        },
+      },
+      {
+        id: 'persistency-by-carrier',
+        title: 'Persistency by Carrier',
+        description: 'Which carriers have the best retention',
+        tableData: {
+          headers: ['Carrier', 'Persistency', 'Active', 'Lapsed'],
+          rows: persistencyByCarrier,
+        },
       },
     ];
 
-    const insights = await InsightsService.generateInsights({
-      userId,
-      startDate: filters.startDate,
-      endDate: filters.endDate,
+    const totalPolicies = carrierPerformance.reduce((sum, c) => sum + (c.total_policies || 0), 0);
+    const activePolicies = carrierPerformance.reduce((sum, c) => sum + (c.active_policies || 0), 0);
+
+    const healthScore = this.calculateHealthScore({
+      netIncome: 0,
+      activePolicies,
+      totalPolicies,
+      insights,
     });
 
     return {
       id: `policy-${Date.now()}`,
       type: 'policy-performance',
-      title: 'Policy Report',
-      subtitle: `Policy analysis for ${filters.startDate.toLocaleDateString()} - ${filters.endDate.toLocaleDateString()}`,
+      title: 'Persistency Analysis',
+      subtitle: `${filters.startDate.toLocaleDateString()} - ${filters.endDate.toLocaleDateString()}`,
       generatedAt: new Date(),
       filters,
       summary: {
-        healthScore: 75,
+        healthScore,
         keyMetrics: sections[0].metrics || [],
-        topInsights: insights.filter(i => i.category === 'retention' || i.category === 'risk').slice(0, 3),
+        topInsights: insights.filter(i => i.category === 'retention').slice(0, 2),
       },
       sections,
     };
@@ -340,68 +344,120 @@ export class ReportGenerationService {
 
   /**
    * Generate Client Relationship Report
+   * DEEP DIVE: Client segmentation, cross-sell opportunities, top clients
+   * NOT for basic counts (see Executive Dashboard)
    */
   private static async generateClientReport(
     userId: string,
     filters: ReportFilters,
   ): Promise<Report> {
-    // Get all clients
-    const { data: clients } = await supabase
-      .from('clients')
-      .select('id')
-      .eq('user_id', userId);
+    // Fetch client LTV from MV
+    const [clientLTV, insights] = await Promise.all([
+      this.fetchClientLTV(userId),
+      InsightsService.generateInsights({
+        userId,
+        startDate: filters.startDate,
+        endDate: filters.endDate,
+      }),
+    ]);
 
-    // Get all active policies with client_id
-    const { data: policies } = await supabase
-      .from('policies')
-      .select('client_id')
-      .eq('user_id', userId)
-      .eq('status', 'active');
+    const totalClients = clientLTV.length;
+    const activePolicies = clientLTV.reduce((sum, c) => sum + (c.active_policies || 0), 0);
+    const avgPoliciesPerClient = totalClients > 0 ? activePolicies / totalClients : 0;
+    const crossSellOpportunities = clientLTV.filter(c => c.cross_sell_opportunity).length;
 
-    const totalClients = clients?.length || 0;
-    const totalPolicies = policies?.length || 0;
-    const avgPoliciesPerClient = totalClients > 0 ? totalPolicies / totalClients : 0;
-
-    // Count policies per client
-    const policiesPerClient = policies?.reduce((acc: Record<string, number>, p: any) => {
-      if (p.client_id) {
-        acc[p.client_id] = (acc[p.client_id] || 0) + 1;
-      }
+    // Client tiers
+    const tierCounts = clientLTV.reduce((acc, c) => {
+      const tier = c.client_tier || 'D';
+      acc[tier] = (acc[tier] || 0) + 1;
       return acc;
-    }, {} as Record<string, number>) || {};
+    }, {} as Record<string, number>);
 
-    const singlePolicyClients = Object.values(policiesPerClient).filter((count: number) => count === 1).length;
+    const tierTableRows = [
+      ['A - High Value', tierCounts['A'] || 0, '$5,000+'],
+      ['B - Medium', tierCounts['B'] || 0, '$2,000-$4,999'],
+      ['C - Standard', tierCounts['C'] || 0, '$500-$1,999'],
+      ['D - Low', tierCounts['D'] || 0, '<$500'],
+    ];
+
+    // Top 5 clients only
+    const topClientsRows = clientLTV
+      .sort((a, b) => (b.active_premium || 0) - (a.active_premium || 0))
+      .slice(0, 5)
+      .map(client => [
+        client.client_name || 'Unknown',
+        formatCurrency(client.active_premium || 0),
+        client.active_policies || 0,
+        client.client_tier || 'D',
+      ]);
+
+    // Cross-sell opportunities list
+    const crossSellClients = clientLTV
+      .filter(c => c.cross_sell_opportunity)
+      .sort((a, b) => (b.active_premium || 0) - (a.active_premium || 0))
+      .slice(0, 5)
+      .map(client => [
+        client.client_name || 'Unknown',
+        formatCurrency(client.active_premium || 0),
+        'Single policy',
+      ]);
 
     const sections: ReportSection[] = [
       {
-        id: 'client-metrics',
-        title: 'Client Metrics',
+        id: 'client-overview',
+        title: 'Client Overview',
         metrics: [
           { label: 'Total Clients', value: totalClients },
-          { label: 'Total Policies', value: totalPolicies },
-          { label: 'Avg Policies per Client', value: avgPoliciesPerClient.toFixed(2) },
-          { label: 'Single-Policy Clients', value: singlePolicyClients },
+          { label: 'Avg Policies/Client', value: avgPoliciesPerClient.toFixed(1) },
+          { label: 'Cross-Sell Opportunities', value: crossSellOpportunities },
         ],
+      },
+      {
+        id: 'client-tiers',
+        title: 'Client Segmentation',
+        tableData: {
+          headers: ['Tier', 'Count', 'Premium Range'],
+          rows: tierTableRows,
+        },
+      },
+      {
+        id: 'top-clients',
+        title: 'Top Clients',
+        tableData: {
+          headers: ['Client', 'Premium', 'Policies', 'Tier'],
+          rows: topClientsRows,
+        },
+      },
+      {
+        id: 'cross-sell',
+        title: 'Cross-Sell Targets',
+        description: 'High-value clients with only one policy',
+        tableData: crossSellClients.length > 0 ? {
+          headers: ['Client', 'Premium', 'Status'],
+          rows: crossSellClients,
+        } : undefined,
       },
     ];
 
-    const insights = await InsightsService.generateInsights({
-      userId,
-      startDate: filters.startDate,
-      endDate: filters.endDate,
+    const totalPolicies = clientLTV.reduce((sum, c) => sum + (c.total_policies || 0), 0);
+    const healthScore = this.calculateHealthScore({
+      netIncome: 0,
+      activePolicies,
+      totalPolicies,
+      insights,
     });
 
     return {
       id: `client-${Date.now()}`,
       type: 'client-relationship',
-      title: 'Client Report',
-      subtitle: `Client analysis for ${filters.startDate.toLocaleDateString()} - ${filters.endDate.toLocaleDateString()}`,
+      title: 'Client Analysis',
+      subtitle: `${filters.startDate.toLocaleDateString()} - ${filters.endDate.toLocaleDateString()}`,
       generatedAt: new Date(),
       filters,
       summary: {
-        healthScore: 80,
+        healthScore,
         keyMetrics: sections[0].metrics || [],
-        topInsights: insights.filter(i => i.category === 'opportunity').slice(0, 3),
+        topInsights: insights.filter(i => i.category === 'opportunity').slice(0, 2),
       },
       sections,
     };
@@ -409,51 +465,80 @@ export class ReportGenerationService {
 
   /**
    * Generate Financial Health Report
+   * DEEP DIVE: Expense breakdown, category analysis, profitability
+   * NOT for basic totals (see Executive Dashboard)
    */
   private static async generateFinancialReport(
     userId: string,
     filters: ReportFilters,
   ): Promise<Report> {
-    const [commissions, expenses] = await Promise.all([
-      this.fetchCommissionData(userId, filters),
+    // Fetch expense summary MV + raw expense data for breakdown
+    const [expenseSummary, expenses, commissions, insights] = await Promise.all([
+      this.fetchExpenseSummary(userId),
       this.fetchExpenseData(userId, filters),
+      this.fetchCommissionData(userId, filters),
+      InsightsService.generateInsights({
+        userId,
+        startDate: filters.startDate,
+        endDate: filters.endDate,
+      }),
     ]);
 
     const totalCommission = commissions.filter(c => c.status === 'paid').reduce((sum, c) => sum + (c.amount || 0), 0);
     const totalExpenses = expenses.reduce((sum, e) => sum + (e.amount || 0), 0);
-    const netIncome = totalCommission - totalExpenses;
     const expenseRatio = totalCommission > 0 ? (totalExpenses / totalCommission) * 100 : 0;
+
+    // Aggregate expenses by category
+    const byCategory = expenses.reduce((acc, e) => {
+      const cat = e.category || 'Other';
+      acc[cat] = (acc[cat] || 0) + (e.amount || 0);
+      return acc;
+    }, {} as Record<string, number>);
+
+    const categoryTableRows = Object.entries(byCategory)
+      .sort((a, b) => (b[1] as number) - (a[1] as number))
+      .map(([category, amount]) => [
+        category,
+        formatCurrency(amount as number),
+        formatPercent(totalExpenses > 0 ? (amount as number) / totalExpenses : 0),
+      ]);
+
+    // Recurring vs one-time
+    const recurringExpenses = expenses.filter(e => e.is_recurring).reduce((sum, e) => sum + (e.amount || 0), 0);
+    const oneTimeExpenses = totalExpenses - recurringExpenses;
 
     const sections: ReportSection[] = [
       {
-        id: 'financial-summary',
-        title: 'Financial Summary',
+        id: 'expense-overview',
+        title: 'Expense Overview',
         metrics: [
-          { label: 'Total Commission', value: formatCurrency(totalCommission) },
           { label: 'Total Expenses', value: formatCurrency(totalExpenses) },
-          { label: 'Net Income', value: formatCurrency(netIncome) },
-          { label: 'Expense Ratio', value: formatPercent(expenseRatio / 100) },
+          { label: 'Expense Ratio', value: formatPercent(expenseRatio / 100), description: 'Expenses as % of commission' },
+          { label: 'Recurring', value: formatCurrency(recurringExpenses) },
+          { label: 'One-Time', value: formatCurrency(oneTimeExpenses) },
         ],
       },
+      {
+        id: 'expense-breakdown',
+        title: 'Expenses by Category',
+        tableData: {
+          headers: ['Category', 'Amount', '% of Total'],
+          rows: categoryTableRows,
+        },
+      },
     ];
-
-    const insights = await InsightsService.generateInsights({
-      userId,
-      startDate: filters.startDate,
-      endDate: filters.endDate,
-    });
 
     return {
       id: `financial-${Date.now()}`,
       type: 'financial-health',
-      title: 'Financial Health Report',
-      subtitle: `Financial analysis for ${filters.startDate.toLocaleDateString()} - ${filters.endDate.toLocaleDateString()}`,
+      title: 'Expense Analysis',
+      subtitle: `${filters.startDate.toLocaleDateString()} - ${filters.endDate.toLocaleDateString()}`,
       generatedAt: new Date(),
       filters,
       summary: {
-        healthScore: netIncome > 0 ? 85 : 50,
+        healthScore: expenseRatio < 30 ? 85 : expenseRatio < 50 ? 65 : 40,
         keyMetrics: sections[0].metrics || [],
-        topInsights: insights.filter(i => i.category === 'expense' || i.category === 'revenue').slice(0, 3),
+        topInsights: insights.filter(i => i.category === 'expense').slice(0, 2),
       },
       sections,
     };
@@ -461,97 +546,56 @@ export class ReportGenerationService {
 
   /**
    * Generate Predictive Analytics Report
+   * UNIQUE: Future projections, trends, forecasting
    */
   private static async generatePredictiveReport(
     userId: string,
     filters: ReportFilters,
   ): Promise<Report> {
-    // Get forecasting data
     const forecast = await ForecastingService.forecastCommission(userId);
 
-    // Get insights for recommendations
-    const insights = await InsightsService.generateInsights({
-      userId,
-      startDate: filters.startDate,
-      endDate: filters.endDate,
-    });
-
-    // Build sections
     const sections: ReportSection[] = [
       {
         id: 'forecast',
-        title: 'Revenue Forecast',
-        description: 'Projected commission income for next 3 months',
+        title: 'Commission Forecast',
         metrics: [
-          {
-            label: 'Next Month Projection',
-            value: formatCurrency(forecast.nextMonth),
-            trend: forecast.trend === 'stable' ? 'neutral' : forecast.trend,
-          },
-          {
-            label: '3-Month Projection',
-            value: formatCurrency(forecast.threeMonth),
-          },
-          {
-            label: 'Confidence Level',
-            value: formatPercent(forecast.confidence),
-          },
+          { label: 'Next Month', value: formatCurrency(forecast.nextMonth), trend: forecast.trend === 'stable' ? 'neutral' : forecast.trend },
+          { label: '3-Month Total', value: formatCurrency(forecast.threeMonth) },
+          { label: 'Confidence', value: formatPercent(forecast.confidence) },
+          { label: 'Trend', value: forecast.trend === 'up' ? 'Growing' : forecast.trend === 'down' ? 'Declining' : 'Stable' },
         ],
       },
     ];
 
-    // Add warnings section if any exist
+    // Add warnings if any
     if (forecast.warnings.length > 0) {
       sections.push({
-        id: 'forecast-warnings',
-        title: 'Forecasting Notes',
-        description: 'Important information about these predictions',
-        insights: forecast.warnings.map((warning, index) => ({
-          id: `warning-${index}`,
-          severity: 'medium',
-          category: 'performance',
-          title: 'Forecasting Limitation',
+        id: 'forecast-notes',
+        title: 'Notes',
+        insights: forecast.warnings.map((warning, i) => ({
+          id: `note-${i}`,
+          severity: 'info' as const,
+          category: 'performance' as const,
+          title: 'Forecast Note',
           description: warning,
-          impact: 'May affect prediction accuracy',
-          recommendedActions: ['Add more historical data', 'Review forecast methodology'],
-          priority: 5,
+          impact: '',
+          recommendedActions: [],
+          priority: 3,
         })),
       });
     }
 
-    // Add trend analysis section
-    sections.push({
-      id: 'trend-analysis',
-      title: 'Trend Analysis',
-      description: `Based on ${forecast.historicalMonths} months of historical data`,
-      metrics: [
-        {
-          label: 'Trend Direction',
-          value: forecast.trend === 'up' ? 'Growing' : forecast.trend === 'down' ? 'Declining' : 'Stable',
-          trend: forecast.trend === 'stable' ? undefined : forecast.trend,
-        },
-        {
-          label: 'Historical Months',
-          value: forecast.historicalMonths,
-        },
-        {
-          label: 'Prediction Quality',
-          value: forecast.confidence > 0.7 ? 'High' : forecast.confidence > 0.4 ? 'Medium' : 'Low',
-        },
-      ],
-    });
-
     return {
       id: `predictive-${Date.now()}`,
       type: 'predictive-analytics',
-      title: 'Predictive Analytics Report',
-      subtitle: `Forecast analysis for ${filters.startDate.toLocaleDateString()} - ${filters.endDate.toLocaleDateString()}`,
+      title: 'Revenue Forecast',
+      subtitle: `Based on ${forecast.historicalMonths} months of data`,
       generatedAt: new Date(),
       filters,
       summary: {
         healthScore: Math.round(forecast.confidence * 100),
         keyMetrics: sections[0].metrics || [],
-        topInsights: insights.slice(0, 3),
+        topInsights: [],
       },
       sections,
     };
@@ -589,6 +633,117 @@ export class ReportGenerationService {
       .gte('effective_date', filters.startDate.toISOString())
       .lte('effective_date', filters.endDate.toISOString());
 
+    return data || [];
+  }
+
+  // ============================================================================
+  // Materialized View Fetch Methods - Pre-aggregated data for faster reports
+  // ============================================================================
+
+  /**
+   * Fetch carrier performance metrics from materialized view
+   * Pre-computed: persistency rates, commission rates, policy counts by carrier
+   */
+  private static async fetchCarrierPerformance(userId: string) {
+    const { data, error } = await supabase
+      .from('mv_carrier_performance')
+      .select('*')
+      .eq('user_id', userId);
+
+    if (error) {
+      console.error('Error fetching carrier performance:', error);
+      return [];
+    }
+    return data || [];
+  }
+
+  /**
+   * Fetch commission aging analysis from materialized view
+   * Pre-computed: risk buckets (0-3mo, 3-6mo, etc.), at-risk amounts
+   */
+  private static async fetchCommissionAging(userId: string) {
+    const { data, error } = await supabase
+      .from('mv_commission_aging')
+      .select('*')
+      .eq('user_id', userId)
+      .order('bucket_order', { ascending: true });
+
+    if (error) {
+      console.error('Error fetching commission aging:', error);
+      return [];
+    }
+    return data || [];
+  }
+
+  /**
+   * Fetch client lifetime value metrics from materialized view
+   * Pre-computed: client tiers (A/B/C/D), cross-sell opportunities, LTV
+   */
+  private static async fetchClientLTV(userId: string) {
+    const { data, error } = await supabase
+      .from('mv_client_ltv')
+      .select('*')
+      .eq('user_id', userId);
+
+    if (error) {
+      console.error('Error fetching client LTV:', error);
+      return [];
+    }
+    return data || [];
+  }
+
+  /**
+   * Fetch cohort retention data from materialized view
+   * Pre-computed: retention rates by cohort month
+   */
+  private static async fetchCohortRetention(userId: string) {
+    const { data, error } = await supabase
+      .from('mv_cohort_retention')
+      .select('*')
+      .eq('user_id', userId)
+      .order('cohort_month', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching cohort retention:', error);
+      return [];
+    }
+    return data || [];
+  }
+
+  /**
+   * Fetch production velocity metrics from materialized view
+   * Pre-computed: weekly/monthly policies and premium
+   */
+  private static async fetchProductionVelocity(userId: string) {
+    const { data, error } = await supabase
+      .from('mv_production_velocity')
+      .select('*')
+      .eq('user_id', userId)
+      .order('week_start', { ascending: false })
+      .limit(12); // Last 12 weeks
+
+    if (error) {
+      console.error('Error fetching production velocity:', error);
+      return [];
+    }
+    return data || [];
+  }
+
+  /**
+   * Fetch expense summary from materialized view
+   * Pre-computed: expenses by category and month
+   */
+  private static async fetchExpenseSummary(userId: string) {
+    const { data, error } = await supabase
+      .from('mv_expense_summary')
+      .select('*')
+      .eq('user_id', userId)
+      .order('expense_month', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching expense summary:', error);
+      return [];
+    }
     return data || [];
   }
 
