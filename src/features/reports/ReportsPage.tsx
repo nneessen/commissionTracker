@@ -6,9 +6,10 @@ import { Button } from '../../components/ui/button';
 import { TimePeriodSelector, AdvancedTimePeriod, getAdvancedDateRange } from '../analytics/components/TimePeriodSelector';
 import { useReport } from '../../hooks/reports/useReport';
 import { ReportExportService } from '../../services/reports/reportExportService';
-import { Download, Loader2, FileText, Table, Printer, ChevronRight, TrendingUp, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Download, Loader2, FileText, Table, Printer, ChevronRight, TrendingUp, AlertTriangle, CheckCircle, Package } from 'lucide-react';
 import { Card } from '../../components/ui/card';
 import { CommissionAgingChart, ClientTierChart } from './components/charts';
+import { BundleExportDialog } from './components/BundleExportDialog';
 
 // Helper function to create stable initial dates
 function getInitialDateRange() {
@@ -71,6 +72,7 @@ export function ReportsPage() {
   const [selectedType, setSelectedType] = useState<ReportType>('executive-dashboard');
   const [timePeriod, setTimePeriod] = useState<AdvancedTimePeriod>('MTD');
   const [customRange, setCustomRange] = useState<{ startDate: Date; endDate: Date }>(getInitialDateRange);
+  const [bundleDialogOpen, setBundleDialogOpen] = useState(false);
 
   // Get date range from time period (memoized to prevent infinite loop)
   const dateRange = useMemo(
@@ -149,6 +151,16 @@ export function ReportsPage() {
               >
                 <FileText className="w-3 h-3 mr-1.5" />
                 Excel
+              </Button>
+              <div className="h-6 w-px bg-border" />
+              <Button
+                onClick={() => setBundleDialogOpen(true)}
+                size="sm"
+                variant="default"
+                className="h-8 px-3"
+              >
+                <Package className="w-3 h-3 mr-1.5" />
+                Export Bundle
               </Button>
             </div>
           </div>
@@ -420,6 +432,13 @@ export function ReportsPage() {
           </div>
         </div>
       </div>
+
+      {/* Bundle Export Dialog */}
+      <BundleExportDialog
+        open={bundleDialogOpen}
+        onOpenChange={setBundleDialogOpen}
+        filters={filters}
+      />
     </div>
   );
 }

@@ -107,3 +107,50 @@ export interface ReportTemplate {
   defaultFilters?: Partial<ReportFilters>;
   sections: string[]; // Section IDs to include
 }
+
+// ============================================================================
+// PHASE 3: Multi-Report Bundle Export Types
+// ============================================================================
+
+export type BundleTemplateId =
+  | 'weekly-check-in'
+  | 'monthly-comprehensive'
+  | 'quarterly-strategic'
+  | 'performance-review'
+  | 'custom';
+
+export interface ReportBundleTemplate {
+  id: BundleTemplateId;
+  name: string;
+  description: string;
+  reportTypes: ReportType[];
+  icon: string;
+}
+
+export interface BundleCoverPage {
+  title: string;
+  subtitle?: string;
+  businessName?: string;
+  preparedFor?: string;
+  confidential?: boolean;
+  logoUrl?: string;
+}
+
+export interface BundleExportOptions {
+  format: 'pdf' | 'excel';
+  reportTypes: ReportType[];
+  filters: ReportFilters;
+  coverPage?: BundleCoverPage;
+  includeTableOfContents?: boolean;
+  includeInsights?: boolean;
+  includeSummary?: boolean;
+}
+
+export interface GeneratedBundle {
+  id: string;
+  templateId: BundleTemplateId;
+  generatedAt: Date;
+  filters: ReportFilters;
+  reports: Report[];
+  format: 'pdf' | 'excel';
+}
