@@ -39,35 +39,47 @@ import { PhaseChecklist } from '../components/PhaseChecklist';
 import { DocumentManager } from '../components/DocumentManager';
 import { CommunicationPanel } from '../components/CommunicationPanel';
 import { useRecruitDocuments } from '../hooks/useRecruitDocuments';
-import { useCurrentUserProfile } from '@/hooks/admin/useUserApproval';
 import type { UserProfile } from '@/types/hierarchy.types';
 
 export function MyRecruitingPipeline() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [expandedPhase, setExpandedPhase] = useState<string | null>(null);
   const [selectedCommunicationTab, setSelectedCommunicationTab] = useState<'compose' | 'inbox'>('compose');
 
-  // Get current user profile to check roles
-  const { data: currentUserProfile } = useCurrentUserProfile();
-
-  // Fetch current user's profile
-  const { data: profile, isLoading: profileLoading } = useQuery<UserProfile>({
-    queryKey: ['user-profile', user?.id],
+  // Fetch profile directly using AuthContext's user.id
+  // This is more reliable than useCurrentUserProfile which has its own auth check
+  const {
+    data: profile,
+    isLoading: profileLoading,
+    error: profileError
+  } = useQuery<UserProfile | null>({
+    queryKey: ['recruit-pipeline-profile', user?.id],
     queryFn: async () => {
+      if (!user?.id) return null;
+
       const { data, error } = await supabase
         .from('user_profiles')
         .select('*')
-        .eq('user_id', user!.id)
+        .eq('user_id', user.id)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('[MyRecruitingPipeline] Profile fetch error:', error);
+        throw error;
+      }
       return data as UserProfile;
     },
-    enabled: !!user?.id,
+    enabled: !authLoading && !!user?.id,
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000),
+    staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
-  // Fetch upline/trainer info
+  // Determine if we're ready to fetch dependent data
+  const isReady = !authLoading && !profileLoading && !!user?.id && !!profile?.id;
+
+  // Fetch upline/trainer info - only when ready
   const { data: upline } = useQuery<UserProfile | null>({
     queryKey: ['upline', profile?.upline_id],
     queryFn: async () => {
@@ -82,7 +94,7 @@ export function MyRecruitingPipeline() {
       if (error) throw error;
       return data as UserProfile;
     },
-    enabled: !!profile?.upline_id,
+    enabled: isReady && !!profile?.upline_id,
   });
 
   // Fetch phase progress
@@ -164,23 +176,38 @@ export function MyRecruitingPipeline() {
     }
   };
 
-  if (profileLoading) {
+  // Show loading state while auth or profile is loading
+  if (authLoading || profileLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground text-xs">Loading...</p>
+          <p className="text-muted-foreground text-xs">Loading your pipeline...</p>
         </div>
       </div>
     );
   }
 
+  // Show error state if profile fetch failed
+  if (profileError) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+          <p className="text-muted-foreground text-xs">Error loading profile. Please refresh.</p>
+          <p className="text-muted-foreground text-[10px] mt-2">{String(profileError)}</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show message if no profile found
   if (!profile) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
-          <p className="text-muted-foreground text-xs">Failed to load profile. Please refresh.</p>
+          <p className="text-muted-foreground text-xs">Profile not found. Please contact support.</p>
         </div>
       </div>
     );
@@ -269,7 +296,7 @@ export function MyRecruitingPipeline() {
                   currentUserId={profile.id}
                   currentPhaseId={currentPhase?.phase_id}
                   viewedPhaseId={currentPhase?.phase_id}
-                  isAdmin={currentUserProfile?.is_admin || false}
+                  isAdmin={profile?.is_admin || false}
                   onPhaseComplete={() => {
                     // Scroll to the phase progress timeline section
                     const phaseProgressEl = document.getElementById('phase-progress-timeline');
@@ -447,7 +474,7 @@ export function MyRecruitingPipeline() {
               <CommunicationPanel
                 userId={profile.id}
                 upline={upline}
-                currentUserProfile={currentUserProfile}
+                currentUserProfile={profile}
               />
             </div>
           </div>

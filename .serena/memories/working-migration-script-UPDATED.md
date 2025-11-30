@@ -2,11 +2,11 @@
 
 ## ✅ THE ONLY SCRIPT TO USE
 
-**File:** `scripts/apply-migration.sh`
+**File:** `scripts/migrations/apply-migration.sh`
 
 **Usage:**
 ```bash
-./scripts/apply-migration.sh supabase/migrations/YYYYMMDD_migration_name.sql
+./scripts/migrations/apply-migration.sh supabase/migrations/YYYYMMDD_migration_name.sql
 ```
 
 ## Why This Works
@@ -23,11 +23,11 @@ postgresql://USER:PASSWORD@HOST:PORT/DATABASE
 - User: `postgres.pcyaqwodnyrpkaiojnpz`
 - Password: `N123j234n345!\$!\$` (escaped in bash)
 
-## Alternative: Node.js
+## Note on Removed Scripts
 
-**File:** `scripts/run-migration-direct.cjs`
-
-Uses Node.js `pg` library with same connection details.
+The following redundant scripts were removed during cleanup (Nov 2025):
+- `run-migration.sh` - nearly identical to apply-migration.sh
+- `run-migration-direct.cjs` - was hardcoded to one specific migration file
 
 ## ❌ Scripts Removed (DO NOT USE)
 
@@ -43,7 +43,7 @@ See: `docs/DATABASE_MIGRATION_GUIDE.md` for complete guide
 
 ## REMEMBER
 
-- ✅ Always use `scripts/apply-migration.sh`
+- ✅ Always use `scripts/migrations/apply-migration.sh`
 - ❌ NEVER create new migration scripts
 - ❌ NEVER try HTTP/REST API methods
 - ❌ NEVER modify WSL networking

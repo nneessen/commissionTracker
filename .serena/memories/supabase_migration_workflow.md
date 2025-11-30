@@ -5,21 +5,21 @@
 
 ## How to Run Migrations
 
-**ALWAYS use the migration script in scripts folder:**
+**ALWAYS use the migration script:**
 
 ```bash
-echo "N123j234n345!\$!\$" | ./scripts/run-migration.sh supabase/migrations/MIGRATION_FILE.sql
+./scripts/migrations/apply-migration.sh supabase/migrations/MIGRATION_FILE.sql
 ```
 
 ## Important Rules
 
 1. **NEVER** manually run `npx supabase db push` or `npx supabase db reset`
 2. **NEVER** use local database - we only work with remote Supabase at `pcyaqwodnyrpkaiojnpz.supabase.co`
-3. **ALWAYS** use the `run-migration.sh` script to apply migrations
+3. **ALWAYS** use the `scripts/migrations/apply-migration.sh` script to apply migrations
 4. **ALWAYS** remember the password is `N123j234n345!$!$`
 
 ## Migration Script Location
-`./scripts/run-migration.sh`
+`./scripts/migrations/apply-migration.sh`
 
 ## When Creating Migrations
 

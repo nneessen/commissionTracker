@@ -4,7 +4,7 @@
 
 ## App Functionality Test Script
 
-**Location**: `scripts/test-app-runs.sh`
+**Location**: `scripts/testing/test-app-runs.sh`
 
 **Purpose**: Verify that the application runs without loading errors after code changes.
 
@@ -18,7 +18,7 @@
 
 ### Usage:
 ```bash
-./scripts/test-app-runs.sh
+./scripts/testing/test-app-runs.sh
 ```
 
 ### When to run:
@@ -37,7 +37,7 @@ This script ensures the application remains functional after changes and catches
 
 ## Build Validation Script
 
-**Location**: `scripts/test-build.sh`
+**Location**: `scripts/testing/test-build.sh`
 
 **Purpose**: Comprehensive build validation with user-friendly output and instructions.
 
@@ -50,7 +50,7 @@ This script ensures the application remains functional after changes and catches
 
 ### Usage:
 ```bash
-./scripts/test-build.sh
+./scripts/testing/test-build.sh
 ```
 
 ### Features:
