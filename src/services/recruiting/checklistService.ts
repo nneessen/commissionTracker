@@ -258,7 +258,10 @@ export const checklistService = {
 
     const { data, error } = await supabase
       .from('recruit_checklist_progress')
-      .insert(progressRecords)
+      .upsert(progressRecords, {
+        onConflict: 'user_id,checklist_item_id',
+        ignoreDuplicates: true, // Don't update if already exists
+      })
       .select();
 
     if (error) throw error;
@@ -376,17 +379,21 @@ export const checklistService = {
     // Create a map of item_id to progress for quick lookup
     const progressMap = new Map(allProgress?.map(p => [p.checklist_item_id, p]) || []);
 
-    // Check if all required items are approved/completed
-    const allRequiredApproved = phaseChecklistItems.every((item) => {
-      if (!item.is_required) return true; // Optional items don't block advancement
+    // Determine which items to check:
+    // - If there are required items, only those must be completed
+    // - If NO required items exist, ALL items must be completed
+    const requiredItems = phaseChecklistItems.filter(item => item.is_required);
+    const itemsToCheck = requiredItems.length > 0 ? requiredItems : phaseChecklistItems;
 
+    // Check if all relevant items are approved/completed
+    const allItemsCompleted = itemsToCheck.every((item) => {
       const progress = progressMap.get(item.id);
       if (!progress) return false; // No progress means not completed
 
       return progress.status === 'approved' || progress.status === 'completed';
     });
 
-    if (allRequiredApproved) {
+    if (allItemsCompleted) {
       // Auto-advance to next phase
       await this.advanceToNextPhase(userId, phase.id);
     }

@@ -141,39 +141,7 @@ export function PhaseChecklist({
         },
       });
       showToast.success(newStatus === 'completed' ? 'Task marked as complete' : 'Task unmarked');
-
-      // Check if this completes all required items in the current phase
-      if (newStatus === 'completed' && onPhaseComplete && currentPhaseId === viewedPhaseId) {
-        // Update progress map with the new status
-        const updatedProgressMap = new Map(progressMap);
-        const existingProgress = updatedProgressMap.get(itemId);
-        if (existingProgress) {
-          updatedProgressMap.set(itemId, { ...existingProgress, status: 'completed' });
-        } else {
-          updatedProgressMap.set(itemId, {
-            id: '',
-            user_id: userId,
-            checklist_item_id: itemId,
-            status: 'completed',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          } as RecruitChecklistProgress);
-        }
-
-        // Check if all required items are now completed
-        const allRequiredCompleted = checklistItems.every((item) => {
-          if (!item.is_required) return true; // Optional items don't block phase completion
-          const progress = updatedProgressMap.get(item.id);
-          return progress && (progress.status === 'completed' || progress.status === 'approved');
-        });
-
-        if (allRequiredCompleted) {
-          // Small delay to allow the UI to update before switching tabs
-          setTimeout(() => {
-            onPhaseComplete();
-          }, 500);
-        }
-      }
+      // Phase advancement is handled server-side by checkPhaseAutoAdvancement()
     } catch (error: any) {
       console.error('Failed to update checklist item:', error);
       showToast.error(error?.message || 'Failed to update task. Please try again.');
@@ -193,29 +161,7 @@ export function PhaseChecklist({
         },
       });
       showToast.success('Item approved successfully');
-
-      // Check if this completes all required items in the current phase
-      if (onPhaseComplete && currentPhaseId === viewedPhaseId) {
-        // Update progress map with the new status
-        const updatedProgressMap = new Map(progressMap);
-        const existingProgress = updatedProgressMap.get(itemId);
-        if (existingProgress) {
-          updatedProgressMap.set(itemId, { ...existingProgress, status: 'approved' });
-        }
-
-        // Check if all required items are now completed/approved
-        const allRequiredCompleted = checklistItems.every((item) => {
-          if (!item.is_required) return true;
-          const progress = updatedProgressMap.get(item.id);
-          return progress && (progress.status === 'completed' || progress.status === 'approved');
-        });
-
-        if (allRequiredCompleted) {
-          setTimeout(() => {
-            onPhaseComplete();
-          }, 500);
-        }
-      }
+      // Phase advancement is handled server-side by checkPhaseAutoAdvancement()
     } catch (error: any) {
       console.error('Failed to approve item:', error);
       showToast.error(error?.message || 'Failed to approve item. Please try again.');
