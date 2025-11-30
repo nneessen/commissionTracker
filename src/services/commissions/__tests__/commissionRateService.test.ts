@@ -2,11 +2,11 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { commissionRateService } from '../commissionRateService';
-import { supabase } from '../../../lib/supabase';
+import { supabase } from '../../base/supabase';
 import type { UserCommissionProfile, CommissionDataQuality } from '../../../types/product.types';
 
 // Mock Supabase client
-vi.mock('../../../lib/supabase', () => ({
+vi.mock('../../base/supabase', () => ({
   supabase: {
     rpc: vi.fn(),
   },

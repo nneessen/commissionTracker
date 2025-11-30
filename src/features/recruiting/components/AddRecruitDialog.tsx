@@ -410,7 +410,12 @@ export function AddRecruitDialog({
               <form.Field
                 name="date_of_birth"
                 validators={{
-                  onChange: createRecruitSchema.shape.date_of_birth,
+                  onChange: ({ value }) => {
+                    if (!value) return undefined; // Optional field
+                    const date = new Date(value);
+                    const age = Math.floor((Date.now() - date.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
+                    return age < 18 ? 'Must be at least 18 years old' : undefined;
+                  },
                 }}
               >
                 {(field) => (

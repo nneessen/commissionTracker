@@ -115,7 +115,7 @@ export const TestCompGuide: React.FC = () => {
             <option value="">-- Select Product --</option>
             {products.map(p => (
               <option key={p.id} value={p.id}>
-                {p.name} ({(p.commission_percentage * 100).toFixed(1)}% base)
+                {p.name} ({((p.commission_percentage ?? 0) * 100).toFixed(1)}% base)
               </option>
             ))}
           </select>

@@ -28,7 +28,6 @@ import { ReportsPage } from "./features/reports";
 import AdminControlCenter from "./features/admin/components/AdminControlCenter";
 import { PermissionGuard } from "./components/auth/PermissionGuard";
 import {
-  HierarchyTree,
   OverrideDashboard,
   DownlinePerformance,
   HierarchyManagement,
@@ -213,7 +212,7 @@ const hierarchyIndexRoute = createRoute({
 const hierarchyTreeRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "hierarchy/tree",
-  component: HierarchyTree,
+  component: HierarchyDashboard, // HierarchyTree requires props, use dashboard instead
 });
 
 const hierarchyOverridesRoute = createRoute({

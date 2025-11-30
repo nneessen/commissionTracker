@@ -32,8 +32,6 @@ export function PaceMetrics() {
       case 'YTD':
       case 'L12M':
         return 'yearly' as const;
-      case 'L7':
-        return 'weekly' as const;
       case 'L60':
       case 'L90':
       case 'CUSTOM':

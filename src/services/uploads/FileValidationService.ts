@@ -104,7 +104,9 @@ export class FileValidationService {
     const mimeType = file.type.toLowerCase();
 
     for (const [category, config] of Object.entries(FILE_CATEGORIES)) {
-      if (config.extensions.includes(extension) || config.mimeTypes.includes(mimeType)) {
+      const extensions = config.extensions as readonly string[];
+      const mimeTypes = config.mimeTypes as readonly string[];
+      if (extensions.some(ext => ext === extension) || mimeTypes.some(mt => mt === mimeType)) {
         return category as FileCategory;
       }
     }

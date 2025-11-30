@@ -45,6 +45,8 @@ describe('ExpenseService', () => {
     date: '2025-01-15',
     is_recurring: false,
     recurring_frequency: null,
+    recurring_group_id: null,
+    recurring_end_date: null,
     receipt_url: null,
     is_tax_deductible: true,
     notes: null,

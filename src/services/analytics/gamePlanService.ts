@@ -101,8 +101,8 @@ class GamePlanService {
     const currentMonth = now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
     // Get targets or use defaults
-    const monthlyIncomeTarget = userTargets?.monthlyIncomeTarget ?? 10000;
-    const monthlyExpenseTarget = userTargets?.monthlyExpenseTarget ?? 5000;
+    const monthlyIncomeTarget = userTargets?.monthly_income_target ?? 10000;
+    const monthlyExpenseTarget = userTargets?.monthly_expense_target ?? 5000;
 
     // Calculate GROSS commission needed (NET income + expenses)
     const grossCommissionNeeded = monthlyIncomeTarget + monthlyExpenseTarget;
@@ -269,13 +269,19 @@ class GamePlanService {
       });
     }
 
-    // Check for upcoming renewals (policies with anniversaries in next 30 days)
+    // Check for upcoming renewals (policies with effective dates approaching anniversary in next 30 days)
     const now = new Date();
     const next30Days = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
 
     const upcomingRenewals = allPolicies.filter((p) => {
-      if (!p.anniversaryDate || p.status !== 'active') return false;
-      const anniversary = new Date(p.anniversaryDate);
+      if (!p.effectiveDate || p.status !== 'active') return false;
+      // Calculate anniversary date (same month/day as effective date, but this year)
+      const effective = new Date(p.effectiveDate);
+      const anniversary = new Date(now.getFullYear(), effective.getMonth(), effective.getDate());
+      // If anniversary already passed this year, use next year
+      if (anniversary < now) {
+        anniversary.setFullYear(anniversary.getFullYear() + 1);
+      }
       return anniversary >= now && anniversary <= next30Days;
     });
 
@@ -416,7 +422,7 @@ class GamePlanService {
     const monthsRemaining = 12 - monthsElapsed;
 
     // Get annual goal from user targets
-    const annualGoal = userTargets?.annualIncomeTarget ?? 120000;
+    const annualGoal = userTargets?.annual_income_target ?? 120000;
 
     // Filter YTD policies
     const ytdPolicies = policies.filter((p) => {

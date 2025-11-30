@@ -94,6 +94,7 @@ export interface ExpenseTotals {
   total: number;
   personal: number;
   business: number;
+  deductible: number;
   monthlyTotal: number;
   yearlyTotal: number;
 }

@@ -1,316 +1,123 @@
 # CLAUDE.md
 
-Purpose: guidance for Claude Code (claude.ai/code) and human contributors working on this repository.
-Target app: small-scale personal + business expense tracker. React 19.1, TypeScript, Supabase/Postgres.
+Insurance Sales KPI & Agency Management System. React 19.1, TypeScript, Supabase/Postgres.
 
 ---
 
-## CRITICAL: Auto-Resume Active Sessions
+## Every Prompt Standards
 
-**IMPORTANT - Check this FIRST in every new conversation:**
+**These apply to EVERY interaction - no exceptions:**
 
-If the memory `ACTIVE_SESSION_CONTINUATION` exists:
-
-1. **Read the memory immediately** using `mcp__serena__read_memory`
-2. **Check the timestamp** - If less than 72 hours old, this is likely the session to resume
-3. **Acknowledge the previous session** to the user:
-   ```
-   I found an active session from [DATE]. The last session was working on:
-   - [Summary of active plans from memory]
-   - [Git status summary]
-
-   Would you like me to continue from where that session left off, or start fresh?
-   ```
-4. **If user wants to continue:**
-   - Review the active plans from the memory
-   - Check current git status to see what changed since
-   - Resume work on the tasks from the active plans
-   - Delete or archive the `ACTIVE_SESSION_CONTINUATION` memory when session is truly complete
-
-5. **If user wants to start fresh:**
-   - Archive the memory: rename to `ACTIVE_SESSION_CONTINUATION_ARCHIVED_[TIMESTAMP]`
-   - Proceed with the user's new request
-
-**This enables ZERO-TOUCH continuation across context windows!**
-
-The `ACTIVE_SESSION_CONTINUATION` memory is automatically created by the PreCompact hook when context fills up. It contains the complete state needed to seamlessly resume work.
+1. **Never assume** - Fetch current schema (`database.types.ts`), read relevant files before modifying
+2. **Never be lazy** - Complete tasks fully, don't skip steps or cut corners
+3. **Ask questions first** - Clarify requirements, suggest additions/exclusions, explain reasoning
+4. **Check for reusability** - Before creating anything, verify if a reusable method/component exists
+5. **Refactor duplicates** - If you find duplicate code, consolidate into one reusable method
+6. **Test everything** - All tests must pass 100%. Run `npm run build` before considering done
+7. **Verify visually** - Run dev server and verify UI changes work correctly
+8. **Suggest edge cases** - Proactively identify and handle edge cases
+9. **Maintain design consistency** - Follow the compact, professional design style (see below)
+10. **No over-engineering** - Solve the problem, don't add unnecessary abstractions
+11. **No fake/mock data** - Every UI element must be functional. No placeholders.
+12. **Conventional naming** - PascalCase components, kebab-case files, camelCase functions
 
 ---
 
-# Project summary
+## Design Philosophy
 
-**Insurance Sales KPI Tracking System**
+**Compact, professional, data-dense UI:**
 
-This is a full-stack application for insurance sales agents to track Key Performance Indicators (KPIs) based on policy data.
-
-**Core Purpose:**
-
-- Track insurance policies (the source of truth for all metrics)
-- Calculate KPIs: persistency rates, average annual premium (AP), policies sold/cancelled/lapsed
-- Analyze performance by state, carrier, product type
-- Track commission earnings with contract-level calculations
-- Monitor advances and splits with upline agents
-- Monitor pace metrics (policies needed per day/week/month to hit goals)
-- Expense tracking for business operations with categories and reports
-- Advanced time period filtering (MTD, YTD, Last 30/60/90 days, custom ranges)
-
-**Core Entity:** POLICIES - Everything derives from policy data
-**Target User:** Individual insurance agents (single-user deployment)
-**Design Principles:** Low concurrency, low cost, strong data safety, real-time KPI calculations
-
-**Recent Major Features (as of Oct 2025):**
-
-- ✅ Contract-level commission system with automatic calculations
-- ✅ Redesigned data-dense dashboard with quick actions
-- ✅ Multiple dashboard layouts (standard, compact, terminal/console)
-- ✅ Time period filtering across all views
-- ✅ Commission management grid with splits and advances
-- ✅ Expense categories and reporting system
+- Minimal padding/margins - maximize information density
+- Small, readable text sizes - don't waste vertical space
+- Muted color palette - professional, not flashy
+- Subtle borders and shadows - clean separation without visual noise
+- Tables over cards when displaying lists - more data per screen
+- Inline actions - avoid modal overuse, prefer inline editing
+- Consistent spacing scale - use Tailwind's smaller values (1, 2, 3, not 6, 8, 10)
+- No unnecessary animations or transitions
+- Mobile-responsive but desktop-optimized (primary use case)
 
 ---
 
-# Stack (explicit)
+## Auto-Resume Sessions
 
-- Frontend: React 19.1 + TypeScript
-- Routing: TanStack Router (latest)
-- Data fetching: TanStack Query (latest)
-- Forms: TanStack Form (latest)
-- UI: shadcn + Tailwind CSS v4
-- Build: Vite
-- Backend / DB: Supabase (Postgres). Use Supabase Edge Functions / serverless for server-side logic.
-- Hosting: Vercel or Railway for frontend. Supabase managed Postgres for DB. Use AWS/GCP for optional services.
-- Language for backend jobs: Python (optional workers/scripts)
-- Devops: GitHub Actions for CI, migrations via supabase / pg-migrate
+At conversation start, check for `ACTIVE_SESSION_CONTINUATION` memory. If exists and <72hrs old, offer to continue previous work. Created automatically when context fills up.
 
 ---
 
-# Goals and constraints
+## Project Overview
 
-- Target users: individual / small teams. Not enterprise scale.
-- Prioritize correctness, privacy, predictable costs.
-- Minimal latency. No unnecessary microservices.
-- Prefer simple, observable, and reversible changes.
+**Active Features:**
+- **Policies** - Source of truth for all metrics (KPIs, persistency, AP calculations)
+- **Commissions** - Contract-level calculations, splits, advances, chargebacks
+- **Recruiting Pipeline** - Multi-phase candidate tracking with status workflows
+- **Email System** - WYSIWYG composer, templates, attachments, Slack notifications
+- **Expenses** - Categories, reporting, business expense tracking
+- **Analytics/Reports** - Time-filtered dashboards (MTD, YTD, custom ranges)
+- **Hierarchy** - Team structure, uplines, contract levels
+- **Targets** - Goal setting and pace metrics
+- **Settings/Admin** - User preferences, system configuration
+
+**Planned:**
+- **Chat/Slack Integration** - Full Slack functionality within the app (requires planning)
+
+**Target User:** Single insurance agent / small team. Not enterprise.
 
 ---
 
-# Project rules (must-follow)
+## Stack
 
-## Critical Architecture Rules
+- **Frontend:** React 19.1, TypeScript, TanStack (Router/Query/Form), shadcn, Tailwind v4, Vite
+- **Backend:** Supabase (Postgres, Auth, Edge Functions)
+- **Testing:** Vitest
+- **CI/CD:** GitHub Actions, Supabase migrations
 
-**ZERO LOCAL STORAGE FOR APPLICATION DATA**
+---
 
-- ❌ NEVER use localStorage, sessionStorage, or IndexedDB for policy, commission, client, or any business data
-- ✅ ALWAYS use Supabase database for ALL data persistence
-- ✅ Local storage ONLY for: cookies, session tokens, UI preferences (theme, sidebar state)
-- ✅ All data must survive page refresh by fetching from Supabase
-- ❌ NO in-memory caches that would cause data to disappear on refresh
-- ✅ Use TanStack Query for server state management (it handles caching properly)
+## Architecture
 
-**Database is Single Source of Truth**
-
-- ALL application data lives in Supabase PostgreSQL database
-- Migrations must work on any machine, any time, idempotently
-- No local database files or SQLite
-- Supabase handles auth, RLS, and all data access
-
-## Database Migration Rules
-
-**CRITICAL: There is ONLY ONE migration directory - `supabase/migrations/`**
-
-**Migration Best Practices:**
-
-- ✅ ALL migrations go in `supabase/migrations/` ONLY
-- ✅ Use Supabase CLI to create migrations: `supabase migration new <name>`
-- ✅ Migration naming: `YYYYMMDD_NNN_descriptive_name.sql` (e.g., `20251005_001_add_user_preferences.sql`)
-- ✅ Test migrations locally before applying to production
-- ✅ Migrations must be idempotent (safe to run multiple times)
-- ✅ Use transactions for multi-step migrations
-- ❌ NEVER create duplicate migration directories (no `database/`, `db/`, etc.)
-- ❌ NEVER use file extensions like `.OLD`, `.backup`, `.temp` - delete old files or move to `/archive`
-- ❌ NEVER manually edit the schema without creating a migration
-- ❌ NEVER commit migrations that haven't been tested locally
-
-**Migration Workflow:**
-
-1. Create migration: `supabase migration new add_feature_x`
-2. Write SQL in generated file: `supabase/migrations/YYYYMMDD_NNN_add_feature_x.sql`
-3. Test locally: `supabase db reset` (applies all migrations)
-4. Verify changes: Connect to local DB and test
-5. Commit migration file to git
-6. Apply to production: Supabase auto-applies on git push OR manual `supabase db push`
-
-**Common Migration Commands:**
-
-- `supabase migration list` - View migration status
-- `supabase migration new <name>` - Create new migration
-- `supabase db reset` - Reset local DB and apply all migrations
-- `supabase db push` - Push migrations to remote (if not auto-deployed)
-
-**Before Creating Migrations, Always:**
-
-1. Check `supabase/migrations/` for existing migrations
-2. Verify no duplicate directories exist (`database/`, `db/`, etc.)
-3. Use `git status` to see if migrations are already in progress
-
-**CRITICAL: Debugging Database Trigger Conflicts**
-
-If you encounter errors like "record 'v_commission' has no field 'commission_amount'":
-
-1. **Check for duplicate triggers** (multiple triggers on same table for same event):
-
-   ```sql
-   SELECT trigger_name, event_object_table, event_manipulation, action_statement
-   FROM information_schema.triggers
-   WHERE event_object_table IN ('policies', 'commissions')
-   ORDER BY event_object_table, trigger_name;
-   ```
-
-2. **Find functions with wrong field references**:
-
-   ```sql
-   SELECT proname, prosrc
-   FROM pg_proc
-   WHERE prosrc LIKE '%commission_amount%'
-   AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public');
-   ```
-
-3. **Identify the OLD broken function** - It will reference non-existent field names like `commission_amount` or `advance_amount`
-
-4. **Remove only the OLD one** (keep the newer, corrected version):
-
-   ```sql
-   DROP TRIGGER IF EXISTS old_trigger_name ON table_name;
-   DROP FUNCTION IF EXISTS old_function_name();
-   ```
-
-5. **Verify correct field names** in commissions table are:
-   - `amount` (NOT commission_amount, NOT advance_amount)
-   - `advance_months`, `months_paid`, `earned_amount`, `unearned_amount`, `chargeback_amount`, `status`
-
-**Root Cause**: Old migrations create functions with wrong field names, new migrations create corrected versions, but BOTH exist in database. The OLD one executes FIRST and fails, blocking the corrected one. Solution: DELETE the old broken function and trigger, keep only the corrected version.
-
-## Database Constraint Philosophy
-
-**CRITICAL: DO NOT create enum-style CHECK constraints on TEXT fields**
-
-❌ **BAD** (rigid, requires migration to add values):
-```sql
-ALTER TABLE foo ADD COLUMN status TEXT CHECK (status IN ('active', 'inactive'));
+```
+/src/features/*        → Domain features (policies, commissions, recruiting, email, etc.)
+/src/components/*      → Reusable UI primitives
+/src/routes/*          → TanStack Router routes & loaders
+/src/services/*        → Business logic & Supabase access
+/src/hooks/*           → TanStack Query hooks
+/src/lib/*             → Utilities (date, currency, calculations)
+/src/types/*           → TypeScript types (source of truth for validation)
+/supabase/migrations/* → SQL migrations (ONLY migration directory)
+/docs/*                → Architecture docs, guides
+/plans/*               → Active plans; move completed to plans/completed/
+/scripts/*             → Utility scripts, testing scripts
 ```
 
-✅ **GOOD** (flexible, validation in TypeScript):
-```sql
-ALTER TABLE foo ADD COLUMN status TEXT; -- Validated at application layer
-```
+---
 
-**When to use database constraints:**
+## Critical Rules
 
-- ✅ **Foreign keys** - Referential integrity (e.g., `REFERENCES user_profiles(id)`)
-- ✅ **NOT NULL** - Required fields
-- ✅ **UNIQUE** - Prevent duplicates
-- ✅ **Numeric ranges** - Business rules (e.g., `contract_level BETWEEN 80 AND 145`)
-- ✅ **Non-negative amounts** - Mathematical validity (e.g., `amount >= 0`)
-- ✅ **Self-reference prevention** - Logical impossibility (e.g., `recruiter_id != id`)
+**Data Storage:**
+- ALL data in Supabase. TanStack Query for state management.
+- Local storage ONLY for: session tokens, UI preferences (theme, sidebar)
+- NO localStorage/sessionStorage for business data
 
-**When NOT to use database constraints:**
+**Migrations:**
+- Single directory: `supabase/migrations/`
+- Format: `YYYYMMDD_NNN_descriptive_name.sql`
+- Test locally before production
+- No enum CHECK constraints - use TypeScript types for validation
 
-- ❌ **Enum-style TEXT validation** - Use TypeScript types instead
-- ❌ **Pattern matching** - Email/phone formats (use TypeScript)
-- ❌ **Business logic** - Anything that may evolve (use TypeScript)
-- ❌ **Role/status/type arrays** - Hardcoded values that will change
-
-**Why?**
-
-TypeScript provides:
-- ✅ Compile-time type safety
-- ✅ Runtime flexibility (add new values without migrations)
-- ✅ Better IDE support
-- ✅ Easier to test and maintain
-- ✅ Single source of truth (types in `/src/types/`)
-
-Database constraints provide:
-- ❌ Friction when adding new enum values
-- ❌ Requires migrations for simple changes
-- ❌ Duplicates validation already in TypeScript
-- ❌ No value in single-user application
-
-**Migration 20251129001407**: Removed all enum-style constraints. Validation now handled exclusively at TypeScript layer.
-
-## Code Quality Rules
-
-- TypeScript strict mode on.
-- Keep naming conventional. Component names PascalCase. Files kebab-case. Function names camelCase. Do not invent fanciful class/file names like `ImprovedSidebar`.
-- Prefer composition over large HOCs.
-- Avoid `useCallback` / `useMemo` by default. Only introduce them when profiling shows measurable benefit.
-- Never commit secrets. Use `.env.example`.
-- Do not use transient mock data in production code. Use seeded fixtures for local dev and tests.
-- Each PR must include tests for any new business logic or SQL migrations.
+**Code Quality:**
+- TypeScript strict mode
+- No mock data in production code
+- Each feature self-contained with routes, hooks, services, tests
 
 ---
 
-# High-level architecture
+## Golden Rules
 
-- `/src/features/*` — feature folders by domain (policies, commissions, clients, expenses, reports, auth)
-- `/src/components/*` — reusable UI primitives
-- `/src/routes/*` — route components & loaders (TanStack Router)
-- `/src/services/*` — business logic and Supabase data access (NO local storage!)
-- `/src/hooks/*` — TanStack Query hooks for server state
-- `/src/lib/*` — app-wide utilities (date, currency, calculations)
-- `/src/types/*` — TypeScript types matching database schema
-- `/supabase/migrations/*` — SQL migrations (single source of truth for schema)
-- `/docs/*` — Architecture, KPI definitions, migration guides
-
-**Data Flow:**
-
-1. User interacts with React components
-2. Components use TanStack Query hooks
-3. Hooks call service functions
-4. Services query Supabase database
-5. Data flows back through hooks to components
-6. **NO local storage at any step**
-
-Keep features self-contained. Each feature should export:
-
-- React routes and route loader functions
-- TanStack Query keys and hooks
-- Service functions for business logic
-- Tests and stories
-
----
-
-# KPI Data Model
-
-**Policies Table** (Source of Truth):
-
-- Contains: client info, carrier, product, premium, status, dates
-- Links to contract-level commission settings
-- Drives all KPI calculations
-- Never deleted, only status updated (active → lapsed → cancelled)
-
-**Commission System** (Contract-Level):
-
-- **Commission Settings**: Stored at contract level (carrier + product + contract_level)
-- **Automatic Calculation**: Commissions auto-calculated when policies are added
-- **Split Management**: Track splits with upline agents (percentage based)
-- **Advance Tracking**: Monitor advances and chargebacks
-- **Time Period Filters**: MTD, YTD, Last 30/60/90 days, custom ranges
-
-**Key Metrics Calculated from Policies:**
-
-- **Persistency**: `COUNT(WHERE status='active' AND months_since_start >= X) / COUNT(total in cohort)`
-- **Avg AP**: `AVG(annual_premium WHERE status='active')`
-- **Pace Metrics**: `(annual_target - YTD_premium) / weeks_remaining / avg_AP = policies_per_week_needed`
-- **State Performance**: `GROUP BY client_state → SUM(annual_premium), COUNT(*), AVG(annual_premium)`
-- **Commission Performance**: Total earned, advances outstanding, splits paid
-
-See `/docs/kpi-definitions.md` for complete formulas and `/docs/commission-lifecycle-business-rules.md` for commission rules.
-
----
-
-GOLDEN RULES TO NEVER BREAK
-
-- when working on plans, do not forget to update them as you go and when completed, change the name to match the other files names and move to plans/completed/
-- always fetch my current db schema from my remote supabase before every new task
-- DO NOT PUT ANY additional .md files in the root of this project. i do not care what the file is. i have a docs/ and a plans/ directory for a reason. i want to stay organized.
-- add to memory. stop asking me to continue working on anything that is still incomplete. if there already is a comprehensive plan typed up that you can keep track of whats been completed and what hasn't, then if its not completed, you don't need to keep asking me to continue. continue until its complete, and when context gets to 10% remaining, write a prompt that i can copy/paste into a new conversation to continue where we left off
-- add to memory. no fake/mock/placeholder period anywhere in this application. do not put in any ui features that don't actually do anything. it makes things confusing.
+1. Fetch current DB schema before every task
+2. Update plans as you work; move completed to `plans/completed/`
+3. No .md files in project root - use `/docs/` or `/plans/`
+4. Don't ask to continue incomplete work - just continue until done
+5. At 10% context remaining, write a continuation prompt
+6. No placeholder UI - everything must be functional
+7. Always run app after changes to verify no loading errors

@@ -353,6 +353,14 @@ class InvitationService {
    * Uses database function for server-side validation
    */
   private async validateSendInvitation(inviterId: string, inviteeEmail: string): Promise<InvitationValidationResult> {
+    // Type for RPC response
+    interface ValidationRpcResponse {
+      valid: boolean;
+      error_message?: string;
+      warning_message?: string;
+      invitee_user_id?: string;
+    }
+
     try {
       // Call database function to validate
       const { data, error } = await supabase
@@ -371,20 +379,22 @@ class InvitationService {
         };
       }
 
-      if (!data.valid) {
+      const result = data as ValidationRpcResponse;
+
+      if (!result.valid) {
         return {
           valid: false,
-          errors: [data.error_message],
-          warnings: data.warning_message ? [data.warning_message] : [],
-          invitee_user_id: data.invitee_user_id,
+          errors: [result.error_message || 'Validation failed'],
+          warnings: result.warning_message ? [result.warning_message] : [],
+          invitee_user_id: result.invitee_user_id,
         };
       }
 
       return {
         valid: true,
         errors: [],
-        warnings: data.warning_message ? [data.warning_message] : [],
-        invitee_user_id: data.invitee_user_id,
+        warnings: result.warning_message ? [result.warning_message] : [],
+        invitee_user_id: result.invitee_user_id,
       };
     } catch (error) {
       logger.error('InvitationService.validateSendInvitation', error instanceof Error ? error : new Error(String(error)));
@@ -401,6 +411,12 @@ class InvitationService {
    * Uses database function for server-side validation
    */
   private async validateAcceptInvitation(userId: string, invitation: HierarchyInvitation): Promise<InvitationValidationResult> {
+    // Type for RPC response
+    interface AcceptValidationRpcResponse {
+      valid: boolean;
+      error_message?: string;
+    }
+
     try {
       // Call database function to validate
       const { data, error } = await supabase
@@ -419,10 +435,12 @@ class InvitationService {
         };
       }
 
-      if (!data.valid) {
+      const result = data as AcceptValidationRpcResponse;
+
+      if (!result.valid) {
         return {
           valid: false,
-          errors: [data.error_message],
+          errors: [result.error_message || 'Validation failed'],
           warnings: [],
         };
       }
