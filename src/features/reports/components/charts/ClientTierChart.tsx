@@ -10,6 +10,7 @@ interface TierData {
 interface ClientTierChartProps {
   data: TierData[];
   height?: number;
+  onSliceClick?: (tier: string) => void;
 }
 
 const tierColors: Record<string, string> = {
@@ -19,7 +20,7 @@ const tierColors: Record<string, string> = {
   'D': '#6b7280',
 };
 
-export function ClientTierChart({ data, height = 180 }: ClientTierChartProps) {
+export function ClientTierChart({ data, height = 180, onSliceClick }: ClientTierChartProps) {
   if (!data || data.length === 0 || data.every(d => d.count === 0)) {
     return (
       <div className="h-[180px] flex items-center justify-center text-muted-foreground text-xs">
@@ -70,6 +71,18 @@ export function ClientTierChart({ data, height = 180 }: ClientTierChartProps) {
           legends: { text: { fontSize: 9, fill: '#6b7280' } },
         }}
         animate={false}
+        onClick={(datum) => {
+          if (onSliceClick) {
+            // Extract tier letter from "Tier A" format
+            const tier = String(datum.id).replace('Tier ', '');
+            onSliceClick(tier);
+          }
+        }}
+        onMouseEnter={(_datum, event) => {
+          if (onSliceClick) {
+            (event.target as SVGElement).style.cursor = 'pointer';
+          }
+        }}
       />
     </div>
   );

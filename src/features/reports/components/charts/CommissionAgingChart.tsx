@@ -12,6 +12,7 @@ interface AgingData {
 interface CommissionAgingChartProps {
   data: AgingData[];
   height?: number;
+  onBarClick?: (bucket: string) => void;
 }
 
 const riskColors: Record<string, string> = {
@@ -22,7 +23,7 @@ const riskColors: Record<string, string> = {
   Unknown: '#6b7280',
 };
 
-export function CommissionAgingChart({ data, height = 200 }: CommissionAgingChartProps) {
+export function CommissionAgingChart({ data, height = 200, onBarClick }: CommissionAgingChartProps) {
   if (!data || data.length === 0) {
     return (
       <div className="h-[200px] flex items-center justify-center text-muted-foreground text-xs">
@@ -93,6 +94,16 @@ export function CommissionAgingChart({ data, height = 200 }: CommissionAgingChar
           legends: { text: { fontSize: 9, fill: '#6b7280' } },
         }}
         animate={false}
+        onClick={(datum) => {
+          if (onBarClick && datum.indexValue) {
+            onBarClick(String(datum.indexValue));
+          }
+        }}
+        onMouseEnter={(_datum, event) => {
+          if (onBarClick) {
+            (event.target as SVGElement).style.cursor = 'pointer';
+          }
+        }}
       />
     </div>
   );

@@ -1,15 +1,18 @@
 // src/features/reports/ReportsPage.tsx
 
 import React, { useState, useMemo } from 'react';
-import { ReportType, ReportFilters, ReportSection } from '../../types/reports.types';
+import { ReportType, ReportFilters, ReportSection, DrillDownContext } from '../../types/reports.types';
 import { Button } from '../../components/ui/button';
 import { TimePeriodSelector, AdvancedTimePeriod, getAdvancedDateRange } from '../analytics/components/TimePeriodSelector';
 import { useReport } from '../../hooks/reports/useReport';
+import { useReportFilterOptions } from '../../hooks/reports/useReportFilterOptions';
 import { ReportExportService } from '../../services/reports/reportExportService';
 import { Download, Loader2, FileText, Table, Printer, ChevronRight, TrendingUp, AlertTriangle, CheckCircle, Package } from 'lucide-react';
 import { Card } from '../../components/ui/card';
 import { CommissionAgingChart, ClientTierChart } from './components/charts';
 import { BundleExportDialog } from './components/BundleExportDialog';
+import { ReportFiltersBar } from './components/filters';
+import { DrillDownDrawer } from './components/drill-down';
 
 // Helper function to create stable initial dates
 function getInitialDateRange() {
@@ -73,6 +76,15 @@ export function ReportsPage() {
   const [timePeriod, setTimePeriod] = useState<AdvancedTimePeriod>('MTD');
   const [customRange, setCustomRange] = useState<{ startDate: Date; endDate: Date }>(getInitialDateRange);
   const [bundleDialogOpen, setBundleDialogOpen] = useState(false);
+  const [drillDownContext, setDrillDownContext] = useState<DrillDownContext | null>(null);
+
+  // Fetch filter options
+  const { carriers, products, states, isLoading: filtersLoading } = useReportFilterOptions();
+
+  // Additional filter state (carrier, product, state selections)
+  const [selectedCarriers, setSelectedCarriers] = useState<string[]>([]);
+  const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
+  const [selectedStates, setSelectedStates] = useState<string[]>([]);
 
   // Get date range from time period (memoized to prevent infinite loop)
   const dateRange = useMemo(
@@ -85,9 +97,46 @@ export function ReportsPage() {
     () => ({
       startDate: dateRange.startDate,
       endDate: dateRange.endDate,
+      carrierIds: selectedCarriers.length > 0 ? selectedCarriers : undefined,
+      productIds: selectedProducts.length > 0 ? selectedProducts : undefined,
+      states: selectedStates.length > 0 ? selectedStates : undefined,
     }),
-    [dateRange.startDate, dateRange.endDate]
+    [dateRange.startDate, dateRange.endDate, selectedCarriers, selectedProducts, selectedStates]
   );
+
+  // Handler for filter changes
+  const handleFiltersChange = (newFilters: ReportFilters) => {
+    setSelectedCarriers(newFilters.carrierIds || []);
+    setSelectedProducts(newFilters.productIds || []);
+    setSelectedStates(newFilters.states || []);
+  };
+
+  // Drill-down handlers
+  const handleAgingBucketClick = (bucket: string) => {
+    setDrillDownContext({
+      type: 'commission-aging-bucket',
+      title: `Commission Aging: ${bucket}`,
+      subtitle: 'At-risk commissions in this aging window',
+      agingBucket: bucket,
+      filters,
+    });
+  };
+
+  const handleClientTierClick = (tier: string) => {
+    const tierDescriptions: Record<string, string> = {
+      A: 'High-value clients with $10K+ total premium',
+      B: 'Growth clients with $5K-$10K total premium',
+      C: 'Standard clients with $2K-$5K total premium',
+      D: 'Entry-level clients with less than $2K total premium',
+    };
+    setDrillDownContext({
+      type: 'client-tier',
+      title: `Tier ${tier} Clients`,
+      subtitle: tierDescriptions[tier] || 'Clients in this tier',
+      clientTier: tier as 'A' | 'B' | 'C' | 'D',
+      filters,
+    });
+  };
 
   // Fetch report data using React Query
   const { data: report, isLoading, error } = useReport(selectedType, filters);
@@ -130,6 +179,15 @@ export function ReportsPage() {
                 onCustomRangeChange={setCustomRange}
               />
             </div>
+            <div className="h-6 w-px bg-border" />
+            <ReportFiltersBar
+              filters={filters}
+              onFiltersChange={handleFiltersChange}
+              carriers={carriers}
+              products={products}
+              states={states}
+              isLoading={filtersLoading}
+            />
             <div className="h-6 w-px bg-border" />
             <div className="flex items-center gap-2">
               <Button
@@ -357,12 +415,20 @@ export function ReportsPage() {
                         {/* Render chart for specific sections */}
                         {section.id === 'commission-aging' && (
                           <div className="mb-2">
-                            <CommissionAgingChart data={getAgingChartData(section)} height={160} />
+                            <CommissionAgingChart
+                              data={getAgingChartData(section)}
+                              height={160}
+                              onBarClick={handleAgingBucketClick}
+                            />
                           </div>
                         )}
                         {section.id === 'client-tiers' && (
                           <div className="mb-2">
-                            <ClientTierChart data={getTierChartData(section)} height={140} />
+                            <ClientTierChart
+                              data={getTierChartData(section)}
+                              height={140}
+                              onSliceClick={handleClientTierClick}
+                            />
                           </div>
                         )}
 
@@ -438,6 +504,13 @@ export function ReportsPage() {
         open={bundleDialogOpen}
         onOpenChange={setBundleDialogOpen}
         filters={filters}
+      />
+
+      {/* Drill-Down Drawer */}
+      <DrillDownDrawer
+        open={!!drillDownContext}
+        onClose={() => setDrillDownContext(null)}
+        context={drillDownContext}
       />
     </div>
   );

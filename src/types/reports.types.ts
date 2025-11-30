@@ -154,3 +154,73 @@ export interface GeneratedBundle {
   reports: Report[];
   format: 'pdf' | 'excel';
 }
+
+// ============================================================================
+// PHASE 4: Interactive Features - Drill-Down Types
+// ============================================================================
+
+export type DrillDownType =
+  | 'commission-aging-bucket'  // Click aging bucket (0-3mo, 3-6mo, etc.)
+  | 'client-tier'              // Click tier (A, B, C, D)
+  | 'carrier'                  // Click carrier row
+  | 'product'                  // Click product row
+  | 'commission'               // Click specific commission
+  | 'policy';                  // Click specific policy
+
+export interface DrillDownContext {
+  type: DrillDownType;
+  title: string;
+  subtitle?: string;
+  // Identifiers for fetching data
+  agingBucket?: string;        // '0-3 months', '3-6 months', etc.
+  clientTier?: 'A' | 'B' | 'C' | 'D';
+  carrierId?: string;
+  carrierName?: string;
+  productId?: string;
+  productName?: string;
+  commissionId?: string;
+  policyId?: string;
+  // Applied filters (inherit from report)
+  filters: ReportFilters;
+}
+
+export interface DrillDownSummary {
+  totalRecords: number;
+  totalAmount: number;
+  avgAmount?: number;
+  additionalMetrics?: Record<string, string | number>;
+}
+
+export interface DrillDownRecord {
+  id: string;
+  type: 'commission' | 'policy' | 'client';
+  // Common fields
+  date: string;
+  amount: number;
+  status: string;
+  // Entity-specific fields
+  policyNumber?: string;
+  clientName?: string;
+  carrierName?: string;
+  productName?: string;
+  monthsPaid?: number;
+  annualPremium?: number;
+  tier?: string;
+}
+
+export interface DrillDownData {
+  summary: DrillDownSummary;
+  records: DrillDownRecord[];
+  columns: {
+    key: keyof DrillDownRecord;
+    label: string;
+    format?: 'currency' | 'number' | 'text' | 'date';
+  }[];
+}
+
+// Filter option types for dropdowns
+export interface FilterOption {
+  id: string;
+  name: string;
+  count?: number; // Optional count of items with this filter
+}
