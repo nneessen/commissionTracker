@@ -7,11 +7,11 @@ import type {
   UserEmail,
   UserActivityLog,
   RecruitFilters,
-  SendEmailRequest,
   CreateRecruitInput,
   UpdateRecruitInput,
   UpdatePhaseInput,
 } from '@/types/recruiting';
+import type { SendEmailRequest } from '@/types/email.types';
 
 export const recruitingService = {
   // ========================================
@@ -290,7 +290,7 @@ export const recruitingService = {
 
   async sendEmail(emailRequest: SendEmailRequest) {
     // Call Edge Function
-    const { data, error } = await supabase.functions.invoke('send-user-email', {
+    const { data, error } = await supabase.functions.invoke('send-email', {
       body: emailRequest,
     });
 

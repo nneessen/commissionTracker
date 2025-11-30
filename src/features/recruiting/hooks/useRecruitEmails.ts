@@ -1,7 +1,7 @@
 // src/features/recruiting/hooks/useRecruitEmails.ts
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { recruitingService } from '@/services/recruiting';
-import type { SendEmailRequest } from '@/types/recruiting';
+import type { SendEmailRequest } from '@/types/email.types';
 
 export function useRecruitEmails(recruitId: string) {
   return useQuery({
@@ -17,7 +17,9 @@ export function useSendEmail() {
   return useMutation({
     mutationFn: (emailRequest: SendEmailRequest) => recruitingService.sendEmail(emailRequest),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['recruits', variables.recruitId, 'emails'] });
+      if (variables.recruitId) {
+        queryClient.invalidateQueries({ queryKey: ['recruits', variables.recruitId, 'emails'] });
+      }
     },
   });
 }
