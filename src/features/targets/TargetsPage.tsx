@@ -155,27 +155,27 @@ export function TargetsPage() {
   return (
     <>
       <div className="h-screen flex flex-col overflow-hidden">
-        {/* Header */}
-        <div className="px-6 py-4 bg-gradient-to-r from-background to-muted/20">
+        {/* Compact Header */}
+        <div className="page-header py-3">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold tracking-tight">Income Targets {new Date().getFullYear()}</h1>
-              <p className="text-sm text-muted-foreground mt-1">
+              <h1 className="text-base font-semibold text-foreground">Income Targets {new Date().getFullYear()}</h1>
+              <p className="text-[11px] text-muted-foreground mt-0.5">
                 Based on {calculatedTargets.calculationMethod === 'historical' ? 'your historical data' : 'industry averages'}
               </p>
             </div>
             {!isEditingInline ? (
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
                 <div className="text-right">
-                  <div className="text-sm text-muted-foreground">Annual Goal</div>
-                  <div className="text-3xl font-bold">{formatCurrency(calculatedTargets.annualIncomeTarget)}</div>
+                  <div className="text-[10px] font-medium text-muted-foreground uppercase">NET Annual Target</div>
+                  <div className="text-lg font-bold">{formatCurrency(calculatedTargets.annualIncomeTarget)}</div>
                 </div>
-                <Button size="sm" variant="ghost" onClick={handleInlineEdit}>
-                  <Edit2 className="h-4 w-4" />
+                <Button size="sm" variant="ghost" onClick={handleInlineEdit} className="h-6 w-6 p-0">
+                  <Edit2 className="h-3 w-3" />
                 </Button>
               </div>
             ) : (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1">
                 <Input
                   type="text"
                   value={inlineEditValue}
@@ -184,206 +184,298 @@ export function TargetsPage() {
                     if (e.key === 'Enter') handleInlineSave();
                     if (e.key === 'Escape') handleInlineCancel();
                   }}
-                  className="w-40 text-lg font-bold"
+                  className="w-32 h-7 text-sm font-bold"
                   autoFocus
                 />
-                <Button size="sm" onClick={handleInlineSave}>Save</Button>
-                <Button size="sm" variant="ghost" onClick={handleInlineCancel}>Cancel</Button>
+                <Button size="sm" onClick={handleInlineSave} className="h-7 px-2 text-xs">Save</Button>
+                <Button size="sm" variant="ghost" onClick={handleInlineCancel} className="h-7 px-2 text-xs">Cancel</Button>
               </div>
             )}
           </div>
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 p-6 overflow-auto">
-          <div className="max-w-7xl mx-auto space-y-6">
+        <div className="flex-1 p-3 overflow-auto">
+          <div className="max-w-7xl mx-auto space-y-2">
+
+            {/* NET vs GROSS Breakdown - New Section */}
+            <Card>
+              <CardContent className="p-3">
+                <div className="text-[11px] font-medium text-muted-foreground uppercase mb-2">Income Calculation Breakdown</div>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-[11px]">
+                        <span className="text-muted-foreground">NET Income Target (Take Home)</span>
+                        <span className="font-mono font-bold text-success">{formatCurrency(calculatedTargets.annualIncomeTarget)}</span>
+                      </div>
+                      <div className="flex justify-between text-[11px]">
+                        <span className="text-muted-foreground">+ Annual Expenses</span>
+                        <span className="font-mono">{formatCurrency(calculatedTargets.monthlyExpenseTarget * 12)}</span>
+                      </div>
+                      <div className="h-px bg-border my-1" />
+                      <div className="flex justify-between text-[11px]">
+                        <span className="text-muted-foreground font-semibold">= GROSS Commission Needed</span>
+                        <span className="font-mono font-bold">{formatCurrency(calculatedTargets.annualIncomeTarget + (calculatedTargets.monthlyExpenseTarget * 12))}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="border-l pl-4">
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-[11px]">
+                        <span className="text-muted-foreground">Gross Commission</span>
+                        <span className="font-mono">{formatCurrency(calculatedTargets.annualIncomeTarget + (calculatedTargets.monthlyExpenseTarget * 12))}</span>
+                      </div>
+                      <div className="flex justify-between text-[11px]">
+                        <span className="text-muted-foreground">÷ Commission Rate</span>
+                        <span className="font-mono font-semibold">{(calculatedTargets.avgCommissionRate * 100).toFixed(1)}%</span>
+                      </div>
+                      <div className="h-px bg-border my-1" />
+                      <div className="flex justify-between text-[11px]">
+                        <span className="text-muted-foreground font-semibold">= Premium Needed</span>
+                        <span className="font-mono font-bold">{formatCurrency(calculatedTargets.totalPremiumNeeded)}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="border-l pl-4">
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-[11px]">
+                        <span className="text-muted-foreground">Premium Needed</span>
+                        <span className="font-mono">{formatCurrency(calculatedTargets.totalPremiumNeeded)}</span>
+                      </div>
+                      <div className="flex justify-between text-[11px]">
+                        <span className="text-muted-foreground">÷ Avg Premium</span>
+                        <span className="font-mono font-semibold">{formatCurrency(calculatedTargets.avgPolicyPremium)}</span>
+                      </div>
+                      <div className="h-px bg-border my-1" />
+                      <div className="flex justify-between text-[11px]">
+                        <span className="text-muted-foreground font-semibold">= Policies Needed</span>
+                        <span className="font-mono font-bold text-info">{calculatedTargets.annualPoliciesTarget} policies</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
             {/* Top Section: Income & Policy Breakdown */}
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-2 gap-2">
 
-              {/* Income Targets - Data Dense */}
-              <Card className="shadow-lg">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <DollarSign className="h-5 w-5 text-success" />
-                    Income Breakdown
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-baseline">
-                      <span className="text-sm text-muted-foreground">Annual</span>
-                      <div className="text-right">
-                        <div className="text-lg font-bold">{formatCurrency(calculatedTargets.annualIncomeTarget)}</div>
-                        <div className={cn("text-xs", getProgressColor((actualMetrics.ytdIncome / calculatedTargets.annualIncomeTarget) * 100))}>
-                          {formatCurrency(actualMetrics.ytdIncome)} YTD
-                        </div>
+              {/* Income Targets - Compact */}
+              <Card>
+                <CardContent className="p-3">
+                  <div className="text-[11px] font-medium text-muted-foreground uppercase mb-2">NET Income Targets</div>
+                  <div className="space-y-1">
+                    <div className="flex justify-between items-center text-[11px]">
+                      <span className="text-muted-foreground">Annual</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono font-bold">{formatCurrency(calculatedTargets.annualIncomeTarget)}</span>
+                        <span className={cn("font-mono text-[10px]", getProgressColor((actualMetrics.ytdIncome / calculatedTargets.annualIncomeTarget) * 100))}>
+                          ({formatCurrency(actualMetrics.ytdIncome)} YTD)
+                        </span>
                       </div>
                     </div>
 
-                    <div className="flex justify-between items-baseline">
-                      <span className="text-sm text-muted-foreground">Quarterly</span>
-                      <div className="text-right">
-                        <div className="text-lg font-bold">{formatCurrency(calculatedTargets.quarterlyIncomeTarget)}</div>
-                        <div className={cn("text-xs", getProgressColor((actualMetrics.qtdIncome / calculatedTargets.quarterlyIncomeTarget) * 100))}>
-                          {formatCurrency(actualMetrics.qtdIncome)} QTD
-                        </div>
+                    <div className="flex justify-between items-center text-[11px]">
+                      <span className="text-muted-foreground">Quarterly</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono font-bold">{formatCurrency(calculatedTargets.quarterlyIncomeTarget)}</span>
+                        <span className={cn("font-mono text-[10px]", getProgressColor((actualMetrics.qtdIncome / calculatedTargets.quarterlyIncomeTarget) * 100))}>
+                          ({formatCurrency(actualMetrics.qtdIncome)} QTD)
+                        </span>
                       </div>
                     </div>
 
-                    <div className="flex justify-between items-baseline">
-                      <span className="text-sm text-muted-foreground">Monthly</span>
-                      <div className="text-right">
-                        <div className="text-lg font-bold">{formatCurrency(calculatedTargets.monthlyIncomeTarget)}</div>
-                        <div className={cn("text-xs", getProgressColor((actualMetrics.mtdIncome / calculatedTargets.monthlyIncomeTarget) * 100))}>
-                          {formatCurrency(actualMetrics.mtdIncome)} MTD
-                        </div>
+                    <div className="flex justify-between items-center text-[11px]">
+                      <span className="text-muted-foreground">Monthly</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono font-bold">{formatCurrency(calculatedTargets.monthlyIncomeTarget)}</span>
+                        <span className={cn("font-mono text-[10px]", getProgressColor((actualMetrics.mtdIncome / calculatedTargets.monthlyIncomeTarget) * 100))}>
+                          ({formatCurrency(actualMetrics.mtdIncome)} MTD)
+                        </span>
                       </div>
                     </div>
 
-                    <div className="pt-2 mt-2 bg-muted/20 -mx-6 px-6 py-3 rounded">
-                      <div className="flex justify-between text-xs">
-                        <span className="text-muted-foreground">Weekly</span>
-                        <span className="font-mono">{formatCurrency(calculatedTargets.weeklyIncomeTarget)}</span>
-                      </div>
-                      <div className="flex justify-between text-xs mt-1">
-                        <span className="text-muted-foreground">Daily</span>
-                        <span className="font-mono">{formatCurrency(calculatedTargets.dailyIncomeTarget)}</span>
-                      </div>
+                    <div className="h-px bg-border my-1" />
+
+                    <div className="flex justify-between text-[11px]">
+                      <span className="text-muted-foreground">Weekly</span>
+                      <span className="font-mono">{formatCurrency(calculatedTargets.weeklyIncomeTarget)}</span>
+                    </div>
+                    <div className="flex justify-between text-[11px]">
+                      <span className="text-muted-foreground">Daily</span>
+                      <span className="font-mono">{formatCurrency(calculatedTargets.dailyIncomeTarget)}</span>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
-              {/* Policy Targets - Data Dense */}
-              <Card className="shadow-lg">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <FileText className="h-5 w-5 text-info" />
-                    Policy Targets
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-baseline">
-                      <span className="text-sm text-muted-foreground">Annual</span>
-                      <div className="text-right">
-                        <div className="text-lg font-bold">{calculatedTargets.annualPoliciesTarget} policies</div>
-                        <div className={cn("text-xs", getProgressColor((actualMetrics.ytdPolicies / calculatedTargets.annualPoliciesTarget) * 100))}>
-                          {actualMetrics.ytdPolicies} YTD
-                        </div>
+              {/* Policy Targets - Compact */}
+              <Card>
+                <CardContent className="p-3">
+                  <div className="text-[11px] font-medium text-muted-foreground uppercase mb-2">Policy Targets</div>
+                  <div className="space-y-1">
+                    <div className="flex justify-between items-center text-[11px]">
+                      <span className="text-muted-foreground">Annual</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono font-bold">{calculatedTargets.annualPoliciesTarget}</span>
+                        <span className={cn("font-mono text-[10px]", getProgressColor((actualMetrics.ytdPolicies / calculatedTargets.annualPoliciesTarget) * 100))}>
+                          ({actualMetrics.ytdPolicies} YTD)
+                        </span>
                       </div>
                     </div>
 
-                    <div className="flex justify-between items-baseline">
-                      <span className="text-sm text-muted-foreground">Quarterly</span>
-                      <div className="text-right">
-                        <div className="text-lg font-bold">{calculatedTargets.quarterlyPoliciesTarget} policies</div>
-                        <div className="text-xs text-muted-foreground">
-                          {Math.floor(actualMetrics.ytdPolicies / 4)} avg/quarter
-                        </div>
+                    <div className="flex justify-between items-center text-[11px]">
+                      <span className="text-muted-foreground">Quarterly</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono font-bold">{calculatedTargets.quarterlyPoliciesTarget}</span>
+                        <span className="font-mono text-[10px] text-muted-foreground">
+                          ({Math.floor(actualMetrics.ytdPolicies / 4)} avg)
+                        </span>
                       </div>
                     </div>
 
-                    <div className="flex justify-between items-baseline">
-                      <span className="text-sm text-muted-foreground">Monthly</span>
-                      <div className="text-right">
-                        <div className="text-lg font-bold">{calculatedTargets.monthlyPoliciesTarget} policies</div>
-                        <div className={cn("text-xs", getProgressColor((actualMetrics.mtdPolicies / calculatedTargets.monthlyPoliciesTarget) * 100))}>
-                          {actualMetrics.mtdPolicies} MTD
-                        </div>
+                    <div className="flex justify-between items-center text-[11px]">
+                      <span className="text-muted-foreground">Monthly</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono font-bold">{calculatedTargets.monthlyPoliciesTarget}</span>
+                        <span className={cn("font-mono text-[10px]", getProgressColor((actualMetrics.mtdPolicies / calculatedTargets.monthlyPoliciesTarget) * 100))}>
+                          ({actualMetrics.mtdPolicies} MTD)
+                        </span>
                       </div>
                     </div>
 
-                    <div className="pt-2 mt-2 bg-muted/20 -mx-6 px-6 py-3 rounded">
-                      <div className="flex justify-between text-xs">
-                        <span className="text-muted-foreground">Weekly</span>
-                        <span className="font-mono">{calculatedTargets.weeklyPoliciesTarget} policies</span>
-                      </div>
-                      <div className="flex justify-between text-xs mt-1">
-                        <span className="text-muted-foreground">Daily</span>
-                        <span className="font-mono">{calculatedTargets.dailyPoliciesTarget} {calculatedTargets.dailyPoliciesTarget === 1 ? 'policy' : 'policies'}</span>
-                      </div>
+                    <div className="h-px bg-border my-1" />
+
+                    <div className="flex justify-between text-[11px]">
+                      <span className="text-muted-foreground">Weekly</span>
+                      <span className="font-mono">{calculatedTargets.weeklyPoliciesTarget}</span>
+                    </div>
+                    <div className="flex justify-between text-[11px]">
+                      <span className="text-muted-foreground">Daily</span>
+                      <span className="font-mono">{calculatedTargets.dailyPoliciesTarget}</span>
                     </div>
                   </div>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Bottom Section: Calculations, Expenses, Persistency */}
-            <div className="grid grid-cols-3 gap-6">
+            {/* Bottom Section: Expenses Breakdown, Metrics, Persistency */}
+            <div className="grid grid-cols-3 gap-2">
 
-              {/* Calculation Basis */}
-              <Card className="shadow-md">
-                <CardHeader>
-                  <CardTitle className="text-base">How It's Calculated</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Avg Commission Rate</span>
-                    <span className="font-mono font-semibold">{(calculatedTargets.avgCommissionRate * 100).toFixed(1)}%</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Avg Policy Premium</span>
-                    <span className="font-mono font-semibold">{formatCurrency(calculatedTargets.avgPolicyPremium)}</span>
-                  </div>
-                  <div className="flex justify-between pt-2 mt-2 bg-accent/10 -mx-6 px-6 py-2 rounded">
-                    <span className="text-muted-foreground">Total Premium Needed</span>
-                    <span className="font-mono font-bold">{formatCurrency(calculatedTargets.totalPremiumNeeded)}</span>
+              {/* Expense Breakdown - More Detail */}
+              <Card>
+                <CardContent className="p-3">
+                  <div className="text-[11px] font-medium text-muted-foreground uppercase mb-2">Expense Analysis</div>
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-[11px]">
+                      <span className="text-muted-foreground">Monthly Target</span>
+                      <span className="font-mono font-semibold">{formatCurrency(calculatedTargets.monthlyExpenseTarget)}</span>
+                    </div>
+                    <div className="flex justify-between text-[11px]">
+                      <span className="text-muted-foreground">MTD Actual</span>
+                      <span className={cn("font-mono", actualMetrics.mtdExpenses > calculatedTargets.monthlyExpenseTarget ? "text-error" : "text-success")}>
+                        {formatCurrency(actualMetrics.mtdExpenses)}
+                      </span>
+                    </div>
+                    <div className="h-px bg-border my-1" />
+                    <div className="flex justify-between text-[11px]">
+                      <span className="text-muted-foreground">Annual Projection</span>
+                      <span className="font-mono">{formatCurrency(calculatedTargets.monthlyExpenseTarget * 12)}</span>
+                    </div>
+                    <div className="flex justify-between text-[11px]">
+                      <span className="text-muted-foreground">Expense Ratio</span>
+                      <span className="font-mono font-bold">{formatPercent(calculatedTargets.expenseRatio * 100)}</span>
+                    </div>
+                    <div className="h-px bg-border my-1" />
+                    <div className="text-[10px] text-muted-foreground">
+                      {calculatedTargets.expenseRatio > 0.3 ?
+                        "⚠️ High expense ratio" :
+                        "✓ Healthy expense ratio"}
+                    </div>
                   </div>
                 </CardContent>
               </Card>
 
-              {/* Expenses */}
-              <Card className="shadow-md">
-                <CardHeader>
-                  <CardTitle className="text-base">Business Expenses</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Monthly Budget</span>
-                    <span className="font-mono font-semibold">{formatCurrency(calculatedTargets.monthlyExpenseTarget)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">MTD Actual</span>
-                    <span className="font-mono">{formatCurrency(actualMetrics.mtdExpenses)}</span>
-                  </div>
-                  <div className="flex justify-between pt-2 mt-2 bg-accent/10 -mx-6 px-6 py-2 rounded">
-                    <span className="text-muted-foreground">Expense Ratio</span>
-                    <span className="font-mono font-bold">{formatPercent(calculatedTargets.expenseRatio * 100)}</span>
+              {/* Key Metrics */}
+              <Card>
+                <CardContent className="p-3">
+                  <div className="text-[11px] font-medium text-muted-foreground uppercase mb-2">Key Metrics</div>
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-[11px]">
+                      <span className="text-muted-foreground">Commission Rate</span>
+                      <span className="font-mono font-semibold">{(calculatedTargets.avgCommissionRate * 100).toFixed(1)}%</span>
+                    </div>
+                    <div className="flex justify-between text-[11px]">
+                      <span className="text-muted-foreground">Avg Premium</span>
+                      <span className="font-mono font-semibold">{formatCurrency(calculatedTargets.avgPolicyPremium)}</span>
+                    </div>
+                    <div className="flex justify-between text-[11px]">
+                      <span className="text-muted-foreground">Current Avg</span>
+                      <span className={cn("font-mono",
+                        actualMetrics.currentAvgPremium < calculatedTargets.avgPolicyPremium ? "text-warning" : "text-success"
+                      )}>
+                        {formatCurrency(actualMetrics.currentAvgPremium)}
+                      </span>
+                    </div>
+                    <div className="h-px bg-border my-1" />
+                    <div className="flex justify-between text-[11px]">
+                      <span className="text-muted-foreground">Data Confidence</span>
+                      <span className={cn("font-semibold text-[10px]",
+                        calculatedTargets.confidence === 'high' ? "text-success" :
+                        calculatedTargets.confidence === 'medium' ? "text-warning" : "text-error"
+                      )}>
+                        {calculatedTargets.confidence.toUpperCase()}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-[11px]">
+                      <span className="text-muted-foreground">Method</span>
+                      <span className="text-[10px] font-medium">{calculatedTargets.calculationMethod}</span>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
 
               {/* Persistency */}
-              <Card className="shadow-md">
-                <CardHeader>
-                  <CardTitle className="text-base">Persistency Rates</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3 text-sm">
-                  <div>
-                    <div className="flex justify-between mb-1">
-                      <span className="text-muted-foreground">13-Month</span>
-                      <span className="font-mono">{formatPercent(calculatedTargets.persistency13MonthTarget * 100)} target</span>
+              <Card>
+                <CardContent className="p-3">
+                  <div className="text-[11px] font-medium text-muted-foreground uppercase mb-2">Persistency Rates</div>
+                  <div className="space-y-2">
+                    <div>
+                      <div className="flex justify-between text-[11px]">
+                        <span className="text-muted-foreground">13-Month Target</span>
+                        <span className="font-mono">{formatPercent(calculatedTargets.persistency13MonthTarget * 100)}</span>
+                      </div>
+                      <div className="flex justify-between text-[11px]">
+                        <span className="text-muted-foreground">13-Month Actual</span>
+                        <span className={cn("font-mono font-semibold",
+                          getProgressColor((actualMetrics.persistency13Month / calculatedTargets.persistency13MonthTarget) * 100))}>
+                          {formatPercent(actualMetrics.persistency13Month * 100)}
+                        </span>
+                      </div>
                     </div>
-                    <div className={cn("text-right font-mono font-semibold", getProgressColor((actualMetrics.persistency13Month / calculatedTargets.persistency13MonthTarget) * 100))}>
-                      {formatPercent(actualMetrics.persistency13Month * 100)} actual
-                    </div>
-                  </div>
-                  <div>
-                    <div className="flex justify-between mb-1">
-                      <span className="text-muted-foreground">25-Month</span>
-                      <span className="font-mono">{formatPercent(calculatedTargets.persistency25MonthTarget * 100)} target</span>
-                    </div>
-                    <div className={cn("text-right font-mono font-semibold", getProgressColor((actualMetrics.persistency25Month / calculatedTargets.persistency25MonthTarget) * 100))}>
-                      {formatPercent(actualMetrics.persistency25Month * 100)} actual
+                    <div className="h-px bg-border my-1" />
+                    <div>
+                      <div className="flex justify-between text-[11px]">
+                        <span className="text-muted-foreground">25-Month Target</span>
+                        <span className="font-mono">{formatPercent(calculatedTargets.persistency25MonthTarget * 100)}</span>
+                      </div>
+                      <div className="flex justify-between text-[11px]">
+                        <span className="text-muted-foreground">25-Month Actual</span>
+                        <span className={cn("font-mono font-semibold",
+                          getProgressColor((actualMetrics.persistency25Month / calculatedTargets.persistency25MonthTarget) * 100))}>
+                          {formatPercent(actualMetrics.persistency25Month * 100)}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Validation Warnings */}
+            {/* Validation Warnings - Compact */}
             {(() => {
               const validation = targetsCalculationService.validateTargets(
                 calculatedTargets,
@@ -392,15 +484,15 @@ export function TargetsPage() {
 
               if (validation.warnings.length > 0 || validation.recommendations.length > 0) {
                 return (
-                  <Alert className="shadow-md">
-                    <AlertCircle className="h-4 w-4" />
+                  <Alert className="p-2">
+                    <AlertCircle className="h-3 w-3" />
                     <AlertDescription>
-                      <div className="space-y-1">
+                      <div className="space-y-0.5">
                         {validation.warnings.map((warning, i) => (
-                          <p key={i} className="text-sm font-medium">{warning}</p>
+                          <p key={i} className="text-[11px] font-medium">{warning}</p>
                         ))}
                         {validation.recommendations.map((rec, i) => (
-                          <p key={i} className="text-sm text-muted-foreground">{rec}</p>
+                          <p key={i} className="text-[10px] text-muted-foreground">{rec}</p>
                         ))}
                       </div>
                     </AlertDescription>

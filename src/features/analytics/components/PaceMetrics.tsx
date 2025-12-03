@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { useAnalyticsDateRange } from '../context/AnalyticsDateContext';
 import { useMetricsWithDateRange } from '@/hooks/kpi/useMetricsWithDateRange';
 import { cn } from '@/lib/utils';
+import { Heading } from '@/components/ui/heading';
 
 /**
  * PaceMetrics - Shows what you need to do to hit your goals
@@ -47,12 +48,12 @@ export function PaceMetrics() {
 
   if (metrics.isLoading) {
     return (
-      <Card className="border-border/50">
-        <CardContent className="p-2">
+      <Card>
+        <CardContent className="p-3">
           <div className="text-[11px] font-medium text-muted-foreground uppercase">
             Pace Metrics
           </div>
-          <div className="p-3 text-center text-[10px] text-muted-foreground">
+          <div className="p-3 text-center text-[11px] text-muted-foreground">
             Loading...
           </div>
         </CardContent>
@@ -115,111 +116,80 @@ export function PaceMetrics() {
   };
 
   return (
-    <Card className="w-full border-border/50">
-      <CardContent className="p-2">
-        {/* Compact Header with Status */}
-        <div className="flex items-center justify-between mb-1.5">
-          <div className="flex items-center gap-1.5">
-            <div className="text-[11px] font-medium text-muted-foreground uppercase">
-              Pace Metrics
-            </div>
-            <div className="text-[10px] text-muted-foreground/70">
-              {getTimePeriodLabel()}
-            </div>
-          </div>
+    <Card>
+      <CardContent className="p-3">
+        <Heading
+          title="Pace Metrics"
+          subtitle={getTimePeriodLabel()}
+        >
           <div className={cn(
-            "px-1.5 py-0.5 rounded text-[10px] font-medium",
+            "px-1.5 py-0.5 rounded text-[11px] font-medium",
             isProfitable ? "bg-green-500/10 text-green-600 dark:text-green-400" : "bg-red-500/10 text-red-600 dark:text-red-400"
           )}>
             {isProfitable ? "PROFITABLE" : "DEFICIT"}
           </div>
-        </div>
+        </Heading>
 
-        {/* Compact Metrics Grid */}
-        <div className="grid grid-cols-3 gap-1.5">
-          {/* Current AP Pace (Projection Highlight) */}
-          <div className="col-span-3 p-1.5 bg-muted/5 rounded border border-border/30">
-            <div className="flex items-center justify-between">
-              <div className="text-[10px] text-muted-foreground uppercase">
-                Projected AP
-              </div>
-              <div className="text-base font-bold font-mono text-foreground">
-                {formatCurrency(projectedAPTotal)}
-              </div>
-            </div>
-            <div className="flex items-center gap-2 text-[10px] text-muted-foreground/70 mt-0.5">
-              <span>Written: {formatCurrency(periodPolicies.premiumWritten)}</span>
-              <span>•</span>
-              <span>Pace: {formatCurrency(currentAPPace)}/day</span>
-              <span>•</span>
-              <span>{daysRemaining}d left</span>
+        {/* Inline Metrics Display - NO CARDS */}
+        <div className="space-y-1">
+          {/* Current Performance Row */}
+          <div className="flex items-center justify-between text-[11px]">
+            <span className="text-muted-foreground">AP Written</span>
+            <div className="flex items-center gap-2">
+              <span className="font-mono font-bold">{formatCurrency(periodPolicies.premiumWritten)}</span>
+              <span className="text-muted-foreground/70">({periodPolicies.newCount} policies)</span>
             </div>
           </div>
 
-          {/* AP Written */}
-          <div className="p-1.5 bg-card rounded border border-border/30">
-            <div className="text-[9px] text-muted-foreground uppercase">
-              AP Written
-            </div>
-            <div className="text-sm font-bold font-mono">
-              {formatCurrency(periodPolicies.premiumWritten)}
-            </div>
-            <div className="text-[9px] text-muted-foreground/70">
-              {periodPolicies.newCount} policies
+          {/* Projected Row */}
+          <div className="flex items-center justify-between text-[11px]">
+            <span className="text-muted-foreground">Projected AP</span>
+            <div className="flex items-center gap-2">
+              <span className="font-mono font-bold text-amber-600 dark:text-amber-400">{formatCurrency(projectedAPTotal)}</span>
+              <span className="text-muted-foreground/70">@ {formatCurrency(currentAPPace)}/day</span>
             </div>
           </div>
 
-          {/* Projected Policies */}
-          <div className="p-1.5 bg-card rounded border border-border/30">
-            <div className="text-[9px] text-muted-foreground uppercase">
-              Proj. Policies
-            </div>
-            <div className="text-sm font-bold font-mono">
-              {projectedPolicyTotal}
-            </div>
-            <div className="text-[9px] text-muted-foreground/70">
-              {currentPolicyPace.toFixed(1)}/day
+          {/* Average Premium Row */}
+          <div className="flex items-center justify-between text-[11px]">
+            <span className="text-muted-foreground">Average AP</span>
+            <span className="font-mono font-bold">{formatCurrency(periodPolicies.averagePremium)}</span>
+          </div>
+
+          {/* Projected Policies Row */}
+          <div className="flex items-center justify-between text-[11px]">
+            <span className="text-muted-foreground">Projected Policies</span>
+            <div className="flex items-center gap-2">
+              <span className="font-mono font-bold">{projectedPolicyTotal}</span>
+              <span className="text-muted-foreground/70">@ {currentPolicyPace.toFixed(1)}/day</span>
             </div>
           </div>
 
-          {/* Average AP */}
-          <div className="p-1.5 bg-card rounded border border-border/30">
-            <div className="text-[9px] text-muted-foreground uppercase">
-              Avg AP
-            </div>
-            <div className="text-sm font-bold font-mono">
-              {formatCurrency(periodPolicies.averagePremium)}
-            </div>
-            <div className="text-[9px] text-muted-foreground/70">
-              per policy
+          {/* Divider */}
+          <div className="h-px bg-slate-800/20 dark:bg-slate-200/10 my-1" />
+
+          {/* Breakeven Status Row */}
+          <div className="flex items-center justify-between text-[11px]">
+            <span className="text-muted-foreground uppercase">{isProfitable ? "Surplus" : "Deficit"}</span>
+            <div className="flex items-center gap-2">
+              <span className={cn(
+                "font-mono font-bold",
+                isProfitable ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"
+              )}>
+                {formatCurrency(Math.abs(netIncome))}
+              </span>
+              {!isProfitable && (
+                <span className="text-muted-foreground/70">
+                  (need {formatNumber(dailyTarget)}/day)
+                </span>
+              )}
             </div>
           </div>
 
-          {/* Breakeven Status - Full Width */}
-          <div className={cn(
-            "col-span-3 p-1.5 rounded border",
-            isProfitable
-              ? "bg-green-500/5 border-green-500/20"
-              : "bg-red-500/5 border-red-500/20"
-          )}>
-            <div className="flex items-center justify-between">
-              <div className="text-[10px] text-muted-foreground uppercase">
-                {isProfitable ? "Current Surplus" : "Current Deficit"}
-              </div>
-              <div className="flex items-center gap-2">
-                <div className={cn(
-                  "text-sm font-bold font-mono",
-                  isProfitable ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"
-                )}>
-                  {formatCurrency(Math.abs(netIncome))}
-                </div>
-                {!isProfitable && (
-                  <div className="text-[10px] text-muted-foreground">
-                    ({formatNumber(dailyTarget)}/day needed)
-                  </div>
-                )}
-              </div>
-            </div>
+          {/* Time Remaining Row */}
+          <div className="flex items-center justify-between text-[11px]">
+            <span className="text-muted-foreground">Time Left</span>
+            <span className="font-mono font-bold">{daysRemaining} days</span>
           </div>
         </div>
       </CardContent>

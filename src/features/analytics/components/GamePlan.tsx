@@ -7,7 +7,15 @@ import { useUserTargets } from '../../../hooks/targets/useUserTargets';
 import { useExpenses } from '../../../hooks/expenses/useExpenses';
 import { gamePlanService } from '../../../services/analytics/gamePlanService';
 import { cn } from '@/lib/utils';
-import { AnalyticsTable, AnalyticsHeading } from './shared';
+import { Heading } from '@/components/ui/heading';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { CheckCircle2, Target, TrendingUp, AlertCircle } from 'lucide-react';
 
 /**
@@ -37,12 +45,12 @@ export function GamePlan() {
 
   if (isLoading) {
     return (
-      <Card className="border-border/50">
-        <CardContent className="p-2">
+      <Card>
+        <CardContent className="p-3">
           <div className="text-[11px] font-medium text-muted-foreground uppercase">
             Game Plan
           </div>
-          <div className="p-3 text-center text-[10px] text-muted-foreground">
+          <div className="p-3 text-center text-[11px] text-muted-foreground">
             Loading...
           </div>
         </CardContent>
@@ -105,9 +113,9 @@ export function GamePlan() {
   };
 
   return (
-    <Card className="border-border/50">
-      <CardContent className="p-2">
-        <AnalyticsHeading
+    <Card>
+      <CardContent className="p-3">
+        <Heading
           title="Game Plan"
           subtitle={`${gamePlan.currentMonth} • ${gamePlan.daysRemainingInMonth}d left`}
         />
@@ -115,8 +123,8 @@ export function GamePlan() {
         {/* Monthly Progress Bar */}
         <div className="mb-2">
           <div className="flex items-center justify-between mb-0.5">
-            <span className="text-[10px] text-muted-foreground">Monthly Goal Progress</span>
-            <span className="text-[10px] font-bold font-mono">
+            <span className="text-[11px] text-muted-foreground">Monthly Goal Progress</span>
+            <span className="text-[11px] font-bold font-mono">
               {Math.round(gamePlan.progressPercent)}%
             </span>
           </div>
@@ -134,7 +142,7 @@ export function GamePlan() {
         </div>
 
         {/* Compact Monthly Stats Grid */}
-        <div className="grid grid-cols-4 gap-1 mb-2 text-[10px]">
+        <div className="grid grid-cols-4 gap-1 mb-2 text-[11px]">
           <div className="p-1 bg-muted/30 rounded text-center">
             <div className="text-muted-foreground/70">MTD</div>
             <div className="font-bold font-mono">{formatCurrency(gamePlan.mtdCommissions)}</div>
@@ -161,8 +169,8 @@ export function GamePlan() {
         {/* Annual Progress Bar */}
         <div className="mb-2">
           <div className="flex items-center justify-between mb-0.5">
-            <span className="text-[10px] text-muted-foreground">Annual Goal Progress</span>
-            <span className="text-[10px] font-bold font-mono">
+            <span className="text-[11px] text-muted-foreground">Annual Goal Progress</span>
+            <span className="text-[11px] font-bold font-mono">
               {Math.round(annualProgress.progressPercent)}%
             </span>
           </div>
@@ -180,7 +188,7 @@ export function GamePlan() {
         </div>
 
         {/* Compact Annual Stats */}
-        <div className="grid grid-cols-4 gap-1 mb-2 text-[10px]">
+        <div className="grid grid-cols-4 gap-1 mb-2 text-[11px]">
           <div className="p-1 bg-muted/30 rounded text-center">
             <div className="text-muted-foreground/70">YTD</div>
             <div className="font-bold font-mono text-green-600 dark:text-green-400">
@@ -204,15 +212,15 @@ export function GamePlan() {
         </div>
 
         {/* Key Metrics Row */}
-        <div className="grid grid-cols-2 gap-1 p-1.5 bg-primary/5 rounded border border-primary/20 mb-2">
+        <div className="grid grid-cols-2 gap-1 p-1.5 bg-slate-800/30 dark:bg-slate-200/10 rounded mb-2">
           <div className="text-center">
-            <div className="text-[9px] text-muted-foreground">Monthly Avg Needed</div>
+            <div className="text-[11px] text-muted-foreground">Monthly Avg Needed</div>
             <div className="text-xs font-bold font-mono text-primary">
               {formatCurrency(annualProgress.avgMonthlyNeeded)}
             </div>
           </div>
           <div className="text-center">
-            <div className="text-[9px] text-muted-foreground">Policies/Month</div>
+            <div className="text-[11px] text-muted-foreground">Policies/Month</div>
             <div className="text-xs font-bold font-mono text-primary">
               ~{annualProgress.policiesNeededPerMonth}
             </div>
@@ -222,105 +230,93 @@ export function GamePlan() {
         {/* Smart Moves Section */}
         {gamePlan.smartMoves && gamePlan.smartMoves.length > 0 && (
           <>
-            <AnalyticsHeading title="Smart Moves" className="mb-1" />
-            <AnalyticsTable
-              columns={[
-                {
-                  key: 'icon',
-                  header: '',
-                  render: (value: string, row: any) => (
-                    <div className={getUrgencyColor(row.urgency)}>
-                      {getMoveIcon(value)}
-                    </div>
-                  ),
-                  className: 'w-6'
-                },
-                {
-                  key: 'title',
-                  header: 'Action',
-                  render: (value: string) => (
-                    <span className="font-medium">{value}</span>
-                  )
-                },
-                {
-                  key: 'description',
-                  header: 'Details',
-                  render: (value: string) => (
-                    <span className="text-[9px] text-muted-foreground">{value}</span>
-                  )
-                },
-                {
-                  key: 'urgency',
-                  header: 'Priority',
-                  align: 'right' as const,
-                  render: (value: string) => (
-                    <span className={cn(
-                      "text-[9px] font-medium uppercase",
-                      getUrgencyColor(value)
-                    )}>
-                      {value}
-                    </span>
-                  )
-                }
-              ]}
-              data={gamePlan.smartMoves.slice(0, 3)}
-              className="mb-2"
-            />
+            <Heading title="Smart Moves" className="mb-1" />
+            <Table className="text-[11px] mb-2">
+              <TableHeader>
+                <TableRow className="h-7">
+                  <TableHead className="p-1.5 bg-primary/5 w-6"></TableHead>
+                  <TableHead className="p-1.5 bg-primary/5">Action</TableHead>
+                  <TableHead className="p-1.5 bg-primary/5">Details</TableHead>
+                  <TableHead className="p-1.5 bg-primary/5 text-right">Priority</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {gamePlan.smartMoves.slice(0, 3).map((row: any, idx: number) => (
+                  <TableRow key={idx} className={idx % 2 === 0 ? 'bg-muted/20' : ''}>
+                    <TableCell className="p-1.5 w-6">
+                      <div className={getUrgencyColor(row.urgency)}>
+                        {getMoveIcon(row.icon)}
+                      </div>
+                    </TableCell>
+                    <TableCell className="p-1.5">
+                      <span className="font-medium">{row.title}</span>
+                    </TableCell>
+                    <TableCell className="p-1.5">
+                      <span className="text-[11px] text-muted-foreground">{row.description}</span>
+                    </TableCell>
+                    <TableCell className="p-1.5 text-right">
+                      <span className={cn(
+                        "text-[11px] font-medium uppercase",
+                        getUrgencyColor(row.urgency)
+                      )}>
+                        {row.urgency}
+                      </span>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </>
         )}
 
         {/* What-If Scenarios */}
         {gamePlan.scenarios && gamePlan.scenarios.length > 0 && (
           <>
-            <AnalyticsHeading title="What If Scenarios" className="mb-1" />
-            <AnalyticsTable
-              columns={[
-                {
-                  key: 'condition',
-                  header: 'Scenario',
-                  render: (value: string) => (
-                    <span className="text-[10px]">{value}</span>
-                  )
-                },
-                {
-                  key: 'projectedEarnings',
-                  header: 'Projected',
-                  align: 'right' as const,
-                  render: (value: number) => formatCurrency(value),
-                  className: 'font-mono text-[10px]'
-                },
-                {
-                  key: 'goalPercent',
-                  header: 'Goal %',
-                  align: 'right' as const,
-                  render: (value: number) => {
-                    const isGood = value >= 100;
-                    const isClose = value >= 90;
-                    return (
-                      <span className={cn(
-                        "font-mono font-bold text-[10px]",
-                        isGood ? "text-green-600 dark:text-green-400" :
-                        isClose ? "text-amber-600 dark:text-amber-400" :
-                        "text-red-600 dark:text-red-400"
-                      )}>
-                        {Math.round(value)}%
-                      </span>
-                    );
-                  }
-                }
-              ]}
-              data={gamePlan.scenarios.slice(0, 4)}
-              className="mb-2"
-            />
+            <Heading title="What If Scenarios" className="mb-1" />
+            <Table className="text-[11px] mb-2">
+              <TableHeader>
+                <TableRow className="h-7">
+                  <TableHead className="p-1.5 bg-primary/5">Scenario</TableHead>
+                  <TableHead className="p-1.5 bg-primary/5 text-right">Projected</TableHead>
+                  <TableHead className="p-1.5 bg-primary/5 text-right">Goal %</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {gamePlan.scenarios.slice(0, 4).map((row: any, idx: number) => {
+                  const isGood = row.goalPercent >= 100;
+                  const isClose = row.goalPercent >= 90;
+                  return (
+                    <TableRow key={idx} className={idx % 2 === 0 ? 'bg-muted/20' : ''}>
+                      <TableCell className="p-1.5">
+                        <span className="text-[11px]">{row.condition}</span>
+                      </TableCell>
+                      <TableCell className="p-1.5 text-right font-mono text-[11px]">
+                        {formatCurrency(row.projectedEarnings)}
+                      </TableCell>
+                      <TableCell className="p-1.5 text-right">
+                        <span className={cn(
+                          "font-mono font-bold text-[11px]",
+                          isGood ? "text-green-600 dark:text-green-400" :
+                          isClose ? "text-amber-600 dark:text-amber-400" :
+                          "text-red-600 dark:text-red-400"
+                        )}>
+                          {Math.round(row.goalPercent)}%
+                        </span>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
           </>
         )}
 
         {/* Status Footer */}
         <div className={cn(
-          "p-1.5 rounded text-center text-[10px] font-medium",
+          "p-1.5 rounded text-center text-[11px] font-medium",
           gamePlan.gap > 0
-            ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20"
-            : "bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/20"
+            ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+            : "bg-green-500/10 text-green-600 dark:text-green-400"
         )}>
           {gamePlan.gap > 0
             ? `Need ${formatCurrency(gamePlan.gap)} more to hit goal`

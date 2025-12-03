@@ -5,7 +5,15 @@ import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { useAnalyticsData } from '../../../hooks';
 import { useAnalyticsDateRange } from '../context/AnalyticsDateContext';
-import { AnalyticsTable, AnalyticsHeading } from './shared';
+import { Heading } from '@/components/ui/heading';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 
 interface CarrierProductData {
   carrier: string;
@@ -35,8 +43,8 @@ export function CarriersProductsBreakdown() {
 
   if (isLoading) {
     return (
-      <Card className="border-border/50">
-        <CardContent className="p-2">
+      <Card>
+        <CardContent className="p-3">
           <div className="text-[11px] font-medium text-muted-foreground uppercase">
             Carriers & Products
           </div>
@@ -164,57 +172,55 @@ export function CarriersProductsBreakdown() {
   });
 
   return (
-    <Card className="border-border/50">
+    <Card>
       <CardContent className="p-2">
-        <AnalyticsHeading
+        <Heading
           title="Carriers & Products"
           subtitle={`${sortedCarriers.length} carriers`}
         />
 
-        <AnalyticsTable
-          columns={[
-            {
-              key: 'name',
-              header: 'Carrier / Product',
-              render: (value: string, row: any) => (
-                <span className={cn(
-                  row.isCarrier ? "font-semibold" : "text-[9px] text-muted-foreground"
-                )}>
-                  {value}
-                </span>
-              )
-            },
-            {
-              key: 'policies',
-              header: 'Policies',
-              align: 'right' as const,
-              className: 'font-mono'
-            },
-            {
-              key: 'premium',
-              header: 'Premium',
-              align: 'right' as const,
-              render: (value: number) => formatCurrency(value),
-              className: 'font-mono'
-            },
-            {
-              key: 'avgRate',
-              header: 'Rate',
-              align: 'right' as const,
-              render: (value: number) => `${value.toFixed(1)}%`,
-              className: 'font-mono text-green-600 dark:text-green-400'
-            },
-            {
-              key: 'commission',
-              header: 'Commission',
-              align: 'right' as const,
-              render: (value: number) => formatCurrency(value),
-              className: 'font-mono font-semibold'
-            }
-          ]}
-          data={tableData}
-          emptyMessage="No carrier data available"
-        />
+        {tableData.length > 0 ? (
+          <Table className="text-[11px]">
+            <TableHeader>
+              <TableRow className="h-7">
+                <TableHead className="p-1.5 bg-primary/5">Carrier / Product</TableHead>
+                <TableHead className="p-1.5 bg-primary/5 text-right">Policies</TableHead>
+                <TableHead className="p-1.5 bg-primary/5 text-right">Premium</TableHead>
+                <TableHead className="p-1.5 bg-primary/5 text-right">Rate</TableHead>
+                <TableHead className="p-1.5 bg-primary/5 text-right">Commission</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {tableData.map((row, idx) => (
+                <TableRow key={idx} className={idx % 2 === 0 ? 'bg-muted/20' : ''}>
+                  <TableCell className="p-1.5">
+                    <span className={cn(
+                      row.isCarrier ? "font-semibold" : "text-[9px] text-muted-foreground"
+                    )}>
+                      {row.name}
+                    </span>
+                  </TableCell>
+                  <TableCell className="p-1.5 text-right font-mono">
+                    {row.policies}
+                  </TableCell>
+                  <TableCell className="p-1.5 text-right font-mono">
+                    {formatCurrency(row.premium)}
+                  </TableCell>
+                  <TableCell className="p-1.5 text-right font-mono text-green-600 dark:text-green-400">
+                    {row.avgRate.toFixed(1)}%
+                  </TableCell>
+                  <TableCell className="p-1.5 text-right font-mono font-semibold">
+                    {formatCurrency(row.commission)}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        ) : (
+          <div className="p-3 text-center text-[11px] text-muted-foreground/70">
+            No carrier data available
+          </div>
+        )}
       </CardContent>
     </Card>
   );

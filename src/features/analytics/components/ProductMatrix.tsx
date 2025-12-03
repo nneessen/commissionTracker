@@ -5,7 +5,15 @@ import { Card, CardContent } from '@/components/ui/card';
 import { useAnalyticsData } from '../../../hooks';
 import { cn } from '@/lib/utils';
 import { useAnalyticsDateRange } from '../context/AnalyticsDateContext';
-import { AnalyticsTable, AnalyticsHeading } from './shared';
+import { Heading } from '@/components/ui/heading';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 
 /**
  * ProductMatrix - Product performance matrix
@@ -19,8 +27,8 @@ export function ProductMatrix() {
 
   if (isLoading) {
     return (
-      <Card className="border-border/50">
-        <CardContent className="p-2">
+      <Card>
+        <CardContent className="p-3">
           <div className="text-[11px] font-medium text-muted-foreground uppercase">
             Product Mix
           </div>
@@ -76,55 +84,54 @@ export function ProductMatrix() {
     }))
     .sort((a, b) => b.revenue - a.revenue);
 
-  const columns = [
-    {
-      key: 'product',
-      header: 'Product',
-      render: (value: string) => formatProductName(value),
-      className: 'font-medium'
-    },
-    {
-      key: 'count',
-      header: 'Policies',
-      align: 'right' as const,
-      className: 'font-mono text-muted-foreground'
-    },
-    {
-      key: 'percentage',
-      header: 'Mix %',
-      align: 'right' as const,
-      render: (value: number) => (
-        <span className={cn(
-          "font-mono",
-          value >= 40 ? "text-green-600 dark:text-green-400" :
-          value >= 20 ? "text-amber-600 dark:text-amber-400" :
-          "text-red-600 dark:text-red-400"
-        )}>
-          {value.toFixed(1)}%
-        </span>
-      )
-    },
-    {
-      key: 'revenue',
-      header: 'Revenue',
-      align: 'right' as const,
-      render: (value: number) => formatCurrency(value),
-      className: 'font-mono font-semibold'
-    }
-  ];
-
   return (
-    <Card className="border-border/50">
+    <Card>
       <CardContent className="p-2">
-        <AnalyticsHeading
+        <Heading
           title="Product Mix"
           subtitle={`${productData.length} products`}
         />
-        <AnalyticsTable
-          columns={columns}
-          data={productData}
-          emptyMessage="No product data available"
-        />
+        {productData.length > 0 ? (
+          <Table className="text-[11px]">
+            <TableHeader>
+              <TableRow className="h-7">
+                <TableHead className="p-1.5 bg-primary/5">Product</TableHead>
+                <TableHead className="p-1.5 bg-primary/5 text-right">Policies</TableHead>
+                <TableHead className="p-1.5 bg-primary/5 text-right">Mix %</TableHead>
+                <TableHead className="p-1.5 bg-primary/5 text-right">Revenue</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {productData.map((row, idx) => (
+                <TableRow key={idx} className={idx % 2 === 0 ? 'bg-muted/20' : ''}>
+                  <TableCell className="p-1.5 font-medium">
+                    {formatProductName(row.product)}
+                  </TableCell>
+                  <TableCell className="p-1.5 text-right font-mono text-muted-foreground">
+                    {row.count}
+                  </TableCell>
+                  <TableCell className="p-1.5 text-right">
+                    <span className={cn(
+                      "font-mono",
+                      row.percentage >= 40 ? "text-green-600 dark:text-green-400" :
+                      row.percentage >= 20 ? "text-amber-600 dark:text-amber-400" :
+                      "text-red-600 dark:text-red-400"
+                    )}>
+                      {row.percentage.toFixed(1)}%
+                    </span>
+                  </TableCell>
+                  <TableCell className="p-1.5 text-right font-mono font-semibold">
+                    {formatCurrency(row.revenue)}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        ) : (
+          <div className="p-3 text-center text-[11px] text-muted-foreground/70">
+            No product data available
+          </div>
+        )}
       </CardContent>
     </Card>
   );

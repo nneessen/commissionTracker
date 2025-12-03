@@ -20,7 +20,15 @@ import {
   getMonthlyTrendData,
   getProductRetentionRates,
 } from '@/services/analytics/policyStatusService';
-import { AnalyticsTable, AnalyticsHeading } from './shared';
+import { Heading } from '@/components/ui/heading';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 
 /**
  * PolicyStatusBreakdown - Clear view of policy statuses without jargon
@@ -39,12 +47,12 @@ export function PolicyStatusBreakdown() {
 
   if (isLoading) {
     return (
-      <Card className="border-border/50">
-        <CardContent className="p-2">
+      <Card>
+        <CardContent className="p-3">
           <div className="text-[11px] font-medium text-muted-foreground uppercase">
             Policy Status
           </div>
-          <div className="p-3 text-center text-[10px] text-muted-foreground">
+          <div className="p-3 text-center text-[11px] text-muted-foreground">
             Loading...
           </div>
         </CardContent>
@@ -65,15 +73,14 @@ export function PolicyStatusBreakdown() {
   };
 
   return (
-    <Card className="border-border/50">
-      <CardContent className="p-2">
-        {/* Compact Header with Inline Status Data */}
-        <div className="flex items-center justify-between mb-1.5">
-          <div className="text-[11px] font-medium text-muted-foreground uppercase">
-            Policy Status
-          </div>
+    <Card>
+      <CardContent className="p-3">
+        <Heading
+          title="Policy Status"
+          subtitle="Active vs Lapsed vs Cancelled"
+        >
           {/* Inline Status Summary */}
-          <div className="flex items-center gap-3 text-[10px]">
+          <div className="flex items-center gap-3 text-[11px]">
             <div className="flex items-center gap-1">
               <span className="text-green-600 dark:text-green-400 font-mono font-bold">
                 {statusSummary.active.count}
@@ -96,11 +103,11 @@ export function PolicyStatusBreakdown() {
               <span className="text-muted-foreground/50">({statusSummary.cancelled.percentage}%)</span>
             </div>
           </div>
-        </div>
+        </Heading>
 
         {/* Compact Monthly Trend Chart */}
         <div className="mb-2">
-          <div className="text-[10px] font-medium text-muted-foreground uppercase mb-1">
+          <div className="text-[11px] font-medium text-muted-foreground uppercase mb-1">
             12-Month Trend
           </div>
           <div className="h-32">
@@ -117,8 +124,6 @@ export function PolicyStatusBreakdown() {
                 <Tooltip
                   contentStyle={{
                     backgroundColor: 'hsl(var(--card))',
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '4px',
                     fontSize: '10px',
                     padding: '4px',
                   }}
@@ -151,69 +156,67 @@ export function PolicyStatusBreakdown() {
             {/* Best Performers */}
             {bestPerformers.length > 0 && (
               <div>
-                <AnalyticsHeading title="Best Performers" className="mb-1" />
-                <AnalyticsTable
-                  columns={[
-                    {
-                      key: 'productName',
-                      header: 'Product',
-                      render: (value: string, row: any) => (
-                        <>
-                          {formatProductName(value)}
-                          <span className="text-[9px] text-muted-foreground/70 ml-1">
-                            ({row.activePolicies})
+                <Heading title="Best Performers" className="mb-1" />
+                <Table className="text-[11px]">
+                  <TableHeader>
+                    <TableRow className="h-7">
+                      <TableHead className="p-1.5 bg-primary/5">Product</TableHead>
+                      <TableHead className="p-1.5 bg-primary/5 text-right">Rate</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {bestPerformers.slice(0, 3).map((product, idx) => (
+                      <TableRow key={idx} className={idx % 2 === 0 ? 'bg-muted/20' : ''}>
+                        <TableCell className="p-1.5">
+                          {formatProductName(product.productName)}
+                          <span className="text-[11px] text-muted-foreground/70 ml-1">
+                            ({product.activePolicies})
                           </span>
-                        </>
-                      )
-                    },
-                    {
-                      key: 'retentionRate',
-                      header: 'Rate',
-                      align: 'right' as const,
-                      render: (value: number) => `${value}%`,
-                      className: 'font-semibold font-mono text-green-600 dark:text-green-400'
-                    }
-                  ]}
-                  data={bestPerformers.slice(0, 3)}
-                />
+                        </TableCell>
+                        <TableCell className="p-1.5 text-right font-semibold font-mono text-green-600 dark:text-green-400">
+                          {product.retentionRate}%
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </div>
             )}
 
             {/* Needs Attention */}
             {needsAttention.length > 0 && (
               <div>
-                <AnalyticsHeading title="Needs Attention" className="mb-1" />
-                <AnalyticsTable
-                  columns={[
-                    {
-                      key: 'productName',
-                      header: 'Product',
-                      render: (value: string, row: any) => (
-                        <>
-                          {formatProductName(value)}
-                          <span className="text-[9px] text-muted-foreground/70 ml-1">
-                            ({row.activePolicies})
+                <Heading title="Needs Attention" className="mb-1" />
+                <Table className="text-[11px]">
+                  <TableHeader>
+                    <TableRow className="h-7">
+                      <TableHead className="p-1.5 bg-primary/5">Product</TableHead>
+                      <TableHead className="p-1.5 bg-primary/5 text-right">Rate</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {needsAttention.slice(0, 3).map((product, idx) => (
+                      <TableRow key={idx} className={idx % 2 === 0 ? 'bg-muted/20' : ''}>
+                        <TableCell className="p-1.5">
+                          {formatProductName(product.productName)}
+                          <span className="text-[11px] text-muted-foreground/70 ml-1">
+                            ({product.activePolicies})
                           </span>
-                        </>
-                      )
-                    },
-                    {
-                      key: 'retentionRate',
-                      header: 'Rate',
-                      align: 'right' as const,
-                      render: (value: number) => `${value}%`,
-                      className: 'font-semibold font-mono text-amber-600 dark:text-amber-400'
-                    }
-                  ]}
-                  data={needsAttention.slice(0, 3)}
-                />
+                        </TableCell>
+                        <TableCell className="p-1.5 text-right font-semibold font-mono text-amber-600 dark:text-amber-400">
+                          {product.retentionRate}%
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </div>
             )}
           </div>
         )}
 
         {bestPerformers.length === 0 && needsAttention.length === 0 && (
-          <div className="text-center text-[10px] text-muted-foreground/70 py-2">
+          <div className="text-center text-[11px] text-muted-foreground/70 py-2">
             Insufficient data for retention analysis
           </div>
         )}

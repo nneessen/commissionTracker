@@ -31,6 +31,9 @@ const GeographicAnalysis = lazy(() =>
 const GamePlan = lazy(() =>
   import("./components").then((m) => ({ default: m.GamePlan })),
 );
+const CommissionPipeline = lazy(() =>
+  import("./components/CommissionPipeline").then((m) => ({ default: m.CommissionPipeline })),
+);
 
 function AnalyticsDashboardContent() {
   const { timePeriod, setTimePeriod, customRange, setCustomRange, dateRange } = useAnalyticsDateRange();
@@ -160,6 +163,9 @@ function AnalyticsDashboardContent() {
             </Suspense>
             <Suspense fallback={null}>
               <GamePlan />
+            </Suspense>
+            <Suspense fallback={null}>
+              <CommissionPipeline />
             </Suspense>
           </div>
         )}

@@ -5,7 +5,15 @@ import { Card, CardContent } from '@/components/ui/card';
 import { useAnalyticsData } from '../../../hooks';
 import { cn } from '@/lib/utils';
 import { useAnalyticsDateRange } from '../context/AnalyticsDateContext';
-import { AnalyticsTable, AnalyticsHeading } from './shared';
+import { Heading } from '@/components/ui/heading';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 
 /**
  * ClientSegmentation - Client value segmentation and opportunities
@@ -21,8 +29,8 @@ export function ClientSegmentation() {
 
   if (isLoading) {
     return (
-      <Card className="border-border/50">
-        <CardContent className="p-2">
+      <Card>
+        <CardContent className="p-3">
           <div className="text-[11px] font-medium text-muted-foreground uppercase">
             Client Segments
           </div>
@@ -127,55 +135,89 @@ export function ClientSegmentation() {
   ];
 
   return (
-    <Card className="border-border/50">
+    <Card>
       <CardContent className="p-2">
-        <AnalyticsHeading title="Client Segments" />
+        <Heading title="Client Segments" />
 
-        <AnalyticsTable
-          columns={segmentColumns}
-          data={segmentTableData}
-          className="mb-2"
-        />
+        <Table className="text-[11px] mb-2">
+          <TableHeader>
+            <TableRow className="h-7">
+              <TableHead className="p-1.5 bg-primary/5">Tier</TableHead>
+              <TableHead className="p-1.5 bg-primary/5 text-right">Clients</TableHead>
+              <TableHead className="p-1.5 bg-primary/5 text-right">Total AP</TableHead>
+              <TableHead className="p-1.5 bg-primary/5 text-right">Avg AP</TableHead>
+              <TableHead className="p-1.5 bg-primary/5 text-right">Mix %</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {segmentTableData.map((row, idx) => (
+              <TableRow key={idx} className={idx % 2 === 0 ? 'bg-muted/20' : ''}>
+                <TableCell className="p-1.5">
+                  <span className={cn(
+                    "font-medium",
+                    row.tier === 'HIGH' ? "text-green-600 dark:text-green-400" :
+                    row.tier === 'MED' ? "text-amber-600 dark:text-amber-400" :
+                    "text-red-600 dark:text-red-400"
+                  )}>
+                    {row.tier}
+                  </span>
+                </TableCell>
+                <TableCell className="p-1.5 text-right font-mono">{row.clients}</TableCell>
+                <TableCell className="p-1.5 text-right font-mono font-semibold">
+                  {formatCurrency(row.totalAP)}
+                </TableCell>
+                <TableCell className="p-1.5 text-right font-mono text-muted-foreground">
+                  {formatCurrency(row.avgAP)}
+                </TableCell>
+                <TableCell className="p-1.5 text-right">
+                  <span className={cn(
+                    "font-mono",
+                    row.tier === 'HIGH' ? "text-green-600 dark:text-green-400" :
+                    row.tier === 'MED' ? "text-amber-600 dark:text-amber-400" :
+                    "text-red-600 dark:text-red-400"
+                  )}>
+                    {row.mixPercent.toFixed(1)}%
+                  </span>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
 
         {/* Cross-Sell Opportunities */}
         {crossSell && crossSell.length > 0 && (
           <>
-            <AnalyticsHeading title="Cross-Sell Targets" />
-            <AnalyticsTable
-              columns={[
-                {
-                  key: 'clientName',
-                  header: 'Client',
-                  render: (value: string) => (
-                    <span className="font-medium truncate" title={value}>
-                      {value}
-                    </span>
-                  )
-                },
-                {
-                  key: 'currentProducts',
-                  header: 'Has',
-                  align: 'right' as const,
-                  render: (value: string[]) => value.length,
-                  className: 'font-mono'
-                },
-                {
-                  key: 'missingProducts',
-                  header: 'Missing',
-                  align: 'right' as const,
-                  render: (value: string[]) => value.length,
-                  className: 'font-mono'
-                },
-                {
-                  key: 'estimatedValue',
-                  header: 'Potential',
-                  align: 'right' as const,
-                  render: (value: number) => formatCurrency(value),
-                  className: 'font-mono font-semibold text-green-600 dark:text-green-400'
-                }
-              ]}
-              data={crossSell.slice(0, 3)}
-            />
+            <Heading title="Cross-Sell Targets" />
+            <Table className="text-[11px]">
+              <TableHeader>
+                <TableRow className="h-7">
+                  <TableHead className="p-1.5 bg-primary/5">Client</TableHead>
+                  <TableHead className="p-1.5 bg-primary/5 text-right">Has</TableHead>
+                  <TableHead className="p-1.5 bg-primary/5 text-right">Missing</TableHead>
+                  <TableHead className="p-1.5 bg-primary/5 text-right">Potential</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {crossSell.slice(0, 3).map((row: any, idx: number) => (
+                  <TableRow key={idx} className={idx % 2 === 0 ? 'bg-muted/20' : ''}>
+                    <TableCell className="p-1.5">
+                      <span className="font-medium truncate" title={row.clientName}>
+                        {row.clientName}
+                      </span>
+                    </TableCell>
+                    <TableCell className="p-1.5 text-right font-mono">
+                      {row.currentProducts.length}
+                    </TableCell>
+                    <TableCell className="p-1.5 text-right font-mono">
+                      {row.missingProducts.length}
+                    </TableCell>
+                    <TableCell className="p-1.5 text-right font-mono font-semibold text-green-600 dark:text-green-400">
+                      {formatCurrency(row.estimatedValue)}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </>
         )}
       </CardContent>
