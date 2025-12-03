@@ -9,6 +9,7 @@
 ## Problem Statement
 
 Current KPI breakdown (KPIGrid.tsx) is functional but limited:
+
 - Simple text-based grid layout
 - No visual hierarchy beyond icons
 - No data visualization
@@ -22,9 +23,11 @@ User request: "3 modern and unique completely redesigned detailed kpi breakdown 
 ## Design Philosophies
 
 ### Design 1: Visual Heatmap Dashboard
+
 **Inspiration:** Bloomberg Terminal + Modern Data Visualization
 
 **Key Features:**
+
 - **Color-Coded Performance Cells:** Gradient intensity based on target achievement
   - Performance < 70%: Red spectrum (HSL 0, 70%, 50-70%)
   - Performance 70-90%: Yellow/Amber (HSL 45, 70%, 50-70%)
@@ -37,6 +40,7 @@ User request: "3 modern and unique completely redesigned detailed kpi breakdown 
 - **No Hard Borders:** Separation via background colors and spacing only
 
 **Technical Implementation:**
+
 - CSS Grid with auto-fit for responsive cells
 - Pure SVG for sparklines (no chart library)
 - Radix UI Tooltip for hover details
@@ -46,9 +50,11 @@ User request: "3 modern and unique completely redesigned detailed kpi breakdown 
 ---
 
 ### Design 2: Story-Driven Narrative Dashboard
+
 **Inspiration:** Apple Product Pages + Data Storytelling
 
 **Key Features:**
+
 - **Natural Language Insights:** Convert numbers into stories
   - "You earned $12,450 this month, which is 23% above your target"
   - "Your avg premium is $1,250, up $150 from last month"
@@ -59,6 +65,7 @@ User request: "3 modern and unique completely redesigned detailed kpi breakdown 
 - **Actionable Recommendations:** System generates insights based on performance
 
 **Visual Hierarchy:**
+
 - Hero metric (top): 3xl font, 700 weight (most important: net income or policies sold)
 - Supporting metrics: xl font, 600 weight
 - Labels: sm font, 400 weight
@@ -66,6 +73,7 @@ User request: "3 modern and unique completely redesigned detailed kpi breakdown 
 - Color accents via left edge bars (not full backgrounds)
 
 **Technical Implementation:**
+
 - Vertical stack with entrance animations (staggered delays)
 - Typography scale for hierarchy
 - Helper function generates contextual insights
@@ -75,9 +83,11 @@ User request: "3 modern and unique completely redesigned detailed kpi breakdown 
 ---
 
 ### Design 3: Command Center Matrix
+
 **Inspiration:** Military/Aerospace HUD + Mission Control
 
 **Key Features:**
+
 - **Quadrant Layout:** 2x2 CSS Grid dividing KPIs into zones
   - Quadrant 1 (top-left): Critical Financial Metrics
   - Quadrant 2 (top-right): Production Metrics
@@ -90,6 +100,7 @@ User request: "3 modern and unique completely redesigned detailed kpi breakdown 
 - **Structured Grid:** Elegant subtle borders (border-border/20), not heavy
 
 **Visual Details:**
+
 - Mini gauges and dials for percentage-based metrics
 - Pulsing indicators for real-time/critical changes
 - Subtle glow effects on active values (box-shadow with theme colors)
@@ -97,6 +108,7 @@ User request: "3 modern and unique completely redesigned detailed kpi breakdown 
 - Data streams presentation
 
 **Technical Implementation:**
+
 - 2x2 CSS Grid (responsive: stack on mobile)
 - SVG circular progress (custom gauge component)
 - Pseudo-element repeating-linear-gradient for scanline
@@ -110,6 +122,7 @@ User request: "3 modern and unique completely redesigned detailed kpi breakdown 
 ### Component Structure
 
 **New Components:**
+
 ```
 src/features/dashboard/components/
 ├── KPIGridHeatmap.tsx          # Design 1: Heatmap layout
@@ -123,11 +136,13 @@ src/features/dashboard/components/
 ```
 
 **New Hook:**
+
 ```
 src/hooks/useKPILayout.ts       # Layout preference management (localStorage)
 ```
 
 **Modified Files:**
+
 - `src/features/dashboard/DashboardHome.tsx` - Add switcher, conditional rendering
 - `src/features/dashboard/components/index.ts` - Export new components
 - `src/types/dashboard.types.ts` - Add KPILayout type
@@ -147,6 +162,7 @@ Shared components (MiniSparkline, CircularGauge, etc.)
 ```
 
 **Key Points:**
+
 - All 3 layouts consume the SAME data: `KPISection[]` from `kpiConfig`
 - Each layout transforms/presents data differently
 - No changes to data fetching or calculation logic
@@ -156,7 +172,7 @@ Shared components (MiniSparkline, CircularGauge, etc.)
 
 ```typescript
 // Add to dashboard.types.ts
-export type KPILayout = 'heatmap' | 'narrative' | 'matrix';
+export type KPILayout = "heatmap" | "narrative" | "matrix";
 
 export interface KPILayoutSwitcherProps {
   layout: KPILayout;
@@ -169,6 +185,7 @@ export interface KPILayoutSwitcherProps {
 **Position:** Dashboard header, near TimePeriodSwitcher or as floating action button
 
 **Visual Style:**
+
 - Icon-based button group (similar to TimePeriodSwitcher)
 - 3 icons representing each layout:
   - Heatmap: Grid3x3 with color dots
@@ -178,6 +195,7 @@ export interface KPILayoutSwitcherProps {
 - Smooth transitions: 300ms fade between layouts
 
 **Behavior:**
+
 - Click to switch layouts
 - Active layout highlighted
 - Tooltip on hover showing layout name
@@ -188,6 +206,7 @@ export interface KPILayoutSwitcherProps {
 ## User Experience
 
 ### Transitions & Animations
+
 - **Layout Switch:** Fade out old (200ms) → Fade in new (300ms)
 - **Heatmap:** Scale transform on cell hover
 - **Narrative:** Staggered entrance animations with delays
@@ -195,12 +214,14 @@ export interface KPILayoutSwitcherProps {
 - **Performance:** CSS transforms for GPU acceleration
 
 ### Accessibility
+
 - Keyboard navigation support (Tab, Enter, Space)
 - ARIA labels for screen readers
 - Focus management on layout switch
 - Respect `prefers-reduced-motion` for animations
 
 ### Responsive Behavior
+
 - **Desktop (>1024px):** Full layouts as designed
 - **Tablet (768-1024px):**
   - Heatmap: 2-3 columns
@@ -216,18 +237,21 @@ export interface KPILayoutSwitcherProps {
 ## Implementation Checklist
 
 ### Phase 1: Foundation
+
 - [x] Create plan document in plans/ACTIVE/
 - [ ] Add KPILayout type to dashboard.types.ts
 - [ ] Create useKPILayout hook with localStorage
 - [ ] Test hook functionality
 
 ### Phase 2: Shared Components
+
 - [ ] Create MiniSparkline.tsx (SVG sparkline)
 - [ ] Create CircularGauge.tsx (progress rings)
 - [ ] Create NarrativeInsight.tsx (insight cards)
 - [ ] Test components in isolation
 
 ### Phase 3: Layout Components
+
 - [ ] Create KPIGridHeatmap.tsx
   - Grid system with masonry
   - Color gradient logic
@@ -245,6 +269,7 @@ export interface KPILayoutSwitcherProps {
   - Scanline effect
 
 ### Phase 4: Switcher & Integration
+
 - [ ] Create KPILayoutSwitcher.tsx
 - [ ] Update component exports in index.ts
 - [ ] Integrate into DashboardHome.tsx
@@ -254,6 +279,7 @@ export interface KPILayoutSwitcherProps {
   - Wire up layout change handler
 
 ### Phase 5: Testing & Polish
+
 - [ ] Test all 3 layouts render correctly with data
 - [ ] Test switcher toggles between layouts
 - [ ] Test localStorage persists preference
@@ -265,6 +291,7 @@ export interface KPILayoutSwitcherProps {
 - [ ] Fix any TS errors
 
 ### Phase 6: Completion
+
 - [ ] Update plan status to COMPLETED
 - [ ] Move plan to plans/COMPLETED/
 - [ ] Rename file: `YYYYMMDD_kpi_redesign_three_layouts_COMPLETED.md`
@@ -274,6 +301,7 @@ export interface KPILayoutSwitcherProps {
 ## Technical Constraints & Best Practices
 
 ### Must Follow (from CLAUDE.md):
+
 - ✅ TypeScript strict mode
 - ✅ Conventional naming (PascalCase components, camelCase functions, kebab-case files)
 - ✅ Prefer composition over HOCs
@@ -286,6 +314,7 @@ export interface KPILayoutSwitcherProps {
 - ✅ All application data from Supabase (not applicable here, displaying existing data)
 
 ### Performance Considerations:
+
 - Memoize metric calculations (if needed)
 - CSS transforms for animations (GPU accelerated)
 - Pure SVG for visualizations (no heavy chart libraries)
@@ -293,6 +322,7 @@ export interface KPILayoutSwitcherProps {
 - Virtual scrolling if narrative layout gets too long
 
 ### Code Quality:
+
 - JSDoc comments for all exported components
 - Type safety (no `any` types)
 - Error handling for edge cases
@@ -304,24 +334,28 @@ export interface KPILayoutSwitcherProps {
 ## Success Criteria
 
 ✅ **Functionality:**
+
 - 3 distinct layouts all render correctly
 - Switcher toggles between layouts smoothly
 - Layout preference persists across page refreshes
 - All layouts work with existing KPI data
 
 ✅ **Design Quality:**
+
 - Each layout has unique visual identity
 - Modern, professional aesthetics
 - Not cookie-cutter or generic
 - Delightful micro-interactions
 
 ✅ **Technical Quality:**
+
 - No TypeScript errors
 - Responsive on all screen sizes
 - Accessible (keyboard, screen readers)
 - Good performance (no jank)
 
 ✅ **User Experience:**
+
 - Easy to switch layouts
 - Each layout provides value in different way
 - Smooth transitions

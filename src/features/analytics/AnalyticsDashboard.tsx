@@ -81,39 +81,45 @@ function AnalyticsDashboardContent() {
 
   return (
     <>
-      {/* Page Header */}
-      <div className="page-header">
-        <h1 className="page-title">Analytics</h1>
-        <p className="page-subtitle">
-          Deep insights into performance, cohorts, segmentation, and forecasts
-        </p>
+      {/* Compact Page Header */}
+      <div className="page-header py-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-base font-semibold text-foreground">Analytics Dashboard</h1>
+            <p className="text-[11px] text-muted-foreground mt-0.5">
+              Real-time performance metrics and insights
+            </p>
+          </div>
+        </div>
       </div>
 
       <div className="page-content">
-        {/* Time Period Selector and Export Controls */}
-        <div className="border-b border-border pb-4 mb-6">
-          <div className="flex items-center justify-between mb-3">
-            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+        {/* Compact Time Period Selector and Export Controls */}
+        <div className="border-b border-border/50 pb-2 mb-3">
+          <div className="flex items-center justify-between mb-1.5">
+            <div className="text-[10px] font-medium text-muted-foreground uppercase">
               Time Period
             </div>
 
             {/* Export Buttons */}
-            <div className="flex gap-2">
+            <div className="flex gap-1.5">
               <Button
                 onClick={handleExportCSV}
                 size="sm"
                 variant="ghost"
+                className="h-6 px-2 text-[10px]"
                 title="Export data to CSV"
               >
-                Export CSV
+                CSV
               </Button>
               <Button
                 onClick={handlePrintPDF}
                 size="sm"
                 variant="ghost"
+                className="h-6 px-2 text-[10px]"
                 title="Print report to PDF"
               >
-                Print PDF
+                PDF
               </Button>
             </div>
           </div>
@@ -128,47 +134,39 @@ function AnalyticsDashboardContent() {
 
         {/* Loading State */}
         {analyticsData.isLoading ? (
-          <div className="p-10 text-center text-sm text-muted-foreground">
+          <div className="p-4 text-center text-[11px] text-muted-foreground">
             Loading analytics...
           </div>
         ) : (
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 max-w-[1600px] mx-auto w-full">
-            {/* Left Column */}
-            <div className="flex flex-col gap-4 min-w-0 w-full">
-              <Suspense fallback={<div className="p-5 text-center text-muted-foreground">Loading...</div>}>
-                <PaceMetrics />
-              </Suspense>
-              <Suspense fallback={<div className="p-5 text-center text-muted-foreground">Loading...</div>}>
-                <PolicyStatusBreakdown />
-              </Suspense>
-              <Suspense fallback={<div className="p-5 text-center text-muted-foreground">Loading...</div>}>
-                <ProductMatrix />
-              </Suspense>
-              <Suspense fallback={<div className="p-5 text-center text-muted-foreground">Loading...</div>}>
-                <CarriersProductsBreakdown />
-              </Suspense>
-              <Suspense fallback={<div className="p-5 text-center text-muted-foreground">Loading...</div>}>
-                <GeographicAnalysis />
-              </Suspense>
-            </div>
-
-            {/* Right Column */}
-            <div className="flex flex-col gap-4 min-w-0 w-full">
-              <Suspense fallback={<div className="p-5 text-center text-muted-foreground">Loading...</div>}>
-                <ClientSegmentation />
-              </Suspense>
-              <Suspense fallback={<div className="p-5 text-center text-muted-foreground">Loading...</div>}>
-                <GamePlan />
-              </Suspense>
-            </div>
+          <div className="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-2 max-w-[1920px] mx-auto w-full">
+            {/* Compact Grid Layout */}
+            <Suspense fallback={null}>
+              <PaceMetrics />
+            </Suspense>
+            <Suspense fallback={null}>
+              <PolicyStatusBreakdown />
+            </Suspense>
+            <Suspense fallback={null}>
+              <ProductMatrix />
+            </Suspense>
+            <Suspense fallback={null}>
+              <CarriersProductsBreakdown />
+            </Suspense>
+            <Suspense fallback={null}>
+              <GeographicAnalysis />
+            </Suspense>
+            <Suspense fallback={null}>
+              <ClientSegmentation />
+            </Suspense>
+            <Suspense fallback={null}>
+              <GamePlan />
+            </Suspense>
           </div>
         )}
 
-        {/* Footer Note */}
-        <div className="mt-8 p-4 bg-card rounded-lg border border-border text-center text-xs text-muted-foreground max-w-[1600px]">
-          <strong className="text-foreground">Note:</strong> All analytics are
-          calculated in real-time from your policy and commission data. Data is
-          automatically refreshed when underlying records change.
+        {/* Compact Footer Note */}
+        <div className="mt-3 px-2 py-1 text-[10px] text-muted-foreground/70 text-center max-w-[1920px]">
+          Real-time calculations • Auto-refresh on data changes
         </div>
       </div>
     </>

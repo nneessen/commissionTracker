@@ -12,6 +12,7 @@
 Consolidate the over-engineered 3-page admin system into a single, coherent Admin Control Center at `/admin`. Disable public signup entirely, implement invitation-only user creation, and ensure all admin functions are centralized in one logical location.
 
 **Key Changes:**
+
 - Merge /admin/users, /admin/roles, /admin/permissions → Single `/admin` page
 - Disable all public signup
 - User creation happens in Admin page (where it belongs)
@@ -86,6 +87,7 @@ Consolidate the over-engineered 3-page admin system into a single, coherent Admi
 ### Simplified Navigation
 
 **Before (Too Many):**
+
 ```
 - User Management
 - Role Management
@@ -94,6 +96,7 @@ Consolidate the over-engineered 3-page admin system into a single, coherent Admi
 ```
 
 **After (Clean):**
+
 ```
 - Admin (single item, contains everything)
 - Settings (personal only)
@@ -106,6 +109,7 @@ Consolidate the over-engineered 3-page admin system into a single, coherent Admi
 ### Two Creation Modes (Both in Admin Page)
 
 #### Mode A: Direct Creation
+
 **When:** Admin has all user information
 **Where:** /admin → Users & Access → [Create User]
 
@@ -114,6 +118,7 @@ Admin fills complete form → User created → Email sent with temp password
 ```
 
 #### Mode B: Invitation
+
 **When:** User will self-onboard
 **Where:** /admin → Users & Access → [Invite User]
 
@@ -129,48 +134,48 @@ interface UserProfile {
 
   // Authentication
   id: string;
-  email: string;                    // Unique, for login
-  password_hash: string;            // Set by user or temp
+  email: string; // Unique, for login
+  password_hash: string; // Set by user or temp
 
   // Identity (REQUIRED)
   first_name: string;
   last_name: string;
-  date_of_birth: Date;              // For compliance/background checks
-  phone: string;                    // Primary contact
+  date_of_birth: Date; // For compliance/background checks
+  phone: string; // Primary contact
 
   // Address (REQUIRED for 1099s)
   street_address: string;
   city: string;
-  state: string;                    // 2-letter code
+  state: string; // 2-letter code
   zip: string;
 
   // Professional/Licensing (REQUIRED)
-  license_number: string;           // State insurance license
-  npn: string;                      // National Producer Number
-  resident_state: string;           // Primary licensed state
-  contract_level: number;           // Commission percentage (50-150)
+  license_number: string; // State insurance license
+  npn: string; // National Producer Number
+  resident_state: string; // Primary licensed state
+  contract_level: number; // Commission percentage (50-150)
   contract_start_date: Date;
 
   // Hierarchy (REQUIRED)
-  upline_id: string;                // Manager/upline user ID
+  upline_id: string; // Manager/upline user ID
 
   // System Access (REQUIRED)
-  roles: string[];                  // ['agent', 'manager', 'admin']
-  is_active: boolean;               // Can login
-  is_approved: boolean;             // Passed admin review
+  roles: string[]; // ['agent', 'manager', 'admin']
+  is_active: boolean; // Can login
+  is_approved: boolean; // Passed admin review
 
   // === OPTIONAL FIELDS ===
 
   // Extended Licensing
-  non_resident_states?: string[];   // Additional state licenses
+  non_resident_states?: string[]; // Additional state licenses
   license_expiration?: Date;
-  eo_insurance?: boolean;           // Errors & Omissions
+  eo_insurance?: boolean; // Errors & Omissions
   eo_expiration?: Date;
 
   // Banking/Tax
-  ssn_last4?: string;               // For 1099
-  tax_id?: string;                  // EIN if applicable
-  bank_account_last4?: string;      // For direct deposit
+  ssn_last4?: string; // For 1099
+  tax_id?: string; // EIN if applicable
+  bank_account_last4?: string; // For direct deposit
   routing_number?: string;
 
   // Social/Marketing
@@ -181,8 +186,8 @@ interface UserProfile {
   personal_website?: string;
 
   // System Tracking
-  invited_by?: string;              // Who sent invitation
-  invitation_code?: string;         // Unique invitation token
+  invited_by?: string; // Who sent invitation
+  invitation_code?: string; // Unique invitation token
   created_at: Date;
   updated_at: Date;
   last_login?: Date;
@@ -196,6 +201,7 @@ interface UserProfile {
 ## User Creation Form Design
 
 ### Quick Invite Form (Minimal)
+
 ```
 ┌─────────────────────────────────┐
 │ Invite New User                 │
@@ -210,6 +216,7 @@ interface UserProfile {
 ```
 
 ### Full Creation Form (Complete)
+
 ```
 ┌─────────────────────────────────────────┐
 │ Create New User                         │
@@ -260,6 +267,7 @@ interface UserProfile {
 ### Page Responsibilities
 
 #### `/admin` - System Administration
+
 - **Purpose:** Central control for all admin functions
 - **Access:** Admin role only
 - **Contains:**
@@ -270,6 +278,7 @@ interface UserProfile {
 - **Key Point:** Everything admin-related is HERE, not scattered
 
 #### `/recruiting` - Team Building
+
 - **Purpose:** Grow your downline team
 - **Access:** Managers and above
 - **Contains:**
@@ -280,6 +289,7 @@ interface UserProfile {
 - **Key Point:** Focused on team GROWTH
 
 #### `/team` or `/hierarchy` - Team Visualization
+
 - **Purpose:** View and manage existing team
 - **Access:** All users (see their portion)
 - **Contains:**
@@ -290,6 +300,7 @@ interface UserProfile {
 - **Key Point:** Focused on team STRUCTURE
 
 #### `/settings` - Personal Settings
+
 - **Purpose:** User self-service
 - **Access:** All users
 - **Contains:**
@@ -300,6 +311,7 @@ interface UserProfile {
 - **Key Point:** Users manage THEMSELVES
 
 ### Clear Separation of Concerns
+
 ```
 System Admin → /admin
 Team Growth → /recruiting
@@ -316,6 +328,7 @@ No overlap, no confusion, everything in its logical place.
 ### Disable Public Signup
 
 1. **Remove signup route**
+
 ```typescript
 // DELETE or comment in router.tsx
 // const signupRoute = createRoute({
@@ -325,6 +338,7 @@ No overlap, no confusion, everything in its logical place.
 ```
 
 2. **Remove signup link from login**
+
 ```typescript
 // In Login.tsx, replace signup link with:
 <Alert>
@@ -337,6 +351,7 @@ No overlap, no confusion, everything in its logical place.
 ```
 
 3. **Block signup endpoint**
+
 ```sql
 -- Revoke public access to auth.users insert
 REVOKE INSERT ON auth.users FROM anon;
@@ -355,6 +370,7 @@ Auto-approved → Hierarchy Established
 ## Implementation Phases
 
 ### Phase 1: Consolidate Admin Pages (2 hours) ✅ COMPLETED
+
 - [x] Create unified /admin page with tabs
 - [x] Migrate UserManagementPage content to Users & Access tab
 - [x] Migrate RoleManagementPage to Roles & Permissions tab
@@ -363,18 +379,21 @@ Auto-approved → Hierarchy Established
 - [ ] Delete old separate page components (deferred to phase 6)
 
 **Implementation Details:**
+
 - Created `AdminControlCenter.tsx` with 3 tabs (Users & Access, Roles & Permissions, System Settings)
 - Updated router.tsx to use single `/admin` route instead of 3 separate routes
 - Updated Sidebar to show single "Admin" menu item
 - All changes tested and working correctly
 
 ### Phase 2: Disable Public Signup (30 mins) ✅ COMPLETED
+
 - [x] Remove signup route (no signup route existed)
 - [x] Remove signup mode from Login component
 - [x] Add invitation-only message to login page
 - [x] Test that signup is fully blocked
 
 **Implementation Details:**
+
 - Modified Login.tsx to remove signup mode completely
 - Changed mode type from `AuthMode` to `"signin" | "reset"`
 - Added invitation-only Alert message on login page
@@ -382,12 +401,14 @@ Auto-approved → Hierarchy Established
 - Fixed type errors related to signup mode removal
 
 ### Phase 3: Extend User Data Model (1 hour) ✅ COMPLETED
+
 - [x] Add missing fields to user_profiles table
 - [x] Create migration for new fields
 - [ ] Update TypeScript interfaces (will auto-generate after migration)
 - [ ] Set defaults for existing users (not needed - nullable fields)
 
 **Implementation Details:**
+
 - Created migration `20251128170833_add_extended_user_profile_fields.sql`
 - Added ALL missing fields from plan:
   - Identity: date_of_birth
@@ -402,6 +423,7 @@ Auto-approved → Hierarchy Established
 - Added comprehensive column comments for documentation
 
 ### Phase 4: Build User Creation Forms (2 hours) 🔄 TODO
+
 - [ ] Create quick invite form component
 - [ ] Create full creation form component
 - [ ] Add forms to Admin page Users & Access tab
@@ -409,12 +431,14 @@ Auto-approved → Hierarchy Established
 - [ ] Add validation and error handling
 
 ### Phase 5: Implement Invitation System (2 hours) 🔄 TODO
+
 - [ ] Enhance invitation service (hierarchy_invitations table already exists)
 - [ ] Create onboarding flow for invited users
 - [ ] Add invitation tracking/status views
 - [ ] Test end-to-end invitation workflow
 
 ### Phase 6: Clean Up & Test (1 hour) 🔄 TODO
+
 - [ ] Remove old admin page components (UserManagementDashboard if not used)
 - [ ] Apply migration to local and remote database
 - [ ] Regenerate TypeScript types from database
@@ -432,24 +456,28 @@ Auto-approved → Hierarchy Established
 ## Benefits
 
 ### For Admins
+
 - Everything in one place (/admin)
 - No navigation between multiple pages
 - Complete user data from day one
 - Clear role and permission management
 
 ### For Security
+
 - No random signups
 - Every user is verified
 - Complete audit trail
 - Proper data collection
 
 ### For Users
+
 - Clear onboarding process
 - All needed info collected upfront
 - Automatic hierarchy setup
 - No confusion about access
 
 ### For Maintenance
+
 - Single admin component to maintain
 - Clear separation of concerns
 - No duplicated code
@@ -479,3 +507,4 @@ Auto-approved → Hierarchy Established
 - Leverage existing systems (hierarchy_invitations table)
 - Test thoroughly before removing old components
 - Document for future developers
+

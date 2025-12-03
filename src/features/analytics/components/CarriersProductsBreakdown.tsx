@@ -1,11 +1,11 @@
 // src/features/analytics/components/CarriersProductsBreakdown.tsx
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { useAnalyticsData } from '../../../hooks';
 import { useAnalyticsDateRange } from '../context/AnalyticsDateContext';
-import { Building2, Package, ArrowUpDown } from 'lucide-react';
+import { AnalyticsTable, AnalyticsHeading } from './shared';
 
 interface CarrierProductData {
   carrier: string;
@@ -22,11 +22,9 @@ interface CarrierProductData {
   avgCommissionRate: number;
 }
 
-type SortColumn = 'carrier' | 'policies' | 'premium' | 'avgRate' | 'commission';
-
 /**
  * CarriersProductsBreakdown - Compact table view of carriers and products
- * Always shows products (no expand/collapse) for quick scanning
+ * Ultra-compact display with shared components
  */
 export function CarriersProductsBreakdown() {
   const { dateRange } = useAnalyticsDateRange();
@@ -35,18 +33,15 @@ export function CarriersProductsBreakdown() {
     endDate: dateRange.endDate,
   });
 
-  const [sortColumn, setSortColumn] = useState<SortColumn>('premium');
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
-
   if (isLoading) {
     return (
-      <Card>
-        <CardContent className="p-5">
-          <div className="text-sm font-semibold text-foreground mb-4 uppercase tracking-wide">
+      <Card className="border-border/50">
+        <CardContent className="p-2">
+          <div className="text-[11px] font-medium text-muted-foreground uppercase">
             Carriers & Products
           </div>
-          <div className="p-10 text-center text-muted-foreground text-xs">
-            Loading carrier data...
+          <div className="p-3 text-center text-[10px] text-muted-foreground">
+            Loading...
           </div>
         </CardContent>
       </Card>
@@ -127,32 +122,8 @@ export function CarriersProductsBreakdown() {
     }
   });
 
-  // Sort carriers
-  const sortCarriers = (carriers: CarrierProductData[]) => {
-    return carriers.sort((a, b) => {
-      let comparison = 0;
-      switch (sortColumn) {
-        case 'carrier':
-          comparison = a.carrier.localeCompare(b.carrier);
-          break;
-        case 'policies':
-          comparison = a.totalPolicies - b.totalPolicies;
-          break;
-        case 'premium':
-          comparison = a.totalPremium - b.totalPremium;
-          break;
-        case 'avgRate':
-          comparison = a.avgCommissionRate - b.avgCommissionRate;
-          break;
-        case 'commission':
-          comparison = a.totalCommissions - b.totalCommissions;
-          break;
-      }
-      return sortDirection === 'asc' ? comparison : -comparison;
-    });
-  };
-
-  const sortedCarriers = sortCarriers(Array.from(carrierMap.values()));
+  // Sort carriers by total premium
+  const sortedCarriers = Array.from(carrierMap.values()).sort((a, b) => b.totalPremium - a.totalPremium);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -163,145 +134,87 @@ export function CarriersProductsBreakdown() {
     }).format(value);
   };
 
-  const formatPercent = (value: number) => {
-    return `${value.toFixed(1)}%`;
-  };
+  // Prepare flattened data for table
+  const tableData: any[] = [];
+  sortedCarriers.forEach(carrier => {
+    // Add carrier summary row
+    tableData.push({
+      isCarrier: true,
+      name: carrier.carrier,
+      policies: carrier.totalPolicies,
+      premium: carrier.totalPremium,
+      avgRate: carrier.avgCommissionRate,
+      commission: carrier.totalCommissions
+    });
 
-  const handleSort = (column: SortColumn) => {
-    if (sortColumn === column) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortColumn(column);
-      setSortDirection('desc');
-    }
-  };
+    // Add product rows (top 3 products per carrier)
+    carrier.products
+      .sort((a, b) => b.totalPremium - a.totalPremium)
+      .slice(0, 3)
+      .forEach(product => {
+        tableData.push({
+          isCarrier: false,
+          name: `  → ${product.name}`,
+          policies: product.policyCount,
+          premium: product.totalPremium,
+          avgRate: product.avgCommissionRate,
+          commission: product.totalCommissions
+        });
+      });
+  });
 
   return (
-    <Card className="w-full">
-      <CardContent className="p-5">
-        {/* Header */}
-        <div className="mb-4">
-          <div className="text-sm font-semibold text-foreground uppercase tracking-wide">
-            Carriers & Products
-          </div>
-          <div className="text-xs text-muted-foreground mt-1">
-            {sortedCarriers.length} carriers with nested products
-          </div>
-        </div>
+    <Card className="border-border/50">
+      <CardContent className="p-2">
+        <AnalyticsHeading
+          title="Carriers & Products"
+          subtitle={`${sortedCarriers.length} carriers`}
+        />
 
-        {/* Table */}
-        <div className="border border-border rounded-lg overflow-hidden">
-          <table className="w-full text-xs">
-            <thead className="bg-muted sticky top-0">
-              <tr>
-                <th
-                  className="text-left p-2 font-semibold cursor-pointer hover:bg-muted-foreground/10 transition-colors"
-                  onClick={() => handleSort('carrier')}
-                  style={{ width: '30%' }}
-                >
-                  <div className="flex items-center gap-1">
-                    <span>Carrier / Product</span>
-                    {sortColumn === 'carrier' && <ArrowUpDown className="h-3 w-3" />}
-                  </div>
-                </th>
-                <th
-                  className="text-right p-2 font-semibold cursor-pointer hover:bg-muted-foreground/10 transition-colors"
-                  onClick={() => handleSort('policies')}
-                  style={{ width: '15%' }}
-                >
-                  <div className="flex items-center justify-end gap-1">
-                    <span>Policies</span>
-                    {sortColumn === 'policies' && <ArrowUpDown className="h-3 w-3" />}
-                  </div>
-                </th>
-                <th
-                  className="text-right p-2 font-semibold cursor-pointer hover:bg-muted-foreground/10 transition-colors"
-                  onClick={() => handleSort('premium')}
-                  style={{ width: '20%' }}
-                >
-                  <div className="flex items-center justify-end gap-1">
-                    <span>Premium</span>
-                    {sortColumn === 'premium' && <ArrowUpDown className="h-3 w-3" />}
-                  </div>
-                </th>
-                <th
-                  className="text-right p-2 font-semibold cursor-pointer hover:bg-muted-foreground/10 transition-colors"
-                  onClick={() => handleSort('avgRate')}
-                  style={{ width: '15%' }}
-                >
-                  <div className="flex items-center justify-end gap-1">
-                    <span>Avg Rate</span>
-                    {sortColumn === 'avgRate' && <ArrowUpDown className="h-3 w-3" />}
-                  </div>
-                </th>
-                <th
-                  className="text-right p-2 font-semibold cursor-pointer hover:bg-muted-foreground/10 transition-colors"
-                  onClick={() => handleSort('commission')}
-                  style={{ width: '20%' }}
-                >
-                  <div className="flex items-center justify-end gap-1">
-                    <span>Commission</span>
-                    {sortColumn === 'commission' && <ArrowUpDown className="h-3 w-3" />}
-                  </div>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {sortedCarriers.map((carrier) => (
-                <React.Fragment key={carrier.carrier}>
-                  {/* Carrier Row */}
-                  <tr className="bg-muted/50 border-t border-border hover:bg-muted/70 transition-colors">
-                    <td className="p-2 font-bold">
-                      <div className="flex items-center gap-2">
-                        <Building2 className="h-3 w-3 text-primary" />
-                        <span>{carrier.carrier}</span>
-                      </div>
-                    </td>
-                    <td className="p-2 text-right font-semibold">{carrier.totalPolicies}</td>
-                    <td className="p-2 text-right font-semibold">{formatCurrency(carrier.totalPremium)}</td>
-                    <td className="p-2 text-right font-semibold text-success">
-                      {formatPercent(carrier.avgCommissionRate)}
-                    </td>
-                    <td className="p-2 text-right font-semibold">{formatCurrency(carrier.totalCommissions)}</td>
-                  </tr>
-
-                  {/* Product Rows (Always Expanded) */}
-                  {carrier.products
-                    .sort((a, b) => b.totalPremium - a.totalPremium)
-                    .map((product) => (
-                      <tr
-                        key={`${carrier.carrier}-${product.name}`}
-                        className="border-t border-border/50 hover:bg-accent/20 transition-colors"
-                      >
-                        <td className="p-2 pl-8 text-muted-foreground">
-                          <div className="flex items-center gap-2">
-                            <Package className="h-3 w-3" />
-                            <span>{product.name}</span>
-                          </div>
-                        </td>
-                        <td className="p-2 text-right text-muted-foreground">{product.policyCount}</td>
-                        <td className="p-2 text-right text-muted-foreground font-mono">
-                          {formatCurrency(product.totalPremium)}
-                        </td>
-                        <td className="p-2 text-right text-muted-foreground">
-                          {formatPercent(product.avgCommissionRate)}
-                        </td>
-                        <td className="p-2 text-right text-muted-foreground font-mono">
-                          {formatCurrency(product.totalCommissions)}
-                        </td>
-                      </tr>
-                    ))}
-                </React.Fragment>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {sortedCarriers.length === 0 && (
-          <div className="text-center text-xs text-muted-foreground py-8">
-            No carrier data available for the selected time period
-          </div>
-        )}
+        <AnalyticsTable
+          columns={[
+            {
+              key: 'name',
+              header: 'Carrier / Product',
+              render: (value: string, row: any) => (
+                <span className={cn(
+                  row.isCarrier ? "font-semibold" : "text-[9px] text-muted-foreground"
+                )}>
+                  {value}
+                </span>
+              )
+            },
+            {
+              key: 'policies',
+              header: 'Policies',
+              align: 'right' as const,
+              className: 'font-mono'
+            },
+            {
+              key: 'premium',
+              header: 'Premium',
+              align: 'right' as const,
+              render: (value: number) => formatCurrency(value),
+              className: 'font-mono'
+            },
+            {
+              key: 'avgRate',
+              header: 'Rate',
+              align: 'right' as const,
+              render: (value: number) => `${value.toFixed(1)}%`,
+              className: 'font-mono text-green-600 dark:text-green-400'
+            },
+            {
+              key: 'commission',
+              header: 'Commission',
+              align: 'right' as const,
+              render: (value: number) => formatCurrency(value),
+              className: 'font-mono font-semibold'
+            }
+          ]}
+          data={tableData}
+          emptyMessage="No carrier data available"
+        />
       </CardContent>
     </Card>
   );

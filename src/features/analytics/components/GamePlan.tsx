@@ -2,12 +2,13 @@
 
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Target, DollarSign, TrendingUp, Trophy, Phone, Flame, CheckCircle2 } from 'lucide-react';
 import { useAnalyticsData } from '../../../hooks';
 import { useUserTargets } from '../../../hooks/targets/useUserTargets';
 import { useExpenses } from '../../../hooks/expenses/useExpenses';
 import { gamePlanService } from '../../../services/analytics/gamePlanService';
 import { cn } from '@/lib/utils';
+import { AnalyticsTable, AnalyticsHeading } from './shared';
+import { CheckCircle2, Target, TrendingUp, AlertCircle } from 'lucide-react';
 
 /**
  * GamePlan - Shows what you need to do to hit your target
@@ -36,9 +37,14 @@ export function GamePlan() {
 
   if (isLoading) {
     return (
-      <Card>
-        <CardContent className="p-10 text-center text-muted-foreground text-xs">
-          Loading your game plan...
+      <Card className="border-border/50">
+        <CardContent className="p-2">
+          <div className="text-[11px] font-medium text-muted-foreground uppercase">
+            Game Plan
+          </div>
+          <div className="p-3 text-center text-[10px] text-muted-foreground">
+            Loading...
+          </div>
         </CardContent>
       </Card>
     );
@@ -80,267 +86,247 @@ export function GamePlan() {
     }).format(value);
   };
 
-  const getUrgencyColor = (urgency: 'high' | 'medium' | 'low') => {
-    switch (urgency) {
-      case 'high': return 'text-destructive';
-      case 'medium': return 'text-warning';
-      case 'low': return 'text-success';
+  // Helper functions for Smart Moves
+  const getMoveIcon = (icon: string) => {
+    switch (icon) {
+      case 'target': return <Target className="h-3 w-3" />;
+      case 'trending': return <TrendingUp className="h-3 w-3" />;
+      case 'alert': return <AlertCircle className="h-3 w-3" />;
+      default: return <CheckCircle2 className="h-3 w-3" />;
     }
   };
 
-  const getMoveIcon = (icon: string) => {
-    switch (icon) {
-      case 'trophy': return <Trophy className="h-5 w-5" />;
-      case 'phone': return <Phone className="h-5 w-5" />;
-      case 'fire': return <Flame className="h-5 w-5" />;
-      default: return <Target className="h-5 w-5" />;
+  const getUrgencyColor = (urgency: string) => {
+    switch (urgency) {
+      case 'high': return 'text-red-600 dark:text-red-400';
+      case 'medium': return 'text-amber-600 dark:text-amber-400';
+      default: return 'text-green-600 dark:text-green-400';
     }
   };
 
   return (
-    <Card className="w-full">
-      <CardContent className="p-5">
-        {/* Header */}
-        <div className="mb-5">
-          <div className="text-sm font-semibold text-foreground uppercase tracking-wide">
-            Your Game Plan
-          </div>
-          <div className="text-xs text-muted-foreground mt-1">
-            What you need to do to hit your target for {gamePlan.currentMonth}
-          </div>
-        </div>
+    <Card className="border-border/50">
+      <CardContent className="p-2">
+        <AnalyticsHeading
+          title="Game Plan"
+          subtitle={`${gamePlan.currentMonth} • ${gamePlan.daysRemainingInMonth}d left`}
+        />
 
-        {/* Annual Goal Tracker */}
-        <div className="mb-5 p-4 bg-gradient-to-r from-primary/5 to-accent/5 rounded-lg border border-primary/20">
-          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
-            Annual Goal Tracker
-          </div>
-
-          {/* YTD Progress Bar */}
-          <div className="mb-3">
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-xs text-muted-foreground">Year-to-Date Progress</span>
-              <span className="text-xs font-bold text-foreground font-mono">
-                {Math.round(annualProgress.progressPercent)}%
-              </span>
-            </div>
-            <div className="h-2 bg-muted rounded-full overflow-hidden">
-              <div
-                className={cn(
-                  "h-full transition-all duration-300",
-                  annualProgress.onTrackForYear
-                    ? "bg-gradient-to-r from-success to-success/80"
-                    : "bg-gradient-to-r from-amber-500 to-amber-600"
-                )}
-                style={{ width: `${Math.min(100, annualProgress.progressPercent)}%` }}
-              />
-            </div>
-          </div>
-
-          {/* Stats Grid */}
-          <div className="grid grid-cols-2 gap-2 mb-3">
-            <div className="p-2 bg-background/50 rounded text-center">
-              <div className="text-[10px] text-muted-foreground">Annual Goal</div>
-              <div className="text-sm font-bold text-foreground font-mono">
-                {formatCurrency(annualProgress.annualGoal)}
-              </div>
-            </div>
-            <div className="p-2 bg-background/50 rounded text-center">
-              <div className="text-[10px] text-muted-foreground">YTD Earned</div>
-              <div className="text-sm font-bold text-success font-mono">
-                {formatCurrency(annualProgress.ytdCommissions)}
-              </div>
-            </div>
-            <div className="p-2 bg-background/50 rounded text-center">
-              <div className="text-[10px] text-muted-foreground">Remaining</div>
-              <div className="text-sm font-bold text-destructive font-mono">
-                {formatCurrency(annualProgress.remainingNeeded)}
-              </div>
-            </div>
-            <div className="p-2 bg-background/50 rounded text-center">
-              <div className="text-[10px] text-muted-foreground">Months Left</div>
-              <div className="text-sm font-bold text-foreground font-mono">
-                {annualProgress.monthsRemaining}
-              </div>
-            </div>
-          </div>
-
-          {/* Key Metrics */}
-          <div className="p-3 bg-primary/10 rounded-lg border border-primary/30">
-            <div className="grid grid-cols-2 gap-3 text-center">
-              <div>
-                <div className="text-[10px] text-muted-foreground mb-1">
-                  Monthly Average Needed
-                </div>
-                <div className="text-lg font-bold text-foreground font-mono">
-                  {formatCurrency(annualProgress.avgMonthlyNeeded)}
-                </div>
-              </div>
-              <div>
-                <div className="text-[10px] text-muted-foreground mb-1">
-                  Policies Per Month
-                </div>
-                <div className="text-lg font-bold text-primary font-mono">
-                  ~{annualProgress.policiesNeededPerMonth}
-                </div>
-                <div className="text-[10px] text-muted-foreground mt-0.5">
-                  based on avg ${Math.round(annualProgress.avgCommissionPerPolicy).toLocaleString()} commission
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Progress Section */}
-        <div className="mb-5">
-          {/* Progress Bar */}
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-semibold text-muted-foreground">Progress to Goal</span>
-            <span className="text-xs font-bold text-foreground font-mono">
+        {/* Monthly Progress Bar */}
+        <div className="mb-2">
+          <div className="flex items-center justify-between mb-0.5">
+            <span className="text-[10px] text-muted-foreground">Monthly Goal Progress</span>
+            <span className="text-[10px] font-bold font-mono">
               {Math.round(gamePlan.progressPercent)}%
             </span>
           </div>
-          <div className="h-3 bg-muted rounded-full overflow-hidden mb-3">
+          <div className="h-1.5 bg-muted rounded-full overflow-hidden">
             <div
               className={cn(
-                "h-full transition-all duration-300 rounded-full",
-                gamePlan.isOnTrack
-                  ? "bg-gradient-to-r from-success to-success/80"
-                  : "bg-gradient-to-r from-warning to-destructive"
+                "h-full transition-all duration-300",
+                gamePlan.progressPercent >= 100 ? "bg-green-600 dark:bg-green-400" :
+                gamePlan.progressPercent >= 75 ? "bg-amber-600 dark:bg-amber-400" :
+                "bg-red-600 dark:bg-red-400"
               )}
               style={{ width: `${Math.min(100, gamePlan.progressPercent)}%` }}
             />
           </div>
+        </div>
 
-          {/* Stats Row */}
-          <div className="grid grid-cols-3 gap-2 text-center">
-            <div className="p-2 bg-muted/30 rounded">
-              <div className="text-[10px] text-muted-foreground">MTD Earned</div>
-              <div className="text-sm font-bold text-foreground font-mono">
-                {formatCurrency(gamePlan.mtdCommissions)}
-              </div>
-            </div>
-            <div className="p-2 bg-primary/10 rounded">
-              <div className="text-[10px] text-muted-foreground">Goal (Gross)</div>
-              <div className="text-sm font-bold text-foreground font-mono">
-                {formatCurrency(gamePlan.grossCommissionNeeded)}
-              </div>
-            </div>
-            <div className="p-2 bg-muted/30 rounded">
-              <div className="text-[10px] text-muted-foreground">Need</div>
-              <div className="text-sm font-bold text-destructive font-mono">
-                {formatCurrency(gamePlan.gap)}
-              </div>
+        {/* Compact Monthly Stats Grid */}
+        <div className="grid grid-cols-4 gap-1 mb-2 text-[10px]">
+          <div className="p-1 bg-muted/30 rounded text-center">
+            <div className="text-muted-foreground/70">MTD</div>
+            <div className="font-bold font-mono">{formatCurrency(gamePlan.mtdCommissions)}</div>
+          </div>
+          <div className="p-1 bg-muted/30 rounded text-center">
+            <div className="text-muted-foreground/70">Goal</div>
+            <div className="font-bold font-mono">{formatCurrency(gamePlan.grossCommissionNeeded)}</div>
+          </div>
+          <div className="p-1 bg-muted/30 rounded text-center">
+            <div className="text-muted-foreground/70">Gap</div>
+            <div className={cn(
+              "font-bold font-mono",
+              gamePlan.gap > 0 ? "text-red-600 dark:text-red-400" : "text-green-600 dark:text-green-400"
+            )}>
+              {formatCurrency(Math.abs(gamePlan.gap))}
             </div>
           </div>
-
-          {/* Time Remaining */}
-          <div className="mt-3 p-2 bg-warning/10 rounded text-center border border-warning/30">
-            <span className="text-xs font-semibold text-warning">
-              ⏰ {gamePlan.daysRemainingInMonth} days left in {gamePlan.currentMonth}
-            </span>
-          </div>
-
-          {/* Breakdown Note */}
-          <div className="mt-3 p-2 bg-muted/20 rounded text-[10px] text-muted-foreground">
-            <strong>Goal breakdown:</strong> ${formatCurrency(gamePlan.monthlyIncomeTarget)} income + ${formatCurrency(gamePlan.monthlyExpenseTarget)} expenses = ${formatCurrency(gamePlan.grossCommissionNeeded)} total commission needed
+          <div className="p-1 bg-muted/30 rounded text-center">
+            <div className="text-muted-foreground/70">Days</div>
+            <div className="font-bold font-mono">{gamePlan.daysRemainingInMonth}</div>
           </div>
         </div>
 
+        {/* Annual Progress Bar */}
+        <div className="mb-2">
+          <div className="flex items-center justify-between mb-0.5">
+            <span className="text-[10px] text-muted-foreground">Annual Goal Progress</span>
+            <span className="text-[10px] font-bold font-mono">
+              {Math.round(annualProgress.progressPercent)}%
+            </span>
+          </div>
+          <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+            <div
+              className={cn(
+                "h-full transition-all duration-300",
+                annualProgress.onTrackForYear
+                  ? "bg-green-600 dark:bg-green-400"
+                  : "bg-amber-600 dark:bg-amber-400"
+              )}
+              style={{ width: `${Math.min(100, annualProgress.progressPercent)}%` }}
+            />
+          </div>
+        </div>
 
-        {/* Smart Moves */}
-        {gamePlan.smartMoves.length > 0 && (
-          <div className="mb-5">
-            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
-              Smart Moves
-            </div>
-            <div className="space-y-2">
-              {gamePlan.smartMoves.map((move) => (
-                <div
-                  key={move.id}
-                  className="p-3 bg-muted/20 rounded-lg border border-border hover:bg-muted/30 transition-colors"
-                >
-                  <div className="flex items-start gap-3">
-                    <div className={cn("mt-0.5", getUrgencyColor(move.urgency))}>
-                      {getMoveIcon(move.icon)}
-                    </div>
-                    <div className="flex-1">
-                      <div className="text-xs font-semibold text-foreground mb-1">
-                        {move.title}
-                      </div>
-                      <div className="text-[10px] text-muted-foreground mb-1">
-                        {move.description}
-                      </div>
-                      <div className="text-[10px] text-muted-foreground italic">
-                        💡 {move.reason}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
+        {/* Compact Annual Stats */}
+        <div className="grid grid-cols-4 gap-1 mb-2 text-[10px]">
+          <div className="p-1 bg-muted/30 rounded text-center">
+            <div className="text-muted-foreground/70">YTD</div>
+            <div className="font-bold font-mono text-green-600 dark:text-green-400">
+              {formatCurrency(annualProgress.ytdCommissions)}
             </div>
           </div>
+          <div className="p-1 bg-muted/30 rounded text-center">
+            <div className="text-muted-foreground/70">Annual</div>
+            <div className="font-bold font-mono">{formatCurrency(annualProgress.annualGoal)}</div>
+          </div>
+          <div className="p-1 bg-muted/30 rounded text-center">
+            <div className="text-muted-foreground/70">Need</div>
+            <div className="font-bold font-mono text-red-600 dark:text-red-400">
+              {formatCurrency(annualProgress.remainingNeeded)}
+            </div>
+          </div>
+          <div className="p-1 bg-muted/30 rounded text-center">
+            <div className="text-muted-foreground/70">Months</div>
+            <div className="font-bold font-mono">{annualProgress.monthsRemaining}</div>
+          </div>
+        </div>
+
+        {/* Key Metrics Row */}
+        <div className="grid grid-cols-2 gap-1 p-1.5 bg-primary/5 rounded border border-primary/20 mb-2">
+          <div className="text-center">
+            <div className="text-[9px] text-muted-foreground">Monthly Avg Needed</div>
+            <div className="text-xs font-bold font-mono text-primary">
+              {formatCurrency(annualProgress.avgMonthlyNeeded)}
+            </div>
+          </div>
+          <div className="text-center">
+            <div className="text-[9px] text-muted-foreground">Policies/Month</div>
+            <div className="text-xs font-bold font-mono text-primary">
+              ~{annualProgress.policiesNeededPerMonth}
+            </div>
+          </div>
+        </div>
+
+        {/* Smart Moves Section */}
+        {gamePlan.smartMoves && gamePlan.smartMoves.length > 0 && (
+          <>
+            <AnalyticsHeading title="Smart Moves" className="mb-1" />
+            <AnalyticsTable
+              columns={[
+                {
+                  key: 'icon',
+                  header: '',
+                  render: (value: string, row: any) => (
+                    <div className={getUrgencyColor(row.urgency)}>
+                      {getMoveIcon(value)}
+                    </div>
+                  ),
+                  className: 'w-6'
+                },
+                {
+                  key: 'title',
+                  header: 'Action',
+                  render: (value: string) => (
+                    <span className="font-medium">{value}</span>
+                  )
+                },
+                {
+                  key: 'description',
+                  header: 'Details',
+                  render: (value: string) => (
+                    <span className="text-[9px] text-muted-foreground">{value}</span>
+                  )
+                },
+                {
+                  key: 'urgency',
+                  header: 'Priority',
+                  align: 'right' as const,
+                  render: (value: string) => (
+                    <span className={cn(
+                      "text-[9px] font-medium uppercase",
+                      getUrgencyColor(value)
+                    )}>
+                      {value}
+                    </span>
+                  )
+                }
+              ]}
+              data={gamePlan.smartMoves.slice(0, 3)}
+              className="mb-2"
+            />
+          </>
         )}
 
         {/* What-If Scenarios */}
-        <div className="mb-3">
-          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
-            What If...
-          </div>
-          <div className="space-y-2">
-            {gamePlan.scenarios.map((scenario) => {
-              const isGood = scenario.goalPercent >= 100;
-              const isClose = scenario.goalPercent >= 90;
-
-              return (
-                <div
-                  key={scenario.id}
-                  className={cn(
-                    "p-3 rounded-lg border flex items-center justify-between",
-                    isGood ? "bg-success/10 border-success/30" :
-                    isClose ? "bg-warning/10 border-warning/30" :
-                    "bg-muted/20 border-border"
-                  )}
-                >
-                  <div>
-                    <div className="text-xs font-semibold text-foreground">
-                      {scenario.condition}
-                    </div>
-                    <div className="text-[10px] text-muted-foreground mt-0.5">
-                      {formatCurrency(scenario.projectedEarnings)} total
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className={cn(
-                      "text-sm font-bold font-mono",
-                      isGood ? "text-success" :
-                      isClose ? "text-warning" :
-                      "text-muted-foreground"
-                    )}>
-                      {Math.round(scenario.goalPercent)}%
-                    </div>
-                    {isGood && <CheckCircle2 className="h-4 w-4 text-success ml-auto mt-0.5" />}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Encouragement Footer */}
-        {gamePlan.gap > 0 ? (
-          <div className="p-3 bg-gradient-to-r from-primary/10 to-accent/5 rounded-lg text-center">
-            <div className="text-xs font-semibold text-foreground">
-              {gamePlan.isOnTrack ? "You got this! 💪" : "Time to push! Every sale counts 🔥"}
-            </div>
-          </div>
-        ) : (
-          <div className="p-3 bg-gradient-to-r from-success/10 to-success/5 rounded-lg text-center border border-success/30">
-            <div className="text-xs font-semibold text-success">
-              🎉 Goal Achieved! Keep the momentum going!
-            </div>
-          </div>
+        {gamePlan.scenarios && gamePlan.scenarios.length > 0 && (
+          <>
+            <AnalyticsHeading title="What If Scenarios" className="mb-1" />
+            <AnalyticsTable
+              columns={[
+                {
+                  key: 'condition',
+                  header: 'Scenario',
+                  render: (value: string) => (
+                    <span className="text-[10px]">{value}</span>
+                  )
+                },
+                {
+                  key: 'projectedEarnings',
+                  header: 'Projected',
+                  align: 'right' as const,
+                  render: (value: number) => formatCurrency(value),
+                  className: 'font-mono text-[10px]'
+                },
+                {
+                  key: 'goalPercent',
+                  header: 'Goal %',
+                  align: 'right' as const,
+                  render: (value: number) => {
+                    const isGood = value >= 100;
+                    const isClose = value >= 90;
+                    return (
+                      <span className={cn(
+                        "font-mono font-bold text-[10px]",
+                        isGood ? "text-green-600 dark:text-green-400" :
+                        isClose ? "text-amber-600 dark:text-amber-400" :
+                        "text-red-600 dark:text-red-400"
+                      )}>
+                        {Math.round(value)}%
+                      </span>
+                    );
+                  }
+                }
+              ]}
+              data={gamePlan.scenarios.slice(0, 4)}
+              className="mb-2"
+            />
+          </>
         )}
+
+        {/* Status Footer */}
+        <div className={cn(
+          "p-1.5 rounded text-center text-[10px] font-medium",
+          gamePlan.gap > 0
+            ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20"
+            : "bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/20"
+        )}>
+          {gamePlan.gap > 0
+            ? `Need ${formatCurrency(gamePlan.gap)} more to hit goal`
+            : "Goal Achieved! Keep going!"
+          }
+        </div>
       </CardContent>
     </Card>
   );

@@ -36,6 +36,7 @@ Phase 2 implements a production-ready WYSIWYG email composer using TipTap, compl
 ### Phase 1 Accomplishments (COMPLETED)
 
 **Database Schema:**
+
 - ✅ `user_email_oauth_tokens` - Encrypted OAuth storage
 - ✅ `email_templates` - Template storage with RLS policies
 - ✅ `email_triggers` - Automatic trigger rules
@@ -45,12 +46,14 @@ Phase 2 implements a production-ready WYSIWYG email composer using TipTap, compl
 - ✅ Extended `user_emails` with threading fields (reply_to_id, thread_id, is_incoming, etc.)
 
 **Edge Functions:**
+
 - ✅ `oauth-callback` - Gmail OAuth handler
 - ✅ `send-email` - Gmail API integration
 - ✅ `_shared/encryption.ts` - AES-256-GCM utilities
 - ✅ `_shared/supabase-client.ts` - Shared client
 
 **Frontend:**
+
 - ✅ `src/features/email/` - Feature folder structure
 - ✅ `EmailConnectionManager` component
 - ✅ `src/types/email.types.ts` - Comprehensive types
@@ -58,6 +61,7 @@ Phase 2 implements a production-ready WYSIWYG email composer using TipTap, compl
 ### Current State
 
 **Existing:** Basic `ComposeEmailDialog` in `src/features/recruiting/components/ComposeEmailDialog.tsx`
+
 - Plain textarea (no formatting)
 - Hardcoded templates (3 static templates)
 - Tied to recruiting feature only
@@ -74,16 +78,19 @@ During comprehensive analysis, 18 critical issues were identified with the origi
 ### 🚨 CRITICAL (Concerns 1-4)
 
 **1. Architecture Conflict - ComposeEmailDialog Location**
+
 - ✅ **Solution:** Create new generic `EmailComposer` in `src/features/email/`
 - ✅ Refactor recruiting's `ComposeEmailDialog` to use the new composer
 - ✅ Maintains backward compatibility while centralizing logic
 
 **2. Image Storage Strategy**
+
 - ✅ **Solution:** Use Supabase Storage with `email-images` bucket
 - ✅ Upload images → Get public URL → Insert URL into HTML (NOT base64)
 - ✅ Create `imageUploadService.ts` with cleanup for orphaned images
 
 **3. Variable Substitution Logic**
+
 - ✅ **Solution:** Create `variableSubstitutionService.ts`
 - ✅ Client-side: Preview substitution (show user what email will look like)
 - ✅ Server-side: Edge Function substitution before actual send
@@ -91,6 +98,7 @@ During comprehensive analysis, 18 critical issues were identified with the origi
 - ✅ Security: Parameterized queries + DOMPurify sanitization
 
 **4. XSS/HTML Sanitization**
+
 - ✅ **Solution:** Add `dompurify` package
 - ✅ Sanitize HTML before preview → Before DB storage → Before email send
 - ✅ Prevent script injection in templates and user content
@@ -98,22 +106,26 @@ During comprehensive analysis, 18 critical issues were identified with the origi
 ### ⚠️ HIGH PRIORITY (Concerns 5-10)
 
 **5. Plain Text Email Fallback**
+
 - ✅ **Solution:** Add `html-to-text` package
 - ✅ Generate plain text from HTML for `body_text` field
 - ✅ Gmail API sends multipart email (HTML + plain text)
 
 **6. Template RLS Policies**
+
 - ✅ **Already exists in Phase 1 migration!**
 - ✅ Verify policies work correctly in UI
 - ✅ Handle permission errors gracefully
 
 **7. Draft Auto-Save**
+
 - ✅ **Solution:** Leverage `email_queue` table with `status='draft'`
 - ✅ Debounced auto-save every 3 seconds
 - ✅ Draft recovery on composer open
 - ✅ Multi-tab conflict resolution with optimistic locking
 
 **8. File Attachments**
+
 - ✅ **Solution:** Create `email-attachments` Storage bucket
 - ✅ Drag-drop + file picker UI
 - ✅ Store metadata in `user_email_attachments` table (CREATE TABLE needed)
@@ -121,12 +133,14 @@ During comprehensive analysis, 18 critical issues were identified with the origi
 - ✅ Edge Function retrieves from Storage, base64-encodes for Gmail API
 
 **9. Email Threading/Replies**
+
 - ✅ **Database fields already exist!** (reply_to_id, thread_id)
 - ✅ Create Reply/Reply All functionality
 - ✅ Quote original text with TipTap blockquote
 - ✅ Edge Function adds In-Reply-To and References headers
 
 **10. Queue Integration & Scheduling**
+
 - ✅ **email_queue table already exists!**
 - ✅ "Send Now" → Insert with `status='pending'`, `scheduled_for=NOW()`
 - ✅ "Schedule" → Insert with future `scheduled_for` timestamp
@@ -135,12 +149,14 @@ During comprehensive analysis, 18 critical issues were identified with the origi
 ### 📋 MEDIUM PRIORITY (Concerns 11-15)
 
 **11. Variable Context Passing**
+
 - ✅ **Solution:** Create `EmailComposerContext` React Context
 - ✅ Pass `recruitId`, `phaseId` to composer for variable resolution
 - ✅ UI shows available variables based on context
 - ✅ Preview mode renders variables with real data
 
 **12. Error Handling**
+
 - ✅ **Solution:** Leverage `email_queue.attempts`, `max_attempts`, `error_message`
 - ✅ Retry with exponential backoff (1min, 5min, 15min)
 - ✅ Toast notifications for success/failure
@@ -148,6 +164,7 @@ During comprehensive analysis, 18 critical issues were identified with the origi
 - ✅ Create `EmailQueueMonitor` component for pending/failed emails
 
 **13. Mobile Responsiveness**
+
 - ✅ **Solution:** Use TipTap `BubbleMenu` for mobile
 - ✅ Floating toolbar on text selection (not fixed)
 - ✅ Collapsible sections for less-used formatting
@@ -155,6 +172,7 @@ During comprehensive analysis, 18 critical issues were identified with the origi
 - ✅ Test on 320px, 768px, 1024px viewports
 
 **14. Bulk Email Sending**
+
 - ✅ **Solution:** Create `BulkEmailDialog` component
 - ✅ Multi-recipient selector (checkboxes)
 - ✅ Creates N `email_queue` items (one per recipient)
@@ -163,6 +181,7 @@ During comprehensive analysis, 18 critical issues were identified with the origi
 - ✅ Individual failures don't stop batch
 
 **15. Testing Strategy**
+
 - ✅ **Solution:** Add `VITE_EMAIL_TEST_MODE` env var
 - ✅ Test mode → emails go to `test_emails` table (no actual send)
 - ✅ Create `EmailTestInbox` component to view test emails
@@ -172,6 +191,7 @@ During comprehensive analysis, 18 critical issues were identified with the origi
 ### 🔧 LOWER PRIORITY (Concerns 16-18)
 
 **16. Bundle Size Optimization**
+
 - ✅ **Solution:** Lazy load EmailComposer with `React.lazy()`
 - ✅ Only import needed TipTap extensions (tree-shaking)
 - ✅ Skip unused extensions (color, text-align)
@@ -179,6 +199,7 @@ During comprehensive analysis, 18 critical issues were identified with the origi
 - ✅ Target: Keep increase under 300KB
 
 **17. Email Signatures**
+
 - ✅ **Solution:** Create `user_email_signatures` table (migration needed)
 - ✅ Settings page section for managing signatures
 - ✅ Checkbox "Include signature" in composer
@@ -186,6 +207,7 @@ During comprehensive analysis, 18 critical issues were identified with the origi
 - ✅ Auto-insert at end of body_html/body_text
 
 **18. Accessibility (a11y)**
+
 - ✅ **Solution:** Add ARIA labels to all toolbar buttons
 - ✅ Ensure keyboard navigation (Tab, Arrow keys, Enter)
 - ✅ Add `role="textbox"` to editor
@@ -287,6 +309,7 @@ Insert to user_emails
 **Tasks:**
 
 1. **Install Packages**
+
    ```bash
    npm install @tiptap/react @tiptap/starter-kit @tiptap/extension-link @tiptap/extension-placeholder @tiptap/extension-underline dompurify html-to-text
    npm install --save-dev @types/dompurify
@@ -311,17 +334,19 @@ Insert to user_emails
      - Touch-friendly 44px buttons
 
 4. **Create EmailComposer Component**
+
    ```tsx
    interface EmailComposerProps {
-     to?: string[]
-     cc?: string[]
-     subject?: string
-     body?: string
-     context?: EmailComposerContext
-     onSend?: (email: SendEmailRequest) => void
-     onCancel?: () => void
+     to?: string[];
+     cc?: string[];
+     subject?: string;
+     body?: string;
+     context?: EmailComposerContext;
+     onSend?: (email: SendEmailRequest) => void;
+     onCancel?: () => void;
    }
    ```
+
    - Fields: To, CC, Subject, Body (TipTap)
    - Send/Cancel buttons
    - Character count display
@@ -340,6 +365,7 @@ Insert to user_emails
    - E2E test: Compose and send basic email
 
 **Acceptance Criteria:**
+
 - ✅ Can compose email with bold, italic, underline, links
 - ✅ HTML is sanitized (no script tags)
 - ✅ Plain text version is generated automatically
@@ -422,6 +448,7 @@ Insert to user_emails
    - E2E test: Create template, use in email, send
 
 **Acceptance Criteria:**
+
 - ✅ Can create/edit/delete email templates
 - ✅ Template picker shows available templates
 - ✅ Variables substitute correctly in preview
@@ -566,6 +593,7 @@ Insert to user_emails
    - E2E test: Full email flow with attachments
 
 **Acceptance Criteria:**
+
 - ✅ Images upload to Storage and display in email
 - ✅ Attachments upload and send with email (under 25MB)
 - ✅ Drafts auto-save every 3 seconds
@@ -587,6 +615,7 @@ Insert to user_emails
 
 1. **Email Signatures Implementation**
    - Create database table:
+
      ```sql
      CREATE TABLE user_email_signatures (
        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -604,6 +633,7 @@ Insert to user_emails
        ON user_email_signatures(user_id)
        WHERE is_default = true;
      ```
+
    - `SignatureManager.tsx` in Settings
      - List of user's signatures
      - Create/Edit/Delete
@@ -687,7 +717,7 @@ Insert to user_emails
 6. **Bundle Size Optimization**
    - Lazy load EmailComposer:
      ```tsx
-     const EmailComposer = lazy(() => import('./components/EmailComposer'))
+     const EmailComposer = lazy(() => import("./components/EmailComposer"));
      ```
    - Review TipTap extensions:
      - Remove unused: Color, TextAlign (if not needed)
@@ -740,6 +770,7 @@ Insert to user_emails
    - Performance testing (Lighthouse)
 
 **Acceptance Criteria:**
+
 - ✅ Can create and manage email signatures
 - ✅ Signatures auto-insert in emails
 - ✅ Can send bulk emails to 10+ recruits
@@ -761,6 +792,7 @@ Insert to user_emails
 ### New Tables (Migrations Needed)
 
 **1. user_email_attachments**
+
 ```sql
 -- File: supabase/migrations/20251129_003_create_user_email_attachments.sql
 
@@ -791,6 +823,7 @@ CREATE POLICY "Users can insert own email attachments" ON user_email_attachments
 ```
 
 **2. user_email_signatures**
+
 ```sql
 -- File: supabase/migrations/20251129_004_create_user_email_signatures.sql
 
@@ -825,6 +858,7 @@ CREATE TRIGGER trigger_signatures_updated_at
 ```
 
 **3. test_emails (for test mode)**
+
 ```sql
 -- File: supabase/migrations/20251129_005_create_test_emails.sql
 
@@ -870,109 +904,115 @@ VALUES ('email-attachments', 'email-attachments', false);
 File: `supabase/functions/process-email-queue/index.ts`
 
 ```typescript
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from "@supabase/supabase-js";
 
 Deno.serve(async (req) => {
   const supabase = createClient(
-    Deno.env.get('SUPABASE_URL')!,
-    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-  )
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+  );
 
   // Fetch pending emails where scheduled_for <= NOW()
   const { data: queueItems, error } = await supabase
-    .from('email_queue')
-    .select('*')
-    .eq('status', 'pending')
-    .lte('scheduled_for', new Date().toISOString())
-    .limit(50) // Process max 50 per run
+    .from("email_queue")
+    .select("*")
+    .eq("status", "pending")
+    .lte("scheduled_for", new Date().toISOString())
+    .limit(50); // Process max 50 per run
 
   if (error) {
-    return new Response(JSON.stringify({ error: error.message }), { status: 500 })
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+    });
   }
 
-  const results = []
+  const results = [];
 
   for (const item of queueItems) {
     // Update to processing
     await supabase
-      .from('email_queue')
-      .update({ status: 'processing' })
-      .eq('id', item.id)
+      .from("email_queue")
+      .update({ status: "processing" })
+      .eq("id", item.id);
 
     try {
       // Call send-email Edge Function
-      const response = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-email`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`
+      const response = await fetch(
+        `${Deno.env.get("SUPABASE_URL")}/functions/v1/send-email`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+          },
+          body: JSON.stringify({
+            userId: item.sender_user_id,
+            to: [item.recipient_user_id], // Or get email from user_profiles
+            subject: item.subject,
+            bodyHtml: item.body_html,
+            // ... other fields
+          }),
         },
-        body: JSON.stringify({
-          userId: item.sender_user_id,
-          to: [item.recipient_user_id], // Or get email from user_profiles
-          subject: item.subject,
-          bodyHtml: item.body_html,
-          // ... other fields
-        })
-      })
+      );
 
-      const result = await response.json()
+      const result = await response.json();
 
       if (result.success) {
         // Update to sent
         await supabase
-          .from('email_queue')
+          .from("email_queue")
           .update({
-            status: 'sent',
+            status: "sent",
             sent_at: new Date().toISOString(),
-            email_id: result.emailId
+            email_id: result.emailId,
           })
-          .eq('id', item.id)
+          .eq("id", item.id);
 
-        results.push({ id: item.id, status: 'sent' })
+        results.push({ id: item.id, status: "sent" });
       } else {
-        throw new Error(result.error)
+        throw new Error(result.error);
       }
     } catch (error) {
       // Increment attempts
-      const newAttempts = item.attempts + 1
-      const maxAttempts = item.max_attempts || 3
+      const newAttempts = item.attempts + 1;
+      const maxAttempts = item.max_attempts || 3;
 
       if (newAttempts >= maxAttempts) {
         // Max attempts reached, mark as failed
         await supabase
-          .from('email_queue')
+          .from("email_queue")
           .update({
-            status: 'failed',
-            attempts: newAttempts,
-            error_message: error.message
-          })
-          .eq('id', item.id)
-      } else {
-        // Retry with exponential backoff
-        const retryMinutes = Math.pow(2, newAttempts) * 5 // 5min, 10min, 20min
-        const retryTime = new Date(Date.now() + retryMinutes * 60 * 1000)
-
-        await supabase
-          .from('email_queue')
-          .update({
-            status: 'pending',
+            status: "failed",
             attempts: newAttempts,
             error_message: error.message,
-            scheduled_for: retryTime.toISOString()
           })
-          .eq('id', item.id)
+          .eq("id", item.id);
+      } else {
+        // Retry with exponential backoff
+        const retryMinutes = Math.pow(2, newAttempts) * 5; // 5min, 10min, 20min
+        const retryTime = new Date(Date.now() + retryMinutes * 60 * 1000);
+
+        await supabase
+          .from("email_queue")
+          .update({
+            status: "pending",
+            attempts: newAttempts,
+            error_message: error.message,
+            scheduled_for: retryTime.toISOString(),
+          })
+          .eq("id", item.id);
       }
 
-      results.push({ id: item.id, status: 'failed', error: error.message })
+      results.push({ id: item.id, status: "failed", error: error.message });
     }
   }
 
-  return new Response(JSON.stringify({ processed: results.length, results }))
-})
+  return new Response(JSON.stringify({ processed: results.length, results }));
+});
 ```
 
 **Deploy and set up cron:**
+
 ```bash
 supabase functions deploy process-email-queue
 supabase functions invoke process-email-queue --method POST
@@ -1008,6 +1048,7 @@ supabase functions invoke process-email-queue --method POST
 ```
 
 **NOT including** (to reduce bundle size):
+
 - `@tiptap/extension-color` - Not needed for emails
 - `@tiptap/extension-text-align` - Basic left-align is fine
 - `@tiptap/extension-text-style` - Covered by StarterKit
@@ -1015,6 +1056,7 @@ supabase functions invoke process-email-queue --method POST
 ### Optional (Phase 3)
 
 For future enhancements:
+
 - `@tiptap/extension-table` - Tables in emails
 - `@tiptap/extension-collaboration` - Real-time collaboration
 
@@ -1025,6 +1067,7 @@ For future enhancements:
 ### Unit Tests
 
 **Services:**
+
 - `sanitizationService.test.ts`
   - Removes `<script>` tags
   - Removes `onclick` handlers
@@ -1039,6 +1082,7 @@ For future enhancements:
   - Escapes HTML in variable values
 
 **Hooks:**
+
 - `useTemplates.test.ts`
   - Fetches templates correctly
   - Filters by category
@@ -1047,17 +1091,20 @@ For future enhancements:
 ### Integration Tests
 
 **Template CRUD:**
+
 - Create template → Appears in list
 - Update template → Changes saved
 - Delete template → Removed from list
 - RLS: Can't edit others' templates
 
 **Draft Auto-Save:**
+
 - Type in composer → Draft saves after 3s
 - Refresh page → Draft loads
 - Send email → Draft deleted
 
 **Queue Processing:**
+
 - Schedule email → Appears in queue
 - Wait for scheduled time → Email sends
 - Failed email → Retries with backoff
@@ -1065,6 +1112,7 @@ For future enhancements:
 ### Component Tests (React Testing Library)
 
 **EmailComposer:**
+
 - Renders all fields
 - Typing updates state
 - Send button disabled when invalid
@@ -1072,6 +1120,7 @@ For future enhancements:
 - Variable inserter adds variable
 
 **TemplateList:**
+
 - Displays templates
 - Filter works
 - Edit button opens editor
@@ -1080,6 +1129,7 @@ For future enhancements:
 ### E2E Tests (Playwright)
 
 **Flow 1: Compose and Send**
+
 1. Open composer
 2. Type subject and body
 3. Add formatting (bold, link)
@@ -1088,6 +1138,7 @@ For future enhancements:
 6. Verify sent successfully
 
 **Flow 2: Use Template**
+
 1. Open Settings → Templates
 2. Create new template with variables
 3. Open composer
@@ -1097,6 +1148,7 @@ For future enhancements:
 7. Verify received email has correct content
 
 **Flow 3: Schedule Email**
+
 1. Open composer
 2. Write email
 3. Click "Schedule"
@@ -1106,6 +1158,7 @@ For future enhancements:
 7. Verify email sent at correct time
 
 **Flow 4: Bulk Send**
+
 1. Open recruiting page
 2. Click "Bulk Email"
 3. Select 5 recruits
@@ -1119,6 +1172,7 @@ For future enhancements:
 ### Visual Regression Tests (Storybook)
 
 Stories for:
+
 - TipTapEditor (empty, with content)
 - EmailComposer (desktop, mobile)
 - TemplateList (empty, with items)
@@ -1129,6 +1183,7 @@ Use Chromatic or Percy for visual diffs.
 ### Accessibility Tests
 
 **Automated (axe-core):**
+
 ```typescript
 import { axe } from 'jest-axe'
 
@@ -1140,6 +1195,7 @@ test('EmailComposer has no a11y violations', async () => {
 ```
 
 **Manual:**
+
 - VoiceOver (Mac): Navigate composer, announce formatting
 - NVDA (Windows): Same as VoiceOver
 - Keyboard only: Tab through, Enter to send, Escape to cancel
@@ -1147,26 +1203,31 @@ test('EmailComposer has no a11y violations', async () => {
 ### Performance Tests
 
 **Lighthouse:**
+
 - Performance score > 90
 - Accessibility score > 95
 - Best Practices score > 90
 
 **Bundle size:**
+
 ```bash
 npm run build
 ls -lh dist/assets/*.js
 ```
+
 Target: Main bundle < 500KB gzipped
 
 ### Cross-Browser Testing
 
 **Desktop:**
+
 - Chrome (latest)
 - Firefox (latest)
 - Safari (latest)
 - Edge (latest)
 
 **Mobile:**
+
 - iOS Safari (iPhone 12, iPhone SE)
 - Android Chrome (Pixel 5)
 
@@ -1264,6 +1325,7 @@ Target: Main bundle < 500KB gzipped
 ### Technical Risks
 
 **Risk 1: TipTap bundle size too large**
+
 - **Impact:** High (slow page loads)
 - **Likelihood:** Medium
 - **Mitigation:**
@@ -1274,6 +1336,7 @@ Target: Main bundle < 500KB gzipped
 - **Fallback:** If still too large, consider simpler editor (react-quill)
 
 **Risk 2: Email sending failures due to OAuth token expiry**
+
 - **Impact:** High (emails don't send)
 - **Likelihood:** Medium
 - **Mitigation:**
@@ -1283,6 +1346,7 @@ Target: Main bundle < 500KB gzipped
 - **Fallback:** User re-authorizes OAuth in Settings
 
 **Risk 3: Gmail API rate limits exceeded**
+
 - **Impact:** Medium (temporary send failures)
 - **Likelihood:** Low (quota tracking should prevent)
 - **Mitigation:**
@@ -1293,6 +1357,7 @@ Target: Main bundle < 500KB gzipped
 - **Fallback:** Show error message, retry next day
 
 **Risk 4: Variable substitution errors (missing data)**
+
 - **Impact:** Medium (emails have blank variables)
 - **Likelihood:** Medium
 - **Mitigation:**
@@ -1303,6 +1368,7 @@ Target: Main bundle < 500KB gzipped
 - **Fallback:** User manually edits before sending
 
 **Risk 5: XSS vulnerabilities in rich text**
+
 - **Impact:** Critical (security breach)
 - **Likelihood:** Low (if DOMPurify used correctly)
 - **Mitigation:**
@@ -1315,6 +1381,7 @@ Target: Main bundle < 500KB gzipped
 ### Schedule Risks
 
 **Risk 1: Phase takes longer than estimated (14-18 days)**
+
 - **Impact:** Medium (delayed feature launch)
 - **Likelihood:** Medium
 - **Mitigation:**
@@ -1324,6 +1391,7 @@ Target: Main bundle < 500KB gzipped
 - **Fallback:** Ship MVP (2A + 2B only), do 2C/2D in Phase 3
 
 **Risk 2: Blocked by Supabase limitations**
+
 - **Impact:** High (can't proceed)
 - **Likelihood:** Low
 - **Mitigation:**
@@ -1335,6 +1403,7 @@ Target: Main bundle < 500KB gzipped
 ### UX Risks
 
 **Risk 1: TipTap too complex for non-technical users**
+
 - **Impact:** Medium (low adoption)
 - **Likelihood:** Low
 - **Mitigation:**
@@ -1345,6 +1414,7 @@ Target: Main bundle < 500KB gzipped
 - **Fallback:** Add "Simple Mode" (plain text) toggle
 
 **Risk 2: Mobile UX is poor**
+
 - **Impact:** Medium (mobile users frustrated)
 - **Likelihood:** Medium
 - **Mitigation:**
@@ -1361,38 +1431,45 @@ Target: Main bundle < 500KB gzipped
 Features intentionally deferred to keep Phase 2 scope manageable:
 
 **1. Incoming Email Sync**
+
 - Sync emails from Gmail to `user_emails` table
 - Gmail Watch API (infrastructure exists from Phase 1)
 - Email inbox UI
 - Unread count badge
 
 **2. Email Triggers (Automatic Emails)**
+
 - Infrastructure exists (`email_triggers` table)
 - Trigger on: Phase started, checklist completed, etc.
 - Configure in Settings
 
 **3. Email Analytics**
+
 - Open tracking (read receipts)
 - Click tracking (link analytics)
 - Delivery status from Gmail API
 - Dashboard: Open rate, click rate, bounce rate
 
 **4. Advanced Templates**
+
 - Conditional content (if/else logic)
 - Loops (repeat sections)
 - Template inheritance (base template + variations)
 
 **5. Email Collaboration**
+
 - Shared drafts
 - Comments on emails
 - Approval workflow
 
 **6. Email Search**
+
 - Full-text search across `user_emails`
 - Filters: Date range, sender, status
 - Saved searches
 
 **7. Email Rules/Filters**
+
 - Auto-label incoming emails
 - Auto-forward to team members
 - Auto-archive after X days
@@ -1524,6 +1601,7 @@ Features intentionally deferred to keep Phase 2 scope manageable:
 ## Success Metrics
 
 **Technical:**
+
 - ✅ All 70+ acceptance criteria met
 - ✅ Test coverage > 80%
 - ✅ Zero critical bugs in production
@@ -1533,6 +1611,7 @@ Features intentionally deferred to keep Phase 2 scope manageable:
 - ✅ No accessibility violations
 
 **User:**
+
 - ✅ Users can compose rich emails in < 2 minutes
 - ✅ Template usage > 50% of emails (saves time)
 - ✅ Draft recovery prevents lost work
@@ -1541,6 +1620,7 @@ Features intentionally deferred to keep Phase 2 scope manageable:
 - ✅ Mobile users can compose emails (even if desktop preferred)
 
 **Business:**
+
 - ✅ Email system replaces manual Gmail compose
 - ✅ Recruiting team uses for all recruit communications
 - ✅ Templates standardize messaging
@@ -1556,6 +1636,7 @@ Each sub-phase is independently testable and shippable. If we run into time cons
 
 **Why not use a simpler editor?**
 TipTap was chosen because:
+
 - Modern (React 19 compatible)
 - Extensible (can add custom features later)
 - Good a11y support
@@ -1563,6 +1644,7 @@ TipTap was chosen because:
 - Headless (full control over UI)
 
 Alternatives considered:
+
 - react-quill: Older, less flexible
 - Draft.js: Deprecated by Meta
 - Slate: Too low-level, more complex
@@ -1571,6 +1653,7 @@ Alternatives considered:
 Reusing existing infrastructure is simpler than creating a separate `drafts` table. The `email_queue` table already has all needed fields, and `status='draft'` differentiates drafts from pending sends.
 
 **Why client-side AND server-side variable substitution?**
+
 - Client-side: For preview (show user what email will look like)
 - Server-side: For actual send (ensures variables use fresh data from DB at send time, not at draft time)
 
@@ -1587,6 +1670,7 @@ Development and testing should NOT spam real email inboxes. Test mode allows ful
 This comprehensive Phase 2 plan addresses all 18 critical concerns identified during the initial review and provides a clear, detailed roadmap for implementing a production-ready WYSIWYG email composer.
 
 **Key Strengths:**
+
 - ✅ Builds on excellent Phase 1 foundation
 - ✅ Addresses security (XSS, sanitization)
 - ✅ Addresses UX (mobile, a11y, drafts)
@@ -1598,6 +1682,7 @@ This comprehensive Phase 2 plan addresses all 18 critical concerns identified du
 **Estimated Timeline:** 14-18 days for complete implementation
 
 **Next Steps:**
+
 1. Review and approve this plan
 2. Create feature branch
 3. Begin Phase 2A implementation

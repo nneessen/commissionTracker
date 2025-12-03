@@ -20,6 +20,7 @@ import {
   getMonthlyTrendData,
   getProductRetentionRates,
 } from '@/services/analytics/policyStatusService';
+import { AnalyticsTable, AnalyticsHeading } from './shared';
 
 /**
  * PolicyStatusBreakdown - Clear view of policy statuses without jargon
@@ -38,13 +39,13 @@ export function PolicyStatusBreakdown() {
 
   if (isLoading) {
     return (
-      <Card>
-        <CardContent className="p-5">
-          <div className="text-sm font-semibold text-foreground mb-4 uppercase tracking-wide">
-            Policy Status Overview
+      <Card className="border-border/50">
+        <CardContent className="p-2">
+          <div className="text-[11px] font-medium text-muted-foreground uppercase">
+            Policy Status
           </div>
-          <div className="p-10 text-center text-muted-foreground text-xs">
-            Loading policy data...
+          <div className="p-3 text-center text-[10px] text-muted-foreground">
+            Loading...
           </div>
         </CardContent>
       </Card>
@@ -55,191 +56,165 @@ export function PolicyStatusBreakdown() {
   const monthlyTrend = getMonthlyTrendData(raw.policies);
   const { bestPerformers, needsAttention } = getProductRetentionRates(raw.policies);
 
+  // Format product names from snake_case to Title Case
+  const formatProductName = (name: string): string => {
+    return name
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  };
+
   return (
-    <Card>
-      <CardContent className="p-5">
-        {/* Header */}
-        <div className="mb-5">
-          <div className="text-sm font-semibold text-foreground uppercase tracking-wide">
-            Policy Status Overview
+    <Card className="border-border/50">
+      <CardContent className="p-2">
+        {/* Compact Header with Inline Status Data */}
+        <div className="flex items-center justify-between mb-1.5">
+          <div className="text-[11px] font-medium text-muted-foreground uppercase">
+            Policy Status
           </div>
-          <div className="text-xs text-muted-foreground mt-1">
-            Current policy health and retention trends
-          </div>
-        </div>
-
-        {/* 3-Card Summary */}
-        <div className="grid grid-cols-3 gap-3 mb-6">
-          {/* Active Policies */}
-          <div className="bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-lg p-3">
-            <div className="flex items-center gap-2 mb-2">
-              <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
-              <span className="text-xs font-medium text-green-700 dark:text-green-300 uppercase tracking-wide">
-                Active
+          {/* Inline Status Summary */}
+          <div className="flex items-center gap-3 text-[10px]">
+            <div className="flex items-center gap-1">
+              <span className="text-green-600 dark:text-green-400 font-mono font-bold">
+                {statusSummary.active.count}
               </span>
+              <span className="text-muted-foreground/70">active</span>
+              <span className="text-muted-foreground/50">({statusSummary.active.percentage}%)</span>
             </div>
-            <div className="text-2xl font-bold text-green-900 dark:text-green-100">
-              {statusSummary.active.count}
-            </div>
-            <div className="text-xs text-green-600 dark:text-green-400 mt-1">
-              {statusSummary.active.percentage}% of total
-            </div>
-          </div>
-
-          {/* Lapsed Policies */}
-          <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
-            <div className="flex items-center gap-2 mb-2">
-              <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-              <span className="text-xs font-medium text-amber-700 dark:text-amber-300 uppercase tracking-wide">
-                Lapsed
+            <div className="flex items-center gap-1">
+              <span className="text-amber-600 dark:text-amber-400 font-mono font-bold">
+                {statusSummary.lapsed.count}
               </span>
+              <span className="text-muted-foreground/70">lapsed</span>
+              <span className="text-muted-foreground/50">({statusSummary.lapsed.percentage}%)</span>
             </div>
-            <div className="text-2xl font-bold text-amber-900 dark:text-amber-100">
-              {statusSummary.lapsed.count}
-            </div>
-            <div className="text-xs text-amber-600 dark:text-amber-400 mt-1">
-              {statusSummary.lapsed.percentage}% of total
-            </div>
-          </div>
-
-          {/* Cancelled Policies */}
-          <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-lg p-3">
-            <div className="flex items-center gap-2 mb-2">
-              <XCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
-              <span className="text-xs font-medium text-red-700 dark:text-red-300 uppercase tracking-wide">
-                Cancelled
+            <div className="flex items-center gap-1">
+              <span className="text-red-600 dark:text-red-400 font-mono font-bold">
+                {statusSummary.cancelled.count}
               </span>
-            </div>
-            <div className="text-2xl font-bold text-red-900 dark:text-red-100">
-              {statusSummary.cancelled.count}
-            </div>
-            <div className="text-xs text-red-600 dark:text-red-400 mt-1">
-              {statusSummary.cancelled.percentage}% of total
+              <span className="text-muted-foreground/70">cancelled</span>
+              <span className="text-muted-foreground/50">({statusSummary.cancelled.percentage}%)</span>
             </div>
           </div>
         </div>
 
-        {/* Monthly Trend Chart */}
-        <div className="mb-6">
-          <div className="text-xs font-semibold text-foreground mb-3 uppercase tracking-wide">
+        {/* Compact Monthly Trend Chart */}
+        <div className="mb-2">
+          <div className="text-[10px] font-medium text-muted-foreground uppercase mb-1">
             12-Month Trend
           </div>
-          <div className="h-64">
+          <div className="h-32">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={monthlyTrend}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis
                   dataKey="month"
                   className="text-xs"
-                  tick={{ fontSize: 11 }}
+                  tick={{ fontSize: 9 }}
+                  height={20}
                 />
-                <YAxis className="text-xs" tick={{ fontSize: 11 }} />
+                <YAxis className="text-xs" tick={{ fontSize: 9 }} width={30} />
                 <Tooltip
                   contentStyle={{
                     backgroundColor: 'hsl(var(--card))',
                     border: '1px solid hsl(var(--border))',
-                    borderRadius: '6px',
-                    fontSize: '12px',
+                    borderRadius: '4px',
+                    fontSize: '10px',
+                    padding: '4px',
                   }}
                 />
-                <Legend wrapperStyle={{ fontSize: '12px' }} />
+                <Legend wrapperStyle={{ fontSize: '10px' }} iconSize={8} />
                 <Line
                   type="monotone"
                   dataKey="active"
                   stroke="hsl(142, 71%, 45%)"
-                  strokeWidth={2}
-                  name="Active Policies"
-                  dot={{ r: 3 }}
+                  strokeWidth={1}
+                  name="Active"
+                  dot={{ r: 1.5 }}
                 />
                 <Line
                   type="monotone"
                   dataKey="lapsed"
                   stroke="hsl(38, 92%, 50%)"
-                  strokeWidth={2}
-                  name="Lapsed Policies"
-                  dot={{ r: 3 }}
+                  strokeWidth={1}
+                  name="Lapsed"
+                  dot={{ r: 1.5 }}
                 />
               </LineChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        {/* Performance Tables */}
+        {/* Compact Performance Tables */}
         {(bestPerformers.length > 0 || needsAttention.length > 0) && (
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-1.5">
             {/* Best Performers */}
             {bestPerformers.length > 0 && (
               <div>
-                <div className="text-xs font-semibold text-foreground mb-2 uppercase tracking-wide">
-                  Best Performers
-                </div>
-                <div className="border border-border rounded-lg overflow-hidden">
-                  <table className="w-full text-xs">
-                    <thead className="bg-muted">
-                      <tr>
-                        <th className="text-left p-2 font-medium">Product</th>
-                        <th className="text-right p-2 font-medium">Retention</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {bestPerformers.map((product, idx) => (
-                        <tr key={idx} className="border-t border-border">
-                          <td className="p-2 truncate" title={product.productName}>
-                            {product.productName}
-                            <span className="text-muted-foreground ml-1">
-                              ({product.activePolicies}/{product.totalPolicies})
-                            </span>
-                          </td>
-                          <td className="p-2 text-right font-semibold text-green-600 dark:text-green-400">
-                            {product.retentionRate}%
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                <AnalyticsHeading title="Best Performers" className="mb-1" />
+                <AnalyticsTable
+                  columns={[
+                    {
+                      key: 'productName',
+                      header: 'Product',
+                      render: (value: string, row: any) => (
+                        <>
+                          {formatProductName(value)}
+                          <span className="text-[9px] text-muted-foreground/70 ml-1">
+                            ({row.activePolicies})
+                          </span>
+                        </>
+                      )
+                    },
+                    {
+                      key: 'retentionRate',
+                      header: 'Rate',
+                      align: 'right' as const,
+                      render: (value: number) => `${value}%`,
+                      className: 'font-semibold font-mono text-green-600 dark:text-green-400'
+                    }
+                  ]}
+                  data={bestPerformers.slice(0, 3)}
+                />
               </div>
             )}
 
             {/* Needs Attention */}
             {needsAttention.length > 0 && (
               <div>
-                <div className="text-xs font-semibold text-foreground mb-2 uppercase tracking-wide">
-                  Needs Attention
-                </div>
-                <div className="border border-border rounded-lg overflow-hidden">
-                  <table className="w-full text-xs">
-                    <thead className="bg-muted">
-                      <tr>
-                        <th className="text-left p-2 font-medium">Product</th>
-                        <th className="text-right p-2 font-medium">Retention</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {needsAttention.map((product, idx) => (
-                        <tr key={idx} className="border-t border-border">
-                          <td className="p-2 truncate" title={product.productName}>
-                            {product.productName}
-                            <span className="text-muted-foreground ml-1">
-                              ({product.activePolicies}/{product.totalPolicies})
-                            </span>
-                          </td>
-                          <td className="p-2 text-right font-semibold text-amber-600 dark:text-amber-400">
-                            {product.retentionRate}%
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                <AnalyticsHeading title="Needs Attention" className="mb-1" />
+                <AnalyticsTable
+                  columns={[
+                    {
+                      key: 'productName',
+                      header: 'Product',
+                      render: (value: string, row: any) => (
+                        <>
+                          {formatProductName(value)}
+                          <span className="text-[9px] text-muted-foreground/70 ml-1">
+                            ({row.activePolicies})
+                          </span>
+                        </>
+                      )
+                    },
+                    {
+                      key: 'retentionRate',
+                      header: 'Rate',
+                      align: 'right' as const,
+                      render: (value: number) => `${value}%`,
+                      className: 'font-semibold font-mono text-amber-600 dark:text-amber-400'
+                    }
+                  ]}
+                  data={needsAttention.slice(0, 3)}
+                />
               </div>
             )}
           </div>
         )}
 
         {bestPerformers.length === 0 && needsAttention.length === 0 && (
-          <div className="text-center text-xs text-muted-foreground py-4">
-            Not enough policy data to show product retention rates (need 3+ policies per product)
+          <div className="text-center text-[10px] text-muted-foreground/70 py-2">
+            Insufficient data for retention analysis
           </div>
         )}
       </CardContent>

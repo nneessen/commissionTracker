@@ -1,37 +1,36 @@
 // src/features/analytics/components/ProductMatrix.tsx
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
-import { Info, X } from 'lucide-react';
 import { useAnalyticsData } from '../../../hooks';
 import { cn } from '@/lib/utils';
 import { useAnalyticsDateRange } from '../context/AnalyticsDateContext';
+import { AnalyticsTable, AnalyticsHeading } from './shared';
 
 /**
  * ProductMatrix - Product performance matrix
  */
 export function ProductMatrix() {
   const { dateRange } = useAnalyticsDateRange();
-  const { attribution, isLoading } = useAnalyticsData({
+  const { raw, isLoading } = useAnalyticsData({
     startDate: dateRange.startDate,
     endDate: dateRange.endDate,
   });
-  const [showInfo, setShowInfo] = useState(false);
 
   if (isLoading) {
     return (
-      <Card>
-        <CardContent className="p-10 text-center text-muted-foreground text-xs">
-          Loading product data...
+      <Card className="border-border/50">
+        <CardContent className="p-2">
+          <div className="text-[11px] font-medium text-muted-foreground uppercase">
+            Product Mix
+          </div>
+          <div className="p-3 text-center text-[10px] text-muted-foreground">
+            Loading...
+          </div>
         </CardContent>
       </Card>
     );
   }
-
-  const { productMix } = attribution;
-  const latestMonth = productMix[productMix.length - 1];
 
   // Helper function to format product names (whole_life -> Whole Life)
   const formatProductName = (product: string): string => {
@@ -50,115 +49,82 @@ export function ProductMatrix() {
     }).format(value);
   };
 
+  // Aggregate product data from policies
+  const productMap = new Map<string, { count: number; revenue: number }>();
+  let totalRevenue = 0;
+
+  raw.policies.forEach(policy => {
+    const product = policy.product || 'Unknown';
+    const revenue = policy.annualPremium || 0;
+
+    const existing = productMap.get(product) || { count: 0, revenue: 0 };
+    productMap.set(product, {
+      count: existing.count + 1,
+      revenue: existing.revenue + revenue
+    });
+
+    totalRevenue += revenue;
+  });
+
+  // Convert to array and calculate percentages
+  const productData = Array.from(productMap.entries())
+    .map(([product, data]) => ({
+      product: product,
+      count: data.count,
+      revenue: data.revenue,
+      percentage: totalRevenue > 0 ? (data.revenue / totalRevenue) * 100 : 0
+    }))
+    .sort((a, b) => b.revenue - a.revenue);
+
+  const columns = [
+    {
+      key: 'product',
+      header: 'Product',
+      render: (value: string) => formatProductName(value),
+      className: 'font-medium'
+    },
+    {
+      key: 'count',
+      header: 'Policies',
+      align: 'right' as const,
+      className: 'font-mono text-muted-foreground'
+    },
+    {
+      key: 'percentage',
+      header: 'Mix %',
+      align: 'right' as const,
+      render: (value: number) => (
+        <span className={cn(
+          "font-mono",
+          value >= 40 ? "text-green-600 dark:text-green-400" :
+          value >= 20 ? "text-amber-600 dark:text-amber-400" :
+          "text-red-600 dark:text-red-400"
+        )}>
+          {value.toFixed(1)}%
+        </span>
+      )
+    },
+    {
+      key: 'revenue',
+      header: 'Revenue',
+      align: 'right' as const,
+      render: (value: number) => formatCurrency(value),
+      className: 'font-mono font-semibold'
+    }
+  ];
+
   return (
-    <Card>
-      <CardContent className="p-5">
-        <div className="flex items-center gap-2 mb-5">
-          <div className="text-sm font-semibold text-foreground uppercase tracking-wide">
-            Product Mix - {latestMonth?.periodLabel}
-          </div>
-          <Button
-            onClick={() => setShowInfo(!showInfo)}
-            size="icon"
-            variant="ghost"
-            className="h-6 w-6 hover:scale-110 transition-transform"
-            title="Click for detailed explanation"
-          >
-            <Info className="h-4 w-4" />
-          </Button>
-        </div>
-
-        {showInfo && (
-          <Alert className="bg-gradient-to-r from-primary/20 via-info/10 to-card shadow-md mb-4">
-            <AlertDescription>
-              <div className="flex justify-between items-start mb-3">
-                <h3 className="m-0 text-sm font-bold text-foreground">
-                  Understanding Product Mix
-                </h3>
-                <Button
-                  onClick={() => setShowInfo(false)}
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6 p-0"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-
-              <div className="mb-4 text-foreground">
-                <strong>What is this?</strong> Product Mix shows which insurance products you're selling most and how your portfolio is balanced.
-                This helps you identify gaps and opportunities in your product offerings.
-              </div>
-
-              <div className="mb-4 p-3 bg-gradient-to-r from-info/15 to-card rounded-md shadow-sm">
-                <strong>Why It Matters:</strong>
-                <div className="text-xs mt-2 text-muted-foreground">
-                  • <strong>Diversification:</strong> Relying too heavily on one product type is risky<br/>
-                  • <strong>Income Stability:</strong> Different products have different commission structures<br/>
-                  • <strong>Client Needs:</strong> Shows if you're serving all client segments<br/>
-                  • <strong>Growth Opportunities:</strong> Identifies underutilized product lines
-                </div>
-              </div>
-
-              <div className="mb-4 p-3 bg-gradient-to-r from-success/15 to-card rounded-md shadow-sm">
-                <strong className="text-foreground">Real Example:</strong>
-                <div className="text-xs mt-2 text-muted-foreground">
-                  Your current mix:<br/>
-                  • <span className="text-success font-bold">60% Term Life</span> (30 policies, $180K premium)<br/>
-                  • <span className="text-info font-bold">25% Whole Life</span> (10 policies, $150K premium)<br/>
-                  • <span className="text-warning font-bold">10% Health</span> (8 policies, $80K premium)<br/>
-                  • <span className="text-destructive font-bold">5% Disability</span> (2 policies, $20K premium)<br/>
-                  <div className="mt-2 text-primary font-semibold">
-                    <strong>Insight:</strong> You're heavily term-focused. Consider pushing whole life and disability for better commission rates!
-                  </div>
-                </div>
-              </div>
-
-              <div className="p-2 bg-gradient-to-r from-primary/20 to-accent/10 rounded text-xs text-center text-primary font-semibold shadow-sm">
-                <strong>Pro Tip:</strong> Aim for a balanced mix - don't put all your eggs in one product basket!
-              </div>
-            </AlertDescription>
-          </Alert>
-        )}
-
-        <div className="grid gap-2">
-          {latestMonth?.productBreakdown.map((product, idx) => {
-            const getProductColor = (index: number) => {
-              const colors = [
-                { bg: "bg-gradient-to-r from-success/20 via-status-active/10 to-card", text: "text-success" },
-                { bg: "bg-gradient-to-r from-info/20 via-status-earned/10 to-card", text: "text-info" },
-                { bg: "bg-gradient-to-r from-primary/20 via-accent/10 to-card", text: "text-primary" },
-                { bg: "bg-gradient-to-r from-warning/20 via-status-pending/10 to-card", text: "text-warning" },
-              ];
-              return colors[index % colors.length];
-            };
-
-            const colorScheme = getProductColor(idx);
-
-            return (
-              <Card
-                key={product.product}
-                className={cn("shadow-md hover:shadow-lg transition-all duration-200", colorScheme.bg)}
-              >
-                <CardContent className="p-3">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <div className="text-xs font-semibold text-foreground mb-1">
-                        {formatProductName(product.product)}
-                      </div>
-                      <div className="text-[10px] text-muted-foreground">
-                        {product.count} policies · {product.percentage.toFixed(1)}%
-                      </div>
-                    </div>
-                    <div className={cn("text-sm font-bold font-mono", colorScheme.text)}>
-                      {formatCurrency(product.revenue)}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
+    <Card className="border-border/50">
+      <CardContent className="p-2">
+        <AnalyticsHeading
+          title="Product Mix"
+          subtitle={`${productData.length} products`}
+        />
+        <AnalyticsTable
+          columns={columns}
+          data={productData}
+          emptyMessage="No product data available"
+        />
       </CardContent>
     </Card>
   );

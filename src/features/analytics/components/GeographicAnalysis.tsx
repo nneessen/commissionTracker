@@ -1,11 +1,11 @@
 // src/features/analytics/components/GeographicAnalysis.tsx
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { ArrowUpDown, Search } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { useAnalyticsData } from '../../../hooks';
 import { useAnalyticsDateRange } from '../context/AnalyticsDateContext';
+import { AnalyticsTable, AnalyticsHeading } from './shared';
 
 interface StateData {
   state: string;
@@ -15,11 +15,9 @@ interface StateData {
   percentOfTotal: number;
 }
 
-type SortColumn = 'state' | 'policies' | 'premium' | 'avgPremium' | 'percent';
-
 /**
- * GeographicAnalysis - Sortable table view of premium by state
- * Replaces map visualization with more practical data table
+ * GeographicAnalysis - Premium by state
+ * Ultra-compact display with shared components
  */
 export function GeographicAnalysis() {
   const { dateRange } = useAnalyticsDateRange();
@@ -28,19 +26,15 @@ export function GeographicAnalysis() {
     endDate: dateRange.endDate,
   });
 
-  const [searchTerm, setSearchTerm] = useState('');
-  const [sortColumn, setSortColumn] = useState<SortColumn>('premium');
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
-
   if (isLoading) {
     return (
-      <Card>
-        <CardContent className="p-5">
-          <div className="text-sm font-semibold text-foreground mb-4 uppercase tracking-wide">
+      <Card className="border-border/50">
+        <CardContent className="p-2">
+          <div className="text-[11px] font-medium text-muted-foreground uppercase">
             Premium by State
           </div>
-          <div className="p-10 text-center text-muted-foreground text-xs">
-            Loading state data...
+          <div className="p-3 text-center text-[10px] text-muted-foreground">
+            Loading...
           </div>
         </CardContent>
       </Card>
@@ -73,33 +67,10 @@ export function GeographicAnalysis() {
       percentOfTotal: totalPremium > 0 ? (data.totalPremium / totalPremium) * 100 : 0,
     }));
 
-  // Filter by search term
-  const filteredData = stateData.filter(data =>
-    data.state.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  // Sort data
-  const sortedData = [...filteredData].sort((a, b) => {
-    let comparison = 0;
-    switch (sortColumn) {
-      case 'state':
-        comparison = a.state.localeCompare(b.state);
-        break;
-      case 'policies':
-        comparison = a.policyCount - b.policyCount;
-        break;
-      case 'premium':
-        comparison = a.totalPremium - b.totalPremium;
-        break;
-      case 'avgPremium':
-        comparison = a.avgPremium - b.avgPremium;
-        break;
-      case 'percent':
-        comparison = a.percentOfTotal - b.percentOfTotal;
-        break;
-    }
-    return sortDirection === 'asc' ? comparison : -comparison;
-  });
+  // Sort by total premium (descending) and take top 10 states
+  const sortedData = stateData
+    .sort((a, b) => b.totalPremium - a.totalPremium)
+    .slice(0, 10);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -110,126 +81,60 @@ export function GeographicAnalysis() {
     }).format(value);
   };
 
-  const formatPercent = (value: number) => {
-    return `${value.toFixed(1)}%`;
-  };
-
-  const handleSort = (column: SortColumn) => {
-    if (sortColumn === column) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortColumn(column);
-      setSortDirection('desc');
-    }
-  };
-
   return (
-    <Card className="w-full">
-      <CardContent className="p-5">
-        {/* Header */}
-        <div className="mb-4">
-          <div className="text-sm font-semibold text-foreground uppercase tracking-wide">
-            Premium by State
-          </div>
-          <div className="text-xs text-muted-foreground mt-1">
-            {stateData.length} states with policies
-          </div>
-        </div>
+    <Card className="border-border/50">
+      <CardContent className="p-2">
+        <AnalyticsHeading
+          title="Premium by State"
+          subtitle={`Top ${sortedData.length} states`}
+        />
 
-        {/* Search Bar */}
-        <div className="mb-3 relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="text"
-            placeholder="Search states..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-9 h-8 text-xs"
-          />
-        </div>
-
-        {/* Table */}
-        <div className="border border-border rounded-lg overflow-hidden">
-          <div className="max-h-[600px] overflow-y-auto">
-            <table className="w-full text-xs">
-              <thead className="bg-muted sticky top-0 z-10">
-                <tr>
-                  <th
-                    className="text-left p-2 font-semibold cursor-pointer hover:bg-muted-foreground/10 transition-colors"
-                    onClick={() => handleSort('state')}
-                  >
-                    <div className="flex items-center gap-1">
-                      <span>State</span>
-                      {sortColumn === 'state' && <ArrowUpDown className="h-3 w-3" />}
-                    </div>
-                  </th>
-                  <th
-                    className="text-right p-2 font-semibold cursor-pointer hover:bg-muted-foreground/10 transition-colors"
-                    onClick={() => handleSort('policies')}
-                  >
-                    <div className="flex items-center justify-end gap-1">
-                      <span>Policies</span>
-                      {sortColumn === 'policies' && <ArrowUpDown className="h-3 w-3" />}
-                    </div>
-                  </th>
-                  <th
-                    className="text-right p-2 font-semibold cursor-pointer hover:bg-muted-foreground/10 transition-colors"
-                    onClick={() => handleSort('premium')}
-                  >
-                    <div className="flex items-center justify-end gap-1">
-                      <span>Total Premium</span>
-                      {sortColumn === 'premium' && <ArrowUpDown className="h-3 w-3" />}
-                    </div>
-                  </th>
-                  <th
-                    className="text-right p-2 font-semibold cursor-pointer hover:bg-muted-foreground/10 transition-colors"
-                    onClick={() => handleSort('avgPremium')}
-                  >
-                    <div className="flex items-center justify-end gap-1">
-                      <span>Avg Premium</span>
-                      {sortColumn === 'avgPremium' && <ArrowUpDown className="h-3 w-3" />}
-                    </div>
-                  </th>
-                  <th
-                    className="text-right p-2 font-semibold cursor-pointer hover:bg-muted-foreground/10 transition-colors"
-                    onClick={() => handleSort('percent')}
-                  >
-                    <div className="flex items-center justify-end gap-1">
-                      <span>% of Total</span>
-                      {sortColumn === 'percent' && <ArrowUpDown className="h-3 w-3" />}
-                    </div>
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {sortedData.map((data, index) => (
-                  <tr
-                    key={data.state}
-                    className={index % 2 === 0 ? 'bg-background' : 'bg-muted/20'}
-                  >
-                    <td className="p-2 font-medium">{data.state}</td>
-                    <td className="p-2 text-right">{data.policyCount}</td>
-                    <td className="p-2 text-right font-mono font-semibold">
-                      {formatCurrency(data.totalPremium)}
-                    </td>
-                    <td className="p-2 text-right font-mono text-muted-foreground">
-                      {formatCurrency(data.avgPremium)}
-                    </td>
-                    <td className="p-2 text-right text-success font-semibold">
-                      {formatPercent(data.percentOfTotal)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {sortedData.length === 0 && (
-          <div className="text-center text-xs text-muted-foreground py-8">
-            {searchTerm ? 'No states match your search' : 'No state data available'}
-          </div>
-        )}
+        <AnalyticsTable
+          columns={[
+            {
+              key: 'state',
+              header: 'State',
+              className: 'font-medium'
+            },
+            {
+              key: 'policyCount',
+              header: 'Policies',
+              align: 'right' as const,
+              className: 'font-mono'
+            },
+            {
+              key: 'totalPremium',
+              header: 'Total',
+              align: 'right' as const,
+              render: (value: number) => formatCurrency(value),
+              className: 'font-mono font-semibold'
+            },
+            {
+              key: 'avgPremium',
+              header: 'Avg',
+              align: 'right' as const,
+              render: (value: number) => formatCurrency(value),
+              className: 'font-mono text-muted-foreground'
+            },
+            {
+              key: 'percentOfTotal',
+              header: '% Total',
+              align: 'right' as const,
+              render: (value: number) => (
+                <span className={cn(
+                  "font-mono",
+                  value >= 20 ? "text-green-600 dark:text-green-400" :
+                  value >= 10 ? "text-amber-600 dark:text-amber-400" :
+                  "text-muted-foreground"
+                )}>
+                  {value.toFixed(1)}%
+                </span>
+              )
+            }
+          ]}
+          data={sortedData}
+          emptyMessage="No state data available"
+        />
       </CardContent>
     </Card>
   );
