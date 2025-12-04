@@ -308,7 +308,7 @@ export default function AdminControlCenter() {
                   </Select>
                 </div>
               </div>
-              <Button size="sm">
+              <Button size="sm" onClick={() => setIsAddUserDialogOpen(true)}>
                 <Plus className="h-3.5 w-3.5 mr-1.5" />
                 Add User
               </Button>
@@ -751,6 +751,13 @@ export default function AdminControlCenter() {
           }}
         />
       )}
+
+      {/* Add User Dialog */}
+      <AddUserDialog
+        open={isAddUserDialogOpen}
+        onOpenChange={setIsAddUserDialogOpen}
+        onSave={handleAddUser}
+      />
     </div>
   );
 }
