@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-12-04 11:31:45
+
+### Changed Files
+- `src/features/hierarchy/AgentDetailPage.tsx`
+- `src/features/hierarchy/components/AgentTable.tsx`
+- `src/features/hierarchy/components/EditAgentModal.tsx`
+- `src/router.tsx`
+- `tsconfig.tsbuildinfo`
+
+### Statistics
+```
+ 5 files changed, 1254 insertions(+), 218 deletions(-)
+```
+
 ## [Checkpoint] - 2025-12-04 09:46:05
 
 ### Changed Files

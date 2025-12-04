@@ -34,6 +34,7 @@ import {
   HierarchyDashboard,
 } from "./features/hierarchy";
 import { HierarchyDashboardCompact } from "./features/hierarchy/HierarchyDashboardCompact";
+import { AgentDetailPage } from "./features/hierarchy/AgentDetailPage";
 import { RecruitingDashboard } from "./features/recruiting/RecruitingDashboard";
 import { PipelineAdminPage } from "./features/recruiting/admin/PipelineAdminPage";
 import { MyRecruitingPipeline } from "./features/recruiting/pages/MyRecruitingPipeline";
@@ -234,6 +235,13 @@ const hierarchyManageRoute = createRoute({
   component: HierarchyManagement,
 });
 
+// Agent detail route - View individual agent information
+const agentDetailRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "hierarchy/agent/$agentId",
+  component: AgentDetailPage,
+});
+
 // Recruiting route
 const recruitingRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -284,6 +292,7 @@ const routeTree = rootRoute.addChildren([
   hierarchyOverridesRoute,
   hierarchyDownlinesRoute,
   hierarchyManageRoute,
+  agentDetailRoute,
   recruitingRoute,
   recruitingAdminRoute,
   myPipelineRoute,
