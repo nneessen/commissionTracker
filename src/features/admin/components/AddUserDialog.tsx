@@ -36,11 +36,15 @@ export interface NewUserData {
   password?: string; // Optional - if empty, sends invite email
   upline_id?: string | null;
   roles: RoleName[];
-  approval_status: 'pending' | 'approved';
-  onboarding_status?: 'lead' | 'active' | null;
+  approval_status: "pending" | "approved";
+  onboarding_status?: "lead" | "active" | null;
 }
 
-export default function AddUserDialog({ open, onOpenChange, onSave }: AddUserDialogProps) {
+export default function AddUserDialog({
+  open,
+  onOpenChange,
+  onSave,
+}: AddUserDialogProps) {
   const { data: roles } = useAllRolesWithPermissions();
   const { data: allUsers } = useAllUsers();
 
@@ -99,24 +103,28 @@ export default function AddUserDialog({ open, onOpenChange, onSave }: AddUserDia
   };
 
   const handleRoleToggle = (roleName: RoleName) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       roles: prev.roles.includes(roleName)
-        ? prev.roles.filter(r => r !== roleName)
-        : [...prev.roles, roleName]
+        ? prev.roles.filter((r) => r !== roleName)
+        : [...prev.roles, roleName],
     }));
   };
 
   return (
-    <Dialog open={open} onOpenChange={(isOpen) => {
-      if (!isOpen) handleReset();
-      onOpenChange(isOpen);
-    }}>
+    <Dialog
+      open={open}
+      onOpenChange={(isOpen) => {
+        if (!isOpen) handleReset();
+        onOpenChange(isOpen);
+      }}
+    >
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Add New User</DialogTitle>
           <DialogDescription>
-            Create a new user account. Leave password empty to send an email invitation.
+            Create a new user account. Leave password empty to send an email
+            invitation.
           </DialogDescription>
         </DialogHeader>
 
@@ -129,10 +137,14 @@ export default function AddUserDialog({ open, onOpenChange, onSave }: AddUserDia
                 id="email"
                 type="email"
                 value={formData.email}
-                onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, email: e.target.value }))
+                }
                 className={errors.email ? "border-red-500" : ""}
               />
-              {errors.email && <p className="text-xs text-red-500">{errors.email}</p>}
+              {errors.email && (
+                <p className="text-xs text-red-500">{errors.email}</p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -142,7 +154,9 @@ export default function AddUserDialog({ open, onOpenChange, onSave }: AddUserDia
                 type="password"
                 placeholder="Leave empty to send invite"
                 value={formData.password}
-                onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, password: e.target.value }))
+                }
               />
             </div>
           </div>
@@ -153,10 +167,17 @@ export default function AddUserDialog({ open, onOpenChange, onSave }: AddUserDia
               <Input
                 id="first_name"
                 value={formData.first_name}
-                onChange={(e) => setFormData(prev => ({ ...prev, first_name: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    first_name: e.target.value,
+                  }))
+                }
                 className={errors.first_name ? "border-red-500" : ""}
               />
-              {errors.first_name && <p className="text-xs text-red-500">{errors.first_name}</p>}
+              {errors.first_name && (
+                <p className="text-xs text-red-500">{errors.first_name}</p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -164,10 +185,17 @@ export default function AddUserDialog({ open, onOpenChange, onSave }: AddUserDia
               <Input
                 id="last_name"
                 value={formData.last_name}
-                onChange={(e) => setFormData(prev => ({ ...prev, last_name: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    last_name: e.target.value,
+                  }))
+                }
                 className={errors.last_name ? "border-red-500" : ""}
               />
-              {errors.last_name && <p className="text-xs text-red-500">{errors.last_name}</p>}
+              {errors.last_name && (
+                <p className="text-xs text-red-500">{errors.last_name}</p>
+              )}
             </div>
           </div>
 
@@ -177,7 +205,9 @@ export default function AddUserDialog({ open, onOpenChange, onSave }: AddUserDia
               id="phone"
               type="tel"
               value={formData.phone}
-              onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, phone: e.target.value }))
+              }
             />
           </div>
 
@@ -186,30 +216,41 @@ export default function AddUserDialog({ open, onOpenChange, onSave }: AddUserDia
             <Label htmlFor="upline">Upline (optional)</Label>
             <Select
               value={formData.upline_id || "none"}
-              onValueChange={(value) => setFormData(prev => ({
-                ...prev,
-                upline_id: value === "none" ? null : value
-              }))}
+              onValueChange={(value) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  upline_id: value === "none" ? null : value,
+                }))
+              }
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select upline" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="none">No upline</SelectItem>
-                {allUsers?.filter(u => u.approval_status === 'approved').map(user => (
-                  <SelectItem key={user.id} value={user.id}>
-                    {user.full_name || user.email}
-                  </SelectItem>
-                ))}
+                {allUsers
+                  ?.filter((u) => u.approval_status === "approved")
+                  .map((user) => (
+                    <SelectItem key={user.id} value={user.id}>
+                      {user.full_name || user.email}
+                    </SelectItem>
+                  ))}
               </SelectContent>
             </Select>
           </div>
 
           {/* Roles */}
           <div className="space-y-2">
-            <Label>Roles * {errors.roles && <span className="text-xs text-red-500 ml-2">{errors.roles}</span>}</Label>
+            <Label>
+              Roles *{" "}
+              {errors.roles && (
+                <span className="text-xs text-red-500 ml-2">
+                  {errors.roles}
+                </span>
+              )}
+            </Label>
             <div className="space-y-2 border rounded-md p-3">
-              {roles?.map(role => (
+              {roles?.map((role) => (
                 <div key={role.id} className="flex items-start gap-2">
                   <input
                     type="checkbox"
@@ -218,9 +259,16 @@ export default function AddUserDialog({ open, onOpenChange, onSave }: AddUserDia
                     onChange={() => handleRoleToggle(role.name as RoleName)}
                     className="mt-1"
                   />
-                  <label htmlFor={`role-${role.id}`} className="flex-1 cursor-pointer">
-                    <div className="font-medium text-sm">{role.display_name}</div>
-                    <div className="text-xs text-muted-foreground">{role.description}</div>
+                  <label
+                    htmlFor={`role-${role.id}`}
+                    className="flex-1 cursor-pointer"
+                  >
+                    <div className="font-medium text-sm">
+                      {role.display_name}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {role.description}
+                    </div>
                   </label>
                 </div>
               ))}
@@ -233,34 +281,37 @@ export default function AddUserDialog({ open, onOpenChange, onSave }: AddUserDia
               <Label htmlFor="approval_status">Approval Status</Label>
               <Select
                 value={formData.approval_status}
-                onValueChange={(value: 'pending' | 'approved') =>
-                  setFormData(prev => ({ ...prev, approval_status: value }))
+                onValueChange={(value: "pending" | "approved") =>
+                  setFormData((prev) => ({ ...prev, approval_status: value }))
                 }
               >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="approved">Approved (Active Agent)</SelectItem>
+                  <SelectItem value="approved">
+                    Approved (Active Agent)
+                  </SelectItem>
                   <SelectItem value="pending">Pending (Recruit)</SelectItem>
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground">
-                {formData.approval_status === 'approved'
-                  ? 'User will appear in Users & Access tab'
-                  : 'User will appear in Recruiting Pipeline tab'}
+                {formData.approval_status === "approved"
+                  ? "User will appear in Users & Access tab"
+                  : "User will appear in Recruiting Pipeline tab"}
               </p>
             </div>
 
-            {formData.approval_status === 'pending' && (
+            {formData.approval_status === "pending" && (
               <div className="space-y-2">
                 <Label htmlFor="onboarding_status">Onboarding Status</Label>
                 <Select
                   value={formData.onboarding_status || "none"}
                   onValueChange={(value) =>
-                    setFormData(prev => ({
+                    setFormData((prev) => ({
                       ...prev,
-                      onboarding_status: value === "none" ? null : (value as 'lead' | 'active')
+                      onboarding_status:
+                        value === "none" ? null : (value as "lead" | "active"),
                     }))
                   }
                 >

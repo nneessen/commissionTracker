@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-12-04 18:45:04
+
+### Changed Files
+- `index.html`
+- `src/features/admin/components/AddUserDialog.tsx`
+
+### Statistics
+```
+ 2 files changed, 101 insertions(+), 46 deletions(-)
+```
+
 ## [Checkpoint] - 2025-12-04 15:13:10
 
 ### Changed Files
