@@ -5,13 +5,11 @@ import { ReportType, ReportFilters, ReportSection, DrillDownContext } from '../.
 import { Button } from '../../components/ui/button';
 import { TimePeriodSelector, AdvancedTimePeriod, getAdvancedDateRange } from '../analytics/components/TimePeriodSelector';
 import { useReport } from '../../hooks/reports/useReport';
-import { useReportFilterOptions } from '../../hooks/reports/useReportFilterOptions';
 import { ReportExportService } from '../../services/reports/reportExportService';
 import { Download, Loader2, FileText, Table, Printer, ChevronRight, TrendingUp, AlertTriangle, CheckCircle, Package } from 'lucide-react';
 import { Card } from '../../components/ui/card';
 import { CommissionAgingChart, ClientTierChart } from './components/charts';
 import { BundleExportDialog } from './components/BundleExportDialog';
-import { ReportFiltersBar } from './components/filters';
 import { DrillDownDrawer } from './components/drill-down';
 
 // Helper function to create stable initial dates
@@ -78,38 +76,20 @@ export function ReportsPage() {
   const [bundleDialogOpen, setBundleDialogOpen] = useState(false);
   const [drillDownContext, setDrillDownContext] = useState<DrillDownContext | null>(null);
 
-  // Fetch filter options
-  const { carriers, products, states, isLoading: filtersLoading } = useReportFilterOptions();
-
-  // Additional filter state (carrier, product, state selections)
-  const [selectedCarriers, setSelectedCarriers] = useState<string[]>([]);
-  const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
-  const [selectedStates, setSelectedStates] = useState<string[]>([]);
-
   // Get date range from time period (memoized to prevent infinite loop)
   const dateRange = useMemo(
     () => getAdvancedDateRange(timePeriod, customRange),
     [timePeriod, customRange]
   );
 
-  // Build report filters (memoized to prevent infinite loop)
+  // Build report filters (memoized to prevent infinite loop) - simplified without carrier/product/state
   const filters: ReportFilters = useMemo(
     () => ({
       startDate: dateRange.startDate,
       endDate: dateRange.endDate,
-      carrierIds: selectedCarriers.length > 0 ? selectedCarriers : undefined,
-      productIds: selectedProducts.length > 0 ? selectedProducts : undefined,
-      states: selectedStates.length > 0 ? selectedStates : undefined,
     }),
-    [dateRange.startDate, dateRange.endDate, selectedCarriers, selectedProducts, selectedStates]
+    [dateRange.startDate, dateRange.endDate]
   );
-
-  // Handler for filter changes
-  const handleFiltersChange = (newFilters: ReportFilters) => {
-    setSelectedCarriers(newFilters.carrierIds || []);
-    setSelectedProducts(newFilters.productIds || []);
-    setSelectedStates(newFilters.states || []);
-  };
 
   // Drill-down handlers
   const handleAgingBucketClick = (bucket: string) => {
@@ -162,63 +142,53 @@ export function ReportsPage() {
 
   return (
     <div className="h-screen flex flex-col bg-background">
-      {/* Top Bar - Compact */}
-      <div className="border-b border-border bg-card px-4 py-2">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <h1 className="text-base font-semibold text-foreground">Reports</h1>
+      {/* Top Bar - Mobile Responsive */}
+      <div className="page-header py-2 md:py-3 border-b border-border/50">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 px-3 md:px-4">
+          <div className="flex-shrink-0">
+            <h1 className="text-lg md:text-xl font-semibold text-foreground">Reports</h1>
+            <p className="text-xs md:text-sm text-muted-foreground">
+              Professional reporting and analytics
+            </p>
           </div>
 
-          {/* Controls - Horizontal */}
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2">
-              <TimePeriodSelector
-                selectedPeriod={timePeriod}
-                onPeriodChange={setTimePeriod}
-                customRange={customRange}
-                onCustomRangeChange={setCustomRange}
-              />
-            </div>
-            <div className="h-6 w-px bg-border" />
-            <ReportFiltersBar
-              filters={filters}
-              onFiltersChange={handleFiltersChange}
-              carriers={carriers}
-              products={products}
-              states={states}
-              isLoading={filtersLoading}
+          {/* Controls - Mobile Responsive */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
+            <TimePeriodSelector
+              selectedPeriod={timePeriod}
+              onPeriodChange={setTimePeriod}
+              customRange={customRange}
+              onCustomRangeChange={setCustomRange}
             />
-            <div className="h-6 w-px bg-border" />
-            <div className="flex items-center gap-2">
+            <div className="flex gap-1.5 justify-end">
               <Button
                 onClick={handleExportPDF}
                 size="sm"
-                variant="outline"
+                variant="ghost"
                 disabled={!report || isLoading}
-                className="h-8 px-3"
+                className="h-7 px-2 text-xs"
+                title="Export to PDF"
               >
-                <Printer className="w-3 h-3 mr-1.5" />
                 PDF
               </Button>
               <Button
                 onClick={handleExportExcel}
                 size="sm"
-                variant="outline"
+                variant="ghost"
                 disabled={!report || isLoading}
-                className="h-8 px-3"
+                className="h-7 px-2 text-xs"
+                title="Export to Excel"
               >
-                <FileText className="w-3 h-3 mr-1.5" />
                 Excel
               </Button>
-              <div className="h-6 w-px bg-border" />
               <Button
                 onClick={() => setBundleDialogOpen(true)}
                 size="sm"
-                variant="default"
-                className="h-8 px-3"
+                variant="ghost"
+                className="h-7 px-2.5 text-xs bg-primary/10 hover:bg-primary/20 text-primary"
               >
-                <Package className="w-3 h-3 mr-1.5" />
-                Export Bundle
+                <Package className="w-3 h-3 mr-1" />
+                Bundle
               </Button>
             </div>
           </div>
@@ -227,23 +197,23 @@ export function ReportsPage() {
 
       {/* Three-Pane Layout */}
       <div className="flex-1 flex overflow-hidden">
-        {/* LEFT PANE - Report Navigator */}
-        <div className="w-48 border-r border-border bg-card flex-shrink-0">
-          <div className="p-3 space-y-4">
+        {/* LEFT PANE - Report Navigator - Hidden on Mobile */}
+        <div className="hidden md:block w-48 lg:w-52 border-r border-border/50 bg-muted/20 flex-shrink-0">
+          <div className="p-3 space-y-3">
             {Object.entries(REPORT_CATEGORIES).map(([key, category]) => (
               <div key={key}>
-                <h3 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2 px-2">
                   {category.name}
                 </h3>
-                <div className="space-y-0.5">
+                <div className="space-y-1">
                   {category.reports.map(report => (
                     <button
                       key={report.type}
                       onClick={() => setSelectedType(report.type)}
-                      className={`w-full text-left px-2 py-1.5 rounded text-xs transition-colors ${
+                      className={`w-full text-left px-2 py-1.5 rounded-sm text-xs transition-colors ${
                         selectedType === report.type
-                          ? 'bg-primary text-primary-foreground font-medium'
-                          : 'hover:bg-accent text-foreground'
+                          ? 'bg-primary/90 text-primary-foreground font-medium'
+                          : 'hover:bg-muted/50 text-foreground'
                       }`}
                     >
                       <span className="mr-1.5">{report.icon}</span>
@@ -257,36 +227,55 @@ export function ReportsPage() {
         </div>
 
         {/* CENTER PANE - Report Viewer (Document Style) */}
-        <div className="flex-1 overflow-y-auto bg-muted/30">
-          <div className="max-w-full mx-auto p-4">
+        <div className="flex-1 overflow-y-auto bg-background">
+          <div className="max-w-full mx-auto p-3 md:p-4">
+            {/* Mobile Report Selector */}
+            <div className="md:hidden mb-4">
+              <select
+                value={selectedType}
+                onChange={(e) => setSelectedType(e.target.value as ReportType)}
+                className="w-full px-3 py-2 text-sm border border-border rounded-md bg-card text-foreground"
+              >
+                {Object.entries(REPORT_CATEGORIES).map(([key, category]) => (
+                  <optgroup key={key} label={category.name}>
+                    {category.reports.map(report => (
+                      <option key={report.type} value={report.type}>
+                        {report.icon} {report.name}
+                      </option>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
+            </div>
+
             {/* Loading State */}
             {isLoading && (
-              <div className="flex flex-col items-center justify-center py-20">
-                <Loader2 className="w-12 h-12 text-primary animate-spin mb-4" />
-                <p className="text-sm text-muted-foreground">Generating professional report...</p>
+              <div className="flex flex-col items-center justify-center py-12">
+                <Loader2 className="w-8 h-8 text-primary animate-spin mb-3" />
+                <p className="text-xs text-muted-foreground">Generating report...</p>
               </div>
             )}
 
             {/* Error State */}
             {error && (
-              <Card className="p-6 border-red-500 bg-red-50 dark:bg-red-950/20">
-                <p className="text-sm text-red-600 dark:text-red-400">
-                  Error generating report: {error instanceof Error ? error.message : 'Unknown error'}
+              <Card className="p-4 border-red-200 bg-red-50/50 dark:bg-red-950/10">
+                <p className="text-xs text-red-600 dark:text-red-400">
+                  Error: {error instanceof Error ? error.message : 'Unknown error'}
                 </p>
               </Card>
             )}
 
             {/* DOCUMENT-STYLE REPORT */}
             {!isLoading && !error && report && (
-              <div className="bg-card rounded-lg shadow-lg border border-border">
-                {/* Report Header - Compact */}
-                <div className="p-3 border-b border-border bg-gradient-to-br from-primary/5 to-primary/10">
+              <div className="bg-card rounded-md shadow-sm border border-border/50">
+                {/* Report Header - Ultra Compact */}
+                <div className="px-3 py-2 border-b border-border/50 bg-gradient-to-br from-primary/5 to-transparent">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h1 className="text-lg font-bold text-foreground">
+                      <h1 className="text-base font-bold text-foreground">
                         {report.title}
                       </h1>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-[10px] text-muted-foreground">
                         {filters.startDate.toLocaleDateString()} - {filters.endDate.toLocaleDateString()}
                       </p>
                     </div>
@@ -294,23 +283,23 @@ export function ReportsPage() {
                 </div>
 
                 {/* Executive Summary Section */}
-                <div className="p-3 border-b border-border">
+                <div className="px-3 py-2 border-b border-border/50">
                   <h2 className="text-sm font-bold text-foreground mb-2">
                     Executive Summary
                   </h2>
 
-                  {/* Key Metrics - Compact 3-Column Grid */}
-                  <div className="grid grid-cols-3 gap-x-4 gap-y-1.5 mb-3">
+                  {/* Key Metrics Grid */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-3 gap-y-1.5 mb-2">
                     {report.summary.keyMetrics.map((metric, index) => (
                       <div key={index} className="flex items-baseline gap-1.5">
-                        <span className="text-[10px] text-muted-foreground">
+                        <span className="text-xs text-muted-foreground whitespace-nowrap">
                           {metric.label}:
                         </span>
-                        <span className="text-xs font-bold text-foreground font-mono">
+                        <span className="text-sm font-bold text-foreground font-mono">
                           {metric.value}
                         </span>
                         {metric.trend && (
-                          <span className={`text-[9px] font-medium ${
+                          <span className={`text-xs font-medium ${
                             metric.trend === 'up' ? 'text-green-600' : 'text-red-600'
                           }`}>
                             {metric.trend === 'up' ? '↑' : '↓'}
@@ -320,24 +309,24 @@ export function ReportsPage() {
                     ))}
                   </div>
 
-                  {/* Top Insights - Ultra Compact */}
+                  {/* Top Insights */}
                   {report.summary.topInsights.length > 0 && (
                     <div className="space-y-2">
-                      <h3 className="text-xs font-semibold text-foreground mb-2">
+                      <h3 className="text-xs font-semibold text-foreground mb-1.5">
                         Priority Actions
                       </h3>
                       {report.summary.topInsights.map((insight, index) => (
                         <div
                           key={insight.id}
-                          className="flex items-start gap-2 p-2 rounded bg-muted/50 border-l-2 border-l-orange-500"
+                          className="flex items-start gap-2 p-2 rounded-sm bg-muted/30 border-l-2 border-l-orange-500/70"
                         >
                           <AlertTriangle className="w-3 h-3 text-orange-600 flex-shrink-0 mt-0.5" />
                           <div className="flex-1 min-w-0">
                             <h4 className="text-xs font-semibold text-foreground">{insight.title}</h4>
-                            <p className="text-[10px] text-muted-foreground leading-tight">
+                            <p className="text-xs text-muted-foreground leading-relaxed">
                               {insight.description}
                             </p>
-                            <div className="text-[10px] text-foreground font-medium mt-0.5">
+                            <div className="text-xs text-foreground font-medium mt-0.5">
                               Impact: {insight.impact}
                             </div>
                           </div>
@@ -347,10 +336,10 @@ export function ReportsPage() {
                   )}
                 </div>
 
-                {/* Report Sections - Ultra Compact */}
+                {/* Report Sections */}
                 {report.sections.map((section, sectionIndex) => (
-                  <div key={section.id} className="p-2 border-b border-border last:border-b-0">
-                    <h2 className="text-sm font-bold text-foreground mb-2">
+                  <div key={section.id} className="px-3 py-2 md:py-3 border-b border-border/50 last:border-b-0">
+                    <h2 className="text-sm font-bold text-foreground mb-1.5">
                       {section.title}
                     </h2>
 
@@ -360,21 +349,21 @@ export function ReportsPage() {
                       </p>
                     )}
 
-                    {/* Section Metrics - Table Format (NO COOKIE-CUTTER CARDS!) */}
+                    {/* Section Metrics Table */}
                     {section.metrics && section.metrics.length > 0 && (
                       <div className="mb-3">
                         <table className="w-full text-xs">
-                          <tbody className="divide-y divide-border">
+                          <tbody className="divide-y divide-border/30">
                             {section.metrics.map((metric, idx) => (
-                              <tr key={idx} className="group hover:bg-muted/30">
-                                <td className="py-1 pr-3 text-muted-foreground font-medium w-1/3">
+                              <tr key={idx} className="group hover:bg-muted/20">
+                                <td className="py-1 pr-2 text-muted-foreground font-medium w-1/3">
                                   {metric.label}
                                 </td>
                                 <td className="py-1 text-foreground font-bold text-sm">
-                                  <div className="flex items-baseline gap-1.5">
+                                  <div className="flex items-baseline gap-1">
                                     <span>{metric.value}</span>
                                     {metric.trend && (
-                                      <span className={`text-[10px] font-medium ${
+                                      <span className={`text-xs font-medium ${
                                         metric.trend === 'up' ? 'text-green-600' :
                                         metric.trend === 'down' ? 'text-red-600' :
                                         'text-muted-foreground'
@@ -384,9 +373,9 @@ export function ReportsPage() {
                                     )}
                                   </div>
                                 </td>
-                                <td className="py-1 text-right text-[10px] text-muted-foreground">
+                                <td className="py-1 text-right text-xs text-muted-foreground">
                                   {metric.change !== undefined && (
-                                    <span>{metric.change > 0 ? '+' : ''}{metric.change}% vs prior</span>
+                                    <span>{metric.change > 0 ? '+' : ''}{metric.change}%</span>
                                   )}
                                 </td>
                               </tr>
@@ -438,7 +427,7 @@ export function ReportsPage() {
                             <thead className="bg-muted border-b border-border">
                               <tr>
                                 {section.tableData.headers.map((header, headerIdx) => (
-                                  <th key={headerIdx} className="px-2 py-1.5 text-left font-semibold text-foreground text-[10px]">
+                                  <th key={headerIdx} className="px-2 py-1.5 text-left font-semibold text-foreground text-xs">
                                     {header}
                                   </th>
                                 ))}
@@ -448,7 +437,7 @@ export function ReportsPage() {
                               {section.tableData.rows.map((row, rowIdx) => (
                                 <tr key={rowIdx} className="hover:bg-muted/50">
                                   {row.map((cell, cellIdx) => (
-                                    <td key={cellIdx} className="px-2 py-1.5 text-muted-foreground">
+                                    <td key={cellIdx} className="px-2 py-1.5 text-xs text-muted-foreground">
                                       {cell}
                                     </td>
                                   ))}
@@ -465,15 +454,15 @@ export function ReportsPage() {
                       <div className="mt-3 space-y-2">
                         <h4 className="text-xs font-semibold text-foreground">Key Findings</h4>
                         {section.insights.map((insight, idx) => (
-                          <div key={insight.id || idx} className="flex items-start gap-1.5 p-2 bg-blue-50 dark:bg-blue-950/20 rounded border-l-2 border-l-blue-500">
+                          <div key={insight.id || idx} className="flex items-start gap-2 p-2 bg-blue-50/50 dark:bg-blue-950/20 rounded-sm border-l-2 border-l-blue-500">
                             <CheckCircle className="w-3 h-3 text-blue-600 flex-shrink-0 mt-0.5" />
                             <div className="flex-1">
                               <p className="text-xs font-medium text-foreground mb-0.5">{insight.title}</p>
-                              <p className="text-[10px] text-muted-foreground leading-tight">{insight.description}</p>
+                              <p className="text-xs text-muted-foreground leading-relaxed">{insight.description}</p>
                               {insight.recommendedActions && insight.recommendedActions.length > 0 && (
                                 <ul className="mt-1 space-y-0.5">
                                   {insight.recommendedActions.map((action, actionIdx) => (
-                                    <li key={actionIdx} className="text-[10px] text-foreground">
+                                    <li key={actionIdx} className="text-xs text-foreground">
                                       → {action}
                                     </li>
                                   ))}
@@ -489,7 +478,7 @@ export function ReportsPage() {
 
                 {/* Report Footer */}
                 <div className="p-2 bg-muted/30 text-center border-t border-border">
-                  <p className="text-[10px] text-muted-foreground">
+                  <p className="text-xs text-muted-foreground">
                     Report ID: {report.id} | Generated: {report.generatedAt.toLocaleString()}
                   </p>
                 </div>

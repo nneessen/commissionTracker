@@ -116,30 +116,34 @@ export class InsightsService {
 
     if (!lapsedPolicies || lapsedPolicies.length < 3) return [];
 
-    // Analyze lapse patterns by carrier
-    const lapseByCarrier = lapsedPolicies.reduce((acc: Record<string, number>, p: any) => {
+    // Analyze lapse patterns by carrier and product
+    const lapseByCarrier = lapsedPolicies.reduce((acc: Record<string, { count: number; products: Set<string>; totalPremium: number }>, p: any) => {
       const carrierName = p.carrier?.name || 'Unknown';
-      acc[carrierName] = (acc[carrierName] || 0) + 1;
+      if (!acc[carrierName]) {
+        acc[carrierName] = { count: 0, products: new Set(), totalPremium: 0 };
+      }
+      acc[carrierName].count++;
+      acc[carrierName].products.add(p.product?.name || 'Unknown Product');
+      acc[carrierName].totalPremium += (p.annual_premium || 0);
       return acc;
-    }, {} as Record<string, number>);
+    }, {});
 
     const insights: ActionableInsight[] = [];
 
     // Find carriers with unusually high lapse rates
-    Object.entries(lapseByCarrier).forEach(([carrier, count]: [string, number]) => {
-      if (count >= 3) {
+    Object.entries(lapseByCarrier).forEach(([carrier, data]) => {
+      if (data.count >= 3) {
+        const productList = Array.from(data.products).slice(0, 3);
         insights.push({
           id: `lapse-pattern-${carrier}`,
           severity: 'high',
           category: 'retention',
-          title: `High Lapse Rate with ${carrier}`,
-          description: `${count} policies from ${carrier} have lapsed in the selected period, indicating a potential issue with this carrier's products or pricing.`,
-          impact: `${count} policies lost`,
+          title: `Lapse Pattern Detected`,
+          description: `${data.count} ${carrier} policies lapsed (${data.totalPremium.toFixed(2)} premium lost)`,
+          impact: `Lost premium: $${data.totalPremium.toFixed(2)}`,
           recommendedActions: [
-            `Review ${carrier} product fit with your client base`,
-            'Compare pricing vs competitors',
-            'Check if carrier service quality has declined',
-            'Consider focusing on carriers with better retention',
+            `Carrier: ${carrier} (${data.count} lapses)`,
+            ...productList.map(product => `Product involved: ${product}`),
           ],
           priority: 7,
         });
@@ -170,12 +174,12 @@ export class InsightsService {
           id: 'revenue-insufficient-data',
           severity: 'medium',
           category: 'performance',
-          title: 'Insufficient Data for Accurate Commission Forecasting',
-          description: `You have less than 5 policies or $10,000 in premium. Commission projections may be inaccurate.`,
-          impact: 'Forecasting accuracy reduced',
+          title: 'Limited Data Available',
+          description: `Current data: ${profile.policy_count || 0} policies, $${(profile.total_premium || 0).toFixed(2)} in premium`,
+          impact: 'Commission projections may vary',
           recommendedActions: [
-            'Focus on writing more policies to improve data quality',
-            'Target minimum 5 policies or $10,000 in premium for reliable forecasts',
+            `Current policy count: ${profile.policy_count || 0} (minimum 5 recommended for accuracy)`,
+            `Current premium total: $${(profile.total_premium || 0).toFixed(2)} (minimum $10,000 recommended)`,
           ],
           priority: 4,
         });
@@ -184,33 +188,43 @@ export class InsightsService {
       // Check average premium opportunity
       const { data: policies } = await supabase
         .from('policies')
-        .select('annual_premium')
+        .select('annual_premium, product, carrier')
         .eq('user_id', context.userId)
         .eq('status', 'active');
 
       if (policies && policies.length > 10) {
         const avgPremium = policies.reduce((sum: number, p: any) => sum + (p.annual_premium || 0), 0) / policies.length;
-        const topQuartilePremium = policies
-          .map((p: any) => p.annual_premium || 0)
-          .sort((a: number, b: number) => b - a)
-          .slice(0, Math.floor(policies.length * 0.25))
-          .reduce((sum: number, premium: number) => sum + premium, 0) / Math.floor(policies.length * 0.25);
+        const topQuartilePolicies = policies
+          .sort((a: any, b: any) => (b.annual_premium || 0) - (a.annual_premium || 0))
+          .slice(0, Math.floor(policies.length * 0.25));
+        
+        const topQuartilePremium = topQuartilePolicies
+          .reduce((sum: number, p: any) => sum + (p.annual_premium || 0), 0) / topQuartilePolicies.length;
 
         if (topQuartilePremium > avgPremium * 1.5) {
+          // Get the actual top performing products/carriers
+          const topProducts = new Map();
+          topQuartilePolicies.forEach((p: any) => {
+            const key = `${p.carrier} - ${p.product}`;
+            topProducts.set(key, (topProducts.get(key) || 0) + 1);
+          });
+
+          const topProductsList = Array.from(topProducts.entries())
+            .sort(([,a], [,b]) => (b as number) - (a as number))
+            .slice(0, 3)
+            .map(([product]) => product);
+
           const potentialIncrease = (topQuartilePremium - avgPremium) * policies.length;
           insights.push({
             id: 'revenue-premium-opportunity',
             severity: 'medium',
             category: 'opportunity',
-            title: 'Opportunity to Increase Average Premium',
-            description: `Your top 25% of policies have an average premium of $${topQuartilePremium.toFixed(2)}, while your overall average is $${avgPremium.toFixed(2)}.`,
-            impact: `Potential additional $${potentialIncrease.toFixed(2)}/year in premium`,
-            recommendedActions: [
-              'Focus on selling products similar to your top performers',
-              'Review what makes your high-premium policies successful',
-              'Consider upselling existing clients to higher-premium products',
-              'Target higher net-worth clients',
-            ],
+            title: 'Premium Distribution Analysis',
+            description: `Top 25% policies average: $${topQuartilePremium.toFixed(2)}, Overall average: $${avgPremium.toFixed(2)}`,
+            impact: `Premium gap: $${(topQuartilePremium - avgPremium).toFixed(2)} per policy`,
+            recommendedActions: topProductsList.length > 0 
+              ? topProductsList.map(product => `Top performer: ${product}`)
+              : [`Current average premium: $${avgPremium.toFixed(2)}`],
             priority: 6,
           });
         }
@@ -252,23 +266,50 @@ export class InsightsService {
     const totalCommission = commissions?.reduce((sum: number, c: any) => sum + (c.amount || 0), 0) || 0;
     const expenseRatio = totalCommission > 0 ? (totalExpenses / totalCommission) * 100 : 0;
 
-    // Alert if expense ratio is high
+    // Alert if expense ratio is high - but only show data-driven insights
     if (expenseRatio > 40) {
-      insights.push({
-        id: 'expense-high-ratio',
-        severity: 'high',
-        category: 'expense',
-        title: 'High Expense Ratio Detected',
-        description: `Your expenses are ${expenseRatio.toFixed(1)}% of your commission income, which is above the recommended 25-35% range.`,
-        impact: `Reducing expenses by 10% would save $${(totalExpenses * 0.1).toFixed(2)}`,
-        recommendedActions: [
-          'Review all recurring expenses for potential cuts',
-          'Evaluate ROI on marketing spend',
-          'Consider more cost-effective lead generation methods',
-          'Negotiate better rates with vendors',
-        ],
-        priority: 8,
-      });
+      // Analyze actual expense categories to provide specific recommendations
+      const categoryTotals = currentExpenses.reduce((acc: Record<string, number>, e: any) => {
+        const category = e.category || 'Uncategorized';
+        acc[category] = (acc[category] || 0) + e.amount;
+        return acc;
+      }, {});
+
+      // Find top spending categories
+      const topCategories = Object.entries(categoryTotals)
+        .sort(([,a], [,b]) => (b as number) - (a as number))
+        .slice(0, 3)
+        .map(([category, amount]) => ({
+          category,
+          amount: amount as number,
+          percentage: ((amount as number) / totalExpenses * 100).toFixed(1)
+        }));
+
+      const recommendations: string[] = [];
+      
+      // Only add specific, data-based recommendations
+      if (topCategories.length > 0) {
+        const topCategory = topCategories[0];
+        recommendations.push(`Your highest expense category is ${topCategory.category} at $${topCategory.amount.toFixed(2)} (${topCategory.percentage}% of expenses)`);
+      }
+      
+      if (expenseRatio > 50) {
+        recommendations.push(`Expense ratio is critically high - immediate review recommended`);
+      }
+
+      // Only create insight if we have actual data-driven recommendations
+      if (recommendations.length > 0) {
+        insights.push({
+          id: 'expense-high-ratio',
+          severity: 'high',
+          category: 'expense',
+          title: 'High Expense Ratio',
+          description: `Expenses are ${expenseRatio.toFixed(1)}% of commission income (target: 25-35%)`,
+          impact: `Current expense total: $${totalExpenses.toFixed(2)}`,
+          recommendedActions: recommendations,
+          priority: 8,
+        });
+      }
     }
 
     return insights;
@@ -282,39 +323,66 @@ export class InsightsService {
   ): Promise<ActionableInsight[]> {
     const insights: ActionableInsight[] = [];
 
-    // Get all active policies
+    // Get all active policies with product details
     const { data: activePolicies } = await supabase
       .from('policies')
-      .select('client_id')
+      .select('client_id, product, annual_premium')
       .eq('user_id', context.userId)
       .eq('status', 'active');
 
     if (!activePolicies || activePolicies.length === 0) return insights;
 
-    // Group by client_id
-    const policiesPerClient = activePolicies.reduce((acc: Record<string, number>, p: any) => {
+    // Group by client_id and track products
+    const clientData = activePolicies.reduce((acc: Record<string, { count: number; products: Set<string>; totalPremium: number }>, p: any) => {
       const clientId = p.client_id;
       if (!clientId) return acc;
-      acc[clientId] = (acc[clientId] || 0) + 1;
+      
+      if (!acc[clientId]) {
+        acc[clientId] = { count: 0, products: new Set(), totalPremium: 0 };
+      }
+      
+      acc[clientId].count++;
+      acc[clientId].products.add(p.product);
+      acc[clientId].totalPremium += (p.annual_premium || 0);
+      
       return acc;
-    }, {} as Record<string, number>);
+    }, {});
 
-    const singlePolicyCount = Object.values(policiesPerClient).filter((count: number) => count === 1).length;
-    const totalClients = Object.keys(policiesPerClient).length;
+    const singlePolicyClients = Object.entries(clientData)
+      .filter(([_, data]) => data.count === 1)
+      .map(([clientId, data]) => ({
+        clientId,
+        product: Array.from(data.products)[0],
+        premium: data.totalPremium
+      }));
+    
+    const totalClients = Object.keys(clientData).length;
+    const avgPoliciesPerClient = activePolicies.length / totalClients;
 
-    if (singlePolicyCount > 5) {
+    if (singlePolicyClients.length > 5) {
+      // Calculate actual potential based on existing multi-policy clients
+      const multiPolicyClients = Object.entries(clientData)
+        .filter(([_, data]) => data.count > 1);
+      
+      const avgMultiPolicyPremium = multiPolicyClients.length > 0
+        ? multiPolicyClients.reduce((sum, [_, data]) => sum + data.totalPremium, 0) / multiPolicyClients.length
+        : 0;
+      
+      const avgSinglePolicyPremium = singlePolicyClients.reduce((sum, c) => sum + c.premium, 0) / singlePolicyClients.length;
+      
       insights.push({
         id: 'opportunity-cross-sell',
         severity: 'medium',
         category: 'opportunity',
-        title: `${singlePolicyCount} Clients Have Only One Policy`,
-        description: `You have ${singlePolicyCount} out of ${totalClients} clients with only one policy, representing potential cross-sell opportunities.`,
-        impact: `Selling just 1 additional policy to 20% of these clients could add significant revenue`,
+        title: `Cross-Sell Opportunity Analysis`,
+        description: `${singlePolicyClients.length} of ${totalClients} clients have single policies`,
+        impact: avgMultiPolicyPremium > 0 
+          ? `Multi-policy clients average $${avgMultiPolicyPremium.toFixed(2)} vs single-policy $${avgSinglePolicyPremium.toFixed(2)}`
+          : `Average policies per client: ${avgPoliciesPerClient.toFixed(1)}`,
         recommendedActions: [
-          'Schedule policy review calls with single-policy clients',
-          'Identify needs gaps (life, disability, long-term care, etc.)',
-          'Create a systematic cross-sell campaign',
-          'Offer bundling discounts if available',
+          `Single-policy clients: ${singlePolicyClients.length}`,
+          `Multi-policy clients: ${multiPolicyClients.length}`,
+          `Average single-policy premium: $${avgSinglePolicyPremium.toFixed(2)}`,
         ],
         priority: 5,
       });
