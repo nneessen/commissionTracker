@@ -5,7 +5,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { useAnalyticsData } from '../../../hooks';
 import { cn } from '@/lib/utils';
 import { useAnalyticsDateRange } from '../context/AnalyticsDateContext';
-import { Heading } from '@/components/ui/heading';
 import {
   Table,
   TableBody,
@@ -86,11 +85,11 @@ export function ProductMatrix() {
 
   return (
     <Card>
-      <CardContent className="p-2">
-        <Heading
-          title="Product Mix"
-          subtitle={`${productData.length} products`}
-        />
+      <CardContent className="p-3">
+        <div className="flex items-center justify-between mb-2">
+          <div className="text-[11px] font-medium text-muted-foreground uppercase">Product Mix</div>
+          <span className="text-[10px] text-muted-foreground">{productData.length} products</span>
+        </div>
         {productData.length > 0 ? (
           <Table className="text-[11px]">
             <TableHeader>

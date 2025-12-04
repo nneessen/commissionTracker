@@ -5,7 +5,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { useAnalyticsData } from '../../../hooks';
 import { useAnalyticsDateRange } from '../context/AnalyticsDateContext';
-import { Heading } from '@/components/ui/heading';
 import {
   Table,
   TableBody,
@@ -173,11 +172,11 @@ export function CarriersProductsBreakdown() {
 
   return (
     <Card>
-      <CardContent className="p-2">
-        <Heading
-          title="Carriers & Products"
-          subtitle={`${sortedCarriers.length} carriers`}
-        />
+      <CardContent className="p-3">
+        <div className="flex items-center justify-between mb-2">
+          <div className="text-[11px] font-medium text-muted-foreground uppercase">Carriers & Products</div>
+          <span className="text-[10px] text-muted-foreground">{sortedCarriers.length} carriers</span>
+        </div>
 
         {tableData.length > 0 ? (
           <Table className="text-[11px]">

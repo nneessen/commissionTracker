@@ -5,7 +5,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { useAnalyticsData } from '../../../hooks';
 import { cn } from '@/lib/utils';
 import { useAnalyticsDateRange } from '../context/AnalyticsDateContext';
-import { Heading } from '@/components/ui/heading';
 import {
   Table,
   TableBody,
@@ -136,8 +135,8 @@ export function ClientSegmentation() {
 
   return (
     <Card>
-      <CardContent className="p-2">
-        <Heading title="Client Segments" />
+      <CardContent className="p-3">
+        <div className="text-[11px] font-medium text-muted-foreground uppercase mb-2">Client Segments</div>
 
         <Table className="text-[11px] mb-2">
           <TableHeader>
@@ -187,7 +186,7 @@ export function ClientSegmentation() {
         {/* Cross-Sell Opportunities */}
         {crossSell && crossSell.length > 0 && (
           <>
-            <Heading title="Cross-Sell Targets" />
+            <div className="text-[10px] font-medium text-muted-foreground uppercase mb-1 mt-2">Cross-Sell Targets</div>
             <Table className="text-[11px]">
               <TableHeader>
                 <TableRow className="h-7">

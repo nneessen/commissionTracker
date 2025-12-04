@@ -5,7 +5,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { useAnalyticsDateRange } from '../context/AnalyticsDateContext';
 import { useMetricsWithDateRange } from '@/hooks/kpi/useMetricsWithDateRange';
 import { cn } from '@/lib/utils';
-import { Heading } from '@/components/ui/heading';
 
 /**
  * PaceMetrics - Shows what you need to do to hit your goals
@@ -118,19 +117,21 @@ export function PaceMetrics() {
   return (
     <Card>
       <CardContent className="p-3">
-        <Heading
-          title="Pace Metrics"
-          subtitle={getTimePeriodLabel()}
-        >
+        {/* Header - matching Targets page pattern */}
+        <div className="flex items-center justify-between mb-2">
+          <div>
+            <div className="text-[11px] font-medium text-muted-foreground uppercase">Pace Metrics</div>
+            <div className="text-[10px] text-muted-foreground">{getTimePeriodLabel()}</div>
+          </div>
           <div className={cn(
-            "px-1.5 py-0.5 rounded text-[11px] font-medium",
+            "px-1.5 py-0.5 rounded text-[10px] font-medium",
             isProfitable ? "bg-green-500/10 text-green-600 dark:text-green-400" : "bg-red-500/10 text-red-600 dark:text-red-400"
           )}>
             {isProfitable ? "PROFITABLE" : "DEFICIT"}
           </div>
-        </Heading>
+        </div>
 
-        {/* Inline Metrics Display - NO CARDS */}
+        {/* Metrics */}
         <div className="space-y-1">
           {/* Current Performance Row */}
           <div className="flex items-center justify-between text-[11px]">

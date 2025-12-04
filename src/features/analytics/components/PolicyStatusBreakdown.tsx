@@ -20,7 +20,6 @@ import {
   getMonthlyTrendData,
   getProductRetentionRates,
 } from '@/services/analytics/policyStatusService';
-import { Heading } from '@/components/ui/heading';
 import {
   Table,
   TableBody,
@@ -75,35 +74,19 @@ export function PolicyStatusBreakdown() {
   return (
     <Card>
       <CardContent className="p-3">
-        <Heading
-          title="Policy Status"
-          subtitle="Active vs Lapsed vs Cancelled"
-        >
-          {/* Inline Status Summary */}
-          <div className="flex items-center gap-3 text-[11px]">
-            <div className="flex items-center gap-1">
-              <span className="text-green-600 dark:text-green-400 font-mono font-bold">
-                {statusSummary.active.count}
-              </span>
-              <span className="text-muted-foreground/70">active</span>
-              <span className="text-muted-foreground/50">({statusSummary.active.percentage}%)</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <span className="text-amber-600 dark:text-amber-400 font-mono font-bold">
-                {statusSummary.lapsed.count}
-              </span>
-              <span className="text-muted-foreground/70">lapsed</span>
-              <span className="text-muted-foreground/50">({statusSummary.lapsed.percentage}%)</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <span className="text-red-600 dark:text-red-400 font-mono font-bold">
-                {statusSummary.cancelled.count}
-              </span>
-              <span className="text-muted-foreground/70">cancelled</span>
-              <span className="text-muted-foreground/50">({statusSummary.cancelled.percentage}%)</span>
-            </div>
+        {/* Header */}
+        <div className="flex items-center justify-between mb-2">
+          <div>
+            <div className="text-[11px] font-medium text-muted-foreground uppercase">Policy Status</div>
+            <div className="text-[10px] text-muted-foreground">Active vs Lapsed vs Cancelled</div>
           </div>
-        </Heading>
+          {/* Status Summary */}
+          <div className="flex items-center gap-2 text-[10px]">
+            <span className="text-green-600 dark:text-green-400 font-mono font-bold">{statusSummary.active.count}</span>
+            <span className="text-amber-600 dark:text-amber-400 font-mono font-bold">{statusSummary.lapsed.count}</span>
+            <span className="text-red-600 dark:text-red-400 font-mono font-bold">{statusSummary.cancelled.count}</span>
+          </div>
+        </div>
 
         {/* Compact Monthly Trend Chart */}
         <div className="mb-2">
@@ -156,7 +139,7 @@ export function PolicyStatusBreakdown() {
             {/* Best Performers */}
             {bestPerformers.length > 0 && (
               <div>
-                <Heading title="Best Performers" className="mb-1" />
+                <div className="text-[10px] font-medium text-muted-foreground uppercase mb-1">Best Performers</div>
                 <Table className="text-[11px]">
                   <TableHeader>
                     <TableRow className="h-7">
@@ -186,7 +169,7 @@ export function PolicyStatusBreakdown() {
             {/* Needs Attention */}
             {needsAttention.length > 0 && (
               <div>
-                <Heading title="Needs Attention" className="mb-1" />
+                <div className="text-[10px] font-medium text-muted-foreground uppercase mb-1">Needs Attention</div>
                 <Table className="text-[11px]">
                   <TableHeader>
                     <TableRow className="h-7">

@@ -7,7 +7,6 @@ import { useUserTargets } from '../../../hooks/targets/useUserTargets';
 import { useExpenses } from '../../../hooks/expenses/useExpenses';
 import { gamePlanService } from '../../../services/analytics/gamePlanService';
 import { cn } from '@/lib/utils';
-import { Heading } from '@/components/ui/heading';
 import {
   Table,
   TableBody,
@@ -115,10 +114,10 @@ export function GamePlan() {
   return (
     <Card>
       <CardContent className="p-3">
-        <Heading
-          title="Game Plan"
-          subtitle={`${gamePlan.currentMonth} • ${gamePlan.daysRemainingInMonth}d left`}
-        />
+        <div className="flex items-center justify-between mb-2">
+          <div className="text-[11px] font-medium text-muted-foreground uppercase">Game Plan</div>
+          <span className="text-[10px] text-muted-foreground">{gamePlan.currentMonth} • {gamePlan.daysRemainingInMonth}d left</span>
+        </div>
 
         {/* Monthly Progress Bar */}
         <div className="mb-2">
@@ -230,7 +229,7 @@ export function GamePlan() {
         {/* Smart Moves Section */}
         {gamePlan.smartMoves && gamePlan.smartMoves.length > 0 && (
           <>
-            <Heading title="Smart Moves" className="mb-1" />
+            <div className="text-[10px] font-medium text-muted-foreground uppercase mb-1 mt-2">Smart Moves</div>
             <Table className="text-[11px] mb-2">
               <TableHeader>
                 <TableRow className="h-7">
@@ -272,7 +271,7 @@ export function GamePlan() {
         {/* What-If Scenarios */}
         {gamePlan.scenarios && gamePlan.scenarios.length > 0 && (
           <>
-            <Heading title="What If Scenarios" className="mb-1" />
+            <div className="text-[10px] font-medium text-muted-foreground uppercase mb-1 mt-2">What If Scenarios</div>
             <Table className="text-[11px] mb-2">
               <TableHeader>
                 <TableRow className="h-7">
