@@ -5,8 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { useAnalyticsData } from '../../../hooks';
 import { useAnalyticsDateRange } from '../context/AnalyticsDateContext';
-import { Heading } from '@/components/ui/heading';
-import { DollarSign, AlertTriangle, Clock, TrendingUp } from 'lucide-react';
+import { AlertTriangle, Clock } from 'lucide-react';
 
 /**
  * CommissionPipeline - Shows pending commissions and cash flow forecast
@@ -106,10 +105,10 @@ export function CommissionPipeline() {
   return (
     <Card>
       <CardContent className="p-3">
-        <Heading
-          title="Commission Pipeline"
-          subtitle="Cash Flow Forecast"
-        />
+        <div className="mb-2">
+          <div className="text-[11px] font-medium text-muted-foreground uppercase">Commission Pipeline</div>
+          <div className="text-[10px] text-muted-foreground">Cash Flow Forecast</div>
+        </div>
 
         {/* Pipeline Timeline */}
         <div className="space-y-2 mb-3">

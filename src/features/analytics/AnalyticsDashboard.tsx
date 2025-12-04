@@ -84,28 +84,25 @@ function AnalyticsDashboardContent() {
 
   return (
     <>
-      {/* Compact Page Header */}
-      <div className="page-header py-3">
-        <div className="flex items-center justify-between">
-          <div>
+      {/* Page Header with TimePeriodSelector on same row */}
+      <div className="page-header py-2 border-b border-border/50 mb-3">
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex-shrink-0">
             <h1 className="text-base font-semibold text-foreground">Analytics Dashboard</h1>
-            <p className="text-[11px] text-muted-foreground mt-0.5">
+            <p className="text-[11px] text-muted-foreground">
               Real-time performance metrics and insights
             </p>
           </div>
-        </div>
-      </div>
 
-      <div className="page-content">
-        {/* Compact Time Period Selector and Export Controls */}
-        <div className="border-b border-border/50 pb-2 mb-3">
-          <div className="flex items-center justify-between mb-1.5">
-            <div className="text-[10px] font-medium text-muted-foreground uppercase">
-              Time Period
-            </div>
-
-            {/* Export Buttons */}
-            <div className="flex gap-1.5">
+          {/* TimePeriodSelector and Export - all on same row */}
+          <div className="flex items-center gap-3">
+            <TimePeriodSelector
+              selectedPeriod={timePeriod}
+              onPeriodChange={setTimePeriod}
+              customRange={customRange}
+              onCustomRangeChange={setCustomRange}
+            />
+            <div className="flex gap-1.5 flex-shrink-0">
               <Button
                 onClick={handleExportCSV}
                 size="sm"
@@ -126,14 +123,10 @@ function AnalyticsDashboardContent() {
               </Button>
             </div>
           </div>
-
-          <TimePeriodSelector
-            selectedPeriod={timePeriod}
-            onPeriodChange={setTimePeriod}
-            customRange={customRange}
-            onCustomRangeChange={setCustomRange}
-          />
         </div>
+      </div>
+
+      <div className="page-content">
 
         {/* Loading State */}
         {analyticsData.isLoading ? (
