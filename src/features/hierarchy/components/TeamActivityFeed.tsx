@@ -21,7 +21,6 @@ import type { UserProfile } from '@/types/hierarchy.types';
 interface Agent extends UserProfile {
   name?: string;
   is_active?: boolean;
-  contract_level?: string;
   parent_agent_id?: string | null;
 }
 
@@ -76,7 +75,7 @@ export function TeamActivityFeed({ agents }: TeamActivityFeedProps) {
             agent: agent.name || agent.email,
             message: 'joined the team',
             timestamp: createdDate,
-            details: agent.contract_level || 'Associate'
+            details: `Level ${agent.contract_level || 100}`
           });
         }
 

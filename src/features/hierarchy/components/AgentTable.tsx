@@ -15,7 +15,6 @@ import {
   UserMinus
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -147,11 +146,18 @@ function AgentRow({
   // Calculate real override spread
   // If viewing from upline's perspective: spread = upline level - agent level
   // For the agent row, we're showing what the upline earns from this agent
-  const agentContractLevel = (agent as any).contract_level || 100; // Default to 100%
+  const agentContractLevel = agent.contract_level || 100; // Default to 100%
   const uplineLevel = uplineContractLevel || 100;
 
-  // Debug logging to see what values we're getting
-  console.log('Agent:', agent.email, 'Level:', agentContractLevel, 'Upline Level:', uplineLevel);
+  // Debug: Log what we're getting
+  console.log('Debug Override Calculation:', {
+    agentEmail: agent.email,
+    agentContractLevel,
+    uplineLevel,
+    agentData: agent,
+    hasContractLevel: 'contract_level' in agent,
+    uplineContractLevel
+  });
 
   const overrideSpread = uplineLevel > agentContractLevel ? uplineLevel - agentContractLevel : 0;
 
@@ -166,7 +172,7 @@ function AgentRow({
     switch (agent.approval_status) {
       case 'approved':
         return {
-          label: `Level ${(agent as any).contract_level || 100}`,
+          label: `Level ${agent.contract_level || 100}`,
           className: 'bg-emerald-500/10 text-emerald-600',
         };
       case 'pending':
@@ -207,9 +213,9 @@ function AgentRow({
   const statusDisplay = getStatusDisplay();
 
   return (
-    <tr className="border-b hover:bg-muted/20">
+    <tr className="hover:bg-muted/50">
       {/* Agent Name with Hierarchy */}
-      <td className="p-2 text-[11px]">
+      <td className="px-2 py-1.5 text-xs text-muted-foreground">
         <div className="flex items-center gap-1" style={{ paddingLeft: `${depth * 16}px` }}>
           {hasChildren && (
             <Button
@@ -240,7 +246,7 @@ function AgentRow({
       </td>
 
       {/* Phase/Status */}
-      <td className="p-2">
+      <td className="px-2 py-1.5 text-xs text-muted-foreground">
         <span
           className={cn(
             'inline-block px-1.5 py-0.5 rounded text-[9px] font-medium',
@@ -252,25 +258,25 @@ function AgentRow({
       </td>
 
       {/* MTD AP */}
-      <td className="p-2 text-right text-[11px] font-mono">
+      <td className="px-2 py-1.5 text-right text-xs font-mono">
         {metrics.mtd_ap > 0 ? (
-          <span className="font-semibold">{formatCurrency(metrics.mtd_ap)}</span>
+          <span className="font-semibold text-foreground">{formatCurrency(metrics.mtd_ap)}</span>
         ) : (
           <span className="text-muted-foreground">$0</span>
         )}
       </td>
 
       {/* MTD Policies */}
-      <td className="p-2 text-center text-[11px] font-mono">
+      <td className="px-2 py-1.5 text-center text-xs font-mono">
         {metrics.mtd_policies > 0 ? (
-          <span className="font-semibold">{metrics.mtd_policies}</span>
+          <span className="font-semibold text-foreground">{metrics.mtd_policies}</span>
         ) : (
           <span className="text-muted-foreground">0</span>
         )}
       </td>
 
       {/* Override Spread % */}
-      <td className="p-2 text-center text-[11px] font-mono">
+      <td className="px-2 py-1.5 text-center text-xs font-mono">
         {overrideSpread > 0 ? (
           <span className="font-medium text-emerald-600">{overrideSpread}%</span>
         ) : (
@@ -279,9 +285,9 @@ function AgentRow({
       </td>
 
       {/* Override $ MTD */}
-      <td className="p-2 text-right text-[11px] font-mono">
+      <td className="px-2 py-1.5 text-right text-xs font-mono">
         {metrics.override_amount > 0 ? (
-          <span className="font-bold text-success">
+          <span className="font-bold text-emerald-600">
             {formatCurrency(metrics.override_amount)}
           </span>
         ) : (
@@ -290,7 +296,7 @@ function AgentRow({
       </td>
 
       {/* Actions */}
-      <td className="p-2 text-center">
+      <td className="px-2 py-1.5 text-center">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
@@ -347,6 +353,7 @@ export function AgentTable({ agents, isLoading, onRefresh }: AgentTableProps) {
         .eq('id', user.id)
         .single();
 
+      console.log('Current User Profile:', profile);
       return profile;
     }
   });
@@ -356,6 +363,12 @@ export function AgentTable({ agents, isLoading, onRefresh }: AgentTableProps) {
     queryKey: ['agents-with-uplines', agents, currentUser],
     queryFn: async () => {
       if (!currentUser) return agents;
+
+      console.log('Processing agents with uplines:', {
+        agents,
+        currentUserId: currentUser.id,
+        currentUserContractLevel: currentUser.contract_level
+      });
 
       // For each agent, determine their upline's contract level
       return agents.map(agent => {
@@ -478,36 +491,35 @@ export function AgentTable({ agents, isLoading, onRefresh }: AgentTableProps) {
 
   return (
     <>
-      <Card>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left p-2 text-[11px] font-medium text-muted-foreground">
-                    Agent
-                  </th>
-                  <th className="text-left p-2 text-[11px] font-medium text-muted-foreground">
-                    Phase/Status
-                  </th>
-                  <th className="text-right p-2 text-[11px] font-medium text-muted-foreground">
-                    MTD AP
-                  </th>
-                  <th className="text-center p-2 text-[11px] font-medium text-muted-foreground">
-                    MTD Policies
-                  </th>
-                  <th className="text-center p-2 text-[11px] font-medium text-muted-foreground">
-                    Override %
-                  </th>
-                  <th className="text-right p-2 text-[11px] font-medium text-muted-foreground">
-                    Override $ MTD
-                  </th>
-                  <th className="text-center p-2 text-[11px] font-medium text-muted-foreground">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
+      <div className="bg-card rounded-md shadow-sm border border-border/50">
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead className="bg-muted border-b border-border">
+              <tr>
+                <th className="px-2 py-1.5 text-left font-semibold text-foreground text-xs">
+                  Agent
+                </th>
+                <th className="px-2 py-1.5 text-left font-semibold text-foreground text-xs">
+                  Status
+                </th>
+                <th className="px-2 py-1.5 text-right font-semibold text-foreground text-xs">
+                  MTD AP
+                </th>
+                <th className="px-2 py-1.5 text-center font-semibold text-foreground text-xs">
+                  Policies
+                </th>
+                <th className="px-2 py-1.5 text-center font-semibold text-foreground text-xs">
+                  Override %
+                </th>
+                <th className="px-2 py-1.5 text-right font-semibold text-foreground text-xs">
+                  Override $
+                </th>
+                <th className="px-2 py-1.5 text-center font-semibold text-foreground text-xs">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
                 {isLoading ? (
                   <tr>
                     <td colSpan={7} className="text-center py-8">
@@ -534,59 +546,58 @@ export function AgentTable({ agents, isLoading, onRefresh }: AgentTableProps) {
                   renderAgentRows(paginatedRootAgents as AgentWithMetrics[])
                 )}
               </tbody>
-            </table>
-          </div>
+          </table>
+        </div>
 
-          {/* Pagination Controls */}
-          {totalRootAgents > 0 && (
-            <div className="flex items-center justify-between px-4 py-2 border-t">
-              <div className="flex items-center gap-4">
-                <span className="text-[11px] text-muted-foreground">
-                  Total: {totalRootAgents} agent{totalRootAgents !== 1 ? 's' : ''}
-                </span>
-                <div className="flex items-center gap-2">
-                  <span className="text-[11px] text-muted-foreground">Rows per page:</span>
-                  <Select value={rowsPerPage.toString()} onValueChange={handleRowsPerPageChange}>
-                    <SelectTrigger className="h-7 w-16 text-[11px]">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="5">5</SelectItem>
-                      <SelectItem value="10">10</SelectItem>
-                      <SelectItem value="20">20</SelectItem>
-                      <SelectItem value="50">50</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-1">
-                <span className="text-[11px] text-muted-foreground">
-                  Page {currentPage} of {totalPages || 1}
-                </span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                  disabled={currentPage === 1}
-                  className="h-7 w-7 p-0"
-                >
-                  <ChevronLeft className="h-3 w-3" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setCurrentPage(Math.min(totalPages || 1, currentPage + 1))}
-                  disabled={currentPage >= totalPages}
-                  className="h-7 w-7 p-0"
-                >
-                  <ChevronRight className="h-3 w-3" />
-                </Button>
+        {/* Pagination Controls */}
+        {totalRootAgents > 0 && (
+          <div className="flex items-center justify-between px-3 py-2 border-t border-border bg-muted/30">
+            <div className="flex items-center gap-4">
+              <span className="text-xs text-muted-foreground">
+                Total: {totalRootAgents} agent{totalRootAgents !== 1 ? 's' : ''}
+              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">Rows per page:</span>
+                <Select value={rowsPerPage.toString()} onValueChange={handleRowsPerPageChange}>
+                  <SelectTrigger className="h-7 w-16 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="5">5</SelectItem>
+                    <SelectItem value="10">10</SelectItem>
+                    <SelectItem value="20">20</SelectItem>
+                    <SelectItem value="50">50</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
-          )}
-        </CardContent>
-      </Card>
+
+            <div className="flex items-center gap-1">
+              <span className="text-xs text-muted-foreground">
+                Page {currentPage} of {totalPages || 1}
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                disabled={currentPage === 1}
+                className="h-7 w-7 p-0"
+              >
+                <ChevronLeft className="h-3 w-3" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setCurrentPage(Math.min(totalPages || 1, currentPage + 1))}
+                disabled={currentPage >= totalPages}
+                className="h-7 w-7 p-0"
+              >
+                <ChevronRight className="h-3 w-3" />
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Remove Agent Confirmation Dialog */}
       <AlertDialog

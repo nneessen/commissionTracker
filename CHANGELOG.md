@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-12-04 14:24:26
+
+### Changed Files
+- `src/features/hierarchy/HierarchyDashboardCompact.tsx`
+- `src/features/hierarchy/components/AgentTable.tsx`
+- `src/features/hierarchy/components/TeamActivityFeed.tsx`
+- `src/types/hierarchy.types.ts`
+
+### Statistics
+```
+ 4 files changed, 125 insertions(+), 104 deletions(-)
+```
+
 ## [Checkpoint] - 2025-12-04 12:56:49
 
 ### Changed Files

@@ -57,7 +57,6 @@ import type { UserProfile } from '@/types/hierarchy.types';
 interface Agent extends UserProfile {
   name?: string;
   is_active?: boolean;
-  contract_level?: string;
   parent_agent_id?: string | null;
 }
 
@@ -80,7 +79,6 @@ export function HierarchyDashboardCompact() {
     ...profile,
     name: `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || profile.email,
     is_active: profile.approval_status === 'approved',
-    contract_level: 'Associate', // Default, would need actual data
     parent_agent_id: profile.upline_id
   }));
 
@@ -144,11 +142,23 @@ export function HierarchyDashboardCompact() {
       });
     }
 
-    // Apply level filter
+    // Apply level filter (based on contract_level)
     if (filters.level !== 'all') {
-      agents = agents.filter(agent =>
-        agent.contract_level === filters.level
-      );
+      // Convert filter levels to contract level ranges
+      const levelMap: Record<string, [number, number]> = {
+        'Associate': [80, 99],
+        'Senior': [100, 109],
+        'Executive': [110, 124],
+        'Director': [125, 145]
+      };
+
+      const range = levelMap[filters.level];
+      if (range) {
+        agents = agents.filter(agent => {
+          const level = agent.contract_level || 100;
+          return level >= range[0] && level <= range[1];
+        });
+      }
     }
 
     // Apply direct only filter
@@ -170,7 +180,7 @@ export function HierarchyDashboardCompact() {
       const exportData = filteredAgents.map(agent => ({
         Name: agent.name || 'N/A',
         Email: agent.email || 'N/A',
-        'Contract Level': agent.contract_level || 'N/A',
+        'Contract Level': agent.contract_level || 100,
         Status: agent.is_active ? 'Active' : 'Inactive',
         'Join Date': agent.created_at ? formatDate(agent.created_at) : 'N/A',
         'MTD Override': formatCurrency(0), // Would need actual data
