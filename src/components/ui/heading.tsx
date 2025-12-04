@@ -7,10 +7,38 @@ export interface HeadingProps extends React.HTMLAttributes<HTMLDivElement> {
   title: string
   subtitle?: string
   children?: React.ReactNode // For actions/badges on the right
+  variant?: "default" | "compact" // New variant prop for different layouts
 }
 
 const Heading = React.forwardRef<HTMLDivElement, HeadingProps>(
-  ({ title, subtitle, className, children, ...props }, ref) => {
+  ({ title, subtitle, className, children, variant = "compact", ...props }, ref) => {
+    // For compact variant - no negative margins, simpler styling
+    if (variant === "compact") {
+      return (
+        <div ref={ref} className={cn("mb-2", className)} {...props}>
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-[11px] font-medium text-muted-foreground uppercase">
+                {title}
+              </h3>
+              {subtitle && (
+                <p className="text-[10px] text-muted-foreground/70 mt-0.5">
+                  {subtitle}
+                </p>
+              )}
+            </div>
+            {children && (
+              <div className="flex items-center gap-1">
+                {children}
+              </div>
+            )}
+          </div>
+          <div className="h-px bg-border mt-1.5" />
+        </div>
+      )
+    }
+
+    // Default variant - original styling (kept for backward compatibility)
     return (
       <div ref={ref} className={cn("-mx-3 -mt-3 mb-4", className)} {...props}>
         <div className="bg-slate-100 dark:bg-slate-800/50 px-3 py-2 border-b-2 border-slate-300 dark:border-slate-700">

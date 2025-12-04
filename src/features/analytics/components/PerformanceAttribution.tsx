@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { Heading } from '@/components/ui/heading';
 import { Info, X } from 'lucide-react';
 import { WaterfallChart } from '../visualizations';
 import { useAnalyticsData } from '../../../hooks';
@@ -30,10 +31,11 @@ export function PerformanceAttribution() {
   if (isLoading) {
     return (
       <Card>
-        <CardContent className="p-5">
-          <div className="text-sm font-semibold text-foreground mb-4 uppercase tracking-wide">
-            What Changed My Income?
-          </div>
+        <CardContent className="p-3">
+          <Heading
+            title="What Changed My Income?"
+            subtitle="Understanding your commission changes"
+          />
           <div className="p-10 text-center text-muted-foreground text-xs">
             Loading attribution data...
           </div>
@@ -63,34 +65,29 @@ export function PerformanceAttribution() {
 
   return (
     <Card className="w-full">
-      <CardContent className="p-5">
+      <CardContent className="p-3">
         {/* Header */}
-        <div className="flex justify-between items-center mb-5">
-          <div className="flex items-center gap-2">
-            <div>
-              <div className="text-sm font-semibold text-foreground uppercase tracking-wide">
-                What Changed My Income?
-              </div>
-              <div className="text-xs text-muted-foreground mt-1">
-                Understanding your commission changes
-              </div>
-            </div>
+        <Heading
+          title="What Changed My Income?"
+          subtitle="Understanding your commission changes"
+        >
+          <div className="flex items-center gap-1">
             {/* Info Icon Button */}
             <Button
               onClick={() => setShowInfo(!showInfo)}
               size="icon"
               variant="ghost"
-              className="h-6 w-6 hover:scale-110 transition-transform"
+              className="h-6 w-6"
               title="Click for detailed explanation"
             >
-              <Info className="h-4 w-4" />
+              <Info className="h-3 w-3" />
             </Button>
+            <div className={cn("flex items-center gap-1 text-[11px] font-bold font-mono", totalDirection.colorClass)}>
+              <span>{totalDirection.symbol}</span>
+              <span>{formatCurrency(Math.abs(contribution.totalChange))}</span>
+            </div>
           </div>
-          <div className={cn("flex items-center gap-2 text-base font-bold font-mono", totalDirection.colorClass)}>
-            <span>{totalDirection.symbol}</span>
-            <span>{formatCurrency(Math.abs(contribution.totalChange))}</span>
-          </div>
-        </div>
+        </Heading>
 
         {/* Info Panel - Shows when info button is clicked */}
         {showInfo && (
@@ -173,7 +170,7 @@ export function PerformanceAttribution() {
         )}
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3 mb-6">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-2 mb-3">
           {/* Volume Effect */}
           <Card className="bg-muted/30 border-primary/20 shadow-sm hover:shadow-md transition-all duration-200">
             <CardContent className="p-3">

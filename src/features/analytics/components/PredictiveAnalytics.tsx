@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { Heading } from '@/components/ui/heading';
 import { Info, X } from 'lucide-react';
 import { ForecastChart } from '../visualizations';
 import { useAnalyticsData } from '../../../hooks';
@@ -25,8 +26,11 @@ export function PredictiveAnalytics() {
   if (isLoading) {
     return (
       <Card>
-        <CardContent className="p-10 text-center text-muted-foreground text-xs">
-          Loading forecast data...
+        <CardContent className="p-3">
+          <Heading title="Predictive Analytics" subtitle="Growth forecasts and predictions" />
+          <div className="p-10 text-center text-muted-foreground text-xs">
+            Loading forecast data...
+          </div>
         </CardContent>
       </Card>
     );
@@ -48,23 +52,23 @@ export function PredictiveAnalytics() {
 
   return (
     <Card className="w-full">
-      <CardContent className="p-5">
+      <CardContent className="p-3">
         {/* Header */}
-        <div className="flex items-center gap-2 mb-5">
-          <div className="text-sm font-semibold text-foreground uppercase tracking-wide">
-            Predictive Analytics
-          </div>
+        <Heading
+          title="Predictive Analytics"
+          subtitle="Growth forecasts and predictions"
+        >
           {/* Info Icon Button */}
           <Button
             onClick={() => setShowInfo(!showInfo)}
             size="icon"
             variant="ghost"
-            className="h-6 w-6 hover:scale-110 transition-transform"
+            className="h-6 w-6"
             title="Click for detailed explanation"
           >
-            <Info className="h-4 w-4" />
+            <Info className="h-3 w-3" />
           </Button>
-        </div>
+        </Heading>
 
         {/* Info Panel */}
         {showInfo && (
@@ -162,7 +166,7 @@ export function PredictiveAnalytics() {
         )}
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3 mb-6">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-2 mb-3">
           <Card className="bg-muted/30 border-primary/20 shadow-sm hover:shadow-md transition-all duration-200">
             <CardContent className="p-3">
               <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">

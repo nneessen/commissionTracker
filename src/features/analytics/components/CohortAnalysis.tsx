@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { Heading } from '@/components/ui/heading';
 import { Info, X } from 'lucide-react';
 import { CohortHeatmap } from '../visualizations';
 import { useAnalyticsData } from '../../../hooks';
@@ -26,10 +27,11 @@ export function CohortAnalysis() {
   if (isLoading) {
     return (
       <Card>
-        <CardContent className="p-5">
-          <div className="text-sm font-semibold text-foreground mb-4 uppercase tracking-wide">
-            Policy Survival Rates
-          </div>
+        <CardContent className="p-3">
+          <Heading
+            title="Policy Survival Rates"
+            subtitle="How long policies stay active by start month"
+          />
           <div className="p-10 text-center text-muted-foreground text-xs">
             Loading cohort data...
           </div>
@@ -42,30 +44,23 @@ export function CohortAnalysis() {
 
   return (
     <Card>
-      <CardContent className="p-5">
+      <CardContent className="p-3">
         {/* Header */}
-        <div className="mb-5">
-          <div className="flex items-center gap-2">
-            <div>
-              <div className="text-sm font-semibold text-foreground uppercase tracking-wide">
-                Policy Survival Rates
-              </div>
-              <div className="text-xs text-muted-foreground mt-1">
-                How long policies stay active by start month
-              </div>
-            </div>
-            {/* Info Icon Button */}
-            <Button
-              onClick={() => setShowInfo(!showInfo)}
-              size="icon"
-              variant="ghost"
-              className="h-6 w-6 hover:scale-110 transition-transform"
-              title="Click for detailed explanation"
-            >
-              <Info className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
+        <Heading
+          title="Policy Survival Rates"
+          subtitle="How long policies stay active by start month"
+        >
+          {/* Info Icon Button */}
+          <Button
+            onClick={() => setShowInfo(!showInfo)}
+            size="icon"
+            variant="ghost"
+            className="h-6 w-6"
+            title="Click for detailed explanation"
+          >
+            <Info className="h-3 w-3" />
+          </Button>
+        </Heading>
 
         {/* Info Panel */}
         {showInfo && (
@@ -164,7 +159,7 @@ export function CohortAnalysis() {
         )}
 
         {/* Summary Stats */}
-        <div className="grid grid-cols-[repeat(auto-fit,minmax(120px,1fr))] gap-3 mb-6">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(120px,1fr))] gap-2 mb-3">
           <Card className="bg-gradient-to-br from-accent/15 to-card shadow-md hover:shadow-lg transition-all duration-200">
             <CardContent className="p-3">
               <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">
@@ -211,10 +206,8 @@ export function CohortAnalysis() {
         </div>
 
         {/* Retention Heatmap */}
-        <div className="mb-5">
-          <div className="text-xs font-semibold text-foreground mb-3 uppercase tracking-wide">
-            Retention Heatmap
-          </div>
+        <div className="mb-2">
+          <Heading title="Retention Heatmap" className="mb-2" />
           <CohortHeatmap data={retention} maxMonths={12} />
         </div>
       </CardContent>

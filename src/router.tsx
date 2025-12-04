@@ -8,7 +8,7 @@ import {
 } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import App from "./App";
-import { ExpenseDashboard } from "./features/expenses";
+import { ExpenseDashboardCompact } from "./features/expenses";
 import { PolicyDashboard } from "./features/policies";
 import { AnalyticsDashboard } from "./features/analytics";
 import { DashboardHome } from "./features/dashboard";
@@ -33,6 +33,7 @@ import {
   HierarchyManagement,
   HierarchyDashboard,
 } from "./features/hierarchy";
+import { HierarchyDashboardCompact } from "./features/hierarchy/HierarchyDashboardCompact";
 import { RecruitingDashboard } from "./features/recruiting/RecruitingDashboard";
 import { PipelineAdminPage } from "./features/recruiting/admin/PipelineAdminPage";
 import { MyRecruitingPipeline } from "./features/recruiting/pages/MyRecruitingPipeline";
@@ -145,7 +146,7 @@ const reportsRoute = createRoute({
 const expensesRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "expenses",
-  component: ExpenseDashboard,
+  component: ExpenseDashboardCompact,
 });
 
 // Test route for debugging comp guide - Super-admin only
@@ -206,13 +207,13 @@ const authDiagnosticRoute = createRoute({
 const hierarchyIndexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "hierarchy",
-  component: HierarchyDashboard,
+  component: HierarchyDashboardCompact,
 });
 
 const hierarchyTreeRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "hierarchy/tree",
-  component: HierarchyDashboard, // HierarchyTree requires props, use dashboard instead
+  component: HierarchyDashboardCompact, // Using compact version for consistency
 });
 
 const hierarchyOverridesRoute = createRoute({

@@ -6,6 +6,30 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-12-04 08:24:53
+
+### Changed Files
+- `src/components/ui/heading.tsx`
+- `src/features/analytics/components/CohortAnalysis.tsx`
+- `src/features/analytics/components/PerformanceAttribution.tsx`
+- `src/features/analytics/components/PredictiveAnalytics.tsx`
+- `src/features/expenses/ExpenseDashboard.tsx`
+- `src/features/expenses/ExpenseDashboardCompact.tsx`
+- `src/features/expenses/components/ExpenseDialogCompact.tsx`
+- `src/features/expenses/index.ts`
+- `src/features/hierarchy/HierarchyDashboardCompact.tsx`
+- `src/features/hierarchy/components/AgentTable.tsx`
+- `src/features/hierarchy/components/InvitationsList.tsx`
+- `src/features/hierarchy/components/TeamActivityFeed.tsx`
+- `src/features/hierarchy/components/TeamMetricsCard.tsx`
+- `src/router.tsx`
+- `tsconfig.tsbuildinfo`
+
+### Statistics
+```
+ 15 files changed, 2743 insertions(+), 868 deletions(-)
+```
+
 ## [Checkpoint] - 2025-12-03 15:41:47
 
 ### Changed Files
