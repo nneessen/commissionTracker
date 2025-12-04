@@ -169,11 +169,11 @@ export function FilterDialog({
           <div className="space-y-2">
             <Label className="text-sm font-medium">Recruiter</Label>
             <Select
-              value={filters.recruiterId || ''}
+              value={filters.recruiterId || 'all'}
               onValueChange={(value) =>
                 onFiltersChange({
                   ...filters,
-                  recruiterId: value || undefined,
+                  recruiterId: value === 'all' ? undefined : value,
                 })
               }
             >
@@ -181,7 +181,7 @@ export function FilterDialog({
                 <SelectValue placeholder="All recruiters" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All recruiters</SelectItem>
+                <SelectItem value="all">All recruiters</SelectItem>
                 {recruiters.map((r) => (
                   <SelectItem key={r.id} value={r.id}>
                     {r.name}
@@ -195,11 +195,11 @@ export function FilterDialog({
           <div className="space-y-2">
             <Label className="text-sm font-medium">Upline</Label>
             <Select
-              value={filters.uplineId || ''}
+              value={filters.uplineId || 'all'}
               onValueChange={(value) =>
                 onFiltersChange({
                   ...filters,
-                  uplineId: value || undefined,
+                  uplineId: value === 'all' ? undefined : value,
                 })
               }
             >
@@ -207,7 +207,7 @@ export function FilterDialog({
                 <SelectValue placeholder="All uplines" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All uplines</SelectItem>
+                <SelectItem value="all">All uplines</SelectItem>
                 {uplines.map((u) => (
                   <SelectItem key={u.id} value={u.id}>
                     {u.name}
@@ -221,11 +221,11 @@ export function FilterDialog({
           <div className="space-y-2">
             <Label className="text-sm font-medium">Referral Source</Label>
             <Select
-              value={filters.referralSource || ''}
+              value={filters.referralSource || 'all'}
               onValueChange={(value) =>
                 onFiltersChange({
                   ...filters,
-                  referralSource: value || undefined,
+                  referralSource: value === 'all' ? undefined : value,
                 })
               }
             >
@@ -233,7 +233,7 @@ export function FilterDialog({
                 <SelectValue placeholder="All sources" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All sources</SelectItem>
+                <SelectItem value="all">All sources</SelectItem>
                 {referralSources.map((source) => (
                   <SelectItem key={source} value={source}>
                     {source}

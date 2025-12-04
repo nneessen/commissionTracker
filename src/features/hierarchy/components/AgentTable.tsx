@@ -5,12 +5,12 @@ import { useNavigate } from '@tanstack/react-router';
 import {
   ChevronRight,
   ChevronDown,
+  ChevronLeft,
   MoreVertical,
   Eye,
   Edit,
   UserCheck,
   UserX,
-  DollarSign,
   MessageCircle,
   UserMinus
 } from 'lucide-react';
@@ -34,6 +34,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { formatCurrency, formatPercent } from '@/lib/format';
 import showToast from '@/utils/toast';
 import type { UserProfile } from '@/types/hierarchy.types';
@@ -192,13 +199,6 @@ function AgentRow({
     showToast.success('Edit functionality coming soon');
   };
 
-  const handleViewCommissions = () => {
-    navigate({
-      to: '/comps',
-      search: { agentId: agent.id },
-    });
-  };
-
   const handleSendMessage = () => {
     // Navigate to email composer or open message modal
     showToast.success('Message functionality coming soon');
@@ -306,10 +306,6 @@ function AgentRow({
               <Edit className="mr-1.5 h-3 w-3" />
               Edit Agent
             </DropdownMenuItem>
-            <DropdownMenuItem className="text-xs" onClick={handleViewCommissions}>
-              <DollarSign className="mr-1.5 h-3 w-3" />
-              View Commissions
-            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem className="text-xs" onClick={handleSendMessage}>
               <MessageCircle className="mr-1.5 h-3 w-3" />
@@ -335,6 +331,8 @@ export function AgentTable({ agents, isLoading, onRefresh }: AgentTableProps) {
   const navigate = useNavigate();
   const [expandedAgents, setExpandedAgents] = useState<Set<string>>(new Set());
   const [agentToRemove, setAgentToRemove] = useState<AgentWithMetrics | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(5);
 
   // Get current user's contract level for override calculation
   const { data: currentUser } = useQuery({
@@ -426,6 +424,26 @@ export function AgentTable({ agents, isLoading, onRefresh }: AgentTableProps) {
     }
   };
 
+  // Pagination calculations
+  const totalRootAgents = rootAgents.length;
+  const totalPages = Math.ceil(totalRootAgents / rowsPerPage);
+
+  // Ensure current page is valid
+  if (currentPage > totalPages && totalPages > 0) {
+    setCurrentPage(1);
+  }
+
+  // Paginate root agents
+  const startIndex = (currentPage - 1) * rowsPerPage;
+  const endIndex = startIndex + rowsPerPage;
+  const paginatedRootAgents = rootAgents.slice(startIndex, endIndex);
+
+  // Reset to first page when rowsPerPage changes
+  const handleRowsPerPageChange = (value: string) => {
+    setRowsPerPage(Number(value));
+    setCurrentPage(1);
+  };
+
   // Recursively render agents with their children
   const renderAgentRows = (
     agentList: AgentWithMetrics[],
@@ -513,11 +531,60 @@ export function AgentTable({ agents, isLoading, onRefresh }: AgentTableProps) {
                     </td>
                   </tr>
                 ) : (
-                  renderAgentRows(rootAgents as AgentWithMetrics[])
+                  renderAgentRows(paginatedRootAgents as AgentWithMetrics[])
                 )}
               </tbody>
             </table>
           </div>
+
+          {/* Pagination Controls */}
+          {totalRootAgents > 0 && (
+            <div className="flex items-center justify-between px-4 py-2 border-t">
+              <div className="flex items-center gap-4">
+                <span className="text-[11px] text-muted-foreground">
+                  Total: {totalRootAgents} agent{totalRootAgents !== 1 ? 's' : ''}
+                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] text-muted-foreground">Rows per page:</span>
+                  <Select value={rowsPerPage.toString()} onValueChange={handleRowsPerPageChange}>
+                    <SelectTrigger className="h-7 w-16 text-[11px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="5">5</SelectItem>
+                      <SelectItem value="10">10</SelectItem>
+                      <SelectItem value="20">20</SelectItem>
+                      <SelectItem value="50">50</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-1">
+                <span className="text-[11px] text-muted-foreground">
+                  Page {currentPage} of {totalPages || 1}
+                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                  disabled={currentPage === 1}
+                  className="h-7 w-7 p-0"
+                >
+                  <ChevronLeft className="h-3 w-3" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setCurrentPage(Math.min(totalPages || 1, currentPage + 1))}
+                  disabled={currentPage >= totalPages}
+                  className="h-7 w-7 p-0"
+                >
+                  <ChevronRight className="h-3 w-3" />
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 

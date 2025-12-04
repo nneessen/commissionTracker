@@ -58,14 +58,14 @@ export function CompFiltersComponent({
             {/* Quick filters - always visible */}
             <div className="flex items-center space-x-3">
               <Select
-                value={filters.carrier_id || ''}
-                onValueChange={(value) => handleSelectChange('carrier_id', value)}
+                value={filters.carrier_id || 'all'}
+                onValueChange={(value) => handleSelectChange('carrier_id', value === 'all' ? '' : value)}
               >
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="All Carriers" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Carriers</SelectItem>
+                  <SelectItem value="all">All Carriers</SelectItem>
                   {carrierIds.map((carrierId) => (
                     <SelectItem key={carrierId} value={carrierId}>
                       {carrierId}
@@ -75,14 +75,14 @@ export function CompFiltersComponent({
               </Select>
 
               <Select
-                value={filters.product_type || ''}
-                onValueChange={(value) => handleSelectChange('product_type', value as Database["public"]["Enums"]["product_type"])}
+                value={filters.product_type || 'all'}
+                onValueChange={(value) => handleSelectChange('product_type', value === 'all' ? '' : value as Database["public"]["Enums"]["product_type"])}
               >
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="All Products" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Products</SelectItem>
+                  <SelectItem value="all">All Products</SelectItem>
                   {productTypes.map((product) => (
                     <SelectItem key={product} value={product}>
                       {formatProductType(product)}
@@ -152,14 +152,14 @@ export function CompFiltersComponent({
                   Carrier
                 </Label>
                 <Select
-                  value={filters.carrier_id || ''}
-                  onValueChange={(value) => handleSelectChange('carrier_id', value)}
+                  value={filters.carrier_id || 'all'}
+                  onValueChange={(value) => handleSelectChange('carrier_id', value === 'all' ? '' : value)}
                 >
                   <SelectTrigger id="advancedCarrier">
                     <SelectValue placeholder="All Carriers" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Carriers</SelectItem>
+                    <SelectItem value="all">All Carriers</SelectItem>
                     {carrierIds.map((carrierId) => (
                       <SelectItem key={carrierId} value={carrierId}>
                         {carrierId}
@@ -176,14 +176,14 @@ export function CompFiltersComponent({
                   Product Type
                 </Label>
                 <Select
-                  value={filters.product_type || ''}
-                  onValueChange={(value) => handleSelectChange('product_type', value as Database["public"]["Enums"]["product_type"])}
+                  value={filters.product_type || 'all'}
+                  onValueChange={(value) => handleSelectChange('product_type', value === 'all' ? '' : value as Database["public"]["Enums"]["product_type"])}
                 >
                   <SelectTrigger id="advancedProduct">
                     <SelectValue placeholder="All Products" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Products</SelectItem>
+                    <SelectItem value="all">All Products</SelectItem>
                     {productTypes.map((product) => (
                       <SelectItem key={product} value={product}>
                         {formatProductType(product)}
