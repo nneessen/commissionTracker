@@ -567,11 +567,17 @@ export class UserApprovalService {
 
   /**
    * Create a new user (admin only)
-   * Creates record in both auth.users and user_profiles
+   * Creates record in user_profiles table and sends magic link email.
+   *
+   * Flow:
+   * 1. Creates user_profile with user_id=NULL
+   * 2. Sends magic link email via signInWithOtp
+   * 3. When user clicks link, auth.users is created
+   * 4. handle_new_user trigger links auth to existing profile
+   * 5. User is logged in and can set password in settings
    */
   async createUser(userData: {
     email: string;
-    password?: string;
     first_name: string;
     last_name: string;
     phone?: string;
@@ -579,30 +585,96 @@ export class UserApprovalService {
     roles?: RoleName[];
     approval_status?: 'pending' | 'approved';
     onboarding_status?: 'lead' | 'active' | null;
-  }): Promise<{ success: boolean; userId?: string; error?: string }> {
+    sendInvite?: boolean; // Whether to send magic link email (default: true)
+  }): Promise<{ success: boolean; userId?: string; error?: string; inviteSent?: boolean }> {
     try {
-      // Step 1: Create auth.users record (requires service role key)
-      // For now, use direct Supabase Admin API or RPC function
-      const { data, error } = await supabase.rpc("admin_create_user", {
-        user_email: userData.email,
-        user_password: userData.password || null,
-        user_first_name: userData.first_name,
-        user_last_name: userData.last_name,
-        user_phone: userData.phone || null,
-        user_upline_id: userData.upline_id || null,
-        user_roles: userData.roles || [],
-        user_approval_status: userData.approval_status || 'approved',
-        user_onboarding_status: userData.onboarding_status || null,
-      });
+      const email = userData.email.toLowerCase().trim();
+
+      // Check if email already exists in user_profiles
+      const { data: existingProfile } = await supabase
+        .from("user_profiles")
+        .select("id, email, user_id")
+        .eq("email", email)
+        .maybeSingle();
+
+      if (existingProfile) {
+        return {
+          success: false,
+          error: `A user with email ${userData.email} already exists`
+        };
+      }
+
+      // Check if email already exists in auth.users (they signed up but no profile somehow)
+      // We can't directly query auth.users, but we can try to check via the users view
+      const { data: existingAuth } = await supabase
+        .from("users")
+        .select("id, email")
+        .eq("email", email)
+        .maybeSingle();
+
+      if (existingAuth) {
+        return {
+          success: false,
+          error: `An account with email ${userData.email} already exists in the auth system`
+        };
+      }
+
+      // Create user_profile
+      const { data, error } = await supabase
+        .from("user_profiles")
+        .insert({
+          email: email,
+          first_name: userData.first_name.trim(),
+          last_name: userData.last_name.trim(),
+          phone: userData.phone?.trim() || null,
+          upline_id: userData.upline_id || null,
+          roles: userData.roles && userData.roles.length > 0 ? userData.roles : ['agent'],
+          approval_status: userData.approval_status || 'approved',
+          onboarding_status: userData.onboarding_status || null,
+          user_id: null, // Will be set when they click magic link
+          hierarchy_path: '',
+          hierarchy_depth: 0,
+          is_admin: userData.roles?.includes('admin') || false,
+        })
+        .select()
+        .single();
 
       if (error) {
-        logger.error("Failed to create user", error, "UserApprovalService");
+        logger.error("Failed to create user profile", error, "UserApprovalService");
         console.error("[UserApprovalService] Create user error:", error);
         return { success: false, error: error.message };
       }
 
-      logger.info(`User created: ${userData.email}`, "UserApprovalService");
-      return { success: true, userId: data?.user_id };
+      // Send magic link email (unless explicitly disabled)
+      let inviteSent = false;
+      if (userData.sendInvite !== false) {
+        const { error: otpError } = await supabase.auth.signInWithOtp({
+          email: email,
+          options: {
+            shouldCreateUser: true,
+            emailRedirectTo: `${window.location.origin}/`,
+            data: {
+              full_name: `${userData.first_name} ${userData.last_name}`.trim(),
+            }
+          }
+        });
+
+        if (otpError) {
+          logger.error("Failed to send invite email", otpError, "UserApprovalService");
+          console.error("[UserApprovalService] Send invite error:", otpError);
+          // Profile was created but invite failed - still return success but note it
+          return {
+            success: true,
+            userId: data?.id,
+            inviteSent: false,
+            error: `Profile created but invite email failed: ${otpError.message}`
+          };
+        }
+        inviteSent = true;
+      }
+
+      logger.info(`User profile created and invite sent: ${email}`, "UserApprovalService");
+      return { success: true, userId: data?.id, inviteSent };
     } catch (error) {
       logger.error(
         "Error in createUser",

@@ -10,6 +10,7 @@ import { useAllRolesWithPermissions, useUpdateUserRoles, useIsAdmin } from "@/ho
 import { useAuth } from "@/contexts/AuthContext";
 import { userApprovalService } from "@/services/admin/userApprovalService";
 import { useQueryClient } from "@tanstack/react-query";
+import showToast from "@/utils/toast";
 import AddUserDialog, { type NewUserData } from "./AddUserDialog";
 import { GraduateToAgentDialog } from "./GraduateToAgentDialog";
 import { Button } from "@/components/ui/button";
@@ -154,8 +155,17 @@ export default function AdminControlCenter() {
       queryClient.invalidateQueries({ queryKey: ['users'] });
       queryClient.invalidateQueries({ queryKey: ['recruits'] });
       setIsAddUserDialogOpen(false);
+
+      if (result.inviteSent) {
+        showToast.success(`User created! Login link sent to ${userData.email}`);
+      } else if (result.error) {
+        // Profile created but invite failed
+        showToast.error(result.error);
+      } else {
+        showToast.success(`User "${userData.first_name} ${userData.last_name}" created`);
+      }
     } else {
-      alert(`Error: ${result.error}`);
+      showToast.error(result.error || "Failed to create user");
     }
   };
 
