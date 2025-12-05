@@ -20,7 +20,7 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
     products: [
       {
         productName: "Express Issue Premier WL",
-        productType: "whole_life",
+        productType: "life",
         commissionRates: [
           { contractLevel: 80, percentage: 70 },
           { contractLevel: 85, percentage: 75 },
@@ -40,7 +40,7 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
       },
       {
         productName: "Express Issue Deluxe WL",
-        productType: "whole_life",
+        productType: "life",
         commissionRates: [
           { contractLevel: 80, percentage: 70 },
           { contractLevel: 85, percentage: 75 },
@@ -60,7 +60,7 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
       },
       {
         productName: "Express Issue Graded WL",
-        productType: "whole_life",
+        productType: "life",
         commissionRates: [
           { contractLevel: 80, percentage: 70 },
           { contractLevel: 85, percentage: 75 },
@@ -80,7 +80,7 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
       },
       {
         productName: "Guaranteed Issue Whole Life",
-        productType: "whole_life",
+        productType: "life",
         commissionRates: [
           { contractLevel: 80, percentage: 25 },
           { contractLevel: 85, percentage: 25 },
@@ -100,7 +100,7 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
       },
       {
         productName: "Provider Whole Life",
-        productType: "whole_life",
+        productType: "life",
         commissionRates: [
           { contractLevel: 80, percentage: 55 },
           { contractLevel: 85, percentage: 60 },
@@ -120,7 +120,7 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
       },
       {
         productName: "Term",
-        productType: "term_life",
+        productType: "life",
         commissionRates: [
           { contractLevel: 80, percentage: 55 },
           { contractLevel: 85, percentage: 60 },
@@ -140,7 +140,7 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
       },
       {
         productName: "Accidental",
-        productType: "health",
+        productType: "other",
         commissionRates: [
           { contractLevel: 80, percentage: 45 },
           { contractLevel: 85, percentage: 50 },
@@ -165,7 +165,7 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
     products: [
       {
         productName: "SBLI Term",
-        productType: "term_life",
+        productType: "life",
         commissionRates: [
           { contractLevel: 80, percentage: 85 },
           { contractLevel: 85, percentage: 90 },
@@ -185,7 +185,7 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
       },
       {
         productName: "Silver Guard FE",
-        productType: "whole_life",
+        productType: "life",
         commissionRates: [
           { contractLevel: 80, percentage: 65 },
           { contractLevel: 85, percentage: 70 },
@@ -205,7 +205,7 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
       },
       {
         productName: "APriority Level Term (75K+)",
-        productType: "term_life",
+        productType: "life",
         commissionRates: [
           { contractLevel: 80, percentage: 45 },
           { contractLevel: 85, percentage: 50 },
@@ -225,7 +225,7 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
       },
       {
         productName: "APriority Whole Life",
-        productType: "whole_life",
+        productType: "life",
         commissionRates: [
           { contractLevel: 80, percentage: 60 },
           { contractLevel: 85, percentage: 60 },
@@ -245,7 +245,7 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
       },
       {
         productName: "APriority Protector Term",
-        productType: "term_life",
+        productType: "life",
         commissionRates: [
           { contractLevel: 80, percentage: 45 },
           { contractLevel: 85, percentage: 50 },
@@ -270,7 +270,7 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
     products: [
       {
         productName: "FE",
-        productType: "whole_life",
+        productType: "life",
         commissionRates: [
           { contractLevel: 80, percentage: 65 },
           { contractLevel: 85, percentage: 70 },
@@ -295,7 +295,7 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
     products: [
       {
         productName: "Simple Term",
-        productType: "term_life",
+        productType: "life",
         commissionRates: [
           { contractLevel: 80, percentage: 85 },
           { contractLevel: 85, percentage: 90 },
@@ -315,7 +315,7 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
       },
       {
         productName: "Path Setter",
-        productType: "whole_life",
+        productType: "life",
         commissionRates: [
           { contractLevel: 80, percentage: 70 },
           { contractLevel: 85, percentage: 75 },
@@ -335,7 +335,7 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
       },
       {
         productName: "Everlast",
-        productType: "whole_life",
+        productType: "life",
         commissionRates: [
           { contractLevel: 80, percentage: 65 },
           { contractLevel: 85, percentage: 70 },
@@ -355,7 +355,7 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
       },
       {
         productName: "Exccudex",
-        productType: "universal_life",
+        productType: "life",
         commissionRates: [
           { contractLevel: 80, percentage: 70 },
           { contractLevel: 85, percentage: 75 },
@@ -380,7 +380,7 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
     products: [
       {
         productName: "Express UL",
-        productType: "universal_life",
+        productType: "life",
         commissionRates: [
           { contractLevel: 80, percentage: 45 },
           { contractLevel: 85, percentage: 50 },
@@ -400,7 +400,7 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
       },
       {
         productName: "Home Protector",
-        productType: "whole_life",
+        productType: "life",
         commissionRates: [
           { contractLevel: 80, percentage: 70 },
           { contractLevel: 85, percentage: 75 },
@@ -420,7 +420,7 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
       },
       {
         productName: "OBA",
-        productType: "whole_life",
+        productType: "life",
         commissionRates: [
           { contractLevel: 80, percentage: 40 },
           { contractLevel: 85, percentage: 45 },
@@ -440,7 +440,7 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
       },
       {
         productName: "SecureLife Plus",
-        productType: "whole_life",
+        productType: "life",
         commissionRates: [
           { contractLevel: 80, percentage: 70 },
           { contractLevel: 85, percentage: 75 },
@@ -460,7 +460,7 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
       },
       {
         productName: "Security Protector",
-        productType: "whole_life",
+        productType: "life",
         commissionRates: [
           { contractLevel: 80, percentage: 50 },
           { contractLevel: 85, percentage: 55 },
@@ -480,7 +480,7 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
       },
       {
         productName: "Survivor Protector",
-        productType: "whole_life",
+        productType: "life",
         commissionRates: [
           { contractLevel: 80, percentage: 70 },
           { contractLevel: 85, percentage: 75 },
@@ -500,7 +500,7 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
       },
       {
         productName: "Term Made Simple",
-        productType: "term_life",
+        productType: "life",
         commissionRates: [
           { contractLevel: 80, percentage: 40 },
           { contractLevel: 85, percentage: 40 },
@@ -520,7 +520,7 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
       },
       {
         productName: "Dignity Solutions & Family Legacy",
-        productType: "whole_life",
+        productType: "life",
         commissionRates: [
           { contractLevel: 80, percentage: 60 },
           { contractLevel: 85, percentage: 65 },
@@ -540,7 +540,7 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
       },
       {
         productName: "Express Term",
-        productType: "term_life",
+        productType: "life",
         commissionRates: [
           { contractLevel: 80, percentage: 50 },
           { contractLevel: 85, percentage: 55 },
@@ -580,7 +580,7 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
       },
       {
         productName: "Guaranteed Guardian",
-        productType: "whole_life",
+        productType: "life",
         commissionRates: [
           { contractLevel: 80, percentage: 0 },
           { contractLevel: 85, percentage: 0 },
@@ -605,7 +605,7 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
     products: [
       {
         productName: "GIWL Whole Life",
-        productType: "whole_life",
+        productType: "life",
         commissionRates: [
           { contractLevel: 80, percentage: 65 },
           { contractLevel: 85, percentage: 70 },
@@ -625,7 +625,7 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
       },
       {
         productName: "SimpliNow Legacy Max SIWL",
-        productType: "whole_life",
+        productType: "life",
         commissionRates: [
           { contractLevel: 80, percentage: 72 },
           { contractLevel: 85, percentage: 77 },
@@ -650,7 +650,7 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
     products: [
       {
         productName: "Trendsetter Super Term",
-        productType: "term_life",
+        productType: "life",
         commissionRates: [
           { contractLevel: 80, percentage: 55 },
           { contractLevel: 85, percentage: 60 },
@@ -670,7 +670,7 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
       },
       {
         productName: "Trendsetter LB Term",
-        productType: "term_life",
+        productType: "life",
         commissionRates: [
           { contractLevel: 80, percentage: 65 },
           { contractLevel: 85, percentage: 70 },
@@ -690,7 +690,7 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
       },
       {
         productName: "Lifetime WL",
-        productType: "whole_life",
+        productType: "life",
         commissionRates: [
           { contractLevel: 80, percentage: 75 },
           { contractLevel: 85, percentage: 80 },
@@ -710,7 +710,7 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
       },
       {
         productName: "Immediate Solution WL",
-        productType: "whole_life",
+        productType: "life",
         commissionRates: [
           { contractLevel: 80, percentage: 75 },
           { contractLevel: 85, percentage: 80 },
@@ -730,7 +730,7 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
       },
       {
         productName: "10 Pay Solution WL",
-        productType: "whole_life",
+        productType: "life",
         commissionRates: [
           { contractLevel: 80, percentage: 65 },
           { contractLevel: 85, percentage: 70 },
@@ -750,7 +750,7 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
       },
       {
         productName: "Easy Solution WL",
-        productType: "whole_life",
+        productType: "life",
         commissionRates: [
           { contractLevel: 80, percentage: 28 },
           { contractLevel: 85, percentage: 33 },
@@ -770,7 +770,7 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
       },
       {
         productName: "Express Solution",
-        productType: "whole_life",
+        productType: "life",
         commissionRates: [
           { contractLevel: 80, percentage: 80 },
           { contractLevel: 85, percentage: 85 },
@@ -790,7 +790,7 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
       },
       {
         productName: "FFIUL",
-        productType: "universal_life",
+        productType: "life",
         commissionRates: [
           { contractLevel: 80, percentage: 70 },
           { contractLevel: 85, percentage: 75 },
@@ -815,7 +815,7 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
     products: [
       {
         productName: "Guaranteed Issue FE",
-        productType: "whole_life",
+        productType: "life",
         commissionRates: [
           { contractLevel: 80, percentage: 30 },
           { contractLevel: 85, percentage: 35 },
@@ -835,7 +835,7 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
       },
       {
         productName: "FE Immediate",
-        productType: "whole_life",
+        productType: "life",
         commissionRates: [
           { contractLevel: 80, percentage: 90 },
           { contractLevel: 85, percentage: 95 },
@@ -855,7 +855,7 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
       },
       {
         productName: "Life Pay WL 0-75",
-        productType: "whole_life",
+        productType: "life",
         commissionRates: [
           { contractLevel: 80, percentage: 75 },
           { contractLevel: 85, percentage: 80 },
@@ -875,7 +875,7 @@ export const PDF_COMMISSION_DATA: PDFCarrierData[] = [
       },
       {
         productName: "Limited Pay WL",
-        productType: "whole_life",
+        productType: "life",
         commissionRates: [
           { contractLevel: 80, percentage: 55 },
           { contractLevel: 85, percentage: 60 },

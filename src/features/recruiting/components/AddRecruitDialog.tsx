@@ -36,9 +36,10 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/services/base/supabase';
 import { Loader2, UserPlus } from 'lucide-react';
 import type { RoleName } from '@/types/permissions.types';
-
-// Default pipeline template ID (from seed migration)
-const DEFAULT_TEMPLATE_ID = '00000000-0000-0000-0000-000000000001';
+import type { AgentStatus, LicensingInfo } from '@/types/recruiting.types';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { InfoIcon } from 'lucide-react';
 
 // US States
 const US_STATES = [
@@ -131,10 +132,13 @@ const createRecruitSchema = z.object({
   zip: z.string().optional(),
 
   // Professional
+  is_licensed_agent: z.boolean().default(false),
+  skip_pipeline: z.boolean().default(false),
   resident_state: z.string().optional(),
   license_number: z.string().optional(),
   npn: z.string().optional(),
   license_expiration: z.string().optional(),
+  years_licensed: z.number().optional(),
 
   // Social Media
   instagram_username: z.string().optional(),
@@ -146,6 +150,9 @@ const createRecruitSchema = z.object({
 
   // Assignment
   upline_id: z.string().optional(),
+
+  // Admin assignment
+  is_admin: z.boolean().default(false),
 
   // Referral
   referral_source: z.string().optional(),
@@ -203,10 +210,13 @@ export function AddRecruitDialog({
       city: '',
       state: '',
       zip: '',
+      is_licensed_agent: false,
+      skip_pipeline: false,
       resident_state: '',
       license_number: '',
       npn: '',
       license_expiration: '',
+      years_licensed: 0,
       instagram_username: '',
       instagram_url: '',
       linkedin_username: '',
@@ -214,6 +224,7 @@ export function AddRecruitDialog({
       facebook_handle: '',
       personal_website: '',
       upline_id: '',
+      is_admin: false,
       referral_source: '',
     },
     onSubmit: async ({ value }) => {
@@ -234,6 +245,23 @@ export function AddRecruitDialog({
       // Normalize URL fields (auto-prepend https://)
       const normalizedWebsite = value.personal_website ? normalizeUrl(value.personal_website) : undefined;
 
+      // Determine agent status based on checkboxes
+      let agent_status: AgentStatus = 'unlicensed';
+      if (value.skip_pipeline || value.is_admin) {
+        agent_status = 'not_applicable';
+      } else if (value.is_licensed_agent) {
+        agent_status = 'licensed';
+      }
+
+      // Build licensing info if licensed
+      const licensing_info: LicensingInfo | undefined = value.is_licensed_agent ? {
+        licenseNumber: value.license_number || undefined,
+        npn: value.npn || undefined,
+        licenseExpirationDate: value.license_expiration || undefined,
+        licenseState: value.resident_state || undefined,
+        yearsLicensed: value.years_licensed || undefined,
+      } : undefined;
+
       const recruit = await createRecruitMutation.mutateAsync({
         first_name: value.first_name,
         last_name: value.last_name,
@@ -244,27 +272,21 @@ export function AddRecruitDialog({
         city: value.city || undefined,
         state: value.state || undefined,
         zip: value.zip || undefined,
-        resident_state: value.resident_state || undefined,
-        license_number: value.license_number || undefined,
-        npn: value.npn || undefined,
-        license_expiration: value.license_expiration || undefined,
-        instagram_username: value.instagram_username || undefined,
-        instagram_url: value.instagram_url || undefined,
-        linkedin_username: value.linkedin_username || undefined,
-        linkedin_url: value.linkedin_url || undefined,
-        facebook_handle: value.facebook_handle || undefined,
-        personal_website: normalizedWebsite,
+        agent_status,
+        licensing_info,
+        skip_pipeline: value.skip_pipeline || value.is_admin,
+        is_admin: value.is_admin,
         recruiter_id: user.id,
         upline_id: value.upline_id || undefined,
         referral_source: value.referral_source || undefined,
       });
 
-      if (recruit) {
-        // Initialize phase progress for the new recruit
+      if (recruit && recruit.pipeline_template_id) {
+        // Initialize phase progress only if the recruit has a pipeline
         try {
           await initializeProgressMutation.mutateAsync({
             userId: recruit.id,
-            templateId: DEFAULT_TEMPLATE_ID,
+            templateId: recruit.pipeline_template_id,
           });
         } catch (error) {
           console.error('Failed to initialize recruit progress:', error);
@@ -507,6 +529,65 @@ export function AddRecruitDialog({
 
             {/* Professional Tab */}
             <TabsContent value="professional" className="space-y-2 py-2">
+              {/* Licensing status checkboxes */}
+              <div className="space-y-2">
+                <form.Field name="is_licensed_agent">
+                  {(field) => (
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="is_licensed_agent"
+                        checked={field.state.value}
+                        onCheckedChange={(checked) => {
+                          field.handleChange(checked === true);
+                          // If admin/skip is checked, uncheck it
+                          if (checked && form.state.values.skip_pipeline) {
+                            form.setFieldValue('skip_pipeline', false);
+                          }
+                        }}
+                      />
+                      <Label htmlFor="is_licensed_agent" className="text-[11px] cursor-pointer">
+                        This person is already a licensed insurance agent
+                      </Label>
+                    </div>
+                  )}
+                </form.Field>
+
+                <form.Field name="skip_pipeline">
+                  {(field) => (
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="skip_pipeline"
+                        checked={field.state.value}
+                        onCheckedChange={(checked) => {
+                          field.handleChange(checked === true);
+                          // If licensed is checked, uncheck it
+                          if (checked && form.state.values.is_licensed_agent) {
+                            form.setFieldValue('is_licensed_agent', false);
+                          }
+                        }}
+                      />
+                      <Label htmlFor="skip_pipeline" className="text-[11px] cursor-pointer">
+                        Skip onboarding pipeline (admin/office staff)
+                      </Label>
+                    </div>
+                  )}
+                </form.Field>
+
+                {/* Info alert about pipeline assignment */}
+                {(form.state.values.is_licensed_agent || form.state.values.skip_pipeline) && (
+                  <Alert className="py-2">
+                    <InfoIcon className="h-3 w-3" />
+                    <AlertDescription className="text-[10px]">
+                      {form.state.values.is_licensed_agent ? (
+                        <>Licensed agents will be assigned a fast-track 3-phase onboarding process instead of the standard 7-phase pipeline.</>
+                      ) : (
+                        <>This user will not be added to any onboarding pipeline and won't appear in recruiting dashboards.</>
+                      )}
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </div>
+
               <form.Field name="resident_state">
                 {(field) => (
                   <div className="grid gap-1">
@@ -530,52 +611,76 @@ export function AddRecruitDialog({
                 )}
               </form.Field>
 
-              <div className="grid grid-cols-2 gap-2">
-                <form.Field name="license_number">
-                  {(field) => (
-                    <div className="grid gap-1">
-                      <Label htmlFor="license_number" className="text-[11px]">License Number</Label>
-                      <Input className="h-7 text-[11px]"
-                        id="license_number"
-                        placeholder="If already licensed"
-                        value={field.state.value}
-                        onChange={(e) => field.handleChange(e.target.value)}
-                        onBlur={field.handleBlur}
-                      />
-                    </div>
-                  )}
-                </form.Field>
+              {/* Show licensing fields if marked as licensed */}
+              {form.state.values.is_licensed_agent && (
+                <>
+                  <div className="grid grid-cols-2 gap-2">
+                    <form.Field name="license_number">
+                      {(field) => (
+                        <div className="grid gap-1">
+                          <Label htmlFor="license_number" className="text-[11px]">License Number</Label>
+                          <Input className="h-7 text-[11px]"
+                            id="license_number"
+                            placeholder="Insurance license number"
+                            value={field.state.value}
+                            onChange={(e) => field.handleChange(e.target.value)}
+                            onBlur={field.handleBlur}
+                          />
+                        </div>
+                      )}
+                    </form.Field>
 
-                <form.Field name="npn">
-                  {(field) => (
-                    <div className="grid gap-1">
-                      <Label htmlFor="npn" className="text-[11px]">NPN (National Producer Number)</Label>
-                      <Input className="h-7 text-[11px]"
-                        id="npn"
-                        placeholder="If has NPN"
-                        value={field.state.value}
-                        onChange={(e) => field.handleChange(e.target.value)}
-                        onBlur={field.handleBlur}
-                      />
-                    </div>
-                  )}
-                </form.Field>
-              </div>
-
-              <form.Field name="license_expiration">
-                {(field) => (
-                  <div className="grid gap-1">
-                    <Label htmlFor="license_expiration" className="text-[11px]">License Expiration Date</Label>
-                    <Input className="h-7 text-[11px]"
-                      id="license_expiration"
-                      type="date"
-                      value={field.state.value}
-                      onChange={(e) => field.handleChange(e.target.value)}
-                      onBlur={field.handleBlur}
-                    />
+                    <form.Field name="npn">
+                      {(field) => (
+                        <div className="grid gap-1">
+                          <Label htmlFor="npn" className="text-[11px]">NPN (National Producer Number)</Label>
+                          <Input className="h-7 text-[11px]"
+                            id="npn"
+                            placeholder="NPN number"
+                            value={field.state.value}
+                            onChange={(e) => field.handleChange(e.target.value)}
+                            onBlur={field.handleBlur}
+                          />
+                        </div>
+                      )}
+                    </form.Field>
                   </div>
-                )}
-              </form.Field>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <form.Field name="license_expiration">
+                      {(field) => (
+                        <div className="grid gap-1">
+                          <Label htmlFor="license_expiration" className="text-[11px]">License Expiration Date</Label>
+                          <Input className="h-7 text-[11px]"
+                            id="license_expiration"
+                            type="date"
+                            value={field.state.value}
+                            onChange={(e) => field.handleChange(e.target.value)}
+                            onBlur={field.handleBlur}
+                          />
+                        </div>
+                      )}
+                    </form.Field>
+
+                    <form.Field name="years_licensed">
+                      {(field) => (
+                        <div className="grid gap-1">
+                          <Label htmlFor="years_licensed" className="text-[11px]">Years Licensed</Label>
+                          <Input className="h-7 text-[11px]"
+                            id="years_licensed"
+                            type="number"
+                            min="0"
+                            placeholder="Years of experience"
+                            value={field.state.value || ''}
+                            onChange={(e) => field.handleChange(e.target.value ? parseInt(e.target.value) : 0)}
+                            onBlur={field.handleBlur}
+                          />
+                        </div>
+                      )}
+                    </form.Field>
+                  </div>
+                </>
+              )}
             </TabsContent>
 
             {/* Assignment Tab */}
@@ -602,6 +707,32 @@ export function AddRecruitDialog({
                     <p className="text-[10px] text-muted-foreground">
                       Upline/trainer who will manage this recruit's onboarding. Leave blank to assign later.
                     </p>
+                  </div>
+                )}
+              </form.Field>
+
+              {/* Admin checkbox */}
+              <form.Field name="is_admin">
+                {(field) => (
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="is_admin"
+                        checked={field.state.value}
+                        onCheckedChange={(checked) => field.handleChange(checked === true)}
+                      />
+                      <Label htmlFor="is_admin" className="text-[11px] cursor-pointer">
+                        Grant admin privileges
+                      </Label>
+                    </div>
+                    {field.state.value && (
+                      <Alert className="py-2">
+                        <InfoIcon className="h-3 w-3" />
+                        <AlertDescription className="text-[10px]">
+                          Admin users have full system access and will not be added to any onboarding pipeline.
+                        </AlertDescription>
+                      </Alert>
+                    )}
                   </div>
                 )}
               </form.Field>

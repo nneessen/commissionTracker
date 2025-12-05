@@ -34,6 +34,11 @@ export interface UserProfile {
   onboarding_completed_at?: string | null;
   referral_source?: string | null;
 
+  // Licensing & Pipeline fields
+  agent_status?: 'unlicensed' | 'licensed' | 'not_applicable';
+  licensing_info?: Record<string, any> | null;
+  pipeline_template_id?: string | null;
+
   // Social media
   instagram_username?: string | null;
   instagram_url?: string | null;

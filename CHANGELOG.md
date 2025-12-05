@@ -6,6 +6,30 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-12-05 09:01:16
+
+### Changed Files
+- `.serena/memories/multiple_pipeline_support_implemented.md`
+- `src/data/compGuideData.ts`
+- `src/features/recruiting/components/AddRecruitDialog.tsx`
+- `src/features/recruiting/hooks/useRecruitMutations.ts`
+- `src/features/settings/commission-rates/CommissionRatesManagement.tsx`
+- `src/features/settings/components/CompGuideImporter.tsx`
+- `src/features/settings/products/components/ProductForm.tsx`
+- `src/services/recruiting/recruitingService.ts`
+- `src/types/database.types.ts`
+- `src/types/hierarchy.types.ts`
+- `src/types/recruiting.types.ts`
+- `supabase/.temp/cli-latest`
+- `supabase/migrations/20251205_001_multiple_pipeline_support.sql`
+- `supabase/migrations/20251205_002_add_product_type_enum.sql`
+- `tsconfig.tsbuildinfo`
+
+### Statistics
+```
+ 15 files changed, 1222 insertions(+), 2070 deletions(-)
+```
+
 ## [Checkpoint] - 2025-12-04 18:45:04
 
 ### Changed Files

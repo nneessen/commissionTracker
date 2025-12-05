@@ -7,10 +7,16 @@ import type {
   UserEmail,
   UserActivityLog,
   RecruitFilters,
-  CreateRecruitInput,
   UpdateRecruitInput,
   UpdatePhaseInput,
 } from '@/types/recruiting';
+import type {
+  CreateRecruitInput,
+  AgentStatus,
+  isLicensedAgent,
+  requiresPipeline,
+  shouldSkipPipeline,
+} from '@/types/recruiting.types';
 import type { SendEmailRequest } from '@/types/email.types';
 
 export const recruitingService = {
@@ -19,17 +25,19 @@ export const recruitingService = {
   // ========================================
 
   async getRecruits(filters?: RecruitFilters, page = 1, limit = 50) {
+    // Only show users who are in the recruiting pipeline (have agent_status of unlicensed or licensed)
     let query = supabase
       .from('user_profiles')
       .select(
         `
         *,
         recruiter:recruiter_id(id, email, first_name, last_name),
-        upline:upline_id(id, email, first_name, last_name)
+        upline:upline_id(id, email, first_name, last_name),
+        pipeline_template:pipeline_template_id(id, name, description)
       `,
         { count: 'exact' }
       )
-      // No filtering here - let the component filter by roles
+      .in('agent_status', ['unlicensed', 'licensed']);
 
     // Apply filters
     if (filters?.onboarding_status && filters.onboarding_status.length > 0) {
@@ -94,21 +102,63 @@ export const recruitingService = {
   },
 
   async createRecruit(recruit: CreateRecruitInput) {
+    // Extract skip_pipeline and other non-database fields
+    const { skip_pipeline, is_licensed_agent, ...dbFields } = recruit;
+
+    // Determine role based on agent status and skip_pipeline flag
+    let roles: string[] = ['recruit']; // Default
+    let pipelineTemplateId: string | null = null;
+
+    if (skip_pipeline || recruit.agent_status === 'not_applicable') {
+      // Admin or non-agent roles - no pipeline
+      roles = recruit.roles || ['view_only'];
+      pipelineTemplateId = null;
+    } else if (recruit.agent_status === 'licensed') {
+      // Licensed agent - gets agent role and fast-track pipeline
+      roles = ['agent'];
+
+      // Get the fast-track template
+      const { data: template } = await supabase
+        .from('pipeline_templates')
+        .select('id')
+        .eq('name', 'Licensed Agent Fast-Track')
+        .eq('is_active', true)
+        .single();
+
+      pipelineTemplateId = template?.id || null;
+    } else {
+      // Unlicensed recruit - gets standard pipeline
+      roles = ['recruit'];
+
+      // Get the standard template
+      const { data: template } = await supabase
+        .from('pipeline_templates')
+        .select('id')
+        .eq('name', 'Standard Recruiting Pipeline')
+        .eq('is_active', true)
+        .single();
+
+      pipelineTemplateId = template?.id || null;
+    }
+
     const { data, error } = await supabase
       .from('user_profiles')
       .insert({
-        ...recruit,
-        roles: ['recruit'], // CRITICAL: Set recruit role
-        onboarding_status: 'interview_1', // Default starting phase (not 'lead')
-        current_onboarding_phase: 'initial_contact',
-        onboarding_started_at: new Date().toISOString(),
+        ...dbFields,
+        roles,
+        agent_status: recruit.agent_status || 'unlicensed',
+        pipeline_template_id: pipelineTemplateId,
+        licensing_info: recruit.licensing_info || {},
+        onboarding_status: skip_pipeline ? null : 'interview_1',
+        current_onboarding_phase: skip_pipeline ? null : 'initial_contact',
+        onboarding_started_at: skip_pipeline ? null : new Date().toISOString(),
         // Note: user_id can be NULL for leads without login
         user_id: null,
         // Required hierarchy fields (set defaults)
         hierarchy_path: '', // Will be updated by trigger
         hierarchy_depth: 0, // Will be updated by trigger
         approval_status: 'pending',
-        is_admin: false,
+        is_admin: recruit.is_admin || false,
       })
       .select()
       .single();
@@ -349,11 +399,11 @@ export const recruitingService = {
   // ========================================
 
   async getRecruitingStats(recruiterId?: string) {
-    // Query all user_profiles with recruit role
+    // Only count users in the recruiting pipeline
     let query = supabase
       .from('user_profiles')
       .select('*', { count: 'exact', head: false })
-      .contains('roles', ['recruit']); // Filter for users with recruit role
+      .in('agent_status', ['unlicensed', 'licensed']);
 
     if (recruiterId) {
       query = query.eq('recruiter_id', recruiterId);
@@ -387,18 +437,17 @@ export const recruitingService = {
   // ========================================
 
   async searchRecruits(searchTerm: string, limit = 10) {
-    // Search recruits in any active phase (not completed/dropped)
-    const activePhases = ['interview_1', 'zoom_interview', 'pre_licensing', 'exam', 'npn_received', 'contracting', 'bootcamp'];
+    // Only search users in the recruiting pipeline
     const { data, error } = await supabase
       .from('user_profiles')
-      .select('id, first_name, last_name, email, profile_photo_url, onboarding_status')
-      .in('onboarding_status', activePhases)
+      .select('id, first_name, last_name, email, profile_photo_url, onboarding_status, agent_status')
+      .in('agent_status', ['unlicensed', 'licensed'])
       .or(
         `first_name.ilike.%${searchTerm}%,last_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`
       )
       .limit(limit);
 
     if (error) throw error;
-    return data as UserProfile[];
+    return data as Partial<UserProfile>[];
   },
 };
