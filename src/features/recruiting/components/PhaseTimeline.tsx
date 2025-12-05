@@ -28,15 +28,15 @@ export function PhaseTimeline({ phaseProgress, phases, onPhaseClick }: PhaseTime
   const getPhaseIcon = (status: string) => {
     switch (status) {
       case 'completed':
-        return <CheckCircle2 className="h-6 w-6 text-green-600" />;
+        return <CheckCircle2 className="h-3 w-3 text-green-600" />;
       case 'in_progress':
-        return <Clock className="h-6 w-6 text-yellow-600" />;
+        return <Clock className="h-3 w-3 text-yellow-600" />;
       case 'blocked':
-        return <AlertCircle className="h-6 w-6 text-red-600" />;
+        return <AlertCircle className="h-3 w-3 text-red-600" />;
       case 'skipped':
-        return <SkipForward className="h-6 w-6 text-gray-600" />;
+        return <SkipForward className="h-3 w-3 text-gray-600" />;
       default:
-        return <Circle className="h-6 w-6 text-gray-400" />;
+        return <Circle className="h-3 w-3 text-gray-400" />;
     }
   };
 
@@ -56,20 +56,20 @@ export function PhaseTimeline({ phaseProgress, phases, onPhaseClick }: PhaseTime
   };
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-1">
       {/* Progress summary */}
-      <div className="space-y-1">
-        <div className="flex items-center justify-between text-sm">
+      <div className="space-y-0.5">
+        <div className="flex items-center justify-between text-xs">
           <span className="font-medium">Overall Progress</span>
           <span className="text-muted-foreground">
-            {completedPhases} of {totalPhases} phases complete ({progressPercentage}%)
+            {completedPhases}/{totalPhases} ({progressPercentage}%)
           </span>
         </div>
-        <Progress value={progressPercentage} className="h-2" />
+        <Progress value={progressPercentage} className="h-1.5" />
       </div>
 
       {/* Phase timeline */}
-      <div className="space-y-1">
+      <div className="space-y-0.5">
         {sortedPhases.map((phase, index) => {
           const progress = progressMap.get(phase.id);
           const status = progress?.status || 'not_started';
@@ -78,42 +78,42 @@ export function PhaseTimeline({ phaseProgress, phases, onPhaseClick }: PhaseTime
           return (
             <div
               key={phase.id}
-              className={`p-1 mb-1 rounded-sm transition-all ${getPhaseColor(status)} ${
+              className={`p-1 rounded-sm transition-all ${getPhaseColor(status)} ${
                 isClickable ? 'cursor-pointer hover:bg-muted/50' : ''
               }`}
               onClick={isClickable ? () => onPhaseClick(phase.id) : undefined}
             >
               <div className="flex items-start gap-1">
-                <div className="flex-shrink-0">{getPhaseIcon(status)}</div>
+                <div className="flex-shrink-0 mt-0.5">{getPhaseIcon(status)}</div>
 
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <h4 className="font-semibold text-sm">{phase.phase_name}</h4>
-                    <span className="text-xs text-muted-foreground">
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-medium text-xs">{phase.phase_name}</span>
+                    <span className="text-[10px] text-muted-foreground">
                       {index + 1}/{totalPhases}
                     </span>
-                    <Badge variant="outline" className="text-xs px-1 py-0">
+                    <Badge variant="outline" className="text-[10px] px-1 py-0 h-3.5">
                       {status.replace('_', ' ')}
                     </Badge>
                   </div>
 
                   {phase.phase_description && (
-                    <p className="text-sm text-muted-foreground mb-2">{phase.phase_description}</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">{phase.phase_description}</p>
                   )}
 
                   {progress?.blocked_reason && (
-                    <div className="mt-2 p-2 bg-red-100/50 dark:bg-red-950/50 rounded-sm text-sm">
+                    <div className="mt-1 p-1 bg-red-100/50 dark:bg-red-950/50 rounded-sm text-[11px]">
                       <span className="font-medium text-red-900 dark:text-red-100">Blocked: </span>
                       <span className="text-red-800 dark:text-red-200">{progress.blocked_reason}</span>
                     </div>
                   )}
 
                   {progress?.notes && !progress.blocked_reason && (
-                    <p className="mt-2 text-sm text-muted-foreground italic">{progress.notes}</p>
+                    <p className="mt-1 text-[11px] text-muted-foreground italic">{progress.notes}</p>
                   )}
 
                   {progress?.started_at && (
-                    <div className="mt-2 flex items-center gap-4 text-xs text-muted-foreground">
+                    <div className="mt-1 flex items-center gap-2 text-[10px] text-muted-foreground">
                       <span>
                         Started: {new Date(progress.started_at).toLocaleDateString()}
                       </span>

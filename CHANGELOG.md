@@ -6,6 +6,34 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-12-05 14:24:58
+
+### Changed Files
+- `package-lock.json`
+- `package.json`
+- `plans/recruiting-refactor-continuation-prompt.md`
+- `scripts/test-delete-recruit.js`
+- `src/features/recruiting/RecruitingDashboard.tsx`
+- `src/features/recruiting/components/DeleteRecruitDialog.optimized.tsx`
+- `src/features/recruiting/components/DeleteRecruitDialog.tsx`
+- `src/features/recruiting/components/PhaseTimeline.tsx`
+- `src/features/recruiting/components/RecruitDetailPanel.tsx`
+- `src/features/recruiting/components/RecruitListTable.tsx`
+- `src/features/recruiting/components/RecruitingErrorBoundary.tsx`
+- `src/features/recruiting/hooks/useRecruitMutations.ts`
+- `src/services/recruiting/recruitingService.enhanced.ts`
+- `src/services/recruiting/recruitingService.ts`
+- `supabase/migrations/20251205_001_recruiting_soft_delete_and_constraints.sql`
+- `supabase/migrations/20251205_002_recruiting_fix_and_reapply.sql`
+- `supabase/migrations/20251205_003_fix_hard_delete_audit.sql`
+- `supabase/migrations/20251205_004_fix_delete_view_and_function.sql`
+- `supabase/migrations/20251205_005_fix_delete_view_proper.sql`
+
+### Statistics
+```
+ 19 files changed, 2786 insertions(+), 143 deletions(-)
+```
+
 ## [Checkpoint] - 2025-12-05 09:01:16
 
 ### Changed Files

@@ -207,28 +207,28 @@ export function RecruitListTable({
                   <TableCell className="p-0.5 text-center text-xs">
                     {getStatusIndicator(recruit)}
                   </TableCell>
-                  <TableCell className="p-0.5 text-xs font-mono truncate">
+                  <TableCell className="p-0.5 text-xs truncate">
                     {recruit.first_name && recruit.last_name
                       ? `${recruit.first_name} ${recruit.last_name}`
                       : recruit.email?.split('@')[0]}
                   </TableCell>
-                  <TableCell className="p-0.5 text-xs font-mono truncate">
+                  <TableCell className="p-0.5 text-xs truncate">
                     {recruit.current_onboarding_phase || 'Not Started'}
                   </TableCell>
-                  <TableCell className="p-0.5 text-[10px] text-muted-foreground font-mono truncate">
+                  <TableCell className="p-0.5 text-[10px] text-muted-foreground truncate">
                     {recruitWithRelations.recruiter?.first_name && recruitWithRelations.recruiter?.last_name
                       ? `${recruitWithRelations.recruiter.first_name[0]}. ${recruitWithRelations.recruiter.last_name}`
                       : recruitWithRelations.recruiter?.email?.split('@')[0] || '-'}
                   </TableCell>
-                  <TableCell className="p-0.5 text-[10px] text-muted-foreground font-mono truncate">
+                  <TableCell className="p-0.5 text-[10px] text-muted-foreground truncate">
                     {recruitWithRelations.upline?.first_name && recruitWithRelations.upline?.last_name
                       ? `${recruitWithRelations.upline.first_name[0]}. ${recruitWithRelations.upline.last_name}`
                       : recruitWithRelations.upline?.email?.split('@')[0] || '-'}
                   </TableCell>
-                  <TableCell className="p-0.5 text-[10px] text-muted-foreground text-center font-mono">
+                  <TableCell className="p-0.5 text-[10px] text-muted-foreground text-center">
                     {daysInPhase}
                   </TableCell>
-                  <TableCell className="p-0.5 text-[10px] text-muted-foreground font-mono truncate">
+                  <TableCell className="p-0.5 text-[10px] text-muted-foreground truncate">
                     {recruit.updated_at
                       ? formatDistanceToNow(new Date(recruit.updated_at), { addSuffix: false })
                           .replace('about ', '')

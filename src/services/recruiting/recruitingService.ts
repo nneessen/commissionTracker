@@ -26,6 +26,7 @@ export const recruitingService = {
 
   async getRecruits(filters?: RecruitFilters, page = 1, limit = 50) {
     // Only show users who are in the recruiting pipeline (have agent_status of unlicensed or licensed)
+    // AND are not deleted
     let query = supabase
       .from('user_profiles')
       .select(
@@ -37,7 +38,8 @@ export const recruitingService = {
       `,
         { count: 'exact' }
       )
-      .in('agent_status', ['unlicensed', 'licensed']);
+      .in('agent_status', ['unlicensed', 'licensed'])
+      .neq('is_deleted', true);
 
     // Apply filters
     if (filters?.onboarding_status && filters.onboarding_status.length > 0) {
@@ -103,7 +105,7 @@ export const recruitingService = {
 
   async createRecruit(recruit: CreateRecruitInput) {
     // Extract skip_pipeline and other non-database fields
-    const { skip_pipeline, is_licensed_agent, ...dbFields } = recruit;
+    const { skip_pipeline, ...dbFields } = recruit;
 
     // Determine role based on agent status and skip_pipeline flag
     let roles: string[] = ['recruit']; // Default
@@ -179,10 +181,25 @@ export const recruitingService = {
     return data as UserProfile;
   },
 
+  // DEPRECATED: Use enhancedRecruitingService.softDeleteRecruit instead
   async deleteRecruit(id: string) {
-    const { error } = await supabase.from('user_profiles').delete().eq('id', id);
+    // Import the enhanced service for proper deletion
+    const { enhancedRecruitingService } = await import('./recruitingService.enhanced');
 
-    if (error) throw error;
+    // Use soft delete by default (safer)
+    // Get current user ID from auth context for audit trail
+    const { data: { user } } = await supabase.auth.getUser();
+    const deletedBy = user?.id || id; // Fallback to self-delete if no auth user
+
+    const result = await enhancedRecruitingService.softDeleteRecruit(
+      id,
+      deletedBy,
+      'Deleted via legacy API'
+    );
+
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to delete recruit');
+    }
   },
 
   // ========================================
@@ -399,11 +416,12 @@ export const recruitingService = {
   // ========================================
 
   async getRecruitingStats(recruiterId?: string) {
-    // Only count users in the recruiting pipeline
+    // Only count users in the recruiting pipeline who are not deleted
     let query = supabase
       .from('user_profiles')
       .select('*', { count: 'exact', head: false })
-      .in('agent_status', ['unlicensed', 'licensed']);
+      .in('agent_status', ['unlicensed', 'licensed'])
+      .neq('is_deleted', true);
 
     if (recruiterId) {
       query = query.eq('recruiter_id', recruiterId);
@@ -437,11 +455,12 @@ export const recruitingService = {
   // ========================================
 
   async searchRecruits(searchTerm: string, limit = 10) {
-    // Only search users in the recruiting pipeline
+    // Only search users in the recruiting pipeline who are not deleted
     const { data, error } = await supabase
       .from('user_profiles')
       .select('id, first_name, last_name, email, profile_photo_url, onboarding_status, agent_status')
       .in('agent_status', ['unlicensed', 'licensed'])
+      .neq('is_deleted', true)
       .or(
         `first_name.ilike.%${searchTerm}%,last_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`
       )

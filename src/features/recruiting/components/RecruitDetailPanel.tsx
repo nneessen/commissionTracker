@@ -18,7 +18,10 @@ import {
   User,
   Instagram,
   Linkedin,
+  Trash2,
 } from 'lucide-react';
+import { DeleteRecruitDialogOptimized } from './DeleteRecruitDialog.optimized';
+import { useRouter } from '@tanstack/react-router';
 import { PhaseTimeline } from './PhaseTimeline';
 import { PhaseChecklist } from './PhaseChecklist';
 import { DocumentManager } from './DocumentManager';
@@ -47,11 +50,14 @@ interface RecruitDetailPanelProps {
   recruit: UserProfile;
   currentUserId?: string;
   isUpline?: boolean;
+  onRecruitDeleted?: () => void;
 }
 
-export function RecruitDetailPanel({ recruit, currentUserId, isUpline = false }: RecruitDetailPanelProps) {
+export function RecruitDetailPanel({ recruit, currentUserId, isUpline = false, onRecruitDeleted }: RecruitDetailPanelProps) {
   const [activeTab, setActiveTab] = useState('progress');
   const [selectedPhaseId, setSelectedPhaseId] = useState<string | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const router = useRouter();
 
   // Get current user profile to check roles
   const { data: currentUserProfile } = useCurrentUserProfile();
@@ -113,6 +119,11 @@ export function RecruitDetailPanel({ recruit, currentUserId, isUpline = false }:
     setActiveTab('checklist'); // Auto-switch to checklist tab
   };
 
+  const handleDeleteSuccess = () => {
+    // Call parent callback to clear the selection
+    onRecruitDeleted?.();
+  };
+
   const isLoading = progressLoading || currentPhaseLoading || templateLoading;
 
   if (isLoading) {
@@ -132,30 +143,11 @@ export function RecruitDetailPanel({ recruit, currentUserId, isUpline = false }:
     });
   };
 
-  // Handle case where recruit has no phase progress
-  if ((!phaseProgress || phaseProgress.length === 0) && template) {
-    return (
-      <div className="p-6 text-center text-muted-foreground space-y-4">
-        <p>This recruit has no pipeline progress initialized.</p>
-        {isUpline && (
-          <Button
-            onClick={handleInitializeProgress}
-            disabled={initializeProgress.isPending}
-          >
-            {initializeProgress.isPending ? 'Initializing...' : 'Initialize Pipeline Progress'}
-          </Button>
-        )}
-      </div>
-    );
-  }
+  // Handle case where recruit has no phase progress - but still show full UI
+  const hasPipelineProgress = phaseProgress && phaseProgress.length > 0;
 
-  if (!phaseProgress || !template) {
-    return (
-      <div className="p-6 text-center text-muted-foreground">
-        <p>Unable to load recruit details</p>
-      </div>
-    );
-  }
+  // Don't block the entire UI just because template isn't loaded
+  // User should still be able to see recruit info and delete them
 
   const displayName = recruit.first_name && recruit.last_name
     ? `${recruit.first_name} ${recruit.last_name}`
@@ -235,39 +227,79 @@ export function RecruitDetailPanel({ recruit, currentUserId, isUpline = false }:
           </div>
         </div>
 
-        {/* Quick Actions - moved below header for better fit */}
-        {isUpline && (
+        {/* Quick Actions - Always show delete, conditionally show pipeline actions */}
+        {/* Show actions if: user is upline, user is admin, or user has permission */}
+        {(isUpline || currentUserProfile?.is_admin) && (
           <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={handleAdvancePhase}
-              disabled={!currentPhase || currentPhase.status === 'blocked'}
-              className="text-xs h-7"
-            >
-              <ArrowRight className="h-3 w-3 mr-1" />
-              Advance
-            </Button>
-            {currentPhase?.status === 'blocked' ? (
-              <Button
-                size="sm"
-                variant="default"
-                onClick={handleUnblockPhase}
-                className="text-xs h-7"
-              >
-                <AlertCircle className="h-3 w-3 mr-1" />
-                Unblock
-              </Button>
+            {/* Pipeline actions - only show if pipeline is initialized */}
+            {hasPipelineProgress ? (
+              <>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleAdvancePhase}
+                  disabled={!currentPhase || currentPhase?.status === 'blocked'}
+                  className="text-xs h-7"
+                >
+                  <ArrowRight className="h-3 w-3 mr-1" />
+                  Advance
+                </Button>
+                {currentPhase?.status === 'blocked' ? (
+                  <Button
+                    size="sm"
+                    variant="default"
+                    onClick={handleUnblockPhase}
+                    className="text-xs h-7"
+                  >
+                    <AlertCircle className="h-3 w-3 mr-1" />
+                    Unblock
+                  </Button>
+                ) : (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleBlockPhase}
+                    disabled={!currentPhase}
+                    className="text-xs h-7"
+                  >
+                    <AlertCircle className="h-3 w-3 mr-1" />
+                    Block
+                  </Button>
+                )}
+              </>
             ) : (
               <Button
                 size="sm"
                 variant="outline"
-                onClick={handleBlockPhase}
-                disabled={!currentPhase}
+                onClick={handleInitializeProgress}
+                disabled={initializeProgress.isPending}
                 className="text-xs h-7"
               >
-                <AlertCircle className="h-3 w-3 mr-1" />
-                Block
+                {initializeProgress.isPending ? 'Initializing...' : 'Initialize Pipeline'}
+              </Button>
+            )}
+            <div className="flex-1" />
+            {/* Delete button - but prevent self-deletion */}
+            {currentUserId !== recruit.id ? (
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={() => setDeleteDialogOpen(true)}
+                className="text-xs h-7"
+              >
+                <Trash2 className="h-3 w-3 mr-1" />
+                Delete
+              </Button>
+            ) : (
+              <Button
+                size="sm"
+                variant="destructive"
+                disabled
+                className="text-xs h-7"
+                title="You cannot delete yourself"
+              >
+                <Trash2 className="h-3 w-3 mr-1" />
+                Delete
               </Button>
             )}
           </div>
@@ -289,42 +321,63 @@ export function RecruitDetailPanel({ recruit, currentUserId, isUpline = false }:
         </TabsList>
 
         <TabsContent value="progress" className="space-y-4">
-          <PhaseTimeline
-            phaseProgress={phaseProgress}
-            phases={(template.phases || []) as any}
-            onPhaseClick={handlePhaseClick}
-          />
+          {hasPipelineProgress && template ? (
+            <PhaseTimeline
+              phaseProgress={phaseProgress}
+              phases={(template.phases || []) as any}
+              onPhaseClick={handlePhaseClick}
+            />
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              <p className="mb-4">No pipeline progress initialized for this recruit.</p>
+              {isUpline && (
+                <Button
+                  size="sm"
+                  onClick={handleInitializeProgress}
+                  disabled={initializeProgress.isPending}
+                >
+                  {initializeProgress.isPending ? 'Initializing...' : 'Initialize Pipeline'}
+                </Button>
+              )}
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="checklist" className="space-y-4">
-          {(() => {
-            // Find the phase to display (selected or current)
-            const targetPhaseId = selectedPhaseId || currentPhase?.phase_id;
-            const targetPhase = template.phases?.find((p: any) => p.id === targetPhaseId);
-            const targetChecklistItems = targetPhase?.checklist_items;
+          {hasPipelineProgress && template ? (
+            (() => {
+              // Find the phase to display (selected or current)
+              const targetPhaseId = selectedPhaseId || currentPhase?.phase_id;
+              const targetPhase = template.phases?.find((p: any) => p.id === targetPhaseId);
+              const targetChecklistItems = targetPhase?.checklist_items;
 
-            if (!targetChecklistItems || targetChecklistItems.length === 0) {
+              if (!targetChecklistItems || targetChecklistItems.length === 0) {
+                return (
+                  <div className="text-center py-8 text-muted-foreground">
+                    {selectedPhaseId ? 'No checklist items for selected phase' : 'No current phase or checklist items'}
+                  </div>
+                );
+              }
+
               return (
-                <div className="text-center py-8 text-muted-foreground">
-                  {selectedPhaseId ? 'No checklist items for selected phase' : 'No current phase or checklist items'}
-                </div>
+                <PhaseChecklist
+                  userId={recruit.id}
+                  checklistItems={targetChecklistItems}
+                  checklistProgress={checklistProgress || []}
+                  isUpline={isUpline}
+                  currentUserId={currentUserId}
+                  currentPhaseId={currentPhase?.phase_id}
+                  viewedPhaseId={targetPhaseId}
+                  isAdmin={currentUserProfile?.is_admin || false}
+                  onPhaseComplete={() => setActiveTab('progress')}
+                />
               );
-            }
-
-            return (
-              <PhaseChecklist
-                userId={recruit.id}
-                checklistItems={targetChecklistItems}
-                checklistProgress={checklistProgress || []}
-                isUpline={isUpline}
-                currentUserId={currentUserId}
-                currentPhaseId={currentPhase?.phase_id}
-                viewedPhaseId={targetPhaseId}
-                isAdmin={currentUserProfile?.is_admin || false}
-                onPhaseComplete={() => setActiveTab('progress')}
-              />
-            );
-          })()}
+            })()
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              Pipeline not initialized. Initialize pipeline to view checklist items.
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="documents" className="space-y-4">
@@ -374,6 +427,14 @@ export function RecruitDetailPanel({ recruit, currentUserId, isUpline = false }:
           )}
         </TabsContent>
       </Tabs>
+
+      <DeleteRecruitDialogOptimized
+        recruit={recruit}
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onSuccess={handleDeleteSuccess}
+        mode="soft" // Use soft delete by default for safety
+      />
     </div>
   );
 }

@@ -9,6 +9,7 @@ import { RecruitListTable } from './components/RecruitListTable';
 import { RecruitDetailPanel } from './components/RecruitDetailPanel';
 import { AddRecruitDialog } from './components/AddRecruitDialog';
 import { StatusLegend } from './components/StatusLegend';
+import { RecruitingErrorBoundary } from './components/RecruitingErrorBoundary';
 import type { UserProfile } from '@/types/hierarchy.types';
 import { useAuth } from '@/contexts/AuthContext';
 import { showToast } from '@/utils/toast';
@@ -21,7 +22,7 @@ type RecruitWithRelations = UserProfile & {
   upline?: { id: string; first_name?: string; last_name?: string; email: string } | null;
 };
 
-export function RecruitingDashboard() {
+function RecruitingDashboardContent() {
   const { user } = useAuth();
   const { data: recruitsData, isLoading: recruitsLoading } = useRecruits();
 
@@ -100,19 +101,19 @@ export function RecruitingDashboard() {
         <div className="grid grid-cols-4 gap-3">
           <div>
             <div className="text-[10px] text-muted-foreground uppercase">Total</div>
-            <div className="text-lg font-bold font-mono">{stats.total}</div>
+            <div className="text-lg font-bold">{stats.total}</div>
           </div>
           <div>
             <div className="text-[10px] text-muted-foreground uppercase">Active</div>
-            <div className="text-lg font-bold font-mono">{stats.active}</div>
+            <div className="text-lg font-bold">{stats.active}</div>
           </div>
           <div>
             <div className="text-[10px] text-muted-foreground uppercase">Complete</div>
-            <div className="text-lg font-bold font-mono">{stats.completed}</div>
+            <div className="text-lg font-bold">{stats.completed}</div>
           </div>
           <div>
             <div className="text-[10px] text-muted-foreground uppercase">Dropped</div>
-            <div className="text-lg font-bold font-mono">{stats.dropped}</div>
+            <div className="text-lg font-bold">{stats.dropped}</div>
           </div>
         </div>
       </div>
@@ -143,6 +144,7 @@ export function RecruitingDashboard() {
                   recruit={selectedRecruit}
                   currentUserId={user?.id}
                   isUpline={true}
+                  onRecruitDeleted={() => setSelectedRecruit(null)}
                 />
               </div>
             ) : (
@@ -168,5 +170,13 @@ export function RecruitingDashboard() {
         }}
       />
     </div>
+  );
+}
+
+export function RecruitingDashboard() {
+  return (
+    <RecruitingErrorBoundary>
+      <RecruitingDashboardContent />
+    </RecruitingErrorBoundary>
   );
 }
