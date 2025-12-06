@@ -6,6 +6,46 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-12-06 14:49:21
+
+### Changed Files
+- `scripts/check_and_fix_user.sql`
+- `scripts/check_nick_user.js`
+- `scripts/check_role_permissions.sql`
+- `scripts/check_user_permissions.sql`
+- `scripts/fix-permissions-client.ts`
+- `scripts/fix_nick_user.sql`
+- `scripts/fix_nick_user_final.sql`
+- `scripts/test_ui_permissions.sql`
+- `src/components/auth/ApprovalGuard.tsx`
+- `src/components/layout/Sidebar.tsx`
+- `src/services/admin/userApprovalService.ts`
+- `src/services/agents/agentService.ts`
+- `src/services/recruiting/recruitingService.ts`
+- `src/services/settings/agentService.ts`
+- `src/services/settings/userService.ts`
+- `src/services/users/userService.ts`
+- `src/test/checkUser.tsx`
+- `src/types/database.types.ts`
+- `src/types/permissions.types.ts`
+- `src/types/user.types.ts`
+- `supabase/functions/fix-active-agent-permissions/index.ts`
+- `supabase/functions/fix-nick-user/index.ts`
+- `supabase/migrations/20251205_002_add_product_type_enum.sql`
+- `supabase/migrations/20251206_001_fix_agent_permissions_and_add_active_agent_role.sql`
+- `supabase/migrations/20251206_002_fix_agent_permissions_workaround.sql`
+- `supabase/migrations/20251206_003_simple_agent_permissions_fix.sql`
+- `supabase/migrations/20251206_004_comprehensive_user_service_fix.sql`
+- `supabase/migrations/20251206_CRITICAL_fix_permissions_and_security.sql`
+- `supabase/migrations/20251206_URGENT_fix_get_user_permissions_function.sql`
+- `supabase/migrations/20251206_fix_active_agent_permissions_final.sql`
+- `tsconfig.tsbuildinfo`
+
+### Statistics
+```
+ 31 files changed, 3423 insertions(+), 1254 deletions(-)
+```
+
 ## [Checkpoint] - 2025-12-05 14:24:58
 
 ### Changed Files

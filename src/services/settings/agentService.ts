@@ -15,11 +15,11 @@ export class AgentService {
   }
 
   getById(id: string) {
-    return userService.getUserById(id);
+    return userService.getById(id);
   }
 
   getAgentById(id: string) {
-    return userService.getUserById(id);
+    return userService.getById(id);
   }
 
   create(data: any) {

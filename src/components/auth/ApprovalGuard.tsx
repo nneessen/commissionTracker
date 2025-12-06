@@ -30,8 +30,11 @@ export const ApprovalGuard: React.FC<ApprovalGuardProps> = ({ children }) => {
     profile,
   } = useAuthorizationStatus();
 
-  const { is, isLoading: permissionsLoading } = usePermissionCheck();
+  const { is, isLoading: permissionsLoading, roles } = usePermissionCheck();
   const isRecruit = is('recruit');
+  const isActiveAgent = is('active_agent');
+  const isAgent = is('agent');
+  const isAdmin = is('admin');
 
   const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
   const [authCheckLoading, setAuthCheckLoading] = useState(true);
@@ -73,7 +76,9 @@ export const ApprovalGuard: React.FC<ApprovalGuardProps> = ({ children }) => {
   const currentPath = window.location.pathname;
   const isOnPipelinePage = currentPath === '/recruiting/my-pipeline';
 
-  if (isRecruit) {
+  // Only redirect if user is ONLY a recruit and not an agent or active_agent
+  // This ensures that users with active_agent or agent roles are not redirected
+  if (isRecruit && !isActiveAgent && !isAgent && !isAdmin) {
     // If already on pipeline page, render children (the pipeline component)
     if (isOnPipelinePage) {
       return <>{children}</>;

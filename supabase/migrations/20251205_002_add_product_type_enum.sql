@@ -7,7 +7,18 @@
 DO $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'product_type') THEN
-    CREATE TYPE product_type AS ENUM ('life', 'annuity', 'disability', 'long_term_care', 'other');
+    -- Match the values used throughout the codebase
+    CREATE TYPE product_type AS ENUM (
+      'whole_life',
+      'term_life',
+      'universal_life',
+      'variable_life',
+      'annuity',
+      'disability',
+      'long_term_care',
+      'health',
+      'other'
+    );
   END IF;
 END $$;
 

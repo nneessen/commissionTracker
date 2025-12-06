@@ -7,6 +7,7 @@
 export type RoleName =
   | 'admin'
   | 'agent'
+  | 'active_agent'
   | 'recruit'
   | 'upline_manager'
   | 'trainer'

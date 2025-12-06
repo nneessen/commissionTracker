@@ -52,6 +52,7 @@ export interface CreateUserData {
   isActive?: boolean;
   ytdCommission?: number;
   ytdPremium?: number;
+  roles?: string[]; // Optional roles array for specifying user roles
 }
 
 export interface UpdateUserData extends Partial<CreateUserData> {

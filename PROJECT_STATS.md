@@ -1,15 +1,15 @@
 # Project Statistics
 
-Last Updated: 2025-12-05 14:24:58
+Last Updated: 2025-12-06 14:49:21
 
 ## Metrics
-- Total Files: 25285
-- Total Lines of Code: 623639
-- Total Commits: 235
+- Total Files: 25291
+- Total Lines of Code: 628149
+- Total Commits: 240
 
 ## Recent Activity
-d48774b docs: multiple changes in .,.serena/memories,src/data
-8cf065a fix: link existing profiles when users sign up via auth
-2f297ef docs: multiple changes in .,src/features/admin/components
-3a7e2d6 docs: CHANGELOG.md,PROJECT_STATS.md,AdminControlCenter.tsx
-cbd3f05 Add Vercel deployment configuration
+e163892 fix: eliminate all soft delete patterns, use hard delete everywhere
+f9a74f3 fix: change user deletion from soft delete to hard delete
+8f524c2 fix: update product types to match database enum, add Vercel deployment rules
+5f1fa13 a
+96851db docs: multiple changes in .,plans,scripts

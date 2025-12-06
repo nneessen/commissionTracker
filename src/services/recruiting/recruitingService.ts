@@ -25,8 +25,10 @@ export const recruitingService = {
   // ========================================
 
   async getRecruits(filters?: RecruitFilters, page = 1, limit = 50) {
-    // Only show users who are in the recruiting pipeline (have agent_status of unlicensed or licensed)
-    // AND are not deleted
+    // Only show users who are ACTUALLY in the recruiting pipeline:
+    // - Have 'recruit' role OR
+    // - Have a non-null onboarding_status (actively in pipeline)
+    // NOT just any licensed agent!
     let query = supabase
       .from('user_profiles')
       .select(
@@ -38,7 +40,7 @@ export const recruitingService = {
       `,
         { count: 'exact' }
       )
-      .in('agent_status', ['unlicensed', 'licensed'])
+      .or('roles.cs.{recruit},onboarding_status.not.is.null')
       .neq('is_deleted', true);
 
     // Apply filters
@@ -411,11 +413,11 @@ export const recruitingService = {
   // ========================================
 
   async getRecruitingStats(recruiterId?: string) {
-    // Only count users in the recruiting pipeline who are not deleted
+    // Only count users who are ACTUALLY in the recruiting pipeline
     let query = supabase
       .from('user_profiles')
       .select('*', { count: 'exact', head: false })
-      .in('agent_status', ['unlicensed', 'licensed'])
+      .or('roles.cs.{recruit},onboarding_status.not.is.null')
       .neq('is_deleted', true);
 
     if (recruiterId) {
@@ -450,11 +452,11 @@ export const recruitingService = {
   // ========================================
 
   async searchRecruits(searchTerm: string, limit = 10) {
-    // Only search users in the recruiting pipeline who are not deleted
+    // Only search users who are ACTUALLY in the recruiting pipeline
     const { data, error } = await supabase
       .from('user_profiles')
       .select('id, first_name, last_name, email, profile_photo_url, onboarding_status, agent_status')
-      .in('agent_status', ['unlicensed', 'licensed'])
+      .or('roles.cs.{recruit},onboarding_status.not.is.null')
       .neq('is_deleted', true)
       .or(
         `first_name.ilike.%${searchTerm}%,last_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`

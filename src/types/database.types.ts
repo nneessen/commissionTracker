@@ -3421,6 +3421,15 @@ export type Database = {
         Args: { target_user_id: string }
         Returns: boolean
       }
+      assign_user_role: {
+        Args: {
+          p_contract_level?: number
+          p_is_recruit?: boolean
+          p_requested_role?: string
+          p_user_id: string
+        }
+        Returns: string[]
+      }
       calculate_chargeback_on_policy_lapse: {
         Args: { p_lapse_date?: string; p_policy_id: string }
         Returns: Json

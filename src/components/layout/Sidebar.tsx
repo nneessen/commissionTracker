@@ -125,7 +125,7 @@ export default function Sidebar({
     ? recruitNavigationItems
     : navigationItems.filter((item) => {
         if (item.public) return true;
-        if (!item.permission) return true;
+        if (!item.permission) return false; // DEFAULT TO FALSE FOR SECURITY
         if (isLoading) return false;
         return can(item.permission);
       });
