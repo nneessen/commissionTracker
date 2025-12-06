@@ -12,6 +12,7 @@ import { userApprovalService } from "@/services/admin/userApprovalService";
 import { useQueryClient } from "@tanstack/react-query";
 import showToast from "@/utils/toast";
 import AddUserDialog, { type NewUserData } from "./AddUserDialog";
+import EditUserDialog from "./EditUserDialog";
 import { GraduateToAgentDialog } from "./GraduateToAgentDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -135,19 +136,6 @@ export default function AdminControlCenter() {
     setIsEditDialogOpen(true);
   };
 
-  const handleSaveUser = async (updates: Partial<UserProfile>) => {
-    if (!editingUser) return;
-
-    const result = await userApprovalService.updateUser(editingUser.id, updates);
-    if (result.success) {
-      queryClient.invalidateQueries({ queryKey: ['users'] });
-      queryClient.invalidateQueries({ queryKey: ['recruits'] });
-      setIsEditDialogOpen(false);
-      setEditingUser(null);
-    } else {
-      alert(`Error: ${result.error}`);
-    }
-  };
 
   const handleAddUser = async (userData: NewUserData) => {
     const result = await userApprovalService.createUser(userData);
@@ -176,10 +164,13 @@ export default function AdminControlCenter() {
 
     const result = await userApprovalService.deleteUser(userId);
     if (result.success) {
+      showToast.success(`${userName} deleted`);
+      // Invalidate all user-related queries to refresh the UI
+      queryClient.invalidateQueries({ queryKey: ['userApproval'] });
       queryClient.invalidateQueries({ queryKey: ['users'] });
       queryClient.invalidateQueries({ queryKey: ['recruits'] });
     } else {
-      alert(`Error: ${result.error}`);
+      showToast.error(result.error || 'Failed to delete user');
     }
   };
 
@@ -396,14 +387,27 @@ export default function AdminControlCenter() {
                           </span>
                         </TableCell>
                         <TableCell className="py-1.5 text-right">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-5 px-1.5"
-                            onClick={() => handleEditUser(user)}
-                          >
-                            <Edit className="h-2.5 w-2.5" />
-                          </Button>
+                          <div className="flex items-center justify-end gap-1">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-5 px-1.5 text-[10px]"
+                              onClick={() => handleEditUser(user)}
+                              title="Edit user"
+                            >
+                              <Edit className="h-2.5 w-2.5 mr-0.5" />
+                              Edit
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-5 px-1.5 text-destructive hover:text-destructive"
+                              onClick={() => handleDeleteUser(user.id, user.full_name || user.email)}
+                              title="Delete user"
+                            >
+                              <Trash2 className="h-2.5 w-2.5" />
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -680,75 +684,19 @@ export default function AdminControlCenter() {
         )}
       </div>
 
-      {/* Edit User Dialog - Ultra Compact */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-md p-3">
-          <DialogHeader className="space-y-1">
-            <DialogTitle className="text-sm font-semibold">Edit User</DialogTitle>
-            <DialogDescription className="text-[10px]">
-              {editingUser?.full_name || editingUser?.email}
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="py-2 space-y-2">
-            {/* Roles Section */}
-            <div className="space-y-1">
-              <div className="text-[11px] font-semibold text-muted-foreground uppercase">Roles</div>
-              <div className="space-y-1">
-                {roles?.map((role) => {
-                  const isChecked = editingUser?.roles?.includes(role.name as RoleName);
-                  return (
-                    <div
-                      key={role.id}
-                      className="flex items-start gap-2 p-1 rounded hover:bg-muted/30 transition-colors"
-                    >
-                      <input
-                        type="checkbox"
-                        id={`role-${role.id}`}
-                        checked={isChecked}
-                        onChange={(e) => {
-                          if (!editingUser) return;
-                          const currentRoles = editingUser.roles || [];
-                          const newRoles = e.target.checked
-                            ? [...currentRoles, role.name as RoleName]
-                            : currentRoles.filter(r => r !== role.name);
-                          setEditingUser({ ...editingUser, roles: newRoles });
-                        }}
-                        className="mt-0.5 h-3 w-3 rounded"
-                      />
-                      <label htmlFor={`role-${role.id}`} className="flex-1 cursor-pointer">
-                        <div className="font-medium text-[11px]">{role.display_name}</div>
-                        <div className="text-[10px] text-muted-foreground leading-tight">{role.description}</div>
-                      </label>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-
-          <DialogFooter className="gap-1 pt-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-6 text-[10px]"
-              onClick={() => {
-                setIsEditDialogOpen(false);
-                setEditingUser(null);
-              }}
-            >
-              Cancel
-            </Button>
-            <Button
-              size="sm"
-              className="h-6 text-[10px]"
-              onClick={() => handleSaveUser({ roles: editingUser?.roles || [] })}
-            >
-              Save
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Edit User Dialog - Comprehensive */}
+      <EditUserDialog
+        user={editingUser}
+        open={isEditDialogOpen}
+        onOpenChange={(open) => {
+          setIsEditDialogOpen(open);
+          if (!open) setEditingUser(null);
+        }}
+        onDeleted={() => {
+          queryClient.invalidateQueries({ queryKey: ['users'] });
+          queryClient.invalidateQueries({ queryKey: ['recruits'] });
+        }}
+      />
 
       {/* Graduate to Agent Dialog */}
       {graduatingRecruit && (

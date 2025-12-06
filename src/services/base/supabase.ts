@@ -21,7 +21,9 @@ export const TABLES = {
   CLIENTS: 'clients',
   COMMISSION_RATES: 'commission_rates',
   CONSTANTS: 'constants',
-  AGENTS: 'agents',
+  // AGENTS table removed - use user_profiles table instead
+  // All users (agents, recruits, admins) are in user_profiles
+  USER_PROFILES: 'user_profiles',
   AGENT_SETTINGS: 'agent_settings',
   COMP_GUIDE: 'comp_guide',
   CHARGEBACKS: 'chargebacks',

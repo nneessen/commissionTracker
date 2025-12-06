@@ -236,12 +236,14 @@ export class UserApprovalService {
 
   /**
    * Get approval statistics (admin only)
+   * Excludes soft-deleted users from counts
    */
   async getApprovalStats(): Promise<ApprovalStats> {
     try {
       const { data, error } = await supabase
         .from("user_profiles")
-        .select("approval_status");
+        .select("approval_status")
+        .neq("is_deleted", true); // Exclude soft-deleted users
 
       if (error) {
         logger.error(
@@ -727,15 +729,28 @@ export class UserApprovalService {
    */
   async deleteUser(userId: string): Promise<{ success: boolean; error?: string }> {
     try {
-      // Use RPC function for proper deletion (cascades to user_profiles)
+      // Use RPC function for proper deletion (soft-delete)
       const { data, error } = await supabase.rpc("admin_delete_user", {
         target_user_id: userId,
       });
 
+      // Handle Supabase transport/connection errors
       if (error) {
         logger.error("Failed to delete user", error, "UserApprovalService");
         console.error("[UserApprovalService] Delete user error:", error);
         return { success: false, error: error.message };
+      }
+
+      // Handle business logic errors from RPC (returns JSONB with success/error)
+      if (data && typeof data === 'object') {
+        if (data.success === false) {
+          logger.error("Delete user denied", data.error, "UserApprovalService");
+          return { success: false, error: data.error || "Failed to delete user" };
+        }
+        if (data.success === true) {
+          logger.info(`User ${userId} deleted`, "UserApprovalService");
+          return { success: true };
+        }
       }
 
       logger.info(`User ${userId} deleted`, "UserApprovalService");

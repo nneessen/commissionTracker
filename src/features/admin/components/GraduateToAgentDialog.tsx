@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { GraduationCap, AlertCircle } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/services/base/supabase';
-import type { UserProfile } from '@/services/admin/userApprovalService';
+import { VALID_CONTRACT_LEVELS, type UserProfile } from '@/services/admin/userApprovalService';
 import { format } from 'date-fns';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/contexts/AuthContext';
@@ -125,12 +125,11 @@ export function GraduateToAgentDialog({ recruit, open, onOpenChange }: GraduateT
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="50">50% (Trainee)</SelectItem>
-                <SelectItem value="60">60% (Junior)</SelectItem>
-                <SelectItem value="70">70% (Standard)</SelectItem>
-                <SelectItem value="80">80% (Experienced)</SelectItem>
-                <SelectItem value="90">90% (Senior)</SelectItem>
-                <SelectItem value="100">100% (Master)</SelectItem>
+                {VALID_CONTRACT_LEVELS.map((level) => (
+                  <SelectItem key={level} value={level.toString()}>
+                    {level}%
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
             <p className="text-xs text-muted-foreground">
