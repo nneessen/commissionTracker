@@ -7,18 +7,36 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "13.0.5"
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          operationName?: string
+          query?: string
+          variables?: Json
+          extensions?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
   }
   public: {
     Tables: {
       carriers: {
         Row: {
-          code: string | null
-          commission_structure: Json | null
-          contact_info: Json | null
+          commission_rates: Json | null
           created_at: string | null
           id: string
           is_active: boolean | null
@@ -26,9 +44,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
-          code?: string | null
-          commission_structure?: Json | null
-          contact_info?: Json | null
+          commission_rates?: Json | null
           created_at?: string | null
           id?: string
           is_active?: boolean | null
@@ -36,9 +52,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
-          code?: string | null
-          commission_structure?: Json | null
-          contact_info?: Json | null
+          commission_rates?: Json | null
           created_at?: string | null
           id?: string
           is_active?: boolean | null
@@ -54,11 +68,11 @@ export type Database = {
           commission_id: string | null
           created_at: string | null
           id: string
+          policy_id: string | null
           reason: string | null
-          resolution_date: string | null
-          resolution_notes: string | null
-          status: Database["public"]["Enums"]["chargeback_status"] | null
+          status: string | null
           updated_at: string | null
+          user_id: string | null
         }
         Insert: {
           chargeback_amount: number
@@ -66,11 +80,11 @@ export type Database = {
           commission_id?: string | null
           created_at?: string | null
           id?: string
+          policy_id?: string | null
           reason?: string | null
-          resolution_date?: string | null
-          resolution_notes?: string | null
-          status?: Database["public"]["Enums"]["chargeback_status"] | null
+          status?: string | null
           updated_at?: string | null
+          user_id?: string | null
         }
         Update: {
           chargeback_amount?: number
@@ -78,27 +92,13 @@ export type Database = {
           commission_id?: string | null
           created_at?: string | null
           id?: string
+          policy_id?: string | null
           reason?: string | null
-          resolution_date?: string | null
-          resolution_notes?: string | null
-          status?: Database["public"]["Enums"]["chargeback_status"] | null
+          status?: string | null
           updated_at?: string | null
+          user_id?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "chargebacks_commission_id_fkey"
-            columns: ["commission_id"]
-            isOneToOne: false
-            referencedRelation: "commission_earning_detail"
-            referencedColumns: ["commission_id"]
-          },
-          {
-            foreignKeyName: "chargebacks_commission_id_fkey"
-            columns: ["commission_id"]
-            isOneToOne: false
-            referencedRelation: "commission_earning_status"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "chargebacks_commission_id_fkey"
             columns: ["commission_id"]
@@ -106,117 +106,135 @@ export type Database = {
             referencedRelation: "commissions"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "chargebacks_policy_id_fkey"
+            columns: ["policy_id"]
+            isOneToOne: false
+            referencedRelation: "policies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chargebacks_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
         ]
       }
       clients: {
         Row: {
-          address: string | null
+          address: Json | null
           created_at: string | null
-          date_of_birth: string | null
           email: string | null
           id: string
           name: string
-          notes: string | null
           phone: string | null
-          status: string | null
           updated_at: string | null
           user_id: string | null
         }
         Insert: {
-          address?: string | null
+          address?: Json | null
           created_at?: string | null
-          date_of_birth?: string | null
           email?: string | null
           id?: string
           name: string
-          notes?: string | null
           phone?: string | null
-          status?: string | null
           updated_at?: string | null
           user_id?: string | null
         }
         Update: {
-          address?: string | null
+          address?: Json | null
           created_at?: string | null
-          date_of_birth?: string | null
           email?: string | null
           id?: string
           name?: string
-          notes?: string | null
           phone?: string | null
-          status?: string | null
           updated_at?: string | null
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "clients_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       commissions: {
         Row: {
-          advance_months: number
-          amount: number
-          chargeback_amount: number | null
-          chargeback_date: string | null
-          chargeback_reason: string | null
+          advance_months: number | null
+          carrier_id: string | null
+          commission_amount: number
           created_at: string | null
-          earned_amount: number
+          earned_amount: number | null
           id: string
-          last_payment_date: string | null
-          months_paid: number
+          is_advance: boolean | null
+          months_paid: number | null
           notes: string | null
           payment_date: string | null
           policy_id: string | null
-          status: string
-          type: string
+          status: string | null
           unearned_amount: number | null
           updated_at: string | null
           user_id: string | null
         }
         Insert: {
-          advance_months?: number
-          amount: number
-          chargeback_amount?: number | null
-          chargeback_date?: string | null
-          chargeback_reason?: string | null
+          advance_months?: number | null
+          carrier_id?: string | null
+          commission_amount: number
           created_at?: string | null
-          earned_amount?: number
+          earned_amount?: number | null
           id?: string
-          last_payment_date?: string | null
-          months_paid?: number
+          is_advance?: boolean | null
+          months_paid?: number | null
           notes?: string | null
           payment_date?: string | null
           policy_id?: string | null
-          status?: string
-          type: string
+          status?: string | null
           unearned_amount?: number | null
           updated_at?: string | null
           user_id?: string | null
         }
         Update: {
-          advance_months?: number
-          amount?: number
-          chargeback_amount?: number | null
-          chargeback_date?: string | null
-          chargeback_reason?: string | null
+          advance_months?: number | null
+          carrier_id?: string | null
+          commission_amount?: number
           created_at?: string | null
-          earned_amount?: number
+          earned_amount?: number | null
           id?: string
-          last_payment_date?: string | null
-          months_paid?: number
+          is_advance?: boolean | null
+          months_paid?: number | null
           notes?: string | null
           payment_date?: string | null
           policy_id?: string | null
-          status?: string
-          type?: string
+          status?: string | null
           unearned_amount?: number | null
           updated_at?: string | null
           user_id?: string | null
         }
         Relationships: [
           {
+            foreignKeyName: "commissions_carrier_id_fkey"
+            columns: ["carrier_id"]
+            isOneToOne: false
+            referencedRelation: "carriers"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "commissions_policy_id_fkey"
             columns: ["policy_id"]
             isOneToOne: false
             referencedRelation: "policies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commissions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
@@ -231,10 +249,8 @@ export type Database = {
           effective_date: string
           expiration_date: string | null
           id: string
-          maximum_premium: number | null
-          minimum_premium: number | null
           product_id: string | null
-          product_type: Database["public"]["Enums"]["product_type"]
+          product_type: string | null
           updated_at: string | null
         }
         Insert: {
@@ -243,13 +259,11 @@ export type Database = {
           commission_percentage: number
           contract_level: number
           created_at?: string | null
-          effective_date: string
+          effective_date?: string
           expiration_date?: string | null
           id?: string
-          maximum_premium?: number | null
-          minimum_premium?: number | null
           product_id?: string | null
-          product_type: Database["public"]["Enums"]["product_type"]
+          product_type?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -261,10 +275,8 @@ export type Database = {
           effective_date?: string
           expiration_date?: string | null
           id?: string
-          maximum_premium?: number | null
-          minimum_premium?: number | null
           product_id?: string | null
-          product_type?: Database["public"]["Enums"]["product_type"]
+          product_type?: string | null
           updated_at?: string | null
         }
         Relationships: [
@@ -286,7 +298,6 @@ export type Database = {
       }
       constants: {
         Row: {
-          category: string | null
           created_at: string | null
           description: string | null
           id: string
@@ -295,16 +306,14 @@ export type Database = {
           value: number
         }
         Insert: {
-          category?: string | null
           created_at?: string | null
           description?: string | null
           id?: string
           key: string
           updated_at?: string | null
-          value: number
+          value?: number
         }
         Update: {
-          category?: string | null
           created_at?: string | null
           description?: string | null
           id?: string
@@ -314,860 +323,55 @@ export type Database = {
         }
         Relationships: []
       }
-      email_quota_tracking: {
-        Row: {
-          date: string
-          emails_sent: number | null
-          id: string
-          provider: string
-          user_id: string
-        }
-        Insert: {
-          date?: string
-          emails_sent?: number | null
-          id?: string
-          provider: string
-          user_id: string
-        }
-        Update: {
-          date?: string
-          emails_sent?: number | null
-          id?: string
-          provider?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "email_quota_tracking_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "active_user_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "email_quota_tracking_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_delete_dependencies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "email_quota_tracking_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      email_templates: {
-        Row: {
-          body_html: string
-          body_text: string | null
-          category: string | null
-          created_at: string | null
-          created_by: string | null
-          id: string
-          is_active: boolean | null
-          is_global: boolean | null
-          name: string
-          subject: string
-          updated_at: string | null
-          usage_count: number | null
-          variables: string[] | null
-        }
-        Insert: {
-          body_html: string
-          body_text?: string | null
-          category?: string | null
-          created_at?: string | null
-          created_by?: string | null
-          id?: string
-          is_active?: boolean | null
-          is_global?: boolean | null
-          name: string
-          subject: string
-          updated_at?: string | null
-          usage_count?: number | null
-          variables?: string[] | null
-        }
-        Update: {
-          body_html?: string
-          body_text?: string | null
-          category?: string | null
-          created_at?: string | null
-          created_by?: string | null
-          id?: string
-          is_active?: boolean | null
-          is_global?: boolean | null
-          name?: string
-          subject?: string
-          updated_at?: string | null
-          usage_count?: number | null
-          variables?: string[] | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "email_templates_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "active_user_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "email_templates_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "user_delete_dependencies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "email_templates_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      email_triggers: {
-        Row: {
-          created_at: string | null
-          created_by: string | null
-          delay_minutes: number | null
-          description: string | null
-          id: string
-          is_active: boolean | null
-          name: string
-          template_id: string
-          trigger_config: Json
-          trigger_type: string
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          created_by?: string | null
-          delay_minutes?: number | null
-          description?: string | null
-          id?: string
-          is_active?: boolean | null
-          name: string
-          template_id: string
-          trigger_config: Json
-          trigger_type: string
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          created_by?: string | null
-          delay_minutes?: number | null
-          description?: string | null
-          id?: string
-          is_active?: boolean | null
-          name?: string
-          template_id?: string
-          trigger_config?: Json
-          trigger_type?: string
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "email_triggers_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "active_user_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "email_triggers_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "user_delete_dependencies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "email_triggers_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "email_triggers_template_id_fkey"
-            columns: ["template_id"]
-            isOneToOne: false
-            referencedRelation: "email_templates"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      email_watch_subscriptions: {
-        Row: {
-          created_at: string | null
-          expiration: string | null
-          history_id: string | null
-          id: string
-          provider: string
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          created_at?: string | null
-          expiration?: string | null
-          history_id?: string | null
-          id?: string
-          provider: string
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          created_at?: string | null
-          expiration?: string | null
-          history_id?: string | null
-          id?: string
-          provider?: string
-          updated_at?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "email_watch_subscriptions_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "active_user_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "email_watch_subscriptions_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_delete_dependencies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "email_watch_subscriptions_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      expense_categories: {
-        Row: {
-          created_at: string
-          description: string | null
-          id: string
-          is_active: boolean
-          name: string
-          sort_order: number
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          description?: string | null
-          id?: string
-          is_active?: boolean
-          name: string
-          sort_order?: number
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          description?: string | null
-          id?: string
-          is_active?: boolean
-          name?: string
-          sort_order?: number
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "expense_categories_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      expense_templates: {
-        Row: {
-          amount: number
-          category: string
-          created_at: string | null
-          description: string | null
-          expense_type: Database["public"]["Enums"]["expense_type"]
-          id: string
-          is_tax_deductible: boolean
-          notes: string | null
-          recurring_frequency: string | null
-          template_name: string
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          amount: number
-          category: string
-          created_at?: string | null
-          description?: string | null
-          expense_type?: Database["public"]["Enums"]["expense_type"]
-          id?: string
-          is_tax_deductible?: boolean
-          notes?: string | null
-          recurring_frequency?: string | null
-          template_name: string
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          amount?: number
-          category?: string
-          created_at?: string | null
-          description?: string | null
-          expense_type?: Database["public"]["Enums"]["expense_type"]
-          id?: string
-          is_tax_deductible?: boolean
-          notes?: string | null
-          recurring_frequency?: string | null
-          template_name?: string
-          updated_at?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fk_expense_templates_user"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       expenses: {
         Row: {
           amount: number
-          category: string
+          category: string | null
           created_at: string | null
-          date: string
-          description: string
-          expense_type: Database["public"]["Enums"]["expense_type"]
+          description: string | null
+          expense_date: string
+          expense_type: string | null
           id: string
           is_recurring: boolean | null
-          is_tax_deductible: boolean
-          name: string
-          notes: string | null
-          receipt_url: string | null
-          recurring_end_date: string | null
-          recurring_frequency: string | null
-          recurring_group_id: string | null
+          name: string | null
           updated_at: string | null
           user_id: string | null
         }
         Insert: {
           amount: number
-          category: string
+          category?: string | null
           created_at?: string | null
-          date: string
-          description: string
-          expense_type?: Database["public"]["Enums"]["expense_type"]
+          description?: string | null
+          expense_date: string
+          expense_type?: string | null
           id?: string
           is_recurring?: boolean | null
-          is_tax_deductible?: boolean
-          name: string
-          notes?: string | null
-          receipt_url?: string | null
-          recurring_end_date?: string | null
-          recurring_frequency?: string | null
-          recurring_group_id?: string | null
+          name?: string | null
           updated_at?: string | null
           user_id?: string | null
         }
         Update: {
           amount?: number
-          category?: string
+          category?: string | null
           created_at?: string | null
-          date?: string
-          description?: string
-          expense_type?: Database["public"]["Enums"]["expense_type"]
+          description?: string | null
+          expense_date?: string
+          expense_type?: string | null
           id?: string
           is_recurring?: boolean | null
-          is_tax_deductible?: boolean
-          name?: string
-          notes?: string | null
-          receipt_url?: string | null
-          recurring_end_date?: string | null
-          recurring_frequency?: string | null
-          recurring_group_id?: string | null
+          name?: string | null
           updated_at?: string | null
           user_id?: string | null
         }
-        Relationships: []
-      }
-      hierarchy_invitations: {
-        Row: {
-          created_at: string
-          expires_at: string
-          id: string
-          invitee_email: string
-          invitee_id: string | null
-          inviter_id: string
-          message: string | null
-          responded_at: string | null
-          status: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          expires_at?: string
-          id?: string
-          invitee_email: string
-          invitee_id?: string | null
-          inviter_id: string
-          message?: string | null
-          responded_at?: string | null
-          status?: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          expires_at?: string
-          id?: string
-          invitee_email?: string
-          invitee_id?: string | null
-          inviter_id?: string
-          message?: string | null
-          responded_at?: string | null
-          status?: string
-          updated_at?: string
-        }
         Relationships: [
           {
-            foreignKeyName: "hierarchy_invitations_invitee_id_fkey"
-            columns: ["invitee_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "hierarchy_invitations_inviter_id_fkey"
-            columns: ["inviter_id"]
+            foreignKeyName: "expenses_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
-      }
-      message_threads: {
-        Row: {
-          created_at: string | null
-          created_by: string
-          id: string
-          last_message_at: string | null
-          participant_ids: string[]
-          subject: string
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          created_by: string
-          id?: string
-          last_message_at?: string | null
-          participant_ids: string[]
-          subject: string
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          created_by?: string
-          id?: string
-          last_message_at?: string | null
-          participant_ids?: string[]
-          subject?: string
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "message_threads_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "active_user_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "message_threads_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "user_delete_dependencies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "message_threads_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      messages: {
-        Row: {
-          content: string
-          created_at: string | null
-          id: string
-          read_by: string[] | null
-          sender_id: string
-          thread_id: string
-          updated_at: string | null
-        }
-        Insert: {
-          content: string
-          created_at?: string | null
-          id?: string
-          read_by?: string[] | null
-          sender_id: string
-          thread_id: string
-          updated_at?: string | null
-        }
-        Update: {
-          content?: string
-          created_at?: string | null
-          id?: string
-          read_by?: string[] | null
-          sender_id?: string
-          thread_id?: string
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "messages_sender_id_fkey"
-            columns: ["sender_id"]
-            isOneToOne: false
-            referencedRelation: "active_user_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "messages_sender_id_fkey"
-            columns: ["sender_id"]
-            isOneToOne: false
-            referencedRelation: "user_delete_dependencies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "messages_sender_id_fkey"
-            columns: ["sender_id"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "messages_thread_id_fkey"
-            columns: ["thread_id"]
-            isOneToOne: false
-            referencedRelation: "message_threads"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      notifications: {
-        Row: {
-          created_at: string
-          expires_at: string | null
-          id: string
-          message: string | null
-          metadata: Json | null
-          read: boolean
-          title: string
-          type: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          expires_at?: string | null
-          id?: string
-          message?: string | null
-          metadata?: Json | null
-          read?: boolean
-          title: string
-          type: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          expires_at?: string | null
-          id?: string
-          message?: string | null
-          metadata?: Json | null
-          read?: boolean
-          title?: string
-          type?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "notifications_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "active_user_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "notifications_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_delete_dependencies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "notifications_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      onboarding_phases: {
-        Row: {
-          blocked_reason: string | null
-          completed_at: string | null
-          created_at: string | null
-          id: string
-          notes: string | null
-          phase_name: string
-          phase_order: number
-          started_at: string | null
-          status: string
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          blocked_reason?: string | null
-          completed_at?: string | null
-          created_at?: string | null
-          id?: string
-          notes?: string | null
-          phase_name: string
-          phase_order: number
-          started_at?: string | null
-          status?: string
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          blocked_reason?: string | null
-          completed_at?: string | null
-          created_at?: string | null
-          id?: string
-          notes?: string | null
-          phase_name?: string
-          phase_order?: number
-          started_at?: string | null
-          status?: string
-          updated_at?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "onboarding_phases_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "active_user_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "onboarding_phases_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_delete_dependencies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "onboarding_phases_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      override_commissions: {
-        Row: {
-          advance_months: number | null
-          base_agent_id: string
-          base_commission_amount: number
-          base_comp_level: number
-          carrier_id: string
-          chargeback_amount: number | null
-          chargeback_date: string | null
-          chargeback_reason: string | null
-          created_at: string | null
-          earned_amount: number | null
-          hierarchy_depth: number
-          id: string
-          months_paid: number | null
-          override_agent_id: string
-          override_commission_amount: number
-          override_comp_level: number
-          payment_date: string | null
-          policy_id: string
-          policy_premium: number
-          product_id: string | null
-          status: string
-          unearned_amount: number | null
-          updated_at: string | null
-        }
-        Insert: {
-          advance_months?: number | null
-          base_agent_id: string
-          base_commission_amount: number
-          base_comp_level: number
-          carrier_id: string
-          chargeback_amount?: number | null
-          chargeback_date?: string | null
-          chargeback_reason?: string | null
-          created_at?: string | null
-          earned_amount?: number | null
-          hierarchy_depth: number
-          id?: string
-          months_paid?: number | null
-          override_agent_id: string
-          override_commission_amount: number
-          override_comp_level: number
-          payment_date?: string | null
-          policy_id: string
-          policy_premium: number
-          product_id?: string | null
-          status?: string
-          unearned_amount?: number | null
-          updated_at?: string | null
-        }
-        Update: {
-          advance_months?: number | null
-          base_agent_id?: string
-          base_commission_amount?: number
-          base_comp_level?: number
-          carrier_id?: string
-          chargeback_amount?: number | null
-          chargeback_date?: string | null
-          chargeback_reason?: string | null
-          created_at?: string | null
-          earned_amount?: number | null
-          hierarchy_depth?: number
-          id?: string
-          months_paid?: number | null
-          override_agent_id?: string
-          override_commission_amount?: number
-          override_comp_level?: number
-          payment_date?: string | null
-          policy_id?: string
-          policy_premium?: number
-          product_id?: string | null
-          status?: string
-          unearned_amount?: number | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "override_commissions_base_agent_id_fkey"
-            columns: ["base_agent_id"]
-            isOneToOne: false
-            referencedRelation: "active_user_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "override_commissions_base_agent_id_fkey"
-            columns: ["base_agent_id"]
-            isOneToOne: false
-            referencedRelation: "user_delete_dependencies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "override_commissions_base_agent_id_fkey"
-            columns: ["base_agent_id"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "override_commissions_carrier_id_fkey"
-            columns: ["carrier_id"]
-            isOneToOne: false
-            referencedRelation: "carriers"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "override_commissions_override_agent_id_fkey"
-            columns: ["override_agent_id"]
-            isOneToOne: false
-            referencedRelation: "active_user_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "override_commissions_override_agent_id_fkey"
-            columns: ["override_agent_id"]
-            isOneToOne: false
-            referencedRelation: "user_delete_dependencies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "override_commissions_override_agent_id_fkey"
-            columns: ["override_agent_id"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "override_commissions_policy_id_fkey"
-            columns: ["policy_id"]
-            isOneToOne: false
-            referencedRelation: "policies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "override_commissions_product_id_fkey"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "products"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      permissions: {
-        Row: {
-          action: string
-          code: string
-          created_at: string | null
-          description: string | null
-          id: string
-          resource: string
-          scope: string | null
-        }
-        Insert: {
-          action: string
-          code: string
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          resource: string
-          scope?: string | null
-        }
-        Update: {
-          action?: string
-          code?: string
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          resource?: string
-          scope?: string | null
-        }
-        Relationships: []
       }
       phase_checklist_items: {
         Row: {
@@ -1320,20 +524,6 @@ export type Database = {
             foreignKeyName: "pipeline_templates_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
-            referencedRelation: "active_user_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "pipeline_templates_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "user_delete_dependencies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "pipeline_templates_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
             referencedRelation: "user_profiles"
             referencedColumns: ["id"]
           },
@@ -1341,76 +531,70 @@ export type Database = {
       }
       policies: {
         Row: {
-          annual_premium: number | null
-          cancellation_date: string | null
-          cancellation_reason: string | null
+          advance_months: number | null
+          annual_premium: number
           carrier_id: string
           client_id: string | null
           commission_percentage: number | null
           created_at: string | null
+          created_by: string | null
           effective_date: string
           expiration_date: string | null
           id: string
-          monthly_premium: number
+          monthly_premium: number | null
           notes: string | null
-          payment_frequency:
-            | Database["public"]["Enums"]["payment_frequency"]
-            | null
+          payment_frequency: string | null
           policy_number: string
-          product: Database["public"]["Enums"]["product_type"]
+          product: string | null
           product_id: string | null
           referral_source: string | null
-          status: string
+          status: string | null
           term_length: number | null
           updated_at: string | null
           user_id: string | null
         }
         Insert: {
-          annual_premium?: number | null
-          cancellation_date?: string | null
-          cancellation_reason?: string | null
+          advance_months?: number | null
+          annual_premium: number
           carrier_id: string
           client_id?: string | null
           commission_percentage?: number | null
           created_at?: string | null
+          created_by?: string | null
           effective_date: string
           expiration_date?: string | null
           id?: string
-          monthly_premium: number
+          monthly_premium?: number | null
           notes?: string | null
-          payment_frequency?:
-            | Database["public"]["Enums"]["payment_frequency"]
-            | null
+          payment_frequency?: string | null
           policy_number: string
-          product: Database["public"]["Enums"]["product_type"]
+          product?: string | null
           product_id?: string | null
           referral_source?: string | null
-          status?: string
+          status?: string | null
           term_length?: number | null
           updated_at?: string | null
           user_id?: string | null
         }
         Update: {
-          annual_premium?: number | null
-          cancellation_date?: string | null
-          cancellation_reason?: string | null
+          advance_months?: number | null
+          annual_premium?: number
           carrier_id?: string
           client_id?: string | null
           commission_percentage?: number | null
           created_at?: string | null
+          created_by?: string | null
           effective_date?: string
           expiration_date?: string | null
           id?: string
-          monthly_premium?: number
+          monthly_premium?: number | null
           notes?: string | null
-          payment_frequency?:
-            | Database["public"]["Enums"]["payment_frequency"]
-            | null
+          payment_frequency?: string | null
           policy_number?: string
-          product?: Database["public"]["Enums"]["product_type"]
+          product?: string | null
           product_id?: string | null
           referral_source?: string | null
-          status?: string
+          status?: string | null
           term_length?: number | null
           updated_at?: string | null
           user_id?: string | null
@@ -1431,57 +615,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "policies_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "policies_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
             referencedColumns: ["id"]
           },
-        ]
-      }
-      product_commission_overrides: {
-        Row: {
-          bonus_percentage: number | null
-          commission_percentage: number
-          comp_level: Database["public"]["Enums"]["comp_level"]
-          created_at: string | null
-          effective_date: string
-          expiration_date: string | null
-          id: string
-          notes: string | null
-          product_id: string
-          updated_at: string | null
-        }
-        Insert: {
-          bonus_percentage?: number | null
-          commission_percentage: number
-          comp_level: Database["public"]["Enums"]["comp_level"]
-          created_at?: string | null
-          effective_date?: string
-          expiration_date?: string | null
-          id?: string
-          notes?: string | null
-          product_id: string
-          updated_at?: string | null
-        }
-        Update: {
-          bonus_percentage?: number | null
-          commission_percentage?: number
-          comp_level?: Database["public"]["Enums"]["comp_level"]
-          created_at?: string | null
-          effective_date?: string
-          expiration_date?: string | null
-          id?: string
-          notes?: string | null
-          product_id?: string
-          updated_at?: string | null
-        }
-        Relationships: [
           {
-            foreignKeyName: "product_commission_overrides_product_id_fkey"
-            columns: ["product_id"]
+            foreignKeyName: "policies_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "products"
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
@@ -1495,13 +646,8 @@ export type Database = {
           description: string | null
           id: string
           is_active: boolean | null
-          max_age: number | null
-          max_premium: number | null
-          metadata: Json | null
-          min_age: number | null
-          min_premium: number | null
           name: string
-          product_type: Database["public"]["Enums"]["product_type"]
+          product_type: string
           updated_at: string | null
         }
         Insert: {
@@ -1512,13 +658,8 @@ export type Database = {
           description?: string | null
           id?: string
           is_active?: boolean | null
-          max_age?: number | null
-          max_premium?: number | null
-          metadata?: Json | null
-          min_age?: number | null
-          min_premium?: number | null
           name: string
-          product_type: Database["public"]["Enums"]["product_type"]
+          product_type: string
           updated_at?: string | null
         }
         Update: {
@@ -1529,13 +670,8 @@ export type Database = {
           description?: string | null
           id?: string
           is_active?: boolean | null
-          max_age?: number | null
-          max_premium?: number | null
-          metadata?: Json | null
-          min_age?: number | null
-          min_premium?: number | null
           name?: string
-          product_type?: Database["public"]["Enums"]["product_type"]
+          product_type?: string
           updated_at?: string | null
         }
         Relationships: [
@@ -1544,135 +680,6 @@ export type Database = {
             columns: ["carrier_id"]
             isOneToOne: false
             referencedRelation: "carriers"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      recruit_checklist_progress: {
-        Row: {
-          checklist_item_id: string
-          completed_at: string | null
-          completed_by: string | null
-          created_at: string | null
-          document_id: string | null
-          id: string
-          metadata: Json | null
-          notes: string | null
-          rejection_reason: string | null
-          status: string
-          updated_at: string | null
-          user_id: string
-          verified_at: string | null
-          verified_by: string | null
-        }
-        Insert: {
-          checklist_item_id: string
-          completed_at?: string | null
-          completed_by?: string | null
-          created_at?: string | null
-          document_id?: string | null
-          id?: string
-          metadata?: Json | null
-          notes?: string | null
-          rejection_reason?: string | null
-          status?: string
-          updated_at?: string | null
-          user_id: string
-          verified_at?: string | null
-          verified_by?: string | null
-        }
-        Update: {
-          checklist_item_id?: string
-          completed_at?: string | null
-          completed_by?: string | null
-          created_at?: string | null
-          document_id?: string | null
-          id?: string
-          metadata?: Json | null
-          notes?: string | null
-          rejection_reason?: string | null
-          status?: string
-          updated_at?: string | null
-          user_id?: string
-          verified_at?: string | null
-          verified_by?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "recruit_checklist_progress_checklist_item_id_fkey"
-            columns: ["checklist_item_id"]
-            isOneToOne: false
-            referencedRelation: "phase_checklist_items"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "recruit_checklist_progress_completed_by_fkey"
-            columns: ["completed_by"]
-            isOneToOne: false
-            referencedRelation: "active_user_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "recruit_checklist_progress_completed_by_fkey"
-            columns: ["completed_by"]
-            isOneToOne: false
-            referencedRelation: "user_delete_dependencies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "recruit_checklist_progress_completed_by_fkey"
-            columns: ["completed_by"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "recruit_checklist_progress_document_id_fkey"
-            columns: ["document_id"]
-            isOneToOne: false
-            referencedRelation: "user_documents"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "recruit_checklist_progress_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "active_user_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "recruit_checklist_progress_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_delete_dependencies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "recruit_checklist_progress_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "recruit_checklist_progress_verified_by_fkey"
-            columns: ["verified_by"]
-            isOneToOne: false
-            referencedRelation: "active_user_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "recruit_checklist_progress_verified_by_fkey"
-            columns: ["verified_by"]
-            isOneToOne: false
-            referencedRelation: "user_delete_dependencies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "recruit_checklist_progress_verified_by_fkey"
-            columns: ["verified_by"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1736,98 +743,7 @@ export type Database = {
             foreignKeyName: "recruit_phase_progress_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "active_user_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "recruit_phase_progress_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_delete_dependencies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "recruit_phase_progress_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
             referencedRelation: "user_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      role_permissions: {
-        Row: {
-          created_at: string | null
-          permission_id: string
-          role_id: string
-        }
-        Insert: {
-          created_at?: string | null
-          permission_id: string
-          role_id: string
-        }
-        Update: {
-          created_at?: string | null
-          permission_id?: string
-          role_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "role_permissions_permission_id_fkey"
-            columns: ["permission_id"]
-            isOneToOne: false
-            referencedRelation: "permissions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "role_permissions_role_id_fkey"
-            columns: ["role_id"]
-            isOneToOne: false
-            referencedRelation: "roles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      roles: {
-        Row: {
-          created_at: string | null
-          description: string | null
-          display_name: string
-          id: string
-          is_system_role: boolean | null
-          name: string
-          parent_role_id: string | null
-          respects_hierarchy: boolean | null
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          description?: string | null
-          display_name: string
-          id?: string
-          is_system_role?: boolean | null
-          name: string
-          parent_role_id?: string | null
-          respects_hierarchy?: boolean | null
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          description?: string | null
-          display_name?: string
-          id?: string
-          is_system_role?: boolean | null
-          name?: string
-          parent_role_id?: string | null
-          respects_hierarchy?: boolean | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "roles_parent_role_id_fkey"
-            columns: ["parent_role_id"]
-            isOneToOne: false
-            referencedRelation: "roles"
             referencedColumns: ["id"]
           },
         ]
@@ -1835,490 +751,34 @@ export type Database = {
       settings: {
         Row: {
           created_at: string | null
-          currency: string | null
-          default_commission_rate: number | null
-          fiscal_year_start: number | null
           id: string
-          notifications_enabled: boolean | null
-          tax_rate: number | null
+          key: string
           updated_at: string | null
           user_id: string | null
+          value: Json | null
         }
         Insert: {
           created_at?: string | null
-          currency?: string | null
-          default_commission_rate?: number | null
-          fiscal_year_start?: number | null
           id?: string
-          notifications_enabled?: boolean | null
-          tax_rate?: number | null
+          key: string
           updated_at?: string | null
           user_id?: string | null
+          value?: Json | null
         }
         Update: {
           created_at?: string | null
-          currency?: string | null
-          default_commission_rate?: number | null
-          fiscal_year_start?: number | null
           id?: string
-          notifications_enabled?: boolean | null
-          tax_rate?: number | null
+          key?: string
           updated_at?: string | null
           user_id?: string | null
-        }
-        Relationships: []
-      }
-      system_audit_log: {
-        Row: {
-          action: string
-          data: Json | null
-          id: string
-          performed_at: string | null
-          performed_by: string | null
-          record_id: string | null
-          table_name: string
-        }
-        Insert: {
-          action: string
-          data?: Json | null
-          id?: string
-          performed_at?: string | null
-          performed_by?: string | null
-          record_id?: string | null
-          table_name: string
-        }
-        Update: {
-          action?: string
-          data?: Json | null
-          id?: string
-          performed_at?: string | null
-          performed_by?: string | null
-          record_id?: string | null
-          table_name?: string
+          value?: Json | null
         }
         Relationships: [
           {
-            foreignKeyName: "system_audit_log_performed_by_fkey"
-            columns: ["performed_by"]
-            isOneToOne: false
-            referencedRelation: "active_user_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "system_audit_log_performed_by_fkey"
-            columns: ["performed_by"]
-            isOneToOne: false
-            referencedRelation: "user_delete_dependencies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "system_audit_log_performed_by_fkey"
-            columns: ["performed_by"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      user_activity_log: {
-        Row: {
-          action_type: string
-          created_at: string | null
-          details: Json | null
-          id: string
-          performed_by: string | null
-          user_id: string
-        }
-        Insert: {
-          action_type: string
-          created_at?: string | null
-          details?: Json | null
-          id?: string
-          performed_by?: string | null
-          user_id: string
-        }
-        Update: {
-          action_type?: string
-          created_at?: string | null
-          details?: Json | null
-          id?: string
-          performed_by?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "user_activity_log_performed_by_fkey"
-            columns: ["performed_by"]
-            isOneToOne: false
-            referencedRelation: "active_user_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_activity_log_performed_by_fkey"
-            columns: ["performed_by"]
-            isOneToOne: false
-            referencedRelation: "user_delete_dependencies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_activity_log_performed_by_fkey"
-            columns: ["performed_by"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_activity_log_user_id_fkey"
+            foreignKeyName: "settings_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "active_user_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_activity_log_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_delete_dependencies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_activity_log_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      user_documents: {
-        Row: {
-          created_at: string | null
-          document_name: string
-          document_type: string
-          expires_at: string | null
-          file_name: string
-          file_size: number | null
-          file_type: string | null
-          id: string
-          notes: string | null
-          required: boolean | null
-          status: string
-          storage_path: string
-          updated_at: string | null
-          uploaded_at: string | null
-          uploaded_by: string | null
-          user_id: string
-        }
-        Insert: {
-          created_at?: string | null
-          document_name: string
-          document_type: string
-          expires_at?: string | null
-          file_name: string
-          file_size?: number | null
-          file_type?: string | null
-          id?: string
-          notes?: string | null
-          required?: boolean | null
-          status?: string
-          storage_path: string
-          updated_at?: string | null
-          uploaded_at?: string | null
-          uploaded_by?: string | null
-          user_id: string
-        }
-        Update: {
-          created_at?: string | null
-          document_name?: string
-          document_type?: string
-          expires_at?: string | null
-          file_name?: string
-          file_size?: number | null
-          file_type?: string | null
-          id?: string
-          notes?: string | null
-          required?: boolean | null
-          status?: string
-          storage_path?: string
-          updated_at?: string | null
-          uploaded_at?: string | null
-          uploaded_by?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "user_documents_uploaded_by_fkey"
-            columns: ["uploaded_by"]
-            isOneToOne: false
-            referencedRelation: "active_user_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_documents_uploaded_by_fkey"
-            columns: ["uploaded_by"]
-            isOneToOne: false
-            referencedRelation: "user_delete_dependencies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_documents_uploaded_by_fkey"
-            columns: ["uploaded_by"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_documents_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "active_user_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_documents_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_delete_dependencies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_documents_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      user_email_attachments: {
-        Row: {
-          created_at: string | null
-          email_id: string
-          file_name: string
-          file_size: number | null
-          file_type: string | null
-          id: string
-          storage_path: string
-        }
-        Insert: {
-          created_at?: string | null
-          email_id: string
-          file_name: string
-          file_size?: number | null
-          file_type?: string | null
-          id?: string
-          storage_path: string
-        }
-        Update: {
-          created_at?: string | null
-          email_id?: string
-          file_name?: string
-          file_size?: number | null
-          file_type?: string | null
-          id?: string
-          storage_path?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "user_email_attachments_email_id_fkey"
-            columns: ["email_id"]
-            isOneToOne: false
-            referencedRelation: "user_emails"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      user_email_oauth_tokens: {
-        Row: {
-          access_token_encrypted: string
-          created_at: string | null
-          email_address: string
-          id: string
-          is_active: boolean | null
-          last_used_at: string | null
-          provider: string
-          refresh_token_encrypted: string | null
-          scopes: string[] | null
-          token_expiry: string | null
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          access_token_encrypted: string
-          created_at?: string | null
-          email_address: string
-          id?: string
-          is_active?: boolean | null
-          last_used_at?: string | null
-          provider: string
-          refresh_token_encrypted?: string | null
-          scopes?: string[] | null
-          token_expiry?: string | null
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          access_token_encrypted?: string
-          created_at?: string | null
-          email_address?: string
-          id?: string
-          is_active?: boolean | null
-          last_used_at?: string | null
-          provider?: string
-          refresh_token_encrypted?: string | null
-          scopes?: string[] | null
-          token_expiry?: string | null
-          updated_at?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "user_email_oauth_tokens_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "active_user_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_email_oauth_tokens_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_delete_dependencies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_email_oauth_tokens_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      user_emails: {
-        Row: {
-          body_html: string | null
-          body_text: string | null
-          cc_addresses: string[] | null
-          created_at: string | null
-          delivered_at: string | null
-          failed_reason: string | null
-          from_address: string | null
-          id: string
-          is_incoming: boolean | null
-          labels: string[] | null
-          metadata: Json | null
-          opened_at: string | null
-          provider: string | null
-          provider_message_id: string | null
-          reply_to_id: string | null
-          sender_id: string | null
-          sent_at: string | null
-          status: string
-          subject: string
-          thread_id: string | null
-          to_addresses: string[] | null
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          body_html?: string | null
-          body_text?: string | null
-          cc_addresses?: string[] | null
-          created_at?: string | null
-          delivered_at?: string | null
-          failed_reason?: string | null
-          from_address?: string | null
-          id?: string
-          is_incoming?: boolean | null
-          labels?: string[] | null
-          metadata?: Json | null
-          opened_at?: string | null
-          provider?: string | null
-          provider_message_id?: string | null
-          reply_to_id?: string | null
-          sender_id?: string | null
-          sent_at?: string | null
-          status?: string
-          subject: string
-          thread_id?: string | null
-          to_addresses?: string[] | null
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          body_html?: string | null
-          body_text?: string | null
-          cc_addresses?: string[] | null
-          created_at?: string | null
-          delivered_at?: string | null
-          failed_reason?: string | null
-          from_address?: string | null
-          id?: string
-          is_incoming?: boolean | null
-          labels?: string[] | null
-          metadata?: Json | null
-          opened_at?: string | null
-          provider?: string | null
-          provider_message_id?: string | null
-          reply_to_id?: string | null
-          sender_id?: string | null
-          sent_at?: string | null
-          status?: string
-          subject?: string
-          thread_id?: string | null
-          to_addresses?: string[] | null
-          updated_at?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "user_emails_reply_to_id_fkey"
-            columns: ["reply_to_id"]
-            isOneToOne: false
-            referencedRelation: "user_emails"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_emails_sender_id_fkey"
-            columns: ["sender_id"]
-            isOneToOne: false
-            referencedRelation: "active_user_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_emails_sender_id_fkey"
-            columns: ["sender_id"]
-            isOneToOne: false
-            referencedRelation: "user_delete_dependencies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_emails_sender_id_fkey"
-            columns: ["sender_id"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_emails_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "active_user_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_emails_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_delete_dependencies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_emails_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
@@ -2329,156 +789,45 @@ export type Database = {
           approval_status: string
           approved_at: string | null
           approved_by: string | null
-          archive_reason: string | null
-          archived_at: string | null
-          archived_by: string | null
-          city: string | null
-          contract_level: number | null
           created_at: string | null
-          current_onboarding_phase: string | null
-          custom_permissions: Json | null
-          date_of_birth: string | null
           denial_reason: string | null
           denied_at: string | null
           email: string
-          facebook_handle: string | null
-          first_name: string | null
-          hierarchy_depth: number | null
-          hierarchy_path: string | null
           id: string
-          instagram_url: string | null
-          instagram_username: string | null
           is_admin: boolean
-          is_deleted: boolean | null
-          is_super_admin: boolean | null
-          last_name: string | null
-          license_expiration: string | null
-          license_number: string | null
           licensing_info: Json | null
-          linkedin_url: string | null
-          linkedin_username: string | null
-          npn: string | null
-          onboarding_completed_at: string | null
-          onboarding_started_at: string | null
-          onboarding_status: string | null
-          personal_website: string | null
-          phone: string | null
           pipeline_template_id: string | null
-          profile_photo_url: string | null
-          recruiter_id: string | null
-          referral_source: string | null
-          resident_state: string | null
-          roles: string[] | null
-          state: string | null
-          street_address: string | null
           updated_at: string | null
-          upline_id: string | null
-          user_id: string | null
-          zip: string | null
         }
         Insert: {
           agent_status?: Database["public"]["Enums"]["agent_status"] | null
           approval_status?: string
           approved_at?: string | null
           approved_by?: string | null
-          archive_reason?: string | null
-          archived_at?: string | null
-          archived_by?: string | null
-          city?: string | null
-          contract_level?: number | null
           created_at?: string | null
-          current_onboarding_phase?: string | null
-          custom_permissions?: Json | null
-          date_of_birth?: string | null
           denial_reason?: string | null
           denied_at?: string | null
           email: string
-          facebook_handle?: string | null
-          first_name?: string | null
-          hierarchy_depth?: number | null
-          hierarchy_path?: string | null
-          id?: string
-          instagram_url?: string | null
-          instagram_username?: string | null
+          id: string
           is_admin?: boolean
-          is_deleted?: boolean | null
-          is_super_admin?: boolean | null
-          last_name?: string | null
-          license_expiration?: string | null
-          license_number?: string | null
           licensing_info?: Json | null
-          linkedin_url?: string | null
-          linkedin_username?: string | null
-          npn?: string | null
-          onboarding_completed_at?: string | null
-          onboarding_started_at?: string | null
-          onboarding_status?: string | null
-          personal_website?: string | null
-          phone?: string | null
           pipeline_template_id?: string | null
-          profile_photo_url?: string | null
-          recruiter_id?: string | null
-          referral_source?: string | null
-          resident_state?: string | null
-          roles?: string[] | null
-          state?: string | null
-          street_address?: string | null
           updated_at?: string | null
-          upline_id?: string | null
-          user_id?: string | null
-          zip?: string | null
         }
         Update: {
           agent_status?: Database["public"]["Enums"]["agent_status"] | null
           approval_status?: string
           approved_at?: string | null
           approved_by?: string | null
-          archive_reason?: string | null
-          archived_at?: string | null
-          archived_by?: string | null
-          city?: string | null
-          contract_level?: number | null
           created_at?: string | null
-          current_onboarding_phase?: string | null
-          custom_permissions?: Json | null
-          date_of_birth?: string | null
           denial_reason?: string | null
           denied_at?: string | null
           email?: string
-          facebook_handle?: string | null
-          first_name?: string | null
-          hierarchy_depth?: number | null
-          hierarchy_path?: string | null
           id?: string
-          instagram_url?: string | null
-          instagram_username?: string | null
           is_admin?: boolean
-          is_deleted?: boolean | null
-          is_super_admin?: boolean | null
-          last_name?: string | null
-          license_expiration?: string | null
-          license_number?: string | null
           licensing_info?: Json | null
-          linkedin_url?: string | null
-          linkedin_username?: string | null
-          npn?: string | null
-          onboarding_completed_at?: string | null
-          onboarding_started_at?: string | null
-          onboarding_status?: string | null
-          personal_website?: string | null
-          phone?: string | null
           pipeline_template_id?: string | null
-          profile_photo_url?: string | null
-          recruiter_id?: string | null
-          referral_source?: string | null
-          resident_state?: string | null
-          roles?: string[] | null
-          state?: string | null
-          street_address?: string | null
           updated_at?: string | null
-          upline_id?: string | null
-          user_id?: string | null
-          zip?: string | null
         }
         Relationships: [
           {
@@ -2489,24 +838,10 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "user_profiles_archived_by_fkey"
-            columns: ["archived_by"]
-            isOneToOne: false
-            referencedRelation: "active_user_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_profiles_archived_by_fkey"
-            columns: ["archived_by"]
-            isOneToOne: false
-            referencedRelation: "user_delete_dependencies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_profiles_archived_by_fkey"
-            columns: ["archived_by"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
+            foreignKeyName: "user_profiles_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
           {
@@ -2514,55 +849,6 @@ export type Database = {
             columns: ["pipeline_template_id"]
             isOneToOne: false
             referencedRelation: "pipeline_templates"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_profiles_recruiter_id_fkey"
-            columns: ["recruiter_id"]
-            isOneToOne: false
-            referencedRelation: "active_user_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_profiles_recruiter_id_fkey"
-            columns: ["recruiter_id"]
-            isOneToOne: false
-            referencedRelation: "user_delete_dependencies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_profiles_recruiter_id_fkey"
-            columns: ["recruiter_id"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_profiles_upline_id_fkey"
-            columns: ["upline_id"]
-            isOneToOne: false
-            referencedRelation: "active_user_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_profiles_upline_id_fkey"
-            columns: ["upline_id"]
-            isOneToOne: false
-            referencedRelation: "user_delete_dependencies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_profiles_upline_id_fkey"
-            columns: ["upline_id"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_profiles_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
@@ -2634,647 +920,6 @@ export type Database = {
       }
     }
     Views: {
-      active_user_profiles: {
-        Row: {
-          agent_status: Database["public"]["Enums"]["agent_status"] | null
-          approval_status: string | null
-          approved_at: string | null
-          approved_by: string | null
-          archive_reason: string | null
-          archived_at: string | null
-          archived_by: string | null
-          city: string | null
-          contract_level: number | null
-          created_at: string | null
-          current_onboarding_phase: string | null
-          custom_permissions: Json | null
-          date_of_birth: string | null
-          denial_reason: string | null
-          denied_at: string | null
-          email: string | null
-          facebook_handle: string | null
-          first_name: string | null
-          hierarchy_depth: number | null
-          hierarchy_path: string | null
-          id: string | null
-          instagram_url: string | null
-          instagram_username: string | null
-          is_admin: boolean | null
-          is_deleted: boolean | null
-          last_name: string | null
-          license_expiration: string | null
-          license_number: string | null
-          licensing_info: Json | null
-          linkedin_url: string | null
-          linkedin_username: string | null
-          npn: string | null
-          onboarding_completed_at: string | null
-          onboarding_started_at: string | null
-          onboarding_status: string | null
-          personal_website: string | null
-          phone: string | null
-          pipeline_template_id: string | null
-          profile_photo_url: string | null
-          recruiter_id: string | null
-          referral_source: string | null
-          resident_state: string | null
-          roles: string[] | null
-          state: string | null
-          street_address: string | null
-          updated_at: string | null
-          upline_id: string | null
-          user_id: string | null
-          zip: string | null
-        }
-        Insert: {
-          agent_status?: Database["public"]["Enums"]["agent_status"] | null
-          approval_status?: string | null
-          approved_at?: string | null
-          approved_by?: string | null
-          archive_reason?: string | null
-          archived_at?: string | null
-          archived_by?: string | null
-          city?: string | null
-          contract_level?: number | null
-          created_at?: string | null
-          current_onboarding_phase?: string | null
-          custom_permissions?: Json | null
-          date_of_birth?: string | null
-          denial_reason?: string | null
-          denied_at?: string | null
-          email?: string | null
-          facebook_handle?: string | null
-          first_name?: string | null
-          hierarchy_depth?: number | null
-          hierarchy_path?: string | null
-          id?: string | null
-          instagram_url?: string | null
-          instagram_username?: string | null
-          is_admin?: boolean | null
-          is_deleted?: boolean | null
-          last_name?: string | null
-          license_expiration?: string | null
-          license_number?: string | null
-          licensing_info?: Json | null
-          linkedin_url?: string | null
-          linkedin_username?: string | null
-          npn?: string | null
-          onboarding_completed_at?: string | null
-          onboarding_started_at?: string | null
-          onboarding_status?: string | null
-          personal_website?: string | null
-          phone?: string | null
-          pipeline_template_id?: string | null
-          profile_photo_url?: string | null
-          recruiter_id?: string | null
-          referral_source?: string | null
-          resident_state?: string | null
-          roles?: string[] | null
-          state?: string | null
-          street_address?: string | null
-          updated_at?: string | null
-          upline_id?: string | null
-          user_id?: string | null
-          zip?: string | null
-        }
-        Update: {
-          agent_status?: Database["public"]["Enums"]["agent_status"] | null
-          approval_status?: string | null
-          approved_at?: string | null
-          approved_by?: string | null
-          archive_reason?: string | null
-          archived_at?: string | null
-          archived_by?: string | null
-          city?: string | null
-          contract_level?: number | null
-          created_at?: string | null
-          current_onboarding_phase?: string | null
-          custom_permissions?: Json | null
-          date_of_birth?: string | null
-          denial_reason?: string | null
-          denied_at?: string | null
-          email?: string | null
-          facebook_handle?: string | null
-          first_name?: string | null
-          hierarchy_depth?: number | null
-          hierarchy_path?: string | null
-          id?: string | null
-          instagram_url?: string | null
-          instagram_username?: string | null
-          is_admin?: boolean | null
-          is_deleted?: boolean | null
-          last_name?: string | null
-          license_expiration?: string | null
-          license_number?: string | null
-          licensing_info?: Json | null
-          linkedin_url?: string | null
-          linkedin_username?: string | null
-          npn?: string | null
-          onboarding_completed_at?: string | null
-          onboarding_started_at?: string | null
-          onboarding_status?: string | null
-          personal_website?: string | null
-          phone?: string | null
-          pipeline_template_id?: string | null
-          profile_photo_url?: string | null
-          recruiter_id?: string | null
-          referral_source?: string | null
-          resident_state?: string | null
-          roles?: string[] | null
-          state?: string | null
-          street_address?: string | null
-          updated_at?: string | null
-          upline_id?: string | null
-          user_id?: string | null
-          zip?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "user_profiles_approved_by_fkey"
-            columns: ["approved_by"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_profiles_archived_by_fkey"
-            columns: ["archived_by"]
-            isOneToOne: false
-            referencedRelation: "active_user_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_profiles_archived_by_fkey"
-            columns: ["archived_by"]
-            isOneToOne: false
-            referencedRelation: "user_delete_dependencies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_profiles_archived_by_fkey"
-            columns: ["archived_by"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_profiles_pipeline_template_id_fkey"
-            columns: ["pipeline_template_id"]
-            isOneToOne: false
-            referencedRelation: "pipeline_templates"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_profiles_recruiter_id_fkey"
-            columns: ["recruiter_id"]
-            isOneToOne: false
-            referencedRelation: "active_user_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_profiles_recruiter_id_fkey"
-            columns: ["recruiter_id"]
-            isOneToOne: false
-            referencedRelation: "user_delete_dependencies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_profiles_recruiter_id_fkey"
-            columns: ["recruiter_id"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_profiles_upline_id_fkey"
-            columns: ["upline_id"]
-            isOneToOne: false
-            referencedRelation: "active_user_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_profiles_upline_id_fkey"
-            columns: ["upline_id"]
-            isOneToOne: false
-            referencedRelation: "user_delete_dependencies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_profiles_upline_id_fkey"
-            columns: ["upline_id"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_profiles_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      commission_chargeback_summary: {
-        Row: {
-          at_risk_amount: number | null
-          chargeback_rate_percentage: number | null
-          charged_back_count: number | null
-          high_risk_count: number | null
-          total_advances: number | null
-          total_chargeback_amount: number | null
-          total_chargebacks: number | null
-          total_earned: number | null
-          user_id: string | null
-        }
-        Relationships: []
-      }
-      commission_earning_detail: {
-        Row: {
-          advance_amount: number | null
-          advance_months: number | null
-          annual_premium: number | null
-          chargeback_amount: number | null
-          chargeback_risk_level: string | null
-          commission_id: string | null
-          earned_amount: number | null
-          effective_date: string | null
-          is_fully_earned: boolean | null
-          monthly_earning_rate: number | null
-          months_paid: number | null
-          months_remaining: number | null
-          policy_id: string | null
-          policy_status: string | null
-          status: string | null
-          unearned_amount: number | null
-          user_id: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "commissions_policy_id_fkey"
-            columns: ["policy_id"]
-            isOneToOne: false
-            referencedRelation: "policies"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      commission_earning_status: {
-        Row: {
-          advance_amount: number | null
-          advance_months: number | null
-          chargeback_amount: number | null
-          chargeback_date: string | null
-          chargeback_reason: string | null
-          chargeback_risk: string | null
-          created_at: string | null
-          earned_amount: number | null
-          id: string | null
-          is_fully_earned: boolean | null
-          last_payment_date: string | null
-          monthly_earning_rate: number | null
-          months_paid: number | null
-          months_remaining: number | null
-          percentage_earned: number | null
-          policy_id: string | null
-          status: string | null
-          type: string | null
-          unearned_amount: number | null
-          updated_at: string | null
-          user_id: string | null
-        }
-        Insert: {
-          advance_amount?: number | null
-          advance_months?: number | null
-          chargeback_amount?: number | null
-          chargeback_date?: string | null
-          chargeback_reason?: string | null
-          chargeback_risk?: never
-          created_at?: string | null
-          earned_amount?: number | null
-          id?: string | null
-          is_fully_earned?: never
-          last_payment_date?: string | null
-          monthly_earning_rate?: never
-          months_paid?: number | null
-          months_remaining?: never
-          percentage_earned?: never
-          policy_id?: string | null
-          status?: string | null
-          type?: string | null
-          unearned_amount?: number | null
-          updated_at?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          advance_amount?: number | null
-          advance_months?: number | null
-          chargeback_amount?: number | null
-          chargeback_date?: string | null
-          chargeback_reason?: string | null
-          chargeback_risk?: never
-          created_at?: string | null
-          earned_amount?: number | null
-          id?: string | null
-          is_fully_earned?: never
-          last_payment_date?: string | null
-          monthly_earning_rate?: never
-          months_paid?: number | null
-          months_remaining?: never
-          percentage_earned?: never
-          policy_id?: string | null
-          status?: string | null
-          type?: string | null
-          unearned_amount?: number | null
-          updated_at?: string | null
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "commissions_policy_id_fkey"
-            columns: ["policy_id"]
-            isOneToOne: false
-            referencedRelation: "policies"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      commission_earning_summary: {
-        Row: {
-          at_risk_count: number | null
-          avg_months_paid: number | null
-          fully_earned_count: number | null
-          portfolio_earned_percentage: number | null
-          total_advances: number | null
-          total_chargebacks: number | null
-          total_commissions: number | null
-          total_earned: number | null
-          total_unearned: number | null
-          user_id: string | null
-        }
-        Relationships: []
-      }
-      mv_carrier_performance: {
-        Row: {
-          active_policies: number | null
-          avg_commission_amount: number | null
-          avg_commission_rate_pct: number | null
-          avg_premium: number | null
-          cancelled_policies: number | null
-          carrier_id: string | null
-          carrier_name: string | null
-          commission_count: number | null
-          lapsed_policies: number | null
-          latest_policy_update: string | null
-          persistency_rate: number | null
-          policies_13mo_plus: number | null
-          total_commission_amount: number | null
-          total_policies: number | null
-          total_premium: number | null
-          user_id: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "policies_carrier_id_fkey"
-            columns: ["carrier_id"]
-            isOneToOne: false
-            referencedRelation: "carriers"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      mv_client_ltv: {
-        Row: {
-          active_policies: number | null
-          active_premium: number | null
-          avg_commission_per_policy: number | null
-          avg_policy_age_months: number | null
-          avg_premium_per_policy: number | null
-          cancelled_policies: number | null
-          client_id: string | null
-          client_name: string | null
-          client_tier: string | null
-          cross_sell_opportunity: boolean | null
-          email: string | null
-          first_policy_date: string | null
-          lapsed_policies: number | null
-          latest_policy_date: string | null
-          paid_commission: number | null
-          total_commission: number | null
-          total_policies: number | null
-          total_premium: number | null
-          user_id: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "policies_client_id_fkey"
-            columns: ["client_id"]
-            isOneToOne: false
-            referencedRelation: "clients"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      mv_cohort_retention: {
-        Row: {
-          active_premium: number | null
-          cancelled_count: number | null
-          cohort_month: string | null
-          cohort_size: number | null
-          lapsed_count: number | null
-          months_since_issue: number | null
-          retention_rate: number | null
-          still_active: number | null
-          total_premium: number | null
-          user_id: string | null
-        }
-        Relationships: []
-      }
-      mv_commission_aging: {
-        Row: {
-          aging_bucket: string | null
-          avg_at_risk: number | null
-          bucket_order: number | null
-          commission_count: number | null
-          policy_count: number | null
-          risk_level: string | null
-          total_at_risk: number | null
-          total_commission: number | null
-          total_earned: number | null
-          user_id: string | null
-        }
-        Relationships: []
-      }
-      mv_daily_production: {
-        Row: {
-          active_policies: number | null
-          avg_premium: number | null
-          cancelled_policies: number | null
-          lapsed_policies: number | null
-          max_premium: number | null
-          min_premium: number | null
-          production_date: string | null
-          total_policies: number | null
-          total_premium: number | null
-          user_id: string | null
-        }
-        Relationships: []
-      }
-      mv_expense_summary: {
-        Row: {
-          avg_amount: number | null
-          category: string | null
-          expense_month: string | null
-          expense_type: Database["public"]["Enums"]["expense_type"] | null
-          max_amount: number | null
-          min_amount: number | null
-          recurring_amount: number | null
-          recurring_count: number | null
-          total_amount: number | null
-          transaction_count: number | null
-          user_id: string | null
-        }
-        Relationships: []
-      }
-      mv_product_performance: {
-        Row: {
-          active_policies: number | null
-          avg_commission: number | null
-          avg_commission_rate_pct: number | null
-          avg_premium: number | null
-          lapsed_policies: number | null
-          persistency_rate: number | null
-          product_id: string | null
-          product_name: string | null
-          product_type: Database["public"]["Enums"]["product_type"] | null
-          total_commission: number | null
-          total_policies: number | null
-          total_premium: number | null
-          user_id: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "policies_product_id_fkey"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "products"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      mv_production_velocity: {
-        Row: {
-          month_start: string | null
-          monthly_avg_premium: number | null
-          monthly_policies: number | null
-          monthly_premium: number | null
-          user_id: string | null
-          week_start: string | null
-          weekly_avg_premium: number | null
-          weekly_policies: number | null
-          weekly_premium: number | null
-        }
-        Relationships: []
-      }
-      override_commission_summary: {
-        Row: {
-          charged_back_amount: number | null
-          earned_amount: number | null
-          override_agent_id: string | null
-          paid_amount: number | null
-          pending_amount: number | null
-          total_earned: number | null
-          total_override_amount: number | null
-          total_overrides: number | null
-          total_unearned: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "override_commissions_override_agent_id_fkey"
-            columns: ["override_agent_id"]
-            isOneToOne: false
-            referencedRelation: "active_user_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "override_commissions_override_agent_id_fkey"
-            columns: ["override_agent_id"]
-            isOneToOne: false
-            referencedRelation: "user_delete_dependencies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "override_commissions_override_agent_id_fkey"
-            columns: ["override_agent_id"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      unearned_commission_summary: {
-        Row: {
-          at_risk_count: number | null
-          avg_months_paid: number | null
-          fully_earned_count: number | null
-          portfolio_earned_percentage: number | null
-          total_advances: number | null
-          total_chargebacks: number | null
-          total_commissions: number | null
-          total_earned: number | null
-          total_unearned: number | null
-          user_id: string | null
-        }
-        Relationships: []
-      }
-      user_delete_dependencies: {
-        Row: {
-          activity_count: number | null
-          can_delete: boolean | null
-          checklist_count: number | null
-          commission_count: number | null
-          deletion_warning: string | null
-          document_count: number | null
-          downline_count: number | null
-          email: string | null
-          email_count: number | null
-          first_name: string | null
-          id: string | null
-          last_name: string | null
-          policy_count: number | null
-        }
-        Insert: {
-          activity_count?: never
-          can_delete?: never
-          checklist_count?: never
-          commission_count?: never
-          deletion_warning?: never
-          document_count?: never
-          downline_count?: never
-          email?: string | null
-          email_count?: never
-          first_name?: string | null
-          id?: string | null
-          last_name?: string | null
-          policy_count?: never
-        }
-        Update: {
-          activity_count?: never
-          can_delete?: never
-          checklist_count?: never
-          commission_count?: never
-          deletion_warning?: never
-          document_count?: never
-          downline_count?: never
-          email?: string | null
-          email_count?: never
-          first_name?: string | null
-          id?: string | null
-          last_name?: string | null
-          policy_count?: never
-        }
-        Relationships: []
-      }
       users: {
         Row: {
           agent_code: string | null
@@ -3322,221 +967,14 @@ export type Database = {
       }
     }
     Functions: {
-      add_to_read_by: {
-        Args: { message_id: string; user_id: string }
-        Returns: undefined
-      }
-      admin_approve_user: {
-        Args: { approver_id: string; target_user_id: string }
-        Returns: boolean
-      }
-      admin_delete_user: { Args: { target_user_id: string }; Returns: Json }
-      admin_deny_user: {
-        Args: { approver_id: string; reason: string; target_user_id: string }
-        Returns: boolean
-      }
-      admin_get_all_users: {
-        Args: never
-        Returns: {
-          approval_status: string
-          approved_at: string
-          approved_by: string
-          city: string
-          contract_level: number
-          created_at: string
-          current_onboarding_phase: string
-          denial_reason: string
-          denied_at: string
-          email: string
-          first_name: string
-          full_name: string
-          hierarchy_depth: number
-          hierarchy_path: string
-          id: string
-          instagram_url: string
-          is_admin: boolean
-          last_name: string
-          license_expiration: string
-          license_number: string
-          linkedin_url: string
-          npn: string
-          onboarding_status: string
-          phone: string
-          resident_state: string
-          roles: string[]
-          state: string
-          street_address: string
-          updated_at: string
-          upline_id: string
-          zip: string
-        }[]
-      }
-      admin_get_pending_users: {
-        Args: never
-        Returns: {
-          approval_status: string
-          approved_at: string
-          approved_by: string
-          contract_level: number
-          created_at: string
-          denial_reason: string
-          denied_at: string
-          email: string
-          full_name: string
-          hierarchy_depth: number
-          hierarchy_path: string
-          id: string
-          is_admin: boolean
-          roles: string[]
-          updated_at: string
-          upline_id: string
-        }[]
-      }
-      admin_get_user_profile: {
-        Args: { target_user_id: string }
-        Returns: {
-          approval_status: string
-          approved_at: string
-          approved_by: string
-          contract_level: number
-          created_at: string
-          denial_reason: string
-          denied_at: string
-          email: string
-          full_name: string
-          hierarchy_depth: number
-          hierarchy_path: string
-          id: string
-          is_admin: boolean
-          roles: string[]
-          updated_at: string
-          upline_id: string
-        }[]
-      }
-      admin_set_admin_role: {
-        Args: { new_is_admin: boolean; target_user_id: string }
-        Returns: boolean
-      }
-      admin_set_pending_user: {
-        Args: { target_user_id: string }
-        Returns: boolean
-      }
-      assign_user_role: {
-        Args: {
-          p_contract_level?: number
-          p_is_recruit?: boolean
-          p_requested_role?: string
-          p_user_id: string
-        }
-        Returns: string[]
-      }
-      calculate_chargeback_on_policy_lapse: {
-        Args: { p_lapse_date?: string; p_policy_id: string }
-        Returns: Json
-      }
-      calculate_client_age: { Args: { birth_date: string }; Returns: number }
       calculate_commission_advance: {
         Args: {
-          p_advance_months: number
           p_annual_premium: number
           p_commission_percentage: number
+          p_advance_months: number
           p_contract_level?: number
         }
         Returns: number
-      }
-      calculate_earned_amount: {
-        Args: {
-          p_advance_months: number
-          p_amount: number
-          p_months_paid: number
-        }
-        Returns: number
-      }
-      calculate_months_paid: {
-        Args: { p_effective_date: string; p_end_date?: string }
-        Returns: number
-      }
-      calculate_next_run_time: {
-        Args: {
-          p_day_of_month?: number
-          p_day_of_week?: number
-          p_from_time?: string
-          p_run_time: string
-          p_schedule_type: string
-          p_timezone: string
-        }
-        Returns: string
-      }
-      calculate_unearned_amount: {
-        Args: {
-          p_advance_months: number
-          p_amount: number
-          p_months_paid: number
-        }
-        Returns: number
-      }
-      check_email_exists: {
-        Args: { target_email: string }
-        Returns: {
-          email_exists: boolean
-          error_message: string
-          user_id: string
-        }[]
-      }
-      check_email_quota: {
-        Args: { p_limit?: number; p_provider: string; p_user_id: string }
-        Returns: boolean
-      }
-      cleanup_old_reports: {
-        Args: { max_reports_per_user?: number }
-        Returns: number
-      }
-      expire_old_invitations: {
-        Args: never
-        Returns: {
-          expired_count: number
-        }[]
-      }
-      get_at_risk_commissions: {
-        Args: { p_risk_threshold?: number; p_user_id: string }
-        Returns: {
-          advance_amount: number
-          commission_id: string
-          earned_amount: number
-          effective_date: string
-          months_paid: number
-          policy_id: string
-          policy_status: string
-          risk_level: string
-          unearned_amount: number
-        }[]
-      }
-      get_clients_with_stats: {
-        Args: never
-        Returns: {
-          active_policy_count: number
-          address: string
-          avg_premium: number
-          created_at: string
-          date_of_birth: string
-          email: string
-          id: string
-          last_policy_date: string
-          name: string
-          notes: string
-          phone: string
-          policy_count: number
-          status: string
-          total_premium: number
-          updated_at: string
-          user_id: string
-        }[]
-      }
-      get_downline_ids: {
-        Args: { target_user_id: string }
-        Returns: {
-          downline_id: string
-        }[]
       }
       get_pipeline_template_for_user: {
         Args: {
@@ -3545,210 +983,45 @@ export type Database = {
         }
         Returns: string
       }
-      get_policies_paginated: {
-        Args: {
-          p_carrier_id?: string
-          p_cursor?: string
-          p_limit?: number
-          p_product_id?: string
-          p_status?: string
-          p_user_id?: string
-        }
-        Returns: {
-          annual_premium: number
-          carrier_id: string
-          carrier_name: string
-          client: Json
-          commission_percentage: number
-          created_at: string
-          effective_date: string
-          id: string
-          payment_frequency: Database["public"]["Enums"]["payment_frequency"]
-          policy_number: string
-          product: Database["public"]["Enums"]["product_type"]
-          product_id: string
-          product_name: string
-          status: Database["public"]["Enums"]["policy_status"]
-          user_id: string
-        }[]
-      }
-      get_policy_count: {
-        Args: {
-          p_carrier_id?: string
-          p_product_id?: string
-          p_status?: string
-          p_user_id?: string
-        }
-        Returns: number
-      }
-      get_product_commission_rate: {
-        Args: {
-          p_comp_level: Database["public"]["Enums"]["comp_level"]
-          p_date?: string
-          p_product_id: string
-        }
-        Returns: number
-      }
-      get_role_permissions_with_inheritance: {
-        Args: { p_role_id: string }
-        Returns: {
-          inherited_from_role_name: string
-          permission_action: string
-          permission_code: string
-          permission_description: string
-          permission_id: string
-          permission_resource: string
-          permission_scope: string
-          permission_type: string
-        }[]
-      }
-      get_user_commission_profile: {
-        Args: { p_lookback_months?: number; p_user_id: string }
-        Returns: {
-          calculated_at: string
-          contract_level: number
-          data_quality: string
-          product_breakdown: Json
-          simple_avg_rate: number
-          weighted_avg_rate: number
-        }[]
-      }
-      get_user_permissions: {
-        Args: { target_user_id: string }
-        Returns: {
-          permission_code: string
-        }[]
-      }
       get_user_profile: {
-        Args: { user_id: string }
+        Args: {
+          user_id: string
+        }
         Returns: {
-          agent_code: string
-          contract_comp_level: number
-          created_at: string
-          email: string
           id: string
+          email: string
+          name: string
+          phone: string
+          contract_comp_level: number
           is_active: boolean
+          agent_code: string
           license_number: string
           license_state: string
-          name: string
           notes: string
-          phone: string
+          created_at: string
           updated_at: string
         }[]
       }
-      hard_delete_user: {
-        Args: {
-          p_confirm_text: string
-          p_deleted_by: string
-          p_user_id: string
-        }
-        Returns: Json
-      }
-      has_permission: {
-        Args: { permission_code: string; target_user_id: string }
+      is_user_approved: {
+        Args: Record<PropertyKey, never>
         Returns: boolean
-      }
-      has_role: {
-        Args: { role_name: string; target_user_id: string }
-        Returns: boolean
-      }
-      increment_email_quota: {
-        Args: { p_provider: string; p_user_id: string }
-        Returns: number
-      }
-      is_admin: { Args: never; Returns: boolean }
-      is_admin_user: { Args: { target_user_id?: string }; Returns: boolean }
-      is_caller_admin: { Args: never; Returns: boolean }
-      is_user_approved: { Args: never; Returns: boolean }
-      lookup_user_by_email: {
-        Args: { p_email: string }
-        Returns: {
-          email: string
-          id: string
-          is_approved: boolean
-          upline_id: string
-        }[]
-      }
-      mark_policy_cancelled: {
-        Args: {
-          p_cancellation_date?: string
-          p_cancellation_reason?: string
-          p_policy_id: string
-        }
-        Returns: Json
-      }
-      mark_policy_lapsed: {
-        Args: {
-          p_lapse_date?: string
-          p_lapse_reason?: string
-          p_policy_id: string
-        }
-        Returns: Json
-      }
-      refresh_all_report_materialized_views: { Args: never; Returns: undefined }
-      restore_deleted_user: {
-        Args: { p_restored_by: string; p_user_id: string }
-        Returns: Json
-      }
-      soft_delete_user: {
-        Args: { p_deleted_by: string; p_reason?: string; p_user_id: string }
-        Returns: Json
-      }
-      update_override_earned_amount: {
-        Args: { p_months_paid: number; p_policy_id: string }
-        Returns: undefined
       }
       update_user_metadata: {
-        Args: { metadata: Json; user_id: string }
+        Args: {
+          user_id: string
+          metadata: Json
+        }
         Returns: undefined
-      }
-      validate_invitation_acceptance: {
-        Args: { p_invitation_id: string; p_invitee_id: string }
-        Returns: {
-          error_message: string
-          valid: boolean
-        }[]
-      }
-      validate_invitation_eligibility: {
-        Args: { p_invitee_email: string; p_inviter_id: string }
-        Returns: {
-          error_message: string
-          invitee_user_id: string
-          valid: boolean
-          warning_message: string
-        }[]
       }
     }
     Enums: {
       agent_status: "unlicensed" | "licensed" | "not_applicable"
-      chargeback_status: "pending" | "resolved" | "disputed"
-      commission_status:
-        | "pending"
-        | "paid"
-        | "reversed"
-        | "disputed"
-        | "clawback"
-        | "charged_back"
-      comp_level: "street" | "release" | "enhanced" | "premium"
-      expense_category:
-        | "insurance_leads"
-        | "software_tools"
-        | "office_remote"
-        | "professional_services"
-        | "marketing"
-        | "uncategorized"
-      expense_type: "personal" | "business"
-      file_type: "csv" | "pdf" | "xlsx"
-      payment_frequency: "monthly" | "quarterly" | "semi_annual" | "annual"
-      policy_status: "active" | "pending" | "lapsed" | "cancelled" | "expired"
       product_type:
-        | "term_life"
-        | "whole_life"
-        | "universal_life"
-        | "variable_life"
-        | "health"
-        | "disability"
+        | "life"
         | "annuity"
+        | "disability"
+        | "long_term_care"
+        | "other"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -3756,33 +1029,27 @@ export type Database = {
   }
 }
 
-type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
-
-type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+type PublicSchema = Database[Extract<keyof Database, "public">]
 
 export type Tables<
-  DefaultSchemaTableNameOrOptions extends
-    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
-    | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
-  }
-    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+  PublicTableNameOrOptions extends
+    | keyof (PublicSchema["Tables"] & PublicSchema["Views"])
+    | { schema: keyof Database },
+  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
+    ? keyof (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
+        Database[PublicTableNameOrOptions["schema"]]["Views"])
     : never = never,
-> = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
-}
-  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+> = PublicTableNameOrOptions extends { schema: keyof Database }
+  ? (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
+      Database[PublicTableNameOrOptions["schema"]]["Views"])[TableName] extends {
       Row: infer R
     }
     ? R
     : never
-  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])
-    ? (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+  : PublicTableNameOrOptions extends keyof (PublicSchema["Tables"] &
+        PublicSchema["Views"])
+    ? (PublicSchema["Tables"] &
+        PublicSchema["Views"])[PublicTableNameOrOptions] extends {
         Row: infer R
       }
       ? R
@@ -3790,24 +1057,20 @@ export type Tables<
     : never
 
 export type TablesInsert<
-  DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
-    | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
-  }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+  PublicTableNameOrOptions extends
+    | keyof PublicSchema["Tables"]
+    | { schema: keyof Database },
+  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
+    ? keyof Database[PublicTableNameOrOptions["schema"]]["Tables"]
     : never = never,
-> = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
-}
-  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+> = PublicTableNameOrOptions extends { schema: keyof Database }
+  ? Database[PublicTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Insert: infer I
     }
     ? I
     : never
-  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+  : PublicTableNameOrOptions extends keyof PublicSchema["Tables"]
+    ? PublicSchema["Tables"][PublicTableNameOrOptions] extends {
         Insert: infer I
       }
       ? I
@@ -3815,24 +1078,20 @@ export type TablesInsert<
     : never
 
 export type TablesUpdate<
-  DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
-    | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
-  }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+  PublicTableNameOrOptions extends
+    | keyof PublicSchema["Tables"]
+    | { schema: keyof Database },
+  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
+    ? keyof Database[PublicTableNameOrOptions["schema"]]["Tables"]
     : never = never,
-> = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
-}
-  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+> = PublicTableNameOrOptions extends { schema: keyof Database }
+  ? Database[PublicTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Update: infer U
     }
     ? U
     : never
-  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+  : PublicTableNameOrOptions extends keyof PublicSchema["Tables"]
+    ? PublicSchema["Tables"][PublicTableNameOrOptions] extends {
         Update: infer U
       }
       ? U
@@ -3840,74 +1099,30 @@ export type TablesUpdate<
     : never
 
 export type Enums<
-  DefaultSchemaEnumNameOrOptions extends
-    | keyof DefaultSchema["Enums"]
-    | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
-  }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+  PublicEnumNameOrOptions extends
+    | keyof PublicSchema["Enums"]
+    | { schema: keyof Database },
+  EnumName extends PublicEnumNameOrOptions extends { schema: keyof Database }
+    ? keyof Database[PublicEnumNameOrOptions["schema"]]["Enums"]
     : never = never,
-> = DefaultSchemaEnumNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
-}
-  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
-  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
-    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+> = PublicEnumNameOrOptions extends { schema: keyof Database }
+  ? Database[PublicEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : PublicEnumNameOrOptions extends keyof PublicSchema["Enums"]
+    ? PublicSchema["Enums"][PublicEnumNameOrOptions]
     : never
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
-    | keyof DefaultSchema["CompositeTypes"]
-    | { schema: keyof DatabaseWithoutInternals },
+    | keyof PublicSchema["CompositeTypes"]
+    | { schema: keyof Database },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
+    schema: keyof Database
   }
-    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    ? keyof Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
     : never = never,
-> = PublicCompositeTypeNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
-}
-  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
-  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
-    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+> = PublicCompositeTypeNameOrOptions extends { schema: keyof Database }
+  ? Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof PublicSchema["CompositeTypes"]
+    ? PublicSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never
 
-export const Constants = {
-  public: {
-    Enums: {
-      agent_status: ["unlicensed", "licensed", "not_applicable"],
-      chargeback_status: ["pending", "resolved", "disputed"],
-      commission_status: [
-        "pending",
-        "paid",
-        "reversed",
-        "disputed",
-        "clawback",
-        "charged_back",
-      ],
-      comp_level: ["street", "release", "enhanced", "premium"],
-      expense_category: [
-        "insurance_leads",
-        "software_tools",
-        "office_remote",
-        "professional_services",
-        "marketing",
-        "uncategorized",
-      ],
-      expense_type: ["personal", "business"],
-      file_type: ["csv", "pdf", "xlsx"],
-      payment_frequency: ["monthly", "quarterly", "semi_annual", "annual"],
-      policy_status: ["active", "pending", "lapsed", "cancelled", "expired"],
-      product_type: [
-        "term_life",
-        "whole_life",
-        "universal_life",
-        "variable_life",
-        "health",
-        "disability",
-        "annuity",
-      ],
-    },
-  },
-} as const
