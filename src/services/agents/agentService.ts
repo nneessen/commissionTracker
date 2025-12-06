@@ -136,19 +136,20 @@ class AgentService {
   }
 
   /**
-   * Soft delete an agent (set is_deleted = true)
+   * Hard delete an agent - permanently removes user and all related data
    */
   async delete(id: string): Promise<void> {
-    const { error } = await supabase
-      .from('user_profiles')
-      .update({
-        is_deleted: true,
-        archived_at: new Date().toISOString()
-      })
-      .eq("id", id);
+    const { data, error } = await supabase.rpc('admin_delete_user', {
+      target_user_id: id
+    });
 
     if (error) {
       throw new Error(`Failed to delete agent: ${error.message}`);
+    }
+
+    // Check if the RPC returned an error
+    if (data && typeof data === 'object' && data.success === false) {
+      throw new Error(data.error || 'Failed to delete agent');
     }
   }
 

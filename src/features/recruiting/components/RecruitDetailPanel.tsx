@@ -433,7 +433,6 @@ export function RecruitDetailPanel({ recruit, currentUserId, isUpline = false, o
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
         onSuccess={handleDeleteSuccess}
-        mode="soft" // Use soft delete by default for safety
       />
     </div>
   );

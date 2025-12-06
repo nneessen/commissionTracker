@@ -181,24 +181,19 @@ export const recruitingService = {
     return data as UserProfile;
   },
 
-  // DEPRECATED: Use enhancedRecruitingService.softDeleteRecruit instead
+  // Hard delete recruit - permanently removes user and all related data
   async deleteRecruit(id: string) {
-    // Import the enhanced service for proper deletion
-    const { enhancedRecruitingService } = await import('./recruitingService.enhanced');
+    const { data, error } = await supabase.rpc('admin_delete_user', {
+      target_user_id: id
+    });
 
-    // Use soft delete by default (safer)
-    // Get current user ID from auth context for audit trail
-    const { data: { user } } = await supabase.auth.getUser();
-    const deletedBy = user?.id || id; // Fallback to self-delete if no auth user
+    if (error) {
+      throw new Error(`Failed to delete recruit: ${error.message}`);
+    }
 
-    const result = await enhancedRecruitingService.softDeleteRecruit(
-      id,
-      deletedBy,
-      'Deleted via legacy API'
-    );
-
-    if (!result.success) {
-      throw new Error(result.error || 'Failed to delete recruit');
+    // Check if the RPC returned an error
+    if (data && typeof data === 'object' && data.success === false) {
+      throw new Error(data.error || 'Failed to delete recruit');
     }
   },
 
