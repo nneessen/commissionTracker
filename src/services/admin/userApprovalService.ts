@@ -725,11 +725,11 @@ export class UserApprovalService {
 
   /**
    * Delete user (admin only)
-   * Soft delete by setting deleted_at timestamp
+   * HARD DELETE - permanently removes user and all related data
    */
   async deleteUser(userId: string): Promise<{ success: boolean; error?: string }> {
     try {
-      // Use RPC function for proper deletion (soft-delete)
+      // Use RPC function for permanent deletion (hard delete)
       const { data, error } = await supabase.rpc("admin_delete_user", {
         target_user_id: userId,
       });
