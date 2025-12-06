@@ -37,11 +37,13 @@ import { Check, ChevronsUpDown } from 'lucide-react';
 type ProductType = Database['public']['Enums']['product_type'];
 
 const PRODUCT_TYPES: ProductType[] = [
-  'life',
-  'annuity',
+  'term_life',
+  'whole_life',
+  'universal_life',
+  'variable_life',
+  'health',
   'disability',
-  'long_term_care',
-  'other'
+  'annuity'
 ];
 
 const productFormSchema = z.object({

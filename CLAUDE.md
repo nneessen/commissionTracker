@@ -94,6 +94,16 @@ At conversation start, check for `ACTIVE_SESSION_CONTINUATION` memory. If exists
 
 ## Critical Rules
 
+**Vercel Deployment (STRICT MODE):**
+- **ALWAYS run `npm run build` before committing** - Vercel uses strict TypeScript checking
+- Build failures on Vercel = deployment fails = app stays broken in production
+- After ANY database schema change (migrations, enum changes, new tables):
+  1. Run: `npx supabase gen types typescript --project-id pcyaqwodnyrpkaiojnpz > src/types/database.types.ts`
+  2. Fix any new type errors in the codebase
+  3. Run `npm run build` to verify all types align
+- Keep types synchronized: `database.types.ts` is generated, other files must match it
+- Never push code with TypeScript errors - the deployment WILL fail
+
 **Data Storage:**
 - ALL data in Supabase. TanStack Query for state management.
 - Local storage ONLY for: session tokens, UI preferences (theme, sidebar)

@@ -161,16 +161,16 @@ export const CompGuideImporter: React.FC<CompGuideImporterProps> = ({
             // Map the product type from FFG data to database enum
             const mapProductType = (product: string): Database["public"]["Enums"]["product_type"] => {
               const productMap: Record<string, Database["public"]["Enums"]["product_type"]> = {
-                'Term Life': 'life',
-                'Whole Life': 'life',
-                'Universal Life': 'life',
-                'Variable Life': 'life',
-                'Health': 'other',
+                'Term Life': 'term_life',
+                'Whole Life': 'whole_life',
+                'Universal Life': 'universal_life',
+                'Variable Life': 'variable_life',
+                'Health': 'health',
                 'Disability': 'disability',
                 'Annuity': 'annuity',
-                'Long Term Care': 'long_term_care'
+                'Long Term Care': 'health'
               };
-              return productMap[product] || 'other';
+              return productMap[product] || 'health';
             };
 
             const formData: CreateCompData = {

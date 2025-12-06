@@ -22,11 +22,13 @@ import type { Database } from '@/types/database.types';
 type ProductType = Database['public']['Enums']['product_type'];
 
 const PRODUCT_TYPES: ProductType[] = [
-  'life',
-  'annuity',
+  'term_life',
+  'whole_life',
+  'universal_life',
+  'variable_life',
+  'health',
   'disability',
-  'long_term_care',
-  'other'
+  'annuity'
 ];
 
 export function CommissionRatesManagement() {
