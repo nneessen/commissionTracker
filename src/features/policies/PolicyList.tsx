@@ -1,6 +1,6 @@
 // src/features/policies/PolicyList.tsx
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Edit,
   Trash2,
@@ -58,8 +58,8 @@ import { useCarriers } from "../../hooks/carriers";
 import { useCommissions } from "../../hooks/commissions/useCommissions";
 import { useUpdateCommissionStatus } from "../../hooks/commissions/useUpdateCommissionStatus";
 import { useProcessChargeback } from "../../hooks/commissions/useProcessChargeback";
-import { useCancelPolicy, useLapsePolicy, useReinstatePolicy, useDeletePolicy } from "../../hooks/policies";
-import { usePoliciesView } from "../../hooks/policies/usePoliciesView";
+import { useUpdatePolicy, useDeletePolicy, usePoliciesPaginated } from "../../hooks/policies";
+import type { SortConfig } from "./hooks/usePolicies";
 import { Policy, PolicyFilters, PolicyStatus } from "../../types/policy.types";
 import { ProductType, CommissionStatus } from "../../types/commission.types";
 import { formatCurrency, formatDate } from "../../lib/format";
@@ -85,37 +85,70 @@ const PRODUCT_ABBREV: Record<string, string> = {
 };
 
 export const PolicyList: React.FC<PolicyListProps> = ({ onEditPolicy, onNewPolicy }) => {
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSizeState] = useState(10);
+  const [filters, setFiltersState] = useState<PolicyFilters>({});
+  const [sortConfig, setSortConfig] = useState<SortConfig>({
+    field: 'created_at',
+    direction: 'desc'
+  });
+
   // Use server-side pagination hook
   const {
     policies,
     isLoading,
     isFetching,
     error,
-    currentPage,
+    totalCount: totalItems,
     totalPages,
-    pageSize,
-    totalItems,
-    goToPage,
-    nextPage,
-    previousPage,
-    setPageSize,
-    filters,
-    setFilters,
-    clearFilters,
-    filterCount,
-    sortConfig,
-    toggleSort,
-    refresh,
     metrics,
-  } = usePoliciesView();
+    refetch: refresh,
+  } = usePoliciesPaginated({
+    page: currentPage,
+    pageSize,
+    filters,
+    sortConfig,
+  });
+
+  // Pagination helpers
+  const goToPage = useCallback((page: number) => {
+    if (page >= 1 && page <= totalPages) setCurrentPage(page);
+  }, [totalPages]);
+  const nextPage = useCallback(() => {
+    if (currentPage < totalPages) setCurrentPage(p => p + 1);
+  }, [currentPage, totalPages]);
+  const previousPage = useCallback(() => {
+    if (currentPage > 1) setCurrentPage(p => p - 1);
+  }, [currentPage]);
+  const setPageSize = useCallback((size: number) => {
+    setPageSizeState(size);
+    setCurrentPage(1);
+  }, []);
+  const setFilters = useCallback((newFilters: PolicyFilters) => {
+    setFiltersState(newFilters);
+    setCurrentPage(1);
+  }, []);
+  const clearFilters = useCallback(() => {
+    setFiltersState({});
+    setCurrentPage(1);
+  }, []);
+  const toggleSort = useCallback((field: string) => {
+    setSortConfig(prev => ({
+      field,
+      direction: prev.field === field && prev.direction === 'asc' ? 'desc' : 'asc'
+    }));
+    setCurrentPage(1);
+  }, []);
+  const filterCount = Object.entries(filters).filter(
+    ([_, value]) => value !== undefined && value !== null && value !== ''
+  ).length;
 
   const { data: carriers = [] } = useCarriers();
   const { data: commissions = [] } = useCommissions();
   const { mutate: updateCommissionStatus } = useUpdateCommissionStatus();
   const { mutate: processChargeback } = useProcessChargeback();
-  const { mutate: cancelPolicy } = useCancelPolicy();
-  const { mutate: lapsePolicy } = useLapsePolicy();
-  const { mutate: reinstatePolicy } = useReinstatePolicy();
+  const { mutate: updatePolicy } = useUpdatePolicy();
   const { mutate: deletePolicy } = useDeletePolicy();
   const getCarrierById = (id: string) => carriers.find((c) => c.id === id);
 
@@ -191,19 +224,16 @@ export const PolicyList: React.FC<PolicyListProps> = ({ onEditPolicy, onNewPolic
       return;
     }
 
-    cancelPolicy(
+    updatePolicy(
       {
-        policyId,
+        id: policyId,
+        status: 'cancelled',
         reason: 'Manually cancelled by user',
         cancelDate: new Date()
       },
       {
-        onSuccess: (result) => {
-          if (result.chargeback && result.chargeback.amount > 0) {
-            alert(`Policy cancelled. Chargeback amount: ${formatCurrency(result.chargeback.amount)}`);
-          } else {
-            alert('Policy cancelled successfully.');
-          }
+        onSuccess: () => {
+          alert('Policy cancelled successfully.');
         },
         onError: (error) => {
           alert(`Failed to cancel policy: ${error.message}`);
@@ -217,19 +247,16 @@ export const PolicyList: React.FC<PolicyListProps> = ({ onEditPolicy, onNewPolic
       return;
     }
 
-    lapsePolicy(
+    updatePolicy(
       {
-        policyId,
+        id: policyId,
+        status: 'lapsed',
         lapseDate: new Date(),
         reason: 'Client stopped paying premiums'
       },
       {
-        onSuccess: (result) => {
-          if (result.chargeback && result.chargeback.amount > 0) {
-            alert(`Policy marked as lapsed. Chargeback amount: ${formatCurrency(result.chargeback.amount)}`);
-          } else {
-            alert('Policy marked as lapsed.');
-          }
+        onSuccess: () => {
+          alert('Policy marked as lapsed.');
         },
         onError: (error) => {
           alert(`Failed to mark policy as lapsed: ${error.message}`);
@@ -238,13 +265,15 @@ export const PolicyList: React.FC<PolicyListProps> = ({ onEditPolicy, onNewPolic
     );
   };
 
-  const handleReinstatePolicy = (policyId: string) => {
+  const handleReinstatePolicy = (policyId: string, currentStatus: 'cancelled' | 'lapsed') => {
     const reason = window.prompt("Please provide a reason for reinstating this policy:");
     if (!reason) return;
 
-    reinstatePolicy(
+    updatePolicy(
       {
-        policyId,
+        id: policyId,
+        status: 'active',
+        previousStatus: currentStatus,
         reason
       },
       {
@@ -552,7 +581,7 @@ export const PolicyList: React.FC<PolicyListProps> = ({ onEditPolicy, onNewPolic
                 <TableCell colSpan={9} className="text-center py-20">
                   <div className="flex flex-col items-center gap-2">
                     <AlertCircle className="h-8 w-8 text-destructive" />
-                    <span className="text-sm text-destructive">Error: {error}</span>
+                    <span className="text-sm text-destructive">Error: {error instanceof Error ? error.message : String(error)}</span>
                     <Button onClick={refresh} size="sm" variant="outline">Retry</Button>
                   </div>
                 </TableCell>
@@ -698,7 +727,7 @@ export const PolicyList: React.FC<PolicyListProps> = ({ onEditPolicy, onNewPolic
                           )}
                           {(policy.status === 'cancelled' || policy.status === 'lapsed') && (
                             <DropdownMenuItem
-                              onClick={() => handleReinstatePolicy(policy.id)}
+                              onClick={() => handleReinstatePolicy(policy.id, policy.status as 'cancelled' | 'lapsed')}
                               className="text-success"
                             >
                               <CheckCircle className="mr-2 h-4 w-4" />

@@ -1,0 +1,129 @@
+// src/features/policies/utils/policyFormTransformer.ts
+// Utilities for transforming policy form data to service data
+
+import type {
+  NewPolicyForm,
+  CreatePolicyData,
+  PaymentFrequency,
+} from '@/types/policy.types';
+
+/**
+ * Calculate monthly premium from annual premium based on payment frequency
+ */
+export function calculateMonthlyPremium(
+  annualPremium: number,
+  paymentFrequency: PaymentFrequency
+): number {
+  switch (paymentFrequency) {
+    case 'annual':
+      return annualPremium / 12;
+    case 'semi-annual':
+      return annualPremium / 6;
+    case 'quarterly':
+      return annualPremium / 3;
+    case 'monthly':
+    default:
+      return annualPremium / 12;
+  }
+}
+
+/**
+ * Validate commission percentage is within database constraints
+ * Database: DECIMAL(5,4) = max 9.9999 (999.99%)
+ *
+ * @param percent - Commission percentage (e.g., 95 for 95%)
+ * @throws Error if percentage is out of valid range
+ */
+export function validateCommissionPercentage(percent: number): void {
+  if (percent < 0 || percent > 999.99) {
+    throw new Error('Commission percentage must be between 0 and 999.99');
+  }
+}
+
+/**
+ * Transform form data to service-compatible CreatePolicyData
+ *
+ * @param form - Form data from PolicyForm component
+ * @param clientId - Client UUID (after client creation/lookup)
+ * @param userId - User UUID from auth context
+ * @returns CreatePolicyData ready for policyService.create()
+ */
+export function transformFormToCreateData(
+  form: NewPolicyForm,
+  clientId: string,
+  userId: string
+): CreatePolicyData {
+  // Validate commission percentage
+  const commissionPercent = form.commissionPercentage || 0;
+  validateCommissionPercentage(commissionPercent);
+
+  // Calculate monthly premium
+  const monthlyPremium = calculateMonthlyPremium(
+    form.annualPremium || 0,
+    form.paymentFrequency
+  );
+
+  return {
+    policyNumber: form.policyNumber,
+    status: form.status,
+    clientId,
+    userId,
+    carrierId: form.carrierId,
+    product: form.product,
+    effectiveDate: new Date(form.effectiveDate),
+    termLength: form.termLength,
+    expirationDate: form.expirationDate ? new Date(form.expirationDate) : undefined,
+    annualPremium: form.annualPremium || 0,
+    monthlyPremium,
+    paymentFrequency: form.paymentFrequency,
+    commissionPercentage: commissionPercent / 100, // Convert to decimal (95% → 0.95)
+    notes: form.notes || undefined,
+  };
+}
+
+/**
+ * Transform partial form updates to service-compatible format
+ *
+ * @param updates - Partial form data
+ * @param clientId - Client UUID (if client info was updated)
+ * @returns Partial CreatePolicyData for policyService.update()
+ */
+export function transformFormToUpdateData(
+  updates: Partial<NewPolicyForm>,
+  clientId?: string
+): Partial<CreatePolicyData> {
+  const result: Partial<CreatePolicyData> = {};
+
+  if (updates.policyNumber !== undefined) result.policyNumber = updates.policyNumber;
+  if (updates.status !== undefined) result.status = updates.status;
+  if (clientId) result.clientId = clientId;
+  if (updates.carrierId !== undefined) result.carrierId = updates.carrierId;
+  if (updates.product !== undefined) result.product = updates.product;
+  if (updates.termLength !== undefined) result.termLength = updates.termLength;
+  if (updates.notes !== undefined) result.notes = updates.notes;
+
+  // Handle dates
+  if (updates.effectiveDate !== undefined) {
+    result.effectiveDate = new Date(updates.effectiveDate);
+  }
+  if (updates.expirationDate !== undefined) {
+    result.expirationDate = updates.expirationDate ? new Date(updates.expirationDate) : undefined;
+  }
+
+  // Handle financial fields with recalculation
+  if (updates.annualPremium !== undefined || updates.paymentFrequency !== undefined) {
+    const annualPremium = updates.annualPremium ?? 0;
+    const paymentFrequency = updates.paymentFrequency ?? 'monthly';
+
+    result.annualPremium = annualPremium;
+    result.monthlyPremium = calculateMonthlyPremium(annualPremium, paymentFrequency);
+    result.paymentFrequency = paymentFrequency;
+  }
+
+  if (updates.commissionPercentage !== undefined) {
+    validateCommissionPercentage(updates.commissionPercentage);
+    result.commissionPercentage = updates.commissionPercentage / 100;
+  }
+
+  return result;
+}

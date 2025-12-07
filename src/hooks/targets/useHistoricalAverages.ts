@@ -1,7 +1,7 @@
 // src/hooks/targets/useHistoricalAverages.ts
 
 import { useMemo } from 'react';
-import { usePolicies } from '../policies/usePolicies';
+import { usePolicies } from '../policies';
 import { useExpenses } from '../expenses/useExpenses';
 import { useUserCommissionProfile } from '../commissions/useUserCommissionProfile';
 import { HistoricalAverages } from '../../services/targets/targetsCalculationService';

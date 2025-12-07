@@ -7,6 +7,7 @@ import {
   Session,
   AuthChangeEvent,
 } from "@supabase/supabase-js";
+import { useQueryClient } from "@tanstack/react-query";
 import { User } from "../types";
 import { userService } from "../services/settings/userService";
 import { logger } from "../services/base/logger";
@@ -52,6 +53,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     checkSession();
@@ -72,11 +74,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
         switch (event) {
           case "SIGNED_IN":
+            // Clear cache on sign in to ensure fresh data for new user
+            queryClient.clear();
             logger.auth("User signed in");
             break;
           case "SIGNED_OUT":
+            // Clear cache on sign out to prevent data leakage
+            queryClient.clear();
             logger.auth("User signed out");
-            // Clear any local data if needed
             break;
           case "TOKEN_REFRESHED":
             logger.auth("Token refreshed");
@@ -261,6 +266,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const { error } = await supabase.auth.signOut();
 
       if (error) throw error;
+
+      // Clear ALL cached data to prevent data leakage between users
+      queryClient.clear();
 
       setSession(null);
       setSupabaseUser(null);

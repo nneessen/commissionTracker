@@ -1,6 +1,6 @@
 // /home/nneessen/projects/commissionTracker/src/hooks/useMetrics.ts
 
-import { usePolicies } from '../policies/usePolicies';
+import { usePolicies } from '../policies';
 import { useCommissions } from '../commissions/useCommissions';
 import { useCarriers } from '../carriers/useCarriers';
 import {

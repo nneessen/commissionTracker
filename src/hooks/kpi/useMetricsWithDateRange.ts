@@ -12,7 +12,7 @@ import {
   getAveragePeriodValue,
 } from "../../utils/dateRange";
 import { parseLocalDate, formatDateForDB } from "../../lib/date";
-import { usePolicies } from "../policies/usePolicies";
+import { usePolicies } from "../policies";
 import { useCommissions } from "../commissions/useCommissions";
 import { useExpenses } from "../expenses/useExpenses";
 import { useCarriers } from "../carriers/useCarriers";

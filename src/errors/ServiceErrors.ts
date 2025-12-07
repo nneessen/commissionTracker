@@ -14,7 +14,7 @@ export class ServiceError extends Error {
     message: string,
     code: string,
     statusCode: number = 500,
-    context?: Record<string, unknown>
+    context?: Record<string, unknown>,
   ) {
     super(message);
     this.name = this.constructor.name;
@@ -47,14 +47,13 @@ export class NotFoundError extends ServiceError {
   constructor(
     resource: string,
     identifier: string | number,
-    context?: Record<string, unknown>
+    context?: Record<string, unknown>,
   ) {
-    super(
-      `${resource} not found: ${identifier}`,
-      'NOT_FOUND',
-      404,
-      { resource, identifier, ...context }
-    );
+    super(`${resource} not found: ${identifier}`, "NOT_FOUND", 404, {
+      resource,
+      identifier,
+      ...context,
+    });
   }
 }
 
@@ -70,15 +69,14 @@ export class ValidationError extends ServiceError {
 
   constructor(
     message: string,
-    validationErrors: Array<{ field: string; message: string; value?: unknown }>,
-    context?: Record<string, unknown>
+    validationErrors: Array<{
+      field: string;
+      message: string;
+      value?: unknown;
+    }>,
+    context?: Record<string, unknown>,
   ) {
-    super(
-      message,
-      'VALIDATION_ERROR',
-      400,
-      { validationErrors, ...context }
-    );
+    super(message, "VALIDATION_ERROR", 400, { validationErrors, ...context });
     this.validationErrors = validationErrors;
   }
 }
@@ -90,22 +88,17 @@ export class DatabaseError extends ServiceError {
   constructor(
     operation: string,
     originalError?: Error,
-    context?: Record<string, unknown>
+    context?: Record<string, unknown>,
   ) {
     const message = originalError
       ? `Database ${operation} failed: ${originalError.message}`
       : `Database ${operation} failed`;
 
-    super(
-      message,
-      'DATABASE_ERROR',
-      500,
-      {
-        operation,
-        originalError: originalError?.message,
-        ...context,
-      }
-    );
+    super(message, "DATABASE_ERROR", 500, {
+      operation,
+      originalError: originalError?.message,
+      ...context,
+    });
   }
 }
 
@@ -116,13 +109,13 @@ export class CalculationError extends ServiceError {
   constructor(
     calculationType: string,
     reason: string,
-    context?: Record<string, unknown>
+    context?: Record<string, unknown>,
   ) {
     super(
       `${calculationType} calculation failed: ${reason}`,
-      'CALCULATION_ERROR',
+      "CALCULATION_ERROR",
       422,
-      { calculationType, reason, ...context }
+      { calculationType, reason, ...context },
     );
   }
 }
@@ -134,13 +127,13 @@ export class AuthorizationError extends ServiceError {
   constructor(
     action: string,
     resource: string,
-    context?: Record<string, unknown>
+    context?: Record<string, unknown>,
   ) {
     super(
       `Not authorized to ${action} ${resource}`,
-      'AUTHORIZATION_ERROR',
+      "AUTHORIZATION_ERROR",
       403,
-      { action, resource, ...context }
+      { action, resource, ...context },
     );
   }
 }
@@ -152,14 +145,9 @@ export class ConflictError extends ServiceError {
   constructor(
     message: string,
     conflictingResource?: string,
-    context?: Record<string, unknown>
+    context?: Record<string, unknown>,
   ) {
-    super(
-      message,
-      'CONFLICT_ERROR',
-      409,
-      { conflictingResource, ...context }
-    );
+    super(message, "CONFLICT_ERROR", 409, { conflictingResource, ...context });
   }
 }
 
@@ -171,23 +159,18 @@ export class ExternalServiceError extends ServiceError {
     serviceName: string,
     operation: string,
     originalError?: Error,
-    context?: Record<string, unknown>
+    context?: Record<string, unknown>,
   ) {
     const message = originalError
       ? `External service ${serviceName} ${operation} failed: ${originalError.message}`
       : `External service ${serviceName} ${operation} failed`;
 
-    super(
-      message,
-      'EXTERNAL_SERVICE_ERROR',
-      502,
-      {
-        serviceName,
-        operation,
-        originalError: originalError?.message,
-        ...context,
-      }
-    );
+    super(message, "EXTERNAL_SERVICE_ERROR", 502, {
+      serviceName,
+      operation,
+      originalError: originalError?.message,
+      ...context,
+    });
   }
 }
 
@@ -198,14 +181,13 @@ export class RateLimitError extends ServiceError {
   constructor(
     resource: string,
     retryAfter?: number,
-    context?: Record<string, unknown>
+    context?: Record<string, unknown>,
   ) {
-    super(
-      `Rate limit exceeded for ${resource}`,
-      'RATE_LIMIT_ERROR',
-      429,
-      { resource, retryAfter, ...context }
-    );
+    super(`Rate limit exceeded for ${resource}`, "RATE_LIMIT_ERROR", 429, {
+      resource,
+      retryAfter,
+      ...context,
+    });
   }
 }
 
@@ -216,14 +198,9 @@ export class BusinessLogicError extends ServiceError {
   constructor(
     rule: string,
     message: string,
-    context?: Record<string, unknown>
+    context?: Record<string, unknown>,
   ) {
-    super(
-      message,
-      'BUSINESS_LOGIC_ERROR',
-      422,
-      { rule, ...context }
-    );
+    super(message, "BUSINESS_LOGIC_ERROR", 422, { rule, ...context });
   }
 }
 
@@ -241,10 +218,10 @@ export function getErrorMessage(error: unknown): string {
   if (error instanceof Error) {
     return error.message;
   }
-  if (typeof error === 'string') {
+  if (typeof error === "string") {
     return error;
   }
-  return 'Unknown error occurred';
+  return "Unknown error occurred";
 }
 
 /**

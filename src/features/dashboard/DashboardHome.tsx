@@ -5,7 +5,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { useConstants } from "../../hooks";
 import { useMetricsWithDateRange } from '@/hooks';
 import { useCreateExpense } from "../../hooks/expenses/useCreateExpense";
-import { useCreatePolicy } from "../../hooks/policies/useCreatePolicy";
+import { useCreatePolicy } from "../../hooks/policies";
 import { useChargebackSummary } from "../../hooks/commissions/useChargebackSummary";
 import { useAuth } from "../../contexts/AuthContext";
 import { TimePeriod } from "../../utils/dateRange";

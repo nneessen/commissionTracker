@@ -5,20 +5,26 @@ import { AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PolicyDialog } from "./components/PolicyDialog";
 import { PolicyList } from "./PolicyList";
-import { usePolicies } from "../../hooks/policies";
+import { usePolicies, useCreatePolicy, useUpdatePolicy, usePolicy } from "../../hooks/policies";
 import { useCarriers } from "../../hooks/carriers";
-import { usePolicyMutations } from "./hooks/usePolicyMutations";
-import { PolicyFilters } from "../../types/policy.types";
+import { useAuth } from "../../contexts/AuthContext";
+import { clientService } from "../../services/clients/clientService";
+import { transformFormToCreateData, transformFormToUpdateData } from "./utils/policyFormTransformer";
+import type { NewPolicyForm } from "../../types/policy.types";
+import showToast from "../../utils/toast";
 
 export const PolicyDashboard: React.FC = () => {
   const [isPolicyFormOpen, setIsPolicyFormOpen] = useState(false);
   const [editingPolicyId, setEditingPolicyId] = useState<string | undefined>();
 
+  const { user } = useAuth();
   const { data: policies = [], isLoading, error, refetch } = usePolicies();
+  const { data: editingPolicy } = usePolicy(editingPolicyId);
   useCarriers();
 
-  // Use custom hooks for mutations
-  const { addPolicy, updatePolicy } = usePolicyMutations(refetch);
+  // Use CRUD mutation hooks
+  const createPolicyMutation = useCreatePolicy();
+  const updatePolicyMutation = useUpdatePolicy();
 
   const getPolicyById = (id: string) => {
     return policies.find((p) => p.id === id);
@@ -63,13 +69,41 @@ export const PolicyDashboard: React.FC = () => {
             setEditingPolicyId(undefined);
           }
         }}
-        onSave={async (formData) => {
-          if (editingPolicyId) {
-            await updatePolicy(editingPolicyId, formData);
+        onSave={async (formData: NewPolicyForm) => {
+          if (!user?.id) {
+            showToast.error('You must be logged in');
             return null;
-          } else {
-            const result = await addPolicy(formData);
-            return result || null;
+          }
+
+          try {
+            // Create or find the client
+            const client = await clientService.createOrFind({
+              name: formData.clientName,
+              email: formData.clientEmail || undefined,
+              phone: formData.clientPhone || undefined,
+              address: JSON.stringify({
+                state: formData.clientState,
+                age: formData.clientAge,
+              }),
+            }, user.id);
+
+            if (editingPolicyId) {
+              // Update existing policy
+              const updateData = transformFormToUpdateData(formData, client.id);
+              await updatePolicyMutation.mutateAsync({ id: editingPolicyId, updates: updateData });
+              showToast.success('Policy updated successfully');
+              return null;
+            } else {
+              // Create new policy
+              const createData = transformFormToCreateData(formData, client.id, user.id);
+              const result = await createPolicyMutation.mutateAsync(createData);
+              showToast.success(`Policy ${result.policyNumber} created successfully!`);
+              return result;
+            }
+          } catch (error) {
+            const message = error instanceof Error ? error.message : 'Operation failed';
+            showToast.error(message);
+            throw error;
           }
         }}
         policyId={editingPolicyId}
