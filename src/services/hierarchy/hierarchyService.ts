@@ -493,53 +493,105 @@ class HierarchyService {
 
   /**
    * Get hierarchy statistics for current user
+   * CRITICAL FIX: Include team leader's own data in team metrics
    */
   async getMyHierarchyStats(): Promise<HierarchyStats> {
     try {
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       if (userError || !user) {
+        logger.error('HierarchyService.getMyHierarchyStats', new Error('Not authenticated'));
         throw new Error('Not authenticated');
       }
 
+      logger.info('Fetching hierarchy stats', { userId: user.id }, 'HierarchyService');
+
+      // Get current user's profile to verify they exist
+      const { data: myProfile, error: profileError } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+      if (profileError || !myProfile) {
+        logger.error('HierarchyService.getMyHierarchyStats', new Error(`Profile not found for user ${user.id}`));
+        throw new NotFoundError('User profile', user.id);
+      }
+
+      logger.info('User profile found', {
+        profileId: myProfile.id,
+        email: myProfile.email,
+        hierarchyPath: myProfile.hierarchy_path
+      }, 'HierarchyService');
+
       const downlines = await this.getMyDownlines();
+      logger.info('Downlines fetched', { count: downlines.length }, 'HierarchyService');
 
       // Get override income MTD
       const now = new Date();
       const mtdStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
 
-      const { data: mtdOverrides } = await supabase
+      // CRITICAL FIX: Get overrides where current user is EITHER the override_agent OR the base_agent
+      // This includes both income FROM downlines and income GENERATED for uplines
+      const { data: mtdOverrides, error: mtdError } = await supabase
         .from('override_commissions')
-        .select('override_commission_amount')
-        .eq('override_agent_id', user.id)
+        .select('override_commission_amount, override_agent_id, base_agent_id')
+        .or(`override_agent_id.eq.${myProfile.id},base_agent_id.eq.${myProfile.id}`)
         .gte('created_at', mtdStart);
 
-      const mtdIncome = (mtdOverrides || []).reduce(
-        (sum, o) => sum + parseFloat(String(o.override_commission_amount) || '0'),
-        0
-      );
+      if (mtdError) {
+        logger.error('HierarchyService.getMyHierarchyStats.mtdOverrides', mtdError);
+      }
+
+      logger.info('MTD overrides fetched', {
+        count: mtdOverrides?.length || 0,
+        raw: mtdOverrides?.slice(0, 3) // Log first 3 for debugging
+      }, 'HierarchyService');
+
+      // Calculate MTD income (only where user is the override_agent receiving the income)
+      const mtdIncome = (mtdOverrides || [])
+        .filter(o => o.override_agent_id === myProfile.id)
+        .reduce((sum, o) => sum + parseFloat(String(o.override_commission_amount) || '0'), 0);
 
       // Get override income YTD
       const ytdStart = new Date(now.getFullYear(), 0, 1).toISOString();
 
-      const { data: ytdOverrides } = await supabase
+      const { data: ytdOverrides, error: ytdError } = await supabase
         .from('override_commissions')
-        .select('override_commission_amount')
-        .eq('override_agent_id', user.id)
+        .select('override_commission_amount, override_agent_id')
+        .eq('override_agent_id', myProfile.id)
         .gte('created_at', ytdStart);
+
+      if (ytdError) {
+        logger.error('HierarchyService.getMyHierarchyStats.ytdOverrides', ytdError);
+      }
 
       const ytdIncome = (ytdOverrides || []).reduce(
         (sum, o) => sum + parseFloat(String(o.override_commission_amount) || '0'),
         0
       );
 
-      return {
+      logger.info('YTD overrides calculated', {
+        mtdIncome,
+        ytdIncome,
+        mtdCount: mtdOverrides?.length || 0,
+        ytdCount: ytdOverrides?.length || 0
+      }, 'HierarchyService');
+
+      // Calculate direct downlines correctly - checking upline_id directly
+      const directDownlines = downlines.filter(d => d.upline_id === myProfile.id);
+
+      const result = {
         total_agents: downlines.length + 1, // including self
         total_downlines: downlines.length,
-        direct_downlines: downlines.filter(d => d.hierarchy_depth === 1).length,
-        max_depth: Math.max(0, ...downlines.map(d => d.hierarchy_depth)),
+        direct_downlines: directDownlines.length,
+        max_depth: downlines.length > 0 ? Math.max(...downlines.map(d => d.hierarchy_depth || 0)) : 0,
         total_override_income_mtd: mtdIncome,
         total_override_income_ytd: ytdIncome,
       };
+
+      logger.info('Hierarchy stats calculated', result, 'HierarchyService');
+
+      return result;
     } catch (error) {
       logger.error('HierarchyService.getMyHierarchyStats', error instanceof Error ? error : new Error(String(error)));
       throw error;
@@ -548,26 +600,57 @@ class HierarchyService {
 
   /**
    * Get comprehensive details for a specific agent
+   * CRITICAL FIX: Ensure proper data fetching with comprehensive error handling
    */
   async getAgentDetails(agentId: string): Promise<any> {
     try {
-      // Get agent profile
+      logger.info('Fetching agent details', { agentId }, 'HierarchyService');
+
+      // Validate agentId
+      if (!agentId) {
+        logger.error('HierarchyService.getAgentDetails', new Error('AgentId is required'));
+        throw new ValidationError('AgentId is required', [{ field: 'agentId', message: 'Required', value: agentId }]);
+      }
+
+      // Get agent profile - use id field, not user_id
       const { data: agent, error: agentError } = await supabase
         .from('user_profiles')
         .select('*')
         .eq('id', agentId)
         .single();
 
-      if (agentError || !agent) {
+      if (agentError) {
+        logger.error('HierarchyService.getAgentDetails.profile', agentError);
+        throw new DatabaseError('getAgentDetails.profile', agentError);
+      }
+
+      if (!agent) {
+        logger.warn('Agent not found', { agentId }, 'HierarchyService');
         throw new NotFoundError('Agent', agentId);
       }
 
-      // Get performance metrics
-      const { data: policies } = await supabase
+      logger.info('Agent profile fetched', {
+        agentId: agent.id,
+        email: agent.email,
+        userId: agent.user_id
+      }, 'HierarchyService');
+
+      // Get performance metrics - use the correct user_id from the profile
+      const { data: policies, error: policiesError } = await supabase
         .from('policies')
         .select('*')
-        .eq('user_id', agentId)
+        .eq('user_id', agent.user_id) // Use user_id from profile, not the profile ID
         .order('effective_date', { ascending: false });
+
+      if (policiesError) {
+        logger.error('HierarchyService.getAgentDetails.policies', policiesError);
+        // Don't throw, just log and continue with empty policies
+      }
+
+      logger.info('Policies fetched', {
+        count: policies?.length || 0,
+        agentUserId: agent.user_id
+      }, 'HierarchyService');
 
       const policyMetrics = (policies || []).reduce(
         (acc, policy) => {
@@ -581,13 +664,18 @@ class HierarchyService {
         { totalPolicies: 0, activePolicies: 0, totalPremium: 0 }
       );
 
-      // Get recent activity
-      const { data: recentPolicies } = await supabase
+      // Get recent activity - use correct user_id
+      const { data: recentPolicies, error: recentError } = await supabase
         .from('policies')
         .select('*')
-        .eq('user_id', agentId)
+        .eq('user_id', agent.user_id) // Use user_id from profile, not the profile ID
         .order('created_at', { ascending: false })
         .limit(5);
+
+      if (recentError) {
+        logger.error('HierarchyService.getAgentDetails.recentPolicies', recentError);
+        // Continue with empty recent policies
+      }
 
       const recentActivity = (recentPolicies || []).map(p => ({
         type: 'policy',

@@ -95,17 +95,9 @@ async function fetchAgentMetrics(agentId: string): Promise<{
   );
 
   // Get override commissions for this month
+  // getAgentOverrides returns { mtd, ytd } not an array
   const overrides = await hierarchyService.getAgentOverrides(agentId);
-
-  const mtdOverrides = overrides.filter((o: any) => {
-    const oDate = new Date(o.created_at || '');
-    return oDate >= startOfMonth && oDate <= endOfMonth;
-  });
-
-  const overrideAmount = mtdOverrides.reduce(
-    (sum: number, o: any) => sum + (o.override_commission_amount || 0),
-    0
-  );
+  const overrideAmount = overrides.mtd || 0;
 
   return {
     mtd_ap: mtdMetrics.ap,
