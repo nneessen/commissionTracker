@@ -26,15 +26,23 @@ export const useUpdateCommissionStatus = () => {
   return useMutation({
     mutationFn: async ({ commissionId, status, policyId }: UpdateCommissionStatusParams) => {
       // First, get the commission record to access advance_months
-      const { data: existingCommission, error: fetchError } = await supabase
+      // Use select without .single() to handle potential RLS issues
+      const { data: commissionRecords, error: fetchError } = await supabase
         .from('commissions')
         .select('advance_months, amount')
-        .eq('id', commissionId)
-        .single();
+        .eq('id', commissionId);
 
       if (fetchError) {
+        console.error('Failed to fetch commission:', fetchError);
         throw new Error(`Failed to fetch commission: ${fetchError.message}`);
       }
+
+      if (!commissionRecords || commissionRecords.length === 0) {
+        throw new Error('Commission not found or you do not have permission to access it');
+      }
+
+      // Use the first record (should only be one with matching ID)
+      const existingCommission = commissionRecords[0];
 
       // Prepare update data based on status
       const updateData: any = {
@@ -68,16 +76,25 @@ export const useUpdateCommissionStatus = () => {
       }
 
       // Update commission (this will trigger the database trigger to recalculate amounts)
-      const { data: commissionData, error: commissionError } = await supabase
+      // Using maybeSingle() to handle edge cases where multiple rows might be visible
+      const { data: commissionResults, error: commissionError } = await supabase
         .from('commissions')
         .update(updateData)
         .eq('id', commissionId)
-        .select()
-        .single();
+        .select();
 
       if (commissionError) {
-        throw commissionError;
+        console.error('Commission update error:', commissionError);
+        throw new Error(`Failed to update commission: ${commissionError.message}`);
       }
+
+      // Handle multiple results edge case (shouldn't happen with ID match, but being defensive)
+      if (!commissionResults || commissionResults.length === 0) {
+        throw new Error('Commission not found or you do not have permission to update it');
+      }
+
+      // Use the first result (they should all be the same since we're updating by ID)
+      const commissionData = commissionResults[0];
 
       // Update policy status when commission status changes
       if (policyId) {

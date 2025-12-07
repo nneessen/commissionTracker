@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-12-07 14:47:10
+
+### Changed Files
+- `scripts/check-user-targets.sql`
+- `scripts/debug-commission-rls.sql`
+- `scripts/fix-nick-approval.sql`
+- `scripts/fix-targets-data.sql`
+- `scripts/test-nick-commission-update.sql`
+- `src/hooks/commissions/useUpdateCommissionStatus.ts`
+- `src/services/reports/insightsService.ts`
+- `supabase/migrations/20251228_001_fix_commission_update_rls_and_client_cascade.sql`
+- `supabase/migrations/20251228_002_fix_user_targets_rls.sql`
+
+### Statistics
+```
+ 9 files changed, 692 insertions(+), 8 deletions(-)
+```
+
 ## [Checkpoint] - 2025-12-07 13:59:17
 
 ### Changed Files

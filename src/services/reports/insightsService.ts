@@ -108,7 +108,7 @@ export class InsightsService {
   ): Promise<ActionableInsight[]> {
     const { data: lapsedPolicies } = await supabase
       .from('policies')
-      .select('*, carrier:carriers(name), product:products(name)')
+      .select('*')
       .eq('user_id', context.userId)
       .eq('status', 'lapsed')
       .gte('effective_date', context.startDate.toISOString())
