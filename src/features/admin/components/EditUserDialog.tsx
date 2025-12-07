@@ -42,7 +42,7 @@ import { supabase } from "@/services/base/supabase";
 import showToast from "@/utils/toast";
 import {
   Mail, User, Phone, Users, Trash2, Send,
-  MapPin, CreditCard, Globe, AlertTriangle
+  MapPin, CreditCard, Globe, AlertTriangle, Loader2
 } from "lucide-react";
 import type { RoleName } from "@/types/permissions.types";
 import type { UserProfile } from "@/services/admin/userApprovalService";
@@ -113,6 +113,71 @@ export default function EditUserDialog({
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isSendingInvite, setIsSendingInvite] = useState(false);
+  const [reassignUplineId, setReassignUplineId] = useState<string | null>(null);
+  const [checkingDependencies, setCheckingDependencies] = useState(false);
+  const [downlineCount, setDownlineCount] = useState(0);
+  const [potentialUplines, setPotentialUplines] = useState<Array<{id: string; first_name: string; last_name: string; email: string}>>([]);
+
+  // Check for downlines when delete dialog opens
+  useEffect(() => {
+    // Reset ALL state when dialog is closed or no user
+    if (!showDeleteConfirm || !user) {
+      setDownlineCount(0);
+      setPotentialUplines([]);
+      setReassignUplineId(null);
+      setCheckingDependencies(false); // FIX: Reset this too!
+      return;
+    }
+
+    // Track if effect is still active (for cleanup)
+    let isActive = true;
+
+    const checkDownlines = async () => {
+      setCheckingDependencies(true);
+      try {
+        // Check for downlines (users with this user as upline)
+        const { count, error: countError } = await supabase
+          .from('user_profiles')
+          .select('*', { count: 'exact', head: true })
+          .eq('upline_id', user.id);
+
+        if (countError) {
+          console.error('Error checking downlines:', countError);
+          if (isActive) setDownlineCount(0);
+          return;
+        }
+
+        if (!isActive) return; // Abort if dialog closed
+        setDownlineCount(count || 0);
+
+        // If there are downlines, fetch potential uplines for reassignment
+        if (count && count > 0) {
+          const { data: uplines, error: uplinesError } = await supabase
+            .from('user_profiles')
+            .select('id, first_name, last_name, email')
+            .neq('id', user.id)
+            .order('first_name');
+
+          if (uplinesError) {
+            console.error('Error fetching uplines:', uplinesError);
+          }
+          if (isActive) setPotentialUplines(uplines || []);
+        }
+      } catch (error) {
+        console.error('Error checking downlines:', error);
+        if (isActive) setDownlineCount(0);
+      } finally {
+        if (isActive) setCheckingDependencies(false);
+      }
+    };
+
+    checkDownlines();
+
+    // Cleanup: mark effect as inactive when dialog closes or deps change
+    return () => {
+      isActive = false;
+    };
+  }, [showDeleteConfirm, user?.id]); // FIX: Use user.id instead of user object
 
   // Populate form when user changes
   useEffect(() => {
@@ -208,19 +273,34 @@ export default function EditUserDialog({
     setIsDeleting(true);
 
     try {
+      // If there are downlines and a reassignment target is selected, reassign first
+      if (downlineCount > 0 && reassignUplineId) {
+        const { data, error } = await supabase
+          .from('user_profiles')
+          .update({ upline_id: reassignUplineId })
+          .eq('upline_id', user.id)
+          .select();
+
+        if (error) {
+          throw new Error(error.message || 'Failed to reassign downlines');
+        }
+        showToast.success(`Reassigned ${data?.length || 0} downline(s)`);
+      }
+
       const result = await userApprovalService.deleteUser(user.id);
 
       if (result.success) {
-        showToast.success("User deleted successfully");
+        showToast.success("User permanently deleted");
         queryClient.invalidateQueries({ queryKey: ["userApproval"] });
+        queryClient.invalidateQueries({ queryKey: ["recruits"] });
         setShowDeleteConfirm(false);
         onOpenChange(false);
         onDeleted?.();
       } else {
         showToast.error(result.error || "Failed to delete user");
       }
-    } catch (error) {
-      showToast.error("An error occurred while deleting");
+    } catch (error: any) {
+      showToast.error(error?.message || "An error occurred while deleting");
       console.error("Delete error:", error);
     } finally {
       setIsDeleting(false);
@@ -262,9 +342,12 @@ export default function EditUserDialog({
 
   if (!user) return null;
 
+  // When delete confirmation opens, close the parent dialog to prevent stacking
+  const dialogOpen = open && !showDeleteConfirm;
+
   return (
     <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
+      <Dialog open={dialogOpen} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader className="pb-2">
             <DialogTitle className="text-base font-semibold flex items-center gap-2">
@@ -588,9 +671,9 @@ export default function EditUserDialog({
                 <AlertDescription>
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="font-medium">Delete User</p>
+                      <p className="font-medium">Permanently Delete User</p>
                       <p className="text-xs opacity-80">
-                        This will soft-delete the user. They can be restored later.
+                        This will permanently delete the user and all their data. This cannot be undone.
                       </p>
                     </div>
                     <Button
@@ -629,25 +712,97 @@ export default function EditUserDialog({
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
-        <AlertDialogContent>
+      {/* Delete Confirmation Dialog - Standalone (parent Dialog closes when this opens) */}
+      <AlertDialog
+        open={showDeleteConfirm}
+        onOpenChange={(isOpen) => {
+          setShowDeleteConfirm(isOpen);
+          // Dialog will automatically reopen when showDeleteConfirm becomes false
+          // because dialogOpen = open && !showDeleteConfirm
+        }}
+      >
+        <AlertDialogContent className="max-w-md">
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete User?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete <strong>{user?.email}</strong>?
-              <br /><br />
-              This will soft-delete the user. Their data will be preserved and they can be restored later if needed.
+            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="h-5 w-5" />
+              Permanently Delete User?
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3">
+                <p>
+                  Are you sure you want to permanently delete{" "}
+                  <strong>{user?.email}</strong>?
+                </p>
+
+                {/* Loading state */}
+                {checkingDependencies && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Checking for downlines...
+                  </div>
+                )}
+
+                {/* Downlines warning with reassignment */}
+                {!checkingDependencies && downlineCount > 0 && (
+                  <Alert className="border-orange-500/50 bg-orange-500/10">
+                    <Users className="h-4 w-4" />
+                    <AlertDescription>
+                      <p className="font-medium mb-1">
+                        This user has {downlineCount} downline{downlineCount > 1 ? 's' : ''} that must be reassigned
+                      </p>
+                      {potentialUplines.length > 0 ? (
+                        <div className="space-y-1">
+                          <p className="text-xs">Select new upline:</p>
+                          <Select
+                            value={reassignUplineId || ''}
+                            onValueChange={setReassignUplineId}
+                          >
+                            <SelectTrigger className="h-8 text-xs">
+                              <SelectValue placeholder="Select new upline..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {potentialUplines.map((upline) => (
+                                <SelectItem key={upline.id} value={upline.id} className="text-xs">
+                                  {upline.first_name} {upline.last_name} ({upline.email})
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      ) : (
+                        <p className="text-xs">No eligible uplines available.</p>
+                      )}
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                <p className="text-sm text-destructive font-medium">
+                  This will delete all associated data. This action cannot be undone.
+                </p>
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
-              disabled={isDeleting}
+              disabled={
+                isDeleting ||
+                checkingDependencies ||
+                (downlineCount > 0 && !reassignUplineId)
+              }
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {isDeleting ? "Deleting..." : "Delete User"}
+              {isDeleting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : downlineCount > 0 && !reassignUplineId ? (
+                "Select upline first"
+              ) : (
+                "Delete Permanently"
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
