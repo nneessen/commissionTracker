@@ -28,6 +28,7 @@ import showToast from "../../utils/toast";
 import { targetsCalculationService, CalculatedTargets } from "../../services/targets/targetsCalculationService";
 import { TargetInputDialog } from "./components/TargetInputDialog";
 import { CalculationBreakdown } from "./components/CalculationBreakdown";
+import { PersistencyScenarios } from "./components/PersistencyScenarios";
 
 export function TargetsPage() {
   const { data: targets, isLoading, error } = useTargets();
@@ -474,6 +475,17 @@ export function TargetsPage() {
                 </CardContent>
               </Card>
             </div>
+
+            {/* What-If Persistency Scenarios */}
+            <PersistencyScenarios
+              baseAnnualPolicies={calculatedTargets.annualPoliciesTarget}
+              totalPremiumNeeded={calculatedTargets.totalPremiumNeeded}
+              avgPolicyPremium={calculatedTargets.avgPolicyPremium}
+              currentPersistency={actualMetrics.persistency13Month || 0.85}
+              avgCommissionRate={calculatedTargets.avgCommissionRate}
+              annualIncomeTarget={calculatedTargets.annualIncomeTarget}
+              monthlyExpenseTarget={calculatedTargets.monthlyExpenseTarget}
+            />
 
             {/* Validation Warnings - Compact */}
             {(() => {
