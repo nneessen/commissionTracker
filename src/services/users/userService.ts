@@ -530,16 +530,45 @@ class UserService {
       dbData.approval_status = updates.approval_status;
     }
 
+    // FIXED: Handle potential multiple row returns more gracefully
     const { data, error } = await supabase
       .from('user_profiles')
       .update(dbData)
       .eq("id", id)
       .neq('is_deleted', true)
       .select()
-      .single();
+      .maybeSingle(); // Use maybeSingle instead of single to handle edge cases
 
     if (error) {
+      // Special handling for the "Cannot coerce" error
+      if (error.message.includes('Cannot coerce')) {
+        // Try to fetch the updated user separately
+        const { data: fetchedData, error: fetchError } = await supabase
+          .from('user_profiles')
+          .select('*')
+          .eq("id", id)
+          .single();
+
+        if (!fetchError && fetchedData) {
+          return this.transformProfileToUser(fetchedData as UserProfile);
+        }
+      }
       throw new Error(`Failed to update user: ${error.message}`);
+    }
+
+    if (!data) {
+      // If no data returned, fetch the user
+      const { data: fetchedData, error: fetchError } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq("id", id)
+        .single();
+
+      if (fetchError) {
+        throw new Error(`Failed to fetch updated user: ${fetchError.message}`);
+      }
+
+      return this.transformProfileToUser(fetchedData as UserProfile);
     }
 
     // Clear cache if updating current user

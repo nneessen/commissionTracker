@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-12-07 15:42:57
+
+### Changed Files
+- `scripts/apply-migration.sh`
+- `src/hooks/admin/useUsersView.ts`
+- `src/services/recruiting/recruitingService.ts`
+- `src/services/users/userService.ts`
+- `supabase/migrations/20251207_fix_user_service_and_role_duplicates.sql`
+
+### Statistics
+```
+ 5 files changed, 421 insertions(+), 25 deletions(-)
+```
+
 ## [Checkpoint] - 2025-12-07 14:47:10
 
 ### Changed Files

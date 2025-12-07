@@ -56,12 +56,16 @@ export function useUsersView() {
 
       let filteredUsers = (allUsers as UserProfile[]) || [];
 
-      // CRITICAL: Exclude recruits (users in onboarding pipeline) from users table
-      // Only show active agents (users with 'agent' role) OR admins (is_admin=true)
-      // Per GraduateToAgentDialog.tsx: Graduation sets roles=['agent'] AND onboarding_status='completed'
-      filteredUsers = filteredUsers.filter(u =>
-        u.roles?.includes('agent') || u.is_admin === true
-      );
+      // FIXED: Include users who are agents (both 'agent' and 'active_agent') OR admins
+      // Exclude users who are ONLY in the recruiting pipeline (recruits without agent status)
+      filteredUsers = filteredUsers.filter(u => {
+        const hasAgentRole = u.roles?.includes('agent') || u.roles?.includes('active_agent');
+        const isAdmin = u.is_admin === true;
+        const hasAdminRole = u.roles?.includes('admin');
+        
+        // Include if they have any agent role, admin role, or admin flag
+        return hasAgentRole || isAdmin || hasAdminRole;
+      });
 
       // Apply filters client-side
       if (filters.searchTerm) {
@@ -120,12 +124,15 @@ export function useUsersView() {
 
       const allUsers = (data as UserProfile[]) || [];
 
-      // CRITICAL: Exclude recruits from metrics (same logic as main query)
-      // Only count active agents (users with 'agent' role) OR admins (is_admin=true)
-      // Per GraduateToAgentDialog.tsx: Graduation sets roles=['agent'] AND onboarding_status='completed'
-      const users = allUsers.filter(u =>
-        u.roles?.includes('agent') || u.is_admin === true
-      );
+      // FIXED: Use same filter logic for metrics as main query
+      const users = allUsers.filter(u => {
+        const hasAgentRole = u.roles?.includes('agent') || u.roles?.includes('active_agent');
+        const isAdmin = u.is_admin === true;
+        const hasAdminRole = u.roles?.includes('admin');
+        
+        // Include if they have any agent role, admin role, or admin flag
+        return hasAgentRole || isAdmin || hasAdminRole;
+      });
 
       const totalUsers = users.length;
       const pendingUsers = users.filter(u => u.approval_status === 'pending').length;

@@ -25,10 +25,8 @@ export const recruitingService = {
   // ========================================
 
   async getRecruits(filters?: RecruitFilters, page = 1, limit = 50) {
-    // Only show users who are ACTUALLY in the recruiting pipeline:
-    // - Have 'recruit' role OR
-    // - Have a non-null onboarding_status (actively in pipeline)
-    // NOT just any licensed agent!
+    // FIXED: Only show users who are ACTUALLY recruits in the pipeline
+    // Exclude active agents and admins even if they have onboarding_status
     let query = supabase
       .from('user_profiles')
       .select(
@@ -40,8 +38,60 @@ export const recruitingService = {
       `,
         { count: 'exact' }
       )
+      .neq('is_deleted', true);
+
+    // Build the filter to get ONLY recruits
+    // Include users with 'recruit' role OR onboarding_status
+    // BUT exclude if they have 'active_agent', 'agent' (with high contract), or 'admin' roles
+    const { data: initialData, error: initialError } = await supabase
+      .from('user_profiles')
+      .select('*')
       .or('roles.cs.{recruit},onboarding_status.not.is.null')
       .neq('is_deleted', true);
+
+    if (initialError) throw initialError;
+
+    // Filter out active agents and admins client-side for proper exclusion
+    const recruitIds = (initialData || [])
+      .filter(u => {
+        const hasActiveAgentRole = u.roles?.includes('active_agent');
+        const hasAdminRole = u.roles?.includes('admin');
+        const isAdmin = u.is_admin === true;
+
+        // Exclude if they're an active agent or admin
+        if (hasActiveAgentRole || hasAdminRole || isAdmin) {
+          return false;
+        }
+
+        // Include if they have recruit role OR onboarding_status
+        return u.roles?.includes('recruit') || u.onboarding_status !== null;
+      })
+      .map(u => u.id);
+
+    // Now build the main query with just the recruit IDs
+    if (recruitIds.length === 0) {
+      // No recruits found, return empty result
+      return {
+        data: [],
+        count: 0,
+        page,
+        limit,
+        totalPages: 0,
+      };
+    }
+
+    query = supabase
+      .from('user_profiles')
+      .select(
+        `
+        *,
+        recruiter:recruiter_id(id, email, first_name, last_name),
+        upline:upline_id(id, email, first_name, last_name),
+        pipeline_template:pipeline_template_id(id, name, description)
+      `,
+        { count: 'exact' }
+      )
+      .in('id', recruitIds);
 
     // Apply filters
     if (filters?.onboarding_status && filters.onboarding_status.length > 0) {
@@ -413,7 +463,7 @@ export const recruitingService = {
   // ========================================
 
   async getRecruitingStats(recruiterId?: string) {
-    // Only count users who are ACTUALLY in the recruiting pipeline
+    // FIXED: Only count users who are ACTUALLY recruits
     let query = supabase
       .from('user_profiles')
       .select('*', { count: 'exact', head: false })
@@ -424,18 +474,31 @@ export const recruitingService = {
       query = query.eq('recruiter_id', recruiterId);
     }
 
-    const { data, count, error } = await query;
+    const { data, error } = await query;
 
     if (error) throw error;
 
-    const recruits = data as UserProfile[];
+    // Filter out active agents and admins
+    const recruits = (data as UserProfile[] || []).filter(u => {
+      const hasActiveAgentRole = u.roles?.includes('active_agent');
+      const hasAdminRole = u.roles?.includes('admin');
+      const isAdmin = u.is_admin === true;
+
+      // Exclude if they're an active agent or admin
+      if (hasActiveAgentRole || hasAdminRole || isAdmin) {
+        return false;
+      }
+
+      // Include if they have recruit role OR onboarding_status
+      return u.roles?.includes('recruit') || u.onboarding_status !== null;
+    });
 
     // Count active recruits (all phases except completed/dropped)
     const activePhases = ['interview_1', 'zoom_interview', 'pre_licensing', 'exam', 'npn_received', 'contracting', 'bootcamp'];
     const activeCount = recruits.filter((r) => r.onboarding_status && activePhases.includes(r.onboarding_status)).length;
 
     return {
-      total: count || 0,
+      total: recruits.length,
       active: activeCount,
       completed: recruits.filter((r) => r.onboarding_status === 'completed').length,
       dropped: recruits.filter((r) => r.onboarding_status === 'dropped').length,
@@ -452,18 +515,34 @@ export const recruitingService = {
   // ========================================
 
   async searchRecruits(searchTerm: string, limit = 10) {
-    // Only search users who are ACTUALLY in the recruiting pipeline
+    // FIXED: Only search users who are ACTUALLY recruits
     const { data, error } = await supabase
       .from('user_profiles')
-      .select('id, first_name, last_name, email, profile_photo_url, onboarding_status, agent_status')
+      .select('id, first_name, last_name, email, profile_photo_url, onboarding_status, agent_status, roles, is_admin')
       .or('roles.cs.{recruit},onboarding_status.not.is.null')
       .neq('is_deleted', true)
       .or(
         `first_name.ilike.%${searchTerm}%,last_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`
       )
-      .limit(limit);
+      .limit(limit * 2); // Get more results to filter
 
     if (error) throw error;
-    return data as Partial<UserProfile>[];
+
+    // Filter out active agents and admins
+    const recruits = (data || []).filter(u => {
+      const hasActiveAgentRole = u.roles?.includes('active_agent');
+      const hasAdminRole = u.roles?.includes('admin');
+      const isAdmin = u.is_admin === true;
+
+      // Exclude if they're an active agent or admin
+      if (hasActiveAgentRole || hasAdminRole || isAdmin) {
+        return false;
+      }
+
+      // Include if they have recruit role OR onboarding_status
+      return u.roles?.includes('recruit') || u.onboarding_status !== null;
+    }).slice(0, limit); // Limit after filtering
+
+    return recruits as Partial<UserProfile>[];
   },
 };
