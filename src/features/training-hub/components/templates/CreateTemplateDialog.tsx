@@ -84,9 +84,20 @@ export function CreateTemplateDialog({ open, onOpenChange }: CreateTemplateDialo
       {/* Header */}
       <div className="flex h-12 shrink-0 items-center justify-between border-b px-4">
         <h1 className="text-sm font-semibold">Create Email Template</h1>
-        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleClose}>
-          <X className="h-4 w-4" />
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={handleSubmit}
+            disabled={!isValid || createTemplate.isPending}
+            size="sm"
+            className="h-8"
+          >
+            {createTemplate.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Create Template
+          </Button>
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleClose}>
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
       {/* Main content */}
