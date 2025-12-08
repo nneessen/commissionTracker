@@ -6,6 +6,17 @@ export { EmailComposer } from './components/EmailComposer'
 export { TipTapEditor } from './components/TipTapEditor'
 export { TipTapMenuBar } from './components/TipTapMenuBar'
 
+// Block Builder
+export {
+  EmailBlockBuilder,
+  blocksToHtml,
+  BlockPalette,
+  BlockCanvas,
+  BlockStylePanel,
+  BlockPreview,
+  VariableDropdown,
+} from './components/block-builder'
+
 // Hooks
 export {
   useEmailConnection,
@@ -42,3 +53,24 @@ export {
   countWords,
   estimateReadingTime,
 } from './services/htmlToTextService'
+
+export {
+  getEmailTemplates,
+  getEmailTemplate,
+  createEmailTemplate,
+  updateEmailTemplate,
+  deleteEmailTemplate,
+  duplicateEmailTemplate,
+  toggleTemplateActive,
+} from './services/emailTemplateService'
+
+// Template Hooks
+export {
+  useEmailTemplates,
+  useEmailTemplate,
+  useCreateEmailTemplate,
+  useUpdateEmailTemplate,
+  useDeleteEmailTemplate,
+  useDuplicateEmailTemplate,
+  useToggleTemplateActive,
+} from './hooks/useEmailTemplates'

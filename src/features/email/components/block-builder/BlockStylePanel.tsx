@@ -1,0 +1,295 @@
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Slider } from '@/components/ui/slider'
+import type { EmailBlock, EmailBlockStyles, EmailFontFamily } from '@/types/email.types'
+
+interface BlockStylePanelProps {
+  block: EmailBlock | null
+  onChange: (block: EmailBlock) => void
+}
+
+const FONT_FAMILIES: { value: EmailFontFamily; label: string }[] = [
+  { value: 'Arial, sans-serif', label: 'Arial' },
+  { value: 'Georgia, serif', label: 'Georgia' },
+  { value: 'Verdana, sans-serif', label: 'Verdana' },
+  { value: 'Tahoma, sans-serif', label: 'Tahoma' },
+  { value: 'Times New Roman, serif', label: 'Times New Roman' },
+  { value: 'Trebuchet MS, sans-serif', label: 'Trebuchet' },
+  { value: 'Courier New, monospace', label: 'Courier New' },
+]
+
+export function BlockStylePanel({ block, onChange }: BlockStylePanelProps) {
+  if (!block) {
+    return (
+      <div className="flex h-full w-[160px] flex-col border-l bg-muted/30">
+        <div className="border-b px-2 py-1.5">
+          <h3 className="text-[11px] font-medium text-muted-foreground">Styles</h3>
+        </div>
+        <div className="flex flex-1 items-center justify-center p-2">
+          <p className="text-center text-[10px] text-muted-foreground">
+            Select a block to edit
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  const updateStyles = (updates: Partial<EmailBlockStyles>) => {
+    onChange({
+      ...block,
+      styles: { ...block.styles, ...updates },
+    })
+  }
+
+  const hasTextContent = ['header', 'text', 'footer', 'quote'].includes(block.type)
+  const hasAlignment = ['header', 'text', 'button', 'footer', 'image', 'social'].includes(block.type)
+
+  return (
+    <div className="flex h-full w-[160px] flex-col border-l bg-muted/30">
+      <div className="border-b px-2 py-1.5">
+        <h3 className="text-[11px] font-medium text-muted-foreground">
+          {block.type.charAt(0).toUpperCase() + block.type.slice(1)} Styles
+        </h3>
+      </div>
+      <div className="flex-1 space-y-2.5 overflow-y-auto p-2">
+        {/* Background Color */}
+        <div className="space-y-0.5">
+          <Label className="text-[10px]">Background</Label>
+          <div className="flex gap-1">
+            <Input
+              type="color"
+              value={block.styles.backgroundColor || '#ffffff'}
+              onChange={(e) => updateStyles({ backgroundColor: e.target.value })}
+              className="h-6 w-8 p-0.5"
+            />
+            <Input
+              value={block.styles.backgroundColor || ''}
+              onChange={(e) => updateStyles({ backgroundColor: e.target.value })}
+              placeholder="transparent"
+              className="h-6 flex-1 text-[10px]"
+            />
+          </div>
+        </div>
+
+        {/* Text Color (for text-containing blocks) */}
+        {hasTextContent && (
+          <div className="space-y-0.5">
+            <Label className="text-[10px]">Text Color</Label>
+            <div className="flex gap-1">
+              <Input
+                type="color"
+                value={block.styles.textColor || '#374151'}
+                onChange={(e) => updateStyles({ textColor: e.target.value })}
+                className="h-6 w-8 p-0.5"
+              />
+              <Input
+                value={block.styles.textColor || ''}
+                onChange={(e) => updateStyles({ textColor: e.target.value })}
+                placeholder="#374151"
+                className="h-6 flex-1 text-[10px]"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Font Family */}
+        {hasTextContent && (
+          <div className="space-y-0.5">
+            <Label className="text-[10px]">Font</Label>
+            <Select
+              value={block.styles.fontFamily || 'Arial, sans-serif'}
+              onValueChange={(value) => updateStyles({ fontFamily: value as EmailFontFamily })}
+            >
+              <SelectTrigger className="h-6 text-[10px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {FONT_FAMILIES.map((font) => (
+                  <SelectItem key={font.value} value={font.value}>
+                    {font.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
+        {/* Line Height */}
+        {hasTextContent && (
+          <div className="space-y-0.5">
+            <Label className="text-[10px]">Line Height</Label>
+            <Select
+              value={block.styles.lineHeight || '1.5'}
+              onValueChange={(value) => updateStyles({ lineHeight: value })}
+            >
+              <SelectTrigger className="h-6 text-[10px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="1">Tight (1)</SelectItem>
+                <SelectItem value="1.25">Snug (1.25)</SelectItem>
+                <SelectItem value="1.5">Normal (1.5)</SelectItem>
+                <SelectItem value="1.75">Relaxed (1.75)</SelectItem>
+                <SelectItem value="2">Loose (2)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
+        {/* Alignment */}
+        {hasAlignment && (
+          <div className="space-y-0.5">
+            <Label className="text-[10px]">Alignment</Label>
+            <Select
+              value={block.styles.alignment || 'left'}
+              onValueChange={(value) => updateStyles({ alignment: value as 'left' | 'center' | 'right' })}
+            >
+              <SelectTrigger className="h-6 text-[10px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="left">Left</SelectItem>
+                <SelectItem value="center">Center</SelectItem>
+                <SelectItem value="right">Right</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
+        {/* Padding */}
+        <div className="space-y-0.5">
+          <div className="flex items-center justify-between">
+            <Label className="text-[10px]">Padding</Label>
+            <span className="text-[9px] text-muted-foreground">
+              {parseInt(block.styles.padding || '16') || 16}px
+            </span>
+          </div>
+          <Slider
+            value={[parseInt(block.styles.padding || '16') || 16]}
+            onValueChange={([value]) => updateStyles({ padding: `${value}px` })}
+            min={0}
+            max={48}
+            step={4}
+          />
+        </div>
+
+        {/* Font Size (for header) */}
+        {block.type === 'header' && (
+          <div className="space-y-0.5">
+            <Label className="text-[10px]">Font Size</Label>
+            <Select
+              value={block.styles.fontSize || '20px'}
+              onValueChange={(value) => updateStyles({ fontSize: value })}
+            >
+              <SelectTrigger className="h-6 text-[10px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="16px">Small</SelectItem>
+                <SelectItem value="20px">Medium</SelectItem>
+                <SelectItem value="24px">Large</SelectItem>
+                <SelectItem value="32px">X-Large</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
+        {/* Border Radius */}
+        {['button', 'image', 'quote'].includes(block.type) && (
+          <div className="space-y-0.5">
+            <Label className="text-[10px]">Corner Radius</Label>
+            <Select
+              value={block.styles.borderRadius || '6px'}
+              onValueChange={(value) => updateStyles({ borderRadius: value })}
+            >
+              <SelectTrigger className="h-6 text-[10px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="0px">None</SelectItem>
+                <SelectItem value="4px">Small</SelectItem>
+                <SelectItem value="6px">Medium</SelectItem>
+                <SelectItem value="12px">Large</SelectItem>
+                <SelectItem value="9999px">Pill</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
+        {/* Border Controls */}
+        <div className="space-y-1 border-t pt-2">
+          <Label className="text-[10px] font-medium">Border</Label>
+          <div className="space-y-1">
+            <Select
+              value={block.styles.borderStyle || 'none'}
+              onValueChange={(value) => updateStyles({ borderStyle: value as 'none' | 'solid' | 'dashed' | 'dotted' })}
+            >
+              <SelectTrigger className="h-6 text-[10px]">
+                <SelectValue placeholder="Style" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">None</SelectItem>
+                <SelectItem value="solid">Solid</SelectItem>
+                <SelectItem value="dashed">Dashed</SelectItem>
+                <SelectItem value="dotted">Dotted</SelectItem>
+              </SelectContent>
+            </Select>
+            {block.styles.borderStyle && block.styles.borderStyle !== 'none' && (
+              <>
+                <div className="flex gap-1">
+                  <Input
+                    type="color"
+                    value={block.styles.borderColor || '#e5e7eb'}
+                    onChange={(e) => updateStyles({ borderColor: e.target.value })}
+                    className="h-6 w-8 p-0.5"
+                  />
+                  <Select
+                    value={block.styles.borderWidth || '1px'}
+                    onValueChange={(value) => updateStyles({ borderWidth: value })}
+                  >
+                    <SelectTrigger className="h-6 flex-1 text-[10px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1px">1px</SelectItem>
+                      <SelectItem value="2px">2px</SelectItem>
+                      <SelectItem value="3px">3px</SelectItem>
+                      <SelectItem value="4px">4px</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Image width */}
+        {block.type === 'image' && (
+          <div className="space-y-0.5">
+            <div className="flex items-center justify-between">
+              <Label className="text-[10px]">Width</Label>
+              <span className="text-[9px] text-muted-foreground">
+                {block.styles.width || '100%'}
+              </span>
+            </div>
+            <Select
+              value={block.styles.width || '100%'}
+              onValueChange={(value) => updateStyles({ width: value })}
+            >
+              <SelectTrigger className="h-6 text-[10px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="25%">25%</SelectItem>
+                <SelectItem value="50%">50%</SelectItem>
+                <SelectItem value="75%">75%</SelectItem>
+                <SelectItem value="100%">100%</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}

@@ -355,6 +355,13 @@ export type Database = {
             foreignKeyName: "email_quota_tracking_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "user_management_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_quota_tracking_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "user_profiles"
             referencedColumns: ["id"]
           },
@@ -362,6 +369,7 @@ export type Database = {
       }
       email_templates: {
         Row: {
+          blocks: Json | null
           body_html: string
           body_text: string | null
           category: string | null
@@ -369,6 +377,7 @@ export type Database = {
           created_by: string | null
           id: string
           is_active: boolean | null
+          is_block_template: boolean | null
           is_global: boolean | null
           name: string
           subject: string
@@ -377,6 +386,7 @@ export type Database = {
           variables: string[] | null
         }
         Insert: {
+          blocks?: Json | null
           body_html: string
           body_text?: string | null
           category?: string | null
@@ -384,6 +394,7 @@ export type Database = {
           created_by?: string | null
           id?: string
           is_active?: boolean | null
+          is_block_template?: boolean | null
           is_global?: boolean | null
           name: string
           subject: string
@@ -392,6 +403,7 @@ export type Database = {
           variables?: string[] | null
         }
         Update: {
+          blocks?: Json | null
           body_html?: string
           body_text?: string | null
           category?: string | null
@@ -399,6 +411,7 @@ export type Database = {
           created_by?: string | null
           id?: string
           is_active?: boolean | null
+          is_block_template?: boolean | null
           is_global?: boolean | null
           name?: string
           subject?: string
@@ -419,6 +432,13 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "user_delete_dependencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_templates_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "user_management_view"
             referencedColumns: ["id"]
           },
           {
@@ -489,6 +509,13 @@ export type Database = {
             foreignKeyName: "email_triggers_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
+            referencedRelation: "user_management_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_triggers_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
             referencedRelation: "user_profiles"
             referencedColumns: ["id"]
           },
@@ -542,6 +569,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "user_delete_dependencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_watch_subscriptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_management_view"
             referencedColumns: ["id"]
           },
           {
@@ -808,6 +842,13 @@ export type Database = {
             foreignKeyName: "message_threads_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
+            referencedRelation: "user_management_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_threads_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
             referencedRelation: "user_profiles"
             referencedColumns: ["id"]
           },
@@ -854,6 +895,13 @@ export type Database = {
             columns: ["sender_id"]
             isOneToOne: false
             referencedRelation: "user_delete_dependencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "user_management_view"
             referencedColumns: ["id"]
           },
           {
@@ -928,6 +976,13 @@ export type Database = {
             foreignKeyName: "notifications_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "user_management_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "user_profiles"
             referencedColumns: ["id"]
           },
@@ -986,6 +1041,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "user_delete_dependencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "onboarding_phases_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_management_view"
             referencedColumns: ["id"]
           },
           {
@@ -1092,6 +1154,13 @@ export type Database = {
             foreignKeyName: "override_commissions_base_agent_id_fkey"
             columns: ["base_agent_id"]
             isOneToOne: false
+            referencedRelation: "user_management_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "override_commissions_base_agent_id_fkey"
+            columns: ["base_agent_id"]
+            isOneToOne: false
             referencedRelation: "user_profiles"
             referencedColumns: ["id"]
           },
@@ -1114,6 +1183,13 @@ export type Database = {
             columns: ["override_agent_id"]
             isOneToOne: false
             referencedRelation: "user_delete_dependencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "override_commissions_override_agent_id_fkey"
+            columns: ["override_agent_id"]
+            isOneToOne: false
+            referencedRelation: "user_management_view"
             referencedColumns: ["id"]
           },
           {
@@ -1328,6 +1404,13 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "user_delete_dependencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pipeline_templates_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "user_management_view"
             referencedColumns: ["id"]
           },
           {
@@ -1623,6 +1706,13 @@ export type Database = {
             foreignKeyName: "recruit_checklist_progress_completed_by_fkey"
             columns: ["completed_by"]
             isOneToOne: false
+            referencedRelation: "user_management_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recruit_checklist_progress_completed_by_fkey"
+            columns: ["completed_by"]
+            isOneToOne: false
             referencedRelation: "user_profiles"
             referencedColumns: ["id"]
           },
@@ -1651,6 +1741,13 @@ export type Database = {
             foreignKeyName: "recruit_checklist_progress_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "user_management_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recruit_checklist_progress_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "user_profiles"
             referencedColumns: ["id"]
           },
@@ -1666,6 +1763,13 @@ export type Database = {
             columns: ["verified_by"]
             isOneToOne: false
             referencedRelation: "user_delete_dependencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recruit_checklist_progress_verified_by_fkey"
+            columns: ["verified_by"]
+            isOneToOne: false
+            referencedRelation: "user_management_view"
             referencedColumns: ["id"]
           },
           {
@@ -1744,6 +1848,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "user_delete_dependencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recruit_phase_progress_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_management_view"
             referencedColumns: ["id"]
           },
           {
@@ -1915,6 +2026,13 @@ export type Database = {
             foreignKeyName: "system_audit_log_performed_by_fkey"
             columns: ["performed_by"]
             isOneToOne: false
+            referencedRelation: "user_management_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "system_audit_log_performed_by_fkey"
+            columns: ["performed_by"]
+            isOneToOne: false
             referencedRelation: "user_profiles"
             referencedColumns: ["id"]
           },
@@ -1964,6 +2082,13 @@ export type Database = {
             foreignKeyName: "user_activity_log_performed_by_fkey"
             columns: ["performed_by"]
             isOneToOne: false
+            referencedRelation: "user_management_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_activity_log_performed_by_fkey"
+            columns: ["performed_by"]
+            isOneToOne: false
             referencedRelation: "user_profiles"
             referencedColumns: ["id"]
           },
@@ -1979,6 +2104,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "user_delete_dependencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_activity_log_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_management_view"
             referencedColumns: ["id"]
           },
           {
@@ -2064,6 +2196,13 @@ export type Database = {
             foreignKeyName: "user_documents_uploaded_by_fkey"
             columns: ["uploaded_by"]
             isOneToOne: false
+            referencedRelation: "user_management_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_documents_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
             referencedRelation: "user_profiles"
             referencedColumns: ["id"]
           },
@@ -2079,6 +2218,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "user_delete_dependencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_documents_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_management_view"
             referencedColumns: ["id"]
           },
           {
@@ -2184,6 +2330,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "user_delete_dependencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_email_oauth_tokens_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_management_view"
             referencedColumns: ["id"]
           },
           {
@@ -2297,6 +2450,13 @@ export type Database = {
             foreignKeyName: "user_emails_sender_id_fkey"
             columns: ["sender_id"]
             isOneToOne: false
+            referencedRelation: "user_management_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_emails_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
             referencedRelation: "user_profiles"
             referencedColumns: ["id"]
           },
@@ -2312,6 +2472,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "user_delete_dependencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_emails_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_management_view"
             referencedColumns: ["id"]
           },
           {
@@ -2506,6 +2673,13 @@ export type Database = {
             foreignKeyName: "user_profiles_archived_by_fkey"
             columns: ["archived_by"]
             isOneToOne: false
+            referencedRelation: "user_management_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_profiles_archived_by_fkey"
+            columns: ["archived_by"]
+            isOneToOne: false
             referencedRelation: "user_profiles"
             referencedColumns: ["id"]
           },
@@ -2534,6 +2708,13 @@ export type Database = {
             foreignKeyName: "user_profiles_recruiter_id_fkey"
             columns: ["recruiter_id"]
             isOneToOne: false
+            referencedRelation: "user_management_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_profiles_recruiter_id_fkey"
+            columns: ["recruiter_id"]
+            isOneToOne: false
             referencedRelation: "user_profiles"
             referencedColumns: ["id"]
           },
@@ -2549,6 +2730,13 @@ export type Database = {
             columns: ["upline_id"]
             isOneToOne: false
             referencedRelation: "user_delete_dependencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_profiles_upline_id_fkey"
+            columns: ["upline_id"]
+            isOneToOne: false
+            referencedRelation: "user_management_view"
             referencedColumns: ["id"]
           },
           {
@@ -2814,6 +3002,13 @@ export type Database = {
             foreignKeyName: "user_profiles_archived_by_fkey"
             columns: ["archived_by"]
             isOneToOne: false
+            referencedRelation: "user_management_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_profiles_archived_by_fkey"
+            columns: ["archived_by"]
+            isOneToOne: false
             referencedRelation: "user_profiles"
             referencedColumns: ["id"]
           },
@@ -2842,6 +3037,13 @@ export type Database = {
             foreignKeyName: "user_profiles_recruiter_id_fkey"
             columns: ["recruiter_id"]
             isOneToOne: false
+            referencedRelation: "user_management_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_profiles_recruiter_id_fkey"
+            columns: ["recruiter_id"]
+            isOneToOne: false
             referencedRelation: "user_profiles"
             referencedColumns: ["id"]
           },
@@ -2857,6 +3059,13 @@ export type Database = {
             columns: ["upline_id"]
             isOneToOne: false
             referencedRelation: "user_delete_dependencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_profiles_upline_id_fkey"
+            columns: ["upline_id"]
+            isOneToOne: false
+            referencedRelation: "user_management_view"
             referencedColumns: ["id"]
           },
           {
@@ -3207,6 +3416,13 @@ export type Database = {
             foreignKeyName: "override_commissions_override_agent_id_fkey"
             columns: ["override_agent_id"]
             isOneToOne: false
+            referencedRelation: "user_management_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "override_commissions_override_agent_id_fkey"
+            columns: ["override_agent_id"]
+            isOneToOne: false
             referencedRelation: "user_profiles"
             referencedColumns: ["id"]
           },
@@ -3274,6 +3490,280 @@ export type Database = {
           policy_count?: never
         }
         Relationships: []
+      }
+      user_management_view: {
+        Row: {
+          agent_status: Database["public"]["Enums"]["agent_status"] | null
+          approval_status: string | null
+          approved_at: string | null
+          approved_by: string | null
+          archive_reason: string | null
+          archived_at: string | null
+          archived_by: string | null
+          city: string | null
+          contract_level: number | null
+          created_at: string | null
+          current_onboarding_phase: string | null
+          custom_permissions: Json | null
+          date_of_birth: string | null
+          denial_reason: string | null
+          denied_at: string | null
+          email: string | null
+          facebook_handle: string | null
+          first_name: string | null
+          hierarchy_depth: number | null
+          hierarchy_path: string | null
+          id: string | null
+          in_recruiting_pipeline: boolean | null
+          in_users_list: boolean | null
+          instagram_url: string | null
+          instagram_username: string | null
+          is_admin: boolean | null
+          is_deleted: boolean | null
+          is_super_admin: boolean | null
+          last_name: string | null
+          license_expiration: string | null
+          license_number: string | null
+          licensing_info: Json | null
+          linkedin_url: string | null
+          linkedin_username: string | null
+          npn: string | null
+          onboarding_completed_at: string | null
+          onboarding_started_at: string | null
+          onboarding_status: string | null
+          personal_website: string | null
+          phone: string | null
+          pipeline_template_id: string | null
+          primary_role: string | null
+          profile_photo_url: string | null
+          recruiter_id: string | null
+          referral_source: string | null
+          resident_state: string | null
+          roles: string[] | null
+          state: string | null
+          street_address: string | null
+          updated_at: string | null
+          upline_id: string | null
+          user_id: string | null
+          zip: string | null
+        }
+        Insert: {
+          agent_status?: Database["public"]["Enums"]["agent_status"] | null
+          approval_status?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          archive_reason?: string | null
+          archived_at?: string | null
+          archived_by?: string | null
+          city?: string | null
+          contract_level?: number | null
+          created_at?: string | null
+          current_onboarding_phase?: string | null
+          custom_permissions?: Json | null
+          date_of_birth?: string | null
+          denial_reason?: string | null
+          denied_at?: string | null
+          email?: string | null
+          facebook_handle?: string | null
+          first_name?: string | null
+          hierarchy_depth?: number | null
+          hierarchy_path?: string | null
+          id?: string | null
+          in_recruiting_pipeline?: never
+          in_users_list?: never
+          instagram_url?: string | null
+          instagram_username?: string | null
+          is_admin?: boolean | null
+          is_deleted?: boolean | null
+          is_super_admin?: boolean | null
+          last_name?: string | null
+          license_expiration?: string | null
+          license_number?: string | null
+          licensing_info?: Json | null
+          linkedin_url?: string | null
+          linkedin_username?: string | null
+          npn?: string | null
+          onboarding_completed_at?: string | null
+          onboarding_started_at?: string | null
+          onboarding_status?: string | null
+          personal_website?: string | null
+          phone?: string | null
+          pipeline_template_id?: string | null
+          primary_role?: never
+          profile_photo_url?: string | null
+          recruiter_id?: string | null
+          referral_source?: string | null
+          resident_state?: string | null
+          roles?: string[] | null
+          state?: string | null
+          street_address?: string | null
+          updated_at?: string | null
+          upline_id?: string | null
+          user_id?: string | null
+          zip?: string | null
+        }
+        Update: {
+          agent_status?: Database["public"]["Enums"]["agent_status"] | null
+          approval_status?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          archive_reason?: string | null
+          archived_at?: string | null
+          archived_by?: string | null
+          city?: string | null
+          contract_level?: number | null
+          created_at?: string | null
+          current_onboarding_phase?: string | null
+          custom_permissions?: Json | null
+          date_of_birth?: string | null
+          denial_reason?: string | null
+          denied_at?: string | null
+          email?: string | null
+          facebook_handle?: string | null
+          first_name?: string | null
+          hierarchy_depth?: number | null
+          hierarchy_path?: string | null
+          id?: string | null
+          in_recruiting_pipeline?: never
+          in_users_list?: never
+          instagram_url?: string | null
+          instagram_username?: string | null
+          is_admin?: boolean | null
+          is_deleted?: boolean | null
+          is_super_admin?: boolean | null
+          last_name?: string | null
+          license_expiration?: string | null
+          license_number?: string | null
+          licensing_info?: Json | null
+          linkedin_url?: string | null
+          linkedin_username?: string | null
+          npn?: string | null
+          onboarding_completed_at?: string | null
+          onboarding_started_at?: string | null
+          onboarding_status?: string | null
+          personal_website?: string | null
+          phone?: string | null
+          pipeline_template_id?: string | null
+          primary_role?: never
+          profile_photo_url?: string | null
+          recruiter_id?: string | null
+          referral_source?: string | null
+          resident_state?: string | null
+          roles?: string[] | null
+          state?: string | null
+          street_address?: string | null
+          updated_at?: string | null
+          upline_id?: string | null
+          user_id?: string | null
+          zip?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_profiles_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_profiles_archived_by_fkey"
+            columns: ["archived_by"]
+            isOneToOne: false
+            referencedRelation: "active_user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_profiles_archived_by_fkey"
+            columns: ["archived_by"]
+            isOneToOne: false
+            referencedRelation: "user_delete_dependencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_profiles_archived_by_fkey"
+            columns: ["archived_by"]
+            isOneToOne: false
+            referencedRelation: "user_management_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_profiles_archived_by_fkey"
+            columns: ["archived_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_profiles_pipeline_template_id_fkey"
+            columns: ["pipeline_template_id"]
+            isOneToOne: false
+            referencedRelation: "pipeline_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_profiles_recruiter_id_fkey"
+            columns: ["recruiter_id"]
+            isOneToOne: false
+            referencedRelation: "active_user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_profiles_recruiter_id_fkey"
+            columns: ["recruiter_id"]
+            isOneToOne: false
+            referencedRelation: "user_delete_dependencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_profiles_recruiter_id_fkey"
+            columns: ["recruiter_id"]
+            isOneToOne: false
+            referencedRelation: "user_management_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_profiles_recruiter_id_fkey"
+            columns: ["recruiter_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_profiles_upline_id_fkey"
+            columns: ["upline_id"]
+            isOneToOne: false
+            referencedRelation: "active_user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_profiles_upline_id_fkey"
+            columns: ["upline_id"]
+            isOneToOne: false
+            referencedRelation: "user_delete_dependencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_profiles_upline_id_fkey"
+            columns: ["upline_id"]
+            isOneToOne: false
+            referencedRelation: "user_management_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_profiles_upline_id_fkey"
+            columns: ["upline_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_profiles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       users: {
         Row: {
@@ -3392,6 +3882,7 @@ export type Database = {
           upline_id: string
         }[]
       }
+      admin_get_user_by_id: { Args: { p_user_id: string }; Returns: Json }
       admin_get_user_profile: {
         Args: { target_user_id: string }
         Returns: {
@@ -3420,6 +3911,10 @@ export type Database = {
       admin_set_pending_user: {
         Args: { target_user_id: string }
         Returns: boolean
+      }
+      admin_update_user: {
+        Args: { p_updates: Json; p_user_id: string }
+        Returns: Json
       }
       assign_user_role: {
         Args: {
@@ -3532,6 +4027,7 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_current_user_profile_id: { Args: never; Returns: string }
       get_downline_ids: {
         Args: { target_user_id: string }
         Returns: {
@@ -3693,6 +4189,14 @@ export type Database = {
       soft_delete_user: {
         Args: { p_deleted_by: string; p_reason?: string; p_user_id: string }
         Returns: Json
+      }
+      test_rls_for_user: {
+        Args: { test_user_id: string }
+        Returns: {
+          policy_number: string
+          user_id: string
+          would_pass: boolean
+        }[]
       }
       update_override_earned_amount: {
         Args: { p_months_paid: number; p_policy_id: string }

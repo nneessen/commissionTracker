@@ -54,6 +54,14 @@ export interface UserProfile {
   ytd_commission?: number;
   ytd_premium?: number;
   is_deleted?: boolean;
+  resident_state?: string;
+  // Optional nested upline data when joined
+  upline?: {
+    id: string;
+    email: string;
+    first_name?: string;
+    last_name?: string;
+  } | null;
 }
 
 export interface ApprovalStats {

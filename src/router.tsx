@@ -38,6 +38,7 @@ import { AgentDetailPage } from "./features/hierarchy/AgentDetailPage";
 import { RecruitingDashboard } from "./features/recruiting/RecruitingDashboard";
 import { PipelineAdminPage } from "./features/recruiting/admin/PipelineAdminPage";
 import { MyRecruitingPipeline } from "./features/recruiting/pages/MyRecruitingPipeline";
+import { TrainingHubPage } from "./features/training-hub";
 
 // Create root route with App layout
 const rootRoute = createRootRoute({
@@ -267,6 +268,17 @@ const myPipelineRoute = createRoute({
   component: MyRecruitingPipeline,
 });
 
+// Training Hub route - for trainers and contracting managers
+const trainingHubRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "training-hub",
+  component: () => (
+    <PermissionGuard permission="nav.training_hub">
+      <TrainingHubPage />
+    </PermissionGuard>
+  ),
+});
+
 // Create the route tree - all routes are already linked via getParentRoute
 const routeTree = rootRoute.addChildren([
   indexRoute,
@@ -296,6 +308,7 @@ const routeTree = rootRoute.addChildren([
   recruitingRoute,
   recruitingAdminRoute,
   myPipelineRoute,
+  trainingHubRoute,
 ]);
 
 // Create and export the router

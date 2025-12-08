@@ -71,6 +71,9 @@ export interface EmailTemplate {
   usage_count: number
   created_at: string
   updated_at: string
+  // Block builder fields
+  blocks: EmailBlock[] | null
+  is_block_template: boolean
 }
 
 // Create template request
@@ -82,6 +85,10 @@ export interface CreateEmailTemplateRequest {
   variables?: string[]
   category?: EmailTemplateCategory
   is_global?: boolean
+  is_active?: boolean
+  // Block builder fields
+  blocks?: EmailBlock[]
+  is_block_template?: boolean
 }
 
 // Email trigger rule
@@ -238,3 +245,166 @@ export const EMAIL_TEMPLATE_VARIABLES = [
 ] as const
 
 export type EmailTemplateVariableName = typeof EMAIL_TEMPLATE_VARIABLES[number]['name']
+
+// ============================================
+// Email Block Builder Types (Visual Templates)
+// ============================================
+
+export type EmailBlockType =
+  | 'header'
+  | 'text'
+  | 'button'
+  | 'divider'
+  | 'spacer'
+  | 'footer'
+  | 'image'
+  | 'columns'
+  | 'social'
+  | 'quote'
+
+// Web-safe fonts for email
+export type EmailFontFamily =
+  | 'Arial, sans-serif'
+  | 'Georgia, serif'
+  | 'Verdana, sans-serif'
+  | 'Tahoma, sans-serif'
+  | 'Times New Roman, serif'
+  | 'Trebuchet MS, sans-serif'
+  | 'Courier New, monospace'
+
+export interface EmailBlockStyles {
+  backgroundColor?: string
+  textColor?: string
+  padding?: string
+  alignment?: 'left' | 'center' | 'right'
+  fontSize?: string
+  fontWeight?: string
+  fontFamily?: EmailFontFamily
+  lineHeight?: string
+  letterSpacing?: string
+  borderRadius?: string
+  // Border controls
+  borderWidth?: string
+  borderColor?: string
+  borderStyle?: 'none' | 'solid' | 'dashed' | 'dotted'
+  // Width control
+  width?: string
+  maxWidth?: string
+}
+
+// Global template settings
+export interface EmailTemplateSettings {
+  backgroundColor?: string
+  contentWidth?: number // max-width in pixels
+  fontFamily?: EmailFontFamily
+  preheaderText?: string
+}
+
+export interface EmailBlock {
+  id: string
+  type: EmailBlockType
+  content: EmailBlockContent
+  styles: EmailBlockStyles
+}
+
+// Content varies by block type
+export type EmailBlockContent =
+  | HeaderBlockContent
+  | TextBlockContent
+  | ButtonBlockContent
+  | DividerBlockContent
+  | SpacerBlockContent
+  | FooterBlockContent
+  | ImageBlockContent
+  | ColumnsBlockContent
+  | SocialBlockContent
+  | QuoteBlockContent
+
+export interface HeaderBlockContent {
+  type: 'header'
+  title: string
+  logoUrl?: string
+  showLogo?: boolean
+}
+
+export interface TextBlockContent {
+  type: 'text'
+  html: string
+}
+
+export type ButtonVariant = 'solid' | 'outline' | 'ghost'
+
+export interface ButtonBlockContent {
+  type: 'button'
+  text: string
+  url: string
+  buttonColor?: string
+  textColor?: string
+  // Enhanced button options
+  variant?: ButtonVariant
+  fullWidth?: boolean
+  icon?: string // Lucide icon name
+  iconPosition?: 'left' | 'right'
+}
+
+export interface DividerBlockContent {
+  type: 'divider'
+  color?: string
+  thickness?: number
+  style?: 'solid' | 'dashed' | 'dotted'
+}
+
+export interface SpacerBlockContent {
+  type: 'spacer'
+  height: number
+}
+
+export interface FooterBlockContent {
+  type: 'footer'
+  text: string
+  showUnsubscribe?: boolean
+}
+
+// New block types
+export interface ImageBlockContent {
+  type: 'image'
+  src: string
+  alt: string
+  width?: number // percentage or pixels
+  linkUrl?: string
+  linkTarget?: '_blank' | '_self'
+}
+
+export interface ColumnContent {
+  blocks: EmailBlock[]
+}
+
+export interface ColumnsBlockContent {
+  type: 'columns'
+  columnCount: 2 | 3
+  columns: ColumnContent[]
+  gap?: number // gap in pixels
+}
+
+export type SocialPlatform = 'facebook' | 'twitter' | 'linkedin' | 'instagram' | 'youtube' | 'email'
+
+export interface SocialLink {
+  platform: SocialPlatform
+  url: string
+  enabled: boolean
+}
+
+export interface SocialBlockContent {
+  type: 'social'
+  links: SocialLink[]
+  iconSize?: number
+  iconColor?: string
+  iconStyle?: 'filled' | 'outline'
+}
+
+export interface QuoteBlockContent {
+  type: 'quote'
+  text: string
+  author?: string
+  accentColor?: string
+}

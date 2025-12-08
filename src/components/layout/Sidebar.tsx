@@ -20,6 +20,7 @@ import {
   ScrollText,
   Lock,
   ClipboardList,
+  GraduationCap,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Button } from "@/components/ui/button";
@@ -29,6 +30,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/services/base/supabase";
 import type { PermissionCode } from "@/types/permissions.types";
 import type { RoleName } from "@/types/permissions.types";
+import { NotificationDropdown } from "@/components/notifications";
 
 interface NavigationItem {
   icon: React.ElementType;
@@ -58,6 +60,11 @@ const navigationItems: NavigationItem[] = [
   { icon: Users, label: "Team", href: "/hierarchy", permission: "nav.team_dashboard" },
   { icon: UserPlus, label: "Recruiting", href: "/recruiting", permission: "nav.recruiting_pipeline" },
   { icon: Settings, label: "Settings", href: "/settings", public: true },
+];
+
+// Training Hub navigation items (for trainers and contracting managers)
+const trainingNavigationItems: NavigationItem[] = [
+  { icon: GraduationCap, label: "Training Hub", href: "/training-hub", permission: "nav.training_hub" },
 ];
 
 // Admin-only navigation items
@@ -130,6 +137,14 @@ export default function Sidebar({
         return can(item.permission);
       });
 
+  const visibleTrainingItems = isRecruit
+    ? []
+    : trainingNavigationItems.filter((item) => {
+        if (!item.permission) return false;
+        if (isLoading) return false;
+        return can(item.permission);
+      });
+
   const visibleAdminItems = isRecruit
     ? []
     : adminNavigationItems.filter((item) => {
@@ -192,25 +207,28 @@ export default function Sidebar({
               </div>
             </div>
           )}
-          {isMobile ? (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 flex-shrink-0"
-              onClick={closeMobile}
-            >
-              <X size={16} />
-            </Button>
-          ) : (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 flex-shrink-0"
-              onClick={onToggleCollapse}
-            >
-              {isCollapsed ? <Menu size={16} /> : <ChevronLeft size={16} />}
-            </Button>
-          )}
+          <div className="flex items-center gap-1 flex-shrink-0">
+            {!isRecruit && <NotificationDropdown isCollapsed={isCollapsed} />}
+            {isMobile ? (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={closeMobile}
+              >
+                <X size={16} />
+              </Button>
+            ) : (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={onToggleCollapse}
+              >
+                {isCollapsed ? <Menu size={16} /> : <ChevronLeft size={16} />}
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Navigation */}
@@ -243,10 +261,38 @@ export default function Sidebar({
             );
           })}
 
-          {/* Separator for admin section if there are admin items */}
-          {visibleAdminItems.length > 0 && !isCollapsed && (
+          {/* Separator for training/admin section */}
+          {(visibleTrainingItems.length > 0 || visibleAdminItems.length > 0) && !isCollapsed && (
             <div className="my-2 border-t border-border" />
           )}
+
+          {/* Training Hub Navigation Items */}
+          {visibleTrainingItems.map((item) => {
+            const Icon = item.icon;
+            return (
+              <Link
+                key={item.href}
+                to={item.href}
+                onClick={() => {
+                  if (isMobile) closeMobile();
+                }}
+              >
+                {({ isActive }) => (
+                  <Button
+                    variant={isActive ? "secondary" : "ghost"}
+                    className={`mb-1 h-9 ${isCollapsed ? "w-9 p-0 mx-auto" : "w-full justify-start px-3"}`}
+                    title={isCollapsed ? item.label : ""}
+                    data-active={isActive}
+                  >
+                    <Icon size={16} className={isCollapsed ? "" : "mr-2.5"} />
+                    {!isCollapsed && (
+                      <span className="text-sm">{item.label}</span>
+                    )}
+                  </Button>
+                )}
+              </Link>
+            );
+          })}
 
           {/* Admin Navigation Items */}
           {visibleAdminItems.map((item) => {
