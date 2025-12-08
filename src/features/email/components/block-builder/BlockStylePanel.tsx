@@ -2,22 +2,13 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Slider } from '@/components/ui/slider'
-import type { EmailBlock, EmailBlockStyles, EmailFontFamily } from '@/types/email.types'
+import { FontPicker } from './FontPicker'
+import type { EmailBlock, EmailBlockStyles, EmailFontFamily, EmailFontWeight } from '@/types/email.types'
 
 interface BlockStylePanelProps {
   block: EmailBlock | null
   onChange: (block: EmailBlock) => void
 }
-
-const FONT_FAMILIES: { value: EmailFontFamily; label: string }[] = [
-  { value: 'Arial, sans-serif', label: 'Arial' },
-  { value: 'Georgia, serif', label: 'Georgia' },
-  { value: 'Verdana, sans-serif', label: 'Verdana' },
-  { value: 'Tahoma, sans-serif', label: 'Tahoma' },
-  { value: 'Times New Roman, serif', label: 'Times New Roman' },
-  { value: 'Trebuchet MS, sans-serif', label: 'Trebuchet' },
-  { value: 'Courier New, monospace', label: 'Courier New' },
-]
 
 export function BlockStylePanel({ block, onChange }: BlockStylePanelProps) {
   if (!block) {
@@ -93,25 +84,16 @@ export function BlockStylePanel({ block, onChange }: BlockStylePanelProps) {
           </div>
         )}
 
-        {/* Font Family */}
+        {/* Font Family with Visual Preview */}
         {hasTextContent && (
           <div className="space-y-0.5">
             <Label className="text-[10px]">Font</Label>
-            <Select
-              value={block.styles.fontFamily || 'Arial, sans-serif'}
-              onValueChange={(value) => updateStyles({ fontFamily: value as EmailFontFamily })}
-            >
-              <SelectTrigger className="h-6 text-[10px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {FONT_FAMILIES.map((font) => (
-                  <SelectItem key={font.value} value={font.value}>
-                    {font.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <FontPicker
+              value={block.styles.fontFamily}
+              onChange={(font) => updateStyles({ fontFamily: font })}
+              weight={block.styles.fontWeight ? parseInt(block.styles.fontWeight) as EmailFontWeight : undefined}
+              onWeightChange={(weight) => updateStyles({ fontWeight: String(weight) })}
+            />
           </div>
         )}
 

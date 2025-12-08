@@ -26,6 +26,7 @@ import { BlockCanvas } from './BlockCanvas'
 import { BlockStylePanel } from './BlockStylePanel'
 import { BlockPreview, blocksToHtml } from './BlockPreview'
 import { VariableDropdown } from './VariableDropdown'
+import { SubjectEditor } from './SubjectEditor'
 import {
   createDefaultHeaderBlock,
   createDefaultTextBlock,
@@ -60,6 +61,8 @@ export function useBlockBuilderContext() {
 interface EmailBlockBuilderProps {
   blocks: EmailBlock[]
   onChange: (blocks: EmailBlock[]) => void
+  subject?: string
+  onSubjectChange?: (subject: string) => void
   previewVariables?: Record<string, string>
 }
 
@@ -91,7 +94,7 @@ export function createBlockFromType(type: EmailBlockType): EmailBlock {
   }
 }
 
-export function EmailBlockBuilder({ blocks, onChange, previewVariables = {} }: EmailBlockBuilderProps) {
+export function EmailBlockBuilder({ blocks, onChange, subject = '', onSubjectChange, previewVariables = {} }: EmailBlockBuilderProps) {
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<'edit' | 'preview'>('edit')
   const [activeId, setActiveId] = useState<string | null>(null)
@@ -216,6 +219,17 @@ export function EmailBlockBuilder({ blocks, onChange, previewVariables = {} }: E
       }}
     >
       <div className="flex h-full flex-col bg-background">
+        {/* Subject Line */}
+        {onSubjectChange && (
+          <div className="border-b px-3 py-2">
+            <SubjectEditor
+              value={subject}
+              onChange={onSubjectChange}
+              previewVariables={previewVariables}
+            />
+          </div>
+        )}
+
         {/* Toolbar */}
         <div className="flex items-center justify-between border-b px-3 py-2">
           <div className="flex items-center gap-1 rounded-md bg-muted p-0.5">

@@ -1,6 +1,6 @@
 // src/features/recruiting/components/ComposeEmailDialog.tsx
 
-import React, { useState } from 'react'
+import { useState, useMemo } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -8,10 +8,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
 import { EmailComposer } from '@/features/email'
+import { TemplatePicker } from '@/features/email/components/TemplatePicker'
+import { blocksToHtml } from '@/features/email/components/block-builder'
 import { useSendEmail } from '../hooks/useRecruitEmails'
-import type { SendEmailRequest } from '@/types/email.types'
+import type { SendEmailRequest, EmailTemplate } from '@/types/email.types'
 
 interface ComposeEmailDialogProps {
   open: boolean
@@ -22,6 +23,15 @@ interface ComposeEmailDialogProps {
   senderId: string
 }
 
+// Replace variables in text with actual values
+function replaceVariables(text: string, variables: Record<string, string>): string {
+  let result = text
+  for (const [key, value] of Object.entries(variables)) {
+    result = result.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), value)
+  }
+  return result
+}
+
 export function ComposeEmailDialog({
   open,
   onOpenChange,
@@ -30,8 +40,16 @@ export function ComposeEmailDialog({
   recruitName,
   senderId,
 }: ComposeEmailDialogProps) {
-  const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null)
+  const [selectedTemplate, setSelectedTemplate] = useState<EmailTemplate | null>(null)
   const sendEmail = useSendEmail()
+
+  // Variables available for substitution
+  const variables = useMemo(() => ({
+    recruit_name: recruitName,
+    recruit_first_name: recruitName.split(' ')[0] || recruitName,
+    recruit_email: recruitEmail,
+    // Add more variables as needed
+  }), [recruitName, recruitEmail])
 
   const handleSend = async (email: SendEmailRequest) => {
     try {
@@ -49,37 +67,36 @@ export function ComposeEmailDialog({
     }
   }
 
-  // Template data (will be replaced with database templates in Phase 2B)
-  const templates = {
-    welcome: {
-      subject: `Welcome to our team, ${recruitName}!`,
-      bodyHtml: `<p>Hi ${recruitName},</p><p>Welcome to our team! We're excited to have you on board.</p><p>In the next few days, you'll receive information about the next steps in your onboarding process.</p><p>If you have any questions, feel free to reach out.</p><p>Best regards</p>`,
-    },
-    document_request: {
-      subject: 'Document Upload Request',
-      bodyHtml: `<p>Hi ${recruitName},</p><p>We need you to upload the following documents to proceed with your onboarding:</p><ul><li>[List documents here]</li></ul><p>Please upload these documents at your earliest convenience.</p><p>Thank you!</p>`,
-    },
-    follow_up: {
-      subject: 'Checking in on your progress',
-      bodyHtml: `<p>Hi ${recruitName},</p><p>I wanted to check in and see how things are going with your onboarding process.</p><p>Do you have any questions or need any assistance?</p><p>Looking forward to hearing from you.</p><p>Best regards</p>`,
-    },
-  }
-
-  const handleTemplateSelect = (template: string) => {
+  const handleTemplateSelect = (template: EmailTemplate) => {
     setSelectedTemplate(template)
   }
 
-  const getTemplateData = () => {
-    if (selectedTemplate && selectedTemplate in templates) {
-      return templates[selectedTemplate as keyof typeof templates]
+  // Get template data with variable substitution
+  const templateData = useMemo(() => {
+    if (!selectedTemplate) {
+      return { subject: '', bodyHtml: '' }
     }
-    return { subject: '', bodyHtml: '' }
-  }
+
+    // If template has blocks, convert to HTML
+    let bodyHtml = ''
+    if (selectedTemplate.blocks && Array.isArray(selectedTemplate.blocks) && selectedTemplate.blocks.length > 0) {
+      bodyHtml = blocksToHtml(selectedTemplate.blocks, variables)
+    } else if (selectedTemplate.body_html) {
+      bodyHtml = replaceVariables(selectedTemplate.body_html, variables)
+    }
+
+    // Replace variables in subject
+    const subject = selectedTemplate.subject
+      ? replaceVariables(selectedTemplate.subject, variables)
+      : ''
+
+    return { subject, bodyHtml }
+  }, [selectedTemplate, variables])
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-[95vw] max-w-4xl h-[85vh] flex flex-col p-0 gap-0">
-        {/* Header with templates */}
+        {/* Header with template picker */}
         <div className="shrink-0 px-6 pt-6 pb-4 border-b">
           <DialogHeader>
             <DialogTitle>Compose Email to {recruitName}</DialogTitle>
@@ -88,33 +105,19 @@ export function ComposeEmailDialog({
             </DialogDescription>
           </DialogHeader>
 
-          {/* Quick Templates */}
+          {/* Template Picker */}
           <div className="flex items-center gap-2 mt-3">
-            <span className="text-sm text-muted-foreground">Templates:</span>
-            <Button
-              type="button"
-              variant={selectedTemplate === 'welcome' ? 'secondary' : 'outline'}
-              size="sm"
-              onClick={() => handleTemplateSelect('welcome')}
-            >
-              Welcome
-            </Button>
-            <Button
-              type="button"
-              variant={selectedTemplate === 'document_request' ? 'secondary' : 'outline'}
-              size="sm"
-              onClick={() => handleTemplateSelect('document_request')}
-            >
-              Document Request
-            </Button>
-            <Button
-              type="button"
-              variant={selectedTemplate === 'follow_up' ? 'secondary' : 'outline'}
-              size="sm"
-              onClick={() => handleTemplateSelect('follow_up')}
-            >
-              Follow-up
-            </Button>
+            <span className="text-sm text-muted-foreground">Template:</span>
+            <TemplatePicker
+              onSelect={handleTemplateSelect}
+              selectedTemplateId={selectedTemplate?.id}
+              category="recruiting"
+            />
+            {selectedTemplate && (
+              <span className="text-xs text-muted-foreground">
+                Using: {selectedTemplate.name}
+              </span>
+            )}
           </div>
         </div>
 
@@ -122,8 +125,8 @@ export function ComposeEmailDialog({
         <div className="flex-1 min-h-0 px-6 py-4">
           <EmailComposer
             to={[recruitEmail]}
-            subject={getTemplateData().subject}
-            bodyHtml={getTemplateData().bodyHtml}
+            subject={templateData.subject}
+            bodyHtml={templateData.bodyHtml}
             recruitId={recruitId}
             onSend={handleSend}
             onCancel={() => onOpenChange(false)}

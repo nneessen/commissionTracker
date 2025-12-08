@@ -1,18 +1,103 @@
-# Email System Phase 2: TipTap WYSIWYG Email Composer
+# Email System Phase 2: Complete Email Marketing Platform
 
-**Status:** ACTIVE
+**Status:** ACTIVE - ENHANCED
 **Created:** 2025-11-29
+**Updated:** 2025-12-07
 **Phase:** 2 of 3 (Building on Phase 1 foundation)
-**Estimated Duration:** 14-18 days
+**Estimated Duration:** 20-25 days (expanded scope)
 **Complexity:** High
 
 ---
 
 ## Executive Summary
 
-Phase 2 implements a production-ready WYSIWYG email composer using TipTap, complete with template management, variable substitution, draft auto-save, file attachments, scheduling, and bulk sending capabilities. This phase addresses **18 critical concerns** identified during plan review and builds on the solid foundation from Phase 1.
+Phase 2 implements a **complete email marketing platform** with:
+- Production-ready WYSIWYG block-based email composer
+- Modern fonts with visual previews
+- Template management with subject lines
+- Variable substitution
+- **Recipient selection & groups** (static + dynamic)
+- **Email automation triggers with UI**
+- Draft auto-save, attachments, scheduling
+- Bulk sending with progress tracking
+- Campaign builder (drip sequences)
+- Email analytics
 
-**Key Insight:** Phase 1's database schema is more comprehensive than initially documented, already including RLS policies, quota tracking, threading fields, and queue infrastructure. This significantly reduces Phase 2 scope.
+This phase addresses **18 original concerns** PLUS **8 additional requirements** identified on 2025-12-07.
+
+**Key Insight:** Phase 1's database schema is comprehensive. The block builder exists but has broken formatting/font output that must be fixed.
+
+---
+
+## 🚨 ADDITIONAL REQUIREMENTS (Added 2025-12-07)
+
+### Current Broken Features (MUST FIX FIRST)
+
+| Issue | Severity | Details |
+|-------|----------|---------|
+| **Fonts don't work** | Critical | Old web-safe fonts (Arial, Georgia, Times) with no preview. Font selection doesn't apply to HTML output |
+| **No subject line** | Critical | Template builder has no place to enter email subject |
+| **Formatting broken** | Critical | Styles set in BlockStylePanel don't export to final HTML in BlockPreview.tsx |
+| **Hardcoded templates** | Critical | `ComposeEmailDialog.tsx:53-66` uses hardcoded templates, ignores database |
+| **No recipient selection** | High | Can only email one recruit at a time |
+| **No groups** | High | Can't create "All Phase 1" or custom recipient groups |
+| **No automation UI** | High | `email_triggers` table exists but has zero UI |
+
+### New Features Required
+
+1. **Modern Font System**
+   - Replace old fonts with: Inter, Roboto, Open Sans, Lato, Montserrat, Poppins
+   - FontPicker component with visual preview (shows actual font)
+   - Font weight selection (Regular, Medium, Semibold, Bold)
+   - Fonts must apply to HTML output
+
+2. **Subject Line in Template Builder**
+   - Add subject field to EmailBlockBuilder
+   - Support variables in subject ({{recruit_name}})
+   - Preview with interpolated values
+   - Character count (50 recommended, 100 max)
+
+3. **Fix HTML Output**
+   - BlockPreview.tsx must apply ALL styles as inline CSS
+   - Font family, size, color, line-height must be in output
+   - Test in actual email clients (Gmail, Outlook)
+
+4. **Recipient Selection UI**
+   - RecipientSelector component with multi-select
+   - Search by name/email
+   - Quick filters: "All recruits", "By Phase", "By Status"
+   - Group selection
+   - CC/BCC support
+   - Recently used recipients
+
+5. **Recipient Groups**
+   - New table: `email_recipient_groups`
+   - Static groups (manually add members)
+   - Dynamic groups (auto-filter: phase, status, etc.)
+   - GroupManager page for CRUD
+   - Preview members before save
+
+6. **Automation Trigger UI**
+   - TriggerBuilder component connecting to `email_triggers` table
+   - Visual trigger type selection
+   - Phase picker for phase-specific triggers
+   - Template selector
+   - Delay configuration (immediate, minutes, hours, days)
+   - Enable/disable toggle
+   - Automation dashboard page
+
+7. **Campaign Builder** (Drip Sequences)
+   - Multi-step email sequences
+   - Visual flow builder
+   - Delay between steps
+   - Stop conditions (if replied, unsubscribed)
+   - A/B testing support (future)
+
+8. **Email Analytics**
+   - Opens, clicks, bounces
+   - Per-template performance
+   - Best send times
+   - Dashboard with charts
 
 ---
 
@@ -1428,51 +1513,400 @@ Target: Main bundle < 500KB gzipped
 
 ## Future Considerations (Phase 3)
 
-Features intentionally deferred to keep Phase 2 scope manageable:
+Features deferred to Phase 3:
 
 **1. Incoming Email Sync**
-
 - Sync emails from Gmail to `user_emails` table
 - Gmail Watch API (infrastructure exists from Phase 1)
 - Email inbox UI
 - Unread count badge
 
-**2. Email Triggers (Automatic Emails)**
-
-- Infrastructure exists (`email_triggers` table)
-- Trigger on: Phase started, checklist completed, etc.
-- Configure in Settings
-
-**3. Email Analytics**
-
-- Open tracking (read receipts)
-- Click tracking (link analytics)
-- Delivery status from Gmail API
-- Dashboard: Open rate, click rate, bounce rate
-
-**4. Advanced Templates**
-
+**2. Advanced Templates**
 - Conditional content (if/else logic)
 - Loops (repeat sections)
 - Template inheritance (base template + variations)
 
-**5. Email Collaboration**
-
+**3. Email Collaboration**
 - Shared drafts
 - Comments on emails
 - Approval workflow
 
-**6. Email Search**
-
+**4. Email Search**
 - Full-text search across `user_emails`
 - Filters: Date range, sender, status
 - Saved searches
 
-**7. Email Rules/Filters**
-
+**5. Email Rules/Filters**
 - Auto-label incoming emails
 - Auto-forward to team members
 - Auto-archive after X days
+
+---
+
+## NEW: Recipient Groups Database Schema
+
+```sql
+-- Migration: YYYYMMDD_001_email_recipient_groups.sql
+
+-- Recipient groups (static or dynamic)
+CREATE TABLE email_recipient_groups (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  description TEXT,
+  group_type TEXT NOT NULL DEFAULT 'static', -- 'static' | 'dynamic'
+  filter_config JSONB, -- For dynamic: {"phase_id": "...", "status": "active", "state": "NY"}
+  color TEXT, -- For UI display
+  icon TEXT,  -- Lucide icon name
+  member_count INTEGER DEFAULT 0, -- Cached count for static groups
+  created_by UUID REFERENCES user_profiles(id) ON DELETE SET NULL,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Static group members
+CREATE TABLE email_group_members (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  group_id UUID NOT NULL REFERENCES email_recipient_groups(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES user_profiles(id) ON DELETE CASCADE,
+  added_at TIMESTAMPTZ DEFAULT now(),
+  added_by UUID REFERENCES user_profiles(id) ON DELETE SET NULL,
+  UNIQUE(group_id, user_id)
+);
+
+-- Indexes
+CREATE INDEX idx_email_recipient_groups_active ON email_recipient_groups(is_active) WHERE is_active = true;
+CREATE INDEX idx_email_recipient_groups_type ON email_recipient_groups(group_type);
+CREATE INDEX idx_email_group_members_group ON email_group_members(group_id);
+CREATE INDEX idx_email_group_members_user ON email_group_members(user_id);
+
+-- RLS Policies
+ALTER TABLE email_recipient_groups ENABLE ROW LEVEL SECURITY;
+ALTER TABLE email_group_members ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Authenticated users can manage groups"
+  ON email_recipient_groups FOR ALL
+  USING (auth.role() = 'authenticated');
+
+CREATE POLICY "Authenticated users can manage group members"
+  ON email_group_members FOR ALL
+  USING (auth.role() = 'authenticated');
+```
+
+---
+
+## NEW: Campaign Builder Database Schema
+
+```sql
+-- Migration: YYYYMMDD_002_email_campaigns.sql
+
+CREATE TABLE email_campaigns (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  description TEXT,
+  trigger_event TEXT NOT NULL, -- 'recruit_created', 'phase_started', 'manual'
+  trigger_config JSONB, -- {"phase_id": "..."} for phase-specific
+  status TEXT NOT NULL DEFAULT 'draft', -- draft, active, paused, completed
+  created_by UUID REFERENCES user_profiles(id),
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE TABLE email_campaign_steps (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  campaign_id UUID NOT NULL REFERENCES email_campaigns(id) ON DELETE CASCADE,
+  step_order INTEGER NOT NULL,
+  template_id UUID NOT NULL REFERENCES email_templates(id),
+  delay_value INTEGER NOT NULL DEFAULT 0,
+  delay_unit TEXT NOT NULL DEFAULT 'days', -- minutes, hours, days
+  send_conditions JSONB, -- {"only_if_opened_previous": true}
+  stop_conditions JSONB, -- {"if_replied": true, "if_unsubscribed": true}
+  created_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(campaign_id, step_order)
+);
+
+CREATE TABLE email_campaign_enrollments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  campaign_id UUID NOT NULL REFERENCES email_campaigns(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES user_profiles(id) ON DELETE CASCADE,
+  current_step INTEGER NOT NULL DEFAULT 1,
+  status TEXT NOT NULL DEFAULT 'active', -- active, completed, stopped, unsubscribed
+  enrolled_at TIMESTAMPTZ DEFAULT now(),
+  completed_at TIMESTAMPTZ,
+  stopped_reason TEXT,
+  UNIQUE(campaign_id, user_id)
+);
+
+-- Indexes
+CREATE INDEX idx_email_campaigns_status ON email_campaigns(status);
+CREATE INDEX idx_email_campaign_steps_campaign ON email_campaign_steps(campaign_id);
+CREATE INDEX idx_email_campaign_enrollments_active ON email_campaign_enrollments(status) WHERE status = 'active';
+
+-- RLS
+ALTER TABLE email_campaigns ENABLE ROW LEVEL SECURITY;
+ALTER TABLE email_campaign_steps ENABLE ROW LEVEL SECURITY;
+ALTER TABLE email_campaign_enrollments ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Authenticated users can manage campaigns"
+  ON email_campaigns FOR ALL USING (auth.role() = 'authenticated');
+
+CREATE POLICY "Authenticated users can manage campaign steps"
+  ON email_campaign_steps FOR ALL USING (auth.role() = 'authenticated');
+
+CREATE POLICY "Authenticated users can manage enrollments"
+  ON email_campaign_enrollments FOR ALL USING (auth.role() = 'authenticated');
+```
+
+---
+
+## NEW: Modern Font System
+
+Replace old fonts in `src/types/email.types.ts`:
+
+```typescript
+// Modern email-safe fonts with Google Fonts + fallbacks
+export type EmailFontFamily =
+  | "'Inter', -apple-system, BlinkMacSystemFont, sans-serif"
+  | "'Roboto', Arial, sans-serif"
+  | "'Open Sans', Helvetica, sans-serif"
+  | "'Lato', 'Helvetica Neue', sans-serif"
+  | "'Montserrat', Arial, sans-serif"
+  | "'Poppins', sans-serif"
+  | "'Source Sans Pro', Arial, sans-serif"
+  | "'Nunito', sans-serif"
+  | "'Playfair Display', Georgia, serif"
+  | "'Merriweather', Georgia, serif"
+  | "Georgia, serif"  // Keep one classic serif
+  | "Arial, sans-serif"  // Keep one classic sans
+
+export type EmailFontWeight = 400 | 500 | 600 | 700
+
+export interface FontOption {
+  value: EmailFontFamily
+  label: string
+  weights: EmailFontWeight[]
+  preview: string // Sample text to show
+}
+
+export const MODERN_EMAIL_FONTS: FontOption[] = [
+  { value: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif", label: 'Inter', weights: [400, 500, 600, 700], preview: 'The quick brown fox' },
+  { value: "'Roboto', Arial, sans-serif", label: 'Roboto', weights: [400, 500, 700], preview: 'The quick brown fox' },
+  { value: "'Open Sans', Helvetica, sans-serif", label: 'Open Sans', weights: [400, 600, 700], preview: 'The quick brown fox' },
+  { value: "'Lato', 'Helvetica Neue', sans-serif", label: 'Lato', weights: [400, 700], preview: 'The quick brown fox' },
+  { value: "'Montserrat', Arial, sans-serif", label: 'Montserrat', weights: [400, 500, 600, 700], preview: 'The quick brown fox' },
+  { value: "'Poppins', sans-serif", label: 'Poppins', weights: [400, 500, 600, 700], preview: 'The quick brown fox' },
+  { value: "'Source Sans Pro', Arial, sans-serif", label: 'Source Sans Pro', weights: [400, 600, 700], preview: 'The quick brown fox' },
+  { value: "'Nunito', sans-serif", label: 'Nunito', weights: [400, 600, 700], preview: 'The quick brown fox' },
+  { value: "'Playfair Display', Georgia, serif", label: 'Playfair Display', weights: [400, 700], preview: 'The quick brown fox' },
+  { value: "'Merriweather', Georgia, serif", label: 'Merriweather', weights: [400, 700], preview: 'The quick brown fox' },
+]
+```
+
+---
+
+## REVISED Sub-Phases (Including New Requirements)
+
+### Phase 2A-FIX: Fix Broken Features (Days 1-3) ⚡ PRIORITY
+
+**Goal:** Fix critical broken functionality before adding new features
+
+**Tasks:**
+
+1. **Fix Font System**
+   - Update `src/types/email.types.ts` with modern fonts
+   - Create `FontPicker.tsx` with visual preview
+   - Update `BlockStylePanel.tsx` to use FontPicker
+   - Add Google Fonts import to email HTML output
+
+2. **Add Subject Line to Template Builder**
+   - Create `SubjectEditor.tsx` component
+   - Add to `EmailBlockBuilder.tsx` header area
+   - Support variable insertion in subject
+   - Add to template save/load
+
+3. **Fix HTML Output**
+   - Update `BlockPreview.tsx` → `blocksToHtml()` function
+   - Apply ALL styles as inline CSS:
+     - font-family, font-size, font-weight
+     - color, background-color
+     - line-height, letter-spacing
+     - text-align, padding
+     - border styles
+   - Test output in Gmail/Outlook
+
+4. **Connect DB Templates to ComposeEmailDialog**
+   - Remove hardcoded templates from `ComposeEmailDialog.tsx`
+   - Use `useEmailTemplates()` hook
+   - Add TemplatePicker component
+   - Integrate with EmailBlockBuilder
+
+**Acceptance Criteria:**
+- ✅ Fonts show preview and apply to HTML output
+- ✅ Subject line saves with template
+- ✅ All block styles appear in sent emails
+- ✅ ComposeEmailDialog uses database templates
+
+---
+
+### Phase 2A: Foundation (Days 4-6) - ORIGINAL SCOPE
+
+*Keep existing Phase 2A content - TipTap, sanitization, etc.*
+
+---
+
+### Phase 2B: Templates & Variables (Days 7-10) - ORIGINAL SCOPE
+
+*Keep existing Phase 2B content*
+
+---
+
+### Phase 2C: Advanced Features (Days 11-15) - ORIGINAL SCOPE
+
+*Keep existing Phase 2C content - drafts, attachments, scheduling*
+
+---
+
+### Phase 2D: Bulk Sending & Polish (Days 16-18) - ORIGINAL SCOPE
+
+*Keep existing Phase 2D content*
+
+---
+
+### Phase 2E: Recipients & Groups (Days 19-21) 🆕
+
+**Goal:** Multi-recipient selection and group management
+
+**Tasks:**
+
+1. **Database Migration**
+   - Create `email_recipient_groups` table
+   - Create `email_group_members` table
+   - Add RLS policies
+
+2. **Recipient Group Service**
+   - `recipientGroupService.ts`
+     - `getGroups()`, `createGroup()`, `updateGroup()`, `deleteGroup()`
+     - `getGroupMembers()`, `addMember()`, `removeMember()`
+     - `getDynamicGroupMembers(filterConfig)` - resolve dynamic groups
+   - `useRecipientGroups.ts` hook
+
+3. **RecipientSelector Component**
+   - Multi-select with search
+   - Quick filters (All, By Phase, By Status)
+   - Group selection dropdown
+   - Recent recipients
+   - CC/BCC toggle
+   - Selected count badge
+
+4. **GroupManager Page**
+   - `/settings/email-groups` route
+   - List all groups with member count
+   - Create/Edit group dialog
+   - Static: manually add/remove members
+   - Dynamic: configure filter rules
+   - Preview members before save
+
+5. **Integration**
+   - Add RecipientSelector to EmailComposer
+   - Add RecipientSelector to BulkEmailDialog
+   - Update send logic to handle multiple recipients
+
+**Acceptance Criteria:**
+- ✅ Can create static groups and add members
+- ✅ Can create dynamic groups with filters
+- ✅ RecipientSelector shows groups and individuals
+- ✅ Can send to multiple recipients at once
+- ✅ CC/BCC works correctly
+
+---
+
+### Phase 2F: Automation & Triggers (Days 22-25) 🆕
+
+**Goal:** Visual automation builder for email triggers
+
+**Tasks:**
+
+1. **Automation Service**
+   - `emailTriggerService.ts`
+     - `getTriggers()`, `createTrigger()`, `updateTrigger()`, `deleteTrigger()`
+     - `toggleTrigger(id, isActive)`
+     - `testTrigger(id)` - send test email
+   - `useEmailTriggers.ts` hook
+
+2. **TriggerBuilder Component**
+   - Trigger type selector:
+     - Phase started/completed/blocked
+     - Checklist item completed/approved/rejected
+     - Recruit graduated
+     - Days in phase (delayed)
+     - Days inactive
+   - Phase/checklist picker (optional)
+   - Template selector with preview
+   - Delay configuration (immediate, or after X min/hr/day)
+   - Enable/disable toggle
+
+3. **Automation Dashboard Page**
+   - `/email/automation` route
+   - List all triggers with stats
+   - Quick enable/disable
+   - Edit/Duplicate/Delete actions
+   - "Test Trigger" button
+
+4. **Backend Processing**
+   - Edge Function: `process-email-triggers`
+   - Listens to database webhooks
+   - Matches events to active triggers
+   - Queues emails with delays
+   - Handles variable substitution
+
+**Acceptance Criteria:**
+- ✅ Can create triggers for phase changes
+- ✅ Can configure delay before sending
+- ✅ Triggers fire automatically when events occur
+- ✅ Can test triggers before enabling
+- ✅ Can view trigger statistics
+
+---
+
+### Phase 2G: Campaigns & Analytics (Days 26-30) 🆕
+
+**Goal:** Drip campaigns and email performance tracking
+
+**Tasks:**
+
+1. **Campaign Database Migration**
+   - Create `email_campaigns` table
+   - Create `email_campaign_steps` table
+   - Create `email_campaign_enrollments` table
+
+2. **Campaign Builder**
+   - Visual step-by-step builder
+   - Drag to reorder steps
+   - Template selector per step
+   - Delay configuration per step
+   - Stop conditions (if replied, etc.)
+
+3. **Campaign Dashboard**
+   - `/email/campaigns` route
+   - List campaigns with status
+   - Enrollment counts
+   - Activate/Pause controls
+
+4. **Email Analytics**
+   - Add tracking pixel for opens (optional, privacy toggle)
+   - Click tracking via link wrapping
+   - Analytics dashboard:
+     - Sends/Opens/Clicks over time
+     - Per-template performance
+     - Best performing subject lines
+     - Optimal send times
+
+**Acceptance Criteria:**
+- ✅ Can create multi-step campaigns
+- ✅ Campaigns auto-enroll recruits on trigger
+- ✅ Steps execute with configured delays
+- ✅ Analytics show email performance
+- ✅ Can see which templates perform best
 
 ---
 

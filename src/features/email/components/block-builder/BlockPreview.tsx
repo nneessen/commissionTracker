@@ -2,26 +2,83 @@ import { useMemo } from 'react'
 import type {
   EmailBlock,
   EmailBlockStyles,
+  EmailFontFamily,
   ImageBlockContent,
   QuoteBlockContent,
   SocialBlockContent,
   ColumnsBlockContent,
   ButtonBlockContent,
 } from '@/types/email.types'
+import { MODERN_EMAIL_FONTS } from '@/types/email.types'
 
 interface BlockPreviewProps {
   blocks: EmailBlock[]
   variables?: Record<string, string>
 }
 
+// Get ALL inline styles for a block - this is critical for email rendering
 function getInlineStyles(styles: EmailBlockStyles): string {
   const parts: string[] = []
-  if (styles.backgroundColor) parts.push(`background-color: ${styles.backgroundColor}`)
+
+  // Background & colors
+  if (styles.backgroundColor && styles.backgroundColor !== 'transparent') {
+    parts.push(`background-color: ${styles.backgroundColor}`)
+  }
   if (styles.textColor) parts.push(`color: ${styles.textColor}`)
+
+  // Typography - MUST be inline for emails
+  if (styles.fontFamily) parts.push(`font-family: ${styles.fontFamily}`)
+  if (styles.fontSize) parts.push(`font-size: ${styles.fontSize}`)
+  if (styles.fontWeight) parts.push(`font-weight: ${styles.fontWeight}`)
+  if (styles.lineHeight) parts.push(`line-height: ${styles.lineHeight}`)
+  if (styles.letterSpacing) parts.push(`letter-spacing: ${styles.letterSpacing}`)
+
+  // Layout
   if (styles.padding) parts.push(`padding: ${styles.padding}`)
   if (styles.alignment) parts.push(`text-align: ${styles.alignment}`)
-  if (styles.fontSize) parts.push(`font-size: ${styles.fontSize}`)
+
+  // Border
+  if (styles.borderStyle && styles.borderStyle !== 'none') {
+    parts.push(`border-style: ${styles.borderStyle}`)
+    if (styles.borderWidth) parts.push(`border-width: ${styles.borderWidth}`)
+    if (styles.borderColor) parts.push(`border-color: ${styles.borderColor}`)
+  }
+  if (styles.borderRadius) parts.push(`border-radius: ${styles.borderRadius}`)
+
+  // Width
+  if (styles.width) parts.push(`width: ${styles.width}`)
+  if (styles.maxWidth) parts.push(`max-width: ${styles.maxWidth}`)
+
   return parts.join('; ')
+}
+
+// Collect all fonts used in blocks for Google Fonts import
+function collectUsedFonts(blocks: EmailBlock[]): EmailFontFamily[] {
+  const fonts = new Set<EmailFontFamily>()
+
+  function addBlockFonts(block: EmailBlock) {
+    if (block.styles.fontFamily) {
+      fonts.add(block.styles.fontFamily)
+    }
+    // Handle nested blocks in columns
+    if (block.type === 'columns') {
+      const content = block.content as ColumnsBlockContent
+      content.columns.forEach(col => col.blocks.forEach(addBlockFonts))
+    }
+  }
+
+  blocks.forEach(addBlockFonts)
+  return Array.from(fonts)
+}
+
+// Generate Google Fonts import for used fonts
+function getGoogleFontsLink(fonts: EmailFontFamily[]): string {
+  const googleFonts = MODERN_EMAIL_FONTS
+    .filter(f => fonts.includes(f.value) && f.googleFont)
+    .map(f => `${f.googleFont}:wght@${f.weights.join(';')}`)
+
+  if (googleFonts.length === 0) return ''
+  return `<link href="https://fonts.googleapis.com/css2?family=${googleFonts.join('&family=')}&display=swap" rel="stylesheet">`
 }
 
 function replaceVariables(text: string, variables: Record<string, string>): string {
@@ -194,19 +251,29 @@ function renderBlockToHtml(block: EmailBlock, variables: Record<string, string>)
 export function blocksToHtml(blocks: EmailBlock[], variables: Record<string, string> = {}): string {
   const bodyContent = blocks.map((block) => renderBlockToHtml(block, variables)).join('')
 
+  // Get Google Fonts link for all fonts used in the email
+  const usedFonts = collectUsedFonts(blocks)
+  const googleFontsLink = getGoogleFontsLink(usedFonts)
+
+  // Default font family (first used font or fallback)
+  const defaultFont = usedFonts[0] || "'Inter', -apple-system, BlinkMacSystemFont, sans-serif"
+
   return `
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  ${googleFontsLink}
   <style>
     body {
       margin: 0;
       padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-family: ${defaultFont};
       line-height: 1.5;
       color: #374151;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
     }
     .email-container {
       max-width: 600px;
@@ -222,6 +289,13 @@ export function blocksToHtml(blocks: EmailBlock[], variables: Record<string, str
     }
     p:last-child {
       margin-bottom: 0;
+    }
+    /* Reset for email clients */
+    table {
+      border-collapse: collapse;
+    }
+    a {
+      color: inherit;
     }
   </style>
 </head>

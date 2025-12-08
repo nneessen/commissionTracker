@@ -262,15 +262,54 @@ export type EmailBlockType =
   | 'social'
   | 'quote'
 
-// Web-safe fonts for email
+// Modern email-safe fonts with Google Fonts + fallbacks
 export type EmailFontFamily =
-  | 'Arial, sans-serif'
-  | 'Georgia, serif'
-  | 'Verdana, sans-serif'
-  | 'Tahoma, sans-serif'
-  | 'Times New Roman, serif'
-  | 'Trebuchet MS, sans-serif'
-  | 'Courier New, monospace'
+  | "'Inter', -apple-system, BlinkMacSystemFont, sans-serif"
+  | "'Roboto', Arial, sans-serif"
+  | "'Open Sans', Helvetica, sans-serif"
+  | "'Lato', 'Helvetica Neue', sans-serif"
+  | "'Montserrat', Arial, sans-serif"
+  | "'Poppins', sans-serif"
+  | "'Source Sans Pro', Arial, sans-serif"
+  | "'Nunito', sans-serif"
+  | "'Playfair Display', Georgia, serif"
+  | "'Merriweather', Georgia, serif"
+  | "Georgia, serif"
+  | "Arial, sans-serif"
+
+export type EmailFontWeight = 400 | 500 | 600 | 700
+
+export interface FontOption {
+  value: EmailFontFamily
+  label: string
+  category: 'sans-serif' | 'serif'
+  weights: EmailFontWeight[]
+  googleFont?: string // Google Fonts import name
+}
+
+export const MODERN_EMAIL_FONTS: FontOption[] = [
+  { value: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif", label: 'Inter', category: 'sans-serif', weights: [400, 500, 600, 700], googleFont: 'Inter' },
+  { value: "'Roboto', Arial, sans-serif", label: 'Roboto', category: 'sans-serif', weights: [400, 500, 700], googleFont: 'Roboto' },
+  { value: "'Open Sans', Helvetica, sans-serif", label: 'Open Sans', category: 'sans-serif', weights: [400, 600, 700], googleFont: 'Open+Sans' },
+  { value: "'Lato', 'Helvetica Neue', sans-serif", label: 'Lato', category: 'sans-serif', weights: [400, 700], googleFont: 'Lato' },
+  { value: "'Montserrat', Arial, sans-serif", label: 'Montserrat', category: 'sans-serif', weights: [400, 500, 600, 700], googleFont: 'Montserrat' },
+  { value: "'Poppins', sans-serif", label: 'Poppins', category: 'sans-serif', weights: [400, 500, 600, 700], googleFont: 'Poppins' },
+  { value: "'Source Sans Pro', Arial, sans-serif", label: 'Source Sans Pro', category: 'sans-serif', weights: [400, 600, 700], googleFont: 'Source+Sans+Pro' },
+  { value: "'Nunito', sans-serif", label: 'Nunito', category: 'sans-serif', weights: [400, 600, 700], googleFont: 'Nunito' },
+  { value: "'Playfair Display', Georgia, serif", label: 'Playfair Display', category: 'serif', weights: [400, 700], googleFont: 'Playfair+Display' },
+  { value: "'Merriweather', Georgia, serif", label: 'Merriweather', category: 'serif', weights: [400, 700], googleFont: 'Merriweather' },
+  { value: "Georgia, serif", label: 'Georgia', category: 'serif', weights: [400, 700] },
+  { value: "Arial, sans-serif", label: 'Arial', category: 'sans-serif', weights: [400, 700] },
+]
+
+// Helper to get Google Fonts import URL for used fonts
+export function getGoogleFontsImport(fonts: EmailFontFamily[]): string {
+  const googleFonts = MODERN_EMAIL_FONTS
+    .filter(f => fonts.includes(f.value) && f.googleFont)
+    .map(f => `${f.googleFont}:wght@${f.weights.join(';')}`)
+  if (googleFonts.length === 0) return ''
+  return `@import url('https://fonts.googleapis.com/css2?family=${googleFonts.join('&family=')}&display=swap');`
+}
 
 export interface EmailBlockStyles {
   backgroundColor?: string
