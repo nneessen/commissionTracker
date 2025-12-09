@@ -1,5 +1,5 @@
 export { HeaderBlock, createDefaultHeaderBlock } from './HeaderBlock'
-export { TextBlock, createDefaultTextBlock } from './TextBlock'
+export { TextBlock, createDefaultTextBlock, type TextBlockRef } from './TextBlock'
 export { ButtonBlock, createDefaultButtonBlock } from './ButtonBlock'
 export { DividerBlock, createDefaultDividerBlock } from './DividerBlock'
 export { SpacerBlock, createDefaultSpacerBlock } from './SpacerBlock'

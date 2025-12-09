@@ -1948,6 +1948,7 @@ export type Database = {
           created_at: string | null
           currency: string | null
           default_commission_rate: number | null
+          email_template_limit: number | null
           fiscal_year_start: number | null
           id: string
           notifications_enabled: boolean | null
@@ -1959,6 +1960,7 @@ export type Database = {
           created_at?: string | null
           currency?: string | null
           default_commission_rate?: number | null
+          email_template_limit?: number | null
           fiscal_year_start?: number | null
           id?: string
           notifications_enabled?: boolean | null
@@ -1970,6 +1972,7 @@ export type Database = {
           created_at?: string | null
           currency?: string | null
           default_commission_rate?: number | null
+          email_template_limit?: number | null
           fiscal_year_start?: number | null
           id?: string
           notifications_enabled?: boolean | null
@@ -3980,6 +3983,10 @@ export type Database = {
       }
       check_email_quota: {
         Args: { p_limit?: number; p_provider: string; p_user_id: string }
+        Returns: boolean
+      }
+      check_user_template_limit: {
+        Args: { user_uuid: string }
         Returns: boolean
       }
       cleanup_old_reports: {

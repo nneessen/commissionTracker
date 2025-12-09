@@ -10,6 +10,10 @@ import {
 } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Switch } from '@/components/ui/switch'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,6 +32,11 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible'
+import {
   Plus,
   MoreHorizontal,
   Pencil,
@@ -37,14 +46,26 @@ import {
   ToggleRight,
   Loader2,
   FileText,
+  ChevronDown,
+  Globe,
+  User,
+  Eye,
+  ArrowLeft,
+  Save,
 } from 'lucide-react'
 import {
-  useEmailTemplates,
+  useGroupedEmailTemplates,
+  useEmailTemplate,
+  useCreateEmailTemplate,
+  useUpdateEmailTemplate,
   useDeleteEmailTemplate,
   useDuplicateEmailTemplate,
   useToggleTemplateActive,
 } from '@/features/email/hooks/useEmailTemplates'
-import { CreateTemplateDialog, EditTemplateDialog } from './templates'
+import { usePermissionCheck } from '@/hooks/permissions/usePermissions'
+import { EmailBlockBuilder } from '@/features/email/components/block-builder'
+import { EMAIL_TEMPLATE_CATEGORIES, TEMPLATE_PREVIEW_VARIABLES } from '@/features/email/constants'
+import type { EmailTemplate, EmailBlock, EmailTemplateCategory } from '@/types/email.types'
 
 interface EmailTemplatesTabProps {
   searchQuery?: string
@@ -57,15 +78,383 @@ const CATEGORY_LABELS: Record<string, string> = {
   general: 'General',
 }
 
-export function EmailTemplatesTab({ searchQuery }: EmailTemplatesTabProps) {
-  const [showCreateDialog, setShowCreateDialog] = useState(false)
-  const [editTemplateId, setEditTemplateId] = useState<string | null>(null)
-  const [deleteTemplateId, setDeleteTemplateId] = useState<string | null>(null)
+// Template list row component
+function TemplateRow({
+  template,
+  onView,
+  onEdit,
+  onDelete,
+  onDuplicate,
+  onToggleActive,
+  canEdit,
+}: {
+  template: EmailTemplate
+  onView: () => void
+  onEdit: () => void
+  onDelete: () => void
+  onDuplicate: () => void
+  onToggleActive: () => void
+  canEdit: boolean
+}) {
+  return (
+    <TableRow className="text-xs">
+      <TableCell className="py-1.5">
+        <span className="font-medium">{template.name}</span>
+      </TableCell>
+      <TableCell className="py-1.5 text-muted-foreground">
+        <span className="line-clamp-1">{template.subject}</span>
+      </TableCell>
+      <TableCell className="py-1.5">
+        <Badge variant="outline" className="text-[9px] px-1 py-0">
+          {CATEGORY_LABELS[template.category] || template.category}
+        </Badge>
+      </TableCell>
+      <TableCell className="py-1.5">
+        <Badge
+          variant={template.is_active ? 'default' : 'secondary'}
+          className={`text-[9px] px-1 py-0 ${template.is_active ? 'bg-green-500/10 text-green-600' : ''}`}
+        >
+          {template.is_active ? 'Active' : 'Inactive'}
+        </Badge>
+      </TableCell>
+      <TableCell className="py-1.5 text-muted-foreground">
+        {format(new Date(template.updated_at), 'MMM d')}
+      </TableCell>
+      <TableCell className="py-1.5 w-8">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-6 w-6">
+              <MoreHorizontal className="h-3 w-3" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="text-xs">
+            <DropdownMenuItem onClick={onView} className="text-xs">
+              <Eye className="mr-1.5 h-3 w-3" />
+              View
+            </DropdownMenuItem>
+            {canEdit && (
+              <DropdownMenuItem onClick={onEdit} className="text-xs">
+                <Pencil className="mr-1.5 h-3 w-3" />
+                Edit
+              </DropdownMenuItem>
+            )}
+            <DropdownMenuItem onClick={onDuplicate} className="text-xs">
+              <Copy className="mr-1.5 h-3 w-3" />
+              Duplicate
+            </DropdownMenuItem>
+            {canEdit && (
+              <>
+                <DropdownMenuItem onClick={onToggleActive} className="text-xs">
+                  {template.is_active ? (
+                    <>
+                      <ToggleLeft className="mr-1.5 h-3 w-3" />
+                      Deactivate
+                    </>
+                  ) : (
+                    <>
+                      <ToggleRight className="mr-1.5 h-3 w-3" />
+                      Activate
+                    </>
+                  )}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={onDelete}
+                  className="text-xs text-destructive focus:text-destructive"
+                >
+                  <Trash2 className="mr-1.5 h-3 w-3" />
+                  Delete
+                </DropdownMenuItem>
+              </>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </TableCell>
+    </TableRow>
+  )
+}
 
-  const { data: templates = [], isLoading } = useEmailTemplates({ searchQuery })
+// Template list table component
+function TemplateTable({
+  templates,
+  onView,
+  onEdit,
+  onDelete,
+  onDuplicate,
+  onToggleActive,
+  canEdit,
+}: {
+  templates: EmailTemplate[]
+  onView: (id: string) => void
+  onEdit: (id: string) => void
+  onDelete: (id: string) => void
+  onDuplicate: (id: string) => void
+  onToggleActive: (id: string, isActive: boolean) => void
+  canEdit: boolean
+}) {
+  if (templates.length === 0) {
+    return (
+      <div className="py-3 text-center text-xs text-muted-foreground">
+        No templates
+      </div>
+    )
+  }
+
+  return (
+    <Table>
+      <TableHeader>
+        <TableRow className="hover:bg-transparent">
+          <TableHead className="h-6 text-[10px]">Name</TableHead>
+          <TableHead className="h-6 text-[10px]">Subject</TableHead>
+          <TableHead className="h-6 text-[10px]">Category</TableHead>
+          <TableHead className="h-6 text-[10px]">Status</TableHead>
+          <TableHead className="h-6 text-[10px]">Updated</TableHead>
+          <TableHead className="h-6 w-8"></TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {templates.map((template) => (
+          <TemplateRow
+            key={template.id}
+            template={template}
+            onView={() => onView(template.id)}
+            onEdit={() => onEdit(template.id)}
+            onDelete={() => onDelete(template.id)}
+            onDuplicate={() => onDuplicate(template.id)}
+            onToggleActive={() => onToggleActive(template.id, !template.is_active)}
+            canEdit={canEdit}
+          />
+        ))}
+      </TableBody>
+    </Table>
+  )
+}
+
+// Inline template editor component
+function InlineTemplateEditor({
+  templateId,
+  isNew,
+  isViewOnly,
+  onClose,
+}: {
+  templateId: string | null
+  isNew: boolean
+  isViewOnly: boolean
+  onClose: () => void
+}) {
+  // Only fetch if we have a templateId and we're not creating new
+  const shouldFetch = !!templateId && !isNew
+  const { data: existingTemplate, isLoading: loadingTemplate } = useEmailTemplate(
+    shouldFetch ? templateId : ''
+  )
+
+  const createTemplate = useCreateEmailTemplate()
+  const updateTemplate = useUpdateEmailTemplate()
+
+  const [name, setName] = useState('')
+  const [subject, setSubject] = useState('')
+  const [category, setCategory] = useState<EmailTemplateCategory>('general')
+  const [isGlobal, setIsGlobal] = useState(false)
+  const [isActive, setIsActive] = useState(true)
+  const [blocks, setBlocks] = useState<EmailBlock[]>([])
+  const [isInitialized, setIsInitialized] = useState(false)
+
+  // Initialize form with existing template data
+  if (existingTemplate && !isInitialized && !isNew) {
+    setName(existingTemplate.name)
+    setSubject(existingTemplate.subject)
+    setCategory(existingTemplate.category)
+    setIsGlobal(existingTemplate.is_global)
+    setIsActive(existingTemplate.is_active)
+    setBlocks(existingTemplate.blocks || [])
+    setIsInitialized(true)
+  }
+
+  const handleSave = async () => {
+    if (!name.trim() || !subject.trim()) return
+
+    if (isNew) {
+      await createTemplate.mutateAsync({
+        name: name.trim(),
+        subject: subject.trim(),
+        body_html: '',
+        category,
+        is_global: isGlobal,
+        blocks,
+        is_block_template: true,
+      })
+    } else if (templateId) {
+      await updateTemplate.mutateAsync({
+        id: templateId,
+        updates: {
+          name: name.trim(),
+          subject: subject.trim(),
+          category,
+          is_global: isGlobal,
+          is_active: isActive,
+          blocks,
+        },
+      })
+    }
+    onClose()
+  }
+
+  const isValid = name.trim() && subject.trim()
+  const isSaving = createTemplate.isPending || updateTemplate.isPending
+
+  if (!isNew && loadingTemplate) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex h-full flex-col">
+      {/* Header */}
+      <div className="flex h-9 shrink-0 items-center justify-between border-b px-3">
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onClose}>
+            <ArrowLeft className="h-3.5 w-3.5" />
+          </Button>
+          <h2 className="text-xs font-semibold">
+            {isViewOnly ? 'View Template' : isNew ? 'Create Template' : 'Edit Template'}
+          </h2>
+        </div>
+        {!isViewOnly && (
+          <Button
+            onClick={handleSave}
+            disabled={!isValid || isSaving}
+            size="sm"
+            className="h-6 gap-1 text-xs px-2"
+          >
+            {isSaving && <Loader2 className="h-3 w-3 animate-spin" />}
+            <Save className="h-3 w-3" />
+            {isNew ? 'Create' : 'Save'}
+          </Button>
+        )}
+      </div>
+
+      {/* Content */}
+      <div className="flex flex-1 overflow-hidden">
+        {/* Settings sidebar */}
+        <div className="w-44 shrink-0 space-y-2.5 overflow-y-auto border-r bg-muted/20 p-2.5">
+          <div className="space-y-1">
+            <Label className="text-[10px] font-medium">Template Name</Label>
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g., Welcome Email"
+              className="h-6 text-[10px]"
+              disabled={isViewOnly}
+            />
+          </div>
+
+          <div className="space-y-1">
+            <Label className="text-[10px] font-medium">Subject Line</Label>
+            <Input
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              placeholder="e.g., Welcome to the Team!"
+              className="h-6 text-[10px]"
+              disabled={isViewOnly}
+            />
+          </div>
+
+          <div className="space-y-1">
+            <Label className="text-[10px] font-medium">Category</Label>
+            <Select
+              value={category}
+              onValueChange={(v) => setCategory(v as EmailTemplateCategory)}
+              disabled={isViewOnly}
+            >
+              <SelectTrigger className="h-6 text-[10px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {EMAIL_TEMPLATE_CATEGORIES.map((cat) => (
+                  <SelectItem key={cat.value} value={cat.value} className="text-xs">
+                    {cat.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {!isViewOnly && (
+            <>
+              <div className="flex items-center gap-1.5">
+                <Switch
+                  id="global"
+                  checked={isGlobal}
+                  onCheckedChange={setIsGlobal}
+                  className="h-3.5 w-6"
+                />
+                <Label htmlFor="global" className="text-[10px]">
+                  Global
+                </Label>
+              </div>
+
+              {!isNew && (
+                <div className="flex items-center gap-1.5">
+                  <Switch
+                    id="active"
+                    checked={isActive}
+                    onCheckedChange={setIsActive}
+                    className="h-3.5 w-6"
+                  />
+                  <Label htmlFor="active" className="text-[10px]">
+                    Active
+                  </Label>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+        {/* Email builder */}
+        <div className="flex-1 overflow-hidden">
+          <EmailBlockBuilder
+            blocks={blocks}
+            onChange={isViewOnly ? () => {} : setBlocks}
+            previewVariables={TEMPLATE_PREVIEW_VARIABLES}
+          />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Main component
+export function EmailTemplatesTab({ searchQuery }: EmailTemplatesTabProps) {
+  const [editorState, setEditorState] = useState<{
+    mode: 'list' | 'create' | 'edit' | 'view'
+    templateId: string | null
+  }>({ mode: 'list', templateId: null })
+  const [deleteTemplateId, setDeleteTemplateId] = useState<string | null>(null)
+  const [globalOpen, setGlobalOpen] = useState(true)
+  const [personalOpen, setPersonalOpen] = useState(true)
+
+  const { data, isLoading } = useGroupedEmailTemplates()
   const deleteTemplate = useDeleteEmailTemplate()
   const duplicateTemplate = useDuplicateEmailTemplate()
   const toggleActive = useToggleTemplateActive()
+  const { isAnyRole } = usePermissionCheck()
+
+  const canManageGlobal = isAnyRole(['admin', 'trainer', 'contracting_manager'])
+
+  const filterTemplates = (templates: EmailTemplate[]) => {
+    if (!searchQuery) return templates
+    const query = searchQuery.toLowerCase()
+    return templates.filter(
+      t => t.name.toLowerCase().includes(query) || t.subject.toLowerCase().includes(query)
+    )
+  }
+
+  const globalTemplates = filterTemplates(data?.globalTemplates || [])
+  const personalTemplates = filterTemplates(data?.personalTemplates || [])
+  const status = data?.status
 
   const handleDelete = async () => {
     if (!deleteTemplateId) return
@@ -73,175 +462,147 @@ export function EmailTemplatesTab({ searchQuery }: EmailTemplatesTabProps) {
     setDeleteTemplateId(null)
   }
 
+  const allTemplates = [...globalTemplates, ...personalTemplates]
   const templateToDelete = deleteTemplateId
-    ? templates.find((t) => t.id === deleteTemplateId)
+    ? allTemplates.find((t) => t.id === deleteTemplateId)
     : null
 
+  const canCreateNew = status?.canCreate ?? true
+
+  // Show editor if in create/edit/view mode
+  if (editorState.mode !== 'list') {
+    return (
+      <InlineTemplateEditor
+        templateId={editorState.templateId}
+        isNew={editorState.mode === 'create'}
+        isViewOnly={editorState.mode === 'view'}
+        onClose={() => setEditorState({ mode: 'list', templateId: null })}
+      />
+    )
+  }
+
+  // Template list view
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="text-sm text-muted-foreground">
-          {templates.length} template{templates.length !== 1 ? 's' : ''}
+        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+          <span>{globalTemplates.length} global</span>
+          <span className="text-border">|</span>
+          <span>
+            {status ? `${status.count}/${status.limit}` : '...'} personal
+          </span>
         </div>
-        <Button size="sm" onClick={() => setShowCreateDialog(true)} className="h-7 gap-1">
-          <Plus className="h-3.5 w-3.5" />
+        <Button
+          size="sm"
+          onClick={() => setEditorState({ mode: 'create', templateId: null })}
+          disabled={!canCreateNew}
+          className="h-6 gap-1 text-xs px-2"
+        >
+          <Plus className="h-3 w-3" />
           New Template
         </Button>
       </div>
 
-      {/* Templates table */}
       {isLoading ? (
-        <div className="flex h-64 items-center justify-center">
-          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        <div className="flex h-40 items-center justify-center">
+          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
         </div>
-      ) : templates.length === 0 ? (
-        <div className="flex h-64 flex-col items-center justify-center gap-2 rounded-lg border border-dashed">
-          <FileText className="h-8 w-8 text-muted-foreground/50" />
-          <p className="text-sm text-muted-foreground">No email templates yet</p>
+      ) : allTemplates.length === 0 ? (
+        <div className="flex h-40 flex-col items-center justify-center gap-1.5 rounded border border-dashed">
+          <FileText className="h-6 w-6 text-muted-foreground/50" />
+          <p className="text-xs text-muted-foreground">No email templates yet</p>
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setShowCreateDialog(true)}
-            className="mt-2"
+            onClick={() => setEditorState({ mode: 'create', templateId: null })}
+            className="mt-1 h-6 text-xs"
           >
             Create your first template
           </Button>
         </div>
       ) : (
-        <div className="rounded-lg border">
-          <Table>
-            <TableHeader>
-              <TableRow className="hover:bg-transparent">
-                <TableHead className="h-8 text-xs">Name</TableHead>
-                <TableHead className="h-8 text-xs">Subject</TableHead>
-                <TableHead className="h-8 text-xs">Category</TableHead>
-                <TableHead className="h-8 text-xs">Type</TableHead>
-                <TableHead className="h-8 text-xs">Status</TableHead>
-                <TableHead className="h-8 text-xs">Updated</TableHead>
-                <TableHead className="h-8 w-10 text-xs"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {templates.map((template) => (
-                <TableRow key={template.id}>
-                  <TableCell className="py-2 font-medium">
-                    <div className="flex items-center gap-2">
-                      <span className="truncate">{template.name}</span>
-                      {template.is_global && (
-                        <Badge variant="secondary" className="text-[10px]">
-                          Global
-                        </Badge>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell className="py-2 text-muted-foreground">
-                    <span className="line-clamp-1">{template.subject}</span>
-                  </TableCell>
-                  <TableCell className="py-2">
-                    <Badge variant="outline" className="text-[10px]">
-                      {CATEGORY_LABELS[template.category] || template.category}
+        <div className="space-y-2">
+          {/* Global Templates Section */}
+          <Collapsible open={globalOpen} onOpenChange={setGlobalOpen}>
+            <div className="rounded border">
+              <CollapsibleTrigger asChild>
+                <button className="flex w-full items-center justify-between px-2 py-1.5 hover:bg-muted/50">
+                  <div className="flex items-center gap-1.5 text-xs font-medium">
+                    <Globe className="h-3 w-3 text-muted-foreground" />
+                    Global Templates
+                    <Badge variant="secondary" className="ml-1 h-4 px-1 text-[9px]">
+                      {globalTemplates.length}
                     </Badge>
-                  </TableCell>
-                  <TableCell className="py-2">
-                    <Badge
-                      variant={template.is_block_template ? 'default' : 'secondary'}
-                      className="text-[10px]"
-                    >
-                      {template.is_block_template ? 'Block' : 'HTML'}
+                  </div>
+                  <ChevronDown className={`h-3 w-3 transition-transform ${globalOpen ? '' : '-rotate-90'}`} />
+                </button>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="border-t">
+                  <TemplateTable
+                    templates={globalTemplates}
+                    onView={(id) => setEditorState({ mode: 'view', templateId: id })}
+                    onEdit={(id) => setEditorState({ mode: 'edit', templateId: id })}
+                    onDelete={setDeleteTemplateId}
+                    onDuplicate={(id) => duplicateTemplate.mutate(id)}
+                    onToggleActive={(id, isActive) => toggleActive.mutate({ id, isActive })}
+                    canEdit={canManageGlobal}
+                  />
+                </div>
+              </CollapsibleContent>
+            </div>
+          </Collapsible>
+
+          {/* Personal Templates Section */}
+          <Collapsible open={personalOpen} onOpenChange={setPersonalOpen}>
+            <div className="rounded border">
+              <CollapsibleTrigger asChild>
+                <button className="flex w-full items-center justify-between px-2 py-1.5 hover:bg-muted/50">
+                  <div className="flex items-center gap-1.5 text-xs font-medium">
+                    <User className="h-3 w-3 text-muted-foreground" />
+                    My Templates
+                    <Badge variant="secondary" className="ml-1 h-4 px-1 text-[9px]">
+                      {status ? `${status.count}/${status.limit}` : personalTemplates.length}
                     </Badge>
-                  </TableCell>
-                  <TableCell className="py-2">
-                    <Badge
-                      variant={template.is_active ? 'default' : 'secondary'}
-                      className={`text-[10px] ${template.is_active ? 'bg-green-500/10 text-green-600' : ''}`}
-                    >
-                      {template.is_active ? 'Active' : 'Inactive'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="py-2 text-muted-foreground">
-                    {format(new Date(template.updated_at), 'MMM d, yyyy')}
-                  </TableCell>
-                  <TableCell className="py-2">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-7 w-7">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => setEditTemplateId(template.id)}>
-                          <Pencil className="mr-2 h-3.5 w-3.5" />
-                          Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => duplicateTemplate.mutate(template.id)}
-                        >
-                          <Copy className="mr-2 h-3.5 w-3.5" />
-                          Duplicate
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() =>
-                            toggleActive.mutate({
-                              id: template.id,
-                              isActive: !template.is_active,
-                            })
-                          }
-                        >
-                          {template.is_active ? (
-                            <>
-                              <ToggleLeft className="mr-2 h-3.5 w-3.5" />
-                              Deactivate
-                            </>
-                          ) : (
-                            <>
-                              <ToggleRight className="mr-2 h-3.5 w-3.5" />
-                              Activate
-                            </>
-                          )}
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          onClick={() => setDeleteTemplateId(template.id)}
-                          className="text-destructive focus:text-destructive"
-                        >
-                          <Trash2 className="mr-2 h-3.5 w-3.5" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                  </div>
+                  <ChevronDown className={`h-3 w-3 transition-transform ${personalOpen ? '' : '-rotate-90'}`} />
+                </button>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="border-t">
+                  <TemplateTable
+                    templates={personalTemplates}
+                    onView={(id) => setEditorState({ mode: 'view', templateId: id })}
+                    onEdit={(id) => setEditorState({ mode: 'edit', templateId: id })}
+                    onDelete={setDeleteTemplateId}
+                    onDuplicate={(id) => duplicateTemplate.mutate(id)}
+                    onToggleActive={(id, isActive) => toggleActive.mutate({ id, isActive })}
+                    canEdit={true}
+                  />
+                </div>
+              </CollapsibleContent>
+            </div>
+          </Collapsible>
         </div>
       )}
 
-      {/* Dialogs */}
-      <CreateTemplateDialog open={showCreateDialog} onOpenChange={setShowCreateDialog} />
-
-      <EditTemplateDialog
-        templateId={editTemplateId}
-        open={!!editTemplateId}
-        onOpenChange={(open) => !open && setEditTemplateId(null)}
-      />
-
+      {/* Delete confirmation */}
       <AlertDialog open={!!deleteTemplateId} onOpenChange={(open) => !open && setDeleteTemplateId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Template</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogTitle className="text-sm">Delete Template</AlertDialogTitle>
+            <AlertDialogDescription className="text-xs">
               Are you sure you want to delete "{templateToDelete?.name}"? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="h-7 text-xs">Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="h-7 text-xs bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {deleteTemplate.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {deleteTemplate.isPending && <Loader2 className="mr-1.5 h-3 w-3 animate-spin" />}
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>

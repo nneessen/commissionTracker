@@ -21,31 +21,32 @@ export function HeaderBlock({ block, isEditing, onChange }: HeaderBlockProps) {
 
   if (isEditing) {
     return (
-      <div className="space-y-3 p-3">
-        <div className="space-y-1">
-          <Label className="text-xs">Title</Label>
+      <div className="space-y-2 p-2">
+        <div className="space-y-0.5">
+          <Label className="text-[10px]">Title</Label>
           <Input
             value={content.title}
             onChange={(e) => updateContent({ title: e.target.value })}
             placeholder="Email Header Title"
-            className="h-8"
+            className="h-6 text-xs"
           />
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           <Switch
             checked={content.showLogo ?? false}
             onCheckedChange={(checked) => updateContent({ showLogo: checked })}
+            className="h-4 w-7"
           />
-          <Label className="text-xs">Show Logo</Label>
+          <Label className="text-[10px]">Show Logo</Label>
         </div>
         {content.showLogo && (
-          <div className="space-y-1">
-            <Label className="text-xs">Logo URL</Label>
+          <div className="space-y-0.5">
+            <Label className="text-[10px]">Logo URL</Label>
             <Input
               value={content.logoUrl ?? ''}
               onChange={(e) => updateContent({ logoUrl: e.target.value })}
               placeholder="https://..."
-              className="h-8"
+              className="h-6 text-xs"
             />
           </div>
         )}
@@ -55,24 +56,26 @@ export function HeaderBlock({ block, isEditing, onChange }: HeaderBlockProps) {
 
   return (
     <div
-      className="p-4"
+      className="p-2"
       style={{
         backgroundColor: block.styles.backgroundColor,
         textAlign: block.styles.alignment ?? 'center',
+        padding: block.styles.padding || '12px',
       }}
     >
       {content.showLogo && content.logoUrl && (
         <img
           src={content.logoUrl}
           alt="Logo"
-          className="mx-auto mb-2 h-12 object-contain"
+          className="mx-auto mb-1.5 h-8 object-contain"
         />
       )}
       <h1
-        className="text-xl font-bold"
+        className="font-semibold"
         style={{
           color: block.styles.textColor,
-          fontSize: block.styles.fontSize,
+          fontSize: block.styles.fontSize || '16px',
+          fontFamily: block.styles.fontFamily || 'inherit',
         }}
       >
         {content.title || 'Header Title'}
@@ -94,7 +97,8 @@ export function createDefaultHeaderBlock(id: string): EmailBlock {
       backgroundColor: '#f8fafc',
       textColor: '#1e293b',
       alignment: 'center',
-      padding: '16px',
+      padding: '12px',
+      fontSize: '16px',
     },
   }
 }

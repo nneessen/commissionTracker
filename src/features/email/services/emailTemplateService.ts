@@ -10,6 +10,14 @@ export interface EmailTemplateFilters {
   searchQuery?: string
 }
 
+export interface UserTemplateStatus {
+  count: number
+  limit: number
+  canCreate: boolean
+}
+
+const DEFAULT_TEMPLATE_LIMIT = 10
+
 export async function getEmailTemplates(filters?: EmailTemplateFilters): Promise<EmailTemplate[]> {
   let query = supabase
     .from('email_templates')
@@ -29,7 +37,9 @@ export async function getEmailTemplates(filters?: EmailTemplateFilters): Promise
     query = query.eq('is_block_template', filters.isBlockTemplate)
   }
   if (filters?.searchQuery) {
-    query = query.or(`name.ilike.%${filters.searchQuery}%,subject.ilike.%${filters.searchQuery}%`)
+    // Escape special characters to prevent SQL injection
+    const sanitized = filters.searchQuery.replace(/[%_\\]/g, '\\$&')
+    query = query.or(`name.ilike.%${sanitized}%,subject.ilike.%${sanitized}%`)
   }
 
   const { data, error } = await query
@@ -150,4 +160,67 @@ export async function toggleTemplateActive(
 
   if (error) throw error
   return data as EmailTemplate
+}
+
+/**
+ * Get user's personal template count and limit
+ */
+export async function getUserTemplateStatus(userId: string): Promise<UserTemplateStatus> {
+  // Get user's limit from settings
+  const { data: settings } = await supabase
+    .from('settings')
+    .select('email_template_limit')
+    .eq('user_id', userId)
+    .single()
+
+  const limit = settings?.email_template_limit ?? DEFAULT_TEMPLATE_LIMIT
+
+  // Count user's personal templates
+  const { count, error } = await supabase
+    .from('email_templates')
+    .select('*', { count: 'exact', head: true })
+    .eq('created_by', userId)
+    .eq('is_global', false)
+
+  if (error) throw error
+
+  const currentCount = count ?? 0
+
+  return {
+    count: currentCount,
+    limit,
+    canCreate: currentCount < limit,
+  }
+}
+
+/**
+ * Get templates grouped by type (global vs personal)
+ */
+export async function getGroupedEmailTemplates(userId: string): Promise<{
+  globalTemplates: EmailTemplate[]
+  personalTemplates: EmailTemplate[]
+  status: UserTemplateStatus
+}> {
+  // Templates query - RLS will filter to global + user's own
+  const { data: templates, error } = await supabase
+    .from('email_templates')
+    .select('*')
+    .order('updated_at', { ascending: false })
+
+  if (error) throw error
+
+  const allTemplates = (templates as EmailTemplate[]) || []
+
+  // Separate global from personal
+  const globalTemplates = allTemplates.filter(t => t.is_global)
+  const personalTemplates = allTemplates.filter(t => !t.is_global && t.created_by === userId)
+
+  // Get user's status
+  const status = await getUserTemplateStatus(userId)
+
+  return {
+    globalTemplates,
+    personalTemplates,
+    status,
+  }
 }

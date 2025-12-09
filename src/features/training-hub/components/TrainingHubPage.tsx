@@ -1,5 +1,5 @@
 // src/features/training-hub/components/TrainingHubPage.tsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Users,
   Mail,
@@ -20,9 +20,23 @@ import { EmailTemplatesTab } from "./EmailTemplatesTab";
 
 type TabView = "recruiting" | "templates" | "automation" | "activity";
 
+const TAB_STORAGE_KEY = "training-hub-active-tab";
+
 export default function TrainingHubPage() {
-  const [activeView, setActiveView] = useState<TabView>("recruiting");
+  // Persist tab selection in localStorage
+  const [activeView, setActiveView] = useState<TabView>(() => {
+    const saved = localStorage.getItem(TAB_STORAGE_KEY);
+    if (saved && ["recruiting", "templates", "automation", "activity"].includes(saved)) {
+      return saved as TabView;
+    }
+    return "recruiting";
+  });
   const [searchQuery, setSearchQuery] = useState("");
+
+  // Persist tab changes
+  useEffect(() => {
+    localStorage.setItem(TAB_STORAGE_KEY, activeView);
+  }, [activeView]);
 
   // Fetch recruits count for stats
   const { data: recruitStats } = useQuery({

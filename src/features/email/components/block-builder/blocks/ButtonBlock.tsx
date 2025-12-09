@@ -146,22 +146,24 @@ export function ButtonBlock({ block, isEditing, onChange }: ButtonBlockProps) {
 
   return (
     <div
-      className="p-4"
+      className="p-2"
       style={{
         backgroundColor: block.styles.backgroundColor,
         textAlign: block.styles.alignment ?? 'center',
+        padding: block.styles.padding || '8px',
       }}
     >
       <a
         href={content.url || '#'}
-        className="rounded-md px-6 py-2 font-medium no-underline"
+        className="rounded text-xs font-medium no-underline"
         style={{
           display: content.fullWidth ? 'block' : 'inline-block',
           width: content.fullWidth ? '100%' : 'auto',
           textAlign: 'center',
           boxSizing: 'border-box',
+          padding: '6px 12px',
           ...buttonStyles,
-          borderRadius: block.styles.borderRadius ?? '6px',
+          borderRadius: block.styles.borderRadius ?? '4px',
         }}
       >
         {content.text || 'Click Here'}
@@ -186,8 +188,8 @@ export function createDefaultButtonBlock(id: string): EmailBlock {
     styles: {
       backgroundColor: 'transparent',
       alignment: 'center',
-      padding: '16px',
-      borderRadius: '6px',
+      padding: '8px',
+      borderRadius: '4px',
     },
   }
 }

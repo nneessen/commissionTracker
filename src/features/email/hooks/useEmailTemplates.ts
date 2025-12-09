@@ -9,11 +9,14 @@ import {
   deleteEmailTemplate,
   duplicateEmailTemplate,
   toggleTemplateActive,
+  getUserTemplateStatus,
+  getGroupedEmailTemplates,
   type EmailTemplateFilters,
 } from '../services/emailTemplateService'
 import type { CreateEmailTemplateRequest } from '@/types/email.types'
 
 const QUERY_KEY = 'email-templates'
+const STATUS_QUERY_KEY = 'email-template-status'
 
 export function useEmailTemplates(filters?: EmailTemplateFilters) {
   return useQuery({
@@ -122,5 +125,31 @@ export function useToggleTemplateActive() {
       console.error('Failed to toggle template:', error)
       showToast.error(error.message || 'Failed to update template status')
     },
+  })
+}
+
+/**
+ * Get user's template status (count/limit)
+ */
+export function useUserTemplateStatus() {
+  const { user } = useAuth()
+
+  return useQuery({
+    queryKey: [STATUS_QUERY_KEY, user?.id],
+    queryFn: () => (user?.id ? getUserTemplateStatus(user.id) : null),
+    enabled: !!user?.id,
+  })
+}
+
+/**
+ * Get templates grouped by global vs personal
+ */
+export function useGroupedEmailTemplates() {
+  const { user } = useAuth()
+
+  return useQuery({
+    queryKey: [QUERY_KEY, 'grouped', user?.id],
+    queryFn: () => (user?.id ? getGroupedEmailTemplates(user.id) : null),
+    enabled: !!user?.id,
   })
 }
