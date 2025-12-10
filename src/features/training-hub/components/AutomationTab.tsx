@@ -30,7 +30,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useWorkflows, useWorkflowRuns, useUpdateWorkflowStatus, useDeleteWorkflow, useTriggerWorkflow } from '@/hooks/workflows';
-import WorkflowDialog from './WorkflowDialog';
+import WorkflowWizard from './WorkflowWizard';
 import type { Workflow } from '@/types/workflow.types';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
@@ -284,7 +284,7 @@ export default function AutomationTab() {
       </div>
 
       {/* Dialogs */}
-      <WorkflowDialog
+      <WorkflowWizard
         open={showDialog}
         onOpenChange={setShowDialog}
         workflow={editingWorkflow}

@@ -6,6 +6,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-12-10 09:14:40
+
+### Changed Files
+- `package-lock.json`
+- `package.json`
+- `src/features/training-hub/components/AutomationTab.tsx`
+- `src/features/training-hub/components/WorkflowWizard.tsx`
+- `src/features/training-hub/components/workflow-wizard/ActionConfigPanel.tsx`
+- `src/features/training-hub/components/workflow-wizard/WorkflowActionsBuilder.tsx`
+- `src/features/training-hub/components/workflow-wizard/WorkflowBasicInfo.tsx`
+- `src/features/training-hub/components/workflow-wizard/WorkflowReview.tsx`
+- `src/features/training-hub/components/workflow-wizard/WorkflowTriggerSetup.tsx`
+- `src/types/workflow.types.ts`
+- `tsconfig.tsbuildinfo`
+
+### Statistics
+```
+ 11 files changed, 2250 insertions(+), 5 deletions(-)
+```
+
 ## [Checkpoint] - 2025-12-09 20:02:46
 
 ### Changed Files

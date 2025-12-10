@@ -14,22 +14,46 @@ export interface WorkflowCondition {
 
 export interface WorkflowAction {
   id?: string;
-  type: 'send_email' | 'create_notification' | 'update_field' | 'create_task' | 'webhook' | 'wait' | 'branch';
+  type: 'send_email' | 'create_notification' | 'update_field' | 'create_task' | 'webhook' | 'wait' | 'branch' | 'assign_user' | 'ai_decision';
   order: number;
   config: {
+    // Email action
     templateId?: string;
     recipientId?: string;
+    recipientType?: string;
+    recipientEmail?: string;
     variables?: Record<string, unknown>;
+
+    // Update field action
     fieldName?: string;
     fieldValue?: unknown;
+
+    // Webhook action
     webhookUrl?: string;
     webhookMethod?: string;
-    webhookHeaders?: Record<string, string>;
+    webhookHeaders?: Record<string, string> | string;
+
+    // Wait action
     waitMinutes?: number;
+
+    // Branch action
     branchConditions?: WorkflowCondition[];
+    conditions?: WorkflowCondition[];
+
     // Notification config
     title?: string;
     message?: string;
+    notificationType?: string;
+
+    // Assign user action
+    userId?: string;
+
+    // Create task action
+    description?: string;
+    dueDate?: string;
+
+    // AI decision action
+    prompt?: string;
   };
   conditions?: WorkflowCondition[];
   delayMinutes?: number;
