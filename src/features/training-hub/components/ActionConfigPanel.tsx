@@ -1,0 +1,1010 @@
+// src/features/training-hub/components/workflow-wizard/ActionConfigPanel.tsx
+
+import { useState } from 'react';
+import { X, Info, Clock, Variable, TestTube, Settings, ChevronDown, ChevronUp } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
+import type { WorkflowAction } from '@/types/workflow.types';
+import { useEmailTemplates } from '@/features/email/hooks/useEmailTemplates';
+import { useAuth } from '@/contexts/AuthContext';
+
+interface ActionConfigPanelProps {
+  action: WorkflowAction;
+  onUpdate: (updates: Partial<WorkflowAction>) => void;
+  onClose: () => void;
+}
+
+const VARIABLE_LIST = [
+  { category: 'Recruit', variables: ['{{recruit.name}}', '{{recruit.email}}', '{{recruit.phone}}', '{{recruit.status}}'] },
+  { category: 'User', variables: ['{{user.name}}', '{{user.email}}', '{{user.role}}'] },
+  { category: 'Date', variables: ['{{date.today}}', '{{date.tomorrow}}', '{{date.next_week}}'] },
+  { category: 'System', variables: ['{{workflow.name}}', '{{workflow.run_id}}', '{{app.url}}'] }
+];
+
+export default function ActionConfigPanel({ action, onUpdate, onClose }: ActionConfigPanelProps) {
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [testMode, setTestMode] = useState(false);
+  const { data: emailTemplates = [] } = useEmailTemplates({ isActive: true });
+  const { user } = useAuth();
+
+  const insertVariable = (variable: string, field: 'title' | 'message' | 'webhookUrl' | 'fieldValue') => {
+    const currentValue = action.config[field] as string || '';
+    onUpdate({
+      config: {
+        ...action.config,
+        [field]: currentValue + ' ' + variable
+      }
+    });
+  };
+
+  const renderConfigFields = () => {
+    switch (action.type) {
+      case 'send_email':
+        return (
+          <>
+            <div>
+              <Label className="text-sm font-medium">Email Template</Label>
+              <Select
+                value={action.config.templateId as string || ''}
+                onValueChange={(value) => onUpdate({
+                  config: { ...action.config, templateId: value }
+                })}
+              >
+                <SelectTrigger className="h-9 text-sm">
+                  <SelectValue placeholder="Select template..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {emailTemplates.length === 0 ? (
+                    <div className="p-2 text-sm text-muted-foreground">
+                      No templates available
+                    </div>
+                  ) : (
+                    emailTemplates.map((template) => (
+                      <SelectItem key={template.id} value={template.id} className="text-sm">
+                        <div>
+                          <div className="font-medium">{template.name}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {template.subject}
+                          </div>
+                        </div>
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label className="text-sm font-medium">Who Receives This Email?</Label>
+              <Select
+                value={action.config.recipientType as string || 'trigger_user'}
+                onValueChange={(value) => onUpdate({
+                  config: { ...action.config, recipientType: value }
+                })}
+              >
+                <SelectTrigger className="h-9 text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="trigger_user" className="text-sm">
+                    <div>
+                      <div className="font-medium">Person Who Triggered Workflow</div>
+                      <div className="text-xs text-muted-foreground">E.g., recruit being processed</div>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="specific_email" className="text-sm">
+                    <div>
+                      <div className="font-medium">Specific Email Address</div>
+                      <div className="text-xs text-muted-foreground">Enter exact email below</div>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="current_user" className="text-sm">
+                    <div>
+                      <div className="font-medium">Current User ({user?.email})</div>
+                      <div className="text-xs text-muted-foreground">You will receive this email</div>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="manager" className="text-sm">
+                    <div>
+                      <div className="font-medium">Manager/Upline</div>
+                      <div className="text-xs text-muted-foreground">Send to manager in hierarchy</div>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="all_trainers" className="text-sm">
+                    <div>
+                      <div className="font-medium">All Trainers</div>
+                      <div className="text-xs text-muted-foreground">Everyone with trainer role</div>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="all_agents" className="text-sm">
+                    <div>
+                      <div className="font-medium">All Active Agents</div>
+                      <div className="text-xs text-muted-foreground">Everyone with agent role</div>
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+
+              {/* Show recipient summary */}
+              <div className="mt-2 p-2 rounded-md bg-muted/30 border border-border/50">
+                <p className="text-xs font-medium text-muted-foreground">📧 Email will be sent to:</p>
+                <p className="text-xs font-semibold mt-1">
+                  {action.config.recipientType === 'trigger_user' && 'The person who triggered this workflow'}
+                  {action.config.recipientType === 'specific_email' && (action.config.recipientEmail || 'Enter email below')}
+                  {action.config.recipientType === 'current_user' && `You (${user?.email})`}
+                  {action.config.recipientType === 'manager' && 'The manager/upline of the trigger user'}
+                  {action.config.recipientType === 'all_trainers' && 'All users with Trainer role'}
+                  {action.config.recipientType === 'all_agents' && 'All users with Agent role'}
+                </p>
+              </div>
+            </div>
+
+            {action.config.recipientType === 'specific_email' && (
+              <div>
+                <Label className="text-sm font-medium">Email Address</Label>
+                <Input
+                  value={action.config.recipientEmail as string || ''}
+                  onChange={(e) => onUpdate({
+                    config: { ...action.config, recipientEmail: e.target.value }
+                  })}
+                  placeholder="email@example.com"
+                  className="h-9 text-sm"
+                  type="email"
+                  required
+                />
+                {action.config.recipientEmail && !action.config.recipientEmail.includes('@') && (
+                  <p className="text-xs text-destructive mt-1">Please enter a valid email address</p>
+                )}
+              </div>
+            )}
+          </>
+        );
+
+      case 'create_notification':
+        return (
+          <>
+            <div>
+              <Label className="text-sm font-medium">Who Gets This Notification?</Label>
+              <Select
+                value={action.config.recipientType as string || 'trigger_user'}
+                onValueChange={(value) => onUpdate({
+                  config: { ...action.config, recipientType: value }
+                })}
+              >
+                <SelectTrigger className="h-9 text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="trigger_user" className="text-sm">
+                    <div>
+                      <div className="font-medium">Person Who Triggered Workflow</div>
+                      <div className="text-xs text-muted-foreground">E.g., recruit being processed</div>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="current_user" className="text-sm">
+                    <div>
+                      <div className="font-medium">Current User ({user?.email})</div>
+                      <div className="text-xs text-muted-foreground">You will see this notification</div>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="manager" className="text-sm">
+                    <div>
+                      <div className="font-medium">Manager/Upline</div>
+                      <div className="text-xs text-muted-foreground">Notify the manager in hierarchy</div>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="all_trainers" className="text-sm">
+                    <div>
+                      <div className="font-medium">All Trainers</div>
+                      <div className="text-xs text-muted-foreground">Everyone with trainer role</div>
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+
+              {/* Show recipient summary */}
+              <div className="mt-2 p-2 rounded-md bg-muted/30 border border-border/50">
+                <p className="text-xs font-medium text-muted-foreground">🔔 Notification will appear for:</p>
+                <p className="text-xs font-semibold mt-1">
+                  {action.config.recipientType === 'trigger_user' && 'The person who triggered this workflow'}
+                  {action.config.recipientType === 'current_user' && `You (${user?.email})`}
+                  {action.config.recipientType === 'manager' && 'The manager/upline of the trigger user'}
+                  {action.config.recipientType === 'all_trainers' && 'All users with Trainer role'}
+                </p>
+              </div>
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <Label className="text-sm font-medium">Notification Title</Label>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-5 w-5"
+                        onClick={() => insertVariable('{{recruit.name}}', 'title')}
+                      >
+                        <Variable className="h-3 w-3" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Insert variable</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+              <Input
+                value={action.config.title as string || ''}
+                onChange={(e) => onUpdate({
+                  config: { ...action.config, title: e.target.value }
+                })}
+                placeholder="e.g., Task Completed"
+                className="h-9 text-sm"
+              />
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <Label className="text-sm font-medium">Message</Label>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-5 w-5"
+                        onClick={() => insertVariable('{{recruit.name}}', 'message')}
+                      >
+                        <Variable className="h-3 w-3" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Insert variable</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+              <Textarea
+                value={action.config.message as string || ''}
+                onChange={(e) => onUpdate({
+                  config: { ...action.config, message: e.target.value }
+                })}
+                placeholder="Notification message..."
+                className="min-h-[80px] text-sm resize-none"
+              />
+            </div>
+
+            <div>
+              <Label className="text-sm font-medium">Type</Label>
+              <Select
+                value={action.config.notificationType as string || 'info'}
+                onValueChange={(value) => onUpdate({
+                  config: { ...action.config, notificationType: value }
+                })}
+              >
+                <SelectTrigger className="h-9 text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="info" className="text-sm">ℹ️ Info</SelectItem>
+                  <SelectItem value="success" className="text-sm">✅ Success</SelectItem>
+                  <SelectItem value="warning" className="text-sm">⚠️ Warning</SelectItem>
+                  <SelectItem value="error" className="text-sm">❌ Error</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </>
+        );
+
+      case 'wait':
+        return (
+          <>
+            <div>
+              <Label className="text-sm font-medium">Wait Duration</Label>
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <Input
+                    type="number"
+                    value={Math.floor((action.config.waitMinutes as number || 0) / 1440)}
+                    onChange={(e) => {
+                      const days = parseInt(e.target.value) || 0;
+                      const hours = Math.floor(((action.config.waitMinutes as number || 0) % 1440) / 60);
+                      const mins = (action.config.waitMinutes as number || 0) % 60;
+                      onUpdate({
+                        config: { ...action.config, waitMinutes: days * 1440 + hours * 60 + mins }
+                      });
+                    }}
+                    className="h-9 text-sm"
+                    min={0}
+                  />
+                  <span className="text-xs text-muted-foreground">days</span>
+                </div>
+                <div>
+                  <Input
+                    type="number"
+                    value={Math.floor(((action.config.waitMinutes as number || 0) % 1440) / 60)}
+                    onChange={(e) => {
+                      const days = Math.floor((action.config.waitMinutes as number || 0) / 1440);
+                      const hours = parseInt(e.target.value) || 0;
+                      const mins = (action.config.waitMinutes as number || 0) % 60;
+                      onUpdate({
+                        config: { ...action.config, waitMinutes: days * 1440 + hours * 60 + mins }
+                      });
+                    }}
+                    className="h-9 text-sm"
+                    min={0}
+                    max={23}
+                  />
+                  <span className="text-xs text-muted-foreground">hours</span>
+                </div>
+                <div>
+                  <Input
+                    type="number"
+                    value={(action.config.waitMinutes as number || 0) % 60}
+                    onChange={(e) => {
+                      const days = Math.floor((action.config.waitMinutes as number || 0) / 1440);
+                      const hours = Math.floor(((action.config.waitMinutes as number || 0) % 1440) / 60);
+                      const mins = parseInt(e.target.value) || 0;
+                      onUpdate({
+                        config: { ...action.config, waitMinutes: days * 1440 + hours * 60 + mins }
+                      });
+                    }}
+                    className="h-9 text-sm"
+                    min={0}
+                    max={59}
+                  />
+                  <span className="text-xs text-muted-foreground">mins</span>
+                </div>
+              </div>
+
+              <div className="mt-2 p-2 rounded-md bg-muted/30 border border-border/50">
+                <p className="text-xs text-muted-foreground">
+                  Total wait: {action.config.waitMinutes || 0} minutes
+                  {(action.config.waitMinutes as number || 0) > 60 && (
+                    <span> ({Math.floor((action.config.waitMinutes as number) / 60)}h {(action.config.waitMinutes as number) % 60}m)</span>
+                  )}
+                </p>
+              </div>
+            </div>
+          </>
+        );
+
+      case 'webhook':
+        return (
+          <>
+            <div>
+              <Label className="text-sm font-medium">Webhook URL</Label>
+              <Input
+                value={action.config.webhookUrl as string || ''}
+                onChange={(e) => onUpdate({
+                  config: { ...action.config, webhookUrl: e.target.value }
+                })}
+                placeholder="https://api.example.com/webhook"
+                className="h-9 text-sm font-mono"
+              />
+            </div>
+
+            <div>
+              <Label className="text-sm font-medium">HTTP Method</Label>
+              <Select
+                value={action.config.webhookMethod as string || 'POST'}
+                onValueChange={(value) => onUpdate({
+                  config: { ...action.config, webhookMethod: value }
+                })}
+              >
+                <SelectTrigger className="h-9 text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="GET" className="text-sm">GET</SelectItem>
+                  <SelectItem value="POST" className="text-sm">POST</SelectItem>
+                  <SelectItem value="PUT" className="text-sm">PUT</SelectItem>
+                  <SelectItem value="PATCH" className="text-sm">PATCH</SelectItem>
+                  <SelectItem value="DELETE" className="text-sm">DELETE</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label className="text-sm font-medium">Headers (JSON)</Label>
+              <Textarea
+                value={typeof action.config.webhookHeaders === 'string'
+                  ? action.config.webhookHeaders
+                  : JSON.stringify(action.config.webhookHeaders || {})}
+                onChange={(e) => onUpdate({
+                  config: { ...action.config, webhookHeaders: e.target.value }
+                })}
+                placeholder='{"Authorization": "Bearer token"}'
+                className="h-20 text-sm font-mono resize-none"
+              />
+            </div>
+
+            <div>
+              <Label className="text-sm font-medium">Body (JSON)</Label>
+              <Textarea
+                value={typeof action.config.webhookBody === 'string'
+                  ? action.config.webhookBody
+                  : JSON.stringify(action.config.webhookBody || {})}
+                onChange={(e) => onUpdate({
+                  config: { ...action.config, webhookBody: e.target.value }
+                })}
+                placeholder='{"key": "value"}'
+                className="h-20 text-sm font-mono resize-none"
+              />
+            </div>
+          </>
+        );
+
+      case 'update_field':
+        return (
+          <>
+            <div>
+              <Label className="text-sm font-medium">Entity Type</Label>
+              <Select
+                value={action.config.entityType as string || 'recruit'}
+                onValueChange={(value) => onUpdate({
+                  config: { ...action.config, entityType: value }
+                })}
+              >
+                <SelectTrigger className="h-9 text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="recruit" className="text-sm">Recruit</SelectItem>
+                  <SelectItem value="policy" className="text-sm">Policy</SelectItem>
+                  <SelectItem value="commission" className="text-sm">Commission</SelectItem>
+                  <SelectItem value="user" className="text-sm">User</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label className="text-sm font-medium">Field Name</Label>
+              <Input
+                value={action.config.fieldName as string || ''}
+                onChange={(e) => onUpdate({
+                  config: { ...action.config, fieldName: e.target.value }
+                })}
+                placeholder="e.g., status, assigned_to, etc."
+                className="h-9 text-sm"
+              />
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <Label className="text-sm font-medium">Field Value</Label>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-5 w-5"
+                        onClick={() => insertVariable('{{recruit.name}}', 'fieldValue')}
+                      >
+                        <Variable className="h-3 w-3" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Insert variable</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+              <Input
+                value={action.config.fieldValue as string || ''}
+                onChange={(e) => onUpdate({
+                  config: { ...action.config, fieldValue: e.target.value }
+                })}
+                placeholder="New value for the field"
+                className="h-9 text-sm"
+              />
+            </div>
+          </>
+        );
+
+      case 'assign_user':
+        return (
+          <>
+            <div>
+              <Label className="text-sm font-medium">Assign To</Label>
+              <Select
+                value={action.config.userId as string || ''}
+                onValueChange={(value) => onUpdate({
+                  config: { ...action.config, userId: value }
+                })}
+              >
+                <SelectTrigger className="h-9 text-sm">
+                  <SelectValue placeholder="Select user..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={user?.id || ''} className="text-sm">
+                    {user?.name || user?.email || 'Current User'}
+                  </SelectItem>
+                  <SelectItem value="manager" className="text-sm">Manager</SelectItem>
+                  <SelectItem value="trainer" className="text-sm">Trainer</SelectItem>
+                  <SelectItem value="next_available" className="text-sm">Next Available</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label className="text-sm font-medium">Entity Type</Label>
+              <Select
+                value={action.config.assignEntityType as string || 'recruit'}
+                onValueChange={(value) => onUpdate({
+                  config: { ...action.config, assignEntityType: value }
+                })}
+              >
+                <SelectTrigger className="h-9 text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="recruit" className="text-sm">Recruit</SelectItem>
+                  <SelectItem value="task" className="text-sm">Task</SelectItem>
+                  <SelectItem value="lead" className="text-sm">Lead</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label className="text-sm font-medium">Assignment Note</Label>
+              <Textarea
+                value={action.config.assignmentNote as string || ''}
+                onChange={(e) => onUpdate({
+                  config: { ...action.config, assignmentNote: e.target.value }
+                })}
+                placeholder="Optional note about this assignment..."
+                className="h-20 text-sm resize-none"
+              />
+            </div>
+          </>
+        );
+
+      case 'create_task':
+        return (
+          <>
+            <div>
+              <Label className="text-sm font-medium">Task Title</Label>
+              <Input
+                value={action.config.taskTitle as string || ''}
+                onChange={(e) => onUpdate({
+                  config: { ...action.config, taskTitle: e.target.value }
+                })}
+                placeholder="e.g., Follow up with recruit"
+                className="h-9 text-sm"
+              />
+            </div>
+
+            <div>
+              <Label className="text-sm font-medium">Description</Label>
+              <Textarea
+                value={action.config.taskDescription as string || ''}
+                onChange={(e) => onUpdate({
+                  config: { ...action.config, taskDescription: e.target.value }
+                })}
+                placeholder="Task details and instructions..."
+                className="h-20 text-sm resize-none"
+              />
+            </div>
+
+            <div>
+              <Label className="text-sm font-medium">Priority</Label>
+              <Select
+                value={action.config.taskPriority as string || 'medium'}
+                onValueChange={(value) => onUpdate({
+                  config: { ...action.config, taskPriority: value }
+                })}
+              >
+                <SelectTrigger className="h-9 text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="low" className="text-sm">🔵 Low Priority</SelectItem>
+                  <SelectItem value="medium" className="text-sm">🟡 Medium Priority</SelectItem>
+                  <SelectItem value="high" className="text-sm">🔴 High Priority</SelectItem>
+                  <SelectItem value="urgent" className="text-sm">🚨 Urgent</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label className="text-sm font-medium">Due In</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="number"
+                  value={action.config.taskDueDays as number || 1}
+                  onChange={(e) => onUpdate({
+                    config: { ...action.config, taskDueDays: parseInt(e.target.value) || 1 }
+                  })}
+                  className="h-9 text-sm w-20"
+                  min={0}
+                />
+                <span className="text-sm text-muted-foreground">days from now</span>
+              </div>
+            </div>
+          </>
+        );
+
+      case 'branch':
+        return (
+          <>
+            <div>
+              <Label className="text-sm font-medium">Condition Type</Label>
+              <Select
+                value={action.config.conditionType as string || 'field_equals'}
+                onValueChange={(value) => onUpdate({
+                  config: { ...action.config, conditionType: value }
+                })}
+              >
+                <SelectTrigger className="h-9 text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="field_equals" className="text-sm">Field Equals</SelectItem>
+                  <SelectItem value="field_contains" className="text-sm">Field Contains</SelectItem>
+                  <SelectItem value="field_greater" className="text-sm">Field Greater Than</SelectItem>
+                  <SelectItem value="field_less" className="text-sm">Field Less Than</SelectItem>
+                  <SelectItem value="field_empty" className="text-sm">Field Is Empty</SelectItem>
+                  <SelectItem value="field_not_empty" className="text-sm">Field Is Not Empty</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label className="text-sm font-medium">Field to Check</Label>
+              <Input
+                value={action.config.conditionField as string || ''}
+                onChange={(e) => onUpdate({
+                  config: { ...action.config, conditionField: e.target.value }
+                })}
+                placeholder="e.g., recruit.status"
+                className="h-9 text-sm"
+              />
+            </div>
+
+            {!['field_empty', 'field_not_empty'].includes(action.config.conditionType as string || '') && (
+              <div>
+                <Label className="text-sm font-medium">Expected Value</Label>
+                <Input
+                  value={action.config.conditionValue as string || ''}
+                  onChange={(e) => onUpdate({
+                    config: { ...action.config, conditionValue: e.target.value }
+                  })}
+                  placeholder="Value to compare against"
+                  className="h-9 text-sm"
+                />
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Branch Actions</Label>
+              <div className="p-2 rounded-md bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800">
+                <p className="text-xs font-medium text-green-700 dark:text-green-300 mb-1">If True</p>
+                <p className="text-xs text-muted-foreground">Continue to next action</p>
+              </div>
+              <div className="p-2 rounded-md bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800">
+                <p className="text-xs font-medium text-red-700 dark:text-red-300 mb-1">If False</p>
+                <Select
+                  value={action.config.elseBranch as string || 'skip'}
+                  onValueChange={(value) => onUpdate({
+                    config: { ...action.config, elseBranch: value }
+                  })}
+                >
+                  <SelectTrigger className="h-8 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="skip" className="text-xs">Skip remaining actions</SelectItem>
+                    <SelectItem value="continue" className="text-xs">Continue anyway</SelectItem>
+                    <SelectItem value="jump" className="text-xs">Jump to specific action</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </>
+        );
+
+      case 'ai_decision':
+        return (
+          <>
+            <div>
+              <Label className="text-sm font-medium">AI Prompt</Label>
+              <Textarea
+                value={action.config.aiPrompt as string || ''}
+                onChange={(e) => onUpdate({
+                  config: { ...action.config, aiPrompt: e.target.value }
+                })}
+                placeholder="Describe what decision the AI should make..."
+                className="h-24 text-sm resize-none"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                The AI will analyze the context and make a decision based on this prompt
+              </p>
+            </div>
+
+            <div>
+              <Label className="text-sm font-medium">Context to Provide</Label>
+              <div className="space-y-2">
+                {['recruit_data', 'workflow_history', 'user_data', 'recent_activities'].map((context) => (
+                  <label key={context} className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={(action.config.aiContext as string[] || []).includes(context)}
+                      onChange={(e) => {
+                        const contexts = action.config.aiContext as string[] || [];
+                        if (e.target.checked) {
+                          onUpdate({
+                            config: { ...action.config, aiContext: [...contexts, context] }
+                          });
+                        } else {
+                          onUpdate({
+                            config: { ...action.config, aiContext: contexts.filter(c => c !== context) }
+                          });
+                        }
+                      }}
+                      className="rounded border-border"
+                    />
+                    <span className="text-sm">{context.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <Label className="text-sm font-medium">Decision Options</Label>
+              <Textarea
+                value={action.config.aiOptions as string || ''}
+                onChange={(e) => onUpdate({
+                  config: { ...action.config, aiOptions: e.target.value }
+                })}
+                placeholder="Option 1: Do this&#10;Option 2: Do that&#10;Option 3: Skip"
+                className="h-20 text-sm resize-none"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                List the possible decisions, one per line
+              </p>
+            </div>
+          </>
+        );
+
+      default:
+        return (
+          <div className="p-3 rounded-md bg-muted/30 border border-border/50">
+            <p className="text-sm text-muted-foreground">
+              Configuration for {action.type} is not yet implemented.
+            </p>
+          </div>
+        );
+    }
+  };
+
+  return (
+    <div className="w-80 border-l bg-card p-4 overflow-y-auto">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-sm font-medium">Configure Action</h3>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="h-5 w-5"
+          onClick={onClose}
+        >
+          <X className="h-3 w-3" />
+        </Button>
+      </div>
+
+      {/* Action Type Badge */}
+      <Badge variant="outline" className="text-xs px-2 py-0.5 mb-3">
+        {action.type.replace('_', ' ').toUpperCase()}
+      </Badge>
+
+      {/* Configuration Fields */}
+      <div className="space-y-3">
+        {renderConfigFields()}
+
+        {/* Delay Before Action */}
+        <div className="pt-3 border-t">
+          <div className="flex items-center justify-between mb-2">
+            <Label className="text-sm font-medium">Delay Before Action</Label>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent side="left" className="max-w-xs">
+                  <p className="text-xs">
+                    Add a delay before this action executes. Useful for spacing out emails or waiting for external processes.
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+          <div className="flex items-center gap-2">
+            <Input
+              type="number"
+              value={action.delayMinutes || 0}
+              onChange={(e) => onUpdate({ delayMinutes: parseInt(e.target.value) || 0 })}
+              className="h-9 text-sm w-20"
+              min={0}
+            />
+            <span className="text-sm text-muted-foreground">minutes</span>
+          </div>
+        </div>
+
+        {/* Advanced Settings */}
+        <div className="pt-3 border-t">
+          <button
+            type="button"
+            onClick={() => setShowAdvanced(!showAdvanced)}
+            className="flex items-center justify-between w-full text-left"
+          >
+            <span className="text-sm font-medium">Advanced Settings</span>
+            {showAdvanced ? (
+              <ChevronUp className="h-3 w-3 text-muted-foreground" />
+            ) : (
+              <ChevronDown className="h-3 w-3 text-muted-foreground" />
+            )}
+          </button>
+
+          {showAdvanced && (
+            <div className="mt-3 space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-medium">Retry on Failure</Label>
+                <Switch
+                  checked={action.retryOnFailure ?? true}
+                  onCheckedChange={(checked) => onUpdate({ retryOnFailure: checked })}
+                />
+              </div>
+
+              {action.retryOnFailure && (
+                <div>
+                  <Label className="text-sm font-medium">Max Retries</Label>
+                  <Input
+                    type="number"
+                    value={action.maxRetries || 3}
+                    onChange={(e) => onUpdate({ maxRetries: parseInt(e.target.value) || 3 })}
+                    className="h-9 text-sm"
+                    min={1}
+                    max={10}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Test Action */}
+        <div className="pt-3 border-t">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="w-full h-9 text-sm"
+            onClick={async () => {
+              setTestMode(true);
+
+              // Create a test context based on action type
+              let testContext: Record<string, unknown> = {
+                recipientId: user?.id,
+                recipientEmail: user?.email,
+                recipientName: user?.name || user?.email,
+                isTest: true
+              };
+
+              // Add specific context for different action types
+              if (action.type === 'send_email' || action.type === 'create_notification') {
+                // Include recipient config
+                testContext = {
+                  ...testContext,
+                  recipientType: action.config.recipientType,
+                  recipientSpecificEmail: action.config.recipientEmail
+                };
+              }
+
+              try {
+                // Execute test action (with inline implementation)
+                const executeAction = async (action: any, context: any) => {
+                    // Fallback test implementation
+                    console.log('Testing action:', action, 'with context:', context);
+
+                    if (action.type === 'send_email') {
+                      const { toast } = await import('sonner');
+                      const recipient =
+                        action.config.recipientType === 'specific_email'
+                          ? action.config.recipientEmail
+                          : action.config.recipientType === 'current_user'
+                          ? user?.email
+                          : 'configured recipients';
+
+                      toast.success(`Test Email Action`, {
+                        description: `Would send email to: ${recipient}`
+                      });
+                      return { success: true, wouldSendTo: recipient };
+                    }
+
+                    if (action.type === 'create_notification') {
+                      const { toast } = await import('sonner');
+                      toast.success(`Test Notification Action`, {
+                        description: `Would show: "${action.config.title}"`
+                      });
+                      return { success: true, title: action.config.title };
+                    }
+
+                    if (action.type === 'wait') {
+                      const { toast } = await import('sonner');
+                      toast.info(`Test Wait Action`, {
+                        description: `Would wait ${action.config.waitMinutes || 0} minutes`
+                      });
+                      return { success: true, waitMinutes: action.config.waitMinutes };
+                    }
+
+                    return { success: true, message: 'Action tested successfully' };
+                  };
+
+                const result = await executeAction(action, testContext);
+                console.log('Test result:', result);
+
+              } catch (error) {
+                console.error('Test failed:', error);
+                const { toast } = await import('sonner');
+                toast.error('Test failed', {
+                  description: error instanceof Error ? error.message : 'Unknown error'
+                });
+              } finally {
+                setTestMode(false);
+              }
+            }}
+          >
+            <TestTube className="h-3 w-3 mr-1" />
+            {testMode ? 'Testing...' : 'Test This Action'}
+          </Button>
+        </div>
+      </div>
+
+      {/* Variable Helper */}
+      <div className="mt-4 p-2 rounded-md bg-muted/30 border border-border/50">
+        <p className="text-xs font-medium text-muted-foreground mb-1">Available Variables</p>
+        <div className="space-y-1">
+          {VARIABLE_LIST.slice(0, 2).map((category) => (
+            <div key={category.category}>
+              <p className="text-xs text-muted-foreground">{category.category}:</p>
+              <div className="flex flex-wrap gap-1">
+                {category.variables.slice(0, 2).map((variable) => (
+                  <Badge
+                    key={variable}
+                    variant="secondary"
+                    className="text-xs px-1 py-0 font-mono cursor-copy"
+                    onClick={() => {
+                      navigator.clipboard.writeText(variable);
+                    }}
+                  >
+                    {variable}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}

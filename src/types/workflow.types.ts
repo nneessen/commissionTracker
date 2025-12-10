@@ -25,6 +25,7 @@ export interface WorkflowAction {
     variables?: Record<string, unknown>;
 
     // Update field action
+    entityType?: string;
     fieldName?: string;
     fieldValue?: unknown;
 
@@ -32,6 +33,7 @@ export interface WorkflowAction {
     webhookUrl?: string;
     webhookMethod?: string;
     webhookHeaders?: Record<string, string> | string;
+    webhookBody?: Record<string, unknown> | string;
 
     // Wait action
     waitMinutes?: number;
@@ -39,6 +41,10 @@ export interface WorkflowAction {
     // Branch action
     branchConditions?: WorkflowCondition[];
     conditions?: WorkflowCondition[];
+    conditionType?: string;
+    conditionField?: string;
+    conditionValue?: string;
+    elseBranch?: string;
 
     // Notification config
     title?: string;
@@ -47,13 +53,22 @@ export interface WorkflowAction {
 
     // Assign user action
     userId?: string;
+    assignEntityType?: string;
+    assignmentNote?: string;
 
     // Create task action
+    taskTitle?: string;
+    taskDescription?: string;
+    taskPriority?: string;
+    taskDueDays?: number;
     description?: string;
     dueDate?: string;
 
     // AI decision action
     prompt?: string;
+    aiPrompt?: string;
+    aiContext?: string[];
+    aiOptions?: string;
   };
   conditions?: WorkflowCondition[];
   delayMinutes?: number;
@@ -175,15 +190,17 @@ export interface WorkflowFormData {
   description?: string;
   category: WorkflowCategory;
   triggerType: TriggerType;
-  trigger?: WorkflowTrigger;
+  trigger: WorkflowTrigger;
   conditions?: WorkflowCondition[];
   actions: WorkflowAction[];
-  settings?: {
+  settings: {
     maxRunsPerDay?: number;
     maxRunsPerRecipient?: number;
     cooldownMinutes?: number;
+    continueOnError?: boolean;
     priority?: number;
   };
+  status?: WorkflowStatus;
 }
 
 export interface WorkflowStats {

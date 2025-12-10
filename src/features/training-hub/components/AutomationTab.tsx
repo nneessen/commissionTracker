@@ -259,10 +259,10 @@ export default function AutomationTab() {
                 <div key={run.id} className="flex items-center justify-between p-2 border rounded-md">
                   <div className="flex-1">
                     <div className="text-xs font-medium">
-                      {run.workflow?.name || 'Unknown Workflow'}
+                      {run.workflow?.name || 'Unknown Workflow (deleted)'}
                     </div>
                     <div className="text-[10px] text-muted-foreground">
-                      {new Date(run.startedAt).toLocaleString()}
+                      {run.startedAt ? new Date(run.startedAt).toLocaleString() : 'Not started'}
                     </div>
                   </div>
                   <Badge

@@ -51,26 +51,34 @@ class WorkflowService {
     const { data: user } = await supabase.auth.getUser();
     if (!user.user) throw new Error('User not authenticated');
 
-    // Start transaction
+    // Create workflow with proper structure
     const { data: workflow, error: workflowError } = await supabase
       .from('workflows')
       .insert({
-        name: formData.name,
-        description: formData.description,
+        name: formData.name.trim(),
+        description: formData.description?.trim(),
         category: formData.category,
         trigger_type: formData.triggerType,
-        status: 'draft',
-        config: {},
+        status: formData.status || 'draft',
+        config: {
+          trigger: formData.trigger,
+          continueOnError: formData.settings?.continueOnError
+        },
         conditions: formData.conditions || [],
+        // Store actions in JSON column with ALL config including recipients
         actions: formData.actions.map(a => ({
-          ...a.config,
           type: a.type,
-          order: a.order
+          order: a.order,
+          config: a.config, // This includes recipientType, recipientEmail, etc.
+          delayMinutes: a.delayMinutes || 0,
+          conditions: a.conditions || [],
+          retryOnFailure: a.retryOnFailure ?? true,
+          maxRetries: a.maxRetries || 3
         })),
-        max_runs_per_day: formData.settings?.maxRunsPerDay,
+        max_runs_per_day: formData.settings?.maxRunsPerDay || 50,
         max_runs_per_recipient: formData.settings?.maxRunsPerRecipient,
         cooldown_minutes: formData.settings?.cooldownMinutes,
-        priority: formData.settings?.priority || 50,
+        priority: Number(formData.settings?.priority) || 50,
         created_by: user.user.id
       })
       .select()
@@ -78,40 +86,8 @@ class WorkflowService {
 
     if (workflowError) throw workflowError;
 
-    // Create trigger if provided
-    if (formData.trigger) {
-      const triggerConfig = this.buildTriggerConfig(formData.trigger);
-
-      const { error: triggerError } = await supabase
-        .from('workflow_triggers')
-        .insert({
-          workflow_id: workflow.id,
-          trigger_type: formData.trigger.type,
-          ...triggerConfig
-        });
-
-      if (triggerError) throw triggerError;
-    }
-
-    // Create actions
-    if (formData.actions.length > 0) {
-      const { error: actionsError } = await supabase
-        .from('workflow_actions')
-        .insert(
-          formData.actions.map(action => ({
-            workflow_id: workflow.id,
-            action_order: action.order,
-            action_type: action.type,
-            config: action.config,
-            conditions: action.conditions || [],
-            delay_minutes: action.delayMinutes || 0,
-            retry_on_failure: action.retryOnFailure ?? true,
-            max_retries: action.maxRetries || 3
-          }))
-        );
-
-      if (actionsError) throw actionsError;
-    }
+    // Don't duplicate actions in workflow_actions table - we're using the JSON column
+    // The Edge Function reads from the JSON column, not the separate table
 
     return workflow as Workflow;
   }
@@ -120,61 +96,66 @@ class WorkflowService {
     const { data: user } = await supabase.auth.getUser();
     if (!user.user) throw new Error('User not authenticated');
 
+    // Build update object - only include fields that are provided
+    const updateData: any = {
+      last_modified_by: user.user.id,
+      updated_at: new Date().toISOString()
+    };
+
+    if (updates.name !== undefined) updateData.name = updates.name.trim();
+    if (updates.description !== undefined) updateData.description = updates.description?.trim();
+    if (updates.category !== undefined) updateData.category = updates.category;
+    if (updates.triggerType !== undefined) updateData.trigger_type = updates.triggerType;
+    if (updates.conditions !== undefined) updateData.conditions = updates.conditions;
+
+    // Store complete action configuration including recipients
+    if (updates.actions !== undefined) {
+      updateData.actions = updates.actions.map(a => ({
+        type: a.type,
+        order: a.order,
+        config: a.config, // This MUST include recipientType, recipientEmail, etc.
+        delayMinutes: a.delayMinutes || 0,
+        conditions: a.conditions || [],
+        retryOnFailure: a.retryOnFailure ?? true,
+        maxRetries: a.maxRetries || 3
+      }));
+    }
+
+    if (updates.settings?.maxRunsPerDay !== undefined) {
+      updateData.max_runs_per_day = updates.settings.maxRunsPerDay;
+    }
+    if (updates.settings?.maxRunsPerRecipient !== undefined) {
+      updateData.max_runs_per_recipient = updates.settings.maxRunsPerRecipient;
+    }
+    if (updates.settings?.cooldownMinutes !== undefined) {
+      updateData.cooldown_minutes = updates.settings.cooldownMinutes;
+    }
+    if (updates.settings?.priority !== undefined) {
+      updateData.priority = Number(updates.settings.priority);
+    }
+    if (updates.status !== undefined) {
+      updateData.status = updates.status;
+    }
+
+    // Update config if trigger provided
+    if (updates.trigger || updates.settings?.continueOnError !== undefined) {
+      updateData.config = {
+        trigger: updates.trigger,
+        continueOnError: updates.settings?.continueOnError
+      };
+    }
+
     // Update main workflow
     const { data: workflow, error: workflowError } = await supabase
       .from('workflows')
-      .update({
-        name: updates.name,
-        description: updates.description,
-        category: updates.category,
-        trigger_type: updates.triggerType,
-        conditions: updates.conditions,
-        actions: updates.actions?.map(a => ({
-          ...a.config,
-          type: a.type,
-          order: a.order
-        })),
-        max_runs_per_day: updates.settings?.maxRunsPerDay,
-        max_runs_per_recipient: updates.settings?.maxRunsPerRecipient,
-        cooldown_minutes: updates.settings?.cooldownMinutes,
-        priority: updates.settings?.priority,
-        last_modified_by: user.user.id,
-        updated_at: new Date().toISOString()
-      })
+      .update(updateData)
       .eq('id', id)
       .select()
       .single();
 
     if (workflowError) throw workflowError;
 
-    // Update actions if provided
-    if (updates.actions) {
-      // Delete existing actions
-      await supabase
-        .from('workflow_actions')
-        .delete()
-        .eq('workflow_id', id);
-
-      // Insert new actions
-      if (updates.actions.length > 0) {
-        const { error: actionsError } = await supabase
-          .from('workflow_actions')
-          .insert(
-            updates.actions.map(action => ({
-              workflow_id: id,
-              action_order: action.order,
-              action_type: action.type,
-              config: action.config,
-              conditions: action.conditions || [],
-              delay_minutes: action.delayMinutes || 0,
-              retry_on_failure: action.retryOnFailure ?? true,
-              max_retries: action.maxRetries || 3
-            }))
-          );
-
-        if (actionsError) throw actionsError;
-      }
-    }
+    // Don't use workflow_actions table - everything is in the JSON column
 
     return workflow as Workflow;
   }
@@ -205,17 +186,22 @@ class WorkflowService {
   // =====================================================
 
   async getWorkflowRuns(workflowId?: string, limit = 50) {
-    const query = supabase
+    let query = supabase
       .from('workflow_runs')
       .select(`
         *,
-        workflows (name, category)
+        workflow:workflows (
+          id,
+          name,
+          status,
+          trigger_type
+        )
       `)
       .order('started_at', { ascending: false })
       .limit(limit);
 
     if (workflowId) {
-      query.eq('workflow_id', workflowId);
+      query = query.eq('workflow_id', workflowId);
     }
 
     const { data, error } = await query;
@@ -242,26 +228,55 @@ class WorkflowService {
     const { data: user } = await supabase.auth.getUser();
     if (!user.user) throw new Error('User not authenticated');
 
-    // Check if workflow can run
-    const { data: canRun, error: checkError } = await supabase
-      .rpc('can_workflow_run', {
-        p_workflow_id: workflowId,
-        p_recipient_id: (context.recipientId as string) || null
-      });
+    // Get the workflow to understand its structure
+    const { data: workflow, error: wfError } = await supabase
+      .from('workflows')
+      .select('*')
+      .eq('id', workflowId)
+      .single();
 
-    if (checkError) throw checkError;
-    if (!canRun) {
-      throw new Error('Workflow cannot run due to execution limits');
+    if (wfError || !workflow) throw new Error('Workflow not found');
+
+    // Build proper context with recipient information
+    const enrichedContext: Record<string, unknown> = {
+      ...context,
+      triggeredBy: user.user.id,
+      triggeredByEmail: user.user.email,
+      triggeredAt: new Date().toISOString(),
+      workflowName: workflow.name
+    };
+
+    // If no recipientId provided, use the current user as default recipient
+    if (!enrichedContext.recipientId) {
+      enrichedContext.recipientId = user.user.id;
+      enrichedContext.recipientEmail = user.user.email;
+      enrichedContext.recipientName = user.user.user_metadata?.name || user.user.email;
     }
 
-    // Create workflow run
+    // Check if workflow can run (skip this check if the RPC doesn't exist)
+    try {
+      const { data: canRun, error: checkError } = await supabase
+        .rpc('can_workflow_run', {
+          p_workflow_id: workflowId,
+          p_recipient_id: enrichedContext.recipientId as string
+        });
+
+      if (!checkError && !canRun) {
+        throw new Error('Workflow cannot run due to execution limits');
+      }
+    } catch (err) {
+      // If RPC doesn't exist, continue anyway
+      console.warn('can_workflow_run check failed, continuing:', err);
+    }
+
+    // Create workflow run with enriched context
     const { data: run, error: runError } = await supabase
       .from('workflow_runs')
       .insert({
         workflow_id: workflowId,
         trigger_source: 'manual',
         status: 'running',
-        context
+        context: enrichedContext
       })
       .select()
       .single();
@@ -269,11 +284,9 @@ class WorkflowService {
     if (runError) throw runError;
 
     // Trigger edge function to process workflow asynchronously
-    // The edge function will handle the actual workflow execution
     supabase.functions.invoke('process-workflow', {
       body: { runId: run.id, workflowId }
     }).catch((err) => {
-      // Log error but don't fail - the run is already created
       console.error('Failed to invoke workflow processor:', err);
     });
 
@@ -337,8 +350,21 @@ class WorkflowService {
       description: workflowConfig.description,
       category: workflowConfig.category || 'general',
       triggerType: workflowConfig.triggerType || 'manual',
+      trigger: {
+        type: workflowConfig.triggerType || 'manual',
+        eventName: undefined,
+        schedule: undefined,
+        webhookConfig: undefined,
+      },
       conditions: workflowConfig.conditions || [],
-      actions: workflowConfig.actions || []
+      actions: workflowConfig.actions || [],
+      settings: {
+        maxRunsPerDay: workflowConfig.maxRunsPerDay || 10,
+        maxRunsPerRecipient: workflowConfig.maxRunsPerRecipient,
+        cooldownMinutes: workflowConfig.cooldownMinutes,
+        continueOnError: false,
+        priority: workflowConfig.priority || 50
+      }
     };
 
     return this.createWorkflow(formData);

@@ -314,6 +314,87 @@ export type Database = {
         }
         Relationships: []
       }
+      email_queue: {
+        Row: {
+          body_html: string
+          body_text: string | null
+          created_at: string | null
+          error_message: string | null
+          id: string
+          recipient_id: string | null
+          sent_at: string | null
+          status: string
+          subject: string
+          template_id: string | null
+          updated_at: string | null
+          variables: Json | null
+        }
+        Insert: {
+          body_html: string
+          body_text?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          recipient_id?: string | null
+          sent_at?: string | null
+          status?: string
+          subject: string
+          template_id?: string | null
+          updated_at?: string | null
+          variables?: Json | null
+        }
+        Update: {
+          body_html?: string
+          body_text?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          recipient_id?: string | null
+          sent_at?: string | null
+          status?: string
+          subject?: string
+          template_id?: string | null
+          updated_at?: string | null
+          variables?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_queue_recipient_id_fkey"
+            columns: ["recipient_id"]
+            isOneToOne: false
+            referencedRelation: "active_user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_queue_recipient_id_fkey"
+            columns: ["recipient_id"]
+            isOneToOne: false
+            referencedRelation: "user_delete_dependencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_queue_recipient_id_fkey"
+            columns: ["recipient_id"]
+            isOneToOne: false
+            referencedRelation: "user_management_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_queue_recipient_id_fkey"
+            columns: ["recipient_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_queue_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "email_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_quota_tracking: {
         Row: {
           date: string
@@ -4359,6 +4440,10 @@ export type Database = {
         }
         Returns: number
       }
+      can_manage_workflows: {
+        Args: { user_id_param: string }
+        Returns: boolean
+      }
       can_workflow_run: {
         Args: { p_recipient_id?: string; p_workflow_id: string }
         Returns: boolean
@@ -4382,6 +4467,10 @@ export type Database = {
       cleanup_old_reports: {
         Args: { max_reports_per_user?: number }
         Returns: number
+      }
+      create_workflow_run: {
+        Args: { context_param?: Json; workflow_id_param: string }
+        Returns: string
       }
       expire_old_invitations: {
         Args: never
@@ -4578,6 +4667,15 @@ export type Database = {
         }
         Returns: Json
       }
+      process_pending_workflow_runs: {
+        Args: never
+        Returns: {
+          message: string
+          run_id: string
+          status: string
+          workflow_id: string
+        }[]
+      }
       process_workflow_trigger: {
         Args: { p_context: Json; p_event_name: string }
         Returns: undefined
@@ -4598,6 +4696,10 @@ export type Database = {
           user_id: string
           would_pass: boolean
         }[]
+      }
+      trigger_workflows_for_event: {
+        Args: { context_data: Json; event_name_param: string }
+        Returns: undefined
       }
       update_override_earned_amount: {
         Args: { p_months_paid: number; p_policy_id: string }

@@ -246,38 +246,137 @@ async function executeSendEmail(
     throw new Error(`Template not found: ${templateId}`)
   }
 
+  // Determine recipients based on action configuration
+  let recipientEmails: string[] = []
+  let recipientIds: string[] = []
+  const recipientType = action.config.recipientType as string || 'trigger_user'
+
+  switch (recipientType) {
+    case 'trigger_user':
+      // Send to the person who triggered the workflow
+      if (context.recipientEmail) {
+        recipientEmails = [context.recipientEmail as string]
+        recipientIds = [context.recipientId as string || '']
+      }
+      break
+
+    case 'specific_email':
+      // Send to a specific email address
+      if (action.config.recipientEmail) {
+        recipientEmails = [action.config.recipientEmail as string]
+        // Try to find user by email
+        const { data: user } = await supabase
+          .from('user_profiles')
+          .select('id')
+          .eq('email', action.config.recipientEmail)
+          .single()
+        if (user) recipientIds = [user.id]
+      }
+      break
+
+    case 'current_user':
+      // Send to the user who created/triggered the workflow
+      if (context.triggeredByEmail) {
+        recipientEmails = [context.triggeredByEmail as string]
+        recipientIds = [context.triggeredBy as string || '']
+      }
+      break
+
+    case 'manager':
+      // Send to manager/upline
+      if (context.recipientId) {
+        const { data: hierarchy } = await supabase
+          .from('user_hierarchy')
+          .select('parent_user_id')
+          .eq('user_id', context.recipientId)
+          .single()
+
+        if (hierarchy?.parent_user_id) {
+          const { data: manager } = await supabase
+            .from('user_profiles')
+            .select('email')
+            .eq('id', hierarchy.parent_user_id)
+            .single()
+
+          if (manager) {
+            recipientEmails = [manager.email]
+            recipientIds = [hierarchy.parent_user_id]
+          }
+        }
+      }
+      break
+
+    case 'all_trainers':
+      // Send to all trainers
+      const { data: trainers } = await supabase
+        .from('user_profiles')
+        .select('id, email')
+        .eq('role', 'trainer')
+
+      if (trainers) {
+        recipientEmails = trainers.map(t => t.email)
+        recipientIds = trainers.map(t => t.id)
+      }
+      break
+
+    case 'all_agents':
+      // Send to all active agents
+      const { data: agents } = await supabase
+        .from('user_profiles')
+        .select('id, email')
+        .eq('role', 'agent')
+        .eq('is_active', true)
+
+      if (agents) {
+        recipientEmails = agents.map(a => a.email)
+        recipientIds = agents.map(a => a.id)
+      }
+      break
+  }
+
+  if (recipientEmails.length === 0) {
+    throw new Error(`No recipients found for type: ${recipientType}`)
+  }
+
   if (isTest) {
     return {
       action: 'send_email',
       template: template.name,
       subject: template.subject,
-      wouldSendTo: context.recipientEmail || 'unknown',
+      recipientType,
+      wouldSendTo: recipientEmails,
       isTest: true,
     }
   }
 
-  // For actual sending, we would call the send-email function
-  // or queue the email for sending
-  const recipientId = context.recipientId as string
-  if (!recipientId) {
-    throw new Error('No recipient ID in context')
-  }
-
-  // Queue email for sending
-  const { error: queueError } = await supabase.from('email_queue').insert({
+  // Queue emails for all recipients
+  const queueEntries = recipientEmails.map((email, idx) => ({
     template_id: templateId,
-    recipient_id: recipientId,
+    recipient_email: email,
+    recipient_id: recipientIds[idx] || null,
     subject: template.subject,
     body_html: template.body_html,
     status: 'pending',
     variables: action.config.variables || {},
-  })
+  }))
+
+  const { error: queueError } = await supabase
+    .from('email_queue')
+    .insert(queueEntries)
 
   if (queueError) {
-    throw new Error(`Failed to queue email: ${queueError.message}`)
+    throw new Error(`Failed to queue emails: ${queueError.message}`)
   }
 
-  return { queued: true, templateId }
+  // Trigger email processing
+  await supabase.functions.invoke('process-email-queue', {})
+
+  return {
+    queued: true,
+    templateId,
+    recipientCount: recipientEmails.length,
+    recipients: recipientEmails
+  }
 }
 
 /**

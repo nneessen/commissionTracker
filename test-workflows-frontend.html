@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Workflows Query</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <h1>Workflow Query Test</h1>
+    <div id="status">Testing...</div>
+    <pre id="result"></pre>
+
+    <script>
+        const { createClient } = supabase;
+
+        const client = createClient(
+            'https://pcyaqwodnyrpkaiojnpz.supabase.co',
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBjeWFxd29kbnlycGthaW9qbnB6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjcyMDc0NjYsImV4cCI6MjA0Mjc4MzQ2Nn0.S4jqhpF2L6a8lQvGI3D5JO8L8OqfJXNH1PYVjYr6jQg'
+        );
+
+        async function test() {
+            const statusDiv = document.getElementById('status');
+            const resultPre = document.getElementById('result');
+
+            try {
+                // Check auth
+                const { data: { user }, error: userError } = await client.auth.getUser();
+
+                if (userError || !user) {
+                    statusDiv.textContent = 'ERROR: Not authenticated';
+                    resultPre.textContent = JSON.stringify(userError, null, 2);
+                    return;
+                }
+
+                statusDiv.textContent = `Logged in as: ${user.email} (${user.id})`;
+
+                // Query workflows
+                const { data, error } = await client
+                    .from('workflows')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+
+                if (error) {
+                    statusDiv.textContent += '\n\nERROR querying workflows:';
+                    resultPre.textContent = JSON.stringify({
+                        code: error.code,
+                        message: error.message,
+                        details: error.details,
+                        hint: error.hint
+                    }, null, 2);
+                } else {
+                    statusDiv.textContent += `\n\nSUCCESS: Found ${data.length} workflows`;
+                    resultPre.textContent = JSON.stringify(data, null, 2);
+                }
+            } catch (err) {
+                statusDiv.textContent = 'EXCEPTION:';
+                resultPre.textContent = err.toString();
+            }
+        }
+
+        test();
+    </script>
+</body>
+</html>

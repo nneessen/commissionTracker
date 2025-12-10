@@ -38,8 +38,8 @@ export function useWorkflows(status?: WorkflowStatus) {
     staleTime: 30000, // 30 seconds
     retry: 1, // Reduce retries for 404 errors
     retryDelay: 1000,
-    // Return empty array on error to prevent UI crashes
-    initialData: []
+    // DO NOT mask errors - we need to see what's failing
+    // initialData: []
   });
 }
 
@@ -136,8 +136,8 @@ export function useWorkflowRuns(workflowId?: string, limit = 50) {
     staleTime: 10000, // 10 seconds
     retry: 1,
     retryDelay: 1000,
-    // Return empty array on error to prevent UI crashes
-    initialData: []
+    // DO NOT mask errors
+    // initialData: []
   });
 }
 
@@ -196,8 +196,7 @@ export function useWorkflowTemplates(category?: string) {
     staleTime: 60000, // 1 minute
     retry: 1,
     retryDelay: 1000,
-    // Return empty array on error to prevent UI crashes
-    initialData: []
+    // initialData: []
   });
 }
 
@@ -228,7 +227,7 @@ export function useTriggerEventTypes() {
     staleTime: 300000, // 5 minutes
     retry: 1,
     retryDelay: 1000,
-    initialData: []
+    // initialData: []
   });
 }
 
