@@ -238,7 +238,7 @@ class WorkflowService {
     return data as WorkflowRun;
   }
 
-  async triggerWorkflow(workflowId: string, context: Record<string, any> = {}) {
+  async triggerWorkflow(workflowId: string, context: Record<string, unknown> = {}) {
     const { data: user } = await supabase.auth.getUser();
     if (!user.user) throw new Error('User not authenticated');
 
@@ -246,7 +246,7 @@ class WorkflowService {
     const { data: canRun, error: checkError } = await supabase
       .rpc('can_workflow_run', {
         p_workflow_id: workflowId,
-        p_recipient_id: context.recipientId || null
+        p_recipient_id: (context.recipientId as string) || null
       });
 
     if (checkError) throw checkError;
@@ -268,18 +268,14 @@ class WorkflowService {
 
     if (runError) throw runError;
 
-    // TODO: Trigger edge function to process workflow
-    // For now, mark as completed after a delay
-    setTimeout(async () => {
-      await supabase
-        .from('workflow_runs')
-        .update({
-          status: 'completed',
-          completed_at: new Date().toISOString(),
-          duration_ms: 1000
-        })
-        .eq('id', run.id);
-    }, 1000);
+    // Trigger edge function to process workflow asynchronously
+    // The edge function will handle the actual workflow execution
+    supabase.functions.invoke('process-workflow', {
+      body: { runId: run.id, workflowId }
+    }).catch((err) => {
+      // Log error but don't fail - the run is already created
+      console.error('Failed to invoke workflow processor:', err);
+    });
 
     return run as WorkflowRun;
   }
@@ -368,6 +364,12 @@ class WorkflowService {
   // =====================================================
 
   async getWorkflowStats(workflowId: string): Promise<WorkflowStats> {
+    interface RunRecord {
+      status: string;
+      duration_ms: number | null;
+      started_at: string;
+    }
+
     const { data: runs, error } = await supabase
       .from('workflow_runs')
       .select('status, duration_ms, started_at')
@@ -375,20 +377,21 @@ class WorkflowService {
 
     if (error) throw error;
 
-    const totalRuns = runs.length;
-    const successfulRuns = runs.filter((r: any) => r.status === 'completed').length;
-    const failedRuns = runs.filter((r: any) => r.status === 'failed').length;
+    const typedRuns = (runs || []) as RunRecord[];
+    const totalRuns = typedRuns.length;
+    const successfulRuns = typedRuns.filter((r) => r.status === 'completed').length;
+    const failedRuns = typedRuns.filter((r) => r.status === 'failed').length;
 
-    const durations = runs
-      .filter((r: any) => r.duration_ms)
-      .map((r: any) => r.duration_ms as number);
+    const durations = typedRuns
+      .filter((r) => r.duration_ms !== null)
+      .map((r) => r.duration_ms as number);
 
     const averageDuration = durations.length > 0
-      ? durations.reduce((a: number, b: number) => a + b, 0) / durations.length
+      ? durations.reduce((a, b) => a + b, 0) / durations.length
       : 0;
 
-    const lastRun = runs.length > 0
-      ? runs.sort((a: any, b: any) => new Date(b.started_at).getTime() - new Date(a.started_at).getTime())[0]
+    const lastRun = typedRuns.length > 0
+      ? typedRuns.sort((a, b) => new Date(b.started_at).getTime() - new Date(a.started_at).getTime())[0]
       : null;
 
     return {
@@ -425,7 +428,7 @@ class WorkflowService {
     return config;
   }
 
-  async testWorkflow(workflowId: string, testContext: Record<string, any>) {
+  async testWorkflow(workflowId: string, testContext: Record<string, unknown>) {
     // Create a test run
     const { data: run, error } = await supabase
       .from('workflow_runs')
@@ -440,21 +443,12 @@ class WorkflowService {
 
     if (error) throw error;
 
-    // TODO: Process test run with edge function
-    // For now, simulate completion
-    setTimeout(async () => {
-      await supabase
-        .from('workflow_runs')
-        .update({
-          status: 'completed',
-          completed_at: new Date().toISOString(),
-          duration_ms: 500,
-          actions_executed: [
-            { actionId: 'test-1', status: 'success', result: 'Email would be sent' }
-          ]
-        })
-        .eq('id', run.id);
-    }, 500);
+    // Trigger edge function to process test workflow
+    supabase.functions.invoke('process-workflow', {
+      body: { runId: run.id, workflowId, isTest: true }
+    }).catch((err) => {
+      console.error('Failed to invoke workflow processor for test:', err);
+    });
 
     return run as WorkflowRun;
   }

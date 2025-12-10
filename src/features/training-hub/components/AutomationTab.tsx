@@ -1,10 +1,19 @@
-// File: /home/nneessen/projects/commissionTracker/src/features/training-hub/components/AutomationTab.tsx
+// src/features/training-hub/components/AutomationTab.tsx
 
-import React, { useState } from 'react';
-import { Plus, Play, Pause, Trash2, Edit, Settings, Clock, Zap, Mail } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
+import { useState } from 'react';
+import { Plus, Play, Pause, Trash2, Edit, Settings, Clock, Zap, Mail, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import {
   Table,
   TableBody,
@@ -22,7 +31,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useWorkflows, useWorkflowRuns, useUpdateWorkflowStatus, useDeleteWorkflow, useTriggerWorkflow } from '@/hooks/workflows';
 import WorkflowDialog from './WorkflowDialog';
-import type { Workflow, WorkflowStatus } from '@/types/workflow.types';
+import type { Workflow } from '@/types/workflow.types';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 
@@ -30,6 +39,7 @@ export default function AutomationTab() {
   const { user } = useAuth();
   const [showDialog, setShowDialog] = useState(false);
   const [editingWorkflow, setEditingWorkflow] = useState<Workflow | null>(null);
+  const [deleteWorkflowId, setDeleteWorkflowId] = useState<string | null>(null);
 
   const { data: workflows = [], isLoading, error } = useWorkflows();
   const { data: runs = [] } = useWorkflowRuns(undefined, 10);
@@ -39,33 +49,42 @@ export default function AutomationTab() {
 
   if (!user) {
     return (
-      <Card>
-        <CardContent className="p-8 text-center">
-          <p className="text-sm text-muted-foreground">Please log in to view workflows</p>
-        </CardContent>
-      </Card>
+      <div className="rounded-lg border p-8 text-center">
+        <p className="text-sm text-muted-foreground">Please log in to view workflows</p>
+      </div>
     );
   }
 
   if (isLoading) {
     return (
-      <Card>
-        <CardContent className="p-8 text-center">
-          <p className="text-sm text-muted-foreground">Loading workflows...</p>
-        </CardContent>
-      </Card>
+      <div className="rounded-lg border p-8 text-center">
+        <p className="text-sm text-muted-foreground">Loading workflows...</p>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <Card>
-        <CardContent className="p-8 text-center">
-          <p className="text-sm text-red-600">Error loading workflows</p>
-        </CardContent>
-      </Card>
+      <div className="rounded-lg border p-8 text-center">
+        <AlertCircle className="h-6 w-6 mx-auto mb-2 text-destructive" />
+        <p className="text-sm text-destructive">Error loading workflows</p>
+        <p className="text-xs text-muted-foreground mt-1">
+          {error instanceof Error ? error.message : 'Unknown error'}
+        </p>
+      </div>
     );
   }
+
+  const workflowToDelete = deleteWorkflowId
+    ? workflows.find((w) => w.id === deleteWorkflowId)
+    : null;
+
+  const handleDeleteConfirm = async () => {
+    if (deleteWorkflowId) {
+      deleteWorkflow.mutate(deleteWorkflowId);
+      setDeleteWorkflowId(null);
+    }
+  };
 
   const statusColors = {
     draft: 'bg-gray-100 text-gray-700',
@@ -110,23 +129,22 @@ export default function AutomationTab() {
       {/* Workflows Grid */}
       <div className="grid grid-cols-2 gap-2 flex-1 overflow-auto">
         {/* Workflows List */}
-        <Card>
-          <CardContent className="p-3">
-            <div className="text-[11px] font-medium text-muted-foreground uppercase mb-2">
-              Active Workflows
+        <div className="rounded-lg border p-3">
+          <div className="text-[11px] font-medium text-muted-foreground uppercase mb-2">
+            Active Workflows
+          </div>
+          {workflows.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-sm text-muted-foreground mb-3">No workflows created yet</p>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setShowDialog(true)}
+              >
+                Create Your First Workflow
+              </Button>
             </div>
-            {workflows.length === 0 ? (
-              <div className="text-center py-8">
-                <p className="text-sm text-muted-foreground mb-3">No workflows created yet</p>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setShowDialog(true)}
-                >
-                  Create Your First Workflow
-                </Button>
-              </div>
-            ) : (
+          ) : (
               <Table>
                 <TableHeader>
                   <TableRow className="h-7">
@@ -211,11 +229,7 @@ export default function AutomationTab() {
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
                               className="text-xs text-red-600"
-                              onClick={() => {
-                                if (confirm('Delete this workflow?')) {
-                                  deleteWorkflow.mutate(workflow.id);
-                                }
-                              }}
+                              onClick={() => setDeleteWorkflowId(workflow.id)}
                             >
                               <Trash2 className="h-3 w-3 mr-1" />
                               Delete
@@ -228,56 +242,75 @@ export default function AutomationTab() {
                 </TableBody>
               </Table>
             )}
-          </CardContent>
-        </Card>
+        </div>
 
         {/* Recent Runs */}
-        <Card>
-          <CardContent className="p-3">
-            <div className="text-[11px] font-medium text-muted-foreground uppercase mb-2">
-              Recent Runs
+        <div className="rounded-lg border p-3">
+          <div className="text-[11px] font-medium text-muted-foreground uppercase mb-2">
+            Recent Runs
+          </div>
+          {runs.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-xs text-muted-foreground">No workflow runs yet</p>
             </div>
-            {runs.length === 0 ? (
-              <div className="text-center py-8">
-                <p className="text-xs text-muted-foreground">No workflow runs yet</p>
-              </div>
-            ) : (
-              <div className="space-y-1">
-                {runs.map((run) => (
-                  <div key={run.id} className="flex items-center justify-between p-2 border rounded-md">
-                    <div className="flex-1">
-                      <div className="text-xs font-medium">
-                        {run.workflow?.name || 'Unknown Workflow'}
-                      </div>
-                      <div className="text-[10px] text-muted-foreground">
-                        {new Date(run.startedAt).toLocaleString()}
-                      </div>
+          ) : (
+            <div className="space-y-1">
+              {runs.map((run) => (
+                <div key={run.id} className="flex items-center justify-between p-2 border rounded-md">
+                  <div className="flex-1">
+                    <div className="text-xs font-medium">
+                      {run.workflow?.name || 'Unknown Workflow'}
                     </div>
-                    <Badge
-                      variant="secondary"
-                      className={cn(
-                        "text-[10px] py-0 px-1",
-                        run.status === 'completed' && "bg-green-100 text-green-700",
-                        run.status === 'failed' && "bg-red-100 text-red-700",
-                        run.status === 'running' && "bg-blue-100 text-blue-700"
-                      )}
-                    >
-                      {run.status}
-                    </Badge>
+                    <div className="text-[10px] text-muted-foreground">
+                      {new Date(run.startedAt).toLocaleString()}
+                    </div>
                   </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                  <Badge
+                    variant="secondary"
+                    className={cn(
+                      "text-[10px] py-0 px-1",
+                      run.status === 'completed' && "bg-green-100 text-green-700",
+                      run.status === 'failed' && "bg-red-100 text-red-700",
+                      run.status === 'running' && "bg-blue-100 text-blue-700"
+                    )}
+                  >
+                    {run.status}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Dialog */}
+      {/* Dialogs */}
       <WorkflowDialog
         open={showDialog}
         onOpenChange={setShowDialog}
         workflow={editingWorkflow}
       />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deleteWorkflowId} onOpenChange={(open) => !open && setDeleteWorkflowId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-sm">Delete Workflow</AlertDialogTitle>
+            <AlertDialogDescription className="text-xs">
+              Are you sure you want to delete "{workflowToDelete?.name}"? This action cannot be undone.
+              All associated runs and history will also be deleted.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="h-7 text-xs">Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              className="h-7 text-xs bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

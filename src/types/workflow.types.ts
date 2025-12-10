@@ -14,19 +14,22 @@ export interface WorkflowCondition {
 
 export interface WorkflowAction {
   id?: string;
-  type: 'send_email' | 'update_field' | 'create_task' | 'webhook' | 'wait' | 'branch';
+  type: 'send_email' | 'create_notification' | 'update_field' | 'create_task' | 'webhook' | 'wait' | 'branch';
   order: number;
   config: {
     templateId?: string;
     recipientId?: string;
-    variables?: Record<string, any>;
+    variables?: Record<string, unknown>;
     fieldName?: string;
-    fieldValue?: any;
+    fieldValue?: unknown;
     webhookUrl?: string;
     webhookMethod?: string;
     webhookHeaders?: Record<string, string>;
     waitMinutes?: number;
     branchConditions?: WorkflowCondition[];
+    // Notification config
+    title?: string;
+    message?: string;
   };
   conditions?: WorkflowCondition[];
   delayMinutes?: number;

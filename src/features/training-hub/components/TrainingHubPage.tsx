@@ -1,17 +1,9 @@
 // src/features/training-hub/components/TrainingHubPage.tsx
 import { useState, useEffect } from "react";
-import {
-  Users,
-  Mail,
-  Zap,
-  Activity,
-  GraduationCap,
-  FileText,
-  CheckCircle2,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Users, Mail, Zap, Activity, Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/services/base/supabase";
 import { RecruitingTab } from "./RecruitingTab";
@@ -92,6 +84,27 @@ export default function TrainingHubPage() {
             <p className="text-[11px] text-muted-foreground mt-0.5">
               Manage recruiting, automation, and communications
             </p>
+          </div>
+          {/* Search Input */}
+          <div className="relative w-56">
+            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+            <Input
+              type="text"
+              placeholder="Search..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="h-7 pl-7 pr-7 text-xs"
+            />
+            {searchQuery && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute right-0.5 top-1/2 -translate-y-1/2 h-6 w-6"
+                onClick={() => setSearchQuery("")}
+              >
+                <X className="h-3 w-3" />
+              </Button>
+            )}
           </div>
         </div>
       </div>

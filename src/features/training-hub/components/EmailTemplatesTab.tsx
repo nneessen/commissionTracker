@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { format } from 'date-fns'
 import {
   Table,
@@ -257,18 +257,18 @@ function InlineTemplateEditor({
   const [isGlobal, setIsGlobal] = useState(false)
   const [isActive, setIsActive] = useState(true)
   const [blocks, setBlocks] = useState<EmailBlock[]>([])
-  const [isInitialized, setIsInitialized] = useState(false)
 
-  // Initialize form with existing template data
-  if (existingTemplate && !isInitialized && !isNew) {
-    setName(existingTemplate.name)
-    setSubject(existingTemplate.subject)
-    setCategory(existingTemplate.category)
-    setIsGlobal(existingTemplate.is_global)
-    setIsActive(existingTemplate.is_active)
-    setBlocks(existingTemplate.blocks || [])
-    setIsInitialized(true)
-  }
+  // Initialize form with existing template data (properly in useEffect)
+  useEffect(() => {
+    if (existingTemplate && !isNew) {
+      setName(existingTemplate.name)
+      setSubject(existingTemplate.subject)
+      setCategory(existingTemplate.category)
+      setIsGlobal(existingTemplate.is_global)
+      setIsActive(existingTemplate.is_active)
+      setBlocks(existingTemplate.blocks || [])
+    }
+  }, [existingTemplate, isNew])
 
   const handleSave = async () => {
     if (!name.trim() || !subject.trim()) return
