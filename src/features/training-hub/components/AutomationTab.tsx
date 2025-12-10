@@ -1,0 +1,283 @@
+// File: /home/nneessen/projects/commissionTracker/src/features/training-hub/components/AutomationTab.tsx
+
+import React, { useState } from 'react';
+import { Plus, Play, Pause, Trash2, Edit, Settings, Clock, Zap, Mail } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
+} from '@/components/ui/table';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { useWorkflows, useWorkflowRuns, useUpdateWorkflowStatus, useDeleteWorkflow, useTriggerWorkflow } from '@/hooks/workflows';
+import WorkflowDialog from './WorkflowDialog';
+import type { Workflow, WorkflowStatus } from '@/types/workflow.types';
+import { useAuth } from '@/contexts/AuthContext';
+import { cn } from '@/lib/utils';
+
+export default function AutomationTab() {
+  const { user } = useAuth();
+  const [showDialog, setShowDialog] = useState(false);
+  const [editingWorkflow, setEditingWorkflow] = useState<Workflow | null>(null);
+
+  const { data: workflows = [], isLoading, error } = useWorkflows();
+  const { data: runs = [] } = useWorkflowRuns(undefined, 10);
+  const updateStatus = useUpdateWorkflowStatus();
+  const deleteWorkflow = useDeleteWorkflow();
+  const triggerWorkflow = useTriggerWorkflow();
+
+  if (!user) {
+    return (
+      <Card>
+        <CardContent className="p-8 text-center">
+          <p className="text-sm text-muted-foreground">Please log in to view workflows</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="p-8 text-center">
+          <p className="text-sm text-muted-foreground">Loading workflows...</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card>
+        <CardContent className="p-8 text-center">
+          <p className="text-sm text-red-600">Error loading workflows</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const statusColors = {
+    draft: 'bg-gray-100 text-gray-700',
+    active: 'bg-green-100 text-green-700',
+    paused: 'bg-yellow-100 text-yellow-700',
+    archived: 'bg-gray-100 text-gray-500'
+  };
+
+  const triggerIcons = {
+    manual: <Play className="h-3 w-3" />,
+    schedule: <Clock className="h-3 w-3" />,
+    event: <Zap className="h-3 w-3" />,
+    webhook: <Mail className="h-3 w-3" />
+  };
+
+  return (
+    <div className="h-full flex flex-col">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-4">
+          <div className="text-sm text-muted-foreground">
+            {workflows.length} workflow{workflows.length !== 1 ? 's' : ''}
+          </div>
+          <div className="h-4 w-px bg-border" />
+          <div className="text-sm text-muted-foreground">
+            {runs.length} recent run{runs.length !== 1 ? 's' : ''}
+          </div>
+        </div>
+        <Button
+          size="sm"
+          className="h-7 text-xs"
+          onClick={() => {
+            setEditingWorkflow(null);
+            setShowDialog(true);
+          }}
+        >
+          <Plus className="h-3 w-3 mr-1" />
+          Create Workflow
+        </Button>
+      </div>
+
+      {/* Workflows Grid */}
+      <div className="grid grid-cols-2 gap-2 flex-1 overflow-auto">
+        {/* Workflows List */}
+        <Card>
+          <CardContent className="p-3">
+            <div className="text-[11px] font-medium text-muted-foreground uppercase mb-2">
+              Active Workflows
+            </div>
+            {workflows.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-sm text-muted-foreground mb-3">No workflows created yet</p>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setShowDialog(true)}
+                >
+                  Create Your First Workflow
+                </Button>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow className="h-7">
+                    <TableHead className="text-[10px] py-1">Name</TableHead>
+                    <TableHead className="text-[10px] py-1">Type</TableHead>
+                    <TableHead className="text-[10px] py-1">Status</TableHead>
+                    <TableHead className="text-[10px] py-1 w-8"></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {workflows.map((workflow) => (
+                    <TableRow key={workflow.id} className="h-8">
+                      <TableCell className="py-1">
+                        <div>
+                          <div className="text-xs font-medium">{workflow.name}</div>
+                          {workflow.description && (
+                            <div className="text-[10px] text-muted-foreground truncate max-w-[200px]">
+                              {workflow.description}
+                            </div>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="py-1">
+                        <div className="flex items-center gap-1">
+                          {triggerIcons[workflow.triggerType]}
+                          <span className="text-[10px]">{workflow.triggerType}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="py-1">
+                        <Badge
+                          variant="secondary"
+                          className={cn("text-[10px] py-0 px-1", statusColors[workflow.status])}
+                        >
+                          {workflow.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="py-1">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                              <Settings className="h-3 w-3" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-32">
+                            {workflow.status === 'active' && (
+                              <DropdownMenuItem
+                                onClick={() => triggerWorkflow.mutate({ workflowId: workflow.id })}
+                                className="text-xs"
+                              >
+                                <Play className="h-3 w-3 mr-1" />
+                                Run Now
+                              </DropdownMenuItem>
+                            )}
+                            {workflow.status === 'active' && (
+                              <DropdownMenuItem
+                                onClick={() => updateStatus.mutate({ id: workflow.id, status: 'paused' })}
+                                className="text-xs"
+                              >
+                                <Pause className="h-3 w-3 mr-1" />
+                                Pause
+                              </DropdownMenuItem>
+                            )}
+                            {workflow.status === 'paused' && (
+                              <DropdownMenuItem
+                                onClick={() => updateStatus.mutate({ id: workflow.id, status: 'active' })}
+                                className="text-xs"
+                              >
+                                <Play className="h-3 w-3 mr-1" />
+                                Resume
+                              </DropdownMenuItem>
+                            )}
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setEditingWorkflow(workflow);
+                                setShowDialog(true);
+                              }}
+                              className="text-xs"
+                            >
+                              <Edit className="h-3 w-3 mr-1" />
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              className="text-xs text-red-600"
+                              onClick={() => {
+                                if (confirm('Delete this workflow?')) {
+                                  deleteWorkflow.mutate(workflow.id);
+                                }
+                              }}
+                            >
+                              <Trash2 className="h-3 w-3 mr-1" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Recent Runs */}
+        <Card>
+          <CardContent className="p-3">
+            <div className="text-[11px] font-medium text-muted-foreground uppercase mb-2">
+              Recent Runs
+            </div>
+            {runs.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-xs text-muted-foreground">No workflow runs yet</p>
+              </div>
+            ) : (
+              <div className="space-y-1">
+                {runs.map((run) => (
+                  <div key={run.id} className="flex items-center justify-between p-2 border rounded-md">
+                    <div className="flex-1">
+                      <div className="text-xs font-medium">
+                        {run.workflow?.name || 'Unknown Workflow'}
+                      </div>
+                      <div className="text-[10px] text-muted-foreground">
+                        {new Date(run.startedAt).toLocaleString()}
+                      </div>
+                    </div>
+                    <Badge
+                      variant="secondary"
+                      className={cn(
+                        "text-[10px] py-0 px-1",
+                        run.status === 'completed' && "bg-green-100 text-green-700",
+                        run.status === 'failed' && "bg-red-100 text-red-700",
+                        run.status === 'running' && "bg-blue-100 text-blue-700"
+                      )}
+                    >
+                      {run.status}
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Dialog */}
+      <WorkflowDialog
+        open={showDialog}
+        onOpenChange={setShowDialog}
+        workflow={editingWorkflow}
+      />
+    </div>
+  );
+}

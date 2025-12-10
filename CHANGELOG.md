@@ -6,6 +6,38 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-12-09 20:02:46
+
+### Changed Files
+- `docs/EMAIL_AUTOMATION_GUIDE.md`
+- `scripts/apply-migration.sh`
+- `scripts/apply-workflow-migration-direct.sh`
+- `scripts/apply-workflow-migration.js`
+- `scripts/create-example-workflows.js`
+- `scripts/create-example-workflows.sql`
+- `scripts/fix-workflow-rls.sh`
+- `scripts/fix-workflows-now.js`
+- `scripts/test-workflow-query.js`
+- `scripts/test-workflows-service.js`
+- `scripts/verify-workflows.js`
+- `src/features/training-hub/components/AutomationTab.tsx`
+- `src/features/training-hub/components/TrainingHubPage.tsx`
+- `src/features/training-hub/components/WorkflowDialog.tsx`
+- `src/hooks/workflows/index.ts`
+- `src/hooks/workflows/useWorkflows.ts`
+- `src/hooks/workflows/useWorkflows.ts.bak`
+- `src/services/workflowService.ts`
+- `src/types/database.types.ts`
+- `src/types/workflow.types.ts`
+- `supabase/migrations/20251209_002_automation_workflows.sql`
+- `supabase/migrations/20251209_003_create_example_workflows.sql`
+- `tsconfig.tsbuildinfo`
+
+### Statistics
+```
+ 23 files changed, 4007 insertions(+), 91 deletions(-)
+```
+
 ## [Checkpoint] - 2025-12-07 15:42:57
 
 ### Changed Files
