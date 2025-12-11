@@ -33,10 +33,51 @@ interface ActionConfigPanelProps {
 }
 
 const VARIABLE_LIST = [
-  { category: 'Recruit', variables: ['{{recruit.name}}', '{{recruit.email}}', '{{recruit.phone}}', '{{recruit.status}}'] },
-  { category: 'User', variables: ['{{user.name}}', '{{user.email}}', '{{user.role}}'] },
-  { category: 'Date', variables: ['{{date.today}}', '{{date.tomorrow}}', '{{date.next_week}}'] },
-  { category: 'System', variables: ['{{workflow.name}}', '{{workflow.run_id}}', '{{app.url}}'] }
+  {
+    category: 'Recruit Basic',
+    variables: [
+      '{{recruit_first_name}}', '{{recruit_last_name}}', '{{recruit_name}}', '{{recruit_email}}',
+      '{{recruit_phone}}', '{{recruit_status}}'
+    ]
+  },
+  {
+    category: 'Recruit Location',
+    variables: [
+      '{{recruit_city}}', '{{recruit_state}}', '{{recruit_zip}}', '{{recruit_address}}'
+    ]
+  },
+  {
+    category: 'Recruit Professional',
+    variables: [
+      '{{recruit_contract_level}}', '{{recruit_npn}}', '{{recruit_license_number}}',
+      '{{recruit_license_expiration}}', '{{recruit_referral_source}}'
+    ]
+  },
+  {
+    category: 'Recruit Social',
+    variables: [
+      '{{recruit_facebook}}', '{{recruit_instagram}}', '{{recruit_linkedin}}', '{{recruit_website}}'
+    ]
+  },
+  {
+    category: 'User/Owner',
+    variables: [
+      '{{user_name}}', '{{user_first_name}}', '{{user_last_name}}', '{{user_email}}', '{{company_name}}'
+    ]
+  },
+  {
+    category: 'Date',
+    variables: [
+      '{{date_today}}', '{{date_tomorrow}}', '{{date_next_week}}',
+      '{{date_current_month}}', '{{date_current_year}}'
+    ]
+  },
+  {
+    category: 'System',
+    variables: [
+      '{{workflow_name}}', '{{workflow_run_id}}', '{{app_url}}'
+    ]
+  }
 ];
 
 export default function ActionConfigPanel({ action, onUpdate, onClose }: ActionConfigPanelProps) {
@@ -243,7 +284,7 @@ export default function ActionConfigPanel({ action, onUpdate, onClose }: ActionC
                         variant="ghost"
                         size="icon"
                         className="h-5 w-5"
-                        onClick={() => insertVariable('{{recruit.name}}', 'title')}
+                        onClick={() => insertVariable('{{recruit_name}}', 'title')}
                       >
                         <Variable className="h-3 w-3" />
                       </Button>
@@ -273,7 +314,7 @@ export default function ActionConfigPanel({ action, onUpdate, onClose }: ActionC
                         variant="ghost"
                         size="icon"
                         className="h-5 w-5"
-                        onClick={() => insertVariable('{{recruit.name}}', 'message')}
+                        onClick={() => insertVariable('{{recruit_name}}', 'message')}
                       >
                         <Variable className="h-3 w-3" />
                       </Button>
@@ -499,7 +540,7 @@ export default function ActionConfigPanel({ action, onUpdate, onClose }: ActionC
                         variant="ghost"
                         size="icon"
                         className="h-5 w-5"
-                        onClick={() => insertVariable('{{recruit.name}}', 'fieldValue')}
+                        onClick={() => insertVariable('{{recruit_name}}', 'fieldValue')}
                       >
                         <Variable className="h-3 w-3" />
                       </Button>
@@ -675,7 +716,7 @@ export default function ActionConfigPanel({ action, onUpdate, onClose }: ActionC
                 onChange={(e) => onUpdate({
                   config: { ...action.config, conditionField: e.target.value }
                 })}
-                placeholder="e.g., recruit.status"
+                placeholder="e.g., recruit_status"
                 className="h-9 text-sm"
               />
             </div>
@@ -1038,21 +1079,30 @@ export default function ActionConfigPanel({ action, onUpdate, onClose }: ActionC
       </div>
 
       {/* Variable Helper */}
-      <div className="mt-4 p-2 rounded-md bg-muted/30 border border-border/50">
-        <p className="text-xs font-medium text-muted-foreground mb-1">Available Variables</p>
-        <div className="space-y-1">
-          {VARIABLE_LIST.slice(0, 2).map((category) => (
+      <div className="mt-4 p-2 rounded-md bg-muted/30 border border-border/50 max-h-64 overflow-y-auto">
+        <p className="text-xs font-medium text-muted-foreground mb-2">Click to Copy Template Variables</p>
+        <div className="space-y-2">
+          {VARIABLE_LIST.map((category) => (
             <div key={category.category}>
-              <p className="text-xs text-muted-foreground">{category.category}:</p>
-              <div className="flex flex-wrap gap-1">
-                {category.variables.slice(0, 2).map((variable) => (
+              <p className="text-[10px] font-medium uppercase text-muted-foreground mb-1">{category.category}</p>
+              <div className="flex flex-wrap gap-1 mb-2">
+                {category.variables.map((variable) => (
                   <Badge
                     key={variable}
                     variant="secondary"
-                    className="text-xs px-1 py-0 font-mono cursor-copy"
+                    className="text-[10px] px-1.5 py-0 font-mono cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors"
                     onClick={() => {
                       navigator.clipboard.writeText(variable);
+                      // Show a toast feedback
+                      const toast = document.createElement('div');
+                      toast.className = 'fixed bottom-4 right-4 bg-green-600 text-white text-xs px-3 py-1.5 rounded-md shadow-lg z-50 animate-in fade-in slide-in-from-bottom-2';
+                      toast.textContent = `Copied: ${variable}`;
+                      document.body.appendChild(toast);
+                      setTimeout(() => {
+                        toast.remove();
+                      }, 2000);
                     }}
+                    title={`Click to copy ${variable}`}
                   >
                     {variable}
                   </Badge>

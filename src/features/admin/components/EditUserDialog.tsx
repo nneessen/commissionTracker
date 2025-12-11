@@ -62,6 +62,7 @@ interface EditableUserData {
   upline_id: string | null;
   roles: RoleName[];
   approval_status: "pending" | "approved" | "denied";
+  agent_status: "unlicensed" | "licensed" | "not_applicable" | null;
   contract_level: number | null;
   // Address fields
   street_address: string;
@@ -96,6 +97,7 @@ export default function EditUserDialog({
     upline_id: null,
     roles: [],
     approval_status: "pending",
+    agent_status: null,
     contract_level: null,
     street_address: "",
     city: "",
@@ -190,6 +192,7 @@ export default function EditUserDialog({
         upline_id: user.upline_id || null,
         roles: (user.roles as RoleName[]) || [],
         approval_status: user.approval_status || "pending",
+        agent_status: user.agent_status || null,
         contract_level: user.contract_level || null,
         street_address: (user as any).street_address || "",
         city: (user as any).city || "",
@@ -227,6 +230,7 @@ export default function EditUserDialog({
       if (formData.upline_id !== user.upline_id) updates.upline_id = formData.upline_id;
       if (JSON.stringify(formData.roles) !== JSON.stringify(user.roles || [])) updates.roles = formData.roles;
       if (formData.approval_status !== user.approval_status) updates.approval_status = formData.approval_status;
+      if (formData.agent_status !== user.agent_status) updates.agent_status = formData.agent_status;
       if (formData.contract_level !== user.contract_level) updates.contract_level = formData.contract_level;
 
       // Address fields
@@ -490,6 +494,33 @@ export default function EditUserDialog({
                     <SelectItem value="denied" className="text-xs">Denied</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+
+              {/* Agent Status */}
+              <div>
+                <Label className="text-[11px] text-muted-foreground">Agent Status</Label>
+                <Select
+                  value={formData.agent_status || "none"}
+                  onValueChange={(value) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      agent_status: value === "none" ? null : value as "unlicensed" | "licensed" | "not_applicable"
+                    }))
+                  }
+                >
+                  <SelectTrigger className="h-8 text-xs mt-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none" className="text-xs">Not Set</SelectItem>
+                    <SelectItem value="licensed" className="text-xs">Licensed (Active Agent)</SelectItem>
+                    <SelectItem value="unlicensed" className="text-xs">Unlicensed (In Training)</SelectItem>
+                    <SelectItem value="not_applicable" className="text-xs">Not Applicable</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-[10px] text-muted-foreground mt-1">
+                  Licensed = Active agent who can receive workflow emails and sell policies
+                </p>
               </div>
 
               <Separator />

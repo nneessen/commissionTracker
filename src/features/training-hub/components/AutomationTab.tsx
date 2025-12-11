@@ -1,7 +1,7 @@
 // src/features/training-hub/components/AutomationTab.tsx
 
 import { useState } from 'react';
-import { Plus, Play, Pause, Trash2, Edit, Settings, Clock, Zap, Mail, AlertCircle } from 'lucide-react';
+import { Plus, Play, Pause, Trash2, Edit, Settings, Clock, Zap, Mail, AlertCircle, Bug } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -31,6 +31,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useWorkflows, useWorkflowRuns, useUpdateWorkflowStatus, useDeleteWorkflow, useTriggerWorkflow } from '@/hooks/workflows';
 import WorkflowWizard from './WorkflowWizard';
+import WorkflowDiagnostic from './WorkflowDiagnostic';
 import type { Workflow } from '@/types/workflow.types';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
@@ -38,6 +39,7 @@ import { cn } from '@/lib/utils';
 export default function AutomationTab() {
   const { user } = useAuth();
   const [showDialog, setShowDialog] = useState(false);
+  const [showDiagnostic, setShowDiagnostic] = useState(false);
   const [editingWorkflow, setEditingWorkflow] = useState<Workflow | null>(null);
   const [deleteWorkflowId, setDeleteWorkflowId] = useState<string | null>(null);
 
@@ -113,18 +115,36 @@ export default function AutomationTab() {
             {runs.length} recent run{runs.length !== 1 ? 's' : ''}
           </div>
         </div>
-        <Button
-          size="sm"
-          className="h-7 text-xs"
-          onClick={() => {
-            setEditingWorkflow(null);
-            setShowDialog(true);
-          }}
-        >
-          <Plus className="h-3 w-3 mr-1" />
-          Create Workflow
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-7 text-xs"
+            onClick={() => setShowDiagnostic(!showDiagnostic)}
+          >
+            <Bug className="h-3 w-3 mr-1" />
+            Diagnostic
+          </Button>
+          <Button
+            size="sm"
+            className="h-7 text-xs"
+            onClick={() => {
+              setEditingWorkflow(null);
+              setShowDialog(true);
+            }}
+          >
+            <Plus className="h-3 w-3 mr-1" />
+            Create Workflow
+          </Button>
+        </div>
       </div>
+
+      {/* Show diagnostic if enabled */}
+      {showDiagnostic && (
+        <div className="mb-3">
+          <WorkflowDiagnostic />
+        </div>
+      )}
 
       {/* Workflows Grid */}
       <div className="grid grid-cols-2 gap-2 flex-1 overflow-auto">
@@ -191,7 +211,18 @@ export default function AutomationTab() {
                           <DropdownMenuContent align="end" className="w-32">
                             {workflow.status === 'active' && (
                               <DropdownMenuItem
-                                onClick={() => triggerWorkflow.mutate({ workflowId: workflow.id })}
+                                onClick={() => {
+                                  // For testing: trigger with a test recipient
+                                  const testEmail = prompt('Enter recipient email for test (or leave empty for yourself):');
+                                  triggerWorkflow.mutate({
+                                    workflowId: workflow.id,
+                                    context: testEmail ? {
+                                      recipientEmail: testEmail,
+                                      recipientId: 'test-recipient',
+                                      isTest: true
+                                    } : {}
+                                  });
+                                }}
                                 className="text-xs"
                               >
                                 <Play className="h-3 w-3 mr-1" />

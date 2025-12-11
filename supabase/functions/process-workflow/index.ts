@@ -233,9 +233,11 @@ async function executeSendEmail(
   isTest: boolean,
   supabase: ReturnType<typeof createSupabaseAdminClient>
 ): Promise<unknown> {
+  console.log('executeSendEmail called with action config:', JSON.stringify(action.config))
+
   const templateId = action.config.templateId as string
   if (!templateId) {
-    throw new Error('No template ID specified for send_email action')
+    throw new Error('No template ID specified for send_email action - config was: ' + JSON.stringify(action.config))
   }
 
   // Get the workflow owner's user ID to use their Gmail
@@ -244,10 +246,10 @@ async function executeSendEmail(
     throw new Error('No workflow owner ID in context - cannot send email without user')
   }
 
-  // Get workflow owner's profile
+  // Get workflow owner's full profile
   const { data: ownerProfile, error: profileError } = await supabase
     .from('user_profiles')
-    .select('id, email')
+    .select('*')
     .eq('user_id', workflowOwnerId)
     .single()
 
@@ -283,6 +285,13 @@ async function executeSendEmail(
   let recipientEmails: string[] = []
   let recipientIds: string[] = []
   const recipientType = action.config.recipientType as string || 'trigger_user'
+
+  console.log('Determining recipients - type:', recipientType, 'context:', {
+    recipientEmail: context.recipientEmail,
+    recipientId: context.recipientId,
+    triggeredByEmail: context.triggeredByEmail,
+    triggeredBy: context.triggeredBy
+  })
 
   switch (recipientType) {
     case 'trigger_user':
@@ -347,13 +356,17 @@ async function executeSendEmail(
       break
 
     case 'all_agents':
-      const { data: agents } = await supabase
+      const { data: agents, error: agentsError } = await supabase
         .from('user_profiles')
         .select('id, email')
-        .eq('role', 'agent')
-        .eq('is_active', true)
+        .eq('agent_status', 'licensed')  // Licensed means active agent
 
-      if (agents) {
+      console.log('Fetching all licensed agents, found:', agents?.length || 0)
+      if (agentsError) {
+        console.error('Error fetching agents:', agentsError)
+      }
+
+      if (agents && agents.length > 0) {
         recipientEmails = agents.map(a => a.email)
         recipientIds = agents.map(a => a.id)
       }
@@ -396,30 +409,47 @@ async function executeSendEmail(
     }
   }
 
+  // Build template variables for replacement
+  const templateVariables = await buildTemplateVariables(context, ownerProfile, supabase)
+
+  // Debug logging
+  console.log('Template variables:', JSON.stringify(templateVariables, null, 2))
+  console.log('Original template subject:', template.subject)
+  console.log('Original template body (first 200 chars):', template.body_html?.substring(0, 200))
+
   // Send email via Gmail API
   const sentEmails: string[] = []
   const failedEmails: string[] = []
 
   for (const recipientEmail of recipientEmails) {
     try {
+      // Replace template variables in subject and body
+      const processedSubject = replaceTemplateVariables(template.subject, templateVariables)
+      const processedBodyHtml = replaceTemplateVariables(template.body_html, templateVariables)
+      const processedBodyText = replaceTemplateVariables(template.body_text || '', templateVariables)
+
+      // Debug processed content
+      console.log('Processed subject:', processedSubject)
+      console.log('Processed body (first 200 chars):', processedBodyHtml?.substring(0, 200))
+
       const rawMessage = buildRawEmail({
         from: oauthToken.email_address,
         to: [recipientEmail],
-        subject: template.subject,
-        bodyHtml: template.body_html,
-        bodyText: template.body_text,
+        subject: processedSubject,
+        bodyHtml: processedBodyHtml,
+        bodyText: processedBodyText,
       })
 
       await sendViaGmail(accessToken, rawMessage)
       sentEmails.push(recipientEmail)
 
-      // Record in user_emails table
+      // Record in user_emails table with processed content
       await supabase.from('user_emails').insert({
         user_id: ownerProfile.id,
         sender_id: ownerProfile.id,
-        subject: template.subject,
-        body_html: template.body_html,
-        body_text: template.body_text,
+        subject: processedSubject,
+        body_html: processedBodyHtml,
+        body_text: processedBodyText,
         status: 'sent',
         sent_at: new Date().toISOString(),
         provider: 'gmail',
@@ -718,4 +748,141 @@ async function executeUpdateField(
   }
 
   return { updated: true, field: fieldName }
+}
+
+/**
+ * Build template variables from context and additional data
+ */
+async function buildTemplateVariables(
+  context: Record<string, unknown>,
+  ownerProfile: any,
+  supabase: ReturnType<typeof createSupabaseAdminClient>
+): Promise<Record<string, string>> {
+  const variables: Record<string, string> = {}
+
+  // Add owner/user variables (using underscores)
+  variables['user_name'] = `${ownerProfile.first_name || ''} ${ownerProfile.last_name || ''}`.trim() || ownerProfile.email
+  variables['user_first_name'] = ownerProfile.first_name || ''
+  variables['user_last_name'] = ownerProfile.last_name || ''
+  variables['user_email'] = ownerProfile.email
+  variables['company_name'] = 'Your Insurance Agency' // TODO: Get from settings
+
+  // Set default recruit variables to empty string to prevent showing raw tags (using underscores)
+  variables['recruit_name'] = ''
+  variables['recruit_first_name'] = ''
+  variables['recruit_last_name'] = ''
+  variables['recruit_email'] = ''
+  variables['recruit_phone'] = ''
+  variables['recruit_status'] = ''
+  variables['recruit_city'] = ''
+  variables['recruit_state'] = ''
+  variables['recruit_zip'] = ''
+  variables['recruit_address'] = ''
+  variables['recruit_contract_level'] = ''
+  variables['recruit_npn'] = ''
+  variables['recruit_license_number'] = ''
+  variables['recruit_license_expiration'] = ''
+  variables['recruit_referral_source'] = ''
+  variables['recruit_facebook'] = ''
+  variables['recruit_instagram'] = ''
+  variables['recruit_linkedin'] = ''
+  variables['recruit_website'] = ''
+
+  // Add date variables (using underscores)
+  const now = new Date()
+  variables['date_today'] = now.toLocaleDateString()
+  variables['date_tomorrow'] = new Date(now.getTime() + 24 * 60 * 60 * 1000).toLocaleDateString()
+  variables['date_next_week'] = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString()
+  variables['date_current_year'] = now.getFullYear().toString()
+  variables['date_current_month'] = now.toLocaleDateString('en-US', { month: 'long' })
+
+  // Add workflow variables (using underscores)
+  variables['workflow_name'] = context.workflowName as string || ''
+  variables['workflow_run_id'] = context.runId as string || ''
+  variables['app_url'] = 'https://your-app-url.com' // TODO: Get from environment
+
+  // Try to get recipient/recruit data
+  // First try recipientId, then recipientEmail, then use the workflow owner as fallback
+  let recipientProfile = null
+
+  // Skip test IDs, but still try to find by email
+  if (context.recipientId && context.recipientId !== 'test-user-id' && context.recipientId !== 'test-recipient') {
+    const { data } = await supabase
+      .from('user_profiles')
+      .select('*')
+      .eq('id', context.recipientId)
+      .single()
+    recipientProfile = data
+    console.log('Found recipient by ID:', recipientProfile?.email)
+  }
+
+  // If no valid profile yet, try by email
+  if (!recipientProfile && context.recipientEmail && context.recipientEmail !== 'test@example.com') {
+    const { data } = await supabase
+      .from('user_profiles')
+      .select('*')
+      .eq('email', context.recipientEmail as string)
+      .single()
+    recipientProfile = data
+    console.log('Found recipient by email:', recipientProfile?.email)
+  }
+
+  // If we still don't have a recipient, use the workflow owner as fallback
+  if (!recipientProfile) {
+    console.log('No recipient found, using owner as fallback:', ownerProfile.email)
+    recipientProfile = ownerProfile
+  }
+
+  if (recipientProfile) {
+    // Override recruit variables with actual recipient data (using underscores)
+    variables['recruit_name'] = `${recipientProfile.first_name || ''} ${recipientProfile.last_name || ''}`.trim() || recipientProfile.email
+    variables['recruit_first_name'] = recipientProfile.first_name || 'there'
+    variables['recruit_last_name'] = recipientProfile.last_name || ''
+    variables['recruit_email'] = recipientProfile.email
+    variables['recruit_phone'] = recipientProfile.phone || ''
+    variables['recruit_status'] = recipientProfile.agent_status || ''
+    variables['recruit_city'] = recipientProfile.city || ''
+    variables['recruit_state'] = recipientProfile.state || ''
+    variables['recruit_zip'] = recipientProfile.zip || ''
+    variables['recruit_address'] = recipientProfile.street_address || ''
+    variables['recruit_contract_level'] = recipientProfile.contract_level?.toString() || ''
+    variables['recruit_npn'] = recipientProfile.npn || ''
+    variables['recruit_license_number'] = recipientProfile.license_number || ''
+    variables['recruit_license_expiration'] = recipientProfile.license_expiration ? new Date(recipientProfile.license_expiration).toLocaleDateString() : ''
+    variables['recruit_referral_source'] = recipientProfile.referral_source || ''
+    variables['recruit_facebook'] = recipientProfile.facebook_handle || ''
+    variables['recruit_instagram'] = recipientProfile.instagram_username || ''
+    variables['recruit_linkedin'] = recipientProfile.linkedin_username || ''
+    variables['recruit_website'] = recipientProfile.personal_website || ''
+  }
+
+  // Add any additional context variables (using underscores)
+  Object.entries(context).forEach(([key, value]) => {
+    if (typeof value === 'string' || typeof value === 'number') {
+      variables[`context_${key}`] = value.toString()
+    }
+  })
+
+  return variables
+}
+
+/**
+ * Replace template variables in text
+ */
+function replaceTemplateVariables(text: string, variables: Record<string, string>): string {
+  let result = text
+
+  // Replace {{variable}} format
+  Object.entries(variables).forEach(([key, value]) => {
+    const regex = new RegExp(`{{\\s*${key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*}}`, 'gi')
+    result = result.replace(regex, value)
+  })
+
+  // Also support {variable} format for backward compatibility
+  Object.entries(variables).forEach(([key, value]) => {
+    const regex = new RegExp(`{\\s*${key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*}`, 'gi')
+    result = result.replace(regex, value)
+  })
+
+  return result
 }

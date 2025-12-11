@@ -22,6 +22,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogClose,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -367,6 +368,7 @@ export default function WorkflowDialog({ open, onOpenChange, workflow }: Workflo
           <DialogTitle className="text-sm">
             {workflow ? 'Edit Workflow' : 'Create Workflow'}
           </DialogTitle>
+          <DialogClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground" />
         </DialogHeader>
 
         <form
@@ -374,18 +376,18 @@ export default function WorkflowDialog({ open, onOpenChange, workflow }: Workflo
             e.preventDefault();
             form.handleSubmit();
           }}
-          className="flex-1 overflow-y-auto space-y-3 pr-1"
+          className="flex-1 overflow-y-auto space-y-2 pr-1"
         >
           {/* Basic Info */}
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <div>
-              <Label className="text-xs">Name</Label>
+              <Label className="text-[10px] text-muted-foreground">Name</Label>
               <form.Field name="name">
                 {(field) => (
                   <Input
                     value={field.state.value}
                     onChange={(e) => field.handleChange(e.target.value)}
-                    className="h-8 text-sm"
+                    className="h-7 text-xs"
                     placeholder="e.g., Welcome Email Sequence"
                   />
                 )}
@@ -393,13 +395,13 @@ export default function WorkflowDialog({ open, onOpenChange, workflow }: Workflo
             </div>
 
             <div>
-              <Label className="text-xs">Description</Label>
+              <Label className="text-[10px] text-muted-foreground">Description</Label>
               <form.Field name="description">
                 {(field) => (
                   <Textarea
                     value={field.state.value}
                     onChange={(e) => field.handleChange(e.target.value)}
-                    className="h-14 text-sm resize-none"
+                    className="h-12 text-xs resize-none"
                     placeholder="Brief description..."
                   />
                 )}
@@ -408,21 +410,21 @@ export default function WorkflowDialog({ open, onOpenChange, workflow }: Workflo
 
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <Label className="text-xs">Category</Label>
+                <Label className="text-[10px] text-muted-foreground">Category</Label>
                 <form.Field name="category">
                   {(field) => (
                     <Select
                       value={field.state.value}
                       onValueChange={(v) => field.handleChange(v as WorkflowCategory)}
                     >
-                      <SelectTrigger className="h-8 text-sm">
+                      <SelectTrigger className="h-7 text-xs">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="email">Email</SelectItem>
-                        <SelectItem value="recruiting">Recruiting</SelectItem>
-                        <SelectItem value="commission">Commission</SelectItem>
-                        <SelectItem value="general">General</SelectItem>
+                        <SelectItem value="email" className="text-xs">Email</SelectItem>
+                        <SelectItem value="recruiting" className="text-xs">Recruiting</SelectItem>
+                        <SelectItem value="commission" className="text-xs">Commission</SelectItem>
+                        <SelectItem value="general" className="text-xs">General</SelectItem>
                       </SelectContent>
                     </Select>
                   )}
@@ -430,21 +432,21 @@ export default function WorkflowDialog({ open, onOpenChange, workflow }: Workflo
               </div>
 
               <div>
-                <Label className="text-xs">Trigger Type</Label>
+                <Label className="text-[10px] text-muted-foreground">Trigger Type</Label>
                 <form.Field name="triggerType">
                   {(field) => (
                     <Select
                       value={field.state.value}
                       onValueChange={(v) => field.handleChange(v as TriggerType)}
                     >
-                      <SelectTrigger className="h-8 text-sm">
+                      <SelectTrigger className="h-7 text-xs">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="manual">Manual</SelectItem>
-                        <SelectItem value="schedule">Schedule</SelectItem>
-                        <SelectItem value="event">Event</SelectItem>
-                        <SelectItem value="webhook">Webhook</SelectItem>
+                        <SelectItem value="manual" className="text-xs">Manual</SelectItem>
+                        <SelectItem value="schedule" className="text-xs">Schedule</SelectItem>
+                        <SelectItem value="event" className="text-xs">Event</SelectItem>
+                        <SelectItem value="webhook" className="text-xs">Webhook</SelectItem>
                       </SelectContent>
                     </Select>
                   )}
@@ -452,18 +454,17 @@ export default function WorkflowDialog({ open, onOpenChange, workflow }: Workflo
               </div>
             </div>
 
-            {/* Trigger Configuration */}
-            <div className="rounded-md border bg-muted/30 p-2">
-              <div className="flex items-center gap-1.5 mb-2">
-                <TriggerIcon className="h-3 w-3 text-muted-foreground" />
-                <span className="text-[10px] font-medium uppercase text-muted-foreground">
-                  Trigger Configuration
-                </span>
-              </div>
+            {/* Trigger Configuration - Only show if not manual */}
+            {form.state.values.triggerType !== 'manual' && (
+              <div className="rounded-md border bg-muted/30 p-2">
+                <div className="flex items-center gap-1.5 mb-1.5">
+                  <TriggerIcon className="h-3 w-3 text-muted-foreground" />
+                  <span className="text-[10px] font-medium text-muted-foreground">
+                    Trigger Settings
+                  </span>
+                </div>
 
-              {form.state.values.triggerType === 'event' && (
-                <div>
-                  <Label className="text-[10px]">Event Type</Label>
+                {form.state.values.triggerType === 'event' && (
                   <form.Field name="trigger.eventName">
                     {(field) => (
                       <Select
@@ -476,27 +477,17 @@ export default function WorkflowDialog({ open, onOpenChange, workflow }: Workflo
                         <SelectContent>
                           {triggerEventTypes.map((event) => (
                             <SelectItem key={event.id} value={event.eventName} className="text-xs">
-                              <div>
-                                <span>{event.eventName}</span>
-                                {event.description && (
-                                  <span className="text-muted-foreground ml-1">
-                                    - {event.description}
-                                  </span>
-                                )}
-                              </div>
+                              {event.eventName}
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                     )}
                   </form.Field>
-                </div>
-              )}
+                )}
 
-              {form.state.values.triggerType === 'schedule' && (
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <Label className="text-[10px]">Time</Label>
+                {form.state.values.triggerType === 'schedule' && (
+                  <div className="grid grid-cols-2 gap-2">
                     <form.Field name="trigger.schedule.time">
                       {(field) => (
                         <Input
@@ -507,9 +498,6 @@ export default function WorkflowDialog({ open, onOpenChange, workflow }: Workflo
                         />
                       )}
                     </form.Field>
-                  </div>
-                  <div>
-                    <Label className="text-[10px]">Day</Label>
                     <form.Field name="trigger.schedule.dayOfWeek">
                       {(field) => (
                         <Select
@@ -533,51 +521,36 @@ export default function WorkflowDialog({ open, onOpenChange, workflow }: Workflo
                       )}
                     </form.Field>
                   </div>
-                </div>
-              )}
+                )}
 
-              {form.state.values.triggerType === 'manual' && (
-                <p className="text-[10px] text-muted-foreground">
-                  This workflow will only run when manually triggered from the UI.
-                </p>
-              )}
-
-              {form.state.values.triggerType === 'webhook' && (
-                <p className="text-[10px] text-muted-foreground">
-                  A webhook URL will be generated after the workflow is created.
-                </p>
-              )}
-            </div>
+                {form.state.values.triggerType === 'webhook' && (
+                  <p className="text-[10px] text-muted-foreground">
+                    A webhook URL will be generated after creation
+                  </p>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Actions Section */}
           <div>
-            <div className="flex items-center justify-between mb-2">
-              <Label className="text-xs">Actions ({actions.length})</Label>
+            <div className="flex items-center justify-between mb-1.5">
+              <Label className="text-[10px] text-muted-foreground">Actions ({actions.length})</Label>
               <Button
                 type="button"
-                variant="outline"
+                variant="ghost"
                 size="sm"
-                className="h-6 text-[10px] gap-1"
+                className="h-5 text-[10px] gap-1"
                 onClick={addAction}
               >
                 <Plus className="h-3 w-3" />
-                Add Action
+                Add
               </Button>
             </div>
 
             {actions.length === 0 ? (
-              <div className="rounded-md border border-dashed p-4 text-center">
-                <p className="text-xs text-muted-foreground mb-2">No actions configured</p>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="h-6 text-[10px]"
-                  onClick={addAction}
-                >
-                  Add your first action
-                </Button>
+              <div className="rounded-md border border-dashed p-2 text-center">
+                <p className="text-[10px] text-muted-foreground">No actions configured</p>
               </div>
             ) : (
               <div className="space-y-2">

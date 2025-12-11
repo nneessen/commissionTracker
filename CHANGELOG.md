@@ -6,6 +6,33 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-12-11 13:04:11
+
+### Changed Files
+- `scripts/check-all-workflows.js`
+- `scripts/check-rls-policies.js`
+- `scripts/check-workflow-config.js`
+- `scripts/create-real-workflow-now.js`
+- `scripts/create-test-workflow.js`
+- `scripts/fix-agent-status.js`
+- `scripts/fix-workflow-issue.js`
+- `scripts/remove-duplicate-role.js`
+- `scripts/test-template-replacement.js`
+- `scripts/test-workflow-creation.js`
+- `scripts/test-workflow-now.js`
+- `src/features/admin/components/EditUserDialog.tsx`
+- `src/features/training-hub/components/ActionConfigPanel.tsx`
+- `src/features/training-hub/components/AutomationTab.tsx`
+- `src/features/training-hub/components/WorkflowDiagnostic.tsx`
+- `src/features/training-hub/components/WorkflowDialog.tsx`
+- `supabase/functions/process-workflow/index.ts`
+- `tsconfig.tsbuildinfo`
+
+### Statistics
+```
+ 18 files changed, 1897 insertions(+), 120 deletions(-)
+```
+
 ## [Checkpoint] - 2025-12-10 09:14:40
 
 ### Changed Files
