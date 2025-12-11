@@ -1,8 +1,11 @@
 // Process Workflow Edge Function
 // Executes workflow actions sequentially with delays and error handling
+// Uses user's connected Gmail for sending emails (NOT Resend)
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createSupabaseAdminClient } from '../_shared/supabase-client.ts'
+import { decrypt } from '../_shared/encryption.ts'
+import { encode as base64Encode } from 'https://deno.land/std@0.168.0/encoding/base64.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -222,7 +225,7 @@ async function executeAction(
 }
 
 /**
- * Send email action
+ * Send email action - uses user's connected Gmail (NOT Resend)
  */
 async function executeSendEmail(
   action: WorkflowAction,
@@ -233,6 +236,36 @@ async function executeSendEmail(
   const templateId = action.config.templateId as string
   if (!templateId) {
     throw new Error('No template ID specified for send_email action')
+  }
+
+  // Get the workflow owner's user ID to use their Gmail
+  const workflowOwnerId = context.triggeredBy as string
+  if (!workflowOwnerId) {
+    throw new Error('No workflow owner ID in context - cannot send email without user')
+  }
+
+  // Get workflow owner's profile
+  const { data: ownerProfile, error: profileError } = await supabase
+    .from('user_profiles')
+    .select('id, email')
+    .eq('user_id', workflowOwnerId)
+    .single()
+
+  if (profileError || !ownerProfile) {
+    throw new Error('Workflow owner profile not found')
+  }
+
+  // Get user's Gmail OAuth token
+  const { data: oauthToken, error: tokenError } = await supabase
+    .from('user_email_oauth_tokens')
+    .select('*')
+    .eq('user_id', ownerProfile.id)
+    .eq('provider', 'gmail')
+    .eq('is_active', true)
+    .single()
+
+  if (tokenError || !oauthToken) {
+    throw new Error('Gmail not connected. The workflow owner must connect their Gmail account in Settings > Email.')
   }
 
   // Get template
@@ -253,7 +286,6 @@ async function executeSendEmail(
 
   switch (recipientType) {
     case 'trigger_user':
-      // Send to the person who triggered the workflow
       if (context.recipientEmail) {
         recipientEmails = [context.recipientEmail as string]
         recipientIds = [context.recipientId as string || '']
@@ -261,10 +293,8 @@ async function executeSendEmail(
       break
 
     case 'specific_email':
-      // Send to a specific email address
       if (action.config.recipientEmail) {
         recipientEmails = [action.config.recipientEmail as string]
-        // Try to find user by email
         const { data: user } = await supabase
           .from('user_profiles')
           .select('id')
@@ -275,7 +305,6 @@ async function executeSendEmail(
       break
 
     case 'current_user':
-      // Send to the user who created/triggered the workflow
       if (context.triggeredByEmail) {
         recipientEmails = [context.triggeredByEmail as string]
         recipientIds = [context.triggeredBy as string || '']
@@ -283,7 +312,6 @@ async function executeSendEmail(
       break
 
     case 'manager':
-      // Send to manager/upline
       if (context.recipientId) {
         const { data: hierarchy } = await supabase
           .from('user_hierarchy')
@@ -307,7 +335,6 @@ async function executeSendEmail(
       break
 
     case 'all_trainers':
-      // Send to all trainers
       const { data: trainers } = await supabase
         .from('user_profiles')
         .select('id, email')
@@ -320,7 +347,6 @@ async function executeSendEmail(
       break
 
     case 'all_agents':
-      // Send to all active agents
       const { data: agents } = await supabase
         .from('user_profiles')
         .select('id, email')
@@ -345,38 +371,219 @@ async function executeSendEmail(
       subject: template.subject,
       recipientType,
       wouldSendTo: recipientEmails,
+      senderGmail: oauthToken.email_address,
       isTest: true,
     }
   }
 
-  // Queue emails for all recipients
-  const queueEntries = recipientEmails.map((email, idx) => ({
-    template_id: templateId,
-    recipient_email: email,
-    recipient_id: recipientIds[idx] || null,
-    subject: template.subject,
-    body_html: template.body_html,
-    status: 'pending',
-    variables: action.config.variables || {},
-  }))
-
-  const { error: queueError } = await supabase
-    .from('email_queue')
-    .insert(queueEntries)
-
-  if (queueError) {
-    throw new Error(`Failed to queue emails: ${queueError.message}`)
+  // Decrypt access token
+  let accessToken: string
+  try {
+    accessToken = await decrypt(oauthToken.access_token_encrypted)
+  } catch (decryptError) {
+    console.error('Token decryption failed:', decryptError)
+    throw new Error('Failed to decrypt Gmail OAuth token')
   }
 
-  // Trigger email processing
-  await supabase.functions.invoke('process-email-queue', {})
+  // Check if token is expired and refresh if needed
+  if (oauthToken.token_expiry && new Date(oauthToken.token_expiry) < new Date()) {
+    console.log('Token expired, attempting refresh...')
+    try {
+      accessToken = await refreshGmailToken(oauthToken, supabase, ownerProfile.id)
+    } catch (refreshError) {
+      console.error('Token refresh failed:', refreshError)
+      throw new Error('Gmail token expired. The workflow owner needs to reconnect their Gmail account.')
+    }
+  }
+
+  // Send email via Gmail API
+  const sentEmails: string[] = []
+  const failedEmails: string[] = []
+
+  for (const recipientEmail of recipientEmails) {
+    try {
+      const rawMessage = buildRawEmail({
+        from: oauthToken.email_address,
+        to: [recipientEmail],
+        subject: template.subject,
+        bodyHtml: template.body_html,
+        bodyText: template.body_text,
+      })
+
+      await sendViaGmail(accessToken, rawMessage)
+      sentEmails.push(recipientEmail)
+
+      // Record in user_emails table
+      await supabase.from('user_emails').insert({
+        user_id: ownerProfile.id,
+        sender_id: ownerProfile.id,
+        subject: template.subject,
+        body_html: template.body_html,
+        body_text: template.body_text,
+        status: 'sent',
+        sent_at: new Date().toISOString(),
+        provider: 'gmail',
+        is_incoming: false,
+        from_address: oauthToken.email_address,
+        to_addresses: [recipientEmail],
+      })
+    } catch (sendError) {
+      console.error(`Failed to send to ${recipientEmail}:`, sendError)
+      failedEmails.push(recipientEmail)
+    }
+  }
+
+  // Update last_used_at on OAuth token
+  await supabase
+    .from('user_email_oauth_tokens')
+    .update({ last_used_at: new Date().toISOString() })
+    .eq('id', oauthToken.id)
+
+  if (sentEmails.length === 0) {
+    throw new Error(`Failed to send to all recipients: ${failedEmails.join(', ')}`)
+  }
 
   return {
-    queued: true,
+    sent: true,
     templateId,
-    recipientCount: recipientEmails.length,
-    recipients: recipientEmails
+    sentCount: sentEmails.length,
+    failedCount: failedEmails.length,
+    sentTo: sentEmails,
+    failedTo: failedEmails.length > 0 ? failedEmails : undefined,
+    senderGmail: oauthToken.email_address
   }
+}
+
+/**
+ * Build RFC 2822 compliant email message
+ */
+function buildRawEmail(params: {
+  from: string
+  to: string[]
+  subject: string
+  bodyHtml: string
+  bodyText?: string
+}): string {
+  const boundary = `boundary_${Date.now()}`
+
+  let message = ''
+
+  // Headers
+  message += `From: ${params.from}\r\n`
+  message += `To: ${params.to.join(', ')}\r\n`
+  message += `Subject: ${params.subject}\r\n`
+  message += `MIME-Version: 1.0\r\n`
+
+  // Body part
+  const altBoundary = `alt_${Date.now()}`
+  message += `Content-Type: multipart/alternative; boundary="${altBoundary}"\r\n`
+  message += `\r\n`
+
+  // Plain text version
+  if (params.bodyText) {
+    message += `--${altBoundary}\r\n`
+    message += `Content-Type: text/plain; charset="UTF-8"\r\n`
+    message += `\r\n`
+    message += `${params.bodyText}\r\n`
+  }
+
+  // HTML version
+  message += `--${altBoundary}\r\n`
+  message += `Content-Type: text/html; charset="UTF-8"\r\n`
+  message += `\r\n`
+  message += `${params.bodyHtml}\r\n`
+  message += `--${altBoundary}--\r\n`
+
+  return message
+}
+
+/**
+ * Send email via Gmail API
+ */
+async function sendViaGmail(
+  accessToken: string,
+  rawMessage: string,
+  threadId?: string
+): Promise<{ id: string; threadId: string }> {
+  const encoder = new TextEncoder()
+  const data = encoder.encode(rawMessage)
+  const base64Message = base64Encode(data)
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '')
+
+  const requestBody: Record<string, string> = { raw: base64Message }
+  if (threadId) {
+    requestBody.threadId = threadId
+  }
+
+  const response = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(requestBody),
+  })
+
+  if (!response.ok) {
+    const errorText = await response.text()
+    console.error('Gmail API error:', errorText)
+    throw new Error(`Gmail API error: ${response.status}`)
+  }
+
+  return response.json()
+}
+
+/**
+ * Refresh Gmail OAuth token
+ */
+async function refreshGmailToken(
+  oauthToken: any,
+  supabase: any,
+  userId: string
+): Promise<string> {
+  if (!oauthToken.refresh_token_encrypted) {
+    throw new Error('No refresh token available')
+  }
+
+  const refreshToken = await decrypt(oauthToken.refresh_token_encrypted)
+
+  const GOOGLE_CLIENT_ID = Deno.env.get('GOOGLE_CLIENT_ID')!
+  const GOOGLE_CLIENT_SECRET = Deno.env.get('GOOGLE_CLIENT_SECRET')!
+
+  const response = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: new URLSearchParams({
+      client_id: GOOGLE_CLIENT_ID,
+      client_secret: GOOGLE_CLIENT_SECRET,
+      refresh_token: refreshToken,
+      grant_type: 'refresh_token',
+    }),
+  })
+
+  if (!response.ok) {
+    throw new Error('Failed to refresh token')
+  }
+
+  const tokens = await response.json()
+  const { encrypt } = await import('../_shared/encryption.ts')
+
+  // Update token in database
+  await supabase
+    .from('user_email_oauth_tokens')
+    .update({
+      access_token_encrypted: await encrypt(tokens.access_token),
+      token_expiry: new Date(Date.now() + tokens.expires_in * 1000).toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq('user_id', userId)
+    .eq('provider', 'gmail')
+
+  return tokens.access_token
 }
 
 /**

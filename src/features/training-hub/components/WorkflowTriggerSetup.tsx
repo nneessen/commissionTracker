@@ -60,26 +60,51 @@ const TRIGGER_TYPES = [
 const SCHEDULE_PRESETS = [
   {
     label: 'Every day at 9 AM',
-    schedule: { time: '09:00', dayOfWeek: 'daily' }
+    schedule: { time: '09:00', frequency: 'daily', dayOfWeek: 'daily' }
   },
   {
     label: 'Every Monday at 8 AM',
-    schedule: { time: '08:00', dayOfWeek: 'monday' }
+    schedule: { time: '08:00', frequency: 'weekly', dayOfWeek: 'monday' }
   },
   {
     label: 'Every weekday at 5 PM',
-    schedule: { time: '17:00', dayOfWeek: 'weekday' }
+    schedule: { time: '17:00', frequency: 'weekdays', dayOfWeek: 'weekday' }
   },
   {
     label: 'First of month at 10 AM',
-    schedule: { time: '10:00', dayOfWeek: 'monthly', dayOfMonth: 1 }
+    schedule: { time: '10:00', frequency: 'monthly', dayOfWeek: 'monthly', dayOfMonth: 1 }
   },
 ];
+
+const DAYS_OF_WEEK = [
+  { value: 'monday', label: 'Mon' },
+  { value: 'tuesday', label: 'Tue' },
+  { value: 'wednesday', label: 'Wed' },
+  { value: 'thursday', label: 'Thu' },
+  { value: 'friday', label: 'Fri' },
+  { value: 'saturday', label: 'Sat' },
+  { value: 'sunday', label: 'Sun' },
+];
+
+const FREQUENCY_OPTIONS = [
+  { value: 'hourly', label: 'Hourly', description: 'Every X hours' },
+  { value: 'daily', label: 'Daily', description: 'Once per day' },
+  { value: 'weekdays', label: 'Weekdays', description: 'Monday-Friday' },
+  { value: 'weekly', label: 'Weekly', description: 'Specific days of week' },
+  { value: 'monthly', label: 'Monthly', description: 'Once per month' },
+];
+
+type ScheduleFrequency = 'hourly' | 'daily' | 'weekdays' | 'weekly' | 'monthly';
 
 export default function WorkflowTriggerSetup({ data, onChange, errors }: WorkflowTriggerSetupProps) {
   const { data: eventTypes = [], refetch: refetchEventTypes } = useTriggerEventTypes();
   const [scheduleTime, setScheduleTime] = useState(data.trigger?.schedule?.time || '09:00');
-  const [scheduleFrequency, setScheduleFrequency] = useState(data.trigger?.schedule?.dayOfWeek || 'daily');
+  const [scheduleFrequency, setScheduleFrequency] = useState<ScheduleFrequency>(
+    (data.trigger?.schedule?.frequency as ScheduleFrequency) || 'daily'
+  );
+  const [selectedDays, setSelectedDays] = useState<string[]>(data.trigger?.schedule?.selectedDays || ['monday']);
+  const [intervalHours, setIntervalHours] = useState(data.trigger?.schedule?.intervalHours || 4);
+  const [dayOfMonth, setDayOfMonth] = useState(data.trigger?.schedule?.dayOfMonth || 1);
   const [isSeeding, setIsSeeding] = useState(false);
 
   // Update parent when schedule changes
@@ -89,12 +114,16 @@ export default function WorkflowTriggerSetup({ data, onChange, errors }: Workflo
         type: 'schedule',
         schedule: {
           time: scheduleTime,
-          dayOfWeek: scheduleFrequency
+          frequency: scheduleFrequency,
+          dayOfWeek: scheduleFrequency, // Keep for backwards compatibility
+          selectedDays: scheduleFrequency === 'weekly' ? selectedDays : undefined,
+          intervalHours: scheduleFrequency === 'hourly' ? intervalHours : undefined,
+          dayOfMonth: scheduleFrequency === 'monthly' ? dayOfMonth : undefined,
         }
       };
       onChange({ trigger: newTrigger });
     }
-  }, [scheduleTime, scheduleFrequency, data.triggerType]);
+  }, [scheduleTime, scheduleFrequency, selectedDays, intervalHours, dayOfMonth, data.triggerType]);
 
   const handleTriggerTypeChange = (type: TriggerType) => {
     onChange({
@@ -109,28 +138,12 @@ export default function WorkflowTriggerSetup({ data, onChange, errors }: Workflo
     }
   };
 
-  const applySchedulePreset = (preset: typeof SCHEDULE_PRESETS[0]) => {
-    setScheduleTime(preset.schedule.time);
-    setScheduleFrequency(preset.schedule.dayOfWeek);
-
-    const newTrigger: WorkflowTrigger = {
-      type: 'schedule',
-      schedule: preset.schedule
-    };
-    onChange({ trigger: newTrigger });
-  };
-
   const handleEventChange = (eventName: string) => {
     const newTrigger: WorkflowTrigger = {
       type: 'event',
       eventName
     };
     onChange({ trigger: newTrigger });
-  };
-
-  const isSchedulePresetActive = (preset: typeof SCHEDULE_PRESETS[0]) => {
-    return scheduleTime === preset.schedule.time &&
-           scheduleFrequency === preset.schedule.dayOfWeek;
   };
 
   const handleSeedEventTypes = async () => {
@@ -204,6 +217,7 @@ export default function WorkflowTriggerSetup({ data, onChange, errors }: Workflo
 
         {data.triggerType === 'schedule' && (
           <div className="space-y-4">
+            {/* Quick Presets */}
             <div>
               <Label className="text-sm font-medium mb-2 block">Quick Presets</Label>
               <div className="grid grid-cols-2 gap-2">
@@ -211,11 +225,15 @@ export default function WorkflowTriggerSetup({ data, onChange, errors }: Workflo
                   <button
                     key={preset.label}
                     type="button"
-                    onClick={() => applySchedulePreset(preset)}
+                    onClick={() => {
+                      setScheduleTime(preset.schedule.time);
+                      setScheduleFrequency(preset.schedule.frequency as ScheduleFrequency);
+                      if (preset.schedule.dayOfMonth) setDayOfMonth(preset.schedule.dayOfMonth);
+                    }}
                     className={cn(
-                      "p-3 rounded-md border text-left transition-all text-sm",
+                      "p-2.5 rounded-md border text-left transition-all text-sm",
                       "hover:bg-muted",
-                      isSchedulePresetActive(preset)
+                      scheduleFrequency === preset.schedule.frequency && scheduleTime === preset.schedule.time
                         ? "bg-primary/10 border-primary text-primary"
                         : "border-border"
                     )}
@@ -226,55 +244,125 @@ export default function WorkflowTriggerSetup({ data, onChange, errors }: Workflo
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            {/* Frequency Selection */}
+            <div>
+              <Label className="text-sm font-medium mb-2 block">Frequency</Label>
+              <Select
+                value={scheduleFrequency}
+                onValueChange={(value) => setScheduleFrequency(value as ScheduleFrequency)}
+              >
+                <SelectTrigger className="h-10 border-input bg-background hover:bg-accent/50 transition-colors">
+                  <SelectValue placeholder="Select frequency..." />
+                </SelectTrigger>
+                <SelectContent className="min-w-[250px]">
+                  {FREQUENCY_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value} className="py-2 cursor-pointer">
+                      <div className="flex flex-col">
+                        <span className="font-medium text-sm">{option.label}</span>
+                        <span className="text-xs text-muted-foreground mt-0.5">{option.description}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Hourly interval */}
+            {scheduleFrequency === 'hourly' && (
               <div>
-                <Label className="text-sm">Time</Label>
+                <Label className="text-sm font-medium mb-2 block">Run every</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    value={intervalHours}
+                    onChange={(e) => setIntervalHours(Math.max(1, Math.min(24, parseInt(e.target.value) || 1)))}
+                    className="w-20 h-10"
+                    min={1}
+                    max={24}
+                  />
+                  <span className="text-sm text-muted-foreground">hours</span>
+                </div>
+              </div>
+            )}
+
+            {/* Weekly - Day selection */}
+            {scheduleFrequency === 'weekly' && (
+              <div>
+                <Label className="text-sm font-medium mb-2 block">Select Days</Label>
+                <div className="flex flex-wrap gap-2">
+                  {DAYS_OF_WEEK.map((day) => (
+                    <button
+                      key={day.value}
+                      type="button"
+                      onClick={() => {
+                        if (selectedDays.includes(day.value)) {
+                          if (selectedDays.length > 1) {
+                            setSelectedDays(selectedDays.filter(d => d !== day.value));
+                          }
+                        } else {
+                          setSelectedDays([...selectedDays, day.value]);
+                        }
+                      }}
+                      className={cn(
+                        "px-3 py-1.5 rounded-md text-sm font-medium transition-colors",
+                        selectedDays.includes(day.value)
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted hover:bg-muted/80 text-muted-foreground"
+                      )}
+                    >
+                      {day.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Monthly - Day of month */}
+            {scheduleFrequency === 'monthly' && (
+              <div>
+                <Label className="text-sm font-medium mb-2 block">Day of Month</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    value={dayOfMonth}
+                    onChange={(e) => setDayOfMonth(Math.max(1, Math.min(28, parseInt(e.target.value) || 1)))}
+                    className="w-20 h-10"
+                    min={1}
+                    max={28}
+                  />
+                  <span className="text-sm text-muted-foreground">of each month</span>
+                </div>
+              </div>
+            )}
+
+            {/* Time of day (not for hourly) */}
+            {scheduleFrequency !== 'hourly' && (
+              <div>
+                <Label className="text-sm font-medium mb-2 block">Time of Day</Label>
                 <Input
                   type="time"
                   value={scheduleTime}
                   onChange={(e) => setScheduleTime(e.target.value)}
-                  className="mt-1"
+                  className="w-32 h-10"
                 />
               </div>
-              <div>
-                <Label className="text-sm">Frequency</Label>
-                <Select
-                  value={scheduleFrequency}
-                  onValueChange={setScheduleFrequency}
-                >
-                  <SelectTrigger className="mt-1">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="daily">Daily</SelectItem>
-                    <SelectItem value="weekday">Weekdays only</SelectItem>
-                    <SelectItem value="monday">Every Monday</SelectItem>
-                    <SelectItem value="tuesday">Every Tuesday</SelectItem>
-                    <SelectItem value="wednesday">Every Wednesday</SelectItem>
-                    <SelectItem value="thursday">Every Thursday</SelectItem>
-                    <SelectItem value="friday">Every Friday</SelectItem>
-                    <SelectItem value="saturday">Every Saturday</SelectItem>
-                    <SelectItem value="sunday">Every Sunday</SelectItem>
-                    <SelectItem value="monthly">Monthly (1st day)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+            )}
 
             {errors.schedule && (
               <p className="text-sm text-destructive">{errors.schedule}</p>
             )}
 
+            {/* Schedule Summary */}
             <div className="flex items-start gap-2 p-3 rounded-md bg-muted">
               <Clock className="h-4 w-4 text-muted-foreground mt-0.5" />
               <div className="text-sm text-muted-foreground">
                 <p className="font-medium">Schedule Summary:</p>
                 <p>
+                  {scheduleFrequency === 'hourly' && `Every ${intervalHours} hour${intervalHours > 1 ? 's' : ''}`}
                   {scheduleFrequency === 'daily' && `Every day at ${scheduleTime}`}
-                  {scheduleFrequency === 'weekday' && `Monday-Friday at ${scheduleTime}`}
-                  {scheduleFrequency === 'monthly' && `1st of each month at ${scheduleTime}`}
-                  {!['daily', 'weekday', 'monthly'].includes(scheduleFrequency) &&
-                    `Every ${scheduleFrequency} at ${scheduleTime}`}
+                  {scheduleFrequency === 'weekdays' && `Monday-Friday at ${scheduleTime}`}
+                  {scheduleFrequency === 'weekly' && `Every ${selectedDays.map(d => d.charAt(0).toUpperCase() + d.slice(1)).join(', ')} at ${scheduleTime}`}
+                  {scheduleFrequency === 'monthly' && `${dayOfMonth}${dayOfMonth === 1 ? 'st' : dayOfMonth === 2 ? 'nd' : dayOfMonth === 3 ? 'rd' : 'th'} of each month at ${scheduleTime}`}
                 </p>
               </div>
             </div>

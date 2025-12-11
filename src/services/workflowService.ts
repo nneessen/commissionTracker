@@ -284,8 +284,16 @@ class WorkflowService {
     if (runError) throw runError;
 
     // Trigger edge function to process workflow asynchronously
+    // Note: We don't await this - the workflow runs in the background
+    // But we do log errors for debugging
     supabase.functions.invoke('process-workflow', {
       body: { runId: run.id, workflowId }
+    }).then((response) => {
+      if (response.error) {
+        console.error('Workflow processor returned error:', response.error);
+      } else {
+        console.log('Workflow processor invoked successfully:', response.data);
+      }
     }).catch((err) => {
       console.error('Failed to invoke workflow processor:', err);
     });

@@ -68,22 +68,22 @@ export default function ActionConfigPanel({ action, onUpdate, onClose }: ActionC
                   config: { ...action.config, templateId: value }
                 })}
               >
-                <SelectTrigger className="h-9 text-sm">
+                <SelectTrigger className="h-9 text-sm border-input bg-background hover:bg-accent/50 transition-colors">
                   <SelectValue placeholder="Select template..." />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="min-w-[250px]">
                   {emailTemplates.length === 0 ? (
-                    <div className="p-2 text-sm text-muted-foreground">
+                    <div className="p-3 text-sm text-muted-foreground text-center">
                       No templates available
                     </div>
                   ) : (
                     emailTemplates.map((template) => (
-                      <SelectItem key={template.id} value={template.id} className="text-sm">
-                        <div>
-                          <div className="font-medium">{template.name}</div>
-                          <div className="text-xs text-muted-foreground">
+                      <SelectItem key={template.id} value={template.id} className="py-2 cursor-pointer">
+                        <div className="flex flex-col">
+                          <span className="font-medium text-sm">{template.name}</span>
+                          <span className="text-xs text-muted-foreground mt-0.5">
                             {template.subject}
-                          </div>
+                          </span>
                         </div>
                       </SelectItem>
                     ))
@@ -100,44 +100,44 @@ export default function ActionConfigPanel({ action, onUpdate, onClose }: ActionC
                   config: { ...action.config, recipientType: value }
                 })}
               >
-                <SelectTrigger className="h-9 text-sm">
-                  <SelectValue />
+                <SelectTrigger className="h-9 text-sm border-input bg-background hover:bg-accent/50 transition-colors">
+                  <SelectValue placeholder="Select recipient..." />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="trigger_user" className="text-sm">
-                    <div>
-                      <div className="font-medium">Person Who Triggered Workflow</div>
-                      <div className="text-xs text-muted-foreground">E.g., recruit being processed</div>
+                <SelectContent className="min-w-[280px]">
+                  <SelectItem value="trigger_user" className="py-2 cursor-pointer">
+                    <div className="flex flex-col">
+                      <span className="font-medium text-sm">Person Who Triggered Workflow</span>
+                      <span className="text-xs text-muted-foreground mt-0.5">E.g., recruit being processed</span>
                     </div>
                   </SelectItem>
-                  <SelectItem value="specific_email" className="text-sm">
-                    <div>
-                      <div className="font-medium">Specific Email Address</div>
-                      <div className="text-xs text-muted-foreground">Enter exact email below</div>
+                  <SelectItem value="specific_email" className="py-2 cursor-pointer">
+                    <div className="flex flex-col">
+                      <span className="font-medium text-sm">Specific Email Address</span>
+                      <span className="text-xs text-muted-foreground mt-0.5">Enter exact email below</span>
                     </div>
                   </SelectItem>
-                  <SelectItem value="current_user" className="text-sm">
-                    <div>
-                      <div className="font-medium">Current User ({user?.email})</div>
-                      <div className="text-xs text-muted-foreground">You will receive this email</div>
+                  <SelectItem value="current_user" className="py-2 cursor-pointer">
+                    <div className="flex flex-col">
+                      <span className="font-medium text-sm">Current User ({user?.email})</span>
+                      <span className="text-xs text-muted-foreground mt-0.5">You will receive this email</span>
                     </div>
                   </SelectItem>
-                  <SelectItem value="manager" className="text-sm">
-                    <div>
-                      <div className="font-medium">Manager/Upline</div>
-                      <div className="text-xs text-muted-foreground">Send to manager in hierarchy</div>
+                  <SelectItem value="manager" className="py-2 cursor-pointer">
+                    <div className="flex flex-col">
+                      <span className="font-medium text-sm">Manager/Upline</span>
+                      <span className="text-xs text-muted-foreground mt-0.5">Send to manager in hierarchy</span>
                     </div>
                   </SelectItem>
-                  <SelectItem value="all_trainers" className="text-sm">
-                    <div>
-                      <div className="font-medium">All Trainers</div>
-                      <div className="text-xs text-muted-foreground">Everyone with trainer role</div>
+                  <SelectItem value="all_trainers" className="py-2 cursor-pointer">
+                    <div className="flex flex-col">
+                      <span className="font-medium text-sm">All Trainers</span>
+                      <span className="text-xs text-muted-foreground mt-0.5">Everyone with trainer role</span>
                     </div>
                   </SelectItem>
-                  <SelectItem value="all_agents" className="text-sm">
-                    <div>
-                      <div className="font-medium">All Active Agents</div>
-                      <div className="text-xs text-muted-foreground">Everyone with agent role</div>
+                  <SelectItem value="all_agents" className="py-2 cursor-pointer">
+                    <div className="flex flex-col">
+                      <span className="font-medium text-sm">All Active Agents</span>
+                      <span className="text-xs text-muted-foreground mt-0.5">Everyone with agent role</span>
                     </div>
                   </SelectItem>
                 </SelectContent>
@@ -898,77 +898,131 @@ export default function ActionConfigPanel({ action, onUpdate, onClose }: ActionC
             type="button"
             variant="outline"
             size="sm"
-            className="w-full h-9 text-sm"
+            className="w-full h-9 text-sm border-blue-200 hover:border-blue-400 hover:bg-blue-50"
             onClick={async () => {
               setTestMode(true);
-
-              // Create a test context based on action type
-              let testContext: Record<string, unknown> = {
-                recipientId: user?.id,
-                recipientEmail: user?.email,
-                recipientName: user?.name || user?.email,
-                isTest: true
-              };
-
-              // Add specific context for different action types
-              if (action.type === 'send_email' || action.type === 'create_notification') {
-                // Include recipient config
-                testContext = {
-                  ...testContext,
-                  recipientType: action.config.recipientType,
-                  recipientSpecificEmail: action.config.recipientEmail
-                };
-              }
+              const { toast } = await import('sonner');
+              const { supabase } = await import('@/services/base/supabase');
 
               try {
-                // Execute test action (with inline implementation)
-                const executeAction = async (action: any, context: any) => {
-                    // Fallback test implementation
-                    console.log('Testing action:', action, 'with context:', context);
+                // For email actions, actually send a test email via Gmail
+                if (action.type === 'send_email') {
+                  if (!action.config.templateId) {
+                    toast.error('Select a template first', {
+                      description: 'You need to select an email template before testing'
+                    });
+                    return;
+                  }
 
-                    if (action.type === 'send_email') {
-                      const { toast } = await import('sonner');
-                      const recipient =
-                        action.config.recipientType === 'specific_email'
-                          ? action.config.recipientEmail
-                          : action.config.recipientType === 'current_user'
-                          ? user?.email
-                          : 'configured recipients';
+                  // Determine who to send test email to
+                  let testRecipient = user?.email;
+                  if (action.config.recipientType === 'specific_email' && action.config.recipientEmail) {
+                    testRecipient = action.config.recipientEmail;
+                  }
 
-                      toast.success(`Test Email Action`, {
-                        description: `Would send email to: ${recipient}`
-                      });
-                      return { success: true, wouldSendTo: recipient };
+                  if (!testRecipient) {
+                    toast.error('No recipient', { description: 'Could not determine test recipient' });
+                    return;
+                  }
+
+                  toast.info('Sending test email...', {
+                    description: `Sending to ${testRecipient} via your Gmail`
+                  });
+
+                  // Get the template
+                  const { data: template, error: templateError } = await supabase
+                    .from('email_templates')
+                    .select('*')
+                    .eq('id', action.config.templateId)
+                    .single();
+
+                  if (templateError || !template) {
+                    toast.error('Template not found');
+                    return;
+                  }
+
+                  // Send via the send-email edge function (uses user's Gmail)
+                  const { data: result, error: sendError } = await supabase.functions.invoke('send-email', {
+                    body: {
+                      to: [testRecipient],
+                      subject: `[TEST] ${template.subject}`,
+                      bodyHtml: template.body_html,
+                      bodyText: template.body_text
                     }
+                  });
 
-                    if (action.type === 'create_notification') {
-                      const { toast } = await import('sonner');
-                      toast.success(`Test Notification Action`, {
-                        description: `Would show: "${action.config.title}"`
-                      });
-                      return { success: true, title: action.config.title };
-                    }
+                  if (sendError) {
+                    throw sendError;
+                  }
 
-                    if (action.type === 'wait') {
-                      const { toast } = await import('sonner');
-                      toast.info(`Test Wait Action`, {
-                        description: `Would wait ${action.config.waitMinutes || 0} minutes`
-                      });
-                      return { success: true, waitMinutes: action.config.waitMinutes };
-                    }
+                  if (result?.success) {
+                    toast.success('Test email sent!', {
+                      description: `Email sent to ${testRecipient} from your Gmail. Check your inbox.`
+                    });
+                  } else {
+                    throw new Error(result?.error || 'Failed to send email');
+                  }
+                }
+                // For notifications, create an actual test notification
+                else if (action.type === 'create_notification') {
+                  if (!action.config.title || !action.config.message) {
+                    toast.error('Missing notification content', {
+                      description: 'Add a title and message first'
+                    });
+                    return;
+                  }
 
-                    return { success: true, message: 'Action tested successfully' };
-                  };
+                  const { error: notifError } = await supabase.from('notifications').insert({
+                    user_id: user?.id,
+                    type: 'workflow_test',
+                    title: `[TEST] ${action.config.title}`,
+                    message: action.config.message,
+                    is_read: false
+                  });
 
-                const result = await executeAction(action, testContext);
-                console.log('Test result:', result);
+                  if (notifError) throw notifError;
+
+                  toast.success('Test notification created!', {
+                    description: 'Check your notification bell'
+                  });
+                }
+                // For other actions, show what would happen
+                else if (action.type === 'wait') {
+                  toast.info('Wait action configured', {
+                    description: `Would wait ${action.config.waitMinutes || 0} minutes before next action`
+                  });
+                }
+                else if (action.type === 'webhook') {
+                  if (!action.config.webhookUrl) {
+                    toast.error('No webhook URL', { description: 'Enter a webhook URL first' });
+                    return;
+                  }
+                  toast.info('Webhook configured', {
+                    description: `Would send ${action.config.webhookMethod || 'POST'} to ${action.config.webhookUrl}`
+                  });
+                }
+                else {
+                  toast.info('Action configured', {
+                    description: `${action.type} action is ready to use`
+                  });
+                }
 
               } catch (error) {
                 console.error('Test failed:', error);
-                const { toast } = await import('sonner');
-                toast.error('Test failed', {
-                  description: error instanceof Error ? error.message : 'Unknown error'
-                });
+                const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+
+                // Provide helpful error messages
+                if (errorMsg.includes('Gmail not connected')) {
+                  toast.error('Gmail not connected', {
+                    description: 'Connect your Gmail in Settings > Email to send emails'
+                  });
+                } else if (errorMsg.includes('quota')) {
+                  toast.error('Email quota exceeded', {
+                    description: 'You\'ve reached your daily email limit'
+                  });
+                } else {
+                  toast.error('Test failed', { description: errorMsg });
+                }
               } finally {
                 setTestMode(false);
               }
@@ -977,6 +1031,9 @@ export default function ActionConfigPanel({ action, onUpdate, onClose }: ActionC
             <TestTube className="h-3 w-3 mr-1" />
             {testMode ? 'Testing...' : 'Test This Action'}
           </Button>
+          <p className="text-xs text-muted-foreground mt-1 text-center">
+            {action.type === 'send_email' ? 'Sends a real test email via your Gmail' : 'Tests the action configuration'}
+          </p>
         </div>
       </div>
 

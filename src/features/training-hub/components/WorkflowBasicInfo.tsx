@@ -132,17 +132,21 @@ export default function WorkflowBasicInfo({ data, onChange, errors }: WorkflowBa
           value={data.category}
           onValueChange={(value) => onChange({ category: value as WorkflowCategory })}
         >
-          <SelectTrigger className="text-sm">
-            <SelectValue />
+          <SelectTrigger className="text-sm h-10 border-input bg-background hover:bg-accent/50 transition-colors">
+            <SelectValue placeholder="Select a category..." />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="min-w-[200px]">
             {WORKFLOW_CATEGORIES.map((category) => (
-              <SelectItem key={category.value} value={category.value}>
-                <div>
-                  <div className="font-medium">{category.label}</div>
-                  <div className="text-xs text-muted-foreground">
+              <SelectItem
+                key={category.value}
+                value={category.value}
+                className="py-2 cursor-pointer"
+              >
+                <div className="flex flex-col">
+                  <span className="font-medium text-sm">{category.label}</span>
+                  <span className="text-xs text-muted-foreground mt-0.5">
                     {category.description}
-                  </div>
+                  </span>
                 </div>
               </SelectItem>
             ))}

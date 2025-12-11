@@ -86,6 +86,10 @@ export interface WorkflowTrigger {
     time?: string;
     dayOfWeek?: string;
     dayOfMonth?: number;
+    // Flexible scheduling options
+    frequency?: 'hourly' | 'daily' | 'weekdays' | 'weekly' | 'monthly';
+    selectedDays?: string[]; // For weekly: ['monday', 'wednesday', 'friday']
+    intervalHours?: number; // For hourly: run every X hours
   };
   webhookConfig?: {
     endpoint?: string;

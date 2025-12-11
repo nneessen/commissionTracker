@@ -3,36 +3,20 @@ description: Intelligent auto-commit with changelog updates and smart commit mes
 argument-hint: [message]
 ---
 
-# Stage all changes
-git add -A
+You must perform a full git add, commit, and push to the remote GitHub repository. Do this NOW without asking for confirmation.
 
-# Check if there are changes
-if git diff --cached --quiet; then
-    echo "✨ No changes to commit. Working directory is clean!"
-    exit 0
-fi
+## Steps to execute:
 
-# Show status
-echo "📋 Changes to be committed:"
-git status --short
+1. **Stage ALL changes** - Run `git add -A` to stage everything (new files, modified files, deleted files)
 
-# Get commit message
-COMMIT_MSG="${ARGUMENTS}"
-if [ -z "$COMMIT_MSG" ]; then
-    # Auto-generate message
-    CHANGED_FILES=$(git diff --cached --name-only)
-    NUM_FILES=$(echo "$CHANGED_FILES" | wc -l)
-    DIRS=$(echo "$CHANGED_FILES" | xargs -n1 dirname | sort -u | head -3 | tr '\n' ',' | sed 's/,$//' | sed 's/,/, /g')
-    COMMIT_MSG="docs: multiple changes in $DIRS"
-fi
+2. **Check for changes** - Run `git status --short` to see what will be committed. If nothing is staged, report "No changes to commit" and stop.
 
-# Commit
-echo "📝 Committing: $COMMIT_MSG"
-git commit -m "$COMMIT_MSG"
+3. **Create commit** - If the user provided a message argument, use it. Otherwise, generate a concise commit message based on the changed files. Run `git commit -m "your message here"`
 
-# Push to remote
-BRANCH=$(git branch --show-current)
-echo "🚀 Pushing to remote origin/$BRANCH..."
-git push origin "$BRANCH"
+4. **Push to remote** - Get the current branch with `git branch --show-current`, then run `git push origin <branch>` to push to GitHub.
 
-echo "✅ Successfully committed and pushed to GitHub!"
+5. **Confirm success** - Report what was committed and pushed.
+
+User's optional commit message: $ARGUMENTS
+
+IMPORTANT: Execute all git commands immediately. Do not ask for confirmation. Do not skip the push step.
