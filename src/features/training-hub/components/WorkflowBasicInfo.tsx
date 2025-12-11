@@ -54,10 +54,10 @@ const NAME_SUGGESTIONS = [
 
 export default function WorkflowBasicInfo({ data, onChange, errors }: WorkflowBasicInfoProps) {
   return (
-    <div className="w-full space-y-6">
+    <div className="w-full space-y-3">
       {/* Workflow Name */}
-      <div>
-        <Label className="text-sm font-medium mb-2 block">
+      <div className="p-2 rounded-md bg-muted/50">
+        <Label className="text-xs font-medium text-muted-foreground">
           Workflow Name <span className="text-destructive">*</span>
         </Label>
         <Input
@@ -65,110 +65,58 @@ export default function WorkflowBasicInfo({ data, onChange, errors }: WorkflowBa
           onChange={(e) => onChange({ name: e.target.value })}
           placeholder="e.g., Welcome Email Series"
           className={cn(
-            "text-sm",
+            "h-8 text-xs mt-1 bg-background",
             errors.name && "border-destructive focus-visible:ring-destructive"
           )}
           maxLength={100}
         />
         {errors.name && (
-          <p className="text-sm text-destructive mt-1">{errors.name}</p>
+          <p className="text-xs text-destructive mt-1">{errors.name}</p>
         )}
-
-        {/* Quick name suggestions */}
-        {!data.name && (
-          <div className="mt-3">
-            <p className="text-sm text-muted-foreground mb-2">Quick suggestions:</p>
-            <div className="flex flex-wrap gap-2">
-              {NAME_SUGGESTIONS.map((suggestion) => (
-                <Button
-                  key={suggestion}
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => onChange({ name: suggestion })}
-                  className="text-sm"
-                >
-                  {suggestion}
-                </Button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <div className="flex justify-end mt-1">
-          <span className="text-xs text-muted-foreground">
-            {data.name.length}/100
-          </span>
-        </div>
       </div>
 
       {/* Description */}
-      <div>
-        <Label className="text-sm font-medium mb-2 block">
-          Description
-          <Badge variant="outline" className="ml-2 text-xs">Optional</Badge>
+      <div className="p-2 rounded-md bg-muted/30">
+        <Label className="text-xs font-medium text-muted-foreground">
+          Description <span className="text-xs text-muted-foreground/70">(optional)</span>
         </Label>
         <Textarea
           value={data.description || ''}
           onChange={(e) => onChange({ description: e.target.value })}
-          placeholder="Briefly describe what this workflow does and when it should run..."
-          className="text-sm resize-none"
+          placeholder="Briefly describe what this workflow does..."
+          className="h-16 text-xs resize-none mt-1 bg-background"
           rows={3}
           maxLength={500}
         />
-        <div className="flex justify-end mt-1">
-          <span className="text-xs text-muted-foreground">
-            {(data.description?.length || 0)}/500
-          </span>
-        </div>
       </div>
 
       {/* Category */}
-      <div>
-        <Label className="text-sm font-medium mb-2 block">
+      <div className="p-2 rounded-md bg-muted/50">
+        <Label className="text-xs font-medium text-muted-foreground">
           Category <span className="text-destructive">*</span>
         </Label>
         <Select
           value={data.category}
           onValueChange={(value) => onChange({ category: value as WorkflowCategory })}
         >
-          <SelectTrigger className="text-sm h-10 border-input bg-background hover:bg-accent/50 transition-colors">
+          <SelectTrigger className="h-8 text-xs mt-1 bg-background">
             <SelectValue placeholder="Select a category..." />
           </SelectTrigger>
-          <SelectContent className="min-w-[200px]">
+          <SelectContent>
             {WORKFLOW_CATEGORIES.map((category) => (
               <SelectItem
                 key={category.value}
                 value={category.value}
-                className="py-2 cursor-pointer"
+                className="text-xs"
               >
-                <div className="flex flex-col">
-                  <span className="font-medium text-sm">{category.label}</span>
-                  <span className="text-xs text-muted-foreground mt-0.5">
-                    {category.description}
-                  </span>
+                <div>
+                  <div className="font-medium">{category.label}</div>
+                  <div className="text-[10px] text-muted-foreground">{category.description}</div>
                 </div>
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
-      </div>
-
-      {/* Info Box */}
-      <div className="p-4 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800">
-        <div className="flex gap-3">
-          <Info className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
-          <div>
-            <p className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-2">
-              Tips for a good workflow:
-            </p>
-            <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1 list-disc list-inside">
-              <li>Use clear, descriptive names that explain the purpose</li>
-              <li>Choose the right category to help with organization</li>
-              <li>Add a description to help others understand the workflow</li>
-            </ul>
-          </div>
-        </div>
       </div>
     </div>
   );

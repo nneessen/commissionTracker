@@ -1034,16 +1034,28 @@ class UserService {
   }
 
   async getAllUsers(): Promise<UserProfile[]> {
-    const users = await this.getAll();
-    return users.map(user => ({
-      ...user,
-      id: user.id,
-      email: user.email,
-      approval_status: user.raw_user_meta_data?.approval_status || 'approved',
-      is_admin: user.raw_user_meta_data?.is_admin || false,
-      created_at: user.createdAt?.toISOString() || new Date().toISOString(),
-      updated_at: user.updatedAt?.toISOString() || new Date().toISOString(),
-    } as UserProfile));
+    // Fetch full UserProfile data directly without lossy transformation
+    let query = supabase
+      .from('user_profiles')
+      .select("*")
+      .neq('is_deleted', true);
+
+    const { data, error } = await query.order("created_at", { ascending: false });
+
+    if (error) {
+      // Try admin RPC if direct query fails
+      const { data: rpcData, error: rpcError } = await supabase.rpc("admin_get_all_users");
+
+      if (rpcError) {
+        logger.error("Failed to fetch users", rpcError, "UserService");
+        return [];
+      }
+
+      return (rpcData as UserProfile[] || []);
+    }
+
+    // Return the full UserProfile data without transformation
+    return (data as UserProfile[]) || [];
   }
 
   async createUser(userData: any): Promise<any> {

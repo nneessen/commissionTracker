@@ -1,34 +1,36 @@
 // src/features/training-hub/components/workflow-wizard/WorkflowActionsBuilder.tsx
 
-import { useState, useRef } from 'react';
-import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
+import { useState } from 'react';
 import {
   Plus,
   Mail,
   Bell,
   Clock,
   Webhook,
-  GitBranch,
-  User,
-  FileText,
-  Brain,
   Trash2,
-  Copy,
-  Settings,
-  GripVertical,
-  ChevronRight,
-  AlertCircle,
-  Zap,
-  PlayCircle,
-  CheckCircle,
-  XCircle,
-  Edit3
+  ChevronUp,
+  ChevronDown,
+  Eye
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import type { WorkflowAction } from '@/types/workflow.types';
-import ActionConfigPanel from './ActionConfigPanel';
+import { useEmailTemplates } from '@/features/email/hooks/useEmailTemplates';
 
 interface WorkflowActionsBuilderProps {
   actions: WorkflowAction[];
@@ -36,112 +38,25 @@ interface WorkflowActionsBuilderProps {
   errors: Record<string, string>;
 }
 
-// Enhanced action types with more options
 const ACTION_TYPES = [
-  {
-    type: 'send_email',
-    label: 'Send Email',
-    icon: Mail,
-    color: 'text-blue-600 bg-blue-50 border-blue-200',
-    description: 'Send email using template',
-    requiredConfig: ['templateId']
-  },
-  {
-    type: 'create_notification',
-    label: 'Create Notification',
-    icon: Bell,
-    color: 'text-yellow-600 bg-yellow-50 border-yellow-200',
-    description: 'Show in-app notification',
-    requiredConfig: ['title', 'message']
-  },
-  {
-    type: 'wait',
-    label: 'Wait',
-    icon: Clock,
-    color: 'text-gray-600 bg-gray-50 border-gray-200',
-    description: 'Delay before next action',
-    requiredConfig: ['waitMinutes']
-  },
-  {
-    type: 'webhook',
-    label: 'Webhook',
-    icon: Webhook,
-    color: 'text-purple-600 bg-purple-50 border-purple-200',
-    description: 'Call external API',
-    requiredConfig: ['webhookUrl']
-  },
-  {
-    type: 'update_field',
-    label: 'Update Field',
-    icon: Edit3,
-    color: 'text-green-600 bg-green-50 border-green-200',
-    description: 'Update database field',
-    requiredConfig: ['fieldName', 'fieldValue']
-  },
-  {
-    type: 'assign_user',
-    label: 'Assign User',
-    icon: User,
-    color: 'text-indigo-600 bg-indigo-50 border-indigo-200',
-    description: 'Assign to team member',
-    requiredConfig: ['userId']
-  },
-  {
-    type: 'create_task',
-    label: 'Create Task',
-    icon: FileText,
-    color: 'text-pink-600 bg-pink-50 border-pink-200',
-    description: 'Create a new task',
-    requiredConfig: ['title', 'description']
-  },
-  {
-    type: 'branch',
-    label: 'Conditional Branch',
-    icon: GitBranch,
-    color: 'text-orange-600 bg-orange-50 border-orange-200',
-    description: 'If/then logic',
-    requiredConfig: ['conditions']
-  },
-  {
-    type: 'ai_decision',
-    label: 'AI Decision',
-    icon: Brain,
-    color: 'text-teal-600 bg-teal-50 border-teal-200',
-    description: 'Smart routing with AI',
-    requiredConfig: ['prompt']
-  }
+  { type: 'send_email', label: 'Send Email', icon: Mail, color: 'bg-blue-500/10 border-blue-500/20 text-blue-600 dark:text-blue-400' },
+  { type: 'create_notification', label: 'Notification', icon: Bell, color: 'bg-amber-500/10 border-amber-500/20 text-amber-600 dark:text-amber-400' },
+  { type: 'wait', label: 'Wait/Delay', icon: Clock, color: 'bg-gray-500/10 border-gray-500/20 text-gray-600 dark:text-gray-400' },
+  { type: 'webhook', label: 'Webhook', icon: Webhook, color: 'bg-violet-500/10 border-violet-500/20 text-violet-600 dark:text-violet-400' }
 ] as const;
 
 export default function WorkflowActionsBuilder({ actions, onChange, errors }: WorkflowActionsBuilderProps) {
-  const [selectedAction, setSelectedAction] = useState<number | null>(null);
-  const [showActionPalette, setShowActionPalette] = useState(false);
+  const { data: emailTemplates = [] } = useEmailTemplates({ isActive: true });
+  const [previewTemplate, setPreviewTemplate] = useState<string | null>(null);
 
-  const handleDragEnd = (result: any) => {
-    if (!result.destination) return;
-
-    const items = Array.from(actions);
-    const [reorderedItem] = items.splice(result.source.index, 1);
-    items.splice(result.destination.index, 0, reorderedItem);
-
-    // Update order property
-    const updatedItems = items.map((item, index) => ({
-      ...item,
-      order: index
-    }));
-
-    onChange(updatedItems);
-  };
-
-  const addAction = (type: string) => {
+  const addAction = () => {
     const newAction: WorkflowAction = {
-      type: type as WorkflowAction['type'],
+      type: 'send_email',
       order: actions.length,
       config: {},
       delayMinutes: 0
     };
     onChange([...actions, newAction]);
-    setSelectedAction(actions.length);
-    setShowActionPalette(false);
   };
 
   const updateAction = (index: number, updates: Partial<WorkflowAction>) => {
@@ -154,304 +69,347 @@ export default function WorkflowActionsBuilder({ actions, onChange, errors }: Wo
     const filtered = actions.filter((_, i) => i !== index);
     const reordered = filtered.map((action, i) => ({ ...action, order: i }));
     onChange(reordered);
-    if (selectedAction === index) {
-      setSelectedAction(null);
-    } else if (selectedAction !== null && selectedAction > index) {
-      setSelectedAction(selectedAction - 1);
-    }
   };
 
-  const duplicateAction = (index: number) => {
-    const actionToDuplicate = actions[index];
-    const newAction = {
-      ...actionToDuplicate,
-      order: actions.length
-    };
-    onChange([...actions, newAction]);
-  };
+  const moveAction = (index: number, direction: 'up' | 'down') => {
+    const newIndex = direction === 'up' ? index - 1 : index + 1;
+    if (newIndex < 0 || newIndex >= actions.length) return;
 
-  const getActionType = (type: string) => {
-    return ACTION_TYPES.find(t => t.type === type);
-  };
+    const items = [...actions];
+    const [movedItem] = items.splice(index, 1);
+    items.splice(newIndex, 0, movedItem);
 
-  const validateAction = (action: WorkflowAction, index: number) => {
-    const actionType = getActionType(action.type);
-    if (!actionType) return [];
-
-    const issues: string[] = [];
-    actionType.requiredConfig.forEach(field => {
-      if (!action.config[field]) {
-        issues.push(`Missing ${field}`);
-      }
-    });
-
-    return issues;
+    const reordered = items.map((item, i) => ({ ...item, order: i }));
+    onChange(reordered);
   };
 
   return (
-    <div className="flex gap-4 h-full min-h-[600px]">
-      {/* Visual Flow Builder */}
-      <div className="flex-1 flex flex-col">
-        <div className="flex items-center justify-between mb-3">
-          <div>
-            <h3 className="text-xs font-medium">Workflow Actions</h3>
-            <p className="text-[10px] text-muted-foreground">
-              Drag to reorder, click to configure
-            </p>
-          </div>
+    <div className="w-full space-y-3">
+      {/* Header */}
+      <div className="p-2 rounded-md bg-muted/50">
+        <div className="flex items-center justify-between">
+          <Label className="text-xs font-medium text-muted-foreground">
+            Workflow Actions ({actions.length})
+          </Label>
           <Button
             type="button"
-            size="sm"
             variant="outline"
-            className="h-7 text-xs"
-            onClick={() => setShowActionPalette(!showActionPalette)}
+            size="sm"
+            className="h-7 text-xs px-2"
+            onClick={addAction}
           >
             <Plus className="h-3 w-3 mr-1" />
             Add Action
           </Button>
         </div>
-
-        {/* Action Palette */}
-        {showActionPalette && (
-          <div className="mb-3 p-3 rounded-lg border bg-card">
-            <div className="grid grid-cols-3 gap-2">
-              {ACTION_TYPES.map((actionType) => {
-                const Icon = actionType.icon;
-                return (
-                  <button
-                    key={actionType.type}
-                    type="button"
-                    onClick={() => addAction(actionType.type)}
-                    className={cn(
-                      "p-2 rounded-md border transition-all",
-                      "hover:shadow-sm text-left",
-                      actionType.color
-                    )}
-                  >
-                    <div className="flex items-center gap-2">
-                      <Icon className="h-3 w-3" />
-                      <div>
-                        <div className="text-[10px] font-medium">{actionType.label}</div>
-                        <div className="text-[9px] opacity-80">{actionType.description}</div>
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Flow Visualization */}
-        <div className="flex-1 overflow-auto rounded-lg border bg-muted/10 p-4">
-          {actions.length === 0 ? (
-            <div className="h-full flex items-center justify-center">
-              <div className="text-center">
-                <div className="mx-auto w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-3">
-                  <Zap className="h-5 w-5 text-muted-foreground" />
-                </div>
-                <p className="text-xs font-medium text-muted-foreground mb-1">
-                  No actions yet
-                </p>
-                <p className="text-[10px] text-muted-foreground mb-3">
-                  Add actions to define your workflow
-                </p>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  className="h-6 text-[10px]"
-                  onClick={() => setShowActionPalette(true)}
-                >
-                  <Plus className="h-3 w-3 mr-1" />
-                  Add First Action
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <DragDropContext onDragEnd={handleDragEnd}>
-              <Droppable droppableId="actions">
-                {(provided) => (
-                  <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-2">
-                    {/* Start Node */}
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/30 border-2 border-green-500 flex items-center justify-center">
-                        <PlayCircle className="h-4 w-4 text-green-600" />
-                      </div>
-                      <span className="text-[10px] font-medium text-muted-foreground">START</span>
-                    </div>
-
-                    {/* Action Nodes */}
-                    {actions.map((action, index) => {
-                      const actionType = getActionType(action.type);
-                      const Icon = actionType?.icon || Zap;
-                      const isSelected = selectedAction === index;
-                      const issues = validateAction(action, index);
-                      const errorKey = `action_${index}`;
-                      const hasError = errors[errorKey] || issues.length > 0;
-
-                      return (
-                        <Draggable key={index} draggableId={`action-${index}`} index={index}>
-                          {(provided, snapshot) => (
-                            <div
-                              ref={provided.innerRef}
-                              {...provided.draggableProps}
-                              className="relative"
-                            >
-                              {/* Connection Line */}
-                              {index > 0 && (
-                                <div className="absolute left-4 -top-2 w-0.5 h-2 bg-border" />
-                              )}
-
-                              {/* Action Node */}
-                              <div
-                                className={cn(
-                                  "flex items-center gap-2 p-2 rounded-lg border-2 bg-card transition-all cursor-pointer",
-                                  isSelected && "border-primary shadow-sm",
-                                  !isSelected && "border-border hover:border-muted-foreground/50",
-                                  hasError && "border-destructive",
-                                  snapshot.isDragging && "shadow-lg opacity-90"
-                                )}
-                                onClick={() => setSelectedAction(index)}
-                              >
-                                {/* Drag Handle */}
-                                <div {...provided.dragHandleProps} className="cursor-grab">
-                                  <GripVertical className="h-3 w-3 text-muted-foreground" />
-                                </div>
-
-                                {/* Action Icon */}
-                                <div className={cn(
-                                  "w-8 h-8 rounded-md flex items-center justify-center",
-                                  actionType?.color || "bg-muted"
-                                )}>
-                                  <Icon className="h-4 w-4" />
-                                </div>
-
-                                {/* Action Details */}
-                                <div className="flex-1">
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-xs font-medium">
-                                      {actionType?.label || action.type}
-                                    </span>
-                                    {action.delayMinutes && action.delayMinutes > 0 && (
-                                      <Badge variant="outline" className="text-[9px] px-1 py-0">
-                                        <Clock className="h-2.5 w-2.5 mr-0.5" />
-                                        {action.delayMinutes}m delay
-                                      </Badge>
-                                    )}
-                                  </div>
-                                  <p className="text-[10px] text-muted-foreground">
-                                    {actionType?.description}
-                                  </p>
-
-                                  {/* Show recipient info for email and notification actions */}
-                                  {(action.type === 'send_email' || action.type === 'create_notification') && action.config.recipientType && (
-                                    <div className="mt-1 text-[9px] text-primary font-medium">
-                                      {action.type === 'send_email' ? '📧' : '🔔'} To: {
-                                        action.config.recipientType === 'trigger_user' ? 'Trigger User' :
-                                        action.config.recipientType === 'specific_email' ? (action.config.recipientEmail || 'Not set') :
-                                        action.config.recipientType === 'current_user' ? 'You' :
-                                        action.config.recipientType === 'manager' ? 'Manager' :
-                                        action.config.recipientType === 'all_trainers' ? 'All Trainers' :
-                                        action.config.recipientType === 'all_agents' ? 'All Agents' :
-                                        'Unknown'
-                                      }
-                                    </div>
-                                  )}
-
-                                  {hasError && (
-                                    <div className="flex items-center gap-1 mt-1">
-                                      <AlertCircle className="h-2.5 w-2.5 text-destructive" />
-                                      <span className="text-[9px] text-destructive">
-                                        {errors[errorKey] || issues.join(', ')}
-                                      </span>
-                                    </div>
-                                  )}
-                                </div>
-
-                                {/* Action Controls */}
-                                <div className="flex items-center gap-1">
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-5 w-5"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      duplicateAction(index);
-                                    }}
-                                  >
-                                    <Copy className="h-3 w-3" />
-                                  </Button>
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-5 w-5 text-destructive hover:text-destructive"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      deleteAction(index);
-                                    }}
-                                  >
-                                    <Trash2 className="h-3 w-3" />
-                                  </Button>
-                                </div>
-                              </div>
-
-                              {/* Connection to next */}
-                              {index < actions.length - 1 && (
-                                <div className="absolute left-4 -bottom-2 w-0.5 h-2 bg-border" />
-                              )}
-                            </div>
-                          )}
-                        </Draggable>
-                      );
-                    })}
-                    {provided.placeholder}
-
-                    {/* End Node */}
-                    {actions.length > 0 && (
-                      <div className="flex items-center gap-2 mt-2">
-                        <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-900/30 border-2 border-gray-500 flex items-center justify-center">
-                          <CheckCircle className="h-4 w-4 text-gray-600" />
-                        </div>
-                        <span className="text-[10px] font-medium text-muted-foreground">END</span>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </Droppable>
-            </DragDropContext>
-          )}
-        </div>
-
-        {/* Action Summary */}
-        {actions.length > 0 && (
-          <div className="mt-3 p-2 rounded-md bg-muted/30 border border-border/50">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3 text-[10px]">
-                <span className="text-muted-foreground">Total actions:</span>
-                <Badge variant="outline" className="text-[10px] px-1 py-0">
-                  {actions.length}
-                </Badge>
-                <span className="text-muted-foreground">Estimated time:</span>
-                <Badge variant="outline" className="text-[10px] px-1 py-0">
-                  ~{actions.reduce((sum, a) => sum + (a.delayMinutes || 0), 0)}m
-                </Badge>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
 
-      {/* Configuration Panel */}
-      {selectedAction !== null && actions[selectedAction] && (
-        <ActionConfigPanel
-          action={actions[selectedAction]}
-          onUpdate={(updates) => updateAction(selectedAction, updates)}
-          onClose={() => setSelectedAction(null)}
-        />
+      {/* Actions List */}
+      {actions.length === 0 ? (
+        <div className="p-4 rounded-md bg-muted/30 text-center">
+          <p className="text-xs text-muted-foreground mb-2">No actions configured yet</p>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-7 text-xs"
+            onClick={addAction}
+          >
+            Add Your First Action
+          </Button>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {actions.map((action, index) => {
+            const actionType = ACTION_TYPES.find(t => t.type === action.type);
+            const Icon = actionType?.icon || Mail;
+            const errorKey = `action_${index}`;
+            const hasError = !!errors[errorKey];
+
+            return (
+              <div
+                key={index}
+                className={cn(
+                  "p-2 rounded-md border",
+                  actionType?.color || 'bg-muted/30',
+                  hasError && "border-destructive"
+                )}
+              >
+                {/* Action Header */}
+                <div className="flex items-center gap-2 mb-2">
+                  <Icon className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-xs font-medium text-muted-foreground">
+                    Step {index + 1}
+                  </span>
+                  <Select
+                    value={action.type}
+                    onValueChange={(v) => updateAction(index, { type: v as WorkflowAction['type'], config: {} })}
+                  >
+                    <SelectTrigger className="h-7 text-xs w-32">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {ACTION_TYPES.map((type) => (
+                        <SelectItem key={type.type} value={type.type} className="text-xs">
+                          {type.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  <div className="ml-auto flex items-center gap-1">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6"
+                      onClick={() => moveAction(index, 'up')}
+                      disabled={index === 0}
+                    >
+                      <ChevronUp className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6"
+                      onClick={() => moveAction(index, 'down')}
+                      disabled={index === actions.length - 1}
+                    >
+                      <ChevronDown className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-destructive hover:text-destructive"
+                      onClick={() => deleteAction(index)}
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Action Configuration */}
+                <div className="space-y-2 pl-6">
+                  {action.type === 'send_email' && (
+                    <>
+                      <div className="flex gap-2">
+                        <div className="flex-1">
+                          <Label className="text-[10px] text-muted-foreground">Email Template</Label>
+                          <div className="flex gap-1">
+                            <Select
+                              value={action.config.templateId || ''}
+                              onValueChange={(v) => updateAction(index, {
+                                config: { ...action.config, templateId: v }
+                              })}
+                            >
+                              <SelectTrigger className="h-7 text-xs bg-background border-blue-500/30 focus:border-blue-500">
+                                <SelectValue placeholder="Select template..." />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {emailTemplates.map((t) => (
+                                  <SelectItem key={t.id} value={t.id} className="text-xs">
+                                    {t.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            {action.config.templateId && (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="icon"
+                                className="h-7 w-7 border-blue-500/30 hover:border-blue-500 hover:bg-blue-50/50 dark:hover:bg-blue-950/20"
+                                onClick={() => setPreviewTemplate(action.config.templateId || null)}
+                              >
+                                <Eye className="h-3 w-3 text-blue-600 dark:text-blue-400" />
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                        <div className="w-32">
+                          <Label className="text-[10px] text-muted-foreground">Send To</Label>
+                          <Select
+                            value={action.config.recipientType || 'trigger_user'}
+                            onValueChange={(v) => updateAction(index, {
+                              config: { ...action.config, recipientType: v }
+                            })}
+                          >
+                            <SelectTrigger className="h-7 text-xs bg-background border-blue-500/30 focus:border-blue-500">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="trigger_user" className="text-xs">Trigger User</SelectItem>
+                              <SelectItem value="specific_email" className="text-xs">Specific Email</SelectItem>
+                              <SelectItem value="all_agents" className="text-xs">All Agents</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      {action.config.recipientType === 'specific_email' && (
+                        <Input
+                          type="email"
+                          value={action.config.recipientEmail || ''}
+                          onChange={(e) => updateAction(index, {
+                            config: { ...action.config, recipientEmail: e.target.value }
+                          })}
+                          placeholder="email@example.com"
+                          className="h-7 text-xs bg-background border-blue-500/30 focus:border-blue-500"
+                        />
+                      )}
+                    </>
+                  )}
+
+                  {action.type === 'wait' && (
+                    <div className="flex items-center gap-2">
+                      <div className="w-24">
+                        <Label className="text-[10px] text-gray-600 dark:text-gray-400">Wait Duration</Label>
+                        <Input
+                          type="number"
+                          value={action.config.waitMinutes || 0}
+                          onChange={(e) => updateAction(index, {
+                            config: { ...action.config, waitMinutes: parseInt(e.target.value) || 0 }
+                          })}
+                          className="h-7 text-xs bg-background border-gray-500/30 focus:border-gray-500"
+                          placeholder="0"
+                          min={0}
+                        />
+                      </div>
+                      <span className="text-xs text-gray-600 dark:text-gray-400 mt-4">minutes</span>
+                    </div>
+                  )}
+
+                  {action.type === 'webhook' && (
+                    <div>
+                      <Label className="text-[10px] text-violet-600 dark:text-violet-400">Webhook URL</Label>
+                      <Input
+                        value={action.config.webhookUrl || ''}
+                        onChange={(e) => updateAction(index, {
+                          config: { ...action.config, webhookUrl: e.target.value }
+                        })}
+                        className="h-7 text-xs bg-background border-violet-500/30 focus:border-violet-500"
+                        placeholder="https://api.example.com/webhook"
+                      />
+                    </div>
+                  )}
+
+                  {action.type === 'create_notification' && (
+                    <div className="space-y-2">
+                      <div>
+                        <Label className="text-[10px] text-amber-600 dark:text-amber-400">Notification Title</Label>
+                        <Input
+                          value={action.config.title || ''}
+                          onChange={(e) => updateAction(index, {
+                            config: { ...action.config, title: e.target.value }
+                          })}
+                          className="h-7 text-xs bg-background border-amber-500/30 focus:border-amber-500"
+                          placeholder="Notification title..."
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-[10px] text-amber-600 dark:text-amber-400">Message</Label>
+                        <Input
+                          value={action.config.message || ''}
+                          onChange={(e) => updateAction(index, {
+                            config: { ...action.config, message: e.target.value }
+                          })}
+                          className="h-7 text-xs bg-background border-amber-500/30 focus:border-amber-500"
+                          placeholder="Notification message..."
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Delay Before Next Action */}
+                  <div className="flex items-center gap-2 pt-1 border-t">
+                    <Label className="text-[10px] text-muted-foreground">Delay before next action:</Label>
+                    <Input
+                      type="number"
+                      value={action.delayMinutes || 0}
+                      onChange={(e) => updateAction(index, { delayMinutes: parseInt(e.target.value) || 0 })}
+                      className="h-6 text-xs w-16 bg-background"
+                      placeholder="0"
+                      min={0}
+                    />
+                    <span className="text-xs text-muted-foreground">minutes</span>
+                  </div>
+                </div>
+
+                {/* Error Display */}
+                {hasError && (
+                  <p className="text-xs text-destructive mt-2 pl-6">{errors[errorKey]}</p>
+                )}
+              </div>
+            );
+          })}
+        </div>
       )}
+
+      {/* Error message */}
+      {errors.actions && (
+        <div className="p-2 rounded bg-destructive/10 border border-destructive/20">
+          <p className="text-xs text-destructive">{errors.actions}</p>
+        </div>
+      )}
+
+      {/* Email Template Preview Modal */}
+      <Dialog open={!!previewTemplate} onOpenChange={() => setPreviewTemplate(null)}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-sm">Email Template Preview</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {(() => {
+              const template = emailTemplates.find(t => t.id === previewTemplate);
+              if (!template) return <p className="text-sm text-muted-foreground">Template not found</p>;
+
+              return (
+                <div className="space-y-4">
+                  <div className="p-3 rounded-lg bg-blue-50/50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800">
+                    <div className="space-y-2">
+                      <div>
+                        <Label className="text-xs font-semibold text-blue-700 dark:text-blue-300">Template Name</Label>
+                        <p className="text-sm text-blue-900 dark:text-blue-100">{template.name}</p>
+                      </div>
+                      <div>
+                        <Label className="text-xs font-semibold text-blue-700 dark:text-blue-300">Subject</Label>
+                        <p className="text-sm text-blue-900 dark:text-blue-100">{template.subject}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-xs font-semibold text-muted-foreground">Preview</Label>
+                    <div className="p-4 rounded-lg border bg-white dark:bg-gray-950">
+                      <div className="prose prose-sm dark:prose-invert max-w-none">
+                        <div
+                          dangerouslySetInnerHTML={{
+                            __html: template.body_html.replace(/{{(.*?)}}/g, '<span class="px-1 py-0.5 bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300 rounded text-xs font-mono">{{$1}}</span>')
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {template.variables && template.variables.length > 0 && (
+                    <div className="p-3 rounded-lg bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800">
+                      <Label className="text-xs font-semibold text-amber-700 dark:text-amber-300 mb-2 block">Dynamic Variables</Label>
+                      <div className="flex flex-wrap gap-2">
+                        {template.variables.map((v: string, i: number) => (
+                          <code key={i} className="text-xs px-2 py-1 bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300 rounded">
+                            {`{{${v}}}`}
+                          </code>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

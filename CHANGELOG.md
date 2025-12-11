@@ -6,6 +6,239 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-12-11 18:57:45
+
+### Changed Files
+- `.github/PULL_REQUEST_TEMPLATE.md`
+- `.github/workflows/ci.yml`
+- `.husky/pre-commit`
+- `.husky/pre-push`
+- `CHANGELOG.md`
+- `CLAUDE.md`
+- `CONTINUATION_PROMPT.md`
+- `ENFORCEMENT.md`
+- `PROJECT_STATS.md`
+- `QUICK_START_WORKFLOWS.md`
+- `SETUP_WORKFLOW_CRON.md`
+- `WORKFLOW_SYSTEM_FIXED.md`
+- `add-workflow-triggers.sql`
+- `fix-workflow-rls-policies.sql`
+- `package-lock.json`
+- `package.json`
+- `plans/TODO/workflow-recipient-refactor.md`
+- `scripts/test-user-data.js`
+- `src/components/ui/dialog.tsx`
+- `src/features/training-hub/components/WorkflowActionsBuilder.tsx`
+- `src/features/training-hub/components/WorkflowBasicInfo.tsx`
+- `src/features/training-hub/components/WorkflowDiagnostic.tsx`
+- `src/features/training-hub/components/WorkflowDialog.tsx`
+- `src/features/training-hub/components/WorkflowReview.tsx`
+- `src/features/training-hub/components/WorkflowTriggerSetup.tsx`
+- `src/features/training-hub/components/WorkflowWizard.tsx`
+- `src/index.css`
+- `src/services/users/userService.ts`
+- `supabase/migrations/20251211_001_add_more_event_types.sql`
+- `tsconfig.tsbuildinfo`
+
+### Statistics
+```
+ 30 files changed, 2495 insertions(+), 3297 deletions(-)
+```
+
+## [Checkpoint] - 2025-12-11 18:57:35
+
+### Changed Files
+- `.github/PULL_REQUEST_TEMPLATE.md`
+- `.github/workflows/ci.yml`
+- `.husky/pre-commit`
+- `.husky/pre-push`
+- `CHANGELOG.md`
+- `CLAUDE.md`
+- `CONTINUATION_PROMPT.md`
+- `ENFORCEMENT.md`
+- `PROJECT_STATS.md`
+- `QUICK_START_WORKFLOWS.md`
+- `SETUP_WORKFLOW_CRON.md`
+- `WORKFLOW_SYSTEM_FIXED.md`
+- `add-workflow-triggers.sql`
+- `fix-workflow-rls-policies.sql`
+- `package-lock.json`
+- `package.json`
+- `plans/TODO/workflow-recipient-refactor.md`
+- `scripts/test-user-data.js`
+- `src/components/ui/dialog.tsx`
+- `src/features/training-hub/components/WorkflowActionsBuilder.tsx`
+- `src/features/training-hub/components/WorkflowBasicInfo.tsx`
+- `src/features/training-hub/components/WorkflowDiagnostic.tsx`
+- `src/features/training-hub/components/WorkflowDialog.tsx`
+- `src/features/training-hub/components/WorkflowReview.tsx`
+- `src/features/training-hub/components/WorkflowTriggerSetup.tsx`
+- `src/features/training-hub/components/WorkflowWizard.tsx`
+- `src/index.css`
+- `src/services/users/userService.ts`
+- `supabase/migrations/20251211_001_add_more_event_types.sql`
+- `tsconfig.tsbuildinfo`
+
+### Statistics
+```
+ 30 files changed, 2456 insertions(+), 3297 deletions(-)
+```
+
+## [Checkpoint] - 2025-12-11 18:57:10
+
+### Changed Files
+- `.github/PULL_REQUEST_TEMPLATE.md`
+- `.github/workflows/ci.yml`
+- `.husky/pre-commit`
+- `.husky/pre-push`
+- `CHANGELOG.md`
+- `CLAUDE.md`
+- `CONTINUATION_PROMPT.md`
+- `ENFORCEMENT.md`
+- `PROJECT_STATS.md`
+- `QUICK_START_WORKFLOWS.md`
+- `SETUP_WORKFLOW_CRON.md`
+- `WORKFLOW_SYSTEM_FIXED.md`
+- `add-workflow-triggers.sql`
+- `fix-workflow-rls-policies.sql`
+- `package-lock.json`
+- `package.json`
+- `plans/TODO/workflow-recipient-refactor.md`
+- `scripts/test-user-data.js`
+- `src/components/ui/dialog.tsx`
+- `src/features/training-hub/components/WorkflowActionsBuilder.tsx`
+- `src/features/training-hub/components/WorkflowBasicInfo.tsx`
+- `src/features/training-hub/components/WorkflowDiagnostic.tsx`
+- `src/features/training-hub/components/WorkflowDialog.tsx`
+- `src/features/training-hub/components/WorkflowReview.tsx`
+- `src/features/training-hub/components/WorkflowTriggerSetup.tsx`
+- `src/features/training-hub/components/WorkflowWizard.tsx`
+- `src/index.css`
+- `src/services/users/userService.ts`
+- `supabase/migrations/20251211_001_add_more_event_types.sql`
+- `tsconfig.tsbuildinfo`
+
+### Statistics
+```
+ 30 files changed, 2417 insertions(+), 3297 deletions(-)
+```
+
+## [Checkpoint] - 2025-12-11 18:56:55
+
+### Changed Files
+- `.github/PULL_REQUEST_TEMPLATE.md`
+- `.github/workflows/ci.yml`
+- `.husky/pre-commit`
+- `.husky/pre-push`
+- `CHANGELOG.md`
+- `CLAUDE.md`
+- `CONTINUATION_PROMPT.md`
+- `ENFORCEMENT.md`
+- `PROJECT_STATS.md`
+- `QUICK_START_WORKFLOWS.md`
+- `SETUP_WORKFLOW_CRON.md`
+- `WORKFLOW_SYSTEM_FIXED.md`
+- `add-workflow-triggers.sql`
+- `fix-workflow-rls-policies.sql`
+- `package-lock.json`
+- `package.json`
+- `plans/TODO/workflow-recipient-refactor.md`
+- `scripts/test-user-data.js`
+- `src/components/ui/dialog.tsx`
+- `src/features/training-hub/components/WorkflowActionsBuilder.tsx`
+- `src/features/training-hub/components/WorkflowBasicInfo.tsx`
+- `src/features/training-hub/components/WorkflowDiagnostic.tsx`
+- `src/features/training-hub/components/WorkflowDialog.tsx`
+- `src/features/training-hub/components/WorkflowReview.tsx`
+- `src/features/training-hub/components/WorkflowTriggerSetup.tsx`
+- `src/features/training-hub/components/WorkflowWizard.tsx`
+- `src/index.css`
+- `src/services/users/userService.ts`
+- `supabase/migrations/20251211_001_add_more_event_types.sql`
+- `tsconfig.tsbuildinfo`
+
+### Statistics
+```
+ 30 files changed, 2378 insertions(+), 3297 deletions(-)
+```
+
+## [Checkpoint] - 2025-12-11 18:56:34
+
+### Changed Files
+- `.github/PULL_REQUEST_TEMPLATE.md`
+- `.github/workflows/ci.yml`
+- `.husky/pre-commit`
+- `.husky/pre-push`
+- `CHANGELOG.md`
+- `CLAUDE.md`
+- `CONTINUATION_PROMPT.md`
+- `ENFORCEMENT.md`
+- `PROJECT_STATS.md`
+- `QUICK_START_WORKFLOWS.md`
+- `SETUP_WORKFLOW_CRON.md`
+- `WORKFLOW_SYSTEM_FIXED.md`
+- `add-workflow-triggers.sql`
+- `fix-workflow-rls-policies.sql`
+- `package-lock.json`
+- `package.json`
+- `plans/TODO/workflow-recipient-refactor.md`
+- `scripts/test-user-data.js`
+- `src/components/ui/dialog.tsx`
+- `src/features/training-hub/components/WorkflowActionsBuilder.tsx`
+- `src/features/training-hub/components/WorkflowBasicInfo.tsx`
+- `src/features/training-hub/components/WorkflowDiagnostic.tsx`
+- `src/features/training-hub/components/WorkflowDialog.tsx`
+- `src/features/training-hub/components/WorkflowReview.tsx`
+- `src/features/training-hub/components/WorkflowTriggerSetup.tsx`
+- `src/features/training-hub/components/WorkflowWizard.tsx`
+- `src/index.css`
+- `src/services/users/userService.ts`
+- `supabase/migrations/20251211_001_add_more_event_types.sql`
+- `tsconfig.tsbuildinfo`
+
+### Statistics
+```
+ 30 files changed, 2339 insertions(+), 3297 deletions(-)
+```
+
+## [Checkpoint] - 2025-12-11 18:52:57
+
+### Changed Files
+- `.github/PULL_REQUEST_TEMPLATE.md`
+- `.github/workflows/ci.yml`
+- `.husky/pre-commit`
+- `.husky/pre-push`
+- `CLAUDE.md`
+- `CONTINUATION_PROMPT.md`
+- `ENFORCEMENT.md`
+- `PROJECT_STATS.md`
+- `QUICK_START_WORKFLOWS.md`
+- `SETUP_WORKFLOW_CRON.md`
+- `WORKFLOW_SYSTEM_FIXED.md`
+- `add-workflow-triggers.sql`
+- `fix-workflow-rls-policies.sql`
+- `package-lock.json`
+- `package.json`
+- `plans/TODO/workflow-recipient-refactor.md`
+- `scripts/test-user-data.js`
+- `src/components/ui/dialog.tsx`
+- `src/features/training-hub/components/WorkflowActionsBuilder.tsx`
+- `src/features/training-hub/components/WorkflowBasicInfo.tsx`
+- `src/features/training-hub/components/WorkflowDiagnostic.tsx`
+- `src/features/training-hub/components/WorkflowDialog.tsx`
+- `src/features/training-hub/components/WorkflowReview.tsx`
+- `src/features/training-hub/components/WorkflowTriggerSetup.tsx`
+- `src/features/training-hub/components/WorkflowWizard.tsx`
+- `src/index.css`
+- `src/services/users/userService.ts`
+- `supabase/migrations/20251211_001_add_more_event_types.sql`
+- `tsconfig.tsbuildinfo`
+
+### Statistics
+```
+ 29 files changed, 2296 insertions(+), 3307 deletions(-)
+```
+
 ## [Checkpoint] - 2025-12-11 13:04:11
 
 ### Changed Files

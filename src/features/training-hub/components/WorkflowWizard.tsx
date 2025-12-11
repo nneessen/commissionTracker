@@ -5,7 +5,6 @@ import {
   ArrowLeft,
   ArrowRight,
   Check,
-  X,
   Save,
   TestTube
 } from 'lucide-react';
@@ -377,26 +376,17 @@ export default function WorkflowWizard({ open, onOpenChange, workflow }: Workflo
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl w-[95vw] max-h-[90vh] p-0 flex flex-col">
-        {/* Header - fixed at top */}
-        <div className="shrink-0 px-6 py-3 border-b bg-background">
-          <div className="flex items-center justify-between mb-3">
-            <DialogTitle className="text-base font-semibold">
-              {workflow ? 'Edit Workflow' : 'Create New Workflow'}
+      <DialogContent className="max-w-lg max-h-[90vh] p-3 flex flex-col" hideCloseButton>
+        {/* Header - compact but readable */}
+        <div className="shrink-0 pb-2 border-b bg-muted/30 -m-3 mb-2 p-3">
+          <div className="flex items-center justify-between">
+            <DialogTitle className="text-sm font-medium">
+              {workflow ? 'Edit' : 'Create'} Workflow
             </DialogTitle>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => onOpenChange(false)}
-              className="h-7 w-7"
-              disabled={isSubmitting}
-            >
-              <X className="h-4 w-4" />
-            </Button>
           </div>
 
-          {/* Step Progress - Compact */}
-          <div className="flex items-center gap-3 text-sm">
+          {/* Step Progress - compact */}
+          <div className="flex items-center gap-2 mt-2">
             {WIZARD_STEPS.map((step, index) => {
               const isActive = index === currentStep;
               const isCompleted = index < currentStep;
@@ -411,15 +401,15 @@ export default function WorkflowWizard({ open, onOpenChange, workflow }: Workflo
                 <div
                   key={step.id}
                   className={cn(
-                    "flex items-center gap-1.5",
-                    isActive && "font-semibold text-foreground",
+                    "flex items-center gap-1",
+                    isActive && "font-medium text-foreground",
                     isCompleted && !isActive && "text-muted-foreground",
                     !isActive && !isCompleted && "text-muted-foreground/50",
                     hasError && "text-destructive"
                   )}
                 >
                   <span className={cn(
-                    "flex items-center justify-center w-5 h-5 rounded-full text-xs",
+                    "flex items-center justify-center w-5 h-5 rounded-full text-[10px]",
                     isActive && "bg-primary text-primary-foreground",
                     isCompleted && !isActive && "bg-primary/20 text-primary",
                     !isActive && !isCompleted && "bg-muted",
@@ -433,7 +423,7 @@ export default function WorkflowWizard({ open, onOpenChange, workflow }: Workflo
                   </span>
                   <span className="text-xs">{step.label}</span>
                   {index < WIZARD_STEPS.length - 1 && (
-                    <span className="text-muted-foreground/30 ml-1">→</span>
+                    <span className="text-muted-foreground/30 text-xs ml-1">→</span>
                   )}
                 </div>
               );
@@ -442,28 +432,28 @@ export default function WorkflowWizard({ open, onOpenChange, workflow }: Workflo
 
           {/* Display submit error if any */}
           {errors.submit && (
-            <div className="mt-2 p-2 rounded-md bg-destructive/10 border border-destructive/20">
+            <div className="mt-2 p-2 rounded bg-destructive/10 border border-destructive/20">
               <p className="text-xs text-destructive">{errors.submit}</p>
             </div>
           )}
         </div>
 
         {/* Content - scrollable, takes remaining space */}
-        <div className="flex-1 min-h-0 overflow-y-auto p-4">
+        <div className="flex-1 min-h-0 overflow-y-auto">
           <div className="w-full">
             {renderStepContent()}
           </div>
         </div>
 
-        {/* Footer - fixed at bottom, always visible */}
-        <div className="shrink-0 px-4 py-3 border-t bg-muted/30">
+        {/* Footer - fixed at bottom, compact */}
+        <div className="shrink-0 pt-2 mt-2 border-t bg-muted/20 -m-3 p-3">
           <div className="flex items-center justify-end gap-2">
             <Button
               variant="outline"
               onClick={handleBack}
               disabled={currentStep === 0 || isSubmitting}
               size="sm"
-              className="h-8"
+              className="h-7 text-xs px-3"
             >
               <ArrowLeft className="h-3 w-3 mr-1" />
               Back
@@ -474,7 +464,7 @@ export default function WorkflowWizard({ open, onOpenChange, workflow }: Workflo
                 onClick={handleNext}
                 size="sm"
                 disabled={isSubmitting}
-                className="h-8 bg-primary hover:bg-primary/90"
+                className="h-7 text-xs px-3"
               >
                 Next
                 <ArrowRight className="h-3 w-3 ml-1" />
@@ -482,11 +472,11 @@ export default function WorkflowWizard({ open, onOpenChange, workflow }: Workflo
             ) : (
               <>
                 <Button
-                  variant="secondary"
+                  variant="outline"
                   onClick={handleTestRun}
                   disabled={isSubmitting}
                   size="sm"
-                  className="h-8 bg-blue-600 hover:bg-blue-700 text-white"
+                  className="h-7 text-xs px-3 border-amber-500/30 hover:border-amber-500 hover:bg-amber-50/50 dark:hover:bg-amber-950/20 text-amber-600 dark:text-amber-400"
                 >
                   <TestTube className="h-3 w-3 mr-1" />
                   Test Run
@@ -495,7 +485,7 @@ export default function WorkflowWizard({ open, onOpenChange, workflow }: Workflo
                   onClick={handleSave}
                   disabled={isSubmitting}
                   size="sm"
-                  className="h-8 bg-green-600 hover:bg-green-700 text-white"
+                  className="h-7 text-xs px-3 bg-emerald-600 hover:bg-emerald-700 text-white"
                 >
                   <Save className="h-3 w-3 mr-1" />
                   {isSubmitting ? 'Saving...' : (workflow ? 'Update' : 'Create')}

@@ -76,7 +76,7 @@ export default function WorkflowDiagnostic() {
         if (!diagnostic.database.gmailConnected) {
           diagnostic.recommendations.push('❌ No Gmail connection found. Connect Gmail in Settings > Email');
         } else {
-          diagnostic.recommendations.push(`✅ Gmail connected: ${oauthTokens[0].email_address}`);
+          diagnostic.recommendations.push(`✅ Gmail connected: ${oauthTokens?.[0]?.email_address || 'unknown'}`);
         }
       }
 

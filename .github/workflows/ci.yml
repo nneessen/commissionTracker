@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Supabase CLI
+        run: |
+          curl -fsSL https://cli.supabase.com/install/linux | sh
+          echo "$HOME/.supabase/bin" >> $GITHUB_PATH
+
+      - name: Generate DB Types and Verify
+        run: |
+          npx supabase gen types typescript --project-id ${{ secrets.SUPABASE_PROJECT_ID }} > generated.types.ts
+          diff -q generated.types.ts src/types/database.types.ts
+        shell: bash
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Prettier
+        run: npm run prettier:check
+
+      - name: Check for mock/test imports in production
+        run: |
+          if grep -R "from ['\"]@/tests" src/; then
+            echo "Mock imports detected in production code"
+            exit 1
+          fi
+
+      - name: Build
+        run: npm run build
+
+      - name: Test
+        run: npm test -- --coverage

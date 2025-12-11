@@ -1,0 +1,13 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "Running quick-check..."
+npm run quick-check || exit 1
+
+echo "Checking for mock/test imports..."
+if grep -R "from ['\"]@/tests" src/; then
+  echo "Mock/test imports detected in production code"
+  exit 1
+fi
+
+echo "Pre-push checks passed."

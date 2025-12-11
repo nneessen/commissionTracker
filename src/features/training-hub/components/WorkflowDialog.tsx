@@ -1,20 +1,13 @@
-// src/features/training-hub/components/WorkflowDialog.tsx
+// /home/nneessen/projects/commissionTracker/src/features/training-hub/components/WorkflowDialog.tsx
 
 import { useEffect, useState } from 'react';
 import { useForm } from '@tanstack/react-form';
 import {
-  Plus,
   Trash2,
-  GripVertical,
   Mail,
   Bell,
   Clock,
-  Zap,
-  Calendar,
   Webhook,
-  Play,
-  ChevronDown,
-  ChevronUp,
 } from 'lucide-react';
 import {
   Dialog,
@@ -22,13 +15,11 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-  DialogClose,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
 import {
   Select,
   SelectContent,
@@ -36,11 +27,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible';
 import { useCreateWorkflow, useUpdateWorkflow, useTriggerEventTypes } from '@/hooks/workflows';
 import { useEmailTemplates } from '@/features/email/hooks/useEmailTemplates';
 import type {
@@ -58,20 +44,23 @@ interface WorkflowDialogProps {
 }
 
 const ACTION_TYPES = [
-  { value: 'send_email', label: 'Send Email', icon: Mail, description: 'Send an email using a template' },
-  { value: 'create_notification', label: 'Create Notification', icon: Bell, description: 'Create an in-app notification' },
-  { value: 'wait', label: 'Wait/Delay', icon: Clock, description: 'Wait before next action' },
-  { value: 'webhook', label: 'Webhook', icon: Webhook, description: 'Call an external URL' },
+  { value: 'send_email', label: 'Email', icon: Mail },
+  { value: 'create_notification', label: 'Notify', icon: Bell },
+  { value: 'wait', label: 'Wait', icon: Clock },
+  { value: 'webhook', label: 'Webhook', icon: Webhook },
 ] as const;
 
-const TRIGGER_TYPE_INFO = {
-  manual: { icon: Play, description: 'Run manually from the UI' },
-  schedule: { icon: Calendar, description: 'Run on a schedule (daily, weekly, etc.)' },
-  event: { icon: Zap, description: 'Run when a specific event occurs' },
-  webhook: { icon: Webhook, description: 'Run when called via webhook URL' },
-};
+// Minimal event categories
+const EVENT_CATEGORIES = {
+  recruit: 'Recruiting',
+  policy: 'Policies',
+  commission: 'Commissions',
+  user: 'Users',
+  email: 'Email',
+  system: 'System',
+} as const;
 
-function ActionCard({
+function ActionRow({
   action,
   index,
   onUpdate,
@@ -84,176 +73,91 @@ function ActionCard({
   onRemove: () => void;
   templates: Array<{ id: string; name: string }>;
 }) {
-  const [expanded, setExpanded] = useState(true);
   const actionType = ACTION_TYPES.find((t) => t.value === action.type);
-  const Icon = actionType?.icon || Zap;
 
   return (
-    <div className="rounded-md border bg-muted/30">
-      <Collapsible open={expanded} onOpenChange={setExpanded}>
-        <div className="flex items-center gap-2 p-2">
-          <GripVertical className="h-3 w-3 text-muted-foreground cursor-grab" />
-          <Badge variant="outline" className="text-[9px] h-4 px-1">
-            {index + 1}
-          </Badge>
-          <Icon className="h-3 w-3 text-muted-foreground" />
-          <span className="text-xs font-medium flex-1">{actionType?.label || action.type}</span>
-          <CollapsibleTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-5 w-5">
-              {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-            </Button>
-          </CollapsibleTrigger>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-5 w-5 text-destructive hover:text-destructive"
-            onClick={onRemove}
-          >
-            <Trash2 className="h-3 w-3" />
-          </Button>
-        </div>
+    <div className="flex items-center gap-1 py-0.5 text-[8px]">
+      <span className="w-3 text-muted-foreground">{index + 1}.</span>
 
-        <CollapsibleContent>
-          <div className="border-t px-2 py-2 space-y-2">
-            {/* Action Type Selector */}
-            <div>
-              <Label className="text-[10px]">Action Type</Label>
-              <Select
-                value={action.type}
-                onValueChange={(v) => onUpdate({ type: v as WorkflowAction['type'] })}
-              >
-                <SelectTrigger className="h-7 text-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {ACTION_TYPES.map((type) => (
-                    <SelectItem key={type.value} value={type.value} className="text-xs">
-                      <div className="flex items-center gap-1.5">
-                        <type.icon className="h-3 w-3" />
-                        {type.label}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+      <Select
+        value={action.type}
+        onValueChange={(v) => onUpdate({ type: v as WorkflowAction['type'] })}
+      >
+        <SelectTrigger className="h-5 text-[8px] w-16">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {ACTION_TYPES.map((type) => (
+            <SelectItem key={type.value} value={type.value} className="text-[8px]">
+              {type.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
 
-            {/* Email Template Selector */}
-            {action.type === 'send_email' && (
-              <div>
-                <Label className="text-[10px]">Email Template</Label>
-                <Select
-                  value={action.config.templateId || ''}
-                  onValueChange={(v) => onUpdate({ config: { ...action.config, templateId: v } })}
-                >
-                  <SelectTrigger className="h-7 text-xs">
-                    <SelectValue placeholder="Select template..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {templates.length === 0 ? (
-                      <div className="p-2 text-xs text-muted-foreground">No templates available</div>
-                    ) : (
-                      templates.map((template) => (
-                        <SelectItem key={template.id} value={template.id} className="text-xs">
-                          {template.name}
-                        </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
+      {action.type === 'send_email' && (
+        <Select
+          value={action.config.templateId || ''}
+          onValueChange={(v) => onUpdate({ config: { ...action.config, templateId: v } })}
+        >
+          <SelectTrigger className="h-5 text-[8px] flex-1">
+            <SelectValue placeholder="Template..." />
+          </SelectTrigger>
+          <SelectContent>
+            {templates.map((t) => (
+              <SelectItem key={t.id} value={t.id} className="text-[8px]">
+                {t.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      )}
 
-            {/* Notification Config */}
-            {action.type === 'create_notification' && (
-              <>
-                <div>
-                  <Label className="text-[10px]">Notification Title</Label>
-                  <Input
-                    value={action.config.title || ''}
-                    onChange={(e) => onUpdate({ config: { ...action.config, title: e.target.value } })}
-                    className="h-7 text-xs"
-                    placeholder="e.g., Task Complete"
-                  />
-                </div>
-                <div>
-                  <Label className="text-[10px]">Message</Label>
-                  <Textarea
-                    value={action.config.message || ''}
-                    onChange={(e) => onUpdate({ config: { ...action.config, message: e.target.value } })}
-                    className="h-14 text-xs resize-none"
-                    placeholder="Notification message..."
-                  />
-                </div>
-              </>
-            )}
+      {action.type === 'wait' && (
+        <Input
+          type="number"
+          value={action.config.waitMinutes || 0}
+          onChange={(e) => onUpdate({ config: { ...action.config, waitMinutes: parseInt(e.target.value) || 0 } })}
+          className="h-5 text-[8px] w-16"
+          placeholder="min"
+        />
+      )}
 
-            {/* Wait/Delay Config */}
-            {action.type === 'wait' && (
-              <div>
-                <Label className="text-[10px]">Wait Duration (minutes)</Label>
-                <Input
-                  type="number"
-                  value={action.config.waitMinutes || 0}
-                  onChange={(e) => onUpdate({ config: { ...action.config, waitMinutes: parseInt(e.target.value) || 0 } })}
-                  className="h-7 text-xs"
-                  min={0}
-                  placeholder="0"
-                />
-                <p className="text-[9px] text-muted-foreground mt-0.5">
-                  {(action.config.waitMinutes || 0) >= 60
-                    ? `= ${Math.floor((action.config.waitMinutes || 0) / 60)}h ${(action.config.waitMinutes || 0) % 60}m`
-                    : ''}
-                </p>
-              </div>
-            )}
+      {action.type === 'webhook' && (
+        <Input
+          value={action.config.webhookUrl || ''}
+          onChange={(e) => onUpdate({ config: { ...action.config, webhookUrl: e.target.value } })}
+          className="h-5 text-[8px] flex-1"
+          placeholder="URL..."
+        />
+      )}
 
-            {/* Webhook Config */}
-            {action.type === 'webhook' && (
-              <>
-                <div>
-                  <Label className="text-[10px]">Webhook URL</Label>
-                  <Input
-                    value={action.config.webhookUrl || ''}
-                    onChange={(e) => onUpdate({ config: { ...action.config, webhookUrl: e.target.value } })}
-                    className="h-7 text-xs"
-                    placeholder="https://..."
-                  />
-                </div>
-                <div>
-                  <Label className="text-[10px]">HTTP Method</Label>
-                  <Select
-                    value={action.config.webhookMethod || 'POST'}
-                    onValueChange={(v) => onUpdate({ config: { ...action.config, webhookMethod: v } })}
-                  >
-                    <SelectTrigger className="h-7 text-xs">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="GET" className="text-xs">GET</SelectItem>
-                      <SelectItem value="POST" className="text-xs">POST</SelectItem>
-                      <SelectItem value="PUT" className="text-xs">PUT</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </>
-            )}
+      {action.type === 'create_notification' && (
+        <Input
+          value={action.config.title || ''}
+          onChange={(e) => onUpdate({ config: { ...action.config, title: e.target.value } })}
+          className="h-5 text-[8px] flex-1"
+          placeholder="Title..."
+        />
+      )}
 
-            {/* Delay Before Action */}
-            <div>
-              <Label className="text-[10px]">Delay Before Action (minutes)</Label>
-              <Input
-                type="number"
-                value={action.delayMinutes || 0}
-                onChange={(e) => onUpdate({ delayMinutes: parseInt(e.target.value) || 0 })}
-                className="h-7 text-xs"
-                min={0}
-                placeholder="0 = immediate"
-              />
-            </div>
-          </div>
-        </CollapsibleContent>
-      </Collapsible>
+      <Input
+        type="number"
+        value={action.delayMinutes || 0}
+        onChange={(e) => onUpdate({ delayMinutes: parseInt(e.target.value) || 0 })}
+        className="h-5 text-[8px] w-12"
+        placeholder="0"
+        title="Delay (min)"
+      />
+
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-4 w-4 p-0"
+        onClick={onRemove}
+      >
+        <Trash2 className="h-2 w-2" />
+      </Button>
     </div>
   );
 }
@@ -265,6 +169,14 @@ export default function WorkflowDialog({ open, onOpenChange, workflow }: Workflo
   const { data: emailTemplates = [] } = useEmailTemplates({ isActive: true });
 
   const [actions, setActions] = useState<WorkflowAction[]>([]);
+
+  // Group events by category
+  const groupedEvents = triggerEventTypes.reduce((acc, event) => {
+    const category = event.category || 'general';
+    if (!acc[category]) acc[category] = [];
+    acc[category].push(event);
+    return acc;
+  }, {} as Record<string, typeof triggerEventTypes>);
 
   const form = useForm({
     defaultValues: {
@@ -308,7 +220,6 @@ export default function WorkflowDialog({ open, onOpenChange, workflow }: Workflo
     },
   });
 
-  // Initialize form when dialog opens
   useEffect(() => {
     if (open) {
       if (workflow) {
@@ -358,17 +269,14 @@ export default function WorkflowDialog({ open, onOpenChange, workflow }: Workflo
   };
 
   const templateOptions = emailTemplates.map((t) => ({ id: t.id, name: t.name }));
-  const triggerInfo = TRIGGER_TYPE_INFO[form.state.values.triggerType];
-  const TriggerIcon = triggerInfo?.icon || Play;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[85vh] overflow-hidden flex flex-col">
-        <DialogHeader>
-          <DialogTitle className="text-sm">
-            {workflow ? 'Edit Workflow' : 'Create Workflow'}
+      <DialogContent className="max-w-md max-h-[85vh] overflow-hidden flex flex-col p-2">
+        <DialogHeader className="pb-0">
+          <DialogTitle className="text-[10px]">
+            {workflow ? 'Edit' : 'Create'} Workflow
           </DialogTitle>
-          <DialogClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground" />
         </DialogHeader>
 
         <form
@@ -376,186 +284,160 @@ export default function WorkflowDialog({ open, onOpenChange, workflow }: Workflo
             e.preventDefault();
             form.handleSubmit();
           }}
-          className="flex-1 overflow-y-auto space-y-2 pr-1"
+          className="flex-1 overflow-y-auto space-y-0.5"
         >
-          {/* Basic Info */}
-          <div className="space-y-1.5">
-            <div>
-              <Label className="text-[10px] text-muted-foreground">Name</Label>
+          {/* Ultra compact basic info */}
+          <div className="space-y-0.5">
+            <div className="flex gap-1">
               <form.Field name="name">
                 {(field) => (
                   <Input
                     value={field.state.value}
                     onChange={(e) => field.handleChange(e.target.value)}
-                    className="h-7 text-xs"
-                    placeholder="e.g., Welcome Email Sequence"
+                    className="h-5 text-[8px] flex-1"
+                    placeholder="Workflow name"
                   />
                 )}
               </form.Field>
-            </div>
-
-            <div>
-              <Label className="text-[10px] text-muted-foreground">Description</Label>
-              <form.Field name="description">
+              <form.Field name="category">
                 {(field) => (
-                  <Textarea
+                  <Select
                     value={field.state.value}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                    className="h-12 text-xs resize-none"
-                    placeholder="Brief description..."
-                  />
+                    onValueChange={(v) => field.handleChange(v as WorkflowCategory)}
+                  >
+                    <SelectTrigger className="h-5 text-[8px] w-20">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="email" className="text-[8px]">Email</SelectItem>
+                      <SelectItem value="recruiting" className="text-[8px]">Recruit</SelectItem>
+                      <SelectItem value="commission" className="text-[8px]">Comm</SelectItem>
+                      <SelectItem value="general" className="text-[8px]">General</SelectItem>
+                    </SelectContent>
+                  </Select>
                 )}
               </form.Field>
             </div>
 
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <Label className="text-[10px] text-muted-foreground">Category</Label>
-                <form.Field name="category">
+            <form.Field name="description">
+              {(field) => (
+                <Textarea
+                  value={field.state.value}
+                  onChange={(e) => field.handleChange(e.target.value)}
+                  className="h-8 text-[8px] resize-none"
+                  placeholder="Description (optional)"
+                />
+              )}
+            </form.Field>
+          </div>
+
+          {/* Trigger - completely flat */}
+          <div className="space-y-0.5">
+            <Label className="text-[8px] text-muted-foreground">Trigger</Label>
+            <div className="flex gap-1">
+              <form.Field name="triggerType">
+                {(field) => (
+                  <Select
+                    value={field.state.value}
+                    onValueChange={(v) => field.handleChange(v as TriggerType)}
+                  >
+                    <SelectTrigger className="h-5 text-[8px] w-20">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="manual" className="text-[8px]">Manual</SelectItem>
+                      <SelectItem value="schedule" className="text-[8px]">Schedule</SelectItem>
+                      <SelectItem value="event" className="text-[8px]">Event</SelectItem>
+                      <SelectItem value="webhook" className="text-[8px]">Webhook</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              </form.Field>
+
+              {form.state.values.triggerType === 'event' && (
+                <form.Field name="trigger.eventName">
                   {(field) => (
                     <Select
                       value={field.state.value}
-                      onValueChange={(v) => field.handleChange(v as WorkflowCategory)}
+                      onValueChange={(v) => field.handleChange(v)}
                     >
-                      <SelectTrigger className="h-7 text-xs">
-                        <SelectValue />
+                      <SelectTrigger className="h-5 text-[8px] flex-1">
+                        <SelectValue placeholder="Select event..." />
                       </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="email" className="text-xs">Email</SelectItem>
-                        <SelectItem value="recruiting" className="text-xs">Recruiting</SelectItem>
-                        <SelectItem value="commission" className="text-xs">Commission</SelectItem>
-                        <SelectItem value="general" className="text-xs">General</SelectItem>
+                      <SelectContent className="max-h-32">
+                        {Object.entries(groupedEvents).map(([category, events]) => (
+                          events.map((event) => (
+                            <SelectItem key={event.id} value={event.eventName} className="text-[8px]">
+                              {event.eventName}
+                            </SelectItem>
+                          ))
+                        ))}
                       </SelectContent>
                     </Select>
                   )}
                 </form.Field>
-              </div>
+              )}
 
-              <div>
-                <Label className="text-[10px] text-muted-foreground">Trigger Type</Label>
-                <form.Field name="triggerType">
-                  {(field) => (
-                    <Select
-                      value={field.state.value}
-                      onValueChange={(v) => field.handleChange(v as TriggerType)}
-                    >
-                      <SelectTrigger className="h-7 text-xs">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="manual" className="text-xs">Manual</SelectItem>
-                        <SelectItem value="schedule" className="text-xs">Schedule</SelectItem>
-                        <SelectItem value="event" className="text-xs">Event</SelectItem>
-                        <SelectItem value="webhook" className="text-xs">Webhook</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  )}
-                </form.Field>
-              </div>
-            </div>
-
-            {/* Trigger Configuration - Only show if not manual */}
-            {form.state.values.triggerType !== 'manual' && (
-              <div className="rounded-md border bg-muted/30 p-2">
-                <div className="flex items-center gap-1.5 mb-1.5">
-                  <TriggerIcon className="h-3 w-3 text-muted-foreground" />
-                  <span className="text-[10px] font-medium text-muted-foreground">
-                    Trigger Settings
-                  </span>
-                </div>
-
-                {form.state.values.triggerType === 'event' && (
-                  <form.Field name="trigger.eventName">
+              {form.state.values.triggerType === 'schedule' && (
+                <>
+                  <form.Field name="trigger.schedule.time">
+                    {(field) => (
+                      <Input
+                        type="time"
+                        value={field.state.value}
+                        onChange={(e) => field.handleChange(e.target.value)}
+                        className="h-5 text-[8px] w-20"
+                      />
+                    )}
+                  </form.Field>
+                  <form.Field name="trigger.schedule.dayOfWeek">
                     {(field) => (
                       <Select
                         value={field.state.value}
                         onValueChange={(v) => field.handleChange(v)}
                       >
-                        <SelectTrigger className="h-7 text-xs">
-                          <SelectValue placeholder="Select event..." />
+                        <SelectTrigger className="h-5 text-[8px] w-20">
+                          <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          {triggerEventTypes.map((event) => (
-                            <SelectItem key={event.id} value={event.eventName} className="text-xs">
-                              {event.eventName}
-                            </SelectItem>
-                          ))}
+                          <SelectItem value="daily" className="text-[8px]">Daily</SelectItem>
+                          <SelectItem value="monday" className="text-[8px]">Mon</SelectItem>
+                          <SelectItem value="tuesday" className="text-[8px]">Tue</SelectItem>
+                          <SelectItem value="wednesday" className="text-[8px]">Wed</SelectItem>
+                          <SelectItem value="thursday" className="text-[8px]">Thu</SelectItem>
+                          <SelectItem value="friday" className="text-[8px]">Fri</SelectItem>
+                          <SelectItem value="saturday" className="text-[8px]">Sat</SelectItem>
+                          <SelectItem value="sunday" className="text-[8px]">Sun</SelectItem>
                         </SelectContent>
                       </Select>
                     )}
                   </form.Field>
-                )}
-
-                {form.state.values.triggerType === 'schedule' && (
-                  <div className="grid grid-cols-2 gap-2">
-                    <form.Field name="trigger.schedule.time">
-                      {(field) => (
-                        <Input
-                          type="time"
-                          value={field.state.value}
-                          onChange={(e) => field.handleChange(e.target.value)}
-                          className="h-7 text-xs"
-                        />
-                      )}
-                    </form.Field>
-                    <form.Field name="trigger.schedule.dayOfWeek">
-                      {(field) => (
-                        <Select
-                          value={field.state.value}
-                          onValueChange={(v) => field.handleChange(v)}
-                        >
-                          <SelectTrigger className="h-7 text-xs">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="daily" className="text-xs">Daily</SelectItem>
-                            <SelectItem value="monday" className="text-xs">Monday</SelectItem>
-                            <SelectItem value="tuesday" className="text-xs">Tuesday</SelectItem>
-                            <SelectItem value="wednesday" className="text-xs">Wednesday</SelectItem>
-                            <SelectItem value="thursday" className="text-xs">Thursday</SelectItem>
-                            <SelectItem value="friday" className="text-xs">Friday</SelectItem>
-                            <SelectItem value="saturday" className="text-xs">Saturday</SelectItem>
-                            <SelectItem value="sunday" className="text-xs">Sunday</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      )}
-                    </form.Field>
-                  </div>
-                )}
-
-                {form.state.values.triggerType === 'webhook' && (
-                  <p className="text-[10px] text-muted-foreground">
-                    A webhook URL will be generated after creation
-                  </p>
-                )}
-              </div>
-            )}
+                </>
+              )}
+            </div>
           </div>
 
-          {/* Actions Section */}
-          <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <Label className="text-[10px] text-muted-foreground">Actions ({actions.length})</Label>
+          {/* Actions - ultra minimal */}
+          <div className="space-y-0.5">
+            <div className="flex items-center justify-between">
+              <Label className="text-[8px] text-muted-foreground">Actions</Label>
               <Button
                 type="button"
                 variant="ghost"
                 size="sm"
-                className="h-5 text-[10px] gap-1"
+                className="h-4 text-[8px] px-1"
                 onClick={addAction}
               >
-                <Plus className="h-3 w-3" />
-                Add
+                + Add
               </Button>
             </div>
 
             {actions.length === 0 ? (
-              <div className="rounded-md border border-dashed p-2 text-center">
-                <p className="text-[10px] text-muted-foreground">No actions configured</p>
-              </div>
+              <p className="text-[8px] text-muted-foreground py-1">No actions</p>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-0">
                 {actions.map((action, index) => (
-                  <ActionCard
+                  <ActionRow
                     key={index}
                     action={action}
                     index={index}
@@ -568,61 +450,53 @@ export default function WorkflowDialog({ open, onOpenChange, workflow }: Workflo
             )}
           </div>
 
-          {/* Settings */}
-          <Collapsible>
-            <CollapsibleTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-6 text-[10px] gap-1 w-full justify-start">
-                <ChevronDown className="h-3 w-3" />
-                Advanced Settings
-              </Button>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <div className="grid grid-cols-2 gap-2 pt-2">
-                <div>
-                  <Label className="text-[10px]">Max Runs Per Day</Label>
-                  <form.Field name="settings.maxRunsPerDay">
-                    {(field) => (
-                      <Input
-                        type="number"
-                        value={field.state.value}
-                        onChange={(e) => field.handleChange(parseInt(e.target.value) || 50)}
-                        className="h-7 text-xs"
-                        min={1}
-                      />
-                    )}
-                  </form.Field>
-                </div>
-                <div>
-                  <Label className="text-[10px]">Priority (1-100)</Label>
-                  <form.Field name="settings.priority">
-                    {(field) => (
-                      <Input
-                        type="number"
-                        value={field.state.value}
-                        onChange={(e) => field.handleChange(parseInt(e.target.value) || 50)}
-                        className="h-7 text-xs"
-                        min={1}
-                        max={100}
-                      />
-                    )}
-                  </form.Field>
-                </div>
-              </div>
-            </CollapsibleContent>
-          </Collapsible>
+          {/* Settings - inline, no collapsible */}
+          <div className="flex gap-1">
+            <div className="flex-1">
+              <Label className="text-[8px] text-muted-foreground">Max/Day</Label>
+              <form.Field name="settings.maxRunsPerDay">
+                {(field) => (
+                  <Input
+                    type="number"
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(parseInt(e.target.value) || 50)}
+                    className="h-5 text-[8px]"
+                    min={1}
+                  />
+                )}
+              </form.Field>
+            </div>
+            <div className="flex-1">
+              <Label className="text-[8px] text-muted-foreground">Priority</Label>
+              <form.Field name="settings.priority">
+                {(field) => (
+                  <Input
+                    type="number"
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(parseInt(e.target.value) || 50)}
+                    className="h-5 text-[8px]"
+                    min={1}
+                    max={100}
+                  />
+                )}
+              </form.Field>
+            </div>
+          </div>
         </form>
 
-        <DialogFooter className="pt-3 border-t">
+        <DialogFooter className="pt-1 gap-1">
           <Button
             type="button"
             variant="outline"
             size="sm"
+            className="h-5 text-[8px] px-2"
             onClick={() => onOpenChange(false)}
           >
             Cancel
           </Button>
           <Button
             size="sm"
+            className="h-5 text-[8px] px-2"
             onClick={() => form.handleSubmit()}
             disabled={createWorkflow.isPending || updateWorkflow.isPending}
           >
