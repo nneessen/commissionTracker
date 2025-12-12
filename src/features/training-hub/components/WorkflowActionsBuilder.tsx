@@ -1,4 +1,4 @@
-// src/features/training-hub/components/workflow-wizard/WorkflowActionsBuilder.tsx
+// src/features/training-hub/components/WorkflowActionsBuilder.tsx
 
 import { useState } from 'react';
 import {
@@ -10,15 +10,22 @@ import {
   Trash2,
   ChevronUp,
   ChevronDown,
-  Eye
+  Eye,
+  Users,
+  Building2,
+  UserCog,
+  GitBranch
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
@@ -30,7 +37,10 @@ import {
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import type { WorkflowAction } from '@/types/workflow.types';
+import type { RecipientType } from '@/types/workflow-recipients.types';
+import { RECIPIENT_CATEGORIES, RECIPIENT_TYPE_LABELS, AVAILABLE_ROLES } from '@/types/workflow-recipients.types';
 import { useEmailTemplates } from '@/features/email/hooks/useEmailTemplates';
+import { usePipelinePhaseOptions } from '@/features/training-hub/hooks/usePipelinePhases';
 
 interface WorkflowActionsBuilderProps {
   actions: WorkflowAction[];
@@ -45,15 +55,27 @@ const ACTION_TYPES = [
   { type: 'webhook', label: 'Webhook', icon: Webhook, color: 'bg-violet-500/10 border-violet-500/20 text-violet-600 dark:text-violet-400' }
 ] as const;
 
+// Category icons for recipient selector
+const CATEGORY_ICONS = {
+  hierarchy: Building2,
+  role: UserCog,
+  context: GitBranch,
+  pipeline: Users,
+  custom: Mail
+} as const;
+
 export default function WorkflowActionsBuilder({ actions, onChange, errors }: WorkflowActionsBuilderProps) {
   const { data: emailTemplates = [] } = useEmailTemplates({ isActive: true });
+  const { options: pipelinePhaseOptions } = usePipelinePhaseOptions();
   const [previewTemplate, setPreviewTemplate] = useState<string | null>(null);
 
   const addAction = () => {
     const newAction: WorkflowAction = {
       type: 'send_email',
       order: actions.length,
-      config: {},
+      config: {
+        recipientConfig: { type: 'event_user' }
+      },
       delayMinutes: 0
     };
     onChange([...actions, newAction]);
@@ -62,6 +84,15 @@ export default function WorkflowActionsBuilder({ actions, onChange, errors }: Wo
   const updateAction = (index: number, updates: Partial<WorkflowAction>) => {
     const updated = [...actions];
     updated[index] = { ...updated[index], ...updates };
+    onChange(updated);
+  };
+
+  const updateActionConfig = (index: number, configUpdates: Record<string, unknown>) => {
+    const updated = [...actions];
+    updated[index] = {
+      ...updated[index],
+      config: { ...updated[index].config, ...configUpdates }
+    };
     onChange(updated);
   };
 
@@ -82,6 +113,34 @@ export default function WorkflowActionsBuilder({ actions, onChange, errors }: Wo
     const reordered = items.map((item, i) => ({ ...item, order: i }));
     onChange(reordered);
   };
+
+  // Get current recipient type from action config
+  const getRecipientType = (action: WorkflowAction): RecipientType => {
+    return action.config.recipientConfig?.type || action.config.recipientType as RecipientType || 'event_user';
+  };
+
+  // Update recipient type
+  const updateRecipientType = (index: number, type: RecipientType) => {
+    const config = actions[index].config;
+    updateActionConfig(index, {
+      recipientConfig: {
+        ...config.recipientConfig,
+        type,
+        // Reset type-specific fields
+        roles: type === 'role' ? [] : undefined,
+        phaseIds: type === 'pipeline_phase' ? [] : undefined,
+        emails: ['specific_email', 'email_list'].includes(type) ? [] : undefined
+      },
+      // Also set legacy field for backward compat
+      recipientType: type
+    });
+  };
+
+  // Check if recipient type needs additional config
+  const needsRoleSelector = (type: RecipientType) => type === 'role';
+  const needsPhaseSelector = (type: RecipientType) => type === 'pipeline_phase';
+  const needsEmailInput = (type: RecipientType) => type === 'specific_email';
+  const needsEmailListInput = (type: RecipientType) => type === 'email_list';
 
   return (
     <div className="w-full space-y-3">
@@ -125,6 +184,7 @@ export default function WorkflowActionsBuilder({ actions, onChange, errors }: Wo
             const Icon = actionType?.icon || Mail;
             const errorKey = `action_${index}`;
             const hasError = !!errors[errorKey];
+            const currentRecipientType = getRecipientType(action);
 
             return (
               <div
@@ -194,15 +254,14 @@ export default function WorkflowActionsBuilder({ actions, onChange, errors }: Wo
                 <div className="space-y-2 pl-6">
                   {action.type === 'send_email' && (
                     <>
+                      {/* Template Selection */}
                       <div className="flex gap-2">
                         <div className="flex-1">
                           <Label className="text-[10px] text-muted-foreground">Email Template</Label>
                           <div className="flex gap-1">
                             <Select
                               value={action.config.templateId || ''}
-                              onValueChange={(v) => updateAction(index, {
-                                config: { ...action.config, templateId: v }
-                              })}
+                              onValueChange={(v) => updateActionConfig(index, { templateId: v })}
                             >
                               <SelectTrigger className="h-7 text-xs bg-background border-blue-500/30 focus:border-blue-500">
                                 <SelectValue placeholder="Select template..." />
@@ -228,35 +287,170 @@ export default function WorkflowActionsBuilder({ actions, onChange, errors }: Wo
                             )}
                           </div>
                         </div>
-                        <div className="w-32">
-                          <Label className="text-[10px] text-muted-foreground">Send To</Label>
-                          <Select
-                            value={action.config.recipientType || 'trigger_user'}
-                            onValueChange={(v) => updateAction(index, {
-                              config: { ...action.config, recipientType: v }
-                            })}
-                          >
-                            <SelectTrigger className="h-7 text-xs bg-background border-blue-500/30 focus:border-blue-500">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="trigger_user" className="text-xs">Trigger User</SelectItem>
-                              <SelectItem value="specific_email" className="text-xs">Specific Email</SelectItem>
-                              <SelectItem value="all_agents" className="text-xs">All Agents</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
                       </div>
-                      {action.config.recipientType === 'specific_email' && (
+
+                      {/* Recipient Selection - Category-Based */}
+                      <div>
+                        <Label className="text-[10px] text-muted-foreground">Send To</Label>
+                        <Select
+                          value={currentRecipientType}
+                          onValueChange={(v) => updateRecipientType(index, v as RecipientType)}
+                        >
+                          <SelectTrigger className="h-7 text-xs bg-background border-blue-500/30 focus:border-blue-500">
+                            <SelectValue>
+                              {RECIPIENT_TYPE_LABELS[currentRecipientType] || currentRecipientType}
+                            </SelectValue>
+                          </SelectTrigger>
+                          <SelectContent className="max-h-80">
+                            {Object.entries(RECIPIENT_CATEGORIES).map(([key, category]) => {
+                              const CategoryIcon = CATEGORY_ICONS[key as keyof typeof CATEGORY_ICONS];
+                              return (
+                                <SelectGroup key={key}>
+                                  <SelectLabel className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                                    <CategoryIcon className="h-3 w-3" />
+                                    {category.label}
+                                  </SelectLabel>
+                                  {category.types.map((type) => (
+                                    <SelectItem key={type} value={type} className="text-xs pl-6">
+                                      {RECIPIENT_TYPE_LABELS[type]}
+                                    </SelectItem>
+                                  ))}
+                                </SelectGroup>
+                              );
+                            })}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {/* Role Selection (for 'role' type) */}
+                      {needsRoleSelector(currentRecipientType) && (
+                        <div>
+                          <Label className="text-[10px] text-muted-foreground">Select Roles</Label>
+                          <div className="flex flex-wrap gap-2 mt-1">
+                            {AVAILABLE_ROLES.map((role) => {
+                              const isChecked = action.config.recipientConfig?.roles?.includes(role.value) ?? false;
+                              return (
+                                <label
+                                  key={role.value}
+                                  className={cn(
+                                    "flex items-center gap-1.5 px-2 py-1 rounded border text-xs cursor-pointer transition-colors",
+                                    isChecked
+                                      ? "bg-blue-100 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700"
+                                      : "bg-background border-input hover:bg-muted/50"
+                                  )}
+                                >
+                                  <Checkbox
+                                    checked={isChecked}
+                                    onCheckedChange={(checked) => {
+                                      const currentRoles = action.config.recipientConfig?.roles || [];
+                                      const newRoles = checked
+                                        ? [...currentRoles, role.value]
+                                        : currentRoles.filter(r => r !== role.value);
+                                      updateActionConfig(index, {
+                                        recipientConfig: {
+                                          ...action.config.recipientConfig,
+                                          type: 'role',
+                                          roles: newRoles
+                                        }
+                                      });
+                                    }}
+                                    className="h-3 w-3"
+                                  />
+                                  {role.label}
+                                </label>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Pipeline Phase Selection (for 'pipeline_phase' type) */}
+                      {needsPhaseSelector(currentRecipientType) && (
+                        <div>
+                          <Label className="text-[10px] text-muted-foreground">Select Pipeline Phases</Label>
+                          <div className="flex flex-wrap gap-2 mt-1 max-h-32 overflow-y-auto">
+                            {pipelinePhaseOptions.map((phase) => {
+                              const isChecked = action.config.recipientConfig?.phaseIds?.includes(phase.value) ?? false;
+                              return (
+                                <label
+                                  key={phase.value}
+                                  className={cn(
+                                    "flex items-center gap-1.5 px-2 py-1 rounded border text-xs cursor-pointer transition-colors",
+                                    isChecked
+                                      ? "bg-blue-100 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700"
+                                      : "bg-background border-input hover:bg-muted/50"
+                                  )}
+                                >
+                                  <Checkbox
+                                    checked={isChecked}
+                                    onCheckedChange={(checked) => {
+                                      const currentPhases = action.config.recipientConfig?.phaseIds || [];
+                                      const newPhases = checked
+                                        ? [...currentPhases, phase.value]
+                                        : currentPhases.filter(p => p !== phase.value);
+                                      updateActionConfig(index, {
+                                        recipientConfig: {
+                                          ...action.config.recipientConfig,
+                                          type: 'pipeline_phase',
+                                          phaseIds: newPhases
+                                        }
+                                      });
+                                    }}
+                                    className="h-3 w-3"
+                                  />
+                                  <span className="truncate max-w-[150px]" title={phase.label}>
+                                    {phase.phaseName}
+                                  </span>
+                                </label>
+                              );
+                            })}
+                          </div>
+                          {pipelinePhaseOptions.length === 0 && (
+                            <p className="text-[10px] text-muted-foreground mt-1">No pipeline phases available</p>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Specific Email Input */}
+                      {needsEmailInput(currentRecipientType) && (
                         <Input
                           type="email"
-                          value={action.config.recipientEmail || ''}
-                          onChange={(e) => updateAction(index, {
-                            config: { ...action.config, recipientEmail: e.target.value }
+                          value={action.config.recipientConfig?.emails?.[0] || action.config.recipientEmail || ''}
+                          onChange={(e) => updateActionConfig(index, {
+                            recipientConfig: {
+                              ...action.config.recipientConfig,
+                              type: 'specific_email',
+                              emails: [e.target.value]
+                            },
+                            recipientEmail: e.target.value
                           })}
                           placeholder="email@example.com"
                           className="h-7 text-xs bg-background border-blue-500/30 focus:border-blue-500"
                         />
+                      )}
+
+                      {/* Email List Input */}
+                      {needsEmailListInput(currentRecipientType) && (
+                        <div>
+                          <Input
+                            value={(action.config.recipientConfig?.emails || []).join(', ')}
+                            onChange={(e) => {
+                              const emails = e.target.value.split(',').map(email => email.trim()).filter(Boolean);
+                              updateActionConfig(index, {
+                                recipientConfig: {
+                                  ...action.config.recipientConfig,
+                                  type: 'email_list',
+                                  emails
+                                }
+                              });
+                            }}
+                            placeholder="email1@example.com, email2@example.com"
+                            className="h-7 text-xs bg-background border-blue-500/30 focus:border-blue-500"
+                          />
+                          <p className="text-[10px] text-muted-foreground mt-1">
+                            Separate multiple emails with commas (max 50)
+                          </p>
+                        </div>
                       )}
                     </>
                   )}
@@ -268,9 +462,7 @@ export default function WorkflowActionsBuilder({ actions, onChange, errors }: Wo
                         <Input
                           type="number"
                           value={action.config.waitMinutes || 0}
-                          onChange={(e) => updateAction(index, {
-                            config: { ...action.config, waitMinutes: parseInt(e.target.value) || 0 }
-                          })}
+                          onChange={(e) => updateActionConfig(index, { waitMinutes: parseInt(e.target.value) || 0 })}
                           className="h-7 text-xs bg-background border-gray-500/30 focus:border-gray-500"
                           placeholder="0"
                           min={0}
@@ -285,9 +477,7 @@ export default function WorkflowActionsBuilder({ actions, onChange, errors }: Wo
                       <Label className="text-[10px] text-violet-600 dark:text-violet-400">Webhook URL</Label>
                       <Input
                         value={action.config.webhookUrl || ''}
-                        onChange={(e) => updateAction(index, {
-                          config: { ...action.config, webhookUrl: e.target.value }
-                        })}
+                        onChange={(e) => updateActionConfig(index, { webhookUrl: e.target.value })}
                         className="h-7 text-xs bg-background border-violet-500/30 focus:border-violet-500"
                         placeholder="https://api.example.com/webhook"
                       />
@@ -300,9 +490,7 @@ export default function WorkflowActionsBuilder({ actions, onChange, errors }: Wo
                         <Label className="text-[10px] text-amber-600 dark:text-amber-400">Notification Title</Label>
                         <Input
                           value={action.config.title || ''}
-                          onChange={(e) => updateAction(index, {
-                            config: { ...action.config, title: e.target.value }
-                          })}
+                          onChange={(e) => updateActionConfig(index, { title: e.target.value })}
                           className="h-7 text-xs bg-background border-amber-500/30 focus:border-amber-500"
                           placeholder="Notification title..."
                         />
@@ -311,9 +499,7 @@ export default function WorkflowActionsBuilder({ actions, onChange, errors }: Wo
                         <Label className="text-[10px] text-amber-600 dark:text-amber-400">Message</Label>
                         <Input
                           value={action.config.message || ''}
-                          onChange={(e) => updateAction(index, {
-                            config: { ...action.config, message: e.target.value }
-                          })}
+                          onChange={(e) => updateActionConfig(index, { message: e.target.value })}
                           className="h-7 text-xs bg-background border-amber-500/30 focus:border-amber-500"
                           placeholder="Notification message..."
                         />

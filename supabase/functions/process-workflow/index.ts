@@ -321,35 +321,39 @@ async function executeSendEmail(
       break
 
     case 'manager':
+    case 'direct_upline':
       if (context.recipientId) {
-        const { data: hierarchy } = await supabase
-          .from('user_hierarchy')
-          .select('parent_user_id')
-          .eq('user_id', context.recipientId)
+        // Get upline_id from user_profiles (not a separate user_hierarchy table)
+        const { data: userWithUpline } = await supabase
+          .from('user_profiles')
+          .select('upline_id')
+          .eq('id', context.recipientId)
           .single()
 
-        if (hierarchy?.parent_user_id) {
+        if (userWithUpline?.upline_id) {
           const { data: manager } = await supabase
             .from('user_profiles')
-            .select('email')
-            .eq('id', hierarchy.parent_user_id)
+            .select('id, email')
+            .eq('id', userWithUpline.upline_id)
             .single()
 
-          if (manager) {
+          if (manager?.email) {
             recipientEmails = [manager.email]
-            recipientIds = [hierarchy.parent_user_id]
+            recipientIds = [manager.id]
           }
         }
       }
       break
 
     case 'all_trainers':
+      // Use roles array (not singular 'role' column which doesn't exist)
       const { data: trainers } = await supabase
         .from('user_profiles')
         .select('id, email')
-        .eq('role', 'trainer')
+        .contains('roles', ['trainer'])
+        .eq('is_deleted', false)
 
-      if (trainers) {
+      if (trainers && trainers.length > 0) {
         recipientEmails = trainers.map(t => t.email)
         recipientIds = trainers.map(t => t.id)
       }

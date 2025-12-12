@@ -1,4 +1,6 @@
-// File: /home/nneessen/projects/commissionTracker/src/types/workflow.types.ts
+// Workflow types for automation system
+
+import type { RecipientConfig } from './workflow-recipients.types';
 
 export type WorkflowStatus = 'draft' | 'active' | 'paused' | 'archived';
 export type WorkflowCategory = 'email' | 'recruiting' | 'commission' | 'general';
@@ -17,7 +19,9 @@ export interface WorkflowAction {
   type: 'send_email' | 'create_notification' | 'update_field' | 'create_task' | 'webhook' | 'wait' | 'branch' | 'assign_user' | 'ai_decision';
   order: number;
   config: {
-    // Email action
+    // Email action - NEW structured recipient config (preferred)
+    recipientConfig?: RecipientConfig;
+    // Email action - LEGACY fields (kept for backward compatibility)
     templateId?: string;
     recipientId?: string;
     recipientType?: string;
