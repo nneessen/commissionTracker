@@ -19,6 +19,7 @@
     "test:run": "vitest run",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
+    "quick-check": "npm run typecheck && npm run lint",
     "preview": "vite preview",
     "start": "npm run dev",
     "generate:types": "supabase gen types typescript --project-id pcyaqwodnyrpkaiojnpz --schema public > src/types/database.types.ts",
