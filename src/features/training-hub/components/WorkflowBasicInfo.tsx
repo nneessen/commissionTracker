@@ -1,6 +1,6 @@
 // src/features/training-hub/components/workflow-wizard/WorkflowBasicInfo.tsx
 
-import { Info } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -11,8 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
 import type { WorkflowFormData, WorkflowCategory } from '@/types/workflow.types';
 
@@ -43,13 +42,6 @@ const WORKFLOW_CATEGORIES = [
     label: 'General',
     description: 'Other automation workflows'
   }
-];
-
-const NAME_SUGGESTIONS = [
-  'Welcome Email Series',
-  'New Recruit Onboarding',
-  'Commission Alert System',
-  'Weekly Progress Report'
 ];
 
 export default function WorkflowBasicInfo({ data, onChange, errors }: WorkflowBasicInfoProps) {
@@ -117,6 +109,87 @@ export default function WorkflowBasicInfo({ data, onChange, errors }: WorkflowBa
             ))}
           </SelectContent>
         </Select>
+      </div>
+
+      {/* Advanced Settings - Priority */}
+      <div className="p-3 rounded-md bg-gradient-to-r from-amber-500/5 to-amber-500/10 border border-amber-500/20">
+        <div className="flex items-start gap-2 mb-3">
+          <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5" />
+          <div className="flex-1">
+            <Label className="text-xs font-medium text-amber-700 dark:text-amber-300">
+              Execution Priority
+            </Label>
+            <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-0.5">
+              Controls the order of execution when multiple workflows are triggered simultaneously
+            </p>
+          </div>
+        </div>
+
+        {/* Priority Slider */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] text-muted-foreground">Low</span>
+            <span className="text-sm font-bold text-amber-700 dark:text-amber-300">
+              {(() => {
+                const priority = data.settings?.priority || 50;
+                if (priority >= 80) return 'High Priority';
+                if (priority >= 60) return 'Medium-High';
+                if (priority >= 40) return 'Normal';
+                if (priority >= 20) return 'Low Priority';
+                return 'Very Low';
+              })()}
+            </span>
+            <span className="text-[10px] text-muted-foreground">High</span>
+          </div>
+
+          <Slider
+            value={[data.settings?.priority || 50]}
+            onValueChange={([value]) => onChange({
+              settings: {
+                ...data.settings,
+                priority: value
+              }
+            })}
+            min={1}
+            max={100}
+            step={10}
+            className="w-full"
+          />
+
+          <div className="flex justify-between text-[9px] text-muted-foreground">
+            <span>1</span>
+            <span>25</span>
+            <span>50</span>
+            <span>75</span>
+            <span>100</span>
+          </div>
+
+          {/* Priority Explanation */}
+          <div className={cn(
+            "p-2 rounded text-[10px] mt-2",
+            "bg-amber-50 dark:bg-amber-950/20 border",
+            data.settings?.priority && data.settings.priority >= 80
+              ? "border-amber-600 text-amber-700 dark:text-amber-300"
+              : data.settings?.priority && data.settings.priority <= 20
+              ? "border-amber-400 text-amber-600 dark:text-amber-400"
+              : "border-amber-500/30 text-amber-600 dark:text-amber-400"
+          )}>
+            <p className="font-medium mb-0.5">
+              Current: {data.settings?.priority || 50}/100
+              {data.settings?.priority === 50 && " (Default)"}
+            </p>
+            <p>
+              {(() => {
+                const priority = data.settings?.priority || 50;
+                if (priority >= 80) return "🚀 High priority workflows execute first. Use for critical automations like welcome emails or urgent alerts.";
+                if (priority >= 60) return "⬆️ Slightly elevated priority. Executes before normal workflows but after high priority ones.";
+                if (priority >= 40) return "➡️ Normal priority (default). Standard execution order with other normal workflows.";
+                if (priority >= 20) return "⬇️ Low priority. Executes after normal and high priority workflows. Good for non-urgent tasks.";
+                return "🐌 Lowest priority. Only executes after all other workflows complete. Use for background tasks.";
+              })()}
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );

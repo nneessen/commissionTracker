@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Play, Calendar, Zap, Webhook } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -14,6 +15,7 @@ import {
 import { cn } from '@/lib/utils';
 import type { WorkflowFormData, TriggerType, WorkflowTrigger } from '@/types/workflow.types';
 import { useTriggerEventTypes } from '@/hooks/workflows';
+import EventSelectionDialog from './EventSelectionDialog';
 
 interface WorkflowTriggerSetupProps {
   data: WorkflowFormData;
@@ -32,6 +34,7 @@ export default function WorkflowTriggerSetup({ data, onChange, errors }: Workflo
   const { data: eventTypes = [] } = useTriggerEventTypes();
   const [scheduleTime, setScheduleTime] = useState(data.trigger?.schedule?.time || '09:00');
   const [scheduleDayOfWeek, setScheduleDayOfWeek] = useState(data.trigger?.schedule?.dayOfWeek || 'daily');
+  const [eventDialogOpen, setEventDialogOpen] = useState(false);
 
   // Update parent when schedule changes
   useEffect(() => {
@@ -48,9 +51,48 @@ export default function WorkflowTriggerSetup({ data, onChange, errors }: Workflo
   }, [scheduleTime, scheduleDayOfWeek, data.triggerType]);
 
   const handleTriggerTypeChange = (type: TriggerType) => {
+    // Create proper trigger object based on type
+    let newTrigger: WorkflowTrigger;
+
+    switch (type) {
+      case 'manual':
+        newTrigger = { type: 'manual' };
+        break;
+      case 'schedule':
+        newTrigger = {
+          type: 'schedule',
+          schedule: {
+            time: scheduleTime,
+            dayOfWeek: scheduleDayOfWeek
+          }
+        };
+        break;
+      case 'event':
+        newTrigger = {
+          type: 'event',
+          eventName: data.trigger?.eventName // Preserve selected event if any
+        };
+        break;
+      case 'webhook':
+        newTrigger = {
+          type: 'webhook',
+          webhookConfig: data.trigger?.webhookConfig
+        };
+        break;
+      default:
+        newTrigger = { type: 'manual' };
+    }
+
+    console.log('[WorkflowTriggerSetup] Changing trigger type to:', {
+      newType: type,
+      newTrigger,
+      preservedEventName: data.trigger?.eventName
+    });
+
+    // Update both triggerType and trigger together
     onChange({
       triggerType: type,
-      trigger: undefined
+      trigger: newTrigger
     });
   };
 
@@ -59,16 +101,18 @@ export default function WorkflowTriggerSetup({ data, onChange, errors }: Workflo
       type: 'event',
       eventName
     };
-    onChange({ trigger: newTrigger });
-  };
 
-  // Group events by category for better organization
-  const groupedEvents = eventTypes.reduce((acc, event) => {
-    const category = event.category || 'general';
-    if (!acc[category]) acc[category] = [];
-    acc[category].push(event);
-    return acc;
-  }, {} as Record<string, typeof eventTypes>);
+    console.log('[WorkflowTriggerSetup] Selecting event:', {
+      eventName,
+      newTrigger
+    });
+
+    // Ensure both triggerType and trigger are updated
+    onChange({
+      triggerType: 'event',
+      trigger: newTrigger
+    });
+  };
 
   return (
     <div className="w-full space-y-3">
@@ -187,44 +231,59 @@ export default function WorkflowTriggerSetup({ data, onChange, errors }: Workflo
               </div>
               <div>
                 <Label className="text-[10px] text-muted-foreground">Select Event</Label>
-                <Select
-                  value={data.trigger?.eventName || ''}
-                  onValueChange={handleEventChange}
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setEventDialogOpen(true)}
+                  className={cn(
+                    "w-full h-8 justify-between text-xs bg-background border-amber-500/30 hover:border-amber-500",
+                    errors.trigger && "border-destructive",
+                    !data.trigger?.eventName && "text-muted-foreground"
+                  )}
                 >
-                  <SelectTrigger className={cn(
-                    "h-8 text-xs bg-background border-amber-500/30 focus:border-amber-500",
-                    errors.trigger && "border-destructive"
-                  )}>
-                    <SelectValue placeholder="Choose an event to listen for..." />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-64">
-                    {Object.entries(groupedEvents).map(([category, events]) => (
-                      <div key={category}>
-                        <div className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 px-2 py-1 bg-amber-500/10">
-                          {category.toUpperCase()}
-                        </div>
-                        {events.map((event) => (
-                          <SelectItem
-                            key={event.id}
-                            value={event.eventName}
-                            className="text-xs"
-                          >
-                            <div>
-                              <div className="font-medium">{event.eventName}</div>
-                              {event.description && (
-                                <div className="text-[10px] text-muted-foreground">{event.description}</div>
-                              )}
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </div>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  {data.trigger?.eventName ? (
+                    <span className="flex items-center gap-2">
+                      <Zap className="h-3 w-3 text-amber-600 dark:text-amber-400" />
+                      <span className="font-medium">{data.trigger.eventName}</span>
+                    </span>
+                  ) : (
+                    <span>Choose an event to listen for...</span>
+                  )}
+                  <Zap className="h-3 w-3 ml-2" />
+                </Button>
                 {errors.trigger && (
                   <p className="text-xs text-destructive mt-1">{errors.trigger}</p>
                 )}
+
+                {/* Show selected event details */}
+                {data.trigger?.eventName && (
+                  <div className="mt-2 p-2 rounded bg-muted/50 border border-amber-500/20">
+                    <p className="text-[10px] text-amber-600 dark:text-amber-400 font-medium mb-1">
+                      Event: {data.trigger.eventName}
+                    </p>
+                    {(() => {
+                      const selectedEventType = eventTypes.find(e => e.eventName === data.trigger?.eventName);
+                      if (selectedEventType?.description) {
+                        return (
+                          <p className="text-[10px] text-muted-foreground">
+                            {selectedEventType.description}
+                          </p>
+                        );
+                      }
+                      return null;
+                    })()}
+                  </div>
+                )}
               </div>
+
+              {/* Event Selection Dialog */}
+              <EventSelectionDialog
+                open={eventDialogOpen}
+                onOpenChange={setEventDialogOpen}
+                eventTypes={eventTypes}
+                selectedEvent={data.trigger?.eventName}
+                onSelectEvent={handleEventChange}
+              />
             </div>
           )}
 

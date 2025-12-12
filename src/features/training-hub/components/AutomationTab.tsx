@@ -380,7 +380,13 @@ export default function AutomationTab() {
       {/* Dialogs */}
       <WorkflowWizard
         open={showDialog}
-        onOpenChange={setShowDialog}
+        onOpenChange={(open) => {
+          setShowDialog(open);
+          // CRITICAL: Reset editing workflow when dialog closes
+          if (!open) {
+            setEditingWorkflow(null);
+          }
+        }}
         workflow={editingWorkflow}
       />
 

@@ -41,11 +41,13 @@ import type { RecipientType } from '@/types/workflow-recipients.types';
 import { RECIPIENT_CATEGORIES, RECIPIENT_TYPE_LABELS, AVAILABLE_ROLES } from '@/types/workflow-recipients.types';
 import { useEmailTemplates } from '@/features/email/hooks/useEmailTemplates';
 import { usePipelinePhaseOptions } from '@/features/training-hub/hooks/usePipelinePhases';
+import { getRecommendedRecipients, isRecommendedRecipient, getRecipientContextDescription } from '@/lib/workflow-recipient-helpers';
 
 interface WorkflowActionsBuilderProps {
   actions: WorkflowAction[];
   onChange: (actions: WorkflowAction[]) => void;
   errors: Record<string, string>;
+  selectedEvent?: string; // The event selected in the trigger setup
 }
 
 const ACTION_TYPES = [
@@ -64,7 +66,7 @@ const CATEGORY_ICONS = {
   custom: Mail
 } as const;
 
-export default function WorkflowActionsBuilder({ actions, onChange, errors }: WorkflowActionsBuilderProps) {
+export default function WorkflowActionsBuilder({ actions, onChange, errors, selectedEvent }: WorkflowActionsBuilderProps) {
   const { data: emailTemplates = [] } = useEmailTemplates({ isActive: true });
   const { options: pipelinePhaseOptions } = usePipelinePhaseOptions();
   const [previewTemplate, setPreviewTemplate] = useState<string | null>(null);
@@ -291,17 +293,50 @@ export default function WorkflowActionsBuilder({ actions, onChange, errors }: Wo
 
                       {/* Recipient Selection - Category-Based */}
                       <div>
-                        <Label className="text-[10px] text-muted-foreground">Send To</Label>
+                        <Label className="text-[10px] text-muted-foreground">
+                          Send To
+                          {selectedEvent && (
+                            <span className="ml-1 text-amber-600 dark:text-amber-400">
+                              (⭐ = recommended for {selectedEvent})
+                            </span>
+                          )}
+                        </Label>
                         <Select
                           value={currentRecipientType}
                           onValueChange={(v) => updateRecipientType(index, v as RecipientType)}
                         >
                           <SelectTrigger className="h-7 text-xs bg-background border-blue-500/30 focus:border-blue-500">
                             <SelectValue>
+                              {isRecommendedRecipient(selectedEvent, currentRecipientType) && '⭐ '}
                               {RECIPIENT_TYPE_LABELS[currentRecipientType] || currentRecipientType}
                             </SelectValue>
                           </SelectTrigger>
                           <SelectContent className="max-h-80">
+                            {/* Show recommended recipients first if event is selected */}
+                            {selectedEvent && getRecommendedRecipients(selectedEvent).length > 0 && (
+                              <SelectGroup>
+                                <SelectLabel className="flex items-center gap-1.5 text-[10px] text-amber-600 dark:text-amber-400 font-semibold">
+                                  <span>⭐ Recommended for {selectedEvent}</span>
+                                </SelectLabel>
+                                {getRecommendedRecipients(selectedEvent).map((type) => {
+                                  const contextDesc = getRecipientContextDescription(selectedEvent, type);
+                                  return (
+                                    <SelectItem key={`recommended-${type}`} value={type} className="text-xs pl-6">
+                                      <div>
+                                        <span className="font-medium">⭐ {RECIPIENT_TYPE_LABELS[type]}</span>
+                                        {contextDesc && (
+                                          <span className="block text-[10px] text-muted-foreground">
+                                            {contextDesc}
+                                          </span>
+                                        )}
+                                      </div>
+                                    </SelectItem>
+                                  );
+                                })}
+                              </SelectGroup>
+                            )}
+
+                            {/* Regular categories */}
                             {Object.entries(RECIPIENT_CATEGORIES).map(([key, category]) => {
                               const CategoryIcon = CATEGORY_ICONS[key as keyof typeof CATEGORY_ICONS];
                               return (
@@ -310,11 +345,28 @@ export default function WorkflowActionsBuilder({ actions, onChange, errors }: Wo
                                     <CategoryIcon className="h-3 w-3" />
                                     {category.label}
                                   </SelectLabel>
-                                  {category.types.map((type) => (
-                                    <SelectItem key={type} value={type} className="text-xs pl-6">
-                                      {RECIPIENT_TYPE_LABELS[type]}
-                                    </SelectItem>
-                                  ))}
+                                  {category.types.map((type) => {
+                                    const isRecommended = isRecommendedRecipient(selectedEvent, type);
+                                    const contextDesc = getRecipientContextDescription(selectedEvent, type);
+                                    return (
+                                      <SelectItem key={type} value={type} className={cn(
+                                        "text-xs pl-6",
+                                        isRecommended && "font-medium"
+                                      )}>
+                                        <div>
+                                          <span>
+                                            {isRecommended && '⭐ '}
+                                            {RECIPIENT_TYPE_LABELS[type]}
+                                          </span>
+                                          {contextDesc && (
+                                            <span className="block text-[10px] text-muted-foreground">
+                                              {contextDesc}
+                                            </span>
+                                          )}
+                                        </div>
+                                      </SelectItem>
+                                    );
+                                  })}
                                 </SelectGroup>
                               );
                             })}

@@ -72,12 +72,28 @@ export function useUpdateWorkflow(id: string) {
     mutationFn: (updates: Partial<WorkflowFormData>) =>
       workflowService.updateWorkflow(id, updates),
     onSuccess: (data) => {
+      // CRITICAL: Update the cache directly with the new data
+      queryClient.setQueryData(QUERY_KEYS.workflow(id), data);
+      queryClient.setQueryData(['workflows'], (old: any) => {
+        if (!old) return [data];
+        return old.map((w: any) => w.id === id ? data : w);
+      });
+
+      // Also invalidate to ensure fresh data on next fetch
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.workflow(id) });
       queryClient.invalidateQueries({ queryKey: ['workflows'] });
+
       toast.success(`Workflow "${data.name}" updated successfully`);
+
+      console.log('[useUpdateWorkflow] Cache updated with:', {
+        id,
+        triggerType: data.triggerType,
+        'config.trigger': data.config?.trigger
+      });
     },
     onError: (error: Error) => {
       toast.error(`Failed to update workflow: ${error.message}`);
+      console.error('[useUpdateWorkflow] Update failed:', error);
     }
   });
 }

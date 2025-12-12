@@ -75,15 +75,25 @@ export default function WorkflowWizard({ open, onOpenChange, workflow }: Workflo
     if (open) {
       if (workflow) {
         // Load existing workflow
-        // Parse trigger from config if needed
+        console.log('[WorkflowWizard] Loading workflow:', {
+          id: workflow.id,
+          name: workflow.name,
+          triggerType: workflow.triggerType,
+          'config.trigger': workflow.config?.trigger,
+          fullWorkflow: workflow
+        });
+
+        // CRITICAL: Get trigger from config, not from the top-level triggerType
         const triggerConfig = workflow.config?.trigger || {};
+        const actualTriggerType = triggerConfig.type || workflow.triggerType || 'manual';
+
         setFormData({
           name: workflow.name,
           description: workflow.description || '',
           category: (workflow.category as WorkflowCategory) || 'general',
-          triggerType: (workflow.triggerType as TriggerType) || 'manual',
+          triggerType: (actualTriggerType as TriggerType),  // Use the actual trigger type from config
           trigger: {
-            type: (workflow.triggerType as TriggerType) || 'manual',
+            type: (actualTriggerType as TriggerType),  // Use the same value here
             eventName: triggerConfig.eventName,
             schedule: triggerConfig.schedule,
             webhookConfig: triggerConfig.webhookConfig,
@@ -97,6 +107,12 @@ export default function WorkflowWizard({ open, onOpenChange, workflow }: Workflo
             priority: workflow.priority || 50
           },
           status: (workflow.status as WorkflowStatus) || 'draft'
+        });
+
+        console.log('[WorkflowWizard] Form data set to:', {
+          triggerType: actualTriggerType,
+          'trigger.type': actualTriggerType,
+          'trigger.eventName': triggerConfig.eventName
         });
       } else {
         // Reset for new workflow
@@ -280,18 +296,39 @@ export default function WorkflowWizard({ open, onOpenChange, workflow }: Workflo
 
     try {
       if (workflow) {
+        // Send complete formData to ensure all fields are updated properly
+        // This is critical for trigger persistence
+        console.log('[WorkflowWizard] Updating workflow with:', {
+          id: workflow.id,
+          name: formData.name,
+          triggerType: formData.triggerType,
+          trigger: formData.trigger,
+          'trigger.type': formData.trigger?.type,
+          'trigger.eventName': formData.trigger?.eventName,
+          actions: formData.actions?.length,
+          fullFormData: formData
+        });
         await updateWorkflow.mutateAsync(formData);
       } else {
+        console.log('[WorkflowWizard] Creating workflow with:', {
+          name: formData.name,
+          triggerType: formData.triggerType,
+          trigger: formData.trigger,
+          'trigger.type': formData.trigger?.type,
+          'trigger.eventName': formData.trigger?.eventName,
+          actions: formData.actions?.length,
+          fullFormData: formData
+        });
         await createWorkflow.mutateAsync(formData);
       }
       onOpenChange(false);
     } catch (error: any) {
-      console.error('Failed to save workflow:', error);
-      
+      console.error('[WorkflowWizard] Failed to save workflow:', error);
+
       // Parse and display user-friendly error
       const userMessage = parseErrorMessage(error);
       setErrors({ submit: userMessage });
-      
+
       // If it's a name conflict, go back to basic info step
       if (userMessage.includes('already exists') || userMessage.includes('name')) {
         setCurrentStep(0);
@@ -372,6 +409,7 @@ export default function WorkflowWizard({ open, onOpenChange, workflow }: Workflo
             actions={formData.actions}
             onChange={(actions) => updateFormData({ actions })}
             errors={errors}
+            selectedEvent={formData.triggerType === 'event' ? formData.trigger?.eventName : undefined}
           />
         );
       case 3:

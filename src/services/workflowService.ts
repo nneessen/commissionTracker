@@ -96,6 +96,24 @@ class WorkflowService {
     const { data: user } = await supabase.auth.getUser();
     if (!user.user) throw new Error('User not authenticated');
 
+    // Debug: Log incoming updates
+    console.log('[WorkflowService] updateWorkflow called with:', {
+      id,
+      triggerType: updates.triggerType,
+      trigger: updates.trigger,
+      hasActions: !!updates.actions,
+      fullUpdates: updates
+    });
+
+    // First, fetch the existing workflow to merge config properly
+    const { data: existingWorkflow, error: fetchError } = await supabase
+      .from('workflows')
+      .select('config')
+      .eq('id', id)
+      .single();
+
+    if (fetchError) throw fetchError;
+
     // Build update object - only include fields that are provided
     const updateData: any = {
       last_modified_by: user.user.id,
@@ -137,13 +155,36 @@ class WorkflowService {
       updateData.status = updates.status;
     }
 
-    // Update config if trigger provided
-    if (updates.trigger || updates.settings?.continueOnError !== undefined) {
-      updateData.config = {
-        trigger: updates.trigger,
-        continueOnError: updates.settings?.continueOnError
-      };
+    // CRITICAL FIX: Properly handle trigger updates
+    const existingConfig = existingWorkflow?.config || {};
+    const configUpdate: any = { ...existingConfig };
+
+    // When trigger is provided, use it completely (don't merge with old trigger)
+    if (updates.trigger !== undefined) {
+      // Replace the entire trigger object with the new one
+      configUpdate.trigger = updates.trigger;
+      console.log('[WorkflowService] Replacing trigger with:', updates.trigger);
+    } else if (updates.triggerType !== undefined && !updates.trigger) {
+      // If only triggerType is provided without trigger object, create minimal trigger
+      configUpdate.trigger = { type: updates.triggerType };
+      console.log('[WorkflowService] Creating minimal trigger for type:', updates.triggerType);
     }
+
+    if (updates.settings?.continueOnError !== undefined) {
+      configUpdate.continueOnError = updates.settings.continueOnError;
+    }
+
+    // Always update config to ensure it's saved properly
+    updateData.config = configUpdate;
+
+    // Debug logging to track trigger persistence
+    console.log('[WorkflowService] Final update data being sent to Supabase:', {
+      id,
+      trigger_type: updateData.trigger_type,
+      'config.trigger': updateData.config?.trigger,
+      fullConfig: updateData.config,
+      fullUpdateData: updateData
+    });
 
     // Update main workflow
     const { data: workflow, error: workflowError } = await supabase
@@ -153,7 +194,17 @@ class WorkflowService {
       .select()
       .single();
 
-    if (workflowError) throw workflowError;
+    if (workflowError) {
+      console.error('[WorkflowService] Update failed:', workflowError);
+      throw workflowError;
+    }
+
+    console.log('[WorkflowService] Updated workflow result:', {
+      id: workflow.id,
+      trigger_type: workflow.trigger_type,
+      'config.trigger': workflow.config?.trigger,
+      fullWorkflow: workflow
+    });
 
     // Don't use workflow_actions table - everything is in the JSON column
 

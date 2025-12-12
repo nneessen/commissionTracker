@@ -186,15 +186,80 @@ export default function WorkflowReview({ data, onEdit }: WorkflowReviewProps) {
       {/* Settings */}
       <div className="p-3 rounded-lg bg-muted/20 border border-muted/40">
         <p className="text-sm font-semibold text-muted-foreground mb-2">Workflow Settings</p>
-        <div className="grid grid-cols-2 gap-3">
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-primary"></div>
-            <span className="text-sm">Max runs per day: <strong className="text-foreground">{data.settings?.maxRunsPerDay || 50}</strong></span>
+        <div className="space-y-3">
+          <div className="flex items-start gap-2">
+            <div className="w-2 h-2 rounded-full bg-blue-500 mt-1"></div>
+            <div>
+              <span className="text-sm">Max runs per day: <strong className="text-foreground">{data.settings?.maxRunsPerDay || 50}</strong></span>
+              <p className="text-[10px] text-muted-foreground mt-0.5">
+                Limits how many times this workflow can execute in a 24-hour period
+              </p>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-primary"></div>
-            <span className="text-sm">Priority: <strong className="text-foreground">{data.settings?.priority || 50}/100</strong></span>
+
+          <div className="flex items-start gap-2">
+            <div className="w-2 h-2 rounded-full bg-amber-500 mt-1"></div>
+            <div>
+              <span className="text-sm">
+                Priority: <strong className="text-foreground">
+                  {(() => {
+                    const priority = data.settings?.priority || 50;
+                    if (priority >= 80) return `High (${priority}/100)`;
+                    if (priority >= 60) return `Medium-High (${priority}/100)`;
+                    if (priority >= 40) return `Normal (${priority}/100)`;
+                    if (priority >= 20) return `Low (${priority}/100)`;
+                    return `Very Low (${priority}/100)`;
+                  })()}
+                </strong>
+              </span>
+              <p className="text-[10px] text-muted-foreground mt-0.5">
+                {(() => {
+                  const priority = data.settings?.priority || 50;
+                  if (priority >= 80) return "Executes before lower priority workflows when multiple are triggered";
+                  if (priority >= 60) return "Slightly elevated execution priority";
+                  if (priority >= 40) return "Standard execution priority (default)";
+                  if (priority >= 20) return "Executes after higher priority workflows";
+                  return "Lowest execution priority - runs last";
+                })()}
+              </p>
+            </div>
           </div>
+
+          {data.settings?.cooldownMinutes && (
+            <div className="flex items-start gap-2">
+              <div className="w-2 h-2 rounded-full bg-green-500 mt-1"></div>
+              <div>
+                <span className="text-sm">Cooldown: <strong className="text-foreground">{data.settings.cooldownMinutes} minutes</strong></span>
+                <p className="text-[10px] text-muted-foreground mt-0.5">
+                  Minimum wait time between workflow runs for the same recipient
+                </p>
+              </div>
+            </div>
+          )}
+
+          {data.settings?.maxRunsPerRecipient && (
+            <div className="flex items-start gap-2">
+              <div className="w-2 h-2 rounded-full bg-purple-500 mt-1"></div>
+              <div>
+                <span className="text-sm">Max per recipient: <strong className="text-foreground">{data.settings.maxRunsPerRecipient}</strong></span>
+                <p className="text-[10px] text-muted-foreground mt-0.5">
+                  Maximum times this workflow can run for a single recipient
+                </p>
+              </div>
+            </div>
+          )}
+
+          {data.settings?.continueOnError && (
+            <div className="flex items-start gap-2">
+              <div className="w-2 h-2 rounded-full bg-orange-500 mt-1"></div>
+              <div>
+                <span className="text-sm">Continue on error: <strong className="text-foreground">Enabled</strong></span>
+                <p className="text-[10px] text-muted-foreground mt-0.5">
+                  Workflow continues executing even if an action fails
+                </p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
