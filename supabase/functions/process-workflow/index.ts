@@ -381,6 +381,43 @@ async function executeSendEmail(
     throw new Error(`No recipients found for type: ${recipientType}`)
   }
 
+  // Rate limit check - prevent runaway email costs
+  const { data: rateLimitCheck, error: rateLimitError } = await supabase.rpc(
+    'check_workflow_email_rate_limit',
+    {
+      p_user_id: ownerProfile.id,
+      p_workflow_id: workflowId,
+      p_recipient_email: recipientEmails[0], // Check first recipient
+      p_recipient_count: recipientEmails.length
+    }
+  )
+
+  if (rateLimitError) {
+    console.error('Rate limit check error:', rateLimitError)
+    // Continue anyway if function doesn't exist yet
+  } else if (rateLimitCheck && !rateLimitCheck.allowed) {
+    const reason = rateLimitCheck.reason
+    let errorMessage = 'Rate limit exceeded'
+
+    switch (reason) {
+      case 'daily_limit_exceeded':
+        errorMessage = `Daily email limit reached (${rateLimitCheck.limit} emails/day). ${rateLimitCheck.remaining} remaining.`
+        break
+      case 'workflow_hourly_limit_exceeded':
+        errorMessage = `This workflow has sent too many emails in the past hour (limit: ${rateLimitCheck.limit}). Please wait before sending more.`
+        break
+      case 'recipient_daily_limit_exceeded':
+        errorMessage = `${rateLimitCheck.recipient} has already received ${rateLimitCheck.limit} emails today from workflows.`
+        break
+      case 'max_recipients_exceeded':
+        errorMessage = `Too many recipients (${rateLimitCheck.requested}). Maximum allowed: ${rateLimitCheck.limit}`
+        break
+    }
+
+    console.log('Rate limit blocked:', rateLimitCheck)
+    throw new Error(errorMessage)
+  }
+
   if (isTest) {
     return {
       action: 'send_email',
@@ -461,9 +498,30 @@ async function executeSendEmail(
         from_address: oauthToken.email_address,
         to_addresses: [recipientEmail],
       })
+
+      // Record for rate limiting tracking
+      await supabase.rpc('record_workflow_email', {
+        p_workflow_id: workflowId,
+        p_user_id: ownerProfile.id,
+        p_recipient_email: recipientEmail,
+        p_recipient_type: recipientType,
+        p_success: true,
+        p_error_message: null
+      }).catch(err => console.log('Rate tracking record failed (non-critical):', err))
+
     } catch (sendError) {
       console.error(`Failed to send to ${recipientEmail}:`, sendError)
       failedEmails.push(recipientEmail)
+
+      // Record failed email for tracking
+      await supabase.rpc('record_workflow_email', {
+        p_workflow_id: workflowId,
+        p_user_id: ownerProfile.id,
+        p_recipient_email: recipientEmail,
+        p_recipient_type: recipientType,
+        p_success: false,
+        p_error_message: sendError instanceof Error ? sendError.message : 'Unknown error'
+      }).catch(err => console.log('Rate tracking record failed (non-critical):', err))
     }
   }
 
