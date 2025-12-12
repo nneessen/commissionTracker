@@ -362,7 +362,7 @@ export type Database = {
             foreignKeyName: "email_queue_recipient_id_fkey"
             columns: ["recipient_id"]
             isOneToOne: false
-            referencedRelation: "activeuser_profiles"
+            referencedRelation: "active_user_profiles"
             referencedColumns: ["id"]
           },
           {
@@ -419,28 +419,28 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "email_quota_trackinguser_id_fkey"
+            foreignKeyName: "email_quota_tracking_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "activeuser_profiles"
+            referencedRelation: "active_user_profiles"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "email_quota_trackinguser_id_fkey"
+            foreignKeyName: "email_quota_tracking_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "user_delete_dependencies"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "email_quota_trackinguser_id_fkey"
+            foreignKeyName: "email_quota_tracking_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "user_management_view"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "email_quota_trackinguser_id_fkey"
+            foreignKeyName: "email_quota_tracking_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "user_profiles"
@@ -505,7 +505,7 @@ export type Database = {
             foreignKeyName: "email_templates_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
-            referencedRelation: "activeuser_profiles"
+            referencedRelation: "active_user_profiles"
             referencedColumns: ["id"]
           },
           {
@@ -576,7 +576,7 @@ export type Database = {
             foreignKeyName: "email_triggers_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
-            referencedRelation: "activeuser_profiles"
+            referencedRelation: "active_user_profiles"
             referencedColumns: ["id"]
           },
           {
@@ -639,28 +639,28 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "email_watch_subscriptionsuser_id_fkey"
+            foreignKeyName: "email_watch_subscriptions_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "activeuser_profiles"
+            referencedRelation: "active_user_profiles"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "email_watch_subscriptionsuser_id_fkey"
+            foreignKeyName: "email_watch_subscriptions_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "user_delete_dependencies"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "email_watch_subscriptionsuser_id_fkey"
+            foreignKeyName: "email_watch_subscriptions_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "user_management_view"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "email_watch_subscriptionsuser_id_fkey"
+            foreignKeyName: "email_watch_subscriptions_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "user_profiles"
@@ -701,7 +701,7 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "expense_categoriesuser_id_fkey"
+            foreignKeyName: "expense_categories_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
@@ -754,7 +754,7 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "fk_expense_templatesuser"
+            foreignKeyName: "fk_expense_templates_user"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
@@ -909,7 +909,7 @@ export type Database = {
             foreignKeyName: "message_threads_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
-            referencedRelation: "activeuser_profiles"
+            referencedRelation: "active_user_profiles"
             referencedColumns: ["id"]
           },
           {
@@ -968,7 +968,7 @@ export type Database = {
             foreignKeyName: "messages_sender_id_fkey"
             columns: ["sender_id"]
             isOneToOne: false
-            referencedRelation: "activeuser_profiles"
+            referencedRelation: "active_user_profiles"
             referencedColumns: ["id"]
           },
           {
@@ -1040,28 +1040,28 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "notificationsuser_id_fkey"
+            foreignKeyName: "notifications_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "activeuser_profiles"
+            referencedRelation: "active_user_profiles"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "notificationsuser_id_fkey"
+            foreignKeyName: "notifications_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "user_delete_dependencies"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "notificationsuser_id_fkey"
+            foreignKeyName: "notifications_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "user_management_view"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "notificationsuser_id_fkey"
+            foreignKeyName: "notifications_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "user_profiles"
@@ -1111,28 +1111,28 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "onboarding_phasesuser_id_fkey"
+            foreignKeyName: "onboarding_phases_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "activeuser_profiles"
+            referencedRelation: "active_user_profiles"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "onboarding_phasesuser_id_fkey"
+            foreignKeyName: "onboarding_phases_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "user_delete_dependencies"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "onboarding_phasesuser_id_fkey"
+            foreignKeyName: "onboarding_phases_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "user_management_view"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "onboarding_phasesuser_id_fkey"
+            foreignKeyName: "onboarding_phases_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "user_profiles"
@@ -1221,7 +1221,7 @@ export type Database = {
             foreignKeyName: "override_commissions_base_agent_id_fkey"
             columns: ["base_agent_id"]
             isOneToOne: false
-            referencedRelation: "activeuser_profiles"
+            referencedRelation: "active_user_profiles"
             referencedColumns: ["id"]
           },
           {
@@ -1256,7 +1256,7 @@ export type Database = {
             foreignKeyName: "override_commissions_override_agent_id_fkey"
             columns: ["override_agent_id"]
             isOneToOne: false
-            referencedRelation: "activeuser_profiles"
+            referencedRelation: "active_user_profiles"
             referencedColumns: ["id"]
           },
           {
@@ -1477,7 +1477,7 @@ export type Database = {
             foreignKeyName: "pipeline_templates_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
-            referencedRelation: "activeuser_profiles"
+            referencedRelation: "active_user_profiles"
             referencedColumns: ["id"]
           },
           {
@@ -1773,7 +1773,7 @@ export type Database = {
             foreignKeyName: "recruit_checklist_progress_completed_by_fkey"
             columns: ["completed_by"]
             isOneToOne: false
-            referencedRelation: "activeuser_profiles"
+            referencedRelation: "active_user_profiles"
             referencedColumns: ["id"]
           },
           {
@@ -1805,28 +1805,28 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "recruit_checklist_progressuser_id_fkey"
+            foreignKeyName: "recruit_checklist_progress_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "activeuser_profiles"
+            referencedRelation: "active_user_profiles"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "recruit_checklist_progressuser_id_fkey"
+            foreignKeyName: "recruit_checklist_progress_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "user_delete_dependencies"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "recruit_checklist_progressuser_id_fkey"
+            foreignKeyName: "recruit_checklist_progress_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "user_management_view"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "recruit_checklist_progressuser_id_fkey"
+            foreignKeyName: "recruit_checklist_progress_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "user_profiles"
@@ -1836,7 +1836,7 @@ export type Database = {
             foreignKeyName: "recruit_checklist_progress_verified_by_fkey"
             columns: ["verified_by"]
             isOneToOne: false
-            referencedRelation: "activeuser_profiles"
+            referencedRelation: "active_user_profiles"
             referencedColumns: ["id"]
           },
           {
@@ -1918,28 +1918,28 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "recruit_phase_progressuser_id_fkey"
+            foreignKeyName: "recruit_phase_progress_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "activeuser_profiles"
+            referencedRelation: "active_user_profiles"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "recruit_phase_progressuser_id_fkey"
+            foreignKeyName: "recruit_phase_progress_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "user_delete_dependencies"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "recruit_phase_progressuser_id_fkey"
+            foreignKeyName: "recruit_phase_progress_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "user_management_view"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "recruit_phase_progressuser_id_fkey"
+            foreignKeyName: "recruit_phase_progress_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "user_profiles"
@@ -2032,7 +2032,7 @@ export type Database = {
           email_template_limit: number | null
           fiscal_year_start: number | null
           id: string
-          notificationsenabled: boolean | null
+          notifications_enabled: boolean | null
           tax_rate: number | null
           updated_at: string | null
           user_id: string | null
@@ -2044,7 +2044,7 @@ export type Database = {
           email_template_limit?: number | null
           fiscal_year_start?: number | null
           id?: string
-          notificationsenabled?: boolean | null
+          notifications_enabled?: boolean | null
           tax_rate?: number | null
           updated_at?: string | null
           user_id?: string | null
@@ -2056,7 +2056,7 @@ export type Database = {
           email_template_limit?: number | null
           fiscal_year_start?: number | null
           id?: string
-          notificationsenabled?: boolean | null
+          notifications_enabled?: boolean | null
           tax_rate?: number | null
           updated_at?: string | null
           user_id?: string | null
@@ -2096,7 +2096,7 @@ export type Database = {
             foreignKeyName: "system_audit_log_performed_by_fkey"
             columns: ["performed_by"]
             isOneToOne: false
-            referencedRelation: "activeuser_profiles"
+            referencedRelation: "active_user_profiles"
             referencedColumns: ["id"]
           },
           {
@@ -2182,7 +2182,7 @@ export type Database = {
             foreignKeyName: "user_activity_log_performed_by_fkey"
             columns: ["performed_by"]
             isOneToOne: false
-            referencedRelation: "activeuser_profiles"
+            referencedRelation: "active_user_profiles"
             referencedColumns: ["id"]
           },
           {
@@ -2207,28 +2207,28 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "user_activity_loguser_id_fkey"
+            foreignKeyName: "user_activity_log_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "activeuser_profiles"
+            referencedRelation: "active_user_profiles"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "user_activity_loguser_id_fkey"
+            foreignKeyName: "user_activity_log_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "user_delete_dependencies"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "user_activity_loguser_id_fkey"
+            foreignKeyName: "user_activity_log_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "user_management_view"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "user_activity_loguser_id_fkey"
+            foreignKeyName: "user_activity_log_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "user_profiles"
@@ -2296,7 +2296,7 @@ export type Database = {
             foreignKeyName: "user_documents_uploaded_by_fkey"
             columns: ["uploaded_by"]
             isOneToOne: false
-            referencedRelation: "activeuser_profiles"
+            referencedRelation: "active_user_profiles"
             referencedColumns: ["id"]
           },
           {
@@ -2321,28 +2321,28 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "user_documentsuser_id_fkey"
+            foreignKeyName: "user_documents_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "activeuser_profiles"
+            referencedRelation: "active_user_profiles"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "user_documentsuser_id_fkey"
+            foreignKeyName: "user_documents_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "user_delete_dependencies"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "user_documentsuser_id_fkey"
+            foreignKeyName: "user_documents_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "user_management_view"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "user_documentsuser_id_fkey"
+            foreignKeyName: "user_documents_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "user_profiles"
@@ -2433,28 +2433,28 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "user_email_oauth_tokensuser_id_fkey"
+            foreignKeyName: "user_email_oauth_tokens_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "activeuser_profiles"
+            referencedRelation: "active_user_profiles"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "user_email_oauth_tokensuser_id_fkey"
+            foreignKeyName: "user_email_oauth_tokens_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "user_delete_dependencies"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "user_email_oauth_tokensuser_id_fkey"
+            foreignKeyName: "user_email_oauth_tokens_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "user_management_view"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "user_email_oauth_tokensuser_id_fkey"
+            foreignKeyName: "user_email_oauth_tokens_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "user_profiles"
@@ -2550,7 +2550,7 @@ export type Database = {
             foreignKeyName: "user_emails_sender_id_fkey"
             columns: ["sender_id"]
             isOneToOne: false
-            referencedRelation: "activeuser_profiles"
+            referencedRelation: "active_user_profiles"
             referencedColumns: ["id"]
           },
           {
@@ -2575,28 +2575,28 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "user_emailsuser_id_fkey"
+            foreignKeyName: "user_emails_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "activeuser_profiles"
+            referencedRelation: "active_user_profiles"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "user_emailsuser_id_fkey"
+            foreignKeyName: "user_emails_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "user_delete_dependencies"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "user_emailsuser_id_fkey"
+            foreignKeyName: "user_emails_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "user_management_view"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "user_emailsuser_id_fkey"
+            foreignKeyName: "user_emails_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "user_profiles"
@@ -2628,7 +2628,7 @@ export type Database = {
           hierarchy_path: string | null
           id: string
           instagram_url: string | null
-          instagramusername: string | null
+          instagram_username: string | null
           is_admin: boolean
           is_deleted: boolean | null
           is_super_admin: boolean | null
@@ -2637,7 +2637,7 @@ export type Database = {
           license_number: string | null
           licensing_info: Json | null
           linkedin_url: string | null
-          linkedinusername: string | null
+          linkedin_username: string | null
           npn: string | null
           onboarding_completed_at: string | null
           onboarding_started_at: string | null
@@ -2680,7 +2680,7 @@ export type Database = {
           hierarchy_path?: string | null
           id?: string
           instagram_url?: string | null
-          instagramusername?: string | null
+          instagram_username?: string | null
           is_admin?: boolean
           is_deleted?: boolean | null
           is_super_admin?: boolean | null
@@ -2689,7 +2689,7 @@ export type Database = {
           license_number?: string | null
           licensing_info?: Json | null
           linkedin_url?: string | null
-          linkedinusername?: string | null
+          linkedin_username?: string | null
           npn?: string | null
           onboarding_completed_at?: string | null
           onboarding_started_at?: string | null
@@ -2732,7 +2732,7 @@ export type Database = {
           hierarchy_path?: string | null
           id?: string
           instagram_url?: string | null
-          instagramusername?: string | null
+          instagram_username?: string | null
           is_admin?: boolean
           is_deleted?: boolean | null
           is_super_admin?: boolean | null
@@ -2741,7 +2741,7 @@ export type Database = {
           license_number?: string | null
           licensing_info?: Json | null
           linkedin_url?: string | null
-          linkedinusername?: string | null
+          linkedin_username?: string | null
           npn?: string | null
           onboarding_completed_at?: string | null
           onboarding_started_at?: string | null
@@ -2773,7 +2773,7 @@ export type Database = {
             foreignKeyName: "user_profiles_archived_by_fkey"
             columns: ["archived_by"]
             isOneToOne: false
-            referencedRelation: "activeuser_profiles"
+            referencedRelation: "active_user_profiles"
             referencedColumns: ["id"]
           },
           {
@@ -2808,7 +2808,7 @@ export type Database = {
             foreignKeyName: "user_profiles_recruiter_id_fkey"
             columns: ["recruiter_id"]
             isOneToOne: false
-            referencedRelation: "activeuser_profiles"
+            referencedRelation: "active_user_profiles"
             referencedColumns: ["id"]
           },
           {
@@ -2836,7 +2836,7 @@ export type Database = {
             foreignKeyName: "user_profiles_upline_id_fkey"
             columns: ["upline_id"]
             isOneToOne: false
-            referencedRelation: "activeuser_profiles"
+            referencedRelation: "active_user_profiles"
             referencedColumns: ["id"]
           },
           {
@@ -2861,7 +2861,7 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "user_profilesuser_id_fkey"
+            foreignKeyName: "user_profiles_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
@@ -2926,7 +2926,7 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "user_targetsuser_id_fkey"
+            foreignKeyName: "user_targets_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: true
             referencedRelation: "users"
@@ -3020,28 +3020,28 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "workflow_email_trackinguser_id_fkey"
+            foreignKeyName: "workflow_email_tracking_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "activeuser_profiles"
+            referencedRelation: "active_user_profiles"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "workflow_email_trackinguser_id_fkey"
+            foreignKeyName: "workflow_email_tracking_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "user_delete_dependencies"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "workflow_email_trackinguser_id_fkey"
+            foreignKeyName: "workflow_email_tracking_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "user_management_view"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "workflow_email_trackinguser_id_fkey"
+            foreignKeyName: "workflow_email_tracking_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "user_profiles"
@@ -3055,6 +3055,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      workflow_events: {
+        Row: {
+          context: Json | null
+          created_at: string | null
+          event_name: string
+          fired_at: string | null
+          id: string
+          workflows_triggered: number | null
+        }
+        Insert: {
+          context?: Json | null
+          created_at?: string | null
+          event_name: string
+          fired_at?: string | null
+          id?: string
+          workflows_triggered?: number | null
+        }
+        Update: {
+          context?: Json | null
+          created_at?: string | null
+          event_name?: string
+          fired_at?: string | null
+          id?: string
+          workflows_triggered?: number | null
+        }
+        Relationships: []
       }
       workflow_rate_limits: {
         Row: {
@@ -3095,28 +3122,28 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "workflow_rate_limitsuser_id_fkey"
+            foreignKeyName: "workflow_rate_limits_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: true
-            referencedRelation: "activeuser_profiles"
+            referencedRelation: "active_user_profiles"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "workflow_rate_limitsuser_id_fkey"
+            foreignKeyName: "workflow_rate_limits_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: true
             referencedRelation: "user_delete_dependencies"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "workflow_rate_limitsuser_id_fkey"
+            foreignKeyName: "workflow_rate_limits_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: true
             referencedRelation: "user_management_view"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "workflow_rate_limitsuser_id_fkey"
+            foreignKeyName: "workflow_rate_limits_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: true
             referencedRelation: "user_profiles"
@@ -3134,6 +3161,7 @@ export type Database = {
           created_at: string | null
           duration_ms: number | null
           emails_sent: number | null
+          error: string | null
           error_details: Json | null
           error_message: string | null
           id: string
@@ -3151,6 +3179,7 @@ export type Database = {
           created_at?: string | null
           duration_ms?: number | null
           emails_sent?: number | null
+          error?: string | null
           error_details?: Json | null
           error_message?: string | null
           id?: string
@@ -3168,6 +3197,7 @@ export type Database = {
           created_at?: string | null
           duration_ms?: number | null
           emails_sent?: number | null
+          error?: string | null
           error_details?: Json | null
           error_message?: string | null
           id?: string
@@ -3237,7 +3267,7 @@ export type Database = {
             foreignKeyName: "workflow_templates_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
-            referencedRelation: "activeuser_profiles"
+            referencedRelation: "active_user_profiles"
             referencedColumns: ["id"]
           },
           {
@@ -3376,7 +3406,7 @@ export type Database = {
             foreignKeyName: "workflows_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
-            referencedRelation: "activeuser_profiles"
+            referencedRelation: "active_user_profiles"
             referencedColumns: ["id"]
           },
           {
@@ -3404,7 +3434,7 @@ export type Database = {
             foreignKeyName: "workflows_last_modified_by_fkey"
             columns: ["last_modified_by"]
             isOneToOne: false
-            referencedRelation: "activeuser_profiles"
+            referencedRelation: "active_user_profiles"
             referencedColumns: ["id"]
           },
           {
@@ -3432,7 +3462,7 @@ export type Database = {
       }
     }
     Views: {
-      activeuser_profiles: {
+      active_user_profiles: {
         Row: {
           agent_status: Database["public"]["Enums"]["agent_status"] | null
           approval_status: string | null
@@ -3456,7 +3486,7 @@ export type Database = {
           hierarchy_path: string | null
           id: string | null
           instagram_url: string | null
-          instagramusername: string | null
+          instagram_username: string | null
           is_admin: boolean | null
           is_deleted: boolean | null
           last_name: string | null
@@ -3464,7 +3494,7 @@ export type Database = {
           license_number: string | null
           licensing_info: Json | null
           linkedin_url: string | null
-          linkedinusername: string | null
+          linkedin_username: string | null
           npn: string | null
           onboarding_completed_at: string | null
           onboarding_started_at: string | null
@@ -3507,7 +3537,7 @@ export type Database = {
           hierarchy_path?: string | null
           id?: string | null
           instagram_url?: string | null
-          instagramusername?: string | null
+          instagram_username?: string | null
           is_admin?: boolean | null
           is_deleted?: boolean | null
           last_name?: string | null
@@ -3515,7 +3545,7 @@ export type Database = {
           license_number?: string | null
           licensing_info?: Json | null
           linkedin_url?: string | null
-          linkedinusername?: string | null
+          linkedin_username?: string | null
           npn?: string | null
           onboarding_completed_at?: string | null
           onboarding_started_at?: string | null
@@ -3558,7 +3588,7 @@ export type Database = {
           hierarchy_path?: string | null
           id?: string | null
           instagram_url?: string | null
-          instagramusername?: string | null
+          instagram_username?: string | null
           is_admin?: boolean | null
           is_deleted?: boolean | null
           last_name?: string | null
@@ -3566,7 +3596,7 @@ export type Database = {
           license_number?: string | null
           licensing_info?: Json | null
           linkedin_url?: string | null
-          linkedinusername?: string | null
+          linkedin_username?: string | null
           npn?: string | null
           onboarding_completed_at?: string | null
           onboarding_started_at?: string | null
@@ -3598,7 +3628,7 @@ export type Database = {
             foreignKeyName: "user_profiles_archived_by_fkey"
             columns: ["archived_by"]
             isOneToOne: false
-            referencedRelation: "activeuser_profiles"
+            referencedRelation: "active_user_profiles"
             referencedColumns: ["id"]
           },
           {
@@ -3633,7 +3663,7 @@ export type Database = {
             foreignKeyName: "user_profiles_recruiter_id_fkey"
             columns: ["recruiter_id"]
             isOneToOne: false
-            referencedRelation: "activeuser_profiles"
+            referencedRelation: "active_user_profiles"
             referencedColumns: ["id"]
           },
           {
@@ -3661,7 +3691,7 @@ export type Database = {
             foreignKeyName: "user_profiles_upline_id_fkey"
             columns: ["upline_id"]
             isOneToOne: false
-            referencedRelation: "activeuser_profiles"
+            referencedRelation: "active_user_profiles"
             referencedColumns: ["id"]
           },
           {
@@ -3686,7 +3716,7 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "user_profilesuser_id_fkey"
+            foreignKeyName: "user_profiles_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
@@ -4012,7 +4042,7 @@ export type Database = {
             foreignKeyName: "override_commissions_override_agent_id_fkey"
             columns: ["override_agent_id"]
             isOneToOne: false
-            referencedRelation: "activeuser_profiles"
+            referencedRelation: "active_user_profiles"
             referencedColumns: ["id"]
           },
           {
@@ -4125,9 +4155,9 @@ export type Database = {
           hierarchy_path: string | null
           id: string | null
           in_recruiting_pipeline: boolean | null
-          inusers_list: boolean | null
+          in_users_list: boolean | null
           instagram_url: string | null
-          instagramusername: string | null
+          instagram_username: string | null
           is_admin: boolean | null
           is_deleted: boolean | null
           is_super_admin: boolean | null
@@ -4136,7 +4166,7 @@ export type Database = {
           license_number: string | null
           licensing_info: Json | null
           linkedin_url: string | null
-          linkedinusername: string | null
+          linkedin_username: string | null
           npn: string | null
           onboarding_completed_at: string | null
           onboarding_started_at: string | null
@@ -4180,9 +4210,9 @@ export type Database = {
           hierarchy_path?: string | null
           id?: string | null
           in_recruiting_pipeline?: never
-          inusers_list?: never
+          in_users_list?: never
           instagram_url?: string | null
-          instagramusername?: string | null
+          instagram_username?: string | null
           is_admin?: boolean | null
           is_deleted?: boolean | null
           is_super_admin?: boolean | null
@@ -4191,7 +4221,7 @@ export type Database = {
           license_number?: string | null
           licensing_info?: Json | null
           linkedin_url?: string | null
-          linkedinusername?: string | null
+          linkedin_username?: string | null
           npn?: string | null
           onboarding_completed_at?: string | null
           onboarding_started_at?: string | null
@@ -4235,9 +4265,9 @@ export type Database = {
           hierarchy_path?: string | null
           id?: string | null
           in_recruiting_pipeline?: never
-          inusers_list?: never
+          in_users_list?: never
           instagram_url?: string | null
-          instagramusername?: string | null
+          instagram_username?: string | null
           is_admin?: boolean | null
           is_deleted?: boolean | null
           is_super_admin?: boolean | null
@@ -4246,7 +4276,7 @@ export type Database = {
           license_number?: string | null
           licensing_info?: Json | null
           linkedin_url?: string | null
-          linkedinusername?: string | null
+          linkedin_username?: string | null
           npn?: string | null
           onboarding_completed_at?: string | null
           onboarding_started_at?: string | null
@@ -4279,7 +4309,7 @@ export type Database = {
             foreignKeyName: "user_profiles_archived_by_fkey"
             columns: ["archived_by"]
             isOneToOne: false
-            referencedRelation: "activeuser_profiles"
+            referencedRelation: "active_user_profiles"
             referencedColumns: ["id"]
           },
           {
@@ -4314,7 +4344,7 @@ export type Database = {
             foreignKeyName: "user_profiles_recruiter_id_fkey"
             columns: ["recruiter_id"]
             isOneToOne: false
-            referencedRelation: "activeuser_profiles"
+            referencedRelation: "active_user_profiles"
             referencedColumns: ["id"]
           },
           {
@@ -4342,7 +4372,7 @@ export type Database = {
             foreignKeyName: "user_profiles_upline_id_fkey"
             columns: ["upline_id"]
             isOneToOne: false
-            referencedRelation: "activeuser_profiles"
+            referencedRelation: "active_user_profiles"
             referencedColumns: ["id"]
           },
           {
@@ -4367,7 +4397,7 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "user_profilesuser_id_fkey"
+            foreignKeyName: "user_profiles_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
@@ -4426,16 +4456,16 @@ export type Database = {
         Args: { message_id: string; user_id: string }
         Returns: undefined
       }
-      admin_approveuser: {
-        Args: { approver_id: string; targetuser_id: string }
+      admin_approve_user: {
+        Args: { approver_id: string; target_user_id: string }
         Returns: boolean
       }
-      admin_deleteuser: { Args: { targetuser_id: string }; Returns: Json }
-      admin_denyuser: {
-        Args: { approver_id: string; reason: string; targetuser_id: string }
+      admin_delete_user: { Args: { target_user_id: string }; Returns: Json }
+      admin_deny_user: {
+        Args: { approver_id: string; reason: string; target_user_id: string }
         Returns: boolean
       }
-      admin_get_allusers: {
+      admin_get_all_users: {
         Args: never
         Returns: {
           approval_status: string
@@ -4471,7 +4501,7 @@ export type Database = {
           zip: string
         }[]
       }
-      admin_get_pendingusers: {
+      admin_get_pending_users: {
         Args: never
         Returns: {
           approval_status: string
@@ -4492,9 +4522,9 @@ export type Database = {
           upline_id: string
         }[]
       }
-      admin_getuser_by_id: { Args: { puser_id: string }; Returns: Json }
-      admin_getuser_profile: {
-        Args: { targetuser_id: string }
+      admin_get_user_by_id: { Args: { p_user_id: string }; Returns: Json }
+      admin_get_user_profile: {
+        Args: { target_user_id: string }
         Returns: {
           approval_status: string
           approved_at: string
@@ -4515,23 +4545,23 @@ export type Database = {
         }[]
       }
       admin_set_admin_role: {
-        Args: { new_is_admin: boolean; targetuser_id: string }
+        Args: { new_is_admin: boolean; target_user_id: string }
         Returns: boolean
       }
-      admin_set_pendinguser: {
-        Args: { targetuser_id: string }
+      admin_set_pending_user: {
+        Args: { target_user_id: string }
         Returns: boolean
       }
-      admin_updateuser: {
-        Args: { p_updates: Json; puser_id: string }
+      admin_update_user: {
+        Args: { p_updates: Json; p_user_id: string }
         Returns: Json
       }
-      assignuser_role: {
+      assign_user_role: {
         Args: {
           p_contract_level?: number
           p_is_recruit?: boolean
           p_requested_role?: string
-          puser_id: string
+          p_user_id: string
         }
         Returns: string[]
       }
@@ -4597,10 +4627,10 @@ export type Database = {
         }[]
       }
       check_email_quota: {
-        Args: { p_limit?: number; p_provider: string; puser_id: string }
+        Args: { p_limit?: number; p_provider: string; p_user_id: string }
         Returns: boolean
       }
-      checkuser_template_limit: {
+      check_user_template_limit: {
         Args: { user_uuid: string }
         Returns: boolean
       }
@@ -4608,13 +4638,13 @@ export type Database = {
         Args: {
           p_recipient_count?: number
           p_recipient_email: string
-          puser_id: string
+          p_user_id: string
           p_workflow_id: string
         }
         Returns: Json
       }
       cleanup_old_reports: {
-        Args: { max_reports_peruser?: number }
+        Args: { max_reports_per_user?: number }
         Returns: number
       }
       create_workflow_run: {
@@ -4628,7 +4658,7 @@ export type Database = {
         }[]
       }
       get_at_risk_commissions: {
-        Args: { p_risk_threshold?: number; puser_id: string }
+        Args: { p_risk_threshold?: number; p_user_id: string }
         Returns: {
           advance_amount: number
           commission_id: string
@@ -4662,21 +4692,21 @@ export type Database = {
           user_id: string
         }[]
       }
-      get_currentuser_profile_id: { Args: never; Returns: string }
+      get_current_user_profile_id: { Args: never; Returns: string }
       get_downline_ids: {
-        Args: { targetuser_id: string }
+        Args: { target_user_id: string }
         Returns: {
           downline_id: string
         }[]
       }
       get_downline_with_emails: {
-        Args: { p_max_count?: number; puser_id: string }
+        Args: { p_max_count?: number; p_user_id: string }
         Returns: {
           email: string
           id: string
         }[]
       }
-      get_pipeline_template_foruser: {
+      get_pipeline_template_for_user: {
         Args: {
           p_agent_status: Database["public"]["Enums"]["agent_status"]
           p_roles: string[]
@@ -4690,7 +4720,7 @@ export type Database = {
           p_limit?: number
           p_product_id?: string
           p_status?: string
-          puser_id?: string
+          p_user_id?: string
         }
         Returns: {
           annual_premium: number
@@ -4715,7 +4745,7 @@ export type Database = {
           p_carrier_id?: string
           p_product_id?: string
           p_status?: string
-          puser_id?: string
+          p_user_id?: string
         }
         Returns: number
       }
@@ -4741,15 +4771,15 @@ export type Database = {
         }[]
       }
       get_upline_chain: {
-        Args: { p_max_depth?: number; puser_id: string }
+        Args: { p_max_depth?: number; p_user_id: string }
         Returns: {
           depth: number
           email: string
           id: string
         }[]
       }
-      getuser_commission_profile: {
-        Args: { p_lookback_months?: number; puser_id: string }
+      get_user_commission_profile: {
+        Args: { p_lookback_months?: number; p_user_id: string }
         Returns: {
           calculated_at: string
           contract_level: number
@@ -4759,13 +4789,13 @@ export type Database = {
           weighted_avg_rate: number
         }[]
       }
-      getuser_permissions: {
-        Args: { targetuser_id: string }
+      get_user_permissions: {
+        Args: { target_user_id: string }
         Returns: {
           permission_code: string
         }[]
       }
-      getuser_profile: {
+      get_user_profile: {
         Args: { user_id: string }
         Returns: {
           agent_code: string
@@ -4782,32 +4812,32 @@ export type Database = {
           updated_at: string
         }[]
       }
-      get_workflow_email_usage: { Args: { puser_id: string }; Returns: Json }
-      hard_deleteuser: {
+      get_workflow_email_usage: { Args: { p_user_id: string }; Returns: Json }
+      hard_delete_user: {
         Args: {
           p_confirm_text: string
           p_deleted_by: string
-          puser_id: string
+          p_user_id: string
         }
         Returns: Json
       }
       has_permission: {
-        Args: { permission_code: string; targetuser_id: string }
+        Args: { permission_code: string; target_user_id: string }
         Returns: boolean
       }
       has_role: {
-        Args: { role_name: string; targetuser_id: string }
+        Args: { role_name: string; target_user_id: string }
         Returns: boolean
       }
       increment_email_quota: {
-        Args: { p_provider: string; puser_id: string }
+        Args: { p_provider: string; p_user_id: string }
         Returns: number
       }
       is_admin: { Args: never; Returns: boolean }
-      is_adminuser: { Args: { targetuser_id?: string }; Returns: boolean }
+      is_admin_user: { Args: { target_user_id?: string }; Returns: boolean }
       is_caller_admin: { Args: never; Returns: boolean }
-      isuser_approved: { Args: never; Returns: boolean }
-      lookupuser_by_email: {
+      is_user_approved: { Args: never; Returns: boolean }
+      lookup_user_by_email: {
         Args: { p_email: string }
         Returns: {
           email: string
@@ -4851,22 +4881,22 @@ export type Database = {
           p_recipient_email: string
           p_recipient_type: string
           p_success?: boolean
-          puser_id: string
+          p_user_id: string
           p_workflow_id: string
         }
         Returns: string
       }
       refresh_all_report_materialized_views: { Args: never; Returns: undefined }
-      restore_deleteduser: {
-        Args: { p_restored_by: string; puser_id: string }
+      restore_deleted_user: {
+        Args: { p_restored_by: string; p_user_id: string }
         Returns: Json
       }
-      soft_deleteuser: {
-        Args: { p_deleted_by: string; p_reason?: string; puser_id: string }
+      soft_delete_user: {
+        Args: { p_deleted_by: string; p_reason?: string; p_user_id: string }
         Returns: Json
       }
-      test_rls_foruser: {
-        Args: { testuser_id: string }
+      test_rls_for_user: {
+        Args: { test_user_id: string }
         Returns: {
           policy_number: string
           user_id: string
@@ -4881,7 +4911,7 @@ export type Database = {
         Args: { p_months_paid: number; p_policy_id: string }
         Returns: undefined
       }
-      updateuser_metadata: {
+      update_user_metadata: {
         Args: { metadata: Json; user_id: string }
         Returns: undefined
       }
@@ -4896,7 +4926,7 @@ export type Database = {
         Args: { p_invitee_email: string; p_inviter_id: string }
         Returns: {
           error_message: string
-          inviteeuser_id: string
+          invitee_user_id: string
           valid: boolean
           warning_message: string
         }[]

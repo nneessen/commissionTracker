@@ -18,7 +18,7 @@ import type {Role, Permission, RolePermission, UserPermissions, PermissionCode, 
  */
 export async function getUserPermissions(userId: string): Promise<PermissionCode[]> {
   const { data, error } = await supabase.rpc('get_user_permissions', {
-    targetuser_id: userId,
+    target_user_id: userId,
   });
 
   if (error) {
@@ -38,7 +38,7 @@ export async function hasPermission(
   permissionCode: PermissionCode
 ): Promise<boolean> {
   const { data, error } = await supabase.rpc('has_permission', {
-    targetuser_id: userId,
+    target_user_id: userId,
     permission_code: permissionCode,
   });
 
@@ -56,7 +56,7 @@ export async function hasPermission(
  */
 export async function hasRole(userId: string, roleName: RoleName): Promise<boolean> {
   const { data, error } = await supabase.rpc('has_role', {
-    targetuser_id: userId,
+    target_user_id: userId,
     role_name: roleName,
   });
 
@@ -74,7 +74,7 @@ export async function hasRole(userId: string, roleName: RoleName): Promise<boole
  */
 export async function isAdminUser(userId?: string): Promise<boolean> {
   const { data, error } = await supabase.rpc('is_adminuser', {
-    targetuser_id: userId || null,
+    target_user_id: userId || null,
   });
 
   if (error) {

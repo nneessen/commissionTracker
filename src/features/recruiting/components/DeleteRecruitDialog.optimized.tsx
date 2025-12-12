@@ -125,7 +125,7 @@ export function DeleteRecruitDialogOptimized({
     try {
       // Use admin_deleteuser RPC for hard delete
       const { data, error } = await supabase.rpc('admin_deleteuser', {
-        targetuser_id: recruit.id
+        target_user_id: recruit.id
       });
 
       if (error) {

@@ -192,7 +192,7 @@ class UserService {
       // If still fails, try RPC for admin access
       if (error || !data) {
         const {data: rpcData, error: rpcError} = await supabase.rpc("admin_getuser_profile", {
-          targetuser_id: userId,
+          target_user_id: userId,
         });
 
         if (rpcError) {
@@ -620,7 +620,7 @@ class UserService {
       }
 
       const {data, error} = await supabase.rpc("admin_approveuser", {
-        targetuser_id: userId,
+        target_user_id: userId,
         approver_id: user.id,
       });
 
@@ -656,7 +656,7 @@ class UserService {
       }
 
       const {data, error} = await supabase.rpc("admin_denyuser", {
-        targetuser_id: userId,
+        target_user_id: userId,
         approver_id: user.id,
         reason: reason || "No reason provided",
       });
@@ -680,7 +680,7 @@ class UserService {
   async setPending(userId: string): Promise<{ success: boolean; error?: string }> {
     try {
       const {data, error} = await supabase.rpc("admin_set_pendinguser", {
-        targetuser_id: userId,
+        target_user_id: userId,
       });
 
       if (error) {
@@ -705,7 +705,7 @@ class UserService {
   async setAdminRole(userId: string, isAdmin: boolean): Promise<{ success: boolean; error?: string }> {
     try {
       const {data, error} = await supabase.rpc("admin_set_admin_role", {
-        targetuser_id: userId,
+        target_user_id: userId,
         new_is_admin: isAdmin,
       });
 
@@ -795,7 +795,7 @@ class UserService {
   async delete(userId: string): Promise<{ success: boolean; error?: string }> {
     try {
       const {data, error} = await supabase.rpc("admin_deleteuser", {
-        targetuser_id: userId,
+        target_user_id: userId,
       });
 
       if (error) {

@@ -303,7 +303,7 @@ export const recruitingService = {
   // Hard delete recruit - permanently removes user and all related data
   async deleteRecruit(id: string) {
     const { data, error } = await supabase.rpc('admin_deleteuser', {
-      targetuser_id: id
+      target_user_id: id
     });
 
     if (error) {
