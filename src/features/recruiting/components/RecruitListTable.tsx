@@ -19,23 +19,15 @@ import {
 } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatDistanceToNow } from 'date-fns';
+import { useTemplates, usePhases } from '@/features/recruiting/hooks/usePipeline';
 
 // Extended type for recruits with joined data
 type RecruitWithRelations = UserProfile & {
   recruiter?: { id: string; first_name?: string; last_name?: string; email: string } | null;
   upline?: { id: string; first_name?: string; last_name?: string; email: string } | null;
+  pipeline_template?: { id: string; name: string; description?: string | null } | null;
+  pipeline_template_id?: string | null;
 };
-
-// All pipeline phases (these match the database pipeline_phases table)
-const ALL_PHASES = [
-  'Interview 1',
-  'Zoom Interview',
-  'Pre-Licensing',
-  'Exam',
-  'NPN Received',
-  'Contracting',
-  'Bootcamp',
-];
 
 interface RecruitListTableProps {
   recruits: UserProfile[];
@@ -51,9 +43,18 @@ export function RecruitListTable({
   onSelectRecruit,
 }: RecruitListTableProps) {
   // Filter states
+  const [pipelineFilter, setPipelineFilter] = useState<string>('all');
   const [phaseFilter, setPhaseFilter] = useState<string>('all');
   const [recruiterFilter, setRecruiterFilter] = useState<string>('all');
   const [uplineFilter, setUplineFilter] = useState<string>('all');
+
+  // Fetch pipeline templates
+  const { data: templates } = useTemplates();
+
+  // Fetch phases for selected pipeline (or all phases if 'all' is selected)
+  const { data: phases } = usePhases(
+    pipelineFilter !== 'all' ? pipelineFilter : undefined
+  );
 
   // Extract unique recruiters and uplines for filter dropdowns
   const { recruiters, uplines } = useMemo(() => {
@@ -82,11 +83,14 @@ export function RecruitListTable({
     };
   }, [recruits]);
 
-  // Apply filters - filter by current_onboarding_phase
+  // Apply filters - filter by pipeline, phase, recruiter, and upline
   const filteredRecruits = useMemo(() => {
     return recruits.filter((r) => {
       const recruit = r as RecruitWithRelations;
 
+      if (pipelineFilter !== 'all' && recruit.pipeline_template_id !== pipelineFilter) {
+        return false;
+      }
       if (phaseFilter !== 'all' && recruit.current_onboarding_phase !== phaseFilter) {
         return false;
       }
@@ -98,7 +102,12 @@ export function RecruitListTable({
       }
       return true;
     });
-  }, [recruits, phaseFilter, recruiterFilter, uplineFilter]);
+  }, [recruits, pipelineFilter, phaseFilter, recruiterFilter, uplineFilter]);
+
+  // When pipeline changes, reset phase filter
+  React.useEffect(() => {
+    setPhaseFilter('all');
+  }, [pipelineFilter]);
 
   if (isLoading) {
     return (
@@ -129,7 +138,25 @@ export function RecruitListTable({
           {/* Filter Row */}
           <TableRow className="h-7 border-b-0">
             <TableHead className="w-5 p-0"></TableHead>
-            <TableHead className="p-0.5"></TableHead>
+            <TableHead className="p-0.5 w-24">
+              <Select value={pipelineFilter} onValueChange={setPipelineFilter}>
+                <SelectTrigger className="h-5 text-[10px] px-1 border-dashed">
+                  <SelectValue placeholder="Pipeline" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all" className="text-xs">All Pipelines</SelectItem>
+                  {templates && templates.length > 0 ? (
+                    templates
+                      .filter((t: any) => t.is_active)
+                      .map((template: any) => (
+                        <SelectItem key={template.id} value={template.id} className="text-xs">
+                          {template.name}
+                        </SelectItem>
+                      ))
+                  ) : null}
+                </SelectContent>
+              </Select>
+            </TableHead>
             <TableHead className="p-0.5 w-28">
               <Select value={phaseFilter} onValueChange={setPhaseFilter}>
                 <SelectTrigger className="h-5 text-[10px] px-1 border-dashed">
@@ -137,9 +164,21 @@ export function RecruitListTable({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all" className="text-xs">All Phases</SelectItem>
-                  {ALL_PHASES.map(phase => (
-                    <SelectItem key={phase} value={phase} className="text-xs">{phase}</SelectItem>
-                  ))}
+                  {phases && phases.length > 0 ? (
+                    phases
+                      .sort((a: any, b: any) => a.phase_order - b.phase_order)
+                      .map((phase: any) => (
+                        <SelectItem key={phase.id} value={phase.phase_name} className="text-xs">
+                          {phase.phase_name}
+                        </SelectItem>
+                      ))
+                  ) : pipelineFilter === 'all' ? (
+                    // If no pipeline selected, show all unique phases from recruits
+                    Array.from(new Set(recruits.map(r => r.current_onboarding_phase).filter(Boolean)))
+                      .map(phase => (
+                        <SelectItem key={phase} value={phase!} className="text-xs">{phase}</SelectItem>
+                      ))
+                  ) : null}
                 </SelectContent>
               </Select>
             </TableHead>
@@ -175,7 +214,7 @@ export function RecruitListTable({
           {/* Header Row */}
           <TableRow className="h-6">
             <TableHead className="w-5 p-0.5 text-[10px]"></TableHead>
-            <TableHead className="p-0.5 text-[10px] font-semibold">Name</TableHead>
+            <TableHead className="p-0.5 text-[10px] font-semibold w-24">Pipeline</TableHead>
             <TableHead className="p-0.5 text-[10px] font-semibold w-28">Phase</TableHead>
             <TableHead className="p-0.5 text-[10px] font-semibold">Recruiter</TableHead>
             <TableHead className="p-0.5 text-[10px] font-semibold">Upline</TableHead>
@@ -186,7 +225,7 @@ export function RecruitListTable({
         <TableBody>
           {filteredRecruits.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={7} className="text-center text-xs text-muted-foreground py-8">
+              <TableCell colSpan={8} className="text-center text-xs text-muted-foreground py-8">
                 No recruits match the current filters
               </TableCell>
             </TableRow>
@@ -207,10 +246,8 @@ export function RecruitListTable({
                   <TableCell className="p-0.5 text-center text-xs">
                     {getStatusIndicator(recruit)}
                   </TableCell>
-                  <TableCell className="p-0.5 text-xs truncate">
-                    {recruit.first_name && recruit.last_name
-                      ? `${recruit.first_name} ${recruit.last_name}`
-                      : recruit.email?.split('@')[0]}
+                  <TableCell className="p-0.5 text-[10px] truncate">
+                    {recruitWithRelations.pipeline_template?.name || 'Standard'}
                   </TableCell>
                   <TableCell className="p-0.5 text-xs truncate">
                     {recruit.current_onboarding_phase || 'Not Started'}
