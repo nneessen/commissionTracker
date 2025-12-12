@@ -6,6 +6,38 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-12-12 08:57:19
+
+### Changed Files
+- `.serena/memories/ACTIVE_SESSION_CONTINUATION_event_triggers.md`
+- `CHANGELOG.md`
+- `PROJECT_STATS.md`
+- `src/features/training-hub/components/AutomationTab.tsx`
+- `src/services/events/workflowEventEmitter.ts`
+- `src/services/recruiting/recruitingService.ts`
+- `supabase/migrations/20251212_001_workflow_event_tracking.sql`
+- `tsconfig.tsbuildinfo`
+
+### Statistics
+```
+ 8 files changed, 975 insertions(+), 172 deletions(-)
+```
+
+## [Checkpoint] - 2025-12-12 08:55:56
+
+### Changed Files
+- `.serena/memories/ACTIVE_SESSION_CONTINUATION_event_triggers.md`
+- `src/features/training-hub/components/AutomationTab.tsx`
+- `src/services/events/workflowEventEmitter.ts`
+- `src/services/recruiting/recruitingService.ts`
+- `supabase/migrations/20251212_001_workflow_event_tracking.sql`
+- `tsconfig.tsbuildinfo`
+
+### Statistics
+```
+ 6 files changed, 953 insertions(+), 162 deletions(-)
+```
+
 ## [Checkpoint] - 2025-12-12 07:53:43
 
 ### Changed Files

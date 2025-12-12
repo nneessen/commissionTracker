@@ -42,9 +42,10 @@ export default function AutomationTab() {
   const [showDiagnostic, setShowDiagnostic] = useState(false);
   const [editingWorkflow, setEditingWorkflow] = useState<Workflow | null>(null);
   const [deleteWorkflowId, setDeleteWorkflowId] = useState<string | null>(null);
+  const [showRecentRuns, setShowRecentRuns] = useState(false);
 
   const { data: workflows = [], isLoading, error } = useWorkflows();
-  const { data: runs = [] } = useWorkflowRuns(undefined, 10);
+  const { data: runs = [] } = useWorkflowRuns(undefined, 5); // Only fetch 5 most recent
   const updateStatus = useUpdateWorkflowStatus();
   const deleteWorkflow = useDeleteWorkflow();
   const triggerWorkflow = useTriggerWorkflow();
@@ -102,6 +103,14 @@ export default function AutomationTab() {
     webhook: <Mail className="h-3 w-3" />
   };
 
+  const runStatusColors = {
+    completed: 'text-green-600',
+    failed: 'text-red-600',
+    running: 'text-blue-600',
+    pending: 'text-gray-500',
+    cancelled: 'text-orange-600'
+  };
+
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
@@ -110,10 +119,18 @@ export default function AutomationTab() {
           <div className="text-sm text-muted-foreground">
             {workflows.length} workflow{workflows.length !== 1 ? 's' : ''}
           </div>
-          <div className="h-4 w-px bg-border" />
-          <div className="text-sm text-muted-foreground">
-            {runs.length} recent run{runs.length !== 1 ? 's' : ''}
-          </div>
+          {runs.length > 0 && (
+            <>
+              <div className="h-4 w-px bg-border" />
+              <button
+                onClick={() => setShowRecentRuns(!showRecentRuns)}
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+              >
+                {runs.length} recent run{runs.length !== 1 ? 's' : ''}
+                <span className="ml-1 text-xs">({showRecentRuns ? '−' : '+'})</span>
+              </button>
+            </>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <Button
@@ -146,172 +163,181 @@ export default function AutomationTab() {
         </div>
       )}
 
-      {/* Workflows Grid */}
-      <div className="grid grid-cols-2 gap-2 flex-1 overflow-auto">
-        {/* Workflows List */}
-        <div className="rounded-lg border p-3">
-          <div className="text-[11px] font-medium text-muted-foreground uppercase mb-2">
-            Active Workflows
+      {/* Recent Runs - Collapsible inline view */}
+      {showRecentRuns && runs.length > 0 && (
+        <div className="mb-3 rounded-lg border px-3 py-2">
+          <div className="text-[10px] font-medium text-muted-foreground uppercase mb-1">
+            Recent Activity
           </div>
-          {workflows.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-sm text-muted-foreground mb-3">No workflows created yet</p>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setShowDialog(true)}
-              >
-                Create Your First Workflow
-              </Button>
-            </div>
-          ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow className="h-7">
-                    <TableHead className="text-[10px] py-1">Name</TableHead>
-                    <TableHead className="text-[10px] py-1">Type</TableHead>
-                    <TableHead className="text-[10px] py-1">Status</TableHead>
-                    <TableHead className="text-[10px] py-1 w-8"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {workflows.map((workflow) => (
-                    <TableRow key={workflow.id} className="h-8">
-                      <TableCell className="py-1">
-                        <div>
-                          <div className="text-xs font-medium">{workflow.name}</div>
-                          {workflow.description && (
-                            <div className="text-[10px] text-muted-foreground truncate max-w-[200px]">
-                              {workflow.description}
-                            </div>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="py-1">
+          <div className="space-y-0.5">
+            {runs.map((run) => (
+              <div key={run.id} className="flex items-center justify-between text-[11px] py-0.5">
+                <div className="flex items-center gap-2">
+                  <span className={cn("font-medium", runStatusColors[run.status])}>
+                    {run.status === 'completed' ? '✓' : run.status === 'failed' ? '✗' : '○'}
+                  </span>
+                  <span className="text-muted-foreground">
+                    {run.workflow?.name || 'Unknown'}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground">
+                    {run.startedAt ? new Date(run.startedAt).toLocaleString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                      hour: 'numeric',
+                      minute: '2-digit'
+                    }) : 'Pending'}
+                  </span>
+                </div>
+                {run.completedAt && run.startedAt && (
+                  <span className="text-[10px] text-muted-foreground">
+                    {Math.round((new Date(run.completedAt).getTime() - new Date(run.startedAt).getTime()) / 1000)}s
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Workflows Table - Full width */}
+      <div className="flex-1 rounded-lg border overflow-auto">
+        {workflows.length === 0 ? (
+          <div className="text-center py-8">
+            <p className="text-sm text-muted-foreground mb-3">No workflows created yet</p>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setShowDialog(true)}
+            >
+              Create Your First Workflow
+            </Button>
+          </div>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow className="h-7">
+                <TableHead className="text-[10px] py-1">Name</TableHead>
+                <TableHead className="text-[10px] py-1">Description</TableHead>
+                <TableHead className="text-[10px] py-1">Type</TableHead>
+                <TableHead className="text-[10px] py-1">Status</TableHead>
+                <TableHead className="text-[10px] py-1">Last Run</TableHead>
+                <TableHead className="text-[10px] py-1 w-8"></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {workflows.map((workflow) => {
+                const lastRun = runs.find(r => r.workflowId === workflow.id);
+                return (
+                  <TableRow key={workflow.id} className="h-8">
+                    <TableCell className="py-1">
+                      <div className="text-xs font-medium">{workflow.name}</div>
+                    </TableCell>
+                    <TableCell className="py-1">
+                      <div className="text-[10px] text-muted-foreground truncate max-w-[300px]">
+                        {workflow.description || '—'}
+                      </div>
+                    </TableCell>
+                    <TableCell className="py-1">
+                      <div className="flex items-center gap-1">
+                        {triggerIcons[workflow.triggerType]}
+                        <span className="text-[10px]">{workflow.triggerType}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="py-1">
+                      <Badge
+                        variant="secondary"
+                        className={cn("text-[10px] py-0 px-1", statusColors[workflow.status])}
+                      >
+                        {workflow.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="py-1">
+                      {lastRun ? (
                         <div className="flex items-center gap-1">
-                          {triggerIcons[workflow.triggerType]}
-                          <span className="text-[10px]">{workflow.triggerType}</span>
+                          <span className={cn("text-[10px]", runStatusColors[lastRun.status])}>
+                            {lastRun.status}
+                          </span>
+                          <span className="text-[10px] text-muted-foreground">
+                            {lastRun.startedAt ? new Date(lastRun.startedAt).toLocaleDateString() : '—'}
+                          </span>
                         </div>
-                      </TableCell>
-                      <TableCell className="py-1">
-                        <Badge
-                          variant="secondary"
-                          className={cn("text-[10px] py-0 px-1", statusColors[workflow.status])}
-                        >
-                          {workflow.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="py-1">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                              <Settings className="h-3 w-3" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-32">
-                            {workflow.status === 'active' && (
-                              <DropdownMenuItem
-                                onClick={() => {
-                                  // For testing: trigger with a test recipient
-                                  const testEmail = prompt('Enter recipient email for test (or leave empty for yourself):');
-                                  triggerWorkflow.mutate({
-                                    workflowId: workflow.id,
-                                    context: testEmail ? {
-                                      recipientEmail: testEmail,
-                                      recipientId: 'test-recipient',
-                                      isTest: true
-                                    } : {}
-                                  });
-                                }}
-                                className="text-xs"
-                              >
-                                <Play className="h-3 w-3 mr-1" />
-                                Run Now
-                              </DropdownMenuItem>
-                            )}
-                            {workflow.status === 'active' && (
-                              <DropdownMenuItem
-                                onClick={() => updateStatus.mutate({ id: workflow.id, status: 'paused' })}
-                                className="text-xs"
-                              >
-                                <Pause className="h-3 w-3 mr-1" />
-                                Pause
-                              </DropdownMenuItem>
-                            )}
-                            {workflow.status === 'paused' && (
-                              <DropdownMenuItem
-                                onClick={() => updateStatus.mutate({ id: workflow.id, status: 'active' })}
-                                className="text-xs"
-                              >
-                                <Play className="h-3 w-3 mr-1" />
-                                Resume
-                              </DropdownMenuItem>
-                            )}
+                      ) : (
+                        <span className="text-[10px] text-muted-foreground">Never</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="py-1">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                            <Settings className="h-3 w-3" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-32">
+                          {workflow.status === 'active' && (
                             <DropdownMenuItem
                               onClick={() => {
-                                setEditingWorkflow(workflow);
-                                setShowDialog(true);
+                                // For testing: trigger with a test recipient
+                                const testEmail = prompt('Enter recipient email for test (or leave empty for yourself):');
+                                triggerWorkflow.mutate({
+                                  workflowId: workflow.id,
+                                  context: testEmail ? {
+                                    recipientEmail: testEmail,
+                                    recipientId: 'test-recipient',
+                                    isTest: true
+                                  } : {}
+                                });
                               }}
                               className="text-xs"
                             >
-                              <Edit className="h-3 w-3 mr-1" />
-                              Edit
+                              <Play className="h-3 w-3 mr-1" />
+                              Run Now
                             </DropdownMenuItem>
-                            <DropdownMenuSeparator />
+                          )}
+                          {workflow.status === 'active' && (
                             <DropdownMenuItem
-                              className="text-xs text-red-600"
-                              onClick={() => setDeleteWorkflowId(workflow.id)}
+                              onClick={() => updateStatus.mutate({ id: workflow.id, status: 'paused' })}
+                              className="text-xs"
                             >
-                              <Trash2 className="h-3 w-3 mr-1" />
-                              Delete
+                              <Pause className="h-3 w-3 mr-1" />
+                              Pause
                             </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-        </div>
-
-        {/* Recent Runs */}
-        <div className="rounded-lg border p-3">
-          <div className="text-[11px] font-medium text-muted-foreground uppercase mb-2">
-            Recent Runs
-          </div>
-          {runs.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-xs text-muted-foreground">No workflow runs yet</p>
-            </div>
-          ) : (
-            <div className="space-y-1">
-              {runs.map((run) => (
-                <div key={run.id} className="flex items-center justify-between p-2 border rounded-md">
-                  <div className="flex-1">
-                    <div className="text-xs font-medium">
-                      {run.workflow?.name || 'Unknown Workflow (deleted)'}
-                    </div>
-                    <div className="text-[10px] text-muted-foreground">
-                      {run.startedAt ? new Date(run.startedAt).toLocaleString() : 'Not started'}
-                    </div>
-                  </div>
-                  <Badge
-                    variant="secondary"
-                    className={cn(
-                      "text-[10px] py-0 px-1",
-                      run.status === 'completed' && "bg-green-100 text-green-700",
-                      run.status === 'failed' && "bg-red-100 text-red-700",
-                      run.status === 'running' && "bg-blue-100 text-blue-700"
-                    )}
-                  >
-                    {run.status}
-                  </Badge>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+                          )}
+                          {workflow.status === 'paused' && (
+                            <DropdownMenuItem
+                              onClick={() => updateStatus.mutate({ id: workflow.id, status: 'active' })}
+                              className="text-xs"
+                            >
+                              <Play className="h-3 w-3 mr-1" />
+                              Resume
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setEditingWorkflow(workflow);
+                              setShowDialog(true);
+                            }}
+                            className="text-xs"
+                          >
+                            <Edit className="h-3 w-3 mr-1" />
+                            Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            className="text-xs text-red-600"
+                            onClick={() => setDeleteWorkflowId(workflow.id)}
+                          >
+                            <Trash2 className="h-3 w-3 mr-1" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        )}
       </div>
 
       {/* Dialogs */}

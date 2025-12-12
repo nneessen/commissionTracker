@@ -1,5 +1,6 @@
 // src/services/recruiting/recruitingService.ts
 import { supabase } from '../base/supabase';
+import { workflowEventEmitter, WORKFLOW_EVENTS } from '../events/workflowEventEmitter';
 import type { UserProfile } from '@/types/hierarchy.types';
 import type {
   OnboardingPhase,
@@ -12,10 +13,6 @@ import type {
 } from '@/types/recruiting';
 import type {
   CreateRecruitInput,
-  AgentStatus,
-  isLicensedAgent,
-  requiresPipeline,
-  shouldSkipPipeline,
 } from '@/types/recruiting.types';
 import type { SendEmailRequest } from '@/types/email.types';
 
@@ -218,10 +215,35 @@ export const recruitingService = {
       .single();
 
     if (error) throw error;
-    return data as UserProfile;
+
+    const newRecruit = data as UserProfile;
+
+    // Emit recruit created event
+    await workflowEventEmitter.emit(WORKFLOW_EVENTS.RECRUIT_CREATED, {
+      recruitId: newRecruit.id,
+      userId: newRecruit.user_id || undefined,
+      userEmail: newRecruit.email,
+      recruitName: `${newRecruit.first_name} ${newRecruit.last_name}`,
+      recruiterId: newRecruit.recruiter_id || undefined,
+      uplineId: newRecruit.upline_id || undefined,
+      agentStatus: newRecruit.agent_status,
+      onboardingStatus: newRecruit.onboarding_status,
+      createdAt: new Date().toISOString(),
+      timestamp: new Date().toISOString()
+    });
+
+    return newRecruit;
   },
 
   async updateRecruit(id: string, updates: UpdateRecruitInput) {
+    // Get current recruit data to check for status changes
+    const { data: currentRecruit } = await supabase
+      .from('user_profiles')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    // Update the recruit
     const { data, error } = await supabase
       .from('user_profiles')
       .update(updates)
@@ -230,7 +252,62 @@ export const recruitingService = {
       .single();
 
     if (error) throw error;
-    return data as UserProfile;
+
+    const updatedRecruit = data as UserProfile;
+
+    // Check for status changes and emit events
+    if (currentRecruit && updates.onboarding_status) {
+      const oldStatus = currentRecruit.onboarding_status;
+      const newStatus = updates.onboarding_status;
+
+      // Emit phase changed event for any status change
+      if (oldStatus !== newStatus) {
+        await workflowEventEmitter.emit(WORKFLOW_EVENTS.RECRUIT_PHASE_CHANGED, {
+          recruitId: id,
+          userId: updatedRecruit.user_id || undefined,
+          userEmail: updatedRecruit.email,
+          recruitName: `${updatedRecruit.first_name} ${updatedRecruit.last_name}`,
+          oldPhase: oldStatus,
+          newPhase: newStatus,
+          recruiterId: updatedRecruit.recruiter_id || undefined,
+          uplineId: updatedRecruit.upline_id || undefined,
+          timestamp: new Date().toISOString()
+        });
+
+        // Check for graduation (completed status)
+        if (newStatus === 'completed') {
+          await workflowEventEmitter.emit(WORKFLOW_EVENTS.RECRUIT_GRADUATED_TO_AGENT, {
+            recruitId: id,
+            userId: updatedRecruit.user_id || undefined,
+            userEmail: updatedRecruit.email,
+            recruitName: `${updatedRecruit.first_name} ${updatedRecruit.last_name}`,
+            graduatedAt: new Date().toISOString(),
+            recruiterId: updatedRecruit.recruiter_id || undefined,
+            uplineId: updatedRecruit.upline_id || undefined,
+            agentStatus: updatedRecruit.agent_status,
+            licensingInfo: updatedRecruit.licensing_info,
+            timestamp: new Date().toISOString()
+          });
+        }
+
+        // Check for dropout
+        if (newStatus === 'dropped') {
+          await workflowEventEmitter.emit(WORKFLOW_EVENTS.RECRUIT_DROPPED_OUT, {
+            recruitId: id,
+            userId: updatedRecruit.user_id || undefined,
+            userEmail: updatedRecruit.email,
+            recruitName: `${updatedRecruit.first_name} ${updatedRecruit.last_name}`,
+            droppedAt: new Date().toISOString(),
+            lastPhase: oldStatus,
+            recruiterId: updatedRecruit.recruiter_id || undefined,
+            uplineId: updatedRecruit.upline_id || undefined,
+            timestamp: new Date().toISOString()
+          });
+        }
+      }
+    }
+
+    return updatedRecruit;
   },
 
   // Hard delete recruit - permanently removes user and all related data
@@ -304,7 +381,7 @@ export const recruitingService = {
     const fileName = `${Date.now()}_${file.name}`;
     const storagePath = `${userId}/${documentType}/${fileName}`;
 
-    const { data: uploadData, error: uploadError } = await supabase.storage
+    const { error: uploadError } = await supabase.storage
       .from('user-documents')
       .upload(storagePath, file);
 
