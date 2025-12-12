@@ -4,6 +4,7 @@ import { logger } from '../base/logger';
 import { supabase, TABLES } from '../base/supabase';
 import { Chargeback, CreateChargebackData } from '../../types/user.types';
 import { formatDateForDB } from '../../lib/date';
+import { workflowEventEmitter, WORKFLOW_EVENTS } from '../events/workflowEventEmitter';
 
 export type { CreateChargebackData };
 
@@ -93,7 +94,21 @@ class ChargebackService {
       throw new Error(`Failed to create chargeback: ${error.message}`);
     }
 
-    return this.transformFromDB(data);
+    const chargeback = this.transformFromDB(data);
+
+    // Emit commission chargeback event
+    await workflowEventEmitter.emit(WORKFLOW_EVENTS.COMMISSION_CHARGEBACK, {
+      commissionId: chargeback.commissionId,
+      policyId: chargeback.policyId,
+      agentId: chargeback.userId,
+      chargebackAmount: chargeback.chargebackAmount,
+      chargebackType: chargeback.chargebackType,
+      chargebackReason: chargeback.chargebackReason,
+      occurredAt: chargeback.chargebackDate.toISOString(),
+      timestamp: new Date().toISOString()
+    });
+
+    return chargeback;
   }
 
   async updateStatus(id: string, status: Chargeback['status']): Promise<Chargeback> {

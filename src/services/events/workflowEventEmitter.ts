@@ -53,6 +53,16 @@ class WorkflowEventEmitter {
     try {
       console.log(`[EventEmitter] Firing event: ${eventName}`, context);
 
+      // Show UI feedback in development mode
+      if (typeof window !== 'undefined' && import.meta.env?.DEV) {
+        // Dynamically import toast to avoid SSR issues
+        const { toast } = await import('sonner');
+        toast.info(`Event: ${eventName}`, {
+          description: 'Workflow event triggered',
+          duration: 2000
+        });
+      }
+
       // Record the event occurrence
       await this.recordEvent(eventName, context);
 
@@ -75,6 +85,15 @@ class WorkflowEventEmitter {
           console.error(`[EventEmitter] Failed to execute workflow ${workflow.id}:`, error);
           result.errors?.push(`Workflow ${workflow.name}: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
+      }
+
+      // Show success feedback if workflows were triggered
+      if (result.workflowsTriggered > 0 && typeof window !== 'undefined' && import.meta.env?.DEV) {
+        const { toast } = await import('sonner');
+        toast.success(`${result.workflowsTriggered} workflow(s) triggered`, {
+          description: `Event: ${eventName}`,
+          duration: 3000
+        });
       }
 
       return result;

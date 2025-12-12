@@ -5,6 +5,7 @@ import { logger } from '../base/logger';
 import { formatDateForDB } from '../../lib/date';
 import { commissionStatusService } from '../commissions/CommissionStatusService';
 import { DatabaseError, NotFoundError, ValidationError } from '../../errors/ServiceErrors';
+import { workflowEventEmitter, WORKFLOW_EVENTS } from '../events/workflowEventEmitter';
 
 /**
  * Service layer for policies - handles business logic
@@ -64,6 +65,26 @@ class PolicyService {
         // Can be retried/fixed manually
       }
     }
+
+    // 4. Emit policy created event
+    const clientName = 'client' in policy && policy.client ?
+      ('firstName' in policy.client ?
+        `${policy.client.firstName} ${policy.client.lastName}` :
+        policy.client.name) :
+      'Unknown Client';
+
+    await workflowEventEmitter.emit(WORKFLOW_EVENTS.POLICY_CREATED, {
+      policyId: policy.id,
+      policyNumber: policy.policyNumber,
+      carrierId: policy.carrierId,
+      productId: policy.productId,
+      agentId: policy.userId,
+      clientName,
+      premium: policy.annualPremium,
+      status: policy.status,
+      effectiveDate: policy.effectiveDate,
+      createdAt: new Date().toISOString()
+    });
 
     return policy;
   }
@@ -311,6 +332,17 @@ class PolicyService {
       // Transform and return
       const updatedPolicy = this.repository['transformFromDB'](updated);
 
+      // Emit policy cancelled event
+      await workflowEventEmitter.emit(WORKFLOW_EVENTS.POLICY_CANCELLED, {
+        policyId: updatedPolicy.id,
+        policyNumber: updatedPolicy.policyNumber,
+        agentId: updatedPolicy.userId,
+        reason,
+        cancelDate: cancelDate.toISOString(),
+        chargebackAmount: parseFloat(commission?.chargeback_amount || '0'),
+        timestamp: new Date().toISOString()
+      });
+
       return {
         policy: updatedPolicy,
         chargeback: {
@@ -497,7 +529,19 @@ class PolicyService {
       }, 'PolicyService');
 
       // Transform and return
-      return this.repository['transformFromDB'](updated);
+      const reinstatedPolicy = this.repository['transformFromDB'](updated);
+
+      // Emit policy renewed event (reinstatement is a form of renewal)
+      await workflowEventEmitter.emit(WORKFLOW_EVENTS.POLICY_RENEWED, {
+        policyId: reinstatedPolicy.id,
+        policyNumber: reinstatedPolicy.policyNumber,
+        agentId: reinstatedPolicy.userId,
+        reason,
+        renewalDate: new Date().toISOString(),
+        timestamp: new Date().toISOString()
+      });
+
+      return reinstatedPolicy;
     } catch (error) {
       logger.error('PolicyService.reinstatePolicy', error instanceof Error ? error : new Error(String(error)));
       throw error;

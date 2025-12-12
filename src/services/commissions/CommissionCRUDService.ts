@@ -6,6 +6,7 @@ import { CommissionRepository } from './CommissionRepository';
 import { logger } from '../base/logger';
 import { NotFoundError, DatabaseError, ValidationError, getErrorMessage } from '../../errors/ServiceErrors';
 import { withRetry } from '../../utils/retry';
+import { workflowEventEmitter, WORKFLOW_EVENTS } from '../events/workflowEventEmitter';
 
 export interface CreateCommissionData {
   policyId?: string;
@@ -251,6 +252,21 @@ class CommissionCRUDService {
       const created = await this.repository.create(dbData);
       const commission = this.transformFromDB(created);
 
+      // Emit commission earned event if this is an earned commission
+      if (commission.status === 'earned' || (commission.advanceAmount && commission.advanceAmount > 0)) {
+        await workflowEventEmitter.emit(WORKFLOW_EVENTS.COMMISSION_EARNED, {
+          commissionId: commission.id,
+          policyId: commission.policyId,
+          agentId: commission.userId,
+          amount: commission.advanceAmount || commission.amount,
+          commissionType: commission.type,
+          status: commission.status,
+          carrierId: commission.carrierId,
+          product: commission.product,
+          earnedAt: new Date().toISOString()
+        });
+      }
+
       return commission;
     } catch (error) {
       throw this.handleError(error, 'create');
@@ -419,6 +435,16 @@ class CommissionCRUDService {
 
       // Transform and return the updated commission
       const updatedCommission = this.transformFromDB(updated);
+
+      // Emit commission paid event
+      await workflowEventEmitter.emit(WORKFLOW_EVENTS.COMMISSION_PAID, {
+        commissionId: updatedCommission.id,
+        policyId: updatedCommission.policyId,
+        agentId: updatedCommission.userId,
+        amount: updatedCommission.amount,
+        paidDate: updatedCommission.paidDate?.toISOString(),
+        timestamp: new Date().toISOString()
+      });
 
       return updatedCommission;
     } catch (error) {
