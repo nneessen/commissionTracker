@@ -14,10 +14,10 @@ import type {Role, Permission, RolePermission, UserPermissions, PermissionCode, 
 
 /**
  * Get all permissions for a user (including inherited from role hierarchy)
- * Uses database function: getuser_permissions(user_id)
+ * Uses database function: get_user_permissions(user_id)
  */
 export async function getUserPermissions(userId: string): Promise<PermissionCode[]> {
-  const { data, error } = await supabase.rpc('getuser_permissions', {
+  const { data, error } = await supabase.rpc('get_user_permissions', {
     targetuser_id: userId,
   });
 
