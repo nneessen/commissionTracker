@@ -2984,6 +2984,146 @@ export type Database = {
           },
         ]
       }
+      workflow_email_tracking: {
+        Row: {
+          date: string | null
+          error_message: string | null
+          id: string
+          recipient_email: string
+          recipient_type: string
+          sent_at: string | null
+          success: boolean | null
+          user_id: string | null
+          workflow_id: string | null
+        }
+        Insert: {
+          date?: string | null
+          error_message?: string | null
+          id?: string
+          recipient_email: string
+          recipient_type: string
+          sent_at?: string | null
+          success?: boolean | null
+          user_id?: string | null
+          workflow_id?: string | null
+        }
+        Update: {
+          date?: string | null
+          error_message?: string | null
+          id?: string
+          recipient_email?: string
+          recipient_type?: string
+          sent_at?: string | null
+          success?: boolean | null
+          user_id?: string | null
+          workflow_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_email_tracking_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "active_user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workflow_email_tracking_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_delete_dependencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workflow_email_tracking_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_management_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workflow_email_tracking_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workflow_email_tracking_workflow_id_fkey"
+            columns: ["workflow_id"]
+            isOneToOne: false
+            referencedRelation: "workflows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workflow_rate_limits: {
+        Row: {
+          created_at: string | null
+          daily_email_limit: number | null
+          daily_workflow_runs_limit: number | null
+          id: string
+          is_unlimited: boolean | null
+          max_recipients_per_action: number | null
+          per_recipient_daily_limit: number | null
+          per_workflow_hourly_limit: number | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          daily_email_limit?: number | null
+          daily_workflow_runs_limit?: number | null
+          id?: string
+          is_unlimited?: boolean | null
+          max_recipients_per_action?: number | null
+          per_recipient_daily_limit?: number | null
+          per_workflow_hourly_limit?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          daily_email_limit?: number | null
+          daily_workflow_runs_limit?: number | null
+          id?: string
+          is_unlimited?: boolean | null
+          max_recipients_per_action?: number | null
+          per_recipient_daily_limit?: number | null
+          per_workflow_hourly_limit?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_rate_limits_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "active_user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workflow_rate_limits_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "user_delete_dependencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workflow_rate_limits_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "user_management_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workflow_rate_limits_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       workflow_runs: {
         Row: {
           actions_completed: number | null
@@ -4464,6 +4604,15 @@ export type Database = {
         Args: { user_uuid: string }
         Returns: boolean
       }
+      check_workflow_email_rate_limit: {
+        Args: {
+          p_recipient_count?: number
+          p_recipient_email: string
+          p_user_id: string
+          p_workflow_id: string
+        }
+        Returns: Json
+      }
       cleanup_old_reports: {
         Args: { max_reports_per_user?: number }
         Returns: number
@@ -4518,6 +4667,13 @@ export type Database = {
         Args: { target_user_id: string }
         Returns: {
           downline_id: string
+        }[]
+      }
+      get_downline_with_emails: {
+        Args: { p_max_count?: number; p_user_id: string }
+        Returns: {
+          email: string
+          id: string
         }[]
       }
       get_pipeline_template_for_user: {
@@ -4584,6 +4740,14 @@ export type Database = {
           permission_type: string
         }[]
       }
+      get_upline_chain: {
+        Args: { p_max_depth?: number; p_user_id: string }
+        Returns: {
+          depth: number
+          email: string
+          id: string
+        }[]
+      }
       get_user_commission_profile: {
         Args: { p_lookback_months?: number; p_user_id: string }
         Returns: {
@@ -4618,6 +4782,7 @@ export type Database = {
           updated_at: string
         }[]
       }
+      get_workflow_email_usage: { Args: { p_user_id: string }; Returns: Json }
       hard_delete_user: {
         Args: {
           p_confirm_text: string
@@ -4679,6 +4844,17 @@ export type Database = {
       process_workflow_trigger: {
         Args: { p_context: Json; p_event_name: string }
         Returns: undefined
+      }
+      record_workflow_email: {
+        Args: {
+          p_error_message?: string
+          p_recipient_email: string
+          p_recipient_type: string
+          p_success?: boolean
+          p_user_id: string
+          p_workflow_id: string
+        }
+        Returns: string
       }
       refresh_all_report_materialized_views: { Args: never; Returns: undefined }
       restore_deleted_user: {

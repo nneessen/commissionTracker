@@ -1,9 +1,10 @@
 // src/features/training-hub/components/AutomationTab.tsx
 
 import { useState } from 'react';
-import { Plus, Play, Pause, Trash2, Edit, Settings, Clock, Zap, Mail, AlertCircle, Bug } from 'lucide-react';
+import { Plus, Play, Pause, Trash2, Edit, Settings, Clock, Zap, Mail, AlertCircle, Bug, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,23 +33,29 @@ import {
 import { useWorkflows, useWorkflowRuns, useUpdateWorkflowStatus, useDeleteWorkflow, useTriggerWorkflow } from '@/hooks/workflows';
 import WorkflowWizard from './WorkflowWizard';
 import WorkflowDiagnostic from './WorkflowDiagnostic';
+import EventTypeManager from './EventTypeManager';
 import type { Workflow } from '@/types/workflow.types';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
+import { useCurrentUserProfile } from '@/hooks/admin/useUserApproval';
 
 export default function AutomationTab() {
   const { user } = useAuth();
+  const { data: profile } = useCurrentUserProfile();
   const [showDialog, setShowDialog] = useState(false);
   const [showDiagnostic, setShowDiagnostic] = useState(false);
   const [editingWorkflow, setEditingWorkflow] = useState<Workflow | null>(null);
   const [deleteWorkflowId, setDeleteWorkflowId] = useState<string | null>(null);
   const [showRecentRuns, setShowRecentRuns] = useState(false);
+  const [activeTab, setActiveTab] = useState<string>('workflows');
 
   const { data: workflows = [], isLoading, error } = useWorkflows();
   const { data: runs = [] } = useWorkflowRuns(undefined, 5); // Only fetch 5 most recent
   const updateStatus = useUpdateWorkflowStatus();
   const deleteWorkflow = useDeleteWorkflow();
   const triggerWorkflow = useTriggerWorkflow();
+
+  const isAdmin = profile?.is_admin === true;
 
   if (!user) {
     return (
@@ -113,48 +120,68 @@ export default function AutomationTab() {
 
   return (
     <div className="h-full flex flex-col">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-4">
-          <div className="text-sm text-muted-foreground">
-            {workflows.length} workflow{workflows.length !== 1 ? 's' : ''}
-          </div>
-          {runs.length > 0 && (
-            <>
-              <div className="h-4 w-px bg-border" />
-              <button
-                onClick={() => setShowRecentRuns(!showRecentRuns)}
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+      {/* Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
+        <div className="flex items-center justify-between mb-3">
+          <TabsList className="h-7">
+            <TabsTrigger value="workflows" className="text-xs h-6">
+              Workflows
+            </TabsTrigger>
+            {isAdmin && (
+              <TabsTrigger value="events" className="text-xs h-6">
+                <Shield className="h-3 w-3 mr-1" />
+                Event Types
+              </TabsTrigger>
+            )}
+          </TabsList>
+
+          {activeTab === 'workflows' && (
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 text-xs"
+                onClick={() => setShowDiagnostic(!showDiagnostic)}
               >
-                {runs.length} recent run{runs.length !== 1 ? 's' : ''}
-                <span className="ml-1 text-xs">({showRecentRuns ? '−' : '+'})</span>
-              </button>
-            </>
+                <Bug className="h-3 w-3 mr-1" />
+                Diagnostic
+              </Button>
+              <Button
+                size="sm"
+                className="h-7 text-xs"
+                onClick={() => {
+                  setEditingWorkflow(null);
+                  setShowDialog(true);
+                }}
+              >
+                <Plus className="h-3 w-3 mr-1" />
+                Create Workflow
+              </Button>
+            </div>
           )}
         </div>
-        <div className="flex items-center gap-2">
-          <Button
-            size="sm"
-            variant="outline"
-            className="h-7 text-xs"
-            onClick={() => setShowDiagnostic(!showDiagnostic)}
-          >
-            <Bug className="h-3 w-3 mr-1" />
-            Diagnostic
-          </Button>
-          <Button
-            size="sm"
-            className="h-7 text-xs"
-            onClick={() => {
-              setEditingWorkflow(null);
-              setShowDialog(true);
-            }}
-          >
-            <Plus className="h-3 w-3 mr-1" />
-            Create Workflow
-          </Button>
-        </div>
-      </div>
+
+        {/* Workflows Tab Content */}
+        <TabsContent value="workflows" className="flex-1 mt-0">
+          <div className="h-full flex flex-col">
+            {/* Workflow Stats Header */}
+            <div className="flex items-center gap-4 mb-3">
+              <div className="text-sm text-muted-foreground">
+                {workflows.length} workflow{workflows.length !== 1 ? 's' : ''}
+              </div>
+              {runs.length > 0 && (
+                <>
+                  <div className="h-4 w-px bg-border" />
+                  <button
+                    onClick={() => setShowRecentRuns(!showRecentRuns)}
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                  >
+                    {runs.length} recent run{runs.length !== 1 ? 's' : ''}
+                    <span className="ml-1 text-xs">({showRecentRuns ? '−' : '+'})</span>
+                  </button>
+                </>
+              )}
+            </div>
 
       {/* Show diagnostic if enabled */}
       {showDiagnostic && (
@@ -339,6 +366,16 @@ export default function AutomationTab() {
           </Table>
         )}
       </div>
+          </div>
+        </TabsContent>
+
+        {/* Event Types Tab Content (Admin Only) */}
+        {isAdmin && (
+          <TabsContent value="events" className="flex-1 mt-0">
+            <EventTypeManager />
+          </TabsContent>
+        )}
+      </Tabs>
 
       {/* Dialogs */}
       <WorkflowWizard

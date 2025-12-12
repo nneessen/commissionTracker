@@ -26,10 +26,9 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Empty, EmptyHeader, EmptyTitle, EmptyDescription } from '@/components/ui/empty';
 import { formatCurrency } from '@/lib/format';
-import { useAuth } from '@/contexts/AuthContext';
-import { useAllDownlinePerformance, useMyDownlines, useUpdateAgentHierarchy } from '@/hooks';
+import { useAllDownlinePerformance, useMyDownlines, useUpdateAgentHierarchy, useCurrentUserProfile } from '@/hooks';
 import showToast from '@/utils/toast';
-import type { DownlinePerformance as DownlinePerformanceType, UserProfile, HierarchyChangeRequest } from '@/types/hierarchy.types';
+import type { UserProfile, HierarchyChangeRequest } from '@/types/hierarchy.types';
 
 interface DownlinePerformanceProps {
   className?: string;
@@ -148,17 +147,18 @@ function EditHierarchyDialog({
  * Shows KPI metrics for all agents with admin actions for hierarchy editing
  */
 export function DownlinePerformance({ className }: DownlinePerformanceProps) {
-  const { user } = useAuth();
   const { data: performanceData, isLoading } = useAllDownlinePerformance();
   const { data: downlines } = useMyDownlines();
   const updateHierarchy = useUpdateAgentHierarchy();
+  const { data: profile } = useCurrentUserProfile();
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedAgent, setSelectedAgent] = useState<UserProfile | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const itemsPerPage = 50;
 
-  const isAdmin = user?.email === 'nick@nickneessen.com';
+  // Check admin status from database profile
+  const isAdmin = profile?.is_admin === true;
 
   // Filter by search term
   const filteredData = performanceData?.filter((d) =>

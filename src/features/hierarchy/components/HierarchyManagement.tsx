@@ -1,7 +1,7 @@
 // src/features/hierarchy/components/HierarchyManagement.tsx
 
 import React, { useState } from 'react';
-import { Users, Shield, AlertCircle, CheckCircle, Edit, UserPlus } from 'lucide-react';
+import { Shield, AlertCircle, Edit } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -25,8 +25,7 @@ import { Label } from '@/components/ui/label';
 import { Empty, EmptyHeader, EmptyTitle, EmptyDescription } from '@/components/ui/empty';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import showToast from '@/utils/toast';
-import { useAuth } from '@/contexts/AuthContext';
-import { useMyDownlines, useUpdateAgentHierarchy } from '@/hooks';
+import { useMyDownlines, useUpdateAgentHierarchy, useCurrentUserProfile } from '@/hooks';
 import type { UserProfile, HierarchyChangeRequest } from '@/types/hierarchy.types';
 
 interface HierarchyManagementProps {
@@ -146,15 +145,15 @@ function EditHierarchyDialog({
  * Allows admins to assign agents to uplines and manage the org structure
  */
 export function HierarchyManagement({ className }: HierarchyManagementProps) {
-  const { user } = useAuth();
   const { data: downlines, isLoading } = useMyDownlines();
   const updateHierarchy = useUpdateAgentHierarchy();
+  const { data: profile } = useCurrentUserProfile();
 
   const [selectedAgent, setSelectedAgent] = useState<UserProfile | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  // Check if user is admin (basic check - enhance with proper admin role check)
-  const isAdmin = user?.email === 'nick@nickneessen.com';
+  // Check admin status from database profile
+  const isAdmin = profile?.is_admin === true;
 
   const handleEditAgent = (agent: UserProfile) => {
     setSelectedAgent(agent);

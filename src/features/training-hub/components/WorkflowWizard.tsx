@@ -12,7 +12,6 @@ import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
@@ -235,7 +234,20 @@ export default function WorkflowWizard({ open, onOpenChange, workflow }: Workflo
 
   // Update form data
   const updateFormData = useCallback((updates: Partial<WorkflowFormData>) => {
-    setFormData(prev => ({ ...prev, ...updates }));
+    setFormData(prev => {
+      // Special handling for trigger updates to ensure persistence
+      if (updates.trigger) {
+        return {
+          ...prev,
+          ...updates,
+          trigger: {
+            ...prev.trigger,
+            ...updates.trigger
+          }
+        };
+      }
+      return { ...prev, ...updates };
+    });
     // Clear relevant errors when data changes
     const newErrors = { ...errors };
     if (updates.name !== undefined) delete newErrors.name;

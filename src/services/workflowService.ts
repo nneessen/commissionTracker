@@ -390,7 +390,107 @@ class WorkflowService {
       .order('category');
 
     if (error) throw error;
-    return data as TriggerEventType[];
+    
+    // Convert snake_case to camelCase
+    return (data || []).map((item: any) => ({
+      id: item.id,
+      eventName: item.event_name,
+      category: item.category,
+      description: item.description,
+      availableVariables: item.available_variables,
+      isActive: item.is_active,
+      createdAt: item.created_at
+    })) as TriggerEventType[];
+  }
+
+  // Event Type Management Methods
+  async getEventTypes() {
+    const { data, error } = await supabase
+      .from('trigger_event_types')
+      .select('*')
+      .order('category, event_name');
+
+    if (error) throw error;
+    
+    // Convert snake_case to camelCase
+    return (data || []).map((item: any) => ({
+      id: item.id,
+      eventName: item.event_name,
+      category: item.category,
+      description: item.description,
+      availableVariables: item.available_variables,
+      isActive: item.is_active,
+      createdAt: item.created_at
+    })) as TriggerEventType[];
+  }
+
+  async createEventType(eventData: Omit<TriggerEventType, 'id' | 'createdAt'>) {
+    // Convert camelCase to snake_case for database
+    const dbData = {
+      event_name: eventData.eventName,
+      category: eventData.category,
+      description: eventData.description,
+      available_variables: eventData.availableVariables,
+      is_active: eventData.isActive ?? true
+    };
+
+    const { data, error } = await supabase
+      .from('trigger_event_types')
+      .insert(dbData)
+      .select()
+      .single();
+
+    if (error) throw error;
+    
+    // Convert back to camelCase
+    return {
+      id: data.id,
+      eventName: data.event_name,
+      category: data.category,
+      description: data.description,
+      availableVariables: data.available_variables,
+      isActive: data.is_active,
+      createdAt: data.created_at
+    } as TriggerEventType;
+  }
+
+  async updateEventType(id: string, updates: Partial<TriggerEventType>) {
+    // Convert camelCase to snake_case for database
+    const dbUpdates: any = {};
+    if (updates.eventName !== undefined) dbUpdates.event_name = updates.eventName;
+    if (updates.category !== undefined) dbUpdates.category = updates.category;
+    if (updates.description !== undefined) dbUpdates.description = updates.description;
+    if (updates.availableVariables !== undefined) dbUpdates.available_variables = updates.availableVariables;
+    if (updates.isActive !== undefined) dbUpdates.is_active = updates.isActive;
+
+    const { data, error } = await supabase
+      .from('trigger_event_types')
+      .update(dbUpdates)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    
+    // Convert back to camelCase
+    return {
+      id: data.id,
+      eventName: data.event_name,
+      category: data.category,
+      description: data.description,
+      availableVariables: data.available_variables,
+      isActive: data.is_active,
+      createdAt: data.created_at
+    } as TriggerEventType;
+  }
+
+  async deleteEventType(id: string) {
+    const { error } = await supabase
+      .from('trigger_event_types')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
   }
 
   // =====================================================

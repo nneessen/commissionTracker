@@ -4,13 +4,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { workflowService } from '@/services/workflowService';
 import type {
-  Workflow,
   WorkflowFormData,
   WorkflowStatus,
-  WorkflowRun,
-  WorkflowTemplate,
-  TriggerEventType,
-  WorkflowStats
+  TriggerEventType
 } from '@/types/workflow.types';
 
 // =====================================================
@@ -24,6 +20,7 @@ const QUERY_KEYS = {
   workflowRun: (id: string) => ['workflow-run', id] as const,
   workflowTemplates: (category?: string) => ['workflow-templates', category] as const,
   triggerEventTypes: ['trigger-event-types'] as const,
+  eventTypes: ['event-types'] as const,
   workflowStats: (workflowId: string) => ['workflow-stats', workflowId] as const
 };
 
@@ -228,6 +225,70 @@ export function useTriggerEventTypes() {
     retry: 1,
     retryDelay: 1000,
     // initialData: []
+  });
+}
+
+// Event Type Management Hooks
+export function useEventTypes() {
+  return useQuery({
+    queryKey: QUERY_KEYS.eventTypes,
+    queryFn: () => workflowService.getEventTypes(),
+    staleTime: 60000, // 1 minute
+    retry: 1,
+    retryDelay: 1000,
+  });
+}
+
+export function useCreateEventType() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: Omit<TriggerEventType, 'id' | 'created_at'>) =>
+      workflowService.createEventType(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.eventTypes });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.triggerEventTypes });
+      toast.success('Event type created successfully');
+    },
+    onError: (error) => {
+      console.error('Failed to create event type:', error);
+      toast.error('Failed to create event type');
+    },
+  });
+}
+
+export function useUpdateEventType() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: Partial<TriggerEventType> & { id: string }) =>
+      workflowService.updateEventType(data.id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.eventTypes });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.triggerEventTypes });
+      toast.success('Event type updated successfully');
+    },
+    onError: (error) => {
+      console.error('Failed to update event type:', error);
+      toast.error('Failed to update event type');
+    },
+  });
+}
+
+export function useDeleteEventType() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => workflowService.deleteEventType(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.eventTypes });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.triggerEventTypes });
+      toast.success('Event type deleted successfully');
+    },
+    onError: (error) => {
+      console.error('Failed to delete event type:', error);
+      toast.error('Failed to delete event type');
+    },
   });
 }
 
