@@ -1,5 +1,5 @@
-import { supabase } from '@/services/base/supabase';
-import type { RecipientConfig, ResolvedRecipients, RecipientType, PhaseStatus } from '@/types/workflow-recipients.types';
+import {supabase} from '@/services/base/supabase';
+import type {RecipientConfig, ResolvedRecipients, RecipientType, PhaseStatus} from '@/types/workflow-recipients.types';
 
 const DEFAULT_MAX_RECIPIENTS = 50;
 
@@ -70,7 +70,7 @@ export async function resolveRecipients(
       case 'commission_recipient':
         result = await resolveCommissionRecipient(context);
         break;
-      case 'event_user':
+      case 'eventuser':
         result = await resolveEventUser(context);
         break;
 
@@ -97,8 +97,8 @@ export async function resolveRecipients(
         break;
 
       // Legacy backward compat
-      case 'trigger_user':
-      case 'current_user':
+      case 'triggeruser':
+      case 'currentuser':
         result = resolveTriggerUser(context);
         break;
 
@@ -164,7 +164,7 @@ async function resolveEntireDownline(context: ResolverContext, max: number): Pro
 
   // Use the database function for recursive downline
   const { data, error } = await supabase.rpc('get_downline_with_emails', {
-    p_user_id: userId,
+    puser_id: userId,
     p_max_count: max + 1
   });
 
@@ -183,7 +183,7 @@ async function resolveUplineChain(context: ResolverContext, max: number): Promis
 
   // Use the database function for recursive upline
   const { data, error } = await supabase.rpc('get_upline_chain', {
-    p_user_id: userId,
+    puser_id: userId,
     p_max_depth: Math.min(max, 10)
   });
 

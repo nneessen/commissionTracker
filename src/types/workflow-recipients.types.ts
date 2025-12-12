@@ -16,7 +16,7 @@ export type RecipientType =
   | 'policy_agent'
   | 'policy_client'
   | 'commission_recipient'
-  | 'event_user'
+  | 'eventuser'
   // Recruiting pipeline
   | 'pipeline_phase'
   | 'pipeline_recruiter'
@@ -26,8 +26,8 @@ export type RecipientType =
   | 'email_list'
   | 'dynamic_field'
   // Legacy (backward compat)
-  | 'trigger_user'
-  | 'current_user'
+  | 'triggeruser'
+  | 'currentuser'
   | 'manager'; // Maps to direct_upline
 
 export type PhaseStatus = 'not_started' | 'in_progress' | 'completed' | 'blocked';
@@ -72,7 +72,7 @@ export const RECIPIENT_TYPE_LABELS: Record<RecipientType, string> = {
   policy_agent: 'Policy Agent',
   policy_client: 'Policy Client',
   commission_recipient: 'Commission Recipient',
-  event_user: 'Event User',
+  eventuser: 'Event User',
   // Pipeline
   pipeline_phase: 'Recruits in Phase(s)',
   pipeline_recruiter: 'Recruiter',
@@ -82,8 +82,8 @@ export const RECIPIENT_TYPE_LABELS: Record<RecipientType, string> = {
   email_list: 'Email List',
   dynamic_field: 'Dynamic Field',
   // Legacy
-  trigger_user: 'Trigger User',
-  current_user: 'Current User',
+  triggeruser: 'Trigger User',
+  currentuser: 'Current User',
   manager: 'Manager'
 };
 
@@ -102,7 +102,7 @@ export const RECIPIENT_CATEGORIES = {
   context: {
     label: 'Event Context',
     description: 'From trigger data',
-    types: ['policy_agent', 'policy_client', 'commission_recipient', 'event_user'] as RecipientType[]
+    types: ['policy_agent', 'policy_client', 'commission_recipient', 'eventuser'] as RecipientType[]
   },
   pipeline: {
     label: 'Recruiting Pipeline',

@@ -1,9 +1,9 @@
 // src/features/dashboard/components/KPIGridNarrative.tsx
 
 import React from 'react';
-import { DetailedKPIGridProps } from '../../../types/dashboard.types';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { NarrativeInsight } from './kpi-layouts/NarrativeInsight';
+import {DetailedKPIGridProps} from '../../../types/dashboard.types';
+import {Card, CardContent, CardHeader, CardTitle} from '@/components/ui/card';
+import {NarrativeInsight} from './kpi-layouts/NarrativeInsight';
 
 /**
  * Generate contextual insight text based on metric
@@ -113,7 +113,7 @@ export const KPIGridNarrative: React.FC<DetailedKPIGridProps> = ({ sections }) =
 
   // Identify hero metric (first metric, usually most important)
   const heroKPI = allKPIs[0];
-  const supportingKPIs = allKPIs.slice(1);
+  const _supportingKPIs = allKPIs.slice(1);
 
   return (
     <Card>

@@ -1,8 +1,8 @@
 // src/hooks/expenses/useExpenseMetrics.ts
 
-import { useQuery } from '@tanstack/react-query';
-import { expenseService } from '../../services/expenses/expenseService';
-import type { ExpenseTotals, ExpenseFilters } from '../../types/expense.types';
+import {useQuery} from '@tanstack/react-query';
+import {expenseService} from '../../services/expenses/expenseService';
+import type {ExpenseTotals, ExpenseFilters} from '../../types/expense.types';
 
 export interface UseExpenseMetricsOptions {
   filters?: ExpenseFilters;

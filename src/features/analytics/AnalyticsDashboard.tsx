@@ -1,13 +1,11 @@
 // src/features/analytics/AnalyticsDashboard.tsx
 
 import React, { lazy, Suspense } from "react";
-import {
-  TimePeriodSelector,
-} from "./components/TimePeriodSelector";
-import { Button } from "@/components/ui/button";
-import { useAnalyticsData } from '@/hooks';
-import { downloadCSV, printAnalyticsToPDF } from "../../utils/exportHelpers";
-import { AnalyticsDateProvider, useAnalyticsDateRange } from "./context/AnalyticsDateContext";
+import {TimePeriodSelector} from "./components/TimePeriodSelector";
+import {Button} from "@/components/ui/button";
+import {useAnalyticsData} from '@/hooks';
+import {downloadCSV, printAnalyticsToPDF} from "../../utils/exportHelpers";
+import {AnalyticsDateProvider, useAnalyticsDateRange} from "./context/AnalyticsDateContext";
 
 // Lazy load analytics components for better performance
 const PaceMetrics = lazy(() =>

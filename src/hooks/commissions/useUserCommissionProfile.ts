@@ -1,9 +1,9 @@
 // src/hooks/commissions/useUserCommissionProfile.ts
 
-import { useQuery, UseQueryResult } from '@tanstack/react-query';
-import { commissionRateService } from '../../services/commissions/commissionRateService';
-import { UserCommissionProfile } from '../../types/product.types';
-import { useAuth } from '../../contexts/AuthContext';
+import {useQuery, UseQueryResult} from '@tanstack/react-query';
+import {commissionRateService} from '../../services/commissions/commissionRateService';
+import {UserCommissionProfile} from '../../types/product.types';
+import {useAuth} from '../../contexts/AuthContext';
 
 /**
  * Hook to get user's commission rate profile

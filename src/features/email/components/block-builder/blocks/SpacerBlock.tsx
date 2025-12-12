@@ -1,6 +1,6 @@
-import { Slider } from '@/components/ui/slider'
-import { Label } from '@/components/ui/label'
-import type { EmailBlock, SpacerBlockContent } from '@/types/email.types'
+import {Slider} from '@/components/ui/slider'
+import {Label} from '@/components/ui/label'
+import type {EmailBlock, SpacerBlockContent} from '@/types/email.types'
 
 interface SpacerBlockProps {
   block: EmailBlock

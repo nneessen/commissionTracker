@@ -1,13 +1,13 @@
 // src/features/email/components/EmailComposer.tsx
 
-import { useState, useEffect, useRef } from 'react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Send, Loader2, X, Paperclip, Trash2, FileText } from 'lucide-react'
-import { TipTapEditor } from './TipTapEditor'
-import { sanitizeForEmail } from '../services/sanitizationService'
-import { convertHtmlToText } from '../services/htmlToTextService'
-import type { SendEmailRequest } from '@/types/email.types'
+import {useState, useEffect, useRef} from 'react'
+import {Button} from '@/components/ui/button'
+import {Input} from '@/components/ui/input'
+import {Send, Loader2, X, Paperclip, Trash2, FileText} from 'lucide-react'
+import {TipTapEditor} from './TipTapEditor'
+import {sanitizeForEmail} from '../services/sanitizationService'
+import {convertHtmlToText} from '../services/htmlToTextService'
+import type {SendEmailRequest} from '@/types/email.types'
 
 interface Attachment {
   id: string

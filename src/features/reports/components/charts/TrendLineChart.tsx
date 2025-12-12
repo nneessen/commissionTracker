@@ -1,17 +1,8 @@
 // src/features/reports/components/charts/TrendLineChart.tsx
 
 import React from 'react';
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from 'recharts';
-import { formatCurrency } from '../../../../lib/format';
+import {LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer} from 'recharts';
+import {formatCurrency} from '../../../../lib/format';
 
 export interface TrendLineChartData {
   label: string;

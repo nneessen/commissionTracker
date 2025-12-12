@@ -1,9 +1,9 @@
 // src/features/dashboard/components/StatItem.tsx
 
 import React from "react";
-import { TrendingUp, TrendingDown } from "lucide-react";
-import { StatItemConfig } from "../../../types/dashboard.types";
-import { MetricTooltip } from "../../../components/ui/MetricTooltip";
+import {TrendingUp, TrendingDown} from "lucide-react";
+import {StatItemConfig} from "../../../types/dashboard.types";
+import {MetricTooltip} from "../../../components/ui/MetricTooltip";
 
 const colorToClass = (color: string): string => {
   const colorMap: Record<string, string> = {

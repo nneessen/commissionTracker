@@ -1,16 +1,10 @@
 // src/services/overrides/overrideService.ts
 // Service layer for override commission management
 
-import { supabase } from '../base/supabase';
-import { logger } from '../base/logger';
-import type {
-  OverrideCommission,
-  OverrideCommissionWithAgents,
-  OverrideSummary,
-  OverrideByDownlineSummary,
-  OverrideFilters,
-} from '../../types/hierarchy.types';
-import { DatabaseError } from '../../errors/ServiceErrors';
+import {supabase} from '../base/supabase';
+import {logger} from '../base/logger';
+import type {OverrideCommission, OverrideCommissionWithAgents, OverrideSummary, OverrideByDownlineSummary, OverrideFilters} from '../../types/hierarchy.types';
+import {DatabaseError} from '../../errors/ServiceErrors';
 
 /**
  * Service layer for override commission operations
@@ -289,7 +283,7 @@ class OverrideService {
       }
 
       // Get the policy to trigger recalculation
-      const { data: policy, error: policyError } = await supabase
+      const { data: _policy, error: policyError } = await supabase
         .from('policies')
         .select('*')
         .eq('id', policyId)

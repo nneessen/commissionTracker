@@ -1,6 +1,6 @@
 // /home/nneessen/projects/commissionTracker/src/setupTests.ts
 import '@testing-library/jest-dom'
-import { vi } from 'vitest'
+import {vi} from 'vitest'
 
 // Extend the global object with test-specific properties
 declare global {

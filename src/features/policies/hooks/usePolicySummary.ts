@@ -1,7 +1,7 @@
 // src/features/policies/hooks/usePolicySummary.ts
 
-import { Policy } from "../../../types/policy.types";
-import { Commission } from "../../../types/commission.types";
+import {Policy} from "../../../types/policy.types";
+import {Commission} from "../../../types/commission.types";
 
 interface PolicySummary {
   totalPolicies: number;

@@ -1,14 +1,10 @@
 // src/features/auth/AuthCallback.tsx
 
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "@tanstack/react-router";
-import { supabase } from "../../services/base/supabase";
-import { logger } from "../../services/base/logger";
-import {
-  AUTH_CALLBACK_TYPES,
-  type AuthCallbackType,
-  SESSION_STORAGE_KEYS,
-} from "../../constants/auth.constants";
+import {useNavigate} from "@tanstack/react-router";
+import {supabase} from "../../services/base/supabase";
+import {logger} from "../../services/base/logger";
+import {AUTH_CALLBACK_TYPES, type AuthCallbackType, SESSION_STORAGE_KEYS} from "../../constants/auth.constants";
 
 export const AuthCallback: React.FC = () => {
   const navigate = useNavigate();
@@ -81,7 +77,7 @@ export const AuthCallback: React.FC = () => {
               try {
                 window.opener.location.href = "/";
                 window.close();
-              } catch (e) {
+              } catch (_e) {
                 navigate({ to: "/" });
               }
             }, 2000);

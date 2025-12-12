@@ -1,14 +1,14 @@
 // src/features/auth/EmailVerificationPending.tsx
 
 import React from "react";
-import { Button } from "../../components/ui";
-import { Card, CardContent } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { MAX_RESEND_ATTEMPTS } from "../../constants/auth.constants";
-import { useEmailVerification } from "./hooks/useEmailVerification";
-import { EmailIcon } from "./components/EmailIcon";
-import { AuthErrorDisplay } from "./components/AuthErrorDisplay";
-import { AuthSuccessMessage } from "./components/AuthSuccessMessage";
+import {Button} from "../../components/ui";
+import {Card, CardContent} from "@/components/ui/card";
+import {Separator} from "@/components/ui/separator";
+import {MAX_RESEND_ATTEMPTS} from "../../constants/auth.constants";
+import {useEmailVerification} from "./hooks/useEmailVerification";
+import {EmailIcon} from "./components/EmailIcon";
+import {AuthErrorDisplay} from "./components/AuthErrorDisplay";
+import {AuthSuccessMessage} from "./components/AuthSuccessMessage";
 
 export const EmailVerificationPending: React.FC = () => {
   const {

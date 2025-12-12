@@ -1,8 +1,8 @@
 // /home/nneessen/projects/commissionTracker/src/hooks/carriers/useCreateCarrier.ts
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { carrierService } from '../../services/settings/carrierService';
-import { NewCarrierForm } from '../../types/carrier.types';
+import {useMutation, useQueryClient} from '@tanstack/react-query';
+import {carrierService} from '../../services/settings/carrierService';
+import {NewCarrierForm} from '../../types/carrier.types';
 
 export const useCreateCarrier = () => {
   const queryClient = useQueryClient();

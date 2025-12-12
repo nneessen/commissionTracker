@@ -1,12 +1,12 @@
 // src/features/settings/components/UserProfile.tsx
 import React, { useState, useEffect } from 'react';
-import { User, Save, AlertCircle, CheckCircle2, Users } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { useAuth } from '../../../contexts/AuthContext';
-import { useUpdateUserProfile } from '../../../hooks/settings/useUpdateUserProfile';
-import { useUpdateAgentHierarchy } from '../../../hooks/hierarchy/useUpdateAgentHierarchy';
-import { SettingsCard } from './SettingsComponents';
-import { supabase } from '@/services/base/supabase';
+import {User, Save, AlertCircle, CheckCircle2, Users} from 'lucide-react';
+import {Button} from '@/components/ui/button';
+import {useAuth} from '../../../contexts/AuthContext';
+import {useUpdateUserProfile} from '../../../hooks/settings/useUpdateUserProfile';
+import {useUpdateAgentHierarchy} from '../../../hooks/hierarchy/useUpdateAgentHierarchy';
+import {SettingsCard} from './SettingsComponents';
+import {supabase} from '@/services/base/supabase';
 
 export function UserProfile() {
   const { user } = useAuth();

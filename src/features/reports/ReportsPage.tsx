@@ -1,16 +1,16 @@
 // src/features/reports/ReportsPage.tsx
 
 import React, { useState, useMemo } from 'react';
-import { ReportType, ReportFilters, ReportSection, DrillDownContext } from '../../types/reports.types';
-import { Button } from '../../components/ui/button';
-import { TimePeriodSelector, AdvancedTimePeriod, getAdvancedDateRange } from '../analytics/components/TimePeriodSelector';
-import { useReport } from '../../hooks/reports/useReport';
-import { ReportExportService } from '../../services/reports/reportExportService';
-import { Download, Loader2, FileText, Table, Printer, ChevronRight, TrendingUp, AlertTriangle, CheckCircle, Package } from 'lucide-react';
-import { Card } from '../../components/ui/card';
-import { CommissionAgingChart, ClientTierChart } from './components/charts';
-import { BundleExportDialog } from './components/BundleExportDialog';
-import { DrillDownDrawer } from './components/drill-down';
+import {ReportType, ReportFilters, ReportSection, DrillDownContext} from '../../types/reports.types';
+import {Button} from '../../components/ui/button';
+import {TimePeriodSelector, AdvancedTimePeriod, getAdvancedDateRange} from '../analytics/components/TimePeriodSelector';
+import {useReport} from '../../hooks/reports/useReport';
+import {ReportExportService} from '../../services/reports/reportExportService';
+import {Printer, ChevronRight, TrendingUp, AlertTriangle, CheckCircle, Package, Loader2} from 'lucide-react';
+import {Card} from '../../components/ui/card';
+import {CommissionAgingChart, ClientTierChart} from './components/charts';
+import {BundleExportDialog} from './components/BundleExportDialog';
+import {DrillDownDrawer} from './components/drill-down';
 
 // Helper function to create stable initial dates
 function getInitialDateRange() {
@@ -315,7 +315,7 @@ export function ReportsPage() {
                       <h3 className="text-xs font-semibold text-foreground mb-1.5">
                         Priority Actions
                       </h3>
-                      {report.summary.topInsights.map((insight, index) => (
+                      {report.summary.topInsights.map((insight, _index) => (
                         <div
                           key={insight.id}
                           className="flex items-start gap-2 p-2 rounded-sm bg-muted/30 border-l-2 border-l-orange-500/70"
@@ -337,7 +337,7 @@ export function ReportsPage() {
                 </div>
 
                 {/* Report Sections */}
-                {report.sections.map((section, sectionIndex) => (
+                {report.sections.map((section, _sectionIndex) => (
                   <div key={section.id} className="px-3 py-2 md:py-3 border-b border-border/50 last:border-b-0">
                     <h2 className="text-sm font-bold text-foreground mb-1.5">
                       {section.title}

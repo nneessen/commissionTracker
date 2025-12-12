@@ -1,40 +1,21 @@
 // src/features/expenses/components/ExpenseDialogCompact.tsx - Ultra-compact expense modal
 
-import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Info, DollarSign, Calendar, Tag } from "lucide-react";
-import { cn } from "@/lib/utils";
-import type {
-  Expense,
-  CreateExpenseData,
-  RecurringFrequency,
-} from "@/types/expense.types";
-import { DEFAULT_EXPENSE_CATEGORIES } from "@/types/expense.types";
-import {
-  RECURRING_FREQUENCY_OPTIONS,
-  TAX_DEDUCTIBLE_TOOLTIP,
-} from "../config/recurringConfig";
-import { useCreateExpenseTemplate } from "../../../hooks/expenses/useExpenseTemplates";
-import { getTodayString } from "../../../lib/date";
+import {useEffect, useState} from "react";
+import {Button} from "@/components/ui/button";
+import {Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle} from "@/components/ui/dialog";
+import {Input} from "@/components/ui/input";
+import {Label} from "@/components/ui/label";
+import {Textarea} from "@/components/ui/textarea";
+import {Checkbox} from "@/components/ui/checkbox";
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
+import {Alert, AlertDescription} from "@/components/ui/alert";
+import {Tag} from "lucide-react";
+import {cn} from "@/lib/utils";
+import type {Expense, CreateExpenseData, RecurringFrequency} from "@/types/expense.types";
+import {DEFAULT_EXPENSE_CATEGORIES} from "@/types/expense.types";
+import {RECURRING_FREQUENCY_OPTIONS, TAX_DEDUCTIBLE_TOOLTIP} from "../config/recurringConfig";
+import {useCreateExpenseTemplate} from "../../../hooks/expenses/useExpenseTemplates";
+import {getTodayString} from "../../../lib/date";
 import showToast from "../../../utils/toast";
 
 interface ExpenseDialogProps {

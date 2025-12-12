@@ -1,13 +1,8 @@
 // src/services/analytics/__tests__/attributionService.test.ts
 
-import { describe, it, expect } from 'vitest';
-import {
-  calculateContribution,
-  getProductMixEvolution,
-  calculateCarrierROI,
-  getTopMovers,
-} from '../attributionService';
-import { Policy, Commission } from '../../../types';
+import {describe, it, expect} from 'vitest';
+import {calculateContribution, getProductMixEvolution, calculateCarrierROI, getTopMovers} from '../attributionService';
+import {Policy, Commission} from '../../../types';
 
 describe('attributionService', () => {
   const currentPolicies: Policy[] = [

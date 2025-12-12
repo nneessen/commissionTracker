@@ -1,12 +1,7 @@
 // src/services/reports/drillDownService.ts
 
-import { supabase } from '../base/supabase';
-import {
-  DrillDownContext,
-  DrillDownData,
-  DrillDownRecord,
-  ReportFilters,
-} from '@/types/reports.types';
+import {supabase} from '../base/supabase';
+import {DrillDownContext, DrillDownData, DrillDownRecord, ReportFilters} from '@/types/reports.types';
 
 /**
  * Service for fetching drill-down data when users click on report elements
@@ -41,7 +36,7 @@ export class DrillDownService {
     context: DrillDownContext
   ): Promise<DrillDownData> {
     const bucket = context.agingBucket || '0-3 months';
-    const { filters } = context;
+    const {filters} = context;
 
     // Map bucket to months_paid range
     const bucketRanges: Record<string, { min: number; max: number }> = {
@@ -85,7 +80,7 @@ export class DrillDownService {
       query = query.in('policy.carrier_id', filters.carrierIds);
     }
 
-    const { data, error } = await query.order('unearned_amount', { ascending: false });
+    const {data, error} = await query.order('unearned_amount', { ascending: false });
     if (error) throw error;
 
     // Transform to DrillDownRecords
@@ -137,16 +132,16 @@ export class DrillDownService {
     context: DrillDownContext
   ): Promise<DrillDownData> {
     const tier = context.clientTier || 'A';
-    const { filters } = context;
+    const {filters: _filters} = context;
 
     // Query from materialized view mv_client_ltv
-    let query = supabase
+    const query = supabase
       .from('mv_client_ltv')
       .select('*')
       .eq('user_id', userId)
       .eq('tier', tier);
 
-    const { data, error } = await query.order('total_premium', { ascending: false });
+    const {data, error} = await query.order('total_premium', { ascending: false });
     if (error) throw error;
 
     // Transform to DrillDownRecords
@@ -193,10 +188,10 @@ export class DrillDownService {
     const carrierId = context.carrierId;
     if (!carrierId) throw new Error('Carrier ID required');
 
-    const { filters } = context;
+    const {filters} = context;
 
     // Query policies with commissions for this carrier
-    let query = supabase
+    const query = supabase
       .from('policies')
       .select(`
         id,
@@ -214,7 +209,7 @@ export class DrillDownService {
       .gte('effective_date', filters.startDate.toISOString())
       .lte('effective_date', filters.endDate.toISOString());
 
-    const { data, error } = await query.order('annual_premium', { ascending: false });
+    const {data, error} = await query.order('annual_premium', { ascending: false });
     if (error) throw error;
 
     // Transform to DrillDownRecords
@@ -275,9 +270,9 @@ export class DrillDownService {
     const productId = context.productId;
     if (!productId) throw new Error('Product ID required');
 
-    const { filters } = context;
+    const {filters} = context;
 
-    let query = supabase
+    const query = supabase
       .from('policies')
       .select(`
         id,
@@ -294,7 +289,7 @@ export class DrillDownService {
       .gte('effective_date', filters.startDate.toISOString())
       .lte('effective_date', filters.endDate.toISOString());
 
-    const { data, error } = await query.order('annual_premium', { ascending: false });
+    const {data, error} = await query.order('annual_premium', { ascending: false });
     if (error) throw error;
 
     const records: DrillDownRecord[] = (data || []).map((p: any) => ({

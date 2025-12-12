@@ -4,8 +4,8 @@
  * Handles real-time subscriptions for notifications using Supabase Realtime.
  */
 
-import { supabase } from '../base/supabase';
-import type { Notification } from '@/types/notification.types';
+import {supabase} from '../base/supabase';
+import type {Notification} from '@/types/notification.types';
 
 /**
  * Subscribe to notifications for current user

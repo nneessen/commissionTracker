@@ -1,22 +1,14 @@
 // src/hooks/kpi/useMetricsWithDateRange.ts
 
 // React 19.1 optimizes automatically - useMemo removed
-import { useQuery } from "@tanstack/react-query";
-import {
-  TimePeriod,
-  DateRange,
-  getDateRange,
-  isInDateRange,
-  getTimeRemaining,
-  getDaysInPeriod,
-  getAveragePeriodValue,
-} from "../../utils/dateRange";
-import { parseLocalDate, formatDateForDB } from "../../lib/date";
-import { usePolicies } from "../policies";
-import { useCommissions } from "../commissions/useCommissions";
-import { useExpenses } from "../expenses/useExpenses";
-import { useCarriers } from "../carriers/useCarriers";
-import { Commission, Policy, Expense, ProductType } from "../../types";
+import {useQuery} from "@tanstack/react-query";
+import {TimePeriod, DateRange, getDateRange, isInDateRange, getTimeRemaining, getDaysInPeriod, getAveragePeriodValue} from "../../utils/dateRange";
+import {parseLocalDate, formatDateForDB} from "../../lib/date";
+import {usePolicies} from "../policies";
+import {useCommissions} from "../commissions/useCommissions";
+import {useExpenses} from "../expenses/useExpenses";
+import {useCarriers} from "../carriers/useCarriers";
+import {Commission, Policy, Expense, ProductType} from "../../types";
 
 interface UseMetricsWithDateRangeOptions {
   timePeriod: TimePeriod;
@@ -100,14 +92,14 @@ export interface DateFilteredMetrics {
 export function useMetricsWithDateRange(
   options: UseMetricsWithDateRangeOptions,
 ): DateFilteredMetrics {
-  const { timePeriod, periodOffset = 0, enabled = true, targetAvgPremium = 1500 } = options;
+  const {timePeriod, periodOffset = 0, enabled = true, targetAvgPremium = 1500} = options;
 
   // Get base data
-  const { data: policies = [], isLoading: policiesLoading } = usePolicies();
-  const { data: commissions = [], isLoading: commissionsLoading } =
+  const {data: policies = [], isLoading: policiesLoading} = usePolicies();
+  const {data: commissions = [], isLoading: commissionsLoading} =
     useCommissions();
-  const { data: expenses = [], isLoading: expensesLoading } = useExpenses();
-  const { data: carriers = [], isLoading: carriersLoading } = useCarriers();
+  const {data: expenses = [], isLoading: expensesLoading} = useExpenses();
+  const {data: _carriers = [], isLoading: carriersLoading} = useCarriers();
 
   const isLoading =
     policiesLoading || commissionsLoading || expensesLoading || carriersLoading;
@@ -493,13 +485,14 @@ export function useMetricsWithDateRange(
           monthlyTarget = policiesNeeded;
           break;
 
-        case "yearly":
+        case "yearly": {
           // For yearly, calculate monthly and weekly targets
           const monthsRemaining = 12 - new Date().getMonth();
           policiesPerDayNeeded = policiesNeeded / daysRemaining;
           dailyTarget = Math.ceil(policiesPerDayNeeded);
           weeklyTarget = Math.ceil(policiesPerDayNeeded * 7);
           monthlyTarget = Math.ceil(policiesNeeded / monthsRemaining);
+        }
           break;
       }
     }

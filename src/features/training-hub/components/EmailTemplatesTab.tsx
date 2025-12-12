@@ -1,71 +1,21 @@
-import { useState, useEffect } from 'react'
-import { format } from 'date-fns'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Switch } from '@/components/ui/switch'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible'
-import {
-  Plus,
-  MoreHorizontal,
-  Pencil,
-  Copy,
-  Trash2,
-  ToggleLeft,
-  ToggleRight,
-  Loader2,
-  FileText,
-  ChevronDown,
-  Globe,
-  User,
-  Eye,
-  ArrowLeft,
-  Save,
-} from 'lucide-react'
-import {
-  useGroupedEmailTemplates,
-  useEmailTemplate,
-  useCreateEmailTemplate,
-  useUpdateEmailTemplate,
-  useDeleteEmailTemplate,
-  useDuplicateEmailTemplate,
-  useToggleTemplateActive,
-} from '@/features/email/hooks/useEmailTemplates'
-import { usePermissionCheck } from '@/hooks/permissions/usePermissions'
-import { EmailBlockBuilder } from '@/features/email/components/block-builder'
-import { EMAIL_TEMPLATE_CATEGORIES, TEMPLATE_PREVIEW_VARIABLES } from '@/features/email/constants'
-import type { EmailTemplate, EmailBlock, EmailTemplateCategory } from '@/types/email.types'
+import {useState, useEffect} from 'react'
+import {format} from 'date-fns'
+import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from '@/components/ui/table'
+import {Button} from '@/components/ui/button'
+import {Badge} from '@/components/ui/badge'
+import {Input} from '@/components/ui/input'
+import {Label} from '@/components/ui/label'
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '@/components/ui/select'
+import {Switch} from '@/components/ui/switch'
+import {DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger} from '@/components/ui/dropdown-menu'
+import {AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle} from '@/components/ui/alert-dialog'
+import {Collapsible, CollapsibleContent, CollapsibleTrigger} from '@/components/ui/collapsible'
+import {Plus, MoreHorizontal, Pencil, Copy, Trash2, ToggleLeft, ToggleRight, Loader2, FileText, ChevronDown, Globe, User, Eye, ArrowLeft, Save} from 'lucide-react'
+import {useGroupedEmailTemplates, useEmailTemplate, useCreateEmailTemplate, useUpdateEmailTemplate, useDeleteEmailTemplate, useDuplicateEmailTemplate, useToggleTemplateActive} from '@/features/email/hooks/useEmailTemplates'
+import {usePermissionCheck} from '@/hooks/permissions/usePermissions'
+import {EmailBlockBuilder} from '@/features/email/components/block-builder'
+import {EMAIL_TEMPLATE_CATEGORIES, TEMPLATE_PREVIEW_VARIABLES} from '@/features/email/constants'
+import type {EmailTemplate, EmailBlock, EmailTemplateCategory} from '@/types/email.types'
 
 interface EmailTemplatesTabProps {
   searchQuery?: string

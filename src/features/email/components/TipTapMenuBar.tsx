@@ -1,26 +1,12 @@
 // src/features/email/components/TipTapMenuBar.tsx
 
-import { Editor } from '@tiptap/react'
-import {
-  Bold,
-  Italic,
-  Underline as UnderlineIcon,
-  Link as LinkIcon,
-  List,
-  ListOrdered,
-} from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { useState } from 'react'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import {Editor} from '@tiptap/react'
+import {Bold, Italic, Underline as UnderlineIcon, Link as LinkIcon, List, ListOrdered} from 'lucide-react'
+import {Button} from '@/components/ui/button'
+import {useState} from 'react'
+import {Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle} from '@/components/ui/dialog'
+import {Input} from '@/components/ui/input'
+import {Label} from '@/components/ui/label'
 
 interface TipTapMenuBarProps {
   editor: Editor

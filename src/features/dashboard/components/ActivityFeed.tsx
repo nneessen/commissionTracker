@@ -1,11 +1,11 @@
 // src/features/dashboard/components/ActivityFeed.tsx
 
 import React from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Clock, FileText, DollarSign } from "lucide-react";
-import { formatCurrency, formatDate } from "../../../lib/format";
-import { cn } from "@/lib/utils";
+import {Card, CardContent} from "@/components/ui/card";
+import {Badge} from "@/components/ui/badge";
+import {Clock, FileText, DollarSign} from "lucide-react";
+import {formatCurrency, formatDate} from "../../../lib/format";
+import {cn} from "@/lib/utils";
 
 interface RecentPolicy {
   id: string;

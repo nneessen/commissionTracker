@@ -1,17 +1,17 @@
 // src/features/recruiting/admin/PipelineTemplateEditor.tsx
 
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
-import { ArrowLeft, Save, Loader2 } from 'lucide-react';
-import { showToast } from '@/utils/toast';
-import { useTemplate, useUpdateTemplate } from '../hooks/usePipeline';
-import { PhaseEditor } from './PhaseEditor';
+import {Button} from '@/components/ui/button';
+import {Card} from '@/components/ui/card';
+import {Badge} from '@/components/ui/badge';
+import {Input} from '@/components/ui/input';
+import {Label} from '@/components/ui/label';
+import {Textarea} from '@/components/ui/textarea';
+import {Checkbox} from '@/components/ui/checkbox';
+import {ArrowLeft, Save, Loader2} from 'lucide-react';
+import {showToast} from '@/utils/toast';
+import {useTemplate, useUpdateTemplate} from '../hooks/usePipeline';
+import {PhaseEditor} from './PhaseEditor';
 
 interface PipelineTemplateEditorProps {
   templateId: string;
@@ -72,7 +72,7 @@ export function PipelineTemplateEditor({
       });
       showToast.success('Template saved');
       setHasChanges(false);
-    } catch (error) {
+    } catch (_error) {
       showToast.error('Failed to save template');
     }
   };

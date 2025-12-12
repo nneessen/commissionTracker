@@ -1,12 +1,12 @@
 // src/hooks/hierarchy/__tests__/useMyDownlines.test.tsx
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook, waitFor } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useMyDownlines } from '../useMyDownlines';
-import { hierarchyService } from '../../../services/hierarchy/hierarchyService';
-import type { UserProfile } from '../../../types/hierarchy.types';
-import type { ReactNode } from 'react';
+import {describe, it, expect, vi, beforeEach} from 'vitest';
+import {renderHook, waitFor} from '@testing-library/react';
+import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
+import {useMyDownlines} from '../useMyDownlines';
+import {hierarchyService} from '../../../services/hierarchy/hierarchyService';
+import type {UserProfile} from '../../../types/hierarchy.types';
+import type {ReactNode} from 'react';
 
 vi.mock('../../../services/hierarchy/hierarchyService', () => ({
   hierarchyService: {

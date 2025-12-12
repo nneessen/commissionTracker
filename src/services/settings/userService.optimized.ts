@@ -2,9 +2,9 @@
 // OPTIMIZED VERSION - Implements all performance improvements
 // Compare with userService.ts to see the differences
 
-import { logger } from '../base/logger';
-import { supabase } from '../base/supabase';
-import { User, UpdateUserData } from '../../types';
+import {logger} from '../base/logger';
+import {supabase} from '../base/supabase';
+import {User, UpdateUserData} from '../../types';
 
 interface GetUsersOptions {
   page?: number;
@@ -135,7 +135,7 @@ export class UserServiceOptimized {
     if (updates.licenseStates !== undefined) metadata.license_states = updates.licenseStates;
 
     // Update user metadata using the function
-    const { error } = await supabase.rpc('update_user_metadata', {
+    const { error } = await supabase.rpc('updateuser_metadata', {
       user_id: userId,
       metadata: metadata
     });
@@ -255,7 +255,7 @@ export class UserServiceOptimized {
       ytdPremium: metadata.ytd_premium,
       createdAt: new Date(supabaseUser.created_at),
       updatedAt: supabaseUser.updated_at ? new Date(supabaseUser.updated_at) : undefined,
-      raw_user_meta_data: metadata
+      rawuser_meta_data: metadata
     };
   }
 
@@ -278,7 +278,7 @@ export class UserServiceOptimized {
       notes: dbUser.notes,
       createdAt: dbUser.created_at ? new Date(dbUser.created_at) : undefined,
       updatedAt: dbUser.updated_at ? new Date(dbUser.updated_at) : undefined,
-      raw_user_meta_data: {}
+      rawuser_meta_data: {}
     };
   }
 
@@ -323,8 +323,8 @@ export const agentServiceOptimized = userServiceOptimized;
  * Migration Guide:
  *
  * 1. Replace imports:
- *    import { userService } from './userService'
- *    → import { userServiceOptimized as userService } from './userService.optimized'
+ *    import {userService} from './userService'
+ *    → import {userServiceOptimized as userService} from './userService.optimized'
  *
  * 2. Update getAllUsers calls with pagination:
  *    const users = await userService.getAllUsers()

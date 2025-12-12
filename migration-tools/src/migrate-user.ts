@@ -1,9 +1,9 @@
 // /home/nneessen/projects/commissionTracker/migration-tools/src/migrate-user.ts
-import { createClient } from '@supabase/supabase-js';
+import {createClient} from '@supabase/supabase-js';
 import * as dotenv from 'dotenv';
-import { readFileSync } from 'fs';
-import { inferProductType, normalizeClientName, normalizePhone } from './lib/product-inference.js';
-import type { UserMapping, MigrationLog, MigrationSummary } from './lib/types.js';
+import {readFileSync} from 'fs';
+import {inferProductType, normalizeClientName, normalizePhone} from './lib/product-inference.js';
+import type {UserMapping, MigrationLog, MigrationSummary} from './lib/types.js';
 
 dotenv.config();
 
@@ -111,7 +111,7 @@ async function migrateUser(mapping: UserMapping, dryRun: boolean = true): Promis
 
     // Fetch client profiles
     const dealIds = deals.map((d) => d.id);
-    const { data: clientProfiles } = await oldSupabase
+    const { data: _clientProfiles } = await oldSupabase
       .from('client_profiles')
       .select('*')
       .in('deal_id', dealIds);
@@ -165,7 +165,7 @@ async function migrateUser(mapping: UserMapping, dryRun: boolean = true): Promis
     const clientMapping = new Map<string, string>(); // deal_id -> new_client_id
 
     if (!dryRun) {
-      for (const [key, clientData] of clientMap.entries()) {
+      for (const [_key, clientData] of clientMap.entries()) {
         const { dealIds, ...client} = clientData;
 
         const { data: newClient, error: clientError } = await newSupabase
@@ -316,7 +316,7 @@ async function migrateUser(mapping: UserMapping, dryRun: boolean = true): Promis
       };
 
       if (!dryRun) {
-        const { data: newPolicy, error: policyError } = await newSupabase
+        const { data: _newPolicy, error: policyError } = await newSupabase
           .from('policies')
           .insert(policyData)
           .select()

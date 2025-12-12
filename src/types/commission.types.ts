@@ -1,5 +1,5 @@
 // Import and re-export ProductType from product.types.ts instead of redefining
-import type { ProductType } from './product.types';
+import type {ProductType} from './product.types';
 
 export interface Client {
   name: string;

@@ -1,19 +1,12 @@
 // src/features/targets/components/TargetInputDialog.tsx
 
 import React, { useState } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { TrendingUp, Calculator, Target } from 'lucide-react';
+import {Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter} from '@/components/ui/dialog';
+import {Button} from '@/components/ui/button';
+import {Input} from '@/components/ui/input';
+import {Label} from '@/components/ui/label';
+import {Alert, AlertDescription} from '@/components/ui/alert';
+import {TrendingUp, Calculator, Target} from 'lucide-react';
 
 interface TargetInputDialogProps {
   open: boolean;
@@ -62,7 +55,7 @@ export function TargetInputDialog({
     try {
       await onSave(value);
       onClose();
-    } catch (err) {
+    } catch (_err) {
       setError('Failed to save target. Please try again.');
     } finally {
       setIsLoading(false);

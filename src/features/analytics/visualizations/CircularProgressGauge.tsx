@@ -1,4 +1,4 @@
-import { cn } from '@/lib/utils';
+import {cn} from '@/lib/utils';
 
 interface CircularProgressGaugeProps {
   percentage: number; // 0-100

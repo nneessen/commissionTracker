@@ -1,7 +1,7 @@
 // src/hooks/hierarchy/useTeamComparison.ts
 
-import { useQuery } from '@tanstack/react-query';
-import { hierarchyService } from '@/services/hierarchy/hierarchyService';
+import {useQuery} from '@tanstack/react-query';
+import {hierarchyService} from '@/services/hierarchy/hierarchyService';
 
 export interface UseTeamComparisonOptions {
   enabled?: boolean;

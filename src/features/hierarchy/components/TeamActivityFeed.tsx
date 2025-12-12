@@ -1,21 +1,12 @@
 // src/features/hierarchy/components/TeamActivityFeed.tsx
 
-import { useState, useEffect } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
-import {
-  UserPlus,
-  UserMinus,
-  TrendingUp,
-  Award,
-  AlertTriangle,
-  Activity,
-  ChevronUp,
-  ChevronDown
-} from 'lucide-react';
-import { formatDate } from '@/lib/format';
-import type { UserProfile } from '@/types/hierarchy.types';
+import {useState, useEffect} from 'react';
+import {Card, CardContent} from '@/components/ui/card';
+import {Button} from '@/components/ui/button';
+import {cn} from '@/lib/utils';
+import {UserPlus, UserMinus, TrendingUp, Award, AlertTriangle, Activity, ChevronUp, ChevronDown} from 'lucide-react';
+import {formatDate} from '@/lib/format';
+import type {UserProfile} from '@/types/hierarchy.types';
 
 // Extended agent type
 interface Agent extends UserProfile {
@@ -55,7 +46,7 @@ function getRelativeTime(date: Date): string {
 export function TeamActivityFeed({ agents }: TeamActivityFeedProps) {
   const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [showAll, setShowAll] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [_isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     // Build activities from actual agent data
@@ -63,7 +54,7 @@ export function TeamActivityFeed({ agents }: TeamActivityFeedProps) {
       const activityList: ActivityItem[] = [];
       const now = new Date();
 
-      agents.forEach((agent, index) => {
+      agents.forEach((agent, _index) => {
         // Check if agent recently joined (based on created_at)
         const createdDate = new Date(agent.created_at);
         const daysSinceJoined = Math.floor((now.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24));

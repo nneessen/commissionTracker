@@ -1,17 +1,17 @@
 // src/features/comps/CompFilters.tsx
 
 import React, { useState } from 'react';
-import { Filter, X, Building2, Package, BarChart3 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { CompFilters } from '../../types/comp.types';
-import { Database } from '../../types/database.types';
-import { ActiveFilterBadges } from './components/ActiveFilterBadges';
-import { formatProductType } from '../../lib/format';
+import {Filter, X, Building2, Package, BarChart3} from 'lucide-react';
+import {Button} from '@/components/ui/button';
+import {Card, CardContent} from '@/components/ui/card';
+import {Input} from '@/components/ui/input';
+import {Label} from '@/components/ui/label';
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '@/components/ui/select';
+import {Badge} from '@/components/ui/badge';
+import {CompFilters} from '../../types/comp.types';
+import {Database} from '../../types/database.types';
+import {ActiveFilterBadges} from './components/ActiveFilterBadges';
+import {formatProductType} from '../../lib/format';
 
 interface CompFiltersProps {
   filters: CompFilters;

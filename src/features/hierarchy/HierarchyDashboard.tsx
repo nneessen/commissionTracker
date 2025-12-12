@@ -1,11 +1,11 @@
 // src/features/hierarchy/HierarchyDashboard.tsx
 
 import React from 'react';
-import { useMyHierarchyStats as useHierarchyStats, useCurrentUserProfile } from '@/hooks';
-import { DownlinePerformance } from './components/DownlinePerformance';
-import { HierarchyManagement } from './components/HierarchyManagement';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { formatCurrency } from '@/lib/format';
+import {useMyHierarchyStats as useHierarchyStats, useCurrentUserProfile} from '@/hooks';
+import {DownlinePerformance} from './components/DownlinePerformance';
+import {HierarchyManagement} from './components/HierarchyManagement';
+import {Card, CardHeader, CardTitle, CardContent} from '@/components/ui/card';
+import {formatCurrency} from '@/lib/format';
 
 /**
  * HierarchyDashboard - Main landing page for the hierarchy/team section

@@ -1,18 +1,13 @@
 // File: /home/nneessen/projects/commissionTracker/src/features/training-hub/components/EventSelectionDialog.tsx
 
-import { useState } from 'react';
-import { Search, Zap, Users, FileText, DollarSign, Mail, User } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { cn } from '@/lib/utils';
-import type { TriggerEventType } from '@/types/workflow.types';
+import {useState} from 'react';
+import {Search, Zap, Users, FileText, DollarSign, Mail, User} from 'lucide-react';
+import {Button} from '@/components/ui/button';
+import {Dialog, DialogContent, DialogHeader, DialogTitle} from '@/components/ui/dialog';
+import {Input} from '@/components/ui/input';
+import {ScrollArea} from '@/components/ui/scroll-area';
+import {cn} from '@/lib/utils';
+import type {TriggerEventType} from '@/types/workflow.types';
 
 interface EventSelectionDialogProps {
   open: boolean;

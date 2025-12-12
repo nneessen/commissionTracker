@@ -1,17 +1,12 @@
 // src/features/dashboard/components/KPILayoutSwitcher.tsx
 
 import React from 'react';
-import { Button } from '@/components/ui/button';
-import { KPILayoutSwitcherProps } from '../../../types/dashboard.types';
-import { KPILayout } from '../../../types/dashboard.types';
-import { cn } from '@/lib/utils';
-import { Grid3x3, List, LayoutGrid } from 'lucide-react';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
+import {Button} from '@/components/ui/button';
+import {KPILayoutSwitcherProps} from '../../../types/dashboard.types';
+import {KPILayout} from '../../../types/dashboard.types';
+import {cn} from '@/lib/utils';
+import {Grid3x3, List, LayoutGrid} from 'lucide-react';
+import {Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from '@/components/ui/tooltip';
 
 /**
  * Layout configuration with icons and labels

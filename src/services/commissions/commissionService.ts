@@ -2,10 +2,10 @@
 // Facade service that delegates to specialized services
 // Maintains backward compatibility while providing cleaner architecture
 
-import { Commission } from '../../types/commission.types';
-import { commissionCRUDService, CreateCommissionData, UpdateCommissionData, CommissionFilters } from './CommissionCRUDService';
-import { commissionCalculationService, CalculationResult } from './CommissionCalculationService';
-import { commissionAnalyticsService, ChargebackRisk, CommissionWithChargebackRisk, CommissionMetrics, NetCommissionMetrics } from './CommissionAnalyticsService';
+import {Commission} from '../../types/commission.types';
+import {commissionCRUDService, CreateCommissionData, UpdateCommissionData, CommissionFilters} from './CommissionCRUDService';
+import {commissionCalculationService, CalculationResult} from './CommissionCalculationService';
+import {commissionAnalyticsService, ChargebackRisk, CommissionWithChargebackRisk, CommissionMetrics, NetCommissionMetrics} from './CommissionAnalyticsService';
 
 // Re-export types for backward compatibility
 export type { CreateCommissionData, UpdateCommissionData, CommissionFilters };

@@ -1,7 +1,7 @@
 // src/features/analytics/visualizations/WaterfallChart.tsx
 
 import React from 'react';
-import { ContributionBreakdown } from '../../../services/analytics/attributionService';
+import {ContributionBreakdown} from '../../../services/analytics/attributionService';
 
 interface WaterfallChartProps {
   data: ContributionBreakdown;
@@ -77,7 +77,7 @@ export function WaterfallChart({ data, title = 'Performance Attribution' }: Wate
           const yEnd = chartHeight / 2 - ((bar.end || 0) / maxValue) * (chartHeight / 2 - 20);
           const height = Math.abs(yEnd - yStart) || 0;
           const y = Math.min(yStart, yEnd) || 0;
-          const isPositive = (bar.value || 0) >= 0;
+          const _isPositive = (bar.value || 0) >= 0;
 
           return (
             <g key={bar.label}>

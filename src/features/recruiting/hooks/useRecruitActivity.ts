@@ -1,6 +1,6 @@
 // src/features/recruiting/hooks/useRecruitActivity.ts
-import { useQuery } from '@tanstack/react-query';
-import { recruitingService } from '@/services/recruiting';
+import {useQuery} from '@tanstack/react-query';
+import {recruitingService} from '@/services/recruiting';
 
 export function useRecruitActivityLog(recruitId: string, limit = 50) {
   return useQuery({

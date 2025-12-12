@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Save, User, Percent, AlertCircle, CheckCircle } from 'lucide-react';
-import { logger } from '../../services/base/logger';
-import { Button } from '@/components/ui/button';
+import {Save, User, Percent, AlertCircle, CheckCircle} from 'lucide-react';
+import {logger} from '../../services/base/logger';
+import {Button} from '@/components/ui/button';
 
 interface UserContractData {
   contractLevel: number;

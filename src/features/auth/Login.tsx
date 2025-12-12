@@ -1,19 +1,19 @@
 // src/features/auth/Login.tsx
 
 import React, { useState } from "react";
-import { useNavigate } from "@tanstack/react-router";
-import { useAuth } from "../../contexts/AuthContext";
-import { Button } from "../../components/ui/button";
-import { Card, CardContent } from "../../components/ui/card";
-import { Separator } from "../../components/ui/separator";
-import { SESSION_STORAGE_KEYS } from "../../constants/auth.constants";
-import { useAuthValidation, AuthMode } from "./hooks/useAuthValidation";
-import { AuthErrorDisplay } from "./components/AuthErrorDisplay";
-import { AuthSuccessMessage } from "./components/AuthSuccessMessage";
-import { SignInForm } from "./components/SignInForm";
-import { ResetPasswordForm } from "./components/ResetPasswordForm";
-import { Alert, AlertDescription } from "../../components/ui/alert";
-import { Info } from "lucide-react";
+import {useNavigate} from "@tanstack/react-router";
+import {useAuth} from "../../contexts/AuthContext";
+import {Button} from "../../components/ui/button";
+import {Card, CardContent} from "../../components/ui/card";
+import {Separator} from "../../components/ui/separator";
+import {SESSION_STORAGE_KEYS} from "../../constants/auth.constants";
+import {AuthMode} from "./hooks/useAuthValidation";
+import {AuthErrorDisplay} from "./components/AuthErrorDisplay";
+import {AuthSuccessMessage} from "./components/AuthSuccessMessage";
+import {SignInForm} from "./components/SignInForm";
+import {ResetPasswordForm} from "./components/ResetPasswordForm";
+import {Alert, AlertDescription} from "../../components/ui/alert";
+import {Info} from "lucide-react";
 
 interface LoginProps {
   onSuccess?: () => void;

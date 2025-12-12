@@ -1,11 +1,11 @@
 // /home/nneessen/projects/commissionTracker/src/features/auth/PendingApproval.tsx
 
 import React from "react";
-import { Button } from "../../components/ui";
-import { Card, CardContent } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { supabase } from "../../services/base/supabase";
-import { useNavigate } from "@tanstack/react-router";
+import {Button} from "../../components/ui";
+import {Card, CardContent} from "@/components/ui/card";
+import {Separator} from "@/components/ui/separator";
+import {supabase} from "../../services/base/supabase";
+import {useNavigate} from "@tanstack/react-router";
 
 export const PendingApproval: React.FC<{ email?: string }> = ({ email }) => {
   const navigate = useNavigate();

@@ -1,14 +1,14 @@
 // src/features/reports/components/filters/MultiSelectFilter.tsx
 
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Badge } from '@/components/ui/badge';
-import { ChevronDown, X } from 'lucide-react';
-import { FilterOption } from '@/types/reports.types';
-import { cn } from '@/lib/utils';
+import {Button} from '@/components/ui/button';
+import {Popover, PopoverContent, PopoverTrigger} from '@/components/ui/popover';
+import {Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList} from '@/components/ui/command';
+import {Checkbox} from '@/components/ui/checkbox';
+import {Badge} from '@/components/ui/badge';
+import {ChevronDown, X} from 'lucide-react';
+import {FilterOption} from '@/types/reports.types';
+import {cn} from '@/lib/utils';
 
 interface MultiSelectFilterProps {
   label: string;

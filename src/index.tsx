@@ -2,14 +2,14 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import "./index.css";
-import { RouterProvider } from "@tanstack/react-router";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
-import { ThemeProvider } from "next-themes";
-import { router } from "./router";
-import { AuthProvider } from "./contexts/AuthContext";
-import { Toaster } from "@/components/ui/sonner";
-import { metricsService } from "./services/observability/MetricsService";
+import {RouterProvider} from "@tanstack/react-router";
+import {QueryClient, QueryClientProvider} from "@tanstack/react-query";
+import {ReactQueryDevtools} from "@tanstack/react-query-devtools";
+import {ThemeProvider} from "next-themes";
+import {router} from "./router";
+import {AuthProvider} from "./contexts/AuthContext";
+import {Toaster} from "@/components/ui/sonner";
+import {metricsService} from "./services/observability/MetricsService";
 
 const queryClient = new QueryClient({
   defaultOptions: {

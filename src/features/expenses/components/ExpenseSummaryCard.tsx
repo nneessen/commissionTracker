@@ -1,11 +1,11 @@
 // src/features/expenses/components/ExpenseSummaryCard.tsx
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { formatCurrency } from '../../../lib/format';
-import { EXPENSE_CARD_STYLES, EXPENSE_GRADIENTS } from '../config/expenseDashboardConfig';
-import { getMomGrowthColor, formatMomGrowth } from '../config/expenseSummaryConfig';
-import { cn } from '@/lib/utils';
+import {Card, CardContent, CardHeader, CardTitle} from '@/components/ui/card';
+import {Badge} from '@/components/ui/badge';
+import {formatCurrency} from '../../../lib/format';
+import {EXPENSE_CARD_STYLES, EXPENSE_GRADIENTS} from '../config/expenseDashboardConfig';
+import {getMomGrowthColor, formatMomGrowth} from '../config/expenseSummaryConfig';
+import {cn} from '@/lib/utils';
 
 export interface ExpenseSummaryCardProps {
   totalAmount: number;
@@ -36,7 +36,7 @@ export function ExpenseSummaryCard({
   transactionCount,
   momGrowthPercentage,
 }: ExpenseSummaryCardProps) {
-  const growthColor = getMomGrowthColor(momGrowthPercentage);
+  const _growthColor = getMomGrowthColor(momGrowthPercentage);
   const growthText = formatMomGrowth(momGrowthPercentage);
 
   return (

@@ -1,15 +1,8 @@
 // src/features/recruiting/hooks/usePipeline.ts
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { pipelineService } from '@/services/recruiting/pipelineService';
-import type {
-  CreateTemplateInput,
-  UpdateTemplateInput,
-  CreatePhaseInput,
-  UpdatePhaseInput,
-  CreateChecklistItemInput,
-  UpdateChecklistItemInput,
-} from '@/types/recruiting';
+import {useQuery, useMutation, useQueryClient} from '@tanstack/react-query';
+import {pipelineService} from '@/services/recruiting/pipelineService';
+import type {CreateTemplateInput, UpdateTemplateInput, CreatePhaseInput, UpdatePhaseInput, CreateChecklistItemInput, UpdateChecklistItemInput} from '@/types/recruiting';
 
 // ========================================
 // TEMPLATES
@@ -135,7 +128,7 @@ export function useDeletePhase() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ phaseId, templateId }: { phaseId: string; templateId: string }) =>
+    mutationFn: ({ phaseId, _templateId }: { phaseId: string; templateId: string }) =>
       pipelineService.deletePhase(phaseId),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['pipeline-phases', variables.templateId] });
@@ -208,7 +201,7 @@ export function useDeleteChecklistItem() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ itemId, phaseId }: { itemId: string; phaseId: string }) =>
+    mutationFn: ({ itemId, _phaseId }: { itemId: string; phaseId: string }) =>
       pipelineService.deleteChecklistItem(itemId),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['checklist-items', variables.phaseId] });

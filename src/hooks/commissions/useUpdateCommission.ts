@@ -1,7 +1,7 @@
 // /home/nneessen/projects/commissionTracker/src/hooks/commissions/useUpdateCommission.ts
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { commissionService, CreateCommissionData } from '../../services/commissions/commissionService';
+import {useMutation, useQueryClient} from '@tanstack/react-query';
+import {commissionService, CreateCommissionData} from '../../services/commissions/commissionService';
 
 export const useUpdateCommission = () => {
   const queryClient = useQueryClient();

@@ -1,29 +1,16 @@
 // src/features/expenses/components/ExpenseTableCard.tsx
 
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { formatCurrency } from '../../../lib/format';
-import { EXPENSE_CARD_STYLES } from '../config/expenseDashboardConfig';
-import { cn } from '@/lib/utils';
-import { Search, X, Edit, Trash2, Plus } from 'lucide-react';
-import type { Expense, AdvancedExpenseFilters } from '../../../types/expense.types';
+import {Card, CardContent, CardHeader} from '@/components/ui/card';
+import {Button} from '@/components/ui/button';
+import {Input} from '@/components/ui/input';
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '@/components/ui/select';
+import {Badge} from '@/components/ui/badge';
+import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from '@/components/ui/table';
+import {formatCurrency} from '../../../lib/format';
+import {EXPENSE_CARD_STYLES} from '../config/expenseDashboardConfig';
+import {cn} from '@/lib/utils';
+import {Search, X, Edit, Trash2, Plus} from 'lucide-react';
+import type {Expense, AdvancedExpenseFilters} from '../../../types/expense.types';
 
 export interface ExpenseTableCardProps {
   expenses: Expense[];

@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react';
-import { supabase } from '@/services/base/supabase';
-import { useCurrentUserProfile, useAuthorizationStatus } from '@/hooks/admin/useUserApproval';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { AlertCircle, CheckCircle, XCircle } from 'lucide-react';
+import {useEffect, useState} from 'react';
+import {supabase} from '@/services/base/supabase';
+import {useCurrentUserProfile, useAuthorizationStatus} from '@/hooks/admin/useUserApproval';
+import {Card, CardContent, CardHeader, CardTitle} from '@/components/ui/card';
+import {Button} from '@/components/ui/button';
+import {AlertCircle, CheckCircle, XCircle} from 'lucide-react';
 
 export function AuthDiagnostic() {
   const [authUser, setAuthUser] = useState<any>(null);
@@ -20,7 +20,7 @@ export function AuthDiagnostic() {
     });
 
     // Get session
-    supabase.auth.getSession().then(({ data, error }) => {
+    supabase.auth.getSession().then(({ data, _error }) => {
       if (data?.session) {
         setSessionData({
           expires_at: data.session.expires_at,

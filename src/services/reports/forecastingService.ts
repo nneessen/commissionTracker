@@ -1,6 +1,6 @@
 // src/services/reports/forecastingService.ts
 
-import { supabase } from '../base/supabase';
+import {supabase} from '../base/supabase';
 
 export interface ForecastResult {
   nextMonth: number;
@@ -139,7 +139,7 @@ export class ForecastingService {
     let sumY = 0;
     let sumXY = 0;
     let sumX2 = 0;
-    let sumY2 = 0;
+    const sumY2 = 0;
 
     monthlyData.forEach(data => {
       const x = data.monthIndex;
@@ -148,7 +148,7 @@ export class ForecastingService {
       sumY += y;
       sumXY += x * y;
       sumX2 += x * x;
-      sumY2 += y * y;
+      // sumY2 += y * y;  // Unused in current calculation
     });
 
     // Calculate slope and intercept
@@ -178,9 +178,7 @@ export class ForecastingService {
    * - Amount of historical data
    */
   private static calculateConfidence(
-    monthlyData: MonthlyData[],
-    slope: number,
-    intercept: number,
+    monthlyData: MonthlyData[], _slope: number, _intercept: number,
     rSquared: number,
   ): number {
     const n = monthlyData.length;

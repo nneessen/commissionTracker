@@ -1,6 +1,6 @@
 // src/features/email/services/htmlToTextService.ts
 
-import { convert } from 'html-to-text'
+import {convert} from 'html-to-text'
 
 /**
  * HTML to plain text conversion service

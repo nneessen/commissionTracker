@@ -1,45 +1,19 @@
 // src/features/recruiting/admin/PhaseEditor.tsx
 
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
-import {
-  Plus,
-  Edit2,
-  Trash2,
-  ChevronDown,
-  ChevronRight,
-  GripVertical,
-  Loader2,
-} from 'lucide-react';
-import { showToast } from '@/utils/toast';
-import {
-  usePhases,
-  useCreatePhase,
-  useUpdatePipelinePhase,
-  useDeletePhase,
-} from '../hooks/usePipeline';
-import { ChecklistItemEditor } from './ChecklistItemEditor';
-import type { PipelinePhase, CreatePhaseInput } from '@/types/recruiting';
+import {Button} from '@/components/ui/button';
+import {Badge} from '@/components/ui/badge';
+import {TableRow} from '@/components/ui/table';
+import {Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter} from '@/components/ui/dialog';
+import {Input} from '@/components/ui/input';
+import {Label} from '@/components/ui/label';
+import {Textarea} from '@/components/ui/textarea';
+import {Checkbox} from '@/components/ui/checkbox';
+import {Plus, Edit2, Trash2, ChevronDown, ChevronRight, GripVertical, Loader2} from 'lucide-react';
+import {showToast} from '@/utils/toast';
+import {usePhases, useCreatePhase, useUpdatePipelinePhase, useDeletePhase} from '../hooks/usePipeline';
+import {ChecklistItemEditor} from './ChecklistItemEditor';
+import type {PipelinePhase, CreatePhaseInput} from '@/types/recruiting';
 
 interface PhaseEditorProps {
   templateId: string;
@@ -85,7 +59,7 @@ export function PhaseEditor({ templateId }: PhaseEditorProps) {
         estimated_days: 7,
         auto_advance: false,
       });
-    } catch (error) {
+    } catch (_error) {
       showToast.error('Failed to create phase');
     }
   };
@@ -105,7 +79,7 @@ export function PhaseEditor({ templateId }: PhaseEditorProps) {
       });
       showToast.success('Phase updated');
       setEditingPhase(null);
-    } catch (error) {
+    } catch (_error) {
       showToast.error('Failed to update phase');
     }
   };
@@ -118,7 +92,7 @@ export function PhaseEditor({ templateId }: PhaseEditorProps) {
       if (expandedPhase === id) {
         setExpandedPhase(null);
       }
-    } catch (error) {
+    } catch (_error) {
       showToast.error('Failed to delete phase');
     }
   };

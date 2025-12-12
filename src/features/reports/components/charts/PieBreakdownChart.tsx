@@ -1,8 +1,8 @@
 // src/features/reports/components/charts/PieBreakdownChart.tsx
 
 import React from 'react';
-import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { formatCurrency } from '../../../../lib/format';
+import {PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer} from 'recharts';
+import {formatCurrency} from '../../../../lib/format';
 
 export interface PieBreakdownChartData {
   name: string;
@@ -155,7 +155,7 @@ export function PieBreakdownChart({
             <Legend
               wrapperStyle={{ fontSize: '12px' }}
               iconType="circle"
-              formatter={(value, entry: any) => {
+              formatter={(value, _entry: any) => {
                 const item = chartData.find(d => d.name === value);
                 const percentage = item ? ((item.value / total) * 100).toFixed(1) : '0';
                 return `${value} (${percentage}%)`;

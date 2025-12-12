@@ -1,9 +1,9 @@
 // src/features/recruiting/hooks/useRecruitMutations.ts
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { recruitingService } from '@/services/recruiting';
-import type { UpdateRecruitInput } from '@/types/recruiting';
-import type { CreateRecruitInput } from '@/types/recruiting.types';
-import { showToast } from '@/utils/toast';
+import {useMutation, useQueryClient} from '@tanstack/react-query';
+import {recruitingService} from '@/services/recruiting';
+import type {UpdateRecruitInput} from '@/types/recruiting';
+import type {CreateRecruitInput} from '@/types/recruiting.types';
+import {showToast} from '@/utils/toast';
 
 export function useCreateRecruit() {
   const queryClient = useQueryClient();

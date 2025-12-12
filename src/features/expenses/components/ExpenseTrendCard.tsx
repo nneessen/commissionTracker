@@ -1,9 +1,9 @@
 // src/features/expenses/components/ExpenseTrendCard.tsx
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { EXPENSE_CARD_STYLES } from '../config/expenseDashboardConfig';
-import { cn } from '@/lib/utils';
-import type { ExpenseTrendData } from '../../../types/expense.types';
+import {Card, CardContent, CardHeader, CardTitle} from '@/components/ui/card';
+import {EXPENSE_CARD_STYLES} from '../config/expenseDashboardConfig';
+import {cn} from '@/lib/utils';
+import type {ExpenseTrendData} from '../../../types/expense.types';
 
 export interface ExpenseTrendCardProps {
   data: ExpenseTrendData[];

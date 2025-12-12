@@ -1,6 +1,6 @@
 // /home/nneessen/projects/commissionTracker/src/types/metrics.types.ts
 
-import { ProductType } from './commission.types';
+import {ProductType} from './commission.types';
 
 export interface ClientMetrics {
   totalClients: number;

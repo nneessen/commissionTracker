@@ -1,11 +1,11 @@
 // src/features/hierarchy/components/SentInvitationsCard.tsx
 // Card showing invitations sent by the current user
 
-import { useState } from 'react';
-import { useSentInvitations, useCancelInvitation } from '../../../hooks/hierarchy/useInvitations';
-import { Button } from '../../../components/ui/button';
-import { Mail, Clock, CheckCircle, XCircle, Ban, Loader2, ChevronDown, ChevronUp } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
+import {useState} from 'react';
+import {useSentInvitations, useCancelInvitation} from '../../../hooks/hierarchy/useInvitations';
+import {Button} from '../../../components/ui/button';
+import {Ban, Loader2, ChevronDown, ChevronUp} from 'lucide-react';
+import {formatDistanceToNow} from 'date-fns';
 
 export function SentInvitationsCard() {
   const { data: sentInvitations, isLoading } = useSentInvitations('pending');

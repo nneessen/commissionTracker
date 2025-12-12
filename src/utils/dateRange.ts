@@ -1,6 +1,6 @@
 // src/utils/dateRange.ts
 
-import { parseLocalDate } from "../lib/date";
+import {parseLocalDate} from "../lib/date";
 
 export type TimePeriod = "daily" | "weekly" | "monthly" | "yearly";
 
@@ -21,7 +21,7 @@ export function getDateRange(period: TimePeriod, offset: number = 0): DateRange 
   let startDate: Date;
 
   // Create a reference date adjusted by the offset
-  let referenceDate = new Date(now);
+  const referenceDate = new Date(now);
 
   switch (period) {
     case "daily":
@@ -238,12 +238,13 @@ export function getTimeRemaining(period: TimePeriod): {
       );
       break;
 
-    case "weekly":
+    case "weekly": {
       // 7 days from start of period
       const weekStart = new Date(now);
       weekStart.setDate(weekStart.getDate() - 7);
       endOfPeriod = new Date(weekStart);
       endOfPeriod.setDate(endOfPeriod.getDate() + 7);
+    }
       break;
 
     case "monthly":

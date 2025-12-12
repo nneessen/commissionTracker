@@ -1,15 +1,6 @@
-import { useMemo } from 'react'
-import type {
-  EmailBlock,
-  EmailBlockStyles,
-  EmailFontFamily,
-  ImageBlockContent,
-  QuoteBlockContent,
-  SocialBlockContent,
-  ColumnsBlockContent,
-  ButtonBlockContent,
-} from '@/types/email.types'
-import { MODERN_EMAIL_FONTS } from '@/types/email.types'
+import {useMemo} from 'react'
+import type {EmailBlock, EmailBlockStyles, EmailFontFamily, ImageBlockContent, QuoteBlockContent, SocialBlockContent, ColumnsBlockContent, ButtonBlockContent} from '@/types/email.types'
+import {MODERN_EMAIL_FONTS} from '@/types/email.types'
 
 interface BlockPreviewProps {
   blocks: EmailBlock[]
@@ -247,7 +238,7 @@ function renderBlockToHtml(block: EmailBlock, variables: Record<string, string>)
       const content = block.content as ColumnsBlockContent
       const gap = content.gap || 16
       const columnWidth = content.columnCount === 2 ? '48%' : '31%'
-      const columnsHtml = content.columns.map((col, i) => {
+      const columnsHtml = content.columns.map((col, _i) => {
         const colContent = col.blocks.map(b => renderBlockToHtml(b, variables)).join('')
         return `<td style="width: ${columnWidth}; vertical-align: top; padding: 0 ${gap/2}px;">${colContent || '<p style="color: #9ca3af; font-size: 12px;">Column ${i + 1}</p>'}</td>`
       }).join('')

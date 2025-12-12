@@ -1,12 +1,7 @@
 // src/services/expenses/expenseTemplateService.ts
 
-import { supabase } from '../base/supabase';
-import type {
-  ExpenseTemplate,
-  CreateExpenseTemplateData,
-  UpdateExpenseTemplateData,
-  CreateExpenseData,
-} from '../../types/expense.types';
+import {supabase} from '../base/supabase';
+import type {ExpenseTemplate, CreateExpenseTemplateData, UpdateExpenseTemplateData, CreateExpenseData} from '../../types/expense.types';
 
 class ExpenseTemplateService {
   private readonly TABLE = 'expense_templates';

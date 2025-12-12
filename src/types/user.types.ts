@@ -23,7 +23,7 @@ export interface User {
   createdAt?: Date;
   updatedAt?: Date;
   preferences?: UserPreferences;
-  raw_user_meta_data: UserMetadata;
+  rawuser_meta_data: UserMetadata;
 }
 
 export interface UserPreferences {

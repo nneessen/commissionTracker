@@ -1,9 +1,9 @@
 // src/features/recruiting/components/RecruitingErrorBoundary.tsx
 
 import React, { Component, ReactNode } from 'react';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
-import { AlertTriangle, RefreshCw } from 'lucide-react';
+import {Alert, AlertDescription, AlertTitle} from '@/components/ui/alert';
+import {Button} from '@/components/ui/button';
+import {AlertTriangle, RefreshCw} from 'lucide-react';
 
 interface ErrorBoundaryProps {
   children: ReactNode;

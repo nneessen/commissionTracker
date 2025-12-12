@@ -1,7 +1,7 @@
 // /home/nneessen/projects/commissionTracker/src/hooks/carriers/useUpdateCarrier.ts
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { carrierService } from '../../services/settings/carrierService';
+import {useMutation, useQueryClient} from '@tanstack/react-query';
+import {carrierService} from '../../services/settings/carrierService';
 
 export const useUpdateCarrier = () => {
   const queryClient = useQueryClient();

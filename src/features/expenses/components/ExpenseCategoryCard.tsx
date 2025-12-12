@@ -1,10 +1,10 @@
 // src/features/expenses/components/ExpenseCategoryCard.tsx
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { formatCurrency } from '../../../lib/format';
-import { EXPENSE_CARD_STYLES } from '../config/expenseDashboardConfig';
-import { cn } from '@/lib/utils';
-import type { CategoryBreakdownData } from '../../../types/expense.types';
+import {Card, CardContent, CardHeader, CardTitle} from '@/components/ui/card';
+import {formatCurrency} from '../../../lib/format';
+import {EXPENSE_CARD_STYLES} from '../config/expenseDashboardConfig';
+import {cn} from '@/lib/utils';
+import type {CategoryBreakdownData} from '../../../types/expense.types';
 
 export interface ExpenseCategoryCardProps {
   categories: CategoryBreakdownData[];

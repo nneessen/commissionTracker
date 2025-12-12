@@ -1,10 +1,10 @@
 // src/services/chargebackService.ts
-import { logger } from '../base/logger';
+import {logger} from '../base/logger';
 
-import { supabase, TABLES } from '../base/supabase';
-import { Chargeback, CreateChargebackData } from '../../types/user.types';
-import { formatDateForDB } from '../../lib/date';
-import { workflowEventEmitter, WORKFLOW_EVENTS } from '../events/workflowEventEmitter';
+import {supabase, TABLES} from '../base/supabase';
+import {Chargeback, CreateChargebackData} from '../../types/user.types';
+import {formatDateForDB} from '../../lib/date';
+import {workflowEventEmitter, WORKFLOW_EVENTS} from '../events/workflowEventEmitter';
 
 export type { CreateChargebackData };
 

@@ -1,13 +1,7 @@
 // src/services/expenses/expenseAnalyticsService.ts
 
-import { format, parseISO, startOfMonth, subMonths } from 'date-fns';
-import type {
-  Expense,
-  ExpenseTrendData,
-  CategoryBreakdownData,
-  ExpenseComparisonData,
-  AdvancedExpenseFilters,
-} from '@/types/expense.types';
+import {format, parseISO, startOfMonth, subMonths} from 'date-fns';
+import type {Expense, ExpenseTrendData, CategoryBreakdownData, ExpenseComparisonData, AdvancedExpenseFilters} from '@/types/expense.types';
 
 export class ExpenseAnalyticsService {
   /**

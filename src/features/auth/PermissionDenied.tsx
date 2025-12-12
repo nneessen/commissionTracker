@@ -1,8 +1,8 @@
 import React from 'react';
-import { Button } from '@/components/ui';
-import { Card, CardContent } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
-import { useNavigate } from '@tanstack/react-router';
+import {Button} from '@/components/ui';
+import {Card, CardContent} from '@/components/ui/card';
+import {Separator} from '@/components/ui/separator';
+import {useNavigate} from '@tanstack/react-router';
 
 interface PermissionDeniedProps {
   message?: string;

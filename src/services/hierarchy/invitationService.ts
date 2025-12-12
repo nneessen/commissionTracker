@@ -1,21 +1,10 @@
 // src/services/hierarchy/invitationService.ts
 // Service layer for hierarchy invitation system - handles all invitation business logic
 
-import { supabase } from '../base/supabase';
-import { logger } from '../base/logger';
-import type {
-  HierarchyInvitation,
-  SendInvitationRequest,
-  SendInvitationResponse,
-  AcceptInvitationRequest,
-  AcceptInvitationResponse,
-  DenyInvitationRequest,
-  CancelInvitationRequest,
-  InvitationValidationResult,
-  InvitationWithDetails,
-  InvitationStats,
-} from '../../types/invitation.types';
-import { DatabaseError, NotFoundError, ValidationError } from '../../errors/ServiceErrors';
+import {supabase} from '../base/supabase';
+import {logger} from '../base/logger';
+import type {HierarchyInvitation, SendInvitationRequest, SendInvitationResponse, AcceptInvitationRequest, AcceptInvitationResponse, DenyInvitationRequest, CancelInvitationRequest, InvitationValidationResult, InvitationWithDetails, InvitationStats} from '../../types/invitation.types';
+import {DatabaseError, NotFoundError, ValidationError} from '../../errors/ServiceErrors';
 
 /**
  * Service layer for hierarchy invitation operations
@@ -358,7 +347,7 @@ class InvitationService {
       valid: boolean;
       error_message?: string;
       warning_message?: string;
-      invitee_user_id?: string;
+      inviteeuser_id?: string;
     }
 
     try {
@@ -386,7 +375,7 @@ class InvitationService {
           valid: false,
           errors: [result.error_message || 'Validation failed'],
           warnings: result.warning_message ? [result.warning_message] : [],
-          invitee_user_id: result.invitee_user_id,
+          inviteeuser_id: result.inviteeuser_id,
         };
       }
 
@@ -394,7 +383,7 @@ class InvitationService {
         valid: true,
         errors: [],
         warnings: result.warning_message ? [result.warning_message] : [],
-        invitee_user_id: result.invitee_user_id,
+        inviteeuser_id: result.inviteeuser_id,
       };
     } catch (error) {
       logger.error('InvitationService.validateSendInvitation', error instanceof Error ? error : new Error(String(error)));

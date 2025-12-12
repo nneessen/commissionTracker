@@ -1,11 +1,11 @@
 // src/features/targets/components/CalculationBreakdown.tsx
 
 import React, { useState } from 'react';
-import { ChevronDown, ChevronUp, Calculator, Info } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { formatCurrency } from '../../../lib/format';
-import { CalculatedTargets } from '../../../services/targets/targetsCalculationService';
+import {ChevronDown, ChevronUp, Calculator, Info} from 'lucide-react';
+import {Card, CardContent, CardHeader, CardTitle} from '@/components/ui/card';
+import {Alert, AlertDescription} from '@/components/ui/alert';
+import {formatCurrency} from '../../../lib/format';
+import {CalculatedTargets} from '../../../services/targets/targetsCalculationService';
 
 interface CalculationBreakdownProps {
   targets: CalculatedTargets;

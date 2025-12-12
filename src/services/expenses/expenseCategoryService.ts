@@ -1,12 +1,7 @@
 // src/services/expenses/expenseCategoryService.ts
 
-import { supabase } from '../base/supabase';
-import type {
-  ExpenseCategory,
-  CreateExpenseCategoryData,
-  UpdateExpenseCategoryData,
-  DEFAULT_EXPENSE_CATEGORIES,
-} from '../../types/expense.types';
+import {supabase} from '../base/supabase';
+import type {ExpenseCategory, CreateExpenseCategoryData, UpdateExpenseCategoryData, DEFAULT_EXPENSE_CATEGORIES} from '../../types/expense.types';
 
 class ExpenseCategoryService {
   private readonly TABLE_NAME = 'expense_categories';

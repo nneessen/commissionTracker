@@ -1,6 +1,6 @@
 // src/features/reports/components/charts/ClientTierChart.tsx
 
-import { ResponsivePie } from '@nivo/pie';
+import {ResponsivePie} from '@nivo/pie';
 
 interface TierData {
   tier: string;

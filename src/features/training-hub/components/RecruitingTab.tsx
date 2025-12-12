@@ -1,23 +1,16 @@
 // src/features/training-hub/components/RecruitingTab.tsx
-import { useState } from "react";
-import { Edit, GraduationCap, UserPlus } from "lucide-react";
-import { useAllUsers } from "@/hooks/admin/useUserApproval";
-import { useAuth } from "@/contexts/AuthContext";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import {useState} from "react";
+import {Edit, GraduationCap, UserPlus} from "lucide-react";
+import {useAllUsers} from "@/hooks/admin/useUserApproval";
+import {useAuth} from "@/contexts/AuthContext";
+import {Button} from "@/components/ui/button";
+import {Badge} from "@/components/ui/badge";
+import {Skeleton} from "@/components/ui/skeleton";
+import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/components/ui/table";
 import EditUserDialog from "@/features/admin/components/EditUserDialog";
-import { GraduateToAgentDialog } from "@/features/admin/components/GraduateToAgentDialog";
-import type { RoleName } from "@/types/permissions.types";
-import type { UserProfile } from "@/services/admin/userApprovalService";
+import {GraduateToAgentDialog} from "@/features/admin/components/GraduateToAgentDialog";
+import type {RoleName} from "@/types/permissions.types";
+import type {UserProfile} from "@/services/admin/userApprovalService";
 
 interface RecruitingTabProps {
   searchQuery: string;

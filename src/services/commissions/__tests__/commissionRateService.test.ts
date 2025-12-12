@@ -1,9 +1,9 @@
 // src/services/commissions/__tests__/commissionRateService.test.ts
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { commissionRateService } from '../commissionRateService';
-import { supabase } from '../../base/supabase';
-import type { UserCommissionProfile, CommissionDataQuality } from '../../../types/product.types';
+import {describe, it, expect, vi, beforeEach} from 'vitest';
+import {commissionRateService} from '../commissionRateService';
+import {supabase} from '../../base/supabase';
+import type {UserCommissionProfile, CommissionDataQuality} from '../../../types/product.types';
 
 // Mock Supabase client
 vi.mock('../../base/supabase', () => ({
@@ -61,8 +61,8 @@ describe('commissionRateService', () => {
         lookbackMonths
       );
 
-      expect(supabase.rpc).toHaveBeenCalledWith('get_user_commission_profile', {
-        p_user_id: userId,
+      expect(supabase.rpc).toHaveBeenCalledWith('getuser_commission_profile', {
+        puser_id: userId,
         p_lookback_months: lookbackMonths,
       });
 
@@ -116,7 +116,7 @@ describe('commissionRateService', () => {
     it('should throw error when database function is not found', async () => {
       const error = {
         message:
-          'Could not find the function public.get_user_commission_profile',
+          'Could not find the function public.getuser_commission_profile',
         code: '42883',
       };
 
@@ -128,7 +128,7 @@ describe('commissionRateService', () => {
       await expect(
         commissionRateService.getUserCommissionProfile(userId, lookbackMonths)
       ).rejects.toThrow(
-        'Failed to calculate commission profile: Could not find the function public.get_user_commission_profile'
+        'Failed to calculate commission profile: Could not find the function public.getuser_commission_profile'
       );
     });
 
@@ -162,8 +162,8 @@ describe('commissionRateService', () => {
 
       await commissionRateService.getUserCommissionProfile(userId);
 
-      expect(supabase.rpc).toHaveBeenCalledWith('get_user_commission_profile', {
-        p_user_id: userId,
+      expect(supabase.rpc).toHaveBeenCalledWith('getuser_commission_profile', {
+        puser_id: userId,
         p_lookback_months: 12,
       });
     });
@@ -176,8 +176,8 @@ describe('commissionRateService', () => {
 
       await commissionRateService.getUserCommissionProfile(userId, 6);
 
-      expect(supabase.rpc).toHaveBeenCalledWith('get_user_commission_profile', {
-        p_user_id: userId,
+      expect(supabase.rpc).toHaveBeenCalledWith('getuser_commission_profile', {
+        puser_id: userId,
         p_lookback_months: 6,
       });
     });

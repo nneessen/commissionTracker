@@ -1,29 +1,13 @@
 // src/features/recruiting/components/FilterDialog.tsx
 
 import React from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { DateRangePicker } from '@/components/ui/date-range-picker';
-import { Label } from '@/components/ui/label';
-import {
-  PHASE_DISPLAY_NAMES,
-  OnboardingStatus,
-  PhaseName,
-} from '@/types/recruiting';
+import {Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter} from '@/components/ui/dialog';
+import {Button} from '@/components/ui/button';
+import {Checkbox} from '@/components/ui/checkbox';
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '@/components/ui/select';
+import {DateRangePicker} from '@/components/ui/date-range-picker';
+import {Label} from '@/components/ui/label';
+import {PHASE_DISPLAY_NAMES, OnboardingStatus, PhaseName} from '@/types/recruiting';
 
 export interface DateRange {
   from: Date | undefined;

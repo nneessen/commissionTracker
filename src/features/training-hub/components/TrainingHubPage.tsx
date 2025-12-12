@@ -1,14 +1,14 @@
 // src/features/training-hub/components/TrainingHubPage.tsx
-import { useState, useEffect } from "react";
-import { Users, Mail, Zap, Activity, Search, X } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/services/base/supabase";
-import { RecruitingTab } from "./RecruitingTab";
-import { ActivityTab } from "./ActivityTab";
-import { EmailTemplatesTab } from "./EmailTemplatesTab";
+import {useState, useEffect} from "react";
+import {Users, Mail, Zap, Activity, Search, X} from "lucide-react";
+import {Input} from "@/components/ui/input";
+import {Badge} from "@/components/ui/badge";
+import {Button} from "@/components/ui/button";
+import {useQuery} from "@tanstack/react-query";
+import {supabase} from "@/services/base/supabase";
+import {RecruitingTab} from "./RecruitingTab";
+import {ActivityTab} from "./ActivityTab";
+import {EmailTemplatesTab} from "./EmailTemplatesTab";
 import AutomationTab from "./AutomationTab";
 
 type TabView = "recruiting" | "templates" | "automation" | "activity";

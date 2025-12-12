@@ -1,7 +1,7 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { productService } from '@/services/settings/productService';
-import { toast } from 'sonner';
-import type { Database } from '@/types/database.types';
+import {useQuery, useMutation, useQueryClient} from '@tanstack/react-query';
+import {productService} from '@/services/settings/productService';
+import {toast} from 'sonner';
+import type {Database} from '@/types/database.types';
 
 type ProductType = Database['public']['Enums']['product_type'];
 

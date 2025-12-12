@@ -1,6 +1,6 @@
 // src/hooks/expenses/useConstants.ts
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { logger } from '../../services/base/logger';
+import {useQuery, useMutation, useQueryClient} from '@tanstack/react-query';
+import {logger} from '../../services/base/logger';
 // Define Constants type locally since it's not exported from expense.types
 interface Constants {
   avgAP: number;
@@ -8,7 +8,7 @@ interface Constants {
   target2: number;
   [key: string]: number; // Allow indexing
 }
-import { constantsService } from '../../services';
+import {constantsService} from '../../services';
 
 const DEFAULT_CONSTANTS: Constants = {
   avgAP: 0,

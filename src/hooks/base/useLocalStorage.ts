@@ -1,7 +1,7 @@
 // src/hooks/base/useLocalStorage.ts
-import { logger } from '../../services/base/logger';
+import {logger} from '../../services/base/logger';
 
-import { useState, useEffect } from 'react';
+import {useState, useEffect} from 'react';
 
 /**
  * Temporary compatibility hook for localStorage state management

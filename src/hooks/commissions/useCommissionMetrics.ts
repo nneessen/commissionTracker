@@ -1,9 +1,9 @@
 // src/hooks/commissions/useCommissionMetrics.ts
 
-import { useQuery } from '@tanstack/react-query';
-import { commissionService } from '../../services';
-import { CommissionSummary } from '../../types/commission.types';
-import { useCarriers } from '../carriers/useCarriers';
+import {useQuery} from '@tanstack/react-query';
+import {commissionService} from '../../services';
+import {CommissionSummary} from '../../types/commission.types';
+import {useCarriers} from '../carriers/useCarriers';
 
 export interface UseCommissionMetricsOptions {
   enabled?: boolean;

@@ -1,43 +1,21 @@
 // src/features/hierarchy/AgentDetailPage.tsx
 
 import React, { useState } from 'react';
-import { useParams, useNavigate } from '@tanstack/react-router';
-import { useQuery } from '@tanstack/react-query';
-import {
-  ArrowLeft,
-  User,
-  DollarSign,
-  TrendingUp,
-  Users,
-  Mail,
-  Phone,
-  MapPin,
-  Calendar,
-  FileCheck,
-  AlertCircle,
-  ChevronRight,
-  Shield,
-  Target
-} from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Progress } from '@/components/ui/progress';
-import { Separator } from '@/components/ui/separator';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { hierarchyService } from '@/services/hierarchy/hierarchyService';
-import { formatCurrency, formatPercent, formatDate } from '@/lib/format';
-import { cn } from '@/lib/utils';
+import {useParams, useNavigate} from '@tanstack/react-router';
+import {useQuery} from '@tanstack/react-query';
+import {Shield, Target} from 'lucide-react';
+import {Card, CardContent, CardHeader, CardTitle} from '@/components/ui/card';
+import {Button} from '@/components/ui/button';
+import {Badge} from '@/components/ui/badge';
+import {Tabs, TabsContent, TabsList, TabsTrigger} from '@/components/ui/tabs';
+import {Progress} from '@/components/ui/progress';
+import {Separator} from '@/components/ui/separator';
+import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from '@/components/ui/table';
+import {hierarchyService} from '@/services/hierarchy/hierarchyService';
+import {formatCurrency, _formatPercent, formatDate} from '@/lib/format';
+import {cn} from '@/lib/utils';
 import showToast from '@/utils/toast';
-import { EditAgentModal } from './components/EditAgentModal';
+import {EditAgentModal} from './components/EditAgentModal';
 
 export function AgentDetailPage() {
   const { agentId } = useParams({ from: '/hierarchy/agent/$agentId' });
@@ -62,7 +40,7 @@ export function AgentDetailPage() {
     enabled: !!agentId,
   });
 
-  const { data: overrides, isLoading: loadingOverrides } = useQuery({
+  const { data: overrides, isLoading: _loadingOverrides } = useQuery({
     queryKey: ['agent-overrides', agentId],
     queryFn: () => hierarchyService.getAgentOverrides(agentId),
     enabled: !!agentId,

@@ -1,6 +1,6 @@
 // /home/nneessen/projects/commissionTracker/src/features/training-hub/utils/seedTriggerEvents.ts
 
-import { supabase } from "@/services/base/supabase";
+import {supabase} from "@/services/base/supabase";
 
 const triggerEventTypes = [
   // Recruiting events

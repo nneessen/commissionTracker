@@ -1,6 +1,6 @@
 // src/services/targets/currentMonthMetricsService.ts
 
-import type { Policy } from '../../types/policy.types';
+import type {Policy} from '../../types/policy.types';
 
 /**
  * Service for calculating current month metrics efficiently

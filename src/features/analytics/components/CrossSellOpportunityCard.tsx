@@ -1,9 +1,9 @@
 // src/features/analytics/components/CrossSellOpportunityCard.tsx
 
 import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { formatCurrency } from '../../../lib/format';
-import { cn } from '@/lib/utils';
+import {Card, CardContent} from '@/components/ui/card';
+import {formatCurrency} from '../../../lib/format';
+import {cn} from '@/lib/utils';
 
 export interface CrossSellOpportunity {
   clientName: string;

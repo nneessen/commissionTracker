@@ -1,41 +1,17 @@
 // /home/nneessen/projects/commissionTracker/src/features/training-hub/components/WorkflowDialog.tsx
 
-import { useEffect, useState } from 'react';
-import { useForm } from '@tanstack/react-form';
-import {
-  Trash2,
-  Mail,
-  Bell,
-  Clock,
-  Webhook,
-} from 'lucide-react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { useCreateWorkflow, useUpdateWorkflow, useTriggerEventTypes } from '@/hooks/workflows';
-import { useEmailTemplates } from '@/features/email/hooks/useEmailTemplates';
-import type {
-  Workflow,
-  WorkflowFormData,
-  TriggerType,
-  WorkflowCategory,
-  WorkflowAction,
-} from '@/types/workflow.types';
+import {useEffect, useState} from 'react';
+import {useForm} from '@tanstack/react-form';
+import {Trash2, Mail, Bell, Clock, Webhook} from 'lucide-react';
+import {Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter} from '@/components/ui/dialog';
+import {Button} from '@/components/ui/button';
+import {Input} from '@/components/ui/input';
+import {Label} from '@/components/ui/label';
+import {Textarea} from '@/components/ui/textarea';
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '@/components/ui/select';
+import {useCreateWorkflow, useUpdateWorkflow, useTriggerEventTypes} from '@/hooks/workflows';
+import {useEmailTemplates} from '@/features/email/hooks/useEmailTemplates';
+import type {Workflow, WorkflowFormData, TriggerType, WorkflowCategory, WorkflowAction} from '@/types/workflow.types';
 
 interface WorkflowDialogProps {
   open: boolean;
@@ -51,7 +27,7 @@ const ACTION_TYPES = [
 ] as const;
 
 // Minimal event categories
-const EVENT_CATEGORIES = {
+const _EVENT_CATEGORIES = {
   recruit: 'Recruiting',
   policy: 'Policies',
   commission: 'Commissions',
@@ -73,7 +49,7 @@ function ActionRow({
   onRemove: () => void;
   templates: Array<{ id: string; name: string }>;
 }) {
-  const actionType = ACTION_TYPES.find((t) => t.value === action.type);
+  const _actionType = ACTION_TYPES.find((t) => t.value === action.type);
 
   return (
     <div className="flex items-center gap-1 py-0.5 text-[8px]">
@@ -365,7 +341,7 @@ export default function WorkflowDialog({ open, onOpenChange, workflow }: Workflo
                         <SelectValue placeholder="Select event..." />
                       </SelectTrigger>
                       <SelectContent className="max-h-32">
-                        {Object.entries(groupedEvents).map(([category, events]) => (
+                        {Object.entries(groupedEvents).map(([_category, events]) => (
                           events.map((event) => (
                             <SelectItem key={event.id} value={event.eventName} className="text-[8px]">
                               {event.eventName}

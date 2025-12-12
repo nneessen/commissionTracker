@@ -2,10 +2,10 @@
 // Sends email via Gmail API using stored OAuth tokens
 // Supports attachments and threading
 
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { decrypt } from '../_shared/encryption.ts'
-import { createSupabaseClient, createSupabaseAdminClient } from '../_shared/supabase-client.ts'
-import { encode as base64Encode } from 'https://deno.land/std@0.168.0/encoding/base64.ts'
+import {serve} from 'https://deno.land/std@0.168.0/http/server.ts'
+import {decrypt} from '../_shared/encryption.ts'
+import {createSupabaseClient, createSupabaseAdminClient} from '../_shared/supabase-client.ts'
+import {encode as base64Encode} from 'https://deno.land/std@0.168.0/encoding/base64.ts'
 
 // CORS headers
 const corsHeaders = {

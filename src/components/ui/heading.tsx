@@ -1,7 +1,7 @@
 // src/components/ui/heading.tsx
 
 import * as React from "react"
-import { cn } from "@/lib/utils"
+import {cn} from "@/lib/utils"
 
 export interface HeadingProps extends React.HTMLAttributes<HTMLDivElement> {
   title: string

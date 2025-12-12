@@ -2,9 +2,9 @@
 // Handles Gmail and Outlook OAuth redirects
 // Exchanges authorization code for tokens, encrypts, and stores them
 
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { encrypt } from '../_shared/encryption.ts'
-import { createSupabaseAdminClient } from '../_shared/supabase-client.ts'
+import {serve} from 'https://deno.land/std@0.168.0/http/server.ts'
+import {encrypt} from '../_shared/encryption.ts'
+import {createSupabaseAdminClient} from '../_shared/supabase-client.ts'
 
 // Google OAuth configuration
 const GOOGLE_CLIENT_ID = Deno.env.get('GOOGLE_CLIENT_ID')!
@@ -179,7 +179,7 @@ async function getGoogleUserInfo(accessToken: string): Promise<GoogleUserInfo> {
  * Set up Gmail Watch for push notifications on incoming emails
  * This enables real-time incoming email notifications via Pub/Sub
  */
-async function setupGmailWatch(
+async function _setupGmailWatch(
   accessToken: string,
   userId: string
 ): Promise<{ historyId: string; expiration: string }> {

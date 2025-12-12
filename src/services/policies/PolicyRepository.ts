@@ -1,8 +1,8 @@
 // src/services/policies/PolicyRepository.ts
-import { BaseRepository } from '../base/BaseRepository';
-import { TABLES } from '../base/supabase';
-import { Policy, CreatePolicyData, UpdatePolicyData } from '../../types/policy.types';
-import { formatDateForDB } from '../../lib/date';
+import {BaseRepository} from '../base/BaseRepository';
+import {TABLES} from '../base/supabase';
+import {Policy, CreatePolicyData, UpdatePolicyData} from '../../types/policy.types';
+import {formatDateForDB} from '../../lib/date';
 
 export class PolicyRepository extends BaseRepository<Policy, CreatePolicyData, UpdatePolicyData> {
   constructor() {
@@ -590,7 +590,7 @@ export class PolicyRepository extends BaseRepository<Policy, CreatePolicyData, U
     return policy;
   }
 
-  protected transformToDB(data: any, isUpdate = false): any {
+  protected transformToDB(data: any, _isUpdate = false): any {
     const dbData: any = {};
 
     if (data.policyNumber !== undefined) dbData.policy_number = data.policyNumber;

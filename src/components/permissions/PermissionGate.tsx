@@ -1,8 +1,8 @@
 // src/components/permissions/PermissionGate.tsx
 
 import React from 'react';
-import { usePermissionCheck } from '@/hooks/permissions/usePermissions';
-import type { PermissionCode, RoleName } from '@/types/permissions.types';
+import {usePermissionCheck} from '@/hooks/permissions/usePermissions';
+import type {PermissionCode, RoleName} from '@/types/permissions.types';
 
 interface PermissionGateProps {
   children: React.ReactNode;
@@ -67,7 +67,7 @@ export function PermissionGate({
   fallback = null,
   showLoading = false,
 }: PermissionGateProps) {
-  const { can, canAny, canAll, is, isAnyRole, isLoading } = usePermissionCheck();
+  const {_can, canAny, canAll, is, isAnyRole, isLoading} = usePermissionCheck();
 
   // Show loading state
   if (isLoading && showLoading) {
@@ -118,7 +118,7 @@ export function useHasAccess({
   role?: RoleName | RoleName[];
   matchAny?: boolean;
 }): boolean {
-  const { can, canAny, canAll, is, isAnyRole, isLoading } = usePermissionCheck();
+  const {_can, canAny, canAll, is, isAnyRole, isLoading} = usePermissionCheck();
 
   if (isLoading) return false;
 

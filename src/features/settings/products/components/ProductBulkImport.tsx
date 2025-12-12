@@ -1,18 +1,11 @@
 import React, { useState } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Download } from 'lucide-react';
-import { useCarriers } from '../../carriers/hooks/useCarriers';
-import type { Database } from '@/types/database.types';
-import type { ProductFormData } from '@/types/product.types';
+import {Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle} from '@/components/ui/dialog';
+import {Button} from '@/components/ui/button';
+import {Textarea} from '@/components/ui/textarea';
+import {Download} from 'lucide-react';
+import {useCarriers} from '../../carriers/hooks/useCarriers';
+import type {Database} from '@/types/database.types';
+import type {ProductFormData} from '@/types/product.types';
 
 type ProductType = Database['public']['Enums']['product_type'];
 

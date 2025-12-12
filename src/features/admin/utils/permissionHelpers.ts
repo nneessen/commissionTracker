@@ -1,7 +1,7 @@
 // src/features/admin/utils/permissionHelpers.ts
 
-import type { PermissionWithSource } from '@/types/permissions.types';
-import { User, Users, Globe, UserCircle } from 'lucide-react';
+import type {PermissionWithSource} from '@/types/permissions.types';
+import {User, Users, Globe, UserCircle} from 'lucide-react';
 
 /**
  * Permission Helper Utilities

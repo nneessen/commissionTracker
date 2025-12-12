@@ -1,14 +1,14 @@
 // src/features/analytics/components/PredictiveAnalytics.tsx
 
 import React, { useState } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
-import { Heading } from '@/components/ui/heading';
-import { Info, X } from 'lucide-react';
-import { ForecastChart } from '../visualizations';
-import { useAnalyticsData } from '../../../hooks';
-import { useAnalyticsDateRange } from '../context/AnalyticsDateContext';
+import {Card, CardContent} from '@/components/ui/card';
+import {Alert, AlertDescription} from '@/components/ui/alert';
+import {Button} from '@/components/ui/button';
+import {Heading} from '@/components/ui/heading';
+import {Info, X} from 'lucide-react';
+import {ForecastChart} from '../visualizations';
+import {useAnalyticsData} from '../../../hooks';
+import {useAnalyticsDateRange} from '../context/AnalyticsDateContext';
 
 /**
  * PredictiveAnalytics - Growth forecasts and predictions

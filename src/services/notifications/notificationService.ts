@@ -4,8 +4,8 @@
  * Handles creation, retrieval, and management of notifications.
  */
 
-import { supabase } from '../base/supabase';
-import type { Notification, CreateNotificationRequest } from '@/types/notification.types';
+import {supabase} from '../base/supabase';
+import type {Notification, CreateNotificationRequest} from '@/types/notification.types';
 
 export const notificationService = {
   /**

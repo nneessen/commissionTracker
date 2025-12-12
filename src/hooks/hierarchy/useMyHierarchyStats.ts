@@ -1,7 +1,7 @@
 // src/hooks/hierarchy/useMyHierarchyStats.ts
 
-import { useQuery } from '@tanstack/react-query';
-import { hierarchyService } from '../../services/hierarchy/hierarchyService';
+import {useQuery} from '@tanstack/react-query';
+import {hierarchyService} from '../../services/hierarchy/hierarchyService';
 
 export interface UseMyHierarchyStatsOptions {
   enabled?: boolean;

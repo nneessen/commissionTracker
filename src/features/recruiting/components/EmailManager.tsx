@@ -1,13 +1,13 @@
 // src/features/recruiting/components/EmailManager.tsx
 
 import React, { useState } from 'react';
-import { UserEmail } from '@/types/recruiting';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Card } from '@/components/ui/card';
-import { Mail, Send, Clock, CheckCircle2, AlertCircle, Eye, FileText } from 'lucide-react';
-import { useSendEmail } from '../hooks/useRecruitEmails';
-import { ComposeEmailDialog } from './ComposeEmailDialog';
+import {UserEmail} from '@/types/recruiting';
+import {Button} from '@/components/ui/button';
+import {Badge} from '@/components/ui/badge';
+import {Card} from '@/components/ui/card';
+import {Mail, Send, Clock, CheckCircle2, AlertCircle, Eye, FileText} from 'lucide-react';
+import {useSendEmail} from '../hooks/useRecruitEmails';
+import {ComposeEmailDialog} from './ComposeEmailDialog';
 
 interface EmailManagerProps {
   recruitId: string;

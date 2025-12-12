@@ -7,9 +7,9 @@
  * Previously inline in DashboardHome.tsx (lines 778-835).
  */
 
-import { TimePeriod, getPeriodLabel } from '../../../utils/dateRange';
-import { PerformanceMetricRow } from '../../../types/dashboard.types';
-import { scaleToDisplayPeriod, scaleCountToDisplayPeriod } from '../../../utils/dashboardCalculations';
+import {TimePeriod, getPeriodLabel} from '../../../utils/dateRange';
+import {PerformanceMetricRow} from '../../../types/dashboard.types';
+import {scaleToDisplayPeriod, scaleCountToDisplayPeriod} from '../../../utils/dashboardCalculations';
 
 interface MetricsConfigParams {
   timePeriod: TimePeriod;

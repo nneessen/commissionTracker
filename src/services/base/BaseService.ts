@@ -1,6 +1,6 @@
 // src/services/base/BaseService.ts
-import { BaseRepository, BaseEntity, QueryOptions, FilterOptions } from './BaseRepository';
-import { logger } from './logger';
+import {BaseRepository, BaseEntity, QueryOptions, FilterOptions} from './BaseRepository';
+import {logger} from './logger';
 
 export interface ServiceResponse<T> {
   data?: T;

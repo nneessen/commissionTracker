@@ -1,8 +1,8 @@
 // src/hooks/reports/useDrillDown.ts
 
-import { useQuery } from '@tanstack/react-query';
-import { DrillDownContext, DrillDownData } from '@/types/reports.types';
-import { DrillDownService } from '@/services/reports/drillDownService';
+import {useQuery} from '@tanstack/react-query';
+import {DrillDownContext, DrillDownData} from '@/types/reports.types';
+import {DrillDownService} from '@/services/reports/drillDownService';
 
 /**
  * Hook to fetch drill-down data based on context

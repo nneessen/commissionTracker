@@ -1,13 +1,13 @@
 // src/features/analytics/components/IncomeGoalTracker.tsx
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { CircularProgressGauge } from '../visualizations/CircularProgressGauge';
-import { useUserTargets, useCommissions } from '@/hooks';
-import { calculateGoalTracking, getGoalStatusLabel, getGoalStatusBadgeColor } from '@/services/analytics/goalTrackingService';
-import { formatCurrency } from '@/utils/formatters';
-import { TrendingUp, TrendingDown, Target, Calendar, DollarSign, Activity } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { Link } from '@tanstack/react-router';
+import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '@/components/ui/card';
+import {CircularProgressGauge} from '../visualizations/CircularProgressGauge';
+import {useUserTargets, useCommissions} from '@/hooks';
+import {calculateGoalTracking, getGoalStatusLabel, getGoalStatusBadgeColor} from '@/services/analytics/goalTrackingService';
+import {formatCurrency} from '@/utils/formatters';
+import {TrendingUp, TrendingDown, Target, Calendar, DollarSign, Activity} from 'lucide-react';
+import {cn} from '@/lib/utils';
+import {Link} from '@tanstack/react-router';
 
 export function IncomeGoalTracker() {
   const { data: userTargets, isLoading: targetsLoading } = useUserTargets();

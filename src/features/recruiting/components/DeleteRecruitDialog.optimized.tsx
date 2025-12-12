@@ -1,31 +1,16 @@
 // DeleteRecruitDialog - HARD DELETE only (no soft delete/archive)
 
-import { useState, useEffect, useCallback } from 'react';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { AlertTriangle, Loader2, Trash2, RefreshCw, Users } from 'lucide-react';
-import { enhancedRecruitingService, type DeleteDependencies } from '@/services/recruiting/recruitingService.enhanced';
-import { supabase } from '@/services/base/supabase';
-import type { UserProfile } from '@/types/hierarchy.types';
-import { showToast } from '@/utils/toast';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import {useState, useEffect, useCallback} from 'react';
+import {AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle} from '@/components/ui/alert-dialog';
+import {Alert, AlertDescription} from '@/components/ui/alert';
+import {Button} from '@/components/ui/button';
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '@/components/ui/select';
+import {AlertTriangle, Loader2, Trash2, RefreshCw, Users} from 'lucide-react';
+import {enhancedRecruitingService, type DeleteDependencies} from '@/services/recruiting/recruitingService.enhanced';
+import {supabase} from '@/services/base/supabase';
+import type {UserProfile} from '@/types/hierarchy.types';
+import {showToast} from '@/utils/toast';
+import {useQuery, useQueryClient} from '@tanstack/react-query';
 
 interface DeleteRecruitDialogProps {
   recruit: UserProfile | null;
@@ -98,7 +83,7 @@ export function DeleteRecruitDialogOptimized({
       const { data } = await query;
       return data || [];
     },
-    enabled: open && !!recruit && dependencies?.downline_count! > 0
+    enabled: open && !!recruit && (dependencies?.downline_count ?? 0) > 0
   });
 
   // Cleanup on close
@@ -138,9 +123,9 @@ export function DeleteRecruitDialogOptimized({
 
     setDeleting(true);
     try {
-      // Use admin_delete_user RPC for hard delete
-      const { data, error } = await supabase.rpc('admin_delete_user', {
-        target_user_id: recruit.id
+      // Use admin_deleteuser RPC for hard delete
+      const { data, error } = await supabase.rpc('admin_deleteuser', {
+        targetuser_id: recruit.id
       });
 
       if (error) {
@@ -168,7 +153,7 @@ export function DeleteRecruitDialogOptimized({
 
   if (!recruit) return null;
 
-  const hasDownlines = dependencies?.downline_count! > 0;
+  const hasDownlines = (dependencies?.downline_count ?? 0) > 0;
   const hasRelatedData = dependencies && (
     dependencies.email_count > 0 ||
     dependencies.document_count > 0 ||

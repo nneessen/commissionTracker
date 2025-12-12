@@ -1,14 +1,14 @@
 // src/features/analytics/components/PerformanceAttribution.tsx
 
 import React, { useState } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
-import { Info, X } from 'lucide-react';
-import { WaterfallChart } from '../visualizations';
-import { useAnalyticsData } from '../../../hooks';
-import { cn } from '@/lib/utils';
-import { useAnalyticsDateRange } from '../context/AnalyticsDateContext';
+import {Card, CardContent} from '@/components/ui/card';
+import {Alert, AlertDescription} from '@/components/ui/alert';
+import {Button} from '@/components/ui/button';
+import {Info, X} from 'lucide-react';
+import {WaterfallChart} from '../visualizations';
+import {useAnalyticsData} from '../../../hooks';
+import {cn} from '@/lib/utils';
+import {useAnalyticsDateRange} from '../context/AnalyticsDateContext';
 
 /**
  * PerformanceAttribution - Contribution breakdown analysis

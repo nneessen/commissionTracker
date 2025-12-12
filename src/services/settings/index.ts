@@ -1,5 +1,5 @@
 // src/services/settings/index.ts
-import { logger } from '../base/logger';
+import {logger} from '../base/logger';
 
 export { carrierService } from './carrierService';
 export { constantsService } from './constantsService';

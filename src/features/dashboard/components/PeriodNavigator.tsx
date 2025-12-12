@@ -1,16 +1,11 @@
 // src/features/dashboard/components/PeriodNavigator.tsx
 
 import React from "react";
-import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
-import { Button } from "../../../components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "../../../components/ui/dropdown-menu";
-import { TimePeriod, DateRange, getPeriodDescriptor, getDateRange } from "../../../utils/dateRange";
-import { cn } from "../../../lib/utils";
+import {ChevronLeft, ChevronRight, Calendar} from "lucide-react";
+import {Button} from "../../../components/ui/button";
+import {DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger} from "../../../components/ui/dropdown-menu";
+import {TimePeriod, DateRange, getPeriodDescriptor, getDateRange} from "../../../utils/dateRange";
+import {cn} from "../../../lib/utils";
 
 interface PeriodNavigatorProps {
   timePeriod: TimePeriod;

@@ -1,16 +1,13 @@
 // src/features/dashboard/components/PerformanceOverviewCard.tsx
 
 import React from "react";
-import { CheckCircle, AlertCircle } from "lucide-react";
-import { PerformanceOverviewCardProps } from "../../../types/dashboard.types";
-import { formatCurrency, formatPercent } from "../../../lib/format";
-import {
-  getPerformanceStatus,
-  calculateTargetPercentage,
-} from "../../../utils/dashboardCalculations";
-import { getPeriodLabel } from "../../../utils/dateRange";
-import { cn } from "@/lib/utils";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {CheckCircle, AlertCircle} from "lucide-react";
+import {PerformanceOverviewCardProps} from "../../../types/dashboard.types";
+import {formatCurrency, formatPercent} from "../../../lib/format";
+import {getPerformanceStatus, calculateTargetPercentage} from "../../../utils/dashboardCalculations";
+import {getPeriodLabel} from "../../../utils/dateRange";
+import {cn} from "@/lib/utils";
+import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
 
 // TODO: why is this component not using the re-usable Table component? I already have a fucking Table component that can be used
 

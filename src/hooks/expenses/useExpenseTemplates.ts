@@ -1,8 +1,8 @@
 // src/hooks/expenses/useExpenseTemplates.ts
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { expenseTemplateService } from '../../services/expenses/expenseTemplateService';
-import type { CreateExpenseTemplateData, UpdateExpenseTemplateData } from '../../types/expense.types';
+import {useQuery, useMutation, useQueryClient} from '@tanstack/react-query';
+import {expenseTemplateService} from '../../services/expenses/expenseTemplateService';
+import type {CreateExpenseTemplateData, UpdateExpenseTemplateData} from '../../types/expense.types';
 
 /**
  * Hook to fetch all expense templates for the current user

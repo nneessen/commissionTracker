@@ -1,7 +1,7 @@
 // /home/nneessen/projects/commissionTracker/src/services/recruiting/recruitingService.enhanced.ts
 // Enhanced recruiting service with delete dependency checking and downline reassignment
 
-import { supabase } from '../base/supabase';
+import {supabase} from '../base/supabase';
 
 // ============================================
 // TYPES

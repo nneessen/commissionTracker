@@ -1,13 +1,8 @@
 // src/features/admin/components/PermissionBadge.tsx
 
-import { Badge } from '@/components/ui/badge';
-import { ArrowDownFromLine } from 'lucide-react';
-import {
-  getScopeColor,
-  getScopeIcon,
-  getScopeAriaLabel,
-  type DeduplicatedPermission,
-} from '../utils/permissionHelpers';
+import {Badge} from '@/components/ui/badge';
+import {ArrowDownFromLine} from 'lucide-react';
+import {getScopeColor, getScopeIcon, getScopeAriaLabel, type DeduplicatedPermission} from '../utils/permissionHelpers';
 
 /**
  * Permission Badge Component

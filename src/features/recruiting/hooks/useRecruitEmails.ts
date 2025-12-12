@@ -1,7 +1,7 @@
 // src/features/recruiting/hooks/useRecruitEmails.ts
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { recruitingService } from '@/services/recruiting';
-import type { SendEmailRequest } from '@/types/email.types';
+import {useQuery, useMutation, useQueryClient} from '@tanstack/react-query';
+import {recruitingService} from '@/services/recruiting';
+import type {SendEmailRequest} from '@/types/email.types';
 
 export function useRecruitEmails(recruitId: string) {
   return useQuery({

@@ -1,9 +1,10 @@
 // src/features/recruiting/components/AddRecruitDialog.tsx
+// TODO: why is this file over 1000 lines long? This is not how a senior dev would write a simple dialog feaeture component
 
-import React, { useState } from 'react';
-import { useForm } from '@tanstack/react-form';
-import { zodValidator } from '@tanstack/zod-form-adapter';
-import { z } from 'zod';
+import React, { useState } from "react";
+import { useForm } from "@tanstack/react-form";
+import { _zodValidator } from "@tanstack/zod-form-adapter";
+import { z } from "zod";
 import {
   Dialog,
   DialogContent,
@@ -11,119 +12,124 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from '@/components/ui/tabs';
-import { useCreateRecruit } from '../hooks/useRecruitMutations';
-import { useInitializeRecruitProgress } from '../hooks/useRecruitProgress';
-import { useAuth } from '@/contexts/AuthContext';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/services/base/supabase';
-import { Loader2, UserPlus } from 'lucide-react';
-import type { RoleName } from '@/types/permissions.types';
-import type { AgentStatus, LicensingInfo } from '@/types/recruiting.types';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { InfoIcon } from 'lucide-react';
+} from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useCreateRecruit } from "../hooks/useRecruitMutations";
+import { useInitializeRecruitProgress } from "../hooks/useRecruitProgress";
+import { useAuth } from "@/contexts/AuthContext";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/services/base/supabase";
+import { Loader2, UserPlus } from "lucide-react";
+import type { RoleName } from "@/types/permissions.types";
+import type { AgentStatus, LicensingInfo } from "@/types/recruiting.types";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { InfoIcon } from "lucide-react";
 
 // US States
+// TODO: this should be a constant, bc it's used all throughout this project
 const US_STATES = [
-  { value: 'AL', label: 'Alabama' },
-  { value: 'AK', label: 'Alaska' },
-  { value: 'AZ', label: 'Arizona' },
-  { value: 'AR', label: 'Arkansas' },
-  { value: 'CA', label: 'California' },
-  { value: 'CO', label: 'Colorado' },
-  { value: 'CT', label: 'Connecticut' },
-  { value: 'DE', label: 'Delaware' },
-  { value: 'FL', label: 'Florida' },
-  { value: 'GA', label: 'Georgia' },
-  { value: 'HI', label: 'Hawaii' },
-  { value: 'ID', label: 'Idaho' },
-  { value: 'IL', label: 'Illinois' },
-  { value: 'IN', label: 'Indiana' },
-  { value: 'IA', label: 'Iowa' },
-  { value: 'KS', label: 'Kansas' },
-  { value: 'KY', label: 'Kentucky' },
-  { value: 'LA', label: 'Louisiana' },
-  { value: 'ME', label: 'Maine' },
-  { value: 'MD', label: 'Maryland' },
-  { value: 'MA', label: 'Massachusetts' },
-  { value: 'MI', label: 'Michigan' },
-  { value: 'MN', label: 'Minnesota' },
-  { value: 'MS', label: 'Mississippi' },
-  { value: 'MO', label: 'Missouri' },
-  { value: 'MT', label: 'Montana' },
-  { value: 'NE', label: 'Nebraska' },
-  { value: 'NV', label: 'Nevada' },
-  { value: 'NH', label: 'New Hampshire' },
-  { value: 'NJ', label: 'New Jersey' },
-  { value: 'NM', label: 'New Mexico' },
-  { value: 'NY', label: 'New York' },
-  { value: 'NC', label: 'North Carolina' },
-  { value: 'ND', label: 'North Dakota' },
-  { value: 'OH', label: 'Ohio' },
-  { value: 'OK', label: 'Oklahoma' },
-  { value: 'OR', label: 'Oregon' },
-  { value: 'PA', label: 'Pennsylvania' },
-  { value: 'RI', label: 'Rhode Island' },
-  { value: 'SC', label: 'South Carolina' },
-  { value: 'SD', label: 'South Dakota' },
-  { value: 'TN', label: 'Tennessee' },
-  { value: 'TX', label: 'Texas' },
-  { value: 'UT', label: 'Utah' },
-  { value: 'VT', label: 'Vermont' },
-  { value: 'VA', label: 'Virginia' },
-  { value: 'WA', label: 'Washington' },
-  { value: 'WV', label: 'West Virginia' },
-  { value: 'WI', label: 'Wisconsin' },
-  { value: 'WY', label: 'Wyoming' },
+  { value: "AL", label: "Alabama" },
+  { value: "AK", label: "Alaska" },
+  { value: "AZ", label: "Arizona" },
+  { value: "AR", label: "Arkansas" },
+  { value: "CA", label: "California" },
+  { value: "CO", label: "Colorado" },
+  { value: "CT", label: "Connecticut" },
+  { value: "DE", label: "Delaware" },
+  { value: "FL", label: "Florida" },
+  { value: "GA", label: "Georgia" },
+  { value: "HI", label: "Hawaii" },
+  { value: "ID", label: "Idaho" },
+  { value: "IL", label: "Illinois" },
+  { value: "IN", label: "Indiana" },
+  { value: "IA", label: "Iowa" },
+  { value: "KS", label: "Kansas" },
+  { value: "KY", label: "Kentucky" },
+  { value: "LA", label: "Louisiana" },
+  { value: "ME", label: "Maine" },
+  { value: "MD", label: "Maryland" },
+  { value: "MA", label: "Massachusetts" },
+  { value: "MI", label: "Michigan" },
+  { value: "MN", label: "Minnesota" },
+  { value: "MS", label: "Mississippi" },
+  { value: "MO", label: "Missouri" },
+  { value: "MT", label: "Montana" },
+  { value: "NE", label: "Nebraska" },
+  { value: "NV", label: "Nevada" },
+  { value: "NH", label: "New Hampshire" },
+  { value: "NJ", label: "New Jersey" },
+  { value: "NM", label: "New Mexico" },
+  { value: "NY", label: "New York" },
+  { value: "NC", label: "North Carolina" },
+  { value: "ND", label: "North Dakota" },
+  { value: "OH", label: "Ohio" },
+  { value: "OK", label: "Oklahoma" },
+  { value: "OR", label: "Oregon" },
+  { value: "PA", label: "Pennsylvania" },
+  { value: "RI", label: "Rhode Island" },
+  { value: "SC", label: "South Carolina" },
+  { value: "SD", label: "South Dakota" },
+  { value: "TN", label: "Tennessee" },
+  { value: "TX", label: "Texas" },
+  { value: "UT", label: "Utah" },
+  { value: "VT", label: "Vermont" },
+  { value: "VA", label: "Virginia" },
+  { value: "WA", label: "Washington" },
+  { value: "WV", label: "West Virginia" },
+  { value: "WI", label: "Wisconsin" },
+  { value: "WY", label: "Wyoming" },
 ];
 
 // Helper function to auto-prepend https:// to URLs
+// TODO: helper function should also not be in this file.
 const normalizeUrl = (url: string): string => {
-  if (!url) return '';
+  if (!url) return "";
   const trimmed = url.trim();
-  if (!trimmed) return '';
-  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+  if (!trimmed) return "";
+  if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
     return trimmed;
   }
   return `https://${trimmed}`;
 };
 
 // Helper to extract error message from Zod error
+// TODO: another helper function...why is it in here?
 const getErrorMessage = (errors: any[]): string => {
-  if (!errors || errors.length === 0) return '';
-  return errors.map((err) => (typeof err === 'string' ? err : err?.message || String(err))).join(', ');
+  if (!errors || errors.length === 0) return "";
+  return errors
+    .map((err) => (typeof err === "string" ? err : err?.message || String(err)))
+    .join(", ");
 };
 
 // Validation schema
 const createRecruitSchema = z.object({
-  first_name: z.string().min(1, 'First name is required'),
-  last_name: z.string().min(1, 'Last name is required'),
-  email: z.string().email('Invalid email address'),
+  first_name: z.string().min(1, "First name is required"),
+  last_name: z.string().min(1, "Last name is required"),
+  email: z.string().email("Invalid email address"),
   phone: z.string().optional(),
-  date_of_birth: z.string().optional().refine((val) => {
-    if (!val) return true; // Optional
-    const date = new Date(val);
-    const age = Math.floor((Date.now() - date.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
-    return age >= 18;
-  }, 'Must be at least 18 years old'),
+  date_of_birth: z
+    .string()
+    .optional()
+    .refine((val) => {
+      if (!val) return true; // Optional
+      const date = new Date(val);
+      const age = Math.floor(
+        (Date.now() - date.getTime()) / (365.25 * 24 * 60 * 60 * 1000),
+      );
+      return age >= 18;
+    }, "Must be at least 18 years old"),
 
   // Address
   street_address: z.string().optional(),
@@ -141,9 +147,9 @@ const createRecruitSchema = z.object({
   years_licensed: z.number().optional(),
 
   // Social Media
-  instagram_username: z.string().optional(),
+  instagramusername: z.string().optional(),
   instagram_url: z.string().optional(),
-  linkedin_username: z.string().optional(),
+  linkedinusername: z.string().optional(),
   linkedin_url: z.string().optional(),
   facebook_handle: z.string().optional(),
   personal_website: z.string().optional(),
@@ -172,27 +178,29 @@ export function AddRecruitDialog({
   const { user } = useAuth();
   const createRecruitMutation = useCreateRecruit();
   const initializeProgressMutation = useInitializeRecruitProgress();
-  const [activeTab, setActiveTab] = useState('basic');
+  const [activeTab, setActiveTab] = useState("basic");
 
   // Fetch potential uplines (users with agent, admin, trainer, or upline_manager roles)
+  // TODO: isn't this considered bad?
   const { data: potentialUplines } = useQuery({
-    queryKey: ['potential-uplines'],
+    queryKey: ["potential-uplines"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('user_profiles')
-        .select('id, first_name, last_name, email, roles')
-        .order('first_name', { ascending: true });
+        .from("user_profiles")
+        .select("id, first_name, last_name, email, roles")
+        .order("first_name", { ascending: true });
 
       if (error) throw error;
 
       // Filter users who have agent, admin, trainer, or upline_manager roles
       return (data || []).filter((u: any) => {
         const roles = u.roles as RoleName[];
-        return roles && (
-          roles.includes('agent' as RoleName) ||
-          roles.includes('admin' as RoleName) ||
-          roles.includes('trainer' as RoleName) ||
-          roles.includes('upline_manager' as RoleName)
+        return (
+          roles &&
+          (roles.includes("agent" as RoleName) ||
+            roles.includes("admin" as RoleName) ||
+            roles.includes("trainer" as RoleName) ||
+            roles.includes("upline_manager" as RoleName))
         );
       });
     },
@@ -201,40 +209,40 @@ export function AddRecruitDialog({
 
   const form = useForm({
     defaultValues: {
-      first_name: '',
-      last_name: '',
-      email: '',
-      phone: '',
-      date_of_birth: '',
-      street_address: '',
-      city: '',
-      state: '',
-      zip: '',
+      first_name: "",
+      last_name: "",
+      email: "",
+      phone: "",
+      date_of_birth: "",
+      street_address: "",
+      city: "",
+      state: "",
+      zip: "",
       is_licensed_agent: false,
       skip_pipeline: false,
-      resident_state: '',
-      license_number: '',
-      npn: '',
-      license_expiration: '',
+      resident_state: "",
+      license_number: "",
+      npn: "",
+      license_expiration: "",
       years_licensed: 0,
-      instagram_username: '',
-      instagram_url: '',
-      linkedin_username: '',
-      linkedin_url: '',
-      facebook_handle: '',
-      personal_website: '',
-      upline_id: '',
+      instagramusername: "",
+      instagram_url: "",
+      linkedinusername: "",
+      linkedin_url: "",
+      facebook_handle: "",
+      personal_website: "",
+      upline_id: "",
       is_admin: false,
-      referral_source: '',
+      referral_source: "",
     },
     onSubmit: async ({ value }) => {
       if (!user?.id) return;
 
       // Check for duplicate email
       const { data: existingUser } = await supabase
-        .from('user_profiles')
-        .select('id, email')
-        .eq('email', value.email)
+        .from("user_profiles")
+        .select("id, email")
+        .eq("email", value.email)
         .maybeSingle();
 
       if (existingUser) {
@@ -243,24 +251,28 @@ export function AddRecruitDialog({
       }
 
       // Normalize URL fields (auto-prepend https://)
-      const normalizedWebsite = value.personal_website ? normalizeUrl(value.personal_website) : undefined;
+      const _normalizedWebsite = value.personal_website
+        ? normalizeUrl(value.personal_website)
+        : undefined;
 
       // Determine agent status based on checkboxes
-      let agent_status: AgentStatus = 'unlicensed';
+      let agent_status: AgentStatus = "unlicensed";
       if (value.skip_pipeline || value.is_admin) {
-        agent_status = 'not_applicable';
+        agent_status = "not_applicable";
       } else if (value.is_licensed_agent) {
-        agent_status = 'licensed';
+        agent_status = "licensed";
       }
 
       // Build licensing info if licensed
-      const licensing_info: LicensingInfo | undefined = value.is_licensed_agent ? {
-        licenseNumber: value.license_number || undefined,
-        npn: value.npn || undefined,
-        licenseExpirationDate: value.license_expiration || undefined,
-        licenseState: value.resident_state || undefined,
-        yearsLicensed: value.years_licensed || undefined,
-      } : undefined;
+      const licensing_info: LicensingInfo | undefined = value.is_licensed_agent
+        ? {
+            licenseNumber: value.license_number || undefined,
+            npn: value.npn || undefined,
+            licenseExpirationDate: value.license_expiration || undefined,
+            licenseState: value.resident_state || undefined,
+            yearsLicensed: value.years_licensed || undefined,
+          }
+        : undefined;
 
       const recruit = await createRecruitMutation.mutateAsync({
         first_name: value.first_name,
@@ -289,13 +301,13 @@ export function AddRecruitDialog({
             templateId: recruit.pipeline_template_id,
           });
         } catch (error) {
-          console.error('Failed to initialize recruit progress:', error);
+          console.error("Failed to initialize recruit progress:", error);
           // Don't block the success flow - the recruit was created
         }
 
         onOpenChange(false);
         form.reset();
-        setActiveTab('basic'); // Reset to first tab
+        setActiveTab("basic"); // Reset to first tab
         onSuccess?.(recruit.id);
       }
     },
@@ -310,7 +322,8 @@ export function AddRecruitDialog({
             Add New Recruit
           </DialogTitle>
           <DialogDescription className="text-[10px]">
-            Enter recruit details to begin onboarding. Only basic info required initially.
+            Enter recruit details to begin onboarding. Only basic info required
+            initially.
           </DialogDescription>
         </DialogHeader>
 
@@ -321,13 +334,27 @@ export function AddRecruitDialog({
             form.handleSubmit();
           }}
         >
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <Tabs
+            value={activeTab}
+            onValueChange={setActiveTab}
+            className="w-full"
+          >
             <TabsList className="grid w-full grid-cols-5 h-7">
-              <TabsTrigger value="basic" className="text-[10px] px-1">Basic</TabsTrigger>
-              <TabsTrigger value="address" className="text-[10px] px-1">Address</TabsTrigger>
-              <TabsTrigger value="professional" className="text-[10px] px-1">Professional</TabsTrigger>
-              <TabsTrigger value="assignment" className="text-[10px] px-1">Assignment</TabsTrigger>
-              <TabsTrigger value="social" className="text-[10px] px-1">Social/Referral</TabsTrigger>
+              <TabsTrigger value="basic" className="text-[10px] px-1">
+                Basic
+              </TabsTrigger>
+              <TabsTrigger value="address" className="text-[10px] px-1">
+                Address
+              </TabsTrigger>
+              <TabsTrigger value="professional" className="text-[10px] px-1">
+                Professional
+              </TabsTrigger>
+              <TabsTrigger value="assignment" className="text-[10px] px-1">
+                Assignment
+              </TabsTrigger>
+              <TabsTrigger value="social" className="text-[10px] px-1">
+                Social/Referral
+              </TabsTrigger>
             </TabsList>
 
             {/* Basic Info Tab */}
@@ -341,21 +368,27 @@ export function AddRecruitDialog({
                 >
                   {(field) => (
                     <div className="grid gap-1">
-                      <Label htmlFor="first_name" className="text-[11px] font-semibold">
+                      <Label
+                        htmlFor="first_name"
+                        className="text-[11px] font-semibold"
+                      >
                         First Name *
                       </Label>
-                      <Input id="first_name" className="h-7 text-[11px]"
+                      <Input
+                        id="first_name"
+                        className="h-7 text-[11px]"
                         value={field.state.value}
                         onChange={(e) => field.handleChange(e.target.value)}
                         onBlur={field.handleBlur}
                         autoFocus
                         required
                       />
-                      {field.state.meta.errors && field.state.meta.errors.length > 0 && (
-                        <p className="text-[10px] text-destructive">
-                          {getErrorMessage(field.state.meta.errors)}
-                        </p>
-                      )}
+                      {field.state.meta.errors &&
+                        field.state.meta.errors.length > 0 && (
+                          <p className="text-[10px] text-destructive">
+                            {getErrorMessage(field.state.meta.errors)}
+                          </p>
+                        )}
                     </div>
                   )}
                 </form.Field>
@@ -368,20 +401,26 @@ export function AddRecruitDialog({
                 >
                   {(field) => (
                     <div className="grid gap-1">
-                      <Label htmlFor="last_name" className="text-[11px] font-semibold">
+                      <Label
+                        htmlFor="last_name"
+                        className="text-[11px] font-semibold"
+                      >
                         Last Name *
                       </Label>
-                      <Input id="last_name" className="h-7 text-[11px]"
+                      <Input
+                        id="last_name"
+                        className="h-7 text-[11px]"
                         value={field.state.value}
                         onChange={(e) => field.handleChange(e.target.value)}
                         onBlur={field.handleBlur}
                         required
                       />
-                      {field.state.meta.errors && field.state.meta.errors.length > 0 && (
-                        <p className="text-[10px] text-destructive">
-                          {getErrorMessage(field.state.meta.errors)}
-                        </p>
-                      )}
+                      {field.state.meta.errors &&
+                        field.state.meta.errors.length > 0 && (
+                          <p className="text-[10px] text-destructive">
+                            {getErrorMessage(field.state.meta.errors)}
+                          </p>
+                        )}
                     </div>
                   )}
                 </form.Field>
@@ -396,20 +435,27 @@ export function AddRecruitDialog({
                 >
                   {(field) => (
                     <div className="grid gap-1">
-                      <Label htmlFor="email" className="text-[11px] font-semibold">
+                      <Label
+                        htmlFor="email"
+                        className="text-[11px] font-semibold"
+                      >
                         Email *
                       </Label>
-                      <Input id="email" type="email" className="h-7 text-[11px]"
+                      <Input
+                        id="email"
+                        type="email"
+                        className="h-7 text-[11px]"
                         value={field.state.value}
                         onChange={(e) => field.handleChange(e.target.value)}
                         onBlur={field.handleBlur}
                         required
                       />
-                      {field.state.meta.errors && field.state.meta.errors.length > 0 && (
-                        <p className="text-[10px] text-destructive">
-                          {getErrorMessage(field.state.meta.errors)}
-                        </p>
-                      )}
+                      {field.state.meta.errors &&
+                        field.state.meta.errors.length > 0 && (
+                          <p className="text-[10px] text-destructive">
+                            {getErrorMessage(field.state.meta.errors)}
+                          </p>
+                        )}
                     </div>
                   )}
                 </form.Field>
@@ -417,8 +463,13 @@ export function AddRecruitDialog({
                 <form.Field name="phone">
                   {(field) => (
                     <div className="grid gap-1">
-                      <Label htmlFor="phone" className="text-[11px]">Phone</Label>
-                      <Input id="phone" type="tel" className="h-7 text-[11px]"
+                      <Label htmlFor="phone" className="text-[11px]">
+                        Phone
+                      </Label>
+                      <Input
+                        id="phone"
+                        type="tel"
+                        className="h-7 text-[11px]"
                         placeholder="(555) 555-5555"
                         value={field.state.value}
                         onChange={(e) => field.handleChange(e.target.value)}
@@ -435,24 +486,35 @@ export function AddRecruitDialog({
                   onChange: ({ value }) => {
                     if (!value) return undefined; // Optional field
                     const date = new Date(value);
-                    const age = Math.floor((Date.now() - date.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
-                    return age < 18 ? 'Must be at least 18 years old' : undefined;
+                    const age = Math.floor(
+                      (Date.now() - date.getTime()) /
+                        (365.25 * 24 * 60 * 60 * 1000),
+                    );
+                    return age < 18
+                      ? "Must be at least 18 years old"
+                      : undefined;
                   },
                 }}
               >
                 {(field) => (
                   <div className="grid gap-1">
-                    <Label htmlFor="date_of_birth" className="text-[11px]">Date of Birth</Label>
-                    <Input id="date_of_birth" type="date" className="h-7 text-[11px]"
+                    <Label htmlFor="date_of_birth" className="text-[11px]">
+                      Date of Birth
+                    </Label>
+                    <Input
+                      id="date_of_birth"
+                      type="date"
+                      className="h-7 text-[11px]"
                       value={field.state.value}
                       onChange={(e) => field.handleChange(e.target.value)}
                       onBlur={field.handleBlur}
                     />
-                    {field.state.meta.errors && field.state.meta.errors.length > 0 && (
-                      <p className="text-[10px] text-destructive">
-                        {getErrorMessage(field.state.meta.errors)}
-                      </p>
-                    )}
+                    {field.state.meta.errors &&
+                      field.state.meta.errors.length > 0 && (
+                        <p className="text-[10px] text-destructive">
+                          {getErrorMessage(field.state.meta.errors)}
+                        </p>
+                      )}
                   </div>
                 )}
               </form.Field>
@@ -463,8 +525,12 @@ export function AddRecruitDialog({
               <form.Field name="street_address">
                 {(field) => (
                   <div className="grid gap-1">
-                    <Label htmlFor="street_address" className="text-[11px]">Street Address</Label>
-                    <Input id="street_address" className="h-7 text-[11px]"
+                    <Label htmlFor="street_address" className="text-[11px]">
+                      Street Address
+                    </Label>
+                    <Input
+                      id="street_address"
+                      className="h-7 text-[11px]"
                       placeholder="123 Main St"
                       value={field.state.value}
                       onChange={(e) => field.handleChange(e.target.value)}
@@ -478,8 +544,12 @@ export function AddRecruitDialog({
                 <form.Field name="city">
                   {(field) => (
                     <div className="grid gap-1">
-                      <Label htmlFor="city" className="text-[11px]">City</Label>
-                      <Input id="city" className="h-7 text-[11px]"
+                      <Label htmlFor="city" className="text-[11px]">
+                        City
+                      </Label>
+                      <Input
+                        id="city"
+                        className="h-7 text-[11px]"
                         value={field.state.value}
                         onChange={(e) => field.handleChange(e.target.value)}
                         onBlur={field.handleBlur}
@@ -491,7 +561,9 @@ export function AddRecruitDialog({
                 <form.Field name="state">
                   {(field) => (
                     <div className="grid gap-1">
-                      <Label htmlFor="state" className="text-[11px]">State</Label>
+                      <Label htmlFor="state" className="text-[11px]">
+                        State
+                      </Label>
                       <Select
                         value={field.state.value}
                         onValueChange={(value) => field.handleChange(value)}
@@ -514,8 +586,12 @@ export function AddRecruitDialog({
                 <form.Field name="zip">
                   {(field) => (
                     <div className="grid gap-1">
-                      <Label htmlFor="zip" className="text-[11px]">ZIP Code</Label>
-                      <Input id="zip" className="h-7 text-[11px]"
+                      <Label htmlFor="zip" className="text-[11px]">
+                        ZIP Code
+                      </Label>
+                      <Input
+                        id="zip"
+                        className="h-7 text-[11px]"
                         placeholder="12345"
                         value={field.state.value}
                         onChange={(e) => field.handleChange(e.target.value)}
@@ -541,11 +617,14 @@ export function AddRecruitDialog({
                           field.handleChange(checked === true);
                           // If admin/skip is checked, uncheck it
                           if (checked && form.state.values.skip_pipeline) {
-                            form.setFieldValue('skip_pipeline', false);
+                            form.setFieldValue("skip_pipeline", false);
                           }
                         }}
                       />
-                      <Label htmlFor="is_licensed_agent" className="text-[11px] cursor-pointer">
+                      <Label
+                        htmlFor="is_licensed_agent"
+                        className="text-[11px] cursor-pointer"
+                      >
                         This person is already a licensed insurance agent
                       </Label>
                     </div>
@@ -562,11 +641,14 @@ export function AddRecruitDialog({
                           field.handleChange(checked === true);
                           // If licensed is checked, uncheck it
                           if (checked && form.state.values.is_licensed_agent) {
-                            form.setFieldValue('is_licensed_agent', false);
+                            form.setFieldValue("is_licensed_agent", false);
                           }
                         }}
                       />
-                      <Label htmlFor="skip_pipeline" className="text-[11px] cursor-pointer">
+                      <Label
+                        htmlFor="skip_pipeline"
+                        className="text-[11px] cursor-pointer"
+                      >
                         Skip onboarding pipeline (admin/office staff)
                       </Label>
                     </div>
@@ -574,14 +656,22 @@ export function AddRecruitDialog({
                 </form.Field>
 
                 {/* Info alert about pipeline assignment */}
-                {(form.state.values.is_licensed_agent || form.state.values.skip_pipeline) && (
+                {(form.state.values.is_licensed_agent ||
+                  form.state.values.skip_pipeline) && (
                   <Alert className="py-2">
                     <InfoIcon className="h-3 w-3" />
                     <AlertDescription className="text-[10px]">
                       {form.state.values.is_licensed_agent ? (
-                        <>Licensed agents will be assigned a fast-track 3-phase onboarding process instead of the standard 7-phase pipeline.</>
+                        <>
+                          Licensed agents will be assigned a fast-track 3-phase
+                          onboarding process instead of the standard 7-phase
+                          pipeline.
+                        </>
                       ) : (
-                        <>This user will not be added to any onboarding pipeline and won't appear in recruiting dashboards.</>
+                        <>
+                          This user will not be added to any onboarding pipeline
+                          and won't appear in recruiting dashboards.
+                        </>
                       )}
                     </AlertDescription>
                   </Alert>
@@ -591,7 +681,9 @@ export function AddRecruitDialog({
               <form.Field name="resident_state">
                 {(field) => (
                   <div className="grid gap-1">
-                    <Label htmlFor="resident_state" className="text-[11px]">Resident State (Primary Licensed State)</Label>
+                    <Label htmlFor="resident_state" className="text-[11px]">
+                      Resident State (Primary Licensed State)
+                    </Label>
                     <Select
                       value={field.state.value}
                       onValueChange={(value) => field.handleChange(value)}
@@ -618,8 +710,14 @@ export function AddRecruitDialog({
                     <form.Field name="license_number">
                       {(field) => (
                         <div className="grid gap-1">
-                          <Label htmlFor="license_number" className="text-[11px]">License Number</Label>
-                          <Input className="h-7 text-[11px]"
+                          <Label
+                            htmlFor="license_number"
+                            className="text-[11px]"
+                          >
+                            License Number
+                          </Label>
+                          <Input
+                            className="h-7 text-[11px]"
                             id="license_number"
                             placeholder="Insurance license number"
                             value={field.state.value}
@@ -633,8 +731,11 @@ export function AddRecruitDialog({
                     <form.Field name="npn">
                       {(field) => (
                         <div className="grid gap-1">
-                          <Label htmlFor="npn" className="text-[11px]">NPN (National Producer Number)</Label>
-                          <Input className="h-7 text-[11px]"
+                          <Label htmlFor="npn" className="text-[11px]">
+                            NPN (National Producer Number)
+                          </Label>
+                          <Input
+                            className="h-7 text-[11px]"
                             id="npn"
                             placeholder="NPN number"
                             value={field.state.value}
@@ -650,8 +751,14 @@ export function AddRecruitDialog({
                     <form.Field name="license_expiration">
                       {(field) => (
                         <div className="grid gap-1">
-                          <Label htmlFor="license_expiration" className="text-[11px]">License Expiration Date</Label>
-                          <Input className="h-7 text-[11px]"
+                          <Label
+                            htmlFor="license_expiration"
+                            className="text-[11px]"
+                          >
+                            License Expiration Date
+                          </Label>
+                          <Input
+                            className="h-7 text-[11px]"
                             id="license_expiration"
                             type="date"
                             value={field.state.value}
@@ -665,14 +772,24 @@ export function AddRecruitDialog({
                     <form.Field name="years_licensed">
                       {(field) => (
                         <div className="grid gap-1">
-                          <Label htmlFor="years_licensed" className="text-[11px]">Years Licensed</Label>
-                          <Input className="h-7 text-[11px]"
+                          <Label
+                            htmlFor="years_licensed"
+                            className="text-[11px]"
+                          >
+                            Years Licensed
+                          </Label>
+                          <Input
+                            className="h-7 text-[11px]"
                             id="years_licensed"
                             type="number"
                             min="0"
                             placeholder="Years of experience"
-                            value={field.state.value || ''}
-                            onChange={(e) => field.handleChange(e.target.value ? parseInt(e.target.value) : 0)}
+                            value={field.state.value || ""}
+                            onChange={(e) =>
+                              field.handleChange(
+                                e.target.value ? parseInt(e.target.value) : 0,
+                              )
+                            }
                             onBlur={field.handleBlur}
                           />
                         </div>
@@ -688,10 +805,14 @@ export function AddRecruitDialog({
               <form.Field name="upline_id">
                 {(field) => (
                   <div className="grid gap-1">
-                    <Label htmlFor="upline_id" className="text-[11px]">Assign Upline/Trainer</Label>
+                    <Label htmlFor="upline_id" className="text-[11px]">
+                      Assign Upline/Trainer
+                    </Label>
                     <Select
                       value={field.state.value || undefined}
-                      onValueChange={(value) => field.handleChange(value === 'none' ? '' : value)}
+                      onValueChange={(value) =>
+                        field.handleChange(value === "none" ? "" : value)
+                      }
                     >
                       <SelectTrigger id="upline_id">
                         <SelectValue placeholder="Select upline (optional)" />
@@ -699,13 +820,15 @@ export function AddRecruitDialog({
                       <SelectContent>
                         {potentialUplines?.map((upline: any) => (
                           <SelectItem key={upline.id} value={upline.id}>
-                            {upline.first_name} {upline.last_name} ({upline.email})
+                            {upline.first_name} {upline.last_name} (
+                            {upline.email})
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                     <p className="text-[10px] text-muted-foreground">
-                      Upline/trainer who will manage this recruit's onboarding. Leave blank to assign later.
+                      Upline/trainer who will manage this recruit's onboarding.
+                      Leave blank to assign later.
                     </p>
                   </div>
                 )}
@@ -719,9 +842,14 @@ export function AddRecruitDialog({
                       <Checkbox
                         id="is_admin"
                         checked={field.state.value}
-                        onCheckedChange={(checked) => field.handleChange(checked === true)}
+                        onCheckedChange={(checked) =>
+                          field.handleChange(checked === true)
+                        }
                       />
-                      <Label htmlFor="is_admin" className="text-[11px] cursor-pointer">
+                      <Label
+                        htmlFor="is_admin"
+                        className="text-[11px] cursor-pointer"
+                      >
                         Grant admin privileges
                       </Label>
                     </div>
@@ -729,7 +857,8 @@ export function AddRecruitDialog({
                       <Alert className="py-2">
                         <InfoIcon className="h-3 w-3" />
                         <AlertDescription className="text-[10px]">
-                          Admin users have full system access and will not be added to any onboarding pipeline.
+                          Admin users have full system access and will not be
+                          added to any onboarding pipeline.
                         </AlertDescription>
                       </Alert>
                     )}
@@ -741,12 +870,18 @@ export function AddRecruitDialog({
             {/* Social/Referral Tab */}
             <TabsContent value="social" className="space-y-2 py-2">
               <div className="grid grid-cols-2 gap-2">
-                <form.Field name="instagram_username">
+                <form.Field name="instagramusername">
                   {(field) => (
                     <div className="grid gap-1">
-                      <Label htmlFor="instagram_username" className="text-[11px]">Instagram Username</Label>
-                      <Input className="h-7 text-[11px]"
-                        id="instagram_username"
+                      <Label
+                        htmlFor="instagramusername"
+                        className="text-[11px]"
+                      >
+                        Instagram Username
+                      </Label>
+                      <Input
+                        className="h-7 text-[11px]"
+                        id="instagramusername"
                         placeholder="@username"
                         value={field.state.value}
                         onChange={(e) => field.handleChange(e.target.value)}
@@ -756,12 +891,18 @@ export function AddRecruitDialog({
                   )}
                 </form.Field>
 
-                <form.Field name="linkedin_username">
+                <form.Field name="linkedinusername">
                   {(field) => (
                     <div className="grid gap-1">
-                      <Label htmlFor="linkedin_username" className="text-[11px]">LinkedIn Username</Label>
-                      <Input className="h-7 text-[11px]"
-                        id="linkedin_username"
+                      <Label
+                        htmlFor="linkedinusername"
+                        className="text-[11px]"
+                      >
+                        LinkedIn Username
+                      </Label>
+                      <Input
+                        className="h-7 text-[11px]"
+                        id="linkedinusername"
                         value={field.state.value}
                         onChange={(e) => field.handleChange(e.target.value)}
                         onBlur={field.handleBlur}
@@ -775,8 +916,11 @@ export function AddRecruitDialog({
                 <form.Field name="facebook_handle">
                   {(field) => (
                     <div className="grid gap-1">
-                      <Label htmlFor="facebook_handle" className="text-[11px]">Facebook Handle</Label>
-                      <Input className="h-7 text-[11px]"
+                      <Label htmlFor="facebook_handle" className="text-[11px]">
+                        Facebook Handle
+                      </Label>
+                      <Input
+                        className="h-7 text-[11px]"
                         id="facebook_handle"
                         value={field.state.value}
                         onChange={(e) => field.handleChange(e.target.value)}
@@ -786,13 +930,14 @@ export function AddRecruitDialog({
                   )}
                 </form.Field>
 
-                <form.Field
-                  name="personal_website"
-                >
+                <form.Field name="personal_website">
                   {(field) => (
                     <div className="grid gap-1">
-                      <Label htmlFor="personal_website" className="text-[11px]">Personal Website</Label>
-                      <Input className="h-7 text-[11px]"
+                      <Label htmlFor="personal_website" className="text-[11px]">
+                        Personal Website
+                      </Label>
+                      <Input
+                        className="h-7 text-[11px]"
                         id="personal_website"
                         type="text"
                         placeholder="example.com (https:// added automatically)"
@@ -808,7 +953,9 @@ export function AddRecruitDialog({
               <form.Field name="referral_source">
                 {(field) => (
                   <div className="grid gap-1">
-                    <Label htmlFor="referral_source" className="text-[11px]">Referral Source</Label>
+                    <Label htmlFor="referral_source" className="text-[11px]">
+                      Referral Source
+                    </Label>
                     <Textarea
                       id="referral_source"
                       placeholder="How did they find us?"
@@ -824,22 +971,37 @@ export function AddRecruitDialog({
           </Tabs>
 
           <DialogFooter className="mt-3 gap-1">
-            <Button type="button" variant="outline" className="h-6 text-[10px]"
+            <Button
+              type="button"
+              variant="outline"
+              className="h-6 text-[10px]"
               onClick={() => {
                 onOpenChange(false);
-                setActiveTab('basic');
+                setActiveTab("basic");
               }}
-              disabled={createRecruitMutation.isPending || initializeProgressMutation.isPending}
+              disabled={
+                createRecruitMutation.isPending ||
+                initializeProgressMutation.isPending
+              }
             >
               Cancel
             </Button>
-            <Button type="submit" className="h-6 text-[10px]" disabled={createRecruitMutation.isPending || initializeProgressMutation.isPending}>
-              {(createRecruitMutation.isPending || initializeProgressMutation.isPending) && (
+            <Button
+              type="submit"
+              className="h-6 text-[10px]"
+              disabled={
+                createRecruitMutation.isPending ||
+                initializeProgressMutation.isPending
+              }
+            >
+              {(createRecruitMutation.isPending ||
+                initializeProgressMutation.isPending) && (
                 <Loader2 className="mr-1 h-3 w-3 animate-spin" />
               )}
-              {!(createRecruitMutation.isPending || initializeProgressMutation.isPending) && (
-                <UserPlus className="mr-1 h-3 w-3" />
-              )}
+              {!(
+                createRecruitMutation.isPending ||
+                initializeProgressMutation.isPending
+              ) && <UserPlus className="mr-1 h-3 w-3" />}
               Add Recruit
             </Button>
           </DialogFooter>

@@ -1,7 +1,7 @@
 // src/services/settings/AgentRepository.ts
-import { logger } from '../base/logger';
-import { BaseRepository } from '../base/BaseRepository';
-import { Agent } from '../../types/user.types';
+import {logger} from '../base/logger';
+import {BaseRepository} from '../base/BaseRepository';
+import {Agent} from '../../types/user.types';
 
 export interface AgentCreateData {
   name: string;
@@ -16,6 +16,7 @@ export interface AgentCreateData {
   ytd_premium?: number;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface AgentUpdateData extends Partial<AgentCreateData> {}
 
 export interface AgentDBRecord {
@@ -59,7 +60,7 @@ export class AgentRepository extends BaseRepository<
       hireDate: agentRecord.hire_date ? new Date(agentRecord.hire_date) : undefined,
       ytdCommission: agentRecord.ytd_commission || 0,
       ytdPremium: agentRecord.ytd_premium || 0,
-      raw_user_meta_data: {}
+      rawuser_meta_data: {}
     };
   }
 

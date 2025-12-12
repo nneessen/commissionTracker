@@ -1,8 +1,8 @@
 // src/features/policies/hooks/usePolicy.ts
 // Hook for fetching a single policy by ID
 
-import { useQuery } from '@tanstack/react-query';
-import { policyQueries } from '../queries';
+import {useQuery} from '@tanstack/react-query';
+import {policyQueries} from '../queries';
 
 /**
  * Fetch a single policy by ID

@@ -1,5 +1,5 @@
-import type { Commission } from '../../types/commission.types';
-import { startOfYear, endOfYear, differenceInDays, differenceInWeeks, differenceInMonths } from 'date-fns';
+import type {Commission} from '../../types/commission.types';
+import {startOfYear, endOfYear, differenceInDays, differenceInWeeks, differenceInMonths} from 'date-fns';
 
 export interface GoalTrackingData {
   // Core metrics

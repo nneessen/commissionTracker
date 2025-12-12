@@ -1,21 +1,14 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { Plus, Search, Edit, Trash2 } from 'lucide-react';
-import { useCarriers, Carrier } from './hooks/useCarriers';
-import { CarrierForm } from './components/CarrierForm';
-import { CarrierDeleteDialog } from './components/CarrierDeleteDialog';
-import { NewCarrierForm } from '../../../types/carrier.types';
+import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '@/components/ui/card';
+import {Button} from '@/components/ui/button';
+import {Input} from '@/components/ui/input';
+import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from '@/components/ui/table';
+import {Badge} from '@/components/ui/badge';
+import {Plus, Search, Edit, Trash2} from 'lucide-react';
+import {useCarriers, Carrier} from './hooks/useCarriers';
+import {CarrierForm} from './components/CarrierForm';
+import {CarrierDeleteDialog} from './components/CarrierDeleteDialog';
+import {NewCarrierForm} from '../../../types/carrier.types';
 
 export function CarriersManagement() {
   const { carriers, isLoading, createCarrier, updateCarrier, deleteCarrier } = useCarriers();
@@ -38,7 +31,7 @@ export function CarriersManagement() {
   }
 
   // Count products per carrier (this would come from a join query in real app)
-  const getProductCount = (carrierId: string) => {
+  const getProductCount = (_carrierId: string) => {
     // TODO: Implement actual product count query
     return 0;
   };

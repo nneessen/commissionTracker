@@ -1,7 +1,7 @@
 // src/features/dashboard/components/SkeletonLoaders.tsx
 import React, { memo } from "react";
-import { Card } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
+import {Card} from "@/components/ui/card";
+import {cn} from "@/lib/utils";
 
 // KPI card skeleton matching exact dimensions
 export const KpiSkeleton = memo(({ className }: { className?: string }) => (

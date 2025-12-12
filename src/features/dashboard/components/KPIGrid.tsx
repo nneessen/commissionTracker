@@ -1,15 +1,8 @@
 import React from "react";
-import { DetailedKPIGridProps } from "../../../types/dashboard.types";
-import { cn } from "@/lib/utils";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  DollarSign,
-  FileText,
-  TrendingUp,
-  Users,
-  Target,
-  Activity,
-} from "lucide-react";
+import {DetailedKPIGridProps} from "../../../types/dashboard.types";
+import {cn} from "@/lib/utils";
+import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
+import {DollarSign, FileText, TrendingUp, Users, Target, Activity} from "lucide-react";
 
 export const KPIGrid: React.FC<DetailedKPIGridProps> = ({ sections }) => {
   const getCategoryIcon = (category: string) => {

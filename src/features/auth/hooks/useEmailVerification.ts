@@ -1,10 +1,10 @@
 // src/features/auth/hooks/useEmailVerification.ts
 
-import { useState, useEffect } from 'react';
-import { useLocation, useNavigate } from '@tanstack/react-router';
-import { useAuth } from '../../../contexts/AuthContext';
-import { SESSION_STORAGE_KEYS, RESEND_COOLDOWN_SECONDS, MAX_RESEND_ATTEMPTS } from '../../../constants/auth.constants';
-import { logger } from '../../../services/base/logger';
+import {useState, useEffect} from 'react';
+import {useLocation, useNavigate} from '@tanstack/react-router';
+import {useAuth} from '../../../contexts/AuthContext';
+import {SESSION_STORAGE_KEYS, RESEND_COOLDOWN_SECONDS, MAX_RESEND_ATTEMPTS} from '../../../constants/auth.constants';
+import {logger} from '../../../services/base/logger';
 
 /**
  * Custom hook to manage email verification state and logic

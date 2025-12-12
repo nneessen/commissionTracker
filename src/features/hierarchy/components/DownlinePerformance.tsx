@@ -1,34 +1,20 @@
 // src/features/hierarchy/components/DownlinePerformance.tsx
 
 import React, { useState } from 'react';
-import { Edit, Shield } from 'lucide-react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Empty, EmptyHeader, EmptyTitle, EmptyDescription } from '@/components/ui/empty';
-import { formatCurrency } from '@/lib/format';
-import { useAllDownlinePerformance, useMyDownlines, useUpdateAgentHierarchy, useCurrentUserProfile } from '@/hooks';
+import {Edit, Shield} from 'lucide-react';
+import {Card, CardHeader, CardTitle, CardContent} from '@/components/ui/card';
+import {Input} from '@/components/ui/input';
+import {Button} from '@/components/ui/button';
+import {Badge} from '@/components/ui/badge';
+import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from '@/components/ui/table';
+import {Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle} from '@/components/ui/dialog';
+import {Label} from '@/components/ui/label';
+import {Alert, AlertDescription} from '@/components/ui/alert';
+import {Empty, EmptyHeader, EmptyTitle, EmptyDescription} from '@/components/ui/empty';
+import {formatCurrency} from '@/lib/format';
+import {useAllDownlinePerformance, useMyDownlines, useUpdateAgentHierarchy, useCurrentUserProfile} from '@/hooks';
 import showToast from '@/utils/toast';
-import type { UserProfile, HierarchyChangeRequest } from '@/types/hierarchy.types';
+import type {UserProfile, HierarchyChangeRequest} from '@/types/hierarchy.types';
 
 interface DownlinePerformanceProps {
   className?: string;

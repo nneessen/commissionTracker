@@ -1,15 +1,9 @@
-import {
-  policyService,
-  commissionService,
-  expenseService,
-  carrierService,
-  constantsService,
-} from '../services';
-import { Policy } from '../types/policy.types';
-import { Commission } from '../types/commission.types';
-import { Expense, CreateExpenseData } from '../types/expense.types';
-import { Carrier } from '../types/carrier.types';
-import { logger } from '../services/base/logger';
+import {policyService, commissionService, expenseService, carrierService, constantsService} from '../services';
+import {Policy} from '../types/policy.types';
+import {Commission} from '../types/commission.types';
+import {Expense, CreateExpenseData} from '../types/expense.types';
+import {Carrier} from '../types/carrier.types';
+import {logger} from '../services/base/logger';
 
 // Legacy types for migration
 interface LegacyExpenseItem {

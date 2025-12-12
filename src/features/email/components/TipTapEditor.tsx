@@ -1,13 +1,13 @@
 // src/features/email/components/TipTapEditor.tsx
 
-import { useEditor, EditorContent } from '@tiptap/react'
+import {useEditor, EditorContent} from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Underline from '@tiptap/extension-underline'
 import Link from '@tiptap/extension-link'
 import Placeholder from '@tiptap/extension-placeholder'
-import { TipTapMenuBar } from './TipTapMenuBar'
-import { useEffect } from 'react'
-import { sanitizeHtml } from '../services/sanitizationService'
+import {TipTapMenuBar} from './TipTapMenuBar'
+import {useEffect} from 'react'
+import {sanitizeHtml} from '../services/sanitizationService'
 
 interface TipTapEditorProps {
   content?: string

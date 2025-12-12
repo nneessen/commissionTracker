@@ -1,10 +1,10 @@
 // src/features/dashboard/components/KPIGridMatrix.tsx
 
 import React from 'react';
-import { DetailedKPIGridProps } from '../../../types/dashboard.types';
-import { cn } from '@/lib/utils';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { CircularGauge } from './kpi-layouts/CircularGauge';
+import {DetailedKPIGridProps} from '../../../types/dashboard.types';
+import {cn} from '@/lib/utils';
+import {Card, CardContent, CardHeader, CardTitle} from '@/components/ui/card';
+import {CircularGauge} from './kpi-layouts/CircularGauge';
 
 /**
  * Assign quadrant based on category

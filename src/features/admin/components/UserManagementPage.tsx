@@ -1,33 +1,22 @@
 // src/features/admin/components/UserManagementPage.tsx
 
 import React, { useState, useMemo } from 'react';
-import { useAllUsers } from '@/hooks/admin/useUserApproval';
-import { useAllRolesWithPermissions, useUpdateUserRoles } from '@/hooks/permissions/usePermissions';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible';
-import { Separator } from '@/components/ui/separator';
-import { Users, Shield, Search, UserCog, CheckCircle2, XCircle, ChevronDown, ChevronRight, Info } from 'lucide-react';
-import type { RoleName, Permission } from '@/types/permissions.types';
-import type { UserProfile } from '@/services/admin/userApprovalService';
+import {useAllUsers} from '@/hooks/admin/useUserApproval';
+import {useAllRolesWithPermissions, useUpdateUserRoles} from '@/hooks/permissions/usePermissions';
+import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '@/components/ui/card';
+import {Badge} from '@/components/ui/badge';
+import {Button} from '@/components/ui/button';
+import {Input} from '@/components/ui/input';
+import {Skeleton} from '@/components/ui/skeleton';
+import {Alert, AlertDescription} from '@/components/ui/alert';
+import {Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle} from '@/components/ui/dialog';
+import {Checkbox} from '@/components/ui/checkbox';
+import {Label} from '@/components/ui/label';
+import {Collapsible, CollapsibleContent, CollapsibleTrigger} from '@/components/ui/collapsible';
+import {Separator} from '@/components/ui/separator';
+import {ChevronDown, ChevronRight, Info, Users, Shield, UserCog, Search, CheckCircle2, XCircle} from 'lucide-react';
+import type {RoleName, Permission} from '@/types/permissions.types';
+import type {UserProfile} from '@/services/admin/userApprovalService';
 
 export function UserManagementPage() {
   const { data: users, isLoading: usersLoading, error: usersError } = useAllUsers();

@@ -1,7 +1,7 @@
 // src/services/analytics/gamePlanService.ts
 
-import type { Policy, Commission } from '../../types';
-import type { UserTargets } from '../userTargets/userTargetsService';
+import type {Policy, Commission} from '../../types';
+import type {UserTargets} from '../userTargets/userTargetsService';
 
 export interface GamePlanData {
   // Current Status
@@ -415,7 +415,7 @@ class GamePlanService {
   ): AnnualProgress {
     const now = new Date();
     const yearStart = new Date(now.getFullYear(), 0, 1);
-    const yearEnd = new Date(now.getFullYear(), 11, 31);
+    const _yearEnd = new Date(now.getFullYear(), 11, 31);
 
     // Calculate months elapsed and remaining
     const monthsElapsed = now.getMonth() + 1; // JavaScript months are 0-indexed

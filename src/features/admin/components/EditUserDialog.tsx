@@ -1,51 +1,26 @@
 // src/features/admin/components/EditUserDialog.tsx
 // Comprehensive user edit dialog with full CRUD capabilities
 
-import { useState, useEffect } from "react";
-import { useQueryClient } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Separator } from "@/components/ui/separator";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { useAllRolesWithPermissions } from "@/hooks/permissions/usePermissions";
-import { useAllUsers } from "@/hooks/admin/useUserApproval";
-import { userApprovalService, VALID_CONTRACT_LEVELS } from "@/services/admin/userApprovalService";
-import { supabase } from "@/services/base/supabase";
+import {useState, useEffect} from "react";
+import {useQueryClient} from "@tanstack/react-query";
+import {Button} from "@/components/ui/button";
+import {Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle} from "@/components/ui/dialog";
+import {Input} from "@/components/ui/input";
+import {Label} from "@/components/ui/label";
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
+import {Checkbox} from "@/components/ui/checkbox";
+import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs";
+import {Separator} from "@/components/ui/separator";
+import {AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle} from "@/components/ui/alert-dialog";
+import {Alert, AlertDescription} from "@/components/ui/alert";
+import {useAllRolesWithPermissions} from "@/hooks/permissions/usePermissions";
+import {useAllUsers} from "@/hooks/admin/useUserApproval";
+import {userApprovalService, VALID_CONTRACT_LEVELS} from "@/services/admin/userApprovalService";
+import {supabase} from "@/services/base/supabase";
 import showToast from "@/utils/toast";
-import {
-  Mail, User, Phone, Users, Trash2, Send,
-  MapPin, CreditCard, Globe, AlertTriangle, Loader2
-} from "lucide-react";
-import type { RoleName } from "@/types/permissions.types";
-import type { UserProfile } from "@/services/admin/userApprovalService";
+import {Mail, User, Phone, Users, Trash2, Send, MapPin, CreditCard, Globe, AlertTriangle, Loader2} from "lucide-react";
+import type {RoleName} from "@/types/permissions.types";
+import type {UserProfile} from "@/services/admin/userApprovalService";
 
 interface EditUserDialogProps {
   user: UserProfile | null;

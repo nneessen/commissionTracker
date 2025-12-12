@@ -1,25 +1,15 @@
 // Email Connection Manager Component
 // Allows users to connect/disconnect Gmail and Outlook accounts
 
-import { useState } from 'react'
-import { Mail, AlertCircle, CheckCircle2, Loader2, LogOut, ExternalLink, RefreshCw } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { Badge } from '@/components/ui/badge'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog'
-import { useEmailConnection, useEmailQuota } from '../hooks/useEmailConnection'
-import type { EmailProvider } from '@/types/email.types'
+import {useState} from 'react'
+import {Mail, AlertCircle, CheckCircle2, Loader2, LogOut, ExternalLink, RefreshCw} from 'lucide-react'
+import {Button} from '@/components/ui/button'
+import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '@/components/ui/card'
+import {Alert, AlertDescription, AlertTitle} from '@/components/ui/alert'
+import {Badge} from '@/components/ui/badge'
+import {AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger} from '@/components/ui/alert-dialog'
+import {useEmailConnection, useEmailQuota} from '../hooks/useEmailConnection'
+import {EmailProvider} from '@/types/email.types'
 
 interface EmailConnectionManagerProps {
   className?: string

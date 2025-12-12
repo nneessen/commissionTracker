@@ -1,7 +1,7 @@
 // src/hooks/targets/useActualMetrics.ts
 
-import { useMetricsWithDateRange } from '../kpi/useMetricsWithDateRange';
-import type { ActualMetrics } from '../../types/targets.types';
+import {useMetricsWithDateRange} from '../kpi/useMetricsWithDateRange';
+import type {ActualMetrics} from '../../types/targets.types';
 
 /**
  * Fetch actual metrics for targets comparison

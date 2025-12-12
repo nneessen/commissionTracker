@@ -1,16 +1,12 @@
 // /home/nneessen/projects/commissionTracker/src/contexts/AuthContext.tsx
 
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { supabase } from "../services/base/supabase";
-import {
-  User as SupabaseUser,
-  Session,
-  AuthChangeEvent,
-} from "@supabase/supabase-js";
-import { useQueryClient } from "@tanstack/react-query";
-import { User } from "../types";
-import { userService } from "../services/settings/userService";
-import { logger } from "../services/base/logger";
+import {supabase} from "../services/base/supabase";
+import {User as SupabaseUser, Session, AuthChangeEvent} from "@supabase/supabase-js";
+import {useQueryClient} from "@tanstack/react-query";
+import {User} from "../types";
+import {userService} from "../services/settings/userService";
+import {logger} from "../services/base/logger";
 
 export interface SignUpResult {
   requiresVerification: boolean;

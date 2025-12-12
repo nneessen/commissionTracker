@@ -1,18 +1,12 @@
 // src/features/expenses/components/ExpenseFilters.tsx
 
-import { useState } from 'react';
-import { Search, X, Filter } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import type { ExpenseFilters as ExpenseFiltersType } from '@/types/expense.types';
+import {useState} from 'react';
+import {Search, X, Filter} from 'lucide-react';
+import {Button} from '@/components/ui/button';
+import {Input} from '@/components/ui/input';
+import {Label} from '@/components/ui/label';
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '@/components/ui/select';
+import type {ExpenseFilters as ExpenseFiltersType} from '@/types/expense.types';
 
 interface ExpenseFiltersProps {
   filters: ExpenseFiltersType;

@@ -1,9 +1,9 @@
 // src/features/policies/hooks/useDeletePolicy.ts
 // Hook for deleting a policy
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { policyService } from '@/services/policies/policyService';
-import { policyKeys } from '../queries';
+import {useMutation, useQueryClient} from '@tanstack/react-query';
+import {policyService} from '@/services/policies/policyService';
+import {policyKeys} from '../queries';
 
 /**
  * Delete a policy

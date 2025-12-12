@@ -1,6 +1,6 @@
 // /home/nneessen/projects/commissionTracker/src/utils/policyCalculations.ts
 
-import { PaymentFrequency } from '../types/policy.types';
+import {PaymentFrequency} from '../types/policy.types';
 
 /**
  * Calculate annual premium from payment amount and frequency

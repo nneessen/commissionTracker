@@ -1,7 +1,7 @@
 // src/services/analytics/attributionService.ts
 
-import { Policy, Commission, ProductType } from '../../types';
-import { format, differenceInMonths } from 'date-fns';
+import {Policy, Commission, ProductType} from '../../types';
+import {format, differenceInMonths} from 'date-fns';
 
 /**
  * Attribution Service

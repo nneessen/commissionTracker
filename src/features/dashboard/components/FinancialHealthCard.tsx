@@ -1,16 +1,11 @@
 // src/features/dashboard/components/FinancialHealthCard.tsx
 
 import React, { useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import {
-  TrendingUp,
-  TrendingDown,
-  DollarSign,
-  AlertCircle,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import {Card, CardContent} from "@/components/ui/card";
+import {Alert, AlertDescription} from "@/components/ui/alert";
+import {TrendingUp, TrendingDown, DollarSign, AlertCircle} from "lucide-react";
+import {Button} from "@/components/ui/button";
+import {cn} from "@/lib/utils";
 
 type TimePeriod = "daily" | "weekly" | "monthly" | "yearly";
 

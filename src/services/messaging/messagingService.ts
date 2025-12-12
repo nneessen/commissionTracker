@@ -4,13 +4,8 @@
  * Handles two-way messaging between recruits, uplines, trainers, and admins.
  */
 
-import { supabase } from '../base/supabase';
-import type {
-  MessageThread,
-  Message,
-  CreateThreadRequest,
-  SendMessageRequest,
-} from '@/types/messaging.types';
+import {supabase} from '../base/supabase';
+import type {MessageThread, Message, CreateThreadRequest, SendMessageRequest} from '@/types/messaging.types';
 
 export const messagingService = {
   /**

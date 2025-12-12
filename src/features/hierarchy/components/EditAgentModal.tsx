@@ -1,30 +1,17 @@
 // src/features/hierarchy/components/EditAgentModal.tsx
 
 import React from 'react';
-import { useForm } from '@tanstack/react-form';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { hierarchyService } from '@/services/hierarchy/hierarchyService';
-import { supabase } from '@/services/base/supabase';
+import {useForm} from '@tanstack/react-form';
+import {useMutation, useQueryClient} from '@tanstack/react-query';
+import {Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle} from '@/components/ui/dialog';
+import {Button} from '@/components/ui/button';
+import {Input} from '@/components/ui/input';
+import {Label} from '@/components/ui/label';
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '@/components/ui/select';
+import {hierarchyService} from '@/services/hierarchy/hierarchyService';
+import {supabase} from '@/services/base/supabase';
 import showToast from '@/utils/toast';
-import type { UserProfile } from '@/types/hierarchy.types';
+import type {UserProfile} from '@/types/hierarchy.types';
 
 interface EditAgentModalProps {
   agent: UserProfile | null;

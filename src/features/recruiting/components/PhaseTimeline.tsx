@@ -1,11 +1,11 @@
 // src/features/recruiting/components/PhaseTimeline.tsx
 
 import React from 'react';
-import { RecruitPhaseProgress, PipelinePhase, PHASE_PROGRESS_ICONS } from '@/types/recruiting';
-import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
-import { Card } from '@/components/ui/card';
-import { CheckCircle2, Clock, AlertCircle, Circle, SkipForward } from 'lucide-react';
+import {PHASE_PROGRESS_ICONS} from '@/types/recruiting';
+import {Progress} from '@/components/ui/progress';
+import {Badge} from '@/components/ui/badge';
+import {Card} from '@/components/ui/card';
+import {CheckCircle2, Clock, AlertCircle, Circle, SkipForward} from 'lucide-react';
 
 interface PhaseTimelineProps {
   phaseProgress: RecruitPhaseProgress[];

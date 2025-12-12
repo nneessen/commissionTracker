@@ -1,8 +1,8 @@
 // Email Connection Service
 // Handles Gmail/Outlook OAuth connection management
 
-import { supabase } from '@/services'
-import type { EmailOAuthToken, EmailConnectionStatus, EmailProvider } from '@/types/email.types'
+import {supabase} from '@/services'
+import type {EmailOAuthToken, EmailConnectionStatus, EmailProvider} from '@/types/email.types'
 
 // Environment-based configuration
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || ''

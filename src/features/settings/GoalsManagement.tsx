@@ -1,12 +1,12 @@
 // src/features/settings/GoalsManagement.tsx
 import React, { useState, useEffect } from 'react';
-import { Target, Save, AlertCircle, CheckCircle2, TrendingUp } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { useUserTargets, useUpdateUserTargets } from '@/hooks';
-import { formatCurrency } from '@/utils/formatters';
+import {Target, Save, AlertCircle, CheckCircle2, TrendingUp} from 'lucide-react';
+import {Button} from '@/components/ui/button';
+import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '@/components/ui/card';
+import {Input} from '@/components/ui/input';
+import {Label} from '@/components/ui/label';
+import {useUserTargets, useUpdateUserTargets} from '@/hooks';
+import {formatCurrency} from '@/utils/formatters';
 
 export function GoalsManagement() {
   const { data: userTargets, isLoading } = useUserTargets();
@@ -97,7 +97,7 @@ export function GoalsManagement() {
 
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
-    } catch (error) {
+    } catch (_error) {
       setValidationError('Failed to update targets. Please try again.');
     }
   };

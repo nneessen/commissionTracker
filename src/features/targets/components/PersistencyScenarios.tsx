@@ -1,20 +1,13 @@
 // src/features/targets/components/PersistencyScenarios.tsx
 
 import React, { useState, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow
-} from '@/components/ui/table';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { TrendingUp, TrendingDown, AlertCircle, Target } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { formatCurrency } from '../../../lib/format';
+import {Card, CardContent, CardHeader, CardTitle} from '@/components/ui/card';
+import {Input} from '@/components/ui/input';
+import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from '@/components/ui/table';
+import {Alert, AlertDescription} from '@/components/ui/alert';
+import {TrendingUp, TrendingDown, AlertCircle, Target} from 'lucide-react';
+import {cn} from '@/lib/utils';
+import {formatCurrency} from '../../../lib/format';
 
 interface PersistencyScenario {
   persistencyRate: number;
@@ -41,10 +34,7 @@ export function PersistencyScenarios({
   baseAnnualPolicies,
   totalPremiumNeeded,
   avgPolicyPremium,
-  currentPersistency,
-  avgCommissionRate,
-  annualIncomeTarget,
-  monthlyExpenseTarget
+  currentPersistency, avgCommissionRate, annualIncomeTarget, monthlyExpenseTarget
 }: PersistencyScenariosProps) {
   const [customPersistency, setCustomPersistency] = useState<string>('75');
 

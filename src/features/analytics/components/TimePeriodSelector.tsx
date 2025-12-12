@@ -1,7 +1,7 @@
 // src/components/custom_ui/TimePeriodSelector.tsx
 
 import React from 'react';
-import { format } from 'date-fns';
+import {format} from 'date-fns';
 
 export type AdvancedTimePeriod =
   | 'MTD'  // Month to Date
@@ -137,7 +137,7 @@ export function TimePeriodSelector({
   ];
 
   const currentRange = getAdvancedDateRange(selectedPeriod, customRange);
-  const displayRange = formatAdvancedDateRange(currentRange);
+  const _displayRange = formatAdvancedDateRange(currentRange);
 
   return (
     <div style={{ position: 'relative' }}>

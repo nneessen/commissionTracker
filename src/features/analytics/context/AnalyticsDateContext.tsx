@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { AdvancedTimePeriod, getAdvancedDateRange } from '../components/TimePeriodSelector';
+import {AdvancedTimePeriod, getAdvancedDateRange} from '../components/TimePeriodSelector';
 
 interface DateRangeContextValue {
   timePeriod: AdvancedTimePeriod;

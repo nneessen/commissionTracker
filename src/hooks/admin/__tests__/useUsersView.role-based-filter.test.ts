@@ -3,9 +3,9 @@
 // Active agents (with 'agent' role) should ONLY appear in Users & Access tab
 // Recruits (without 'agent' role) should ONLY appear in Recruiting Pipeline tab
 
-import { describe, it, expect } from 'vitest';
-import type { UserProfile } from '../../../services/admin/userApprovalService';
-import type { RoleName } from '../../../types/permissions.types';
+import {describe, it, expect} from 'vitest';
+import type {UserProfile} from '../../../services/admin/userApprovalService';
+import type {RoleName} from '../../../types/permissions.types';
 
 describe('useUsersView role-based filtering logic', () => {
   // Test data matching actual database structure

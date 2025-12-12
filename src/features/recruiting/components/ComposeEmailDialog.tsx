@@ -1,18 +1,12 @@
 // src/features/recruiting/components/ComposeEmailDialog.tsx
 
-import { useState, useMemo } from 'react'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
-import { EmailComposer } from '@/features/email'
-import { TemplatePicker } from '@/features/email/components/TemplatePicker'
-import { blocksToHtml } from '@/features/email/components/block-builder'
-import { useSendEmail } from '../hooks/useRecruitEmails'
-import type { SendEmailRequest, EmailTemplate } from '@/types/email.types'
+import {useState, useMemo} from 'react'
+import {Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle} from '@/components/ui/dialog'
+import {EmailComposer} from '@/features/email'
+import {TemplatePicker} from '@/features/email/components/TemplatePicker'
+import {blocksToHtml} from '@/features/email/components/block-builder'
+import {useSendEmail} from '../hooks/useRecruitEmails'
+import type {SendEmailRequest, EmailTemplate} from '@/types/email.types'
 
 interface ComposeEmailDialogProps {
   open: boolean
@@ -37,8 +31,7 @@ export function ComposeEmailDialog({
   onOpenChange,
   recruitId,
   recruitEmail,
-  recruitName,
-  senderId,
+  recruitName, _senderId,
 }: ComposeEmailDialogProps) {
   const [selectedTemplate, setSelectedTemplate] = useState<EmailTemplate | null>(null)
   const sendEmail = useSendEmail()

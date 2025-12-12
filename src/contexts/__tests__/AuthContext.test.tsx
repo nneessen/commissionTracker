@@ -3,10 +3,10 @@
  * Verifies the auth system implementation without requiring manual testing
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { renderHook, waitFor } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { AuthProvider, useAuth } from '../AuthContext';
+import {describe, it, expect, beforeEach, vi} from 'vitest';
+import {renderHook, waitFor} from '@testing-library/react';
+import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
+import {AuthProvider, useAuth} from '../AuthContext';
 
 // Create a wrapper with QueryClient for tests
 function createWrapper() {

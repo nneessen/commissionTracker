@@ -1,8 +1,8 @@
 // src/hooks/commissions/useMarkCommissionPaid.ts
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { commissionService } from '../../services/commissions/commissionService';
-import { Commission } from '../../types/commission.types';
+import {useMutation, useQueryClient} from '@tanstack/react-query';
+import {commissionService} from '../../services/commissions/commissionService';
+import {Commission} from '../../types/commission.types';
 import showToast from '../../utils/toast';
 
 interface MarkCommissionPaidVariables {

@@ -1,10 +1,10 @@
 // src/components/layout/SettingsLayout.tsx
 import React from 'react';
-import { ArrowLeft } from 'lucide-react';
-import { Link } from '@tanstack/react-router';
-import { cn } from '@/lib/utils';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import {ArrowLeft} from 'lucide-react';
+import {Link} from '@tanstack/react-router';
+import {cn} from '@/lib/utils';
+import {Card} from '@/components/ui/card';
+import {Button} from '@/components/ui/button';
 
 interface SettingsLayoutProps {
   title: string;

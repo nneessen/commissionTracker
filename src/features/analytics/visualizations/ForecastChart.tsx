@@ -1,7 +1,7 @@
 // src/features/analytics/visualizations/ForecastChart.tsx
 
 import React from 'react';
-import { GrowthProjection } from '../../../services/analytics/forecastService';
+import {GrowthProjection} from '../../../services/analytics/forecastService';
 
 interface ForecastChartProps {
   data: GrowthProjection[];
@@ -110,7 +110,7 @@ export function ForecastChart({
     .filter((seg): seg is { x: number; y: number; isFirst: boolean } => seg !== null);
 
   const lowerBandPath = lowerBandPathSegments
-    .map((seg, i) => seg.isFirst ? `M ${seg.x} ${seg.y}` : `L ${seg.x} ${seg.y}`)
+    .map((seg, _i) => seg.isFirst ? `M ${seg.x} ${seg.y}` : `L ${seg.x} ${seg.y}`)
     .join(' ');
 
   // Y-axis ticks

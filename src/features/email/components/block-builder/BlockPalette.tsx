@@ -1,21 +1,9 @@
-import { useDraggable } from '@dnd-kit/core'
-import { CSS } from '@dnd-kit/utilities'
-import {
-  Type,
-  MousePointerClick,
-  Minus,
-  ArrowDownUp,
-  FileText,
-  Heading,
-  Plus,
-  Image,
-  Quote,
-  Share2,
-  Columns2,
-} from 'lucide-react'
-import { cn } from '@/lib/utils'
-import { Button } from '@/components/ui/button'
-import type { EmailBlockType } from '@/types/email.types'
+import {useDraggable} from '@dnd-kit/core'
+import {CSS} from '@dnd-kit/utilities'
+import {Type, MousePointerClick, Minus, ArrowDownUp, FileText, Heading, Plus, Image, Quote, Share2, Columns2} from 'lucide-react'
+import {cn} from '@/lib/utils'
+import {Button} from '@/components/ui/button'
+import type {EmailBlockType} from '@/types/email.types'
 
 interface BlockPaletteProps {
   onAddBlock: (type: EmailBlockType) => void

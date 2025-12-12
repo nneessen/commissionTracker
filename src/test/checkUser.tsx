@@ -2,8 +2,8 @@
 // Component to test user access for nick.neessen@gmail.com
 
 import React, { useEffect, useState } from 'react';
-import { userService } from '../services/users/userService';
-import { usePermissionCheck } from '../hooks/permissions/usePermissions';
+import {userService} from '../services/users/userService';
+import {usePermissionCheck} from '../hooks/permissions/usePermissions';
 
 export function UserAccessTest() {
   const [userInfo, setUserInfo] = useState<any>(null);

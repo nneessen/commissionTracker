@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { ChevronUp, ChevronDown } from 'lucide-react';
-import { DataTableProps } from '../../types';
+import {ChevronUp, ChevronDown} from 'lucide-react';
+import {DataTableProps} from '../../types';
 
 export function DataTable<T>({
   data,

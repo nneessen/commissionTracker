@@ -1,14 +1,10 @@
-import { useState, useRef } from 'react'
-import { ChevronDown, AlertCircle, CheckCircle } from 'lucide-react'
-import { cn } from '@/lib/utils'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover'
-import { Button } from '@/components/ui/button'
+import {useState, useRef} from 'react'
+import {ChevronDown, AlertCircle, CheckCircle} from 'lucide-react'
+import {cn} from '@/lib/utils'
+import {Input} from '@/components/ui/input'
+import {Label} from '@/components/ui/label'
+import {Popover, PopoverContent, PopoverTrigger} from '@/components/ui/popover'
+import {Button} from '@/components/ui/button'
 
 interface SubjectEditorProps {
   value: string

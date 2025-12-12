@@ -1,9 +1,9 @@
 // src/hooks/reports/useReport.ts
 
-import { useQuery } from '@tanstack/react-query';
-import { Report, ReportType, ReportFilters } from '../../types/reports.types';
-import { ReportGenerationService } from '../../services/reports/reportGenerationService';
-import { supabase } from '../../services/base/supabase';
+import {useQuery} from '@tanstack/react-query';
+import {Report, ReportType, ReportFilters} from '../../types/reports.types';
+import {ReportGenerationService} from '../../services/reports/reportGenerationService';
+import {supabase} from '../../services/base/supabase';
 
 /**
  * Hook to fetch and generate a report

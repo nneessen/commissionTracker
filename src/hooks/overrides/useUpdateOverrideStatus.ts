@@ -1,7 +1,7 @@
 // src/hooks/overrides/useUpdateOverrideStatus.ts
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { overrideService } from '../../services/overrides/overrideService';
+import {useMutation, useQueryClient} from '@tanstack/react-query';
+import {overrideService} from '../../services/overrides/overrideService';
 
 export type OverrideStatus = 'pending' | 'earned' | 'paid' | 'chargedback';
 

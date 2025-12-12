@@ -1,5 +1,5 @@
 // src/services/commissions/index.ts
-import { logger } from '../base/logger';
+import {logger} from '../base/logger';
 
 // Repository
 export { CommissionRepository } from './CommissionRepository';

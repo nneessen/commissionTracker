@@ -1,21 +1,14 @@
 // src/features/expenses/components/ExpenseTable.tsx
 
-import { Edit, Trash2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardHeader, CardContent } from '@/components/ui/card';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { Empty, EmptyHeader, EmptyTitle, EmptyDescription, EmptyContent } from '@/components/ui/empty';
-import { formatCurrency, formatDate } from '@/lib/format';
-import { cn } from '@/lib/utils';
-import type { Expense } from '@/types/expense.types';
+import {Edit, Trash2} from 'lucide-react';
+import {Button} from '@/components/ui/button';
+import {Badge} from '@/components/ui/badge';
+import {Card, CardHeader, CardContent} from '@/components/ui/card';
+import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from '@/components/ui/table';
+import {Empty, EmptyHeader, EmptyTitle, EmptyDescription, EmptyContent} from '@/components/ui/empty';
+import {formatCurrency, formatDate} from '@/lib/format';
+import {cn} from '@/lib/utils';
+import type {Expense} from '@/types/expense.types';
 
 interface ExpenseTableProps {
   expenses: Expense[];

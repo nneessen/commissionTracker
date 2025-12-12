@@ -1,11 +1,7 @@
 // src/features/policies/utils/policyFormTransformer.ts
 // Utilities for transforming policy form data to service data
 
-import type {
-  NewPolicyForm,
-  CreatePolicyData,
-  PaymentFrequency,
-} from '@/types/policy.types';
+import type {NewPolicyForm, CreatePolicyData, PaymentFrequency} from '@/types/policy.types';
 
 /**
  * Calculate monthly premium from annual premium based on payment frequency

@@ -1,15 +1,9 @@
 // src/features/policies/components/PolicyDialog.tsx
 
 import React from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { PolicyForm } from '../PolicyForm';
-import type { NewPolicyForm, Policy } from '../../../types/policy.types';
+import {Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle} from '@/components/ui/dialog';
+import {PolicyForm} from '../PolicyForm';
+import type {NewPolicyForm, Policy} from '../../../types/policy.types';
 
 interface PolicyDialogProps {
   open: boolean;

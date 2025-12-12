@@ -1,10 +1,10 @@
 // src/features/policies/hooks/useUpdatePolicy.ts
 // Hook for updating a policy (including status changes like cancel/lapse/reinstate)
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { policyService } from '@/services/policies/policyService';
-import { policyKeys } from '../queries';
-import type { CreatePolicyData, Policy, PolicyStatus } from '@/types/policy.types';
+import {useMutation, useQueryClient} from '@tanstack/react-query';
+import {policyService} from '@/services/policies/policyService';
+import {policyKeys} from '../queries';
+import type {CreatePolicyData, Policy, PolicyStatus} from '@/types/policy.types';
 
 // Basic update params
 interface BasicUpdateParams {

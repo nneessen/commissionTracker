@@ -1,17 +1,7 @@
 // src/services/recruiting/pipelineService.ts
 
-import { supabase } from '@/services/base/supabase';
-import type {
-  PipelineTemplate,
-  PipelinePhase,
-  PhaseChecklistItem,
-  CreateTemplateInput,
-  UpdateTemplateInput,
-  CreatePhaseInput,
-  UpdatePhaseInput,
-  CreateChecklistItemInput,
-  UpdateChecklistItemInput,
-} from '@/types/recruiting';
+import {supabase} from '@/services/base/supabase';
+import type {PipelineTemplate, PipelinePhase, PhaseChecklistItem, CreateTemplateInput, UpdateTemplateInput, CreatePhaseInput, UpdatePhaseInput, CreateChecklistItemInput, UpdateChecklistItemInput} from '@/types/recruiting';
 
 export const pipelineService = {
   // ========================================
@@ -192,7 +182,7 @@ export const pipelineService = {
     if (error) throw error;
   },
 
-  async reorderPhases(templateId: string, phaseIds: string[]) {
+  async reorderPhases(_templateId: string, phaseIds: string[]) {
     // Update phase_order for each phase
     const updates = phaseIds.map((phaseId, index) => ({
       id: phaseId,
@@ -273,7 +263,7 @@ export const pipelineService = {
     if (error) throw error;
   },
 
-  async reorderChecklistItems(phaseId: string, itemIds: string[]) {
+  async reorderChecklistItems(_phaseId: string, itemIds: string[]) {
     // Update item_order for each item
     const updates = itemIds.map((itemId, index) => ({
       id: itemId,

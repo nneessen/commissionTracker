@@ -1,27 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { ProductWithRates, CONTRACT_LEVELS } from '../hooks/useCommissionRates';
-import { compGuideService } from '@/services/settings/compGuideService';
-import { capitalizeWords } from '@/utils/stringUtils';
+import {Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle} from '@/components/ui/dialog';
+import {Button} from '@/components/ui/button';
+import {Input} from '@/components/ui/input';
+import {Badge} from '@/components/ui/badge';
+import {Separator} from '@/components/ui/separator';
+import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from '@/components/ui/table';
+import {ProductWithRates, CONTRACT_LEVELS} from '../hooks/useCommissionRates';
+import {compGuideService} from '@/services/settings/compGuideService';
+import {capitalizeWords} from '@/utils/stringUtils';
 
 interface RateEditDialogProps {
   open: boolean;
@@ -39,7 +25,7 @@ export function RateEditDialog({
   isSaving = false,
 }: RateEditDialogProps) {
   const [rates, setRates] = useState<Record<number, string>>({});
-  const [rateIds, setRateIds] = useState<Record<number, string>>({});
+  const [_rateIds, setRateIds] = useState<Record<number, string>>({});
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
 
   // Load existing rates when product changes

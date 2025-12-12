@@ -1,6 +1,6 @@
 // Email feature constants
 
-import type { EmailTemplateCategory } from '@/types/email.types'
+import type {EmailTemplateCategory} from '@/types/email.types'
 
 // Template categories for dropdowns
 export const EMAIL_TEMPLATE_CATEGORIES: { value: EmailTemplateCategory; label: string }[] = [

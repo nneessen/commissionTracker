@@ -1,10 +1,10 @@
 // src/features/policies/hooks/usePolicies.ts
 // Hook for fetching policy lists with optional pagination/filtering
 
-import { useQuery, useQueries, keepPreviousData } from '@tanstack/react-query';
-import { policyKeys, policyQueries } from '../queries';
-import { policyService } from '@/services/policies/policyService';
-import type { PolicyFilters } from '@/types/policy.types';
+import {useQuery, useQueries, keepPreviousData} from '@tanstack/react-query';
+import {policyKeys, policyQueries} from '../queries';
+import {policyService} from '@/services/policies/policyService';
+import type {PolicyFilters} from '@/types/policy.types';
 
 export interface SortConfig {
   field: string;

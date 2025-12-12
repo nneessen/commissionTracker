@@ -1,85 +1,30 @@
 // /home/nneessen/projects/commissionTracker/src/features/admin/components/UserManagementDashboard.tsx
 
 import React, { useState, useEffect } from 'react';
-import { format } from 'date-fns';
-import {
-  Search,
-  Filter,
-  ChevronUp,
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
-  AlertCircle,
-  Shield,
-  UserCheck,
-  UserX,
-  Clock,
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
-import { useUsersView } from '../../../hooks/admin/useUsersView';
-import { useApproveUser, useDenyUser, useSetPendingUser, useSetAdminRole, useCurrentUserProfile, useUpdateContractLevel } from '../../../hooks/admin/useUserApproval';
-import { UserProfile, VALID_CONTRACT_LEVELS } from '../../../services/admin/userApprovalService';
-import { Checkbox } from '@/components/ui/checkbox';
+import {format} from 'date-fns';
+import {Search, Filter, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, AlertCircle, Shield, UserCheck, UserX, Clock} from 'lucide-react';
+import {cn} from '@/lib/utils';
+import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from '@/components/ui/table';
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '@/components/ui/select';
+import {Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle} from '@/components/ui/dialog';
+import {Button} from '@/components/ui/button';
+import {Input} from '@/components/ui/input';
+import {Textarea} from '@/components/ui/textarea';
+import {Badge} from '@/components/ui/badge';
+import {useUsersView} from '../../../hooks/admin/useUsersView';
+import {useApproveUser, useDenyUser, useSetPendingUser, useSetAdminRole, useCurrentUserProfile, useUpdateContractLevel} from '../../../hooks/admin/useUserApproval';
+import {UserProfile, VALID_CONTRACT_LEVELS} from '../../../services/admin/userApprovalService';
+import {Checkbox} from '@/components/ui/checkbox';
 
 export const UserManagementDashboard: React.FC = () => {
-  const {
-    users,
-    metrics,
-    isLoading,
-    isFetching,
-    error,
-    currentPage,
-    totalPages,
-    pageSize,
-    totalItems,
-    goToPage,
-    nextPage,
-    previousPage,
-    setPageSize,
-    filters,
-    setFilters,
-    clearFilters,
-    filterCount,
-    sortConfig,
-    toggleSort,
-    refresh,
-  } = useUsersView();
+  const {users, metrics, isLoading, isFetching, error, currentPage, totalPages, pageSize, totalItems, goToPage, nextPage, previousPage, setPageSize, filters, setFilters, clearFilters, filterCount, sortConfig, toggleSort, refresh} = useUsersView();
 
   const approveUser = useApproveUser();
   const denyUser = useDenyUser();
   const setPendingUser = useSetPendingUser();
   const setAdminRole = useSetAdminRole();
   const updateContractLevel = useUpdateContractLevel();
-  const { data: currentUserProfile } = useCurrentUserProfile();
+  const {data: currentUserProfile} = useCurrentUserProfile();
 
   const [showFilters, setShowFilters] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -535,7 +480,7 @@ export const UserManagementDashboard: React.FC = () => {
               const pages = [];
               const maxVisible = 5;
               let start = Math.max(1, currentPage - Math.floor(maxVisible / 2));
-              let end = Math.min(totalPages, start + maxVisible - 1);
+              const end = Math.min(totalPages, start + maxVisible - 1);
 
               if (end - start < maxVisible - 1) {
                 start = Math.max(1, end - maxVisible + 1);

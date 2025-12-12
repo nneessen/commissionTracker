@@ -1,9 +1,9 @@
 // src/features/analytics/components/SegmentCard.tsx
 
 import React from 'react';
-import { Card } from '@/components/ui/card';
-import { formatCurrency } from '../../../lib/format';
-import { cn } from '@/lib/utils';
+import {Card} from '@/components/ui/card';
+import {formatCurrency} from '../../../lib/format';
+import {cn} from '@/lib/utils';
 
 export type SegmentTier = 'high' | 'medium' | 'low';
 

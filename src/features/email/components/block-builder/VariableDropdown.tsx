@@ -1,12 +1,7 @@
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { Button } from '@/components/ui/button'
-import { Variable } from 'lucide-react'
-import { EMAIL_TEMPLATE_VARIABLES } from '@/types/email.types'
+import {DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger} from '@/components/ui/dropdown-menu'
+import {Button} from '@/components/ui/button'
+import {Variable} from 'lucide-react'
+import {EMAIL_TEMPLATE_VARIABLES} from '@/types/email.types'
 
 interface VariableDropdownProps {
   onInsert: (variable: string) => void

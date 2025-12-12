@@ -1,7 +1,7 @@
 // src/services/analytics/cohortService.ts
 
-import { Policy, Commission } from '../../types';
-import { format, parseISO, differenceInMonths } from 'date-fns';
+import {Policy, Commission} from '../../types';
+import {format, parseISO, differenceInMonths} from 'date-fns';
 
 /**
  * Cohort Analysis Service

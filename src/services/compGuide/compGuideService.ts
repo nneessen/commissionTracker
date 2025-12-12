@@ -1,7 +1,7 @@
 // /home/nneessen/projects/commissionTracker/src/services/compGuide/compGuideService.ts
 // Service layer for Commission Guide data from Supabase database
 
-import { supabase } from "../base/supabase";
+import {supabase} from "../base/supabase";
 
 export interface CompGuideRecord {
   id: string;

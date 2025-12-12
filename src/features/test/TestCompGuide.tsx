@@ -1,11 +1,11 @@
 // /home/nneessen/projects/commissionTracker/src/features/test/TestCompGuide.tsx
 
 import React, { useEffect, useState } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
-import { useCarriers } from '../../hooks/carriers';
-import { useProducts } from '../../hooks/products/useProducts';
-import { useCompGuide } from '../../hooks/comps';
-import { supabase } from '../../services/base/supabase';
+import {useAuth} from '../../contexts/AuthContext';
+import {useCarriers} from '../../hooks/carriers';
+import {useProducts} from '../../hooks/products/useProducts';
+import {useCompGuide} from '../../hooks/comps';
+import {supabase} from '../../services/base/supabase';
 
 export const TestCompGuide: React.FC = () => {
   const { user } = useAuth();

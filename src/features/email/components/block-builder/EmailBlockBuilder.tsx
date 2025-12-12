@@ -1,44 +1,17 @@
-import { useState, useCallback, createContext, useContext, useRef } from 'react'
-import {
-  DndContext,
-  DragOverlay,
-  useSensor,
-  useSensors,
-  PointerSensor,
-  KeyboardSensor,
-  closestCenter,
-  type DragStartEvent,
-  type DragEndEvent,
-  type DragOverEvent,
-} from '@dnd-kit/core'
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
-} from '@dnd-kit/sortable'
-import { Eye, Pencil } from 'lucide-react'
-import { cn } from '@/lib/utils'
-import { Button } from '@/components/ui/button'
-import type { EmailBlock, EmailBlockType } from '@/types/email.types'
-import { BlockPalette } from './BlockPalette'
-import { BlockCanvas } from './BlockCanvas'
-import { BlockStylePanel } from './BlockStylePanel'
-import { BlockPreview, blocksToHtml } from './BlockPreview'
-import { VariableDropdown } from './VariableDropdown'
-import { SubjectEditor } from './SubjectEditor'
-import {
-  createDefaultHeaderBlock,
-  createDefaultTextBlock,
-  createDefaultButtonBlock,
-  createDefaultDividerBlock,
-  createDefaultSpacerBlock,
-  createDefaultFooterBlock,
-  createDefaultImageBlock,
-  createDefaultQuoteBlock,
-  createDefaultSocialBlock,
-  createDefaultColumnsBlock,
-} from './blocks'
+import {useState, useCallback, createContext, useContext, useRef} from 'react'
+import {DndContext, DragOverlay, useSensor, useSensors, PointerSensor, KeyboardSensor, closestCenter, type DragStartEvent, type DragEndEvent, type DragOverEvent} from '@dnd-kit/core'
+import {arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy} from '@dnd-kit/sortable'
+import {Eye, Pencil} from 'lucide-react'
+import {cn} from '@/lib/utils'
+import {Button} from '@/components/ui/button'
+import type {EmailBlock, EmailBlockType} from '@/types/email.types'
+import {BlockPalette} from './BlockPalette'
+import {BlockCanvas} from './BlockCanvas'
+import {BlockStylePanel} from './BlockStylePanel'
+import {BlockPreview, blocksToHtml} from './BlockPreview'
+import {VariableDropdown} from './VariableDropdown'
+import {SubjectEditor} from './SubjectEditor'
+import {createDefaultHeaderBlock, createDefaultTextBlock, createDefaultButtonBlock, createDefaultDividerBlock, createDefaultSpacerBlock, createDefaultFooterBlock, createDefaultImageBlock, createDefaultQuoteBlock, createDefaultSocialBlock, createDefaultColumnsBlock} from './blocks'
 
 // Context for variable insertion
 interface BlockBuilderContextType {

@@ -1,20 +1,20 @@
 // src/features/recruiting/RecruitingDashboard.tsx
 
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { UserPlus, Mail, Download, Settings2 } from 'lucide-react';
-import { useRecruits } from './hooks/useRecruits';
-import { RecruitListTable } from './components/RecruitListTable';
-import { RecruitDetailPanel } from './components/RecruitDetailPanel';
-import { AddRecruitDialog } from './components/AddRecruitDialog';
-import { StatusLegend } from './components/StatusLegend';
-import { RecruitingErrorBoundary } from './components/RecruitingErrorBoundary';
-import type { UserProfile } from '@/types/hierarchy.types';
-import { useAuth } from '@/contexts/AuthContext';
-import { showToast } from '@/utils/toast';
-import { Link } from '@tanstack/react-router';
-import { downloadCSV } from '@/utils/exportHelpers';
+import {Button} from '@/components/ui/button';
+import {Card} from '@/components/ui/card';
+import {UserPlus, Mail, Download, Settings2} from 'lucide-react';
+import {useRecruits} from './hooks/useRecruits';
+import {RecruitListTable} from './components/RecruitListTable';
+import {RecruitDetailPanel} from './components/RecruitDetailPanel';
+import {AddRecruitDialog} from './components/AddRecruitDialog';
+import {StatusLegend} from './components/StatusLegend';
+import {RecruitingErrorBoundary} from './components/RecruitingErrorBoundary';
+import type {UserProfile} from '@/types/hierarchy.types';
+import {useAuth} from '@/contexts/AuthContext';
+import {showToast} from '@/utils/toast';
+import {Link} from '@tanstack/react-router';
+import {downloadCSV} from '@/utils/exportHelpers';
 
 // Extended type for recruits with joined data
 type RecruitWithRelations = UserProfile & {

@@ -1,6 +1,6 @@
 // /home/nneessen/projects/commissionTracker/src/hooks/base/useFilter.ts
 
-import { useState } from 'react';
+import {useState} from 'react';
 
 export type FilterOperator = 'equals' | 'contains' | 'startsWith' | 'endsWith' |
   'greaterThan' | 'lessThan' | 'between' | 'in' | 'notIn';

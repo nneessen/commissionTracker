@@ -1,12 +1,12 @@
 // src/features/recruiting/admin/PipelineAdminPage.tsx
 
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { ArrowLeft, Plus, Settings2 } from 'lucide-react';
-import { useNavigate } from '@tanstack/react-router';
-import { PipelineTemplatesList } from './PipelineTemplatesList';
-import { PipelineTemplateEditor } from './PipelineTemplateEditor';
+import {Button} from '@/components/ui/button';
+import {Card} from '@/components/ui/card';
+import {Plus, Settings2} from 'lucide-react';
+import {useNavigate} from '@tanstack/react-router';
+import {PipelineTemplatesList} from './PipelineTemplatesList';
+import {PipelineTemplateEditor} from './PipelineTemplateEditor';
 
 export function PipelineAdminPage() {
   const navigate = useNavigate();

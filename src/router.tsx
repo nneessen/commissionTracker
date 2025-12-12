@@ -65,16 +65,18 @@ const dashboardRoute = createRoute({
 });
 
 // Login route with success handler
+function LoginComponent() {
+  const navigate = useNavigate();
+  const handleLoginSuccess = () => {
+    navigate({ to: "/" });
+  };
+  return <Login onSuccess={handleLoginSuccess} />;
+}
+
 const loginRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "login",
-  component: () => {
-    const navigate = useNavigate();
-    const handleLoginSuccess = () => {
-      navigate({ to: "/" });
-    };
-    return <Login onSuccess={handleLoginSuccess} />;
-  },
+  component: LoginComponent,
 });
 
 // Auth callback route (for email confirmation)
@@ -195,7 +197,7 @@ const authDiagnosticRoute = createRoute({
     const AuthDiagnostic = lazy(() =>
       import("./features/admin/components/AuthDiagnostic").then((m) => ({
         default: m.AuthDiagnostic,
-      }))
+      })),
     );
     return (
       <PermissionGuard requireEmail="nick@nickneessen.com">
@@ -323,4 +325,3 @@ declare module "@tanstack/react-router" {
     router: typeof router;
   }
 }
-

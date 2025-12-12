@@ -1,10 +1,10 @@
 // src/components/notifications/useNotifications.ts
-import { useEffect, useCallback } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/services/base/supabase';
-import { notificationService } from '@/services/notifications/notificationService';
-import { useAuth } from '@/contexts/AuthContext';
-import type { Notification } from '@/types/notification.types';
+import {useEffect, useCallback} from 'react';
+import {useQuery, useMutation, useQueryClient} from '@tanstack/react-query';
+import {supabase} from '@/services/base/supabase';
+import {notificationService} from '@/services/notifications/notificationService';
+import {useAuth} from '@/contexts/AuthContext';
+import type {Notification} from '@/types/notification.types';
 
 export const notificationKeys = {
   all: ['notifications'] as const,
@@ -70,7 +70,7 @@ export function useMarkAsRead() {
 
       return { previousNotifications, previousCount };
     },
-    onError: (err, notificationId, context) => {
+    onError: (_err, _notificationId, context) => {
       // Rollback on error
       if (context?.previousNotifications) {
         queryClient.setQueryData(notificationKeys.list(), context.previousNotifications);

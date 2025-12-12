@@ -1,16 +1,7 @@
 // Enhanced client service with full CRUD operations and statistics
-import { supabase, TABLES } from '../base/supabase';
-import type {
-  Client,
-  CreateClientData,
-  UpdateClientData,
-  ClientFilters,
-  ClientWithStats,
-  ClientWithPolicies,
-  ClientSelectOption,
-  ClientSortConfig,
-} from '../../types/client.types';
-import type { Policy } from '../../types/policy.types';
+import {supabase, TABLES} from '../base/supabase';
+import type {Client, CreateClientData, UpdateClientData, ClientFilters, ClientWithStats, ClientWithPolicies, ClientSelectOption, ClientSortConfig} from '../../types/client.types';
+import type {Policy} from '../../types/policy.types';
 
 // Legacy interface for backward compatibility
 export interface ClientData {

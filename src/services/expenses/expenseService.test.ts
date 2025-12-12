@@ -1,9 +1,9 @@
 // src/services/expenses/expenseService.test.ts
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { expenseService } from './expenseService';
-import { supabase } from '../base/supabase';
-import type { CreateExpenseData, Expense } from '../../types/expense.types';
+import {describe, it, expect, beforeEach, vi} from 'vitest';
+import {expenseService} from './expenseService';
+import {supabase} from '../base/supabase';
+import type {CreateExpenseData, Expense} from '../../types/expense.types';
 
 // Mock Supabase
 vi.mock('../base/supabase', () => ({

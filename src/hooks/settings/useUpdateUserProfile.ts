@@ -1,7 +1,7 @@
 // src/hooks/settings/useUpdateUserProfile.ts
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { userService } from '../../services/settings/userService';
-import { UpdateUserData } from '../../types/user.types';
+import {useMutation, useQueryClient} from '@tanstack/react-query';
+import {userService} from '../../services/settings/userService';
+import {UpdateUserData} from '../../types/user.types';
 
 /**
  * Hook for updating the current user's profile

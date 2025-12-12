@@ -1,8 +1,8 @@
 // /home/nneessen/projects/commissionTracker/src/components/ProtectedRoute.tsx
 
 import React from 'react';
-import { Navigate } from '@tanstack/react-router';
-import { useAuth } from '../contexts/AuthContext';
+import {Navigate} from '@tanstack/react-router';
+import {useAuth} from '../contexts/AuthContext';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;

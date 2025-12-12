@@ -1,16 +1,9 @@
 // src/features/reports/components/ReportSelector.tsx
 
 import React from 'react';
-import { ReportType } from '../../../types/reports.types';
-import { Button } from '../../../components/ui/button';
-import {
-  LayoutDashboard,
-  DollarSign,
-  FileText,
-  Users,
-  TrendingUp,
-  BarChart3,
-} from 'lucide-react';
+import {ReportType} from '../../../types/reports.types';
+import {Button} from '../../../components/ui/button';
+import {LayoutDashboard, DollarSign, FileText, Users, TrendingUp, BarChart3} from 'lucide-react';
 
 interface ReportSelectorProps {
   selectedType: ReportType;

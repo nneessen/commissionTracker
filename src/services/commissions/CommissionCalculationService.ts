@@ -1,12 +1,12 @@
 // src/services/commissions/CommissionCalculationService.ts
 // Handles commission calculations using comp guide
 
-import { Commission } from '../../types/commission.types';
-import { logger } from '../base/logger';
-import type { CreateCommissionData } from './CommissionCRUDService';
-import { commissionCRUDService } from './CommissionCRUDService';
-import { CalculationError, ExternalServiceError, NotFoundError, ValidationError, getErrorMessage } from '../../errors/ServiceErrors';
-import { withRetry } from '../../utils/retry';
+import {Commission} from '../../types/commission.types';
+import {logger} from '../base/logger';
+import type {CreateCommissionData} from './CommissionCRUDService';
+import {commissionCRUDService} from './CommissionCRUDService';
+import {CalculationError, ExternalServiceError, NotFoundError, ValidationError, getErrorMessage} from '../../errors/ServiceErrors';
+import {withRetry} from '../../utils/retry';
 
 export interface CalculationResult {
   advanceAmount: number; // Changed from commissionAmount for clarity

@@ -1,9 +1,9 @@
 // src/features/dashboard/components/QuickStatsPanel.tsx
 
 import React from 'react';
-import { QuickStatsPanelProps } from '../../../types/dashboard.types';
-import { StatItem } from './StatItem';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {QuickStatsPanelProps} from '../../../types/dashboard.types';
+import {StatItem} from './StatItem';
+import {Card, CardContent, CardHeader, CardTitle} from '@/components/ui/card';
 
 /**
  * Quick Stats Panel Component

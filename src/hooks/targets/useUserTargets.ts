@@ -1,7 +1,7 @@
 // src/hooks/targets/useUserTargets.ts
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { userTargetsService, UpdateUserTargetsInput, UserTargets } from '@/services/userTargets/userTargetsService';
+import {useQuery, useMutation, useQueryClient} from '@tanstack/react-query';
+import {userTargetsService, UpdateUserTargetsInput, UserTargets} from '@/services/userTargets/userTargetsService';
 
 export interface UseUserTargetsOptions {
   enabled?: boolean;
@@ -36,7 +36,7 @@ export const useUpdateUserTargets = () => {
     mutationFn: async (input: UpdateUserTargetsInput) => {
       return await userTargetsService.upsert(input);
     },
-    onSuccess: (data) => {
+    onSuccess: (_data) => {
       // Invalidate and refetch user targets
       queryClient.invalidateQueries({ queryKey: ['user-targets'] });
     },

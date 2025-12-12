@@ -1,6 +1,6 @@
 import React from 'react';
-import { BarChart3, Building2, Package, Percent, TrendingUp } from 'lucide-react';
-import { useComps } from '../../hooks/comps';
+import {BarChart3, Building2, Package, Percent, TrendingUp} from 'lucide-react';
+import {useComps} from '../../hooks/comps';
 
 export function CompStats() {
   const { data: comps, isLoading, error } = useComps();

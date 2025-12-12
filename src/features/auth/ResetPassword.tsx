@@ -1,15 +1,15 @@
 // src/features/auth/ResetPassword.tsx
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from '@tanstack/react-router';
-import { useAuth } from '../../contexts/AuthContext';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent } from '@/components/ui/card';
-import { logger } from '../../services/base/logger';
-import { AuthErrorDisplay } from './components/AuthErrorDisplay';
-import { AuthSuccessMessage } from './components/AuthSuccessMessage';
+import {useNavigate} from '@tanstack/react-router';
+import {useAuth} from '../../contexts/AuthContext';
+import {Button} from '@/components/ui/button';
+import {Input} from '@/components/ui/input';
+import {Label} from '@/components/ui/label';
+import {Card, CardContent} from '@/components/ui/card';
+import {logger} from '../../services/base/logger';
+import {AuthErrorDisplay} from './components/AuthErrorDisplay';
+import {AuthSuccessMessage} from './components/AuthSuccessMessage';
 
 /**
  * ResetPassword - Handle password reset after user clicks email link

@@ -1,15 +1,8 @@
 // src/services/reports/reportBundleService.ts
 
-import { format } from 'date-fns';
+import {format} from 'date-fns';
 import ExcelJS from 'exceljs';
-import {
-  Report,
-  ReportType,
-  ReportBundleTemplate,
-  BundleTemplateId,
-  BundleExportOptions,
-  BundleCoverPage,
-} from '../../types/reports.types';
+import {Report, ReportType, ReportBundleTemplate, BundleTemplateId, BundleExportOptions, BundleCoverPage} from '../../types/reports.types';
 
 // ============================================================================
 // BUNDLE TEMPLATES
@@ -54,7 +47,7 @@ export const BUNDLE_TEMPLATES: ReportBundleTemplate[] = [
 ];
 
 // Report type display names
-const REPORT_TYPE_NAMES: Record<ReportType, string> = {
+const _REPORT_TYPE_NAMES: Record<ReportType, string> = {
   'executive-dashboard': 'Executive Dashboard',
   'commission-performance': 'Commission Performance',
   'policy-performance': 'Policy Performance',
@@ -217,8 +210,7 @@ export class ReportBundleService {
   }
 
   private static generateReportSectionHTML(
-    report: Report,
-    index: number,
+    report: Report, _index: number,
     includeInsights: boolean
   ): string {
     // Generate executive summary metrics
@@ -816,8 +808,7 @@ export class ReportBundleService {
 
   private static addReportSheet(
     workbook: ExcelJS.Workbook,
-    report: Report,
-    index: number
+    report: Report, _index: number
   ): void {
     const sheetName = this.getSheetName(report.type);
     const sheet = workbook.addWorksheet(sheetName);

@@ -1,9 +1,9 @@
 // src/features/reports/components/InsightCard.tsx
 
 import React from 'react';
-import { ActionableInsight } from '../../../types/reports.types';
-import { Card } from '../../../components/ui/card';
-import { AlertTriangle, AlertCircle, Info, TrendingUp, Shield } from 'lucide-react';
+import {ActionableInsight} from '../../../types/reports.types';
+import {Card} from '../../../components/ui/card';
+import {AlertTriangle, AlertCircle, Info, TrendingUp, Shield} from 'lucide-react';
 
 interface InsightCardProps {
   insight: ActionableInsight;

@@ -7,9 +7,9 @@
  * Extracted from DashboardHome.tsx (lines 963-1147).
  */
 
-import { AlertConfig } from '../../../types/dashboard.types';
-import { TimePeriod, getPeriodLabel } from '../../../utils/dateRange';
-import { formatPercent, formatCurrency } from '../../../lib/format';
+import {AlertConfig} from '../../../types/dashboard.types';
+import {TimePeriod, getPeriodLabel} from '../../../utils/dateRange';
+import {formatPercent, formatCurrency} from '../../../lib/format';
 
 interface AlertsConfigParams {
   timePeriod: TimePeriod;

@@ -1,15 +1,7 @@
 // File: /home/nneessen/projects/commissionTracker/src/services/workflowService.ts
 
-import { supabase } from '@/services/base/supabase';
-import type {
-  Workflow,
-  WorkflowRun,
-  WorkflowTemplate,
-  TriggerEventType,
-  WorkflowFormData,
-  WorkflowStats,
-  WorkflowStatus
-} from '@/types/workflow.types';
+import {supabase} from '@/services/base/supabase';
+import type {Workflow, WorkflowRun, WorkflowTemplate, TriggerEventType, WorkflowFormData, WorkflowStats, WorkflowStatus} from '@/types/workflow.types';
 
 class WorkflowService {
   // =====================================================

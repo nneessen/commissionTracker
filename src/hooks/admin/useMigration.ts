@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { dataMigrationService, MigrationResult } from '../../utils/dataMigration';
+import {useState} from 'react';
+import {dataMigrationService, MigrationResult} from '../../utils/dataMigration';
 
 export interface UseMigrationResult {
   migrate: () => Promise<MigrationResult>;

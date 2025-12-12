@@ -1,6 +1,6 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { compGuideService, CompGuideCreateData } from '../../services/settings/compGuideService';
-import { Database } from '../../types/database.types';
+import {useQuery, useMutation, useQueryClient} from '@tanstack/react-query';
+import {compGuideService, CompGuideCreateData} from '../../services/settings/compGuideService';
+import {Database} from '../../types/database.types';
 
 type CompGuideRow = Database['public']['Tables']['comp_guide']['Row'];
 type CompGuideInsert = Database['public']['Tables']['comp_guide']['Insert'];

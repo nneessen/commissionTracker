@@ -1,15 +1,11 @@
-import { useState } from 'react'
-import { Check, ChevronDown, Type } from 'lucide-react'
-import { cn } from '@/lib/utils'
-import { Button } from '@/components/ui/button'
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import type { EmailFontFamily, EmailFontWeight } from '@/types/email.types'
-import { MODERN_EMAIL_FONTS } from '@/types/email.types'
+import {useState} from 'react'
+import {Type} from 'lucide-react'
+import {cn} from '@/lib/utils'
+import {Button} from '@/components/ui/button'
+import {Popover, PopoverContent, PopoverTrigger} from '@/components/ui/popover'
+import {ScrollArea} from '@/components/ui/scroll-area'
+import type {EmailFontFamily, EmailFontWeight} from '@/types/email.types'
+import {MODERN_EMAIL_FONTS} from '@/types/email.types'
 
 interface FontPickerProps {
   value: EmailFontFamily | undefined

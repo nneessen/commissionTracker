@@ -1,15 +1,15 @@
 // src/features/hierarchy/components/HierarchyTree.tsx
 
 import React, { useState, useMemo } from 'react';
-import { ChevronRight, ChevronDown, User, Mail, Search, Users } from 'lucide-react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { cn } from '@/lib/utils';
-import { formatCurrency } from '@/lib/format';
-import { AgentDetailModal } from './AgentDetailModal';
-import type { HierarchyNode } from '@/types/hierarchy.types';
+import {Mail, Search, Users} from 'lucide-react';
+import {Card, CardHeader, CardTitle, CardContent} from '@/components/ui/card';
+import {Badge} from '@/components/ui/badge';
+import {Button} from '@/components/ui/button';
+import {Input} from '@/components/ui/input';
+import {cn} from '@/lib/utils';
+import {formatCurrency} from '@/lib/format';
+import {AgentDetailModal} from './AgentDetailModal';
+import type {HierarchyNode} from '@/types/hierarchy.types';
 
 interface HierarchyTreeProps {
   nodes: HierarchyNode[];

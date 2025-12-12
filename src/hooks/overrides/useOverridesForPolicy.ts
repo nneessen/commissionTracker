@@ -1,7 +1,7 @@
 // src/hooks/overrides/useOverridesForPolicy.ts
 
-import { useQuery } from '@tanstack/react-query';
-import { overrideService } from '../../services/overrides/overrideService';
+import {useQuery} from '@tanstack/react-query';
+import {overrideService} from '../../services/overrides/overrideService';
 
 export interface UseOverridesForPolicyOptions {
   enabled?: boolean;

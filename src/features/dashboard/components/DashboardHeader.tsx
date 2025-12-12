@@ -1,8 +1,8 @@
 // src/features/dashboard/components/DashboardHeader.tsx
 
 import React from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { DashboardHeaderProps } from "../../../types/dashboard.types";
+import {Card, CardContent} from "@/components/ui/card";
+import {DashboardHeaderProps} from "../../../types/dashboard.types";
 
 export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   monthProgress,

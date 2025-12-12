@@ -1,10 +1,10 @@
 // src/features/policies/components/PolicyDashboardHeader.tsx
 
 import React from "react";
-import { Plus, Calendar } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import {Plus, Calendar} from "lucide-react";
+import {Button} from "@/components/ui/button";
+import {Card, CardContent} from "@/components/ui/card";
+import {Badge} from "@/components/ui/badge";
 
 interface PolicyDashboardHeaderProps {
   summary: {

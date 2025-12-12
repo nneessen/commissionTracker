@@ -1,9 +1,9 @@
 // src/services/expenses/recurringExpenseService.ts
 
-import { supabase } from '../base/supabase';
-import type { Expense, CreateExpenseData, RecurringFrequency } from '../../types/expense.types';
-import { parseLocalDate, formatDateForDB } from '../../lib/date';
-import { v4 as uuidv4 } from 'uuid';
+import {supabase} from '../base/supabase';
+import type {Expense, CreateExpenseData, RecurringFrequency} from '../../types/expense.types';
+import {parseLocalDate, formatDateForDB} from '../../lib/date';
+import {v4 as uuidv4} from 'uuid';
 
 /**
  * RecurringExpenseService - Auto-generate recurring expenses
@@ -139,39 +139,43 @@ class RecurringExpenseService {
         date.setDate(date.getDate() + (nth * 14));
         break;
 
-      case 'monthly':
+      case 'monthly': {
         // Add months first
         date.setMonth(date.getMonth() + nth);
         // Fix day overflow: if original was 31st and target month has 30 days, use 30th
         const lastDayOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
         date.setDate(Math.min(originalDay, lastDayOfMonth));
+      }
         break;
 
-      case 'quarterly':
+      case 'quarterly': {
         date.setMonth(date.getMonth() + (nth * 3));
         // Fix day overflow for quarterly
         const lastDayOfQuarter = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
         date.setDate(Math.min(originalDay, lastDayOfQuarter));
+      }
         break;
 
-      case 'semiannually':
+      case 'semiannually': {
         date.setMonth(date.getMonth() + (nth * 6));
         // Fix day overflow for semiannual
         const lastDayOfSemi = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
         date.setDate(Math.min(originalDay, lastDayOfSemi));
+      }
         break;
 
       case 'annually':
         date.setFullYear(date.getFullYear() + nth);
         break;
 
-      default:
+      default: {
         // Unknown frequency, default to monthly
         date.setMonth(date.getMonth() + nth);
         const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
         date.setDate(Math.min(originalDay, lastDay));
     }
 
+      }
     return date;
   }
 

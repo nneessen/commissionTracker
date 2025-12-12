@@ -1,13 +1,9 @@
 // File: /home/nneessen/projects/commissionTracker/src/hooks/workflows/useWorkflows.ts
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
-import { workflowService } from '@/services/workflowService';
-import type {
-  WorkflowFormData,
-  WorkflowStatus,
-  TriggerEventType
-} from '@/types/workflow.types';
+import {useQuery, useMutation, useQueryClient} from '@tanstack/react-query';
+import {toast} from 'sonner';
+import {workflowService} from '@/services/workflowService';
+import type {WorkflowFormData, WorkflowStatus, TriggerEventType} from '@/types/workflow.types';
 
 // =====================================================
 // QUERY KEYS

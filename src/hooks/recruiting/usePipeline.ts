@@ -1,7 +1,7 @@
 // /home/nneessen/projects/commissionTracker/src/hooks/recruiting/usePipeline.ts
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { pipelineService } from '../../services/recruiting/pipelineService';
+import {useQuery, useMutation, useQueryClient} from '@tanstack/react-query';
+import {pipelineService} from '../../services/recruiting/pipelineService';
 
 // Query keys
 const PIPELINE_KEYS = {

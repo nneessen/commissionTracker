@@ -1,27 +1,11 @@
 // src/hooks/analytics/useAnalyticsData.ts
 
 // React 19.1 optimizes automatically - useMemo removed
-import { usePolicies } from '../policies';
-import { useCommissions } from '../commissions';
-import { useExpenses } from '../expenses';
-import { useCarriers } from '../carriers';
-import {
-  getCohortRetention,
-  getChargebacksByCohort,
-  getEarningProgressByCohort,
-  getCohortSummary,
-  segmentClientsByValue,
-  calculateCrossSellOpportunities,
-  getClientLifetimeValue,
-  forecastRenewals,
-  calculateChargebackRisk,
-  projectGrowth,
-  detectSeasonality,
-  calculateContribution,
-  getProductMixEvolution,
-  calculateCarrierROI,
-  getTopMovers,
-} from '../../services/analytics';
+import {usePolicies} from '../policies';
+import {useCommissions} from '../commissions';
+import {useExpenses} from '../expenses';
+import {useCarriers} from '../carriers';
+import {getCohortRetention, getChargebacksByCohort, getEarningProgressByCohort, getCohortSummary, segmentClientsByValue, calculateCrossSellOpportunities, getClientLifetimeValue, forecastRenewals, calculateChargebackRisk, projectGrowth, detectSeasonality, calculateContribution, getProductMixEvolution, calculateCarrierROI, getTopMovers} from '../../services/analytics';
 
 export interface UseAnalyticsDataOptions {
   startDate?: Date;

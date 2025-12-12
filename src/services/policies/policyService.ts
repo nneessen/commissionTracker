@@ -1,11 +1,11 @@
-import { Policy, PolicyFilters, CreatePolicyData } from '../../types/policy.types';
-import { PolicyRepository } from './PolicyRepository';
-import { supabase } from '../base/supabase';
-import { logger } from '../base/logger';
-import { formatDateForDB } from '../../lib/date';
-import { commissionStatusService } from '../commissions/CommissionStatusService';
-import { DatabaseError, NotFoundError, ValidationError } from '../../errors/ServiceErrors';
-import { workflowEventEmitter, WORKFLOW_EVENTS } from '../events/workflowEventEmitter';
+import {Policy, PolicyFilters, CreatePolicyData} from '../../types/policy.types';
+import {PolicyRepository} from './PolicyRepository';
+import {supabase} from '../base/supabase';
+import {logger} from '../base/logger';
+import {formatDateForDB} from '../../lib/date';
+import {commissionStatusService} from '../commissions/CommissionStatusService';
+import {DatabaseError, NotFoundError, ValidationError} from '../../errors/ServiceErrors';
+import {workflowEventEmitter, WORKFLOW_EVENTS} from '../events/workflowEventEmitter';
 
 /**
  * Service layer for policies - handles business logic
@@ -161,7 +161,7 @@ class PolicyService {
       page,
       pageSize,
       orderBy: sortConfig?.field || 'created_at',
-      orderDirection: sortConfig?.direction || 'desc' as 'desc'
+      orderDirection: sortConfig?.direction || 'desc' as const
     };
 
     return this.repository.findAll(options, repoFilters);

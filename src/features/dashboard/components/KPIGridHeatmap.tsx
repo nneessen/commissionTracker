@@ -1,16 +1,11 @@
 // src/features/dashboard/components/KPIGridHeatmap.tsx
 
 import React from 'react';
-import { DetailedKPIGridProps } from '../../../types/dashboard.types';
-import { cn } from '@/lib/utils';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { MiniSparkline } from './kpi-layouts/MiniSparkline';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
+import {DetailedKPIGridProps} from '../../../types/dashboard.types';
+import {cn} from '@/lib/utils';
+import {Card, CardContent, CardHeader, CardTitle} from '@/components/ui/card';
+import {MiniSparkline} from './kpi-layouts/MiniSparkline';
+import {Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from '@/components/ui/tooltip';
 
 /**
  * Get performance color based on value

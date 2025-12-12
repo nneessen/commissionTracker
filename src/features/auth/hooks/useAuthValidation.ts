@@ -1,6 +1,6 @@
 // src/features/auth/hooks/useAuthValidation.ts
 
-import { useState } from 'react';
+import {useState} from 'react';
 
 export interface FormErrors {
   email?: string;

@@ -1,8 +1,8 @@
 // src/features/expenses/components/ExpenseTemplatesPanel.tsx
-import { Card, CardHeader, CardContent, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { formatCurrency } from "@/lib/format";
-import type { ExpenseTemplate } from "@/types/expense.types";
+import {Card, CardHeader, CardContent, CardDescription} from "@/components/ui/card";
+import {Button} from "@/components/ui/button";
+import {formatCurrency} from "@/lib/format";
+import type {ExpenseTemplate} from "@/types/expense.types";
 
 interface ExpenseTemplatesPanelProps {
   templates: ExpenseTemplate[];

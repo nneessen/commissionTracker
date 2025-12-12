@@ -1,10 +1,10 @@
 // src/features/dashboard/components/PerformanceMetrics.tsx
 
 import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { BarChart3, Trophy, TrendingUp } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import {Card, CardContent} from '@/components/ui/card';
+import {Badge} from '@/components/ui/badge';
+import {BarChart3, Trophy, TrendingUp} from 'lucide-react';
+import {cn} from '@/lib/utils';
 
 interface ProductPerformance {
   product: string;

@@ -1,7 +1,7 @@
 // src/types/hierarchy.types.ts
 // Type definitions for insurance agency hierarchy system
 
-import type { CommissionStatus } from './commission.types';
+import type {CommissionStatus} from './commission.types';
 
 /**
  * User profile with hierarchy information
@@ -40,9 +40,9 @@ export interface UserProfile {
   pipeline_template_id?: string | null;
 
   // Social media
-  instagram_username?: string | null;
+  instagramusername?: string | null;
   instagram_url?: string | null;
-  linkedin_username?: string | null;
+  linkedinusername?: string | null;
   linkedin_url?: string | null;
 
   // Timestamps

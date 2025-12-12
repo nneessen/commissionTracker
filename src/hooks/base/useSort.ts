@@ -1,6 +1,6 @@
 // /home/nneessen/projects/commissionTracker/src/hooks/base/useSort.ts
 
-import { useState } from 'react';
+import {useState} from 'react';
 
 export type SortDirection = 'asc' | 'desc';
 

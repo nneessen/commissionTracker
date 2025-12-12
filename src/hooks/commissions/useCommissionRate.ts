@@ -2,8 +2,8 @@
  * Hook to fetch commission rate from comp_guide table
  * Based on product_id and agent's contract_level
  */
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/services/base/supabase';
+import {useQuery} from '@tanstack/react-query';
+import {supabase} from '@/services/base/supabase';
 
 export function useCommissionRate(productId?: string, contractLevel?: number) {
   return useQuery({

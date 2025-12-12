@@ -1,13 +1,6 @@
 // src/services/uploads/FileValidationService.ts
 
-import {
-  FileValidationResult,
-  FileSecurityCheck,
-  FileUploadOptions,
-  SECURITY_CONFIG,
-  FILE_CATEGORIES,
-  FileCategory
-} from './types';
+import {FileValidationResult, FileSecurityCheck, FileUploadOptions, SECURITY_CONFIG, FILE_CATEGORIES, FileCategory} from './types';
 
 export class FileValidationService {
   private static instance: FileValidationService;
@@ -118,10 +111,10 @@ export class FileValidationService {
    */
   sanitizeFileName(fileName: string): string {
     // Remove path traversal attempts
-    let safe = fileName.replace(/\.\./g, '').replace(/[\/\\]/g, '_');
+    let safe = fileName.replace(/../g, '').replace(/[/\\]/g, '_');
 
     // Remove control characters and special characters
-    safe = safe.replace(/[^\w\s\-\.]/gi, '_');
+    safe = safe.replace(/[^\w\s\-.]/gi, '_');
 
     // Limit length
     if (safe.length > SECURITY_CONFIG.maxFileNameLength) {
@@ -325,7 +318,7 @@ export class FileValidationService {
         message: 'File content validation passed',
         severity: 'info',
       };
-    } catch (error) {
+    } catch (_error) {
       return {
         checkType: 'content',
         passed: false,
@@ -370,7 +363,7 @@ export class FileValidationService {
             };
           }
         }
-      } catch (error) {
+      } catch (_error) {
         // If we can't read it, be cautious
         return {
           checkType: 'content',

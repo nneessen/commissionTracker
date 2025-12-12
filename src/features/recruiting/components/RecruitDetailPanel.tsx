@@ -1,47 +1,28 @@
 // src/features/recruiting/components/RecruitDetailPanel.tsx
 
 import React, { useState } from 'react';
-import { UserProfile } from '@/types/hierarchy.types';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import {
-  Mail,
-  Phone,
-  FileText,
-  Activity,
-  ArrowRight,
-  AlertCircle,
-  User,
-  Instagram,
-  Linkedin,
-  Trash2,
-} from 'lucide-react';
-import { DeleteRecruitDialogOptimized } from './DeleteRecruitDialog.optimized';
-import { useRouter } from '@tanstack/react-router';
-import { PhaseTimeline } from './PhaseTimeline';
-import { PhaseChecklist } from './PhaseChecklist';
-import { DocumentManager } from './DocumentManager';
-import { EmailManager } from './EmailManager';
-import {
-  useRecruitPhaseProgress,
-  useCurrentPhase,
-  useChecklistProgress,
-  useAdvancePhase,
-  useBlockPhase,
-  useUpdatePhaseStatus,
-  useInitializeRecruitProgress,
-} from '../hooks/useRecruitProgress';
-import { useActiveTemplate } from '../hooks/usePipeline';
-import { useCurrentUserProfile } from '@/hooks/admin/useUserApproval';
+import {UserProfile} from '@/types/hierarchy.types';
+import {Tabs, TabsContent, TabsList, TabsTrigger} from '@/components/ui/tabs';
+import {Button} from '@/components/ui/button';
+import {Card} from '@/components/ui/card';
+import {Badge} from '@/components/ui/badge';
+import {Skeleton} from '@/components/ui/skeleton';
+import {Avatar, AvatarFallback, AvatarImage} from '@/components/ui/avatar';
+import {Mail, Phone, FileText, Activity, ArrowRight, AlertCircle, User, Instagram, Linkedin, Trash2} from 'lucide-react';
+import {DeleteRecruitDialogOptimized} from './DeleteRecruitDialog.optimized';
+import {useRouter} from '@tanstack/react-router';
+import {PhaseTimeline} from './PhaseTimeline';
+import {PhaseChecklist} from './PhaseChecklist';
+import {DocumentManager} from './DocumentManager';
+import {EmailManager} from './EmailManager';
+import {useRecruitPhaseProgress, useCurrentPhase, useChecklistProgress, useAdvancePhase, useBlockPhase, useUpdatePhaseStatus, useInitializeRecruitProgress} from '../hooks/useRecruitProgress';
+import {useActiveTemplate} from '../hooks/usePipeline';
+import {useCurrentUserProfile} from '@/hooks/admin/useUserApproval';
 
-import { useRecruitDocuments } from '../hooks/useRecruitDocuments';
-import { useRecruitEmails } from '../hooks/useRecruitEmails';
-import { useRecruitActivityLog } from '../hooks/useRecruitActivity';
-import { ONBOARDING_STATUS_COLORS } from '@/types/recruiting';
+import {useRecruitDocuments} from '../hooks/useRecruitDocuments';
+import {useRecruitEmails} from '../hooks/useRecruitEmails';
+import {useRecruitActivityLog} from '../hooks/useRecruitActivity';
+import {ONBOARDING_STATUS_COLORS} from '@/types/recruiting';
 
 // Default pipeline template ID (from seed migration)
 const DEFAULT_TEMPLATE_ID = '00000000-0000-0000-0000-000000000001';
@@ -57,7 +38,7 @@ export function RecruitDetailPanel({ recruit, currentUserId, isUpline = false, o
   const [activeTab, setActiveTab] = useState('progress');
   const [selectedPhaseId, setSelectedPhaseId] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const router = useRouter();
+  const _router = useRouter();
 
   // Get current user profile to check roles
   const { data: currentUserProfile } = useCurrentUserProfile();
@@ -66,7 +47,7 @@ export function RecruitDetailPanel({ recruit, currentUserId, isUpline = false, o
   const { data: phaseProgress, isLoading: progressLoading } = useRecruitPhaseProgress(recruit.id);
   const { data: currentPhase, isLoading: currentPhaseLoading } = useCurrentPhase(recruit.id);
   const { data: template, isLoading: templateLoading } = useActiveTemplate();
-  const { data: checklistProgress, isLoading: checklistLoading } = useChecklistProgress(
+  const { data: checklistProgress, isLoading: _checklistLoading } = useChecklistProgress(
     recruit.id,
     selectedPhaseId || currentPhase?.phase_id
   );
@@ -197,7 +178,7 @@ export function RecruitDetailPanel({ recruit, currentUserId, isUpline = false, o
                     className="flex items-center gap-1 text-blue-600 hover:text-blue-700 hover:underline"
                   >
                     <Instagram className="h-3 w-3" />
-                    <span className="truncate max-w-[100px]">@{recruit.instagram_username || 'IG'}</span>
+                    <span className="truncate max-w-[100px]">@{recruit.instagramusername || 'IG'}</span>
                   </a>
                 )}
                 {recruit.linkedin_url && (
@@ -208,7 +189,7 @@ export function RecruitDetailPanel({ recruit, currentUserId, isUpline = false, o
                     className="flex items-center gap-1 text-blue-600 hover:text-blue-700 hover:underline"
                   >
                     <Linkedin className="h-3 w-3" />
-                    <span className="truncate max-w-[100px]">{recruit.linkedin_username || 'LI'}</span>
+                    <span className="truncate max-w-[100px]">{recruit.linkedinusername || 'LI'}</span>
                   </a>
                 )}
               </div>

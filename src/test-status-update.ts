@@ -1,5 +1,5 @@
 // /home/nneessen/projects/commissionTracker/src/test-status-update.ts
-import { supabase } from './services/base/supabase';
+import {supabase} from './services/base/supabase';
 
 export async function testStatusUpdate() {
   console.log('=== TESTING STATUS UPDATE CASCADE ===');

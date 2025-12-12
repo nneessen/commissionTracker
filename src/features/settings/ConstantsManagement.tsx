@@ -1,12 +1,12 @@
 // src/features/settings/ConstantsManagement.tsx
 import React, { useState } from 'react';
-import { useConstants, useUpdateConstant } from '../../hooks/expenses/useConstants';
-import { Button } from '../../components/ui/button';
-import { Input } from '../../components/ui/input';
-import { Label } from '../../components/ui/label';
-import { Card, CardContent } from '../../components/ui/card';
-import { Alert, AlertDescription } from '../../components/ui/alert';
-import { AlertCircle, CheckCircle, Settings, DollarSign } from 'lucide-react';
+import {useConstants, useUpdateConstant} from '../../hooks/expenses/useConstants';
+import {Button} from '../../components/ui/button';
+import {Input} from '../../components/ui/input';
+import {Label} from '../../components/ui/label';
+import {Card, CardContent} from '../../components/ui/card';
+import {Alert, AlertDescription} from '../../components/ui/alert';
+import {AlertCircle, CheckCircle, Settings, DollarSign} from 'lucide-react';
 
 export const ConstantsManagement: React.FC = () => {
   const { data: constants, isLoading } = useConstants();

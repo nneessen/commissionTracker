@@ -3,8 +3,8 @@
 // Sends automated emails using Resend API
 // This function is for system-generated emails (workflows, notifications) not user emails
 
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { createSupabaseAdminClient } from '../_shared/supabase-client.ts'
+import {serve} from 'https://deno.land/std@0.168.0/http/server.ts'
+import {createSupabaseAdminClient} from '../_shared/supabase-client.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -64,7 +64,7 @@ serve(async (req) => {
         status: 'simulated',
         provider: 'none',
         created_at: new Date().toISOString()
-      }).catch(err => {
+      }).catch(_err => {
         // Ignore if table doesn't exist
         console.log('Could not log to email_logs table')
       })

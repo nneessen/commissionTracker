@@ -1,6 +1,6 @@
 // Product-related types for the commission tracker application
 
-import { Database } from './database.types';
+import {Database} from './database.types';
 
 // ProductType is the database enum for product types
 export type ProductType = Database["public"]["Enums"]["product_type"];

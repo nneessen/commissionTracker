@@ -1,43 +1,21 @@
 // src/features/training-hub/components/AutomationTab.tsx
 
-import { useState } from 'react';
-import { Plus, Play, Pause, Trash2, Edit, Settings, Clock, Zap, Mail, AlertCircle, Bug, Shield } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow
-} from '@/components/ui/table';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { useWorkflows, useWorkflowRuns, useUpdateWorkflowStatus, useDeleteWorkflow, useTriggerWorkflow } from '@/hooks/workflows';
+import {useState} from 'react';
+import {Plus, Play, Pause, Trash2, Edit, Settings, Clock, Zap, Mail, AlertCircle, Bug, Shield} from 'lucide-react';
+import {Button} from '@/components/ui/button';
+import {Badge} from '@/components/ui/badge';
+import {Tabs, TabsContent, TabsList, TabsTrigger} from '@/components/ui/tabs';
+import {AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle} from '@/components/ui/alert-dialog';
+import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from '@/components/ui/table';
+import {DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger} from '@/components/ui/dropdown-menu';
+import {useWorkflows, useWorkflowRuns, useUpdateWorkflowStatus, useDeleteWorkflow, useTriggerWorkflow} from '@/hooks/workflows';
 import WorkflowWizard from './WorkflowWizard';
 import WorkflowDiagnostic from './WorkflowDiagnostic';
 import EventTypeManager from './EventTypeManager';
-import type { Workflow } from '@/types/workflow.types';
-import { useAuth } from '@/contexts/AuthContext';
-import { cn } from '@/lib/utils';
-import { useCurrentUserProfile } from '@/hooks/admin/useUserApproval';
+import type {Workflow} from '@/types/workflow.types';
+import {useAuth} from '@/contexts/AuthContext';
+import {cn} from '@/lib/utils';
+import {useCurrentUserProfile} from '@/hooks/admin/useUserApproval';
 
 export default function AutomationTab() {
   const { user } = useAuth();

@@ -1,7 +1,7 @@
 // /home/nneessen/projects/commissionTracker/src/hooks/commissions/useUpdateMonthsPaid.ts
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { commissionStatusService } from '../../services/commissions/CommissionStatusService';
+import {useMutation, useQueryClient} from '@tanstack/react-query';
+import {commissionStatusService} from '../../services/commissions/CommissionStatusService';
 
 export interface UseUpdateMonthsPaidParams {
   commissionId: string;

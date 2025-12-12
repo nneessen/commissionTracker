@@ -1,21 +1,14 @@
 import React from 'react';
-import {
-  User,
-  Settings,
-  Building2,
-  Package,
-  Percent,
-  Mail
-} from 'lucide-react';
-import { SettingsCard } from './components/SettingsComponents';
-import { UserProfile } from './components/UserProfile';
-import { CarriersManagement } from './carriers/CarriersManagement';
-import { ProductsManagement } from './products/ProductsManagement';
-import { CommissionRatesManagement } from './commission-rates/CommissionRatesManagement';
-import { ConstantsManagement } from './ConstantsManagement';
-import { EmailConnectionManager } from '@/features/email';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { usePermissionCheck } from '@/hooks/permissions/usePermissions';
+import {User, Settings, Building2, Package, Percent, Mail} from 'lucide-react';
+import {SettingsCard} from './components/SettingsComponents';
+import {UserProfile} from './components/UserProfile';
+import {CarriersManagement} from './carriers/CarriersManagement';
+import {ProductsManagement} from './products/ProductsManagement';
+import {CommissionRatesManagement} from './commission-rates/CommissionRatesManagement';
+import {ConstantsManagement} from './ConstantsManagement';
+import {EmailConnectionManager} from '@/features/email';
+import {Tabs, TabsContent, TabsList, TabsTrigger} from '@/components/ui/tabs';
+import {usePermissionCheck} from '@/hooks/permissions/usePermissions';
 
 export function SettingsDashboard() {
   const { can } = usePermissionCheck();

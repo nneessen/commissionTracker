@@ -1,9 +1,9 @@
 // src/hooks/targets/useUpdateTargets.ts
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { targetsService } from '../../services/targets';
-import { supabase } from '../../services/base/supabase';
-import type { UpdateUserTargetsData } from '../../types/targets.types';
+import {useMutation, useQueryClient} from '@tanstack/react-query';
+import {targetsService} from '../../services/targets';
+import {supabase} from '../../services/base/supabase';
+import type {UpdateUserTargetsData} from '../../types/targets.types';
 
 /**
  * Update user targets using TanStack Mutation

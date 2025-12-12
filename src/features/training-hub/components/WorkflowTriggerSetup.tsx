@@ -1,20 +1,14 @@
 // src/features/training-hub/components/workflow-wizard/WorkflowTriggerSetup.tsx
 
-import { useState, useEffect } from 'react';
-import { Play, Calendar, Zap, Webhook } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { cn } from '@/lib/utils';
-import type { WorkflowFormData, TriggerType, WorkflowTrigger } from '@/types/workflow.types';
-import { useTriggerEventTypes } from '@/hooks/workflows';
+import {useState, useEffect} from 'react';
+import {Play, Calendar, Zap, Webhook} from 'lucide-react';
+import {Button} from '@/components/ui/button';
+import {Input} from '@/components/ui/input';
+import {Label} from '@/components/ui/label';
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '@/components/ui/select';
+import {cn} from '@/lib/utils';
+import type {WorkflowFormData, TriggerType, WorkflowTrigger} from '@/types/workflow.types';
+import {useTriggerEventTypes} from '@/hooks/workflows';
 import EventSelectionDialog from './EventSelectionDialog';
 
 interface WorkflowTriggerSetupProps {

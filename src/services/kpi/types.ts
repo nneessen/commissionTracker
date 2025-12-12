@@ -1,7 +1,7 @@
 // src/services/kpi/types.ts
 
-import { TimePeriod, DateRange } from '../../utils/dateRange';
-import { Commission, Policy, Expense, ProductType } from '../../types';
+import {TimePeriod, DateRange} from '../../utils/dateRange';
+import {Commission, Policy, Expense, ProductType} from '../../types';
 
 /**
  * METRIC CATEGORY 1: ACTUAL TOTALS

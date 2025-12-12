@@ -1,8 +1,8 @@
 // src/hooks/reports/useReportFilterOptions.ts
 
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '../../services/base/supabase';
-import { FilterOption } from '../../types/reports.types';
+import {useQuery} from '@tanstack/react-query';
+import {supabase} from '../../services/base/supabase';
+import {FilterOption} from '../../types/reports.types';
 
 interface ReportFilterOptions {
   carriers: FilterOption[];

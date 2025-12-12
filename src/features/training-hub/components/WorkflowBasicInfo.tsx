@@ -1,19 +1,13 @@
 // src/features/training-hub/components/workflow-wizard/WorkflowBasicInfo.tsx
 
-import { AlertCircle } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Slider } from '@/components/ui/slider';
-import { cn } from '@/lib/utils';
-import type { WorkflowFormData, WorkflowCategory } from '@/types/workflow.types';
+import {AlertCircle} from 'lucide-react';
+import {Input} from '@/components/ui/input';
+import {Label} from '@/components/ui/label';
+import {Textarea} from '@/components/ui/textarea';
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '@/components/ui/select';
+import {Slider} from '@/components/ui/slider';
+import {cn} from '@/lib/utils';
+import type {WorkflowFormData, WorkflowCategory} from '@/types/workflow.types';
 
 interface WorkflowBasicInfoProps {
   data: WorkflowFormData;

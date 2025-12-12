@@ -1,10 +1,10 @@
 // src/features/analytics/components/PaceMetrics.tsx
 
 import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { useAnalyticsDateRange } from '../context/AnalyticsDateContext';
-import { useMetricsWithDateRange } from '@/hooks/kpi/useMetricsWithDateRange';
-import { cn } from '@/lib/utils';
+import {Card, CardContent} from '@/components/ui/card';
+import {useAnalyticsDateRange} from '../context/AnalyticsDateContext';
+import {useMetricsWithDateRange} from '@/hooks/kpi/useMetricsWithDateRange';
+import {cn} from '@/lib/utils';
 
 /**
  * PaceMetrics - Shows what you need to do to hit your goals
@@ -19,7 +19,7 @@ import { cn } from '@/lib/utils';
  * - How much time is left?
  */
 export function PaceMetrics() {
-  const { dateRange, timePeriod } = useAnalyticsDateRange();
+  const {dateRange, timePeriod} = useAnalyticsDateRange();
 
   // Map analytics time period to dashboard time period for useMetricsWithDateRange
   // Default to 'monthly' for most cases
@@ -61,8 +61,8 @@ export function PaceMetrics() {
   }
 
   // Extract the data from the SAME calculations as dashboard
-  const { periodAnalytics, periodPolicies, periodCommissions } = metrics;
-  const { surplusDeficit, breakevenNeeded, policiesNeeded, netIncome } = periodAnalytics;
+  const {periodAnalytics, periodPolicies, periodCommissions} = metrics;
+  const {surplusDeficit, breakevenNeeded, policiesNeeded, netIncome} = periodAnalytics;
   const isProfitable = surplusDeficit >= 0;
 
   // Calculate time remaining based on selected period
@@ -85,8 +85,8 @@ export function PaceMetrics() {
   // Calculate pace targets (what's needed to break even)
   const policiesPerDayNeeded = policiesNeeded > 0 ? policiesNeeded / daysRemaining : 0;
   const dailyTarget = Math.ceil(policiesPerDayNeeded);
-  const weeklyTarget = Math.ceil(policiesPerDayNeeded * 7);
-  const monthlyTarget = Math.ceil(policiesPerDayNeeded * 30);
+  const _weeklyTarget = Math.ceil(policiesPerDayNeeded * 7);
+  const _monthlyTarget = Math.ceil(policiesPerDayNeeded * 30);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {

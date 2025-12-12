@@ -1,8 +1,8 @@
 // /home/nneessen/projects/commissionTracker/src/hooks/commissions/useChargebackSummary.ts
 
-import { useQuery } from '@tanstack/react-query';
-import { commissionStatusService } from '../../services/commissions/CommissionStatusService';
-import { supabase } from '../../services/base/supabase';
+import {useQuery} from '@tanstack/react-query';
+import {commissionStatusService} from '../../services/commissions/CommissionStatusService';
+import {supabase} from '../../services/base/supabase';
 
 /**
  * Hook to get chargeback summary metrics for the current user

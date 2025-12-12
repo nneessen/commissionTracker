@@ -1,29 +1,12 @@
 // src/features/training-hub/components/WorkflowWizard.tsx
 
-import { useState, useEffect, useCallback } from 'react';
-import {
-  ArrowLeft,
-  ArrowRight,
-  Check,
-  Save,
-  TestTube
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { cn } from '@/lib/utils';
-import type {
-  Workflow,
-  WorkflowFormData,
-  WorkflowAction,
-  WorkflowCategory,
-  WorkflowStatus,
-  TriggerType
-} from '@/types/workflow.types';
-import { useCreateWorkflow, useUpdateWorkflow, useWorkflows } from '@/hooks/workflows';
+import {useState, useEffect, useCallback} from 'react';
+import {ArrowLeft, ArrowRight, Check, Save, TestTube} from 'lucide-react';
+import {Button} from '@/components/ui/button';
+import {Dialog, DialogContent, DialogTitle} from '@/components/ui/dialog';
+import {cn} from '@/lib/utils';
+import type {Workflow, WorkflowFormData, WorkflowAction, WorkflowCategory, WorkflowStatus, TriggerType} from '@/types/workflow.types';
+import {useCreateWorkflow, useUpdateWorkflow, useWorkflows} from '@/hooks/workflows';
 import WorkflowBasicInfo from './WorkflowBasicInfo';
 import WorkflowTriggerSetup from './WorkflowTriggerSetup';
 import WorkflowActionsBuilder from './WorkflowActionsBuilder';

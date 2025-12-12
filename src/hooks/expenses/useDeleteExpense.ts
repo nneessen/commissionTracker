@@ -1,8 +1,8 @@
 // src/hooks/expenses/useDeleteExpense.ts
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { expenseService } from '../../services/expenses/expenseService';
-import { toast } from 'sonner';
+import {useMutation, useQueryClient} from '@tanstack/react-query';
+import {expenseService} from '../../services/expenses/expenseService';
+import {toast} from 'sonner';
 
 /**
  * Hook for deleting an expense

@@ -1,6 +1,6 @@
 // src/types/recruiting.types.ts
 
-import type { Database } from './database.types';
+import type {Database} from './database.types';
 
 export type AgentStatus = Database['public']['Enums']['agent_status'];
 

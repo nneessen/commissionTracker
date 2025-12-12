@@ -1,17 +1,10 @@
 // src/services/hierarchy/hierarchyService.ts
 // Service layer for hierarchy management - handles business logic for agency hierarchy
 
-import { supabase } from '../base/supabase';
-import { logger } from '../base/logger';
-import type {
-  HierarchyNode,
-  UserProfile,
-  DownlinePerformance,
-  HierarchyChangeRequest,
-  HierarchyValidationResult,
-  HierarchyStats,
-} from '../../types/hierarchy.types';
-import { DatabaseError, NotFoundError, ValidationError } from '../../errors/ServiceErrors';
+import {supabase} from '../base/supabase';
+import {logger} from '../base/logger';
+import type {HierarchyNode, UserProfile, DownlinePerformance, HierarchyChangeRequest, HierarchyValidationResult, HierarchyStats} from '../../types/hierarchy.types';
+import {DatabaseError, NotFoundError, ValidationError} from '../../errors/ServiceErrors';
 
 /**
  * Service layer for hierarchy operations
@@ -358,7 +351,7 @@ class HierarchyService {
       }
 
       // Check comp level constraint
-      // Note: contractCompLevel is stored in auth.users.raw_user_meta_data, not user_profiles
+      // Note: contractCompLevel is stored in auth.users.rawuser_meta_data, not user_profiles
       // We'll add this validation if needed in the future
       // For now, database trigger will enforce this
 

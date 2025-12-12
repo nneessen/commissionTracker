@@ -1,6 +1,6 @@
 // src/services/analytics/segmentationService.ts
 
-import { Policy } from '../../types';
+import {Policy} from '../../types';
 
 /**
  * Client Segmentation Service

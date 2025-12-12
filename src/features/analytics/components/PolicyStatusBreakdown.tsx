@@ -1,33 +1,13 @@
 // src/features/analytics/components/PolicyStatusBreakdown.tsx
 
 import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Legend,
-} from 'recharts';
-import { useAnalyticsData } from '@/hooks';
-import { useAnalyticsDateRange } from '../context/AnalyticsDateContext';
-import {
-  getPolicyStatusSummary,
-  getMonthlyTrendData,
-  getProductRetentionRates,
-} from '@/services/analytics/policyStatusService';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import {Card, CardContent} from '@/components/ui/card';
+import {AlertCircle} from 'lucide-react';
+import {LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend} from 'recharts';
+import {useAnalyticsData} from '@/hooks';
+import {useAnalyticsDateRange} from '../context/AnalyticsDateContext';
+import {getPolicyStatusSummary, getMonthlyTrendData, getProductRetentionRates} from '@/services/analytics/policyStatusService';
+import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from '@/components/ui/table';
 
 /**
  * PolicyStatusBreakdown - Clear view of policy statuses without jargon

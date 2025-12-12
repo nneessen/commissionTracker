@@ -1,14 +1,14 @@
 // src/features/hierarchy/components/InvitationsList.tsx
 
-import { useState, useEffect } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
-import { Send, X, Clock, CheckCircle, XCircle } from 'lucide-react';
-import { formatDate } from '@/lib/format';
-import { supabase } from '@/services/base/supabase';
-import { useAuth } from '@/contexts/AuthContext';
+import {useState, useEffect} from 'react';
+import {Card, CardContent} from '@/components/ui/card';
+import {Button} from '@/components/ui/button';
+import {Badge} from '@/components/ui/badge';
+import {cn} from '@/lib/utils';
+import {Send, X, Clock, CheckCircle, XCircle} from 'lucide-react';
+import {formatDate} from '@/lib/format';
+import {supabase} from '@/services/base/supabase';
+import {useAuth} from '@/contexts/AuthContext';
 import showToast from '@/utils/toast';
 
 interface Invitation {
@@ -53,7 +53,7 @@ export function InvitationsList() {
       // Would implement resend logic here
       showToast.success(`Invitation resent to ${invitation.invitee_email}`);
       await loadInvitations();
-    } catch (error) {
+    } catch (_error) {
       showToast.error('Failed to resend invitation');
     }
   };
@@ -68,7 +68,7 @@ export function InvitationsList() {
       if (error) throw error;
       showToast.success('Invitation cancelled');
       await loadInvitations();
-    } catch (error) {
+    } catch (_error) {
       showToast.error('Failed to cancel invitation');
     }
   };

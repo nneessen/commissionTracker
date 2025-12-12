@@ -1,12 +1,7 @@
 // src/services/recruiting/checklistService.ts
 
-import { supabase } from '@/services/base/supabase';
-import type {
-  RecruitPhaseProgress,
-  RecruitChecklistProgress,
-  UpdateChecklistItemStatusInput,
-  OnboardingStatus,
-} from '@/types/recruiting';
+import {supabase} from '@/services/base/supabase';
+import type {RecruitPhaseProgress, RecruitChecklistProgress, UpdateChecklistItemStatusInput, OnboardingStatus} from '@/types/recruiting';
 
 // Convert phase name to onboarding status key
 const phaseNameToStatus = (phaseName: string): OnboardingStatus => {
@@ -53,7 +48,7 @@ export const checklistService = {
 
   async getCurrentPhase(userId: string) {
     // First try to find an in_progress phase
-    let { data, error } = await supabase
+    const { data: initialData, error } = await supabase
       .from('recruit_phase_progress')
       .select(
         `
@@ -71,6 +66,7 @@ export const checklistService = {
     if (error) throw error;
 
     // If no in_progress phase, look for a blocked phase (so we can show unblock button)
+    let data = initialData;
     if (!data) {
       const { data: blockedData, error: blockedError } = await supabase
         .from('recruit_phase_progress')

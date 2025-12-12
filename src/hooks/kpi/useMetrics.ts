@@ -1,19 +1,11 @@
 // /home/nneessen/projects/commissionTracker/src/hooks/useMetrics.ts
 
-import { usePolicies } from '../policies';
-import { useCommissions } from '../commissions/useCommissions';
-import { useCarriers } from '../carriers/useCarriers';
-import {
-  ClientMetrics,
-  PolicyMetrics,
-  CommissionMetrics,
-  ForecastMetrics,
-  ProductPerformance,
-  CarrierPerformance,
-  StatePerformance
-} from '../../types/metrics.types';
-import { ProductType } from '../../types/commission.types';
-import { calculateCommissionAdvance } from '../../utils/policyCalculations';
+import {usePolicies} from '../policies';
+import {useCommissions} from '../commissions/useCommissions';
+import {useCarriers} from '../carriers/useCarriers';
+import {ClientMetrics, PolicyMetrics, CommissionMetrics, ForecastMetrics, ProductPerformance, CarrierPerformance, StatePerformance} from '../../types/metrics.types';
+import {ProductType} from '../../types/commission.types';
+import {calculateCommissionAdvance} from '../../utils/policyCalculations';
 
 export function useMetrics() {
   const { data: policies = [], isLoading: policiesLoading } = usePolicies();

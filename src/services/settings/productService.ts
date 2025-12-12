@@ -1,5 +1,5 @@
-import { supabase } from '@/services/base/supabase';
-import type { Database } from '@/types/database.types';
+import {supabase} from '@/services/base/supabase';
+import type {Database} from '@/types/database.types';
 
 type ProductRow = Database['public']['Tables']['products']['Row'];
 type ProductInsert = Database['public']['Tables']['products']['Insert'];

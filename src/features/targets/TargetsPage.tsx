@@ -1,34 +1,21 @@
 // src/features/targets/TargetsPage.tsx
 
-import { useState, useEffect } from "react";
-import {
-  useTargets,
-  useUpdateTargets,
-  useActualMetrics,
-} from "../../hooks/targets";
-import { useHistoricalAverages } from "../../hooks/targets/useHistoricalAverages";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import {
-  Edit2,
-  Target,
-  TrendingUp,
-  DollarSign,
-  Calendar,
-  FileText,
-  AlertCircle,
-  ChevronRight
-} from "lucide-react";
-import { cn } from "@/lib/utils";
-import { formatCurrency, formatPercent } from "../../lib/format";
-import { MetricTooltip } from "../../components/ui/MetricTooltip";
+import {useState, useEffect} from "react";
+import {useTargets, useUpdateTargets, useActualMetrics} from "../../hooks/targets";
+import {useHistoricalAverages} from "../../hooks/targets/useHistoricalAverages";
+import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
+import {Button} from "@/components/ui/button";
+import {Input} from "@/components/ui/input";
+import {Alert, AlertDescription} from "@/components/ui/alert";
+import {Edit2, Target, TrendingUp, DollarSign, Calendar, FileText, AlertCircle, ChevronRight} from "lucide-react";
+import {cn} from "@/lib/utils";
+import {formatCurrency, formatPercent} from "../../lib/format";
+import {MetricTooltip} from "../../components/ui/MetricTooltip";
 import showToast from "../../utils/toast";
-import { targetsCalculationService, CalculatedTargets } from "../../services/targets/targetsCalculationService";
-import { TargetInputDialog } from "./components/TargetInputDialog";
-import { CalculationBreakdown } from "./components/CalculationBreakdown";
-import { PersistencyScenarios } from "./components/PersistencyScenarios";
+import {targetsCalculationService, CalculatedTargets} from "../../services/targets/targetsCalculationService";
+import {TargetInputDialog} from "./components/TargetInputDialog";
+import {CalculationBreakdown} from "./components/CalculationBreakdown";
+import {PersistencyScenarios} from "./components/PersistencyScenarios";
 
 export function TargetsPage() {
   const { data: targets, isLoading, error } = useTargets();
@@ -141,7 +128,7 @@ export function TargetsPage() {
     return null;
   }
 
-  const getProgress = (actual: number, target: number) => {
+  const _getProgress = (actual: number, target: number) => {
     if (target === 0) return 0;
     return Math.min(100, (actual / target) * 100);
   };

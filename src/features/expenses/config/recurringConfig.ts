@@ -1,6 +1,6 @@
 // src/features/expenses/config/recurringConfig.ts
 
-import type { RecurringFrequency } from '../../../types/expense.types';
+import type {RecurringFrequency} from '../../../types/expense.types';
 
 /**
  * Recurring Expense Configuration

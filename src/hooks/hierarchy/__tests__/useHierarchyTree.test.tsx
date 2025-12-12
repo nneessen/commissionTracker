@@ -1,12 +1,12 @@
 // src/hooks/hierarchy/__tests__/useHierarchyTree.test.tsx
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook, waitFor } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useHierarchyTree } from '../useHierarchyTree';
-import { hierarchyService } from '../../../services/hierarchy/hierarchyService';
-import type { HierarchyNode } from '../../../types/hierarchy.types';
-import type { ReactNode } from 'react';
+import {describe, it, expect, vi, beforeEach} from 'vitest';
+import {renderHook, waitFor} from '@testing-library/react';
+import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
+import {useHierarchyTree} from '../useHierarchyTree';
+import {hierarchyService} from '../../../services/hierarchy/hierarchyService';
+import type {HierarchyNode} from '../../../types/hierarchy.types';
+import type {ReactNode} from 'react';
 
 // Mock the hierarchy service
 vi.mock('../../../services/hierarchy/hierarchyService', () => ({

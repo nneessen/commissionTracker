@@ -1,7 +1,7 @@
 // Client type definitions for the insurance sales tracker application
 
-import { Database } from './database.types';
-import { Policy } from './policy.types';
+import {Database} from './database.types';
+import {Policy} from './policy.types';
 
 // Extract types from database schema
 export type ClientRow = Database['public']['Tables']['clients']['Row'];
@@ -38,6 +38,7 @@ export interface CreateClientData {
 }
 
 // Data for updating an existing client (all fields optional)
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface UpdateClientData extends Partial<CreateClientData> {}
 
 // Client with aggregated statistics (from database function)

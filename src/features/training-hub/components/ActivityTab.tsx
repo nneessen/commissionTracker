@@ -1,10 +1,10 @@
 // src/features/training-hub/components/ActivityTab.tsx
-import { Mail, Bell, Clock, AlertCircle, CheckCircle2, Info } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/services/base/supabase";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { formatDistanceToNow } from "date-fns";
+import {Mail, Bell, Clock, AlertCircle, CheckCircle2, Info} from "lucide-react";
+import {useQuery} from "@tanstack/react-query";
+import {supabase} from "@/services/base/supabase";
+import {Badge} from "@/components/ui/badge";
+import {Skeleton} from "@/components/ui/skeleton";
+import {formatDistanceToNow} from "date-fns";
 
 interface ActivityTabProps {
   searchQuery: string;

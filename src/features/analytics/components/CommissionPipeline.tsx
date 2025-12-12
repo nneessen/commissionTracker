@@ -1,11 +1,11 @@
 // src/features/analytics/components/CommissionPipeline.tsx
 
 import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { cn } from '@/lib/utils';
-import { useAnalyticsData } from '../../../hooks';
-import { useAnalyticsDateRange } from '../context/AnalyticsDateContext';
-import { AlertTriangle, Clock } from 'lucide-react';
+import {Card, CardContent} from '@/components/ui/card';
+import {cn} from '@/lib/utils';
+import {useAnalyticsData} from '../../../hooks';
+import {useAnalyticsDateRange} from '../context/AnalyticsDateContext';
+import {AlertTriangle, Clock} from 'lucide-react';
 
 /**
  * CommissionPipeline - Shows pending commissions and cash flow forecast
@@ -48,7 +48,7 @@ export function CommissionPipeline() {
   let pendingCount90 = 0;
   let atRisk = 0;
   let atRiskCount = 0;
-  let totalPaid = 0;
+  const _totalPaid = 0;
   let totalPending = 0;
 
   raw.commissions.forEach(commission => {

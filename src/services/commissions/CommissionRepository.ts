@@ -1,10 +1,10 @@
 // src/services/commissions/CommissionRepository.ts
-import { logger } from '../base/logger';
-import { BaseRepository } from '../base/BaseRepository';
-import { TABLES } from '../base/supabase';
-import { Commission, CreateCommissionData, UpdateCommissionData } from '../../types/commission.types';
-import { queryPerformance, measureAsync } from '../../utils/performance';
-import { formatDateForDB } from '../../lib/date';
+import {logger} from '../base/logger';
+import {BaseRepository} from '../base/BaseRepository';
+import {TABLES} from '../base/supabase';
+import {Commission, CreateCommissionData, UpdateCommissionData} from '../../types/commission.types';
+import {queryPerformance, measureAsync} from '../../utils/performance';
+import {formatDateForDB} from '../../lib/date';
 
 export class CommissionRepository extends BaseRepository<Commission, CreateCommissionData, UpdateCommissionData> {
   constructor() {
@@ -161,8 +161,8 @@ export class CommissionRepository extends BaseRepository<Commission, CreateCommi
     count: number;
   }> {
     try {
-      const startDate = new Date(year, month - 1, 1);
-      const endDate = new Date(year, month, 0);
+      const _startDate = new Date(year, month - 1, 1);
+      const _endDate = new Date(year, month, 0);
 
       const { data, error } = await this.client
         .from(this.tableName)
@@ -300,7 +300,7 @@ export class CommissionRepository extends BaseRepository<Commission, CreateCommi
   }
 
 
-  protected transformToDB(data: any, isUpdate = false): any {
+  protected transformToDB(data: any, _isUpdate = false): any {
     const dbData: any = {};
 
     if (data.policyId !== undefined) dbData.policy_id = data.policyId;

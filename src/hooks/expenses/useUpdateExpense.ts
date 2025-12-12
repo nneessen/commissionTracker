@@ -1,9 +1,9 @@
 // src/hooks/expenses/useUpdateExpense.ts
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { expenseService } from '../../services/expenses/expenseService';
-import type { UpdateExpenseData, Expense } from '../../types/expense.types';
-import { toast } from 'sonner';
+import {useMutation, useQueryClient} from '@tanstack/react-query';
+import {expenseService} from '../../services/expenses/expenseService';
+import type {UpdateExpenseData, Expense} from '../../types/expense.types';
+import {toast} from 'sonner';
 
 /**
  * Hook for updating an existing expense

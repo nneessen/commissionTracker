@@ -1,7 +1,7 @@
-import { Textarea } from '@/components/ui/textarea'
-import { Label } from '@/components/ui/label'
-import { Switch } from '@/components/ui/switch'
-import type { EmailBlock, FooterBlockContent } from '@/types/email.types'
+import {Textarea} from '@/components/ui/textarea'
+import {Label} from '@/components/ui/label'
+import {Switch} from '@/components/ui/switch'
+import type {EmailBlock, FooterBlockContent} from '@/types/email.types'
 
 interface FooterBlockProps {
   block: EmailBlock

@@ -21,7 +21,7 @@
  * const chargeback = calculateChargeback(4612.50, 9, 3); // $3,075.00
  */
 
-import { logger } from '../base/logger';
+import {logger} from '../base/logger';
 
 /**
  * Input parameters for advance calculation

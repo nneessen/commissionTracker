@@ -2,14 +2,10 @@
 // SINGLE comprehensive user service for ALL user operations
 // Handles agents, recruits, admins, and all user types
 
-import { supabase } from "../base/supabase";
-import { logger } from "../base/logger";
-import {
-  User,
-  CreateUserData,
-  UpdateUserData,
-} from "../../types/user.types";
-import type { RoleName } from "../../types/permissions.types";
+import {supabase} from "../base/supabase";
+import {logger} from "../base/logger";
+import {User, CreateUserData, UpdateUserData} from "../../types/user.types";
+import type {RoleName} from "../../types/permissions.types";
 
 export type { CreateUserData, UpdateUserData };
 
@@ -42,9 +38,9 @@ export interface UserProfile {
   phone?: string;
   profile_photo_url?: string;
   instagram_url?: string;
-  instagram_username?: string;
+  instagramusername?: string;
   linkedin_url?: string;
-  linkedin_username?: string;
+  linkedinusername?: string;
   agent_code?: string;
   license_number?: string;
   license_state?: string;
@@ -115,7 +111,7 @@ class UserService {
         return null;
       }
 
-      const { data, error } = await supabase
+      const {data, error} = await supabase
         .from("user_profiles")
         .select("*")
         .eq("user_id", user.id)
@@ -175,7 +171,7 @@ class UserService {
   async getUserProfile(userId: string): Promise<UserProfile | null> {
     try {
       // First try direct query (works for self or if user has permissions)
-      let { data, error } = await supabase
+      let {data, error} = await supabase
         .from("user_profiles")
         .select("*")
         .eq("id", userId)
@@ -195,8 +191,8 @@ class UserService {
 
       // If still fails, try RPC for admin access
       if (error || !data) {
-        const { data: rpcData, error: rpcError } = await supabase.rpc("admin_get_user_profile", {
-          target_user_id: userId,
+        const {data: rpcData, error: rpcError} = await supabase.rpc("admin_getuser_profile", {
+          targetuser_id: userId,
         });
 
         if (rpcError) {
@@ -228,7 +224,7 @@ class UserService {
    * Get user by email
    */
   async getByEmail(email: string): Promise<User | null> {
-    const { data, error } = await supabase
+    const {data, error} = await supabase
       .from("user_profiles")
       .select("*")
       .eq("email", email.toLowerCase())
@@ -271,11 +267,11 @@ class UserService {
       query = query.neq('is_deleted', true);
     }
 
-    const { data, error } = await query.order("created_at", { ascending: false });
+    const {data, error} = await query.order("created_at", { ascending: false });
 
     if (error) {
       // Try admin RPC if direct query fails
-      const { data: rpcData, error: rpcError } = await supabase.rpc("admin_get_all_users");
+      const {data: rpcData, error: rpcError} = await supabase.rpc("admin_get_allusers");
 
       if (rpcError) {
         logger.error("Failed to fetch users", rpcError, "UserService");
@@ -292,7 +288,7 @@ class UserService {
    * Get all agents (users with 'agent' or 'active_agent' role)
    */
   async getAllAgents(): Promise<User[]> {
-    const { data, error } = await supabase
+    const {data, error} = await supabase
       .from('user_profiles')
       .select("*")
       .or(`roles.cs.{agent},roles.cs.{active_agent}`)
@@ -339,7 +335,7 @@ class UserService {
    * Get users by contract level
    */
   async getByContractLevel(contractLevel: number): Promise<User[]> {
-    const { data, error } = await supabase
+    const {data, error} = await supabase
       .from('user_profiles')
       .select("*")
       .eq("contract_level", contractLevel)
@@ -358,7 +354,7 @@ class UserService {
    */
   async getPendingUsers(): Promise<UserProfile[]> {
     try {
-      const { data, error } = await supabase.rpc("admin_get_pending_users");
+      const {data, error} = await supabase.rpc("admin_get_pendingusers");
 
       if (error) {
         logger.error("Failed to fetch pending users", error as Error, "UserService");
@@ -392,7 +388,7 @@ class UserService {
       const email = userData.email.toLowerCase().trim();
 
       // Check if user already exists
-      const { data: existingProfile } = await supabase
+      const {data: existingProfile} = await supabase
         .from("user_profiles")
         .select("id, email")
         .eq("email", email)
@@ -461,7 +457,7 @@ class UserService {
       };
 
       // Create user profile
-      const { data, error } = await supabase
+      const {data, error} = await supabase
         .from("user_profiles")
         .insert(profileData)
         .select()
@@ -475,7 +471,7 @@ class UserService {
       // Send magic link email if requested
       let inviteSent = false;
       if (userData.sendInvite !== false) {
-        const { error: otpError } = await supabase.auth.signInWithOtp({
+        const {error: otpError} = await supabase.auth.signInWithOtp({
           email: email,
           options: {
             shouldCreateUser: true,
@@ -539,7 +535,7 @@ class UserService {
     }
 
     // FIXED: Handle potential multiple row returns more gracefully
-    const { data, error } = await supabase
+    const {data, error} = await supabase
       .from('user_profiles')
       .update(dbData)
       .eq("id", id)
@@ -551,7 +547,7 @@ class UserService {
       // Special handling for the "Cannot coerce" error
       if (error.message.includes('Cannot coerce')) {
         // Try to fetch the updated user separately
-        const { data: fetchedData, error: fetchError } = await supabase
+        const {data: fetchedData, error: fetchError} = await supabase
           .from('user_profiles')
           .select('*')
           .eq("id", id)
@@ -566,7 +562,7 @@ class UserService {
 
     if (!data) {
       // If no data returned, fetch the user
-      const { data: fetchedData, error: fetchError } = await supabase
+      const {data: fetchedData, error: fetchError} = await supabase
         .from('user_profiles')
         .select('*')
         .eq("id", id)
@@ -623,8 +619,8 @@ class UserService {
         return { success: false, error: "Not authenticated" };
       }
 
-      const { data, error } = await supabase.rpc("admin_approve_user", {
-        target_user_id: userId,
+      const {data, error} = await supabase.rpc("admin_approveuser", {
+        targetuser_id: userId,
         approver_id: user.id,
       });
 
@@ -659,8 +655,8 @@ class UserService {
         return { success: false, error: "Not authenticated" };
       }
 
-      const { data, error } = await supabase.rpc("admin_deny_user", {
-        target_user_id: userId,
+      const {data, error} = await supabase.rpc("admin_denyuser", {
+        targetuser_id: userId,
         approver_id: user.id,
         reason: reason || "No reason provided",
       });
@@ -683,8 +679,8 @@ class UserService {
    */
   async setPending(userId: string): Promise<{ success: boolean; error?: string }> {
     try {
-      const { data, error } = await supabase.rpc("admin_set_pending_user", {
-        target_user_id: userId,
+      const {data, error} = await supabase.rpc("admin_set_pendinguser", {
+        targetuser_id: userId,
       });
 
       if (error) {
@@ -708,8 +704,8 @@ class UserService {
    */
   async setAdminRole(userId: string, isAdmin: boolean): Promise<{ success: boolean; error?: string }> {
     try {
-      const { data, error } = await supabase.rpc("admin_set_admin_role", {
-        target_user_id: userId,
+      const {data, error} = await supabase.rpc("admin_set_admin_role", {
+        targetuser_id: userId,
         new_is_admin: isAdmin,
       });
 
@@ -753,7 +749,7 @@ class UserService {
         };
       }
 
-      const { data, error } = await supabase
+      const {data, error} = await supabase
         .from("user_profiles")
         .update({ contract_level: contractLevel })
         .eq("id", userId)
@@ -798,8 +794,8 @@ class UserService {
    */
   async delete(userId: string): Promise<{ success: boolean; error?: string }> {
     try {
-      const { data, error } = await supabase.rpc("admin_delete_user", {
-        target_user_id: userId,
+      const {data, error} = await supabase.rpc("admin_deleteuser", {
+        targetuser_id: userId,
       });
 
       if (error) {
@@ -875,7 +871,7 @@ class UserService {
    */
   async getApprovalStats(): Promise<ApprovalStats> {
     try {
-      const { data, error } = await supabase
+      const {data, error} = await supabase
         .from("user_profiles")
         .select("approval_status")
         .neq("is_deleted", true);
@@ -927,7 +923,7 @@ class UserService {
       ytdPremium: metadata.ytd_premium,
       createdAt: new Date(supabaseUser.created_at),
       updatedAt: supabaseUser.updated_at ? new Date(supabaseUser.updated_at) : undefined,
-      raw_user_meta_data: metadata
+      rawuser_meta_data: metadata
     };
   }
 
@@ -937,7 +933,7 @@ class UserService {
   async signOut(): Promise<void> {
     this.clearCache();
 
-    const { error } = await supabase.auth.signOut();
+    const {error} = await supabase.auth.signOut();
     if (error) {
       throw error;
     }
@@ -979,7 +975,7 @@ class UserService {
       ytdPremium: profile.ytd_premium,
       createdAt: profile.created_at ? new Date(profile.created_at) : undefined,
       updatedAt: profile.updated_at ? new Date(profile.updated_at) : undefined,
-      raw_user_meta_data: {
+      rawuser_meta_data: {
         roles: profile.roles,
         agent_status: profile.agent_status,
         approval_status: profile.approval_status,
@@ -1035,16 +1031,16 @@ class UserService {
 
   async getAllUsers(): Promise<UserProfile[]> {
     // Fetch full UserProfile data directly without lossy transformation
-    let query = supabase
+    const query = supabase
       .from('user_profiles')
       .select("*")
       .neq('is_deleted', true);
 
-    const { data, error } = await query.order("created_at", { ascending: false });
+    const {data, error} = await query.order("created_at", { ascending: false });
 
     if (error) {
       // Try admin RPC if direct query fails
-      const { data: rpcData, error: rpcError } = await supabase.rpc("admin_get_all_users");
+      const {data: rpcData, error: rpcError} = await supabase.rpc("admin_get_allusers");
 
       if (rpcError) {
         logger.error("Failed to fetch users", rpcError, "UserService");

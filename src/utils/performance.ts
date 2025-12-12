@@ -1,7 +1,7 @@
 // src/utils/performance.ts
 // Performance monitoring utilities for tracking query timing and metrics
 
-import { logger } from '../services/base/logger';
+import {logger} from '../services/base/logger';
 
 /**
  * Performance metric data

@@ -1,10 +1,10 @@
 // src/features/policies/hooks/useCreatePolicy.ts
 // Hook for creating a new policy
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { policyService } from '@/services/policies/policyService';
-import { policyKeys } from '../queries';
-import type { CreatePolicyData, Policy } from '@/types/policy.types';
+import {useMutation, useQueryClient} from '@tanstack/react-query';
+import {policyService} from '@/services/policies/policyService';
+import {policyKeys} from '../queries';
+import type {CreatePolicyData, Policy} from '@/types/policy.types';
 
 /**
  * Create a new policy

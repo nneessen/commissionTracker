@@ -1,39 +1,22 @@
 // /home/nneessen/projects/commissionTracker/src/features/policies/PolicyForm.tsx
 
 import React, { useState, useEffect } from "react";
-import { useAuth } from "../../contexts/AuthContext";
-import { useCarriers } from "../../hooks/carriers";
-import { useProducts } from "../../hooks/products/useProducts";
-import { useCompGuide } from "../../hooks/comps";
-import { supabase } from "../../services/base/supabase";
-import {
-  NewPolicyForm,
-  PolicyStatus,
-  PaymentFrequency,
-  Policy,
-} from "../../types/policy.types";
-import { ProductType } from "../../types/commission.types";
-import { US_STATES } from "../../types/agent.types";
-import { formatDateForDB } from "../../lib/date";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import {useAuth} from "../../contexts/AuthContext";
+import {useCarriers} from "../../hooks/carriers";
+import {useProducts} from "../../hooks/products/useProducts";
+import {useCompGuide} from "../../hooks/comps";
+import {supabase} from "../../services/base/supabase";
+import {NewPolicyForm, PolicyStatus, PaymentFrequency, Policy} from "../../types/policy.types";
+import {ProductType} from "../../types/commission.types";
+import {US_STATES} from "../../types/agent.types";
+import {formatDateForDB} from "../../lib/date";
+import {Button} from "@/components/ui/button";
+import {Input} from "@/components/ui/input";
+import {Label} from "@/components/ui/label";
+import {Textarea} from "@/components/ui/textarea";
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
 
-import {
-  calculateAnnualPremium,
-  calculatePaymentAmount,
-  calculateExpectedCommission,
-  validatePremium,
-  validateCommissionPercentage,
-} from "../../utils/policyCalculations";
+import {calculateAnnualPremium, calculatePaymentAmount, calculateExpectedCommission, validatePremium, validateCommissionPercentage} from "../../utils/policyCalculations";
 
 interface PolicyFormProps {
   policyId?: string;
@@ -81,7 +64,7 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
   const {
     data: products = [],
     isLoading: productsLoading,
-    error: productsError,
+    error: _productsError,
   } = useProducts(formData.carrierId);
 
   // Fetch commission rate from comp_guide based on product and user's contract level

@@ -1,18 +1,10 @@
 // Email Connection Hook
 // Manages Gmail/Outlook OAuth connection state
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { toast } from 'sonner'
-import {
-  getEmailConnectionStatus,
-  getEmailOAuthTokens,
-  initiateGmailOAuth,
-  disconnectEmail,
-  getEmailQuota,
-  isEmailConfigured,
-  getOAuthConfigStatus,
-} from '../services/emailConnectionService'
-import type { EmailProvider } from '@/types/email.types'
+import {useQuery, useMutation, useQueryClient} from '@tanstack/react-query'
+import {toast} from 'sonner'
+import {getEmailConnectionStatus, getEmailOAuthTokens, initiateGmailOAuth, disconnectEmail, getEmailQuota, isEmailConfigured, getOAuthConfigStatus} from '../services/emailConnectionService'
+import type {EmailProvider} from '@/types/email.types'
 
 // Query keys
 export const emailConnectionKeys = {

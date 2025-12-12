@@ -1,6 +1,6 @@
 // src/__tests__/utils/retry.test.ts
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { withRetry, CircuitBreaker } from '../../utils/retry';
+import {describe, it, expect, vi, beforeEach} from 'vitest';
+import {withRetry, CircuitBreaker} from '../../utils/retry';
 
 describe('withRetry', () => {
   beforeEach(() => {

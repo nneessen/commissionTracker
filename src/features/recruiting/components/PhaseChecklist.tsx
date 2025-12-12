@@ -1,17 +1,13 @@
 // src/features/recruiting/components/PhaseChecklist.tsx
 
 import React from 'react';
-import {
-  RecruitChecklistProgress,
-  PhaseChecklistItem,
-  CHECKLIST_STATUS_COLORS,
-} from '@/types/recruiting';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
-import { ExternalLink, Upload, CheckCircle2, XCircle, FileText, Lock, AlertCircle } from 'lucide-react';
-import { useUpdateChecklistItemStatus } from '../hooks/useRecruitProgress';
-import { showToast } from '@/utils/toast';
+import {RecruitChecklistProgress, PhaseChecklistItem, CHECKLIST_STATUS_COLORS} from '@/types/recruiting';
+import {Button} from '@/components/ui/button';
+import {Badge} from '@/components/ui/badge';
+import {Checkbox} from '@/components/ui/checkbox';
+import {ExternalLink, Upload, CheckCircle2, XCircle, FileText, Lock, AlertCircle} from 'lucide-react';
+import {useUpdateChecklistItemStatus} from '../hooks/useRecruitProgress';
+import {showToast} from '@/utils/toast';
 
 interface PhaseChecklistProps {
   userId: string;
@@ -33,8 +29,7 @@ export function PhaseChecklist({
   currentUserId,
   currentPhaseId,
   viewedPhaseId,
-  isAdmin = false,
-  onPhaseComplete,
+  isAdmin = false, _onPhaseComplete,
 }: PhaseChecklistProps) {
   const updateItemStatus = useUpdateChecklistItemStatus();
 

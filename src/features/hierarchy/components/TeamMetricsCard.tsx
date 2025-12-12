@@ -1,17 +1,10 @@
 // src/features/hierarchy/components/TeamMetricsCard.tsx
 
-import { Card, CardContent } from '@/components/ui/card';
-import { cn } from '@/lib/utils';
-import { formatCurrency, formatPercent } from '@/lib/format';
-import {
-  TrendingUp,
-  TrendingDown,
-  Users,
-  UserCheck,
-  DollarSign,
-  Target
-} from 'lucide-react';
-import type { HierarchyStats } from '@/types/hierarchy.types';
+import {Card, CardContent} from '@/components/ui/card';
+import {cn} from '@/lib/utils';
+import {formatCurrency, formatPercent} from '@/lib/format';
+import {UserCheck, DollarSign, Target} from 'lucide-react';
+import type {HierarchyStats} from '@/types/hierarchy.types';
 
 interface TeamMetricsCardProps {
   stats: HierarchyStats | null | undefined;

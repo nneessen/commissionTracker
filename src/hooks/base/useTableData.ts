@@ -1,8 +1,8 @@
 // src/hooks/base/useTableData.ts
 
-import { useFilter, FilterConfig } from './useFilter';
-import { useSort, SortConfig, SortDirection } from './useSort';
-import { usePagination } from './usePagination';
+import {useFilter, FilterConfig} from './useFilter';
+import {useSort, SortConfig, SortDirection} from './useSort';
+import {usePagination} from './usePagination';
 
 export interface UseTableDataOptions<T> {
   // Filter options

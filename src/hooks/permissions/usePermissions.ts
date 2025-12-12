@@ -1,42 +1,9 @@
 // src/hooks/permissions/usePermissions.ts
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useAuth } from '@/contexts/AuthContext';
-import type {
-  UserPermissions,
-  PermissionCode,
-  RoleName,
-  Role,
-  Permission,
-  PermissionWithSource,
-} from '@/types/permissions.types';
-import {
-  getUserPermissionsContext,
-  getUserPermissions,
-  getUserRoles,
-  hasPermission,
-  hasRole,
-  isAdminUser,
-  hasAnyPermission,
-  hasAllPermissions,
-  getAllRoles,
-  getAllRolesWithPermissions,
-  getAllPermissions,
-  getRolePermissionsWithInheritance,
-  setUserRoles,
-  assignPermissionToRole,
-  removePermissionFromRole,
-  createRole,
-  updateRole,
-  deleteRole,
-  createPermission,
-  updatePermission,
-  deletePermission,
-  type CreateRoleInput,
-  type UpdateRoleInput,
-  type CreatePermissionInput,
-  type UpdatePermissionInput,
-} from '@/services/permissions/permissionService';
+import {useQuery, useMutation, useQueryClient} from '@tanstack/react-query';
+import {useAuth} from '@/contexts/AuthContext';
+import type {UserPermissions, PermissionCode, RoleName, Role, Permission, PermissionWithSource} from '@/types/permissions.types';
+import {getUserPermissionsContext, getUserPermissions, getUserRoles, hasPermission, hasRole, isAdminUser, hasAnyPermission, hasAllPermissions, getAllRoles, getAllRolesWithPermissions, getAllPermissions, getRolePermissionsWithInheritance, setUserRoles, assignPermissionToRole, removePermissionFromRole, createRole, updateRole, deleteRole, createPermission, updatePermission, deletePermission, type CreateRoleInput, type UpdateRoleInput, type CreatePermissionInput, type UpdatePermissionInput} from '@/services/permissions/permissionService';
 
 // Re-export types for convenience
 export type { CreateRoleInput, UpdateRoleInput, CreatePermissionInput, UpdatePermissionInput };
@@ -69,7 +36,7 @@ export const permissionKeys = {
  * Get current user's full permissions context (roles + permissions)
  */
 export function useUserPermissions() {
-  const { user } = useAuth();
+  const {user} = useAuth();
 
   return useQuery({
     queryKey: permissionKeys.userContext(user?.id || ''),
@@ -83,7 +50,7 @@ export function useUserPermissions() {
  * Get current user's permission codes only
  */
 export function useUserPermissionCodes() {
-  const { user } = useAuth();
+  const {user} = useAuth();
 
   return useQuery({
     queryKey: permissionKeys.userPermissions(user?.id || ''),
@@ -97,7 +64,7 @@ export function useUserPermissionCodes() {
  * Get current user's roles
  */
 export function useUserRoles() {
-  const { user } = useAuth();
+  const {user} = useAuth();
 
   return useQuery({
     queryKey: permissionKeys.userRoles(user?.id || ''),
@@ -111,7 +78,7 @@ export function useUserRoles() {
  * Check if current user has a specific permission
  */
 export function useHasPermission(permissionCode: PermissionCode) {
-  const { user } = useAuth();
+  const {user} = useAuth();
 
   return useQuery({
     queryKey: permissionKeys.hasPermission(user?.id || '', permissionCode),
@@ -125,7 +92,7 @@ export function useHasPermission(permissionCode: PermissionCode) {
  * Check if current user has a specific role
  */
 export function useHasRole(roleName: RoleName) {
-  const { user } = useAuth();
+  const {user} = useAuth();
 
   return useQuery({
     queryKey: permissionKeys.hasRole(user?.id || '', roleName),
@@ -139,7 +106,7 @@ export function useHasRole(roleName: RoleName) {
  * Check if current user is an admin
  */
 export function useIsAdmin() {
-  const { user } = useAuth();
+  const {user} = useAuth();
 
   return useQuery({
     queryKey: permissionKeys.isAdmin(user?.id || ''),
@@ -154,8 +121,8 @@ export function useIsAdmin() {
  * Returns helper functions for permission checks
  */
 export function usePermissionCheck() {
-  const { user } = useAuth();
-  const { data: permissionsContext } = useUserPermissions();
+  const {user} = useAuth();
+  const {data: permissionsContext} = useUserPermissions();
 
   const can = (permissionCode: PermissionCode): boolean => {
     if (!permissionsContext) return false;

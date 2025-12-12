@@ -1,51 +1,28 @@
 // src/features/recruiting/pages/MyRecruitingPipeline.tsx
 
-import { useState } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/services/base/supabase';
-import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible';
-import {
-  User,
-  Mail,
-  Phone,
-  Upload,
-  CheckCircle2,
-  Circle,
-  Clock,
-  AlertCircle,
-  MessageSquare,
-  ChevronDown,
-  ChevronRight,
-  Slack,
-  Send,
-  Inbox,
-} from 'lucide-react';
-import { format } from 'date-fns';
-import {
-  useRecruitPhaseProgress,
-  useCurrentPhase,
-  useChecklistProgress,
-} from '../hooks/useRecruitProgress';
-import { useActiveTemplate } from '../hooks/usePipeline';
-import { PhaseChecklist } from '../components/PhaseChecklist';
-import { DocumentManager } from '../components/DocumentManager';
-import { CommunicationPanel } from '../components/CommunicationPanel';
-import { useRecruitDocuments } from '../hooks/useRecruitDocuments';
-import type { UserProfile } from '@/types/hierarchy.types';
+import {useState} from 'react';
+import {useAuth} from '@/contexts/AuthContext';
+import {useQuery} from '@tanstack/react-query';
+import {supabase} from '@/services/base/supabase';
+import {Button} from '@/components/ui/button';
+import {Avatar, AvatarFallback, AvatarImage} from '@/components/ui/avatar';
+import {Badge} from '@/components/ui/badge';
+import {Collapsible, CollapsibleContent, CollapsibleTrigger} from '@/components/ui/collapsible';
+import {Inbox} from 'lucide-react';
+import {format} from 'date-fns';
+import {useRecruitPhaseProgress, useCurrentPhase, useChecklistProgress} from '../hooks/useRecruitProgress';
+import {useActiveTemplate} from '../hooks/usePipeline';
+import {PhaseChecklist} from '../components/PhaseChecklist';
+import {DocumentManager} from '../components/DocumentManager';
+import {CommunicationPanel} from '../components/CommunicationPanel';
+import {useRecruitDocuments} from '../hooks/useRecruitDocuments';
+import type {UserProfile} from '@/types/hierarchy.types';
 
 export function MyRecruitingPipeline() {
   const { user, loading: authLoading } = useAuth();
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [expandedPhase, setExpandedPhase] = useState<string | null>(null);
-  const [selectedCommunicationTab, setSelectedCommunicationTab] = useState<'compose' | 'inbox'>('compose');
+  const [_selectedCommunicationTab, _setSelectedCommunicationTab] = useState<'compose' | 'inbox'>('compose');
 
   // Fetch profile directly using AuthContext's user.id
   // This is more reliable than useCurrentUserProfile which has its own auth check
@@ -152,7 +129,7 @@ export function MyRecruitingPipeline() {
 
     try {
       const fileName = `${user.id}_${Date.now()}.${file.name.split('.').pop()}`;
-      const { data: uploadData, error: uploadError } = await supabase.storage
+      const { data: _uploadData, error: uploadError } = await supabase.storage
         .from('avatars')
         .upload(fileName, file, { upsert: true });
 

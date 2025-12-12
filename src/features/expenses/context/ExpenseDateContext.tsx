@@ -1,11 +1,7 @@
 // src/features/expenses/context/ExpenseDateContext.tsx
 
 import React, { createContext, useContext, useState, useMemo } from 'react';
-import {
-  AdvancedTimePeriod,
-  getAdvancedDateRange,
-  AdvancedDateRange,
-} from '@/features/analytics/components/TimePeriodSelector';
+import {AdvancedDateRange} from '@/features/analytics/components/TimePeriodSelector';
 
 interface ExpenseDateContextType {
   timePeriod: AdvancedTimePeriod;

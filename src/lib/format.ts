@@ -1,6 +1,6 @@
 // src/lib/format.ts
 
-import { parseLocalDate, formatDateForDisplay } from './date';
+import {parseLocalDate, formatDateForDisplay} from './date';
 
 /**
  * Format a number as USD currency

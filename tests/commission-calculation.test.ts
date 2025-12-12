@@ -1,9 +1,9 @@
 // /home/nneessen/projects/commissionTracker/tests/commission-calculation.test.ts
 // Comprehensive tests for policy commission calculation functionality
 
-import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
-import { commissionCalculationService } from '@/services/commissions/commissionCalculationService';
-import { supabase } from '@/services/base/supabase';
+import {describe, it, expect, _beforeAll, _afterAll, vi} from 'vitest';
+import {commissionCalculationService} from '@/services/commissions/commissionCalculationService';
+import {supabase} from '@/services/base/supabase';
 
 // Mock the supabase client
 vi.mock('@/services/base/supabase', () => ({

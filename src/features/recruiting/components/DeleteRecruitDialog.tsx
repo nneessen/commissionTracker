@@ -1,22 +1,13 @@
 // src/features/recruiting/components/DeleteRecruitDialog.tsx
 
-import { useState, useEffect } from 'react';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertTriangle, Loader2, Trash2 } from 'lucide-react';
-import { useRecruitMutations } from '../hooks/useRecruitMutations';
-import { supabase } from '@/services/base/supabase';
-import type { UserProfile } from '@/types/hierarchy.types';
-import { showToast } from '@/utils/toast';
+import {useState, useEffect} from 'react';
+import {AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle} from '@/components/ui/alert-dialog';
+import {Alert, AlertDescription} from '@/components/ui/alert';
+import {AlertTriangle, Loader2, Trash2} from 'lucide-react';
+import {useRecruitMutations} from '../hooks/useRecruitMutations';
+import {supabase} from '@/services/base/supabase';
+import type {UserProfile} from '@/types/hierarchy.types';
+import {showToast} from '@/utils/toast';
 
 interface DeleteRecruitDialogProps {
   recruit: UserProfile | null;

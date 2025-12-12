@@ -1,12 +1,7 @@
 // src/features/expenses/components/ExpenseTrendChart.tsx
-import {
-  Card,
-  CardHeader,
-  CardContent,
-  CardDescription,
-} from "@/components/ui/card";
-import { Empty as EmptyState } from "@/components/ui/empty";
-import { formatCurrency } from "@/lib/format";
+import {Card, CardHeader, CardContent, CardDescription} from "@/components/ui/card";
+import {Empty as EmptyState} from "@/components/ui/empty";
+import {formatCurrency} from "@/lib/format";
 
 interface TrendDataPoint {
   month: string;

@@ -1,11 +1,11 @@
 // /home/nneessen/projects/commissionTracker/src/features/auth/DeniedAccess.tsx
 
 import React from "react";
-import { Button } from "../../components/ui";
-import { Card, CardContent } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { supabase } from "../../services/base/supabase";
-import { useNavigate } from "@tanstack/react-router";
+import {Button} from "../../components/ui";
+import {Card, CardContent} from "@/components/ui/card";
+import {Separator} from "@/components/ui/separator";
+import {supabase} from "../../services/base/supabase";
+import {useNavigate} from "@tanstack/react-router";
 
 export const DeniedAccess: React.FC<{ email?: string; reason?: string }> = ({ email, reason }) => {
   const navigate = useNavigate();

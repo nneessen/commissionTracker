@@ -4,9 +4,9 @@
  * Handles real-time subscriptions for messages and threads using Supabase Realtime.
  */
 
-import { supabase } from '../base/supabase';
-import type { Message, MessageThread } from '@/types/messaging.types';
-import type { RealtimeChannel } from '@supabase/supabase-js';
+import {supabase} from '../base/supabase';
+import type {Message, MessageThread} from '@/types/messaging.types';
+import type {RealtimeChannel} from '@supabase/supabase-js';
 
 /**
  * Subscribe to messages in a specific thread

@@ -1,16 +1,7 @@
 // src/services/permissions/permissionService.ts
 
-import { supabase } from '@/services/base/supabase';
-import type {
-  Role,
-  Permission,
-  RolePermission,
-  UserPermissions,
-  PermissionCode,
-  RoleName,
-  PermissionCheckResult,
-  PermissionWithSource,
-} from '@/types/permissions.types';
+import {supabase} from '@/services/base/supabase';
+import type {Role, Permission, RolePermission, UserPermissions, PermissionCode, RoleName, PermissionCheckResult, PermissionWithSource} from '@/types/permissions.types';
 
 /**
  * Permission Service
@@ -23,11 +14,11 @@ import type {
 
 /**
  * Get all permissions for a user (including inherited from role hierarchy)
- * Uses database function: get_user_permissions(user_id)
+ * Uses database function: getuser_permissions(user_id)
  */
 export async function getUserPermissions(userId: string): Promise<PermissionCode[]> {
-  const { data, error } = await supabase.rpc('get_user_permissions', {
-    target_user_id: userId,
+  const { data, error } = await supabase.rpc('getuser_permissions', {
+    targetuser_id: userId,
   });
 
   if (error) {
@@ -47,7 +38,7 @@ export async function hasPermission(
   permissionCode: PermissionCode
 ): Promise<boolean> {
   const { data, error } = await supabase.rpc('has_permission', {
-    target_user_id: userId,
+    targetuser_id: userId,
     permission_code: permissionCode,
   });
 
@@ -65,7 +56,7 @@ export async function hasPermission(
  */
 export async function hasRole(userId: string, roleName: RoleName): Promise<boolean> {
   const { data, error } = await supabase.rpc('has_role', {
-    target_user_id: userId,
+    targetuser_id: userId,
     role_name: roleName,
   });
 
@@ -79,11 +70,11 @@ export async function hasRole(userId: string, roleName: RoleName): Promise<boole
 
 /**
  * Check if user is an admin
- * Uses database function: is_admin_user(user_id)
+ * Uses database function: is_adminuser(user_id)
  */
 export async function isAdminUser(userId?: string): Promise<boolean> {
-  const { data, error } = await supabase.rpc('is_admin_user', {
-    target_user_id: userId || null,
+  const { data, error } = await supabase.rpc('is_adminuser', {
+    targetuser_id: userId || null,
   });
 
   if (error) {

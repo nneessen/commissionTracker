@@ -1,53 +1,21 @@
 // src/features/hierarchy/components/AgentTable.tsx
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from '@tanstack/react-router';
-import {
-  ChevronRight,
-  ChevronDown,
-  ChevronLeft,
-  MoreVertical,
-  Eye,
-  Edit,
-  UserCheck,
-  UserX,
-  MessageCircle,
-  UserMinus
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { formatCurrency, formatPercent } from '@/lib/format';
+import {useNavigate} from '@tanstack/react-router';
+import {ChevronRight, ChevronDown, ChevronLeft, MoreVertical, Eye, Edit, UserCheck, UserX, MessageCircle, UserMinus} from 'lucide-react';
+import {cn} from '@/lib/utils';
+import {Button} from '@/components/ui/button';
+import {DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger} from '@/components/ui/dropdown-menu';
+import {AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle} from '@/components/ui/alert-dialog';
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '@/components/ui/select';
+import {formatCurrency, _formatPercent} from '@/lib/format';
 import showToast from '@/utils/toast';
-import type { UserProfile } from '@/types/hierarchy.types';
-import { useQuery } from '@tanstack/react-query';
-import { hierarchyService } from '@/services/hierarchy/hierarchyService';
-import { policyService } from '@/services/policies/policyService';
-import { commissionService } from '@/services/commissions/commissionService';
-import { supabase } from '@/services/base/supabase';
+import type {UserProfile} from '@/types/hierarchy.types';
+import {useQuery} from '@tanstack/react-query';
+import {hierarchyService} from '@/services/hierarchy/hierarchyService';
+import {policyService} from '@/services/policies/policyService';
+import {commissionService} from '@/services/commissions/commissionService';
+import {supabase} from '@/services/base/supabase';
 
 interface AgentWithMetrics extends UserProfile {
   // Real calculated metrics
@@ -326,7 +294,7 @@ function AgentRow({
 }
 
 export function AgentTable({ agents, isLoading, onRefresh }: AgentTableProps) {
-  const navigate = useNavigate();
+  const _navigate = useNavigate();
   const [expandedAgents, setExpandedAgents] = useState<Set<string>>(new Set());
   const [agentToRemove, setAgentToRemove] = useState<AgentWithMetrics | null>(null);
   const [currentPage, setCurrentPage] = useState(1);

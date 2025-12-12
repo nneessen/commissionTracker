@@ -2,43 +2,21 @@
 // COMPLETE implementation with ALL CRUD dialogs
 
 import React, { useState } from 'react';
-import {
-  useAllRoles,
-  useAllPermissions,
-  useCreateRole,
-  useUpdateRole,
-  useDeleteRole,
-  useRolePermissionsWithInheritance,
-  useAssignPermissionToRole,
-  useRemovePermissionFromRole,
-} from '@/hooks/permissions/usePermissions';
-import type { Role, Permission } from '@/types/permissions.types';
-import type { CreateRoleInput, UpdateRoleInput } from '@/services/permissions/permissionService';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Shield, Plus, Edit, Trash2, Lock, ChevronDown, ChevronRight } from 'lucide-react';
+import {useAllRoles, useAllPermissions, useCreateRole, useUpdateRole, useDeleteRole, useRolePermissionsWithInheritance, useAssignPermissionToRole, useRemovePermissionFromRole} from '@/hooks/permissions/usePermissions';
+import type {Role, Permission} from '@/types/permissions.types';
+import type {CreateRoleInput, UpdateRoleInput} from '@/services/permissions/permissionService';
+import {Card, CardContent, CardHeader, CardTitle} from '@/components/ui/card';
+import {Badge} from '@/components/ui/badge';
+import {Button} from '@/components/ui/button';
+import {Input} from '@/components/ui/input';
+import {Label} from '@/components/ui/label';
+import {Textarea} from '@/components/ui/textarea';
+import {Checkbox} from '@/components/ui/checkbox';
+import {Skeleton} from '@/components/ui/skeleton';
+import {Alert, AlertDescription} from '@/components/ui/alert';
+import {Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle} from '@/components/ui/dialog';
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '@/components/ui/select';
+import {Shield, Plus, Edit, Trash2, Lock, ChevronDown, ChevronRight} from 'lucide-react';
 
 export function RoleManagementPage() {
   const { data: roles, isLoading: rolesLoading, error: rolesError } = useAllRoles();

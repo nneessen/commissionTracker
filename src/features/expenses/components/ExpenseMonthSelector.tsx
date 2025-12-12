@@ -1,6 +1,6 @@
 // src/features/expenses/components/ExpenseMonthSelector.tsx
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import {Button} from "@/components/ui/button";
+import {Card, CardContent, CardHeader} from "@/components/ui/card";
 
 interface ExpenseMonthSelectorProps {
   selectedMonth: Date;

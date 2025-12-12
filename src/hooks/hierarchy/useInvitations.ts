@@ -1,15 +1,10 @@
 // src/hooks/hierarchy/useInvitations.ts
 // TanStack Query hooks for hierarchy invitation system
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { invitationService } from '../../services/hierarchy/invitationService';
-import type {
-  SendInvitationRequest,
-  AcceptInvitationRequest,
-  DenyInvitationRequest,
-  CancelInvitationRequest,
-} from '../../types/invitation.types';
-import { toast } from 'sonner';
+import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
+import {invitationService} from '../../services/hierarchy/invitationService';
+import type {SendInvitationRequest, AcceptInvitationRequest, DenyInvitationRequest, CancelInvitationRequest} from '../../types/invitation.types';
+import {toast} from 'sonner';
 
 /**
  * Query keys for invitation-related queries

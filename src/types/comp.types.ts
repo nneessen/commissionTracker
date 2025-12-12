@@ -1,6 +1,6 @@
 // Compensation (comp_guide table) types for carrier product compensation rates
 
-import { Database } from "./database.types";
+import {Database} from "./database.types";
 
 // Main compensation entry type
 export interface Comp {

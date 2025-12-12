@@ -1,13 +1,8 @@
 // src/components/ui/MetricTooltip.tsx
 
 import * as React from "react";
-import { HelpCircle } from "lucide-react";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-  TooltipProvider,
-} from "@/components/ui/tooltip";
+import {HelpCircle} from "lucide-react";
+import {Tooltip, TooltipContent, TooltipTrigger, TooltipProvider} from "@/components/ui/tooltip";
 
 interface MetricTooltipProps {
   title: string;

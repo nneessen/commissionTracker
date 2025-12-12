@@ -1,72 +1,32 @@
 // src/features/expenses/ExpenseDashboardCompact.tsx - Redesigned with ultra-compact styling
 
-import { useState, useEffect } from "react";
-import {
-  Search,
-  Filter,
-  ChevronUp,
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
-  Edit,
-  Trash2,
-  Plus,
-  Download,
-  MoreVertical,
-  FileText,
-  TrendingUp,
-  TrendingDown,
-  DollarSign,
-  Receipt,
-  PieChart,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Card, CardContent } from "@/components/ui/card";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { useExpenses } from "../../hooks/expenses/useExpenses";
-import { useCreateExpense } from "../../hooks/expenses/useCreateExpense";
-import { useUpdateExpense } from "../../hooks/expenses/useUpdateExpense";
-import { useDeleteExpense } from "../../hooks/expenses/useDeleteExpense";
-import {
-  useExpenseTemplates,
-  useDeleteExpenseTemplate,
-} from "../../hooks/expenses/useExpenseTemplates";
-import { expenseAnalyticsService } from "../../services/expenses/expenseAnalyticsService";
-import { expenseTemplateService } from "../../services/expenses/expenseTemplateService";
-import { supabase } from "../../services/base/supabase";
-import { downloadCSV } from "../../utils/exportHelpers";
-import type {
-  Expense,
-  AdvancedExpenseFilters,
-  CreateExpenseData,
-  ExpenseTemplate,
-} from "../../types/expense.types";
-import { isSameMonth } from "../../lib/date";
-import { formatCurrency, formatPercent, formatDate } from "../../lib/format";
+import {useState, useEffect} from "react";
+import {PieChart} from "lucide-react";
+import {cn} from "@/lib/utils";
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
+import {DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger} from "@/components/ui/dropdown-menu";
+import {Card, CardContent} from "@/components/ui/card";
+import {Alert, AlertDescription} from "@/components/ui/alert";
+import {Button} from "@/components/ui/button";
+import {Input} from "@/components/ui/input";
+import {Badge} from "@/components/ui/badge";
+import {useExpenses} from "../../hooks/expenses/useExpenses";
+import {useCreateExpense} from "../../hooks/expenses/useCreateExpense";
+import {useUpdateExpense} from "../../hooks/expenses/useUpdateExpense";
+import {useDeleteExpense} from "../../hooks/expenses/useDeleteExpense";
+import {useExpenseTemplates, useDeleteExpenseTemplate} from "../../hooks/expenses/useExpenseTemplates";
+import {expenseAnalyticsService} from "../../services/expenses/expenseAnalyticsService";
+import {expenseTemplateService} from "../../services/expenses/expenseTemplateService";
+import {supabase} from "../../services/base/supabase";
+import {downloadCSV} from "../../utils/exportHelpers";
+import type {Expense, AdvancedExpenseFilters, CreateExpenseData, ExpenseTemplate} from "../../types/expense.types";
+import {isSameMonth} from "../../lib/date";
+import {formatCurrency, formatPercent, _formatDate} from "../../lib/format";
 import showToast from "../../utils/toast";
-import { DEFAULT_EXPENSE_CATEGORIES } from "../../types/expense.types";
-import { ExpenseDialogCompact } from "./components/ExpenseDialogCompact";
-import { ExpenseDeleteDialog } from "./components/ExpenseDeleteDialog";
-import { useMetricsWithDateRange } from "@/hooks/kpi/useMetricsWithDateRange";
+import {DEFAULT_EXPENSE_CATEGORIES} from "../../types/expense.types";
+import {ExpenseDialogCompact} from "./components/ExpenseDialogCompact";
+import {ExpenseDeleteDialog} from "./components/ExpenseDeleteDialog";
+import {useMetricsWithDateRange} from "@/hooks/kpi/useMetricsWithDateRange";
 
 export function ExpenseDashboardCompact() {
   // State
@@ -87,7 +47,7 @@ export function ExpenseDashboardCompact() {
 
   // Data fetching
   const { data: expenses = [], isLoading = false } = useExpenses({ filters });
-  const { data: templates = [] } = useExpenseTemplates();
+  const { data: _templates = [] } = useExpenseTemplates();
   const createExpense = useCreateExpense();
   const updateExpense = useUpdateExpense();
   const deleteExpense = useDeleteExpense();
@@ -100,7 +60,7 @@ export function ExpenseDashboardCompact() {
   });
 
   // Filter expenses for selected month
-  let filteredExpenses = expenseAnalyticsService.applyAdvancedFilters(expenses, filters);
+  const filteredExpenses = expenseAnalyticsService.applyAdvancedFilters(expenses, filters);
   const monthlyExpenses = filteredExpenses.filter((expense) =>
     isSameMonth(expense.date, selectedMonth)
   );
@@ -195,7 +155,7 @@ export function ExpenseDashboardCompact() {
         setIsAddDialogOpen(false);
       }
       setSelectedExpense(null);
-    } catch (error) {
+    } catch (_error) {
       showToast.error("Failed to save expense. Please try again.");
     }
   };
@@ -225,7 +185,7 @@ export function ExpenseDashboardCompact() {
       }
       setIsDeleteDialogOpen(false);
       setSelectedExpense(null);
-    } catch (error) {
+    } catch (_error) {
       showToast.error("Failed to delete expense. Please try again.");
     }
   };
@@ -247,28 +207,28 @@ export function ExpenseDashboardCompact() {
 
       downloadCSV(exportData, 'expenses');
       showToast.success("Expenses exported to CSV!");
-    } catch (error) {
+    } catch (_error) {
       showToast.error("Failed to export CSV. Please try again.");
     }
   };
 
-  const handleUseTemplate = async (template: ExpenseTemplate) => {
+  const _handleUseTemplate = async (template: ExpenseTemplate) => {
     const expenseData = expenseTemplateService.templateToExpenseData(template);
     const today = new Date().toISOString().split("T")[0];
     try {
       await createExpense.mutateAsync({ ...expenseData, date: today });
       showToast.success(`✓ Added: ${template.template_name}`);
-    } catch (error) {
+    } catch (_error) {
       showToast.error("Failed to create expense. Please try again.");
     }
   };
 
-  const handleDeleteTemplate = async (template: ExpenseTemplate) => {
+  const _handleDeleteTemplate = async (template: ExpenseTemplate) => {
     if (confirm(`Delete template "${template.template_name}"?`)) {
       try {
         await deleteTemplate.mutateAsync(template.id);
         showToast.success("Template deleted successfully!");
-      } catch (error) {
+      } catch (_error) {
         showToast.error("Failed to delete template. Please try again.");
       }
     }

@@ -1,8 +1,8 @@
 // /home/nneessen/projects/commissionTracker/supabase/functions/fix-active-agent-permissions/index.ts
 // Edge function to fix active_agent role permissions
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import {serve} from "https://deno.land/std@0.168.0/http/server.ts";
+import {createClient} from "https://esm.sh/@supabase/supabase-js@2.39.3";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -25,7 +25,7 @@ serve(async (req) => {
     });
 
     // 1. Get or create active_agent role
-    let { data: roleData, error: roleError } = await supabase
+    const { data: roleData, error: roleError } = await supabase
       .from('roles')
       .select('id')
       .eq('name', 'active_agent')

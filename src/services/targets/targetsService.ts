@@ -1,19 +1,8 @@
 // src/services/targets/targetsService.ts
 
-import { supabase, TABLES } from '../base/supabase';
-import type {
-  UserTargets,
-  CreateUserTargetsData,
-  UpdateUserTargetsData,
-  TargetProgress,
-  AllTargetsProgress,
-  ActualMetrics,
-  ProgressStatus,
-  PaceMetrics,
-  Achievement,
-  MilestoneCheck,
-} from '../../types/targets.types';
-import type { Tables, TablesInsert, TablesUpdate } from '../../types/database.types';
+import {supabase, TABLES} from '../base/supabase';
+import type {UserTargets, CreateUserTargetsData, UpdateUserTargetsData, TargetProgress, AllTargetsProgress, ActualMetrics, ProgressStatus, PaceMetrics, Achievement, MilestoneCheck} from '../../types/targets.types';
+import type {Tables, TablesInsert, TablesUpdate} from '../../types/database.types';
 
 // Database row type for user_targets
 type UserTargetsRow = Tables<'user_targets'>;
@@ -195,8 +184,8 @@ class TargetsService {
   ): AllTargetsProgress {
     const now = new Date();
     const yearStart = new Date(now.getFullYear(), 0, 1);
-    const yearEnd = new Date(now.getFullYear(), 11, 31);
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const _yearEnd = new Date(now.getFullYear(), 11, 31);
+    const _monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
     const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
     const quarterStart = new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1);
     const quarterEnd = new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3 + 3, 0);

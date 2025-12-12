@@ -1,23 +1,16 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { Search, Edit, Upload } from 'lucide-react';
-import { useCommissionRates, ProductWithRates, CreateRateData } from './hooks/useCommissionRates';
-import { useCarriers } from '../carriers/hooks/useCarriers';
-import { useProducts } from '../products/hooks/useProducts';
-import { RateEditDialog } from './components/RateEditDialog';
-import { RateBulkImport } from './components/RateBulkImport';
-import type { Database } from '@/types/database.types';
+import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '@/components/ui/card';
+import {Button} from '@/components/ui/button';
+import {Input} from '@/components/ui/input';
+import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from '@/components/ui/table';
+import {Badge} from '@/components/ui/badge';
+import {Search, Edit, Upload} from 'lucide-react';
+import {useCommissionRates, ProductWithRates, CreateRateData} from './hooks/useCommissionRates';
+import {useCarriers} from '../carriers/hooks/useCarriers';
+import {useProducts} from '../products/hooks/useProducts';
+import {RateEditDialog} from './components/RateEditDialog';
+import {RateBulkImport} from './components/RateBulkImport';
+import type {Database} from '@/types/database.types';
 
 type ProductType = Database['public']['Enums']['product_type'];
 

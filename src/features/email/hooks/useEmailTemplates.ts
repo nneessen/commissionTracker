@@ -1,19 +1,8 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useAuth } from '@/contexts/AuthContext'
+import {useQuery, useMutation, useQueryClient} from '@tanstack/react-query'
+import {useAuth} from '@/contexts/AuthContext'
 import showToast from '@/utils/toast'
-import {
-  getEmailTemplates,
-  getEmailTemplate,
-  createEmailTemplate,
-  updateEmailTemplate,
-  deleteEmailTemplate,
-  duplicateEmailTemplate,
-  toggleTemplateActive,
-  getUserTemplateStatus,
-  getGroupedEmailTemplates,
-  type EmailTemplateFilters,
-} from '../services/emailTemplateService'
-import type { CreateEmailTemplateRequest } from '@/types/email.types'
+import {getEmailTemplates, getEmailTemplate, createEmailTemplate, updateEmailTemplate, deleteEmailTemplate, duplicateEmailTemplate, toggleTemplateActive, getUserTemplateStatus, getGroupedEmailTemplates, type EmailTemplateFilters} from '../services/emailTemplateService'
+import type {CreateEmailTemplateRequest} from '@/types/email.types'
 
 const QUERY_KEY = 'email-templates'
 const STATUS_QUERY_KEY = 'email-template-status'

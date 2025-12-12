@@ -1,8 +1,8 @@
 // src/hooks/commissions/useCommissions.ts
 
-import { useQuery, UseQueryOptions } from '@tanstack/react-query';
-import { commissionService } from '../../services/commissions/commissionService';
-import { Commission } from '../../types/commission.types';
+import {useQuery, UseQueryOptions} from '@tanstack/react-query';
+import {commissionService} from '../../services/commissions/commissionService';
+import {Commission} from '../../types/commission.types';
 
 export interface UseCommissionsOptions {
   enabled?: boolean;

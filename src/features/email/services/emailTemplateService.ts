@@ -1,6 +1,6 @@
-import { supabase } from '@/services/base/supabase'
-import type { EmailTemplate, CreateEmailTemplateRequest, EmailBlock } from '@/types/email.types'
-import { blocksToHtml } from '../components/block-builder'
+import {supabase} from '@/services/base/supabase'
+import type {EmailTemplate, CreateEmailTemplateRequest, EmailBlock} from '@/types/email.types'
+import {blocksToHtml} from '../components/block-builder'
 
 export interface EmailTemplateFilters {
   category?: string

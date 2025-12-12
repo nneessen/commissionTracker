@@ -1,6 +1,6 @@
-import { Columns2, Columns3 } from 'lucide-react'
-import { Label } from '@/components/ui/label'
-import type { EmailBlock, ColumnsBlockContent } from '@/types/email.types'
+import {Columns2, Columns3} from 'lucide-react'
+import {Label} from '@/components/ui/label'
+import type {EmailBlock, ColumnsBlockContent} from '@/types/email.types'
 
 interface ColumnsBlockProps {
   block: EmailBlock

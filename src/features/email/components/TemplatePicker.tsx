@@ -1,16 +1,12 @@
-import { useState } from 'react'
-import { Check, ChevronDown, FileText, Plus, Loader2 } from 'lucide-react'
-import { cn } from '@/lib/utils'
-import { Button } from '@/components/ui/button'
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { Input } from '@/components/ui/input'
-import { useEmailTemplates } from '../hooks/useEmailTemplates'
-import type { EmailTemplate } from '@/types/email.types'
+import {useState} from 'react'
+import {Check, ChevronDown, FileText, Plus, Loader2} from 'lucide-react'
+import {cn} from '@/lib/utils'
+import {Button} from '@/components/ui/button'
+import {Popover, PopoverContent, PopoverTrigger} from '@/components/ui/popover'
+import {ScrollArea} from '@/components/ui/scroll-area'
+import {Input} from '@/components/ui/input'
+import {useEmailTemplates} from '../hooks/useEmailTemplates'
+import type {EmailTemplate} from '@/types/email.types'
 
 interface TemplatePickerProps {
   onSelect: (template: EmailTemplate) => void

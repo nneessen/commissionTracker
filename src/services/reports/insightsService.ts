@@ -1,7 +1,7 @@
 // src/services/reports/insightsService.ts
 
-import { ActionableInsight, InsightSeverity, InsightCategory } from '../../types/reports.types';
-import { supabase } from '../base/supabase';
+import {ActionableInsight, InsightSeverity, InsightCategory} from '../../types/reports.types';
+import {supabase} from '../base/supabase';
 
 interface InsightContext {
   startDate: Date;
@@ -163,7 +163,7 @@ export class InsightsService {
 
     // Get commission rate data
     const { data: commissionData } = await supabase
-      .rpc('get_user_commission_profile', { p_user_id: context.userId });
+      .rpc('getuser_commission_profile', { puser_id: context.userId });
 
     if (commissionData && commissionData.length > 0) {
       const profile = commissionData[0];
@@ -214,7 +214,7 @@ export class InsightsService {
             .slice(0, 3)
             .map(([product]) => product);
 
-          const potentialIncrease = (topQuartilePremium - avgPremium) * policies.length;
+          const _potentialIncrease = (topQuartilePremium - avgPremium) * policies.length;
           insights.push({
             id: 'revenue-premium-opportunity',
             severity: 'medium',

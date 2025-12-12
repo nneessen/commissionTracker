@@ -1,17 +1,8 @@
 // src/features/reports/components/charts/AreaStackedChart.tsx
 
 import React from 'react';
-import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from 'recharts';
-import { formatCurrency } from '../../../../lib/format';
+import {AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer} from 'recharts';
+import {formatCurrency} from '../../../../lib/format';
 
 export interface AreaStackedChartData {
   label: string;

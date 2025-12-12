@@ -1,13 +1,6 @@
 // src/utils/__tests__/dateRange.test.ts
 
-import {
-  TimePeriod,
-  DateRange,
-  DAYS_PER_PERIOD,
-  scaleMetricByPeriod,
-  getAveragePeriodValue,
-  getPeriodLabel
-} from '../dateRange';
+import {TimePeriod, DateRange, DAYS_PER_PERIOD, scaleMetricByPeriod, getAveragePeriodValue, getPeriodLabel} from '../dateRange';
 
 describe('dateRange time period scaling', () => {
   describe('DAYS_PER_PERIOD constant', () => {

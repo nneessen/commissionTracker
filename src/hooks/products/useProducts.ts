@@ -1,6 +1,6 @@
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '../../services/base/supabase';
-import { Product } from '../../types/product.types';
+import {useQuery} from '@tanstack/react-query';
+import {supabase} from '../../services/base/supabase';
+import {Product} from '../../types/product.types';
 
 /**
  * Hook to fetch products with optional filtering by carrier

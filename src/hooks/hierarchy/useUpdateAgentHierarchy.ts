@@ -1,8 +1,8 @@
 // src/hooks/hierarchy/useUpdateAgentHierarchy.ts
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { hierarchyService } from '../../services/hierarchy/hierarchyService';
-import { HierarchyChangeRequest } from '../../types/hierarchy.types';
+import {useMutation, useQueryClient} from '@tanstack/react-query';
+import {hierarchyService} from '../../services/hierarchy/hierarchyService';
+import {HierarchyChangeRequest} from '../../types/hierarchy.types';
 
 /**
  * Update agent hierarchy assignment (admin only)

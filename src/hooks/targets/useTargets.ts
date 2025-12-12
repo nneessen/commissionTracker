@@ -1,8 +1,8 @@
 // src/hooks/targets/useTargets.ts
 
-import { useQuery } from "@tanstack/react-query";
-import { targetsService } from "../../services/targets";
-import { supabase } from "../../services/base/supabase";
+import {useQuery} from "@tanstack/react-query";
+import {targetsService} from "../../services/targets";
+import {supabase} from "../../services/base/supabase";
 
 export interface UseTargetsOptions {
   enabled?: boolean;

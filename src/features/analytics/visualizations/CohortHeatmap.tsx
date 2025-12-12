@@ -1,7 +1,7 @@
 // src/features/analytics/visualizations/CohortHeatmap.tsx
 
 import React from 'react';
-import { CohortRetentionData } from '../../../services/analytics/cohortService';
+import {CohortRetentionData} from '../../../services/analytics/cohortService';
 
 interface CohortHeatmapProps {
   data: CohortRetentionData[];

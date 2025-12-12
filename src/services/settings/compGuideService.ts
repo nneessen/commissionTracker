@@ -1,14 +1,15 @@
 // src/services/settings/compGuideService.ts
-import { logger } from "../base/logger";
+import {logger} from "../base/logger";
 
-import { supabase } from "../base/supabase";
-import { Database } from "../../types/database.types";
+import {supabase} from "../base/supabase";
+import {Database} from "../../types/database.types";
 
 type CompGuideRow = Database["public"]["Tables"]["comp_guide"]["Row"];
 type CompGuideInsert = Database["public"]["Tables"]["comp_guide"]["Insert"];
 type CompGuideUpdate = Database["public"]["Tables"]["comp_guide"]["Update"];
 
 // Re-export for backward compatibility
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface CompGuideEntry extends CompGuideRow {}
 
 export interface CompGuideCreateData {

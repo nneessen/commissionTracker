@@ -1,5 +1,5 @@
 // src/services/settings/agentSettingsService.ts
-import { logger } from '../base/logger';
+import {logger} from '../base/logger';
 
 export const agentSettingsService = {
   async getSettings(): Promise<any> {
@@ -7,7 +7,7 @@ export const agentSettingsService = {
     return {};
   },
 
-  async updateSettings(data: any): Promise<any> {
+  async updateSettings(_data: any): Promise<any> {
     // Placeholder implementation
     throw new Error('Not implemented');
   }

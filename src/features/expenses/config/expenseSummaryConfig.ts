@@ -1,7 +1,7 @@
 // src/features/expenses/config/expenseSummaryConfig.ts
 
-import type { Expense } from '../../../types/expense.types';
-import { EXPENSE_STATUS_COLORS } from './expenseDashboardConfig';
+import type {Expense} from '../../../types/expense.types';
+import {EXPENSE_STATUS_COLORS} from './expenseDashboardConfig';
 
 /**
  * Summary metric configuration

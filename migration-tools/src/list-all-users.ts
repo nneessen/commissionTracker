@@ -1,5 +1,5 @@
 // /home/nneessen/projects/commissionTracker/migration-tools/src/list-all-users.ts
-import { createClient } from '@supabase/supabase-js';
+import {createClient} from '@supabase/supabase-js';
 import * as dotenv from 'dotenv';
 
 dotenv.config();

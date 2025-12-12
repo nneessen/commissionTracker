@@ -1,38 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+import {useForm} from 'react-hook-form';
+import {zodResolver} from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-} from '@/components/ui/command';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Product } from '../hooks/useProducts';
-import { useCarriers } from '../../carriers/hooks/useCarriers';
-import type { Database } from '@/types/database.types';
-import { Check, ChevronsUpDown } from 'lucide-react';
+import {Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle} from '@/components/ui/dialog';
+import {Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage} from '@/components/ui/form';
+import {Command, CommandEmpty, CommandGroup, CommandInput, CommandItem} from '@/components/ui/command';
+import {Input} from '@/components/ui/input';
+import {Button} from '@/components/ui/button';
+import {Badge} from '@/components/ui/badge';
+import {Product} from '../hooks/useProducts';
+import {useCarriers} from '../../carriers/hooks/useCarriers';
+import type {Database} from '@/types/database.types';
+import {Check, ChevronsUpDown} from 'lucide-react';
 
 type ProductType = Database['public']['Enums']['product_type'];
 

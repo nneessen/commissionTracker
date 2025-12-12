@@ -15,18 +15,10 @@
  * already gives us the correct period. Scaling is ONLY for pace metrics.
  */
 
-import { getTimeRemaining, DAYS_PER_PERIOD } from '../../utils/dateRange';
-import type {
-  ActualTotalMetrics,
-  CurrentStateMetrics,
-  DerivedMetrics,
-  PaceMetrics,
-  GroupedMetrics,
-  CalculatedMetrics,
-  MetricCalculationInput,
-} from './types';
-import type { Commission, Policy, Expense, ProductType } from '../../types';
-import type { PolicyClient, PolicyClientExtended } from '../../types/policy.types';
+import {getTimeRemaining, DAYS_PER_PERIOD} from '../../utils/dateRange';
+import type {ActualTotalMetrics, CurrentStateMetrics, DerivedMetrics, PaceMetrics, GroupedMetrics, CalculatedMetrics, MetricCalculationInput} from './types';
+import type {Commission, Policy, Expense, ProductType} from '../../types';
+import type {PolicyClient, PolicyClientExtended} from '../../types/policy.types';
 
 /**
  * CATEGORY 1: Calculate actual historical totals for the period
@@ -333,7 +325,7 @@ export function calculatePaceMetrics(
         breakevenPerDay = breakevenNeeded / 30;
         break;
 
-      case 'yearly':
+      case 'yearly': {
         // For yearly, calculate monthly and weekly targets
         const monthsRemaining = 12 - new Date().getMonth();
         weeklyTarget = Math.ceil(policiesPerDayNeeded * 7);
@@ -341,6 +333,7 @@ export function calculatePaceMetrics(
         breakevenPerMonth = breakevenNeeded / 12;
         breakevenPerWeek = breakevenNeeded / 52;
         breakevenPerDay = breakevenNeeded / 365;
+      }
         break;
     }
   }

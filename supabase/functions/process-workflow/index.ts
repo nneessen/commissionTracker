@@ -2,10 +2,10 @@
 // Executes workflow actions sequentially with delays and error handling
 // Uses user's connected Gmail for sending emails (NOT Resend)
 
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { createSupabaseAdminClient } from '../_shared/supabase-client.ts'
-import { decrypt } from '../_shared/encryption.ts'
-import { encode as base64Encode } from 'https://deno.land/std@0.168.0/encoding/base64.ts'
+import {serve} from 'https://deno.land/std@0.168.0/http/server.ts'
+import {createSupabaseAdminClient} from '../_shared/supabase-client.ts'
+import {decrypt} from '../_shared/encryption.ts'
+import {encode as base64Encode} from 'https://deno.land/std@0.168.0/encoding/base64.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -193,7 +193,7 @@ serve(async (req) => {
 async function executeAction(
   action: WorkflowAction,
   context: Record<string, unknown>,
-  workflow: Record<string, unknown>,
+  _workflow: Record<string, unknown>,
   isTest: boolean,
   supabase: ReturnType<typeof createSupabaseAdminClient>
 ): Promise<unknown> {
@@ -283,7 +283,7 @@ async function executeSendEmail(
 
   // Determine recipients based on action configuration
   let recipientEmails: string[] = []
-  let recipientIds: string[] = []
+  let _recipientIds: string[] = []
   const recipientType = action.config.recipientType as string || 'trigger_user'
 
   console.log('Determining recipients - type:', recipientType, 'context:', {
@@ -297,7 +297,7 @@ async function executeSendEmail(
     case 'trigger_user':
       if (context.recipientEmail) {
         recipientEmails = [context.recipientEmail as string]
-        recipientIds = [context.recipientId as string || '']
+        _recipientIds = [context.recipientId as string || '']
       }
       break
 
@@ -309,14 +309,14 @@ async function executeSendEmail(
           .select('id')
           .eq('email', action.config.recipientEmail)
           .single()
-        if (user) recipientIds = [user.id]
+        if (user) _recipientIds = [user.id]
       }
       break
 
     case 'current_user':
       if (context.triggeredByEmail) {
         recipientEmails = [context.triggeredByEmail as string]
-        recipientIds = [context.triggeredBy as string || '']
+        _recipientIds = [context.triggeredBy as string || '']
       }
       break
 
@@ -339,13 +339,13 @@ async function executeSendEmail(
 
           if (manager?.email) {
             recipientEmails = [manager.email]
-            recipientIds = [manager.id]
+            _recipientIds = [manager.id]
           }
         }
       }
       break
 
-    case 'all_trainers':
+    case 'all_trainers': {
       // Use roles array (not singular 'role' column which doesn't exist)
       const { data: trainers } = await supabase
         .from('user_profiles')
@@ -355,11 +355,12 @@ async function executeSendEmail(
 
       if (trainers && trainers.length > 0) {
         recipientEmails = trainers.map(t => t.email)
-        recipientIds = trainers.map(t => t.id)
+        _recipientIds = trainers.map(t => t.id)
       }
+}
       break
 
-    case 'all_agents':
+    case 'all_agents': {
       const { data: agents, error: agentsError } = await supabase
         .from('user_profiles')
         .select('id, email')
@@ -372,8 +373,9 @@ async function executeSendEmail(
 
       if (agents && agents.length > 0) {
         recipientEmails = agents.map(a => a.email)
-        recipientIds = agents.map(a => a.id)
+        _recipientIds = agents.map(a => a.id)
       }
+}
       break
   }
 
@@ -556,7 +558,7 @@ function buildRawEmail(params: {
   bodyHtml: string
   bodyText?: string
 }): string {
-  const boundary = `boundary_${Date.now()}`
+  const _boundary = `boundary_${Date.now()}`
 
   let message = ''
 

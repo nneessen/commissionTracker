@@ -10,11 +10,11 @@
  * - Get chargeback summaries and reporting
  */
 
-import { supabase } from '../base/supabase';
-import { logger } from '../base/logger';
-import { commissionLifecycleService } from './CommissionLifecycleService';
-import { DatabaseError, NotFoundError, ValidationError } from '../../errors/ServiceErrors';
-import { formatDateForDB } from '../../lib/date';
+import {supabase} from '../base/supabase';
+import {logger} from '../base/logger';
+import {commissionLifecycleService} from './CommissionLifecycleService';
+import {DatabaseError, NotFoundError, ValidationError} from '../../errors/ServiceErrors';
+import {formatDateForDB} from '../../lib/date';
 
 export interface UpdateMonthsPaidParams {
   commissionId: string;
@@ -450,7 +450,7 @@ class CommissionStatusService {
   ): Promise<AtRiskCommission[]> {
     try {
       const { data, error } = await supabase.rpc('get_at_risk_commissions', {
-        p_user_id: userId,
+        puser_id: userId,
         p_risk_threshold: riskThreshold
       });
 

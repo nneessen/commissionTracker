@@ -1,6 +1,6 @@
 // src/utils/exportHelpers.ts
 
-import { format } from 'date-fns';
+import {format} from 'date-fns';
 
 /**
  * Convert data to CSV format
@@ -489,7 +489,7 @@ export function generatePrintableHTML(
     </div>
   </div>
 
-  ${sections.map((section, index) => `
+  ${sections.map((section, _index) => `
     <div class="no-break">
       <h2>${section.title}</h2>
       ${section.content}

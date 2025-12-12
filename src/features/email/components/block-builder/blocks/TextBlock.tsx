@@ -1,20 +1,13 @@
-import { useEffect, useCallback, forwardRef, useImperativeHandle } from 'react'
-import { useEditor, EditorContent } from '@tiptap/react'
+import {useEffect, useCallback, forwardRef, useImperativeHandle} from 'react'
+import {useEditor, EditorContent} from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Link from '@tiptap/extension-link'
 import TextAlign from '@tiptap/extension-text-align'
 import DOMPurify from 'dompurify'
-import { cn } from '@/lib/utils'
-import { Button } from '@/components/ui/button'
-import {
-  Bold,
-  Italic,
-  List,
-  AlignLeft,
-  AlignCenter,
-  AlignRight,
-} from 'lucide-react'
-import type { EmailBlock, TextBlockContent } from '@/types/email.types'
+import {cn} from '@/lib/utils'
+import {Button} from '@/components/ui/button'
+import {Bold, Italic, List, AlignLeft, AlignCenter, AlignRight} from 'lucide-react'
+import type {EmailBlock, TextBlockContent} from '@/types/email.types'
 
 // Sanitizer config for email-safe HTML
 const SANITIZE_CONFIG = {

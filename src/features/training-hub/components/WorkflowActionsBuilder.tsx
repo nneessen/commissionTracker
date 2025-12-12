@@ -1,47 +1,20 @@
 // src/features/training-hub/components/WorkflowActionsBuilder.tsx
 
-import { useState } from 'react';
-import {
-  Plus,
-  Mail,
-  Bell,
-  Clock,
-  Webhook,
-  Trash2,
-  ChevronUp,
-  ChevronDown,
-  Eye,
-  Users,
-  Building2,
-  UserCog,
-  GitBranch
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { cn } from '@/lib/utils';
-import type { WorkflowAction } from '@/types/workflow.types';
-import type { RecipientType } from '@/types/workflow-recipients.types';
-import { RECIPIENT_CATEGORIES, RECIPIENT_TYPE_LABELS, AVAILABLE_ROLES } from '@/types/workflow-recipients.types';
-import { useEmailTemplates } from '@/features/email/hooks/useEmailTemplates';
-import { usePipelinePhaseOptions } from '@/features/training-hub/hooks/usePipelinePhases';
-import { getRecommendedRecipients, isRecommendedRecipient, getRecipientContextDescription } from '@/lib/workflow-recipient-helpers';
+import {useState} from 'react';
+import {Plus, Mail, Bell, Clock, Webhook, Trash2, ChevronUp, ChevronDown, Eye, Users, Building2, UserCog, GitBranch} from 'lucide-react';
+import {Button} from '@/components/ui/button';
+import {Input} from '@/components/ui/input';
+import {Label} from '@/components/ui/label';
+import {Checkbox} from '@/components/ui/checkbox';
+import {Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue} from '@/components/ui/select';
+import {Dialog, DialogContent, DialogHeader, DialogTitle} from '@/components/ui/dialog';
+import {cn} from '@/lib/utils';
+import type {WorkflowAction} from '@/types/workflow.types';
+import type {RecipientType} from '@/types/workflow-recipients.types';
+import {RECIPIENT_CATEGORIES, RECIPIENT_TYPE_LABELS, AVAILABLE_ROLES} from '@/types/workflow-recipients.types';
+import {useEmailTemplates} from '@/features/email/hooks/useEmailTemplates';
+import {usePipelinePhaseOptions} from '@/features/training-hub/hooks/usePipelinePhases';
+import {getRecommendedRecipients, isRecommendedRecipient, getRecipientContextDescription} from '@/lib/workflow-recipient-helpers';
 
 interface WorkflowActionsBuilderProps {
   actions: WorkflowAction[];
@@ -76,7 +49,7 @@ export default function WorkflowActionsBuilder({ actions, onChange, errors, sele
       type: 'send_email',
       order: actions.length,
       config: {
-        recipientConfig: { type: 'event_user' }
+        recipientConfig: { type: 'eventuser' }
       },
       delayMinutes: 0
     };
@@ -118,7 +91,7 @@ export default function WorkflowActionsBuilder({ actions, onChange, errors, sele
 
   // Get current recipient type from action config
   const getRecipientType = (action: WorkflowAction): RecipientType => {
-    return action.config.recipientConfig?.type || action.config.recipientType as RecipientType || 'event_user';
+    return action.config.recipientConfig?.type || action.config.recipientType as RecipientType || 'eventuser';
   };
 
   // Update recipient type

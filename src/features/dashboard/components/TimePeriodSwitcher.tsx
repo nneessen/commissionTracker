@@ -1,10 +1,10 @@
 // src/features/dashboard/components/TimePeriodSwitcher.tsx
 
 import React from 'react';
-import { Button } from '@/components/ui/button';
-import { TimePeriodSwitcherProps } from '../../../types/dashboard.types';
-import { TimePeriod } from '../../../utils/dateRange';
-import { cn } from '@/lib/utils';
+import {Button} from '@/components/ui/button';
+import {TimePeriodSwitcherProps} from '../../../types/dashboard.types';
+import {TimePeriod} from '../../../utils/dateRange';
+import {cn} from '@/lib/utils';
 
 /**
  * Time Period Switcher Component

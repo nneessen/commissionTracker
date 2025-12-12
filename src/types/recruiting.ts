@@ -171,9 +171,9 @@ export interface CreateRecruitInput {
   license_expiration?: string; // ISO date string
 
   // Social Media / Marketing
-  instagram_username?: string;
+  instagramusername?: string;
   instagram_url?: string;
-  linkedin_username?: string;
+  linkedinusername?: string;
   linkedin_url?: string;
   facebook_handle?: string;
   personal_website?: string;
@@ -192,9 +192,9 @@ export interface UpdateRecruitInput {
   email?: string;
   phone?: string;
   profile_photo_url?: string;
-  instagram_username?: string;
+  instagramusername?: string;
   instagram_url?: string;
-  linkedin_username?: string;
+  linkedinusername?: string;
   linkedin_url?: string;
   upline_id?: string;
   referral_source?: string;

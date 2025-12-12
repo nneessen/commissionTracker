@@ -1,5 +1,5 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { compGuideService } from '../../services/settings/compGuideService';
+import {useMutation, useQueryClient} from '@tanstack/react-query';
+import {compGuideService} from '../../services/settings/compGuideService';
 
 export const useDeleteComp = () => {
   const queryClient = useQueryClient();

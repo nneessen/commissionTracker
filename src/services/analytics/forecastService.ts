@@ -1,7 +1,7 @@
 // src/services/analytics/forecastService.ts
 
-import { Policy, Commission } from '../../types';
-import { format, addMonths, differenceInMonths } from 'date-fns';
+import {Policy, Commission} from '../../types';
+import {format, addMonths, differenceInMonths} from 'date-fns';
 
 /**
  * Forecast Service
@@ -315,7 +315,7 @@ export function detectSeasonality(policies: Policy[]): SeasonalityPattern[] {
   // Calculate averages for each month
   const seasonalPatterns: SeasonalityPattern[] = [];
   const overallAvgPolicies = policies.length / 12;
-  const overallAvgRevenue = policies.reduce((sum, p) => sum + (p.annualPremium || 0), 0) / 12;
+  const _overallAvgRevenue = policies.reduce((sum, p) => sum + (p.annualPremium || 0), 0) / 12;
 
   for (let month = 1; month <= 12; month++) {
     const data = monthlyData[month];

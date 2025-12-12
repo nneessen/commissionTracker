@@ -1,32 +1,18 @@
 // src/features/hierarchy/components/HierarchyManagement.tsx
 
 import React, { useState } from 'react';
-import { Shield, AlertCircle, Edit } from 'lucide-react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Empty, EmptyHeader, EmptyTitle, EmptyDescription } from '@/components/ui/empty';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import {Shield, AlertCircle, Edit} from 'lucide-react';
+import {Card, CardHeader, CardTitle, CardContent} from '@/components/ui/card';
+import {Badge} from '@/components/ui/badge';
+import {Button} from '@/components/ui/button';
+import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from '@/components/ui/table';
+import {Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle} from '@/components/ui/dialog';
+import {Label} from '@/components/ui/label';
+import {Empty, EmptyHeader, EmptyTitle, EmptyDescription} from '@/components/ui/empty';
+import {Alert, AlertDescription} from '@/components/ui/alert';
 import showToast from '@/utils/toast';
-import { useMyDownlines, useUpdateAgentHierarchy, useCurrentUserProfile } from '@/hooks';
-import type { UserProfile, HierarchyChangeRequest } from '@/types/hierarchy.types';
+import {useMyDownlines, useUpdateAgentHierarchy, useCurrentUserProfile} from '@/hooks';
+import type {UserProfile, HierarchyChangeRequest} from '@/types/hierarchy.types';
 
 interface HierarchyManagementProps {
   className?: string;

@@ -1,7 +1,7 @@
 // /home/nneessen/projects/commissionTracker/src/types/policy.types.ts
 
-import { ProductType } from './commission.types';
-import { Product } from './product.types';
+import {ProductType} from './commission.types';
+import {Product} from './product.types';
 
 export type PolicyStatus = 'pending' | 'active' | 'lapsed' | 'cancelled' | 'matured';
 export type PaymentFrequency = 'annual' | 'semi-annual' | 'quarterly' | 'monthly';
@@ -16,6 +16,7 @@ export interface PolicyClientBase {
 }
 
 // Legacy client interface (same as base for backward compatibility)
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface PolicyClient extends PolicyClientBase {}
 
 // Extended client interface for new service architecture

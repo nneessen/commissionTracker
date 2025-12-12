@@ -1,8 +1,8 @@
-import { Facebook, Twitter, Linkedin, Instagram, Youtube, Mail } from 'lucide-react'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Switch } from '@/components/ui/switch'
-import type { EmailBlock, SocialBlockContent, SocialLink, SocialPlatform } from '@/types/email.types'
+import {Facebook, Twitter, Linkedin, Instagram, Youtube, Mail} from 'lucide-react'
+import {Input} from '@/components/ui/input'
+import {Label} from '@/components/ui/label'
+import {Switch} from '@/components/ui/switch'
+import type {EmailBlock, SocialBlockContent, SocialLink, SocialPlatform} from '@/types/email.types'
 
 interface SocialBlockProps {
   block: EmailBlock

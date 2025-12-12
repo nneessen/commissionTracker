@@ -1,16 +1,12 @@
 // src/features/hierarchy/components/PendingInvitationBanner.tsx
 // Banner to display pending invitations received by the user
 
-import { useState } from 'react';
-import { useReceivedInvitations, useAcceptInvitation, useDenyInvitation } from '../../../hooks/hierarchy/useInvitations';
-import { Button } from '../../../components/ui/button';
-import { AlertCircle, Check, X, Mail, Clock, User } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
-import {
-  Alert,
-  AlertDescription,
-  AlertTitle,
-} from '../../../components/ui/alert';
+import {useState} from 'react';
+import {useReceivedInvitations, useAcceptInvitation, useDenyInvitation} from '../../../hooks/hierarchy/useInvitations';
+import {Button} from '../../../components/ui/button';
+import {AlertCircle, Check, X, Mail, Clock, User} from 'lucide-react';
+import {formatDistanceToNow} from 'date-fns';
+import {Alert, AlertDescription, AlertTitle} from '../../../components/ui/alert';
 
 export function PendingInvitationBanner() {
   const { data: receivedInvitations, isLoading } = useReceivedInvitations('pending');

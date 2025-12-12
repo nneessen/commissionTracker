@@ -103,5 +103,5 @@ export interface InvitationValidationResult {
   valid: boolean;
   errors: string[];
   warnings: string[];
-  invitee_user_id?: string; // Resolved user ID if found
+  inviteeuser_id?: string; // Resolved user ID if found
 }

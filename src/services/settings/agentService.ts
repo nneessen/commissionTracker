@@ -1,9 +1,9 @@
 // /home/nneessen/projects/commissionTracker/src/services/settings/agentService.ts
-import { logger } from '../base/logger';
+import {logger} from '../base/logger';
 // This file is deprecated - use userService.ts instead
 // Keeping for backward compatibility
 
-import { userService } from './userService';
+import {userService} from './userService';
 
 // Re-export userService as agentService for backward compatibility
 export const agentService = userService;
@@ -22,7 +22,7 @@ export class AgentService {
     return userService.getById(id);
   }
 
-  create(data: any) {
+  create(_data: any) {
     // Users are created through Supabase Auth
     throw new Error('Users must be created through authentication signup');
   }
@@ -31,7 +31,7 @@ export class AgentService {
     return userService.updateUser(id, data);
   }
 
-  delete(id: string) {
+  delete(_id: string) {
     // Users cannot be deleted through this service
     throw new Error('Users cannot be deleted through this interface');
   }

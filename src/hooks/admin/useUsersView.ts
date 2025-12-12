@@ -1,10 +1,10 @@
 // /home/nneessen/projects/commissionTracker/src/hooks/admin/useUsersView.ts
 // Server-side paginated users view with filtering and sorting
 
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState, useMemo } from 'react';
-import { supabase } from '../../services/base/supabase';
-import { UserProfile } from '../../services/admin/userApprovalService';
+import {useQuery, useQueryClient} from '@tanstack/react-query';
+import {useState, useMemo} from 'react';
+import {supabase} from '../../services/base/supabase';
+import {UserProfile} from '../../services/admin/userApprovalService';
 
 export interface UserFilters {
   searchTerm?: string;
@@ -42,10 +42,10 @@ export function useUsersView() {
   } = useQuery({
     queryKey: ['users-paginated', currentPage, pageSize, filters, sortConfig],
     queryFn: async () => {
-      console.log('[useUsersView] Fetching users via admin_get_all_users()');
+      console.log('[useUsersView] Fetching users via admin_get_allusers()');
 
       // Get ALL users via RPC function (bypasses RLS)
-      const { data: allUsers, error } = await supabase.rpc('admin_get_all_users');
+      const { data: allUsers, error } = await supabase.rpc('admin_get_allusers');
 
       if (error) {
         console.error('[useUsersView] Error fetching users:', error);
@@ -113,9 +113,9 @@ export function useUsersView() {
   const { data: metrics } = useQuery({
     queryKey: ['users-metrics'],
     queryFn: async () => {
-      console.log('[useUsersView] Fetching metrics via admin_get_all_users()');
+      console.log('[useUsersView] Fetching metrics via admin_get_allusers()');
 
-      const { data, error } = await supabase.rpc('admin_get_all_users');
+      const { data, error } = await supabase.rpc('admin_get_allusers');
 
       if (error) {
         console.error('[useUsersView] Error fetching metrics:', error);

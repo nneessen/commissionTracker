@@ -1,9 +1,9 @@
 // src/services/analytics/breakevenService.ts
 
-import { supabase, TABLES } from '../base/supabase';
-import { commissionService, chargebackService, constantsService, expenseService } from '../index';
-import { BREAKEVEN_RATES, CHARGEBACK_THRESHOLDS, EMERGENCY_FUND, FINANCIAL_CONSTANTS } from '../../constants/financial';
-import type { NetCommissionMetrics } from '../commissions/CommissionAnalyticsService';
+import {supabase, TABLES} from '../base/supabase';
+import {commissionService, chargebackService, constantsService, expenseService} from '../index';
+import {BREAKEVEN_RATES, CHARGEBACK_THRESHOLDS, EMERGENCY_FUND, FINANCIAL_CONSTANTS} from '../../constants/financial';
+import type {NetCommissionMetrics} from '../commissions/CommissionAnalyticsService';
 
 export interface BreakevenScenario {
   scenarioName: string;
@@ -248,8 +248,7 @@ class BreakevenService {
   }
 
   async getChargebackProjections(
-    userId?: string,
-    projectionMonths: number = 6
+    userId?: string, _projectionMonths: number = 6
   ): Promise<{
     currentChargebacks: number;
     projectedChargebacks: number;

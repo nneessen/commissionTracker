@@ -1,10 +1,10 @@
 // src/features/reports/components/filters/ReportFiltersBar.tsx
 
 import React from 'react';
-import { Button } from '@/components/ui/button';
-import { X, Filter } from 'lucide-react';
-import { ReportFilters, FilterOption } from '@/types/reports.types';
-import { MultiSelectFilter } from './MultiSelectFilter';
+import {Button} from '@/components/ui/button';
+import {X, Filter} from 'lucide-react';
+import {ReportFilters, FilterOption} from '@/types/reports.types';
+import {MultiSelectFilter} from './MultiSelectFilter';
 
 interface ReportFiltersBarProps {
   filters: ReportFilters;

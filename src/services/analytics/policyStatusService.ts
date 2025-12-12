@@ -1,7 +1,7 @@
 // src/services/analytics/policyStatusService.ts
 
-import type { Policy } from '@/types';
-import { startOfMonth, format, subMonths } from 'date-fns';
+import type {Policy} from '@/types';
+import {startOfMonth, format, subMonths} from 'date-fns';
 
 export interface PolicyStatusSummary {
   active: {

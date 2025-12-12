@@ -1,9 +1,9 @@
 // src/features/dashboard/config/statsConfig.ts
 
-import { TimePeriod, getPeriodLabel } from "../../../utils/dateRange";
-import { StatItemConfig } from "../../../types/dashboard.types";
-import { formatCurrency, formatPercent } from "../../../lib/format";
-import { getPeriodSuffix } from "../../../utils/dashboardCalculations";
+import {TimePeriod, getPeriodLabel} from "../../../utils/dateRange";
+import {StatItemConfig} from "../../../types/dashboard.types";
+import {formatCurrency, formatPercent} from "../../../lib/format";
+import {getPeriodSuffix} from "../../../utils/dashboardCalculations";
 
 const METRIC_COLORS = {
   COMMISSION_EARNED: "rgb(16, 185, 129)",

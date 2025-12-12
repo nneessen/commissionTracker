@@ -132,8 +132,8 @@ export interface CustomTriggerConfig {
 export interface EmailQueueItem {
   id: string
   trigger_id: string | null
-  recipient_user_id: string
-  sender_user_id: string
+  recipientuser_id: string
+  senderuser_id: string
   template_id: string | null
   subject: string | null
   body_html: string | null

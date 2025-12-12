@@ -1,14 +1,14 @@
 // src/features/hierarchy/components/InviteDownline.tsx
 
-import { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Copy, Mail, UserPlus, CheckCircle2, AlertCircle } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
-import { useUpdateAgentHierarchy } from '@/hooks/hierarchy/useUpdateAgentHierarchy';
-import { supabase } from '@/services/base/supabase';
+import {useState} from 'react';
+import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '@/components/ui/card';
+import {Button} from '@/components/ui/button';
+import {Input} from '@/components/ui/input';
+import {Label} from '@/components/ui/label';
+import {Copy, Mail, UserPlus, CheckCircle2, AlertCircle} from 'lucide-react';
+import {useAuth} from '@/contexts/AuthContext';
+import {useUpdateAgentHierarchy} from '@/hooks/hierarchy/useUpdateAgentHierarchy';
+import {supabase} from '@/services/base/supabase';
 
 export function InviteDownline() {
   const { user } = useAuth();
@@ -49,7 +49,7 @@ export function InviteDownline() {
     try {
       // Find user by email using secure RPC function
       const { data, error: lookupError } = await supabase
-        .rpc('lookup_user_by_email', { p_email: downlineEmail.trim() });
+        .rpc('lookupuser_by_email', { p_email: downlineEmail.trim() });
 
       if (lookupError) {
         setError('Failed to lookup user. Please try again.');

@@ -1,21 +1,14 @@
 // src/features/reports/components/drill-down/DrillDownDrawer.tsx
 
 import React, { useState } from 'react';
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-  SheetFooter,
-} from '@/components/ui/sheet';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Badge } from '@/components/ui/badge';
-import { Download, ChevronUp, ChevronDown, ExternalLink } from 'lucide-react';
-import { DrillDownContext, DrillDownData, DrillDownRecord } from '@/types/reports.types';
-import { useDrillDown } from '@/hooks/reports/useDrillDown';
-import { cn } from '@/lib/utils';
+import {Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter} from '@/components/ui/sheet';
+import {Button} from '@/components/ui/button';
+import {Skeleton} from '@/components/ui/skeleton';
+import {Badge} from '@/components/ui/badge';
+import {ExternalLink} from 'lucide-react';
+import {DrillDownData, DrillDownRecord} from '@/types/reports.types';
+import {useDrillDown} from '@/hooks/reports/useDrillDown';
+import {cn} from '@/lib/utils';
 
 interface DrillDownDrawerProps {
   open: boolean;

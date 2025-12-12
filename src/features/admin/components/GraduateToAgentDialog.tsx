@@ -1,19 +1,19 @@
 // src/features/admin/components/GraduateToAgentDialog.tsx
 
-import { useState } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import { GraduationCap, AlertCircle } from 'lucide-react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/services/base/supabase';
-import { VALID_CONTRACT_LEVELS, type UserProfile } from '@/services/admin/userApprovalService';
-import { format } from 'date-fns';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useAuth } from '@/contexts/AuthContext';
-import type { RoleName } from '@/types/permissions.types';
+import {useState} from 'react';
+import {Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle} from '@/components/ui/dialog';
+import {Button} from '@/components/ui/button';
+import {Label} from '@/components/ui/label';
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '@/components/ui/select';
+import {Textarea} from '@/components/ui/textarea';
+import {GraduationCap, AlertCircle} from 'lucide-react';
+import {useMutation, useQueryClient} from '@tanstack/react-query';
+import {supabase} from '@/services/base/supabase';
+import {VALID_CONTRACT_LEVELS, type UserProfile} from '@/services/admin/userApprovalService';
+import {format} from 'date-fns';
+import {Alert, AlertDescription} from '@/components/ui/alert';
+import {useAuth} from '@/contexts/AuthContext';
+import type {RoleName} from '@/types/permissions.types';
 
 interface GraduateToAgentDialogProps {
   recruit: UserProfile;

@@ -1,10 +1,10 @@
 // src/features/dashboard/components/QuickActionsPanel.tsx
 
 import React from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { QuickActionsPanelProps } from "../../../types/dashboard.types";
-import { cn } from "@/lib/utils";
+import {Button} from "@/components/ui/button";
+import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
+import {QuickActionsPanelProps} from "../../../types/dashboard.types";
+import {cn} from "@/lib/utils";
 
 /**
  * Quick Actions Panel Component

@@ -1,30 +1,19 @@
 // src/features/training-hub/components/workflow-wizard/ActionConfigPanel.tsx
 
-import { useState } from 'react';
-import { X, Info, Clock, Variable, TestTube, Settings, ChevronDown, ChevronUp } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
-import { cn } from '@/lib/utils';
-import type { WorkflowAction } from '@/types/workflow.types';
-import { useEmailTemplates } from '@/features/email/hooks/useEmailTemplates';
-import { useAuth } from '@/contexts/AuthContext';
+import {useState} from 'react';
+import {X, Info, Clock, Variable, TestTube, Settings, ChevronDown, ChevronUp} from 'lucide-react';
+import {Button} from '@/components/ui/button';
+import {Input} from '@/components/ui/input';
+import {Label} from '@/components/ui/label';
+import {Textarea} from '@/components/ui/textarea';
+import {Badge} from '@/components/ui/badge';
+import {Switch} from '@/components/ui/switch';
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '@/components/ui/select';
+import {Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from '@/components/ui/tooltip';
+import {cn} from '@/lib/utils';
+import type {WorkflowAction} from '@/types/workflow.types';
+import {useEmailTemplates} from '@/features/email/hooks/useEmailTemplates';
+import {useAuth} from '@/contexts/AuthContext';
 
 interface ActionConfigPanelProps {
   action: WorkflowAction;
@@ -136,7 +125,7 @@ export default function ActionConfigPanel({ action, onUpdate, onClose }: ActionC
             <div>
               <Label className="text-sm font-medium">Who Receives This Email?</Label>
               <Select
-                value={action.config.recipientType as string || 'trigger_user'}
+                value={action.config.recipientType as string || 'triggeruser'}
                 onValueChange={(value) => onUpdate({
                   config: { ...action.config, recipientType: value }
                 })}
@@ -145,7 +134,7 @@ export default function ActionConfigPanel({ action, onUpdate, onClose }: ActionC
                   <SelectValue placeholder="Select recipient..." />
                 </SelectTrigger>
                 <SelectContent className="min-w-[280px]">
-                  <SelectItem value="trigger_user" className="py-2 cursor-pointer">
+                  <SelectItem value="triggeruser" className="py-2 cursor-pointer">
                     <div className="flex flex-col">
                       <span className="font-medium text-sm">Person Who Triggered Workflow</span>
                       <span className="text-xs text-muted-foreground mt-0.5">E.g., recruit being processed</span>
@@ -157,7 +146,7 @@ export default function ActionConfigPanel({ action, onUpdate, onClose }: ActionC
                       <span className="text-xs text-muted-foreground mt-0.5">Enter exact email below</span>
                     </div>
                   </SelectItem>
-                  <SelectItem value="current_user" className="py-2 cursor-pointer">
+                  <SelectItem value="currentuser" className="py-2 cursor-pointer">
                     <div className="flex flex-col">
                       <span className="font-medium text-sm">Current User ({user?.email})</span>
                       <span className="text-xs text-muted-foreground mt-0.5">You will receive this email</span>
@@ -188,9 +177,9 @@ export default function ActionConfigPanel({ action, onUpdate, onClose }: ActionC
               <div className="mt-2 p-2 rounded-md bg-muted/30 border border-border/50">
                 <p className="text-xs font-medium text-muted-foreground">📧 Email will be sent to:</p>
                 <p className="text-xs font-semibold mt-1">
-                  {action.config.recipientType === 'trigger_user' && 'The person who triggered this workflow'}
+                  {action.config.recipientType === 'triggeruser' && 'The person who triggered this workflow'}
                   {action.config.recipientType === 'specific_email' && (action.config.recipientEmail || 'Enter email below')}
-                  {action.config.recipientType === 'current_user' && `You (${user?.email})`}
+                  {action.config.recipientType === 'currentuser' && `You (${user?.email})`}
                   {action.config.recipientType === 'manager' && 'The manager/upline of the trigger user'}
                   {action.config.recipientType === 'all_trainers' && 'All users with Trainer role'}
                   {action.config.recipientType === 'all_agents' && 'All users with Agent role'}
@@ -225,7 +214,7 @@ export default function ActionConfigPanel({ action, onUpdate, onClose }: ActionC
             <div>
               <Label className="text-sm font-medium">Who Gets This Notification?</Label>
               <Select
-                value={action.config.recipientType as string || 'trigger_user'}
+                value={action.config.recipientType as string || 'triggeruser'}
                 onValueChange={(value) => onUpdate({
                   config: { ...action.config, recipientType: value }
                 })}
@@ -234,13 +223,13 @@ export default function ActionConfigPanel({ action, onUpdate, onClose }: ActionC
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="trigger_user" className="text-sm">
+                  <SelectItem value="triggeruser" className="text-sm">
                     <div>
                       <div className="font-medium">Person Who Triggered Workflow</div>
                       <div className="text-xs text-muted-foreground">E.g., recruit being processed</div>
                     </div>
                   </SelectItem>
-                  <SelectItem value="current_user" className="text-sm">
+                  <SelectItem value="currentuser" className="text-sm">
                     <div>
                       <div className="font-medium">Current User ({user?.email})</div>
                       <div className="text-xs text-muted-foreground">You will see this notification</div>
@@ -265,8 +254,8 @@ export default function ActionConfigPanel({ action, onUpdate, onClose }: ActionC
               <div className="mt-2 p-2 rounded-md bg-muted/30 border border-border/50">
                 <p className="text-xs font-medium text-muted-foreground">🔔 Notification will appear for:</p>
                 <p className="text-xs font-semibold mt-1">
-                  {action.config.recipientType === 'trigger_user' && 'The person who triggered this workflow'}
-                  {action.config.recipientType === 'current_user' && `You (${user?.email})`}
+                  {action.config.recipientType === 'triggeruser' && 'The person who triggered this workflow'}
+                  {action.config.recipientType === 'currentuser' && `You (${user?.email})`}
                   {action.config.recipientType === 'manager' && 'The manager/upline of the trigger user'}
                   {action.config.recipientType === 'all_trainers' && 'All users with Trainer role'}
                 </p>
@@ -561,7 +550,7 @@ export default function ActionConfigPanel({ action, onUpdate, onClose }: ActionC
           </>
         );
 
-      case 'assign_user':
+      case 'assignuser':
         return (
           <>
             <div>

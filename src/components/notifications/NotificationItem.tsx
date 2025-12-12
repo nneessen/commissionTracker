@@ -1,18 +1,8 @@
 // src/components/notifications/NotificationItem.tsx
-import { formatDistanceToNow } from 'date-fns';
-import {
-  GraduationCap,
-  FileCheck,
-  FileX,
-  FileUp,
-  MessageSquare,
-  CheckCircle2,
-  ArrowRight,
-  ClipboardCheck,
-  Mail,
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
-import type { Notification, NotificationType } from '@/types/notification.types';
+import {formatDistanceToNow} from 'date-fns';
+import {GraduationCap, FileCheck, FileX, FileUp, MessageSquare, CheckCircle2, ArrowRight, ClipboardCheck, Mail} from 'lucide-react';
+import {cn} from '@/lib/utils';
+import type {Notification, NotificationType} from '@/types/notification.types';
 
 interface NotificationItemProps {
   notification: Notification;

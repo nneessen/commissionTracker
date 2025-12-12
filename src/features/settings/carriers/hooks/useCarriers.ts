@@ -1,6 +1,6 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { carrierService } from '@/services/settings/carrierService';
-import { toast } from 'sonner';
+import {useQuery, useMutation, useQueryClient} from '@tanstack/react-query';
+import {carrierService} from '@/services/settings/carrierService';
+import {toast} from 'sonner';
 
 export interface Carrier {
   id: string;

@@ -1,9 +1,9 @@
 // src/services/overrides/__tests__/overrideService.test.ts
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { overrideService } from '../overrideService';
-import { supabase } from '../../base/supabase';
-import type { OverrideCommissionWithAgents, OverrideSummary } from '../../../types/hierarchy.types';
+import {describe, it, expect, vi, beforeEach} from 'vitest';
+import {overrideService} from '../overrideService';
+import {supabase} from '../../base/supabase';
+import type {OverrideCommissionWithAgents, OverrideSummary} from '../../../types/hierarchy.types';
 
 // Mock Supabase
 vi.mock('../../base/supabase', () => ({

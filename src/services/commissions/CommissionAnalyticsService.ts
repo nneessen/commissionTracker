@@ -1,11 +1,11 @@
 // src/services/commissions/CommissionAnalyticsService.ts
 // Handles commission metrics, reporting, and chargeback analysis
 
-import { Commission } from '../../types/commission.types';
-import { supabase, TABLES } from '../base/supabase';
-import { RISK_SCORE_WEIGHTS, CHARGEBACK_THRESHOLDS, RISK_LEVELS } from '../../constants/financial';
-import { commissionCRUDService } from './CommissionCRUDService';
-import { logger } from '../base/logger';
+import {Commission} from '../../types/commission.types';
+import {supabase, TABLES} from '../base/supabase';
+import {RISK_SCORE_WEIGHTS, CHARGEBACK_THRESHOLDS, RISK_LEVELS} from '../../constants/financial';
+import {commissionCRUDService} from './CommissionCRUDService';
+import {logger} from '../base/logger';
 
 export interface ChargebackRisk {
   riskLevel: 'low' | 'medium' | 'high';

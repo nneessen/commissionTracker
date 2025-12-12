@@ -3,9 +3,9 @@
  * Tests the enhanced service methods for product and bulk operations
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { compGuideService } from '../compGuideService';
-import { supabase } from '../../base/supabase';
+import {describe, it, expect, vi, beforeEach} from 'vitest';
+import {compGuideService} from '../compGuideService';
+import {supabase} from '../../base/supabase';
 
 // Mock Supabase
 vi.mock('../../base/supabase', () => ({

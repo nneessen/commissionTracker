@@ -1,6 +1,6 @@
 // src/features/recruiting/hooks/useRecruitDocuments.ts
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { recruitingService } from '@/services/recruiting';
+import {useQuery, useMutation, useQueryClient} from '@tanstack/react-query';
+import {recruitingService} from '@/services/recruiting';
 
 export function useRecruitDocuments(recruitId: string | undefined) {
   return useQuery({
@@ -50,7 +50,7 @@ export function useDeleteDocument() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, storagePath, recruitId }: { id: string; storagePath: string; recruitId: string }) =>
+    mutationFn: ({ id, storagePath, _recruitId }: { id: string; storagePath: string; recruitId: string }) =>
       recruitingService.deleteDocument(id, storagePath),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['recruits', variables.recruitId, 'documents'] });
@@ -65,8 +65,7 @@ export function useUpdateDocumentStatus() {
     mutationFn: ({
       id,
       status,
-      approvalNotes,
-      recruitId,
+      approvalNotes, _recruitId,
     }: {
       id: string;
       status: 'pending' | 'received' | 'approved' | 'rejected';

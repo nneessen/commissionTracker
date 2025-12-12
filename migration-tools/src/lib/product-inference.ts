@@ -1,5 +1,5 @@
 // /home/nneessen/projects/commissionTracker/migration-tools/src/lib/product-inference.ts
-import type { ProductType } from './types.js';
+import type {ProductType} from './types.js';
 
 export function inferProductType(productName: string): ProductType {
   const lower = productName.toLowerCase();

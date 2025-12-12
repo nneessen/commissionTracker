@@ -1,28 +1,15 @@
 // src/features/hierarchy/components/AgentDetailModal.tsx
 
 import React, { useState } from 'react';
-import { X, User, Mail, Phone, Calendar, TrendingUp, DollarSign, AlertCircle, Target, Award, Activity, FileText, Users, BarChart3, Clock, ChevronRight } from 'lucide-react';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { Progress } from '@/components/ui/progress';
-import { formatCurrency, formatDate, formatPercent } from '@/lib/format';
+import {X, User, Mail, Phone, Calendar, TrendingUp, DollarSign, AlertCircle, Target, Award, Activity, FileText, Users, BarChart3, Clock, ChevronRight} from 'lucide-react';
+import {Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle} from '@/components/ui/dialog';
+import {Tabs, TabsContent, TabsList, TabsTrigger} from '@/components/ui/tabs';
+import {Badge} from '@/components/ui/badge';
+import {Button} from '@/components/ui/button';
+import {Card, CardContent, CardHeader, CardTitle} from '@/components/ui/card';
+import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from '@/components/ui/table';
+import {Progress} from '@/components/ui/progress';
+import {formatCurrency, formatDate, formatPercent} from '@/lib/format';
 
 // Safe formatters that handle null/undefined/invalid values
 const safeFormatDate = (date: any): string => {
@@ -54,13 +41,13 @@ const safeFormatPercent = (value: any, decimals?: number): string => {
   if (value === null || value === undefined || isNaN(value)) return '0%';
   return formatPercent(Number(value), decimals);
 };
-import { useAgentDetails } from '@/hooks/hierarchy/useAgentDetails';
-import { useAgentPolicies } from '@/hooks/hierarchy/useAgentPolicies';
-import { useAgentCommissions } from '@/hooks/hierarchy/useAgentCommissions';
-import { useAgentOverrides } from '@/hooks/hierarchy/useAgentOverrides';
-import { useTeamComparison } from '@/hooks/hierarchy/useTeamComparison';
-import { cn } from '@/lib/utils';
-import type { HierarchyNode } from '@/types/hierarchy.types';
+import {useAgentDetails} from '@/hooks/hierarchy/useAgentDetails';
+import {useAgentPolicies} from '@/hooks/hierarchy/useAgentPolicies';
+import {useAgentCommissions} from '@/hooks/hierarchy/useAgentCommissions';
+import {useAgentOverrides} from '@/hooks/hierarchy/useAgentOverrides';
+import {useTeamComparison} from '@/hooks/hierarchy/useTeamComparison';
+import {cn} from '@/lib/utils';
+import type {HierarchyNode} from '@/types/hierarchy.types';
 
 interface AgentDetailModalProps {
   agent: HierarchyNode | null;

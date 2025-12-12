@@ -1,8 +1,8 @@
 // src/hooks/expenses/useGenerateRecurring.ts
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { recurringExpenseService } from '../../services/expenses/recurringExpenseService';
-import { toast } from 'sonner';
+import {useMutation, useQueryClient} from '@tanstack/react-query';
+import {recurringExpenseService} from '../../services/expenses/recurringExpenseService';
+import {toast} from 'sonner';
 
 /**
  * Hook for generating recurring expenses

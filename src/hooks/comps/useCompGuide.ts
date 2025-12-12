@@ -1,5 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '../../services/base/supabase';
+import {useQuery} from '@tanstack/react-query';
+import {supabase} from '../../services/base/supabase';
 
 interface CompGuideResult {
   commission_percentage: number;

@@ -1,12 +1,12 @@
 // /home/nneessen/projects/commissionTracker/src/features/training-hub/components/WorkflowDiagnostic.tsx
 
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { supabase } from '@/services/base/supabase';
-import { useAuth } from '@/contexts/AuthContext';
-import { AlertCircle, CheckCircle, XCircle } from 'lucide-react';
+import {useState} from 'react';
+import {Button} from '@/components/ui/button';
+import {Card, CardContent, CardHeader, CardTitle} from '@/components/ui/card';
+import {Alert, AlertDescription} from '@/components/ui/alert';
+import {supabase} from '@/services/base/supabase';
+import {useAuth} from '@/contexts/AuthContext';
+import {AlertCircle, CheckCircle, XCircle} from 'lucide-react';
 
 export default function WorkflowDiagnostic() {
   const { user } = useAuth();
@@ -54,7 +54,7 @@ export default function WorkflowDiagnostic() {
       }
 
       // 3. Check email templates
-      const { data: templates, count: templateCount } = await supabase
+      const { data: _templates, count: templateCount } = await supabase
         .from('email_templates')
         .select('*', { count: 'exact', head: true });
 

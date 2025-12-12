@@ -1,17 +1,8 @@
 // src/features/reports/components/charts/BarComparisonChart.tsx
 
 import React from 'react';
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from 'recharts';
-import { formatCurrency } from '../../../../lib/format';
+import {BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer} from 'recharts';
+import {formatCurrency} from '../../../../lib/format';
 
 export interface BarComparisonChartData {
   label: string;

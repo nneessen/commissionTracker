@@ -1,6 +1,6 @@
 // /home/nneessen/projects/commissionTracker/src/hooks/base/usePagination.ts
 
-import { useState } from 'react';
+import {useState} from 'react';
 
 export interface PaginationState {
   currentPage: number;

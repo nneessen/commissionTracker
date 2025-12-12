@@ -1,12 +1,12 @@
 // src/features/expenses/components/ExpenseQuickAdd.tsx
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { formatCurrency } from '../../../lib/format';
-import { EXPENSE_CARD_STYLES } from '../config/expenseDashboardConfig';
-import { cn } from '@/lib/utils';
-import { Plus, Trash2 } from 'lucide-react';
-import type { ExpenseTemplate } from '../../../types/expense.types';
+import {Card, CardContent, CardHeader, CardTitle} from '@/components/ui/card';
+import {Button} from '@/components/ui/button';
+import {formatCurrency} from '../../../lib/format';
+import {EXPENSE_CARD_STYLES} from '../config/expenseDashboardConfig';
+import {cn} from '@/lib/utils';
+import {Plus, Trash2} from 'lucide-react';
+import type {ExpenseTemplate} from '../../../types/expense.types';
 
 export interface ExpenseQuickAddProps {
   templates: ExpenseTemplate[];

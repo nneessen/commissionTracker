@@ -1,20 +1,10 @@
 // src/services/recruiting/recruitingService.ts
-import { supabase } from '../base/supabase';
-import { workflowEventEmitter, WORKFLOW_EVENTS } from '../events/workflowEventEmitter';
-import type { UserProfile } from '@/types/hierarchy.types';
-import type {
-  OnboardingPhase,
-  UserDocument,
-  UserEmail,
-  UserActivityLog,
-  RecruitFilters,
-  UpdateRecruitInput,
-  UpdatePhaseInput,
-} from '@/types/recruiting';
-import type {
-  CreateRecruitInput,
-} from '@/types/recruiting.types';
-import type { SendEmailRequest } from '@/types/email.types';
+import {supabase} from '../base/supabase';
+import {workflowEventEmitter, WORKFLOW_EVENTS} from '../events/workflowEventEmitter';
+import type {UserProfile} from '@/types/hierarchy.types';
+import type {OnboardingPhase, UserDocument, UserEmail, UserActivityLog, RecruitFilters, UpdateRecruitInput, UpdatePhaseInput} from '@/types/recruiting';
+import type {CreateRecruitInput} from '@/types/recruiting.types';
+import type {SendEmailRequest} from '@/types/email.types';
 
 export const recruitingService = {
   // ========================================
@@ -312,8 +302,8 @@ export const recruitingService = {
 
   // Hard delete recruit - permanently removes user and all related data
   async deleteRecruit(id: string) {
-    const { data, error } = await supabase.rpc('admin_delete_user', {
-      target_user_id: id
+    const { data, error } = await supabase.rpc('admin_deleteuser', {
+      targetuser_id: id
     });
 
     if (error) {

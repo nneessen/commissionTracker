@@ -1,8 +1,8 @@
 // src/features/dashboard/components/AlertsPanel.tsx
 
 import React from 'react';
-import { AlertsPanelProps, AlertConfig } from '../../../types/dashboard.types';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {AlertsPanelProps, AlertConfig} from '../../../types/dashboard.types';
+import {Card, CardContent, CardHeader, CardTitle} from '@/components/ui/card';
 
 /**
  * Alerts Panel Component

@@ -1,16 +1,8 @@
 // src/services/expenses/expenseService.ts
 
-import { supabase, TABLES } from '../base/supabase';
-import { isSameMonth, isSameYear } from '../../lib/date';
-import type {
-  Expense,
-  CreateExpenseData,
-  UpdateExpenseData,
-  ExpenseFilters,
-  ExpenseTotals,
-  MonthlyExpenseBreakdown,
-  YearlyExpenseSummary,
-} from '../../types/expense.types';
+import {supabase, TABLES} from '../base/supabase';
+import {isSameMonth, isSameYear} from '../../lib/date';
+import type {Expense, CreateExpenseData, UpdateExpenseData, ExpenseFilters, ExpenseTotals, MonthlyExpenseBreakdown, YearlyExpenseSummary} from '../../types/expense.types';
 
 class ExpenseService {
   /**

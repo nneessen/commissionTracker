@@ -1,6 +1,6 @@
 // src/services/settings/constantsService.ts
-import { logger } from '../base/logger';
-import { supabase } from '../base/supabase';
+import {logger} from '../base/logger';
+import {supabase} from '../base/supabase';
 
 interface ConstantRow {
   key: string;

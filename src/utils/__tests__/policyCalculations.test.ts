@@ -1,12 +1,6 @@
 // /home/nneessen/projects/commissionTracker/src/utils/__tests__/policyCalculations.test.ts
 
-import {
-  calculateAnnualPremium,
-  calculatePaymentAmount,
-  calculateExpectedCommission,
-  validateCommissionPercentage,
-  validatePremium
-} from '../policyCalculations';
+import {calculateAnnualPremium, calculatePaymentAmount, calculateExpectedCommission, validateCommissionPercentage, validatePremium} from '../policyCalculations';
 
 describe('Policy Calculations', () => {
   describe('calculateAnnualPremium', () => {

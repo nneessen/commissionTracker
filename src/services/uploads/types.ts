@@ -123,7 +123,7 @@ export const SECURITY_CONFIG = {
   maxFileNameLength: 255,
 
   // Regex for safe file names
-  safeFileNamePattern: /^[a-zA-Z0-9_\-\.\s]+$/,
+  safeFileNamePattern: /^[a-zA-Z0-9_\-.\s]+$/,
 
   // Rate limiting
   rateLimit: {

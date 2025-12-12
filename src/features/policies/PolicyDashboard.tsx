@@ -1,16 +1,16 @@
 // src/features/policies/PolicyDashboard.tsx
 
 import React, { useState } from "react";
-import { AlertCircle } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { PolicyDialog } from "./components/PolicyDialog";
-import { PolicyList } from "./PolicyList";
-import { usePolicies, useCreatePolicy, useUpdatePolicy, usePolicy } from "../../hooks/policies";
-import { useCarriers } from "../../hooks/carriers";
-import { useAuth } from "../../contexts/AuthContext";
-import { clientService } from "../../services/clients/clientService";
-import { transformFormToCreateData, transformFormToUpdateData } from "./utils/policyFormTransformer";
-import type { NewPolicyForm } from "../../types/policy.types";
+import {AlertCircle} from "lucide-react";
+import {Button} from "@/components/ui/button";
+import {PolicyDialog} from "./components/PolicyDialog";
+import {PolicyList} from "./PolicyList";
+import {usePolicies, useCreatePolicy, useUpdatePolicy, usePolicy} from "../../hooks/policies";
+import {useCarriers} from "../../hooks/carriers";
+import {useAuth} from "../../contexts/AuthContext";
+import {clientService} from "../../services/clients/clientService";
+import {transformFormToCreateData, transformFormToUpdateData} from "./utils/policyFormTransformer";
+import type {NewPolicyForm} from "../../types/policy.types";
 import showToast from "../../utils/toast";
 
 export const PolicyDashboard: React.FC = () => {
@@ -19,7 +19,7 @@ export const PolicyDashboard: React.FC = () => {
 
   const { user } = useAuth();
   const { data: policies = [], isLoading, error, refetch } = usePolicies();
-  const { data: editingPolicy } = usePolicy(editingPolicyId);
+  const { data: _editingPolicy } = usePolicy(editingPolicyId);
   useCarriers();
 
   // Use CRUD mutation hooks

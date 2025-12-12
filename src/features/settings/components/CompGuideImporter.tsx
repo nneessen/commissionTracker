@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Upload, X, Check, AlertCircle, Download, Eye } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
-import { FFG_COMP_GUIDE_DATA, getUniqueCarriers, getProductsByCarrier } from '../data/ffgCompGuideData';
-import { Carrier } from '../../../types/carrier.types';
-import { Comp, CreateCompData } from '../../../types/comp.types';
-import { Database } from '../../../types/database.types';
-import { carrierService } from '../../../services/settings/carrierService';
-import { compGuideService } from '../../../services/settings/compGuideService';
+import {Upload, X, Check, AlertCircle, Download, Eye} from 'lucide-react';
+import {Button} from '@/components/ui/button';
+import {cn} from '@/lib/utils';
+import {FFG_COMP_GUIDE_DATA, getUniqueCarriers, getProductsByCarrier} from '../data/ffgCompGuideData';
+import {Carrier} from '../../../types/carrier.types';
+import {Comp, CreateCompData} from '../../../types/comp.types';
+import {Database} from '../../../types/database.types';
+import {carrierService} from '../../../services/settings/carrierService';
+import {compGuideService} from '../../../services/settings/compGuideService';
 
 interface CompGuideImporterProps {
   isOpen: boolean;
@@ -33,7 +33,7 @@ export const CompGuideImporter: React.FC<CompGuideImporterProps> = ({
   const [step, setStep] = useState<'preview' | 'mapping' | 'importing' | 'complete'>('preview');
   const [selectedCarriers, setSelectedCarriers] = useState<string[]>([]);
   const [carrierMapping, setCarrierMapping] = useState<Record<string, string>>({});
-  const [importing, setImporting] = useState(false);
+  const [_importing, setImporting] = useState(false);
   const [progress, setProgress] = useState(0);
   const [importResults, setImportResults] = useState<{
     success: number;

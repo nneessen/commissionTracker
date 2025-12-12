@@ -2,47 +2,23 @@
 // Comprehensive agent detail modal - REDESIGNED for data density and proper visual hierarchy
 
 import React, { useState } from 'react';
-import { X, User, Mail, Calendar, TrendingUp, DollarSign, AlertCircle, Target, Activity, FileText, Users, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { formatCurrency, formatDate, formatPercent } from '@/lib/format';
-import { useAgentDetails } from '@/hooks/hierarchy/useAgentDetails';
-import { useAgentPolicies } from '@/hooks/hierarchy/useAgentPolicies';
-import { useAgentCommissions } from '@/hooks/hierarchy/useAgentCommissions';
-import { useAgentOverrides } from '@/hooks/hierarchy/useAgentOverrides';
-import { useTeamComparison } from '@/hooks/hierarchy/useTeamComparison';
-import { cn } from '@/lib/utils';
-import type { HierarchyNode } from '@/types/hierarchy.types';
-import type {
-  AgentDetails,
-  AgentPoliciesData,
-  AgentCommissionsData,
-  AgentOverridesData,
-  TeamComparisonData,
-  AgentPolicy,
-  AgentCommission,
-  AgentActivity,
-  ProductMixItem,
-  PeerPerformance
-} from '@/types/agent-detail.types';
+import {X, User, Mail, Calendar, TrendingUp, DollarSign, AlertCircle, Target, Activity, FileText, Users, Clock, ChevronLeft, ChevronRight} from 'lucide-react';
+import {Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle} from '@/components/ui/dialog';
+import {Tabs, TabsContent, TabsList, TabsTrigger} from '@/components/ui/tabs';
+import {Badge} from '@/components/ui/badge';
+import {Button} from '@/components/ui/button';
+import {Card, CardContent, CardHeader, CardTitle} from '@/components/ui/card';
+import {Separator} from '@/components/ui/separator';
+import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from '@/components/ui/table';
+import {formatCurrency, formatDate, formatPercent} from '@/lib/format';
+import {useAgentDetails} from '@/hooks/hierarchy/useAgentDetails';
+import {useAgentPolicies} from '@/hooks/hierarchy/useAgentPolicies';
+import {useAgentCommissions} from '@/hooks/hierarchy/useAgentCommissions';
+import {useAgentOverrides} from '@/hooks/hierarchy/useAgentOverrides';
+import {useTeamComparison} from '@/hooks/hierarchy/useTeamComparison';
+import {cn} from '@/lib/utils';
+import type {HierarchyNode} from '@/types/hierarchy.types';
+import {TeamComparisonData, AgentPolicy, AgentCommission, AgentActivity, ProductMixItem, PeerPerformance} from '@/types/agent-detail.types';
 
 interface AgentDetailModalProps {
   agent: HierarchyNode | null;
@@ -102,7 +78,7 @@ export function AgentDetailModal({ agent, open, onOpenChange }: AgentDetailModal
   const { data: details, isLoading: detailsLoading, error: detailsError } = useAgentDetails(agent?.id, { enabled: !!agent });
   const { data: policies, isLoading: policiesLoading, error: policiesError } = useAgentPolicies(agent?.id, { enabled: !!agent });
   const { data: commissions, isLoading: commissionsLoading, error: commissionsError } = useAgentCommissions(agent?.id, { enabled: !!agent });
-  const { data: overrides, isLoading: overridesLoading } = useAgentOverrides(agent?.id, { enabled: !!agent });
+  const { data: overrides, isLoading: _overridesLoading } = useAgentOverrides(agent?.id, { enabled: !!agent });
   const { data: comparison, isLoading: comparisonLoading } = useTeamComparison(agent?.id, { enabled: !!agent });
 
   // Pagination for tables

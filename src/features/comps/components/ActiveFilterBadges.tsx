@@ -1,10 +1,10 @@
 // src/features/comps/components/ActiveFilterBadges.tsx
 
 import React from 'react';
-import { X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { CompFilters } from '../../../types/comp.types';
-import { formatProductType } from '../../../lib/format';
+import {X} from 'lucide-react';
+import {Button} from '@/components/ui/button';
+import {CompFilters} from '../../../types/comp.types';
+import {formatProductType} from '../../../lib/format';
 
 interface ActiveFilterBadgesProps {
   filters: CompFilters;

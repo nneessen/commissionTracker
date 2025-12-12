@@ -1,37 +1,19 @@
 // src/features/recruiting/admin/PipelineTemplatesList.tsx
 
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Plus, Edit2, Trash2, Star, Copy, Loader2 } from 'lucide-react';
-import { showToast } from '@/utils/toast';
-import {
-  useTemplates,
-  useCreateTemplate,
-  useDeleteTemplate,
-  useSetDefaultTemplate,
-} from '../hooks/usePipeline';
-import type { PipelineTemplate } from '@/types/recruiting';
+import {Button} from '@/components/ui/button';
+import {Card} from '@/components/ui/card';
+import {Badge} from '@/components/ui/badge';
+import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from '@/components/ui/table';
+import {Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter} from '@/components/ui/dialog';
+import {Input} from '@/components/ui/input';
+import {Label} from '@/components/ui/label';
+import {Textarea} from '@/components/ui/textarea';
+import {Checkbox} from '@/components/ui/checkbox';
+import {Copy, Loader2} from 'lucide-react';
+import {showToast} from '@/utils/toast';
+import {useTemplates, useCreateTemplate, useDeleteTemplate, useSetDefaultTemplate} from '../hooks/usePipeline';
+import {PipelineTemplate} from '@/types/recruiting';
 
 interface PipelineTemplatesListProps {
   onSelectTemplate: (id: string) => void;
@@ -67,7 +49,7 @@ export function PipelineTemplatesList({ onSelectTemplate }: PipelineTemplatesLis
       setCreateDialogOpen(false);
       setNewTemplate({ name: '', description: '', is_active: true });
       onSelectTemplate(created.id);
-    } catch (error) {
+    } catch (_error) {
       showToast.error('Failed to create template');
     }
   };
@@ -77,7 +59,7 @@ export function PipelineTemplatesList({ onSelectTemplate }: PipelineTemplatesLis
       await deleteTemplate.mutateAsync(id);
       showToast.success('Template deleted');
       setDeleteConfirmId(null);
-    } catch (error) {
+    } catch (_error) {
       showToast.error('Failed to delete template');
     }
   };
@@ -86,7 +68,7 @@ export function PipelineTemplatesList({ onSelectTemplate }: PipelineTemplatesLis
     try {
       await setDefaultTemplate.mutateAsync(id);
       showToast.success('Default template updated');
-    } catch (error) {
+    } catch (_error) {
       showToast.error('Failed to set default template');
     }
   };

@@ -1,6 +1,6 @@
 // src/features/expenses/components/ExpenseRecurringBanner.tsx
-import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import {Button} from "@/components/ui/button";
+import {Alert, AlertDescription} from "@/components/ui/alert";
 
 interface ExpenseRecurringBannerProps {
   templateCount: number;

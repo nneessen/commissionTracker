@@ -1,18 +1,11 @@
 // src/features/analytics/components/GeographicAnalysis.tsx
 
 import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { cn } from '@/lib/utils';
-import { useAnalyticsData } from '../../../hooks';
-import { useAnalyticsDateRange } from '../context/AnalyticsDateContext';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import {Card, CardContent} from '@/components/ui/card';
+import {cn} from '@/lib/utils';
+import {useAnalyticsData} from '../../../hooks';
+import {useAnalyticsDateRange} from '../context/AnalyticsDateContext';
+import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from '@/components/ui/table';
 
 interface StateData {
   state: string;

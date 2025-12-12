@@ -1,16 +1,10 @@
 // src/services/reports/reportGenerationService.ts
 
-import {
-  Report,
-  ReportFilters,
-  ReportType,
-  ReportSection,
-  ReportMetric,
-} from '../../types/reports.types';
-import { supabase } from '../base/supabase';
-import { InsightsService } from './insightsService';
-import { ForecastingService } from './forecastingService';
-import { formatCurrency, formatPercent } from '../../lib/format';
+import {Report, ReportFilters, ReportType, ReportSection, ReportMetric} from '../../types/reports.types';
+import {supabase} from '../base/supabase';
+import {InsightsService} from './insightsService';
+import {ForecastingService} from './forecastingService';
+import {formatCurrency, formatPercent} from '../../lib/format';
 
 interface GenerateReportOptions {
   userId: string;
@@ -149,7 +143,7 @@ export class ReportGenerationService {
     const totalAtRisk = commissionAging.reduce((sum, bucket) => sum + (bucket.total_at_risk || 0), 0);
     const totalEarned = commissionAging.reduce((sum, bucket) => sum + (bucket.total_earned || 0), 0);
     const criticalRisk = commissionAging.find(b => b.risk_level === 'Critical');
-    const highRisk = commissionAging.find(b => b.risk_level === 'High');
+    const _highRisk = commissionAging.find(b => b.risk_level === 'High');
 
     // Carrier profitability table
     const carrierTableRows = carrierPerformance
@@ -473,7 +467,7 @@ export class ReportGenerationService {
     filters: ReportFilters,
   ): Promise<Report> {
     // Fetch expense summary MV + raw expense data for breakdown
-    const [expenseSummary, expenses, commissions, insights] = await Promise.all([
+    const [_expenseSummary, expenses, commissions, insights] = await Promise.all([
       this.fetchExpenseSummary(userId),
       this.fetchExpenseData(userId, filters),
       this.fetchCommissionData(userId, filters),

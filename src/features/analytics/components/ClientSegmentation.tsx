@@ -1,18 +1,11 @@
 // src/features/analytics/components/ClientSegmentation.tsx
 
 import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { useAnalyticsData } from '../../../hooks';
-import { cn } from '@/lib/utils';
-import { useAnalyticsDateRange } from '../context/AnalyticsDateContext';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import {Card, CardContent} from '@/components/ui/card';
+import {useAnalyticsData} from '../../../hooks';
+import {cn} from '@/lib/utils';
+import {useAnalyticsDateRange} from '../context/AnalyticsDateContext';
+import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from '@/components/ui/table';
 
 /**
  * ClientSegmentation - Client value segmentation and opportunities
@@ -57,7 +50,7 @@ export function ClientSegmentation() {
     }).format(value);
   };
 
-  const segmentColumns = [
+  const _segmentColumns = [
     {
       key: 'tier',
       header: 'Tier',

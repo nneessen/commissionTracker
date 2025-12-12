@@ -1,8 +1,8 @@
 import React from 'react';
-import { useAuth } from '@/contexts/AuthContext';
-import { usePermissionCheck } from '@/hooks/permissions/usePermissions';
-import type { PermissionCode } from '@/types/permissions.types';
-import { PermissionDenied } from '@/features/auth';
+import {useAuth} from '@/contexts/AuthContext';
+import {usePermissionCheck} from '@/hooks/permissions/usePermissions';
+import type {PermissionCode} from '@/types/permissions.types';
+import {PermissionDenied} from '@/features/auth';
 
 interface PermissionGuardProps {
   children: React.ReactNode;

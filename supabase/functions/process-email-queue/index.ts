@@ -1,8 +1,8 @@
 // Process Email Queue Edge Function
 // Processes pending emails from the email_queue table
 
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { createSupabaseAdminClient } from '../_shared/supabase-client.ts'
+import {serve} from 'https://deno.land/std@0.168.0/http/server.ts'
+import {createSupabaseAdminClient} from '../_shared/supabase-client.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -79,7 +79,7 @@ serve(async (req) => {
         }
 
         // Invoke send-automated-email function (doesn't require user auth)
-        const { data: sendResult, error: sendError } = await adminSupabase.functions.invoke('send-automated-email', {
+        const { data: _sendResult, error: sendError } = await adminSupabase.functions.invoke('send-automated-email', {
           body: {
             to: recipientEmail,
             subject: email.subject,

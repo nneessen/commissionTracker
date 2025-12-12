@@ -1,6 +1,6 @@
 // File: /home/nneessen/projects/commissionTracker/src/lib/workflow-recipient-helpers.ts
 
-import type { RecipientType } from '@/types/workflow-recipients.types';
+import type {RecipientType} from '@/types/workflow-recipients.types';
 
 /**
  * Maps event types to recommended recipient types
@@ -13,15 +13,15 @@ export const EVENT_RECIPIENT_MAPPING: Record<string, {
 }> = {
   // Recruit events
   'recruit.created': {
-    recommended: ['event_user', 'pipeline_recruiter', 'pipeline_upline', 'all_trainers', 'admins'],
+    recommended: ['eventuser', 'pipeline_recruiter', 'pipeline_upline', 'all_trainers', 'admins'],
     description: 'New recruit added to the system'
   },
   'recruit.phase_changed': {
-    recommended: ['event_user', 'pipeline_recruiter', 'pipeline_upline', 'all_trainers'],
+    recommended: ['eventuser', 'pipeline_recruiter', 'pipeline_upline', 'all_trainers'],
     description: 'Recruit moved to a new phase'
   },
   'recruit.graduated_to_agent': {
-    recommended: ['event_user', 'pipeline_recruiter', 'direct_upline', 'all_managers', 'admins'],
+    recommended: ['eventuser', 'pipeline_recruiter', 'direct_upline', 'all_managers', 'admins'],
     description: 'Recruit graduated to agent status'
   },
   'recruit.dropped_out': {
@@ -63,11 +63,11 @@ export const EVENT_RECIPIENT_MAPPING: Record<string, {
 
   // User events
   'user.login': {
-    recommended: ['event_user', 'admins'],
+    recommended: ['eventuser', 'admins'],
     description: 'User logged in'
   },
   'user.role_changed': {
-    recommended: ['event_user', 'direct_upline', 'admins'],
+    recommended: ['eventuser', 'direct_upline', 'admins'],
     description: 'User role changed'
   },
 
@@ -77,7 +77,7 @@ export const EVENT_RECIPIENT_MAPPING: Record<string, {
     description: 'Email sent successfully'
   },
   'email.failed': {
-    recommended: ['admins', 'event_user'],
+    recommended: ['admins', 'eventuser'],
     description: 'Email sending failed'
   }
 };
@@ -91,7 +91,7 @@ export function getRecommendedRecipients(eventName?: string): RecipientType[] {
   const mapping = EVENT_RECIPIENT_MAPPING[eventName];
   if (!mapping) {
     // Default recommendations for unknown events
-    return ['event_user', 'admins'];
+    return ['eventuser', 'admins'];
   }
 
   return mapping.recommended;
@@ -117,7 +117,7 @@ export function getRecipientContextDescription(eventName?: string, recipientType
 
   const descriptions: Record<string, Partial<Record<RecipientType, string>>> = {
     recruit: {
-      event_user: 'The recruit who was created/updated',
+      eventuser: 'The recruit who was created/updated',
       pipeline_recruiter: 'The recruiter responsible for this recruit',
       pipeline_upline: 'The recruit\'s assigned upline/manager',
       all_trainers: 'All trainers in the system',
@@ -136,7 +136,7 @@ export function getRecipientContextDescription(eventName?: string, recipientType
       admins: 'System administrators'
     },
     user: {
-      event_user: 'The user who triggered this event',
+      eventuser: 'The user who triggered this event',
       direct_upline: 'The user\'s manager',
       admins: 'System administrators'
     }

@@ -1,15 +1,8 @@
 // src/services/commissionRateService.ts
-import { logger } from '../base/logger';
+import {logger} from '../base/logger';
 
-import { supabase, TABLES } from '../base/supabase';
-import {
-  CommissionRate,
-  NewCommissionRateForm,
-  UpdateCommissionRateForm,
-  UserCommissionProfile,
-  ProductCommissionBreakdown,
-  CommissionDataQuality
-} from '../../types/product.types';
+import {supabase, TABLES} from '../base/supabase';
+import {CommissionRate, NewCommissionRateForm, UpdateCommissionRateForm, UserCommissionProfile, ProductCommissionBreakdown, CommissionDataQuality} from '../../types/product.types';
 
 export interface CreateCommissionRateData {
   carrierId: string;
@@ -241,8 +234,8 @@ class CommissionRateService {
   ): Promise<UserCommissionProfile> {
     try {
       // Call the PostgreSQL function that does the heavy lifting
-      const { data, error } = await supabase.rpc('get_user_commission_profile', {
-        p_user_id: userId,
+      const { data, error } = await supabase.rpc('getuser_commission_profile', {
+        puser_id: userId,
         p_lookback_months: lookbackMonths
       });
 

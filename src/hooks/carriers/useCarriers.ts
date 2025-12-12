@@ -1,9 +1,9 @@
 // /home/nneessen/projects/commissionTracker/src/hooks/carriers/useCarriers.ts
-import { logger } from '../../services/base/logger';
+import {logger} from '../../services/base/logger';
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { carrierService } from '../../services/settings/carrierService';
-import { Carrier, NewCarrierForm } from '../../types/carrier.types';
+import {useQuery, useMutation, useQueryClient} from '@tanstack/react-query';
+import {carrierService} from '../../services/settings/carrierService';
+import {Carrier, NewCarrierForm} from '../../types/carrier.types';
 
 // Query keys for React Query cache management
 export const carrierQueryKeys = {

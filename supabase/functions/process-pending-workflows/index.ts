@@ -2,8 +2,8 @@
 // This function runs periodically (via cron) to check for pending workflow runs
 // and invoke the process-workflow function for each one
 
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { createSupabaseAdminClient } from '../_shared/supabase-client.ts'
+import {serve} from 'https://deno.land/std@0.168.0/http/server.ts'
+import {createSupabaseAdminClient} from '../_shared/supabase-client.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -100,7 +100,7 @@ serve(async (req) => {
         }
 
         // Invoke the process-workflow function
-        const { data, error: invokeError } = await adminSupabase.functions.invoke(
+        const { _data, error: invokeError } = await adminSupabase.functions.invoke(
           'process-workflow',
           {
             body: {

@@ -1,6 +1,6 @@
 // src/services/userTargets/userTargetsService.ts
 
-import { supabase } from '../base/supabase';
+import {supabase} from '../base/supabase';
 
 export interface UserTargets {
   id: string;

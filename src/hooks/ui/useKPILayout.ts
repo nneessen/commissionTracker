@@ -1,7 +1,7 @@
 // src/hooks/ui/useKPILayout.ts
 
-import { useState, useEffect } from 'react';
-import { KPILayout } from '../../types/dashboard.types';
+import {useState, useEffect} from 'react';
+import {KPILayout} from '../../types/dashboard.types';
 
 const KPI_LAYOUT_KEY = 'kpi-layout-preference';
 const DEFAULT_LAYOUT: KPILayout = 'heatmap';

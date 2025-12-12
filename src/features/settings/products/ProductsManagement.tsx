@@ -1,32 +1,16 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { Plus, Search, Edit, Trash2, Upload } from 'lucide-react';
-import { useProducts, Product } from './hooks/useProducts';
-import { useCarriers } from '../carriers/hooks/useCarriers';
-import { ProductForm } from './components/ProductForm';
-import { ProductBulkImport } from './components/ProductBulkImport';
-import { ProductFormData } from '../../../types/product.types';
+import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '@/components/ui/card';
+import {Button} from '@/components/ui/button';
+import {Input} from '@/components/ui/input';
+import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from '@/components/ui/table';
+import {Badge} from '@/components/ui/badge';
+import {AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle} from '@/components/ui/alert-dialog';
+import {Plus, Search, Edit, Trash2, Upload} from 'lucide-react';
+import {useProducts, Product} from './hooks/useProducts';
+import {useCarriers} from '../carriers/hooks/useCarriers';
+import {ProductForm} from './components/ProductForm';
+import {ProductBulkImport} from './components/ProductBulkImport';
+import {ProductFormData} from '../../../types/product.types';
 
 export function ProductsManagement() {
   const { products, isLoading, createProduct, updateProduct, deleteProduct, bulkImportProducts } = useProducts();

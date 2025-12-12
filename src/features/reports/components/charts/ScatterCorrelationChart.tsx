@@ -1,18 +1,8 @@
 // src/features/reports/components/charts/ScatterCorrelationChart.tsx
 
 import React from 'react';
-import {
-  ScatterChart,
-  Scatter,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  ZAxis,
-} from 'recharts';
-import { formatCurrency } from '../../../../lib/format';
+import {ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ZAxis} from 'recharts';
+import {formatCurrency} from '../../../../lib/format';
 
 export interface ScatterCorrelationChartData {
   name: string;

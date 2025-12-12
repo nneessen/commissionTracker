@@ -124,8 +124,7 @@ class Logger {
 
   // Specific auth-related logging - DISABLED (too noisy)
   auth(
-    event: string,
-    data?: Record<string, unknown> | string | number | boolean | null | Error,
+    _event: string, _data?: Record<string, unknown> | string | number | boolean | null | Error,
   ): void {
     // Disabled - auth logging was too verbose
     // this.info(`Auth event: ${event}`, data, "Auth");

@@ -1,6 +1,6 @@
 // Workflow types for automation system
 
-import type { RecipientConfig } from './workflow-recipients.types';
+import type {RecipientConfig} from './workflow-recipients.types';
 
 export type WorkflowStatus = 'draft' | 'active' | 'paused' | 'archived';
 export type WorkflowCategory = 'email' | 'recruiting' | 'commission' | 'general';
@@ -16,7 +16,7 @@ export interface WorkflowCondition {
 
 export interface WorkflowAction {
   id?: string;
-  type: 'send_email' | 'create_notification' | 'update_field' | 'create_task' | 'webhook' | 'wait' | 'branch' | 'assign_user' | 'ai_decision';
+  type: 'send_email' | 'create_notification' | 'update_field' | 'create_task' | 'webhook' | 'wait' | 'branch' | 'assignuser' | 'ai_decision';
   order: number;
   config: {
     // Email action - NEW structured recipient config (preferred)

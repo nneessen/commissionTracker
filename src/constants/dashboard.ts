@@ -3,6 +3,8 @@
 /**
  * Dashboard metric color constants
  */
+// TODO: why are we styling the dashboard this way? These are not the colors that we should be using in this application
+// We already have a index.css with my color scheme so we should not be doing the dashboard using any of these colors
 export const METRIC_COLORS = {
   COMMISSION_EARNED: "rgb(16, 185, 129)",
   PENDING_PIPELINE: "rgb(59, 130, 246)",
@@ -26,3 +28,4 @@ export const METRIC_COLORS = {
 } as const;
 
 export type MetricColorKey = keyof typeof METRIC_COLORS;
+

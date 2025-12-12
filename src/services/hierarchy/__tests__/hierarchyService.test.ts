@@ -1,9 +1,9 @@
 // src/services/hierarchy/__tests__/hierarchyService.test.ts
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { hierarchyService } from '../hierarchyService';
-import { supabase } from '../../base/supabase';
-import type { UserProfile } from '../../../types/hierarchy.types';
+import {describe, it, expect, vi, beforeEach} from 'vitest';
+import {hierarchyService} from '../hierarchyService';
+import {supabase} from '../../base/supabase';
+import type {UserProfile} from '../../../types/hierarchy.types';
 
 // Mock Supabase
 vi.mock('../../base/supabase', () => ({

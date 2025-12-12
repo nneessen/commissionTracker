@@ -1,11 +1,11 @@
 // src/features/auth/components/SignUpForm.tsx
 
 import React from "react";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { FormErrors } from "../hooks/useAuthValidation";
-import { AlertCircle } from "lucide-react";
+import {Input} from "@/components/ui/input";
+import {Label} from "@/components/ui/label";
+import {Button} from "@/components/ui/button";
+import {FormErrors} from "../hooks/useAuthValidation";
+import {AlertCircle} from "lucide-react";
 
 interface SignUpFormProps {
   email: string;

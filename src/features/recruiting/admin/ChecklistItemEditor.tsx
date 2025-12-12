@@ -1,52 +1,18 @@
 // src/features/recruiting/admin/ChecklistItemEditor.tsx
 
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  Plus,
-  Edit2,
-  Trash2,
-  GripVertical,
-  Loader2,
-  FileText,
-  CheckSquare,
-  BookOpen,
-  UserCheck,
-  Zap,
-  PenTool,
-} from 'lucide-react';
-import { showToast } from '@/utils/toast';
-import {
-  useChecklistItems,
-  useCreateChecklistItem,
-  useUpdateChecklistItem,
-  useDeleteChecklistItem,
-} from '../hooks/usePipeline';
-import type {
-  PhaseChecklistItem,
-  CreateChecklistItemInput,
-  ChecklistItemType,
-  CompletedBy,
-} from '@/types/recruiting';
+import {Button} from '@/components/ui/button';
+import {Badge} from '@/components/ui/badge';
+import {Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter} from '@/components/ui/dialog';
+import {Input} from '@/components/ui/input';
+import {Label} from '@/components/ui/label';
+import {Textarea} from '@/components/ui/textarea';
+import {Checkbox} from '@/components/ui/checkbox';
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '@/components/ui/select';
+import {Plus, Edit2, Trash2, GripVertical, Loader2, FileText, CheckSquare, BookOpen, UserCheck, Zap, PenTool} from 'lucide-react';
+import {showToast} from '@/utils/toast';
+import {useChecklistItems, useCreateChecklistItem, useUpdateChecklistItem, useDeleteChecklistItem} from '../hooks/usePipeline';
+import type {PhaseChecklistItem, CreateChecklistItemInput, ChecklistItemType, CompletedBy} from '@/types/recruiting';
 
 interface ChecklistItemEditorProps {
   phaseId: string;
@@ -110,7 +76,7 @@ export function ChecklistItemEditor({ phaseId }: ChecklistItemEditorProps) {
         requires_verification: false,
         external_link: undefined,
       });
-    } catch (error) {
+    } catch (_error) {
       showToast.error('Failed to create item');
     }
   };
@@ -133,7 +99,7 @@ export function ChecklistItemEditor({ phaseId }: ChecklistItemEditorProps) {
       });
       showToast.success('Item updated');
       setEditingItem(null);
-    } catch (error) {
+    } catch (_error) {
       showToast.error('Failed to update item');
     }
   };
@@ -143,7 +109,7 @@ export function ChecklistItemEditor({ phaseId }: ChecklistItemEditorProps) {
       await deleteItem.mutateAsync({ itemId: id, phaseId });
       showToast.success('Item deleted');
       setDeleteConfirmId(null);
-    } catch (error) {
+    } catch (_error) {
       showToast.error('Failed to delete item');
     }
   };

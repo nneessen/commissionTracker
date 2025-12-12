@@ -1,21 +1,14 @@
 // src/features/analytics/components/GamePlan.tsx
 
 import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { useAnalyticsData } from '../../../hooks';
-import { useUserTargets } from '../../../hooks/targets/useUserTargets';
-import { useExpenses } from '../../../hooks/expenses/useExpenses';
-import { gamePlanService } from '../../../services/analytics/gamePlanService';
-import { cn } from '@/lib/utils';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { CheckCircle2, Target, TrendingUp, AlertCircle } from 'lucide-react';
+import {Card, CardContent} from '@/components/ui/card';
+import {useAnalyticsData} from '../../../hooks';
+import {useUserTargets} from '../../../hooks/targets/useUserTargets';
+import {useExpenses} from '../../../hooks/expenses/useExpenses';
+import {gamePlanService} from '../../../services/analytics/gamePlanService';
+import {cn} from '@/lib/utils';
+import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from '@/components/ui/table';
+import {CheckCircle2, Target, TrendingUp, AlertCircle} from 'lucide-react';
 
 /**
  * GamePlan - Shows what you need to do to hit your target

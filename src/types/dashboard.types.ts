@@ -6,7 +6,7 @@
  * TypeScript interfaces and types for dashboard components and data.
  */
 
-import { TimePeriod } from '../utils/dateRange';
+import {TimePeriod} from '../utils/dateRange';
 
 /**
  * Tooltip configuration for metric explanations

@@ -1,7 +1,7 @@
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Switch } from '@/components/ui/switch'
-import type { EmailBlock, ButtonBlockContent, ButtonVariant } from '@/types/email.types'
+import {Input} from '@/components/ui/input'
+import {Label} from '@/components/ui/label'
+import {Switch} from '@/components/ui/switch'
+import type {EmailBlock, ButtonBlockContent, ButtonVariant} from '@/types/email.types'
 
 interface ButtonBlockProps {
   block: EmailBlock

@@ -1,8 +1,8 @@
 // File: /home/nneessen/projects/commissionTracker/src/services/events/workflowEventEmitter.ts
 // TODO: remove console.logs
 
-import { supabase } from "@/services/base/supabase";
-import type { Workflow } from "@/types/workflow.types";
+import {supabase} from "@/services/base/supabase";
+import type {Workflow} from "@/types/workflow.types";
 
 interface EventContext {
   // Common context fields
@@ -245,8 +245,7 @@ class WorkflowEventEmitter {
    * Check if workflow can run based on cooldown and rate limits
    */
   private async checkWorkflowCooldown(
-    workflow: Workflow,
-    _context: EventContext,
+    workflow: Workflow, _context: EventContext,
   ): Promise<boolean> {
     if (!workflow.cooldownMinutes) {
       return true; // No cooldown configured

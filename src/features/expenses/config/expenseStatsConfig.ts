@@ -1,6 +1,6 @@
 // src/features/expenses/config/expenseStatsConfig.ts
 
-import { parseLocalDate } from '../../../lib/date';
+import {parseLocalDate} from '../../../lib/date';
 
 /**
  * Color palette for expense visualizations
@@ -69,8 +69,7 @@ export const generateExpenseStatsConfig = ({
   expenseCount,
   momGrowth,
   personalAmount,
-  businessAmount,
-  timePeriod,
+  businessAmount, _timePeriod,
 }: GenerateExpenseStatsParams): ExpenseStatConfig[] => {
   // Calculate trend direction
   const getTrendDirection = (
@@ -89,7 +88,7 @@ export const generateExpenseStatsConfig = ({
   };
 
   const trendDirection = getTrendDirection(momGrowth.growthPercentage);
-  const trendColor = getTrendColor(trendDirection);
+  const _trendColor = getTrendColor(trendDirection);
 
   return [
     {

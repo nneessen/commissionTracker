@@ -1,8 +1,8 @@
 // src/features/policies/queries.ts
 
-import { queryOptions } from "@tanstack/react-query";
-import { policyService } from "@/services/policies/policyService";
-import type { PolicyFilters } from "@/types/policy.types";
+import {queryOptions} from "@tanstack/react-query";
+import {policyService} from "@/services/policies/policyService";
+import type {PolicyFilters} from "@/types/policy.types";
 
 export const policyKeys = {
   all: ["policies"] as const,

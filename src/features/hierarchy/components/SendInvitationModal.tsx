@@ -1,26 +1,19 @@
 // src/features/hierarchy/components/SendInvitationModal.tsx
 // Modal for sending hierarchy invitations - email-only input
 
-import { useState } from 'react';
-import { useForm } from '@tanstack/react-form';
-import { zodValidator } from '@tanstack/zod-form-adapter';
-import { z } from 'zod';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '../../../components/ui/dialog';
-import { Button } from '../../../components/ui/button';
-import { Input } from '../../../components/ui/input';
-import { Label } from '../../../components/ui/label';
-import { Textarea } from '../../../components/ui/textarea';
-import { useSendInvitation } from '../../../hooks/hierarchy/useInvitations';
-import { Loader2, Mail, Send } from 'lucide-react';
+import {useState} from 'react';
+import {useForm} from '@tanstack/react-form';
+import {zodValidator} from '@tanstack/zod-form-adapter';
+import {z} from 'zod';
+import {Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle} from '../../../components/ui/dialog';
+import {Button} from '../../../components/ui/button';
+import {Input} from '../../../components/ui/input';
+import {Label} from '../../../components/ui/label';
+import {Textarea} from '../../../components/ui/textarea';
+import {useSendInvitation} from '../../../hooks/hierarchy/useInvitations';
+import {Loader2, Mail, Send} from 'lucide-react';
 
-const sendInvitationSchema = z.object({
+const _sendInvitationSchema = z.object({
   invitee_email: z.string().email('Invalid email address'),
   message: z.string().optional(),
 });

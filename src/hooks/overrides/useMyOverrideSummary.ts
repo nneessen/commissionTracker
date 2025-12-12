@@ -1,7 +1,7 @@
 // src/hooks/overrides/useMyOverrideSummary.ts
 
-import { useQuery } from '@tanstack/react-query';
-import { overrideService } from '../../services/overrides/overrideService';
+import {useQuery} from '@tanstack/react-query';
+import {overrideService} from '../../services/overrides/overrideService';
 
 export interface UseMyOverrideSummaryOptions {
   enabled?: boolean;

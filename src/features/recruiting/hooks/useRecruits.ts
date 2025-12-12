@@ -1,7 +1,7 @@
 // src/features/recruiting/hooks/useRecruits.ts
-import { useQuery } from '@tanstack/react-query';
-import { recruitingService } from '@/services/recruiting';
-import type { RecruitFilters } from '@/types/recruiting';
+import {useQuery} from '@tanstack/react-query';
+import {recruitingService} from '@/services/recruiting';
+import type {RecruitFilters} from '@/types/recruiting';
 
 export function useRecruits(filters?: RecruitFilters, page = 1, limit = 50) {
   return useQuery({

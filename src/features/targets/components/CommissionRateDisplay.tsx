@@ -1,21 +1,14 @@
 // src/features/targets/components/CommissionRateDisplay.tsx
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../components/ui/card';
-import { Badge } from '../../../components/ui/badge';
-import { Alert, AlertDescription, AlertTitle } from '../../../components/ui/alert';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '../../../components/ui/table';
-import { useUserCommissionProfile } from '../../../hooks/commissions/useUserCommissionProfile';
-import { formatCurrency, formatPercent } from '../../../lib/format';
-import { AlertCircle, TrendingUp, Info, ChevronDown } from 'lucide-react';
-import { CommissionDataQuality } from '../../../types/product.types';
-import { useState } from 'react';
+import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '../../../components/ui/card';
+import {Badge} from '../../../components/ui/badge';
+import {Alert, AlertDescription, AlertTitle} from '../../../components/ui/alert';
+import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from '../../../components/ui/table';
+import {useUserCommissionProfile} from '../../../hooks/commissions/useUserCommissionProfile';
+import {formatCurrency, formatPercent} from '../../../lib/format';
+import {AlertCircle, TrendingUp, Info, ChevronDown} from 'lucide-react';
+import {CommissionDataQuality} from '../../../types/product.types';
+import {useState} from 'react';
 
 /**
  * Component to display user's commission rate profile with full transparency

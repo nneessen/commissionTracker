@@ -1,16 +1,12 @@
 // src/components/notifications/NotificationDropdown.tsx
-import { Bell, CheckCheck, Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { useNotifications, useUnreadCount, useMarkAsRead, useMarkAllAsRead, useNotificationSubscription } from './useNotifications';
-import { NotificationItem } from './NotificationItem';
-import { useNavigate } from '@tanstack/react-router';
-import type { NotificationMetadata } from '@/types/notification.types';
+import {Bell, CheckCheck, Loader2} from 'lucide-react';
+import {Button} from '@/components/ui/button';
+import {Popover, PopoverContent, PopoverTrigger} from '@/components/ui/popover';
+import {ScrollArea} from '@/components/ui/scroll-area';
+import {useNotifications, useUnreadCount, useMarkAsRead, useMarkAllAsRead, useNotificationSubscription} from './useNotifications';
+import {NotificationItem} from './NotificationItem';
+import {useNavigate} from '@tanstack/react-router';
+import type {NotificationMetadata} from '@/types/notification.types';
 
 interface NotificationDropdownProps {
   isCollapsed?: boolean;

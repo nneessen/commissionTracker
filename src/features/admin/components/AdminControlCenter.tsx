@@ -1,43 +1,24 @@
 // src/features/admin/components/AdminControlCenter.tsx
-import { useState } from "react";
-import {
-  Users, Shield, Settings, Search, Plus, Edit, Trash2,
-  CheckCircle2, XCircle, UserCog, ScrollText, UserPlus,
-  ChevronLeft, ChevronRight, GraduationCap
-} from "lucide-react";
-import { useAllUsers } from "@/hooks/admin/useUserApproval";
-import { useAllRolesWithPermissions, useUpdateUserRoles, useIsAdmin } from "@/hooks/permissions/usePermissions";
-import { useAuth } from "@/contexts/AuthContext";
-import { userApprovalService } from "@/services/admin/userApprovalService";
-import { useQueryClient } from "@tanstack/react-query";
+import {useState} from "react";
+import {Users, Shield, Settings, Search, Plus, Edit, Trash2, CheckCircle2, XCircle, UserCog, ScrollText, UserPlus, ChevronLeft, ChevronRight, GraduationCap} from "lucide-react";
+import {useAllUsers} from "@/hooks/admin/useUserApproval";
+import {useAllRolesWithPermissions, useUpdateUserRoles, useIsAdmin} from "@/hooks/permissions/usePermissions";
+import {useAuth} from "@/contexts/AuthContext";
+import {userApprovalService} from "@/services/admin/userApprovalService";
+import {useQueryClient} from "@tanstack/react-query";
 import showToast from "@/utils/toast";
 import AddUserDialog, { type NewUserData } from "./AddUserDialog";
 import EditUserDialog from "./EditUserDialog";
-import { GraduateToAgentDialog } from "./GraduateToAgentDialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow
-} from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import type { RoleName } from "@/types/permissions.types";
-import type { UserProfile } from "@/services/admin/userApprovalService";
+import {GraduateToAgentDialog} from "./GraduateToAgentDialog";
+import {Button} from "@/components/ui/button";
+import {Input} from "@/components/ui/input";
+import {Badge} from "@/components/ui/badge";
+import {Skeleton} from "@/components/ui/skeleton";
+import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/components/ui/table";
+import {DialogTitle} from "@/components/ui/dialog";
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
+import type {RoleName} from "@/types/permissions.types";
+import type {UserProfile} from "@/services/admin/userApprovalService";
 
 export default function AdminControlCenter() {
   const [activeView, setActiveView] = useState<"users" | "recruits" | "roles" | "system">("users");
@@ -51,10 +32,10 @@ export default function AdminControlCenter() {
   const [itemsPerPage, setItemsPerPage] = useState(50);
 
   const { user: currentUser } = useAuth();
-  const { data: isAdmin, isLoading: isAdminLoading } = useIsAdmin();
+  const { data: isAdmin, isLoading: _isAdminLoading } = useIsAdmin();
   const { data: allUsers, isLoading: usersLoading } = useAllUsers();
   const { data: roles } = useAllRolesWithPermissions();
-  const { mutate: updateUserRoles } = useUpdateUserRoles();
+  const { mutate: _updateUserRoles } = useUpdateUserRoles();
   const queryClient = useQueryClient();
 
   // Check if current user can graduate recruits (Admin, Trainer, or Contracting Manager)

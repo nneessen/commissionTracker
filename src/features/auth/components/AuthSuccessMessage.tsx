@@ -1,8 +1,8 @@
 // src/features/auth/components/AuthSuccessMessage.tsx
 
 import React from "react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { CheckCircle } from "lucide-react";
+import {Alert, AlertDescription} from "@/components/ui/alert";
+import {CheckCircle} from "lucide-react";
 
 interface AuthSuccessMessageProps {
   message: string;

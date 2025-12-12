@@ -1,6 +1,6 @@
 // src/features/expenses/config/expenseBudgetConfig.ts
 
-import { BUDGET_THRESHOLDS, EXPENSE_STATUS_COLORS } from './expenseDashboardConfig';
+import {BUDGET_THRESHOLDS, EXPENSE_STATUS_COLORS} from './expenseDashboardConfig';
 
 /**
  * Budget configuration and calculations

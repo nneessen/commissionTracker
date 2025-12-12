@@ -1,9 +1,9 @@
 // src/services/observability/MetricsService.ts
 // Metrics collection and aggregation service
 
-import { logger } from '../base/logger';
-import { performanceMonitor } from '../../utils/performance';
-import { QueryClient } from '@tanstack/react-query';
+import {logger} from '../base/logger';
+import {performanceMonitor} from '../../utils/performance';
+import {QueryClient} from '@tanstack/react-query';
 
 /**
  * Metric types
@@ -112,7 +112,7 @@ class MetricsService {
   /**
    * Record an error
    */
-  recordError(error: Error, context?: Record<string, unknown>): void {
+  recordError(error: Error, _context?: Record<string, unknown>): void {
     this.errorCount++;
     this.recentErrors.push(new Date());
 

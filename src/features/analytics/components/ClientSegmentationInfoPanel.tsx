@@ -1,9 +1,9 @@
 // src/features/analytics/components/ClientSegmentationInfoPanel.tsx
 
 import React from 'react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
-import { X } from 'lucide-react';
+import {Alert, AlertDescription} from '@/components/ui/alert';
+import {Button} from '@/components/ui/button';
+import {X} from 'lucide-react';
 
 interface ClientSegmentationInfoPanelProps {
   onClose: () => void;

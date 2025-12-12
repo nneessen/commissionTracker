@@ -1,9 +1,9 @@
 // src/features/dashboard/components/PaceTracker.tsx
 
 import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Target, Calendar, TrendingUp } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import {Card, CardContent} from '@/components/ui/card';
+import {Target, Calendar, TrendingUp} from 'lucide-react';
+import {cn} from '@/lib/utils';
 
 interface PaceTrackerProps {
   policiesNeededPerWeek: number;

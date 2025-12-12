@@ -4,11 +4,11 @@
  * TanStack Query hooks for messaging functionality.
  */
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useEffect } from 'react';
-import { messagingService } from '@/services/messaging/messagingService';
-import { subscribeToThreadMessages, subscribeToAllThreads, subscribeToUserMessages } from '@/services/messaging/realtimeMessaging';
-import type { CreateThreadRequest, SendMessageRequest } from '@/types/messaging.types';
+import {useQuery, useMutation, useQueryClient} from '@tanstack/react-query';
+import {useEffect} from 'react';
+import {messagingService} from '@/services/messaging/messagingService';
+import {subscribeToThreadMessages, subscribeToAllThreads, subscribeToUserMessages} from '@/services/messaging/realtimeMessaging';
+import type {CreateThreadRequest, SendMessageRequest} from '@/types/messaging.types';
 
 /**
  * Get all message threads for current user

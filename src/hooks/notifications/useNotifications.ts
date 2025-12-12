@@ -4,11 +4,11 @@
  * TanStack Query hooks for notification functionality.
  */
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useMemo } from 'react';
-import { notificationService } from '@/services/notifications/notificationService';
-import { subscribeToNotifications } from '@/services/notifications/realtimeNotifications';
-import type { CreateNotificationRequest } from '@/types/notification.types';
+import {useQuery, useMutation, useQueryClient} from '@tanstack/react-query';
+import {useEffect, useMemo} from 'react';
+import {notificationService} from '@/services/notifications/notificationService';
+import {subscribeToNotifications} from '@/services/notifications/realtimeNotifications';
+import type {CreateNotificationRequest} from '@/types/notification.types';
 
 /**
  * Get all notifications for current user

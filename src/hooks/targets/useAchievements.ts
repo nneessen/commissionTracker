@@ -1,9 +1,9 @@
 // src/hooks/targets/useAchievements.ts
 
-import { useQuery } from '@tanstack/react-query';
-import { targetsService } from '../../services/targets';
-import { supabase } from '../../services/base/supabase';
-import type { Achievement } from '../../types/targets.types';
+import {useQuery} from '@tanstack/react-query';
+import {targetsService} from '../../services/targets';
+import {supabase} from '../../services/base/supabase';
+import type {Achievement} from '../../types/targets.types';
 
 export interface UseAchievementsOptions {
   enabled?: boolean;

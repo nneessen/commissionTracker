@@ -1,22 +1,11 @@
-import { useDroppable } from '@dnd-kit/core'
-import { useSortable } from '@dnd-kit/sortable'
-import { CSS } from '@dnd-kit/utilities'
-import { GripVertical, Trash2, Plus } from 'lucide-react'
-import { cn } from '@/lib/utils'
-import { Button } from '@/components/ui/button'
-import type { EmailBlock } from '@/types/email.types'
-import {
-  HeaderBlock,
-  TextBlock,
-  ButtonBlock,
-  DividerBlock,
-  SpacerBlock,
-  FooterBlock,
-  ImageBlock,
-  QuoteBlock,
-  SocialBlock,
-  ColumnsBlock,
-} from './blocks'
+import {useDroppable} from '@dnd-kit/core'
+import {useSortable} from '@dnd-kit/sortable'
+import {CSS} from '@dnd-kit/utilities'
+import {GripVertical, Trash2, Plus} from 'lucide-react'
+import {cn} from '@/lib/utils'
+import {Button} from '@/components/ui/button'
+import type {EmailBlock} from '@/types/email.types'
+import {HeaderBlock, TextBlock, ButtonBlock, DividerBlock, SpacerBlock, FooterBlock, ImageBlock, QuoteBlock, SocialBlock, ColumnsBlock} from './blocks'
 
 interface BlockCanvasProps {
   blocks: EmailBlock[]

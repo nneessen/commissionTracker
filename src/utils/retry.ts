@@ -1,7 +1,7 @@
 // src/utils/retry.ts
 // Retry logic for handling transient failures
 
-import { logger } from '../services/base/logger';
+import {logger} from '../services/base/logger';
 
 export interface RetryOptions {
   maxAttempts?: number;
@@ -131,8 +131,7 @@ export async function withRetry<T>(
  */
 export function Retry(options: RetryOptions = {}) {
   return function (
-    target: any,
-    propertyKey: string,
+    _target: any, _propertyKey: string,
     descriptor: PropertyDescriptor
   ) {
     const originalMethod = descriptor.value;

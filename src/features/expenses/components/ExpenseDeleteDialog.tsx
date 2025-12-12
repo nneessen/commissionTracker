@@ -1,17 +1,8 @@
 // src/features/expenses/components/ExpenseDeleteDialog.tsx
 
-import { useState } from 'react';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import type { Expense } from '@/types/expense.types';
+import {useState} from 'react';
+import {AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle} from '@/components/ui/alert-dialog';
+import type {Expense} from '@/types/expense.types';
 
 interface ExpenseDeleteDialogProps {
   open: boolean;

@@ -1,9 +1,9 @@
 // src/features/auth/components/AuthErrorDisplay.tsx
 
 import React from "react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
-import { AlertCircle } from "lucide-react";
+import {Alert, AlertDescription} from "@/components/ui/alert";
+import {Button} from "@/components/ui/button";
+import {AlertCircle} from "lucide-react";
 
 interface AuthErrorDisplayProps {
   error: string;

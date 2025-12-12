@@ -1,25 +1,16 @@
 // src/features/recruiting/components/DocumentManager.tsx
 
 import React, { useState } from 'react';
-import { UserDocument } from '@/types/recruiting';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Card } from '@/components/ui/card';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { FileText, Download, Trash2, CheckCircle2, XCircle, MoreVertical, Upload, Eye } from 'lucide-react';
-import {
-  useUploadDocument,
-  useDeleteDocument,
-  useUpdateDocumentStatus,
-} from '../hooks/useRecruitDocuments';
-import { recruitingService } from '@/services/recruiting';
-import { UploadDocumentDialog } from './UploadDocumentDialog';
-import { DocumentViewerDialog } from './DocumentViewerDialog';
+import {UserDocument} from '@/types/recruiting';
+import {Button} from '@/components/ui/button';
+import {Badge} from '@/components/ui/badge';
+import {Card} from '@/components/ui/card';
+import {DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger} from '@/components/ui/dropdown-menu';
+import {FileText, Download, Trash2, CheckCircle2, XCircle, MoreVertical, Upload, Eye} from 'lucide-react';
+import {useUploadDocument, useDeleteDocument, useUpdateDocumentStatus} from '../hooks/useRecruitDocuments';
+import {recruitingService} from '@/services/recruiting';
+import {UploadDocumentDialog} from './UploadDocumentDialog';
+import {DocumentViewerDialog} from './DocumentViewerDialog';
 
 interface DocumentManagerProps {
   userId: string;
@@ -41,7 +32,7 @@ export function DocumentManager({ userId, documents, isUpline = false, currentUs
   const [selectedDocument, setSelectedDocument] = useState<UserDocument | null>(null);
   const [isViewerOpen, setIsViewerOpen] = useState(false);
 
-  const uploadDocument = useUploadDocument();
+  const _uploadDocument = useUploadDocument();
   const deleteDocument = useDeleteDocument();
   const updateDocumentStatus = useUpdateDocumentStatus();
 

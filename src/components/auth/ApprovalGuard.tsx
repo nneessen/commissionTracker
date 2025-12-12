@@ -1,12 +1,12 @@
 // /home/nneessen/projects/commissionTracker/src/components/auth/ApprovalGuard.tsx
 
 import React, { useEffect, useState } from 'react';
-import { Navigate } from '@tanstack/react-router';
-import { useAuthorizationStatus } from '../../hooks/admin/useUserApproval';
-import { PendingApproval } from '../../features/auth/PendingApproval';
-import { DeniedAccess } from '../../features/auth/DeniedAccess';
-import { supabase } from '@/services/base/supabase';
-import { usePermissionCheck } from '@/hooks/permissions/usePermissions';
+import {Navigate} from '@tanstack/react-router';
+import {useAuthorizationStatus} from '../../hooks/admin/useUserApproval';
+import {PendingApproval} from '../../features/auth/PendingApproval';
+import {DeniedAccess} from '../../features/auth/DeniedAccess';
+import {supabase} from '@/services/base/supabase';
+import {usePermissionCheck} from '@/hooks/permissions/usePermissions';
 
 interface ApprovalGuardProps {
   children: React.ReactNode;
@@ -30,7 +30,7 @@ export const ApprovalGuard: React.FC<ApprovalGuardProps> = ({ children }) => {
     profile,
   } = useAuthorizationStatus();
 
-  const { is, isLoading: permissionsLoading, roles } = usePermissionCheck();
+  const { is, isLoading: permissionsLoading } = usePermissionCheck();
   const isRecruit = is('recruit');
   const isActiveAgent = is('active_agent');
   const isAgent = is('agent');
@@ -44,7 +44,7 @@ export const ApprovalGuard: React.FC<ApprovalGuardProps> = ({ children }) => {
 
   useEffect(() => {
     // Get the current auth user email directly
-    supabase.auth.getUser().then(({ data, error }) => {
+    supabase.auth.getUser().then(({ data }) => {
       if (data?.user) {
         setCurrentUserEmail(data.user.email || null);
       }

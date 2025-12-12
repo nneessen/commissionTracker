@@ -1,9 +1,9 @@
 // src/features/training-hub/components/workflow-wizard/WorkflowReview.tsx
 
-import { Edit2, Mail, Bell, Clock, Webhook, Play, Calendar, Zap } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import type { WorkflowFormData } from '@/types/workflow.types';
+import {Edit2, Mail, Bell, Clock, Webhook, Play, Calendar, Zap} from 'lucide-react';
+import {Button} from '@/components/ui/button';
+import {Badge} from '@/components/ui/badge';
+import type {WorkflowFormData} from '@/types/workflow.types';
 
 interface WorkflowReviewProps {
   data: WorkflowFormData;

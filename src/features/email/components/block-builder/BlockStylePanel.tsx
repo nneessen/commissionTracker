@@ -1,9 +1,9 @@
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Slider } from '@/components/ui/slider'
-import { FontPicker } from './FontPicker'
-import type { EmailBlock, EmailBlockStyles, EmailFontFamily, EmailFontWeight } from '@/types/email.types'
+import {Input} from '@/components/ui/input'
+import {Label} from '@/components/ui/label'
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '@/components/ui/select'
+import {Slider} from '@/components/ui/slider'
+import {FontPicker} from './FontPicker'
+import {EmailFontFamily, EmailFontWeight} from '@/types/email.types'
 
 interface BlockStylePanelProps {
   block: EmailBlock | null

@@ -1,34 +1,11 @@
 // src/features/comps/CompTable.tsx
 
 import React, { useState } from "react";
-import {
-  ChevronLeft,
-  ChevronRight,
-  ArrowUp,
-  ArrowDown,
-  Building2,
-  Package,
-  Percent,
-  Calendar,
-  AlertCircle,
-} from "lucide-react";
-import { Comp } from "../../types/comp.types";
-import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import {ChevronLeft, ChevronRight, ArrowUp, ArrowDown, Building2, Package, Percent, Calendar, AlertCircle} from "lucide-react";
+import {Comp} from "../../types/comp.types";
+import {Button} from "@/components/ui/button";
+import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/components/ui/table";
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
 
 interface CompTableProps {
   data: Comp[];

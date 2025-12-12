@@ -1,20 +1,6 @@
 // src/__tests__/errors/ServiceErrors.test.ts
-import { describe, it, expect } from 'vitest';
-import {
-  ServiceError,
-  NotFoundError,
-  ValidationError,
-  DatabaseError,
-  CalculationError,
-  AuthorizationError,
-  ConflictError,
-  ExternalServiceError,
-  RateLimitError,
-  BusinessLogicError,
-  isServiceError,
-  getErrorMessage,
-  getErrorDetails,
-} from '../../errors/ServiceErrors';
+import {describe, it, expect} from 'vitest';
+import {ServiceError, NotFoundError, ValidationError, DatabaseError, CalculationError, AuthorizationError, ConflictError, ExternalServiceError, RateLimitError, BusinessLogicError, isServiceError, getErrorMessage, getErrorDetails} from '../../errors/ServiceErrors';
 
 describe('ServiceError', () => {
   it('should create error with all properties', () => {

@@ -1,6 +1,6 @@
 // src/features/reports/components/charts/CommissionAgingChart.tsx
 
-import { ResponsiveBar } from '@nivo/bar';
+import {ResponsiveBar} from '@nivo/bar';
 
 interface AgingData {
   bucket: string;
@@ -15,7 +15,7 @@ interface CommissionAgingChartProps {
   onBarClick?: (bucket: string) => void;
 }
 
-const riskColors: Record<string, string> = {
+const _riskColors: Record<string, string> = {
   Critical: '#ef4444',
   High: '#f97316',
   Medium: '#eab308',

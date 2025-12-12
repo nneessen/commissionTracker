@@ -1,9 +1,9 @@
 // /home/nneessen/projects/commissionTracker/src/features/analytics/PerformanceTable.tsx
 
 import React from 'react';
-import { DataTable } from '../../components/shared/DataTable';
-import { CarrierPerformance, StatePerformance, ProductPerformance } from '../../types/metrics.types';
-import { DataTableColumn } from '../../types/ui.types';
+import {DataTable} from '../../components/shared/DataTable';
+import {CarrierPerformance, StatePerformance, ProductPerformance} from '../../types/metrics.types';
+import {DataTableColumn} from '../../types/ui.types';
 
 interface PerformanceTableProps {
   title: string;

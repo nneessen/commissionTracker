@@ -1,6 +1,6 @@
 // src/types/expense.types.ts
 
-import type { Database } from './database.types';
+import type {Database} from './database.types';
 
 // Expense type enum
 export type ExpenseType = 'personal' | 'business';
