@@ -1,31 +1,10 @@
 // src/features/dashboard/config/statsConfig.ts
 
-import {TimePeriod, getPeriodLabel} from "../../../utils/dateRange";
-import {StatItemConfig} from "../../../types/dashboard.types";
-import {formatCurrency, formatPercent} from "../../../lib/format";
-import {getPeriodSuffix} from "../../../utils/dashboardCalculations";
-
-const METRIC_COLORS = {
-  COMMISSION_EARNED: "rgb(16, 185, 129)",
-  PENDING_PIPELINE: "rgb(59, 130, 246)",
-  EXPENSES: "rgb(245, 158, 11)",
-  NET_INCOME_POSITIVE: "rgb(16, 185, 129)",
-  NET_INCOME_NEGATIVE: "rgb(239, 68, 68)",
-  BREAKEVEN: "rgb(239, 68, 68)",
-  BREAKEVEN_MET: "rgb(16, 185, 129)",
-  POLICIES_NEEDED: "rgb(139, 92, 246)",
-  ACTIVE_POLICIES: "rgb(6, 182, 212)",
-  TOTAL_POLICIES: "rgb(100, 116, 139)",
-  RETENTION_GOOD: "rgb(16, 185, 129)",
-  RETENTION_WARNING: "rgb(245, 158, 11)",
-  LAPSE_GOOD: "rgb(16, 185, 129)",
-  LAPSE_BAD: "rgb(239, 68, 68)",
-  TOTAL_CLIENTS: "rgb(236, 72, 153)",
-  POLICIES_PER_CLIENT: "rgb(168, 85, 247)",
-  AVG_PREMIUM: "rgb(14, 165, 233)",
-  AVG_COMMISSION: "rgb(20, 184, 166)",
-  AVG_CLIENT_LTV: "rgb(249, 115, 22)",
-} as const;
+import { TimePeriod, getPeriodLabel } from "../../../utils/dateRange";
+import { StatItemConfig } from "../../../types/dashboard.types";
+import { formatCurrency, formatPercent } from "../../../lib/format";
+import { getPeriodSuffix } from "../../../utils/dashboardCalculations";
+import { METRIC_COLORS } from "../../../constants/dashboard";
 
 interface StatsConfigParams {
   timePeriod: TimePeriod;
@@ -121,8 +100,7 @@ export function generateStatsConfig(
       color: METRIC_COLORS.PENDING_PIPELINE,
       tooltip: {
         title: "Pending Pipeline",
-        description:
-          "Total commissions owed to you but not yet paid.",
+        description: "Total commissions owed to you but not yet paid.",
         formula: "Sum of all commissions where status is pending or earned",
         note: "Point-in-time metric - does NOT change with time period filter",
       },
@@ -183,8 +161,7 @@ export function generateStatsConfig(
       color: METRIC_COLORS.ACTIVE_POLICIES,
       tooltip: {
         title: "Active Policies",
-        description:
-          "Currently active insurance policies.",
+        description: "Currently active insurance policies.",
         formula: "COUNT(policies) WHERE status=active",
         note: "Point-in-time metric - does NOT change with time period",
       },
@@ -195,8 +172,7 @@ export function generateStatsConfig(
       color: METRIC_COLORS.TOTAL_POLICIES,
       tooltip: {
         title: "Total Policies",
-        description:
-          "Lifetime total of all policies ever written.",
+        description: "Lifetime total of all policies ever written.",
         formula: "COUNT(all policies)",
         note: "Point-in-time metric - does NOT change with time period",
       },
@@ -210,8 +186,7 @@ export function generateStatsConfig(
           : METRIC_COLORS.RETENTION_WARNING,
       tooltip: {
         title: "Retention Rate",
-        description:
-          "Percentage of policies that remain active.",
+        description: "Percentage of policies that remain active.",
         formula: "(Active Policies / Total Policies) × 100",
         note: "Above 80% is good, below 70% needs attention",
       },
@@ -278,8 +253,7 @@ export function generateStatsConfig(
       color: METRIC_COLORS.EXPENSES,
       tooltip: {
         title: "High Risk Count",
-        description:
-          "Policies with <3 months paid (high chargeback risk).",
+        description: "Policies with <3 months paid (high chargeback risk).",
         formula:
           "COUNT(commissions) WHERE months_paid < 3 AND status IN (pending, earned)",
         note: "Contact these clients to prevent lapses",
@@ -305,8 +279,7 @@ export function generateStatsConfig(
       color: METRIC_COLORS.POLICIES_PER_CLIENT,
       tooltip: {
         title: "Policies per Client",
-        description:
-          "Average policies per client (cross-sell metric).",
+        description: "Average policies per client (cross-sell metric).",
         formula: "Total Policies / Total Clients",
         note: "Higher is better - shows cross-sell success",
       },

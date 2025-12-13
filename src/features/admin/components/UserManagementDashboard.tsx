@@ -17,7 +17,7 @@ import {UserProfile, VALID_CONTRACT_LEVELS} from '../../../services/admin/userAp
 import {Checkbox} from '@/components/ui/checkbox';
 
 export const UserManagementDashboard: React.FC = () => {
-  const {users, metrics, isLoading, isFetching, error, currentPage, totalPages, pageSize, totalItems, goToPage, nextPage, previousPage, setPageSize, filters, setFilters, clearFilters, filterCount, sortConfig, toggleSort, refresh} = useUsersView();
+  const {users, metrics, isLoading, error, currentPage, totalPages, pageSize, totalItems, goToPage, nextPage, previousPage, setPageSize, filters, setFilters, clearFilters, filterCount, sortConfig, toggleSort, refresh} = useUsersView();
 
   const approveUser = useApproveUser();
   const denyUser = useDenyUser();
@@ -374,7 +374,7 @@ export const UserManagementDashboard: React.FC = () => {
                     </Select>
                   </TableCell>
                   <TableCell className="py-1.5 px-3 text-[12px] text-muted-foreground">
-                    {format(new Date(user.created_at || new Date().toISOString()), 'MMM d, yyyy h:mm a')}
+                    {user.created_at ? format(new Date(user.created_at), 'MMM d, yyyy h:mm a') : '-'}
                   </TableCell>
                   <TableCell className="py-1.5 px-3 text-[12px] text-muted-foreground">
                     {user.approved_at && format(new Date(user.approved_at), 'MMM d, yyyy h:mm a')}

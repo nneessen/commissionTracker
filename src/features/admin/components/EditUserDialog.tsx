@@ -1,26 +1,63 @@
 // src/features/admin/components/EditUserDialog.tsx
 // Comprehensive user edit dialog with full CRUD capabilities
 
-import {useState, useEffect} from "react";
-import {useQueryClient} from "@tanstack/react-query";
-import {Button} from "@/components/ui/button";
-import {Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle} from "@/components/ui/dialog";
-import {Input} from "@/components/ui/input";
-import {Label} from "@/components/ui/label";
-import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
-import {Checkbox} from "@/components/ui/checkbox";
-import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs";
-import {Separator} from "@/components/ui/separator";
-import {AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle} from "@/components/ui/alert-dialog";
-import {Alert, AlertDescription} from "@/components/ui/alert";
-import {useAllRolesWithPermissions} from "@/hooks/permissions/usePermissions";
-import {useAllUsers} from "@/hooks/admin/useUserApproval";
-import {userApprovalService, VALID_CONTRACT_LEVELS} from "@/services/admin/userApprovalService";
-import {supabase} from "@/services/base/supabase";
+import { useState, useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Separator } from "@/components/ui/separator";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useAllRolesWithPermissions } from "@/hooks/permissions/usePermissions";
+import { useAllUsers } from "@/hooks/admin/useUserApproval";
+import {
+  userApprovalService,
+  VALID_CONTRACT_LEVELS,
+} from "@/services/admin/userApprovalService";
+import { supabase } from "@/services/base/supabase";
 import showToast from "@/utils/toast";
-import {Mail, User, Phone, Users, Trash2, Send, MapPin, CreditCard, Globe, AlertTriangle, Loader2} from "lucide-react";
-import type {RoleName} from "@/types/permissions.types";
-import type {UserProfile} from "@/services/admin/userApprovalService";
+import {
+  Mail,
+  User,
+  Phone,
+  Users,
+  Trash2,
+  Send,
+  MapPin,
+  CreditCard,
+  Globe,
+  AlertTriangle,
+  Loader2,
+} from "lucide-react";
+import type { RoleName } from "@/types/permissions.types";
+import type { UserProfile } from "@/services/admin/userApprovalService";
 
 interface EditUserDialogProps {
   user: UserProfile | null;
@@ -93,7 +130,9 @@ export default function EditUserDialog({
   const [reassignUplineId, setReassignUplineId] = useState<string | null>(null);
   const [checkingDependencies, setCheckingDependencies] = useState(false);
   const [downlineCount, setDownlineCount] = useState(0);
-  const [potentialUplines, setPotentialUplines] = useState<Array<{id: string; first_name: string; last_name: string; email: string}>>([]);
+  const [potentialUplines, setPotentialUplines] = useState<
+    Array<{ id: string; first_name: string; last_name: string; email: string }>
+  >([]);
 
   // Check for downlines when delete dialog opens
   useEffect(() => {
@@ -114,12 +153,12 @@ export default function EditUserDialog({
       try {
         // Check for downlines (users with this user as upline)
         const { count, error: countError } = await supabase
-          .from('user_profiles')
-          .select('*', { count: 'exact', head: true })
-          .eq('upline_id', user.id);
+          .from("user_profiles")
+          .select("*", { count: "exact", head: true })
+          .eq("upline_id", user.id);
 
         if (countError) {
-          console.error('Error checking downlines:', countError);
+          console.error("Error checking downlines:", countError);
           if (isActive) setDownlineCount(0);
           return;
         }
@@ -130,18 +169,18 @@ export default function EditUserDialog({
         // If there are downlines, fetch potential uplines for reassignment
         if (count && count > 0) {
           const { data: uplines, error: uplinesError } = await supabase
-            .from('user_profiles')
-            .select('id, first_name, last_name, email')
-            .neq('id', user.id)
-            .order('first_name');
+            .from("user_profiles")
+            .select("id, first_name, last_name, email")
+            .neq("id", user.id)
+            .order("first_name");
 
           if (uplinesError) {
-            console.error('Error fetching uplines:', uplinesError);
+            console.error("Error fetching uplines:", uplinesError);
           }
           if (isActive) setPotentialUplines(uplines || []);
         }
       } catch (error) {
-        console.error('Error checking downlines:', error);
+        console.error("Error checking downlines:", error);
         if (isActive) setDownlineCount(0);
       } finally {
         if (isActive) setCheckingDependencies(false);
@@ -154,7 +193,7 @@ export default function EditUserDialog({
     return () => {
       isActive = false;
     };
-  }, [showDeleteConfirm, user?.id]); // FIX: Use user.id instead of user object
+  }, [showDeleteConfirm, user?.id, user]); // Include user in dependencies
 
   // Populate form when user changes
   useEffect(() => {
@@ -166,17 +205,17 @@ export default function EditUserDialog({
         phone: user.phone || "",
         upline_id: user.upline_id || null,
         roles: (user.roles as RoleName[]) || [],
-        approval_status: (user.approval_status || "pending") as "pending" | "approved" | "denied",
+        approval_status: (user.approval_status as "pending" | "approved" | "denied") || "pending",
         agent_status: user.agent_status || null,
         contract_level: user.contract_level || null,
-        street_address: (user as any).street_address || "",
-        city: (user as any).city || "",
-        state: (user as any).state || "",
-        zip: (user as any).zip || "",
-        resident_state: (user as any).resident_state || "",
-        license_number: (user as any).license_number || "",
-        npn: (user as any).npn || "",
-        license_expiration: (user as any).license_expiration || "",
+        street_address: user.street_address || "",
+        city: user.city || "",
+        state: user.state || "",
+        zip: user.zip || "",
+        resident_state: user.resident_state || "",
+        license_number: user.license_number || "",
+        npn: user.npn || "",
+        license_expiration: user.license_expiration || "",
         linkedin_url: user.linkedin_url || "",
         instagram_url: user.instagram_url || "",
       });
@@ -197,32 +236,48 @@ export default function EditUserDialog({
     setIsSaving(true);
 
     try {
-      const updates: Record<string, any> = {};
+      const updates: Record<string, unknown> = {};
 
-      if (formData.first_name !== (user.first_name || "")) updates.first_name = formData.first_name || null;
-      if (formData.last_name !== (user.last_name || "")) updates.last_name = formData.last_name || null;
-      if (formData.phone !== (user.phone || "")) updates.phone = formData.phone || null;
-      if (formData.upline_id !== user.upline_id) updates.upline_id = formData.upline_id;
-      if (JSON.stringify(formData.roles) !== JSON.stringify(user.roles || [])) updates.roles = formData.roles;
-      if (formData.approval_status !== user.approval_status) updates.approval_status = formData.approval_status;
-      if (formData.agent_status !== user.agent_status) updates.agent_status = formData.agent_status;
-      if (formData.contract_level !== user.contract_level) updates.contract_level = formData.contract_level;
+      if (formData.first_name !== (user.first_name || ""))
+        updates.first_name = formData.first_name || null;
+      if (formData.last_name !== (user.last_name || ""))
+        updates.last_name = formData.last_name || null;
+      if (formData.phone !== (user.phone || ""))
+        updates.phone = formData.phone || null;
+      if (formData.upline_id !== user.upline_id)
+        updates.upline_id = formData.upline_id;
+      if (JSON.stringify(formData.roles) !== JSON.stringify(user.roles || []))
+        updates.roles = formData.roles;
+      if (formData.approval_status !== user.approval_status)
+        updates.approval_status = formData.approval_status;
+      if (formData.agent_status !== user.agent_status)
+        updates.agent_status = formData.agent_status;
+      if (formData.contract_level !== user.contract_level)
+        updates.contract_level = formData.contract_level;
 
       // Address fields
-      if (formData.street_address !== ((user as any).street_address || "")) updates.street_address = formData.street_address || null;
-      if (formData.city !== ((user as any).city || "")) updates.city = formData.city || null;
-      if (formData.state !== ((user as any).state || "")) updates.state = formData.state || null;
-      if (formData.zip !== ((user as any).zip || "")) updates.zip = formData.zip || null;
-      if (formData.resident_state !== ((user as any).resident_state || "")) updates.resident_state = formData.resident_state || null;
+      if (formData.street_address !== (user.street_address || ""))
+        updates.street_address = formData.street_address || null;
+      if (formData.city !== (user.city || ""))
+        updates.city = formData.city || null;
+      if (formData.state !== (user.state || ""))
+        updates.state = formData.state || null;
+      if (formData.zip !== (user.zip || "")) updates.zip = formData.zip || null;
+      if (formData.resident_state !== (user.resident_state || ""))
+        updates.resident_state = formData.resident_state || null;
 
       // License fields
-      if (formData.license_number !== ((user as any).license_number || "")) updates.license_number = formData.license_number || null;
-      if (formData.npn !== ((user as any).npn || "")) updates.npn = formData.npn || null;
-      if (formData.license_expiration !== ((user as any).license_expiration || "")) updates.license_expiration = formData.license_expiration || null;
+      if (formData.license_number !== (user.license_number || ""))
+        updates.license_number = formData.license_number || null;
+      if (formData.npn !== (user.npn || "")) updates.npn = formData.npn || null;
+      if (formData.license_expiration !== (user.license_expiration || ""))
+        updates.license_expiration = formData.license_expiration || null;
 
       // Social fields
-      if (formData.linkedin_url !== (user.linkedin_url || "")) updates.linkedin_url = formData.linkedin_url || null;
-      if (formData.instagram_url !== (user.instagram_url || "")) updates.instagram_url = formData.instagram_url || null;
+      if (formData.linkedin_url !== (user.linkedin_url || ""))
+        updates.linkedin_url = formData.linkedin_url || null;
+      if (formData.instagram_url !== (user.instagram_url || ""))
+        updates.instagram_url = formData.instagram_url || null;
 
       if (Object.keys(updates).length === 0) {
         showToast.success("No changes to save");
@@ -255,13 +310,13 @@ export default function EditUserDialog({
       // If there are downlines and a reassignment target is selected, reassign first
       if (downlineCount > 0 && reassignUplineId) {
         const { data, error } = await supabase
-          .from('user_profiles')
+          .from("user_profiles")
           .update({ upline_id: reassignUplineId })
-          .eq('upline_id', user.id)
+          .eq("upline_id", user.id)
           .select();
 
         if (error) {
-          throw new Error(error.message || 'Failed to reassign downlines');
+          throw new Error(error.message || "Failed to reassign downlines");
         }
         showToast.success(`Reassigned ${data?.length || 0} downline(s)`);
       }
@@ -278,8 +333,12 @@ export default function EditUserDialog({
       } else {
         showToast.error(result.error || "Failed to delete user");
       }
-    } catch (error: any) {
-      showToast.error(error?.message || "An error occurred while deleting");
+    } catch (error) {
+      showToast.error(
+        error instanceof Error
+          ? error.message
+          : "An error occurred while deleting",
+      );
       console.error("Delete error:", error);
     } finally {
       setIsDeleting(false);
@@ -291,33 +350,30 @@ export default function EditUserDialog({
     setIsSendingInvite(true);
 
     try {
-      const { error } = await supabase.auth.signInWithOtp({
-        email: user.email,
-        options: {
-          shouldCreateUser: true,
-          emailRedirectTo: `${window.location.origin}/`,
-          data: {
-            full_name: `${formData.first_name} ${formData.last_name}`.trim(),
-          },
-        },
+      // Send password reset email which acts as confirmation email where users set their password
+      const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
+        redirectTo: `${window.location.origin}/auth/callback?type=recovery`,
       });
 
       if (error) {
-        showToast.error(`Failed to send invite: ${error.message}`);
+        showToast.error(`Failed to send confirmation email: ${error.message}`);
       } else {
-        showToast.success(`Invite email sent to ${user.email}`);
+        showToast.success(
+          `Confirmation email sent to ${user.email} to set password`,
+        );
       }
     } catch (error) {
-      showToast.error("An error occurred while sending invite");
-      console.error("Resend invite error:", error);
+      showToast.error("An error occurred while sending confirmation email");
+      console.error("Resend confirmation email error:", error);
     } finally {
       setIsSendingInvite(false);
     }
   };
 
-  const approvedUplines = allUsers?.filter(
-    (u) => u.approval_status === "approved" && u.id !== user?.id
-  ) ?? [];
+  const approvedUplines =
+    allUsers?.filter(
+      (u) => u.approval_status === "approved" && u.id !== user?.id,
+    ) ?? [];
 
   if (!user) return null;
 
@@ -334,16 +390,27 @@ export default function EditUserDialog({
               Edit User
             </DialogTitle>
             <DialogDescription className="text-xs">
-              {user.email} - Created {new Date(user.created_at || new Date().toISOString()).toLocaleDateString()}
+              {user.email} - Created{" "}
+              {user.created_at
+                ? new Date(user.created_at).toLocaleDateString()
+                : "Unknown"}
             </DialogDescription>
           </DialogHeader>
 
           <Tabs defaultValue="basic" className="w-full">
             <TabsList className="grid w-full grid-cols-4 h-8">
-              <TabsTrigger value="basic" className="text-xs">Basic Info</TabsTrigger>
-              <TabsTrigger value="roles" className="text-xs">Roles & Status</TabsTrigger>
-              <TabsTrigger value="details" className="text-xs">Details</TabsTrigger>
-              <TabsTrigger value="actions" className="text-xs">Actions</TabsTrigger>
+              <TabsTrigger value="basic" className="text-xs">
+                Basic Info
+              </TabsTrigger>
+              <TabsTrigger value="roles" className="text-xs">
+                Roles & Status
+              </TabsTrigger>
+              <TabsTrigger value="details" className="text-xs">
+                Details
+              </TabsTrigger>
+              <TabsTrigger value="actions" className="text-xs">
+                Actions
+              </TabsTrigger>
             </TabsList>
 
             {/* Basic Info Tab */}
@@ -351,19 +418,33 @@ export default function EditUserDialog({
               {/* Name Row */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label className="text-[11px] text-muted-foreground">First Name</Label>
+                  <Label className="text-[11px] text-muted-foreground">
+                    First Name
+                  </Label>
                   <Input
                     value={formData.first_name}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, first_name: e.target.value }))}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        first_name: e.target.value,
+                      }))
+                    }
                     className="h-8 text-xs"
                     placeholder="First name"
                   />
                 </div>
                 <div>
-                  <Label className="text-[11px] text-muted-foreground">Last Name</Label>
+                  <Label className="text-[11px] text-muted-foreground">
+                    Last Name
+                  </Label>
                   <Input
                     value={formData.last_name}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, last_name: e.target.value }))}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        last_name: e.target.value,
+                      }))
+                    }
                     className="h-8 text-xs"
                     placeholder="Last name"
                   />
@@ -373,7 +454,9 @@ export default function EditUserDialog({
               {/* Email & Phone */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label className="text-[11px] text-muted-foreground">Email</Label>
+                  <Label className="text-[11px] text-muted-foreground">
+                    Email
+                  </Label>
                   <div className="relative">
                     <Mail className="absolute left-2 top-2 h-3.5 w-3.5 text-muted-foreground" />
                     <Input
@@ -383,15 +466,24 @@ export default function EditUserDialog({
                       title="Email cannot be changed"
                     />
                   </div>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">Email cannot be changed</p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">
+                    Email cannot be changed
+                  </p>
                 </div>
                 <div>
-                  <Label className="text-[11px] text-muted-foreground">Phone</Label>
+                  <Label className="text-[11px] text-muted-foreground">
+                    Phone
+                  </Label>
                   <div className="relative">
                     <Phone className="absolute left-2 top-2 h-3.5 w-3.5 text-muted-foreground" />
                     <Input
                       value={formData.phone}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, phone: e.target.value }))}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          phone: e.target.value,
+                        }))
+                      }
                       className="h-8 text-xs pl-7"
                       placeholder="(555) 123-4567"
                     />
@@ -402,18 +494,25 @@ export default function EditUserDialog({
               {/* Upline & Contract Level */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label className="text-[11px] text-muted-foreground">Upline</Label>
+                  <Label className="text-[11px] text-muted-foreground">
+                    Upline
+                  </Label>
                   <Select
                     value={formData.upline_id || "none"}
                     onValueChange={(value) =>
-                      setFormData((prev) => ({ ...prev, upline_id: value === "none" ? null : value }))
+                      setFormData((prev) => ({
+                        ...prev,
+                        upline_id: value === "none" ? null : value,
+                      }))
                     }
                   >
                     <SelectTrigger className="h-8 text-xs">
                       <SelectValue placeholder="No upline" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="none" className="text-xs">No upline</SelectItem>
+                      <SelectItem value="none" className="text-xs">
+                        No upline
+                      </SelectItem>
                       {approvedUplines.map((u) => (
                         <SelectItem key={u.id} value={u.id} className="text-xs">
                           {u.full_name || u.email}
@@ -423,13 +522,16 @@ export default function EditUserDialog({
                   </Select>
                 </div>
                 <div>
-                  <Label className="text-[11px] text-muted-foreground">Contract Level</Label>
+                  <Label className="text-[11px] text-muted-foreground">
+                    Contract Level
+                  </Label>
                   <Select
                     value={formData.contract_level?.toString() || "none"}
                     onValueChange={(value) =>
                       setFormData((prev) => ({
                         ...prev,
-                        contract_level: value === "none" ? null : parseInt(value),
+                        contract_level:
+                          value === "none" ? null : parseInt(value),
                       }))
                     }
                   >
@@ -437,9 +539,15 @@ export default function EditUserDialog({
                       <SelectValue placeholder="Not set" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="none" className="text-xs">Not set</SelectItem>
+                      <SelectItem value="none" className="text-xs">
+                        Not set
+                      </SelectItem>
                       {VALID_CONTRACT_LEVELS.map((level) => (
-                        <SelectItem key={level} value={level.toString()} className="text-xs">
+                        <SelectItem
+                          key={level}
+                          value={level.toString()}
+                          className="text-xs"
+                        >
                           {level}%
                         </SelectItem>
                       ))}
@@ -453,33 +561,18 @@ export default function EditUserDialog({
             <TabsContent value="roles" className="space-y-3 mt-3">
               {/* Approval Status */}
               <div>
-                <Label className="text-[11px] text-muted-foreground">Approval Status</Label>
+                <Label className="text-[11px] text-muted-foreground">
+                  Approval Status
+                </Label>
                 <Select
                   value={formData.approval_status}
                   onValueChange={(value) =>
-                    setFormData((prev) => ({ ...prev, approval_status: value as "pending" | "approved" | "denied" }))
-                  }
-                >
-                  <SelectTrigger className="h-8 text-xs mt-1">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="approved" className="text-xs">Approved</SelectItem>
-                    <SelectItem value="pending" className="text-xs">Pending</SelectItem>
-                    <SelectItem value="denied" className="text-xs">Denied</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Agent Status */}
-              <div>
-                <Label className="text-[11px] text-muted-foreground">Agent Status</Label>
-                <Select
-                  value={formData.agent_status || "none"}
-                  onValueChange={(value) =>
                     setFormData((prev) => ({
                       ...prev,
-                      agent_status: value === "none" ? null : value as "unlicensed" | "licensed" | "not_applicable"
+                      approval_status: value as
+                        | "pending"
+                        | "approved"
+                        | "denied",
                     }))
                   }
                 >
@@ -487,14 +580,60 @@ export default function EditUserDialog({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none" className="text-xs">Not Set</SelectItem>
-                    <SelectItem value="licensed" className="text-xs">Licensed (Active Agent)</SelectItem>
-                    <SelectItem value="unlicensed" className="text-xs">Unlicensed (In Training)</SelectItem>
-                    <SelectItem value="not_applicable" className="text-xs">Not Applicable</SelectItem>
+                    <SelectItem value="approved" className="text-xs">
+                      Approved
+                    </SelectItem>
+                    <SelectItem value="pending" className="text-xs">
+                      Pending
+                    </SelectItem>
+                    <SelectItem value="denied" className="text-xs">
+                      Denied
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Agent Status */}
+              <div>
+                <Label className="text-[11px] text-muted-foreground">
+                  Agent Status
+                </Label>
+                <Select
+                  value={formData.agent_status || "none"}
+                  onValueChange={(value) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      agent_status:
+                        value === "none"
+                          ? null
+                          : (value as
+                              | "unlicensed"
+                              | "licensed"
+                              | "not_applicable"),
+                    }))
+                  }
+                >
+                  <SelectTrigger className="h-8 text-xs mt-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none" className="text-xs">
+                      Not Set
+                    </SelectItem>
+                    <SelectItem value="licensed" className="text-xs">
+                      Licensed (Active Agent)
+                    </SelectItem>
+                    <SelectItem value="unlicensed" className="text-xs">
+                      Unlicensed (In Training)
+                    </SelectItem>
+                    <SelectItem value="not_applicable" className="text-xs">
+                      Not Applicable
+                    </SelectItem>
                   </SelectContent>
                 </Select>
                 <p className="text-[10px] text-muted-foreground mt-1">
-                  Licensed = Active agent who can receive workflow emails and sell policies
+                  Licensed = Active agent who can receive workflow emails and
+                  sell policies
                 </p>
               </div>
 
@@ -502,7 +641,9 @@ export default function EditUserDialog({
 
               {/* Roles */}
               <div>
-                <Label className="text-[11px] text-muted-foreground">Roles</Label>
+                <Label className="text-[11px] text-muted-foreground">
+                  Roles
+                </Label>
                 <div className="grid grid-cols-2 gap-2 mt-2">
                   {roles?.map((role) => (
                     <div
@@ -512,7 +653,9 @@ export default function EditUserDialog({
                       <Checkbox
                         id={`role-${role.id}`}
                         checked={formData.roles.includes(role.name as RoleName)}
-                        onCheckedChange={() => handleRoleToggle(role.name as RoleName)}
+                        onCheckedChange={() =>
+                          handleRoleToggle(role.name as RoleName)
+                        }
                         className="h-3.5 w-3.5"
                       />
                       <Label
@@ -538,35 +681,62 @@ export default function EditUserDialog({
                 <div className="space-y-2 mt-1">
                   <Input
                     value={formData.street_address}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, street_address: e.target.value }))}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        street_address: e.target.value,
+                      }))
+                    }
                     className="h-8 text-xs"
                     placeholder="Street address"
                   />
                   <div className="grid grid-cols-3 gap-2">
                     <Input
                       value={formData.city}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, city: e.target.value }))}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          city: e.target.value,
+                        }))
+                      }
                       className="h-8 text-xs"
                       placeholder="City"
                     />
                     <Input
                       value={formData.state}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, state: e.target.value }))}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          state: e.target.value,
+                        }))
+                      }
                       className="h-8 text-xs"
                       placeholder="State"
                     />
                     <Input
                       value={formData.zip}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, zip: e.target.value }))}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          zip: e.target.value,
+                        }))
+                      }
                       className="h-8 text-xs"
                       placeholder="ZIP"
                     />
                   </div>
                   <div>
-                    <Label className="text-[10px] text-muted-foreground">Resident State (for licensing)</Label>
+                    <Label className="text-[10px] text-muted-foreground">
+                      Resident State (for licensing)
+                    </Label>
                     <Input
                       value={formData.resident_state}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, resident_state: e.target.value }))}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          resident_state: e.target.value,
+                        }))
+                      }
                       className="h-8 text-xs"
                       placeholder="Resident state"
                     />
@@ -583,29 +753,50 @@ export default function EditUserDialog({
                 </Label>
                 <div className="grid grid-cols-3 gap-2 mt-1">
                   <div>
-                    <Label className="text-[10px] text-muted-foreground">License #</Label>
+                    <Label className="text-[10px] text-muted-foreground">
+                      License #
+                    </Label>
                     <Input
                       value={formData.license_number}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, license_number: e.target.value }))}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          license_number: e.target.value,
+                        }))
+                      }
                       className="h-8 text-xs"
                       placeholder="License number"
                     />
                   </div>
                   <div>
-                    <Label className="text-[10px] text-muted-foreground">NPN</Label>
+                    <Label className="text-[10px] text-muted-foreground">
+                      NPN
+                    </Label>
                     <Input
                       value={formData.npn}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, npn: e.target.value }))}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          npn: e.target.value,
+                        }))
+                      }
                       className="h-8 text-xs"
                       placeholder="NPN"
                     />
                   </div>
                   <div>
-                    <Label className="text-[10px] text-muted-foreground">Expiration</Label>
+                    <Label className="text-[10px] text-muted-foreground">
+                      Expiration
+                    </Label>
                     <Input
                       type="date"
                       value={formData.license_expiration}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, license_expiration: e.target.value }))}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          license_expiration: e.target.value,
+                        }))
+                      }
                       className="h-8 text-xs"
                     />
                   </div>
@@ -622,13 +813,23 @@ export default function EditUserDialog({
                 <div className="grid grid-cols-2 gap-2 mt-1">
                   <Input
                     value={formData.linkedin_url}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, linkedin_url: e.target.value }))}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        linkedin_url: e.target.value,
+                      }))
+                    }
                     className="h-8 text-xs"
                     placeholder="LinkedIn URL"
                   />
                   <Input
                     value={formData.instagram_url}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, instagram_url: e.target.value }))}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        instagram_url: e.target.value,
+                      }))
+                    }
                     className="h-8 text-xs"
                     placeholder="Instagram URL"
                   />
@@ -642,9 +843,12 @@ export default function EditUserDialog({
               <div className="p-3 border rounded-lg">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium">Resend Invite Email</p>
+                    <p className="text-sm font-medium">
+                      Send Signup Confirmation Email
+                    </p>
                     <p className="text-xs text-muted-foreground">
-                      Send a new login link to {user.email}
+                      Send a confirmation email to {user.email} to set up their
+                      password
                     </p>
                   </div>
                   <Button
@@ -654,18 +858,34 @@ export default function EditUserDialog({
                     disabled={isSendingInvite}
                   >
                     <Send className="h-3.5 w-3.5 mr-1.5" />
-                    {isSendingInvite ? "Sending..." : "Send Invite"}
+                    {isSendingInvite ? "Sending..." : "Send Confirmation"}
                   </Button>
                 </div>
               </div>
 
               {/* User Info */}
               <div className="p-3 bg-muted/30 rounded-lg text-xs space-y-1">
-                <p><span className="text-muted-foreground">User ID:</span> {user.id}</p>
-                <p><span className="text-muted-foreground">Created:</span> {new Date(user.created_at || new Date().toISOString()).toLocaleString()}</p>
-                <p><span className="text-muted-foreground">Updated:</span> {new Date(user.updated_at || new Date().toISOString()).toLocaleString()}</p>
-                {(user as any).onboarding_status && (
-                  <p><span className="text-muted-foreground">Onboarding:</span> {(user as any).onboarding_status}</p>
+                <p>
+                  <span className="text-muted-foreground">User ID:</span>{" "}
+                  {user.id}
+                </p>
+                <p>
+                  <span className="text-muted-foreground">Created:</span>{" "}
+                  {user.created_at
+                    ? new Date(user.created_at).toLocaleString()
+                    : "Unknown"}
+                </p>
+                <p>
+                  <span className="text-muted-foreground">Updated:</span>{" "}
+                  {user.updated_at
+                    ? new Date(user.updated_at).toLocaleString()
+                    : "Unknown"}
+                </p>
+                {user.onboarding_status && (
+                  <p>
+                    <span className="text-muted-foreground">Onboarding:</span>{" "}
+                    {user.onboarding_status}
+                  </p>
                 )}
               </div>
 
@@ -679,7 +899,8 @@ export default function EditUserDialog({
                     <div>
                       <p className="font-medium">Permanently Delete User</p>
                       <p className="text-xs opacity-80">
-                        This will permanently delete the user and all their data. This cannot be undone.
+                        This will permanently delete the user and all their
+                        data. This cannot be undone.
                       </p>
                     </div>
                     <Button
@@ -754,13 +975,14 @@ export default function EditUserDialog({
                     <Users className="h-4 w-4" />
                     <AlertDescription>
                       <p className="font-medium mb-1">
-                        This user has {downlineCount} downline{downlineCount > 1 ? 's' : ''} that must be reassigned
+                        This user has {downlineCount} downline
+                        {downlineCount > 1 ? "s" : ""} that must be reassigned
                       </p>
                       {potentialUplines.length > 0 ? (
                         <div className="space-y-1">
                           <p className="text-xs">Select new upline:</p>
                           <Select
-                            value={reassignUplineId || ''}
+                            value={reassignUplineId || ""}
                             onValueChange={setReassignUplineId}
                           >
                             <SelectTrigger className="h-8 text-xs">
@@ -768,22 +990,30 @@ export default function EditUserDialog({
                             </SelectTrigger>
                             <SelectContent>
                               {potentialUplines.map((upline) => (
-                                <SelectItem key={upline.id} value={upline.id} className="text-xs">
-                                  {upline.first_name} {upline.last_name} ({upline.email})
+                                <SelectItem
+                                  key={upline.id}
+                                  value={upline.id}
+                                  className="text-xs"
+                                >
+                                  {upline.first_name} {upline.last_name} (
+                                  {upline.email})
                                 </SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
                         </div>
                       ) : (
-                        <p className="text-xs">No eligible uplines available.</p>
+                        <p className="text-xs">
+                          No eligible uplines available.
+                        </p>
                       )}
                     </AlertDescription>
                   </Alert>
                 )}
 
                 <p className="text-sm text-destructive font-medium">
-                  This will delete all associated data. This action cannot be undone.
+                  This will delete all associated data. This action cannot be
+                  undone.
                 </p>
               </div>
             </AlertDialogDescription>

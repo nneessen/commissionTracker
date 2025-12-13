@@ -2,11 +2,12 @@
 
 import React, { useState } from 'react';
 import {Button} from '@/components/ui/button';
-import {Card} from '@/components/ui/card';
-import {Plus, Settings2, ArrowLeft} from 'lucide-react';
+// import {Card} from '@/components/ui/card';
+import {Plus, Settings2} from 'lucide-react';
 import {useNavigate} from '@tanstack/react-router';
 import {PipelineTemplatesList} from './PipelineTemplatesList';
 import {PipelineTemplateEditor} from './PipelineTemplateEditor';
+import { ArrowLeft } from 'lucide-react';
 
 export function PipelineAdminPage() {
   const navigate = useNavigate();

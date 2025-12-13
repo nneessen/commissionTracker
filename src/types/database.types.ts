@@ -4813,6 +4813,17 @@ export type Database = {
         }[]
       }
       get_workflow_email_usage: { Args: { p_user_id: string }; Returns: Json }
+      getuser_commission_profile: {
+        Args: { p_lookback_months?: number; puser_id: string }
+        Returns: {
+          calculated_at: string
+          contract_level: number
+          data_quality: string
+          product_breakdown: Json
+          simple_avg_rate: number
+          weighted_avg_rate: number
+        }[]
+      }
       hard_delete_user: {
         Args: {
           p_confirm_text: string

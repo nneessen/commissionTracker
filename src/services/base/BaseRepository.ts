@@ -1,7 +1,7 @@
 // src/services/base/BaseRepository.ts
-import {supabase} from "./supabase";
-import {SupabaseClient, PostgrestError} from "@supabase/supabase-js";
-import {logger} from "./logger";
+import { supabase } from "./supabase";
+import { SupabaseClient, PostgrestError } from "@supabase/supabase-js";
+import { logger } from "./logger";
 
 export interface BaseEntity {
   id: string;
@@ -296,9 +296,9 @@ export abstract class BaseRepository<
    * Override in child classes for custom transformations
    */
   protected transformToDB(
-    data: CreateData | UpdateData, _isUpdate = false,
+    data: CreateData | UpdateData,
+    _isUpdate = false,
   ): Record<string, unknown> {
     return data as Record<string, unknown>;
   }
 }
-

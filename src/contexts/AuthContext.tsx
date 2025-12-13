@@ -347,9 +347,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setError(null);
       setLoading(true);
 
-      const updatedUser = await userService.updateUser(user.id, metadata);
-      if (updatedUser) {
-        setUser(updatedUser);
+      const result = await userService.updateUser(user.id, metadata);
+      if (result.success && result.data) {
+        setUser(result.data);
+      } else if (!result.success) {
+        throw new Error(result.error || "Failed to update user");
       }
 
       logger.auth("User metadata updated successfully");

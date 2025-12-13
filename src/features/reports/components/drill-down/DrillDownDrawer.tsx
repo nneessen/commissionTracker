@@ -5,8 +5,8 @@ import {Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFoo
 import {Button} from '@/components/ui/button';
 import {Skeleton} from '@/components/ui/skeleton';
 import {Badge} from '@/components/ui/badge';
-import {ExternalLink, ChevronUp, ChevronDown, Download} from 'lucide-react';
-import {DrillDownData, DrillDownRecord, DrillDownContext} from '@/types/reports.types';
+import {Download, ChevronUp, ChevronDown} from 'lucide-react';
+import {DrillDownRecord, DrillDownContext} from '@/types/reports.types';
 import {useDrillDown} from '@/hooks/reports/useDrillDown';
 import {cn} from '@/lib/utils';
 

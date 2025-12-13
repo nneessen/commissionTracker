@@ -1,7 +1,7 @@
 // src/features/recruiting/components/PhaseChecklist.tsx
 
 import React from 'react';
-import {RecruitChecklistProgress, PhaseChecklistItem, CHECKLIST_STATUS_COLORS} from '@/types/recruiting.types';
+import {RecruitChecklistProgress, PhaseChecklistItem, CHECKLIST_STATUS_COLORS} from '@/types/recruiting';
 import {Button} from '@/components/ui/button';
 import {Badge} from '@/components/ui/badge';
 import {Checkbox} from '@/components/ui/checkbox';
@@ -29,7 +29,7 @@ export function PhaseChecklist({
   currentUserId,
   currentPhaseId,
   viewedPhaseId,
-  isAdmin = false,
+  isAdmin = false, onPhaseComplete: _onPhaseComplete,
 }: PhaseChecklistProps) {
   const updateItemStatus = useUpdateChecklistItemStatus();
 
@@ -74,12 +74,12 @@ export function PhaseChecklist({
     }
 
     // Allow re-attempting rejected items regardless of order
-    if (itemStatus === 'rejected' || itemStatus === 'rejected') {
+    if (itemStatus === 'rejected' || itemStatus === 'needs_resubmission') {
       return { isEnabled: true };
     }
 
     // If already completed/approved, allow unchecking (toggle off)
-    if (itemStatus === 'completed' || itemStatus === 'verified') {
+    if (itemStatus === 'completed' || itemStatus === 'approved') {
       return { isEnabled: true };
     }
 
@@ -90,7 +90,7 @@ export function PhaseChecklist({
         if (!i.is_required) return false;
         const progress = progressMap.get(i.id);
         const status = progress?.status || 'not_started';
-        return status !== 'completed' && status !== 'verified';
+        return status !== 'completed' && status !== 'approved';
       })
       .map(i => i.item_order);
 
@@ -101,7 +101,7 @@ export function PhaseChecklist({
           .filter(i => {
             const progress = progressMap.get(i.id);
             const status = progress?.status || 'not_started';
-            return status !== 'completed' && status !== 'verified';
+            return status !== 'completed' && status !== 'approved';
           })
           .map(i => i.item_order)
           .concat([Infinity])); // Add Infinity as fallback
@@ -211,7 +211,7 @@ export function PhaseChecklist({
             </div>
           );
         }
-        if (status === 'verified') {
+        if (status === 'approved') {
           return (
             <Badge variant="outline" className="text-green-600 bg-green-50">
               <CheckCircle2 className="h-3 w-3 mr-1" />
@@ -221,7 +221,7 @@ export function PhaseChecklist({
         }
       } else {
         // Recruit can upload document
-        if (status === 'not_started' || status === 'rejected') {
+        if (status === 'not_started' || status === 'needs_resubmission') {
           return (
             <Button size="sm" variant="outline">
               <Upload className="h-4 w-4 mr-1" />
@@ -253,7 +253,7 @@ export function PhaseChecklist({
 
     // Training module type
     if (item.item_type === 'training_module') {
-      if (item.external_link && status !== 'completed' && status !== 'verified') {
+      if (item.external_link && status !== 'completed' && status !== 'approved') {
         return (
           <Button size="sm" variant="outline" asChild>
             <a href={item.external_link} target="_blank" rel="noopener noreferrer">
@@ -281,7 +281,7 @@ export function PhaseChecklist({
       {sortedItems.map((item) => {
         const progress = progressMap.get(item.id);
         const status = progress?.status || 'not_started';
-        const isCompleted = status === 'completed' || status === 'verified';
+        const isCompleted = status === 'completed' || status === 'approved';
         const isRejected = status === 'rejected';
 
         // Get checkbox state using the new comprehensive logic

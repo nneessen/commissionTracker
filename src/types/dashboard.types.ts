@@ -6,7 +6,8 @@
  * TypeScript interfaces and types for dashboard components and data.
  */
 
-import {TimePeriod} from '../utils/dateRange';
+import { TimePeriod } from "../utils/dateRange";
+import { METRIC_COLORS } from "../constants/dashboard";
 
 /**
  * Tooltip configuration for metric explanations
@@ -25,7 +26,7 @@ export interface MetricTooltipConfig {
 export interface StatItemConfig {
   label: string;
   value: string | number;
-  trend?: 'up' | 'down';
+  trend?: "up" | "down";
   color: string;
   tooltip?: MetricTooltipConfig;
 }
@@ -37,7 +38,7 @@ export interface PerformanceMetricRow {
   metric: string;
   current: number;
   target: number | null;
-  unit: '$' | '%' | '#';
+  unit: "$" | "%" | "#";
   showTarget: boolean;
 }
 
@@ -56,7 +57,7 @@ export interface KPISection {
  * Alert configuration for AlertsPanel
  */
 export interface AlertConfig {
-  type: 'info' | 'warning' | 'danger' | 'error';
+  type: "info" | "warning" | "danger" | "error";
   title: string;
   message: string;
   condition: boolean; // Whether to show this alert
@@ -203,17 +204,18 @@ export interface DetailedKPIGridProps {
 /**
  * Performance status type
  */
-export type PerformanceStatus = 'hit' | 'good' | 'fair' | 'poor' | 'neutral';
+export type PerformanceStatus = "hit" | "good" | "fair" | "poor" | "neutral";
 
 /**
  * Color scheme type for metrics
+ * Represents the actual Tailwind class names used for metric colors
  */
-export type MetricColor = keyof typeof import('../constants/dashboard').METRIC_COLORS;
+export type MetricColor = (typeof METRIC_COLORS)[keyof typeof METRIC_COLORS];
 
 /**
  * KPI layout variant type
  */
-export type KPILayout = 'heatmap' | 'narrative' | 'matrix';
+export type KPILayout = "heatmap" | "narrative" | "matrix";
 
 /**
  * KPI layout switcher props

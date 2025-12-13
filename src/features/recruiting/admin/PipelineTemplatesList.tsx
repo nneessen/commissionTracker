@@ -10,10 +10,11 @@ import {Input} from '@/components/ui/input';
 import {Label} from '@/components/ui/label';
 import {Textarea} from '@/components/ui/textarea';
 import {Checkbox} from '@/components/ui/checkbox';
-import {Copy, Loader2, Plus, Star, Edit2, Trash2} from 'lucide-react';
+import {Copy, Loader2} from 'lucide-react';
 import {showToast} from '@/utils/toast';
 import {useTemplates, useCreateTemplate, useDeleteTemplate, useSetDefaultTemplate} from '../hooks/usePipeline';
-import {PipelineTemplate} from '@/types/recruiting.types';
+import {PipelineTemplate} from '@/types/recruiting';
+import { Plus, Star, Edit2, Trash2 } from 'lucide-react';
 
 interface PipelineTemplatesListProps {
   onSelectTemplate: (id: string) => void;

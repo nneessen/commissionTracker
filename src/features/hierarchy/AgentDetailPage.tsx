@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import {useParams, useNavigate} from '@tanstack/react-router';
 import {useQuery} from '@tanstack/react-query';
-import {Shield, Target, AlertCircle, ArrowLeft, Mail, Phone, User, MapPin, FileCheck, DollarSign, TrendingUp, Users} from 'lucide-react';
+import {Target, AlertCircle, ArrowLeft, Mail, User, Phone, MapPin, FileCheck, DollarSign, TrendingUp, Users} from 'lucide-react';
 import {Card, CardContent, CardHeader, CardTitle} from '@/components/ui/card';
 import {Button} from '@/components/ui/button';
 import {Badge} from '@/components/ui/badge';
@@ -12,7 +12,7 @@ import {Progress} from '@/components/ui/progress';
 import {Separator} from '@/components/ui/separator';
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from '@/components/ui/table';
 import {hierarchyService} from '@/services/hierarchy/hierarchyService';
-import {formatCurrency, formatPercent, formatDate} from '@/lib/format';
+import {formatCurrency, formatDate} from '@/lib/format';
 import {cn} from '@/lib/utils';
 import showToast from '@/utils/toast';
 import {EditAgentModal} from './components/EditAgentModal';

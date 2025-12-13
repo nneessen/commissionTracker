@@ -16,9 +16,6 @@ import {
   ChevronLeft,
   X,
   Shield,
-  UserCog,
-  ScrollText,
-  Lock,
   ClipboardList,
   GraduationCap,
 } from "lucide-react";

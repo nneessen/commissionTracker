@@ -10,6 +10,7 @@ import {formatCurrency, formatDate} from '@/lib/format';
 import {cn} from '@/lib/utils';
 import {useMyOverrides, useMyOverrideSummary} from '@/hooks';
 import type {OverrideFilters} from '@/types/hierarchy.types';
+import { DollarSign, Clock, TrendingUp, CheckCircle } from 'lucide-react';
 
 interface OverrideDashboardProps {
   className?: string;

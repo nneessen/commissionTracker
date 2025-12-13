@@ -12,7 +12,7 @@ interface NotificationDropdownProps {
   isCollapsed?: boolean;
 }
 
-export function NotificationDropdown({ isCollapsed = false }: NotificationDropdownProps) {
+export function NotificationDropdown({ isCollapsed: _isCollapsed = false }: NotificationDropdownProps) {
   const navigate = useNavigate();
   const { data: notifications, isLoading } = useNotifications();
   const { data: unreadCount = 0 } = useUnreadCount();

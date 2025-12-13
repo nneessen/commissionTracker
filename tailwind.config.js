@@ -64,6 +64,12 @@ export default {
           DEFAULT: "var(--info)",
           foreground: "var(--info-foreground)",
         },
+        status: {
+          active: "var(--success)",
+          earned: "var(--info)",
+          pending: "var(--warning)",
+          lapsed: "var(--error)",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",

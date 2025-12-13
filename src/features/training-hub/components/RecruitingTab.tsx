@@ -28,7 +28,7 @@ export function RecruitingTab({ searchQuery }: RecruitingTabProps) {
   // Check if current user can graduate recruits (Admin, Trainer, or Contracting Manager)
   const currentUserProfile = allUsers?.find((u) => u.id === currentUser?.id);
   const canGraduateRecruits = currentUserProfile?.roles?.some((role) =>
-    ["admin", "trainer", "contracting_manager"].includes(role)
+    ["admin", "trainer", "contracting_manager"].includes(role as string)
   );
 
   // Recruits: users WITHOUT 'agent' role AND NOT admins

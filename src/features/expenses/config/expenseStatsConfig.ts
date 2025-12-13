@@ -69,7 +69,7 @@ export const generateExpenseStatsConfig = ({
   expenseCount,
   momGrowth,
   personalAmount,
-  businessAmount,
+  businessAmount, timePeriod: _timePeriod,
 }: GenerateExpenseStatsParams): ExpenseStatConfig[] => {
   // Calculate trend direction
   const getTrendDirection = (

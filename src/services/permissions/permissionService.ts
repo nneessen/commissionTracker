@@ -1,7 +1,7 @@
 // src/services/permissions/permissionService.ts
 
 import {supabase} from '@/services/base/supabase';
-import type {Role, Permission, RolePermission, UserPermissions, PermissionCode, RoleName, PermissionCheckResult, PermissionWithSource} from '@/types/permissions.types';
+import type {Role, Permission, UserPermissions, PermissionCode, RoleName, PermissionCheckResult, PermissionWithSource} from '@/types/permissions.types';
 
 /**
  * Permission Service
@@ -70,10 +70,10 @@ export async function hasRole(userId: string, roleName: RoleName): Promise<boole
 
 /**
  * Check if user is an admin
- * Uses database function: is_adminuser(user_id)
+ * Uses database function: is_admin_user(user_id)
  */
 export async function isAdminUser(userId?: string): Promise<boolean> {
-  const { data, error } = await supabase.rpc('is_adminuser', {
+  const { data, error } = await supabase.rpc('is_admin_user', {
     target_user_id: userId || null,
   });
 

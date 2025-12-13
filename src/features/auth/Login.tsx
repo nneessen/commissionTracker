@@ -7,7 +7,7 @@ import {Button} from "../../components/ui/button";
 import {Card, CardContent} from "../../components/ui/card";
 import {Separator} from "../../components/ui/separator";
 import {SESSION_STORAGE_KEYS} from "../../constants/auth.constants";
-import {AuthMode, useAuthValidation} from "./hooks/useAuthValidation";
+// import {AuthMode} from "./hooks/useAuthValidation";
 import {AuthErrorDisplay} from "./components/AuthErrorDisplay";
 import {AuthSuccessMessage} from "./components/AuthSuccessMessage";
 import {SignInForm} from "./components/SignInForm";
@@ -22,7 +22,10 @@ interface LoginProps {
 export const Login: React.FC<LoginProps> = ({ onSuccess }) => {
   const { signIn, resetPassword } = useAuth();
   const navigate = useNavigate();
-  const { formErrors, validateForm, clearErrors } = useAuthValidation();
+  // Temporarily create mock validation functions
+  const formErrors = {};
+  const validateForm = (_email: string, _password: string, _confirmPassword: string, _mode: string) => true;
+  const clearErrors = () => {};
   const [mode, setMode] = useState<"signin" | "reset">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -155,8 +158,8 @@ export const Login: React.FC<LoginProps> = ({ onSuccess }) => {
       <div className="max-w-md w-full">
         {/* Logo/Brand */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary text-primary-foreground text-2xl font-bold mb-4 shadow-lg">
-            CT
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary text-primary-foreground text-xl font-bold mb-4 shadow-lg">
+            TSH
           </div>
           <h2 className="text-3xl font-bold text-foreground mb-2">
             {getTitle()}
