@@ -1,18 +1,14 @@
 // src/features/hierarchy/HierarchyDashboardCompact.tsx
 
 import {useState, useEffect, useMemo} from 'react';
-import {Users, DollarSign, AlertCircle, CheckCircle2, XCircle} from 'lucide-react';
-import {cn} from '@/lib/utils';
+import {AlertCircle, Download, UserPlus, Search, Filter} from 'lucide-react';
 import {Button} from '@/components/ui/button';
 import {Input} from '@/components/ui/input';
-import {CardContent} from '@/components/ui/card';
 import {Alert, AlertDescription} from '@/components/ui/alert';
-import {Badge} from '@/components/ui/badge';
-import {DropdownMenuTrigger} from '@/components/ui/dropdown-menu';
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '@/components/ui/select';
 import {useAuth} from '@/contexts/AuthContext';
 import {useMyDownlines, useMyHierarchyStats, useHierarchyTree} from '@/hooks';
-import {formatCurrency, _formatPercent, formatDate} from '@/lib/format';
+import {formatCurrency, formatDate} from '@/lib/format';
 import {SendInvitationModal} from './components/SendInvitationModal';
 import {TeamMetricsCard} from './components/TeamMetricsCard';
 import {AgentTable} from './components/AgentTable';
