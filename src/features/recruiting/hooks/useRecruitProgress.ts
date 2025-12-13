@@ -2,7 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { checklistService } from "@/services/recruiting/checklistService";
-import type { UpdateChecklistItemStatusInput } from "@/types/recruiting";
+import type { UpdateChecklistItemStatusInput } from "@/types/recruiting.types";
 
 // ========================================
 // RECRUIT PHASE PROGRESS

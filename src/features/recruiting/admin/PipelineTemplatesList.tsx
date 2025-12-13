@@ -13,7 +13,7 @@ import {Checkbox} from '@/components/ui/checkbox';
 import {Copy, Loader2} from 'lucide-react';
 import {showToast} from '@/utils/toast';
 import {useTemplates, useCreateTemplate, useDeleteTemplate, useSetDefaultTemplate} from '../hooks/usePipeline';
-import {PipelineTemplate} from '@/types/recruiting';
+import {PipelineTemplate} from '@/types/recruiting.types';
 
 interface PipelineTemplatesListProps {
   onSelectTemplate: (id: string) => void;

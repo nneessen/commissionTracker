@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import {Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle} from '@/components/ui/dialog';
 import {Button} from '@/components/ui/button';
 import {Download, Loader2, FileText} from 'lucide-react';
-import {UserDocument} from '@/types/recruiting';
+import {UserDocument} from '@/types/recruiting.types';
 import {recruitingService} from '@/services/recruiting';
 
 interface DocumentViewerDialogProps {

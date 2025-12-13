@@ -1,7 +1,7 @@
 // src/features/recruiting/components/EmailManager.tsx
 
 import React, { useState } from 'react';
-import {UserEmail} from '@/types/recruiting';
+import {UserEmail} from '@/types/recruiting.types';
 import {Button} from '@/components/ui/button';
 import {Badge} from '@/components/ui/badge';
 import {Card} from '@/components/ui/card';

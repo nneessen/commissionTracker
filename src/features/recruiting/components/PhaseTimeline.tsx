@@ -1,7 +1,7 @@
 // src/features/recruiting/components/PhaseTimeline.tsx
 
 import React from 'react';
-import {PHASE_PROGRESS_ICONS} from '@/types/recruiting';
+import {PHASE_PROGRESS_ICONS} from '@/types/recruiting.types';
 import {Progress} from '@/components/ui/progress';
 import {Badge} from '@/components/ui/badge';
 import {Card} from '@/components/ui/card';

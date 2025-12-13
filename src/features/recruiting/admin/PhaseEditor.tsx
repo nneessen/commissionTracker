@@ -13,7 +13,7 @@ import {Plus, Edit2, Trash2, ChevronDown, ChevronRight, GripVertical, Loader2} f
 import {showToast} from '@/utils/toast';
 import {usePhases, useCreatePhase, useUpdatePipelinePhase, useDeletePhase} from '../hooks/usePipeline';
 import {ChecklistItemEditor} from './ChecklistItemEditor';
-import type {PipelinePhase, CreatePhaseInput} from '@/types/recruiting';
+import type {PipelinePhase, CreatePhaseInput} from '@/types/recruiting.types';
 
 interface PhaseEditorProps {
   templateId: string;

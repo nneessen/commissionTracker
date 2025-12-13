@@ -12,7 +12,7 @@ import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '@/c
 import {Plus, Edit2, Trash2, GripVertical, Loader2, FileText, CheckSquare, BookOpen, UserCheck, Zap, PenTool} from 'lucide-react';
 import {showToast} from '@/utils/toast';
 import {useChecklistItems, useCreateChecklistItem, useUpdateChecklistItem, useDeleteChecklistItem} from '../hooks/usePipeline';
-import type {PhaseChecklistItem, CreateChecklistItemInput, ChecklistItemType, CompletedBy} from '@/types/recruiting';
+import type {PhaseChecklistItem, CreateChecklistItemInput, ChecklistItemType, CompletedBy} from '@/types/recruiting.types';
 
 interface ChecklistItemEditorProps {
   phaseId: string;

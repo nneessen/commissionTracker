@@ -194,11 +194,17 @@ export interface CreatePolicyData extends Omit<PolicyInsert, 'id' | 'created_at'
 - Tests verify: UserProfile, Carrier, PolicyRow, Comp extend DB rows
 - Tests verify: Enum types and Insert/Update types accessible
 
-### Phase 7: Update All Imports
-- [ ] Global find/replace: `from '@/types/hierarchy.types'` → `from '@/types/user.types'` (for UserProfile)
-- [ ] Fix all broken imports
-- [ ] Run type check: `npm run type-check`
-- [ ] Fix any new errors
+### Phase 7: Update All Imports ✅ COMPLETE (2024-12-13)
+- [x] Add missing types to recruiting.types.ts (migrated from deleted recruiting.ts)
+- [x] Update 16 files from `@/types/recruiting` → `@/types/recruiting.types`
+- [x] Run type check: 187 → 179 errors (8 fewer pre-existing errors)
+- [x] Verify dev server starts without errors
+- [x] Database alignment tests pass (15/15)
+
+**Phase 7 Results**:
+- Added ~40 missing types/interfaces to recruiting.types.ts
+- Fixed all recruiting module imports
+- hierarchy.types.ts already re-exports UserProfile (no changes needed)
 
 ### Phase 8: Verify & Deploy
 - [ ] Run full test suite: `npm run test:run`

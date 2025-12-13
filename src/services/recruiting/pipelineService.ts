@@ -1,7 +1,7 @@
 // src/services/recruiting/pipelineService.ts
 
 import {supabase} from '@/services/base/supabase';
-import type {PipelineTemplate, PipelinePhase, PhaseChecklistItem, CreateTemplateInput, UpdateTemplateInput, CreatePhaseInput, UpdatePhaseInput, CreateChecklistItemInput, UpdateChecklistItemInput} from '@/types/recruiting';
+import type {PipelineTemplate, PipelinePhase, PhaseChecklistItem, CreateTemplateInput, UpdateTemplateInput, CreatePhaseInput, UpdatePhaseInput, CreateChecklistItemInput, UpdateChecklistItemInput} from '@/types/recruiting.types';
 
 export const pipelineService = {
   // ========================================

@@ -1,7 +1,7 @@
 // src/features/recruiting/hooks/useRecruitPhases.ts
 import {useQuery, useMutation, useQueryClient} from '@tanstack/react-query';
 import {recruitingService} from '@/services/recruiting';
-import type {UpdatePhaseInput} from '@/types/recruiting';
+import type {UpdatePhaseInput} from '@/types/recruiting.types';
 
 export function useRecruitPhases(recruitId: string) {
   return useQuery({

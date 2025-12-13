@@ -2,7 +2,7 @@
 
 import {useQuery, useMutation, useQueryClient} from '@tanstack/react-query';
 import {pipelineService} from '@/services/recruiting/pipelineService';
-import type {CreateTemplateInput, UpdateTemplateInput, CreatePhaseInput, UpdatePhaseInput, CreateChecklistItemInput, UpdateChecklistItemInput} from '@/types/recruiting';
+import type {CreateTemplateInput, UpdateTemplateInput, CreatePhaseInput, UpdatePhaseInput, CreateChecklistItemInput, UpdateChecklistItemInput} from '@/types/recruiting.types';
 
 // ========================================
 // TEMPLATES

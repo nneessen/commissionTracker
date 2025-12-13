@@ -1,7 +1,7 @@
 // src/services/recruiting/checklistService.ts
 
 import {supabase} from '@/services/base/supabase';
-import type {RecruitPhaseProgress, RecruitChecklistProgress, UpdateChecklistItemStatusInput, OnboardingStatus} from '@/types/recruiting';
+import type {RecruitPhaseProgress, RecruitChecklistProgress, UpdateChecklistItemStatusInput, OnboardingStatus} from '@/types/recruiting.types';
 
 // Convert phase name to onboarding status key
 const phaseNameToStatus = (phaseName: string): OnboardingStatus => {

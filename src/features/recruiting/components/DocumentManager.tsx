@@ -1,7 +1,7 @@
 // src/features/recruiting/components/DocumentManager.tsx
 
 import React, { useState } from 'react';
-import {UserDocument} from '@/types/recruiting';
+import {UserDocument} from '@/types/recruiting.types';
 import {Button} from '@/components/ui/button';
 import {Badge} from '@/components/ui/badge';
 import {Card} from '@/components/ui/card';
