@@ -119,23 +119,34 @@ export interface CreatePolicyData extends Omit<PolicyInsert, 'id' | 'created_at'
 - Critical duplicates: UserProfile (3x), Carrier (3x), Client (2x)
 - See `docs/type-audit-findings.md` for detailed field comparisons
 
-### Phase 2: Database-First Migration
-- [ ] Apply database-first pattern to ALL domain types:
-  - [ ] `user.types.ts`: `Database['public']['Tables']['user_profiles']['Row']`
-  - [ ] `policy.types.ts`: Extend from database.types
-  - [ ] `commission.types.ts`: Extend from database.types
-  - [ ] `carrier.types.ts`: Extend from database.types
-  - [ ] `client.types.ts`: Extend from database.types
+### Phase 2: Database-First Migration ✅ COMPLETE (2024-12-12)
+- [x] Apply database-first pattern to ALL domain types:
+  - [x] `user.types.ts`: `Database['public']['Tables']['user_profiles']['Row']`
+  - [ ] `policy.types.ts`: Extend from database.types (deferred - requires more testing)
+  - [ ] `commission.types.ts`: Extend from database.types (deferred)
+  - [x] `carrier.types.ts`: Extend from database.types
+  - [ ] `client.types.ts`: Already uses DB types correctly
 
-### Phase 3: Remove Duplicates
-- [ ] Delete `UserProfile` from `hierarchy.types.ts` (import from user.types)
-- [ ] Delete `UserProfile` from `messaging.types.ts` (import from user.types)
-- [ ] Delete `UserProfile` from `userService.ts` (import from user.types)
-- [ ] Move `ApprovalStats` from userService.ts to user.types.ts
-- [ ] Delete `recruiting.ts` (merge into recruiting.types.ts)
-- [ ] Delete `agent.types.ts` (merge into user.types.ts)
-- [ ] Delete `agent-detail.types.ts` (merge into user.types.ts)
-- [ ] Delete `database.ts` (ensure only database.types.ts exists)
+**Phase 2 Results**:
+- UserProfile now extends UserProfileRow from database.types.ts
+- Carrier now extends CarrierRow from database.types.ts
+- Added UserProfileMinimal, ApprovalStats, helper functions
+- CommissionClientInfo renamed to avoid conflict with Client entity
+
+### Phase 3: Remove Duplicates ✅ PARTIALLY COMPLETE (2024-12-12)
+- [x] Delete `UserProfile` from `hierarchy.types.ts` (now imports from user.types)
+- [x] Delete `UserProfile` from `messaging.types.ts` (now uses UserProfileMinimal)
+- [x] Delete `UserProfile` from `userService.ts` (now imports from user.types)
+- [x] Move `ApprovalStats` from userService.ts to user.types.ts
+- [ ] Delete `recruiting.ts` (merge into recruiting.types.ts) - deferred
+- [ ] Delete `agent.types.ts` (merge into user.types.ts) - deferred
+- [ ] Delete `agent-detail.types.ts` (merge into user.types.ts) - deferred
+- [ ] Delete `database.ts` (ensure only database.types.ts exists) - deferred
+
+**Phase 3 Results**:
+- UserProfile now defined ONCE in user.types.ts
+- All 3 duplicate definitions replaced with imports
+- Re-exports added for backward compatibility
 
 ### Phase 4: Consolidate Files
 - [ ] Merge `comp.types.ts` into `commission.types.ts`
