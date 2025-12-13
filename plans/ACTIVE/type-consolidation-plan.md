@@ -148,11 +148,18 @@ export interface CreatePolicyData extends Omit<PolicyInsert, 'id' | 'created_at'
 - All 3 duplicate definitions replaced with imports
 - Re-exports added for backward compatibility
 
-### Phase 4: Consolidate Files
-- [ ] Merge `comp.types.ts` into `commission.types.ts`
-- [ ] Ensure all files use `.types.ts` suffix
-- [ ] Create single `index.ts` barrel export
-- [ ] Target: Reduce from 30 files to ~15-18 files
+### Phase 4: Consolidate Files ✅ PARTIALLY COMPLETE (2024-12-12)
+- [ ] Merge `comp.types.ts` into `commission.types.ts` - deferred
+- [x] Ensure all files use `.types.ts` suffix - database.ts renamed to db-helpers.types.ts
+- [x] Create single `index.ts` barrel export - updated with clear imports
+- [x] Delete unused files: recruiting.ts (duplicate), TODO.md
+- [ ] Target: Reduce from 30 files to ~15-18 files - NOW: 28 files (deleted 2)
+
+**Phase 4 Additional Progress**:
+- policy.types.ts: Added PolicyRow, PolicyInsert, PolicyUpdate, helper functions
+- recruiting.ts: DELETED (was unused, duplicate of recruiting.types.ts)
+- database.ts → db-helpers.types.ts: Renamed for clarity
+- TODO.md: DELETED from types directory
 
 ### Phase 5: Remove Deprecated Cruft
 - [ ] Create `legacy/` directory
