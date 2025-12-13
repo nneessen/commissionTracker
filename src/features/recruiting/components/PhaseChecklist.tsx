@@ -29,7 +29,7 @@ export function PhaseChecklist({
   currentUserId,
   currentPhaseId,
   viewedPhaseId,
-  isAdmin = false, _onPhaseComplete,
+  isAdmin = false, onPhaseComplete: _onPhaseComplete,
 }: PhaseChecklistProps) {
   const updateItemStatus = useUpdateChecklistItemStatus();
 
