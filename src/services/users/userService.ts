@@ -4,70 +4,31 @@ import { supabase } from "../base/supabase";
 import { logger } from "../base/logger";
 import { User, CreateUserData, UpdateUserData } from "../../types/user.types";
 import type { RoleName } from "../../types/permissions.types";
+import type { Database } from "../../types/database.types";
 
 export type { CreateUserData, UpdateUserData };
 
-export interface UserProfile {
-  id: string;
-  user_id?: string | null;
-  email: string;
-  full_name?: string | null;
-  first_name?: string;
-  last_name?: string;
-  roles?: RoleName[];
-  agent_status?: "licensed" | "unlicensed" | "not_applicable";
-  approval_status: "pending" | "approved" | "denied";
-  is_admin: boolean;
-  is_super_admin?: boolean;
-  approved_by?: string;
-  approved_at?: string;
-  denied_at?: string;
-  denial_reason?: string;
-  created_at: string;
-  updated_at: string;
-  contract_level?: number;
-  upline_id?: string;
-  hierarchy_path?: string;
-  hierarchy_depth?: number;
-  onboarding_status?:
-    | "lead"
-    | "active"
-    | "interview_1"
-    | "zoom_interview"
-    | "pre_licensing"
-    | "exam"
-    | "npn_received"
-    | "contracting"
-    | "bootcamp"
-    | "completed"
-    | "dropped"
-    | null;
-  current_onboarding_phase?: string;
-  onboarding_completed_at?: string;
-  phone?: string;
-  profile_photo_url?: string;
-  instagram_url?: string;
-  instagramusername?: string;
-  linkedin_url?: string;
-  linkedinusername?: string;
-  agent_code?: string;
-  license_number?: string;
-  license_state?: string;
-  license_states?: string[];
-  notes?: string;
-  hire_date?: string;
-  ytd_commission?: number;
-  ytd_premium?: number;
-  is_deleted?: boolean;
-  resident_state?: string;
-  // Optional nested upline data when joined
-  upline?: {
-    id: string;
-    email: string;
-    first_name?: string;
-    last_name?: string;
-  } | null;
-}
+// Use the generated type from database.types.ts
+export type UserProfile =
+  Database["public"]["Tables"]["user_profiles"]["Row"] & {
+    // Add the optional joined upline data that's not in the base table
+    upline?: {
+      id: string;
+      email: string;
+      first_name?: string | null;
+      last_name?: string | null;
+    } | null;
+    // Add missing fields that might not be in database yet but are needed
+    full_name?: string | null;
+    hire_date?: string | null;
+    agent_code?: string | null;
+    license_state?: string | null;
+    license_states?: string[] | null;
+    notes?: string | null;
+    ytd_commission?: number | null;
+    ytd_premium?: number | null;
+    zip?: string | null;
+  };
 
 export interface ApprovalStats {
   total: number;
@@ -476,7 +437,7 @@ class UserService {
         roles: assignedRoles,
         agent_status: agentStatus,
         approval_status: approvalStatus,
-        onboarding_status: (userData.onboarding_status as any) || null,
+        onboarding_status: userData.onboarding_status || null,
         user_id: null, // Will be set when user clicks magic link
         contract_level: userData.contractCompLevel,
         license_number: userData.licenseNumber,
@@ -508,28 +469,50 @@ class UserService {
         return { success: false, error: error.message };
       }
 
-      // Send magic link email if requested
+      // Send confirmation signup email if requested (NOT magic link!)
       let inviteSent = false;
       if (userData.sendInvite !== false) {
-        const { error: otpError } = await supabase.auth.signInWithOtp({
-          email: email,
-          options: {
-            shouldCreateUser: true,
-            emailRedirectTo: `${window.location.origin}/`,
-          },
-        });
+        // Use admin.inviteUserByEmail to send proper signup confirmation email
+        const { data: inviteData, error: inviteError } =
+          await supabase.auth.admin.inviteUserByEmail(email, {
+            redirectTo: `${window.location.origin}/`,
+            data: {
+              email: email,
+              first_name: userData.name ? userData.name.split(" ")[0] : "",
+              last_name: userData.name
+                ? userData.name.split(" ").slice(1).join(" ")
+                : "",
+              roles: assignedRoles,
+              agent_status: agentStatus,
+              approval_status: approvalStatus,
+              profile_id: data?.id,
+            },
+          });
 
-        if (otpError) {
-          logger.error("Failed to send invite email", otpError, "UserService");
+        if (inviteError) {
+          logger.error(
+            "Failed to send confirmation signup email",
+            inviteError,
+            "UserService",
+          );
           // Profile was created but invite failed - still return success
           return {
             success: true,
             userId: data?.id,
             user: this.transformProfileToUser(data as UserProfile),
             inviteSent: false,
-            error: `Profile created but invite email failed: ${otpError.message}`,
+            error: `Profile created but confirmation email failed: ${inviteError.message}`,
           };
         }
+
+        // Link the auth user to the profile
+        if (inviteData?.user) {
+          await supabase
+            .from("user_profiles")
+            .update({ user_id: inviteData.user.id })
+            .eq("id", data?.id);
+        }
+
         inviteSent = true;
       }
 
@@ -561,7 +544,7 @@ class UserService {
     // Handle direct contract_level separately from transformUpdatesToDB
     const { contract_level, ...otherUpdates } = updates;
     const dbData = this.transformUpdatesToDB(otherUpdates);
-    
+
     // Add contract_level directly if provided
     if (contract_level !== undefined) {
       dbData.contract_level = contract_level;
@@ -606,12 +589,12 @@ class UserService {
           .eq("id", id)
           .select()
           .maybeSingle();
-          
+
         if (!retryError && retryData) {
           return this.transformProfileToUser(retryData as UserProfile);
         }
       }
-      
+
       // Try to fetch the user to verify update worked
       const { data: fetchedData, error: fetchError } = await supabase
         .from("user_profiles")
@@ -622,7 +605,7 @@ class UserService {
       if (!fetchError && fetchedData) {
         return this.transformProfileToUser(fetchedData as UserProfile);
       }
-      
+
       throw new Error(`Failed to update user: ${error.message}`);
     }
 
@@ -661,7 +644,7 @@ class UserService {
     }
 
     // Cast roles to RoleName[] if present
-    const updateData: any = { ...updates };
+    const updateData: Record<string, unknown> = { ...updates };
     if (updateData.roles) {
       updateData.roles = updateData.roles as RoleName[];
     }
@@ -742,9 +725,12 @@ class UserService {
     userId: string,
   ): Promise<{ success: boolean; error?: string }> {
     try {
-      const { data: _data, error } = await supabase.rpc("admin_set_pendinguser", {
-        target_user_id: userId,
-      });
+      const { data: _data, error } = await supabase.rpc(
+        "admin_set_pendinguser",
+        {
+          target_user_id: userId,
+        },
+      );
 
       if (error) {
         logger.error(
@@ -767,10 +753,13 @@ class UserService {
     isAdmin: boolean,
   ): Promise<{ success: boolean; error?: string }> {
     try {
-      const { data: _data, error } = await supabase.rpc("admin_set_admin_role", {
-        target_user_id: userId,
-        new_is_admin: isAdmin,
-      });
+      const { data: _data, error } = await supabase.rpc(
+        "admin_set_admin_role",
+        {
+          target_user_id: userId,
+          new_is_admin: isAdmin,
+        },
+      );
 
       if (error) {
         logger.error("Failed to set admin role", error as Error, "UserService");
@@ -969,24 +958,35 @@ class UserService {
     }
   }
 
-  public mapAuthUserToUser(supabaseUser: any): User {
+  public mapAuthUserToUser(supabaseUser: {
+    id: string;
+    email?: string;
+    created_at: string;
+    updated_at?: string;
+    user_metadata?: Record<string, unknown>;
+  }): User {
     const metadata = supabaseUser.user_metadata || {};
 
     return {
       id: supabaseUser.id,
       email: supabaseUser.email || "",
-      name: metadata.full_name || supabaseUser.email?.split("@")[0] || "User",
-      phone: metadata.phone,
-      contractCompLevel: metadata.contract_comp_level || 100,
+      name:
+        (metadata.full_name as string) ||
+        supabaseUser.email?.split("@")[0] ||
+        "User",
+      phone: metadata.phone as string | undefined,
+      contractCompLevel: (metadata.contract_comp_level as number) || 100,
       isActive: metadata.is_active !== false,
-      agentCode: metadata.agent_code,
-      licenseNumber: metadata.license_number,
-      licenseState: metadata.license_state,
-      licenseStates: metadata.license_states,
-      notes: metadata.notes,
-      hireDate: metadata.hire_date ? new Date(metadata.hire_date) : undefined,
-      ytdCommission: metadata.ytd_commission,
-      ytdPremium: metadata.ytd_premium,
+      agentCode: metadata.agent_code as string | undefined,
+      licenseNumber: metadata.license_number as string | undefined,
+      licenseState: metadata.license_state as string | undefined,
+      licenseStates: metadata.license_states as string[] | undefined,
+      notes: metadata.notes as string | undefined,
+      hireDate: metadata.hire_date
+        ? new Date(metadata.hire_date as string)
+        : undefined,
+      ytdCommission: metadata.ytd_commission as number | undefined,
+      ytdPremium: metadata.ytd_premium as number | undefined,
       createdAt: new Date(supabaseUser.created_at),
       updatedAt: supabaseUser.updated_at
         ? new Date(supabaseUser.updated_at)
@@ -1043,8 +1043,10 @@ class UserService {
     };
   }
 
-  private transformUpdatesToDB(data: Partial<CreateUserData>): any {
-    const dbData: any = {};
+  private transformUpdatesToDB(
+    data: Partial<CreateUserData>,
+  ): Record<string, unknown> {
+    const dbData: Record<string, unknown> = {};
 
     if (data.name !== undefined) {
       const parts = data.name.split(" ");
@@ -1104,11 +1106,35 @@ class UserService {
     return (data as UserProfile[]) || [];
   }
 
-  async createUser(userData: any): Promise<any> {
+  async createUser(
+    userData: CreateUserData & {
+      roles?: RoleName[];
+      approval_status?: "pending" | "approved";
+      onboarding_status?: string | null;
+      sendInvite?: boolean;
+      upline_id?: string | null;
+      agent_status?: "licensed" | "unlicensed" | "not_applicable";
+    },
+  ): Promise<{
+    success: boolean;
+    user?: User;
+    userId?: string;
+    error?: string;
+    inviteSent?: boolean;
+  }> {
     return this.create(userData);
   }
 
-  async updateUser(userId: string, updates: any): Promise<any> {
+  async updateUser(
+    userId: string,
+    updates: Partial<UpdateUserData> & {
+      roles?: RoleName[];
+      approval_status?: "pending" | "approved" | "denied";
+      agent_status?: "licensed" | "unlicensed" | "not_applicable";
+      contract_level?: number;
+      [key: string]: unknown;
+    },
+  ): Promise<{ success: boolean; data?: User; error?: string }> {
     try {
       const user = await this.update(userId, updates);
       return { success: true, data: user };
@@ -1120,19 +1146,28 @@ class UserService {
     }
   }
 
-  async deleteUser(userId: string): Promise<any> {
+  async deleteUser(
+    userId: string,
+  ): Promise<{ success: boolean; error?: string }> {
     return this.delete(userId);
   }
 
-  async approveUser(userId: string): Promise<any> {
+  async approveUser(
+    userId: string,
+  ): Promise<{ success: boolean; error?: string }> {
     return this.approve(userId);
   }
 
-  async denyUser(userId: string, reason?: string): Promise<any> {
+  async denyUser(
+    userId: string,
+    reason?: string,
+  ): Promise<{ success: boolean; error?: string }> {
     return this.deny(userId, reason);
   }
 
-  async setPendingUser(userId: string): Promise<any> {
+  async setPendingUser(
+    userId: string,
+  ): Promise<{ success: boolean; error?: string }> {
     return this.setPending(userId);
   }
 }
@@ -1140,4 +1175,3 @@ class UserService {
 export const userService = new UserService();
 export const agentService = userService;
 export const userApprovalService = userService;
-

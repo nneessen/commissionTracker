@@ -6,6 +6,36 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-12-13 15:28:43
+
+### Changed Files
+- `ACTIVE_SESSION_CONTINUATION.md`
+- `CHANGELOG.md`
+- `PROJECT_STATS.md`
+- `docs/email-templates/magic-link.html`
+- `src/features/admin/components/AdminControlCenter.tsx`
+- `src/features/admin/components/EditUserDialog.tsx`
+- `src/services/users/userService.ts`
+
+### Statistics
+```
+ 7 files changed, 413 insertions(+), 83 deletions(-)
+```
+
+## [Checkpoint] - 2025-12-13 15:28:27
+
+### Changed Files
+- `ACTIVE_SESSION_CONTINUATION.md`
+- `docs/email-templates/magic-link.html`
+- `src/features/admin/components/AdminControlCenter.tsx`
+- `src/features/admin/components/EditUserDialog.tsx`
+- `src/services/users/userService.ts`
+
+### Statistics
+```
+ 5 files changed, 395 insertions(+), 78 deletions(-)
+```
+
 ## [Checkpoint] - 2025-12-13 15:11:28
 
 ### Changed Files
