@@ -1,4 +1,4 @@
-# Type Consolidation Continuation Prompt - Phase 4+
+# Type Consolidation Continuation Prompt - Phase 5+
 
 ## Context
 
@@ -7,7 +7,7 @@ You are continuing the Type Architecture Consolidation project for the Commissio
 **Branch**: `type-consolidation-phase1`
 **Plan**: `plans/ACTIVE/type-consolidation-plan.md`
 
-## Completed Work (Phases 1-3)
+## Completed Work (Phases 1-4)
 
 ### Phase 1: Audit ✅
 - Created `docs/type-audit.md` - Complete inventory of 31 type files
@@ -27,6 +27,15 @@ You are continuing the Type Architecture Consolidation project for the Commissio
 - Deleted `TODO.md` from types directory
 - **Type file count: 31 → 27 (-4 files)**
 
+### Phase 4: Consolidate Files ✅
+- Merged `comp.types.ts` into `commission.types.ts`
+- Added DB-first types: CompGuideRow, CompGuideInsert, CompGuideUpdate
+- Comp interface now extends CompGuideRow
+- Updated 8 files to import from commission.types.ts
+- Fixed null handling in CompTable sorting
+- Deleted `comp.types.ts`
+- **Type file count: 27 (comp.types.ts merged, not separately counted)**
+
 ## Current State
 
 ```
@@ -37,11 +46,10 @@ src/types/ (27 files)
 ├── messaging.types.ts     # Uses UserProfileMinimal from user.types
 ├── policy.types.ts        # PolicyRow + Policy + helpers
 ├── carrier.types.ts       # CarrierRow + Carrier
-├── commission.types.ts    # CommissionClientInfo (renamed from Client)
+├── commission.types.ts    # CommissionClientInfo + Comp types (merged from comp.types.ts)
 ├── client.types.ts        # Canonical Client entity
 ├── product.types.ts       # Uses DB enums
 ├── recruiting.types.ts    # Uses DB enums (AgentStatus)
-├── comp.types.ts          # Compensation guide types (TO MERGE)
 ├── agent-detail.types.ts  # UI view models for AgentDetailModal
 ├── db-helpers.types.ts    # Generic DB transformation helpers
 ├── ... (remaining files)
@@ -49,21 +57,17 @@ src/types/ (27 files)
 
 ## Remaining Work
 
-### Phase 4: Consolidate Files (Continue)
-1. **Merge `comp.types.ts` into `commission.types.ts`**
-   - Check imports: `grep -r "from.*comp\.types" src/`
-   - Move types to commission.types.ts
-   - Update imports
-   - Delete comp.types.ts
-
-2. **Apply DB-first to `commission.types.ts`**
-   - Add CommissionRow, CommissionInsert, CommissionUpdate
-   - Check database schema: `grep "commissions:" src/types/database.types.ts -A 50`
-
 ### Phase 5: Remove Deprecated Cruft
-- Create `src/types/legacy/` directory
-- Move deprecated types with @deprecated JSDoc comments
-- Add migration helpers if needed
+1. **Create legacy directory**
+   - `mkdir src/types/legacy`
+   - Move deprecated fields from Commission interface
+   - Add @deprecated JSDoc comments
+   - Create migration helpers if needed
+
+2. **Deprecated fields in Commission**:
+   - `advanceAmount` → use `amount`
+   - `paidDate` → use `paymentDate`
+   - `created_at`/`updated_at` → use `createdAt`/`updatedAt`
 
 ### Phase 6: Add Validation Tests
 - Create `src/types/__tests__/database-alignment.test.ts`
@@ -99,19 +103,18 @@ git branch --show-current
 # Check status
 git status
 
-# Continue with Phase 4
-# 1. Check comp.types.ts imports
-grep -r "from.*comp\.types" src/
+# Continue with Phase 5
+# 1. Create legacy directory
+mkdir -p src/types/legacy
 
-# 2. Read comp.types.ts
-cat src/types/comp.types.ts
+# 2. Check deprecated fields in commission.types.ts
+grep -n "@deprecated" src/types/commission.types.ts
 ```
 
 ## Success Criteria
 
-- [ ] comp.types.ts merged into commission.types.ts
-- [ ] commission.types.ts uses DB-first pattern
-- [ ] Type file count reduced to ~25
-- [ ] All imports updated
-- [ ] `npx tsc --noEmit` shows no NEW errors
+- [ ] Legacy directory created with deprecated types
+- [ ] Database alignment tests added
+- [ ] All imports updated to canonical sources
+- [ ] `npx tsc --noEmit` shows no NEW errors (187 pre-existing)
 - [ ] Build passes: `npm run build`

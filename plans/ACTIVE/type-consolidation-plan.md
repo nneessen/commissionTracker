@@ -149,18 +149,24 @@ export interface CreatePolicyData extends Omit<PolicyInsert, 'id' | 'created_at'
 - All duplicate definitions removed
 - Type file count: 31 → 27 (-4 files)
 
-### Phase 4: Consolidate Files ✅ PARTIALLY COMPLETE (2024-12-12)
-- [ ] Merge `comp.types.ts` into `commission.types.ts` - deferred
+### Phase 4: Consolidate Files ✅ COMPLETE (2024-12-13)
+- [x] Merge `comp.types.ts` into `commission.types.ts` - DONE
 - [x] Ensure all files use `.types.ts` suffix - database.ts renamed to db-helpers.types.ts
 - [x] Create single `index.ts` barrel export - updated with clear imports
-- [x] Delete unused files: recruiting.ts (duplicate), TODO.md
-- [ ] Target: Reduce from 30 files to ~15-18 files - NOW: 28 files (deleted 2)
+- [x] Delete unused files: recruiting.ts (duplicate), TODO.md, comp.types.ts (merged)
+- [x] Target: Reduce from 31 files to 27 files (-4 files)
 
-**Phase 4 Additional Progress**:
+**Phase 4 Results**:
 - policy.types.ts: Added PolicyRow, PolicyInsert, PolicyUpdate, helper functions
 - recruiting.ts: DELETED (was unused, duplicate of recruiting.types.ts)
 - database.ts → db-helpers.types.ts: Renamed for clarity
 - TODO.md: DELETED from types directory
+- comp.types.ts: MERGED into commission.types.ts with DB-first pattern
+  - Added CompGuideRow, CompGuideInsert, CompGuideUpdate from database.types
+  - Comp interface now extends CompGuideRow
+  - CreateCompData, UpdateCompData, CompFilters, ProductSummary moved
+  - 8 files updated to import from commission.types.ts
+  - Fixed null handling in CompTable sorting
 
 ### Phase 5: Remove Deprecated Cruft
 - [ ] Create `legacy/` directory
