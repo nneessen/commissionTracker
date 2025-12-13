@@ -399,23 +399,24 @@ class CommissionStatusService {
         .from('commission_chargeback_summary')
         .select('*')
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();
 
       if (error) {
-        // If no data found, return zeros
-        if (error.code === 'PGRST116') {
-          return {
-            totalChargebacks: 0,
-            totalChargebackAmount: 0,
-            totalAdvances: 0,
-            totalEarned: 0,
-            chargebackRatePercentage: 0,
-            chargedBackCount: 0,
-            highRiskCount: 0,
-            atRiskAmount: 0
-          };
-        }
         throw new DatabaseError('getChargebackSummary', error);
+      }
+
+      // If no data found (user has no commissions), return zeros
+      if (!data) {
+        return {
+          totalChargebacks: 0,
+          totalChargebackAmount: 0,
+          totalAdvances: 0,
+          totalEarned: 0,
+          chargebackRatePercentage: 0,
+          chargedBackCount: 0,
+          highRiskCount: 0,
+          atRiskAmount: 0
+        };
       }
 
       return {

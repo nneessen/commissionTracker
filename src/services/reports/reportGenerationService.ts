@@ -132,12 +132,26 @@ export class ReportGenerationService {
         .from('commission_chargeback_summary')
         .select('*')
         .eq('user_id', userId)
-        .single(),
+        .maybeSingle(),
       this.fetchCarrierPerformance(userId),
       this.fetchCommissionAging(userId),
     ]);
 
-    const chargebackSummary = chargebackSummaryResult.data;
+    if (chargebackSummaryResult.error) {
+      throw new Error(`Failed to fetch chargeback summary: ${chargebackSummaryResult.error.message}`);
+    }
+
+    // Default to zeros if user has no commissions yet
+    const chargebackSummary = chargebackSummaryResult.data || {
+      total_chargebacks: 0,
+      total_chargeback_amount: 0,
+      total_advances: 0,
+      total_earned: 0,
+      chargeback_rate_percentage: 0,
+      charged_back_count: 0,
+      high_risk_count: 0,
+      at_risk_amount: 0
+    };
 
     // Risk metrics from aging MV
     const totalAtRisk = commissionAging.reduce((sum, bucket) => sum + (bucket.total_at_risk || 0), 0);
