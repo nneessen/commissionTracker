@@ -10,7 +10,6 @@ import {cn} from '@/lib/utils';
 import {formatCurrency} from '@/lib/format';
 import {AgentDetailModal} from './AgentDetailModal';
 import type {HierarchyNode} from '@/types/hierarchy.types';
-import { ChevronDown, ChevronRight, User } from 'lucide-react';
 
 interface HierarchyTreeProps {
   nodes: HierarchyNode[];

@@ -1,7 +1,7 @@
 // src/features/recruiting/components/PhaseChecklist.tsx
 
 import React from 'react';
-import {RecruitChecklistProgress, PhaseChecklistItem, CHECKLIST_STATUS_COLORS} from '@/types/recruiting';
+import {RecruitChecklistProgress, PhaseChecklistItem, CHECKLIST_STATUS_COLORS} from '@/types/recruiting.types';
 import {Button} from '@/components/ui/button';
 import {Badge} from '@/components/ui/badge';
 import {Checkbox} from '@/components/ui/checkbox';

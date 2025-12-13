@@ -97,7 +97,7 @@ export interface RecruitChecklistProgress {
   id: string;
   user_id: string;
   checklist_item_id: string;
-  status: 'pending' | 'in_progress' | 'completed' | 'verified' | 'rejected';
+  status: 'not_started' | 'pending' | 'in_progress' | 'completed' | 'verified' | 'approved' | 'rejected' | 'needs_resubmission';
   completed_at: string | null;
   completed_by: string | null;
   verified_at: string | null;
@@ -135,11 +135,14 @@ export const ONBOARDING_STATUS_COLORS: Record<string, string> = {
 };
 
 export const CHECKLIST_STATUS_COLORS: Record<string, string> = {
+  not_started: 'bg-gray-100 text-gray-600',
   pending: 'bg-gray-100 text-gray-800',
   in_progress: 'bg-blue-100 text-blue-800',
   completed: 'bg-green-100 text-green-800',
   verified: 'bg-emerald-100 text-emerald-800',
+  approved: 'bg-emerald-100 text-emerald-800',
   rejected: 'bg-red-100 text-red-800',
+  needs_resubmission: 'bg-amber-100 text-amber-800',
 };
 
 // =============================================================================
