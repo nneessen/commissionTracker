@@ -1,7 +1,29 @@
-// /home/nneessen/projects/commissionTracker/src/types/policy.types.ts
+// src/types/policy.types.ts
+// Policy type definitions - DATABASE-FIRST pattern with app-level transformations
 
-import {ProductType} from './commission.types';
-import {Product} from './product.types';
+import type { Database } from './database.types';
+import type { ProductType } from './product.types';
+import type { Product } from './product.types';
+
+// =============================================================================
+// DATABASE-DERIVED TYPES (Source of Truth)
+// =============================================================================
+
+/** Raw database row type for policies table */
+export type PolicyRow = Database['public']['Tables']['policies']['Row'];
+
+/** Insert type for creating new policies */
+export type PolicyInsert = Database['public']['Tables']['policies']['Insert'];
+
+/** Update type for modifying policies */
+export type PolicyUpdate = Database['public']['Tables']['policies']['Update'];
+
+/** Payment frequency enum from database */
+export type PaymentFrequencyDB = Database['public']['Enums']['payment_frequency'];
+
+// =============================================================================
+// APP-LEVEL TYPES (CamelCase for React components)
+// =============================================================================
 
 export type PolicyStatus = 'pending' | 'active' | 'lapsed' | 'cancelled' | 'matured';
 export type PaymentFrequency = 'annual' | 'semi-annual' | 'quarterly' | 'monthly';
@@ -28,6 +50,12 @@ export interface PolicyClientExtended extends PolicyClientBase {
   zipCode?: string;
 }
 
+/**
+ * Policy - App-level interface with camelCase fields
+ *
+ * This is transformed from PolicyRow for use in React components.
+ * Use PolicyRow for direct database operations.
+ */
 export interface Policy {
   id: string;
   policyNumber: string;
@@ -38,21 +66,20 @@ export interface Policy {
 
   // Policy Details
   carrierId: string;
-  productId?: string; // Links to products table (NEW)
+  productId?: string; // Links to products table
   userId?: string; // Links to auth.users
-  product: ProductType; // Product type enum (kept for backward compatibility)
-  productDetails?: Product; // Full product object when joined (NEW)
-  submitDate?: string; // Date string in YYYY-MM-DD format to avoid timezone issues
-  effectiveDate: string; // Date string in YYYY-MM-DD format to avoid timezone issues
+  product: ProductType; // Product type enum
+  productDetails?: Product; // Full product object when joined
+  submitDate?: string; // Date string in YYYY-MM-DD format
+  effectiveDate: string; // Date string in YYYY-MM-DD format
   termLength?: number; // in years
-  expirationDate?: string; // Date string in YYYY-MM-DD format to avoid timezone issues
+  expirationDate?: string; // Date string in YYYY-MM-DD format
 
   // Financial Details
   annualPremium: number;
-  monthlyPremium?: number; // Optional for backward compatibility
+  monthlyPremium?: number;
   paymentFrequency: PaymentFrequency;
   commissionPercentage: number; // Commission rate as decimal (e.g., 0.95 for 95%)
-  // Note: advanceMonths removed - now only stored in commissions table
 
   // Metadata
   createdAt: string;
@@ -62,6 +89,10 @@ export interface Policy {
   createdBy?: string;
   notes?: string;
 }
+
+// =============================================================================
+// FORM TYPES
+// =============================================================================
 
 export interface NewPolicyForm {
   policyNumber: string;
@@ -76,16 +107,16 @@ export interface NewPolicyForm {
 
   // Policy fields
   carrierId: string;
-  productId?: string; // NEW: Actual product selection
-  product: ProductType; // Keep for backward compatibility
-  submitDate?: string; // ISO date string for form
-  effectiveDate: string; // ISO date string for form
+  productId?: string;
+  product: ProductType;
+  submitDate?: string;
+  effectiveDate: string;
   expirationDate?: string;
   termLength?: number;
 
   // Financial fields
-  premium: number; // Payment amount (monthly, quarterly, etc.)
-  annualPremium?: number; // Calculated annual premium
+  premium: number;
+  annualPremium?: number;
   paymentFrequency: PaymentFrequency;
   commissionPercentage: number;
 
@@ -103,12 +134,15 @@ export interface PolicyFilters {
   searchTerm?: string;
   startDate?: Date;
   endDate?: Date;
-  // Date range filters for effective date (YYYY-MM-DD format strings)
   effectiveDateFrom?: string;
   effectiveDateTo?: string;
   minPremium?: number;
   maxPremium?: number;
 }
+
+// =============================================================================
+// ANALYTICS TYPES
+// =============================================================================
 
 export interface PolicySummary {
   totalPolicies: number;
@@ -122,22 +156,86 @@ export interface PolicySummary {
   policiesByProduct: Record<ProductType, number>;
 }
 
-// Service layer types - matches actual database schema
+// =============================================================================
+// SERVICE LAYER TYPES
+// =============================================================================
+
+/**
+ * Data for creating a new policy
+ * Uses camelCase for app layer, transforms to snake_case for DB
+ */
 export interface CreatePolicyData {
   policyNumber: string;
-  clientId: string; // Foreign key to clients table
+  clientId: string;
   carrierId: string;
-  userId: string; // Required for RLS compliance - links to auth.users
-  product: ProductType; // Product enum type
+  userId: string;
+  product: ProductType;
   effectiveDate: Date;
   termLength?: number;
   expirationDate?: Date;
   annualPremium: number;
-  monthlyPremium: number; // Required field in database
+  monthlyPremium: number;
   paymentFrequency: PaymentFrequency;
-  commissionPercentage: number; // Stored as decimal (e.g., 0.1025 for 102.5%)
+  commissionPercentage: number;
   notes?: string;
-  status?: PolicyStatus; // Optional, defaults to 'pending'
+  status?: PolicyStatus;
 }
 
 export type UpdatePolicyData = Partial<CreatePolicyData>;
+
+// =============================================================================
+// HELPER FUNCTIONS
+// =============================================================================
+
+/**
+ * Transform database row to app-level Policy
+ */
+export function policyRowToPolicy(
+  row: PolicyRow,
+  client: PolicyClient | PolicyClientExtended
+): Policy {
+  return {
+    id: row.id,
+    policyNumber: row.policy_number,
+    status: row.status as PolicyStatus,
+    client,
+    carrierId: row.carrier_id,
+    productId: row.product_id || undefined,
+    userId: row.user_id || undefined,
+    product: row.product,
+    effectiveDate: row.effective_date,
+    termLength: row.term_length || undefined,
+    expirationDate: row.expiration_date || undefined,
+    annualPremium: row.annual_premium || 0,
+    monthlyPremium: row.monthly_premium,
+    paymentFrequency: (row.payment_frequency as PaymentFrequency) || 'monthly',
+    commissionPercentage: row.commission_percentage || 0,
+    createdAt: row.created_at || new Date().toISOString(),
+    updatedAt: row.updated_at || new Date().toISOString(),
+    notes: row.notes || undefined,
+  };
+}
+
+/**
+ * Transform app-level data to database insert
+ */
+export function createPolicyDataToInsert(
+  data: CreatePolicyData
+): PolicyInsert {
+  return {
+    policy_number: data.policyNumber,
+    client_id: data.clientId,
+    carrier_id: data.carrierId,
+    user_id: data.userId,
+    product: data.product,
+    effective_date: data.effectiveDate.toISOString().split('T')[0],
+    term_length: data.termLength,
+    expiration_date: data.expirationDate?.toISOString().split('T')[0],
+    annual_premium: data.annualPremium,
+    monthly_premium: data.monthlyPremium,
+    payment_frequency: data.paymentFrequency as PaymentFrequencyDB,
+    commission_percentage: data.commissionPercentage,
+    notes: data.notes,
+    status: data.status || 'pending',
+  };
+}

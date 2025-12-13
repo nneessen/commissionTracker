@@ -1,6 +1,8 @@
-// src/types/database.ts
+// src/types/db-helpers.types.ts
 /**
- * Database transformation types for type-safe DB operations
+ * Generic database transformation helpers for type-safe DB operations
+ *
+ * NOTE: For actual database table types, use database.types.ts (auto-generated from Supabase)
  */
 
 /**
