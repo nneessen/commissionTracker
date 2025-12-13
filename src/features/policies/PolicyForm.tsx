@@ -8,7 +8,7 @@ import {useCompGuide} from "../../hooks/comps";
 import {supabase} from "../../services/base/supabase";
 import {NewPolicyForm, PolicyStatus, PaymentFrequency, Policy} from "../../types/policy.types";
 import {ProductType} from "../../types/commission.types";
-import {US_STATES} from "../../types/agent.types";
+import {US_STATES} from "../../types/user.types";
 import {formatDateForDB} from "../../lib/date";
 import {Button} from "@/components/ui/button";
 import {Input} from "@/components/ui/input";

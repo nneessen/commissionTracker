@@ -6,9 +6,8 @@
 export * from './expense.types';
 export * from './carrier.types';
 export * from './product.types';
-export * from './agent.types';
 export * from './ui.types';
-export * from './user.types';
+export * from './user.types'; // Includes agent settings types (merged from agent.types.ts)
 export * from './policy.types';
 export * from './metrics.types';
 export * from './targets.types';
