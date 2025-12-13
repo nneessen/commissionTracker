@@ -67,7 +67,7 @@ export function PermissionGate({
   fallback = null,
   showLoading = false,
 }: PermissionGateProps) {
-  const {_can, canAny, canAll, is, isAnyRole, isLoading} = usePermissionCheck();
+  const {can: _can, canAny, canAll, is, isAnyRole, isLoading} = usePermissionCheck();
 
   // Show loading state
   if (isLoading && showLoading) {
@@ -118,7 +118,7 @@ export function useHasAccess({
   role?: RoleName | RoleName[];
   matchAny?: boolean;
 }): boolean {
-  const {_can, canAny, canAll, is, isAnyRole, isLoading} = usePermissionCheck();
+  const {can: _can, canAny, canAll, is, isAnyRole, isLoading} = usePermissionCheck();
 
   if (isLoading) return false;
 

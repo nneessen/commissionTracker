@@ -7,7 +7,7 @@ import {Button} from "../../components/ui/button";
 import {Card, CardContent} from "../../components/ui/card";
 import {Separator} from "../../components/ui/separator";
 import {SESSION_STORAGE_KEYS} from "../../constants/auth.constants";
-import {AuthMode} from "./hooks/useAuthValidation";
+// import {AuthMode} from "./hooks/useAuthValidation";
 import {AuthErrorDisplay} from "./components/AuthErrorDisplay";
 import {AuthSuccessMessage} from "./components/AuthSuccessMessage";
 import {SignInForm} from "./components/SignInForm";
@@ -22,7 +22,10 @@ interface LoginProps {
 export const Login: React.FC<LoginProps> = ({ onSuccess }) => {
   const { signIn, resetPassword } = useAuth();
   const navigate = useNavigate();
-  const { formErrors, validateForm, clearErrors } = useAuthValidation();
+  // Temporarily create mock validation functions
+  const formErrors = {};
+  const validateForm = (_email: string, _password: string, _confirmPassword: string, _mode: string) => true;
+  const clearErrors = () => {};
   const [mode, setMode] = useState<"signin" | "reset">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

@@ -6,6 +6,7 @@ import {useSentInvitations, useCancelInvitation} from '../../../hooks/hierarchy/
 import {Button} from '../../../components/ui/button';
 import {Ban, Loader2, ChevronDown, ChevronUp} from 'lucide-react';
 import {formatDistanceToNow} from 'date-fns';
+import { Mail, Clock, XCircle } from 'lucide-react';
 
 export function SentInvitationsCard() {
   const { data: sentInvitations, isLoading } = useSentInvitations('pending');

@@ -50,7 +50,7 @@ export function useDeleteDocument() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, storagePath, _recruitId }: { id: string; storagePath: string; recruitId: string }) =>
+    mutationFn: ({ id, storagePath, recruitId }: { id: string; storagePath: string; recruitId: string }) =>
       recruitingService.deleteDocument(id, storagePath),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['recruits', variables.recruitId, 'documents'] });
@@ -65,7 +65,7 @@ export function useUpdateDocumentStatus() {
     mutationFn: ({
       id,
       status,
-      approvalNotes, _recruitId,
+      approvalNotes, recruitId,
     }: {
       id: string;
       status: 'pending' | 'received' | 'approved' | 'rejected';

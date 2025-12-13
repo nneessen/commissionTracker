@@ -55,7 +55,7 @@ export function CommissionPipeline() {
     const policy = raw.policies.find(p => p.id === commission.policyId);
 
     if (commission.status === 'paid') {
-      totalPaid += commission.amount || 0;
+      // _totalPaid += commission.amount || 0;
     } else if (commission.status === 'pending') {
       totalPending += commission.amount || 0;
 

@@ -28,28 +28,57 @@ async function applyMigration() {
   });
 
   try {
-    // Read the migration file
-    const migrationPath = path.join(__dirname, '../supabase/migrations/20251213_001_add_getuser_commission_profile_function.sql');
-    const sql = await fs.readFile(migrationPath, 'utf-8');
+    // Get migration file from command line argument or use default
+    const migrationFile = process.argv[2] || '20241213_009_fix_admin_deleteuser_verified.sql';
+    const migrationPath = path.join(__dirname, '../supabase/migrations', migrationFile);
 
-    console.log('Applying migration: 20251213_001_add_getuser_commission_profile_function.sql');
-
-    // Execute the SQL directly
-    const { data, error } = await supabase.rpc('query', { query: sql });
-
-    if (error) {
-      // If the rpc function doesn't exist, we need to use a different approach
-      console.error('Note: Direct SQL execution via RPC failed. The function has been created in the migration file.');
-      console.log('Please apply the migration manually via Supabase Dashboard or CLI.');
-      console.log('\nMigration file location:');
-      console.log(migrationPath);
-      return;
+    // Check if file exists
+    try {
+      await fs.access(migrationPath);
+    } catch {
+      console.error(`❌ Migration file not found: ${migrationPath}`);
+      process.exit(1);
     }
 
-    console.log('✅ Migration applied successfully');
+    const sql = await fs.readFile(migrationPath, 'utf-8');
+
+    console.log(`📝 Applying migration: ${migrationFile}`);
+    console.log('');
+
+    // Use Supabase's query method to execute raw SQL
+    // This requires proper auth and may need to be done via REST API
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/exec`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SERVICE_ROLE_KEY,
+        'Authorization': `Bearer ${SERVICE_ROLE_KEY}`
+      },
+      body: JSON.stringify({ query: sql })
+    });
+
+    if (!response.ok) {
+      // Fallback: Try using postgres connection if available
+      console.log('⚠️  Direct SQL execution not available via Supabase client.');
+      console.log('');
+      console.log('Please run the migration using one of these methods:');
+      console.log('');
+      console.log('1. Via psql (if you have database password):');
+      console.log(`   PGPASSWORD='your-password' psql "postgresql://postgres.pcyaqwodnyrpkaiojnpz:password@aws-1-us-east-2.pooler.supabase.com:6543/postgres" -f ${migrationPath}`);
+      console.log('');
+      console.log('2. Via Supabase Dashboard:');
+      console.log('   https://supabase.com/dashboard/project/pcyaqwodnyrpkaiojnpz/sql/new');
+      console.log('   Copy and paste the contents of:');
+      console.log(`   ${migrationPath}`);
+      console.log('');
+      process.exit(1);
+    }
+
+    console.log('');
+    console.log('✅ Migration applied successfully!');
 
   } catch (error) {
-    console.error('Error applying migration:', error);
+    console.error('❌ Error applying migration:', error.message);
     process.exit(1);
   }
 }

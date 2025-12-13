@@ -6,6 +6,93 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-12-13 13:21:53
+
+### Changed Files
+- `CHANGELOG.md`
+- `PROJECT_STATS.md`
+- `scripts/apply-all-migrations.js`
+- `scripts/apply-migration-direct.sh`
+- `scripts/apply-migration.js`
+- `scripts/fix-typescript-errors.js`
+- `scripts/generate-sql-for-dashboard.js`
+- `src/components/permissions/PermissionGate.tsx`
+- `src/features/admin/components/AuthDiagnostic.tsx`
+- `src/features/analytics/components/CommissionPipeline.tsx`
+- `src/features/auth/Login.tsx`
+- `src/features/email/components/block-builder/BlockStylePanel.tsx`
+- `src/features/email/components/block-builder/FontPicker.tsx`
+- `src/features/expenses/config/expenseStatsConfig.ts`
+- `src/features/expenses/context/ExpenseDateContext.tsx`
+- `src/features/hierarchy/components/AgentTable.tsx`
+- `src/features/hierarchy/components/HierarchyTree.tsx`
+- `src/features/hierarchy/components/OverrideDashboard.tsx`
+- `src/features/hierarchy/components/SentInvitationsCard.tsx`
+- `src/features/recruiting/admin/PipelineAdminPage.tsx`
+- `src/features/recruiting/admin/PipelineTemplatesList.tsx`
+- `src/features/recruiting/components/AddRecruitDialog.tsx`
+- `src/features/recruiting/components/ComposeEmailDialog.tsx`
+- `src/features/recruiting/components/PhaseChecklist.tsx`
+- `src/features/recruiting/components/PhaseTimeline.tsx`
+- `src/features/recruiting/hooks/usePipeline.ts`
+- `src/features/recruiting/hooks/useRecruitDocuments.ts`
+- `src/features/recruiting/pages/MyRecruitingPipeline.tsx`
+- `supabase/migrations/20241213_005_admin_deleteuser_function.sql`
+- `supabase/migrations/20241213_006_fix_admin_deleteuser_function.sql`
+- `supabase/migrations/20241213_007_fix_admin_deleteuser_columns.sql`
+- `supabase/migrations/20241213_008_minimal_admin_deleteuser.sql`
+- `tsconfig.tsbuildinfo`
+
+### Statistics
+```
+ 33 files changed, 1090 insertions(+), 40 deletions(-)
+```
+
+## [Checkpoint] - 2025-12-13 13:05:42
+
+### Changed Files
+- `docs/admin-deleteuser-fix-summary.md`
+- `docs/admin-deleteuser-implementation-complete.md`
+- `docs/user-deletion-schema-mapping.md`
+- `scripts/apply-all-migrations.js`
+- `scripts/apply-migration-direct.sh`
+- `scripts/apply-migration.js`
+- `scripts/fix-typescript-errors.js`
+- `scripts/generate-sql-for-dashboard.js`
+- `scripts/test-admin-deleteuser.sql`
+- `src/components/permissions/PermissionGate.tsx`
+- `src/features/admin/components/AuthDiagnostic.tsx`
+- `src/features/analytics/components/CommissionPipeline.tsx`
+- `src/features/auth/Login.tsx`
+- `src/features/email/components/block-builder/BlockStylePanel.tsx`
+- `src/features/email/components/block-builder/FontPicker.tsx`
+- `src/features/expenses/config/expenseStatsConfig.ts`
+- `src/features/expenses/context/ExpenseDateContext.tsx`
+- `src/features/hierarchy/components/AgentTable.tsx`
+- `src/features/hierarchy/components/HierarchyTree.tsx`
+- `src/features/hierarchy/components/OverrideDashboard.tsx`
+- `src/features/hierarchy/components/SentInvitationsCard.tsx`
+- `src/features/recruiting/admin/PipelineAdminPage.tsx`
+- `src/features/recruiting/admin/PipelineTemplatesList.tsx`
+- `src/features/recruiting/components/AddRecruitDialog.tsx`
+- `src/features/recruiting/components/ComposeEmailDialog.tsx`
+- `src/features/recruiting/components/PhaseChecklist.tsx`
+- `src/features/recruiting/components/PhaseTimeline.tsx`
+- `src/features/recruiting/hooks/usePipeline.ts`
+- `src/features/recruiting/hooks/useRecruitDocuments.ts`
+- `src/features/recruiting/pages/MyRecruitingPipeline.tsx`
+- `supabase/migrations/20241213_005_admin_deleteuser_function.sql`
+- `supabase/migrations/20241213_006_fix_admin_deleteuser_function.sql`
+- `supabase/migrations/20241213_007_fix_admin_deleteuser_columns.sql`
+- `supabase/migrations/20241213_008_minimal_admin_deleteuser.sql`
+- `supabase/migrations/20241213_009_fix_admin_deleteuser_verified.sql`
+- `tsconfig.tsbuildinfo`
+
+### Statistics
+```
+ 36 files changed, 1880 insertions(+), 35 deletions(-)
+```
+
 ## [Checkpoint] - 2025-12-13 12:03:48
 
 ### Changed Files

@@ -8,7 +8,7 @@ import {Button} from '@/components/ui/button';
 import {Avatar, AvatarFallback, AvatarImage} from '@/components/ui/avatar';
 import {Badge} from '@/components/ui/badge';
 import {Collapsible, CollapsibleContent, CollapsibleTrigger} from '@/components/ui/collapsible';
-import {Inbox} from 'lucide-react';
+import {Inbox, AlertCircle, Upload, ChevronDown, ChevronRight, CheckCircle2, Clock, Circle} from 'lucide-react';
 import {format} from 'date-fns';
 import {useRecruitPhaseProgress, useCurrentPhase, useChecklistProgress} from '../hooks/useRecruitProgress';
 import {useActiveTemplate} from '../hooks/usePipeline';

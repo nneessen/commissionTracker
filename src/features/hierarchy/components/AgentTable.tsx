@@ -8,13 +8,13 @@ import {Button} from '@/components/ui/button';
 import {DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger} from '@/components/ui/dropdown-menu';
 import {AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle} from '@/components/ui/alert-dialog';
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '@/components/ui/select';
-import {formatCurrency, _formatPercent} from '@/lib/format';
+import {formatCurrency, formatPercent} from '@/lib/format';
 import showToast from '@/utils/toast';
 import type {UserProfile} from '@/types/hierarchy.types';
 import {useQuery} from '@tanstack/react-query';
 import {hierarchyService} from '@/services/hierarchy/hierarchyService';
-import {policyService} from '@/services/policies/policyService';
-import {commissionService} from '@/services/commissions/commissionService';
+// import {policyService} from '@/services/policies/policyService';
+// import {commissionService} from '@/services/commissions/commissionService';
 import {supabase} from '@/services/base/supabase';
 
 interface AgentWithMetrics extends UserProfile {
