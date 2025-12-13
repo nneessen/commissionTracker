@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <title>Password Reset - The Standard</title>
+    <title>Invitation - The Standard</title>
     <!--[if mso]>
       <style type="text/css">
         body, table, td {
@@ -28,7 +28,7 @@
                       <span style="font-size: 20px; font-weight: 600; color: #111827; letter-spacing: -0.025em;">THE STANDARD</span>
                     </td>
                     <td style="text-align: right; vertical-align: middle;">
-                      <span style="font-size: 12px; color: #6b7280;">Password Reset</span>
+                      <span style="font-size: 12px; color: #6b7280;">Account Invitation</span>
                     </td>
                   </tr>
                 </table>
@@ -38,21 +38,27 @@
             <!-- Main Content -->
             <tr>
               <td style="padding: 24px 0;">
-                <h1 style="margin: 0 0 8px; font-size: 18px; font-weight: 600; color: #111827;">Password Reset Request</h1>
+                <h1 style="margin: 0 0 8px; font-size: 18px; font-weight: 600; color: #111827;">You've Been Invited to The Standard</h1>
                 <p style="margin: 0 0 20px; font-size: 14px; color: #4b5563;">
-                  We received a request to reset the password for your account. Click the button below to create a new password.
+                  An administrator has created an account for you on The Standard insurance agency management platform.
                 </p>
 
-                <!-- Account Details -->
+                <!-- Invitation Details -->
                 <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 0 0 24px;">
                   <tr>
                     <td style="padding: 12px; background-color: #f9fafb; border: 1px solid #e5e7eb;">
                       <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
                         <tr>
-                          <td style="font-size: 12px; color: #6b7280; padding-bottom: 4px;">Account Email</td>
+                          <td style="font-size: 12px; color: #6b7280; padding-bottom: 4px;">Your Email</td>
                         </tr>
                         <tr>
-                          <td style="font-size: 14px; color: #111827; font-weight: 500;">{{ .Email }}</td>
+                          <td style="font-size: 14px; color: #111827; font-weight: 500; padding-bottom: 12px;">{{ .Email }}</td>
+                        </tr>
+                        <tr>
+                          <td style="font-size: 12px; color: #6b7280; padding-bottom: 4px;">Invited By</td>
+                        </tr>
+                        <tr>
+                          <td style="font-size: 14px; color: #111827; font-weight: 500;">{{ .InviterName | default "System Administrator" }}</td>
                         </tr>
                       </table>
                     </td>
@@ -64,7 +70,7 @@
                   <tr>
                     <td>
                       <a href="{{ .ConfirmationURL }}" style="display: inline-block; padding: 10px 24px; background-color: #111827; color: #ffffff; text-decoration: none; font-size: 14px; font-weight: 500; border-radius: 4px;">
-                        Reset Password
+                        Accept Invitation & Set Password
                       </a>
                     </td>
                   </tr>
@@ -78,16 +84,24 @@
                   {{ .ConfirmationURL }}
                 </p>
 
-                <!-- Security Notice -->
+                <!-- What You Can Do -->
                 <div style="margin: 24px 0; padding-top: 16px; border-top: 1px solid #e5e7eb;">
                   <p style="margin: 0 0 8px; font-size: 12px; color: #6b7280;">
-                    <strong style="color: #4b5563;">Security Information:</strong>
+                    <strong style="color: #4b5563;">With Your Account You Can:</strong>
                   </p>
                   <ul style="margin: 0; padding-left: 20px; font-size: 12px; color: #6b7280; line-height: 1.6;">
-                    <li>This link expires in 1 hour</li>
-                    <li>If you didn't request this reset, your password remains unchanged</li>
-                    <li>Contact support if you suspect unauthorized access</li>
+                    <li>Track commissions and policies</li>
+                    <li>Manage your recruiting pipeline</li>
+                    <li>Access training resources</li>
+                    <li>View performance analytics</li>
                   </ul>
+                </div>
+
+                <!-- Expiration Notice -->
+                <div style="margin: 24px 0; padding-top: 16px; border-top: 1px solid #e5e7eb;">
+                  <p style="margin: 0; font-size: 12px; color: #6b7280;">
+                    <strong style="color: #4b5563;">Note:</strong> This invitation expires in 7 days. After accepting, you'll be asked to create a secure password for your account.
+                  </p>
                 </div>
               </td>
             </tr>

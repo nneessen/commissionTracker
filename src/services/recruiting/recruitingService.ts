@@ -1,6 +1,7 @@
 // src/services/recruiting/recruitingService.ts
 import {supabase} from '../base/supabase';
 import {workflowEventEmitter, WORKFLOW_EVENTS} from '../events/workflowEventEmitter';
+import {createAuthUserWithProfile} from './authUserService';
 import type {UserProfile} from '@/types/hierarchy.types';
 import type {OnboardingPhase, UserDocument, UserEmail, UserActivityLog, RecruitFilters, UpdateRecruitInput, UpdatePhaseInput} from '@/types/recruiting';
 import type {CreateRecruitInput} from '@/types/recruiting.types';
@@ -182,31 +183,77 @@ export const recruitingService = {
       pipelineTemplateId = template?.id || null;
     }
 
-    const { data, error } = await supabase
-      .from('user_profiles')
-      .insert({
-        ...dbFields,
+    // CRITICAL FIX: Create auth user FIRST, which triggers profile creation
+    const fullName = `${recruit.first_name} ${recruit.last_name}`;
+    let authUserId: string | null = null;
+    let newRecruit: UserProfile;
+
+    try {
+      // Create auth user - this will trigger automatic user_profile creation
+      const authUser = await createAuthUserWithProfile({
+        email: recruit.email,
+        fullName,
         roles,
-        agent_status: recruit.agent_status || 'unlicensed',
-        pipeline_template_id: pipelineTemplateId,
-        licensing_info: recruit.licensing_info || {},
-        onboarding_status: skip_pipeline ? null : 'interview_1',
-        current_onboarding_phase: skip_pipeline ? null : 'initial_contact',
-        onboarding_started_at: skip_pipeline ? null : new Date().toISOString(),
-        // Note: user_id can be NULL for leads without login
-        user_id: null,
-        // Required hierarchy fields (set defaults)
-        hierarchy_path: '', // Will be updated by trigger
-        hierarchy_depth: 0, // Will be updated by trigger
-        approval_status: 'pending',
-        is_admin: recruit.is_admin || false,
-      })
-      .select()
-      .single();
+        isAdmin: recruit.is_admin || false,
+        skipPipeline: skip_pipeline || false
+      });
 
-    if (error) throw error;
+      authUserId = authUser.id;
 
-    const newRecruit = data as UserProfile;
+      // Update the auto-created profile with recruit-specific data
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .update({
+          ...dbFields,
+          roles,
+          agent_status: recruit.agent_status || 'unlicensed',
+          pipeline_template_id: pipelineTemplateId,
+          licensing_info: recruit.licensing_info || {},
+          onboarding_status: skip_pipeline ? null : 'interview_1',
+          current_onboarding_phase: skip_pipeline ? null : 'initial_contact',
+          onboarding_started_at: skip_pipeline ? null : new Date().toISOString(),
+          user_id: authUserId,
+          // Required hierarchy fields (set defaults)
+          hierarchy_path: '', // Will be updated by trigger
+          hierarchy_depth: 0, // Will be updated by trigger
+          approval_status: 'pending',
+          is_admin: recruit.is_admin || false,
+        })
+        .eq('id', authUserId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      newRecruit = data as UserProfile;
+
+    } catch (authError) {
+      // Fallback: Create profile without auth user (for leads/prospects)
+      console.warn('Auth user creation failed, creating profile-only recruit:', authError);
+
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .insert({
+          ...dbFields,
+          roles,
+          agent_status: recruit.agent_status || 'unlicensed',
+          pipeline_template_id: pipelineTemplateId,
+          licensing_info: recruit.licensing_info || {},
+          onboarding_status: skip_pipeline ? null : 'interview_1',
+          current_onboarding_phase: skip_pipeline ? null : 'initial_contact',
+          onboarding_started_at: skip_pipeline ? null : new Date().toISOString(),
+          user_id: null, // No auth user
+          // Required hierarchy fields (set defaults)
+          hierarchy_path: '',
+          hierarchy_depth: 0,
+          approval_status: 'pending',
+          is_admin: recruit.is_admin || false,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      newRecruit = data as UserProfile;
+    }
 
     // Emit recruit created event
     await workflowEventEmitter.emit(WORKFLOW_EVENTS.RECRUIT_CREATED, {

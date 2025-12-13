@@ -29,7 +29,7 @@ async function applyMigration() {
 
   try {
     // Get migration file from command line argument or use default
-    const migrationFile = process.argv[2] || '20241213_009_fix_admin_deleteuser_verified.sql';
+    const migrationFile = process.argv[2] || '20241213_010_fix_user_profile_trigger.sql';
     const migrationPath = path.join(__dirname, '../supabase/migrations', migrationFile);
 
     // Check if file exists

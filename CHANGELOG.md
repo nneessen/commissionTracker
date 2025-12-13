@@ -6,6 +6,68 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-12-13 15:11:28
+
+### Changed Files
+- `CHANGELOG.md`
+- `PROJECT_STATS.md`
+- `docs/AUTH_FIX_COMPLETE.md`
+- `docs/auth-config-instructions.md`
+- `docs/auth-fix-summary.md`
+- `docs/email-templates/README.md`
+- `docs/email-templates/email-change.html`
+- `docs/email-templates/invite-user.html`
+- `docs/email-templates/magic-link.html`
+- `docs/email-templates/reauthentication.html`
+- `docs/email-templates/reset-password.html`
+- `docs/email-templates/verify-email.html`
+- `scripts/apply-migration.js`
+- `scripts/apply-migration.sh`
+- `scripts/check-user-profile-trigger.sql`
+- `scripts/deploy-edge-function.sh`
+- `src/features/auth/Login.tsx`
+- `src/services/recruiting/authUserService.ts`
+- `src/services/recruiting/recruitingService.ts`
+- `supabase/functions/configure-email-templates/index.ts`
+- `supabase/functions/create-auth-user/index.ts`
+- `supabase/migrations/20241213_010_fix_user_profile_trigger.sql`
+- `tsconfig.tsbuildinfo`
+
+### Statistics
+```
+ 23 files changed, 2218 insertions(+), 549 deletions(-)
+```
+
+## [Checkpoint] - 2025-12-13 15:10:30
+
+### Changed Files
+- `docs/AUTH_FIX_COMPLETE.md`
+- `docs/auth-config-instructions.md`
+- `docs/auth-fix-summary.md`
+- `docs/email-templates/README.md`
+- `docs/email-templates/email-change.html`
+- `docs/email-templates/invite-user.html`
+- `docs/email-templates/magic-link.html`
+- `docs/email-templates/reauthentication.html`
+- `docs/email-templates/reset-password.html`
+- `docs/email-templates/verify-email.html`
+- `scripts/apply-migration.js`
+- `scripts/apply-migration.sh`
+- `scripts/check-user-profile-trigger.sql`
+- `scripts/deploy-edge-function.sh`
+- `src/features/auth/Login.tsx`
+- `src/services/recruiting/authUserService.ts`
+- `src/services/recruiting/recruitingService.ts`
+- `supabase/functions/configure-email-templates/index.ts`
+- `supabase/functions/create-auth-user/index.ts`
+- `supabase/migrations/20241213_010_fix_user_profile_trigger.sql`
+- `tsconfig.tsbuildinfo`
+
+### Statistics
+```
+ 21 files changed, 2183 insertions(+), 543 deletions(-)
+```
+
 ## [Checkpoint] - 2025-12-13 13:21:53
 
 ### Changed Files

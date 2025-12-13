@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <title>Password Reset - The Standard</title>
+    <title>Security Verification - The Standard</title>
     <!--[if mso]>
       <style type="text/css">
         body, table, td {
@@ -28,7 +28,7 @@
                       <span style="font-size: 20px; font-weight: 600; color: #111827; letter-spacing: -0.025em;">THE STANDARD</span>
                     </td>
                     <td style="text-align: right; vertical-align: middle;">
-                      <span style="font-size: 12px; color: #6b7280;">Password Reset</span>
+                      <span style="font-size: 12px; color: #6b7280;">Security Verification</span>
                     </td>
                   </tr>
                 </table>
@@ -38,12 +38,12 @@
             <!-- Main Content -->
             <tr>
               <td style="padding: 24px 0;">
-                <h1 style="margin: 0 0 8px; font-size: 18px; font-weight: 600; color: #111827;">Password Reset Request</h1>
+                <h1 style="margin: 0 0 8px; font-size: 18px; font-weight: 600; color: #111827;">Reauthentication Required</h1>
                 <p style="margin: 0 0 20px; font-size: 14px; color: #4b5563;">
-                  We received a request to reset the password for your account. Click the button below to create a new password.
+                  For your security, please verify your identity to continue with the sensitive operation you requested.
                 </p>
 
-                <!-- Account Details -->
+                <!-- Request Details -->
                 <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 0 0 24px;">
                   <tr>
                     <td style="padding: 12px; background-color: #f9fafb; border: 1px solid #e5e7eb;">
@@ -52,7 +52,19 @@
                           <td style="font-size: 12px; color: #6b7280; padding-bottom: 4px;">Account Email</td>
                         </tr>
                         <tr>
-                          <td style="font-size: 14px; color: #111827; font-weight: 500;">{{ .Email }}</td>
+                          <td style="font-size: 14px; color: #111827; font-weight: 500; padding-bottom: 12px;">{{ .Email }}</td>
+                        </tr>
+                        <tr>
+                          <td style="font-size: 12px; color: #6b7280; padding-bottom: 4px;">Request Time</td>
+                        </tr>
+                        <tr>
+                          <td style="font-size: 14px; color: #111827; font-weight: 500; padding-bottom: 12px;">{{ .RequestTime | default "Just now" }}</td>
+                        </tr>
+                        <tr>
+                          <td style="font-size: 12px; color: #6b7280; padding-bottom: 4px;">IP Address</td>
+                        </tr>
+                        <tr>
+                          <td style="font-size: 14px; color: #111827; font-weight: 500;">{{ .IPAddress | default "Unknown" }}</td>
                         </tr>
                       </table>
                     </td>
@@ -64,7 +76,7 @@
                   <tr>
                     <td>
                       <a href="{{ .ConfirmationURL }}" style="display: inline-block; padding: 10px 24px; background-color: #111827; color: #ffffff; text-decoration: none; font-size: 14px; font-weight: 500; border-radius: 4px;">
-                        Reset Password
+                        Verify Identity
                       </a>
                     </td>
                   </tr>
@@ -78,15 +90,23 @@
                   {{ .ConfirmationURL }}
                 </p>
 
-                <!-- Security Notice -->
+                <!-- Security Warning -->
+                <div style="margin: 24px 0; padding: 12px; background-color: #fef2f2; border: 1px solid #fecaca;">
+                  <p style="margin: 0; font-size: 12px; color: #991b1b;">
+                    <strong>Security Alert:</strong> If you did not attempt to perform a sensitive operation, someone may be trying to access your account. Do not click the verification link. Instead, change your password immediately and review your account activity.
+                  </p>
+                </div>
+
+                <!-- Why This Is Required -->
                 <div style="margin: 24px 0; padding-top: 16px; border-top: 1px solid #e5e7eb;">
                   <p style="margin: 0 0 8px; font-size: 12px; color: #6b7280;">
-                    <strong style="color: #4b5563;">Security Information:</strong>
+                    <strong style="color: #4b5563;">Why Reauthentication Is Required:</strong>
                   </p>
                   <ul style="margin: 0; padding-left: 20px; font-size: 12px; color: #6b7280; line-height: 1.6;">
-                    <li>This link expires in 1 hour</li>
-                    <li>If you didn't request this reset, your password remains unchanged</li>
-                    <li>Contact support if you suspect unauthorized access</li>
+                    <li>You're accessing sensitive account settings</li>
+                    <li>You're performing administrative actions</li>
+                    <li>Your session requires additional verification</li>
+                    <li>This link expires in 10 minutes</li>
                   </ul>
                 </div>
               </td>

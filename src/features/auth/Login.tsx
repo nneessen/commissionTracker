@@ -158,8 +158,8 @@ export const Login: React.FC<LoginProps> = ({ onSuccess }) => {
       <div className="max-w-md w-full">
         {/* Logo/Brand */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary text-primary-foreground text-2xl font-bold mb-4 shadow-lg">
-            CT
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary text-primary-foreground text-xl font-bold mb-4 shadow-lg">
+            TSH
           </div>
           <h2 className="text-3xl font-bold text-foreground mb-2">
             {getTitle()}
