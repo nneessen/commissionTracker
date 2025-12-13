@@ -1,4 +1,4 @@
-# Type Consolidation Continuation Prompt - Phase 5+
+# Type Consolidation Continuation Prompt - Phase 7+
 
 ## Context
 
@@ -7,77 +7,64 @@ You are continuing the Type Architecture Consolidation project for the Commissio
 **Branch**: `type-consolidation-phase1`
 **Plan**: `plans/ACTIVE/type-consolidation-plan.md`
 
-## Completed Work (Phases 1-4)
+## Completed Work (Phases 1-6)
 
 ### Phase 1: Audit ✅
 - Created `docs/type-audit.md` - Complete inventory of 31 type files
-- Created `docs/type-audit-findings.md` - Detailed field comparisons
 - Identified 3 UserProfile duplicates, 3 Carrier duplicates, 2 Client duplicates
 
 ### Phase 2: Database-First Migration ✅
-- `user.types.ts`: UserProfile extends `Database['public']['Tables']['user_profiles']['Row']`
-- `carrier.types.ts`: Carrier extends `CarrierRow` from database.types
-- `policy.types.ts`: Added PolicyRow, PolicyInsert, PolicyUpdate, helper functions
+- `user.types.ts`: UserProfile extends UserProfileRow
+- `carrier.types.ts`: Carrier extends CarrierRow
+- `policy.types.ts`: Added PolicyRow, PolicyInsert, PolicyUpdate
 - `commission.types.ts`: Renamed Client → CommissionClientInfo
 
 ### Phase 3: Remove Duplicates ✅
-- Deleted `recruiting.ts` (unused duplicate)
-- Deleted `agent.types.ts` (merged into user.types.ts)
+- Deleted `recruiting.ts`, `agent.types.ts`, `TODO.md`
 - Renamed `database.ts` → `db-helpers.types.ts`
-- Deleted `TODO.md` from types directory
-- **Type file count: 31 → 27 (-4 files)**
+- **Type file count: 31 → 27**
 
 ### Phase 4: Consolidate Files ✅
 - Merged `comp.types.ts` into `commission.types.ts`
-- Added DB-first types: CompGuideRow, CompGuideInsert, CompGuideUpdate
-- Comp interface now extends CompGuideRow
+- Added CompGuideRow, CompGuideInsert, CompGuideUpdate
 - Updated 8 files to import from commission.types.ts
-- Fixed null handling in CompTable sorting
-- Deleted `comp.types.ts`
-- **Type file count: 27 (comp.types.ts merged, not separately counted)**
+
+### Phase 5: Remove Deprecated Cruft ✅
+- Created `src/types/legacy/` directory
+- `legacy/commission-v1.types.ts`: LegacyCommission, migration helpers
+- `legacy/user-v1.types.ts`: LegacyUser, LegacyAgent, migration helpers
+- Added type guards: hasLegacyFields, isLegacyUser
+
+### Phase 6: Add Validation ✅
+- Created `src/types/__tests__/database-alignment.test.ts`
+- 15 compile-time type compatibility tests
+- Tests verify UserProfile, Carrier, PolicyRow, Comp extend DB rows
+- Tests verify enum types and Insert/Update types accessible
 
 ## Current State
 
 ```
-src/types/ (27 files)
-├── database.types.ts      # Auto-generated Supabase types (SOURCE OF TRUTH)
-├── user.types.ts          # Canonical UserProfile + AgentSettings + US_STATES
-├── hierarchy.types.ts     # Imports UserProfile from user.types
-├── messaging.types.ts     # Uses UserProfileMinimal from user.types
-├── policy.types.ts        # PolicyRow + Policy + helpers
-├── carrier.types.ts       # CarrierRow + Carrier
-├── commission.types.ts    # CommissionClientInfo + Comp types (merged from comp.types.ts)
-├── client.types.ts        # Canonical Client entity
-├── product.types.ts       # Uses DB enums
-├── recruiting.types.ts    # Uses DB enums (AgentStatus)
-├── agent-detail.types.ts  # UI view models for AgentDetailModal
-├── db-helpers.types.ts    # Generic DB transformation helpers
-├── ... (remaining files)
+src/types/ (27 files + legacy/ + __tests__/)
+├── database.types.ts      # Auto-generated (SOURCE OF TRUTH)
+├── user.types.ts          # UserProfile extends UserProfileRow
+├── carrier.types.ts       # Carrier extends CarrierRow
+├── policy.types.ts        # PolicyRow + helpers
+├── commission.types.ts    # CommissionClientInfo + Comp types
+├── legacy/                # Deprecated types with migration helpers
+│   ├── commission-v1.types.ts
+│   ├── user-v1.types.ts
+│   └── index.ts
+├── __tests__/
+│   └── database-alignment.test.ts
+└── ... (remaining files)
 ```
 
 ## Remaining Work
 
-### Phase 5: Remove Deprecated Cruft
-1. **Create legacy directory**
-   - `mkdir src/types/legacy`
-   - Move deprecated fields from Commission interface
-   - Add @deprecated JSDoc comments
-   - Create migration helpers if needed
-
-2. **Deprecated fields in Commission**:
-   - `advanceAmount` → use `amount`
-   - `paidDate` → use `paymentDate`
-   - `created_at`/`updated_at` → use `createdAt`/`updatedAt`
-
-### Phase 6: Add Validation Tests
-- Create `src/types/__tests__/database-alignment.test.ts`
-- Add compile-time type compatibility tests
-- Verify UserProfile extends database row correctly
-
 ### Phase 7: Update All Imports
-- Find remaining imports from old locations
-- Update to use canonical sources
-- Run type check: `npx tsc --noEmit`
+1. Find imports from old locations
+2. Update to use canonical sources
+3. Run type check: `npx tsc --noEmit`
 
 ### Phase 8: Verify & Deploy
 - Run full build: `npm run build`
@@ -87,11 +74,7 @@ src/types/ (27 files)
 
 ## Pre-existing Issues (Not in Scope)
 
-There are ~187 pre-existing TypeScript errors unrelated to this consolidation:
-- Missing icon imports in various components
-- Undefined variables in expense/email features
-- RoleName type mismatches in admin components
-
+~187 pre-existing TypeScript errors unrelated to this consolidation.
 These should be addressed in a separate cleanup task.
 
 ## Commands to Start
@@ -100,21 +83,21 @@ These should be addressed in a separate cleanup task.
 # Check current branch
 git branch --show-current
 
-# Check status
-git status
+# Check for outdated imports
+grep -r "from '@/types/hierarchy.types'" src/ --include="*.ts" --include="*.tsx"
+grep -r "from '@/types/recruiting'" src/ --include="*.ts" --include="*.tsx"
 
-# Continue with Phase 5
-# 1. Create legacy directory
-mkdir -p src/types/legacy
+# Run type check
+npx tsc --noEmit 2>&1 | grep -c "error TS"
 
-# 2. Check deprecated fields in commission.types.ts
-grep -n "@deprecated" src/types/commission.types.ts
+# Run tests
+npm run test:run
 ```
 
 ## Success Criteria
 
-- [ ] Legacy directory created with deprecated types
-- [ ] Database alignment tests added
 - [ ] All imports updated to canonical sources
-- [ ] `npx tsc --noEmit` shows no NEW errors (187 pre-existing)
-- [ ] Build passes: `npm run build`
+- [ ] No new TypeScript errors introduced
+- [ ] All tests pass: `npm run test:run`
+- [ ] Dev server starts without errors
+- [ ] Build passes (with pre-existing errors only)
