@@ -3,7 +3,7 @@
 import React from 'react';
 import {X} from 'lucide-react';
 import {Button} from '@/components/ui/button';
-import {CompFilters} from '../../../types/comp.types';
+import {CompFilters} from '../../../types/commission.types';
 import {formatProductType} from '../../../lib/format';
 
 interface ActiveFilterBadgesProps {

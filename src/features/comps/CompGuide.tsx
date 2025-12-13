@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import {logger} from '../../services/base/logger';
 import {Download, Settings, Calculator, Database} from 'lucide-react';
 import {useComps} from '../../hooks/comps';
-import {CompFilters} from '../../types/comp.types';
+import {CompFilters} from '../../types/commission.types';
 import {UserContractSettings} from './UserContractSettings';
 import {CompTable} from './CompTable';
 import {CompFiltersComponent} from './CompFilters';

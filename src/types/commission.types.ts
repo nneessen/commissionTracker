@@ -1,5 +1,76 @@
 // Import and re-export ProductType from product.types.ts instead of redefining
 import type {ProductType} from './product.types';
+import type {Database} from './database.types';
+
+// ============================================================================
+// Comp Guide Types (DB-first pattern from comp_guide table)
+// ============================================================================
+
+/** Raw database row from comp_guide table */
+export type CompGuideRow = Database['public']['Tables']['comp_guide']['Row'];
+/** Insert type for comp_guide table */
+export type CompGuideInsert = Database['public']['Tables']['comp_guide']['Insert'];
+/** Update type for comp_guide table */
+export type CompGuideUpdate = Database['public']['Tables']['comp_guide']['Update'];
+
+/**
+ * Comp Guide entry - carrier product compensation rates
+ * Extends database row with camelCase aliases for UI consistency
+ */
+export interface Comp extends CompGuideRow {
+  // No additional fields needed - database schema is the source of truth
+}
+
+/** Create compensation guide data (form input) */
+export interface CreateCompData {
+  carrier_id: string;
+  product_type: Database['public']['Enums']['product_type'];
+  contract_level: number;
+  product_id?: string;
+  commission_percentage: number;
+  bonus_percentage?: number;
+  effective_date: string;
+  expiration_date?: string;
+  minimum_premium?: number;
+  maximum_premium?: number;
+}
+
+/** Update compensation guide data */
+export interface UpdateCompData {
+  carrier_id?: string;
+  product_type?: Database['public']['Enums']['product_type'];
+  contract_level?: number;
+  product_id?: string;
+  commission_percentage?: number;
+  bonus_percentage?: number;
+  effective_date?: string;
+  expiration_date?: string;
+  minimum_premium?: number;
+  maximum_premium?: number;
+}
+
+/** Filters for querying comp guide entries */
+export interface CompFilters {
+  carrier_id?: string;
+  product_type?: Database['public']['Enums']['product_type'];
+  contract_level?: number;
+  product_id?: string;
+  effective_from?: string;
+  effective_to?: string;
+}
+
+/** Product summary statistics from comp guide */
+export interface ProductSummary {
+  product_type: Database['public']['Enums']['product_type'];
+  carrier_count: number;
+  avg_commission: number;
+  min_contract_level: number;
+  max_contract_level: number;
+}
+
+// ============================================================================
+// Commission Types
+// ============================================================================
 
 /**
  * Minimal client info for commission records

@@ -4,7 +4,7 @@ import {Button} from '@/components/ui/button';
 import {cn} from '@/lib/utils';
 import {FFG_COMP_GUIDE_DATA, getUniqueCarriers, getProductsByCarrier} from '../data/ffgCompGuideData';
 import {Carrier} from '../../../types/carrier.types';
-import {Comp, CreateCompData} from '../../../types/comp.types';
+import {Comp, CreateCompData} from '../../../types/commission.types';
 import {Database} from '../../../types/database.types';
 import {carrierService} from '../../../services/settings/carrierService';
 import {compGuideService} from '../../../services/settings/compGuideService';

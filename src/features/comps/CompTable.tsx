@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import {ChevronLeft, ChevronRight, ArrowUp, ArrowDown, Building2, Package, Percent, Calendar, AlertCircle} from "lucide-react";
-import {Comp} from "../../types/comp.types";
+import {Comp} from "../../types/commission.types";
 import {Button} from "@/components/ui/button";
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/components/ui/table";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
@@ -31,8 +31,13 @@ export function CompTable({ data, isLoading, error }: CompTableProps) {
   const sortedData = !data
     ? []
     : [...data].sort((a, b) => {
-        let aVal = a[sortBy];
-        let bVal = b[sortBy];
+        let aVal: string | number | null = a[sortBy];
+        let bVal: string | number | null = b[sortBy];
+
+        // Handle null values - sort nulls to the end
+        if (aVal === null && bVal === null) return 0;
+        if (aVal === null) return 1;
+        if (bVal === null) return -1;
 
         if (typeof aVal === "string") aVal = aVal.toLowerCase();
         if (typeof bVal === "string") bVal = bVal.toLowerCase();
