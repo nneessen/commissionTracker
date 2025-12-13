@@ -16,7 +16,7 @@ import {Collapsible, CollapsibleContent, CollapsibleTrigger} from '@/components/
 import {Separator} from '@/components/ui/separator';
 import {ChevronDown, ChevronRight, Info, Users, Shield, UserCog, Search, CheckCircle2, XCircle} from 'lucide-react';
 import type {RoleName, Permission} from '@/types/permissions.types';
-import type {UserProfile} from '@/services/admin/userApprovalService';
+import type {UserProfile} from '@/services/users/userService';
 
 export function UserManagementPage() {
   const { data: users, isLoading: usersLoading, error: usersError } = useAllUsers();

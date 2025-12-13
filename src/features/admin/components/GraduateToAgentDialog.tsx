@@ -9,7 +9,7 @@ import {Textarea} from '@/components/ui/textarea';
 import {GraduationCap, AlertCircle} from 'lucide-react';
 import {useMutation, useQueryClient} from '@tanstack/react-query';
 import {supabase} from '@/services/base/supabase';
-import {VALID_CONTRACT_LEVELS, type UserProfile} from '@/services/admin/userApprovalService';
+import {VALID_CONTRACT_LEVELS, type UserProfile} from '@/services/users/userService';
 import {format} from 'date-fns';
 import {Alert, AlertDescription} from '@/components/ui/alert';
 import {useAuth} from '@/contexts/AuthContext';

@@ -15,34 +15,19 @@ import type { Policy } from "../../types/policy.types";
 // TODO: why aren't any of these using the base service/.repository? every service/repository will have the same CRUD operations that each service can inherit from the
 // base service. how would a senior dev utilize encapsulation, etc.
 
-// Legacy interface for backward compatibility
-export interface ClientData {
-  name: string;
-  email?: string;
-  phone?: string;
-  address?: string;
-  date_of_birth?: string;
-  notes?: string;
-}
-
 class ClientService {
-  /**
-   * Get all clients with optional filtering and sorting
-   */
   async getAll(
     filters?: ClientFilters,
     sort?: ClientSortConfig,
   ): Promise<Client[]> {
     let query = supabase.from(TABLES.CLIENTS).select("*");
 
-    // Apply filters
     if (filters) {
       if (filters.status && filters.status !== "all") {
         query = query.eq("status", filters.status);
       }
 
       if (filters.searchTerm) {
-        // Search in name, email, and phone
         const searchPattern = `%${filters.searchTerm}%`;
         query = query.or(
           `name.ilike.${searchPattern},email.ilike.${searchPattern},phone.ilike.${searchPattern}`,
@@ -60,12 +45,8 @@ class ClientService {
       } else if (filters.hasPhone === false) {
         query = query.is("phone", null);
       }
-
-      // Note: hasPolicies and hasActivePolicies filters require join or RPC
-      // These will be handled in getAllWithStats instead
     }
 
-    // Apply sorting
     const sortField = sort?.field || "name";
     const sortDirection = sort?.direction || "asc";
     query = query.order(sortField as any, {
@@ -363,7 +344,7 @@ class ClientService {
   /**
    * Create or find client by name (legacy method for backward compatibility)
    */
-  async createOrFind(clientData: ClientData, userId: string): Promise<Client> {
+  async createOrFind(clientData: CreateClientData, userId: string): Promise<Client> {
     if (!userId) {
       throw new Error("User ID is required to create or find client");
     }
@@ -482,4 +463,3 @@ class ClientService {
 }
 
 export const clientService = new ClientService();
-

@@ -4,7 +4,7 @@
 // Recruits (without 'agent' role) should ONLY appear in Recruiting Pipeline tab
 
 import { describe, it, expect } from "vitest";
-import type { UserProfile } from "../../../services/admin/userApprovalService";
+import type { UserProfile } from "@/services/users/userService";
 import type { RoleName } from "../../../types/permissions.types";
 
 describe("useUsersView role-based filtering logic", () => {
@@ -39,7 +39,6 @@ describe("useUsersView role-based filtering logic", () => {
     hierarchy_path: null,
     instagram_url: null,
     instagram_username: null,
-    is_deleted: null,
     is_super_admin: null,
     last_name: null,
     license_expiration: null,

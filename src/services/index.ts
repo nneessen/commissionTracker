@@ -10,12 +10,12 @@ export * from './commissions';
 export * from './expenses';
 export * from './settings';
 export * from './analytics';
-export * from './agents';
+export * from './users';
 
 // Individual service exports for backward compatibility
 export { carrierService } from './settings/carrierService';
 export { constantsService } from './settings/constantsService';
-export { agentService } from './agents/agentService';
+export { agentService, userService, userApprovalService } from './users/userService';
 export { compGuideService } from './settings/compGuideService';
 export { agentSettingsService } from './settings/agentSettingsService';
 export { chargebackService } from './commissions/chargebackService';

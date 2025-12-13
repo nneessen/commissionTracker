@@ -4,7 +4,7 @@
 import {useQuery, useQueryClient} from '@tanstack/react-query';
 import {useState, useMemo} from 'react';
 import {supabase} from '../../services/base/supabase';
-import {UserProfile} from '../../services/admin/userApprovalService';
+import {UserProfile} from '@/services/users/userService';
 
 export interface UserFilters {
   searchTerm?: string;

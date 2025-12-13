@@ -24,7 +24,7 @@ import {
   useIsAdmin,
 } from "@/hooks/permissions/usePermissions";
 import { useAuth } from "@/contexts/AuthContext";
-import { userApprovalService } from "@/services/admin/userApprovalService";
+import { userApprovalService } from "@/services/users/userService";
 import { useQueryClient } from "@tanstack/react-query";
 import showToast from "@/utils/toast";
 import AddUserDialog, { type NewUserData } from "./AddUserDialog";
@@ -50,7 +50,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { RoleName } from "@/types/permissions.types";
-import type { UserProfile } from "@/services/admin/userApprovalService";
+import type { UserProfile } from "@/services/users/userService";
 
 export default function AdminControlCenter() {
   const [activeView, setActiveView] = useState<

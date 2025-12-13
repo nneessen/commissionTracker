@@ -1,7 +1,7 @@
 // /home/nneessen/projects/commissionTracker/src/hooks/admin/useUserApproval.ts
 
 import {useQuery, useMutation, useQueryClient} from '@tanstack/react-query';
-import {userApprovalService, UserProfile, ApprovalStats} from '../../services/admin/userApprovalService';
+import {userApprovalService, UserProfile, ApprovalStats} from '@/services/users/userService';
 
 /**
  * Query keys for user approval

@@ -10,7 +10,7 @@ import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/c
 import EditUserDialog from "@/features/admin/components/EditUserDialog";
 import {GraduateToAgentDialog} from "@/features/admin/components/GraduateToAgentDialog";
 import type {RoleName} from "@/types/permissions.types";
-import type {UserProfile} from "@/services/admin/userApprovalService";
+import type {UserProfile} from "@/services/users/userService";
 
 interface RecruitingTabProps {
   searchQuery: string;

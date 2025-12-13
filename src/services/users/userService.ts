@@ -41,7 +41,6 @@ interface UserServiceFilter {
   roles?: RoleName[];
   approvalStatus?: "pending" | "approved" | "denied";
   agentStatus?: "licensed" | "unlicensed" | "not_applicable";
-  includeDeleted?: boolean;
 }
 
 // Valid contract levels for insurance agents
@@ -194,7 +193,6 @@ class UserService {
       .from("user_profiles")
       .select("*")
       .eq("email", email.toLowerCase())
-      .neq("is_deleted", true)
       .single();
 
     if (error) {
@@ -219,9 +217,6 @@ class UserService {
     }
     if (filter?.agentStatus) {
       query = query.eq("agent_status", filter.agentStatus);
-    }
-    if (!filter?.includeDeleted) {
-      query = query.neq("is_deleted", true);
     }
 
     const { data, error } = await query.order("created_at", {
@@ -257,7 +252,6 @@ class UserService {
       .from("user_profiles")
       .select("*")
       .or(`roles.cs.{agent},roles.cs.{active_agent}`)
-      .neq("is_deleted", true)
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -308,7 +302,6 @@ class UserService {
       .from("user_profiles")
       .select("*")
       .eq("contract_level", contractLevel)
-      .neq("is_deleted", true)
       .order("first_name", { ascending: true });
 
     if (error) {
@@ -872,6 +865,10 @@ class UserService {
     return profile?.contract_level || 100;
   }
 
+  /**
+   * Hard delete a user and all related data.
+   * Deletes from all related tables, user_profiles, and auth.users.
+   */
   async delete(userId: string): Promise<{ success: boolean; error?: string }> {
     try {
       const { data, error } = await supabase.rpc("admin_deleteuser", {
@@ -961,8 +958,7 @@ class UserService {
     try {
       const { data, error } = await supabase
         .from("user_profiles")
-        .select("approval_status")
-        .neq("is_deleted", true);
+        .select("approval_status");
 
       if (error) {
         logger.error(
@@ -1048,7 +1044,7 @@ class UserService {
       email: profile.email,
       phone: profile.phone || undefined,
       contractCompLevel: profile.contract_level || undefined,
-      isActive: profile.approval_status === "approved" && !profile.is_deleted,
+      isActive: profile.approval_status === "approved",
       agentCode: profile.agent_code || undefined,
       licenseNumber: profile.license_number || undefined,
       licenseState: profile.license_state || undefined,
@@ -1111,14 +1107,10 @@ class UserService {
   }
 
   async getAllUsers(): Promise<UserProfile[]> {
-    const query = supabase
+    const { data, error } = await supabase
       .from("user_profiles")
       .select("*")
-      .neq("is_deleted", true);
-
-    const { data, error } = await query.order("created_at", {
-      ascending: false,
-    });
+      .order("created_at", { ascending: false });
 
     if (error) {
       const { data: rpcData, error: rpcError } =

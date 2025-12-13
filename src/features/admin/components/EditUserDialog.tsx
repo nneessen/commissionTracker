@@ -40,7 +40,7 @@ import { useAllUsers } from "@/hooks/admin/useUserApproval";
 import {
   userApprovalService,
   VALID_CONTRACT_LEVELS,
-} from "@/services/admin/userApprovalService";
+} from "@/services/users/userService";
 import { supabase } from "@/services/base/supabase";
 import showToast from "@/utils/toast";
 import {
@@ -57,7 +57,7 @@ import {
   Loader2,
 } from "lucide-react";
 import type { RoleName } from "@/types/permissions.types";
-import type { UserProfile } from "@/services/admin/userApprovalService";
+import type { UserProfile } from "@/services/users/userService";
 
 interface EditUserDialogProps {
   user: UserProfile | null;

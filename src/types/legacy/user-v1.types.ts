@@ -36,7 +36,7 @@ export type {
  * Maps legacy User/Agent to UserProfile
  * Use this when migrating old data structures
  *
- * Note: Legacy 'isActive' maps to 'is_deleted' (inverted) in current schema
+ * Note: Legacy 'isActive' maps to 'approval_status' in current schema
  */
 export function migrateLegacyUser(legacy: User | Agent): Partial<UserProfile> {
   const result: Partial<UserProfile> = {
@@ -47,8 +47,8 @@ export function migrateLegacyUser(legacy: User | Agent): Partial<UserProfile> {
     phone: legacy.phone ?? null,
     contract_level: legacy.contractCompLevel ?? null,
     license_number: legacy.licenseNumber ?? null,
-    // Note: is_active is not in current schema; use is_deleted instead
-    is_deleted: legacy.isActive === false ? true : null,
+    // Note: is_active maps to approval_status (hard deletes only, no soft delete)
+    approval_status: legacy.isActive === false ? 'denied' : 'approved',
   };
 
   // Only set optional fields if they have values
