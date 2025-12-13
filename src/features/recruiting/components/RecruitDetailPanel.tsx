@@ -22,7 +22,7 @@ import {useCurrentUserProfile} from '@/hooks/admin/useUserApproval';
 import {useRecruitDocuments} from '../hooks/useRecruitDocuments';
 import {useRecruitEmails} from '../hooks/useRecruitEmails';
 import {useRecruitActivityLog} from '../hooks/useRecruitActivity';
-import {ONBOARDING_STATUS_COLORS} from '@/types/recruiting';
+import {ONBOARDING_STATUS_COLORS} from '@/types/recruiting.types';
 
 // Default pipeline template ID (from seed migration)
 const DEFAULT_TEMPLATE_ID = '00000000-0000-0000-0000-000000000001';
