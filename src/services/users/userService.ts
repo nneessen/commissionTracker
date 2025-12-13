@@ -438,7 +438,7 @@ class UserService {
         agent_status: agentStatus,
         approval_status: approvalStatus,
         onboarding_status: userData.onboarding_status || null,
-        user_id: null, // Will be set when user clicks confirmation link
+        user_id: null, // Will be set by Edge Function
         contract_level: userData.contractCompLevel,
         license_number: userData.licenseNumber,
         license_states: userData.licenseStates,
@@ -488,6 +488,7 @@ class UserService {
                 roles: assignedRoles,
                 isAdmin: assignedRoles.includes("admin"),
                 skipPipeline: false,
+                profileId: data?.id, // Pass profile ID so Edge Function can link them
               }),
             },
           );
@@ -495,69 +496,32 @@ class UserService {
           const result = await response.json();
 
           if (!response.ok) {
-            // If user already exists, send password reset email instead
-            if (
-              result.error?.includes("already exists") ||
-              result.error?.includes("already registered")
-            ) {
-              // User exists, send password reset email instead
-              const { error: resetError } =
-                await supabase.auth.resetPasswordForEmail(email, {
-                  redirectTo: `${window.location.origin}/auth/callback?type=recovery`,
-                });
+            logger.error(
+              "Failed to create auth user via Edge Function",
+              new Error(result.error || "Unknown error"),
+              "UserService",
+            );
+            return {
+              success: true,
+              userId: data?.id,
+              user: this.transformProfileToUser(data as UserProfile),
+              inviteSent: false,
+              error: `Profile created but auth user creation failed: ${result.error || "Unknown error"}`,
+            };
+          }
 
-              if (resetError) {
-                logger.error(
-                  "Failed to send password reset email",
-                  resetError,
-                  "UserService",
-                );
-                return {
-                  success: true,
-                  userId: data?.id,
-                  user: this.transformProfileToUser(data as UserProfile),
-                  inviteSent: false,
-                  error: `Profile created but password reset email failed: ${resetError.message}`,
-                };
-              }
-              inviteSent = true;
-            } else {
-              logger.error(
-                "Failed to create auth user via Edge Function",
-                new Error(result.error || "Unknown error"),
-                "UserService",
-              );
-              return {
-                success: true,
-                userId: data?.id,
-                user: this.transformProfileToUser(data as UserProfile),
-                inviteSent: false,
-                error: `Profile created but auth user creation failed: ${result.error || "Unknown error"}`,
-              };
-            }
-          } else {
-            // Auth user created successfully via Edge Function
-            // Check if email was sent successfully
-            inviteSent = result.emailSent === true;
+          // Auth user created successfully
+          inviteSent = result.emailSent === true;
 
-            // Link the auth user to the profile
-            if (result.user) {
-              await supabase
-                .from("user_profiles")
-                .update({ user_id: result.user.id })
-                .eq("id", data?.id);
-            }
-
-            // If email wasn't sent, return an error message
-            if (!inviteSent) {
-              return {
-                success: true,
-                userId: data?.id,
-                user: this.transformProfileToUser(data as UserProfile),
-                inviteSent: false,
-                error: `Profile and auth user created, but confirmation email failed. User needs to request a password reset.`,
-              };
-            }
+          // If email wasn't sent, return an error message
+          if (!inviteSent) {
+            return {
+              success: true,
+              userId: data?.id,
+              user: this.transformProfileToUser(data as UserProfile),
+              inviteSent: false,
+              error: `Profile and auth user created, but confirmation email failed. User needs to request a password reset.`,
+            };
           }
         } catch (error) {
           logger.error(

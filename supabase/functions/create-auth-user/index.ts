@@ -27,7 +27,8 @@ serve(async (req) => {
       },
     );
 
-    const { email, fullName, roles, isAdmin, skipPipeline } = await req.json();
+    const { email, fullName, roles, isAdmin, skipPipeline, profileId } =
+      await req.json();
 
     if (!email) {
       throw new Error("Email is required");
@@ -41,12 +42,16 @@ serve(async (req) => {
       throw new Error("User with this email already exists");
     }
 
-    // Create user with email_confirm: false to trigger signup confirmation email
-    // This will send the "Confirm signup" template, not the "Invite user" template
+    // Generate a secure random password
+    const tempPassword = crypto.randomUUID() + crypto.randomUUID();
+
+    // Create user with a password and email_confirm=false
+    // This triggers the "Confirm signup" email template
     const { data: authUser, error: authError } =
       await supabaseAdmin.auth.admin.createUser({
         email,
-        email_confirm: false, // User must confirm email - triggers signup confirmation
+        password: tempPassword,
+        email_confirm: false, // This triggers signup confirmation email
         user_metadata: {
           full_name: fullName,
           roles: roles || [],
@@ -59,14 +64,22 @@ serve(async (req) => {
       throw authError;
     }
 
-    // The createUser with email_confirm: false automatically sends the confirmation email
-    // using the "Confirm signup" template configured in Supabase dashboard
+    // Now link the auth user ID to the profile
+    if (authUser.user && profileId) {
+      const { error: updateError } = await supabaseAdmin
+        .from("user_profiles")
+        .update({ user_id: authUser.user.id })
+        .eq("id", profileId);
+
+      if (updateError) {
+        console.error("Failed to link profile:", updateError);
+      }
+    }
 
     return new Response(
       JSON.stringify({
         user: authUser.user,
-        message:
-          "User created successfully. Confirmation email sent using your custom template.",
+        message: "User created successfully. Signup confirmation email sent.",
         emailSent: true,
       }),
       {
