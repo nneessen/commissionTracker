@@ -1,17 +1,28 @@
-import {useQuery, useMutation, useQueryClient} from '@tanstack/react-query'
-import {useAuth} from '@/contexts/AuthContext'
-import showToast from '@/utils/toast'
-import {getEmailTemplates, getEmailTemplate, createEmailTemplate, updateEmailTemplate, deleteEmailTemplate, duplicateEmailTemplate, toggleTemplateActive, getUserTemplateStatus, getGroupedEmailTemplates, type EmailTemplateFilters} from '../services/emailTemplateService'
-import type {CreateEmailTemplateRequest} from '@/types/email.types'
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/contexts/AuthContext";
+import showToast from "@/utils/toast";
+import {
+  getEmailTemplates,
+  getEmailTemplate,
+  createEmailTemplate,
+  updateEmailTemplate,
+  deleteEmailTemplate,
+  duplicateEmailTemplate,
+  toggleTemplateActive,
+  getUserTemplateStatus,
+  getGroupedEmailTemplates,
+  type EmailTemplateFilters,
+} from "../services/emailTemplateService";
+import type { CreateEmailTemplateRequest } from "@/types/email.types";
 
-const QUERY_KEY = 'email-templates'
-const STATUS_QUERY_KEY = 'email-template-status'
+const QUERY_KEY = "email-templates";
+const STATUS_QUERY_KEY = "email-template-status";
 
 export function useEmailTemplates(filters?: EmailTemplateFilters) {
   return useQuery({
     queryKey: [QUERY_KEY, filters],
     queryFn: () => getEmailTemplates(filters),
-  })
+  });
 }
 
 export function useEmailTemplate(id: string | null) {
@@ -19,126 +30,133 @@ export function useEmailTemplate(id: string | null) {
     queryKey: [QUERY_KEY, id],
     queryFn: () => (id ? getEmailTemplate(id) : null),
     enabled: !!id,
-  })
+  });
 }
 
 export function useCreateEmailTemplate() {
-  const queryClient = useQueryClient()
-  const { user } = useAuth()
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   return useMutation({
     mutationFn: (template: CreateEmailTemplateRequest) => {
       if (!user?.id) {
-        throw new Error('You must be logged in to create templates')
+        throw new Error("You must be logged in to create templates");
       }
-      return createEmailTemplate(template, user.id)
+      return createEmailTemplate(template, user.id);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEY] })
-      showToast.success('Template created successfully')
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
+      showToast.success("Template created successfully");
     },
     onError: (error: Error) => {
-      console.error('Failed to create template:', error)
-      showToast.error(error.message || 'Failed to create template')
+      console.error("Failed to create template:", error);
+      showToast.error(error.message || "Failed to create template");
     },
-  })
+  });
 }
 
 export function useUpdateEmailTemplate() {
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, updates }: { id: string; updates: Partial<CreateEmailTemplateRequest> }) =>
-      updateEmailTemplate(id, updates),
+    mutationFn: ({
+      id,
+      updates,
+    }: {
+      id: string;
+      updates: Partial<CreateEmailTemplateRequest>;
+    }) => updateEmailTemplate(id, updates),
     onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEY] })
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEY, id] })
-      showToast.success('Template saved successfully')
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEY, id] });
+      showToast.success("Template saved successfully");
     },
     onError: (error: Error) => {
-      console.error('Failed to update template:', error)
-      showToast.error(error.message || 'Failed to save template')
+      console.error("Failed to update template:", error);
+      showToast.error(error.message || "Failed to save template");
     },
-  })
+  });
 }
 
 export function useDeleteEmailTemplate() {
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (id: string) => deleteEmailTemplate(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEY] })
-      showToast.success('Template deleted')
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
+      showToast.success("Template deleted");
     },
     onError: (error: Error) => {
-      console.error('Failed to delete template:', error)
-      showToast.error(error.message || 'Failed to delete template')
+      console.error("Failed to delete template:", error);
+      showToast.error(error.message || "Failed to delete template");
     },
-  })
+  });
 }
 
 export function useDuplicateEmailTemplate() {
-  const queryClient = useQueryClient()
-  const { user } = useAuth()
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   return useMutation({
     mutationFn: (id: string) => {
       if (!user?.id) {
-        throw new Error('You must be logged in to duplicate templates')
+        throw new Error("You must be logged in to duplicate templates");
       }
-      return duplicateEmailTemplate(id, user.id)
+      return duplicateEmailTemplate(id, user.id);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEY] })
-      showToast.success('Template duplicated')
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
+      showToast.success("Template duplicated");
     },
     onError: (error: Error) => {
-      console.error('Failed to duplicate template:', error)
-      showToast.error(error.message || 'Failed to duplicate template')
+      console.error("Failed to duplicate template:", error);
+      showToast.error(error.message || "Failed to duplicate template");
     },
-  })
+  });
 }
 
 export function useToggleTemplateActive() {
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) =>
       toggleTemplateActive(id, isActive),
     onSuccess: (_, { isActive }) => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEY] })
-      showToast.success(isActive ? 'Template activated' : 'Template deactivated')
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
+      showToast.success(
+        isActive ? "Template activated" : "Template deactivated",
+      );
     },
     onError: (error: Error) => {
-      console.error('Failed to toggle template:', error)
-      showToast.error(error.message || 'Failed to update template status')
+      console.error("Failed to toggle template:", error);
+      showToast.error(error.message || "Failed to update template status");
     },
-  })
+  });
 }
 
 /**
  * Get user's template status (count/limit)
  */
 export function useUserTemplateStatus() {
-  const { user } = useAuth()
+  const { user } = useAuth();
 
   return useQuery({
     queryKey: [STATUS_QUERY_KEY, user?.id],
     queryFn: () => (user?.id ? getUserTemplateStatus(user.id) : null),
     enabled: !!user?.id,
-  })
+  });
 }
 
 /**
  * Get templates grouped by global vs personal
  */
 export function useGroupedEmailTemplates() {
-  const { user } = useAuth()
+  const { user } = useAuth();
 
   return useQuery({
-    queryKey: [QUERY_KEY, 'grouped', user?.id],
+    queryKey: [QUERY_KEY, "grouped", user?.id],
     queryFn: () => (user?.id ? getGroupedEmailTemplates(user.id) : null),
     enabled: !!user?.id,
-  })
+  });
 }

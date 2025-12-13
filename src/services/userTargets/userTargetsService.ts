@@ -1,6 +1,6 @@
 // src/services/userTargets/userTargetsService.ts
 
-import {supabase} from '../base/supabase';
+import { supabase } from "../base/supabase";
 
 export interface UserTargets {
   id: string;
@@ -35,41 +35,40 @@ export interface UpdateUserTargetsInput {
 }
 
 class UserTargetsService {
-  /**
-   * Get user targets for the current user
-   */
   async get(): Promise<UserTargets | null> {
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
     if (!user) {
-      throw new Error('User not authenticated');
+      throw new Error("User not authenticated");
     }
 
     const { data, error } = await supabase
-      .from('user_targets')
-      .select('*')
-      .eq('user_id', user.id)
+      .from("user_targets")
+      .select("*")
+      .eq("user_id", user.id)
       .single();
 
-    if (error && error.code !== 'PGRST116') { // PGRST116 = not found
+    if (error && error.code !== "PGRST116") {
+      // PGRST116 = not found
       throw error;
     }
 
     return data;
   }
 
-  /**
-   * Create or update user targets for the current user
-   */
   async upsert(input: UpdateUserTargetsInput): Promise<UserTargets> {
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
     if (!user) {
-      throw new Error('User not authenticated');
+      throw new Error("User not authenticated");
     }
 
     const { data, error } = await supabase
-      .from('user_targets')
+      .from("user_targets")
       .upsert({
         user_id: user.id,
         ...input,
@@ -85,23 +84,22 @@ class UserTargetsService {
     return data;
   }
 
-  /**
-   * Update specific target fields
-   */
   async update(input: UpdateUserTargetsInput): Promise<UserTargets> {
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
     if (!user) {
-      throw new Error('User not authenticated');
+      throw new Error("User not authenticated");
     }
 
     const { data, error } = await supabase
-      .from('user_targets')
+      .from("user_targets")
       .update({
         ...input,
         updated_at: new Date().toISOString(),
       })
-      .eq('user_id', user.id)
+      .eq("user_id", user.id)
       .select()
       .single();
 
