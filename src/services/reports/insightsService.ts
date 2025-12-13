@@ -1,6 +1,6 @@
 // src/services/reports/insightsService.ts
 
-import {ActionableInsight, InsightSeverity, InsightCategory} from '../../types/reports.types';
+import {ActionableInsight} from '../../types/reports.types';
 import {supabase} from '../base/supabase';
 
 interface InsightContext {
@@ -186,11 +186,12 @@ export class InsightsService {
       }
 
       // Check average premium opportunity
+      // Get policies that are not cancelled (active policies)
       const { data: policies } = await supabase
         .from('policies')
         .select('annual_premium, product, carrier')
         .eq('user_id', context.userId)
-        .eq('status', 'active');
+        .is('cancellation_date', null);
 
       if (policies && policies.length > 10) {
         const avgPremium = policies.reduce((sum: number, p: any) => sum + (p.annual_premium || 0), 0) / policies.length;
@@ -324,11 +325,12 @@ export class InsightsService {
     const insights: ActionableInsight[] = [];
 
     // Get all active policies with product details
+    // Active policies = not cancelled
     const { data: activePolicies } = await supabase
       .from('policies')
       .select('client_id, product, annual_premium')
       .eq('user_id', context.userId)
-      .eq('status', 'active');
+      .is('cancellation_date', null);
 
     if (!activePolicies || activePolicies.length === 0) return insights;
 
@@ -402,7 +404,7 @@ export class InsightsService {
     // Get persistency metrics
     const { data: cohorts } = await supabase
       .from('policies')
-      .select('effective_date, status')
+      .select('effective_date, status, cancellation_date')
       .eq('user_id', context.userId);
 
     if (!cohorts || cohorts.length === 0) return insights;
@@ -414,7 +416,8 @@ export class InsightsService {
     const cohortPolicies = cohorts.filter(
       p => new Date(p.effective_date) <= thirteenMonthsAgo,
     );
-    const stillActive = cohortPolicies.filter(p => p.status === 'active');
+    // Consider policies without cancellation date as still active
+    const stillActive = cohortPolicies.filter(p => !p.cancellation_date);
     const persistency = cohortPolicies.length > 0
       ? (stillActive.length / cohortPolicies.length) * 100
       : 0;

@@ -6,6 +6,38 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-12-13 12:03:48
+
+### Changed Files
+- `CHANGELOG.md`
+- `PROJECT_STATS.md`
+- `scripts/test-admin-user-update.js`
+- `scripts/test-contract-level-update.js`
+- `scripts/test-userservice-update.js`
+- `src/features/expenses/components/ExpenseDialogCompact.tsx`
+- `src/services/reports/insightsService.ts`
+- `src/services/users/userService.ts`
+
+### Statistics
+```
+ 8 files changed, 395 insertions(+), 30 deletions(-)
+```
+
+## [Checkpoint] - 2025-12-13 12:02:23
+
+### Changed Files
+- `scripts/test-admin-user-update.js`
+- `scripts/test-contract-level-update.js`
+- `scripts/test-userservice-update.js`
+- `src/features/expenses/components/ExpenseDialogCompact.tsx`
+- `src/services/reports/insightsService.ts`
+- `src/services/users/userService.ts`
+
+### Statistics
+```
+ 6 files changed, 369 insertions(+), 18 deletions(-)
+```
+
 ## [Checkpoint] - 2025-12-13 11:09:38
 
 ### Changed Files

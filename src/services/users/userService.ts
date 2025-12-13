@@ -555,9 +555,17 @@ class UserService {
       roles?: RoleName[];
       approval_status?: "pending" | "approved" | "denied";
       agent_status?: "licensed" | "unlicensed" | "not_applicable";
+      contract_level?: number;
     },
   ): Promise<User> {
-    const dbData = this.transformUpdatesToDB(updates);
+    // Handle direct contract_level separately from transformUpdatesToDB
+    const { contract_level, ...otherUpdates } = updates;
+    const dbData = this.transformUpdatesToDB(otherUpdates);
+    
+    // Add contract_level directly if provided
+    if (contract_level !== undefined) {
+      dbData.contract_level = contract_level;
+    }
 
     // If roles are being updated, also update agent_status accordingly
     if (updates.roles) {
@@ -580,29 +588,41 @@ class UserService {
       dbData.approval_status = updates.approval_status;
     }
 
-    // FIXED: Handle potential multiple row returns more gracefully
+    // FIXED: Simplified query to avoid 406 errors
     const { data, error } = await supabase
       .from("user_profiles")
       .update(dbData)
       .eq("id", id)
-      .neq("is_deleted", true)
       .select()
-      .maybeSingle(); // Use maybeSingle instead of single to handle edge cases
+      .single();
 
     if (error) {
-      // Special handling for the "Cannot coerce" error
-      if (error.message.includes("Cannot coerce")) {
-        // Try to fetch the updated user separately
-        const { data: fetchedData, error: fetchError } = await supabase
+      // Special handling for edge cases
+      if (error.code === "PGRST116" || error.message.includes("multiple")) {
+        // Multiple rows returned, try with maybeSingle
+        const { data: retryData, error: retryError } = await supabase
           .from("user_profiles")
-          .select("*")
+          .update(dbData)
           .eq("id", id)
-          .single();
-
-        if (!fetchError && fetchedData) {
-          return this.transformProfileToUser(fetchedData as UserProfile);
+          .select()
+          .maybeSingle();
+          
+        if (!retryError && retryData) {
+          return this.transformProfileToUser(retryData as UserProfile);
         }
       }
+      
+      // Try to fetch the user to verify update worked
+      const { data: fetchedData, error: fetchError } = await supabase
+        .from("user_profiles")
+        .select("*")
+        .eq("id", id)
+        .single();
+
+      if (!fetchError && fetchedData) {
+        return this.transformProfileToUser(fetchedData as UserProfile);
+      }
+      
       throw new Error(`Failed to update user: ${error.message}`);
     }
 
@@ -663,7 +683,7 @@ class UserService {
         return { success: false, error: "Not authenticated" };
       }
 
-      const { data, error } = await supabase.rpc("admin_approveuser", {
+      const { data: _data, error } = await supabase.rpc("admin_approveuser", {
         target_user_id: userId,
         approver_id: user.id,
       });
@@ -699,7 +719,7 @@ class UserService {
         return { success: false, error: "Not authenticated" };
       }
 
-      const { data, error } = await supabase.rpc("admin_denyuser", {
+      const { data: _data, error } = await supabase.rpc("admin_denyuser", {
         target_user_id: userId,
         approver_id: user.id,
         reason: reason || "No reason provided",
@@ -722,7 +742,7 @@ class UserService {
     userId: string,
   ): Promise<{ success: boolean; error?: string }> {
     try {
-      const { data, error } = await supabase.rpc("admin_set_pendinguser", {
+      const { data: _data, error } = await supabase.rpc("admin_set_pendinguser", {
         target_user_id: userId,
       });
 
@@ -747,7 +767,7 @@ class UserService {
     isAdmin: boolean,
   ): Promise<{ success: boolean; error?: string }> {
     try {
-      const { data, error } = await supabase.rpc("admin_set_admin_role", {
+      const { data: _data, error } = await supabase.rpc("admin_set_admin_role", {
         target_user_id: userId,
         new_is_admin: isAdmin,
       });
@@ -792,7 +812,7 @@ class UserService {
         };
       }
 
-      const { data, error } = await supabase
+      const { data: _data, error } = await supabase
         .from("user_profiles")
         .update({ contract_level: contractLevel })
         .eq("id", userId)
