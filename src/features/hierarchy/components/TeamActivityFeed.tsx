@@ -56,7 +56,7 @@ export function TeamActivityFeed({ agents }: TeamActivityFeedProps) {
 
       agents.forEach((agent, _index) => {
         // Check if agent recently joined (based on created_at)
-        const createdDate = new Date(agent.created_at);
+        const createdDate = new Date(agent.created_at || new Date().toISOString());
         const daysSinceJoined = Math.floor((now.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24));
 
         if (daysSinceJoined <= 30) {
@@ -77,7 +77,7 @@ export function TeamActivityFeed({ agents }: TeamActivityFeedProps) {
             type: 'warning',
             agent: agent.name || agent.email,
             message: 'became inactive',
-            timestamp: new Date(agent.updated_at),
+            timestamp: new Date(agent.updated_at || new Date().toISOString()),
             details: 'Review agent status'
           });
         }

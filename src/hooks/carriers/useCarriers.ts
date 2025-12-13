@@ -159,7 +159,7 @@ export function useUpdateCarrier() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<Carrier> }) => {
+    mutationFn: async ({ id, data }: { id: string; data: Partial<NewCarrierForm> }) => {
       const result = await carrierService.update(id, data);
       if (result.success && result.data) {
         return result.data;

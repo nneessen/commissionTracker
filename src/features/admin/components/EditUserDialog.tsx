@@ -166,7 +166,7 @@ export default function EditUserDialog({
         phone: user.phone || "",
         upline_id: user.upline_id || null,
         roles: (user.roles as RoleName[]) || [],
-        approval_status: user.approval_status || "pending",
+        approval_status: (user.approval_status || "pending") as "pending" | "approved" | "denied",
         agent_status: user.agent_status || null,
         contract_level: user.contract_level || null,
         street_address: (user as any).street_address || "",
@@ -334,7 +334,7 @@ export default function EditUserDialog({
               Edit User
             </DialogTitle>
             <DialogDescription className="text-xs">
-              {user.email} - Created {new Date(user.created_at).toLocaleDateString()}
+              {user.email} - Created {new Date(user.created_at || new Date().toISOString()).toLocaleDateString()}
             </DialogDescription>
           </DialogHeader>
 
@@ -662,8 +662,8 @@ export default function EditUserDialog({
               {/* User Info */}
               <div className="p-3 bg-muted/30 rounded-lg text-xs space-y-1">
                 <p><span className="text-muted-foreground">User ID:</span> {user.id}</p>
-                <p><span className="text-muted-foreground">Created:</span> {new Date(user.created_at).toLocaleString()}</p>
-                <p><span className="text-muted-foreground">Updated:</span> {new Date(user.updated_at).toLocaleString()}</p>
+                <p><span className="text-muted-foreground">Created:</span> {new Date(user.created_at || new Date().toISOString()).toLocaleString()}</p>
+                <p><span className="text-muted-foreground">Updated:</span> {new Date(user.updated_at || new Date().toISOString()).toLocaleString()}</p>
                 {(user as any).onboarding_status && (
                   <p><span className="text-muted-foreground">Onboarding:</span> {(user as any).onboarding_status}</p>
                 )}

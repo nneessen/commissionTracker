@@ -305,6 +305,7 @@ export interface UpdateRecruitInput {
   license_number?: string;
   npn?: string;
   license_expiration?: string;
+  onboarding_status?: OnboardingStatus;
 }
 
 export interface UpdatePhaseInput {

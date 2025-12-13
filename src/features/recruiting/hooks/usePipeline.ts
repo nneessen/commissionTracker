@@ -128,7 +128,7 @@ export function useDeletePhase() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ phaseId, _templateId }: { phaseId: string; templateId: string }) =>
+    mutationFn: ({ phaseId, templateId: _templateId }: { phaseId: string; templateId: string }) =>
       pipelineService.deletePhase(phaseId),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['pipeline-phases', variables.templateId] });
@@ -201,7 +201,7 @@ export function useDeleteChecklistItem() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ itemId, _phaseId }: { itemId: string; phaseId: string }) =>
+    mutationFn: ({ itemId, phaseId: _phaseId }: { itemId: string; phaseId: string }) =>
       pipelineService.deleteChecklistItem(itemId),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['checklist-items', variables.phaseId] });

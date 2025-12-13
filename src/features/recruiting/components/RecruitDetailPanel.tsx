@@ -178,7 +178,7 @@ export function RecruitDetailPanel({ recruit, currentUserId, isUpline = false, o
                     className="flex items-center gap-1 text-blue-600 hover:text-blue-700 hover:underline"
                   >
                     <Instagram className="h-3 w-3" />
-                    <span className="truncate max-w-[100px]">@{recruit.instagramusername || 'IG'}</span>
+                    <span className="truncate max-w-[100px]">@{recruit.instagram_username || 'IG'}</span>
                   </a>
                 )}
                 {recruit.linkedin_url && (
@@ -189,7 +189,7 @@ export function RecruitDetailPanel({ recruit, currentUserId, isUpline = false, o
                     className="flex items-center gap-1 text-blue-600 hover:text-blue-700 hover:underline"
                   >
                     <Linkedin className="h-3 w-3" />
-                    <span className="truncate max-w-[100px]">{recruit.linkedinusername || 'LI'}</span>
+                    <span className="truncate max-w-[100px]">{recruit.linkedin_username || 'LI'}</span>
                   </a>
                 )}
               </div>

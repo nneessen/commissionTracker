@@ -90,9 +90,9 @@ export function ChecklistItemEditor({ phaseId }: ChecklistItemEditorProps) {
         updates: {
           item_name: editingItem.item_name,
           item_description: editingItem.item_description ?? undefined,
-          item_type: editingItem.item_type,
+          item_type: editingItem.item_type as ChecklistItemType,
           is_required: editingItem.is_required,
-          can_be_completed_by: editingItem.can_be_completed_by,
+          can_be_completed_by: editingItem.can_be_completed_by as CompletedBy,
           requires_verification: editingItem.requires_verification,
           external_link: editingItem.external_link ?? undefined,
         },
@@ -151,7 +151,7 @@ export function ChecklistItemEditor({ phaseId }: ChecklistItemEditorProps) {
       ) : (
         <div className="space-y-1">
           {sortedItems.map((item) => {
-            const Icon = getTypeIcon(item.item_type);
+            const Icon = getTypeIcon(item.item_type as ChecklistItemType);
             return (
               <div
                 key={item.id}

@@ -1,7 +1,7 @@
 // src/features/hierarchy/HierarchyDashboardCompact.tsx
 
 import {useState, useEffect, useMemo} from 'react';
-import {Users, DollarSign, AlertCircle, CheckCircle2, XCircle} from 'lucide-react';
+import {Users, DollarSign, AlertCircle, CheckCircle2, XCircle, Download, UserPlus, Search, Filter} from 'lucide-react';
 import {cn} from '@/lib/utils';
 import {Button} from '@/components/ui/button';
 import {Input} from '@/components/ui/input';
@@ -12,7 +12,7 @@ import {DropdownMenuTrigger} from '@/components/ui/dropdown-menu';
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '@/components/ui/select';
 import {useAuth} from '@/contexts/AuthContext';
 import {useMyDownlines, useMyHierarchyStats, useHierarchyTree} from '@/hooks';
-import {formatCurrency, _formatPercent, formatDate} from '@/lib/format';
+import {formatCurrency, formatPercent, formatDate} from '@/lib/format';
 import {SendInvitationModal} from './components/SendInvitationModal';
 import {TeamMetricsCard} from './components/TeamMetricsCard';
 import {AgentTable} from './components/AgentTable';

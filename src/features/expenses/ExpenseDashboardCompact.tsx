@@ -1,7 +1,7 @@
 // src/features/expenses/ExpenseDashboardCompact.tsx - Redesigned with ultra-compact styling
 
 import {useState, useEffect} from "react";
-import {PieChart} from "lucide-react";
+import {PieChart, Download, Plus, ChevronLeft, ChevronRight, Search, Filter, FileText, MoreVertical, Edit, Trash2, DollarSign} from "lucide-react";
 import {cn} from "@/lib/utils";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
 import {DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger} from "@/components/ui/dropdown-menu";
@@ -21,7 +21,7 @@ import {supabase} from "../../services/base/supabase";
 import {downloadCSV} from "../../utils/exportHelpers";
 import type {Expense, AdvancedExpenseFilters, CreateExpenseData, ExpenseTemplate} from "../../types/expense.types";
 import {isSameMonth} from "../../lib/date";
-import {formatCurrency, formatPercent, _formatDate} from "../../lib/format";
+import {formatCurrency, formatPercent, formatDate} from "../../lib/format";
 import showToast from "../../utils/toast";
 import {DEFAULT_EXPENSE_CATEGORIES} from "../../types/expense.types";
 import {ExpenseDialogCompact} from "./components/ExpenseDialogCompact";

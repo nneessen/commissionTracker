@@ -94,7 +94,7 @@ export const ApprovalGuard: React.FC<ApprovalGuardProps> = ({ children }) => {
 
   // Show denied access screen
   if (isDenied) {
-    return <DeniedAccess email={profile?.email || currentUserEmail || undefined} reason={denialReason} />;
+    return <DeniedAccess email={profile?.email || currentUserEmail || undefined} reason={denialReason ?? undefined} />;
   }
 
   // Allow access if approved or admin

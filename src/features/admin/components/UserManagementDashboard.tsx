@@ -374,7 +374,7 @@ export const UserManagementDashboard: React.FC = () => {
                     </Select>
                   </TableCell>
                   <TableCell className="py-1.5 px-3 text-[12px] text-muted-foreground">
-                    {format(new Date(user.created_at), 'MMM d, yyyy h:mm a')}
+                    {format(new Date(user.created_at || new Date().toISOString()), 'MMM d, yyyy h:mm a')}
                   </TableCell>
                   <TableCell className="py-1.5 px-3 text-[12px] text-muted-foreground">
                     {user.approved_at && format(new Date(user.approved_at), 'MMM d, yyyy h:mm a')}

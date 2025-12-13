@@ -1,7 +1,7 @@
 // src/features/hierarchy/components/OverrideDashboard.tsx
 
 import React, { useState } from 'react';
-import {AlertCircle} from 'lucide-react';
+import {AlertCircle, DollarSign, Clock, TrendingUp, CheckCircle} from 'lucide-react';
 import {Card, CardHeader, CardTitle, CardContent} from '@/components/ui/card';
 import {Badge} from '@/components/ui/badge';
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from '@/components/ui/table';

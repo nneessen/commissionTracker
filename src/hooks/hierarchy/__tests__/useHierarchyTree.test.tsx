@@ -15,7 +15,7 @@ vi.mock('../../../services/hierarchy/hierarchyService', () => ({
   },
 }));
 
-const mockHierarchyTree: HierarchyNode[] = [
+const mockHierarchyTree = [
   {
     id: 'user-1',
     email: 'user@example.com',
@@ -24,8 +24,8 @@ const mockHierarchyTree: HierarchyNode[] = [
     hierarchy_depth: 0,
     approval_status: 'approved',
     is_admin: false,
-    created_at: new Date('2025-01-01'),
-    updated_at: new Date('2025-01-01'),
+    created_at: '2025-01-01T00:00:00.000Z',
+    updated_at: '2025-01-01T00:00:00.000Z',
     children: [
       {
         id: 'user-2',
@@ -35,8 +35,8 @@ const mockHierarchyTree: HierarchyNode[] = [
         hierarchy_depth: 1,
         approval_status: 'approved',
         is_admin: false,
-        created_at: new Date('2025-01-01'),
-        updated_at: new Date('2025-01-01'),
+        created_at: '2025-01-01T00:00:00.000Z',
+        updated_at: '2025-01-01T00:00:00.000Z',
         children: [],
         downline_count: 0,
         direct_downline_count: 0,
@@ -45,7 +45,7 @@ const mockHierarchyTree: HierarchyNode[] = [
     downline_count: 1,
     direct_downline_count: 1,
   },
-];
+] as unknown as HierarchyNode[];
 
 describe('useHierarchyTree', () => {
   let queryClient: QueryClient;
@@ -135,7 +135,7 @@ describe('useHierarchyTree', () => {
   });
 
   it('should handle nested hierarchy with multiple levels', async () => {
-    const deepHierarchy: HierarchyNode[] = [
+    const deepHierarchy = [
       {
         id: 'root',
         email: 'root@example.com',
@@ -144,8 +144,8 @@ describe('useHierarchyTree', () => {
         hierarchy_depth: 0,
         approval_status: 'approved',
         is_admin: true,
-        created_at: new Date('2025-01-01'),
-        updated_at: new Date('2025-01-01'),
+        created_at: '2025-01-01T00:00:00.000Z',
+        updated_at: '2025-01-01T00:00:00.000Z',
         children: [
           {
             id: 'level-1',
@@ -155,8 +155,8 @@ describe('useHierarchyTree', () => {
             hierarchy_depth: 1,
             approval_status: 'approved',
             is_admin: false,
-            created_at: new Date('2025-01-01'),
-            updated_at: new Date('2025-01-01'),
+            created_at: '2025-01-01T00:00:00.000Z',
+            updated_at: '2025-01-01T00:00:00.000Z',
             children: [
               {
                 id: 'level-2',
@@ -166,8 +166,8 @@ describe('useHierarchyTree', () => {
                 hierarchy_depth: 2,
                 approval_status: 'approved',
                 is_admin: false,
-                created_at: new Date('2025-01-01'),
-                updated_at: new Date('2025-01-01'),
+                created_at: '2025-01-01T00:00:00.000Z',
+                updated_at: '2025-01-01T00:00:00.000Z',
                 children: [],
                 downline_count: 0,
                 direct_downline_count: 0,
@@ -180,7 +180,7 @@ describe('useHierarchyTree', () => {
         downline_count: 2,
         direct_downline_count: 1,
       },
-    ];
+    ] as unknown as HierarchyNode[];
 
     vi.mocked(hierarchyService.getMyHierarchyTree).mockResolvedValue(deepHierarchy);
 

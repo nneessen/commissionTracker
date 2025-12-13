@@ -62,7 +62,7 @@ function EditHierarchyDialog({
 
   // Filter out the agent itself and its downlines to prevent circular references
   const availableUplines = allAgents.filter(
-    (a) => a.id !== agent?.id && !a.hierarchy_path.includes(agent?.id || '')
+    (a) => a.id !== agent?.id && !(a.hierarchy_path || '').includes(agent?.id || '')
   );
 
   return (
@@ -171,7 +171,7 @@ export function HierarchyManagement({ className }: HierarchyManagementProps) {
 
   // Group agents by hierarchy level
   const agentsByLevel = (downlines || []).reduce((acc, agent) => {
-    const level = agent.hierarchy_depth;
+    const level = agent.hierarchy_depth ?? 0;
     if (!acc[level]) acc[level] = [];
     acc[level].push(agent);
     return acc;
@@ -229,7 +229,7 @@ export function HierarchyManagement({ className }: HierarchyManagementProps) {
               <TableBody>
                 {downlines.map((agent) => {
                   const directDownlines = downlines.filter(d => d.upline_id === agent.id).length;
-                  const totalDownlines = downlines.filter(d => d.hierarchy_path.includes(agent.id) && d.id !== agent.id).length;
+                  const totalDownlines = downlines.filter(d => (d.hierarchy_path || '').includes(agent.id) && d.id !== agent.id).length;
                   const uplineEmail = agent.upline_id
                     ? downlines.find(d => d.id === agent.upline_id)?.email
                     : null;

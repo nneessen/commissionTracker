@@ -9,5 +9,6 @@ export * from './product.types';
 export * from './ui.types';
 export * from './user.types'; // Includes agent settings types (merged from agent.types.ts)
 export * from './policy.types';
+export * from './commission.types';
 export * from './metrics.types';
 export * from './targets.types';

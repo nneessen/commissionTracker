@@ -40,7 +40,7 @@ export default function AdminControlCenter() {
 
   // Check if current user can graduate recruits (Admin, Trainer, or Contracting Manager)
   const currentUserProfile = allUsers?.find(u => u.id === currentUser?.id);
-  const canGraduateRecruits = currentUserProfile?.roles?.some((role: RoleName) =>
+  const canGraduateRecruits = currentUserProfile?.roles?.some((role) =>
     ['admin', 'trainer', 'contracting_manager'].includes(role)
   );
 
@@ -335,10 +335,10 @@ export default function AdminControlCenter() {
                             {user.roles?.slice(0, 2).map((roleName) => (
                               <Badge
                                 key={roleName}
-                                className={`${getRoleColor(roleName)} text-[10px] px-1 py-0 h-4`}
+                                className={`${getRoleColor(roleName as RoleName)} text-[10px] px-1 py-0 h-4`}
                                 variant="secondary"
                               >
-                                {getRoleDisplayName(roleName)}
+                                {getRoleDisplayName(roleName as RoleName)}
                               </Badge>
                             ))}
                             {(user.roles?.length || 0) > 2 && (

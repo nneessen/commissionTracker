@@ -9,13 +9,13 @@ import type {RoleName} from '../../../types/permissions.types';
 
 describe('useUsersView role-based filtering logic', () => {
   // Test data matching actual database structure
-  const mockUsers: UserProfile[] = [
+  const mockUsers = [
     {
       id: '1',
       email: 'recruit1@test.com',
       first_name: 'Recruit',
       last_name: 'One',
-      roles: undefined, // NO ROLE - RECRUIT
+      roles: null, // NO ROLE - RECRUIT
       onboarding_status: 'lead',
       approval_status: 'approved',
       is_admin: false,
@@ -27,7 +27,7 @@ describe('useUsersView role-based filtering logic', () => {
       email: 'recruit2@test.com',
       first_name: 'Recruit',
       last_name: 'Two',
-      roles: undefined, // NO ROLE - RECRUIT
+      roles: null, // NO ROLE - RECRUIT
       onboarding_status: 'active',
       approval_status: 'approved',
       is_admin: false,
@@ -70,7 +70,7 @@ describe('useUsersView role-based filtering logic', () => {
       created_at: '2025-01-05',
       updated_at: '2025-01-05',
     },
-  ];
+  ] as UserProfile[];
 
   describe('Users & Access tab (Active Agents)', () => {
     it('should INCLUDE users with roles containing "agent" OR is_admin=true', () => {
@@ -195,7 +195,7 @@ describe('useUsersView role-based filtering logic', () => {
     });
 
     it('should handle empty roles array as recruit (if not admin)', () => {
-      const userWithEmptyRoles: UserProfile = {
+      const userWithEmptyRoles = {
         id: '6',
         email: 'empty-roles@test.com',
         roles: [] as RoleName[],
@@ -204,7 +204,7 @@ describe('useUsersView role-based filtering logic', () => {
         is_admin: false,
         created_at: '2025-01-06',
         updated_at: '2025-01-06',
-      };
+      } as UserProfile;
 
       const isAgent = userWithEmptyRoles.roles?.includes('agent') || userWithEmptyRoles.is_admin === true;
       expect(isAgent).toBe(false);
@@ -215,16 +215,16 @@ describe('useUsersView role-based filtering logic', () => {
     });
 
     it('should include admin users even without agent role', () => {
-      const adminWithoutAgentRole: UserProfile = {
+      const adminWithoutAgentRole = {
         id: '7',
         email: 'admin-only@test.com',
-        roles: undefined, // No roles but is admin
+        roles: null, // No roles but is admin
         onboarding_status: null,
         approval_status: 'approved',
         is_admin: true,
         created_at: '2025-01-07',
         updated_at: '2025-01-07',
-      };
+      } as UserProfile;
 
       // Should appear in Users & Access tab because is_admin=true
       const shouldBeInUsers = adminWithoutAgentRole.roles?.includes('agent') || adminWithoutAgentRole.is_admin === true;

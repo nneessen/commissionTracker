@@ -1,5 +1,5 @@
 import {useState} from 'react'
-import {Type} from 'lucide-react'
+import {Type, ChevronDown, Check} from 'lucide-react'
 import {cn} from '@/lib/utils'
 import {Button} from '@/components/ui/button'
 import {Popover, PopoverContent, PopoverTrigger} from '@/components/ui/popover'

@@ -20,7 +20,7 @@ export function AuthDiagnostic() {
     });
 
     // Get session
-    supabase.auth.getSession().then(({ data, _error }) => {
+    supabase.auth.getSession().then(({ data, error: _error }) => {
       if (data?.session) {
         setSessionData({
           expires_at: data.session.expires_at,

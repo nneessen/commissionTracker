@@ -136,7 +136,7 @@ export function RecruitListTable({
 
   const getStatusIndicator = (recruit: UserProfile) => {
     const status = recruit.onboarding_status;
-    const updatedAt = new Date(recruit.updated_at || recruit.created_at);
+    const updatedAt = new Date(recruit.updated_at || recruit.created_at || new Date().toISOString());
     const daysSinceUpdate = Math.floor(
       (Date.now() - updatedAt.getTime()) / (1000 * 60 * 60 * 24),
     );
@@ -298,7 +298,7 @@ export function RecruitListTable({
           ) : (
             filteredRecruits.map((recruit) => {
               const updatedDate = new Date(
-                recruit.updated_at || recruit.created_at,
+                recruit.updated_at || recruit.created_at || new Date().toISOString(),
               );
               const daysInPhase = Math.floor(
                 (Date.now() - updatedDate.getTime()) / (1000 * 60 * 60 * 24),

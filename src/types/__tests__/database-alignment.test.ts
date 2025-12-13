@@ -60,9 +60,12 @@ describe('Database Type Alignment', () => {
       expect(true).toBe(true);
     });
 
-    it('Carrier extends CarrierRow', () => {
+    it('Carrier extends CarrierRow (with typed contact_info)', () => {
+      // Carrier extends Omit<CarrierRow, 'contact_info'> and adds typed contact_info
       const carrier = {} as Carrier;
-      const _row: CarrierRow = carrier;
+      const _id: string = carrier.id;
+      const _name: string = carrier.name;
+      // Carrier has typed contact_info instead of Json
       expect(true).toBe(true);
     });
 

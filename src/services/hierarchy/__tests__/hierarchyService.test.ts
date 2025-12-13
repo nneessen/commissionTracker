@@ -50,7 +50,7 @@ describe('HierarchyService', () => {
 
   describe('getMyHierarchyTree', () => {
     it('should fetch hierarchy tree for current user', async () => {
-      const mockProfile: UserProfile = {
+      const mockProfile= {
         id: 'user-1',
         email: 'user@example.com',
         upline_id: null,
@@ -58,11 +58,11 @@ describe('HierarchyService', () => {
         hierarchy_depth: 0,
         approval_status: 'approved',
         is_admin: false,
-        created_at: new Date('2025-01-01'),
-        updated_at: new Date('2025-01-01'),
+        created_at: '2025-01-01T00:00:00.000Z',
+        updated_at: '2025-01-01T00:00:00.000Z',
       };
 
-      const mockDownlines: UserProfile[] = [
+      const mockDownlines= [
         {
           id: 'downline-1',
           email: 'downline@example.com',
@@ -71,8 +71,8 @@ describe('HierarchyService', () => {
           hierarchy_depth: 1,
           approval_status: 'approved',
           is_admin: false,
-          created_at: new Date('2025-01-01'),
-          updated_at: new Date('2025-01-01'),
+          created_at: '2025-01-01T00:00:00.000Z',
+          updated_at: '2025-01-01T00:00:00.000Z',
         },
       ];
 
@@ -97,7 +97,7 @@ describe('HierarchyService', () => {
     });
 
     it('should handle user with no downlines', async () => {
-      const mockProfile: UserProfile = {
+      const mockProfile= {
         id: 'user-1',
         email: 'user@example.com',
         upline_id: null,
@@ -105,8 +105,8 @@ describe('HierarchyService', () => {
         hierarchy_depth: 0,
         approval_status: 'approved',
         is_admin: false,
-        created_at: new Date('2025-01-01'),
-        updated_at: new Date('2025-01-01'),
+        created_at: '2025-01-01T00:00:00.000Z',
+        updated_at: '2025-01-01T00:00:00.000Z',
       };
 
       vi.mocked(supabase.auth.getUser).mockResolvedValue({
@@ -140,7 +140,7 @@ describe('HierarchyService', () => {
         hierarchy_path: 'user-1',
       };
 
-      const mockDownlines: UserProfile[] = [
+      const mockDownlines= [
         {
           id: 'downline-1',
           email: 'downline1@example.com',
@@ -149,8 +149,8 @@ describe('HierarchyService', () => {
           hierarchy_depth: 1,
           approval_status: 'approved',
           is_admin: false,
-          created_at: new Date('2025-01-01'),
-          updated_at: new Date('2025-01-01'),
+          created_at: '2025-01-01T00:00:00.000Z',
+          updated_at: '2025-01-01T00:00:00.000Z',
         },
         {
           id: 'downline-2',
@@ -160,8 +160,8 @@ describe('HierarchyService', () => {
           hierarchy_depth: 1,
           approval_status: 'approved',
           is_admin: false,
-          created_at: new Date('2025-01-01'),
-          updated_at: new Date('2025-01-01'),
+          created_at: '2025-01-01T00:00:00.000Z',
+          updated_at: '2025-01-01T00:00:00.000Z',
         },
       ];
 
@@ -208,7 +208,7 @@ describe('HierarchyService', () => {
         reason: 'Organizational restructure',
       };
 
-      const updatedProfile: UserProfile = {
+      const updatedProfile= {
         id: 'downline-1',
         email: 'downline@example.com',
         upline_id: 'user-2',
@@ -216,8 +216,8 @@ describe('HierarchyService', () => {
         hierarchy_depth: 1,
         approval_status: 'approved',
         is_admin: false,
-        created_at: new Date('2025-01-01'),
-        updated_at: new Date('2025-01-01'),
+        created_at: '2025-01-01T00:00:00.000Z',
+        updated_at: '2025-01-01T00:00:00.000Z',
       };
 
       // Mock validation check
@@ -275,7 +275,7 @@ describe('HierarchyService', () => {
         reason: 'Promote to root',
       };
 
-      const updatedProfile: UserProfile = {
+      const updatedProfile= {
         id: 'downline-1',
         email: 'downline@example.com',
         upline_id: null,
@@ -283,8 +283,8 @@ describe('HierarchyService', () => {
         hierarchy_depth: 0,
         approval_status: 'approved',
         is_admin: false,
-        created_at: new Date('2025-01-01'),
-        updated_at: new Date('2025-01-01'),
+        created_at: '2025-01-01T00:00:00.000Z',
+        updated_at: '2025-01-01T00:00:00.000Z',
       };
 
       // Mock agent fetch for validation

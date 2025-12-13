@@ -461,7 +461,7 @@ class HierarchyService {
         return {
           agent_id: downline.id,
           agent_email: downline.email,
-          hierarchy_depth: downline.hierarchy_depth,
+          hierarchy_depth: downline.hierarchy_depth ?? 0,
           policies_written: policyMetrics.total,
           policies_active: policyMetrics.active,
           policies_lapsed: policyMetrics.lapsed,

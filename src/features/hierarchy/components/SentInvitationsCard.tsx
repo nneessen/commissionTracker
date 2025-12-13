@@ -4,7 +4,7 @@
 import {useState} from 'react';
 import {useSentInvitations, useCancelInvitation} from '../../../hooks/hierarchy/useInvitations';
 import {Button} from '../../../components/ui/button';
-import {Ban, Loader2, ChevronDown, ChevronUp} from 'lucide-react';
+import {Ban, Loader2, ChevronDown, ChevronUp, Mail, Clock, XCircle} from 'lucide-react';
 import {formatDistanceToNow} from 'date-fns';
 
 export function SentInvitationsCard() {

@@ -1,7 +1,7 @@
 // src/features/hierarchy/components/HierarchyTree.tsx
 
 import React, { useState, useMemo } from 'react';
-import {Mail, Search, Users} from 'lucide-react';
+import {Mail, Search, Users, ChevronDown, ChevronRight, User} from 'lucide-react';
 import {Card, CardHeader, CardTitle, CardContent} from '@/components/ui/card';
 import {Badge} from '@/components/ui/badge';
 import {Button} from '@/components/ui/button';

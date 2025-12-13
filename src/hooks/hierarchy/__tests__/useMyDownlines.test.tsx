@@ -14,7 +14,7 @@ vi.mock('../../../services/hierarchy/hierarchyService', () => ({
   },
 }));
 
-const mockDownlines: UserProfile[] = [
+const mockDownlines = [
   {
     id: 'downline-1',
     email: 'downline1@example.com',
@@ -23,8 +23,8 @@ const mockDownlines: UserProfile[] = [
     hierarchy_depth: 1,
     approval_status: 'approved',
     is_admin: false,
-    created_at: new Date('2025-01-01'),
-    updated_at: new Date('2025-01-01'),
+    created_at: '2025-01-01T00:00:00.000Z',
+    updated_at: '2025-01-01T00:00:00.000Z',
   },
   {
     id: 'downline-2',
@@ -34,10 +34,10 @@ const mockDownlines: UserProfile[] = [
     hierarchy_depth: 1,
     approval_status: 'approved',
     is_admin: false,
-    created_at: new Date('2025-01-01'),
-    updated_at: new Date('2025-01-01'),
+    created_at: '2025-01-01T00:00:00.000Z',
+    updated_at: '2025-01-01T00:00:00.000Z',
   },
-];
+] as unknown as UserProfile[];
 
 describe('useMyDownlines', () => {
   let queryClient: QueryClient;

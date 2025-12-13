@@ -64,7 +64,7 @@ function EditHierarchyDialog({
 
   // Filter out the agent itself and its downlines to prevent circular references
   const availableUplines = allAgents.filter(
-    (a) => a.id !== agent?.id && !a.hierarchy_path.includes(agent?.id || '')
+    (a) => a.id !== agent?.id && !(a.hierarchy_path || '').includes(agent?.id || '')
   );
 
   return (

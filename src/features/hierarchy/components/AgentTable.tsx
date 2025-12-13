@@ -8,7 +8,7 @@ import {Button} from '@/components/ui/button';
 import {DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger} from '@/components/ui/dropdown-menu';
 import {AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle} from '@/components/ui/alert-dialog';
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '@/components/ui/select';
-import {formatCurrency, _formatPercent} from '@/lib/format';
+import {formatCurrency, formatPercent} from '@/lib/format';
 import showToast from '@/utils/toast';
 import type {UserProfile} from '@/types/hierarchy.types';
 import {useQuery} from '@tanstack/react-query';

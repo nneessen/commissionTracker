@@ -7,7 +7,7 @@ import {Button} from "../../components/ui/button";
 import {Card, CardContent} from "../../components/ui/card";
 import {Separator} from "../../components/ui/separator";
 import {SESSION_STORAGE_KEYS} from "../../constants/auth.constants";
-import {AuthMode} from "./hooks/useAuthValidation";
+import {AuthMode, useAuthValidation} from "./hooks/useAuthValidation";
 import {AuthErrorDisplay} from "./components/AuthErrorDisplay";
 import {AuthSuccessMessage} from "./components/AuthSuccessMessage";
 import {SignInForm} from "./components/SignInForm";

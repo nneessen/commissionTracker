@@ -31,7 +31,7 @@ export function ComposeEmailDialog({
   onOpenChange,
   recruitId,
   recruitEmail,
-  recruitName, _senderId,
+  recruitName,
 }: ComposeEmailDialogProps) {
   const [selectedTemplate, setSelectedTemplate] = useState<EmailTemplate | null>(null)
   const sendEmail = useSendEmail()

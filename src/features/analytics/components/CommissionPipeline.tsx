@@ -48,7 +48,7 @@ export function CommissionPipeline() {
   let pendingCount90 = 0;
   let atRisk = 0;
   let atRiskCount = 0;
-  const _totalPaid = 0;
+  let totalPaid = 0;
   let totalPending = 0;
 
   raw.commissions.forEach(commission => {
