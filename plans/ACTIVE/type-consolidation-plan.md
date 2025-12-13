@@ -133,20 +133,21 @@ export interface CreatePolicyData extends Omit<PolicyInsert, 'id' | 'created_at'
 - Added UserProfileMinimal, ApprovalStats, helper functions
 - CommissionClientInfo renamed to avoid conflict with Client entity
 
-### Phase 3: Remove Duplicates ✅ PARTIALLY COMPLETE (2024-12-12)
+### Phase 3: Remove Duplicates ✅ COMPLETE (2024-12-12)
 - [x] Delete `UserProfile` from `hierarchy.types.ts` (now imports from user.types)
 - [x] Delete `UserProfile` from `messaging.types.ts` (now uses UserProfileMinimal)
 - [x] Delete `UserProfile` from `userService.ts` (now imports from user.types)
 - [x] Move `ApprovalStats` from userService.ts to user.types.ts
-- [ ] Delete `recruiting.ts` (merge into recruiting.types.ts) - deferred
-- [ ] Delete `agent.types.ts` (merge into user.types.ts) - deferred
-- [ ] Delete `agent-detail.types.ts` (merge into user.types.ts) - deferred
-- [ ] Delete `database.ts` (ensure only database.types.ts exists) - deferred
+- [x] Delete `recruiting.ts` (was unused duplicate of recruiting.types.ts)
+- [x] Delete `agent.types.ts` (merged into user.types.ts)
+- [x] Keep `agent-detail.types.ts` (UI view models, not entity types)
+- [x] Rename `database.ts` → `db-helpers.types.ts` (clarity)
 
 **Phase 3 Results**:
 - UserProfile now defined ONCE in user.types.ts
-- All 3 duplicate definitions replaced with imports
-- Re-exports added for backward compatibility
+- AgentSettings, AgentProfile, US_STATES merged into user.types.ts
+- All duplicate definitions removed
+- Type file count: 31 → 27 (-4 files)
 
 ### Phase 4: Consolidate Files ✅ PARTIALLY COMPLETE (2024-12-12)
 - [ ] Merge `comp.types.ts` into `commission.types.ts` - deferred
