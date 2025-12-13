@@ -350,36 +350,21 @@ export default function EditUserDialog({
     setIsSendingInvite(true);
 
     try {
-      // Use admin.inviteUserByEmail to send proper signup confirmation email (NOT magic link!)
-      const { data, error } = await supabase.auth.admin.inviteUserByEmail(
-        user.email,
-        {
-          redirectTo: `${window.location.origin}/`,
-          data: {
-            full_name: `${formData.first_name} ${formData.last_name}`.trim(),
-            profile_id: user.id,
-            roles: user.roles,
-            agent_status: user.agent_status,
-            approval_status: user.approval_status,
-          },
-        },
-      );
+      // Send password reset email which acts as confirmation email where users set their password
+      const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
+        redirectTo: `${window.location.origin}/auth/callback?type=recovery`,
+      });
 
       if (error) {
         showToast.error(`Failed to send confirmation email: ${error.message}`);
       } else {
-        // Update the profile with the auth user ID if provided
-        if (data?.user) {
-          await supabase
-            .from("user_profiles")
-            .update({ user_id: data.user.id })
-            .eq("id", user.id);
-        }
-        showToast.success(`Confirmation signup email sent to ${user.email}`);
+        showToast.success(
+          `Confirmation email sent to ${user.email} to set password`,
+        );
       }
     } catch (error) {
-      showToast.error("An error occurred while sending invite");
-      console.error("Resend invite error:", error);
+      showToast.error("An error occurred while sending confirmation email");
+      console.error("Resend confirmation email error:", error);
     } finally {
       setIsSendingInvite(false);
     }

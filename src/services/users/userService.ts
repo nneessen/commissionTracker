@@ -469,14 +469,15 @@ class UserService {
         return { success: false, error: error.message };
       }
 
-      // Send confirmation signup email if requested (NOT magic link!)
+      // Send confirmation/password reset email if requested
       let inviteSent = false;
       if (userData.sendInvite !== false) {
-        // Use admin.inviteUserByEmail to send proper signup confirmation email
-        const { data: inviteData, error: inviteError } =
-          await supabase.auth.admin.inviteUserByEmail(email, {
-            redirectTo: `${window.location.origin}/`,
-            data: {
+        // First, create the auth user WITHOUT sending any email
+        const { data: authData, error: createError } =
+          await supabase.auth.admin.createUser({
+            email: email,
+            email_confirm: false, // Don't auto-confirm the email
+            user_metadata: {
               email: email,
               first_name: userData.name ? userData.name.split(" ")[0] : "",
               last_name: userData.name
@@ -489,31 +490,77 @@ class UserService {
             },
           });
 
-        if (inviteError) {
-          logger.error(
-            "Failed to send confirmation signup email",
-            inviteError,
-            "UserService",
-          );
-          // Profile was created but invite failed - still return success
-          return {
-            success: true,
-            userId: data?.id,
-            user: this.transformProfileToUser(data as UserProfile),
-            inviteSent: false,
-            error: `Profile created but confirmation email failed: ${inviteError.message}`,
-          };
-        }
+        if (createError) {
+          // If user already exists, that's ok - just get their ID and send reset email
+          if (createError.message?.includes("already exists")) {
+            // User exists, send password reset email instead
+            const { error: resetError } =
+              await supabase.auth.resetPasswordForEmail(email, {
+                redirectTo: `${window.location.origin}/auth/callback?type=recovery`,
+              });
 
-        // Link the auth user to the profile
-        if (inviteData?.user) {
-          await supabase
-            .from("user_profiles")
-            .update({ user_id: inviteData.user.id })
-            .eq("id", data?.id);
-        }
+            if (resetError) {
+              logger.error(
+                "Failed to send password reset email",
+                resetError,
+                "UserService",
+              );
+              return {
+                success: true,
+                userId: data?.id,
+                user: this.transformProfileToUser(data as UserProfile),
+                inviteSent: false,
+                error: `Profile created but password reset email failed: ${resetError.message}`,
+              };
+            }
+            inviteSent = true;
+          } else {
+            logger.error(
+              "Failed to create auth user",
+              createError,
+              "UserService",
+            );
+            return {
+              success: true,
+              userId: data?.id,
+              user: this.transformProfileToUser(data as UserProfile),
+              inviteSent: false,
+              error: `Profile created but auth user creation failed: ${createError.message}`,
+            };
+          }
+        } else {
+          // Auth user created successfully, now send password reset email
+          // This acts as the confirmation email where they set their password
+          const { error: resetError } =
+            await supabase.auth.resetPasswordForEmail(email, {
+              redirectTo: `${window.location.origin}/auth/callback?type=recovery`,
+            });
 
-        inviteSent = true;
+          if (resetError) {
+            logger.error(
+              "Failed to send password reset email",
+              resetError,
+              "UserService",
+            );
+            return {
+              success: true,
+              userId: data?.id,
+              user: this.transformProfileToUser(data as UserProfile),
+              inviteSent: false,
+              error: `Profile and auth user created but password email failed: ${resetError.message}`,
+            };
+          }
+
+          // Link the auth user to the profile
+          if (authData?.user) {
+            await supabase
+              .from("user_profiles")
+              .update({ user_id: authData.user.id })
+              .eq("id", data?.id);
+          }
+
+          inviteSent = true;
+        }
       }
 
       logger.info(`User profile created: ${email}`, "UserService");
