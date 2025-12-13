@@ -41,110 +41,39 @@ serve(async (req) => {
       throw new Error("User with this email already exists");
     }
 
-    // First try to send invite email (this creates the user and sends confirmation in one step)
-    try {
-      const { data: inviteData, error: inviteError } =
-        await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
-          data: {
-            full_name: fullName,
-            roles: roles || [],
-            is_admin: isAdmin || false,
-            skip_pipeline: skipPipeline || false,
-          },
-          redirectTo: `${req.headers.get("origin")}/auth/callback?type=signup`,
-        });
-
-      if (inviteError) {
-        console.error("Invite error:", inviteError);
-        throw inviteError;
-      }
-
-      // Get the created user details
-      const { data: userList } = await supabaseAdmin.auth.admin.listUsers();
-      const newUser = userList?.users?.find((u) => u.email === email);
-
-      return new Response(
-        JSON.stringify({
-          user: newUser || inviteData,
-          message: "User created and confirmation email sent successfully.",
-          emailSent: true,
-        }),
-        {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 200,
+    // Create user with email_confirm: false to trigger signup confirmation email
+    // This will send the "Confirm signup" template, not the "Invite user" template
+    const { data: authUser, error: authError } =
+      await supabaseAdmin.auth.admin.createUser({
+        email,
+        email_confirm: false, // User must confirm email - triggers signup confirmation
+        user_metadata: {
+          full_name: fullName,
+          roles: roles || [],
+          is_admin: isAdmin || false,
+          skip_pipeline: skipPipeline || false,
         },
-      );
-    } catch (inviteError) {
-      console.error("Failed to invite user:", inviteError);
+      });
 
-      // Fallback: Create user manually and send password reset
-      const { data: authUser, error: authError } =
-        await supabaseAdmin.auth.admin.createUser({
-          email,
-          email_confirm: false,
-          user_metadata: {
-            full_name: fullName,
-            roles: roles || [],
-            is_admin: isAdmin || false,
-            skip_pipeline: skipPipeline || false,
-          },
-        });
-
-      if (authError) {
-        throw authError;
-      }
-
-      // Send password reset email as confirmation
-      try {
-        const { error: resetError } =
-          await supabaseAdmin.auth.resetPasswordForEmail(email, {
-            redirectTo: `${req.headers.get("origin")}/auth/callback?type=recovery`,
-          });
-
-        if (resetError) {
-          console.error("Password reset error:", resetError);
-          return new Response(
-            JSON.stringify({
-              user: authUser.user,
-              message:
-                "User created but confirmation email failed. User should request password reset.",
-              emailSent: false,
-            }),
-            {
-              headers: { ...corsHeaders, "Content-Type": "application/json" },
-              status: 200,
-            },
-          );
-        }
-
-        return new Response(
-          JSON.stringify({
-            user: authUser.user,
-            message:
-              "User created. Password reset email sent (as confirmation).",
-            emailSent: true,
-          }),
-          {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 200,
-          },
-        );
-      } catch (emailError) {
-        console.error("Email error:", emailError);
-        return new Response(
-          JSON.stringify({
-            user: authUser.user,
-            message:
-              "User created but email failed. User should request password reset.",
-            emailSent: false,
-          }),
-          {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 200,
-          },
-        );
-      }
+    if (authError) {
+      throw authError;
     }
+
+    // The createUser with email_confirm: false automatically sends the confirmation email
+    // using the "Confirm signup" template configured in Supabase dashboard
+
+    return new Response(
+      JSON.stringify({
+        user: authUser.user,
+        message:
+          "User created successfully. Confirmation email sent using your custom template.",
+        emailSent: true,
+      }),
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      },
+    );
   } catch (error) {
     console.error("Error in create-auth-user function:", error);
     return new Response(

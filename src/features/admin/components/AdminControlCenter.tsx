@@ -169,6 +169,8 @@ export default function AdminControlCenter() {
   const handleAddUser = async (userData: NewUserData) => {
     const result = await userApprovalService.createUser(userData);
     if (result.success) {
+      // Invalidate all user-related queries to refresh the UI
+      queryClient.invalidateQueries({ queryKey: ["userApproval"] });
       queryClient.invalidateQueries({ queryKey: ["users"] });
       queryClient.invalidateQueries({ queryKey: ["recruits"] });
       setIsAddUserDialogOpen(false);
