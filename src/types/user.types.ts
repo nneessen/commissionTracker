@@ -1,16 +1,165 @@
-// User represents the authenticated user with agent properties
-//
-//
-interface UserMetadata {
-  [key: string]: any;
+// src/types/user.types.ts
+// Canonical user/agent type definitions - DATABASE-FIRST pattern
+// All other files should import UserProfile from here
+
+import type { Database, Json } from './database.types';
+
+// =============================================================================
+// DATABASE-DERIVED TYPES (Source of Truth)
+// =============================================================================
+
+/** Raw database row type for user_profiles table */
+export type UserProfileRow = Database['public']['Tables']['user_profiles']['Row'];
+
+/** Insert type for creating new user profiles */
+export type UserProfileInsert = Database['public']['Tables']['user_profiles']['Insert'];
+
+/** Update type for modifying user profiles */
+export type UserProfileUpdate = Database['public']['Tables']['user_profiles']['Update'];
+
+/** Agent status enum from database */
+export type AgentStatus = Database['public']['Enums']['agent_status'];
+
+/** Approval status values */
+export type ApprovalStatus = 'pending' | 'approved' | 'denied';
+
+/** Onboarding status values (matches database check constraint) */
+export type OnboardingStatus =
+  | 'lead'
+  | 'active'
+  | 'interview_1'
+  | 'zoom_interview'
+  | 'pre_licensing'
+  | 'exam'
+  | 'npn_received'
+  | 'contracting'
+  | 'bootcamp'
+  | 'completed'
+  | 'dropped';
+
+// =============================================================================
+// USERPROFILE - Primary Interface (extends database row)
+// =============================================================================
+
+/**
+ * UserProfile - The canonical user/agent interface
+ *
+ * This is the SINGLE SOURCE OF TRUTH for user profile types.
+ * All components should import UserProfile from this file.
+ *
+ * Extends the database row type with optional join fields.
+ */
+export interface UserProfile extends UserProfileRow {
+  // Optional nested upline data (populated by joins)
+  upline?: Pick<UserProfileRow, 'id' | 'email' | 'first_name' | 'last_name'> | null;
+
+  // Computed/legacy fields (for backward compatibility)
+  // These are not in the database but used by app code
+  full_name?: string; // Computed from first_name + last_name
+  agent_code?: string; // Legacy field
+  license_state?: string; // Alias for resident_state
+  license_states?: string[]; // Multiple license states
+  notes?: string; // User notes
+  hire_date?: string; // When agent was hired
+  ytd_commission?: number; // Year-to-date commission (calculated)
+  ytd_premium?: number; // Year-to-date premium (calculated)
 }
 
+/**
+ * Minimal user profile for UI components (messaging, avatars, etc.)
+ */
+export type UserProfileMinimal = Pick<
+  UserProfileRow,
+  'id' | 'first_name' | 'last_name' | 'email' | 'profile_photo_url'
+>;
+
+/**
+ * User profile with hierarchy fields required (not nullable)
+ * Use when hierarchy context is guaranteed
+ */
+export interface UserProfileWithHierarchy extends UserProfile {
+  hierarchy_path: string;
+  hierarchy_depth: number;
+  upline_id: string | null;
+}
+
+// =============================================================================
+// FORM & INPUT TYPES
+// =============================================================================
+
+/**
+ * Data for creating a new user profile
+ */
+export interface CreateUserProfileData {
+  email: string;
+  first_name?: string;
+  last_name?: string;
+  phone?: string;
+  upline_id?: string;
+  recruiter_id?: string;
+  referral_source?: string;
+  agent_status?: AgentStatus;
+  contract_level?: number;
+  roles?: string[];
+  is_admin?: boolean;
+  pipeline_template_id?: string;
+  // Address fields
+  street_address?: string;
+  city?: string;
+  state?: string;
+  zip?: string;
+  date_of_birth?: string;
+  resident_state?: string;
+  // Licensing
+  license_number?: string;
+  npn?: string;
+  licensing_info?: Json;
+}
+
+/**
+ * Data for updating an existing user profile
+ */
+export type UpdateUserProfileData = Partial<CreateUserProfileData> & {
+  id: string;
+};
+
+// =============================================================================
+// ADMIN & APPROVAL TYPES
+// =============================================================================
+
+/**
+ * Statistics for user approval workflow
+ * Moved from userService.ts to proper location
+ */
+export interface ApprovalStats {
+  total: number;
+  pending: number;
+  approved: number;
+  denied: number;
+}
+
+/**
+ * User with computed display fields
+ */
+export interface UserProfileWithDisplay extends UserProfile {
+  full_name: string; // Computed: first_name + last_name
+  display_name: string; // Computed: full_name or email
+}
+
+// =============================================================================
+// LEGACY COMPATIBILITY TYPES
+// =============================================================================
+
+/**
+ * @deprecated Use UserProfile instead
+ * Legacy User interface for backward compatibility
+ */
 export interface User {
   id: string;
   email: string;
   name?: string;
   phone?: string;
-  contractCompLevel?: number; // 80-145
+  contractCompLevel?: number;
   isActive?: boolean;
   agentCode?: string;
   licenseNumber?: string;
@@ -23,24 +172,17 @@ export interface User {
   createdAt?: Date;
   updatedAt?: Date;
   preferences?: UserPreferences;
-  rawuser_meta_data: UserMetadata;
+  rawuser_meta_data?: Record<string, unknown>;
 }
 
-export interface UserPreferences {
-  theme: "light" | "dark";
-  dateFormat: "MM/DD/YYYY" | "DD/MM/YYYY" | "YYYY-MM-DD";
-  currency: "USD" | "EUR" | "GBP" | "CAD";
-  defaultCommissionRate: number;
-  notifications: {
-    emailReports: boolean;
-    policyReminders: boolean;
-    goalAchievements: boolean;
-  };
-}
-
-// For backward compatibility, Agent is now an alias for User
+/**
+ * @deprecated Use UserProfile instead
+ */
 export type Agent = User;
 
+/**
+ * @deprecated Use CreateUserProfileData instead
+ */
 export interface CreateUserData {
   name?: string;
   email: string;
@@ -52,30 +194,53 @@ export interface CreateUserData {
   isActive?: boolean;
   ytdCommission?: number;
   ytdPremium?: number;
-  roles?: string[]; // Optional roles array for specifying user roles
+  roles?: string[];
 }
 
+/**
+ * @deprecated Use UpdateUserProfileData instead
+ */
 export interface UpdateUserData extends Partial<CreateUserData> {
   id: string;
 }
 
-// Maintain backward compatibility
+/**
+ * @deprecated Use CreateUserProfileData instead
+ */
 export type CreateAgentData = CreateUserData;
+
+/**
+ * @deprecated Use UpdateUserProfileData instead
+ */
 export type UpdateAgentData = UpdateUserData;
 
-// CompGuideEntry, CompGuideLookup, and CommissionCalculation moved to product.types.ts
+export interface UserPreferences {
+  theme: 'light' | 'dark';
+  dateFormat: 'MM/DD/YYYY' | 'DD/MM/YYYY' | 'YYYY-MM-DD';
+  currency: 'USD' | 'EUR' | 'GBP' | 'CAD';
+  defaultCommissionRate: number;
+  notifications: {
+    emailReports: boolean;
+    policyReminders: boolean;
+    goalAchievements: boolean;
+  };
+}
+
+// =============================================================================
+// CHARGEBACK TYPES (should move to commission.types.ts in future)
+// =============================================================================
 
 export interface Chargeback {
   id: string;
   policyId: string;
   commissionId: string;
   userId?: string;
-  chargebackType: "policy_lapse" | "refund" | "cancellation";
+  chargebackType: 'policy_lapse' | 'refund' | 'cancellation';
   chargebackAmount: number;
   chargebackReason?: string;
   policyLapseDate?: Date;
   chargebackDate: Date;
-  status: "pending" | "processed" | "disputed" | "resolved";
+  status: 'pending' | 'processed' | 'disputed' | 'resolved';
   createdAt: Date;
   updatedAt: Date;
 }
@@ -84,13 +249,17 @@ export interface CreateChargebackData {
   policyId: string;
   commissionId: string;
   userId?: string;
-  chargebackType: "policy_lapse" | "refund" | "cancellation";
+  chargebackType: 'policy_lapse' | 'refund' | 'cancellation';
   chargebackAmount: number;
   chargebackReason?: string;
   policyLapseDate?: Date;
   chargebackDate: Date;
-  status?: "pending" | "processed" | "disputed" | "resolved";
+  status?: 'pending' | 'processed' | 'disputed' | 'resolved';
 }
+
+// =============================================================================
+// UI TYPES
+// =============================================================================
 
 export interface NavigationItem {
   id: string;
@@ -100,3 +269,33 @@ export interface NavigationItem {
   isActive?: boolean;
 }
 
+// =============================================================================
+// HELPER FUNCTIONS
+// =============================================================================
+
+/**
+ * Get full name from user profile
+ */
+export function getFullName(user: Pick<UserProfileRow, 'first_name' | 'last_name'>): string {
+  const parts = [user.first_name, user.last_name].filter(Boolean);
+  return parts.length > 0 ? parts.join(' ') : '';
+}
+
+/**
+ * Get display name (full name or email fallback)
+ */
+export function getDisplayName(
+  user: Pick<UserProfileRow, 'first_name' | 'last_name' | 'email'>
+): string {
+  const fullName = getFullName(user);
+  return fullName || user.email;
+}
+
+/**
+ * Get initials from user profile
+ */
+export function getUserInitials(user: Pick<UserProfileRow, 'first_name' | 'last_name'>): string {
+  const first = user.first_name?.[0] || '';
+  const last = user.last_name?.[0] || '';
+  return (first + last).toUpperCase() || '?';
+}

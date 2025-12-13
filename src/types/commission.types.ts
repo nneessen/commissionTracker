@@ -1,11 +1,22 @@
 // Import and re-export ProductType from product.types.ts instead of redefining
 import type {ProductType} from './product.types';
 
-export interface Client {
+/**
+ * Minimal client info for commission records
+ * This is NOT the full Client entity - use client.types.ts for that
+ * This is just the embedded client snapshot in a commission
+ */
+export interface CommissionClientInfo {
   name: string;
   age: number;
   state: string;
 }
+
+/**
+ * @deprecated Use CommissionClientInfo instead
+ * Kept for backward compatibility
+ */
+export type Client = CommissionClientInfo;
 
 export type CommissionType = 'first_year' | 'renewal' | 'trail' | 'bonus' | 'override';
 
@@ -35,7 +46,7 @@ export interface Commission {
   id: string;
   policyId?: string; // Links to Policy when available
   userId: string; // Links to auth.users (required)
-  client: Client;
+  client: CommissionClientInfo;
   carrierId: string;
   product: ProductType;
 

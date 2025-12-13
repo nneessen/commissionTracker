@@ -4,6 +4,12 @@
  * Types for the two-way messaging system between recruits, uplines, trainers, and admins.
  */
 
+import type { UserProfileMinimal } from './user.types';
+
+// Re-export for backward compatibility
+// New code should import directly from user.types.ts
+export type { UserProfileMinimal as UserProfile } from './user.types';
+
 export interface MessageThread {
   id: string;
   subject: string;
@@ -24,7 +30,7 @@ export interface MessageThread {
   // Client-side computed fields
   unread_count?: number;
   last_message_preview?: string;
-  participants?: UserProfile[];
+  participants?: UserProfileMinimal[];
 }
 
 export interface Message {
@@ -43,14 +49,6 @@ export interface Message {
     last_name: string | null;
     profile_photo_url: string | null;
   };
-}
-
-export interface UserProfile {
-  id: string;
-  first_name: string | null;
-  last_name: string | null;
-  email: string;
-  profile_photo_url: string | null;
 }
 
 export interface CreateThreadRequest {
@@ -95,5 +93,5 @@ export interface ComposeThreadDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (request: CreateThreadRequest) => void;
-  availableRecipients: UserProfile[];
+  availableRecipients: UserProfileMinimal[];
 }

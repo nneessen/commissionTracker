@@ -1,21 +1,62 @@
-export interface Carrier {
-  id: string;
-  name: string;
-  short_name?: string;
-  is_active: boolean;
-  default_commission_rates: Record<string, number>;
-  contact_info: {
-    email?: string;
-    phone?: string;
-    website?: string;
-    rep_name?: string;
-    rep_email?: string;
-    rep_phone?: string;
-  };
-  notes?: string;
-  created_at: Date;
-  updated_at?: Date;
+// src/types/carrier.types.ts
+// Carrier type definitions - DATABASE-FIRST pattern
+
+import type { Database, Json } from './database.types';
+
+// =============================================================================
+// DATABASE-DERIVED TYPES (Source of Truth)
+// =============================================================================
+
+/** Raw database row type for carriers table */
+export type CarrierRow = Database['public']['Tables']['carriers']['Row'];
+
+/** Insert type for creating new carriers */
+export type CarrierInsert = Database['public']['Tables']['carriers']['Insert'];
+
+/** Update type for modifying carriers */
+export type CarrierUpdate = Database['public']['Tables']['carriers']['Update'];
+
+// =============================================================================
+// CARRIER INTERFACE
+// =============================================================================
+
+/**
+ * Carrier - extends database row with typed contact_info
+ */
+export interface Carrier extends Omit<CarrierRow, 'contact_info'> {
+  contact_info: CarrierContactInfo | null;
 }
+
+/**
+ * Typed contact info structure (stored as JSON in database)
+ */
+export interface CarrierContactInfo {
+  email?: string;
+  phone?: string;
+  website?: string;
+  rep_name?: string;
+  rep_email?: string;
+  rep_phone?: string;
+}
+
+// =============================================================================
+// FORM & INPUT TYPES
+// =============================================================================
+
+export interface NewCarrierForm {
+  name: string;
+  code?: string;
+  is_active?: boolean;
+  contact_info?: CarrierContactInfo;
+}
+
+export interface UpdateCarrierForm extends Partial<NewCarrierForm> {
+  id: string;
+}
+
+// =============================================================================
+// ANALYTICS TYPES
+// =============================================================================
 
 export interface CarrierStats {
   carrierId: string;
@@ -27,87 +68,86 @@ export interface CarrierStats {
   averagePremium: number;
 }
 
-export interface NewCarrierForm {
-  name: string;
-  short_name?: string;
-  is_active?: boolean;
-  default_commission_rates?: Record<string, number>;
-  contact_info?: {
-    email?: string;
-    phone?: string;
-    website?: string;
-    rep_name?: string;
-    rep_email?: string;
-    rep_phone?: string;
-  };
-  notes?: string;
-}
+// =============================================================================
+// DEFAULT DATA
+// =============================================================================
 
-export const DEFAULT_CARRIERS: Array<Omit<Carrier, 'id' | 'created_at'>> = [
-  { 
-    name: "United Home Life", 
-    is_active: true, 
-    default_commission_rates: {},
-    contact_info: {} 
+export const DEFAULT_CARRIERS: Array<Omit<Carrier, 'id' | 'created_at' | 'updated_at'>> = [
+  {
+    name: 'United Home Life',
+    code: null,
+    is_active: true,
+    commission_structure: null,
+    contact_info: null,
   },
-  { 
-    name: "Legal & General America", 
-    is_active: true, 
-    default_commission_rates: {},
-    contact_info: {} 
+  {
+    name: 'Legal & General America',
+    code: null,
+    is_active: true,
+    commission_structure: null,
+    contact_info: null,
   },
-  { 
-    name: "American Home Life", 
-    is_active: true, 
-    default_commission_rates: {},
-    contact_info: {} 
+  {
+    name: 'American Home Life',
+    code: null,
+    is_active: true,
+    commission_structure: null,
+    contact_info: null,
   },
-  { 
-    name: "SBLI", 
-    is_active: true, 
-    default_commission_rates: {},
-    contact_info: {} 
+  {
+    name: 'SBLI',
+    code: null,
+    is_active: true,
+    commission_structure: null,
+    contact_info: null,
   },
-  { 
-    name: "Baltimore Life", 
-    is_active: true, 
-    default_commission_rates: {},
-    contact_info: {} 
+  {
+    name: 'Baltimore Life',
+    code: null,
+    is_active: true,
+    commission_structure: null,
+    contact_info: null,
   },
-  { 
-    name: "John Hancock", 
-    is_active: true, 
-    default_commission_rates: {},
-    contact_info: {} 
+  {
+    name: 'John Hancock',
+    code: null,
+    is_active: true,
+    commission_structure: null,
+    contact_info: null,
   },
-  { 
-    name: "American-Amicable Group", 
-    is_active: true, 
-    default_commission_rates: {},
-    contact_info: {} 
+  {
+    name: 'American-Amicable Group',
+    code: null,
+    is_active: true,
+    commission_structure: null,
+    contact_info: null,
   },
-  { 
-    name: "Corebridge Financial", 
-    is_active: true, 
-    default_commission_rates: {},
-    contact_info: {} 
+  {
+    name: 'Corebridge Financial',
+    code: null,
+    is_active: true,
+    commission_structure: null,
+    contact_info: null,
   },
-  { 
-    name: "Transamerica", 
-    is_active: true, 
-    default_commission_rates: {},
-    contact_info: {} 
+  {
+    name: 'Transamerica',
+    code: null,
+    is_active: true,
+    commission_structure: null,
+    contact_info: null,
   },
-  { 
-    name: "ELCO Mutual", 
-    is_active: true, 
-    default_commission_rates: {},
-    contact_info: {} 
+  {
+    name: 'ELCO Mutual',
+    code: null,
+    is_active: true,
+    commission_structure: null,
+    contact_info: null,
   },
-  { 
-    name: "Kansas City Life", 
-    is_active: true, 
-    default_commission_rates: {},
-    contact_info: {} 
+  {
+    name: 'Kansas City Life',
+    code: null,
+    is_active: true,
+    commission_structure: null,
+    contact_info: null,
   },
 ];

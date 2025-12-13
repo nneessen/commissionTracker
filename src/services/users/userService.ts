@@ -2,79 +2,18 @@
 
 import { supabase } from "../base/supabase";
 import { logger } from "../base/logger";
-import { User, CreateUserData, UpdateUserData } from "../../types/user.types";
+import {
+  User,
+  CreateUserData,
+  UpdateUserData,
+  UserProfile,
+  ApprovalStats,
+} from "../../types/user.types";
 import type { RoleName } from "../../types/permissions.types";
 
-export type { CreateUserData, UpdateUserData };
-
-export interface UserProfile {
-  id: string;
-  user_id?: string | null;
-  email: string;
-  full_name?: string | null;
-  first_name?: string;
-  last_name?: string;
-  roles?: RoleName[];
-  agent_status?: "licensed" | "unlicensed" | "not_applicable";
-  approval_status: "pending" | "approved" | "denied";
-  is_admin: boolean;
-  is_super_admin?: boolean;
-  approved_by?: string;
-  approved_at?: string;
-  denied_at?: string;
-  denial_reason?: string;
-  created_at: string;
-  updated_at: string;
-  contract_level?: number;
-  upline_id?: string;
-  hierarchy_path?: string;
-  hierarchy_depth?: number;
-  onboarding_status?:
-    | "lead"
-    | "active"
-    | "interview_1"
-    | "zoom_interview"
-    | "pre_licensing"
-    | "exam"
-    | "npn_received"
-    | "contracting"
-    | "bootcamp"
-    | "completed"
-    | "dropped"
-    | null;
-  current_onboarding_phase?: string;
-  onboarding_completed_at?: string;
-  phone?: string;
-  profile_photo_url?: string;
-  instagram_url?: string;
-  instagramusername?: string;
-  linkedin_url?: string;
-  linkedinusername?: string;
-  agent_code?: string;
-  license_number?: string;
-  license_state?: string;
-  license_states?: string[];
-  notes?: string;
-  hire_date?: string;
-  ytd_commission?: number;
-  ytd_premium?: number;
-  is_deleted?: boolean;
-  resident_state?: string;
-  // Optional nested upline data when joined
-  upline?: {
-    id: string;
-    email: string;
-    first_name?: string;
-    last_name?: string;
-  } | null;
-}
-
-export interface ApprovalStats {
-  total: number;
-  pending: number;
-  approved: number;
-  denied: number;
-}
+// Re-export for backward compatibility
+// New code should import directly from user.types.ts
+export type { CreateUserData, UpdateUserData, UserProfile, ApprovalStats };
 
 interface UserServiceFilter {
   roles?: RoleName[];

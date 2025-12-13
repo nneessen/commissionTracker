@@ -1,54 +1,12 @@
 // src/types/hierarchy.types.ts
 // Type definitions for insurance agency hierarchy system
 
-import type {CommissionStatus} from './commission.types';
+import type { CommissionStatus } from './commission.types';
+import type { UserProfile } from './user.types';
 
-/**
- * User profile with hierarchy information
- * NOTE: Recruits are just users with onboarding_status='lead' or 'active'
- * No separate table needed - single source of truth
- */
-export interface UserProfile {
-  id: string;
-  user_id?: string | null; // References auth.users.id (can be NULL for leads)
-  email: string;
-  first_name?: string | null;
-  last_name?: string | null;
-  phone?: string | null;
-  profile_photo_url?: string | null;
-
-  // Hierarchy fields
-  upline_id: string | null;
-  hierarchy_path: string;
-  hierarchy_depth: number;
-  approval_status: 'pending' | 'approved' | 'denied';
-  is_admin: boolean;
-  roles?: string[] | null; // Array of role names from RBAC system
-  contract_level?: number | null; // Commission contract level (80-145)
-
-  // Onboarding/recruiting fields - status mirrors the 7 phases
-  onboarding_status?: 'interview_1' | 'zoom_interview' | 'pre_licensing' | 'exam' | 'npn_received' | 'contracting' | 'bootcamp' | 'completed' | 'dropped';
-  current_onboarding_phase?: string | null;
-  recruiter_id?: string | null; // Who recruited them (different from upline_id)
-  onboarding_started_at?: string | null;
-  onboarding_completed_at?: string | null;
-  referral_source?: string | null;
-
-  // Licensing & Pipeline fields
-  agent_status?: 'unlicensed' | 'licensed' | 'not_applicable';
-  licensing_info?: Record<string, any> | null;
-  pipeline_template_id?: string | null;
-
-  // Social media
-  instagramusername?: string | null;
-  instagram_url?: string | null;
-  linkedinusername?: string | null;
-  linkedin_url?: string | null;
-
-  // Timestamps
-  created_at: Date;
-  updated_at: Date;
-}
+// Re-export UserProfile for backward compatibility
+// All new code should import directly from user.types.ts
+export type { UserProfile } from './user.types';
 
 /**
  * Hierarchical tree node representing an agent and their downlines
