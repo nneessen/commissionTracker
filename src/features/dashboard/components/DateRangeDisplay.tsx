@@ -1,7 +1,11 @@
 // src/features/dashboard/components/DateRangeDisplay.tsx
 
 import React from "react";
-import {TimePeriod, formatDateRange, type DateRange} from "../../../utils/dateRange";
+import {
+  TimePeriod,
+  formatDateRange,
+  type DateRange,
+} from "../../../utils/dateRange";
 
 interface DateRangeDisplayProps {
   timePeriod: TimePeriod;

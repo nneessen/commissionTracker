@@ -1,11 +1,11 @@
 // src/features/dashboard/components/ActivityFeed.tsx
 
 import React from "react";
-import {Card, CardContent} from "@/components/ui/card";
-import {Badge} from "@/components/ui/badge";
-import {Clock, FileText, DollarSign} from "lucide-react";
-import {formatCurrency, formatDate} from "../../../lib/format";
-import {cn} from "@/lib/utils";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Clock, FileText, DollarSign } from "lucide-react";
+import { formatCurrency, formatDate } from "../../../lib/format";
+import { cn } from "@/lib/utils";
 
 interface RecentPolicy {
   id: string;
@@ -92,27 +92,30 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({
                       key={policy.id}
                       className="bg-gradient-to-r from-card to-info/5 shadow-md rounded-lg p-3 transition-all duration-200 cursor-pointer hover:-translate-y-0.5 hover:shadow-lg"
                     >
-                        <div className="flex justify-between items-start mb-1.5">
-                          <div>
-                            <div className="text-sm font-semibold text-foreground mb-0.5">
-                              {policy.clientName}
-                            </div>
-                            <div className="text-xs text-muted-foreground">
-                              {policy.policyNumber}
-                            </div>
+                      <div className="flex justify-between items-start mb-1.5">
+                        <div>
+                          <div className="text-sm font-semibold text-foreground mb-0.5">
+                            {policy.clientName}
                           </div>
-                          <div className="text-sm font-bold text-success font-mono">
-                            {formatCurrency(policy.annualPremium)}
-                          </div>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <Badge variant="secondary" className="text-xs bg-info/20 text-info">
-                            {formatProductName(policy.product)}
-                          </Badge>
                           <div className="text-xs text-muted-foreground">
-                            {formatDate(policy.createdAt)}
+                            {policy.policyNumber}
                           </div>
                         </div>
+                        <div className="text-sm font-bold text-success font-mono">
+                          {formatCurrency(policy.annualPremium)}
+                        </div>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <Badge
+                          variant="secondary"
+                          className="text-xs bg-info/20 text-info"
+                        >
+                          {formatProductName(policy.product)}
+                        </Badge>
+                        <div className="text-xs text-muted-foreground">
+                          {formatDate(policy.createdAt)}
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -137,34 +140,34 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({
                         "shadow-md rounded-lg p-3 transition-all duration-200 cursor-pointer hover:-translate-y-0.5 hover:shadow-lg",
                         commission.status === "paid"
                           ? "bg-gradient-to-r from-card to-success/10"
-                          : "bg-gradient-to-r from-card to-warning/10"
+                          : "bg-gradient-to-r from-card to-warning/10",
                       )}
                     >
-                        <div className="flex justify-between items-start mb-1.5">
-                          <div>
-                            <div className="text-sm font-bold text-foreground font-mono">
-                              {formatCurrency(commission.amount)}
-                            </div>
-                            <div className="text-xs text-muted-foreground">
-                              {formatProductName(commission.product)}
-                            </div>
+                      <div className="flex justify-between items-start mb-1.5">
+                        <div>
+                          <div className="text-sm font-bold text-foreground font-mono">
+                            {formatCurrency(commission.amount)}
                           </div>
-                          <Badge
-                            className={cn(
-                              "text-xs uppercase shadow-sm",
-                              commission.status === "paid"
-                                ? "bg-success text-primary-foreground"
-                                : "bg-warning text-warning-foreground"
-                            )}
-                          >
-                            {commission.status}
-                          </Badge>
+                          <div className="text-xs text-muted-foreground">
+                            {formatProductName(commission.product)}
+                          </div>
                         </div>
-                        <div className="text-xs text-muted-foreground">
-                          {commission.paidDate
-                            ? formatDate(commission.paidDate)
-                            : formatDate(commission.createdAt)}
-                        </div>
+                        <Badge
+                          className={cn(
+                            "text-xs uppercase shadow-sm",
+                            commission.status === "paid"
+                              ? "bg-success text-primary-foreground"
+                              : "bg-warning text-warning-foreground",
+                          )}
+                        >
+                          {commission.status}
+                        </Badge>
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {commission.paidDate
+                          ? formatDate(commission.paidDate)
+                          : formatDate(commission.createdAt)}
+                      </div>
                     </div>
                   ))}
                 </div>

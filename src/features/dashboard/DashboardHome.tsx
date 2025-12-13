@@ -1,39 +1,45 @@
 // src/features/dashboard/DashboardHome.tsx
 
 import React, { useState } from "react";
-import {useNavigate} from "@tanstack/react-router";
-import {useConstants} from "../../hooks";
-import {useMetricsWithDateRange} from '@/hooks';
-import {useCreateExpense} from "../../hooks/expenses/useCreateExpense";
-import {useCreatePolicy} from "../../hooks/policies";
-import {useChargebackSummary} from "../../hooks/commissions/useChargebackSummary";
-import {useAuth} from "../../contexts/AuthContext";
-import {TimePeriod} from "../../utils/dateRange";
+import { useNavigate } from "@tanstack/react-router";
+import { useConstants } from "../../hooks";
+import { useMetricsWithDateRange } from "@/hooks";
+import { useCreateExpense } from "../../hooks/expenses/useCreateExpense";
+import { useCreatePolicy } from "../../hooks/policies";
+import { useChargebackSummary } from "../../hooks/commissions/useChargebackSummary";
+import { useAuth } from "../../contexts/AuthContext";
+import { TimePeriod } from "../../utils/dateRange";
 import showToast from "../../utils/toast";
-import type {CreateExpenseData} from "../../types/expense.types";
-import type {NewPolicyForm, CreatePolicyData} from "../../types/policy.types";
+import type { CreateExpenseData } from "../../types/expense.types";
+import type { NewPolicyForm, CreatePolicyData } from "../../types/policy.types";
 
 // Components
-import {TimePeriodSwitcher} from "./components/TimePeriodSwitcher";
-import {PeriodNavigator} from "./components/PeriodNavigator";
-import {DateRangeDisplay} from "./components/DateRangeDisplay";
-import {QuickStatsPanel} from "./components/QuickStatsPanel";
-import {PerformanceOverviewCard} from "./components/PerformanceOverviewCard";
-import {AlertsPanel} from "./components/AlertsPanel";
-import {QuickActionsPanel} from "./components/QuickActionsPanel";
-import {KPIGridHeatmap} from "./components/KPIGridHeatmap";
-import {ExpenseDialog} from "../expenses/components/ExpenseDialog";
-import {PolicyDialog} from "../policies/components/PolicyDialog";
+import { TimePeriodSwitcher } from "./components/TimePeriodSwitcher";
+import { PeriodNavigator } from "./components/PeriodNavigator";
+import { DateRangeDisplay } from "./components/DateRangeDisplay";
+import { QuickStatsPanel } from "./components/QuickStatsPanel";
+import { PerformanceOverviewCard } from "./components/PerformanceOverviewCard";
+import { AlertsPanel } from "./components/AlertsPanel";
+import { QuickActionsPanel } from "./components/QuickActionsPanel";
+import { KPIGridHeatmap } from "./components/KPIGridHeatmap";
+import { ExpenseDialog } from "../expenses/components/ExpenseDialog";
+import { PolicyDialog } from "../policies/components/PolicyDialog";
 
 // Configuration
-import {generateStatsConfig} from "./config/statsConfig";
-import {generateMetricsConfig} from "./config/metricsConfig";
-import {generateKPIConfig} from "./config/kpiConfig";
-import {generateAlertsConfig} from "./config/alertsConfig";
+import { generateStatsConfig } from "./config/statsConfig";
+import { generateMetricsConfig } from "./config/metricsConfig";
+import { generateKPIConfig } from "./config/kpiConfig";
+import { generateAlertsConfig } from "./config/alertsConfig";
 
 // Utils
-import {calculateDerivedMetrics, getBreakevenDisplay, getPoliciesNeededDisplay, getPeriodSuffix, scaleToDisplayPeriod} from "../../utils/dashboardCalculations";
-import {clientService} from "../../services/clients/clientService";
+import {
+  calculateDerivedMetrics,
+  getBreakevenDisplay,
+  getPoliciesNeededDisplay,
+  getPeriodSuffix,
+  scaleToDisplayPeriod,
+} from "../../utils/dashboardCalculations";
+import { clientService } from "../../services/clients/clientService";
 
 export const DashboardHome: React.FC = () => {
   const navigate = useNavigate();

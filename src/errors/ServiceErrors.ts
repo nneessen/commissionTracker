@@ -1,9 +1,5 @@
 // src/errors/ServiceErrors.ts
-// Custom error classes for better error handling and debugging
 
-/**
- * Base error class for all service errors
- */
 export class ServiceError extends Error {
   public readonly code: string;
   public readonly statusCode: number;
@@ -23,7 +19,6 @@ export class ServiceError extends Error {
     this.context = context;
     this.timestamp = new Date();
 
-    // Maintains proper stack trace for where our error was thrown
     Error.captureStackTrace(this, this.constructor);
   }
 
@@ -40,9 +35,6 @@ export class ServiceError extends Error {
   }
 }
 
-/**
- * Resource not found error (404)
- */
 export class NotFoundError extends ServiceError {
   constructor(
     resource: string,
@@ -57,9 +49,6 @@ export class NotFoundError extends ServiceError {
   }
 }
 
-/**
- * Validation error (400)
- */
 export class ValidationError extends ServiceError {
   public readonly validationErrors: Array<{
     field: string;
@@ -81,9 +70,6 @@ export class ValidationError extends ServiceError {
   }
 }
 
-/**
- * Database operation error (500)
- */
 export class DatabaseError extends ServiceError {
   constructor(
     operation: string,
@@ -102,9 +88,6 @@ export class DatabaseError extends ServiceError {
   }
 }
 
-/**
- * Calculation error (422)
- */
 export class CalculationError extends ServiceError {
   constructor(
     calculationType: string,
@@ -191,9 +174,6 @@ export class RateLimitError extends ServiceError {
   }
 }
 
-/**
- * Business logic error (422)
- */
 export class BusinessLogicError extends ServiceError {
   constructor(
     rule: string,
@@ -204,16 +184,10 @@ export class BusinessLogicError extends ServiceError {
   }
 }
 
-/**
- * Type guard to check if error is a ServiceError
- */
 export function isServiceError(error: unknown): error is ServiceError {
   return error instanceof ServiceError;
 }
 
-/**
- * Extract error message safely from any error type
- */
 export function getErrorMessage(error: unknown): string {
   if (error instanceof Error) {
     return error.message;
@@ -224,9 +198,6 @@ export function getErrorMessage(error: unknown): string {
   return "Unknown error occurred";
 }
 
-/**
- * Extract error details for logging
- */
 export function getErrorDetails(error: unknown): {
   message: string;
   code?: string;
