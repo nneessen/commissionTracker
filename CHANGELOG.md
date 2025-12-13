@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-12-13 16:34:29
+
+### Changed Files
+- `docs/auth-email-fix-december-2024.md`
+- `plans/TODO/create-user-not-working.md`
+- `src/constants/dashboard.ts`
+- `src/features/dashboard/components/StatItem.tsx`
+- `src/features/dashboard/config/statsConfig.ts`
+- `src/services/users/userService.ts`
+- `src/types/dashboard.types.ts`
+- `supabase/functions/create-auth-user/index.ts`
+- `tailwind.config.js`
+
+### Statistics
+```
+ 9 files changed, 356 insertions(+), 179 deletions(-)
+```
+
 ## [Checkpoint] - 2025-12-13 15:28:43
 
 ### Changed Files

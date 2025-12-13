@@ -438,7 +438,7 @@ class UserService {
         agent_status: agentStatus,
         approval_status: approvalStatus,
         onboarding_status: userData.onboarding_status || null,
-        user_id: null, // Will be set when user clicks magic link
+        user_id: null, // Will be set when user clicks confirmation link
         contract_level: userData.contractCompLevel,
         license_number: userData.licenseNumber,
         license_states: userData.licenseStates,
@@ -453,7 +453,7 @@ class UserService {
         ytd_premium: userData.ytdPremium,
       };
 
-      // Create user profile
+      // Create user profile first
       const { data, error } = await supabase
         .from("user_profiles")
         .insert(profileData)
@@ -469,40 +469,62 @@ class UserService {
         return { success: false, error: error.message };
       }
 
-      // Send confirmation/password reset email if requested
+      // Create auth user and send confirmation email if requested
       let inviteSent = false;
       if (userData.sendInvite !== false) {
-        // First, create the auth user WITHOUT sending any email
-        const { data: authData, error: createError } =
-          await supabase.auth.admin.createUser({
-            email: email,
-            email_confirm: false, // Don't auto-confirm the email
-            user_metadata: {
-              email: email,
-              first_name: userData.name ? userData.name.split(" ")[0] : "",
-              last_name: userData.name
-                ? userData.name.split(" ").slice(1).join(" ")
-                : "",
-              roles: assignedRoles,
-              agent_status: agentStatus,
-              approval_status: approvalStatus,
-              profile_id: data?.id,
+        try {
+          // Use the Edge Function to create auth user with service role permissions
+          const response = await fetch(
+            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-auth-user`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+              },
+              body: JSON.stringify({
+                email: email,
+                fullName: userData.name || "",
+                roles: assignedRoles,
+                isAdmin: assignedRoles.includes("admin"),
+                skipPipeline: false,
+              }),
             },
-          });
+          );
 
-        if (createError) {
-          // If user already exists, that's ok - just get their ID and send reset email
-          if (createError.message?.includes("already exists")) {
-            // User exists, send password reset email instead
-            const { error: resetError } =
-              await supabase.auth.resetPasswordForEmail(email, {
-                redirectTo: `${window.location.origin}/auth/callback?type=recovery`,
-              });
+          const result = await response.json();
 
-            if (resetError) {
+          if (!response.ok) {
+            // If user already exists, send password reset email instead
+            if (
+              result.error?.includes("already exists") ||
+              result.error?.includes("already registered")
+            ) {
+              // User exists, send password reset email instead
+              const { error: resetError } =
+                await supabase.auth.resetPasswordForEmail(email, {
+                  redirectTo: `${window.location.origin}/auth/callback?type=recovery`,
+                });
+
+              if (resetError) {
+                logger.error(
+                  "Failed to send password reset email",
+                  resetError,
+                  "UserService",
+                );
+                return {
+                  success: true,
+                  userId: data?.id,
+                  user: this.transformProfileToUser(data as UserProfile),
+                  inviteSent: false,
+                  error: `Profile created but password reset email failed: ${resetError.message}`,
+                };
+              }
+              inviteSent = true;
+            } else {
               logger.error(
-                "Failed to send password reset email",
-                resetError,
+                "Failed to create auth user via Edge Function",
+                new Error(result.error || "Unknown error"),
                 "UserService",
               );
               return {
@@ -510,56 +532,46 @@ class UserService {
                 userId: data?.id,
                 user: this.transformProfileToUser(data as UserProfile),
                 inviteSent: false,
-                error: `Profile created but password reset email failed: ${resetError.message}`,
+                error: `Profile created but auth user creation failed: ${result.error || "Unknown error"}`,
               };
             }
-            inviteSent = true;
           } else {
-            logger.error(
-              "Failed to create auth user",
-              createError,
-              "UserService",
-            );
-            return {
-              success: true,
-              userId: data?.id,
-              user: this.transformProfileToUser(data as UserProfile),
-              inviteSent: false,
-              error: `Profile created but auth user creation failed: ${createError.message}`,
-            };
-          }
-        } else {
-          // Auth user created successfully, now send password reset email
-          // This acts as the confirmation email where they set their password
-          const { error: resetError } =
-            await supabase.auth.resetPasswordForEmail(email, {
-              redirectTo: `${window.location.origin}/auth/callback?type=recovery`,
-            });
+            // Auth user created successfully via Edge Function
+            // Check if email was sent successfully
+            inviteSent = result.emailSent === true;
 
-          if (resetError) {
-            logger.error(
-              "Failed to send password reset email",
-              resetError,
-              "UserService",
-            );
-            return {
-              success: true,
-              userId: data?.id,
-              user: this.transformProfileToUser(data as UserProfile),
-              inviteSent: false,
-              error: `Profile and auth user created but password email failed: ${resetError.message}`,
-            };
-          }
+            // Link the auth user to the profile
+            if (result.user) {
+              await supabase
+                .from("user_profiles")
+                .update({ user_id: result.user.id })
+                .eq("id", data?.id);
+            }
 
-          // Link the auth user to the profile
-          if (authData?.user) {
-            await supabase
-              .from("user_profiles")
-              .update({ user_id: authData.user.id })
-              .eq("id", data?.id);
+            // If email wasn't sent, return an error message
+            if (!inviteSent) {
+              return {
+                success: true,
+                userId: data?.id,
+                user: this.transformProfileToUser(data as UserProfile),
+                inviteSent: false,
+                error: `Profile and auth user created, but confirmation email failed. User needs to request a password reset.`,
+              };
+            }
           }
-
-          inviteSent = true;
+        } catch (error) {
+          logger.error(
+            "Failed to call create-auth-user function",
+            error as Error,
+            "UserService",
+          );
+          return {
+            success: true,
+            userId: data?.id,
+            user: this.transformProfileToUser(data as UserProfile),
+            inviteSent: false,
+            error: `Profile created but auth user creation failed: ${(error as Error).message}`,
+          };
         }
       }
 
@@ -964,7 +976,13 @@ class UserService {
   > {
     try {
       const profile = await this.getCurrentUserProfile();
-      return (profile?.approval_status as "pending" | "approved" | "denied" | null) || null;
+      return (
+        (profile?.approval_status as
+          | "pending"
+          | "approved"
+          | "denied"
+          | null) || null
+      );
     } catch (error) {
       logger.error(
         "Error in getCurrentUserStatus",
