@@ -205,7 +205,7 @@ export default function EditUserDialog({
         phone: user.phone || "",
         upline_id: user.upline_id || null,
         roles: (user.roles as RoleName[]) || [],
-        approval_status: user.approval_status || "pending",
+        approval_status: (user.approval_status as "pending" | "approved" | "denied") || "pending",
         agent_status: user.agent_status || null,
         contract_level: user.contract_level || null,
         street_address: user.street_address || "",
@@ -391,7 +391,9 @@ export default function EditUserDialog({
             </DialogTitle>
             <DialogDescription className="text-xs">
               {user.email} - Created{" "}
-              {new Date(user.created_at).toLocaleDateString()}
+              {user.created_at
+                ? new Date(user.created_at).toLocaleDateString()
+                : "Unknown"}
             </DialogDescription>
           </DialogHeader>
 
@@ -869,11 +871,15 @@ export default function EditUserDialog({
                 </p>
                 <p>
                   <span className="text-muted-foreground">Created:</span>{" "}
-                  {new Date(user.created_at).toLocaleString()}
+                  {user.created_at
+                    ? new Date(user.created_at).toLocaleString()
+                    : "Unknown"}
                 </p>
                 <p>
                   <span className="text-muted-foreground">Updated:</span>{" "}
-                  {new Date(user.updated_at).toLocaleString()}
+                  {user.updated_at
+                    ? new Date(user.updated_at).toLocaleString()
+                    : "Unknown"}
                 </p>
                 {user.onboarding_status && (
                   <p>

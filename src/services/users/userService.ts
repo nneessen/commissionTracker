@@ -964,7 +964,7 @@ class UserService {
   > {
     try {
       const profile = await this.getCurrentUserProfile();
-      return profile?.approval_status || null;
+      return (profile?.approval_status as "pending" | "approved" | "denied" | null) || null;
     } catch (error) {
       logger.error(
         "Error in getCurrentUserStatus",
@@ -1064,17 +1064,17 @@ class UserService {
       id: profile.id,
       name: fullName,
       email: profile.email,
-      phone: profile.phone,
-      contractCompLevel: profile.contract_level,
+      phone: profile.phone || undefined,
+      contractCompLevel: profile.contract_level || undefined,
       isActive: profile.approval_status === "approved" && !profile.is_deleted,
-      agentCode: profile.agent_code,
-      licenseNumber: profile.license_number,
-      licenseState: profile.license_state,
-      licenseStates: profile.license_states,
-      notes: profile.notes,
+      agentCode: profile.agent_code || undefined,
+      licenseNumber: profile.license_number || undefined,
+      licenseState: profile.license_state || undefined,
+      licenseStates: profile.license_states || undefined,
+      notes: profile.notes || undefined,
       hireDate: profile.hire_date ? new Date(profile.hire_date) : undefined,
-      ytdCommission: profile.ytd_commission,
-      ytdPremium: profile.ytd_premium,
+      ytdCommission: profile.ytd_commission || undefined,
+      ytdPremium: profile.ytd_premium || undefined,
       createdAt: profile.created_at ? new Date(profile.created_at) : undefined,
       updatedAt: profile.updated_at ? new Date(profile.updated_at) : undefined,
       rawuser_meta_data: {

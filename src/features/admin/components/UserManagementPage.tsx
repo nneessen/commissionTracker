@@ -30,7 +30,7 @@ export function UserManagementPage() {
 
   const openEditDialog = (user: UserProfile) => {
     setSelectedUser(user);
-    setSelectedRoles(new Set(user.roles || []));
+    setSelectedRoles(new Set((user.roles || []) as RoleName[]));
     setIsEditDialogOpen(true);
   };
 
@@ -254,10 +254,10 @@ export function UserManagementPage() {
                       {user.roles?.map((roleName) => (
                         <Badge
                           key={roleName}
-                          className={getRoleColor(roleName)}
+                          className={getRoleColor(roleName as RoleName)}
                           variant="secondary"
                         >
-                          {getRoleDisplayName(roleName)}
+                          {getRoleDisplayName(roleName as RoleName)}
                         </Badge>
                       ))}
                       {(!user.roles || user.roles.length === 0) && (

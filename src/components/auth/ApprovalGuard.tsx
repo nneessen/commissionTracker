@@ -89,12 +89,12 @@ export const ApprovalGuard: React.FC<ApprovalGuardProps> = ({ children }) => {
 
   // Show pending approval screen (for non-recruits)
   if (isPending) {
-    return <PendingApproval email={profile?.email || currentUserEmail || undefined} />;
+    return <PendingApproval email={profile?.email || (currentUserEmail ?? undefined)} />;
   }
 
   // Show denied access screen
   if (isDenied) {
-    return <DeniedAccess email={profile?.email || currentUserEmail || undefined} reason={denialReason} />;
+    return <DeniedAccess email={(profile?.email ?? currentUserEmail) ?? undefined} reason={denialReason} />;
   }
 
   // Allow access if approved or admin
@@ -103,5 +103,5 @@ export const ApprovalGuard: React.FC<ApprovalGuardProps> = ({ children }) => {
   }
 
   // Fallback: show pending screen if status is unclear
-  return <PendingApproval email={profile?.email || currentUserEmail || undefined} />;
+  return <PendingApproval email={profile?.email || (currentUserEmail ?? undefined)} />;
 };
