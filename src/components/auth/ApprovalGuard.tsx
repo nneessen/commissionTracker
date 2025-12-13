@@ -1,12 +1,12 @@
 // /home/nneessen/projects/commissionTracker/src/components/auth/ApprovalGuard.tsx
 
-import React, { useEffect, useState } from 'react';
-import {Navigate} from '@tanstack/react-router';
-import {useAuthorizationStatus} from '../../hooks/admin/useUserApproval';
-import {PendingApproval} from '../../features/auth/PendingApproval';
-import {DeniedAccess} from '../../features/auth/DeniedAccess';
-import {supabase} from '@/services/base/supabase';
-import {usePermissionCheck} from '@/hooks/permissions/usePermissions';
+import React, { useEffect, useState } from "react";
+import { Navigate } from "@tanstack/react-router";
+import { useAuthorizationStatus } from "../../hooks/admin/useUserApproval";
+import { PendingApproval } from "../../features/auth/PendingApproval";
+import { DeniedAccess } from "../../features/auth/DeniedAccess";
+import { supabase } from "@/services/base/supabase";
+import { usePermissionCheck } from "@/hooks/permissions/usePermissions";
 
 interface ApprovalGuardProps {
   children: React.ReactNode;
@@ -21,32 +21,28 @@ interface ApprovalGuardProps {
  * - Allows access if user is approved or is admin
  */
 export const ApprovalGuard: React.FC<ApprovalGuardProps> = ({ children }) => {
-  const {
-    isApproved,
-    isPending,
-    isDenied,
-    denialReason,
-    isLoading,
-    profile,
-  } = useAuthorizationStatus();
+  const { isApproved, isPending, isDenied, denialReason, isLoading, profile } =
+    useAuthorizationStatus();
 
   const { is, isLoading: permissionsLoading } = usePermissionCheck();
-  const isRecruit = is('recruit');
-  const isActiveAgent = is('active_agent');
-  const isAgent = is('agent');
-  const isAdmin = is('admin');
+  const isRecruit = is("recruit");
+  const isActiveAgent = is("active_agent");
+  const isAgent = is("agent");
+  const isAdmin = is("admin");
 
-  const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
+  const [currentUserEmail, setCurrentUserEmail] = useState<string | undefined>(
+    undefined,
+  );
   const [authCheckLoading, setAuthCheckLoading] = useState(true);
 
   // Admin email - hardcoded for security
-  const ADMIN_EMAIL = 'nick@nickneessen.com';
+  const ADMIN_EMAIL = "nick@nickneessen.com";
 
   useEffect(() => {
     // Get the current auth user email directly
     supabase.auth.getUser().then(({ data }) => {
       if (data?.user) {
-        setCurrentUserEmail(data.user.email || null);
+        setCurrentUserEmail(data.user.email || undefined);
       }
       setAuthCheckLoading(false);
     });
@@ -74,7 +70,7 @@ export const ApprovalGuard: React.FC<ApprovalGuardProps> = ({ children }) => {
   // NEW: Recruit handling - recruits should only see their onboarding pipeline
   // Check if we're already on the pipeline page to avoid infinite redirect
   const currentPath = window.location.pathname;
-  const isOnPipelinePage = currentPath === '/recruiting/my-pipeline';
+  const isOnPipelinePage = currentPath === "/recruiting/my-pipeline";
 
   // Only redirect if user is ONLY a recruit and not an agent or active_agent
   // This ensures that users with active_agent or agent roles are not redirected
@@ -89,12 +85,17 @@ export const ApprovalGuard: React.FC<ApprovalGuardProps> = ({ children }) => {
 
   // Show pending approval screen (for non-recruits)
   if (isPending) {
-    return <PendingApproval email={profile?.email || (currentUserEmail ?? undefined)} />;
+    return <PendingApproval email={profile?.email ?? currentUserEmail} />;
   }
 
   // Show denied access screen
   if (isDenied) {
-    return <DeniedAccess email={(profile?.email ?? currentUserEmail) ?? undefined} reason={denialReason} />;
+    return (
+      <DeniedAccess
+        email={profile?.email ?? currentUserEmail}
+        reason={denialReason || undefined}
+      />
+    );
   }
 
   // Allow access if approved or admin
@@ -103,5 +104,5 @@ export const ApprovalGuard: React.FC<ApprovalGuardProps> = ({ children }) => {
   }
 
   // Fallback: show pending screen if status is unclear
-  return <PendingApproval email={profile?.email || (currentUserEmail ?? undefined)} />;
+  return <PendingApproval email={profile?.email ?? currentUserEmail} />;
 };
