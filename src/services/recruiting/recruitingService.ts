@@ -212,7 +212,7 @@ export const recruitingService = {
           onboarding_status: skip_pipeline ? null : 'interview_1',
           current_onboarding_phase: skip_pipeline ? null : 'initial_contact',
           onboarding_started_at: skip_pipeline ? null : new Date().toISOString(),
-          user_id: authUserId,
+          // Note: id = authUserId (same UUID, no separate user_id column)
           // Required hierarchy fields (set defaults)
           hierarchy_path: '', // Will be updated by trigger
           hierarchy_depth: 0, // Will be updated by trigger
@@ -241,7 +241,7 @@ export const recruitingService = {
           onboarding_status: skip_pipeline ? null : 'interview_1',
           current_onboarding_phase: skip_pipeline ? null : 'initial_contact',
           onboarding_started_at: skip_pipeline ? null : new Date().toISOString(),
-          user_id: null, // No auth user
+          // Note: Without auth user, profile id is auto-generated
           // Required hierarchy fields (set defaults)
           hierarchy_path: '',
           hierarchy_depth: 0,
@@ -258,7 +258,7 @@ export const recruitingService = {
     // Emit recruit created event
     await workflowEventEmitter.emit(WORKFLOW_EVENTS.RECRUIT_CREATED, {
       recruitId: newRecruit.id,
-      userId: newRecruit.user_id || undefined,
+      userId: newRecruit.id,
       userEmail: newRecruit.email,
       recruitName: `${newRecruit.first_name} ${newRecruit.last_name}`,
       recruiterId: newRecruit.recruiter_id || undefined,
@@ -301,7 +301,7 @@ export const recruitingService = {
       if (oldStatus !== newStatus) {
         await workflowEventEmitter.emit(WORKFLOW_EVENTS.RECRUIT_PHASE_CHANGED, {
           recruitId: id,
-          userId: updatedRecruit.user_id || undefined,
+          userId: updatedRecruit.id,
           userEmail: updatedRecruit.email,
           recruitName: `${updatedRecruit.first_name} ${updatedRecruit.last_name}`,
           oldPhase: oldStatus,
@@ -315,7 +315,7 @@ export const recruitingService = {
         if (newStatus === 'completed') {
           await workflowEventEmitter.emit(WORKFLOW_EVENTS.RECRUIT_GRADUATED_TO_AGENT, {
             recruitId: id,
-            userId: updatedRecruit.user_id || undefined,
+            userId: updatedRecruit.id,
             userEmail: updatedRecruit.email,
             recruitName: `${updatedRecruit.first_name} ${updatedRecruit.last_name}`,
             graduatedAt: new Date().toISOString(),
@@ -331,7 +331,7 @@ export const recruitingService = {
         if (newStatus === 'dropped') {
           await workflowEventEmitter.emit(WORKFLOW_EVENTS.RECRUIT_DROPPED_OUT, {
             recruitId: id,
-            userId: updatedRecruit.user_id || undefined,
+            userId: updatedRecruit.id,
             userEmail: updatedRecruit.email,
             recruitName: `${updatedRecruit.first_name} ${updatedRecruit.last_name}`,
             droppedAt: new Date().toISOString(),

@@ -2485,7 +2485,6 @@ export type Database = {
           street_address: string | null
           updated_at: string | null
           upline_id: string | null
-          user_id: string | null
           zip: string | null
         }
         Insert: {
@@ -2536,7 +2535,6 @@ export type Database = {
           street_address?: string | null
           updated_at?: string | null
           upline_id?: string | null
-          user_id?: string | null
           zip?: string | null
         }
         Update: {
@@ -2587,7 +2585,6 @@ export type Database = {
           street_address?: string | null
           updated_at?: string | null
           upline_id?: string | null
-          user_id?: string | null
           zip?: string | null
         }
         Relationships: [
@@ -2666,13 +2663,6 @@ export type Database = {
             columns: ["upline_id"]
             isOneToOne: false
             referencedRelation: "user_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_profiles_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
@@ -3283,7 +3273,6 @@ export type Database = {
           street_address: string | null
           updated_at: string | null
           upline_id: string | null
-          user_id: string | null
           zip: string | null
         }
         Insert: {
@@ -3333,7 +3322,6 @@ export type Database = {
           street_address?: string | null
           updated_at?: string | null
           upline_id?: string | null
-          user_id?: string | null
           zip?: string | null
         }
         Update: {
@@ -3383,7 +3371,6 @@ export type Database = {
           street_address?: string | null
           updated_at?: string | null
           upline_id?: string | null
-          user_id?: string | null
           zip?: string | null
         }
         Relationships: [
@@ -3462,13 +3449,6 @@ export type Database = {
             columns: ["upline_id"]
             isOneToOne: false
             referencedRelation: "user_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_profiles_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
@@ -3877,7 +3857,6 @@ export type Database = {
           street_address: string | null
           updated_at: string | null
           upline_id: string | null
-          user_id: string | null
           zip: string | null
         }
         Insert: {
@@ -3931,7 +3910,6 @@ export type Database = {
           street_address?: string | null
           updated_at?: string | null
           upline_id?: string | null
-          user_id?: string | null
           zip?: string | null
         }
         Update: {
@@ -3985,7 +3963,6 @@ export type Database = {
           street_address?: string | null
           updated_at?: string | null
           upline_id?: string | null
-          user_id?: string | null
           zip?: string | null
         }
         Relationships: [
@@ -4064,13 +4041,6 @@ export type Database = {
             columns: ["upline_id"]
             isOneToOne: false
             referencedRelation: "user_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_profiles_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]

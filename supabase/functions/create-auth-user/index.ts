@@ -64,17 +64,9 @@ serve(async (req) => {
       throw authError;
     }
 
-    // Now link the auth user ID to the profile
-    if (authUser.user && profileId) {
-      const { error: updateError } = await supabaseAdmin
-        .from("user_profiles")
-        .update({ user_id: authUser.user.id })
-        .eq("id", profileId);
-
-      if (updateError) {
-        console.error("Failed to link profile:", updateError);
-      }
-    }
+    // Note: user_profiles.id IS auth.users.id (same UUID)
+    // The handle_new_user trigger creates the profile automatically
+    // No need to manually link - the profile id = auth user id
 
     return new Response(
       JSON.stringify({

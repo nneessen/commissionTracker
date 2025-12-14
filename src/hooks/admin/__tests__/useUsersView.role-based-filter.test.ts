@@ -62,7 +62,6 @@ describe("useUsersView role-based filtering logic", () => {
     street_address: null,
     updated_at: null,
     upline_id: null,
-    user_id: null,
     zip: null,
 
     // Apply overrides

@@ -94,9 +94,9 @@ class UserService {
           console.warn(
             "[UserService] Admin user query blocked by RLS, using fallback",
           );
+          // Return minimal profile - id IS the auth user id (same UUID)
           return {
             id: user.id,
-            user_id: user.id,
             email: user.email,
             approval_status: "approved",
             is_admin: true,
@@ -106,7 +106,7 @@ class UserService {
             approved_at: new Date().toISOString(),
             created_at: user.created_at,
             updated_at: new Date().toISOString(),
-          } as UserProfile;
+          } as unknown as UserProfile;
         }
 
         return null;
@@ -418,55 +418,15 @@ class UserService {
         }
       }
 
-      // Build profile data
-      const profileData: Partial<UserProfile> = {
-        email: email,
-        first_name: userData.name ? userData.name.split(" ")[0] : "",
-        last_name: userData.name
-          ? userData.name.split(" ").slice(1).join(" ")
-          : "",
-        phone: userData.phone?.trim() || undefined,
-        upline_id: userData.upline_id || undefined,
-        roles: assignedRoles,
-        agent_status: agentStatus,
-        approval_status: approvalStatus,
-        onboarding_status: userData.onboarding_status || null,
-        user_id: null, // Will be set by Edge Function
-        contract_level: userData.contractCompLevel,
-        license_number: userData.licenseNumber,
-        license_states: userData.licenseStates,
-        hire_date: userData.hireDate
-          ? userData.hireDate.toISOString()
-          : undefined,
-        hierarchy_path: "",
-        hierarchy_depth: 0,
-        is_admin: assignedRoles.includes("admin"),
-        is_super_admin: email === "nick@nickneessen.com",
-        ytd_commission: userData.ytdCommission,
-        ytd_premium: userData.ytdPremium,
-      };
+      // NEW FLOW: Create auth user FIRST, then update profile
+      // The handle_new_user trigger creates profile with id = auth.users.id
 
-      // Create user profile first
-      const { data, error } = await supabase
-        .from("user_profiles")
-        .insert(profileData)
-        .select()
-        .single();
-
-      if (error) {
-        logger.error(
-          "Failed to create user profile",
-          error as Error,
-          "UserService",
-        );
-        return { success: false, error: error.message };
-      }
-
-      // Create auth user and send confirmation email if requested
+      let authUserId: string | null = null;
       let inviteSent = false;
+
       if (userData.sendInvite !== false) {
         try {
-          // Use the Edge Function to create auth user with service role permissions
+          // Step 1: Create auth user via Edge Function
           const response = await fetch(
             `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-auth-user`,
             {
@@ -481,7 +441,6 @@ class UserService {
                 roles: assignedRoles,
                 isAdmin: assignedRoles.includes("admin"),
                 skipPipeline: false,
-                profileId: data?.id, // Pass profile ID so Edge Function can link them
               }),
             },
           );
@@ -495,25 +454,18 @@ class UserService {
               "UserService",
             );
             return {
-              success: true,
-              userId: data?.id,
-              user: this.transformProfileToUser(data as UserProfile),
-              inviteSent: false,
-              error: `Profile created but auth user creation failed: ${result.error || "Unknown error"}`,
+              success: false,
+              error: `Auth user creation failed: ${result.error || "Unknown error"}`,
             };
           }
 
-          // Auth user created successfully
+          authUserId = result.user?.id;
           inviteSent = result.emailSent === true;
 
-          // If email wasn't sent, return an error message
-          if (!inviteSent) {
+          if (!authUserId) {
             return {
-              success: true,
-              userId: data?.id,
-              user: this.transformProfileToUser(data as UserProfile),
-              inviteSent: false,
-              error: `Profile and auth user created, but confirmation email failed. User needs to request a password reset.`,
+              success: false,
+              error: "Auth user was created but no ID was returned",
             };
           }
         } catch (error) {
@@ -523,19 +475,69 @@ class UserService {
             "UserService",
           );
           return {
-            success: true,
-            userId: data?.id,
-            user: this.transformProfileToUser(data as UserProfile),
-            inviteSent: false,
-            error: `Profile created but auth user creation failed: ${(error as Error).message}`,
+            success: false,
+            error: `Auth user creation failed: ${(error as Error).message}`,
           };
         }
+      } else {
+        // No invite - can't create user without auth
+        return {
+          success: false,
+          error: "Cannot create user without sending invite (auth user required)",
+        };
       }
 
-      logger.info(`User profile created: ${email}`, "UserService");
+      // Step 2: Update the profile with additional data
+      // The trigger already created a basic profile with id = authUserId
+      const profileData: Partial<UserProfile> = {
+        first_name: userData.name ? userData.name.split(" ")[0] : "",
+        last_name: userData.name
+          ? userData.name.split(" ").slice(1).join(" ")
+          : "",
+        phone: userData.phone?.trim() || undefined,
+        upline_id: userData.upline_id || undefined,
+        roles: assignedRoles,
+        agent_status: agentStatus,
+        approval_status: approvalStatus,
+        onboarding_status: userData.onboarding_status || null,
+        contract_level: userData.contractCompLevel,
+        license_number: userData.licenseNumber,
+        license_states: userData.licenseStates,
+        hire_date: userData.hireDate
+          ? userData.hireDate.toISOString()
+          : undefined,
+        is_admin: assignedRoles.includes("admin"),
+        is_super_admin: email === "nick@nickneessen.com",
+        ytd_commission: userData.ytdCommission,
+        ytd_premium: userData.ytdPremium,
+      };
+
+      const { data, error } = await supabase
+        .from("user_profiles")
+        .update(profileData)
+        .eq("id", authUserId)
+        .select()
+        .single();
+
+      if (error) {
+        logger.error(
+          "Failed to update user profile after auth creation",
+          error as Error,
+          "UserService",
+        );
+        // Auth user exists but profile update failed
+        return {
+          success: true,
+          userId: authUserId,
+          inviteSent,
+          error: `Auth user created but profile update failed: ${error.message}`,
+        };
+      }
+
+      logger.info(`User created: ${email} (ID: ${authUserId})`, "UserService");
       return {
         success: true,
-        userId: data?.id,
+        userId: authUserId,
         user: this.transformProfileToUser(data as UserProfile),
         inviteSent,
       };
