@@ -239,50 +239,63 @@ export const DashboardHome: React.FC = () => {
 
   return (
     <>
-      {/* Time Period Controls - Full Width */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between gap-4 w-full">
-          <TimePeriodSwitcher
-            timePeriod={timePeriod}
-            onTimePeriodChange={handleTimePeriodChange}
-          />
-          <PeriodNavigator
-            timePeriod={timePeriod}
-            periodOffset={periodOffset}
-            onOffsetChange={setPeriodOffset}
-            dateRange={dateRange}
-          />
-          <DateRangeDisplay timePeriod={timePeriod} dateRange={dateRange} />
-        </div>
-      </div>
-
-      <div className="page-content">
-        {/* Main 3-column layout */}
-        <div className="grid gap-6 mb-6 grid-cols-[280px_1fr_320px]">
-          <QuickStatsPanel stats={statsConfig} timePeriod={timePeriod} />
-
-          <PerformanceOverviewCard
-            metrics={metricsConfig}
-            isBreakeven={isBreakeven}
-            timePeriod={timePeriod}
-            surplusDeficit={periodAnalytics.surplusDeficit}
-            breakevenDisplay={breakevenDisplay}
-            policiesNeeded={policiesNeededDisplay}
-            periodSuffix={periodSuffix}
-          />
-
-          <div className="flex flex-col gap-4">
-            <AlertsPanel alerts={alertsConfig} />
-            <QuickActionsPanel
-              actions={quickActions}
-              onActionClick={handleQuickAction}
-              isCreating={isCreating}
-            />
+      <div className="h-screen flex flex-col overflow-hidden">
+        {/* Compact Header - matching Targets/Expenses pages */}
+        <div className="page-header py-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-base font-semibold text-foreground">Dashboard</h1>
+              <p className="text-[11px] text-muted-foreground mt-0.5">
+                Performance overview and key metrics
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <TimePeriodSwitcher
+                timePeriod={timePeriod}
+                onTimePeriodChange={handleTimePeriodChange}
+              />
+              <PeriodNavigator
+                timePeriod={timePeriod}
+                periodOffset={periodOffset}
+                onOffsetChange={setPeriodOffset}
+                dateRange={dateRange}
+              />
+              <DateRangeDisplay timePeriod={timePeriod} dateRange={dateRange} />
+            </div>
           </div>
         </div>
 
-        {/* KPI Heatmap Dashboard */}
-        <KPIGridHeatmap sections={kpiConfig} />
+        {/* Main Content */}
+        <div className="flex-1 p-3 overflow-auto">
+          <div className="max-w-7xl mx-auto space-y-2">
+            {/* Main 3-column layout */}
+            <div className="grid gap-2 grid-cols-[260px_1fr_280px]">
+              <QuickStatsPanel stats={statsConfig} timePeriod={timePeriod} />
+
+              <PerformanceOverviewCard
+                metrics={metricsConfig}
+                isBreakeven={isBreakeven}
+                timePeriod={timePeriod}
+                surplusDeficit={periodAnalytics.surplusDeficit}
+                breakevenDisplay={breakevenDisplay}
+                policiesNeeded={policiesNeededDisplay}
+                periodSuffix={periodSuffix}
+              />
+
+              <div className="flex flex-col gap-2">
+                <AlertsPanel alerts={alertsConfig} />
+                <QuickActionsPanel
+                  actions={quickActions}
+                  onActionClick={handleQuickAction}
+                  isCreating={isCreating}
+                />
+              </div>
+            </div>
+
+            {/* KPI Breakdown */}
+            <KPIGridHeatmap sections={kpiConfig} />
+          </div>
+        </div>
       </div>
 
       {/* Dialogs */}

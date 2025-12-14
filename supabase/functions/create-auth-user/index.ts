@@ -42,16 +42,16 @@ serve(async (req) => {
       throw new Error("User with this email already exists");
     }
 
-    // Generate a secure random password
+    // Generate a secure random password (user will set their own via reset email)
     const tempPassword = crypto.randomUUID() + crypto.randomUUID();
 
-    // Create user with a password and email_confirm=false
-    // This triggers the "Confirm signup" email template
+    // Create user with email_confirm=true (pre-confirmed) and a temp password
+    // Then send password reset email so user can set their own password
     const { data: authUser, error: authError } =
       await supabaseAdmin.auth.admin.createUser({
         email,
         password: tempPassword,
-        email_confirm: false, // This triggers signup confirmation email
+        email_confirm: true, // Pre-confirm email to avoid magic link issues
         user_metadata: {
           full_name: fullName,
           roles: roles || [],
@@ -68,11 +68,30 @@ serve(async (req) => {
     // The handle_new_user trigger creates the profile automatically
     // No need to manually link - the profile id = auth user id
 
+    // Send password reset email so user can set their own password
+    let emailSent = false;
+    if (authUser.user) {
+      const siteUrl = Deno.env.get("SITE_URL") || "https://www.thestandardhq.com";
+      const { error: resetError } =
+        await supabaseAdmin.auth.resetPasswordForEmail(email, {
+          redirectTo: `${siteUrl}/auth/reset-password`,
+        });
+
+      if (resetError) {
+        console.error("Password reset email error:", resetError);
+        // Don't fail the entire operation - user was created successfully
+      } else {
+        emailSent = true;
+      }
+    }
+
     return new Response(
       JSON.stringify({
         user: authUser.user,
-        message: "User created successfully. Signup confirmation email sent.",
-        emailSent: true,
+        message: emailSent
+          ? "User created successfully. Password reset email sent."
+          : "User created but email could not be sent. User may need manual password reset.",
+        emailSent,
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },

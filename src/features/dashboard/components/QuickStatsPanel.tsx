@@ -3,29 +3,21 @@
 import React from 'react';
 import {QuickStatsPanelProps} from '../../../types/dashboard.types';
 import {StatItem} from './StatItem';
-import {Card, CardContent, CardHeader, CardTitle} from '@/components/ui/card';
+import {Card, CardContent} from '@/components/ui/card';
 
 /**
- * Quick Stats Panel Component
- *
- * Left sidebar displaying key metrics with tooltips and trends.
- * Extracted from DashboardHome.tsx (lines 365-632).
- *
- * Refactored to use Tailwind CSS classes instead of inline styles.
+ * Quick Stats Panel - Clean, compact design matching Targets/Expenses pages
  */
 export const QuickStatsPanel: React.FC<QuickStatsPanelProps> = ({ stats }) => {
   return (
     <Card>
-      <CardHeader className="p-4 pb-3">
-        <CardTitle className="text-sm uppercase tracking-wide">
-          Key Metrics
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="p-4 pt-0">
-
-        {stats.map((stat, index) => (
-          <StatItem key={index} stat={stat} showBorder={index < stats.length - 1} />
-        ))}
+      <CardContent className="p-3">
+        <div className="text-[11px] font-medium text-muted-foreground uppercase mb-2">Key Metrics</div>
+        <div className="space-y-0.5">
+          {stats.map((stat, index) => (
+            <StatItem key={index} stat={stat} showBorder={index < stats.length - 1} />
+          ))}
+        </div>
       </CardContent>
     </Card>
   );

@@ -7,12 +7,7 @@ import {TimePeriod} from '../../../utils/dateRange';
 import {cn} from '@/lib/utils';
 
 /**
- * Time Period Switcher Component
- *
- * Button group for selecting time period (daily/weekly/monthly/yearly).
- * Extracted from DashboardHome.tsx (lines 312-352).
- *
- * Refactored to use Tailwind CSS classes instead of inline styles.
+ * Time Period Switcher - Compact button group for time period selection
  */
 export const TimePeriodSwitcher: React.FC<TimePeriodSwitcherProps> = ({
   timePeriod,
@@ -21,7 +16,7 @@ export const TimePeriodSwitcher: React.FC<TimePeriodSwitcherProps> = ({
   const periods: TimePeriod[] = ['daily', 'weekly', 'monthly', 'yearly'];
 
   return (
-    <div className="flex gap-1 bg-muted/30 p-1 rounded-md shadow-inner">
+    <div className="flex gap-0.5 bg-muted/30 p-0.5 rounded">
       {periods.map((period) => (
         <Button
           key={period}
@@ -29,7 +24,7 @@ export const TimePeriodSwitcher: React.FC<TimePeriodSwitcherProps> = ({
           variant="ghost"
           size="sm"
           className={cn(
-            "px-4 py-2 text-xs font-semibold capitalize h-auto rounded-sm transition-all duration-200",
+            "h-6 px-2 text-[11px] font-medium capitalize rounded-sm",
             timePeriod === period
               ? "bg-card text-foreground shadow-sm"
               : "bg-transparent text-muted-foreground hover:text-foreground"

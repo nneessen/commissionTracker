@@ -86,94 +86,33 @@ export function generateKPIConfig(params: KPIConfigParams): KPISection[] {
   const periodLabel = getPeriodLabel(timePeriod);
   const periodSuffix = getPeriodSuffix(timePeriod);
 
+  // KPI Breakdown: Detailed metrics not shown elsewhere
   return [
     {
-      category: `${periodLabel} Financial`,
+      category: 'Financial Details',
       kpis: [
-        {
-          label: 'Profit Margin',
-          value: formatPercent(periodAnalytics.profitMargin),
-        },
-        {
-          label: 'Recurring Expenses',
-          value: formatCurrency(periodExpenses.recurring),
-        },
-        {
-          label: 'One-Time Expenses',
-          value: formatCurrency(periodExpenses.oneTime),
-        },
-        {
-          label: 'Tax Deductible ⓘ',
-          value: formatCurrency(periodExpenses.taxDeductible),
-        },
+        { label: 'Profit Margin', value: formatPercent(periodAnalytics.profitMargin) },
+        { label: 'Recurring Expenses', value: formatCurrency(periodExpenses.recurring) },
+        { label: 'One-Time Expenses', value: formatCurrency(periodExpenses.oneTime) },
+        { label: 'Tax Deductible', value: formatCurrency(periodExpenses.taxDeductible) },
       ],
     },
     {
-      category: `${periodLabel} Production`,
+      category: 'Policy Health',
       kpis: [
-        {
-          label: 'Cancelled',
-          value: periodPolicies.cancelled,
-        },
-        {
-          label: 'Lapsed',
-          value: periodPolicies.lapsed,
-        },
-        {
-          label: 'Commissionable Value',
-          value: formatCurrency(periodPolicies.commissionableValue),
-        },
+        { label: 'Active Policies', value: currentState.activePolicies },
+        { label: 'Retention Rate', value: formatPercent(currentState.retentionRate) },
+        { label: 'Cancelled', value: periodPolicies.cancelled },
+        { label: 'Lapsed', value: periodPolicies.lapsed },
+        { label: 'Lapse Rate', value: formatPercent(derivedMetrics.lapsedRate) },
       ],
     },
     {
-      category: `${periodLabel} Metrics`,
+      category: 'Client Details',
       kpis: [
-        {
-          label: 'Cancel Rate',
-          value: formatPercent(derivedMetrics.cancellationRate),
-        },
-        {
-          label: 'Commission Count',
-          value: periodCommissions.count,
-        },
-        {
-          label: 'Avg Commission',
-          value: formatCurrency(periodCommissions.averageAmount),
-        },
-        {
-          label: 'Expense Count',
-          value: periodExpenses.count,
-        },
-      ],
-    },
-    {
-      category: `${periodLabel} Clients`,
-      kpis: [
-        {
-          label: 'Avg Client Age',
-          value: periodClients.averageAge > 0 ? periodClients.averageAge.toFixed(1) : '—',
-        },
-        {
-          label: 'Total Value',
-          value: formatCurrency(periodClients.totalValue),
-        },
-      ],
-    },
-    {
-      category: 'Targets & Pace',
-      kpis: [
-        {
-          label: 'Daily Target',
-          value: periodAnalytics.paceMetrics.dailyTarget,
-        },
-        {
-          label: 'Weekly Target',
-          value: periodAnalytics.paceMetrics.weeklyTarget,
-        },
-        {
-          label: 'Monthly Target',
-          value: periodAnalytics.paceMetrics.monthlyTarget,
-        },
+        { label: 'Total Clients', value: currentState.totalClients },
+        { label: 'Policies/Client', value: currentState.totalClients > 0 ? (currentState.totalPolicies / currentState.totalClients).toFixed(2) : '0' },
+        { label: 'Avg Client Value', value: formatCurrency(derivedMetrics.avgClientValue) },
       ],
     },
   ];

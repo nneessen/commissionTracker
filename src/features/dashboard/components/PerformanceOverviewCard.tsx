@@ -7,9 +7,7 @@ import {formatCurrency, formatPercent} from "../../../lib/format";
 import {getPerformanceStatus, calculateTargetPercentage} from "../../../utils/dashboardCalculations";
 import {getPeriodLabel} from "../../../utils/dateRange";
 import {cn} from "@/lib/utils";
-import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
-
-// TODO: why is this component not using the re-usable Table component? I already have a fucking Table component that can be used
+import {Card, CardContent} from "@/components/ui/card";
 
 export const PerformanceOverviewCard: React.FC<
   PerformanceOverviewCardProps
@@ -41,96 +39,57 @@ export const PerformanceOverviewCard: React.FC<
 
   return (
     <Card>
-      <CardHeader className="p-4 pb-3">
-        <CardTitle className="text-sm uppercase tracking-wide">
-          Performance Overview
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="p-4 pt-0">
-        {/* Status Banner */}
-        <div
-          className={cn(
-            "p-4 rounded-lg mb-4 flex items-center gap-3 shadow-sm",
-            isBreakeven
-              ? "bg-gradient-to-br from-green-100 to-emerald-100 dark:from-green-900/40 dark:to-emerald-900/35"
-              : "bg-gradient-to-br from-amber-100 to-yellow-100 dark:from-amber-900/40 dark:to-yellow-900/35",
-          )}
-        >
+      <CardContent className="p-3">
+        <div className="text-[11px] font-medium text-muted-foreground uppercase mb-2">Performance Overview</div>
+
+        {/* Status Banner - Clean design */}
+        <div className="flex items-center gap-2 mb-3 pb-2 border-b">
           {isBreakeven ? (
-            <CheckCircle className="h-5 w-5 text-success" />
+            <CheckCircle className="h-3.5 w-3.5 text-success" />
           ) : (
-            <AlertCircle className="h-5 w-5 text-warning" />
+            <AlertCircle className="h-3.5 w-3.5 text-warning" />
           )}
           <div className="flex-1">
-            <div
-              className={cn(
-                "text-sm font-semibold",
-                isBreakeven ? "text-success" : "text-warning",
-              )}
-            >
-              {isBreakeven
-                ? `✓ Above Breakeven (${periodLabel})`
-                : `⚠ Below Breakeven (${periodLabel})`}
+            <div className={cn("text-[11px] font-semibold", isBreakeven ? "text-success" : "text-warning")}>
+              {isBreakeven ? `Above Breakeven (${periodLabel})` : `Below Breakeven (${periodLabel})`}
             </div>
-            <div
-              className={cn(
-                "text-xs",
-                isBreakeven ? "text-success/80" : "text-warning/80",
-              )}
-            >
+            <div className="text-[10px] text-muted-foreground">
               {isBreakeven
-                ? `${periodLabel} surplus of ${formatCurrency(Math.abs(surplusDeficit))}`
+                ? `Surplus: ${formatCurrency(Math.abs(surplusDeficit))}`
                 : `Need ${formatCurrency(breakevenDisplay)}${periodSuffix.toLowerCase()} (${Math.ceil(policiesNeeded)} policies)`}
             </div>
           </div>
         </div>
 
-        {/* Performance Table */}
-        <div className="overflow-x-auto bg-gradient-to-br from-slate-50/50 to-zinc-50/40 dark:from-slate-100/10 dark:to-zinc-950/8 rounded-lg p-4 shadow-sm">
-          <table className="w-full text-xs">
+        {/* Performance Table - Clean styling */}
+        <div className="overflow-x-auto">
+          <table className="w-full">
             <thead>
-              <tr className="mb-2">
-                <th className="text-left py-2 px-1 font-semibold text-muted-foreground uppercase tracking-wider">
-                  Metric
-                </th>
-                <th className="text-right py-2 px-1 font-semibold text-muted-foreground uppercase tracking-wider">
-                  Current
-                </th>
-                <th className="text-right py-2 px-1 font-semibold text-muted-foreground uppercase tracking-wider">
-                  Target
-                </th>
-                <th className="text-right py-2 px-1 font-semibold text-muted-foreground uppercase tracking-wider">
-                  %
-                </th>
-                <th className="text-center py-2 px-1 font-semibold text-muted-foreground uppercase tracking-wider">
-                  Status
-                </th>
+              <tr className="border-b">
+                <th className="text-left py-1.5 text-[10px] font-semibold text-muted-foreground uppercase">Metric</th>
+                <th className="text-right py-1.5 text-[10px] font-semibold text-muted-foreground uppercase">Current</th>
+                <th className="text-right py-1.5 text-[10px] font-semibold text-muted-foreground uppercase">Target</th>
+                <th className="text-right py-1.5 text-[10px] font-semibold text-muted-foreground uppercase">%</th>
+                <th className="text-center py-1.5 text-[10px] font-semibold text-muted-foreground uppercase w-8">Status</th>
               </tr>
             </thead>
             <tbody>
               {metrics.map((row, index) => {
                 const pct = calculateTargetPercentage(row.current, row.target);
-                const status = getPerformanceStatus(
-                  row.current,
-                  row.target,
-                  row.showTarget,
-                );
+                const status = getPerformanceStatus(row.current, row.target, row.showTarget);
                 const statusColorClass = getStatusColorClass(status);
 
                 return (
-                  <tr
-                    key={index}
-                    className="hover:bg-muted/10 transition-colors"
-                  >
-                    <td className="py-2 px-1 text-foreground">{row.metric}</td>
-                    <td className="py-2 px-1 text-right font-mono font-semibold text-foreground">
+                  <tr key={index} className="hover:bg-muted/20">
+                    <td className="py-1.5 text-[11px] text-foreground">{row.metric}</td>
+                    <td className="py-1.5 text-right text-[11px] font-mono font-semibold">
                       {row.unit === "$"
                         ? formatCurrency(row.current)
                         : row.unit === "%"
                           ? formatPercent(row.current)
                           : row.current.toFixed(1)}
                     </td>
-                    <td className="py-2 px-1 text-right text-muted-foreground font-mono">
+                    <td className="py-1.5 text-right text-[11px] text-muted-foreground font-mono">
                       {row.showTarget && row.target
                         ? row.unit === "$"
                           ? formatCurrency(row.target)
@@ -139,25 +98,19 @@ export const PerformanceOverviewCard: React.FC<
                             : row.target
                         : "—"}
                     </td>
-                    <td
-                      className={cn(
-                        "py-2 px-1 text-right font-semibold",
-                        statusColorClass,
-                      )}
-                    >
+                    <td className={cn("py-1.5 text-right text-[11px] font-semibold", statusColorClass)}>
                       {row.showTarget ? `${pct.toFixed(0)}%` : "—"}
                     </td>
-                    <td className="py-2 px-1 text-center">
+                    <td className="py-1.5 text-center">
                       {row.showTarget && (
                         <span
                           className={cn(
-                            "inline-block w-2 h-2 rounded-full",
+                            "inline-block w-1.5 h-1.5 rounded-full",
                             status.toUpperCase() === "HIT" && "bg-success",
                             status.toUpperCase() === "GOOD" && "bg-info",
                             status.toUpperCase() === "FAIR" && "bg-warning",
                             status.toUpperCase() === "POOR" && "bg-error",
-                            status.toUpperCase() === "NEUTRAL" &&
-                              "bg-muted-foreground",
+                            status.toUpperCase() === "NEUTRAL" && "bg-muted-foreground",
                           )}
                         />
                       )}

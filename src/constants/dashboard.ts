@@ -2,26 +2,32 @@
 
 /**
  * Dashboard metric color constants
- * Now uses semantic Tailwind classes that adapt to light/dark mode
+ *
+ * DESIGN PRINCIPLE: Use default foreground for most values.
+ * Only use semantic colors for actual status indicators (positive/negative, good/bad).
+ * This matches the clean styling of Targets/Expenses pages.
  */
 export const METRIC_COLORS = {
-  COMMISSION_EARNED: "text-status-active",
-  PENDING_PIPELINE: "text-status-earned",
-  EXPENSES: "text-status-pending",
-  NET_INCOME_POSITIVE: "text-status-active",
-  NET_INCOME_NEGATIVE: "text-destructive",
-  BREAKEVEN: "text-destructive",
-  BREAKEVEN_MET: "text-status-active",
-  POLICIES_NEEDED: "text-primary",
-  ACTIVE_POLICIES: "text-status-earned",
-  TOTAL_POLICIES: "text-muted-foreground",
-  RETENTION_GOOD: "text-status-active",
-  RETENTION_WARNING: "text-status-pending",
-  LAPSE_GOOD: "text-status-active",
-  LAPSE_BAD: "text-destructive",
-  TOTAL_CLIENTS: "text-primary",
-  POLICIES_PER_CLIENT: "text-primary",
-  AVG_PREMIUM: "text-status-earned",
-  AVG_COMMISSION: "text-status-active",
-  AVG_CLIENT_LTV: "text-status-pending",
+  // Most metrics use default foreground - clean and professional
+  COMMISSION_EARNED: "text-foreground",
+  PENDING_PIPELINE: "text-foreground",
+  EXPENSES: "text-foreground",
+  ACTIVE_POLICIES: "text-foreground",
+  TOTAL_POLICIES: "text-foreground",
+  TOTAL_CLIENTS: "text-foreground",
+  POLICIES_PER_CLIENT: "text-foreground",
+  AVG_PREMIUM: "text-foreground",
+  AVG_COMMISSION: "text-foreground",
+  AVG_CLIENT_LTV: "text-foreground",
+  POLICIES_NEEDED: "text-foreground",
+
+  // Only use semantic colors for actual status indicators
+  NET_INCOME_POSITIVE: "text-success",
+  NET_INCOME_NEGATIVE: "text-error",
+  BREAKEVEN: "text-warning",
+  BREAKEVEN_MET: "text-success",
+  RETENTION_GOOD: "text-success",
+  RETENTION_WARNING: "text-warning",
+  LAPSE_GOOD: "text-success",
+  LAPSE_BAD: "text-error",
 } as const;

@@ -52,16 +52,10 @@ export function generateMetricsConfig(params: MetricsConfigParams): PerformanceM
 
   const periodLabel = getPeriodLabel(timePeriod);
 
+  // Performance Overview: Production metrics (no financial duplicates - those are in Key Metrics)
   return [
     {
-      metric: `${periodLabel} Commission Earned`,
-      current: periodCommissions.earned,
-      target: null,
-      unit: '$',
-      showTarget: false,
-    },
-    {
-      metric: `${periodLabel} New Policies`,
+      metric: `${periodLabel} Policies`,
       current: periodPolicies.newCount,
       target: null,
       unit: '#',
@@ -75,38 +69,24 @@ export function generateMetricsConfig(params: MetricsConfigParams): PerformanceM
       showTarget: false,
     },
     {
-      metric: `${periodLabel} New Clients`,
+      metric: `${periodLabel} Clients`,
       current: periodClients.newCount,
       target: null,
       unit: '#',
       showTarget: false,
     },
     {
-      metric: 'Avg Premium per Policy',
+      metric: 'Avg Premium',
       current: periodPolicies.averagePremium,
       target: constants?.avgAP || null,
       unit: '$',
       showTarget: !!constants?.avgAP,
     },
     {
-      metric: 'Avg Commission Rate',
+      metric: 'Commission Rate',
       current: periodCommissions.averageRate,
       target: null,
       unit: '%',
-      showTarget: false,
-    },
-    {
-      metric: `${periodLabel} Total Expenses`,
-      current: periodExpenses.total,
-      target: null,
-      unit: '$',
-      showTarget: false,
-    },
-    {
-      metric: `${periodLabel} Net Income`,
-      current: periodAnalytics.netIncome,
-      target: null,
-      unit: '$',
       showTarget: false,
     },
   ];

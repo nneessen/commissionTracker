@@ -63,16 +63,16 @@ export const PeriodNavigator: React.FC<PeriodNavigatorProps> = ({
   };
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-1">
       {/* Previous Button */}
       <Button
         onClick={handlePrevious}
         variant="outline"
         size="sm"
-        className="h-8 px-2"
+        className="h-6 w-6 p-0"
         title="Previous period"
       >
-        <ChevronLeft className="h-4 w-4" />
+        <ChevronLeft className="h-3 w-3" />
       </Button>
 
       {/* Period Label with Dropdown */}
@@ -81,7 +81,7 @@ export const PeriodNavigator: React.FC<PeriodNavigatorProps> = ({
           <Button
             variant="ghost"
             size="sm"
-            className="h-8 px-3 font-medium hover:bg-muted"
+            className="h-6 px-2 text-[11px] font-medium hover:bg-muted"
             title="Select period"
           >
             {currentPeriodLabel}
@@ -93,7 +93,7 @@ export const PeriodNavigator: React.FC<PeriodNavigatorProps> = ({
               key={option.offset}
               onClick={() => handleSelectFromDropdown(option.offset)}
               className={cn(
-                "cursor-pointer",
+                "cursor-pointer text-[11px]",
                 option.offset === periodOffset && "bg-muted font-semibold"
               )}
             >
@@ -108,24 +108,24 @@ export const PeriodNavigator: React.FC<PeriodNavigatorProps> = ({
         onClick={handleNext}
         variant="outline"
         size="sm"
-        className="h-8 px-2"
+        className="h-6 w-6 p-0"
         disabled={isAtCurrentPeriod}
         title={isAtCurrentPeriod ? "Already at current period" : "Next period"}
       >
-        <ChevronRight className="h-4 w-4" />
+        <ChevronRight className="h-3 w-3" />
       </Button>
 
       {/* Jump to Current Button - Only shown when not at current period */}
       {!isAtCurrentPeriod && (
         <Button
           onClick={handleJumpToCurrent}
-          variant="outline"
+          variant="ghost"
           size="sm"
-          className="h-8 px-3 gap-1.5"
+          className="h-6 px-2 gap-1 text-[10px]"
           title="Jump to current period"
         >
-          <Calendar className="h-3.5 w-3.5" />
-          <span className="text-xs">Current</span>
+          <Calendar className="h-3 w-3" />
+          <span>Current</span>
         </Button>
       )}
     </div>
