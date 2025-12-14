@@ -368,7 +368,8 @@ export async function setUserRoles(userId: string, roles: RoleName[]): Promise<v
   // Ensure at least one role
   const finalRoles = roles.length > 0 ? roles : ['agent'];
 
-  const { error } = await supabase.from('user_profiles').update({ roles: finalRoles }).eq('user_id', userId);
+  // Note: id IS the auth user id (no separate user_id column)
+  const { error } = await supabase.from('user_profiles').update({ roles: finalRoles }).eq('id', userId);
 
   if (error) {
     console.error('Error setting user roles:', error);
