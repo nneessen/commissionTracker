@@ -1,41 +1,46 @@
 // src/types/user.types.ts
 // Canonical user/agent type definitions - DATABASE-FIRST pattern
 // All other files should import UserProfile from here
+// TODO: all types/interfaces if possible should be inhereting from the database.types.ts file
+// to maintain consistency throughout the app regarding interfaces/types
 
-import type { Database, Json } from './database.types';
+import type { Database, Json } from "./database.types";
 
 // =============================================================================
 // DATABASE-DERIVED TYPES (Source of Truth)
 // =============================================================================
 
 /** Raw database row type for user_profiles table */
-export type UserProfileRow = Database['public']['Tables']['user_profiles']['Row'];
+export type UserProfileRow =
+  Database["public"]["Tables"]["user_profiles"]["Row"];
 
 /** Insert type for creating new user profiles */
-export type UserProfileInsert = Database['public']['Tables']['user_profiles']['Insert'];
+export type UserProfileInsert =
+  Database["public"]["Tables"]["user_profiles"]["Insert"];
 
 /** Update type for modifying user profiles */
-export type UserProfileUpdate = Database['public']['Tables']['user_profiles']['Update'];
+export type UserProfileUpdate =
+  Database["public"]["Tables"]["user_profiles"]["Update"];
 
 /** Agent status enum from database */
-export type AgentStatus = Database['public']['Enums']['agent_status'];
+export type AgentStatus = Database["public"]["Enums"]["agent_status"];
 
 /** Approval status values */
-export type ApprovalStatus = 'pending' | 'approved' | 'denied';
+export type ApprovalStatus = "pending" | "approved" | "denied";
 
 /** Onboarding status values (matches database check constraint) */
 export type OnboardingStatus =
-  | 'lead'
-  | 'active'
-  | 'interview_1'
-  | 'zoom_interview'
-  | 'pre_licensing'
-  | 'exam'
-  | 'npn_received'
-  | 'contracting'
-  | 'bootcamp'
-  | 'completed'
-  | 'dropped';
+  | "lead"
+  | "active"
+  | "interview_1"
+  | "zoom_interview"
+  | "pre_licensing"
+  | "exam"
+  | "npn_received"
+  | "contracting"
+  | "bootcamp"
+  | "completed"
+  | "dropped";
 
 // =============================================================================
 // USERPROFILE - Primary Interface (extends database row)
@@ -51,7 +56,10 @@ export type OnboardingStatus =
  */
 export interface UserProfile extends UserProfileRow {
   // Optional nested upline data (populated by joins)
-  upline?: Pick<UserProfileRow, 'id' | 'email' | 'first_name' | 'last_name'> | null;
+  upline?: Pick<
+    UserProfileRow,
+    "id" | "email" | "first_name" | "last_name"
+  > | null;
 
   // Computed/legacy fields (for backward compatibility)
   // These are not in the database but used by app code
@@ -70,7 +78,7 @@ export interface UserProfile extends UserProfileRow {
  */
 export type UserProfileMinimal = Pick<
   UserProfileRow,
-  'id' | 'first_name' | 'last_name' | 'email' | 'profile_photo_url'
+  "id" | "first_name" | "last_name" | "email" | "profile_photo_url"
 >;
 
 /**
@@ -92,28 +100,28 @@ export interface UserProfileWithHierarchy extends UserProfile {
  */
 export interface CreateUserProfileData {
   email: string;
-  first_name?: string;
-  last_name?: string;
-  phone?: string;
-  upline_id?: string;
-  recruiter_id?: string;
-  referral_source?: string;
+  first_name?: string | null;
+  last_name?: string | null;
+  phone?: string | null;
+  upline_id?: string | null;
+  recruiter_id?: string | null;
+  referral_source?: string | null;
   agent_status?: AgentStatus;
-  contract_level?: number;
+  contract_level?: number | null;
   roles?: string[];
   is_admin?: boolean;
-  pipeline_template_id?: string;
+  pipeline_template_id?: string | null;
   // Address fields
-  street_address?: string;
-  city?: string;
-  state?: string;
-  zip?: string;
-  date_of_birth?: string;
-  resident_state?: string;
+  street_address?: string | null;
+  city?: string | null;
+  state?: string | null;
+  zip?: string | null;
+  date_of_birth?: string | null;
+  resident_state?: string | null;
   // Licensing
-  license_number?: string;
-  npn?: string;
-  licensing_info?: Json;
+  license_number?: string | null;
+  npn?: string | null;
+  licensing_info?: Json | null;
 }
 
 /**
@@ -154,6 +162,8 @@ export interface UserProfileWithDisplay extends UserProfile {
  * @deprecated Use UserProfile instead
  * Legacy User interface for backward compatibility
  */
+// TODO: STOP LEAVING DEPRECATED CODE IN THIS APP
+// why are you even creating a User type like this. Why would we not be using the database.types.ts?
 export interface User {
   id: string;
   email: string;
@@ -215,9 +225,9 @@ export type CreateAgentData = CreateUserData;
 export type UpdateAgentData = UpdateUserData;
 
 export interface UserPreferences {
-  theme: 'light' | 'dark';
-  dateFormat: 'MM/DD/YYYY' | 'DD/MM/YYYY' | 'YYYY-MM-DD';
-  currency: 'USD' | 'EUR' | 'GBP' | 'CAD';
+  theme: "light" | "dark";
+  dateFormat: "MM/DD/YYYY" | "DD/MM/YYYY" | "YYYY-MM-DD";
+  currency: "USD" | "EUR" | "GBP" | "CAD";
   defaultCommissionRate: number;
   notifications: {
     emailReports: boolean;
@@ -235,12 +245,12 @@ export interface Chargeback {
   policyId: string;
   commissionId: string;
   userId?: string;
-  chargebackType: 'policy_lapse' | 'refund' | 'cancellation';
+  chargebackType: "policy_lapse" | "refund" | "cancellation";
   chargebackAmount: number;
   chargebackReason?: string;
   policyLapseDate?: Date;
   chargebackDate: Date;
-  status: 'pending' | 'processed' | 'disputed' | 'resolved';
+  status: "pending" | "processed" | "disputed" | "resolved";
   createdAt: Date;
   updatedAt: Date;
 }
@@ -249,12 +259,12 @@ export interface CreateChargebackData {
   policyId: string;
   commissionId: string;
   userId?: string;
-  chargebackType: 'policy_lapse' | 'refund' | 'cancellation';
+  chargebackType: "policy_lapse" | "refund" | "cancellation";
   chargebackAmount: number;
   chargebackReason?: string;
   policyLapseDate?: Date;
   chargebackDate: Date;
-  status?: 'pending' | 'processed' | 'disputed' | 'resolved';
+  status?: "pending" | "processed" | "disputed" | "resolved";
 }
 
 // =============================================================================
@@ -276,16 +286,18 @@ export interface NavigationItem {
 /**
  * Get full name from user profile
  */
-export function getFullName(user: Pick<UserProfileRow, 'first_name' | 'last_name'>): string {
+export function getFullName(
+  user: Pick<UserProfileRow, "first_name" | "last_name">,
+): string {
   const parts = [user.first_name, user.last_name].filter(Boolean);
-  return parts.length > 0 ? parts.join(' ') : '';
+  return parts.length > 0 ? parts.join(" ") : "";
 }
 
 /**
  * Get display name (full name or email fallback)
  */
 export function getDisplayName(
-  user: Pick<UserProfileRow, 'first_name' | 'last_name' | 'email'>
+  user: Pick<UserProfileRow, "first_name" | "last_name" | "email">,
 ): string {
   const fullName = getFullName(user);
   return fullName || user.email;
@@ -294,10 +306,12 @@ export function getDisplayName(
 /**
  * Get initials from user profile
  */
-export function getUserInitials(user: Pick<UserProfileRow, 'first_name' | 'last_name'>): string {
-  const first = user.first_name?.[0] || '';
-  const last = user.last_name?.[0] || '';
-  return (first + last).toUpperCase() || '?';
+export function getUserInitials(
+  user: Pick<UserProfileRow, "first_name" | "last_name">,
+): string {
+  const first = user.first_name?.[0] || "";
+  const last = user.last_name?.[0] || "";
+  return (first + last).toUpperCase() || "?";
 }
 
 // =============================================================================
@@ -337,7 +351,10 @@ export interface UpdateAgentSettingsForm extends Partial<NewAgentSettingsForm> {
   id: string;
 }
 
-export type CreateAgentSettingsData = Omit<AgentSettings, 'id' | 'createdAt' | 'updatedAt'>;
+export type CreateAgentSettingsData = Omit<
+  AgentSettings,
+  "id" | "createdAt" | "updatedAt"
+>;
 
 /**
  * Agent profile with performance metrics
@@ -355,54 +372,54 @@ export interface AgentProfile extends AgentSettings {
 // =============================================================================
 
 export const US_STATES = [
-  { value: 'AL', label: 'Alabama' },
-  { value: 'AK', label: 'Alaska' },
-  { value: 'AZ', label: 'Arizona' },
-  { value: 'AR', label: 'Arkansas' },
-  { value: 'CA', label: 'California' },
-  { value: 'CO', label: 'Colorado' },
-  { value: 'CT', label: 'Connecticut' },
-  { value: 'DE', label: 'Delaware' },
-  { value: 'FL', label: 'Florida' },
-  { value: 'GA', label: 'Georgia' },
-  { value: 'HI', label: 'Hawaii' },
-  { value: 'ID', label: 'Idaho' },
-  { value: 'IL', label: 'Illinois' },
-  { value: 'IN', label: 'Indiana' },
-  { value: 'IA', label: 'Iowa' },
-  { value: 'KS', label: 'Kansas' },
-  { value: 'KY', label: 'Kentucky' },
-  { value: 'LA', label: 'Louisiana' },
-  { value: 'ME', label: 'Maine' },
-  { value: 'MD', label: 'Maryland' },
-  { value: 'MA', label: 'Massachusetts' },
-  { value: 'MI', label: 'Michigan' },
-  { value: 'MN', label: 'Minnesota' },
-  { value: 'MS', label: 'Mississippi' },
-  { value: 'MO', label: 'Missouri' },
-  { value: 'MT', label: 'Montana' },
-  { value: 'NE', label: 'Nebraska' },
-  { value: 'NV', label: 'Nevada' },
-  { value: 'NH', label: 'New Hampshire' },
-  { value: 'NJ', label: 'New Jersey' },
-  { value: 'NM', label: 'New Mexico' },
-  { value: 'NY', label: 'New York' },
-  { value: 'NC', label: 'North Carolina' },
-  { value: 'ND', label: 'North Dakota' },
-  { value: 'OH', label: 'Ohio' },
-  { value: 'OK', label: 'Oklahoma' },
-  { value: 'OR', label: 'Oregon' },
-  { value: 'PA', label: 'Pennsylvania' },
-  { value: 'RI', label: 'Rhode Island' },
-  { value: 'SC', label: 'South Carolina' },
-  { value: 'SD', label: 'South Dakota' },
-  { value: 'TN', label: 'Tennessee' },
-  { value: 'TX', label: 'Texas' },
-  { value: 'UT', label: 'Utah' },
-  { value: 'VT', label: 'Vermont' },
-  { value: 'VA', label: 'Virginia' },
-  { value: 'WA', label: 'Washington' },
-  { value: 'WV', label: 'West Virginia' },
-  { value: 'WI', label: 'Wisconsin' },
-  { value: 'WY', label: 'Wyoming' },
+  { value: "AL", label: "Alabama" },
+  { value: "AK", label: "Alaska" },
+  { value: "AZ", label: "Arizona" },
+  { value: "AR", label: "Arkansas" },
+  { value: "CA", label: "California" },
+  { value: "CO", label: "Colorado" },
+  { value: "CT", label: "Connecticut" },
+  { value: "DE", label: "Delaware" },
+  { value: "FL", label: "Florida" },
+  { value: "GA", label: "Georgia" },
+  { value: "HI", label: "Hawaii" },
+  { value: "ID", label: "Idaho" },
+  { value: "IL", label: "Illinois" },
+  { value: "IN", label: "Indiana" },
+  { value: "IA", label: "Iowa" },
+  { value: "KS", label: "Kansas" },
+  { value: "KY", label: "Kentucky" },
+  { value: "LA", label: "Louisiana" },
+  { value: "ME", label: "Maine" },
+  { value: "MD", label: "Maryland" },
+  { value: "MA", label: "Massachusetts" },
+  { value: "MI", label: "Michigan" },
+  { value: "MN", label: "Minnesota" },
+  { value: "MS", label: "Mississippi" },
+  { value: "MO", label: "Missouri" },
+  { value: "MT", label: "Montana" },
+  { value: "NE", label: "Nebraska" },
+  { value: "NV", label: "Nevada" },
+  { value: "NH", label: "New Hampshire" },
+  { value: "NJ", label: "New Jersey" },
+  { value: "NM", label: "New Mexico" },
+  { value: "NY", label: "New York" },
+  { value: "NC", label: "North Carolina" },
+  { value: "ND", label: "North Dakota" },
+  { value: "OH", label: "Ohio" },
+  { value: "OK", label: "Oklahoma" },
+  { value: "OR", label: "Oregon" },
+  { value: "PA", label: "Pennsylvania" },
+  { value: "RI", label: "Rhode Island" },
+  { value: "SC", label: "South Carolina" },
+  { value: "SD", label: "South Dakota" },
+  { value: "TN", label: "Tennessee" },
+  { value: "TX", label: "Texas" },
+  { value: "UT", label: "Utah" },
+  { value: "VT", label: "Vermont" },
+  { value: "VA", label: "Virginia" },
+  { value: "WA", label: "Washington" },
+  { value: "WV", label: "West Virginia" },
+  { value: "WI", label: "Wisconsin" },
+  { value: "WY", label: "Wyoming" },
 ] as const;

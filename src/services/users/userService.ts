@@ -1,168 +1,90 @@
-// /home/nneessen/projects/commissionTracker/src/services/users/userService.ts
+// src/services/users/userService.ts
+// User profile management service using database-first types
 
 import { supabase } from "../base/supabase";
 import { logger } from "../base/logger";
-import { User, CreateUserData, UpdateUserData } from "../../types/user.types";
-import type { RoleName } from "../../types/permissions.types";
 import type { Database } from "../../types/database.types";
+import type {
+  UserProfile,
+  UserProfileRow,
+  ApprovalStats,
+  AgentStatus,
+  ApprovalStatus,
+  CreateUserProfileData,
+} from "../../types/user.types";
+import { VALID_CONTRACT_LEVELS, isValidContractLevel } from "../../lib/constants";
 
-export type { CreateUserData, UpdateUserData };
+// Re-export for backward compatibility
+export { VALID_CONTRACT_LEVELS };
 
-// Use the generated type from database.types.ts
-export type UserProfile =
-  Database["public"]["Tables"]["user_profiles"]["Row"] & {
-    // Add the optional joined upline data that's not in the base table
-    upline?: {
-      id: string;
-      email: string;
-      first_name?: string | null;
-      last_name?: string | null;
-    } | null;
-    // Add missing fields that might not be in database yet but are needed
-    full_name?: string | null;
-    hire_date?: string | null;
-    agent_code?: string | null;
-    license_state?: string | null;
-    license_states?: string[] | null;
-    notes?: string | null;
-    ytd_commission?: number | null;
-    ytd_premium?: number | null;
-    zip?: string | null;
-  };
+// Type aliases from database
+type RoleName = string;
 
-export interface ApprovalStats {
-  total: number;
-  pending: number;
-  approved: number;
-  denied: number;
-}
-
+// Filter interface for querying users
 interface UserServiceFilter {
   roles?: RoleName[];
-  approvalStatus?: "pending" | "approved" | "denied";
-  agentStatus?: "licensed" | "unlicensed" | "not_applicable";
+  approvalStatus?: ApprovalStatus;
+  agentStatus?: AgentStatus;
 }
 
-// Valid contract levels for insurance agents
-// TODO: this is a constont and should be where constants are held
-export const VALID_CONTRACT_LEVELS = [
-  80, 85, 90, 95, 100, 105, 110, 115, 120, 125, 130, 135, 140, 145,
-];
+// =============================================================================
+// USER SERVICE CLASS
+// =============================================================================
 
 class UserService {
-  private currentUserCache: { user: UserProfile; timestamp: number } | null =
-    null;
-  private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+  // -------------------------------------------------------------------------
+  // READ OPERATIONS
+  // -------------------------------------------------------------------------
 
+  /**
+   * Get the current authenticated user's profile
+   */
   async getCurrentUserProfile(): Promise<UserProfile | null> {
     try {
-      if (this.currentUserCache) {
-        const age = Date.now() - this.currentUserCache.timestamp;
-        if (age < this.CACHE_TTL) {
-          return this.currentUserCache.user;
-        }
-      }
-
       const {
         data: { user },
         error: authError,
       } = await supabase.auth.getUser();
 
       if (authError || !user) {
-        logger.error(
-          "Failed to get authenticated user",
-          authError,
-          "UserService",
-        );
+        logger.error("Failed to get authenticated user", authError, "UserService");
         return null;
       }
 
       const { data, error } = await supabase
         .from("user_profiles")
         .select("*")
-        .eq("user_id", user.id)
+        .eq("id", user.id)
         .single();
 
       if (error) {
-        logger.error(
-          "Failed to fetch user profile",
-          error as Error,
-          "UserService",
-        );
-
-        if (user.email === "nick@nickneessen.com") {
-          console.warn(
-            "[UserService] Admin user query blocked by RLS, using fallback",
-          );
-          // Return minimal profile - id IS the auth user id (same UUID)
-          return {
-            id: user.id,
-            email: user.email,
-            approval_status: "approved",
-            is_admin: true,
-            is_super_admin: true,
-            roles: ["admin"],
-            agent_status: "licensed",
-            approved_at: new Date().toISOString(),
-            created_at: user.created_at,
-            updated_at: new Date().toISOString(),
-          } as unknown as UserProfile;
-        }
-
+        logger.error("Failed to fetch user profile", error as Error, "UserService");
         return null;
-      }
-
-      // Cache the result
-      if (data) {
-        this.currentUserCache = {
-          user: data as UserProfile,
-          timestamp: Date.now(),
-        };
       }
 
       return data as UserProfile;
     } catch (error) {
-      logger.error(
-        "Error in getCurrentUserProfile",
-        error as Error,
-        "UserService",
-      );
+      logger.error("Error in getCurrentUserProfile", error as Error, "UserService");
       return null;
     }
   }
 
-  async getCurrentUser(): Promise<User | null> {
-    const profile = await this.getCurrentUserProfile();
-    if (!profile) return null;
-    return this.transformProfileToUser(profile);
-  }
-
+  /**
+   * Get a user profile by ID
+   */
   async getUserProfile(userId: string): Promise<UserProfile | null> {
     try {
-      let { data, error } = await supabase
+      const { data, error } = await supabase
         .from("user_profiles")
         .select("*")
         .eq("id", userId)
         .single();
 
-      // If that fails, try by user_id
-      if (error?.code === "PGRST116" || !data) {
-        const result = await supabase
-          .from("user_profiles")
-          .select("*")
-          .eq("user_id", userId)
-          .single();
-
-        data = result.data;
-        error = result.error;
-      }
-
-      if (error || !data) {
+      if (error) {
+        // Try admin RPC as fallback (for viewing other users)
         const { data: rpcData, error: rpcError } = await supabase.rpc(
           "admin_getuser_profile",
-          {
-            target_user_id: userId,
-          },
+          { target_user_id: userId }
         );
 
         if (rpcError) {
@@ -170,8 +92,7 @@ class UserService {
           return null;
         }
 
-        const profile =
-          Array.isArray(rpcData) && rpcData.length > 0 ? rpcData[0] : null;
+        const profile = Array.isArray(rpcData) && rpcData.length > 0 ? rpcData[0] : null;
         return profile as UserProfile;
       }
 
@@ -182,13 +103,10 @@ class UserService {
     }
   }
 
-  async getById(id: string): Promise<User | null> {
-    const profile = await this.getUserProfile(id);
-    if (!profile) return null;
-    return this.transformProfileToUser(profile);
-  }
-
-  async getByEmail(email: string): Promise<User | null> {
+  /**
+   * Get a user profile by email
+   */
+  async getByEmail(email: string): Promise<UserProfile | null> {
     const { data, error } = await supabase
       .from("user_profiles")
       .select("*")
@@ -202,13 +120,15 @@ class UserService {
       throw new Error(`Failed to fetch user by email: ${error.message}`);
     }
 
-    return data ? this.transformProfileToUser(data as UserProfile) : null;
+    return data as UserProfile;
   }
 
-  async getAll(filter?: UserServiceFilter): Promise<User[]> {
+  /**
+   * Get all users with optional filtering
+   */
+  async getAll(filter?: UserServiceFilter): Promise<UserProfile[]> {
     let query = supabase.from("user_profiles").select("*");
 
-    // Apply filters
     if (filter?.roles && filter.roles.length > 0) {
       query = query.contains("roles", filter.roles);
     }
@@ -219,35 +139,34 @@ class UserService {
       query = query.eq("agent_status", filter.agentStatus);
     }
 
-    const { data, error } = await query.order("created_at", {
-      ascending: false,
-    });
+    const { data, error } = await query.order("created_at", { ascending: false });
 
     if (error) {
-      const { data: rpcData, error: rpcError } =
-        await supabase.rpc("admin_get_allusers");
+      // Fallback to admin RPC
+      const { data: rpcData, error: rpcError } = await supabase.rpc("admin_get_allusers");
 
       if (rpcError) {
         logger.error("Failed to fetch users", rpcError, "UserService");
         return [];
       }
 
-      return ((rpcData as UserProfile[]) || []).map(
-        this.transformProfileToUser,
-      );
+      return (rpcData as UserProfile[]) || [];
     }
 
-    return (
-      data?.map((profile) =>
-        this.transformProfileToUser(profile as UserProfile),
-      ) || []
-    );
+    return (data as UserProfile[]) || [];
+  }
+
+  /**
+   * Get all users (alias for getAll with no filter)
+   */
+  async getAllUsers(): Promise<UserProfile[]> {
+    return this.getAll();
   }
 
   /**
    * Get all agents (users with 'agent' or 'active_agent' role)
    */
-  async getAllAgents(): Promise<User[]> {
+  async getAllAgents(): Promise<UserProfile[]> {
     const { data, error } = await supabase
       .from("user_profiles")
       .select("*")
@@ -258,17 +177,13 @@ class UserService {
       throw new Error(`Failed to fetch agents: ${error.message}`);
     }
 
-    return (
-      data?.map((profile) =>
-        this.transformProfileToUser(profile as UserProfile),
-      ) || []
-    );
+    return (data as UserProfile[]) || [];
   }
 
   /**
-   * Get all active agents (approved agents with licensed status)
+   * Get all active agents (approved and licensed)
    */
-  async getActiveAgents(): Promise<User[]> {
+  async getActiveAgents(): Promise<UserProfile[]> {
     return this.getAll({
       roles: ["active_agent"],
       approvalStatus: "approved",
@@ -279,25 +194,21 @@ class UserService {
   /**
    * Get all recruits
    */
-  async getRecruits(): Promise<User[]> {
-    return this.getAll({
-      roles: ["recruit"],
-    });
+  async getRecruits(): Promise<UserProfile[]> {
+    return this.getAll({ roles: ["recruit"] });
   }
 
   /**
    * Get all admins
    */
-  async getAdmins(): Promise<User[]> {
-    return this.getAll({
-      roles: ["admin"],
-    });
+  async getAdmins(): Promise<UserProfile[]> {
+    return this.getAll({ roles: ["admin"] });
   }
 
   /**
    * Get users by contract level
    */
-  async getByContractLevel(contractLevel: number): Promise<User[]> {
+  async getByContractLevel(contractLevel: number): Promise<UserProfile[]> {
     const { data, error } = await supabase
       .from("user_profiles")
       .select("*")
@@ -305,16 +216,10 @@ class UserService {
       .order("first_name", { ascending: true });
 
     if (error) {
-      throw new Error(
-        `Failed to fetch users by contract level: ${error.message}`,
-      );
+      throw new Error(`Failed to fetch users by contract level: ${error.message}`);
     }
 
-    return (
-      data?.map((profile) =>
-        this.transformProfileToUser(profile as UserProfile),
-      ) || []
-    );
+    return (data as UserProfile[]) || [];
   }
 
   /**
@@ -325,11 +230,7 @@ class UserService {
       const { data, error } = await supabase.rpc("admin_get_pendingusers");
 
       if (error) {
-        logger.error(
-          "Failed to fetch pending users",
-          error as Error,
-          "UserService",
-        );
+        logger.error("Failed to fetch pending users", error as Error, "UserService");
         return [];
       }
 
@@ -340,26 +241,25 @@ class UserService {
     }
   }
 
-  // ============================================
-  // USER CRUD OPERATIONS
-  // ============================================
+  // -------------------------------------------------------------------------
+  // CREATE OPERATIONS
+  // -------------------------------------------------------------------------
 
   /**
-   * Create a new user with appropriate role and status
-   * Handles both admin-created users and self-registration
+   * Create a new user with auth account and profile
    */
-  async create(
-    userData: CreateUserData & {
-      roles?: RoleName[];
-      approval_status?: "pending" | "approved";
-      onboarding_status?: string | null;
-      sendInvite?: boolean;
-      upline_id?: string | null;
-      agent_status?: "licensed" | "unlicensed" | "not_applicable";
-    },
-  ): Promise<{
+  async create(userData: CreateUserProfileData & {
+    name?: string;
+    roles?: RoleName[];
+    approval_status?: ApprovalStatus;
+    onboarding_status?: string | null;
+    sendInvite?: boolean;
+    upline_id?: string | null;
+    agent_status?: AgentStatus;
+    contractCompLevel?: number;
+  }): Promise<{
     success: boolean;
-    user?: User;
+    user?: UserProfile;
     userId?: string;
     error?: string;
     inviteSent?: boolean;
@@ -377,38 +277,30 @@ class UserService {
       if (existingProfile) {
         return {
           success: false,
-          error: `A user with email ${userData.email} already exists`,
+          error: `A user with email ${email} already exists`,
         };
       }
 
-      // Determine appropriate role and status
-      let assignedRoles = userData.roles;
-      let agentStatus = userData.agent_status || "not_applicable";
-      let approvalStatus = userData.approval_status || "approved";
+      // Determine roles and status
+      let assignedRoles = userData.roles || [];
+      let agentStatus: AgentStatus = userData.agent_status || "not_applicable";
+      let approvalStatus: ApprovalStatus = userData.approval_status || "approved";
 
-      if (!assignedRoles || assignedRoles.length === 0) {
-        // Auto-assign role based on context
-        if (userData.contractCompLevel && userData.contractCompLevel >= 50) {
+      if (assignedRoles.length === 0) {
+        const contractLevel = userData.contractCompLevel || userData.contract_level;
+        if (contractLevel && contractLevel >= 50) {
           assignedRoles = ["active_agent"];
           agentStatus = "licensed";
-        } else if (
-          userData.contractCompLevel &&
-          userData.contractCompLevel < 50
-        ) {
+        } else if (contractLevel && contractLevel < 50) {
           assignedRoles = ["agent"];
           agentStatus = "licensed";
         } else {
-          // Default to recruit if no contract level specified
           assignedRoles = ["recruit"];
           agentStatus = "unlicensed";
-          approvalStatus = "pending"; // Recruits start as pending
+          approvalStatus = "pending";
         }
       } else {
-        // Set agent_status based on provided roles
-        if (
-          assignedRoles.includes("active_agent") ||
-          assignedRoles.includes("agent")
-        ) {
+        if (assignedRoles.includes("active_agent") || assignedRoles.includes("agent")) {
           agentStatus = "licensed";
         } else if (assignedRoles.includes("recruit")) {
           agentStatus = "unlicensed";
@@ -418,98 +310,82 @@ class UserService {
         }
       }
 
-      // NEW FLOW: Create auth user FIRST, then update profile
-      // The handle_new_user trigger creates profile with id = auth.users.id
-
-      let authUserId: string | null = null;
-      let inviteSent = false;
-
-      if (userData.sendInvite !== false) {
-        try {
-          // Step 1: Create auth user via Edge Function
-          const response = await fetch(
-            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-auth-user`,
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-              },
-              body: JSON.stringify({
-                email: email,
-                fullName: userData.name || "",
-                roles: assignedRoles,
-                isAdmin: assignedRoles.includes("admin"),
-                skipPipeline: false,
-              }),
-            },
-          );
-
-          const result = await response.json();
-
-          if (!response.ok) {
-            logger.error(
-              "Failed to create auth user via Edge Function",
-              new Error(result.error || "Unknown error"),
-              "UserService",
-            );
-            return {
-              success: false,
-              error: `Auth user creation failed: ${result.error || "Unknown error"}`,
-            };
-          }
-
-          authUserId = result.user?.id;
-          inviteSent = result.emailSent === true;
-
-          if (!authUserId) {
-            return {
-              success: false,
-              error: "Auth user was created but no ID was returned",
-            };
-          }
-        } catch (error) {
-          logger.error(
-            "Failed to call create-auth-user function",
-            error as Error,
-            "UserService",
-          );
-          return {
-            success: false,
-            error: `Auth user creation failed: ${(error as Error).message}`,
-          };
-        }
-      } else {
-        // No invite - can't create user without auth
+      // Create auth user via Edge Function
+      if (userData.sendInvite === false) {
         return {
           success: false,
           error: "Cannot create user without sending invite (auth user required)",
         };
       }
 
-      // Step 2: Update the profile with additional data
-      // The trigger already created a basic profile with id = authUserId
-      const profileData: Partial<UserProfile> = {
-        first_name: userData.name ? userData.name.split(" ")[0] : "",
-        last_name: userData.name
-          ? userData.name.split(" ").slice(1).join(" ")
-          : "",
-        phone: userData.phone?.trim() || undefined,
-        upline_id: userData.upline_id || undefined,
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-auth-user`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          },
+          body: JSON.stringify({
+            email,
+            fullName: userData.name || `${userData.first_name || ""} ${userData.last_name || ""}`.trim(),
+            roles: assignedRoles,
+            isAdmin: assignedRoles.includes("admin"),
+            skipPipeline: false,
+          }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        return {
+          success: false,
+          error: `Auth user creation failed: ${result.error || "Unknown error"}`,
+        };
+      }
+
+      const authUserId = result.user?.id;
+      const inviteSent = result.emailSent === true;
+
+      if (!authUserId) {
+        return {
+          success: false,
+          error: "Auth user was created but no ID was returned",
+        };
+      }
+
+      // Parse name into first/last
+      let firstName = userData.first_name || "";
+      let lastName = userData.last_name || "";
+      if (userData.name && !firstName) {
+        const parts = userData.name.split(" ");
+        firstName = parts[0] || "";
+        lastName = parts.slice(1).join(" ") || "";
+      }
+
+      // Update the profile created by trigger
+      const profileData: Partial<UserProfileRow> = {
+        first_name: firstName,
+        last_name: lastName,
+        phone: userData.phone || null,
+        upline_id: userData.upline_id || null,
+        recruiter_id: userData.recruiter_id || null,
         roles: assignedRoles,
         agent_status: agentStatus,
         approval_status: approvalStatus,
         onboarding_status: userData.onboarding_status || null,
-        contract_level: userData.contractCompLevel,
-        license_number: userData.licenseNumber,
-        license_states: userData.licenseStates,
-        hire_date: userData.hireDate
-          ? userData.hireDate.toISOString()
-          : undefined,
+        contract_level: userData.contractCompLevel || userData.contract_level || null,
+        license_number: userData.license_number || null,
         is_admin: assignedRoles.includes("admin"),
-        is_super_admin: email === "nick@nickneessen.com",
-        ytd_commission: userData.ytdCommission,
-        ytd_premium: userData.ytdPremium,
+        referral_source: userData.referral_source || null,
+        street_address: userData.street_address || null,
+        city: userData.city || null,
+        state: userData.state || null,
+        zip: userData.zip || null,
+        resident_state: userData.resident_state || null,
+        date_of_birth: userData.date_of_birth || null,
+        npn: userData.npn || null,
       };
 
       const { data, error } = await supabase
@@ -520,12 +396,7 @@ class UserService {
         .single();
 
       if (error) {
-        logger.error(
-          "Failed to update user profile after auth creation",
-          error as Error,
-          "UserService",
-        );
-        // Auth user exists but profile update failed
+        logger.error("Failed to update user profile after auth creation", error as Error, "UserService");
         return {
           success: true,
           userId: authUserId,
@@ -538,7 +409,7 @@ class UserService {
       return {
         success: true,
         userId: authUserId,
-        user: this.transformProfileToUser(data as UserProfile),
+        user: data as UserProfile,
         inviteSent,
       };
     } catch (error) {
@@ -547,33 +418,33 @@ class UserService {
     }
   }
 
+  // -------------------------------------------------------------------------
+  // UPDATE OPERATIONS
+  // -------------------------------------------------------------------------
+
   /**
-   * Update user profile
+   * Update a user profile
    */
   async update(
     id: string,
-    updates: Partial<UpdateUserData> & {
+    updates: Partial<UserProfileRow> & {
       roles?: RoleName[];
-      approval_status?: "pending" | "approved" | "denied";
-      agent_status?: "licensed" | "unlicensed" | "not_applicable";
-      contract_level?: number;
-    },
-  ): Promise<User> {
-    // Handle direct contract_level separately from transformUpdatesToDB
-    const { contract_level, ...otherUpdates } = updates;
-    const dbData = this.transformUpdatesToDB(otherUpdates);
+      name?: string;
+    }
+  ): Promise<UserProfile> {
+    const dbData: Partial<UserProfileRow> = { ...updates };
 
-    // Add contract_level directly if provided
-    if (contract_level !== undefined) {
-      dbData.contract_level = contract_level;
+    // Handle name -> first_name/last_name
+    if (updates.name !== undefined) {
+      const parts = updates.name.split(" ");
+      dbData.first_name = parts[0] || "";
+      dbData.last_name = parts.slice(1).join(" ") || "";
+      delete (dbData as Record<string, unknown>).name;
     }
 
-    // If roles are being updated, also update agent_status accordingly
+    // Auto-set agent_status based on roles
     if (updates.roles) {
-      if (
-        updates.roles.includes("active_agent") ||
-        updates.roles.includes("agent")
-      ) {
+      if (updates.roles.includes("active_agent") || updates.roles.includes("agent")) {
         dbData.agent_status = "licensed";
       } else if (updates.roles.includes("recruit")) {
         dbData.agent_status = "unlicensed";
@@ -584,12 +455,6 @@ class UserService {
       }
     }
 
-    // Handle approval_status if provided
-    if (updates.approval_status) {
-      dbData.approval_status = updates.approval_status;
-    }
-
-    // FIXED: Simplified query to avoid 406 errors
     const { data, error } = await supabase
       .from("user_profiles")
       .update(dbData)
@@ -598,22 +463,7 @@ class UserService {
       .single();
 
     if (error) {
-      // Special handling for edge cases
-      if (error.code === "PGRST116" || error.message.includes("multiple")) {
-        // Multiple rows returned, try with maybeSingle
-        const { data: retryData, error: retryError } = await supabase
-          .from("user_profiles")
-          .update(dbData)
-          .eq("id", id)
-          .select()
-          .maybeSingle();
-
-        if (!retryError && retryData) {
-          return this.transformProfileToUser(retryData as UserProfile);
-        }
-      }
-
-      // Try to fetch the user to verify update worked
+      // Try to fetch to verify update worked
       const { data: fetchedData, error: fetchError } = await supabase
         .from("user_profiles")
         .select("*")
@@ -621,70 +471,97 @@ class UserService {
         .single();
 
       if (!fetchError && fetchedData) {
-        return this.transformProfileToUser(fetchedData as UserProfile);
+        return fetchedData as UserProfile;
       }
 
       throw new Error(`Failed to update user: ${error.message}`);
     }
 
-    if (!data) {
-      // If no data returned, fetch the user
-      const { data: fetchedData, error: fetchError } = await supabase
-        .from("user_profiles")
-        .select("*")
-        .eq("id", id)
-        .single();
-
-      if (fetchError) {
-        throw new Error(`Failed to fetch updated user: ${fetchError.message}`);
-      }
-
-      return this.transformProfileToUser(fetchedData as UserProfile);
-    }
-
-    // Clear cache if updating current user
-    if (this.currentUserCache?.user.id === id) {
-      this.clearCache();
-    }
-
-    return this.transformProfileToUser(data as UserProfile);
+    return data as UserProfile;
   }
 
   /**
    * Update current user's profile
    */
   async updateCurrentUserProfile(
-    updates: Partial<UpdateUserData>,
-  ): Promise<User | null> {
+    updates: Partial<Omit<UserProfileRow, 'roles'>> & { roles?: string[] }
+  ): Promise<UserProfile | null> {
     const currentUser = await this.getCurrentUserProfile();
     if (!currentUser) {
       throw new Error("No authenticated user");
     }
-
-    // Cast roles to RoleName[] if present
-    const updateData: Record<string, unknown> = { ...updates };
-    if (updateData.roles) {
-      updateData.roles = updateData.roles as RoleName[];
-    }
-
-    return this.update(currentUser.id, updateData);
+    return this.update(currentUser.id, updates);
   }
 
-  async approve(
+  /**
+   * Update contract level
+   */
+  async updateContractLevel(
     userId: string,
-    role: RoleName = "active_agent",
+    contractLevel: number | null
   ): Promise<{ success: boolean; error?: string }> {
     try {
-      const {
-        data: { user },
-        error: authError,
-      } = await supabase.auth.getUser();
+      if (contractLevel !== null && !isValidContractLevel(contractLevel)) {
+        return {
+          success: false,
+          error: `Invalid contract level. Must be one of: ${VALID_CONTRACT_LEVELS.join(", ")}`,
+        };
+      }
+
+      const { error } = await supabase
+        .from("user_profiles")
+        .update({ contract_level: contractLevel })
+        .eq("id", userId);
+
+      if (error) {
+        logger.error("Failed to update contract level", error as Error, "UserService");
+        return { success: false, error: error.message };
+      }
+
+      // Auto-upgrade agent role if contract level is high enough
+      if (contractLevel && contractLevel >= 50) {
+        const profile = await this.getUserProfile(userId);
+        if (profile && profile.roles?.includes("agent") && !profile.roles?.includes("active_agent")) {
+          const newRoles = profile.roles.map((r) => (r === "agent" ? "active_agent" : r));
+          await this.update(userId, { roles: newRoles });
+        }
+      }
+
+      logger.info(`User ${userId} contract level set to ${contractLevel}`, "UserService");
+      return { success: true };
+    } catch (error) {
+      logger.error("Error in updateContractLevel", error as Error, "UserService");
+      return { success: false, error: "Failed to update contract level" };
+    }
+  }
+
+  /**
+   * Get user's contract level
+   */
+  async getUserContractLevel(userId: string): Promise<number> {
+    const profile = await this.getUserProfile(userId);
+    return profile?.contract_level || 100;
+  }
+
+  // -------------------------------------------------------------------------
+  // APPROVAL OPERATIONS
+  // -------------------------------------------------------------------------
+
+  /**
+   * Approve a user
+   */
+  async approve(
+    userId: string,
+    role: RoleName = "active_agent"
+  ): Promise<{ success: boolean; error?: string }> {
+    try {
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
 
       if (authError || !user) {
         return { success: false, error: "Not authenticated" };
       }
 
-      const { data: _data, error } = await supabase.rpc("admin_approveuser", {
+      const { error } = await supabase.rpc("admin_approveuser", {
         target_user_id: userId,
         approver_id: user.id,
       });
@@ -706,21 +583,21 @@ class UserService {
     }
   }
 
+  /**
+   * Deny a user
+   */
   async deny(
     userId: string,
-    reason?: string,
+    reason?: string
   ): Promise<{ success: boolean; error?: string }> {
     try {
-      const {
-        data: { user },
-        error: authError,
-      } = await supabase.auth.getUser();
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
 
       if (authError || !user) {
         return { success: false, error: "Not authenticated" };
       }
 
-      const { data: _data, error } = await supabase.rpc("admin_denyuser", {
+      const { error } = await supabase.rpc("admin_denyuser", {
         target_user_id: userId,
         approver_id: user.id,
         reason: reason || "No reason provided",
@@ -739,23 +616,17 @@ class UserService {
     }
   }
 
-  async setPending(
-    userId: string,
-  ): Promise<{ success: boolean; error?: string }> {
+  /**
+   * Set user to pending status
+   */
+  async setPending(userId: string): Promise<{ success: boolean; error?: string }> {
     try {
-      const { data: _data, error } = await supabase.rpc(
-        "admin_set_pendinguser",
-        {
-          target_user_id: userId,
-        },
-      );
+      const { error } = await supabase.rpc("admin_set_pendinguser", {
+        target_user_id: userId,
+      });
 
       if (error) {
-        logger.error(
-          "Failed to set user to pending",
-          error as Error,
-          "UserService",
-        );
+        logger.error("Failed to set user to pending", error as Error, "UserService");
         return { success: false, error: error.message };
       }
 
@@ -766,33 +637,33 @@ class UserService {
     }
   }
 
+  /**
+   * Set admin role for a user
+   */
   async setAdminRole(
     userId: string,
-    isAdmin: boolean,
+    isAdmin: boolean
   ): Promise<{ success: boolean; error?: string }> {
     try {
-      const { data: _data, error } = await supabase.rpc(
-        "admin_set_admin_role",
-        {
-          target_user_id: userId,
-          new_is_admin: isAdmin,
-        },
-      );
+      const { error } = await supabase.rpc("admin_set_admin_role", {
+        target_user_id: userId,
+        new_is_admin: isAdmin,
+      });
 
       if (error) {
         logger.error("Failed to set admin role", error as Error, "UserService");
         return { success: false, error: error.message };
       }
 
+      // Update roles array
       const profile = await this.getUserProfile(userId);
       if (profile) {
+        const currentRoles = profile.roles || [];
         const newRoles = isAdmin
-          ? [...(profile.roles || []), "admin"].filter(
-              (v, i, a) => a.indexOf(v) === i,
-            )
-          : (profile.roles || []).filter((r) => r !== "admin");
+          ? [...currentRoles, "admin"].filter((v, i, a) => a.indexOf(v) === i)
+          : currentRoles.filter((r) => r !== "admin");
 
-        await this.update(userId, { roles: newRoles as RoleName[] });
+        await this.update(userId, { roles: newRoles });
       }
 
       logger.info(`User ${userId} admin role set to ${isAdmin}`, "UserService");
@@ -803,73 +674,12 @@ class UserService {
     }
   }
 
-  async updateContractLevel(
-    userId: string,
-    contractLevel: number | null,
-  ): Promise<{ success: boolean; error?: string }> {
-    try {
-      // Validate contract level
-      if (
-        contractLevel !== null &&
-        !VALID_CONTRACT_LEVELS.includes(contractLevel)
-      ) {
-        return {
-          success: false,
-          error: `Invalid contract level. Must be one of: ${VALID_CONTRACT_LEVELS.join(", ")}`,
-        };
-      }
-
-      const { data: _data, error } = await supabase
-        .from("user_profiles")
-        .update({ contract_level: contractLevel })
-        .eq("id", userId)
-        .select()
-        .single();
-
-      if (error) {
-        logger.error(
-          "Failed to update contract level",
-          error as Error,
-          "UserService",
-        );
-        return { success: false, error: error.message };
-      }
-
-      if (contractLevel && contractLevel >= 50) {
-        const profile = await this.getUserProfile(userId);
-        if (profile && profile.roles?.includes("agent")) {
-          // Upgrade to active_agent
-          await this.update(userId, {
-            roles: profile.roles.map((r) =>
-              r === "agent" ? "active_agent" : r,
-            ) as RoleName[],
-          });
-        }
-      }
-
-      logger.info(
-        `User ${userId} contract level set to ${contractLevel}`,
-        "UserService",
-      );
-      return { success: true };
-    } catch (error) {
-      logger.error(
-        "Error in updateContractLevel",
-        error as Error,
-        "UserService",
-      );
-      return { success: false, error: "Failed to update contract level" };
-    }
-  }
-
-  async getUserContractLevel(userId: string): Promise<number> {
-    const profile = await this.getUserProfile(userId);
-    return profile?.contract_level || 100;
-  }
+  // -------------------------------------------------------------------------
+  // DELETE OPERATIONS
+  // -------------------------------------------------------------------------
 
   /**
-   * Hard delete a user and all related data.
-   * Deletes from all related tables, user_profiles, and auth.users.
+   * Hard delete a user and all related data
    */
   async delete(userId: string): Promise<{ success: boolean; error?: string }> {
     try {
@@ -882,14 +692,10 @@ class UserService {
         return { success: false, error: error.message };
       }
 
-      if (data && typeof data === "object") {
-        if (data.success === false) {
-          logger.error("Delete user denied", data.error, "UserService");
-          return {
-            success: false,
-            error: data.error || "Failed to delete user",
-          };
-        }
+      if (data && typeof data === "object" && (data as { success?: boolean }).success === false) {
+        const errorData = data as { error?: string };
+        logger.error("Delete user denied", errorData.error, "UserService");
+        return { success: false, error: errorData.error || "Failed to delete user" };
       }
 
       logger.info(`User ${userId} deleted`, "UserService");
@@ -900,62 +706,52 @@ class UserService {
     }
   }
 
+  // -------------------------------------------------------------------------
+  // STATUS CHECK OPERATIONS
+  // -------------------------------------------------------------------------
+
+  /**
+   * Check if current user is admin
+   */
   async isCurrentUserAdmin(): Promise<boolean> {
     try {
       const profile = await this.getCurrentUserProfile();
-      return (
-        profile?.is_admin === true || profile?.roles?.includes("admin") || false
-      );
+      return profile?.is_admin === true || profile?.roles?.includes("admin") || false;
     } catch (error) {
-      logger.error(
-        "Error in isCurrentUserAdmin",
-        error as Error,
-        "UserService",
-      );
+      logger.error("Error in isCurrentUserAdmin", error as Error, "UserService");
       return false;
     }
   }
 
+  /**
+   * Check if current user is approved
+   */
   async isCurrentUserApproved(): Promise<boolean> {
     try {
       const profile = await this.getCurrentUserProfile();
-      return (
-        profile?.approval_status === "approved" ||
-        profile?.is_admin === true ||
-        false
-      );
+      return profile?.approval_status === "approved" || profile?.is_admin === true || false;
     } catch (error) {
-      logger.error(
-        "Error in isCurrentUserApproved",
-        error as Error,
-        "UserService",
-      );
+      logger.error("Error in isCurrentUserApproved", error as Error, "UserService");
       return false;
     }
   }
 
-  async getCurrentUserStatus(): Promise<
-    "pending" | "approved" | "denied" | null
-  > {
+  /**
+   * Get current user's approval status
+   */
+  async getCurrentUserStatus(): Promise<ApprovalStatus | null> {
     try {
       const profile = await this.getCurrentUserProfile();
-      return (
-        (profile?.approval_status as
-          | "pending"
-          | "approved"
-          | "denied"
-          | null) || null
-      );
+      return (profile?.approval_status as ApprovalStatus) || null;
     } catch (error) {
-      logger.error(
-        "Error in getCurrentUserStatus",
-        error as Error,
-        "UserService",
-      );
+      logger.error("Error in getCurrentUserStatus", error as Error, "UserService");
       return null;
     }
   }
 
+  /**
+   * Get approval statistics
+   */
   async getApprovalStats(): Promise<ApprovalStats> {
     try {
       const { data, error } = await supabase
@@ -963,35 +759,85 @@ class UserService {
         .select("approval_status");
 
       if (error) {
-        logger.error(
-          "Failed to fetch approval stats",
-          error as Error,
-          "UserService",
-        );
+        logger.error("Failed to fetch approval stats", error as Error, "UserService");
         return { total: 0, pending: 0, approved: 0, denied: 0 };
       }
 
-      const stats = {
+      return {
         total: data.length,
         pending: data.filter((u) => u.approval_status === "pending").length,
         approved: data.filter((u) => u.approval_status === "approved").length,
         denied: data.filter((u) => u.approval_status === "denied").length,
       };
-
-      return stats;
     } catch (error) {
       logger.error("Error in getApprovalStats", error as Error, "UserService");
       return { total: 0, pending: 0, approved: 0, denied: 0 };
     }
   }
 
-  public mapAuthUserToUser(supabaseUser: {
+  // -------------------------------------------------------------------------
+  // AUTH OPERATIONS
+  // -------------------------------------------------------------------------
+
+  /**
+   * Sign out the current user
+   */
+  async signOut(): Promise<void> {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * Map Supabase auth user to UserProfile (for initial login)
+   * Used by AuthContext before full profile is loaded
+   */
+  mapAuthUserToProfile(supabaseUser: {
     id: string;
     email?: string;
     created_at: string;
     updated_at?: string;
     user_metadata?: Record<string, unknown>;
-  }): User {
+  }): Partial<UserProfile> {
+    const metadata = supabaseUser.user_metadata || {};
+
+    return {
+      id: supabaseUser.id,
+      email: supabaseUser.email || "",
+      first_name: (metadata.first_name as string) || null,
+      last_name: (metadata.last_name as string) || null,
+      phone: (metadata.phone as string) || null,
+      contract_level: (metadata.contract_level as number) || null,
+      roles: (metadata.roles as string[]) || null,
+      is_admin: (metadata.is_admin as boolean) || false,
+      created_at: supabaseUser.created_at,
+      updated_at: supabaseUser.updated_at || null,
+    };
+  }
+
+  /**
+   * @deprecated Use mapAuthUserToProfile instead
+   * Legacy method for backward compatibility with AuthContext
+   * Returns the deprecated User type format
+   */
+  mapAuthUserToUser(supabaseUser: {
+    id: string;
+    email?: string;
+    created_at: string;
+    updated_at?: string;
+    user_metadata?: Record<string, unknown>;
+  }): {
+    id: string;
+    email: string;
+    name?: string;
+    phone?: string;
+    contractCompLevel?: number;
+    isActive?: boolean;
+    createdAt?: Date;
+    updatedAt?: Date;
+    rawuser_meta_data?: Record<string, unknown>;
+  } {
     const metadata = supabaseUser.user_metadata || {};
 
     return {
@@ -1004,16 +850,6 @@ class UserService {
       phone: metadata.phone as string | undefined,
       contractCompLevel: (metadata.contract_comp_level as number) || 100,
       isActive: metadata.is_active !== false,
-      agentCode: metadata.agent_code as string | undefined,
-      licenseNumber: metadata.license_number as string | undefined,
-      licenseState: metadata.license_state as string | undefined,
-      licenseStates: metadata.license_states as string[] | undefined,
-      notes: metadata.notes as string | undefined,
-      hireDate: metadata.hire_date
-        ? new Date(metadata.hire_date as string)
-        : undefined,
-      ytdCommission: metadata.ytd_commission as number | undefined,
-      ytdPremium: metadata.ytd_premium as number | undefined,
       createdAt: new Date(supabaseUser.created_at),
       updatedAt: supabaseUser.updated_at
         ? new Date(supabaseUser.updated_at)
@@ -1022,145 +858,52 @@ class UserService {
     };
   }
 
-  async signOut(): Promise<void> {
-    this.clearCache();
+  // -------------------------------------------------------------------------
+  // BACKWARD COMPATIBILITY ALIASES
+  // -------------------------------------------------------------------------
 
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      throw error;
-    }
+  /** @deprecated Use getUserProfile instead */
+  async getById(userId: string): Promise<UserProfile | null> {
+    return this.getUserProfile(userId);
   }
 
-  clearCache(): void {
-    this.currentUserCache = null;
-  }
-
-  private transformProfileToUser(profile: UserProfile): User {
-    const fullName =
-      [profile.first_name, profile.last_name].filter(Boolean).join(" ") ||
-      profile.email;
-
-    return {
-      id: profile.id,
-      name: fullName,
-      email: profile.email,
-      phone: profile.phone || undefined,
-      contractCompLevel: profile.contract_level || undefined,
-      isActive: profile.approval_status === "approved",
-      agentCode: profile.agent_code || undefined,
-      licenseNumber: profile.license_number || undefined,
-      licenseState: profile.license_state || undefined,
-      licenseStates: profile.license_states || undefined,
-      notes: profile.notes || undefined,
-      hireDate: profile.hire_date ? new Date(profile.hire_date) : undefined,
-      ytdCommission: profile.ytd_commission || undefined,
-      ytdPremium: profile.ytd_premium || undefined,
-      createdAt: profile.created_at ? new Date(profile.created_at) : undefined,
-      updatedAt: profile.updated_at ? new Date(profile.updated_at) : undefined,
-      rawuser_meta_data: {
-        roles: profile.roles,
-        agent_status: profile.agent_status,
-        approval_status: profile.approval_status,
-        is_admin: profile.is_admin,
-        is_super_admin: profile.is_super_admin,
-        upline_id: profile.upline_id,
-        hierarchy_path: profile.hierarchy_path,
-        hierarchy_depth: profile.hierarchy_depth,
-      },
-    };
-  }
-
-  private transformUpdatesToDB(
-    data: Partial<CreateUserData>,
-  ): Record<string, unknown> {
-    const dbData: Record<string, unknown> = {};
-
-    if (data.name !== undefined) {
-      const parts = data.name.split(" ");
-      dbData.first_name = parts[0] || "";
-      dbData.last_name = parts.slice(1).join(" ") || "";
-    }
-    if (data.email !== undefined) dbData.email = data.email.toLowerCase();
-    if (data.phone !== undefined) dbData.phone = data.phone;
-    if (data.contractCompLevel !== undefined) {
-      dbData.contract_level = data.contractCompLevel;
-    }
-    if (data.isActive !== undefined) {
-      dbData.approval_status = data.isActive ? "approved" : "pending";
-    }
-    if (data.licenseNumber !== undefined)
-      dbData.license_number = data.licenseNumber;
-    if (data.licenseStates !== undefined)
-      dbData.license_states = data.licenseStates;
-    if (data.hireDate !== undefined) dbData.hire_date = data.hireDate;
-    if (data.ytdCommission !== undefined)
-      dbData.ytd_commission = data.ytdCommission;
-    if (data.ytdPremium !== undefined) dbData.ytd_premium = data.ytdPremium;
-
-    return dbData;
-  }
-
-  async getAgentById(id: string): Promise<User | null> {
-    return this.getById(id);
-  }
-
-  async getActive(): Promise<User[]> {
-    return this.getActiveAgents();
-  }
-
-  async getAllUsers(): Promise<UserProfile[]> {
-    const { data, error } = await supabase
-      .from("user_profiles")
-      .select("*")
-      .order("created_at", { ascending: false });
-
-    if (error) {
-      const { data: rpcData, error: rpcError } =
-        await supabase.rpc("admin_get_allusers");
-
-      if (rpcError) {
-        logger.error("Failed to fetch users", rpcError, "UserService");
-        return [];
-      }
-
-      return (rpcData as UserProfile[]) || [];
-    }
-
-    return (data as UserProfile[]) || [];
-  }
-
+  /** @deprecated Use create instead */
   async createUser(
-    userData: CreateUserData & {
-      roles?: RoleName[];
-      approval_status?: "pending" | "approved";
-      onboarding_status?: string | null;
-      sendInvite?: boolean;
-      upline_id?: string | null;
-      agent_status?: "licensed" | "unlicensed" | "not_applicable";
-    },
-  ): Promise<{
-    success: boolean;
-    user?: User;
-    userId?: string;
-    error?: string;
-    inviteSent?: boolean;
-  }> {
+    userData: Parameters<typeof this.create>[0]
+  ): Promise<ReturnType<typeof this.create>> {
     return this.create(userData);
   }
 
+  /** @deprecated Use update instead */
   async updateUser(
-    userId: string,
-    updates: Partial<UpdateUserData> & {
-      roles?: RoleName[];
-      approval_status?: "pending" | "approved" | "denied";
-      agent_status?: "licensed" | "unlicensed" | "not_applicable";
-      contract_level?: number;
-      [key: string]: unknown;
-    },
-  ): Promise<{ success: boolean; data?: User; error?: string }> {
+    id: string,
+    updates: Parameters<typeof this.update>[1]
+  ): Promise<{
+    success: boolean;
+    data?: {
+      id: string;
+      email: string;
+      name?: string;
+      phone?: string;
+      contractCompLevel?: number;
+      isActive?: boolean;
+    };
+    error?: string;
+  }> {
     try {
-      const user = await this.update(userId, updates);
-      return { success: true, data: user };
+      const result = await this.update(id, updates);
+      // Convert to legacy User format
+      return {
+        success: true,
+        data: {
+          id: result.id,
+          email: result.email,
+          name: [result.first_name, result.last_name].filter(Boolean).join(" ") || undefined,
+          phone: result.phone || undefined,
+          contractCompLevel: result.contract_level || undefined,
+          isActive: result.approval_status === "approved",
+        },
+      };
     } catch (error) {
       return {
         success: false,
@@ -1169,32 +912,42 @@ class UserService {
     }
   }
 
-  async deleteUser(
-    userId: string,
-  ): Promise<{ success: boolean; error?: string }> {
+  /** @deprecated Use delete instead */
+  async deleteUser(userId: string): Promise<{ success: boolean; error?: string }> {
     return this.delete(userId);
   }
 
+  /** @deprecated Use approve instead */
   async approveUser(
     userId: string,
+    role?: string
   ): Promise<{ success: boolean; error?: string }> {
-    return this.approve(userId);
+    return this.approve(userId, role);
   }
 
+  /** @deprecated Use deny instead */
   async denyUser(
     userId: string,
-    reason?: string,
+    reason?: string
   ): Promise<{ success: boolean; error?: string }> {
     return this.deny(userId, reason);
   }
 
-  async setPendingUser(
-    userId: string,
-  ): Promise<{ success: boolean; error?: string }> {
+  /** @deprecated Use setPending instead */
+  async setPendingUser(userId: string): Promise<{ success: boolean; error?: string }> {
     return this.setPending(userId);
   }
 }
 
+// =============================================================================
+// EXPORTS
+// =============================================================================
+
 export const userService = new UserService();
+
+// Backward compatibility aliases
 export const agentService = userService;
 export const userApprovalService = userService;
+
+// Re-export types
+export type { UserProfile, ApprovalStats };

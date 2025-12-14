@@ -17,16 +17,21 @@ import type {Role, Permission, UserPermissions, PermissionCode, RoleName, Permis
  * Uses database function: get_user_permissions(user_id)
  */
 export async function getUserPermissions(userId: string): Promise<PermissionCode[]> {
+  console.log('[PermissionService] getUserPermissions called with userId:', userId);
+
   const { data, error } = await supabase.rpc('get_user_permissions', {
     target_user_id: userId,
   });
 
   if (error) {
-    console.error('Error fetching user permissions:', error);
+    console.error('[PermissionService] Error fetching user permissions:', error);
     throw new Error(`Failed to fetch user permissions: ${error.message}`);
   }
 
-  return (data || []).map((row: { permission_code: string }) => row.permission_code);
+  // RPC returns { code: string } not { permission_code: string }
+  const permissions = (data || []).map((row: { code: string }) => row.code);
+  console.log('[PermissionService] getUserPermissions result:', permissions.length, 'permissions');
+  return permissions;
 }
 
 /**
@@ -89,17 +94,20 @@ export async function isAdminUser(userId?: string): Promise<boolean> {
  * Get user's roles from user_profiles
  */
 export async function getUserRoles(userId: string): Promise<RoleName[]> {
+  console.log('[PermissionService] getUserRoles called with userId:', userId);
+
   const { data, error } = await supabase
     .from('user_profiles')
     .select('roles')
-    .eq('user_id', userId)
+    .eq('id', userId)
     .single();
 
   if (error) {
-    console.error('Error fetching user roles:', error);
+    console.error('[PermissionService] Error fetching user roles:', error);
     throw new Error(`Failed to fetch user roles: ${error.message}`);
   }
 
+  console.log('[PermissionService] getUserRoles result:', data);
   return (data?.roles || ['agent']) as RoleName[];
 }
 
@@ -107,16 +115,30 @@ export async function getUserRoles(userId: string): Promise<RoleName[]> {
  * Get complete user permissions context (roles + permissions)
  */
 export async function getUserPermissionsContext(userId: string): Promise<UserPermissions> {
-  const [roles, permissions] = await Promise.all([
-    getUserRoles(userId),
-    getUserPermissions(userId),
-  ]);
+  console.log('[PermissionService] getUserPermissionsContext called with userId:', userId);
 
-  return {
-    userId,
-    roles,
-    permissions,
-  };
+  try {
+    const [roles, permissions] = await Promise.all([
+      getUserRoles(userId),
+      getUserPermissions(userId),
+    ]);
+
+    console.log('[PermissionService] Successfully loaded permissions:', {
+      userId,
+      rolesCount: roles.length,
+      permissionsCount: permissions.length,
+      roles,
+    });
+
+    return {
+      userId,
+      roles,
+      permissions,
+    };
+  } catch (error) {
+    console.error('[PermissionService] Failed to load permissions context:', error);
+    throw error;
+  }
 }
 
 /**
@@ -273,7 +295,7 @@ export async function assignRoleToUser(userId: string, roleName: RoleName): Prom
     const { error } = await supabase
       .from('user_profiles')
       .update({ roles: updatedRoles })
-      .eq('user_id', userId);
+      .eq('id', userId);
 
     if (error) {
       console.error('Error assigning role:', error);
@@ -297,7 +319,7 @@ export async function removeRoleFromUser(userId: string, roleName: RoleName): Pr
   const { error } = await supabase
     .from('user_profiles')
     .update({ roles: updatedRoles })
-    .eq('user_id', userId);
+    .eq('id', userId);
 
   if (error) {
     console.error('Error removing role:', error);
@@ -318,7 +340,7 @@ export async function setUserRoles(userId: string, roles: RoleName[]): Promise<v
     const { data: currentUserProfile } = await supabase
       .from('user_profiles')
       .select('roles')
-      .eq('user_id', userId)
+      .eq('id', userId)
       .single();
       
     const currentRoles = currentUserProfile?.roles || [];
@@ -332,7 +354,7 @@ export async function setUserRoles(userId: string, roles: RoleName[]): Promise<v
         .from('user_profiles')
         .select('id', { count: 'exact', head: true })
         .contains('roles', ['admin'])
-        .neq('user_id', userId);
+        .neq('id', userId);
         
       if (count === 0) {
         throw new Error('Cannot remove your admin role: You are the last admin in the system. Promote another user to admin first.');
@@ -346,7 +368,7 @@ export async function setUserRoles(userId: string, roles: RoleName[]): Promise<v
   const { data: targetUserProfile } = await supabase
     .from('user_profiles')
     .select('roles')
-    .eq('user_id', userId)
+    .eq('id', userId)
     .single();
     
   const targetCurrentRoles = targetUserProfile?.roles || [];

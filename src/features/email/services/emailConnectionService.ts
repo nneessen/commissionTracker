@@ -41,7 +41,7 @@ export async function getEmailConnectionStatus(): Promise<EmailConnectionStatus>
   const { data: profile } = await supabase
     .from("user_profiles")
     .select("id")
-    .eq("user_id", user.id)
+    .eq("id", user.id)
     .single();
 
   if (!profile) {
@@ -94,7 +94,7 @@ export async function getEmailOAuthTokens(): Promise<EmailOAuthToken[]> {
   const { data: profile } = await supabase
     .from("user_profiles")
     .select("id")
-    .eq("user_id", user.id)
+    .eq("id", user.id)
     .single();
 
   if (!profile) return [];
@@ -137,7 +137,7 @@ export async function initiateGmailOAuth(): Promise<void> {
   const { data: profile } = await supabase
     .from("user_profiles")
     .select("id")
-    .eq("user_id", user.id)
+    .eq("id", user.id)
     .single();
 
   if (!profile) {
@@ -179,7 +179,7 @@ export async function disconnectEmail(provider: EmailProvider): Promise<void> {
   const { data: profile } = await supabase
     .from("user_profiles")
     .select("id")
-    .eq("user_id", user.id)
+    .eq("id", user.id)
     .single();
 
   if (!profile) {
@@ -218,7 +218,7 @@ export async function getEmailQuota(provider: EmailProvider): Promise<{
   const { data: profile } = await supabase
     .from("user_profiles")
     .select("id")
-    .eq("user_id", user.id)
+    .eq("id", user.id)
     .single();
 
   if (!profile) {

@@ -38,7 +38,7 @@ export function MyRecruitingPipeline() {
       const { data, error } = await supabase
         .from('user_profiles')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('id', user.id)
         .single();
 
       if (error) {
@@ -140,7 +140,7 @@ export function MyRecruitingPipeline() {
       const { error: updateError } = await supabase
         .from('user_profiles')
         .update({ profile_photo_url: urlData.publicUrl })
-        .eq('user_id', user.id);
+        .eq('id', user.id);
 
       if (updateError) throw updateError;
 

@@ -18,7 +18,7 @@ export const notificationService = {
     const { data: profile } = await supabase
       .from('user_profiles')
       .select('id')
-      .eq('user_id', user.id)
+      .eq('id', user.id)
       .single();
 
     if (!profile) throw new Error('Profile not found');
@@ -44,7 +44,7 @@ export const notificationService = {
     const { data: profile } = await supabase
       .from('user_profiles')
       .select('id')
-      .eq('user_id', user.id)
+      .eq('id', user.id)
       .single();
 
     if (!profile) throw new Error('Profile not found');
@@ -81,7 +81,7 @@ export const notificationService = {
     const { data: profile } = await supabase
       .from('user_profiles')
       .select('id')
-      .eq('user_id', user.id)
+      .eq('id', user.id)
       .single();
 
     if (!profile) throw new Error('Profile not found');
@@ -128,7 +128,7 @@ export const notificationService = {
     const { data: profile } = await supabase
       .from('user_profiles')
       .select('id')
-      .eq('user_id', user.id)
+      .eq('id', user.id)
       .single();
 
     if (!profile) throw new Error('Profile not found');

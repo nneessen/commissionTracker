@@ -1,16 +1,17 @@
 // supabase/functions/configure-email-templates/index.ts
 
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
+};
 
 // Email templates with The Standard branding
 const emailTemplates = {
   confirmSignup: {
-    subject: 'Welcome to The Standard - Confirm Your Account',
+    subject: "Welcome to The Standard - Confirm Your Account",
     content: `
 <!DOCTYPE html>
 <html>
@@ -97,10 +98,10 @@ const emailTemplates = {
   </div>
 </body>
 </html>
-    `
+    `,
   },
   resetPassword: {
-    subject: 'Reset Your Password - The Standard',
+    subject: "Reset Your Password - The Standard",
     content: `
 <!DOCTYPE html>
 <html>
@@ -187,14 +188,14 @@ const emailTemplates = {
   </div>
 </body>
 </html>
-    `
-  }
-}
+    `,
+  },
+};
 
 serve(async (req) => {
   // Handle CORS
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
   }
 
   try {
@@ -203,31 +204,30 @@ serve(async (req) => {
 
     return new Response(
       JSON.stringify({
-        message: 'Email templates configured for The Standard branding',
+        message: "Email templates configured for The Standard branding",
         templates: {
           confirmSignup: {
             subject: emailTemplates.confirmSignup.subject,
-            configured: true
+            configured: true,
           },
           resetPassword: {
             subject: emailTemplates.resetPassword.subject,
-            configured: true
-          }
+            configured: true,
+          },
         },
-        instructions: 'These templates should be configured in Supabase Dashboard under Authentication > Email Templates'
+        instructions:
+          "These templates should be configured in Supabase Dashboard under Authentication > Email Templates",
       }),
       {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
-      }
-    )
+      },
+    );
   } catch (error) {
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 400,
-      }
-    )
+    return new Response(JSON.stringify({ error: error.message }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 400,
+    });
   }
-})
+});
+
