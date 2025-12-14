@@ -1,20 +1,38 @@
 // src/features/admin/components/AddUserDialog.tsx
-import {useState} from "react";
-import {Button} from "@/components/ui/button";
-import {Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle} from "@/components/ui/dialog";
-import {Input} from "@/components/ui/input";
-import {Label} from "@/components/ui/label";
-import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
-import {Checkbox} from "@/components/ui/checkbox";
-import {useAllRolesWithPermissions} from "@/hooks/permissions/usePermissions";
-import {useAllUsers} from "@/hooks/admin/useUserApproval";
-import {Mail, User, Phone, Users} from "lucide-react";
-import type {RoleName} from "@/types/permissions.types";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useAllRolesWithPermissions } from "@/hooks/permissions/usePermissions";
+import { useAllUsers } from "@/hooks/admin/useUserApproval";
+import { Mail, User, Phone, Users } from "lucide-react";
+import type { RoleName } from "@/types/permissions.types";
 
 interface AddUserDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSave: (userData: NewUserData) => void;
+}
+
+interface ApprovalStatus {
+  pending: string;
+  approved: string;
 }
 
 export interface NewUserData {
@@ -24,7 +42,7 @@ export interface NewUserData {
   phone?: string;
   upline_id?: string | null;
   roles: RoleName[];
-  approval_status: "pending" | "approved";
+  approval_status: ApprovalStatus;
   onboarding_status?: "lead" | "active" | null;
 }
 

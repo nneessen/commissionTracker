@@ -154,8 +154,10 @@ otp_length = 6
 otp_expiry = 3600
 
 # Use a production-ready SMTP server
+# NOTE: Disable SMTP in local dev to use Inbucket (localhost:54324)
+# Enable this in production Supabase Dashboard instead
 [auth.email.smtp]
-enabled = true
+enabled = false
 host = "smtp.resend.com"
 port = 587
 user = "resend"
