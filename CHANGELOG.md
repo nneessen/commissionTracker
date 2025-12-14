@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-12-14 15:34:52
+
+### Changed Files
+- `package-lock.json`
+- `package.json`
+- `supabase/config.toml`
+- `supabase/templates/confirmation.html`
+- `supabase/templates/email-change.html`
+- `supabase/templates/magic-link.html`
+- `supabase/templates/recovery.html`
+
+### Statistics
+```
+ 7 files changed, 2713 insertions(+), 155 deletions(-)
+```
+
 ## [Checkpoint] - 2025-12-13 16:45:38
 
 ### Changed Files
