@@ -565,7 +565,67 @@ EXCEPTION
 END;
 $$;
 
--- Step 9: Add comments documenting the design
+-- Step 9: Fix log_user_profile_changes function (also referenced user_id)
+CREATE OR REPLACE FUNCTION log_user_profile_changes()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_performed_by UUID;
+  v_details JSONB;
+BEGIN
+  -- Get current authenticated user (id IS the auth user id now)
+  v_performed_by := auth.uid();
+
+  -- Build details JSON with before/after values
+  v_details := jsonb_build_object(
+    'before', row_to_json(OLD),
+    'after', row_to_json(NEW),
+    'changed_fields', (
+      SELECT jsonb_object_agg(key, value)
+      FROM jsonb_each(to_jsonb(NEW))
+      WHERE to_jsonb(NEW)->>key IS DISTINCT FROM to_jsonb(OLD)->>key
+    )
+  );
+
+  -- Log significant changes
+  IF TG_OP = 'INSERT' THEN
+    INSERT INTO user_activity_log (user_id, performed_by, action_type, details)
+    VALUES (NEW.id, v_performed_by, 'created', v_details);
+
+  ELSIF TG_OP = 'UPDATE' THEN
+    -- Log onboarding status changes
+    IF OLD.onboarding_status IS DISTINCT FROM NEW.onboarding_status THEN
+      INSERT INTO user_activity_log (user_id, performed_by, action_type, details)
+      VALUES (NEW.id, v_performed_by, 'status_changed', jsonb_build_object(
+        'field', 'onboarding_status',
+        'old_value', OLD.onboarding_status,
+        'new_value', NEW.onboarding_status
+      ));
+    END IF;
+
+    -- Log phase changes
+    IF OLD.current_onboarding_phase IS DISTINCT FROM NEW.current_onboarding_phase THEN
+      INSERT INTO user_activity_log (user_id, performed_by, action_type, details)
+      VALUES (NEW.id, v_performed_by, 'phase_changed', jsonb_build_object(
+        'old_phase', OLD.current_onboarding_phase,
+        'new_phase', NEW.current_onboarding_phase
+      ));
+    END IF;
+
+    -- Log general updates (if something changed)
+    IF v_details->'changed_fields' != '{}'::jsonb THEN
+      INSERT INTO user_activity_log (user_id, performed_by, action_type, details)
+      VALUES (NEW.id, v_performed_by, 'updated', v_details);
+    END IF;
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+-- Step 10: Add comments documenting the design
 COMMENT ON TABLE user_profiles IS
 'User profile data. The id column IS the auth.users.id (same UUID).
 There is no separate user_id column - use id for all auth-related operations.';
