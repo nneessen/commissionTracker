@@ -38,34 +38,12 @@ export const permissionKeys = {
 export function useUserPermissions() {
   const {user} = useAuth();
 
-  console.log('[useUserPermissions] user from useAuth:', user?.id, 'enabled:', !!user?.id);
-
-  const query = useQuery({
+  return useQuery({
     queryKey: permissionKeys.userContext(user?.id || ''),
-    queryFn: async () => {
-      console.log('[useUserPermissions] queryFn executing for userId:', user!.id);
-      try {
-        const result = await getUserPermissionsContext(user!.id);
-        console.log('[useUserPermissions] queryFn success:', result);
-        return result;
-      } catch (error) {
-        console.error('[useUserPermissions] queryFn error:', error);
-        throw error;
-      }
-    },
+    queryFn: () => getUserPermissionsContext(user!.id),
     enabled: !!user?.id,
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
   });
-
-  console.log('[useUserPermissions] query state:', {
-    status: query.status,
-    isLoading: query.isLoading,
-    isError: query.isError,
-    error: query.error,
-    dataExists: !!query.data,
-  });
-
-  return query;
 }
 
 /**

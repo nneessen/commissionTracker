@@ -83,20 +83,8 @@ export default function Sidebar({
 }: SidebarProps) {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const { can, isLoading, permissions, roles } = usePermissionCheck();
+  const { can, isLoading } = usePermissionCheck();
   const { user } = useAuth();
-
-  // DEBUG: Log permission state
-  useEffect(() => {
-    console.log('[Sidebar] Permission state:', {
-      userId: user?.id,
-      isLoading,
-      permissionsCount: permissions?.length || 0,
-      rolesCount: roles?.length || 0,
-      roles,
-      hasNavDashboard: permissions?.includes('nav.dashboard'),
-    });
-  }, [user?.id, isLoading, permissions, roles]);
 
   // Fetch user roles from profile
   const { data: userProfile } = useQuery({
@@ -162,46 +150,8 @@ export default function Sidebar({
         return can(item.permission);
       });
 
-  // DEBUG: Show permission state visually
-  const canDashboard = can('nav.dashboard');
-  const canPolicies = can('nav.policies');
-  const hasNavDashboard = permissions?.includes('nav.dashboard');
-
-  // Deep debug - what IS permissions?
-  const permType = typeof permissions;
-  const isArray = Array.isArray(permissions);
-  const permKeys = permissions ? Object.keys(permissions).slice(0, 3).join(',') : 'null';
-  const permJSON = permissions ? JSON.stringify(permissions).slice(0, 100) : 'null';
-
-  const debugInfo = {
-    userId: user?.id?.substring(0, 8) || 'null',
-    isLoading,
-    permCount: permissions?.length || 0,
-    roles: roles?.join(',') || 'none',
-    canDashboard: String(canDashboard),
-    permType,
-    isArray: String(isArray),
-    permKeys,
-    permJSON,
-  };
-
   return (
     <>
-      {/* DEBUG: Permission state indicator - REMOVE IN PRODUCTION */}
-      {import.meta.env.DEV && (
-        <div className="fixed top-0 right-0 z-[200] bg-black text-white text-xs p-2 max-w-xs overflow-auto max-h-screen">
-          <div>User: {debugInfo.userId}</div>
-          <div>Loading: {String(debugInfo.isLoading)}</div>
-          <div>Perms: {debugInfo.permCount}</div>
-          <div>Roles: {debugInfo.roles}</div>
-          <div>can(dash): {debugInfo.canDashboard}</div>
-          <div>type: {debugInfo.permType}</div>
-          <div>isArray: {debugInfo.isArray}</div>
-          <div>keys: {debugInfo.permKeys}</div>
-          <div className="break-all">JSON: {debugInfo.permJSON}</div>
-        </div>
-      )}
-
       {/* Mobile Menu Button */}
       {isMobile && (
         <Button

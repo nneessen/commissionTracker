@@ -58,16 +58,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(
       async (event: AuthChangeEvent, session: Session | null) => {
-        console.log('[AuthContext] onAuthStateChange:', event, 'session:', !!session, 'userId:', session?.user?.id);
         setSession(session);
         setSupabaseUser(session?.user ?? null);
 
         if (session?.user) {
           const fullUser = userService.mapAuthUserToUser(session.user);
-          console.log('[AuthContext] Setting user:', fullUser?.id, fullUser?.email);
           setUser(fullUser);
         } else {
-          console.log('[AuthContext] No session, clearing user');
           setUser(null);
         }
 
@@ -103,15 +100,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const checkSession = async () => {
     try {
       setLoading(true);
-      console.log('[AuthContext] checkSession: starting...');
 
       // Get the current session
       const {
         data: { session },
         error,
       } = await supabase.auth.getSession();
-
-      console.log('[AuthContext] checkSession: got session', !!session, 'userId:', session?.user?.id, 'error:', error?.message);
 
       if (error) throw error;
 
@@ -120,10 +114,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       if (session?.user) {
         const fullUser = userService.mapAuthUserToUser(session.user);
-        console.log('[AuthContext] checkSession: setting user', fullUser?.id, fullUser?.email);
         setUser(fullUser);
       } else {
-        console.log('[AuthContext] checkSession: no user in session');
         setUser(null);
       }
 

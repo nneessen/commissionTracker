@@ -17,21 +17,17 @@ import type {Role, Permission, UserPermissions, PermissionCode, RoleName, Permis
  * Uses database function: get_user_permissions(user_id)
  */
 export async function getUserPermissions(userId: string): Promise<PermissionCode[]> {
-  console.log('[PermissionService] getUserPermissions called with userId:', userId);
-
   const { data, error } = await supabase.rpc('get_user_permissions', {
     target_user_id: userId,
   });
 
   if (error) {
-    console.error('[PermissionService] Error fetching user permissions:', error);
+    console.error('Error fetching user permissions:', error);
     throw new Error(`Failed to fetch user permissions: ${error.message}`);
   }
 
   // RPC returns { code: string } not { permission_code: string }
-  const permissions = (data || []).map((row: { code: string }) => row.code);
-  console.log('[PermissionService] getUserPermissions result:', permissions.length, 'permissions');
-  return permissions;
+  return (data || []).map((row: { code: string }) => row.code);
 }
 
 /**
@@ -94,8 +90,6 @@ export async function isAdminUser(userId?: string): Promise<boolean> {
  * Get user's roles from user_profiles
  */
 export async function getUserRoles(userId: string): Promise<RoleName[]> {
-  console.log('[PermissionService] getUserRoles called with userId:', userId);
-
   const { data, error } = await supabase
     .from('user_profiles')
     .select('roles')
@@ -103,11 +97,10 @@ export async function getUserRoles(userId: string): Promise<RoleName[]> {
     .single();
 
   if (error) {
-    console.error('[PermissionService] Error fetching user roles:', error);
+    console.error('Error fetching user roles:', error);
     throw new Error(`Failed to fetch user roles: ${error.message}`);
   }
 
-  console.log('[PermissionService] getUserRoles result:', data);
   return (data?.roles || ['agent']) as RoleName[];
 }
 
@@ -115,30 +108,16 @@ export async function getUserRoles(userId: string): Promise<RoleName[]> {
  * Get complete user permissions context (roles + permissions)
  */
 export async function getUserPermissionsContext(userId: string): Promise<UserPermissions> {
-  console.log('[PermissionService] getUserPermissionsContext called with userId:', userId);
+  const [roles, permissions] = await Promise.all([
+    getUserRoles(userId),
+    getUserPermissions(userId),
+  ]);
 
-  try {
-    const [roles, permissions] = await Promise.all([
-      getUserRoles(userId),
-      getUserPermissions(userId),
-    ]);
-
-    console.log('[PermissionService] Successfully loaded permissions:', {
-      userId,
-      rolesCount: roles.length,
-      permissionsCount: permissions.length,
-      roles,
-    });
-
-    return {
-      userId,
-      roles,
-      permissions,
-    };
-  } catch (error) {
-    console.error('[PermissionService] Failed to load permissions context:', error);
-    throw error;
-  }
+  return {
+    userId,
+    roles,
+    permissions,
+  };
 }
 
 /**
