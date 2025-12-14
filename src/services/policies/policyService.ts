@@ -29,44 +29,14 @@ class PolicyService {
   }
 
   /**
-   * Create a new policy and automatically create commission record
+   * Create a new policy.
+   * Commission records are automatically created by DB trigger `auto_create_commission_record`.
    */
   async create(policyData: CreatePolicyData): Promise<Policy> {
-    // 1. Create policy record
+    // Create policy record - commission is auto-created by DB trigger
     const policy = await this.repository.create(policyData);
 
-    // 2. Calculate advance amount
-    const monthlyPremium = policyData.monthlyPremium || 0;
-    const commissionRate = policyData.commissionPercentage || 0;
-    const advanceMonths = 9; // Industry standard
-    const advanceAmount = monthlyPremium * advanceMonths * commissionRate;
-
-    // 3. Create commission record if there's an advance amount
-    if (advanceAmount > 0) {
-      const { error: commissionError } = await supabase
-        .from('commissions')
-        .insert([{
-          user_id: policy.userId,
-          policy_id: policy.id,
-          carrier_id: policy.carrierId,
-          commission_amount: advanceAmount,
-          payment_date: policy.effectiveDate,
-          status: 'pending',
-          is_advance: true,
-          advance_months: advanceMonths,
-          months_paid: 0,
-          earned_amount: 0,
-          unearned_amount: advanceAmount,
-        }]);
-
-      if (commissionError) {
-        console.error('Failed to create commission record:', commissionError);
-        // Don't fail policy creation if commission creation fails
-        // Can be retried/fixed manually
-      }
-    }
-
-    // 4. Emit policy created event
+    // Emit policy created event
     const clientName = 'client' in policy && policy.client ?
       ('firstName' in policy.client ?
         `${policy.client.firstName} ${policy.client.lastName}` :
