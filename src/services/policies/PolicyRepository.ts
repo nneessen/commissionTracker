@@ -1,35 +1,77 @@
 // src/services/policies/PolicyRepository.ts
-import {BaseRepository} from '../base/BaseRepository';
-import {TABLES} from '../base/supabase';
-import {Policy, CreatePolicyData, UpdatePolicyData} from '../../types/policy.types';
-import {formatDateForDB} from '../../lib/date';
+import { BaseRepository } from "../base/BaseRepository";
+import { TABLES } from "../base/supabase";
+import {
+  Policy,
+  CreatePolicyData,
+  UpdatePolicyData,
+} from "../../types/policy.types";
+import { formatDateForDB } from "../../lib/date";
 
-export class PolicyRepository extends BaseRepository<Policy, CreatePolicyData, UpdatePolicyData> {
+export class PolicyRepository extends BaseRepository<
+  Policy,
+  CreatePolicyData,
+  UpdatePolicyData
+> {
   constructor() {
     super(TABLES.POLICIES);
   }
 
-  // Override findAll to include client join and support pagination + date filtering
-  async findAll(options?: {
-    page?: number;
-    pageSize?: number;
-    orderBy?: string;
-    orderDirection?: "asc" | "desc";
-    limit?: number;
-    offset?: number;
-  }, filters?: {
-    status?: string;
-    carrierId?: string;
-    product?: string;
-    effectiveDateFrom?: string;  // YYYY-MM-DD format
-    effectiveDateTo?: string;    // YYYY-MM-DD format
-    searchTerm?: string;
-    [key: string]: any;
-  }): Promise<Policy[]> {
+  // Override findById to include client join
+  async findById(id: string): Promise<Policy | null> {
     try {
-      let query = this.client
+      const { data, error } = await this.client
         .from(this.tableName)
-        .select(`
+        .select(
+          `
+          *,
+          clients!policies_client_id_fkey (
+            id,
+            name,
+            email,
+            phone,
+            address
+          )
+        `,
+        )
+        .eq("id", id)
+        .single();
+
+      if (error) {
+        if (error.code === "PGRST116") {
+          return null; // Not found
+        }
+        throw this.handleError(error, "findById");
+      }
+
+      return data ? this.transformFromDB(data) : null;
+    } catch (error) {
+      throw this.wrapError(error, "findById");
+    }
+  }
+
+  // Override findAll to include client join and support pagination + date filtering
+  async findAll(
+    options?: {
+      page?: number;
+      pageSize?: number;
+      orderBy?: string;
+      orderDirection?: "asc" | "desc";
+      limit?: number;
+      offset?: number;
+    },
+    filters?: {
+      status?: string;
+      carrierId?: string;
+      product?: string;
+      effectiveDateFrom?: string; // YYYY-MM-DD format
+      effectiveDateTo?: string; // YYYY-MM-DD format
+      searchTerm?: string;
+      [key: string]: any;
+    },
+  ): Promise<Policy[]> {
+    try {
+      let query = this.client.from(this.tableName).select(`
           *,
           clients!policies_client_id_fkey (
             id,
@@ -43,15 +85,20 @@ export class PolicyRepository extends BaseRepository<Policy, CreatePolicyData, U
       // Apply filters
       if (filters) {
         // Handle standard equality filters
-        const { effectiveDateFrom, effectiveDateTo, searchTerm, ...equalityFilters } = filters;
+        const {
+          effectiveDateFrom,
+          effectiveDateTo,
+          searchTerm,
+          ...equalityFilters
+        } = filters;
 
         Object.entries(equalityFilters).forEach(([key, value]) => {
           if (value !== undefined && value !== null) {
             // Map filter keys to database columns
             const columnMap: { [key: string]: string } = {
-              carrierId: 'carrier_id',
-              product: 'product',
-              status: 'status'
+              carrierId: "carrier_id",
+              product: "product",
+              status: "status",
             };
             const column = columnMap[key] || key;
             query = query.eq(column, value);
@@ -60,15 +107,15 @@ export class PolicyRepository extends BaseRepository<Policy, CreatePolicyData, U
 
         // Apply date range filters
         if (effectiveDateFrom) {
-          query = query.gte('effective_date', effectiveDateFrom);
+          query = query.gte("effective_date", effectiveDateFrom);
         }
         if (effectiveDateTo) {
-          query = query.lte('effective_date', effectiveDateTo);
+          query = query.lte("effective_date", effectiveDateTo);
         }
 
         // Apply search term filter (searches in policy number)
         if (searchTerm) {
-          query = query.ilike('policy_number', `%${searchTerm}%`);
+          query = query.ilike("policy_number", `%${searchTerm}%`);
         }
       }
 
@@ -113,7 +160,8 @@ export class PolicyRepository extends BaseRepository<Policy, CreatePolicyData, U
     try {
       const { data, error } = await this.client
         .from(this.tableName)
-        .select(`
+        .select(
+          `
           *,
           clients!policies_client_id_fkey (
             id,
@@ -122,20 +170,21 @@ export class PolicyRepository extends BaseRepository<Policy, CreatePolicyData, U
             phone,
             address
           )
-        `)
-        .eq('policy_number', policyNumber)
+        `,
+        )
+        .eq("policy_number", policyNumber)
         .single();
 
       if (error) {
-        if (error.code === 'PGRST116') {
+        if (error.code === "PGRST116") {
           return null; // Not found
         }
-        throw this.handleError(error, 'findByPolicyNumber');
+        throw this.handleError(error, "findByPolicyNumber");
       }
 
       return data ? this.transformFromDB(data) : null;
     } catch (error) {
-      throw this.wrapError(error, 'findByPolicyNumber');
+      throw this.wrapError(error, "findByPolicyNumber");
     }
   }
 
@@ -143,7 +192,8 @@ export class PolicyRepository extends BaseRepository<Policy, CreatePolicyData, U
     try {
       const { data, error } = await this.client
         .from(this.tableName)
-        .select(`
+        .select(
+          `
           *,
           clients!policies_client_id_fkey (
             id,
@@ -152,17 +202,18 @@ export class PolicyRepository extends BaseRepository<Policy, CreatePolicyData, U
             phone,
             address
           )
-        `)
-        .eq('carrier_id', carrierId)
-        .order('created_at', { ascending: false });
+        `,
+        )
+        .eq("carrier_id", carrierId)
+        .order("created_at", { ascending: false });
 
       if (error) {
-        throw this.handleError(error, 'findByCarrier');
+        throw this.handleError(error, "findByCarrier");
       }
 
       return data?.map(this.transformFromDB) || [];
     } catch (error) {
-      throw this.wrapError(error, 'findByCarrier');
+      throw this.wrapError(error, "findByCarrier");
     }
   }
 
@@ -170,7 +221,8 @@ export class PolicyRepository extends BaseRepository<Policy, CreatePolicyData, U
     try {
       const { data, error } = await this.client
         .from(this.tableName)
-        .select(`
+        .select(
+          `
           *,
           clients!policies_client_id_fkey (
             id,
@@ -179,25 +231,30 @@ export class PolicyRepository extends BaseRepository<Policy, CreatePolicyData, U
             phone,
             address
           )
-        `)
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false });
+        `,
+        )
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false });
 
       if (error) {
-        throw this.handleError(error, 'findByAgent');
+        throw this.handleError(error, "findByAgent");
       }
 
       return data?.map(this.transformFromDB) || [];
     } catch (error) {
-      throw this.wrapError(error, 'findByAgent');
+      throw this.wrapError(error, "findByAgent");
     }
   }
 
-  async findActiveByDateRange(startDate: Date, endDate: Date): Promise<Policy[]> {
+  async findActiveByDateRange(
+    startDate: Date,
+    endDate: Date,
+  ): Promise<Policy[]> {
     try {
       const { data, error } = await this.client
         .from(this.tableName)
-        .select(`
+        .select(
+          `
           *,
           clients!policies_client_id_fkey (
             id,
@@ -206,19 +263,20 @@ export class PolicyRepository extends BaseRepository<Policy, CreatePolicyData, U
             phone,
             address
           )
-        `)
-        .eq('status', 'active')
-        .gte('effective_date', formatDateForDB(startDate))
-        .lte('effective_date', formatDateForDB(endDate))
-        .order('effective_date', { ascending: false });
+        `,
+        )
+        .eq("status", "active")
+        .gte("effective_date", formatDateForDB(startDate))
+        .lte("effective_date", formatDateForDB(endDate))
+        .order("effective_date", { ascending: false });
 
       if (error) {
-        throw this.handleError(error, 'findActiveByDateRange');
+        throw this.handleError(error, "findActiveByDateRange");
       }
 
       return data?.map(this.transformFromDB) || [];
     } catch (error) {
-      throw this.wrapError(error, 'findActiveByDateRange');
+      throw this.wrapError(error, "findActiveByDateRange");
     }
   }
 
@@ -226,17 +284,22 @@ export class PolicyRepository extends BaseRepository<Policy, CreatePolicyData, U
     try {
       const { data, error } = await this.client
         .from(this.tableName)
-        .select('annual_premium')
-        .eq('carrier_id', carrierId)
-        .eq('status', 'active');
+        .select("annual_premium")
+        .eq("carrier_id", carrierId)
+        .eq("status", "active");
 
       if (error) {
-        throw this.handleError(error, 'getTotalAnnualPremiumByCarrier');
+        throw this.handleError(error, "getTotalAnnualPremiumByCarrier");
       }
 
-      return data?.reduce((total, policy) => total + parseFloat(policy.annual_premium || '0'), 0) || 0;
+      return (
+        data?.reduce(
+          (total, policy) => total + parseFloat(policy.annual_premium || "0"),
+          0,
+        ) || 0
+      );
     } catch (error) {
-      throw this.wrapError(error, 'getTotalAnnualPremiumByCarrier');
+      throw this.wrapError(error, "getTotalAnnualPremiumByCarrier");
     }
   }
 
@@ -254,8 +317,8 @@ export class PolicyRepository extends BaseRepository<Policy, CreatePolicyData, U
       productId?: string;
       userId?: string;
     };
-    orderBy?: 'created_at' | 'effective_date' | 'id';
-    orderDirection?: 'asc' | 'desc';
+    orderBy?: "created_at" | "effective_date" | "id";
+    orderDirection?: "asc" | "desc";
   }): Promise<{
     data: Policy[];
     nextCursor: string | null;
@@ -266,14 +329,12 @@ export class PolicyRepository extends BaseRepository<Policy, CreatePolicyData, U
         cursor,
         limit = 50,
         filters = {},
-        orderBy = 'created_at',
-        orderDirection = 'desc'
+        orderBy = "created_at",
+        orderDirection = "desc",
       } = options;
 
       // Build base query
-      let query = this.client
-        .from(this.tableName)
-        .select(`
+      let query = this.client.from(this.tableName).select(`
           *,
           clients!policies_client_id_fkey (
             id,
@@ -287,7 +348,7 @@ export class PolicyRepository extends BaseRepository<Policy, CreatePolicyData, U
 
       // Apply cursor (for pagination)
       if (cursor) {
-        if (orderDirection === 'desc') {
+        if (orderDirection === "desc") {
           query = query.lt(orderBy, cursor);
         } else {
           query = query.gt(orderBy, cursor);
@@ -295,37 +356,46 @@ export class PolicyRepository extends BaseRepository<Policy, CreatePolicyData, U
       }
 
       // Apply filters
-      if (filters.status) query = query.eq('status', filters.status);
-      if (filters.carrierId) query = query.eq('carrier_id', filters.carrierId);
-      if (filters.productId) query = query.eq('product_id', filters.productId);
-      if (filters.userId) query = query.eq('user_id', filters.userId);
+      if (filters.status) query = query.eq("status", filters.status);
+      if (filters.carrierId) query = query.eq("carrier_id", filters.carrierId);
+      if (filters.productId) query = query.eq("product_id", filters.productId);
+      if (filters.userId) query = query.eq("user_id", filters.userId);
 
       // Order and limit
       query = query
-        .order(orderBy, { ascending: orderDirection === 'asc' })
+        .order(orderBy, { ascending: orderDirection === "asc" })
         .limit(limit + 1); // Fetch one extra to check if there's more
 
       const { data, error } = await query;
 
       if (error) {
-        throw this.handleError(error, 'findPaginated');
+        throw this.handleError(error, "findPaginated");
       }
 
       const hasMore = data ? data.length > limit : false;
-      const policies = data ? data.slice(0, limit).map(this.transformFromDB) : [];
+      const policies = data
+        ? data.slice(0, limit).map(this.transformFromDB)
+        : [];
 
       // Next cursor is the last item's orderBy field
-      const nextCursor = hasMore && policies.length > 0
-        ? policies[policies.length - 1][orderBy === 'created_at' ? 'createdAt' : orderBy === 'effective_date' ? 'effectiveDate' : 'id']
-        : null;
+      const nextCursor =
+        hasMore && policies.length > 0
+          ? policies[policies.length - 1][
+              orderBy === "created_at"
+                ? "createdAt"
+                : orderBy === "effective_date"
+                  ? "effectiveDate"
+                  : "id"
+            ]
+          : null;
 
       return {
         data: policies,
-        nextCursor: typeof nextCursor === 'string' ? nextCursor : null,
-        hasMore
+        nextCursor: typeof nextCursor === "string" ? nextCursor : null,
+        hasMore,
       };
     } catch (error) {
-      throw this.wrapError(error, 'findPaginated');
+      throw this.wrapError(error, "findPaginated");
     }
   }
 
@@ -338,29 +408,31 @@ export class PolicyRepository extends BaseRepository<Policy, CreatePolicyData, U
     productId?: string;
     product?: string;
     userId?: string;
-    effectiveDateFrom?: string;  // YYYY-MM-DD format
-    effectiveDateTo?: string;    // YYYY-MM-DD format
+    effectiveDateFrom?: string; // YYYY-MM-DD format
+    effectiveDateTo?: string; // YYYY-MM-DD format
     searchTerm?: string;
   }): Promise<number> {
     try {
       let query = this.client
         .from(this.tableName)
-        .select('id', { count: 'exact', head: true }); // Only count, don't fetch data
+        .select("id", { count: "exact", head: true }); // Only count, don't fetch data
 
       if (filters) {
         // Standard equality filters
-        if (filters.status) query = query.eq('status', filters.status);
-        if (filters.carrierId) query = query.eq('carrier_id', filters.carrierId);
-        if (filters.productId) query = query.eq('product_id', filters.productId);
-        if (filters.product) query = query.eq('product', filters.product);
-        if (filters.userId) query = query.eq('user_id', filters.userId);
+        if (filters.status) query = query.eq("status", filters.status);
+        if (filters.carrierId)
+          query = query.eq("carrier_id", filters.carrierId);
+        if (filters.productId)
+          query = query.eq("product_id", filters.productId);
+        if (filters.product) query = query.eq("product", filters.product);
+        if (filters.userId) query = query.eq("user_id", filters.userId);
 
         // Date range filters
         if (filters.effectiveDateFrom) {
-          query = query.gte('effective_date', filters.effectiveDateFrom);
+          query = query.gte("effective_date", filters.effectiveDateFrom);
         }
         if (filters.effectiveDateTo) {
-          query = query.lte('effective_date', filters.effectiveDateTo);
+          query = query.lte("effective_date", filters.effectiveDateTo);
         }
 
         // Search term filter
@@ -372,16 +444,19 @@ export class PolicyRepository extends BaseRepository<Policy, CreatePolicyData, U
       const { count, error } = await query;
 
       if (error) {
-        throw this.handleError(error, 'countPolicies');
+        throw this.handleError(error, "countPolicies");
       }
 
       return count || 0;
     } catch (error) {
-      throw this.wrapError(error, 'countPolicies');
+      throw this.wrapError(error, "countPolicies");
     }
   }
 
-  async getMonthlyMetrics(year: number, month: number): Promise<{
+  async getMonthlyMetrics(
+    year: number,
+    month: number,
+  ): Promise<{
     totalPolicies: number;
     totalPremium: number;
     averagePremium: number;
@@ -394,37 +469,42 @@ export class PolicyRepository extends BaseRepository<Policy, CreatePolicyData, U
       const [allPolicies, newPolicies] = await Promise.all([
         this.client
           .from(this.tableName)
-          .select('annual_premium')
-          .eq('status', 'active')
-          .lte('effective_date', formatDateForDB(endDate)),
+          .select("annual_premium")
+          .eq("status", "active")
+          .lte("effective_date", formatDateForDB(endDate)),
         this.client
           .from(this.tableName)
-          .select('annual_premium')
-          .gte('effective_date', formatDateForDB(startDate))
-          .lte('effective_date', formatDateForDB(endDate))
+          .select("annual_premium")
+          .gte("effective_date", formatDateForDB(startDate))
+          .lte("effective_date", formatDateForDB(endDate)),
       ]);
 
       if (allPolicies.error) {
-        throw this.handleError(allPolicies.error, 'getMonthlyMetrics');
+        throw this.handleError(allPolicies.error, "getMonthlyMetrics");
       }
 
       if (newPolicies.error) {
-        throw this.handleError(newPolicies.error, 'getMonthlyMetrics');
+        throw this.handleError(newPolicies.error, "getMonthlyMetrics");
       }
 
       const totalPolicies = allPolicies.data?.length || 0;
-      const totalPremium = allPolicies.data?.reduce((sum, p) => sum + parseFloat(p.annual_premium || '0'), 0) || 0;
-      const averagePremium = totalPolicies > 0 ? totalPremium / totalPolicies : 0;
+      const totalPremium =
+        allPolicies.data?.reduce(
+          (sum, p) => sum + parseFloat(p.annual_premium || "0"),
+          0,
+        ) || 0;
+      const averagePremium =
+        totalPolicies > 0 ? totalPremium / totalPolicies : 0;
       const newPolicyCount = newPolicies.data?.length || 0;
 
       return {
         totalPolicies,
         totalPremium,
         averagePremium,
-        newPolicies: newPolicyCount
+        newPolicies: newPolicyCount,
       };
     } catch (error) {
-      throw this.wrapError(error, 'getMonthlyMetrics');
+      throw this.wrapError(error, "getMonthlyMetrics");
     }
   }
 
@@ -455,18 +535,23 @@ export class PolicyRepository extends BaseRepository<Policy, CreatePolicyData, U
       // Build base query with filters
       let query = this.client
         .from(this.tableName)
-        .select('status, annual_premium, effective_date', { count: 'exact' });
+        .select("status, annual_premium, effective_date", { count: "exact" });
 
       // Apply filters (same logic as findAll)
       if (filters) {
-        const { effectiveDateFrom, effectiveDateTo, searchTerm, ...equalityFilters } = filters;
+        const {
+          effectiveDateFrom,
+          effectiveDateTo,
+          searchTerm,
+          ...equalityFilters
+        } = filters;
 
         Object.entries(equalityFilters).forEach(([key, value]) => {
           if (value !== undefined && value !== null) {
             const columnMap: { [key: string]: string } = {
-              status: 'status',
-              carrierId: 'carrier_id',
-              product: 'product'
+              status: "status",
+              carrierId: "carrier_id",
+              product: "product",
             };
             const column = columnMap[key] || key;
             query = query.eq(column, value);
@@ -475,17 +560,17 @@ export class PolicyRepository extends BaseRepository<Policy, CreatePolicyData, U
 
         // Date range filters
         if (effectiveDateFrom) {
-          query = query.gte('effective_date', effectiveDateFrom);
+          query = query.gte("effective_date", effectiveDateFrom);
         }
         if (effectiveDateTo) {
-          query = query.lte('effective_date', effectiveDateTo);
+          query = query.lte("effective_date", effectiveDateTo);
         }
       }
 
       const { data, count, error } = await query;
 
       if (error) {
-        console.error('PolicyRepository.getAggregateMetrics error:', error);
+        console.error("PolicyRepository.getAggregateMetrics error:", error);
         throw error;
       }
 
@@ -493,19 +578,37 @@ export class PolicyRepository extends BaseRepository<Policy, CreatePolicyData, U
       const currentYear = new Date().getFullYear();
       const policies = data || [];
 
-      const activePolicies = policies.filter(p => p.status === 'active').length;
-      const pendingPolicies = policies.filter(p => p.status === 'pending').length;
-      const lapsedPolicies = policies.filter(p => p.status === 'lapsed').length;
-      const cancelledPolicies = policies.filter(p => p.status === 'cancelled').length;
-      
-      const totalPremium = policies.reduce((sum, p) => sum + (parseFloat(p.annual_premium) || 0), 0);
-      const avgPremium = policies.length > 0 ? totalPremium / policies.length : 0;
+      const activePolicies = policies.filter(
+        (p) => p.status === "active",
+      ).length;
+      const pendingPolicies = policies.filter(
+        (p) => p.status === "pending",
+      ).length;
+      const lapsedPolicies = policies.filter(
+        (p) => p.status === "lapsed",
+      ).length;
+      const cancelledPolicies = policies.filter(
+        (p) => p.status === "cancelled",
+      ).length;
 
-      const ytdPolicies = policies.filter(p => 
-        p.effective_date && new Date(p.effective_date).getFullYear() === currentYear
+      const totalPremium = policies.reduce(
+        (sum, p) => sum + (parseFloat(p.annual_premium) || 0),
+        0,
+      );
+      const avgPremium =
+        policies.length > 0 ? totalPremium / policies.length : 0;
+
+      const ytdPolicies = policies.filter(
+        (p) =>
+          p.effective_date &&
+          new Date(p.effective_date).getFullYear() === currentYear,
       ).length;
       const ytdPremium = policies
-        .filter(p => p.effective_date && new Date(p.effective_date).getFullYear() === currentYear)
+        .filter(
+          (p) =>
+            p.effective_date &&
+            new Date(p.effective_date).getFullYear() === currentYear,
+        )
         .reduce((sum, p) => sum + (parseFloat(p.annual_premium) || 0), 0);
 
       return {
@@ -520,7 +623,7 @@ export class PolicyRepository extends BaseRepository<Policy, CreatePolicyData, U
         ytdPremium,
       };
     } catch (error) {
-      console.error('PolicyRepository.getAggregateMetrics error:', error);
+      console.error("PolicyRepository.getAggregateMetrics error:", error);
       throw error;
     }
   }
@@ -532,11 +635,11 @@ export class PolicyRepository extends BaseRepository<Policy, CreatePolicyData, U
       // Client was joined - parse address JSONB field
       let address: any = {};
       if (dbRecord.clients.address) {
-        if (typeof dbRecord.clients.address === 'string') {
+        if (typeof dbRecord.clients.address === "string") {
           try {
             address = JSON.parse(dbRecord.clients.address);
-          } catch (e) {
-            console.error('Failed to parse client address JSON:', e);
+          } catch {
+            // Silent fail - use defaults
           }
         } else {
           address = dbRecord.clients.address;
@@ -544,11 +647,11 @@ export class PolicyRepository extends BaseRepository<Policy, CreatePolicyData, U
       }
 
       clientData = {
-        name: dbRecord.clients.name || 'Unknown',
-        state: address.state || 'Unknown',
+        name: dbRecord.clients.name || "Unknown",
+        state: address.state || "Unknown",
         age: address.age || 0,
         email: dbRecord.clients.email,
-        phone: dbRecord.clients.phone
+        phone: dbRecord.clients.phone,
       };
     } else if (dbRecord.client) {
       // Fallback to JSONB client field for backward compatibility
@@ -556,9 +659,9 @@ export class PolicyRepository extends BaseRepository<Policy, CreatePolicyData, U
     } else {
       // No client data - create minimal object
       clientData = {
-        name: 'Unknown',
-        state: 'Unknown',
-        age: 0
+        name: "Unknown",
+        state: "Unknown",
+        age: 0,
       };
     }
 
@@ -568,18 +671,18 @@ export class PolicyRepository extends BaseRepository<Policy, CreatePolicyData, U
       status: dbRecord.status,
       client: clientData,
       carrierId: dbRecord.carrier_id,
-      productId: dbRecord.product_id, // NEW: Product ID field
+      productId: dbRecord.product_id,
       userId: dbRecord.user_id,
       product: dbRecord.product,
-      productDetails: dbRecord.products || undefined, // NEW: Joined product data if available
-      effectiveDate: dbRecord.effective_date, // Keep as string to avoid timezone issues
+      productDetails: dbRecord.products || undefined,
+      submitDate: dbRecord.submit_date || undefined,
+      effectiveDate: dbRecord.effective_date,
       termLength: dbRecord.term_length,
-      expirationDate: dbRecord.expiration_date || undefined, // Keep as string
-      annualPremium: parseFloat(dbRecord.annual_premium || '0'),
-      monthlyPremium: parseFloat(dbRecord.monthly_premium || '0'),
+      expirationDate: dbRecord.expiration_date || undefined,
+      annualPremium: parseFloat(dbRecord.annual_premium || "0"),
+      monthlyPremium: parseFloat(dbRecord.monthly_premium || "0"),
       paymentFrequency: dbRecord.payment_frequency,
-      commissionPercentage: parseFloat(dbRecord.commission_percentage || '0'),
-      // advanceMonths removed - now only in commissions table
+      commissionPercentage: parseFloat(dbRecord.commission_percentage || "0"),
       createdAt: dbRecord.created_at,
       updatedAt: dbRecord.updated_at,
       created_at: dbRecord.created_at,
@@ -593,7 +696,8 @@ export class PolicyRepository extends BaseRepository<Policy, CreatePolicyData, U
   protected transformToDB(data: any, _isUpdate = false): any {
     const dbData: any = {};
 
-    if (data.policyNumber !== undefined) dbData.policy_number = data.policyNumber;
+    if (data.policyNumber !== undefined)
+      dbData.policy_number = data.policyNumber;
     if (data.status !== undefined) dbData.status = data.status;
     if (data.clientId !== undefined) dbData.client_id = data.clientId; // Use client_id foreign key
     if (data.carrierId !== undefined) dbData.carrier_id = data.carrierId;
@@ -601,20 +705,26 @@ export class PolicyRepository extends BaseRepository<Policy, CreatePolicyData, U
     if (data.userId !== undefined) dbData.user_id = data.userId;
     if (data.product !== undefined) dbData.product = data.product;
     if (data.effectiveDate !== undefined) {
-      dbData.effective_date = data.effectiveDate instanceof Date
-        ? formatDateForDB(data.effectiveDate)
-        : data.effectiveDate;
+      dbData.effective_date =
+        data.effectiveDate instanceof Date
+          ? formatDateForDB(data.effectiveDate)
+          : data.effectiveDate;
     }
     if (data.termLength !== undefined) dbData.term_length = data.termLength;
     if (data.expirationDate !== undefined) {
-      dbData.expiration_date = data.expirationDate instanceof Date
-        ? formatDateForDB(data.expirationDate)
-        : data.expirationDate;
+      dbData.expiration_date =
+        data.expirationDate instanceof Date
+          ? formatDateForDB(data.expirationDate)
+          : data.expirationDate;
     }
-    if (data.annualPremium !== undefined) dbData.annual_premium = data.annualPremium;
-    if (data.monthlyPremium !== undefined) dbData.monthly_premium = data.monthlyPremium;
-    if (data.paymentFrequency !== undefined) dbData.payment_frequency = data.paymentFrequency;
-    if (data.commissionPercentage !== undefined) dbData.commission_percentage = data.commissionPercentage;
+    if (data.annualPremium !== undefined)
+      dbData.annual_premium = data.annualPremium;
+    if (data.monthlyPremium !== undefined)
+      dbData.monthly_premium = data.monthlyPremium;
+    if (data.paymentFrequency !== undefined)
+      dbData.payment_frequency = data.paymentFrequency;
+    if (data.commissionPercentage !== undefined)
+      dbData.commission_percentage = data.commissionPercentage;
     // advanceMonths removed - now only in commissions table
     if (data.createdBy !== undefined) dbData.created_by = data.createdBy;
     if (data.notes !== undefined) dbData.notes = data.notes;

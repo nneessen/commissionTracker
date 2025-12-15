@@ -2,15 +2,34 @@
 // Facade service that delegates to specialized services
 // Maintains backward compatibility while providing cleaner architecture
 
-import {Commission} from '../../types/commission.types';
-import {commissionCRUDService, CreateCommissionData, UpdateCommissionData, CommissionFilters} from './CommissionCRUDService';
-import {commissionCalculationService, CalculationResult} from './CommissionCalculationService';
-import {commissionAnalyticsService, ChargebackRisk, CommissionWithChargebackRisk, CommissionMetrics, NetCommissionMetrics} from './CommissionAnalyticsService';
+import { Commission } from "../../types/commission.types";
+import {
+  commissionCRUDService,
+  CreateCommissionData,
+  UpdateCommissionData,
+  CommissionFilters,
+} from "./CommissionCRUDService";
+import {
+  commissionCalculationService,
+  CalculationResult,
+} from "./CommissionCalculationService";
+import {
+  commissionAnalyticsService,
+  ChargebackRisk,
+  CommissionWithChargebackRisk,
+  CommissionMetrics,
+  NetCommissionMetrics,
+} from "./CommissionAnalyticsService";
 
 // Re-export types for backward compatibility
 export type { CreateCommissionData, UpdateCommissionData, CommissionFilters };
 export type { CalculationResult };
-export type { ChargebackRisk, CommissionWithChargebackRisk, CommissionMetrics, NetCommissionMetrics };
+export type {
+  ChargebackRisk,
+  CommissionWithChargebackRisk,
+  CommissionMetrics,
+  NetCommissionMetrics,
+};
 
 class CommissionService {
   // ===================================================================
@@ -37,7 +56,10 @@ class CommissionService {
     return commissionCRUDService.create(data);
   }
 
-  async update(id: string, data: Partial<CreateCommissionData>): Promise<Commission> {
+  async update(
+    id: string,
+    data: Partial<CreateCommissionData>,
+  ): Promise<Commission> {
     return commissionCRUDService.update(id, data);
   }
 
@@ -68,20 +90,50 @@ class CommissionService {
     return commissionCalculationService.calculateCommissionWithCompGuide(data);
   }
 
-  async createWithAutoCalculation(commissionData: CreateCommissionData): Promise<Commission> {
-    return commissionCalculationService.createWithAutoCalculation(commissionData);
+  async createWithAutoCalculation(
+    commissionData: CreateCommissionData,
+  ): Promise<Commission> {
+    return commissionCalculationService.createWithAutoCalculation(
+      commissionData,
+    );
   }
 
-  async recalculateCommission(commissionId: string, newContractLevel?: number): Promise<Commission> {
-    return commissionCalculationService.recalculateCommission(commissionId, newContractLevel);
+  async recalculateCommission(
+    commissionId: string,
+    newContractLevel?: number,
+  ): Promise<Commission> {
+    return commissionCalculationService.recalculateCommission(
+      commissionId,
+      newContractLevel,
+    );
+  }
+
+  async recalculateCommissionByPolicyId(
+    policyId: string,
+    newAnnualPremium: number,
+    newMonthlyPremium?: number,
+  ): Promise<Commission | null> {
+    return commissionCalculationService.recalculateCommissionByPolicyId(
+      policyId,
+      newAnnualPremium,
+      newMonthlyPremium,
+    );
   }
 
   // ===================================================================
   // Analytics Operations - Delegated to CommissionAnalyticsService
   // ===================================================================
 
-  async getCommissionMetrics(userId?: string, startDate?: Date, endDate?: Date): Promise<CommissionMetrics> {
-    return commissionAnalyticsService.getCommissionMetrics(userId, startDate, endDate);
+  async getCommissionMetrics(
+    userId?: string,
+    startDate?: Date,
+    endDate?: Date,
+  ): Promise<CommissionMetrics> {
+    return commissionAnalyticsService.getCommissionMetrics(
+      userId,
+      startDate,
+      endDate,
+    );
   }
 
   async getChargebackRisk(commissionId: string): Promise<ChargebackRisk> {
@@ -91,26 +143,35 @@ class CommissionService {
   async createChargebackForCommission(
     commissionId: string,
     chargebackData: {
-      chargebackType: 'policy_lapse' | 'refund' | 'cancellation';
+      chargebackType: "policy_lapse" | "refund" | "cancellation";
       chargebackAmount?: number;
       chargebackReason?: string;
       policyLapseDate?: Date;
       chargebackDate: Date;
-    }
+    },
   ): Promise<any> {
-    return commissionAnalyticsService.createChargebackForCommission(commissionId, chargebackData);
+    return commissionAnalyticsService.createChargebackForCommission(
+      commissionId,
+      chargebackData,
+    );
   }
 
-  async getCommissionsWithChargebackRisk(userId?: string): Promise<CommissionWithChargebackRisk[]> {
+  async getCommissionsWithChargebackRisk(
+    userId?: string,
+  ): Promise<CommissionWithChargebackRisk[]> {
     return commissionAnalyticsService.getCommissionsWithChargebackRisk(userId);
   }
 
   async calculateNetCommissionAfterChargebacks(
     userId?: string,
     startDate?: Date,
-    endDate?: Date
+    endDate?: Date,
   ): Promise<NetCommissionMetrics> {
-    return commissionAnalyticsService.calculateNetCommissionAfterChargebacks(userId, startDate, endDate);
+    return commissionAnalyticsService.calculateNetCommissionAfterChargebacks(
+      userId,
+      startDate,
+      endDate,
+    );
   }
 }
 

@@ -1,11 +1,23 @@
-import {Policy, PolicyFilters, CreatePolicyData} from '../../types/policy.types';
-import {PolicyRepository} from './PolicyRepository';
-import {supabase} from '../base/supabase';
-import {logger} from '../base/logger';
-import {formatDateForDB} from '../../lib/date';
-import {commissionStatusService} from '../commissions/CommissionStatusService';
-import {DatabaseError, NotFoundError, ValidationError} from '../../errors/ServiceErrors';
-import {workflowEventEmitter, WORKFLOW_EVENTS} from '../events/workflowEventEmitter';
+import {
+  Policy,
+  PolicyFilters,
+  CreatePolicyData,
+} from "../../types/policy.types";
+import { PolicyRepository } from "./PolicyRepository";
+import { supabase } from "../base/supabase";
+import { logger } from "../base/logger";
+import { formatDateForDB } from "../../lib/date";
+import { commissionStatusService } from "../commissions/CommissionStatusService";
+import { commissionService } from "../commissions/commissionService";
+import {
+  DatabaseError,
+  NotFoundError,
+  ValidationError,
+} from "../../errors/ServiceErrors";
+import {
+  workflowEventEmitter,
+  WORKFLOW_EVENTS,
+} from "../events/workflowEventEmitter";
 
 /**
  * Service layer for policies - handles business logic
@@ -29,19 +41,60 @@ class PolicyService {
   }
 
   /**
-   * Create a new policy.
-   * Commission records are automatically created by DB trigger `auto_create_commission_record`.
+   * Create a new policy and its associated commission record.
    */
   async create(policyData: CreatePolicyData): Promise<Policy> {
-    // Create policy record - commission is auto-created by DB trigger
+    // Create policy record
     const policy = await this.repository.create(policyData);
 
+    // Create commission record for this policy
+    try {
+      // Extract client info for commission record
+      const clientInfo = policy.client
+        ? {
+            firstName: policy.client.name?.split(" ")[0] || "Unknown",
+            lastName: policy.client.name?.split(" ").slice(1).join(" ") || "",
+            email: policy.client.email,
+            phone: policy.client.phone,
+            state: policy.client.state,
+          }
+        : {
+            firstName: "Unknown",
+            lastName: "Client",
+          };
+
+      await commissionService.createWithAutoCalculation({
+        policyId: policy.id,
+        userId: policy.userId,
+        carrierId: policy.carrierId,
+        product: policy.product,
+        client: clientInfo,
+        calculationBasis: "annual_premium",
+        annualPremium: policy.annualPremium,
+        monthlyPremium: policy.monthlyPremium,
+        commissionRate: policy.commissionPercentage,
+        advanceMonths: 9, // Standard advance period
+        status: "pending",
+        type: "advance",
+        isAutoCalculated: true,
+      });
+      console.log(`Commission created for policy ${policy.id}`);
+    } catch (error) {
+      // Log but don't fail policy creation if commission creation fails
+      console.error("Failed to create commission for policy:", error);
+      logger.error(
+        "PolicyService.create",
+        error instanceof Error ? error : new Error(String(error)),
+      );
+    }
+
     // Emit policy created event
-    const clientName = 'client' in policy && policy.client ?
-      ('firstName' in policy.client ?
-        `${policy.client.firstName} ${policy.client.lastName}` :
-        policy.client.name) :
-      'Unknown Client';
+    const clientName =
+      "client" in policy && policy.client
+        ? "firstName" in policy.client
+          ? `${policy.client.firstName} ${policy.client.lastName}`
+          : policy.client.name
+        : "Unknown Client";
 
     await workflowEventEmitter.emit(WORKFLOW_EVENTS.POLICY_CREATED, {
       policyId: policy.id,
@@ -53,7 +106,7 @@ class PolicyService {
       premium: policy.annualPremium,
       status: policy.status,
       effectiveDate: policy.effectiveDate,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
     });
 
     return policy;
@@ -62,7 +115,10 @@ class PolicyService {
   /**
    * Update an existing policy
    */
-  async update(id: string, updates: Partial<CreatePolicyData>): Promise<Policy> {
+  async update(
+    id: string,
+    updates: Partial<CreatePolicyData>,
+  ): Promise<Policy> {
     return this.repository.update(id, updates);
   }
 
@@ -83,9 +139,10 @@ class PolicyService {
     // For now, do client-side filtering for simplicity
     const allPolicies = await this.repository.findAll();
 
-    return allPolicies.filter(policy => {
+    return allPolicies.filter((policy) => {
       if (filters.status && policy.status !== filters.status) return false;
-      if (filters.carrierId && policy.carrierId !== filters.carrierId) return false;
+      if (filters.carrierId && policy.carrierId !== filters.carrierId)
+        return false;
       if (filters.product && policy.product !== filters.product) return false;
       if (filters.startDate) {
         const policyDate = policy.effectiveDate; // Already in YYYY-MM-DD format
@@ -97,8 +154,10 @@ class PolicyService {
         const endDateString = formatDateForDB(filters.endDate);
         if (policyDate > endDateString) return false;
       }
-      if (filters.minPremium && policy.annualPremium < filters.minPremium) return false;
-      if (filters.maxPremium && policy.annualPremium > filters.maxPremium) return false;
+      if (filters.minPremium && policy.annualPremium < filters.minPremium)
+        return false;
+      if (filters.maxPremium && policy.annualPremium > filters.maxPremium)
+        return false;
       return true;
     });
   }
@@ -115,23 +174,25 @@ class PolicyService {
     page: number,
     pageSize: number,
     filters?: PolicyFilters,
-    sortConfig?: { field: string; direction: 'asc' | 'desc' }
+    sortConfig?: { field: string; direction: "asc" | "desc" },
   ): Promise<Policy[]> {
     // Convert PolicyFilters to repository filter format
-    const repoFilters = filters ? {
-      status: filters.status,
-      carrierId: filters.carrierId,
-      product: filters.product,
-      effectiveDateFrom: filters.effectiveDateFrom,
-      effectiveDateTo: filters.effectiveDateTo,
-      searchTerm: filters.searchTerm
-    } : undefined;
+    const repoFilters = filters
+      ? {
+          status: filters.status,
+          carrierId: filters.carrierId,
+          product: filters.product,
+          effectiveDateFrom: filters.effectiveDateFrom,
+          effectiveDateTo: filters.effectiveDateTo,
+          searchTerm: filters.searchTerm,
+        }
+      : undefined;
 
     const options = {
       page,
       pageSize,
-      orderBy: sortConfig?.field || 'created_at',
-      orderDirection: sortConfig?.direction || 'desc' as const
+      orderBy: sortConfig?.field || "created_at",
+      orderDirection: sortConfig?.direction || ("desc" as const),
     };
 
     return this.repository.findAll(options, repoFilters);
@@ -144,14 +205,16 @@ class PolicyService {
    */
   async getCount(filters?: PolicyFilters): Promise<number> {
     // Convert PolicyFilters to repository filter format
-    const repoFilters = filters ? {
-      status: filters.status,
-      carrierId: filters.carrierId,
-      product: filters.product,
-      effectiveDateFrom: filters.effectiveDateFrom,
-      effectiveDateTo: filters.effectiveDateTo,
-      searchTerm: filters.searchTerm
-    } : undefined;
+    const repoFilters = filters
+      ? {
+          status: filters.status,
+          carrierId: filters.carrierId,
+          product: filters.product,
+          effectiveDateFrom: filters.effectiveDateFrom,
+          effectiveDateTo: filters.effectiveDateTo,
+          searchTerm: filters.searchTerm,
+        }
+      : undefined;
 
     return this.repository.countPolicies(repoFilters);
   }
@@ -174,14 +237,16 @@ class PolicyService {
     ytdPremium: number;
   }> {
     // Convert PolicyFilters to repository filter format
-    const repoFilters = filters ? {
-      status: filters.status,
-      carrierId: filters.carrierId,
-      product: filters.product,
-      effectiveDateFrom: filters.effectiveDateFrom,
-      effectiveDateTo: filters.effectiveDateTo,
-      searchTerm: filters.searchTerm
-    } : undefined;
+    const repoFilters = filters
+      ? {
+          status: filters.status,
+          carrierId: filters.carrierId,
+          product: filters.product,
+          effectiveDateFrom: filters.effectiveDateFrom,
+          effectiveDateTo: filters.effectiveDateTo,
+          searchTerm: filters.searchTerm,
+        }
+      : undefined;
 
     return this.repository.getAggregateMetrics(repoFilters);
   }
@@ -230,7 +295,7 @@ class PolicyService {
   async cancelPolicy(
     policyId: string,
     reason: string,
-    cancelDate: Date = new Date()
+    cancelDate: Date = new Date(),
   ): Promise<{
     policy: Policy;
     chargeback: {
@@ -242,65 +307,77 @@ class PolicyService {
     try {
       // Validate reason
       if (!reason || reason.trim().length === 0) {
-        throw new ValidationError('Cancellation reason is required', [
-          { field: 'reason', message: 'Reason cannot be empty', value: reason }
+        throw new ValidationError("Cancellation reason is required", [
+          { field: "reason", message: "Reason cannot be empty", value: reason },
         ]);
       }
 
       // Validate policy exists
       const policy = await this.repository.findById(policyId);
       if (!policy) {
-        throw new NotFoundError('Policy', policyId);
+        throw new NotFoundError("Policy", policyId);
       }
 
       // Validate policy is not already cancelled
-      if (policy.status === 'cancelled' || policy.status === 'lapsed') {
-        throw new ValidationError('Policy is already cancelled or lapsed', [
-          { field: 'status', message: 'Cannot cancel an already cancelled/lapsed policy', value: policy.status }
+      if (policy.status === "cancelled" || policy.status === "lapsed") {
+        throw new ValidationError("Policy is already cancelled or lapsed", [
+          {
+            field: "status",
+            message: "Cannot cancel an already cancelled/lapsed policy",
+            value: policy.status,
+          },
         ]);
       }
 
       // Update policy status to 'cancelled'
       // Database trigger will automatically calculate chargeback
       const { data: updated, error: updateError } = await supabase
-        .from('policies')
+        .from("policies")
         .update({
-          status: 'cancelled',
+          status: "cancelled",
           notes: policy.notes
-            ? `${policy.notes}\n\nCancelled: ${reason} (${cancelDate.toISOString().split('T')[0]})`
-            : `Cancelled: ${reason} (${cancelDate.toISOString().split('T')[0]})`,
-          updated_at: new Date().toISOString()
+            ? `${policy.notes}\n\nCancelled: ${reason} (${cancelDate.toISOString().split("T")[0]})`
+            : `Cancelled: ${reason} (${cancelDate.toISOString().split("T")[0]})`,
+          updated_at: new Date().toISOString(),
         })
-        .eq('id', policyId)
+        .eq("id", policyId)
         .select()
         .single();
 
       if (updateError) {
-        throw new DatabaseError('cancelPolicy', updateError);
+        throw new DatabaseError("cancelPolicy", updateError);
       }
 
       // Get updated commission with chargeback details
       const { data: commission, error: commissionError } = await supabase
-        .from('commissions')
-        .select('chargeback_amount, chargeback_reason, months_paid')
-        .eq('policy_id', policyId)
+        .from("commissions")
+        .select("chargeback_amount, chargeback_reason, months_paid")
+        .eq("policy_id", policyId)
         .single();
 
       if (commissionError) {
-        logger.warn('Could not fetch chargeback details', {
-          policyId,
-          error: commissionError
-        }, 'PolicyService.cancelPolicy');
+        logger.warn(
+          "Could not fetch chargeback details",
+          {
+            policyId,
+            error: commissionError,
+          },
+          "PolicyService.cancelPolicy",
+        );
       }
 
-      logger.info('Policy cancelled', {
-        policyId,
-        reason,
-        chargebackAmount: commission?.chargeback_amount || 0
-      }, 'PolicyService');
+      logger.info(
+        "Policy cancelled",
+        {
+          policyId,
+          reason,
+          chargebackAmount: commission?.chargeback_amount || 0,
+        },
+        "PolicyService",
+      );
 
       // Transform and return
-      const updatedPolicy = this.repository['transformFromDB'](updated);
+      const updatedPolicy = this.repository["transformFromDB"](updated);
 
       // Emit policy cancelled event
       await workflowEventEmitter.emit(WORKFLOW_EVENTS.POLICY_CANCELLED, {
@@ -309,20 +386,23 @@ class PolicyService {
         agentId: updatedPolicy.userId,
         reason,
         cancelDate: cancelDate.toISOString(),
-        chargebackAmount: parseFloat(commission?.chargeback_amount || '0'),
-        timestamp: new Date().toISOString()
+        chargebackAmount: parseFloat(commission?.chargeback_amount || "0"),
+        timestamp: new Date().toISOString(),
       });
 
       return {
         policy: updatedPolicy,
         chargeback: {
-          amount: parseFloat(commission?.chargeback_amount || '0'),
+          amount: parseFloat(commission?.chargeback_amount || "0"),
           monthsPaid: commission?.months_paid || 0,
-          reason: commission?.chargeback_reason || reason
-        }
+          reason: commission?.chargeback_reason || reason,
+        },
       };
     } catch (error) {
-      logger.error('PolicyService.cancelPolicy', error instanceof Error ? error : new Error(String(error)));
+      logger.error(
+        "PolicyService.cancelPolicy",
+        error instanceof Error ? error : new Error(String(error)),
+      );
       throw error;
     }
   }
@@ -343,7 +423,7 @@ class PolicyService {
   async lapsePolicy(
     policyId: string,
     lapseDate: Date = new Date(),
-    reason?: string
+    reason?: string,
   ): Promise<{
     policy: Policy;
     chargeback: {
@@ -356,72 +436,85 @@ class PolicyService {
       // Validate policy exists
       const policy = await this.repository.findById(policyId);
       if (!policy) {
-        throw new NotFoundError('Policy', policyId);
+        throw new NotFoundError("Policy", policyId);
       }
 
       // Validate policy is not already lapsed or cancelled
-      if (policy.status === 'cancelled' || policy.status === 'lapsed') {
-        throw new ValidationError('Policy is already cancelled or lapsed', [
-          { field: 'status', message: 'Cannot lapse an already cancelled/lapsed policy', value: policy.status }
+      if (policy.status === "cancelled" || policy.status === "lapsed") {
+        throw new ValidationError("Policy is already cancelled or lapsed", [
+          {
+            field: "status",
+            message: "Cannot lapse an already cancelled/lapsed policy",
+            value: policy.status,
+          },
         ]);
       }
 
       // Update policy status to 'lapsed'
       // Database trigger will automatically calculate chargeback
       const lapseNote = reason
-        ? `Lapsed: ${reason} (${lapseDate.toISOString().split('T')[0]})`
-        : `Lapsed on ${lapseDate.toISOString().split('T')[0]} - client stopped paying`;
+        ? `Lapsed: ${reason} (${lapseDate.toISOString().split("T")[0]})`
+        : `Lapsed on ${lapseDate.toISOString().split("T")[0]} - client stopped paying`;
 
       const { data: updated, error: updateError } = await supabase
-        .from('policies')
+        .from("policies")
         .update({
-          status: 'lapsed',
-          notes: policy.notes
-            ? `${policy.notes}\n\n${lapseNote}`
-            : lapseNote,
-          updated_at: new Date().toISOString()
+          status: "lapsed",
+          notes: policy.notes ? `${policy.notes}\n\n${lapseNote}` : lapseNote,
+          updated_at: new Date().toISOString(),
         })
-        .eq('id', policyId)
+        .eq("id", policyId)
         .select()
         .single();
 
       if (updateError) {
-        throw new DatabaseError('lapsePolicy', updateError);
+        throw new DatabaseError("lapsePolicy", updateError);
       }
 
       // Get updated commission with chargeback details
       const { data: commission, error: commissionError } = await supabase
-        .from('commissions')
-        .select('chargeback_amount, chargeback_reason, months_paid')
-        .eq('policy_id', policyId)
+        .from("commissions")
+        .select("chargeback_amount, chargeback_reason, months_paid")
+        .eq("policy_id", policyId)
         .single();
 
       if (commissionError) {
-        logger.warn('Could not fetch chargeback details', {
-          policyId,
-          error: commissionError
-        }, 'PolicyService.lapsePolicy');
+        logger.warn(
+          "Could not fetch chargeback details",
+          {
+            policyId,
+            error: commissionError,
+          },
+          "PolicyService.lapsePolicy",
+        );
       }
 
-      logger.info('Policy lapsed', {
-        policyId,
-        lapseDate,
-        chargebackAmount: commission?.chargeback_amount || 0
-      }, 'PolicyService');
+      logger.info(
+        "Policy lapsed",
+        {
+          policyId,
+          lapseDate,
+          chargebackAmount: commission?.chargeback_amount || 0,
+        },
+        "PolicyService",
+      );
 
       // Transform and return
-      const updatedPolicy = this.repository['transformFromDB'](updated);
+      const updatedPolicy = this.repository["transformFromDB"](updated);
 
       return {
         policy: updatedPolicy,
         chargeback: {
-          amount: parseFloat(commission?.chargeback_amount || '0'),
+          amount: parseFloat(commission?.chargeback_amount || "0"),
           monthsPaid: commission?.months_paid || 0,
-          reason: commission?.chargeback_reason || 'Policy lapsed'
-        }
+          reason: commission?.chargeback_reason || "Policy lapsed",
+        },
       };
     } catch (error) {
-      logger.error('PolicyService.lapsePolicy', error instanceof Error ? error : new Error(String(error)));
+      logger.error(
+        "PolicyService.lapsePolicy",
+        error instanceof Error ? error : new Error(String(error)),
+      );
       throw error;
     }
   }
@@ -438,36 +531,40 @@ class PolicyService {
    * @param reason - Reason for reinstatement (required)
    * @returns Updated policy
    */
-  async reinstatePolicy(
-    policyId: string,
-    reason: string
-  ): Promise<Policy> {
+  async reinstatePolicy(policyId: string, reason: string): Promise<Policy> {
     try {
       // Validate reason
       if (!reason || reason.trim().length === 0) {
-        throw new ValidationError('Reinstatement reason is required', [
-          { field: 'reason', message: 'Reason cannot be empty', value: reason }
+        throw new ValidationError("Reinstatement reason is required", [
+          { field: "reason", message: "Reason cannot be empty", value: reason },
         ]);
       }
 
       // Validate policy exists
       const policy = await this.repository.findById(policyId);
       if (!policy) {
-        throw new NotFoundError('Policy', policyId);
+        throw new NotFoundError("Policy", policyId);
       }
 
       // Validate policy is cancelled or lapsed
-      if (policy.status !== 'cancelled' && policy.status !== 'lapsed') {
-        throw new ValidationError('Policy must be cancelled or lapsed to reinstate', [
-          { field: 'status', message: 'Can only reinstate cancelled/lapsed policies', value: policy.status }
-        ]);
+      if (policy.status !== "cancelled" && policy.status !== "lapsed") {
+        throw new ValidationError(
+          "Policy must be cancelled or lapsed to reinstate",
+          [
+            {
+              field: "status",
+              message: "Can only reinstate cancelled/lapsed policies",
+              value: policy.status,
+            },
+          ],
+        );
       }
 
       // Get commission to reverse chargeback
       const { data: commission, error: commissionError } = await supabase
-        .from('commissions')
-        .select('id')
-        .eq('policy_id', policyId)
+        .from("commissions")
+        .select("id")
+        .eq("policy_id", policyId)
         .single();
 
       // Reverse chargeback if commission exists
@@ -477,29 +574,33 @@ class PolicyService {
 
       // Update policy status to 'active'
       const { data: updated, error: updateError } = await supabase
-        .from('policies')
+        .from("policies")
         .update({
-          status: 'active',
+          status: "active",
           notes: policy.notes
-            ? `${policy.notes}\n\nReinstated: ${reason} (${new Date().toISOString().split('T')[0]})`
-            : `Reinstated: ${reason} (${new Date().toISOString().split('T')[0]})`,
-          updated_at: new Date().toISOString()
+            ? `${policy.notes}\n\nReinstated: ${reason} (${new Date().toISOString().split("T")[0]})`
+            : `Reinstated: ${reason} (${new Date().toISOString().split("T")[0]})`,
+          updated_at: new Date().toISOString(),
         })
-        .eq('id', policyId)
+        .eq("id", policyId)
         .select()
         .single();
 
       if (updateError) {
-        throw new DatabaseError('reinstatePolicy', updateError);
+        throw new DatabaseError("reinstatePolicy", updateError);
       }
 
-      logger.info('Policy reinstated', {
-        policyId,
-        reason
-      }, 'PolicyService');
+      logger.info(
+        "Policy reinstated",
+        {
+          policyId,
+          reason,
+        },
+        "PolicyService",
+      );
 
       // Transform and return
-      const reinstatedPolicy = this.repository['transformFromDB'](updated);
+      const reinstatedPolicy = this.repository["transformFromDB"](updated);
 
       // Emit policy renewed event (reinstatement is a form of renewal)
       await workflowEventEmitter.emit(WORKFLOW_EVENTS.POLICY_RENEWED, {
@@ -508,12 +609,15 @@ class PolicyService {
         agentId: reinstatedPolicy.userId,
         reason,
         renewalDate: new Date().toISOString(),
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
 
       return reinstatedPolicy;
     } catch (error) {
-      logger.error('PolicyService.reinstatePolicy', error instanceof Error ? error : new Error(String(error)));
+      logger.error(
+        "PolicyService.reinstatePolicy",
+        error instanceof Error ? error : new Error(String(error)),
+      );
       throw error;
     }
   }

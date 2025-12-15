@@ -6,6 +6,48 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-12-15 13:11:44
+
+### Changed Files
+- `.serena/memories/ACTIVE_SESSION_CONTINUATION.md`
+- `CHANGELOG.md`
+- `PROJECT_STATS.md`
+- `src/features/policies/PolicyDashboard.tsx`
+- `src/features/policies/PolicyForm.tsx`
+- `src/features/policies/components/PolicyDialog.tsx`
+- `src/features/policies/hooks/useUpdatePolicy.ts`
+- `src/services/commissions/CommissionCRUDService.ts`
+- `src/services/commissions/CommissionCalculationService.ts`
+- `src/services/commissions/commissionService.ts`
+- `src/services/policies/PolicyRepository.ts`
+- `src/services/policies/policyService.ts`
+- `tsconfig.tsbuildinfo`
+
+### Statistics
+```
+ 13 files changed, 440 insertions(+), 223 deletions(-)
+```
+
+## [Checkpoint] - 2025-12-15 13:10:52
+
+### Changed Files
+- `.serena/memories/ACTIVE_SESSION_CONTINUATION.md`
+- `src/features/policies/PolicyDashboard.tsx`
+- `src/features/policies/PolicyForm.tsx`
+- `src/features/policies/components/PolicyDialog.tsx`
+- `src/features/policies/hooks/useUpdatePolicy.ts`
+- `src/services/commissions/CommissionCRUDService.ts`
+- `src/services/commissions/CommissionCalculationService.ts`
+- `src/services/commissions/commissionService.ts`
+- `src/services/policies/PolicyRepository.ts`
+- `src/services/policies/policyService.ts`
+- `tsconfig.tsbuildinfo`
+
+### Statistics
+```
+ 11 files changed, 410 insertions(+), 213 deletions(-)
+```
+
 ## [Checkpoint] - 2025-12-14 18:45:09
 
 ### Changed Files

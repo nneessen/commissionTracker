@@ -1,37 +1,54 @@
 // /home/nneessen/projects/commissionTracker/src/features/policies/PolicyForm.tsx
 
 import React, { useState, useEffect } from "react";
-import {useAuth} from "../../contexts/AuthContext";
-import {useCarriers} from "../../hooks/carriers";
-import {useProducts} from "../../hooks/products/useProducts";
-import {useCompGuide} from "../../hooks/comps";
-import {supabase} from "../../services/base/supabase";
-import {NewPolicyForm, PolicyStatus, PaymentFrequency, Policy} from "../../types/policy.types";
-import {ProductType} from "../../types/commission.types";
-import {US_STATES} from "../../types/user.types";
-import {formatDateForDB} from "../../lib/date";
-import {Button} from "@/components/ui/button";
-import {Input} from "@/components/ui/input";
-import {Label} from "@/components/ui/label";
-import {Textarea} from "@/components/ui/textarea";
-import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
+import { useAuth } from "../../contexts/AuthContext";
+import { useCarriers } from "../../hooks/carriers";
+import { useProducts } from "../../hooks/products/useProducts";
+import { useCompGuide } from "../../hooks/comps";
+import { supabase } from "../../services/base/supabase";
+import {
+  NewPolicyForm,
+  PolicyStatus,
+  PaymentFrequency,
+  Policy,
+} from "../../types/policy.types";
+import { ProductType } from "../../types/commission.types";
+import { US_STATES } from "../../types/user.types";
+import { formatDateForDB } from "../../lib/date";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
-import {calculateAnnualPremium, calculatePaymentAmount, calculateExpectedCommission, validatePremium, validateCommissionPercentage} from "../../utils/policyCalculations";
+import {
+  calculateAnnualPremium,
+  calculatePaymentAmount,
+  calculateExpectedCommission,
+  validatePremium,
+  validateCommissionPercentage,
+} from "../../utils/policyCalculations";
 
 interface PolicyFormProps {
   policyId?: string;
+  policy?: Policy | null;
   onClose: () => void;
   addPolicy: (form: NewPolicyForm) => Promise<Policy | null>;
   updatePolicy: (id: string, updates: Partial<NewPolicyForm>) => Promise<void>;
-  getPolicyById: (id: string) => Policy | undefined;
 }
 
 export const PolicyForm: React.FC<PolicyFormProps> = ({
   policyId,
+  policy,
   onClose,
   addPolicy,
   updatePolicy,
-  getPolicyById,
 }) => {
   const { user } = useAuth();
   const { data: carriers = [] } = useCarriers();
@@ -73,47 +90,39 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
     userContractLevel,
   );
 
+  // Populate form when editing an existing policy - wait for carriers to be loaded
   useEffect(() => {
-    if (policyId) {
-      const policy = getPolicyById(policyId);
-      if (policy) {
-        setFormData({
-          clientName: policy.client.name,
-          clientState: policy.client.state,
-          clientAge: policy.client.age,
-          carrierId: policy.carrierId,
-          productId: policy.productId || "",
-          product: policy.product,
-          policyNumber: policy.policyNumber,
-          submitDate:
-            policy.submitDate || formatDateForDB(new Date()),
-          effectiveDate:
-            policy.effectiveDate || formatDateForDB(new Date()),
-          premium: calculatePaymentAmount(
-            policy.annualPremium,
-            policy.paymentFrequency,
-          ),
-          paymentFrequency: policy.paymentFrequency,
-          commissionPercentage: policy.commissionPercentage * 100,
-          status: policy.status,
-          notes: policy.notes || "",
-        });
-      } else {
-        console.error("❌ PolicyForm: Policy not found for id:", policyId);
-      }
+    if (policyId && policy && carriers.length > 0) {
+      const newFormData = {
+        clientName: policy.client?.name || "",
+        clientState: policy.client?.state || "",
+        clientAge: policy.client?.age || 0,
+        carrierId: policy.carrierId,
+        productId: policy.productId || "",
+        product: policy.product,
+        policyNumber: policy.policyNumber,
+        submitDate: policy.submitDate || formatDateForDB(new Date()),
+        effectiveDate: policy.effectiveDate || formatDateForDB(new Date()),
+        premium: calculatePaymentAmount(
+          policy.annualPremium,
+          policy.paymentFrequency,
+        ),
+        paymentFrequency: policy.paymentFrequency,
+        commissionPercentage: policy.commissionPercentage * 100,
+        status: policy.status,
+        notes: policy.notes || "",
+      };
+      setFormData(newFormData);
     }
-  }, [policyId, getPolicyById]);
+  }, [policyId, policy, carriers.length]);
 
-  // When products load and we're editing a policy without productId, try to find matching product
+  // When products load and we're editing a policy without productId, auto-match by product type
   useEffect(() => {
-    if (
-      policyId &&
-      formData.carrierId &&
-      !formData.productId &&
-      formData.product &&
-      products.length > 0
-    ) {
-      // Try to find a product that matches the carrier and product type
+    // Only run for edit mode when products are loaded but productId is empty
+    if (!policyId || products.length === 0) return;
+
+    // Check if we need to auto-select (formData has carrierId and product type but no productId)
+    if (formData.carrierId && !formData.productId && formData.product) {
       const matchingProduct = products.find(
         (p) =>
           p.carrier_id === formData.carrierId &&
@@ -129,10 +138,10 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
     }
   }, [
     policyId,
+    products,
     formData.carrierId,
     formData.productId,
     formData.product,
-    products,
   ]);
 
   // Fetch commission rates for all products when products change
@@ -211,24 +220,41 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
   };
 
   const handleSelectChange = (name: string, value: string) => {
+    // Ignore empty values - Radix Select triggers onValueChange("") on mount
+    // when the controlled value doesn't match any SelectItem yet
+    if (!value) {
+      return;
+    }
+
     // Handle carrier change - reset product selection
     if (name === "carrierId") {
-      setFormData((prev) => ({
-        ...prev,
-        carrierId: value,
-        productId: "", // Reset product when carrier changes
-        commissionPercentage: 0,
-      }));
+      setFormData((prev) => {
+        // Only reset product/commission if carrier actually changed
+        const carrierChanged = prev.carrierId !== value;
+        return {
+          ...prev,
+          carrierId: value,
+          // Only reset these if carrier actually changed (not just initial population)
+          productId: carrierChanged ? "" : prev.productId,
+          commissionPercentage: carrierChanged ? 0 : prev.commissionPercentage,
+        };
+      });
     }
     // Handle product change - commission will be set by useEffect watching compGuideData
     else if (name === "productId") {
       const selectedProduct = products.find((p) => p.id === value);
-      setFormData((prev) => ({
-        ...prev,
-        productId: value,
-        product: selectedProduct?.product_type || ("term_life" as ProductType),
-        commissionPercentage: 0, // Will be updated by useEffect
-      }));
+      setFormData((prev) => {
+        // Only reset commission if product actually changed
+        const productChanged = prev.productId !== value;
+        return {
+          ...prev,
+          productId: value,
+          product:
+            selectedProduct?.product_type || ("term_life" as ProductType),
+          // Only reset commission if product actually changed (not initial population)
+          commissionPercentage: productChanged ? 0 : prev.commissionPercentage,
+        };
+      });
     }
     // Handle other select fields
     else {
@@ -294,10 +320,10 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
       try {
         if (policyId) {
           await updatePolicy(policyId, submissionData);
-          onClose(); // Close dialog after successful update
+          onClose();
         } else {
           await addPolicy(submissionData);
-          onClose(); // Close dialog after successful add
+          onClose();
         }
       } catch (error) {
         alert(

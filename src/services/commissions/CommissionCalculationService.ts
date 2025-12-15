@@ -1,12 +1,18 @@
 // src/services/commissions/CommissionCalculationService.ts
 // Handles commission calculations using comp guide
 
-import {Commission} from '../../types/commission.types';
-import {logger} from '../base/logger';
-import type {CreateCommissionData} from './CommissionCRUDService';
-import {commissionCRUDService} from './CommissionCRUDService';
-import {CalculationError, ExternalServiceError, NotFoundError, ValidationError, getErrorMessage} from '../../errors/ServiceErrors';
-import {withRetry} from '../../utils/retry';
+import { Commission } from "../../types/commission.types";
+import { logger } from "../base/logger";
+import type { CreateCommissionData } from "./CommissionCRUDService";
+import { commissionCRUDService } from "./CommissionCRUDService";
+import {
+  CalculationError,
+  ExternalServiceError,
+  NotFoundError,
+  ValidationError,
+  getErrorMessage,
+} from "../../errors/ServiceErrors";
+import { withRetry } from "../../utils/retry";
 
 export interface CalculationResult {
   advanceAmount: number; // Changed from commissionAmount for clarity
@@ -27,17 +33,28 @@ class CommissionCalculationService {
    *
    * @private
    */
-  private handleError(error: unknown, context: string, details?: Record<string, unknown>): never {
+  private handleError(
+    error: unknown,
+    context: string,
+    details?: Record<string, unknown>,
+  ): never {
     const message = getErrorMessage(error);
-    logger.error(`CommissionCalculationService.${context}`, error instanceof Error ? error : new Error(String(error)));
+    logger.error(
+      `CommissionCalculationService.${context}`,
+      error instanceof Error ? error : new Error(String(error)),
+    );
 
     // Re-throw structured errors
-    if (error instanceof CalculationError || error instanceof ValidationError || error instanceof NotFoundError) {
+    if (
+      error instanceof CalculationError ||
+      error instanceof ValidationError ||
+      error instanceof NotFoundError
+    ) {
       throw error;
     }
 
     // Wrap in appropriate error type
-    throw new CalculationError('Commission', message, details);
+    throw new CalculationError("Commission", message, details);
   }
 
   /**
@@ -80,32 +97,37 @@ class CommissionCalculationService {
   }): Promise<CalculationResult | null> {
     // Validation
     if (!data.carrierId) {
-      throw new ValidationError('Missing calculation parameters', [
-        { field: 'carrierId', message: 'Carrier ID is required' }
+      throw new ValidationError("Missing calculation parameters", [
+        { field: "carrierId", message: "Carrier ID is required" },
       ]);
     }
     if (!data.product) {
-      throw new ValidationError('Missing calculation parameters', [
-        { field: 'product', message: 'Product is required' }
+      throw new ValidationError("Missing calculation parameters", [
+        { field: "product", message: "Product is required" },
       ]);
     }
     if (!data.monthlyPremium || data.monthlyPremium <= 0) {
-      throw new ValidationError('Invalid calculation parameters', [
-        { field: 'monthlyPremium', message: 'Monthly premium must be greater than 0', value: data.monthlyPremium }
+      throw new ValidationError("Invalid calculation parameters", [
+        {
+          field: "monthlyPremium",
+          message: "Monthly premium must be greater than 0",
+          value: data.monthlyPremium,
+        },
       ]);
     }
 
-    const { compGuideService, agentService, carrierService } = await import('../index');
+    const { compGuideService, agentService, carrierService } =
+      await import("../index");
 
     try {
       // Get carrier name for comp guide lookup (with retry)
       const { data: carrier, error: carrierError } = await withRetry(
         () => carrierService.getCarrierById(data.carrierId),
-        { maxAttempts: 2 }
+        { maxAttempts: 2 },
       );
 
       if (carrierError || !carrier) {
-        throw new NotFoundError('Carrier', data.carrierId);
+        throw new NotFoundError("Carrier", data.carrierId);
       }
 
       // Determine contract comp level
@@ -118,38 +140,42 @@ class CommissionCalculationService {
             contractCompLevel = user.contractCompLevel;
           }
         } catch (error) {
-          logger.warn('Could not get user contract comp level', error instanceof Error ? error : String(error), 'CommissionCalculationService');
+          logger.warn(
+            "Could not get user contract comp level",
+            error instanceof Error ? error : String(error),
+            "CommissionCalculationService",
+          );
         }
       }
 
       if (!contractCompLevel) {
-        throw new CalculationError('Commission', 'Contract comp level not found', {
-          userId,
-          carrierId: data.carrierId
-        });
-      }
-
-      // Map product types to comp guide product names
-      const compGuideProductName = this.mapProductToCompGuideName(data.product);
-      if (!compGuideProductName) {
-        throw new CalculationError('Commission', 'Product not found in comp guide', {
-          product: data.product
-        });
+        throw new CalculationError(
+          "Commission",
+          "Contract comp level not found",
+          {
+            userId,
+            carrierId: data.carrierId,
+          },
+        );
       }
 
       // Get commission percentage from comp guide (with retry for external service)
+      // Note: product_type in comp_guide is an enum, so pass the raw product type directly
       const rateResult = await withRetry(
-        () => compGuideService.getCommissionRate(
-          carrier.name,
-          compGuideProductName as any,
-          contractCompLevel // Now passing as number directly, no cast needed
-        ),
-        { maxAttempts: 3 }
+        () =>
+          compGuideService.getCommissionRate(
+            carrier.name,
+            data.product as any, // Cast to any - product types match DB enum values
+            contractCompLevel,
+          ),
+        { maxAttempts: 3 },
       );
 
       if (rateResult.error || !rateResult.data) {
-        throw new ExternalServiceError('CompGuideService', 'getCommissionRate',
-          new Error(rateResult.error?.message || 'No rate data returned')
+        throw new ExternalServiceError(
+          "CompGuideService",
+          "getCommissionRate",
+          new Error(rateResult.error?.message || "No rate data returned"),
         );
       }
 
@@ -162,15 +188,19 @@ class CommissionCalculationService {
 
       const commissionCalculation = {
         amount: data.monthlyPremium * advanceMonths * commissionRate,
-        rate: rateResult.data
+        rate: rateResult.data,
       };
 
-      logger.info('CommissionCalculation', 'Advance calculated using comp guide', JSON.stringify({
-        monthlyPremium: data.monthlyPremium,
-        advanceMonths,
-        commissionRate: rateResult.data,
-        advanceAmount: commissionCalculation.amount
-      }));
+      logger.info(
+        "CommissionCalculation",
+        "Advance calculated using comp guide",
+        JSON.stringify({
+          monthlyPremium: data.monthlyPremium,
+          advanceMonths,
+          commissionRate: rateResult.data,
+          advanceAmount: commissionCalculation.amount,
+        }),
+      );
 
       return {
         advanceAmount: commissionCalculation.amount, // This is the ADVANCE
@@ -180,12 +210,16 @@ class CommissionCalculationService {
         contractCompLevel,
       };
     } catch (error) {
-      if (error instanceof CalculationError || error instanceof NotFoundError || error instanceof ValidationError) {
+      if (
+        error instanceof CalculationError ||
+        error instanceof NotFoundError ||
+        error instanceof ValidationError
+      ) {
         throw error;
       }
-      throw this.handleError(error, 'calculateCommissionWithCompGuide', {
+      throw this.handleError(error, "calculateCommissionWithCompGuide", {
         carrierId: data.carrierId,
-        product: data.product
+        product: data.product,
       });
     }
   }
@@ -213,7 +247,9 @@ class CommissionCalculationService {
    * });
    * ```
    */
-  async createWithAutoCalculation(commissionData: CreateCommissionData): Promise<Commission> {
+  async createWithAutoCalculation(
+    commissionData: CreateCommissionData,
+  ): Promise<Commission> {
     try {
       let finalData = { ...commissionData };
 
@@ -223,11 +259,13 @@ class CommissionCalculationService {
       }
 
       // If auto-calculation is requested and we have the required data
-      if (commissionData.isAutoCalculated !== false &&
-          commissionData.carrierId &&
-          commissionData.product &&
-          finalData.monthlyPremium && finalData.monthlyPremium > 0) {
-
+      if (
+        commissionData.isAutoCalculated !== false &&
+        commissionData.carrierId &&
+        commissionData.product &&
+        finalData.monthlyPremium &&
+        finalData.monthlyPremium > 0
+      ) {
         const calculation = await this.calculateCommissionWithCompGuide({
           carrierId: commissionData.carrierId,
           product: commissionData.product,
@@ -255,17 +293,28 @@ class CommissionCalculationService {
       // Ensure required fields are set
       // BUSINESS RULE: If advance amount not calculated, use the ONE formula
       // Advance = Monthly Premium × Advance Months × Commission Rate
-      if (!finalData.advanceAmount && finalData.monthlyPremium && finalData.commissionRate) {
+      if (
+        !finalData.advanceAmount &&
+        finalData.monthlyPremium &&
+        finalData.commissionRate
+      ) {
         const advanceMonths = finalData.advanceMonths || 9;
         // commissionRate is already a percentage (e.g., 102.5), so divide by 100
-        finalData.advanceAmount = finalData.monthlyPremium * advanceMonths * (finalData.commissionRate / 100);
+        finalData.advanceAmount =
+          finalData.monthlyPremium *
+          advanceMonths *
+          (finalData.commissionRate / 100);
 
-        logger.info('CommissionCalculation', 'Advance calculated using fallback formula', JSON.stringify({
-          monthlyPremium: finalData.monthlyPremium,
-          advanceMonths,
-          commissionRate: finalData.commissionRate,
-          advanceAmount: finalData.advanceAmount
-        }));
+        logger.info(
+          "CommissionCalculation",
+          "Advance calculated using fallback formula",
+          JSON.stringify({
+            monthlyPremium: finalData.monthlyPremium,
+            advanceMonths,
+            commissionRate: finalData.commissionRate,
+            advanceAmount: finalData.advanceAmount,
+          }),
+        );
       }
 
       if (!finalData.advanceMonths) {
@@ -278,7 +327,7 @@ class CommissionCalculationService {
 
       return commissionCRUDService.create(finalData);
     } catch (error) {
-      throw this.handleError(error, 'createWithAutoCalculation');
+      throw this.handleError(error, "createWithAutoCalculation");
     }
   }
 
@@ -299,18 +348,22 @@ class CommissionCalculationService {
    * );
    * ```
    */
-  async recalculateCommission(commissionId: string, newContractLevel?: number): Promise<Commission> {
+  async recalculateCommission(
+    commissionId: string,
+    newContractLevel?: number,
+  ): Promise<Commission> {
     try {
       const commission = await commissionCRUDService.getById(commissionId);
       if (!commission) {
-        throw new Error('Commission not found');
+        throw new Error("Commission not found");
       }
 
       if (!commission.isAutoCalculated) {
-        throw new Error('Cannot recalculate manually entered commission');
+        throw new Error("Cannot recalculate manually entered commission");
       }
 
-      const monthlyPremium = commission.monthlyPremium || commission.annualPremium / 12;
+      const monthlyPremium =
+        commission.monthlyPremium || commission.annualPremium / 12;
 
       const calculation = await this.calculateCommissionWithCompGuide({
         carrierId: commission.carrierId,
@@ -322,7 +375,9 @@ class CommissionCalculationService {
       });
 
       if (!calculation) {
-        throw new Error('Unable to recalculate commission - comp guide data not found');
+        throw new Error(
+          "Unable to recalculate commission - comp guide data not found",
+        );
       }
 
       return commissionCRUDService.update(commissionId, {
@@ -331,31 +386,104 @@ class CommissionCalculationService {
         contractCompLevel: calculation.contractCompLevel,
       });
     } catch (error) {
-      throw this.handleError(error, 'recalculateCommission');
+      throw this.handleError(error, "recalculateCommission");
     }
   }
 
   /**
-   * Maps internal product type strings to compensation guide product names
+   * Recalculates commission for a policy when its premium changes
    *
-   * @param productType - The internal product type identifier
-   * @returns The corresponding comp guide product name, or null if no mapping exists
+   * @param policyId - The ID of the policy whose commission needs recalculation
+   * @param newAnnualPremium - The updated annual premium amount
+   * @param newMonthlyPremium - The updated monthly premium amount (optional)
+   * @returns Updated commission or null if no commission found
    *
-   * @private
+   * @example
+   * ```ts
+   * // After updating a policy's premium
+   * const updatedCommission = await recalculateCommissionByPolicyId(
+   *   'policy-123',
+   *   2400, // new annual premium
+   *   200   // new monthly premium
+   * );
+   * ```
    */
-  private mapProductToCompGuideName(productType: string): string | null {
-    // Map our ProductType enum values to comp guide product names
-    const productMapping: Record<string, string> = {
-      'whole_life': 'Provider Whole Life',
-      'term': 'Term Life',
-      'universal_life': 'Express UL',
-      'indexed_universal_life': 'Express Issue Premier WL',
-      'accidental': 'Accidental Death',
-      'final_expense': 'Final Expense',
-      'annuity': 'Annuity',
-    };
+  async recalculateCommissionByPolicyId(
+    policyId: string,
+    newAnnualPremium: number,
+    newMonthlyPremium?: number,
+  ): Promise<Commission | null> {
+    try {
+      // Get all commissions for this policy (should typically be one)
+      const commissions = await commissionCRUDService.getByPolicyId(policyId);
 
-    return productMapping[productType] || null;
+      if (!commissions || commissions.length === 0) {
+        logger.warn(
+          "CommissionCalculation",
+          "No commission found for policy",
+          `policyId: ${policyId}`,
+        );
+        return null;
+      }
+
+      // Get the most recent commission (in case there are multiple)
+      const commission = commissions[0];
+      const advanceMonths = commission.advanceMonths || 9;
+
+      // IMPORTANT: The commission DB table doesn't store carrier_id, product, commission_rate
+      // These fields only exist in the TypeScript interface, not in the actual database
+      // We MUST get this data from the policy
+      const { policyService } = await import("../index");
+      const policy = await policyService.getById(policyId);
+
+      if (!policy) {
+        throw new Error(`Policy not found: ${policyId}`);
+      }
+
+      // Calculate new advance using policy's commission_percentage
+      // commission_percentage is stored as decimal (e.g., 1.1 = 110%)
+      const monthlyPremium = newMonthlyPremium || newAnnualPremium / 12;
+      const commissionRate = policy.commissionPercentage; // Already a decimal like 1.1 for 110%
+      const newAdvanceAmount = monthlyPremium * advanceMonths * commissionRate;
+
+      logger.info(
+        "CommissionCalculation",
+        "Recalculating commission",
+        JSON.stringify({
+          policyId,
+          commissionId: commission.id,
+          monthlyPremium,
+          advanceMonths,
+          commissionRate,
+          oldAmount: commission.advanceAmount,
+          newAmount: newAdvanceAmount,
+        }),
+      );
+
+      // Update the commission with new calculated values
+      // Note: We only update 'amount' field since that's what the DB has
+      const updatedCommission = await commissionCRUDService.update(
+        commission.id,
+        {
+          advanceAmount: newAdvanceAmount,
+        },
+      );
+
+      logger.info(
+        "CommissionCalculation",
+        "Commission recalculated for policy",
+        JSON.stringify({
+          policyId,
+          commissionId: commission.id,
+          oldAmount: commission.advanceAmount,
+          newAmount: updatedCommission.advanceAmount,
+        }),
+      );
+
+      return updatedCommission;
+    } catch (error) {
+      throw this.handleError(error, "recalculateCommissionByPolicyId");
+    }
   }
 }
 

@@ -1,16 +1,23 @@
 // src/features/policies/components/PolicyDialog.tsx
 
-import React from 'react';
-import {Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle} from '@/components/ui/dialog';
-import {PolicyForm} from '../PolicyForm';
-import type {NewPolicyForm, Policy} from '../../../types/policy.types';
+import React from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { PolicyForm } from "../PolicyForm";
+import type { NewPolicyForm, Policy } from "../../../types/policy.types";
 
 interface PolicyDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSave: (formData: NewPolicyForm) => Promise<Policy | null>;
   policyId?: string;
-  getPolicyById?: (id: string) => Policy | undefined;
+  policy?: Policy | null;
+  isLoadingPolicy?: boolean;
 }
 
 /**
@@ -22,7 +29,8 @@ export function PolicyDialog({
   onOpenChange,
   onSave,
   policyId,
-  getPolicyById,
+  policy,
+  isLoadingPolicy = false,
 }: PolicyDialogProps) {
   const handleClose = () => onOpenChange(false);
 
@@ -31,25 +39,35 @@ export function PolicyDialog({
       <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
         <DialogHeader className="pb-2">
           <DialogTitle className="text-lg font-semibold text-foreground">
-            {policyId ? 'Edit Policy' : 'New Policy'}
+            {policyId ? "Edit Policy" : "New Policy"}
           </DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground mt-1">
             {policyId
-              ? 'Update the policy details below'
-              : 'Fill in the details to add a new policy'}
+              ? "Update the policy details below"
+              : "Fill in the details to add a new policy"}
           </DialogDescription>
         </DialogHeader>
 
         <div className="mt-1">
-          <PolicyForm
-            policyId={policyId}
-            onClose={handleClose}
-            addPolicy={onSave}
-            updatePolicy={async () => {
-              /* handled by PolicyForm internally */
-            }}
-            getPolicyById={getPolicyById || (() => undefined)}
-          />
+          {isLoadingPolicy && policyId ? (
+            <div className="flex items-center justify-center p-8 text-muted-foreground">
+              Loading policy data...
+            </div>
+          ) : (
+            <PolicyForm
+              policyId={policyId}
+              policy={policy}
+              onClose={handleClose}
+              addPolicy={onSave}
+              updatePolicy={async (
+                _id: string,
+                updates: Partial<NewPolicyForm>,
+              ) => {
+                // For updates, pass the formData through onSave which handles both create and update
+                await onSave(updates as NewPolicyForm);
+              }}
+            />
+          )}
         </div>
       </DialogContent>
     </Dialog>
