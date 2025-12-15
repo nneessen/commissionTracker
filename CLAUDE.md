@@ -254,4 +254,6 @@ No half-steps
 No speculative abstractions
 
 Always functional, testable, type-safe code
+
 - add to memory: place active session files in plans/active/... not the root dir.
+

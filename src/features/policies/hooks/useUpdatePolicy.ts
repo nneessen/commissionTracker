@@ -166,9 +166,9 @@ export function useUpdatePolicy() {
         }
       }
 
-      // ALWAYS invalidate commissions cache to ensure UI updates
+      // ALWAYS refetch commissions cache to ensure UI updates immediately
       // This covers both status changes (chargebacks) and premium updates (recalculations)
-      queryClient.invalidateQueries({ queryKey: ["commissions"] });
+      await queryClient.refetchQueries({ queryKey: ["commissions"] });
 
       // Also invalidate chargeback summary for status changes
       if (

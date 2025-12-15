@@ -6,6 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-12-15 17:34:54
+
+### Changed Files
+- `CLAUDE.md`
+- `plans/active/CONTINUATION_PROMPT_20251215.md`
+- `src/App.test.tsx`
+- `src/features/policies/hooks/useUpdatePolicy.ts`
+- `src/test-status-update.ts`
+- `supabase/migrations/20251215_001_comp_guide_rls_select_policy.sql`
+- `supabase/migrations/20251215_002_fix_commissions_rls_insert_policy.sql`
+- `tsconfig.tsbuildinfo`
+
+### Statistics
+```
+ 8 files changed, 292 insertions(+), 152 deletions(-)
+```
+
 ## [Checkpoint] - 2025-12-15 13:11:44
 
 ### Changed Files
