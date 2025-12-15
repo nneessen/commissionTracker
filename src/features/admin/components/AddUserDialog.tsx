@@ -23,16 +23,12 @@ import { useAllRolesWithPermissions } from "@/hooks/permissions/usePermissions";
 import { useAllUsers } from "@/hooks/admin/useUserApproval";
 import { Mail, User, Phone, Users } from "lucide-react";
 import type { RoleName } from "@/types/permissions.types";
+import type { ApprovalStatus } from "@/types/user.types";
 
 interface AddUserDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSave: (userData: NewUserData) => void;
-}
-
-interface ApprovalStatus {
-  pending: string;
-  approved: string;
 }
 
 export interface NewUserData {
