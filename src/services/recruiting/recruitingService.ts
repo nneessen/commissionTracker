@@ -25,8 +25,7 @@ export const recruitingService = {
         pipeline_template:pipeline_template_id(id, name, description)
       `,
         { count: 'exact' }
-      )
-      .neq('is_deleted', true);
+      );
 
     // Build the filter to get ONLY recruits
     // Include users with 'recruit' role OR onboarding_status
@@ -34,8 +33,7 @@ export const recruitingService = {
     const { data: initialData, error: initialError } = await supabase
       .from('user_profiles')
       .select('*')
-      .or('roles.cs.{recruit},onboarding_status.not.is.null')
-      .neq('is_deleted', true);
+      .or('roles.cs.{recruit},onboarding_status.not.is.null');
 
     if (initialError) throw initialError;
 
@@ -581,8 +579,7 @@ export const recruitingService = {
     let query = supabase
       .from('user_profiles')
       .select('*', { count: 'exact', head: false })
-      .or('roles.cs.{recruit},onboarding_status.not.is.null')
-      .neq('is_deleted', true);
+      .or('roles.cs.{recruit},onboarding_status.not.is.null');
 
     if (recruiterId) {
       query = query.eq('recruiter_id', recruiterId);
@@ -634,7 +631,6 @@ export const recruitingService = {
       .from('user_profiles')
       .select('id, first_name, last_name, email, profile_photo_url, onboarding_status, agent_status, roles, is_admin')
       .or('roles.cs.{recruit},onboarding_status.not.is.null')
-      .neq('is_deleted', true)
       .or(
         `first_name.ilike.%${searchTerm}%,last_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`
       )
