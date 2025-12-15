@@ -6,6 +6,32 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-12-15 18:01:57
+
+### Changed Files
+- `.serena/memories/CRITICAL_MIGRATION_SCRIPT_PATH.md`
+- `CHANGELOG.md`
+- `PROJECT_STATS.md`
+- `src/services/users/userService.ts`
+- `supabase/migrations/20251215_003_fix_admin_deleteuser_final.sql`
+
+### Statistics
+```
+ 5 files changed, 437 insertions(+), 64 deletions(-)
+```
+
+## [Checkpoint] - 2025-12-15 18:01:37
+
+### Changed Files
+- `.serena/memories/CRITICAL_MIGRATION_SCRIPT_PATH.md`
+- `src/services/users/userService.ts`
+- `supabase/migrations/20251215_003_fix_admin_deleteuser_final.sql`
+
+### Statistics
+```
+ 3 files changed, 421 insertions(+), 59 deletions(-)
+```
+
 ## [Checkpoint] - 2025-12-15 17:34:54
 
 ### Changed Files

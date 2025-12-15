@@ -3,7 +3,6 @@
 
 import { supabase } from "../base/supabase";
 import { logger } from "../base/logger";
-import type { Database } from "../../types/database.types";
 import type {
   UserProfile,
   UserProfileRow,
@@ -12,7 +11,10 @@ import type {
   ApprovalStatus,
   CreateUserProfileData,
 } from "../../types/user.types";
-import { VALID_CONTRACT_LEVELS, isValidContractLevel } from "../../lib/constants";
+import {
+  VALID_CONTRACT_LEVELS,
+  isValidContractLevel,
+} from "../../lib/constants";
 
 // Re-export for backward compatibility
 export { VALID_CONTRACT_LEVELS };
@@ -47,7 +49,11 @@ class UserService {
       } = await supabase.auth.getUser();
 
       if (authError || !user) {
-        logger.error("Failed to get authenticated user", authError, "UserService");
+        logger.error(
+          "Failed to get authenticated user",
+          authError,
+          "UserService",
+        );
         return null;
       }
 
@@ -58,13 +64,21 @@ class UserService {
         .single();
 
       if (error) {
-        logger.error("Failed to fetch user profile", error as Error, "UserService");
+        logger.error(
+          "Failed to fetch user profile",
+          error as Error,
+          "UserService",
+        );
         return null;
       }
 
       return data as UserProfile;
     } catch (error) {
-      logger.error("Error in getCurrentUserProfile", error as Error, "UserService");
+      logger.error(
+        "Error in getCurrentUserProfile",
+        error as Error,
+        "UserService",
+      );
       return null;
     }
   }
@@ -84,7 +98,7 @@ class UserService {
         // Try admin RPC as fallback (for viewing other users)
         const { data: rpcData, error: rpcError } = await supabase.rpc(
           "admin_getuser_profile",
-          { target_user_id: userId }
+          { target_user_id: userId },
         );
 
         if (rpcError) {
@@ -92,7 +106,8 @@ class UserService {
           return null;
         }
 
-        const profile = Array.isArray(rpcData) && rpcData.length > 0 ? rpcData[0] : null;
+        const profile =
+          Array.isArray(rpcData) && rpcData.length > 0 ? rpcData[0] : null;
         return profile as UserProfile;
       }
 
@@ -139,11 +154,14 @@ class UserService {
       query = query.eq("agent_status", filter.agentStatus);
     }
 
-    const { data, error } = await query.order("created_at", { ascending: false });
+    const { data, error } = await query.order("created_at", {
+      ascending: false,
+    });
 
     if (error) {
       // Fallback to admin RPC
-      const { data: rpcData, error: rpcError } = await supabase.rpc("admin_get_allusers");
+      const { data: rpcData, error: rpcError } =
+        await supabase.rpc("admin_get_allusers");
 
       if (rpcError) {
         logger.error("Failed to fetch users", rpcError, "UserService");
@@ -216,7 +234,9 @@ class UserService {
       .order("first_name", { ascending: true });
 
     if (error) {
-      throw new Error(`Failed to fetch users by contract level: ${error.message}`);
+      throw new Error(
+        `Failed to fetch users by contract level: ${error.message}`,
+      );
     }
 
     return (data as UserProfile[]) || [];
@@ -230,7 +250,11 @@ class UserService {
       const { data, error } = await supabase.rpc("admin_get_pendingusers");
 
       if (error) {
-        logger.error("Failed to fetch pending users", error as Error, "UserService");
+        logger.error(
+          "Failed to fetch pending users",
+          error as Error,
+          "UserService",
+        );
         return [];
       }
 
@@ -248,16 +272,18 @@ class UserService {
   /**
    * Create a new user with auth account and profile
    */
-  async create(userData: CreateUserProfileData & {
-    name?: string;
-    roles?: RoleName[];
-    approval_status?: ApprovalStatus;
-    onboarding_status?: string | null;
-    sendInvite?: boolean;
-    upline_id?: string | null;
-    agent_status?: AgentStatus;
-    contractCompLevel?: number;
-  }): Promise<{
+  async create(
+    userData: CreateUserProfileData & {
+      name?: string;
+      roles?: RoleName[];
+      approval_status?: ApprovalStatus;
+      onboarding_status?: string | null;
+      sendInvite?: boolean;
+      upline_id?: string | null;
+      agent_status?: AgentStatus;
+      contractCompLevel?: number;
+    },
+  ): Promise<{
     success: boolean;
     user?: UserProfile;
     userId?: string;
@@ -284,10 +310,12 @@ class UserService {
       // Determine roles and status
       let assignedRoles = userData.roles || [];
       let agentStatus: AgentStatus = userData.agent_status || "not_applicable";
-      let approvalStatus: ApprovalStatus = userData.approval_status || "approved";
+      let approvalStatus: ApprovalStatus =
+        userData.approval_status || "approved";
 
       if (assignedRoles.length === 0) {
-        const contractLevel = userData.contractCompLevel || userData.contract_level;
+        const contractLevel =
+          userData.contractCompLevel || userData.contract_level;
         if (contractLevel && contractLevel >= 50) {
           assignedRoles = ["active_agent"];
           agentStatus = "licensed";
@@ -300,7 +328,10 @@ class UserService {
           approvalStatus = "pending";
         }
       } else {
-        if (assignedRoles.includes("active_agent") || assignedRoles.includes("agent")) {
+        if (
+          assignedRoles.includes("active_agent") ||
+          assignedRoles.includes("agent")
+        ) {
           agentStatus = "licensed";
         } else if (assignedRoles.includes("recruit")) {
           agentStatus = "unlicensed";
@@ -314,7 +345,8 @@ class UserService {
       if (userData.sendInvite === false) {
         return {
           success: false,
-          error: "Cannot create user without sending invite (auth user required)",
+          error:
+            "Cannot create user without sending invite (auth user required)",
         };
       }
 
@@ -328,12 +360,14 @@ class UserService {
           },
           body: JSON.stringify({
             email,
-            fullName: userData.name || `${userData.first_name || ""} ${userData.last_name || ""}`.trim(),
+            fullName:
+              userData.name ||
+              `${userData.first_name || ""} ${userData.last_name || ""}`.trim(),
             roles: assignedRoles,
             isAdmin: assignedRoles.includes("admin"),
             skipPipeline: false,
           }),
-        }
+        },
       );
 
       const result = await response.json();
@@ -375,7 +409,8 @@ class UserService {
         agent_status: agentStatus,
         approval_status: approvalStatus,
         onboarding_status: userData.onboarding_status || null,
-        contract_level: userData.contractCompLevel || userData.contract_level || null,
+        contract_level:
+          userData.contractCompLevel || userData.contract_level || null,
         license_number: userData.license_number || null,
         is_admin: assignedRoles.includes("admin"),
         referral_source: userData.referral_source || null,
@@ -396,7 +431,11 @@ class UserService {
         .single();
 
       if (error) {
-        logger.error("Failed to update user profile after auth creation", error as Error, "UserService");
+        logger.error(
+          "Failed to update user profile after auth creation",
+          error as Error,
+          "UserService",
+        );
         return {
           success: true,
           userId: authUserId,
@@ -430,7 +469,7 @@ class UserService {
     updates: Partial<UserProfileRow> & {
       roles?: RoleName[];
       name?: string;
-    }
+    },
   ): Promise<UserProfile> {
     const dbData: Partial<UserProfileRow> = { ...updates };
 
@@ -444,7 +483,10 @@ class UserService {
 
     // Auto-set agent_status based on roles
     if (updates.roles) {
-      if (updates.roles.includes("active_agent") || updates.roles.includes("agent")) {
+      if (
+        updates.roles.includes("active_agent") ||
+        updates.roles.includes("agent")
+      ) {
         dbData.agent_status = "licensed";
       } else if (updates.roles.includes("recruit")) {
         dbData.agent_status = "unlicensed";
@@ -484,7 +526,7 @@ class UserService {
    * Update current user's profile
    */
   async updateCurrentUserProfile(
-    updates: Partial<Omit<UserProfileRow, 'roles'>> & { roles?: string[] }
+    updates: Partial<Omit<UserProfileRow, "roles">> & { roles?: string[] },
   ): Promise<UserProfile | null> {
     const currentUser = await this.getCurrentUserProfile();
     if (!currentUser) {
@@ -498,7 +540,7 @@ class UserService {
    */
   async updateContractLevel(
     userId: string,
-    contractLevel: number | null
+    contractLevel: number | null,
   ): Promise<{ success: boolean; error?: string }> {
     try {
       if (contractLevel !== null && !isValidContractLevel(contractLevel)) {
@@ -514,23 +556,40 @@ class UserService {
         .eq("id", userId);
 
       if (error) {
-        logger.error("Failed to update contract level", error as Error, "UserService");
+        logger.error(
+          "Failed to update contract level",
+          error as Error,
+          "UserService",
+        );
         return { success: false, error: error.message };
       }
 
       // Auto-upgrade agent role if contract level is high enough
       if (contractLevel && contractLevel >= 50) {
         const profile = await this.getUserProfile(userId);
-        if (profile && profile.roles?.includes("agent") && !profile.roles?.includes("active_agent")) {
-          const newRoles = profile.roles.map((r) => (r === "agent" ? "active_agent" : r));
+        if (
+          profile &&
+          profile.roles?.includes("agent") &&
+          !profile.roles?.includes("active_agent")
+        ) {
+          const newRoles = profile.roles.map((r) =>
+            r === "agent" ? "active_agent" : r,
+          );
           await this.update(userId, { roles: newRoles });
         }
       }
 
-      logger.info(`User ${userId} contract level set to ${contractLevel}`, "UserService");
+      logger.info(
+        `User ${userId} contract level set to ${contractLevel}`,
+        "UserService",
+      );
       return { success: true };
     } catch (error) {
-      logger.error("Error in updateContractLevel", error as Error, "UserService");
+      logger.error(
+        "Error in updateContractLevel",
+        error as Error,
+        "UserService",
+      );
       return { success: false, error: "Failed to update contract level" };
     }
   }
@@ -552,10 +611,13 @@ class UserService {
    */
   async approve(
     userId: string,
-    role: RoleName = "active_agent"
+    role: RoleName = "active_agent",
   ): Promise<{ success: boolean; error?: string }> {
     try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser();
 
       if (authError || !user) {
         return { success: false, error: "Not authenticated" };
@@ -588,10 +650,13 @@ class UserService {
    */
   async deny(
     userId: string,
-    reason?: string
+    reason?: string,
   ): Promise<{ success: boolean; error?: string }> {
     try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser();
 
       if (authError || !user) {
         return { success: false, error: "Not authenticated" };
@@ -619,14 +684,20 @@ class UserService {
   /**
    * Set user to pending status
    */
-  async setPending(userId: string): Promise<{ success: boolean; error?: string }> {
+  async setPending(
+    userId: string,
+  ): Promise<{ success: boolean; error?: string }> {
     try {
       const { error } = await supabase.rpc("admin_set_pendinguser", {
         target_user_id: userId,
       });
 
       if (error) {
-        logger.error("Failed to set user to pending", error as Error, "UserService");
+        logger.error(
+          "Failed to set user to pending",
+          error as Error,
+          "UserService",
+        );
         return { success: false, error: error.message };
       }
 
@@ -642,7 +713,7 @@ class UserService {
    */
   async setAdminRole(
     userId: string,
-    isAdmin: boolean
+    isAdmin: boolean,
   ): Promise<{ success: boolean; error?: string }> {
     try {
       const { error } = await supabase.rpc("admin_set_admin_role", {
@@ -692,10 +763,17 @@ class UserService {
         return { success: false, error: error.message };
       }
 
-      if (data && typeof data === "object" && (data as { success?: boolean }).success === false) {
+      if (
+        data &&
+        typeof data === "object" &&
+        (data as { success?: boolean }).success === false
+      ) {
         const errorData = data as { error?: string };
         logger.error("Delete user denied", errorData.error, "UserService");
-        return { success: false, error: errorData.error || "Failed to delete user" };
+        return {
+          success: false,
+          error: errorData.error || "Failed to delete user",
+        };
       }
 
       logger.info(`User ${userId} deleted`, "UserService");
@@ -716,9 +794,15 @@ class UserService {
   async isCurrentUserAdmin(): Promise<boolean> {
     try {
       const profile = await this.getCurrentUserProfile();
-      return profile?.is_admin === true || profile?.roles?.includes("admin") || false;
+      return (
+        profile?.is_admin === true || profile?.roles?.includes("admin") || false
+      );
     } catch (error) {
-      logger.error("Error in isCurrentUserAdmin", error as Error, "UserService");
+      logger.error(
+        "Error in isCurrentUserAdmin",
+        error as Error,
+        "UserService",
+      );
       return false;
     }
   }
@@ -729,9 +813,17 @@ class UserService {
   async isCurrentUserApproved(): Promise<boolean> {
     try {
       const profile = await this.getCurrentUserProfile();
-      return profile?.approval_status === "approved" || profile?.is_admin === true || false;
+      return (
+        profile?.approval_status === "approved" ||
+        profile?.is_admin === true ||
+        false
+      );
     } catch (error) {
-      logger.error("Error in isCurrentUserApproved", error as Error, "UserService");
+      logger.error(
+        "Error in isCurrentUserApproved",
+        error as Error,
+        "UserService",
+      );
       return false;
     }
   }
@@ -744,7 +836,11 @@ class UserService {
       const profile = await this.getCurrentUserProfile();
       return (profile?.approval_status as ApprovalStatus) || null;
     } catch (error) {
-      logger.error("Error in getCurrentUserStatus", error as Error, "UserService");
+      logger.error(
+        "Error in getCurrentUserStatus",
+        error as Error,
+        "UserService",
+      );
       return null;
     }
   }
@@ -759,7 +855,11 @@ class UserService {
         .select("approval_status");
 
       if (error) {
-        logger.error("Failed to fetch approval stats", error as Error, "UserService");
+        logger.error(
+          "Failed to fetch approval stats",
+          error as Error,
+          "UserService",
+        );
         return { total: 0, pending: 0, approved: 0, denied: 0 };
       }
 
@@ -869,7 +969,7 @@ class UserService {
 
   /** @deprecated Use create instead */
   async createUser(
-    userData: Parameters<typeof this.create>[0]
+    userData: Parameters<typeof this.create>[0],
   ): Promise<ReturnType<typeof this.create>> {
     return this.create(userData);
   }
@@ -877,7 +977,7 @@ class UserService {
   /** @deprecated Use update instead */
   async updateUser(
     id: string,
-    updates: Parameters<typeof this.update>[1]
+    updates: Parameters<typeof this.update>[1],
   ): Promise<{
     success: boolean;
     data?: {
@@ -898,7 +998,9 @@ class UserService {
         data: {
           id: result.id,
           email: result.email,
-          name: [result.first_name, result.last_name].filter(Boolean).join(" ") || undefined,
+          name:
+            [result.first_name, result.last_name].filter(Boolean).join(" ") ||
+            undefined,
           phone: result.phone || undefined,
           contractCompLevel: result.contract_level || undefined,
           isActive: result.approval_status === "approved",
@@ -913,14 +1015,16 @@ class UserService {
   }
 
   /** @deprecated Use delete instead */
-  async deleteUser(userId: string): Promise<{ success: boolean; error?: string }> {
+  async deleteUser(
+    userId: string,
+  ): Promise<{ success: boolean; error?: string }> {
     return this.delete(userId);
   }
 
   /** @deprecated Use approve instead */
   async approveUser(
     userId: string,
-    role?: string
+    role?: string,
   ): Promise<{ success: boolean; error?: string }> {
     return this.approve(userId, role);
   }
@@ -928,13 +1032,15 @@ class UserService {
   /** @deprecated Use deny instead */
   async denyUser(
     userId: string,
-    reason?: string
+    reason?: string,
   ): Promise<{ success: boolean; error?: string }> {
     return this.deny(userId, reason);
   }
 
   /** @deprecated Use setPending instead */
-  async setPendingUser(userId: string): Promise<{ success: boolean; error?: string }> {
+  async setPendingUser(
+    userId: string,
+  ): Promise<{ success: boolean; error?: string }> {
     return this.setPending(userId);
   }
 }
