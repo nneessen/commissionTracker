@@ -12,7 +12,20 @@ export function useCreateRecruit() {
     mutationFn: (recruit: CreateRecruitInput) => recruitingService.createRecruit(recruit),
     onSuccess: (data) => {
       const name = `${data.first_name} ${data.last_name}`.trim() || data.email;
-      showToast.success(`Successfully added ${name} to recruiting pipeline`);
+      const emailSent = (data as any)._emailSent;
+
+      if (emailSent) {
+        showToast.success(
+          `Successfully added ${name}. A password reset email has been sent to ${data.email}. They should check their inbox (and spam folder) for login instructions.`,
+          { duration: 8000 }
+        );
+      } else {
+        showToast.warning(
+          `Added ${name} but the invite email could not be sent. Use the "Resend Invite" button in their profile to send login instructions.`,
+          { duration: 8000 }
+        );
+      }
+
       queryClient.invalidateQueries({ queryKey: ['recruits'] });
       queryClient.invalidateQueries({ queryKey: ['recruiting-stats'] });
     },

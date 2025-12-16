@@ -27,6 +27,7 @@ import {
 import { ReportsPage } from "./features/reports";
 import AdminControlCenter from "./features/admin/components/AdminControlCenter";
 import { PermissionGuard } from "./components/auth/PermissionGuard";
+import { RouteGuard } from "./components/auth/RouteGuard";
 import {
   OverrideDashboard,
   DownlinePerformance,
@@ -50,18 +51,26 @@ const rootRoute = createRootRoute({
   ),
 });
 
-// Dashboard/Home route
+// Dashboard/Home route - requires approval, blocks recruits
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/",
-  component: DashboardHome,
+  component: () => (
+    <RouteGuard permission="nav.dashboard" noRecruits>
+      <DashboardHome />
+    </RouteGuard>
+  ),
 });
 
-// Dashboard route (alias for home)
+// Dashboard route (alias for home) - requires approval, blocks recruits
 const dashboardRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "dashboard",
-  component: DashboardHome,
+  component: () => (
+    <RouteGuard permission="nav.dashboard" noRecruits>
+      <DashboardHome />
+    </RouteGuard>
+  ),
 });
 
 // Login route with success handler
@@ -100,18 +109,26 @@ const verifyEmailRoute = createRoute({
   component: EmailVerificationPending,
 });
 
-// Policies route
+// Policies route - requires approval, blocks recruits
 const policiesRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "policies",
-  component: PolicyDashboard,
+  component: () => (
+    <RouteGuard permission="nav.policies" noRecruits>
+      <PolicyDashboard />
+    </RouteGuard>
+  ),
 });
 
-// Analytics route
+// Analytics route - requires approval, blocks recruits
 const analyticsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "analytics",
-  component: AnalyticsDashboard,
+  component: () => (
+    <RouteGuard permission="nav.dashboard" noRecruits>
+      <AnalyticsDashboard />
+    </RouteGuard>
+  ),
 });
 
 // Comp Guide route - Admin only (manages carriers, products, commission rates)
@@ -119,38 +136,54 @@ const compGuideRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "comps",
   component: () => (
-    <PermissionGuard permission="carriers.manage">
+    <RouteGuard permission="carriers.manage" noRecruits>
       <CompGuide />
-    </PermissionGuard>
+    </RouteGuard>
   ),
 });
 
-// Settings route
+// Settings route - allow pending users
 const settingsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "settings",
-  component: SettingsDashboard,
+  component: () => (
+    <RouteGuard allowPending>
+      <SettingsDashboard />
+    </RouteGuard>
+  ),
 });
 
-// Targets route
+// Targets route - requires approval, blocks recruits
 const targetsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "targets",
-  component: TargetsPage,
+  component: () => (
+    <RouteGuard permission="nav.dashboard" noRecruits>
+      <TargetsPage />
+    </RouteGuard>
+  ),
 });
 
-// Reports route
+// Reports route - requires approval, blocks recruits
 const reportsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "reports",
-  component: ReportsPage,
+  component: () => (
+    <RouteGuard permission="nav.downline_reports" noRecruits>
+      <ReportsPage />
+    </RouteGuard>
+  ),
 });
 
-// Expenses route
+// Expenses route - requires approval, blocks recruits
 const expensesRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "expenses",
-  component: ExpenseDashboardCompact,
+  component: () => (
+    <RouteGuard permission="expenses.read.own" noRecruits>
+      <ExpenseDashboardCompact />
+    </RouteGuard>
+  ),
 });
 
 // Test route for debugging comp guide - Super-admin only
@@ -158,9 +191,9 @@ const testCompGuideRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "test-comp",
   component: () => (
-    <PermissionGuard requireEmail="nick@nickneessen.com">
+    <RouteGuard requireEmail="nick@nickneessen.com">
       <TestCompGuide />
-    </PermissionGuard>
+    </RouteGuard>
   ),
 });
 
@@ -183,9 +216,9 @@ const adminRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "admin",
   component: () => (
-    <PermissionGuard permission="nav.user_management">
+    <RouteGuard permission="nav.user_management" noRecruits>
       <AdminControlCenter />
-    </PermissionGuard>
+    </RouteGuard>
   ),
 });
 
@@ -200,56 +233,85 @@ const authDiagnosticRoute = createRoute({
       })),
     );
     return (
-      <PermissionGuard requireEmail="nick@nickneessen.com">
+      <RouteGuard requireEmail="nick@nickneessen.com">
         <AuthDiagnostic />
-      </PermissionGuard>
+      </RouteGuard>
     );
   },
 });
 
 // Hierarchy routes - Agency hierarchy and override commissions
+// All hierarchy routes require approval and block recruits
 const hierarchyIndexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "hierarchy",
-  component: HierarchyDashboardCompact,
+  component: () => (
+    <RouteGuard permission="nav.team_dashboard" noRecruits>
+      <HierarchyDashboardCompact />
+    </RouteGuard>
+  ),
 });
 
 const hierarchyTreeRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "hierarchy/tree",
-  component: HierarchyDashboardCompact, // Using compact version for consistency
+  component: () => (
+    <RouteGuard permission="nav.team_dashboard" noRecruits>
+      <HierarchyDashboardCompact />
+    </RouteGuard>
+  ),
 });
 
 const hierarchyOverridesRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "hierarchy/overrides",
-  component: OverrideDashboard,
+  component: () => (
+    <RouteGuard permission="nav.team_dashboard" noRecruits>
+      <OverrideDashboard />
+    </RouteGuard>
+  ),
 });
 
 const hierarchyDownlinesRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "hierarchy/downlines",
-  component: DownlinePerformance,
+  component: () => (
+    <RouteGuard permission="nav.team_dashboard" noRecruits>
+      <DownlinePerformance />
+    </RouteGuard>
+  ),
 });
 
 const hierarchyManageRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "hierarchy/manage",
-  component: HierarchyManagement,
+  component: () => (
+    <RouteGuard permission="nav.team_dashboard" noRecruits>
+      <HierarchyManagement />
+    </RouteGuard>
+  ),
 });
 
 // Agent detail route - View individual agent information
 const agentDetailRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "hierarchy/agent/$agentId",
-  component: AgentDetailPage,
+  component: () => (
+    <RouteGuard permission="nav.team_dashboard" noRecruits>
+      <AgentDetailPage />
+    </RouteGuard>
+  ),
 });
 
-// Recruiting route
+// Recruiting route - requires approval, blocks recruits (admin/recruiter view)
 const recruitingRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "recruiting",
-  component: RecruitingDashboard,
+  component: () => (
+    <RouteGuard permission="nav.recruiting_pipeline" noRecruits>
+      <RecruitingDashboard />
+    </RouteGuard>
+  ),
 });
 
 // Recruiting admin route - pipeline management - Super-admin only
@@ -257,17 +319,21 @@ const recruitingAdminRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "recruiting/admin/pipelines",
   component: () => (
-    <PermissionGuard requireEmail="nick@nickneessen.com">
+    <RouteGuard requireEmail="nick@nickneessen.com">
       <PipelineAdminPage />
-    </PermissionGuard>
+    </RouteGuard>
   ),
 });
 
-// My Pipeline route - Recruit-specific dashboard
+// My Pipeline route - Recruit-only dashboard (allows pending, recruit access only)
 const myPipelineRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "recruiting/my-pipeline",
-  component: MyRecruitingPipeline,
+  component: () => (
+    <RouteGuard recruitOnly allowPending>
+      <MyRecruitingPipeline />
+    </RouteGuard>
+  ),
 });
 
 // Training Hub route - for trainers and contracting managers
@@ -275,9 +341,9 @@ const trainingHubRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "training-hub",
   component: () => (
-    <PermissionGuard permission="nav.training_hub">
+    <RouteGuard permission="nav.training_hub" noRecruits>
       <TrainingHubPage />
-    </PermissionGuard>
+    </RouteGuard>
   ),
 });
 

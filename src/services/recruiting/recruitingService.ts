@@ -186,9 +186,10 @@ export const recruitingService = {
     let authUserId: string | null = null;
     let newRecruit: UserProfile;
 
+    let emailSent = false;
     try {
       // Create auth user - this will trigger automatic user_profile creation
-      const authUser = await createAuthUserWithProfile({
+      const authResult = await createAuthUserWithProfile({
         email: recruit.email,
         fullName,
         roles,
@@ -196,7 +197,8 @@ export const recruitingService = {
         skipPipeline: skip_pipeline || false
       });
 
-      authUserId = authUser.id;
+      authUserId = authResult.user.id;
+      emailSent = authResult.emailSent;
 
       // Update the auto-created profile with recruit-specific data
       const { data, error } = await supabase
@@ -267,7 +269,8 @@ export const recruitingService = {
       timestamp: new Date().toISOString()
     });
 
-    return newRecruit;
+    // Return recruit with emailSent status for UI feedback
+    return { ...newRecruit, _emailSent: emailSent };
   },
 
   async updateRecruit(id: string, updates: UpdateRecruitInput) {

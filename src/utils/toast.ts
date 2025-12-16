@@ -2,23 +2,48 @@
 
 import toast from 'react-hot-toast';
 
+interface ToastOptions {
+  duration?: number;
+}
+
 /**
  * Toast notification utility
  * Wraps react-hot-toast with consistent styling and behavior
  */
 
 export const showToast = {
-  success: (message: string) => {
+  success: (message: string, options?: ToastOptions) => {
     toast.success(message, {
-      duration: 4000,
+      duration: options?.duration ?? 4000,
       position: 'top-right',
     });
   },
 
-  error: (message: string) => {
+  error: (message: string, options?: ToastOptions) => {
     toast.error(message, {
-      duration: 6000,
+      duration: options?.duration ?? 6000,
       position: 'top-right',
+    });
+  },
+
+  warning: (message: string, options?: ToastOptions) => {
+    toast(message, {
+      duration: options?.duration ?? 5000,
+      position: 'top-right',
+      icon: '⚠️',
+      style: {
+        background: '#fef3c7',
+        color: '#92400e',
+        border: '1px solid #fcd34d',
+      },
+    });
+  },
+
+  info: (message: string, options?: ToastOptions) => {
+    toast(message, {
+      duration: options?.duration ?? 4000,
+      position: 'top-right',
+      icon: 'ℹ️',
     });
   },
 

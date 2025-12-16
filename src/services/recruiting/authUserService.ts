@@ -24,9 +24,20 @@ export interface CreateAuthUserParams {
   skipPipeline?: boolean;
 }
 
+export interface CreateAuthUserResult {
+  user: {
+    id: string;
+    email: string;
+    [key: string]: any;
+  };
+  emailSent: boolean;
+  message: string;
+}
+
 /**
  * Creates an auth user with corresponding user profile
  * This ensures both auth.users and user_profiles entries are created
+ * Returns the user info and whether the password reset email was sent
  */
 export async function createAuthUserWithProfile({
   email,
@@ -34,7 +45,7 @@ export async function createAuthUserWithProfile({
   roles,
   isAdmin = false,
   skipPipeline = false
-}: CreateAuthUserParams) {
+}: CreateAuthUserParams): Promise<CreateAuthUserResult> {
   try {
     // Call Edge Function to create user with proper password reset email
     const { data, error } = await supabaseClient.functions.invoke('create-auth-user', {
@@ -56,7 +67,11 @@ export async function createAuthUserWithProfile({
       throw new Error('No user returned from auth creation');
     }
 
-    return data.user;
+    return {
+      user: data.user,
+      emailSent: data.emailSent ?? false,
+      message: data.message ?? 'User created'
+    };
   } catch (error) {
     console.error('Create auth user with profile error:', error);
     throw error;

@@ -18,16 +18,19 @@ import {
   Shield,
   ClipboardList,
   GraduationCap,
+  Lock,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { usePermissionCheck } from "@/hooks/permissions/usePermissions";
+import { useAuthorizationStatus } from "@/hooks/admin/useUserApproval";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/services/base/supabase";
 import type { PermissionCode } from "@/types/permissions.types";
 import type { RoleName } from "@/types/permissions.types";
 import { NotificationDropdown } from "@/components/notifications";
+import { toast } from "sonner";
 
 interface NavigationItem {
   icon: React.ElementType;
@@ -84,6 +87,7 @@ export default function Sidebar({
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const { can, isLoading } = usePermissionCheck();
+  const { isPending, isLoading: authStatusLoading } = useAuthorizationStatus();
   const { user } = useAuth();
 
   // Fetch user roles from profile
@@ -124,31 +128,43 @@ export default function Sidebar({
   const toggleMobile = () => setIsMobileOpen(!isMobileOpen);
   const closeMobile = () => setIsMobileOpen(false);
 
+  // Handler for locked nav item clicks (for pending users)
+  const handleLockedNavClick = () => {
+    toast.error("Your account is pending approval. Please wait for administrator approval to access this feature.");
+  };
+
   // If user is a recruit, show ONLY recruit navigation
+  // If user is pending, show ALL items but they will be rendered as locked
   const visibleNavItems = isRecruit
     ? recruitNavigationItems
-    : navigationItems.filter((item) => {
-        if (item.public) return true;
-        if (!item.permission) return false; // DEFAULT TO FALSE FOR SECURITY
-        if (isLoading) return false;
-        return can(item.permission);
-      });
+    : isPending
+      ? navigationItems // Show all items for pending users (will be rendered as locked)
+      : navigationItems.filter((item) => {
+          if (item.public) return true;
+          if (!item.permission) return false; // DEFAULT TO FALSE FOR SECURITY
+          if (isLoading) return false;
+          return can(item.permission);
+        });
 
   const visibleTrainingItems = isRecruit
     ? []
-    : trainingNavigationItems.filter((item) => {
-        if (!item.permission) return false;
-        if (isLoading) return false;
-        return can(item.permission);
-      });
+    : isPending
+      ? trainingNavigationItems // Show all for pending (will be locked)
+      : trainingNavigationItems.filter((item) => {
+          if (!item.permission) return false;
+          if (isLoading) return false;
+          return can(item.permission);
+        });
 
   const visibleAdminItems = isRecruit
     ? []
-    : adminNavigationItems.filter((item) => {
-        if (!item.permission) return false;
-        if (isLoading) return false;
-        return can(item.permission);
-      });
+    : isPending
+      ? adminNavigationItems // Show all for pending (will be locked)
+      : adminNavigationItems.filter((item) => {
+          if (!item.permission) return false;
+          if (isLoading) return false;
+          return can(item.permission);
+        });
 
   return (
     <>
@@ -233,6 +249,36 @@ export default function Sidebar({
           {/* Main Navigation Items */}
           {visibleNavItems.map((item) => {
             const Icon = item.icon;
+            // Check if this item should be locked (pending user + not a public item)
+            const isLocked = isPending && !item.public;
+
+            if (isLocked) {
+              // Render locked nav item for pending users
+              return (
+                <div
+                  key={item.href}
+                  className={`relative mb-1 ${isCollapsed ? "mx-auto" : ""}`}
+                  onClick={handleLockedNavClick}
+                >
+                  <Button
+                    variant="ghost"
+                    className={`h-9 ${isCollapsed ? "w-9 p-0" : "w-full justify-start px-3"} opacity-50 cursor-not-allowed`}
+                    title={isCollapsed ? `${item.label} (Locked)` : ""}
+                  >
+                    <Icon size={16} className={`${isCollapsed ? "" : "mr-2.5"} text-muted-foreground`} />
+                    {!isCollapsed && (
+                      <span className="text-sm blur-[0.5px] text-muted-foreground">{item.label}</span>
+                    )}
+                  </Button>
+                  <Lock
+                    size={12}
+                    className={`absolute ${isCollapsed ? "bottom-0 right-0" : "right-2 top-1/2 -translate-y-1/2"} text-muted-foreground/70`}
+                  />
+                </div>
+              );
+            }
+
+            // Render normal nav item
             return (
               <Link
                 key={item.href}
@@ -266,6 +312,33 @@ export default function Sidebar({
           {/* Training Hub Navigation Items */}
           {visibleTrainingItems.map((item) => {
             const Icon = item.icon;
+            const isLocked = isPending && !item.public;
+
+            if (isLocked) {
+              return (
+                <div
+                  key={item.href}
+                  className={`relative mb-1 ${isCollapsed ? "mx-auto" : ""}`}
+                  onClick={handleLockedNavClick}
+                >
+                  <Button
+                    variant="ghost"
+                    className={`h-9 ${isCollapsed ? "w-9 p-0" : "w-full justify-start px-3"} opacity-50 cursor-not-allowed`}
+                    title={isCollapsed ? `${item.label} (Locked)` : ""}
+                  >
+                    <Icon size={16} className={`${isCollapsed ? "" : "mr-2.5"} text-muted-foreground`} />
+                    {!isCollapsed && (
+                      <span className="text-sm blur-[0.5px] text-muted-foreground">{item.label}</span>
+                    )}
+                  </Button>
+                  <Lock
+                    size={12}
+                    className={`absolute ${isCollapsed ? "bottom-0 right-0" : "right-2 top-1/2 -translate-y-1/2"} text-muted-foreground/70`}
+                  />
+                </div>
+              );
+            }
+
             return (
               <Link
                 key={item.href}
@@ -294,6 +367,33 @@ export default function Sidebar({
           {/* Admin Navigation Items */}
           {visibleAdminItems.map((item) => {
             const Icon = item.icon;
+            const isLocked = isPending && !item.public;
+
+            if (isLocked) {
+              return (
+                <div
+                  key={item.href}
+                  className={`relative mb-1 ${isCollapsed ? "mx-auto" : ""}`}
+                  onClick={handleLockedNavClick}
+                >
+                  <Button
+                    variant="ghost"
+                    className={`h-9 ${isCollapsed ? "w-9 p-0" : "w-full justify-start px-3"} opacity-50 cursor-not-allowed`}
+                    title={isCollapsed ? `${item.label} (Locked)` : ""}
+                  >
+                    <Icon size={16} className={`${isCollapsed ? "" : "mr-2.5"} text-muted-foreground`} />
+                    {!isCollapsed && (
+                      <span className="text-sm blur-[0.5px] text-muted-foreground">{item.label}</span>
+                    )}
+                  </Button>
+                  <Lock
+                    size={12}
+                    className={`absolute ${isCollapsed ? "bottom-0 right-0" : "right-2 top-1/2 -translate-y-1/2"} text-muted-foreground/70`}
+                  />
+                </div>
+              );
+            }
+
             return (
               <Link
                 key={item.href}

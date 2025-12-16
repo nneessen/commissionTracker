@@ -8,7 +8,7 @@ import {Card} from '@/components/ui/card';
 import {Badge} from '@/components/ui/badge';
 import {Skeleton} from '@/components/ui/skeleton';
 import {Avatar, AvatarFallback, AvatarImage} from '@/components/ui/avatar';
-import {Mail, Phone, FileText, Activity, ArrowRight, AlertCircle, User, Instagram, Linkedin, Trash2} from 'lucide-react';
+import {Mail, Phone, FileText, Activity, ArrowRight, AlertCircle, User, Instagram, Linkedin, Trash2, SendHorizontal, Loader2} from 'lucide-react';
 import {DeleteRecruitDialogOptimized} from './DeleteRecruitDialog.optimized';
 import {useRouter} from '@tanstack/react-router';
 import {PhaseTimeline} from './PhaseTimeline';
@@ -23,6 +23,8 @@ import {useRecruitDocuments} from '../hooks/useRecruitDocuments';
 import {useRecruitEmails} from '../hooks/useRecruitEmails';
 import {useRecruitActivityLog} from '../hooks/useRecruitActivity';
 import {ONBOARDING_STATUS_COLORS} from '@/types/recruiting.types';
+import {supabase} from '@/services/base/supabase';
+import {showToast} from '@/utils/toast';
 
 // Default pipeline template ID (from seed migration)
 const DEFAULT_TEMPLATE_ID = '00000000-0000-0000-0000-000000000001';
@@ -38,6 +40,7 @@ export function RecruitDetailPanel({ recruit, currentUserId, isUpline = false, o
   const [activeTab, setActiveTab] = useState('progress');
   const [selectedPhaseId, setSelectedPhaseId] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [resendingInvite, setResendingInvite] = useState(false);
   const _router = useRouter();
 
   // Get current user profile to check roles
@@ -103,6 +106,35 @@ export function RecruitDetailPanel({ recruit, currentUserId, isUpline = false, o
   const handleDeleteSuccess = () => {
     // Call parent callback to clear the selection
     onRecruitDeleted?.();
+  };
+
+  const handleResendInvite = async () => {
+    if (!recruit.email) {
+      showToast.error('No email address available for this recruit');
+      return;
+    }
+
+    setResendingInvite(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(recruit.email, {
+        redirectTo: `${window.location.origin}/auth/reset-password`,
+      });
+
+      if (error) {
+        console.error('Resend invite error:', error);
+        showToast.error(`Failed to send invite email: ${error.message}`);
+      } else {
+        showToast.success(
+          `Invite email sent to ${recruit.email}. They should check their inbox (and spam folder) for login instructions.`,
+          { duration: 6000 }
+        );
+      }
+    } catch (err) {
+      console.error('Resend invite error:', err);
+      showToast.error('Failed to send invite email. Please try again.');
+    } finally {
+      setResendingInvite(false);
+    }
   };
 
   const isLoading = progressLoading || currentPhaseLoading || templateLoading;
@@ -259,6 +291,22 @@ export function RecruitDetailPanel({ recruit, currentUserId, isUpline = false, o
                 {initializeProgress.isPending ? 'Initializing...' : 'Initialize Pipeline'}
               </Button>
             )}
+            {/* Resend Invite button - sends password reset email */}
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleResendInvite}
+              disabled={resendingInvite || !recruit.email}
+              className="text-xs h-7"
+              title="Send password reset email so recruit can login"
+            >
+              {resendingInvite ? (
+                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+              ) : (
+                <SendHorizontal className="h-3 w-3 mr-1" />
+              )}
+              {resendingInvite ? 'Sending...' : 'Resend Invite'}
+            </Button>
             <div className="flex-1" />
             {/* Delete button - but prevent self-deletion */}
             {currentUserId !== recruit.id ? (
