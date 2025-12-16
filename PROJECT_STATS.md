@@ -1,15 +1,15 @@
 # Project Statistics
 
-Last Updated: 2025-12-15 18:01:57
+Last Updated: 2025-12-16 09:05:36
 
 ## Metrics
-- Total Files: 28326
-- Total Lines of Code: 103960
-- Total Commits: 332
+- Total Files: 28327
+- Total Lines of Code: 104107
+- Total Commits: 335
 
 ## Recent Activity
+0c92c41 fix(email): fix recruiting email system visibility, security, and styling
+0484b8d feat(auth): add route protection, pending user lock UI, and recruit invite flow improvements
+289574e docs: multiple changes in .,.serena/memories,src/services/users
 fcfc67f docs: multiple changes in .,plans/active,src
 370387e docs: multiple changes in .,.serena/memories,src/features/policies
-206ca87 fix(recruiting): remove invalid is_deleted filter causing 400 errors
-2bbebf1 fix(db): fix has_permission column reference and add policy-client cascade delete
-6e99fc5 fix(types): use correct ApprovalStatus type in AddUserDialog

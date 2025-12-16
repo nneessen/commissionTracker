@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-12-16 09:05:36
+
+### Changed Files
+- `supabase/migrations/20251216_002_fix_agent_role_permissions.sql`
+- `tsconfig.tsbuildinfo`
+
+### Statistics
+```
+ 2 files changed, 55 insertions(+), 1 deletion(-)
+```
+
 ## [Checkpoint] - 2025-12-15 18:01:57
 
 ### Changed Files
