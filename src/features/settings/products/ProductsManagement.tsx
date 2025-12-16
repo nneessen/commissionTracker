@@ -1,23 +1,47 @@
-import React, { useState } from 'react';
-import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '@/components/ui/card';
-import {Button} from '@/components/ui/button';
-import {Input} from '@/components/ui/input';
-import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from '@/components/ui/table';
-import {Badge} from '@/components/ui/badge';
-import {AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle} from '@/components/ui/alert-dialog';
-import {Plus, Search, Edit, Trash2, Upload} from 'lucide-react';
-import {useProducts, Product} from './hooks/useProducts';
-import {useCarriers} from '../carriers/hooks/useCarriers';
-import {ProductForm} from './components/ProductForm';
-import {ProductBulkImport} from './components/ProductBulkImport';
-import {ProductFormData} from '../../../types/product.types';
+// src/features/settings/products/ProductsManagement.tsx
+import React, { useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Plus, Search, Edit, Trash2, Upload, Package } from "lucide-react";
+import { useProducts, Product } from "./hooks/useProducts";
+import { useCarriers } from "../carriers/hooks/useCarriers";
+import { ProductForm } from "./components/ProductForm";
+import { ProductBulkImport } from "./components/ProductBulkImport";
+import { ProductFormData } from "../../../types/product.types";
 
 export function ProductsManagement() {
-  const { products, isLoading, createProduct, updateProduct, deleteProduct, bulkImportProducts } = useProducts();
+  const {
+    products,
+    isLoading,
+    createProduct,
+    updateProduct,
+    deleteProduct,
+    bulkImportProducts,
+  } = useProducts();
   const { carriers } = useCarriers();
 
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterCarrierId, setFilterCarrierId] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterCarrierId, setFilterCarrierId] = useState("");
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -27,19 +51,21 @@ export function ProductsManagement() {
   let filteredProducts = products;
 
   if (filterCarrierId) {
-    filteredProducts = filteredProducts.filter(p => p.carrier_id === filterCarrierId);
+    filteredProducts = filteredProducts.filter(
+      (p) => p.carrier_id === filterCarrierId,
+    );
   }
 
   if (searchTerm) {
     const search = searchTerm.toLowerCase();
-    filteredProducts = filteredProducts.filter(
-      (product) => product.name.toLowerCase().includes(search)
+    filteredProducts = filteredProducts.filter((product) =>
+      product.name.toLowerCase().includes(search),
     );
   }
 
   // Get carrier name by ID
   const getCarrierName = (carrierId: string) => {
-    return carriers.find(c => c.id === carrierId)?.name || 'Unknown';
+    return carriers.find((c) => c.id === carrierId)?.name || "Unknown";
   };
 
   const handleAddProduct = () => {
@@ -83,8 +109,10 @@ export function ProductsManagement() {
   if (isLoading) {
     return (
       <Card>
-        <CardContent className="p-8 text-center">
-          <p className="text-muted-foreground">Loading products...</p>
+        <CardContent className="p-3">
+          <div className="flex items-center justify-center py-4 text-muted-foreground text-[11px]">
+            Loading products...
+          </div>
         </CardContent>
       </Card>
     );
@@ -93,46 +121,58 @@ export function ProductsManagement() {
   return (
     <>
       <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Products</CardTitle>
-              <CardDescription>
-                Manage insurance products and their details
-              </CardDescription>
+        <CardContent className="p-3">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Package className="h-3.5 w-3.5 text-muted-foreground" />
+              <span className="text-[11px] font-medium text-muted-foreground uppercase">
+                Products
+              </span>
+              <span className="text-[10px] text-muted-foreground">
+                ({products.length})
+              </span>
             </div>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setIsBulkImportOpen(true)}>
-                <Upload className="h-4 w-4 mr-2" />
-                Bulk Import
+            <div className="flex gap-1">
+              <Button
+                variant="outline"
+                onClick={() => setIsBulkImportOpen(true)}
+                size="sm"
+                className="h-6 px-2 text-[10px]"
+              >
+                <Upload className="h-3 w-3 mr-1" />
+                Import
               </Button>
-              <Button onClick={handleAddProduct}>
-                <Plus className="h-4 w-4 mr-2" />
+              <Button
+                onClick={handleAddProduct}
+                size="sm"
+                className="h-6 px-2 text-[10px]"
+              >
+                <Plus className="h-3 w-3 mr-1" />
                 New Product
               </Button>
             </div>
           </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
+
           {/* Filters */}
-          <div className="flex gap-4">
+          <div className="flex gap-2 mb-2">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Search className="absolute left-2 top-1/2 h-3 w-3 -translate-y-1/2 text-muted-foreground" />
               <Input
                 type="text"
                 placeholder="Search products..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9"
+                className="pl-7 h-7 text-[11px]"
               />
             </div>
             <select
               value={filterCarrierId}
               onChange={(e) => setFilterCarrierId(e.target.value)}
-              className="h-10 px-3 border rounded-md min-w-[200px]"
+              className="h-7 px-2 text-[11px] border rounded bg-background min-w-[140px]"
             >
               <option value="">All Carriers</option>
-              {carriers.map(carrier => (
+              {carriers.map((carrier) => (
                 <option key={carrier.id} value={carrier.id}>
                   {carrier.name}
                 </option>
@@ -141,58 +181,75 @@ export function ProductsManagement() {
           </div>
 
           {/* Table */}
-          <div className="rounded-md border">
+          <div className="rounded border">
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Product Name</TableHead>
-                  <TableHead>Carrier</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="text-[10px] h-7">
+                    Product Name
+                  </TableHead>
+                  <TableHead className="text-[10px] h-7">Carrier</TableHead>
+                  <TableHead className="text-[10px] h-7">Type</TableHead>
+                  <TableHead className="text-[10px] h-7">Status</TableHead>
+                  <TableHead className="text-[10px] h-7 text-right">
+                    Actions
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredProducts.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                    <TableCell
+                      colSpan={5}
+                      className="text-center py-4 text-muted-foreground text-[11px]"
+                    >
                       {searchTerm || filterCarrierId
-                        ? 'No products found matching your filters.'
+                        ? "No products found matching your filters."
                         : 'No products yet. Click "New Product" to add one.'}
                     </TableCell>
                   </TableRow>
                 ) : (
                   filteredProducts.map((product) => (
                     <TableRow key={product.id}>
-                      <TableCell className="font-medium">{product.name}</TableCell>
-                      <TableCell className="text-muted-foreground">
+                      <TableCell className="text-[11px] font-medium py-1.5">
+                        {product.name}
+                      </TableCell>
+                      <TableCell className="text-[11px] text-muted-foreground py-1.5">
                         {getCarrierName(product.carrier_id)}
                       </TableCell>
-                      <TableCell>
-                        <Badge variant="outline">
-                          {product.product_type.replace('_', ' ')}
+                      <TableCell className="py-1.5">
+                        <Badge
+                          variant="outline"
+                          className="text-[9px] px-1.5 py-0"
+                        >
+                          {product.product_type.replace("_", " ")}
                         </Badge>
                       </TableCell>
-                      <TableCell>
-                        <Badge variant={product.is_active ? 'default' : 'secondary'}>
-                          {product.is_active ? 'Active' : 'Inactive'}
+                      <TableCell className="py-1.5">
+                        <Badge
+                          variant={product.is_active ? "default" : "secondary"}
+                          className="text-[9px] px-1.5 py-0"
+                        >
+                          {product.is_active ? "Active" : "Inactive"}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
+                      <TableCell className="text-right py-1.5">
+                        <div className="flex justify-end gap-1">
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => handleEditProduct(product)}
+                            className="h-6 w-6 p-0"
                           >
-                            <Edit className="h-4 w-4" />
+                            <Edit className="h-3 w-3" />
                           </Button>
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => handleDeleteClick(product)}
+                            className="h-6 w-6 p-0"
                           >
-                            <Trash2 className="h-4 w-4 text-destructive" />
+                            <Trash2 className="h-3 w-3 text-destructive" />
                           </Button>
                         </div>
                       </TableCell>
@@ -223,30 +280,42 @@ export function ProductsManagement() {
       />
 
       {/* Delete Dialog */}
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+      <AlertDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Product?</AlertDialogTitle>
-            <AlertDialogDescription className="space-y-2">
+            <AlertDialogTitle className="text-sm">
+              Delete Product?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-[11px] space-y-1">
               <p>
-                Are you sure you want to delete <strong>{selectedProduct?.name}</strong>?
+                Are you sure you want to delete{" "}
+                <strong>{selectedProduct?.name}</strong>?
               </p>
-              <p className="text-sm text-muted-foreground">
-                This will also delete all associated commission rates. This action cannot be undone.
+              <p className="text-muted-foreground">
+                This will also delete all associated commission rates. This
+                action cannot be undone.
               </p>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleteProduct.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel
+              disabled={deleteProduct.isPending}
+              className="h-7 text-[11px]"
+            >
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={(e) => {
                 e.preventDefault();
                 handleDeleteConfirm();
               }}
               disabled={deleteProduct.isPending}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90 h-7 text-[11px]"
             >
-              {deleteProduct.isPending ? 'Deleting...' : 'Delete Product'}
+              {deleteProduct.isPending ? "Deleting..." : "Delete Product"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

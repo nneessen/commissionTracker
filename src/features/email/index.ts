@@ -1,12 +1,13 @@
+// src/features/email/index.ts
 // Email Feature Exports
+// NOTE: Gmail OAuth has been removed. All email sending now uses Resend via emailService.
 
-// Components
-export { EmailConnectionManager } from './components/EmailConnectionManager'
-export { EmailComposer } from './components/EmailComposer'
-export { TipTapEditor } from './components/TipTapEditor'
-export { TipTapMenuBar } from './components/TipTapMenuBar'
+// Components (kept for email composition UI)
+export { EmailComposer } from "./components/EmailComposer";
+export { TipTapEditor } from "./components/TipTapEditor";
+export { TipTapMenuBar } from "./components/TipTapMenuBar";
 
-// Block Builder
+// Block Builder (visual email template builder)
 export {
   EmailBlockBuilder,
   blocksToHtml,
@@ -15,45 +16,25 @@ export {
   BlockStylePanel,
   BlockPreview,
   VariableDropdown,
-} from './components/block-builder'
+} from "./components/block-builder";
 
-// Hooks
-export {
-  useEmailConnection,
-  useEmailConnectionStatus,
-  useEmailOAuthTokens,
-  useEmailQuota,
-  useConnectGmail,
-  useDisconnectEmail,
-  useOAuthConfig,
-  emailConnectionKeys,
-} from './hooks/useEmailConnection'
-
-// Services
-export {
-  getEmailConnectionStatus,
-  getEmailOAuthTokens,
-  initiateGmailOAuth,
-  disconnectEmail,
-  getEmailQuota,
-  isEmailConfigured,
-  getOAuthConfigStatus,
-} from './services/emailConnectionService'
-
+// Sanitization Services
 export {
   sanitizeHtml,
   sanitizeForEmail,
   stripHtml,
   containsDangerousContent,
-} from './services/sanitizationService'
+} from "./services/sanitizationService";
 
+// HTML to Text conversion
 export {
   convertHtmlToText,
   generatePreviewText,
   countWords,
   estimateReadingTime,
-} from './services/htmlToTextService'
+} from "./services/htmlToTextService";
 
+// Template CRUD
 export {
   getEmailTemplates,
   getEmailTemplate,
@@ -62,7 +43,9 @@ export {
   deleteEmailTemplate,
   duplicateEmailTemplate,
   toggleTemplateActive,
-} from './services/emailTemplateService'
+  getUserTemplateStatus,
+  getGroupedEmailTemplates,
+} from "./services/emailTemplateService";
 
 // Template Hooks
 export {
@@ -73,4 +56,4 @@ export {
   useDeleteEmailTemplate,
   useDuplicateEmailTemplate,
   useToggleTemplateActive,
-} from './hooks/useEmailTemplates'
+} from "./hooks/useEmailTemplates";

@@ -1,19 +1,28 @@
-import React, { useState } from 'react';
-import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '@/components/ui/card';
-import {Button} from '@/components/ui/button';
-import {Input} from '@/components/ui/input';
-import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from '@/components/ui/table';
-import {Badge} from '@/components/ui/badge';
-import {Plus, Search, Edit, Trash2} from 'lucide-react';
-import {useCarriers, Carrier} from './hooks/useCarriers';
-import {CarrierForm} from './components/CarrierForm';
-import {CarrierDeleteDialog} from './components/CarrierDeleteDialog';
-import {NewCarrierForm} from '../../../types/carrier.types';
+// src/features/settings/carriers/CarriersManagement.tsx
+import React, { useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Plus, Search, Edit, Trash2, Building2 } from "lucide-react";
+import { useCarriers, Carrier } from "./hooks/useCarriers";
+import { CarrierForm } from "./components/CarrierForm";
+import { CarrierDeleteDialog } from "./components/CarrierDeleteDialog";
+import { NewCarrierForm } from "../../../types/carrier.types";
 
 export function CarriersManagement() {
-  const { carriers, isLoading, createCarrier, updateCarrier, deleteCarrier } = useCarriers();
+  const { carriers, isLoading, createCarrier, updateCarrier, deleteCarrier } =
+    useCarriers();
 
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedCarrier, setSelectedCarrier] = useState<Carrier | null>(null);
@@ -26,7 +35,7 @@ export function CarriersManagement() {
     filteredCarriers = carriers.filter(
       (carrier) =>
         carrier.name.toLowerCase().includes(search) ||
-        carrier.short_name?.toLowerCase().includes(search)
+        carrier.short_name?.toLowerCase().includes(search),
     );
   }
 
@@ -72,8 +81,10 @@ export function CarriersManagement() {
   if (isLoading) {
     return (
       <Card>
-        <CardContent className="p-8 text-center">
-          <p className="text-muted-foreground">Loading carriers...</p>
+        <CardContent className="p-3">
+          <div className="flex items-center justify-center py-4 text-muted-foreground text-[11px]">
+            Loading carriers...
+          </div>
         </CardContent>
       </Card>
     );
@@ -82,86 +93,105 @@ export function CarriersManagement() {
   return (
     <>
       <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Carriers</CardTitle>
-              <CardDescription>
-                Manage insurance carriers and their information
-              </CardDescription>
+        <CardContent className="p-3">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
+              <span className="text-[11px] font-medium text-muted-foreground uppercase">
+                Carriers
+              </span>
+              <span className="text-[10px] text-muted-foreground">
+                ({carriers.length})
+              </span>
             </div>
-            <Button onClick={handleAddCarrier}>
-              <Plus className="h-4 w-4 mr-2" />
+            <Button
+              onClick={handleAddCarrier}
+              size="sm"
+              className="h-6 px-2 text-[10px]"
+            >
+              <Plus className="h-3 w-3 mr-1" />
               New Carrier
             </Button>
           </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
+
           {/* Search */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <div className="relative mb-2">
+            <Search className="absolute left-2 top-1/2 h-3 w-3 -translate-y-1/2 text-muted-foreground" />
             <Input
               type="text"
               placeholder="Search carriers..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9"
+              className="pl-7 h-7 text-[11px]"
             />
           </div>
 
           {/* Table */}
-          <div className="rounded-md border">
+          <div className="rounded border">
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Carrier Name</TableHead>
-                  <TableHead>Short Name</TableHead>
-                  <TableHead># Products</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="text-[10px] h-7">
+                    Carrier Name
+                  </TableHead>
+                  <TableHead className="text-[10px] h-7">Short Name</TableHead>
+                  <TableHead className="text-[10px] h-7"># Products</TableHead>
+                  <TableHead className="text-[10px] h-7">Status</TableHead>
+                  <TableHead className="text-[10px] h-7 text-right">
+                    Actions
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredCarriers.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                    <TableCell
+                      colSpan={5}
+                      className="text-center py-4 text-muted-foreground text-[11px]"
+                    >
                       {searchTerm
-                        ? 'No carriers found matching your search.'
+                        ? "No carriers found matching your search."
                         : 'No carriers yet. Click "New Carrier" to add one.'}
                     </TableCell>
                   </TableRow>
                 ) : (
                   filteredCarriers.map((carrier) => (
                     <TableRow key={carrier.id}>
-                      <TableCell className="font-medium">{carrier.name}</TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {carrier.short_name || '—'}
+                      <TableCell className="text-[11px] font-medium py-1.5">
+                        {carrier.name}
                       </TableCell>
-                      <TableCell>
-                        <span className="text-sm text-muted-foreground">
-                          {getProductCount(carrier.id)}
-                        </span>
+                      <TableCell className="text-[11px] text-muted-foreground py-1.5">
+                        {carrier.short_name || "—"}
                       </TableCell>
-                      <TableCell>
-                        <Badge variant={carrier.is_active ? 'default' : 'secondary'}>
-                          {carrier.is_active ? 'Active' : 'Inactive'}
+                      <TableCell className="text-[11px] text-muted-foreground py-1.5">
+                        {getProductCount(carrier.id)}
+                      </TableCell>
+                      <TableCell className="py-1.5">
+                        <Badge
+                          variant={carrier.is_active ? "default" : "secondary"}
+                          className="text-[9px] px-1.5 py-0"
+                        >
+                          {carrier.is_active ? "Active" : "Inactive"}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
+                      <TableCell className="text-right py-1.5">
+                        <div className="flex justify-end gap-1">
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => handleEditCarrier(carrier)}
+                            className="h-6 w-6 p-0"
                           >
-                            <Edit className="h-4 w-4" />
+                            <Edit className="h-3 w-3" />
                           </Button>
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => handleDeleteClick(carrier)}
+                            className="h-6 w-6 p-0"
                           >
-                            <Trash2 className="h-4 w-4 text-destructive" />
+                            <Trash2 className="h-3 w-3 text-destructive" />
                           </Button>
                         </div>
                       </TableCell>

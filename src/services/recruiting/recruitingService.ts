@@ -1,11 +1,23 @@
 // src/services/recruiting/recruitingService.ts
-import {supabase} from '../base/supabase';
-import {workflowEventEmitter, WORKFLOW_EVENTS} from '../events/workflowEventEmitter';
-import {createAuthUserWithProfile} from './authUserService';
-import type {UserProfile} from '@/types/hierarchy.types';
-import type {OnboardingPhase, UserDocument, UserEmail, UserActivityLog, RecruitFilters, UpdateRecruitInput, UpdatePhaseInput} from '@/types/recruiting.types';
-import type {CreateRecruitInput} from '@/types/recruiting.types';
-import type {SendEmailRequest} from '@/types/email.types';
+import { supabase } from "../base/supabase";
+import {
+  workflowEventEmitter,
+  WORKFLOW_EVENTS,
+} from "../events/workflowEventEmitter";
+import { createAuthUserWithProfile } from "./authUserService";
+import type { UserProfile } from "@/types/hierarchy.types";
+import type {
+  OnboardingPhase,
+  UserDocument,
+  UserEmail,
+  UserActivityLog,
+  RecruitFilters,
+  UpdateRecruitInput,
+  UpdatePhaseInput,
+} from "@/types/recruiting.types";
+import type { CreateRecruitInput } from "@/types/recruiting.types";
+import type { SendEmailRequest } from "@/types/email.types";
+import { emailService } from "@/services/email";
 
 export const recruitingService = {
   // ========================================
@@ -15,33 +27,31 @@ export const recruitingService = {
   async getRecruits(filters?: RecruitFilters, page = 1, limit = 50) {
     // FIXED: Only show users who are ACTUALLY recruits in the pipeline
     // Exclude active agents and admins even if they have onboarding_status
-    let query = supabase
-      .from('user_profiles')
-      .select(
-        `
+    let query = supabase.from("user_profiles").select(
+      `
         *,
         recruiter:recruiter_id(id, email, first_name, last_name),
         upline:upline_id(id, email, first_name, last_name),
         pipeline_template:pipeline_template_id(id, name, description)
       `,
-        { count: 'exact' }
-      );
+      { count: "exact" },
+    );
 
     // Build the filter to get ONLY recruits
     // Include users with 'recruit' role OR onboarding_status
     // BUT exclude if they have 'active_agent', 'agent' (with high contract), or 'admin' roles
     const { data: initialData, error: initialError } = await supabase
-      .from('user_profiles')
-      .select('*')
-      .or('roles.cs.{recruit},onboarding_status.not.is.null');
+      .from("user_profiles")
+      .select("*")
+      .or("roles.cs.{recruit},onboarding_status.not.is.null");
 
     if (initialError) throw initialError;
 
     // Filter out active agents and admins client-side for proper exclusion
     const recruitIds = (initialData || [])
-      .filter(u => {
-        const hasActiveAgentRole = u.roles?.includes('active_agent');
-        const hasAdminRole = u.roles?.includes('admin');
+      .filter((u) => {
+        const hasActiveAgentRole = u.roles?.includes("active_agent");
+        const hasAdminRole = u.roles?.includes("admin");
         const isAdmin = u.is_admin === true;
 
         // Exclude if they're an active agent or admin
@@ -50,9 +60,9 @@ export const recruitingService = {
         }
 
         // Include if they have recruit role OR onboarding_status
-        return u.roles?.includes('recruit') || u.onboarding_status !== null;
+        return u.roles?.includes("recruit") || u.onboarding_status !== null;
       })
-      .map(u => u.id);
+      .map((u) => u.id);
 
     // Now build the main query with just the recruit IDs
     if (recruitIds.length === 0) {
@@ -67,7 +77,7 @@ export const recruitingService = {
     }
 
     query = supabase
-      .from('user_profiles')
+      .from("user_profiles")
       .select(
         `
         *,
@@ -75,32 +85,32 @@ export const recruitingService = {
         upline:upline_id(id, email, first_name, last_name),
         pipeline_template:pipeline_template_id(id, name, description)
       `,
-        { count: 'exact' }
+        { count: "exact" },
       )
-      .in('id', recruitIds);
+      .in("id", recruitIds);
 
     // Apply filters
     if (filters?.onboarding_status && filters.onboarding_status.length > 0) {
-      query = query.in('onboarding_status', filters.onboarding_status);
+      query = query.in("onboarding_status", filters.onboarding_status);
     }
     if (filters?.current_phase && filters.current_phase.length > 0) {
-      query = query.in('current_onboarding_phase', filters.current_phase);
+      query = query.in("current_onboarding_phase", filters.current_phase);
     }
     if (filters?.recruiter_id) {
-      query = query.eq('recruiter_id', filters.recruiter_id);
+      query = query.eq("recruiter_id", filters.recruiter_id);
     }
     if (filters?.assigned_upline_id) {
-      query = query.eq('upline_id', filters.assigned_upline_id);
+      query = query.eq("upline_id", filters.assigned_upline_id);
     }
     if (filters?.search) {
       query = query.or(
-        `first_name.ilike.%${filters.search}%,last_name.ilike.%${filters.search}%,email.ilike.%${filters.search}%`
+        `first_name.ilike.%${filters.search}%,last_name.ilike.%${filters.search}%,email.ilike.%${filters.search}%`,
       );
     }
     if (filters?.date_range) {
       query = query
-        .gte('created_at', filters.date_range.start)
-        .lte('created_at', filters.date_range.end);
+        .gte("created_at", filters.date_range.start)
+        .lte("created_at", filters.date_range.end);
     }
 
     // Pagination
@@ -109,7 +119,7 @@ export const recruitingService = {
     query = query.range(from, to);
 
     // Sort by updated_at desc
-    query = query.order('updated_at', { ascending: false });
+    query = query.order("updated_at", { ascending: false });
 
     const { data, error, count } = await query;
 
@@ -126,15 +136,15 @@ export const recruitingService = {
 
   async getRecruitById(id: string) {
     const { data, error } = await supabase
-      .from('user_profiles')
+      .from("user_profiles")
       .select(
         `
         *,
         recruiter:recruiter_id(id, email, first_name, last_name),
         upline:upline_id(id, email, first_name, last_name)
-      `
+      `,
       )
-      .eq('id', id)
+      .eq("id", id)
       .single();
 
     if (error) throw error;
@@ -146,36 +156,36 @@ export const recruitingService = {
     const { skip_pipeline, ...dbFields } = recruit;
 
     // Determine role based on agent status and skip_pipeline flag
-    let roles: string[] = ['recruit']; // Default
+    let roles: string[] = ["recruit"]; // Default
     let pipelineTemplateId: string | null = null;
 
-    if (skip_pipeline || recruit.agent_status === 'not_applicable') {
+    if (skip_pipeline || recruit.agent_status === "not_applicable") {
       // Admin or non-agent roles - no pipeline
-      roles = recruit.roles || ['view_only'];
+      roles = recruit.roles || ["view_only"];
       pipelineTemplateId = null;
-    } else if (recruit.agent_status === 'licensed') {
+    } else if (recruit.agent_status === "licensed") {
       // Licensed agent - gets agent role and fast-track pipeline
-      roles = ['agent'];
+      roles = ["agent"];
 
       // Get the fast-track template
       const { data: template } = await supabase
-        .from('pipeline_templates')
-        .select('id')
-        .eq('name', 'Licensed Agent Fast-Track')
-        .eq('is_active', true)
+        .from("pipeline_templates")
+        .select("id")
+        .eq("name", "Licensed Agent Fast-Track")
+        .eq("is_active", true)
         .single();
 
       pipelineTemplateId = template?.id || null;
     } else {
       // Unlicensed recruit - gets standard pipeline
-      roles = ['recruit'];
+      roles = ["recruit"];
 
       // Get the standard template
       const { data: template } = await supabase
-        .from('pipeline_templates')
-        .select('id')
-        .eq('name', 'Standard Recruiting Pipeline')
-        .eq('is_active', true)
+        .from("pipeline_templates")
+        .select("id")
+        .eq("name", "Standard Recruiting Pipeline")
+        .eq("is_active", true)
         .single();
 
       pipelineTemplateId = template?.id || null;
@@ -194,7 +204,7 @@ export const recruitingService = {
         fullName,
         roles,
         isAdmin: recruit.is_admin || false,
-        skipPipeline: skip_pipeline || false
+        skipPipeline: skip_pipeline || false,
       });
 
       authUserId = authResult.user.id;
@@ -202,50 +212,56 @@ export const recruitingService = {
 
       // Update the auto-created profile with recruit-specific data
       const { data, error } = await supabase
-        .from('user_profiles')
+        .from("user_profiles")
         .update({
           ...dbFields,
           roles,
-          agent_status: recruit.agent_status || 'unlicensed',
+          agent_status: recruit.agent_status || "unlicensed",
           pipeline_template_id: pipelineTemplateId,
           licensing_info: recruit.licensing_info || {},
-          onboarding_status: skip_pipeline ? null : 'interview_1',
-          current_onboarding_phase: skip_pipeline ? null : 'initial_contact',
-          onboarding_started_at: skip_pipeline ? null : new Date().toISOString(),
+          onboarding_status: skip_pipeline ? null : "interview_1",
+          current_onboarding_phase: skip_pipeline ? null : "initial_contact",
+          onboarding_started_at: skip_pipeline
+            ? null
+            : new Date().toISOString(),
           // Note: id = authUserId (same UUID, no separate user_id column)
           // Required hierarchy fields (set defaults)
-          hierarchy_path: '', // Will be updated by trigger
+          hierarchy_path: "", // Will be updated by trigger
           hierarchy_depth: 0, // Will be updated by trigger
-          approval_status: 'pending',
+          approval_status: "pending",
           is_admin: recruit.is_admin || false,
         })
-        .eq('id', authUserId)
+        .eq("id", authUserId)
         .select()
         .single();
 
       if (error) throw error;
       newRecruit = data as UserProfile;
-
     } catch (authError) {
       // Fallback: Create profile without auth user (for leads/prospects)
-      console.warn('Auth user creation failed, creating profile-only recruit:', authError);
+      console.warn(
+        "Auth user creation failed, creating profile-only recruit:",
+        authError,
+      );
 
       const { data, error } = await supabase
-        .from('user_profiles')
+        .from("user_profiles")
         .insert({
           ...dbFields,
           roles,
-          agent_status: recruit.agent_status || 'unlicensed',
+          agent_status: recruit.agent_status || "unlicensed",
           pipeline_template_id: pipelineTemplateId,
           licensing_info: recruit.licensing_info || {},
-          onboarding_status: skip_pipeline ? null : 'interview_1',
-          current_onboarding_phase: skip_pipeline ? null : 'initial_contact',
-          onboarding_started_at: skip_pipeline ? null : new Date().toISOString(),
+          onboarding_status: skip_pipeline ? null : "interview_1",
+          current_onboarding_phase: skip_pipeline ? null : "initial_contact",
+          onboarding_started_at: skip_pipeline
+            ? null
+            : new Date().toISOString(),
           // Note: Without auth user, profile id is auto-generated
           // Required hierarchy fields (set defaults)
-          hierarchy_path: '',
+          hierarchy_path: "",
           hierarchy_depth: 0,
-          approval_status: 'pending',
+          approval_status: "pending",
           is_admin: recruit.is_admin || false,
         })
         .select()
@@ -266,7 +282,7 @@ export const recruitingService = {
       agentStatus: newRecruit.agent_status,
       onboardingStatus: newRecruit.onboarding_status,
       createdAt: new Date().toISOString(),
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
 
     // Return recruit with emailSent status for UI feedback
@@ -276,16 +292,16 @@ export const recruitingService = {
   async updateRecruit(id: string, updates: UpdateRecruitInput) {
     // Get current recruit data to check for status changes
     const { data: currentRecruit } = await supabase
-      .from('user_profiles')
-      .select('*')
-      .eq('id', id)
+      .from("user_profiles")
+      .select("*")
+      .eq("id", id)
       .single();
 
     // Update the recruit
     const { data, error } = await supabase
-      .from('user_profiles')
+      .from("user_profiles")
       .update(updates)
-      .eq('id', id)
+      .eq("id", id)
       .select()
       .single();
 
@@ -309,27 +325,30 @@ export const recruitingService = {
           newPhase: newStatus,
           recruiterId: updatedRecruit.recruiter_id || undefined,
           uplineId: updatedRecruit.upline_id || undefined,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         });
 
         // Check for graduation (completed status)
-        if (newStatus === 'completed') {
-          await workflowEventEmitter.emit(WORKFLOW_EVENTS.RECRUIT_GRADUATED_TO_AGENT, {
-            recruitId: id,
-            userId: updatedRecruit.id,
-            userEmail: updatedRecruit.email,
-            recruitName: `${updatedRecruit.first_name} ${updatedRecruit.last_name}`,
-            graduatedAt: new Date().toISOString(),
-            recruiterId: updatedRecruit.recruiter_id || undefined,
-            uplineId: updatedRecruit.upline_id || undefined,
-            agentStatus: updatedRecruit.agent_status,
-            licensingInfo: updatedRecruit.licensing_info,
-            timestamp: new Date().toISOString()
-          });
+        if (newStatus === "completed") {
+          await workflowEventEmitter.emit(
+            WORKFLOW_EVENTS.RECRUIT_GRADUATED_TO_AGENT,
+            {
+              recruitId: id,
+              userId: updatedRecruit.id,
+              userEmail: updatedRecruit.email,
+              recruitName: `${updatedRecruit.first_name} ${updatedRecruit.last_name}`,
+              graduatedAt: new Date().toISOString(),
+              recruiterId: updatedRecruit.recruiter_id || undefined,
+              uplineId: updatedRecruit.upline_id || undefined,
+              agentStatus: updatedRecruit.agent_status,
+              licensingInfo: updatedRecruit.licensing_info,
+              timestamp: new Date().toISOString(),
+            },
+          );
         }
 
         // Check for dropout
-        if (newStatus === 'dropped') {
+        if (newStatus === "dropped") {
           await workflowEventEmitter.emit(WORKFLOW_EVENTS.RECRUIT_DROPPED_OUT, {
             recruitId: id,
             userId: updatedRecruit.id,
@@ -339,7 +358,7 @@ export const recruitingService = {
             lastPhase: oldStatus,
             recruiterId: updatedRecruit.recruiter_id || undefined,
             uplineId: updatedRecruit.upline_id || undefined,
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
           });
         }
       }
@@ -350,8 +369,8 @@ export const recruitingService = {
 
   // Hard delete recruit - permanently removes user and all related data
   async deleteRecruit(id: string) {
-    const { data, error } = await supabase.rpc('admin_deleteuser', {
-      target_user_id: id
+    const { data, error } = await supabase.rpc("admin_deleteuser", {
+      target_user_id: id,
     });
 
     if (error) {
@@ -359,8 +378,8 @@ export const recruitingService = {
     }
 
     // Check if the RPC returned an error
-    if (data && typeof data === 'object' && data.success === false) {
-      throw new Error(data.error || 'Failed to delete recruit');
+    if (data && typeof data === "object" && data.success === false) {
+      throw new Error(data.error || "Failed to delete recruit");
     }
   },
 
@@ -370,10 +389,10 @@ export const recruitingService = {
 
   async getRecruitPhases(userId: string) {
     const { data, error } = await supabase
-      .from('onboarding_phases')
-      .select('*')
-      .eq('user_id', userId)
-      .order('phase_order', { ascending: true });
+      .from("onboarding_phases")
+      .select("*")
+      .eq("user_id", userId)
+      .order("phase_order", { ascending: true });
 
     if (error) throw error;
     return data as OnboardingPhase[];
@@ -381,9 +400,9 @@ export const recruitingService = {
 
   async updatePhase(phaseId: string, updates: UpdatePhaseInput) {
     const { data, error } = await supabase
-      .from('onboarding_phases')
+      .from("onboarding_phases")
       .update(updates)
-      .eq('id', phaseId)
+      .eq("id", phaseId)
       .select()
       .single();
 
@@ -397,10 +416,10 @@ export const recruitingService = {
 
   async getRecruitDocuments(userId: string) {
     const { data, error } = await supabase
-      .from('user_documents')
-      .select('*')
-      .eq('user_id', userId)
-      .order('uploaded_at', { ascending: false });
+      .from("user_documents")
+      .select("*")
+      .eq("user_id", userId)
+      .order("uploaded_at", { ascending: false });
 
     if (error) throw error;
     return data as UserDocument[];
@@ -413,21 +432,21 @@ export const recruitingService = {
     documentName: string,
     uploadedBy: string,
     required = false,
-    expiresAt?: string
+    expiresAt?: string,
   ) {
     // Upload file to Supabase Storage
     const fileName = `${Date.now()}_${file.name}`;
     const storagePath = `${userId}/${documentType}/${fileName}`;
 
     const { error: uploadError } = await supabase.storage
-      .from('user-documents')
+      .from("user-documents")
       .upload(storagePath, file);
 
     if (uploadError) throw uploadError;
 
     // Create document record
     const { data, error } = await supabase
-      .from('user_documents')
+      .from("user_documents")
       .insert({
         user_id: userId,
         document_type: documentType,
@@ -449,7 +468,7 @@ export const recruitingService = {
 
   async downloadDocument(storagePath: string) {
     const { data, error } = await supabase.storage
-      .from('user-documents')
+      .from("user-documents")
       .download(storagePath);
 
     if (error) throw error;
@@ -458,7 +477,7 @@ export const recruitingService = {
 
   async getDocumentUrl(storagePath: string) {
     const { data } = await supabase.storage
-      .from('user-documents')
+      .from("user-documents")
       .createSignedUrl(storagePath, 3600); // 1 hour expiry
 
     return data?.signedUrl || null;
@@ -467,29 +486,32 @@ export const recruitingService = {
   async deleteDocument(id: string, storagePath: string) {
     // Delete from storage
     const { error: storageError } = await supabase.storage
-      .from('user-documents')
+      .from("user-documents")
       .remove([storagePath]);
 
     if (storageError) throw storageError;
 
     // Delete record
-    const { error } = await supabase.from('user_documents').delete().eq('id', id);
+    const { error } = await supabase
+      .from("user_documents")
+      .delete()
+      .eq("id", id);
 
     if (error) throw error;
   },
 
   async updateDocumentStatus(
     id: string,
-    status: 'pending' | 'received' | 'approved' | 'rejected' | 'expired',
-    notes?: string
+    status: "pending" | "received" | "approved" | "rejected" | "expired",
+    notes?: string,
   ) {
     const { data, error } = await supabase
-      .from('user_documents')
+      .from("user_documents")
       .update({
         status,
         notes: notes || null,
       })
-      .eq('id', id)
+      .eq("id", id)
       .select()
       .single();
 
@@ -503,28 +525,43 @@ export const recruitingService = {
 
   async getRecruitEmails(userId: string) {
     const { data, error } = await supabase
-      .from('user_emails')
+      .from("user_emails")
       .select(
         `
         *,
         attachments:user_email_attachments(*)
-      `
+      `,
       )
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false });
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false });
 
     if (error) throw error;
     return data as UserEmail[];
   },
 
   async sendEmail(emailRequest: SendEmailRequest) {
-    // Call Edge Function
-    const { data, error } = await supabase.functions.invoke('send-email', {
-      body: emailRequest,
-    });
+    // Use unified emailService (Resend API)
+    const to = Array.isArray(emailRequest.to)
+      ? emailRequest.to[0]
+      : emailRequest.to;
+    const result = await emailService.sendEmail(
+      to,
+      emailRequest.subject,
+      emailRequest.bodyHtml,
+      {
+        cc: emailRequest.cc,
+        metadata: { text: emailRequest.bodyText },
+      },
+    );
 
-    if (error) throw error;
-    return data;
+    if (!result.success) {
+      throw new Error(result.error || "Failed to send email");
+    }
+
+    return {
+      success: true,
+      emailId: result.messageId,
+    };
   },
 
   // ========================================
@@ -533,10 +570,10 @@ export const recruitingService = {
 
   async getRecruitActivityLog(userId: string, limit = 50) {
     const { data, error } = await supabase
-      .from('user_activity_log')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
+      .from("user_activity_log")
+      .select("*")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
       .limit(limit);
 
     if (error) throw error;
@@ -551,10 +588,10 @@ export const recruitingService = {
     const LINKEDIN_CLIENT_ID = import.meta.env.VITE_LINKEDIN_CLIENT_ID;
     const REDIRECT_URI = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/linkedin-oauth`;
     const state = userId; // Pass userId as state
-    const scope = 'r_liteprofile r_emailaddress';
+    const scope = "r_liteprofile r_emailaddress";
 
     const authUrl = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${LINKEDIN_CLIENT_ID}&redirect_uri=${encodeURIComponent(
-      REDIRECT_URI
+      REDIRECT_URI,
     )}&state=${state}&scope=${scope}`;
 
     return authUrl;
@@ -564,10 +601,10 @@ export const recruitingService = {
     const INSTAGRAM_APP_ID = import.meta.env.VITE_INSTAGRAM_APP_ID;
     const REDIRECT_URI = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/instagram-oauth`;
     const state = userId;
-    const scope = 'user_profile,user_media';
+    const scope = "user_profile,user_media";
 
     const authUrl = `https://api.instagram.com/oauth/authorize?client_id=${INSTAGRAM_APP_ID}&redirect_uri=${encodeURIComponent(
-      REDIRECT_URI
+      REDIRECT_URI,
     )}&scope=${scope}&response_type=code&state=${state}`;
 
     return authUrl;
@@ -580,12 +617,12 @@ export const recruitingService = {
   async getRecruitingStats(recruiterId?: string) {
     // FIXED: Only count users who are ACTUALLY recruits
     let query = supabase
-      .from('user_profiles')
-      .select('*', { count: 'exact', head: false })
-      .or('roles.cs.{recruit},onboarding_status.not.is.null');
+      .from("user_profiles")
+      .select("*", { count: "exact", head: false })
+      .or("roles.cs.{recruit},onboarding_status.not.is.null");
 
     if (recruiterId) {
-      query = query.eq('recruiter_id', recruiterId);
+      query = query.eq("recruiter_id", recruiterId);
     }
 
     const { data, error } = await query;
@@ -593,9 +630,9 @@ export const recruitingService = {
     if (error) throw error;
 
     // Filter out active agents and admins
-    const recruits = (data as UserProfile[] || []).filter(u => {
-      const hasActiveAgentRole = u.roles?.includes('active_agent');
-      const hasAdminRole = u.roles?.includes('admin');
+    const recruits = ((data as UserProfile[]) || []).filter((u) => {
+      const hasActiveAgentRole = u.roles?.includes("active_agent");
+      const hasAdminRole = u.roles?.includes("admin");
       const isAdmin = u.is_admin === true;
 
       // Exclude if they're an active agent or admin
@@ -604,23 +641,37 @@ export const recruitingService = {
       }
 
       // Include if they have recruit role OR onboarding_status
-      return u.roles?.includes('recruit') || u.onboarding_status !== null;
+      return u.roles?.includes("recruit") || u.onboarding_status !== null;
     });
 
     // Count active recruits (all phases except completed/dropped)
-    const activePhases = ['interview_1', 'zoom_interview', 'pre_licensing', 'exam', 'npn_received', 'contracting', 'bootcamp'];
-    const activeCount = recruits.filter((r) => r.onboarding_status && activePhases.includes(r.onboarding_status)).length;
+    const activePhases = [
+      "interview_1",
+      "zoom_interview",
+      "pre_licensing",
+      "exam",
+      "npn_received",
+      "contracting",
+      "bootcamp",
+    ];
+    const activeCount = recruits.filter(
+      (r) => r.onboarding_status && activePhases.includes(r.onboarding_status),
+    ).length;
 
     return {
       total: recruits.length,
       active: activeCount,
-      completed: recruits.filter((r) => r.onboarding_status === 'completed').length,
-      dropped: recruits.filter((r) => r.onboarding_status === 'dropped').length,
-      byPhase: recruits.reduce((acc, recruit) => {
-        const status = recruit.onboarding_status || 'interview_1';
-        acc[status] = (acc[status] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>),
+      completed: recruits.filter((r) => r.onboarding_status === "completed")
+        .length,
+      dropped: recruits.filter((r) => r.onboarding_status === "dropped").length,
+      byPhase: recruits.reduce(
+        (acc, recruit) => {
+          const status = recruit.onboarding_status || "interview_1";
+          acc[status] = (acc[status] || 0) + 1;
+          return acc;
+        },
+        {} as Record<string, number>,
+      ),
     };
   },
 
@@ -631,30 +682,34 @@ export const recruitingService = {
   async searchRecruits(searchTerm: string, limit = 10) {
     // FIXED: Only search users who are ACTUALLY recruits
     const { data, error } = await supabase
-      .from('user_profiles')
-      .select('id, first_name, last_name, email, profile_photo_url, onboarding_status, agent_status, roles, is_admin')
-      .or('roles.cs.{recruit},onboarding_status.not.is.null')
+      .from("user_profiles")
+      .select(
+        "id, first_name, last_name, email, profile_photo_url, onboarding_status, agent_status, roles, is_admin",
+      )
+      .or("roles.cs.{recruit},onboarding_status.not.is.null")
       .or(
-        `first_name.ilike.%${searchTerm}%,last_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`
+        `first_name.ilike.%${searchTerm}%,last_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`,
       )
       .limit(limit * 2); // Get more results to filter
 
     if (error) throw error;
 
     // Filter out active agents and admins
-    const recruits = (data || []).filter(u => {
-      const hasActiveAgentRole = u.roles?.includes('active_agent');
-      const hasAdminRole = u.roles?.includes('admin');
-      const isAdmin = u.is_admin === true;
+    const recruits = (data || [])
+      .filter((u) => {
+        const hasActiveAgentRole = u.roles?.includes("active_agent");
+        const hasAdminRole = u.roles?.includes("admin");
+        const isAdmin = u.is_admin === true;
 
-      // Exclude if they're an active agent or admin
-      if (hasActiveAgentRole || hasAdminRole || isAdmin) {
-        return false;
-      }
+        // Exclude if they're an active agent or admin
+        if (hasActiveAgentRole || hasAdminRole || isAdmin) {
+          return false;
+        }
 
-      // Include if they have recruit role OR onboarding_status
-      return u.roles?.includes('recruit') || u.onboarding_status !== null;
-    }).slice(0, limit); // Limit after filtering
+        // Include if they have recruit role OR onboarding_status
+        return u.roles?.includes("recruit") || u.onboarding_status !== null;
+      })
+      .slice(0, limit); // Limit after filtering
 
     return recruits as Partial<UserProfile>[];
   },

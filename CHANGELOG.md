@@ -6,6 +6,34 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-12-16 10:21:34
+
+### Changed Files
+- `src/features/email/components/EmailConnectionManager.tsx`
+- `src/features/email/hooks/useEmailConnection.ts`
+- `src/features/email/index.ts`
+- `src/features/email/services/emailConnectionService.ts`
+- `src/features/settings/ConstantsManagement.tsx`
+- `src/features/settings/SettingsDashboard.tsx`
+- `src/features/settings/carriers/CarriersManagement.tsx`
+- `src/features/settings/commission-rates/CommissionRatesManagement.tsx`
+- `src/features/settings/components/SettingsComponents.tsx`
+- `src/features/settings/components/UserProfile.tsx`
+- `src/features/settings/products/ProductsManagement.tsx`
+- `src/services/email/emailService.ts`
+- `src/services/email/index.ts`
+- `src/services/recruiting/recruitingService.ts`
+- `supabase/functions/oauth-callback/index.ts`
+- `supabase/functions/process-workflow/index.ts`
+- `supabase/functions/send-email/index.ts`
+- `supabase/migrations/20251216_003_remove_gmail_oauth_tables.sql`
+- `tsconfig.tsbuildinfo`
+
+### Statistics
+```
+ 19 files changed, 901 insertions(+), 2113 deletions(-)
+```
+
 ## [Checkpoint] - 2025-12-16 09:05:36
 
 ### Changed Files
