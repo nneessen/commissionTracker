@@ -9,6 +9,10 @@ import { MessagesLayout } from "./components/layout/MessagesLayout";
 import { ThreadList } from "./components/inbox/ThreadList";
 import { ThreadView } from "./components/thread/ThreadView";
 import { ComposeDialog } from "./components/compose/ComposeDialog";
+import { CreateLabelDialog } from "./components/labels/CreateLabelDialog";
+import { useEmailQuota } from "./hooks/useSendEmail";
+import { useLabels } from "./hooks/useLabels";
+import { useFolderCounts } from "./hooks/useFolderCounts";
 import {
   Inbox,
   Send,
@@ -20,7 +24,6 @@ import {
   Star,
   Archive,
   Tag,
-  Zap,
   Mail,
   MessageSquare,
   Instagram,
@@ -28,8 +31,7 @@ import {
 import { cn } from "@/lib/utils";
 
 type TabType =
-  | "inbox"
-  | "sent"
+  | "email"
   | "slack"
   | "instagram"
   | "templates"
@@ -41,8 +43,23 @@ export function MessagesPage() {
   const [selectedThreadId, setSelectedThreadId] = useState<string | null>(null);
   const [isComposeOpen, setIsComposeOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeTab, setActiveTab] = useState<TabType>("inbox");
+  const [activeTab, setActiveTab] = useState<TabType>("email");
   const [activeFolder, setActiveFolder] = useState<FolderType>("all");
+
+  // Get email quota
+  const { remainingDaily, percentUsed, quota } = useEmailQuota();
+
+  // Folder counts and unread
+  const { counts, totalUnread } = useFolderCounts();
+
+  // Labels
+  const { labels, createLabel } = useLabels();
+  const [isCreateLabelOpen, setIsCreateLabelOpen] = useState(false);
+  const [selectedLabelId, setSelectedLabelId] = useState<string | null>(null);
+
+  const handleCreateLabel = async (name: string, color: string) => {
+    await createLabel(name, color);
+  };
 
   const handleThreadSelect = (threadId: string) => {
     setSelectedThreadId(threadId);
@@ -54,8 +71,7 @@ export function MessagesPage() {
 
   // Tab configuration - Email, Slack, Instagram, Templates, Analytics, Settings
   const tabs: { id: TabType; label: string; icon: typeof Inbox }[] = [
-    { id: "inbox", label: "Email", icon: Inbox },
-    { id: "sent", label: "Sent", icon: Send },
+    { id: "email", label: "Email", icon: Mail },
     { id: "slack", label: "Slack", icon: MessageSquare },
     { id: "instagram", label: "Instagram", icon: Instagram },
     { id: "templates", label: "Templates", icon: FileText },
@@ -63,18 +79,23 @@ export function MessagesPage() {
     { id: "settings", label: "Settings", icon: Settings },
   ];
 
-  // Folder configuration for sidebar
+  // Folder configuration for sidebar - uses real counts
   const folders: {
     id: FolderType;
     label: string;
     icon: typeof Inbox;
     count?: number;
   }[] = [
-    { id: "all", label: "All Messages", icon: Mail, count: 0 },
-    { id: "inbox", label: "Inbox", icon: Inbox, count: 0 },
-    { id: "sent", label: "Sent", icon: Send, count: 0 },
-    { id: "starred", label: "Starred", icon: Star, count: 0 },
-    { id: "archived", label: "Archived", icon: Archive, count: 0 },
+    { id: "all", label: "All Messages", icon: Mail, count: counts.all },
+    { id: "inbox", label: "Inbox", icon: Inbox, count: counts.inbox },
+    { id: "sent", label: "Sent", icon: Send, count: counts.sent },
+    { id: "starred", label: "Starred", icon: Star, count: counts.starred },
+    {
+      id: "archived",
+      label: "Archived",
+      icon: Archive,
+      count: counts.archived,
+    },
   ];
 
   return (
@@ -88,7 +109,7 @@ export function MessagesPage() {
                 Messages
               </h1>
               <p className="text-[11px] text-muted-foreground mt-0.5">
-                Communications hub • 0 unread
+                Communications hub • {totalUnread} unread
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -127,13 +148,18 @@ export function MessagesPage() {
                 <div className="space-y-0.5">
                   {folders.map((folder) => {
                     const Icon = folder.icon;
+                    const isActive =
+                      activeFolder === folder.id && !selectedLabelId;
                     return (
                       <button
                         key={folder.id}
-                        onClick={() => setActiveFolder(folder.id)}
+                        onClick={() => {
+                          setActiveFolder(folder.id);
+                          setSelectedLabelId(null); // Clear label selection when folder clicked
+                        }}
                         className={cn(
                           "w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-[11px] transition-colors",
-                          activeFolder === folder.id
+                          isActive
                             ? "bg-primary/10 text-primary font-medium"
                             : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
                         )}
@@ -154,7 +180,43 @@ export function MessagesPage() {
                 <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide px-2 mt-4 mb-2">
                   Labels
                 </div>
-                <button className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-[11px] text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors">
+                <div className="space-y-0.5 mb-2">
+                  {labels.map((label) => {
+                    const isActive = selectedLabelId === label.id;
+                    return (
+                      <button
+                        key={label.id}
+                        onClick={() => {
+                          setSelectedLabelId(label.id);
+                          setActiveFolder("all"); // Show all when filtering by label
+                        }}
+                        className={cn(
+                          "w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-[11px] transition-colors",
+                          isActive
+                            ? "bg-primary/10 text-primary font-medium"
+                            : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
+                        )}
+                      >
+                        <div
+                          className="w-2.5 h-2.5 rounded-full"
+                          style={{ backgroundColor: label.color }}
+                        />
+                        <span className="flex-1 text-left truncate">
+                          {label.name}
+                        </span>
+                        {(label.message_count ?? 0) > 0 && (
+                          <span className="text-[10px]">
+                            {label.message_count}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+                <button
+                  onClick={() => setIsCreateLabelOpen(true)}
+                  className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-[11px] text-primary hover:bg-primary/10 transition-colors"
+                >
                   <Tag className="h-3.5 w-3.5" />
                   <span>Create label</span>
                 </button>
@@ -168,27 +230,21 @@ export function MessagesPage() {
                     <div className="flex justify-between">
                       <span>Daily quota</span>
                       <span className="font-medium text-foreground">
-                        0 / 50
+                        {quota
+                          ? `${quota.dailyUsed} / ${quota.dailyLimit}`
+                          : "0 / 50"}
                       </span>
                     </div>
                     <div className="h-1.5 bg-muted rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-primary rounded-full"
-                        style={{ width: "0%" }}
+                        className="h-full bg-primary rounded-full transition-all"
+                        style={{ width: `${percentUsed}%` }}
                       />
                     </div>
                     <p className="text-[9px] text-muted-foreground/70">
-                      Resets at midnight
+                      {remainingDaily} remaining • Resets at midnight
                     </p>
                   </div>
-                  <Button
-                    size="sm"
-                    className="w-full h-6 mt-2 text-[10px] gap-1 bg-primary/10 text-primary hover:bg-primary/20"
-                    onClick={() => console.log("Upgrade clicked")}
-                  >
-                    <Zap className="h-3 w-3" />
-                    Upgrade
-                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -224,39 +280,15 @@ export function MessagesPage() {
 
               {/* Tab Content */}
               <div className="flex-1 overflow-hidden min-h-0">
-                {activeTab === "inbox" && (
+                {activeTab === "email" && (
                   <MessagesLayout
                     list={
                       <ThreadList
-                        labelId={null}
+                        labelId={selectedLabelId}
                         searchQuery={searchQuery}
                         selectedThreadId={selectedThreadId}
                         onThreadSelect={handleThreadSelect}
-                        filter="inbox"
-                      />
-                    }
-                    detail={
-                      selectedThreadId ? (
-                        <ThreadView
-                          threadId={selectedThreadId}
-                          onClose={() => setSelectedThreadId(null)}
-                        />
-                      ) : (
-                        <EmptyThreadView />
-                      )
-                    }
-                  />
-                )}
-
-                {activeTab === "sent" && (
-                  <MessagesLayout
-                    list={
-                      <ThreadList
-                        labelId={null}
-                        searchQuery={searchQuery}
-                        selectedThreadId={selectedThreadId}
-                        onThreadSelect={handleThreadSelect}
-                        filter="sent"
+                        filter={activeFolder}
                       />
                     }
                     detail={
@@ -359,6 +391,13 @@ export function MessagesPage() {
 
       {/* Compose Dialog */}
       <ComposeDialog open={isComposeOpen} onOpenChange={setIsComposeOpen} />
+
+      {/* Create Label Dialog */}
+      <CreateLabelDialog
+        open={isCreateLabelOpen}
+        onOpenChange={setIsCreateLabelOpen}
+        onCreateLabel={handleCreateLabel}
+      />
     </>
   );
 }

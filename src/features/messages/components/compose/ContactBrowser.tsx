@@ -3,7 +3,6 @@
 
 import { useCallback, useRef, useEffect } from "react";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -19,7 +18,6 @@ import {
   Star,
   Users,
   User,
-  Building2,
   Loader2,
   ChevronLeft,
   ChevronRight,
@@ -73,11 +71,11 @@ export function ContactBrowser({
     (c) => !selectedEmails.includes(c.email.toLowerCase()),
   );
 
+  // Only show team-related tabs (no clients)
   const tabs: { id: ContactTab; label: string; icon: typeof Users }[] = [
-    { id: "all", label: "All", icon: Users },
+    { id: "all", label: "All Team", icon: Users },
     { id: "favorites", label: "Favorites", icon: Star },
-    { id: "team", label: "Team", icon: User },
-    { id: "clients", label: "Clients", icon: Building2 },
+    { id: "team", label: "My Team", icon: User },
   ];
 
   const handleContactClick = useCallback(
@@ -102,43 +100,49 @@ export function ContactBrowser({
 
   return (
     <div
-      className={cn("flex flex-col h-full border-l border-border", className)}
+      className={cn(
+        "flex flex-col h-full border-l border-border bg-muted/30",
+        className,
+      )}
     >
       {/* Header */}
-      <div className="px-3 py-2 border-b border-border">
-        <h3 className="text-[11px] font-semibold text-foreground">Contacts</h3>
+      <div className="px-3 py-2 bg-primary/5 border-b border-border">
+        <h3 className="text-[11px] font-semibold text-primary">
+          Team Contacts
+        </h3>
         <p className="text-[10px] text-muted-foreground">
-          {total} contact{total !== 1 ? "s" : ""}
+          {total} contact{total !== 1 ? "s" : ""} available
         </p>
       </div>
 
       {/* Search */}
       <div className="px-2 py-2 border-b border-border">
         <div className="relative">
-          <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-primary/60" />
           <Input
             ref={searchInputRef}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search contacts..."
-            className="h-7 pl-7 text-[11px]"
+            placeholder="Search by name or email..."
+            className="h-8 pl-8 text-[11px] bg-background"
           />
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-border">
+      <div className="flex gap-1 p-1.5 border-b border-border bg-background">
         {tabs.map((tab) => {
           const Icon = tab.icon;
+          const isActive = activeTab === tab.id;
           return (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={cn(
-                "flex-1 flex items-center justify-center gap-1 py-1.5 text-[10px] transition-colors",
-                activeTab === tab.id
-                  ? "text-primary border-b-2 border-primary bg-primary/5"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
+                "flex-1 flex items-center justify-center gap-1 py-1.5 px-2 text-[10px] rounded transition-colors",
+                isActive
+                  ? "bg-primary text-primary-foreground font-medium"
+                  : "text-foreground hover:bg-primary/10",
               )}
             >
               <Icon className="h-3 w-3" />
@@ -222,26 +226,36 @@ export function ContactBrowser({
 
       {/* Pagination */}
       {total > 50 && (
-        <div className="flex items-center justify-between px-2 py-1.5 border-t border-border">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-6 px-2 text-[10px]"
+        <div className="flex items-center justify-between px-2 py-2 border-t border-border bg-background">
+          <button
             onClick={prevPage}
             disabled={page === 1}
+            className={cn(
+              "flex items-center gap-1 px-2 py-1 rounded text-[10px] transition-colors",
+              page === 1
+                ? "text-muted-foreground/50 cursor-not-allowed"
+                : "text-primary hover:bg-primary/10",
+            )}
           >
             <ChevronLeft className="h-3 w-3" />
-          </Button>
-          <span className="text-[10px] text-muted-foreground">Page {page}</span>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-6 px-2 text-[10px]"
+            Prev
+          </button>
+          <span className="text-[10px] font-medium text-foreground">
+            Page {page}
+          </span>
+          <button
             onClick={nextPage}
             disabled={!hasMore}
+            className={cn(
+              "flex items-center gap-1 px-2 py-1 rounded text-[10px] transition-colors",
+              !hasMore
+                ? "text-muted-foreground/50 cursor-not-allowed"
+                : "text-primary hover:bg-primary/10",
+            )}
           >
+            Next
             <ChevronRight className="h-3 w-3" />
-          </Button>
+          </button>
         </div>
       )}
 
@@ -272,24 +286,25 @@ function ContactRow({
     <div
       onClick={onClick}
       className={cn(
-        "flex items-center gap-2 px-2 py-1.5 rounded-sm cursor-pointer group",
-        "hover:bg-muted/50 transition-colors",
+        "flex items-center gap-2 px-2 py-2 rounded-md cursor-pointer group",
+        "bg-background hover:bg-primary/5 border border-transparent hover:border-primary/20 transition-all",
+        "mb-1 mx-1",
       )}
     >
-      {/* Add button */}
+      {/* Add button - more prominent */}
       <button
         onClick={(e) => {
           e.stopPropagation();
           onClick();
         }}
-        className="p-0.5 rounded hover:bg-primary/10 text-primary shrink-0"
+        className="p-1 rounded-md bg-primary/10 hover:bg-primary/20 text-primary shrink-0 transition-colors"
       >
-        <Plus className="h-3 w-3" />
+        <Plus className="h-3.5 w-3.5" />
       </button>
 
       {/* Name and email - horizontal layout */}
       <div className="flex-1 min-w-0 flex items-center gap-1.5">
-        <span className="text-[11px] font-medium truncate max-w-[100px]">
+        <span className="text-[11px] font-medium text-foreground truncate max-w-[100px]">
           {contact.name}
         </span>
         <span className="text-[10px] text-muted-foreground truncate">
@@ -297,42 +312,26 @@ function ContactRow({
         </span>
       </div>
 
-      {/* Type badge */}
-      <Badge
-        variant="secondary"
-        className={cn(
-          "h-4 text-[8px] px-1 shrink-0",
-          contact.type === "team"
-            ? "bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400"
-            : "bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400",
-        )}
-      >
-        {contact.type === "team" ? "T" : "C"}
-      </Badge>
-
-      {/* Role badge if exists */}
+      {/* Role badge if exists - always visible */}
       {contact.role && (
-        <Badge
-          variant="outline"
-          className="h-4 text-[8px] px-1 shrink-0 hidden group-hover:flex"
-        >
-          {contact.role.slice(0, 8)}
+        <Badge className="h-4 text-[8px] px-1.5 shrink-0 bg-primary/10 text-primary">
+          {contact.role.slice(0, 10)}
         </Badge>
       )}
 
-      {/* Favorite button */}
+      {/* Favorite button - more visible */}
       <button
         onClick={onFavoriteClick}
         disabled={isTogglingFavorite}
         className={cn(
-          "p-0.5 rounded shrink-0 transition-colors",
+          "p-1 rounded-md shrink-0 transition-colors",
           contact.isFavorite
-            ? "text-amber-500 hover:text-amber-600"
-            : "text-muted-foreground/30 hover:text-amber-400 opacity-0 group-hover:opacity-100",
+            ? "text-amber-500 bg-amber-50 hover:bg-amber-100"
+            : "text-muted-foreground/50 hover:text-amber-400 hover:bg-amber-50",
         )}
       >
         <Star
-          className="h-3 w-3"
+          className="h-3.5 w-3.5"
           fill={contact.isFavorite ? "currentColor" : "none"}
         />
       </button>

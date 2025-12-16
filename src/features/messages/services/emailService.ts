@@ -3,6 +3,9 @@
 
 import { supabase } from "@/services/base/supabase";
 
+// Email source types for domain selection
+export type EmailSource = "personal" | "workflow" | "bulk";
+
 export interface SendEmailParams {
   userId: string;
   to: string[];
@@ -18,6 +21,7 @@ export interface SendEmailParams {
   signatureId?: string;
   trackOpens?: boolean;
   trackClicks?: boolean;
+  source?: EmailSource; // Determines which domain to use
 }
 
 export interface EmailQuota {
@@ -38,7 +42,20 @@ export interface EmailDraft {
   updatedAt: string;
 }
 
-const EMAIL_DOMAIN = "updates.thestandardhq.com";
+// Multi-domain configuration for different email types
+// - personal: Direct emails from compose (best inbox placement)
+// - workflow: Automated system emails (isolated reputation)
+// - bulk: Newsletters/campaigns (protects other domains from spam complaints)
+export const EMAIL_DOMAINS: Record<EmailSource, string> = {
+  personal: "mail.thestandardhq.com",
+  workflow: "notifications.thestandardhq.com",
+  bulk: "updates.thestandardhq.com",
+} as const;
+
+// Helper to get domain based on email source
+function getEmailDomain(source: EmailSource = "personal"): string {
+  return EMAIL_DOMAINS[source];
+}
 
 export async function sendEmail(
   params: SendEmailParams,
@@ -57,6 +74,7 @@ export async function sendEmail(
     signatureId,
     trackOpens = true,
     trackClicks = true,
+    source = "personal",
   } = params;
 
   try {
@@ -110,7 +128,8 @@ export async function sendEmail(
     const fromName =
       `${userData.first_name || ""} ${userData.last_name || ""}`.trim() ||
       "The Standard HQ";
-    const fromAddress = `noreply@${EMAIL_DOMAIN}`;
+    const emailDomain = getEmailDomain(source);
+    const fromAddress = `noreply@${emailDomain}`;
     const replyTo = userData.email;
 
     // If scheduled, save email to user_emails first, then create schedule entry
@@ -161,7 +180,63 @@ export async function sendEmail(
       return { success: true, messageId: emailRecord.id };
     }
 
-    // Send immediately via edge function
+    // Determine or create thread
+    let finalThreadId = threadId;
+    if (!finalThreadId) {
+      // Generate subject hash for thread grouping
+      const subjectHash = subject
+        .toLowerCase()
+        .replace(/^(re:|fwd:|fw:)\s*/gi, "")
+        .trim()
+        .slice(0, 255);
+
+      // Create new thread for this email
+      const { data: newThread, error: threadError } = await supabase
+        .from("email_threads")
+        .insert({
+          user_id: userId,
+          subject,
+          subject_hash: subjectHash,
+          snippet: stripHtml(bodyHtml).slice(0, 200),
+          message_count: 1,
+          unread_count: 0,
+          last_message_at: new Date().toISOString(),
+          participant_emails: [...to, ...(cc || [])],
+          is_starred: false,
+          is_archived: false,
+          labels: [],
+        })
+        .select()
+        .single();
+
+      if (threadError) {
+        console.error("Error creating thread:", threadError);
+        return {
+          success: false,
+          error: "Failed to create conversation thread",
+        };
+      }
+
+      finalThreadId = newThread.id;
+    } else {
+      // Update existing thread - get current count first
+      const { data: existingThread } = await supabase
+        .from("email_threads")
+        .select("message_count")
+        .eq("id", threadId)
+        .single();
+
+      await supabase
+        .from("email_threads")
+        .update({
+          snippet: stripHtml(bodyHtml).slice(0, 200),
+          last_message_at: new Date().toISOString(),
+          message_count: (existingThread?.message_count || 0) + 1,
+        })
+        .eq("id", threadId);
+    }
+
+    // Send via edge function
     const { data, error } = await supabase.functions.invoke("send-email", {
       body: {
         to,
@@ -174,20 +249,49 @@ export async function sendEmail(
         replyTo,
         trackingId,
         userId,
-        threadId,
+        threadId: finalThreadId,
         replyToMessageId,
       },
     });
 
     if (error) {
       console.error("Error sending email:", error);
+      // Delete thread if we just created it and sending failed
+      if (!threadId && finalThreadId) {
+        await supabase.from("email_threads").delete().eq("id", finalThreadId);
+      }
       return { success: false, error: error.message };
+    }
+
+    // Create the sent email record in user_emails
+    const { error: emailRecordError } = await supabase
+      .from("user_emails")
+      .insert({
+        user_id: userId,
+        thread_id: finalThreadId,
+        from_address: fromAddress,
+        to_addresses: to,
+        cc_addresses: cc || [],
+        subject,
+        body_html: finalBodyHtml,
+        body_text: bodyText || stripHtml(bodyHtml),
+        is_incoming: false,
+        is_read: true,
+        status: "sent",
+        tracking_id: trackingId,
+        created_at: new Date().toISOString(),
+      });
+
+    if (emailRecordError) {
+      // Email was sent successfully but record wasn't saved
+      // Log but don't fail - the email went out
+      console.error("Error saving sent email record:", emailRecordError);
     }
 
     // Update quota
     await incrementQuota(userId);
 
-    return { success: true, messageId: data?.messageId };
+    return { success: true, messageId: data?.messageId || trackingId };
   } catch (err) {
     console.error("Error in sendEmail:", err);
     return { success: false, error: "Failed to send email" };

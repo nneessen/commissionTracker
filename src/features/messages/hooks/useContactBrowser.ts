@@ -34,9 +34,11 @@ export function useContactBrowser(options: UseContactBrowserOptions = {}) {
   const [teamOnlyFilter, setTeamOnlyFilter] = useState(false);
   const [page, setPage] = useState(1);
 
-  // Build filters based on state
+  // Build filters based on state - TEAM ONLY (no clients)
   const filters = useMemo((): ContactFilters => {
-    const f: ContactFilters = {};
+    const f: ContactFilters = {
+      type: "team", // Always filter to team members only
+    };
 
     if (search.length >= 2) {
       f.search = search;
@@ -56,13 +58,9 @@ export function useContactBrowser(options: UseContactBrowserOptions = {}) {
         f.favoritesOnly = true;
         break;
       case "team":
-        f.type = "team";
+        f.teamOnly = true; // Show only user's downlines
         break;
-      case "clients":
-        f.type = "client";
-        break;
-      default:
-        f.type = "all";
+      // "all" shows all team members (default type: "team" above)
     }
 
     return f;

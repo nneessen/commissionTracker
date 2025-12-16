@@ -3,6 +3,8 @@
 
 import { useState } from "react";
 import { useThread } from "../../hooks/useThread";
+import { useThreads } from "../../hooks/useThreads";
+import { ComposeDialog } from "../compose/ComposeDialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -35,6 +37,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { sanitizeHtml } from "@/features/email/services/sanitizationService";
 
 interface ThreadViewProps {
   threadId: string;
@@ -49,9 +52,59 @@ export function ThreadView({ threadId, onClose }: ThreadViewProps) {
     error,
     markAsRead: _markAsRead,
   } = useThread(threadId);
+  const { toggleStar, archive, isStarring, isArchiving } = useThreads();
   const [expandedMessages, setExpandedMessages] = useState<Set<string>>(
     new Set(),
   );
+
+  // Reply/Forward state
+  const [composeState, setComposeState] = useState<{
+    open: boolean;
+    replyTo?: {
+      threadId: string;
+      messageId: string;
+      to: string;
+      subject: string;
+    };
+    forward?: { subject: string; body: string };
+  }>({ open: false });
+
+  const handleReply = () => {
+    if (!thread || !messages?.length) return;
+    const lastMessage = messages[messages.length - 1];
+    setComposeState({
+      open: true,
+      replyTo: {
+        threadId: thread.id,
+        messageId: lastMessage.id,
+        to: lastMessage.fromAddress,
+        subject: thread.subject,
+      },
+    });
+  };
+
+  const handleForward = () => {
+    if (!thread || !messages?.length) return;
+    const lastMessage = messages[messages.length - 1];
+    setComposeState({
+      open: true,
+      forward: {
+        subject: thread.subject,
+        body: lastMessage.bodyText || "",
+      },
+    });
+  };
+
+  const handleToggleStar = () => {
+    if (!thread) return;
+    toggleStar(thread.id, !thread.isStarred);
+  };
+
+  const handleArchive = () => {
+    if (!thread) return;
+    archive(thread.id);
+    onClose(); // Close the view after archiving
+  };
 
   // Mark as read on view
   // useEffect(() => {
@@ -116,10 +169,24 @@ export function ThreadView({ threadId, onClose }: ThreadViewProps) {
           </div>
 
           <div className="flex items-center gap-1">
-            <Button variant="ghost" size="sm" className="h-7 px-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 px-2"
+              onClick={handleArchive}
+              disabled={isArchiving}
+              title="Archive"
+            >
               <Archive className="h-3.5 w-3.5" />
             </Button>
-            <Button variant="ghost" size="sm" className="h-7 px-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 px-2"
+              onClick={handleToggleStar}
+              disabled={isStarring}
+              title={thread.isStarred ? "Unstar" : "Star"}
+            >
               <Star
                 className={cn(
                   "h-3.5 w-3.5",
@@ -137,14 +204,20 @@ export function ThreadView({ threadId, onClose }: ThreadViewProps) {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem className="text-[11px]">
+                <DropdownMenuItem className="text-[11px]" onClick={handleReply}>
                   <Reply className="h-3.5 w-3.5 mr-2" /> Reply
                 </DropdownMenuItem>
-                <DropdownMenuItem className="text-[11px]">
+                <DropdownMenuItem
+                  className="text-[11px]"
+                  onClick={handleForward}
+                >
                   <Forward className="h-3.5 w-3.5 mr-2" /> Forward
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem className="text-[11px] text-destructive">
+                <DropdownMenuItem
+                  className="text-[11px] text-destructive"
+                  onClick={handleArchive}
+                >
                   <Trash2 className="h-3.5 w-3.5 mr-2" /> Delete
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -190,20 +263,39 @@ export function ThreadView({ threadId, onClose }: ThreadViewProps) {
             variant="outline"
             size="sm"
             className="h-7 text-[11px] gap-1.5"
+            onClick={handleReply}
           >
             <Reply className="h-3.5 w-3.5" />
             Reply
           </Button>
-          <Button variant="ghost" size="sm" className="h-7 text-[11px] gap-1.5">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 text-[11px] gap-1.5"
+            onClick={handleReply}
+          >
             <ReplyAll className="h-3.5 w-3.5" />
             Reply All
           </Button>
-          <Button variant="ghost" size="sm" className="h-7 text-[11px] gap-1.5">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 text-[11px] gap-1.5"
+            onClick={handleForward}
+          >
             <Forward className="h-3.5 w-3.5" />
             Forward
           </Button>
         </div>
       </div>
+
+      {/* Compose Dialog for Reply/Forward */}
+      <ComposeDialog
+        open={composeState.open}
+        onOpenChange={(open) => setComposeState({ ...composeState, open })}
+        replyTo={composeState.replyTo}
+        forward={composeState.forward}
+      />
     </div>
   );
 }
@@ -306,12 +398,12 @@ function MessageBubble({
             <span>To: {message.toAddresses?.join(", ")}</span>
           </div>
 
-          {/* Email body */}
+          {/* Email body - sanitized to prevent XSS */}
           <div
             className="px-3 py-3 text-[11px] prose prose-sm max-w-none
               prose-p:my-1 prose-headings:my-2 prose-ul:my-1 prose-ol:my-1"
             dangerouslySetInnerHTML={{
-              __html: message.bodyHtml || message.bodyText,
+              __html: sanitizeHtml(message.bodyHtml || message.bodyText || ""),
             }}
           />
 

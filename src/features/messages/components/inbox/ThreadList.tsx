@@ -12,7 +12,14 @@ interface ThreadListProps {
   searchQuery: string;
   selectedThreadId: string | null;
   onThreadSelect: (threadId: string) => void;
-  filter: "inbox" | "sent" | "drafts" | "scheduled" | "archived";
+  filter:
+    | "all"
+    | "inbox"
+    | "sent"
+    | "starred"
+    | "drafts"
+    | "scheduled"
+    | "archived";
 }
 
 export function ThreadList({
@@ -112,6 +119,10 @@ function EmptyState({ filter, hasSearch, hasLabel }: EmptyStateProps) {
   }
 
   const messages: Record<string, { title: string; subtitle: string }> = {
+    all: {
+      title: "No messages",
+      subtitle: "Your messages will appear here",
+    },
     inbox: {
       title: "Your inbox is empty",
       subtitle: "Messages you receive will appear here",
@@ -119,6 +130,10 @@ function EmptyState({ filter, hasSearch, hasLabel }: EmptyStateProps) {
     sent: {
       title: "No sent messages",
       subtitle: "Messages you send will appear here",
+    },
+    starred: {
+      title: "No starred messages",
+      subtitle: "Star important messages for quick access",
     },
     drafts: {
       title: "No drafts",

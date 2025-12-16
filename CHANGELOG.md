@@ -6,6 +6,58 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-12-16 15:04:05
+
+### Changed Files
+- `CHANGELOG.md`
+- `PROJECT_STATS.md`
+- `src/features/messages/MessagesPage.tsx`
+- `src/features/messages/components/compose/ComposeDialog.tsx`
+- `src/features/messages/components/compose/ContactBrowser.tsx`
+- `src/features/messages/components/inbox/ThreadList.tsx`
+- `src/features/messages/components/labels/CreateLabelDialog.tsx`
+- `src/features/messages/components/layout/MessagesSidebar.tsx`
+- `src/features/messages/components/layout/index.ts`
+- `src/features/messages/components/thread/ThreadView.tsx`
+- `src/features/messages/hooks/index.ts`
+- `src/features/messages/hooks/useContactBrowser.ts`
+- `src/features/messages/hooks/useFolderCounts.ts`
+- `src/features/messages/hooks/useThreads.ts`
+- `src/features/messages/index.ts`
+- `src/features/messages/services/emailService.ts`
+- `src/features/messages/services/threadService.ts`
+- `tsconfig.tsbuildinfo`
+
+### Statistics
+```
+ 18 files changed, 728 insertions(+), 388 deletions(-)
+```
+
+## [Checkpoint] - 2025-12-16 15:03:25
+
+### Changed Files
+- `src/features/messages/MessagesPage.tsx`
+- `src/features/messages/components/compose/ComposeDialog.tsx`
+- `src/features/messages/components/compose/ContactBrowser.tsx`
+- `src/features/messages/components/inbox/ThreadList.tsx`
+- `src/features/messages/components/labels/CreateLabelDialog.tsx`
+- `src/features/messages/components/layout/MessagesSidebar.tsx`
+- `src/features/messages/components/layout/index.ts`
+- `src/features/messages/components/thread/ThreadView.tsx`
+- `src/features/messages/hooks/index.ts`
+- `src/features/messages/hooks/useContactBrowser.ts`
+- `src/features/messages/hooks/useFolderCounts.ts`
+- `src/features/messages/hooks/useThreads.ts`
+- `src/features/messages/index.ts`
+- `src/features/messages/services/emailService.ts`
+- `src/features/messages/services/threadService.ts`
+- `tsconfig.tsbuildinfo`
+
+### Statistics
+```
+ 16 files changed, 698 insertions(+), 382 deletions(-)
+```
+
 ## [Checkpoint] - 2025-12-16 14:00:05
 
 ### Changed Files

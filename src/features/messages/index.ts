@@ -6,7 +6,6 @@ export { MessagesPage } from "./MessagesPage";
 
 // Components - Layout
 export { MessagesLayout } from "./components/layout/MessagesLayout";
-export { MessagesSidebar } from "./components/layout/MessagesSidebar";
 export { MessagesHeader } from "./components/layout/MessagesHeader";
 
 // Components - Inbox

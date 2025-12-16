@@ -204,22 +204,33 @@ export function ComposeDialog({
         )}
         style={{ maxHeight: "85vh" }}
       >
-        <DialogHeader className="px-4 py-2 border-b border-border flex-row items-center justify-between">
-          <DialogTitle className="text-sm font-semibold">
-            {replyTo ? "Reply" : forward ? "Forward" : "New Message"}
-          </DialogTitle>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-6 px-2"
-            onClick={() => setShowContactBrowser(!showContactBrowser)}
-          >
-            {showContactBrowser ? (
-              <PanelRightClose className="h-3.5 w-3.5" />
-            ) : (
-              <PanelRightOpen className="h-3.5 w-3.5" />
-            )}
-          </Button>
+        <DialogHeader className="px-4 py-2 border-b border-border">
+          <div className="flex items-center gap-3">
+            <DialogTitle className="text-sm font-semibold">
+              {replyTo ? "Reply" : forward ? "Forward" : "New Message"}
+            </DialogTitle>
+            <button
+              onClick={() => setShowContactBrowser(!showContactBrowser)}
+              className={cn(
+                "flex items-center gap-1.5 px-2 py-1 rounded text-[10px] transition-colors",
+                showContactBrowser
+                  ? "bg-primary/10 text-primary"
+                  : "bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary",
+              )}
+            >
+              {showContactBrowser ? (
+                <>
+                  <PanelRightClose className="h-3 w-3" />
+                  <span>Hide Contacts</span>
+                </>
+              ) : (
+                <>
+                  <PanelRightOpen className="h-3 w-3" />
+                  <span>Show Contacts</span>
+                </>
+              )}
+            </button>
+          </div>
         </DialogHeader>
 
         <div className="flex flex-1 overflow-hidden">

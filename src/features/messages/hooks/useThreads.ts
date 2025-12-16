@@ -18,7 +18,14 @@ export type { Thread } from "../services/threadService";
 interface UseThreadsOptions {
   labelId?: string;
   search?: string;
-  filter?: "inbox" | "sent" | "drafts" | "scheduled" | "archived";
+  filter?:
+    | "all"
+    | "inbox"
+    | "sent"
+    | "starred"
+    | "drafts"
+    | "scheduled"
+    | "archived";
 }
 
 export function useThreads(options: UseThreadsOptions = {}) {

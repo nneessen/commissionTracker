@@ -51,14 +51,97 @@ export interface Message {
 export interface ThreadFilters {
   labelId?: string;
   search?: string;
-  filter?: "inbox" | "sent" | "drafts" | "scheduled" | "archived";
+  filter?:
+    | "all"
+    | "inbox"
+    | "sent"
+    | "starred"
+    | "drafts"
+    | "scheduled"
+    | "archived";
   userId: string;
 }
 
 export async function getThreads(filters: ThreadFilters): Promise<Thread[]> {
   const { userId, labelId, search, filter = "inbox" } = filters;
 
-  // Build query for threads
+  // For "sent" filter, we need to get thread IDs that have outgoing messages first
+  if (filter === "sent") {
+    // Get thread IDs with outgoing messages
+    const { data: sentThreadIds, error: sentError } = await supabase
+      .from("user_emails")
+      .select("thread_id")
+      .eq("user_id", userId)
+      .eq("is_incoming", false)
+      .not("thread_id", "is", null);
+
+    if (sentError) {
+      console.error("Error fetching sent thread IDs:", sentError);
+      throw sentError;
+    }
+
+    if (!sentThreadIds || sentThreadIds.length === 0) {
+      return [];
+    }
+
+    // Filter to only valid UUIDs (36 chars with hyphens pattern)
+    const uuidPattern =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const validThreadIds = sentThreadIds
+      .map((t) => t.thread_id)
+      .filter(
+        (id): id is string => typeof id === "string" && uuidPattern.test(id),
+      );
+
+    const uniqueThreadIds = [...new Set(validThreadIds)];
+
+    if (uniqueThreadIds.length === 0) {
+      return [];
+    }
+
+    // Now get those threads
+    let query = supabase
+      .from("email_threads")
+      .select(
+        `
+        id,
+        subject,
+        snippet,
+        message_count,
+        unread_count,
+        last_message_at,
+        participant_emails,
+        is_starred,
+        is_archived,
+        labels
+      `,
+      )
+      .eq("user_id", userId)
+      .in("id", uniqueThreadIds)
+      .eq("is_archived", false)
+      .order("last_message_at", { ascending: false });
+
+    // Apply label filter
+    if (labelId) {
+      query = query.contains("labels", [labelId]);
+    }
+
+    // Apply search
+    if (search) {
+      query = query.or(`subject.ilike.%${search}%,snippet.ilike.%${search}%`);
+    }
+
+    const { data: threads, error } = await query.limit(50);
+
+    if (error) {
+      console.error("Error fetching sent threads:", error);
+      throw error;
+    }
+
+    return transformThreads(threads || [], userId);
+  }
+
+  // Build query for threads (non-sent filters)
   let query = supabase
     .from("email_threads")
     .select(
@@ -80,14 +163,18 @@ export async function getThreads(filters: ThreadFilters): Promise<Thread[]> {
 
   // Apply filter
   switch (filter) {
+    case "all":
+      // All non-archived messages
+      query = query.eq("is_archived", false);
+      break;
     case "inbox":
       query = query.eq("is_archived", false);
       break;
+    case "starred":
+      query = query.eq("is_starred", true).eq("is_archived", false);
+      break;
     case "archived":
       query = query.eq("is_archived", true);
-      break;
-    case "sent":
-      // For sent, we'll filter messages that are outgoing
       break;
   }
 
@@ -108,7 +195,15 @@ export async function getThreads(filters: ThreadFilters): Promise<Thread[]> {
     throw error;
   }
 
-  if (!threads) return [];
+  return transformThreads(threads || [], userId);
+}
+
+// Helper function to transform thread data
+async function transformThreads(
+  threads: Record<string, unknown>[],
+  userId: string,
+): Promise<Thread[]> {
+  if (threads.length === 0) return [];
 
   // Get labels for color mapping
   const { data: allLabels } = await supabase
