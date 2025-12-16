@@ -82,13 +82,13 @@ export async function sendEmail(
     if (signatureId) {
       const { data: signature } = await supabase
         .from("email_signatures")
-        .select("html_content")
+        .select("content_html")
         .eq("id", signatureId)
         .eq("user_id", userId)
         .single();
 
-      if (signature?.html_content) {
-        finalBodyHtml = `${bodyHtml}<br/><br/>${signature.html_content}`;
+      if (signature?.content_html) {
+        finalBodyHtml = `${bodyHtml}<br/><br/>${signature.content_html}`;
       }
     }
 
@@ -97,7 +97,8 @@ export async function sendEmail(
 
     // Add tracking pixel if enabled
     if (trackOpens) {
-      const trackingPixel = `<img src="${process.env.VITE_SUPABASE_URL}/functions/v1/track-email-open?id=${trackingId}" width="1" height="1" style="display:none" />`;
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || "";
+      const trackingPixel = `<img src="${supabaseUrl}/functions/v1/track-email-open?id=${trackingId}" width="1" height="1" style="display:none" />`;
       finalBodyHtml = `${finalBodyHtml}${trackingPixel}`;
     }
 
@@ -112,35 +113,52 @@ export async function sendEmail(
     const fromAddress = `noreply@${EMAIL_DOMAIN}`;
     const replyTo = userData.email;
 
-    // If scheduled, save to scheduled queue
+    // If scheduled, save email to user_emails first, then create schedule entry
     if (scheduledFor && scheduledFor > new Date()) {
-      const { data: scheduled, error: scheduleError } = await supabase
-        .from("email_scheduled")
+      // Step 1: Create email record in user_emails with scheduled status
+      const { data: emailRecord, error: emailError } = await supabase
+        .from("user_emails")
         .insert({
           user_id: userId,
           to_addresses: to,
           cc_addresses: cc || [],
-          bcc_addresses: bcc || [],
           subject,
           body_html: finalBodyHtml,
           body_text: bodyText || stripHtml(bodyHtml),
           from_address: fromAddress,
-          from_name: fromName,
-          reply_to: replyTo,
+          status: "scheduled",
           scheduled_for: scheduledFor.toISOString(),
-          thread_id: threadId,
-          reply_to_message_id: replyToMessageId,
           tracking_id: trackingId,
+          thread_id: threadId,
+          is_incoming: false,
         })
         .select()
         .single();
 
-      if (scheduleError) {
-        console.error("Error scheduling email:", scheduleError);
+      if (emailError) {
+        console.error("Error creating scheduled email:", emailError);
         return { success: false, error: "Failed to schedule email" };
       }
 
-      return { success: true, messageId: scheduled?.id };
+      // Step 2: Create schedule queue entry referencing the email
+      const { error: scheduleError } = await supabase
+        .from("email_scheduled")
+        .insert({
+          user_id: userId,
+          email_id: emailRecord.id,
+          scheduled_for: scheduledFor.toISOString(),
+          status: "pending",
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        });
+
+      if (scheduleError) {
+        console.error("Error queuing scheduled email:", scheduleError);
+        // Rollback the email record
+        await supabase.from("user_emails").delete().eq("id", emailRecord.id);
+        return { success: false, error: "Failed to schedule email" };
+      }
+
+      return { success: true, messageId: emailRecord.id };
     }
 
     // Send immediately via edge function
@@ -358,7 +376,7 @@ function stripHtml(html: string): string {
 
 function rewriteLinksForTracking(html: string, trackingId: string): string {
   // Simple link rewriting - in production would use proper HTML parsing
-  const baseUrl = process.env.VITE_SUPABASE_URL || "";
+  const baseUrl = import.meta.env.VITE_SUPABASE_URL || "";
   return html.replace(/href="(https?:\/\/[^"]+)"/g, (_match, url) => {
     const trackingUrl = `${baseUrl}/functions/v1/track-email-click?id=${trackingId}&url=${encodeURIComponent(url)}`;
     return `href="${trackingUrl}"`;

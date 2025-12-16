@@ -523,6 +523,66 @@ export type Database = {
         };
         Relationships: [];
       };
+      contact_favorites: {
+        Row: {
+          client_id: string | null;
+          contact_user_id: string | null;
+          created_at: string;
+          id: string;
+          user_id: string;
+        };
+        Insert: {
+          client_id?: string | null;
+          contact_user_id?: string | null;
+          created_at?: string;
+          id?: string;
+          user_id: string;
+        };
+        Update: {
+          client_id?: string | null;
+          contact_user_id?: string | null;
+          created_at?: string;
+          id?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "contact_favorites_client_id_fkey";
+            columns: ["client_id"];
+            isOneToOne: false;
+            referencedRelation: "clients";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "contact_favorites_contact_user_id_fkey";
+            columns: ["contact_user_id"];
+            isOneToOne: false;
+            referencedRelation: "active_user_profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "contact_favorites_contact_user_id_fkey";
+            columns: ["contact_user_id"];
+            isOneToOne: false;
+            referencedRelation: "user_management_view";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "contact_favorites_contact_user_id_fkey";
+            columns: ["contact_user_id"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "contact_favorites_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       email_labels: {
         Row: {
           color: string;
@@ -5191,6 +5251,14 @@ export type Database = {
         | { Args: never; Returns: boolean }
         | { Args: { target_user_id?: string }; Returns: boolean };
       is_caller_admin: { Args: never; Returns: boolean };
+      is_contact_favorited: {
+        Args: {
+          p_client_id?: string;
+          p_contact_user_id?: string;
+          p_user_id: string;
+        };
+        Returns: boolean;
+      };
       is_user_approved: { Args: never; Returns: boolean };
       lookup_user_by_email: {
         Args: { p_email: string };

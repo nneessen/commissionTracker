@@ -2,3 +2,4 @@
 // Compose components barrel export
 
 export { ComposeDialog } from "./ComposeDialog";
+export { ContactBrowser } from "./ContactBrowser";

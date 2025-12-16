@@ -79,9 +79,9 @@ export function MessagesPage() {
 
   return (
     <>
-      <div className="h-screen flex flex-col overflow-hidden">
+      <div className="flex flex-col" style={{ height: "calc(100vh - 3rem)" }}>
         {/* Page Header - matching Expenses/Targets/Dashboard */}
-        <div className="page-header py-3">
+        <div className="flex-shrink-0 py-3">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-base font-semibold text-foreground">
@@ -115,11 +115,11 @@ export function MessagesPage() {
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 p-3 overflow-hidden">
+        <div className="flex-1 px-3 pb-3 overflow-hidden min-h-0">
           <div className="h-full flex gap-2">
             {/* Left Sidebar - Folders */}
-            <Card className="w-48 flex-shrink-0 flex flex-col">
-              <CardContent className="p-2 flex-1 flex flex-col">
+            <Card className="w-48 flex-shrink-0 flex flex-col overflow-hidden">
+              <CardContent className="p-2 flex-1 flex flex-col min-h-0 overflow-auto">
                 {/* Folders */}
                 <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide px-2 mb-2">
                   Folders
@@ -182,9 +182,8 @@ export function MessagesPage() {
                     </p>
                   </div>
                   <Button
-                    variant="outline"
                     size="sm"
-                    className="w-full h-6 mt-2 text-[10px] gap-1 text-amber-600 border-amber-300 hover:bg-amber-50 hover:border-amber-400"
+                    className="w-full h-6 mt-2 text-[10px] gap-1 bg-primary/10 text-primary hover:bg-primary/20"
                     onClick={() => console.log("Upgrade clicked")}
                   >
                     <Zap className="h-3 w-3" />
@@ -195,27 +194,28 @@ export function MessagesPage() {
             </Card>
 
             {/* Main Content Area */}
-            <div className="flex-1 flex flex-col gap-2 overflow-hidden">
+            <div className="flex-1 flex flex-col gap-2 overflow-hidden min-h-0">
               {/* Tabs - styled like filter buttons */}
               <Card>
                 <CardContent className="p-2">
                   <div className="flex gap-1">
                     {tabs.map((tab) => {
                       const Icon = tab.icon;
+                      const isActive = activeTab === tab.id;
                       return (
-                        <Button
+                        <button
                           key={tab.id}
-                          variant={activeTab === tab.id ? "default" : "ghost"}
-                          size="sm"
                           className={cn(
-                            "h-7 px-3 text-[11px] gap-1.5",
-                            activeTab !== tab.id && "text-muted-foreground",
+                            "h-7 px-3 text-[11px] flex items-center gap-1.5 rounded-md transition-colors",
+                            isActive
+                              ? "bg-primary text-primary-foreground font-medium"
+                              : "text-foreground hover:bg-muted",
                           )}
                           onClick={() => setActiveTab(tab.id)}
                         >
                           <Icon className="h-3.5 w-3.5" />
                           {tab.label}
-                        </Button>
+                        </button>
                       );
                     })}
                   </div>
@@ -223,7 +223,7 @@ export function MessagesPage() {
               </Card>
 
               {/* Tab Content */}
-              <div className="flex-1 overflow-hidden">
+              <div className="flex-1 overflow-hidden min-h-0">
                 {activeTab === "inbox" && (
                   <MessagesLayout
                     list={

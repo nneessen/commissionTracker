@@ -6,6 +6,52 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-12-16 14:00:05
+
+### Changed Files
+- `CHANGELOG.md`
+- `PROJECT_STATS.md`
+- `plans/active/email-compose-contact-picker-plan.md`
+- `src/features/messages/MessagesPage.tsx`
+- `src/features/messages/components/compose/ComposeDialog.tsx`
+- `src/features/messages/components/compose/ContactBrowser.tsx`
+- `src/features/messages/components/compose/ContactPicker.tsx`
+- `src/features/messages/components/compose/index.ts`
+- `src/features/messages/hooks/useContactBrowser.ts`
+- `src/features/messages/hooks/useContacts.ts`
+- `src/features/messages/services/contactService.ts`
+- `src/features/messages/services/emailService.ts`
+- `src/types/database.types.ts`
+- `supabase/migrations/20251216_007_contact_favorites.sql`
+- `tsconfig.tsbuildinfo`
+
+### Statistics
+```
+ 15 files changed, 7275 insertions(+), 4856 deletions(-)
+```
+
+## [Checkpoint] - 2025-12-16 13:59:30
+
+### Changed Files
+- `plans/active/email-compose-contact-picker-plan.md`
+- `src/features/messages/MessagesPage.tsx`
+- `src/features/messages/components/compose/ComposeDialog.tsx`
+- `src/features/messages/components/compose/ContactBrowser.tsx`
+- `src/features/messages/components/compose/ContactPicker.tsx`
+- `src/features/messages/components/compose/index.ts`
+- `src/features/messages/hooks/useContactBrowser.ts`
+- `src/features/messages/hooks/useContacts.ts`
+- `src/features/messages/services/contactService.ts`
+- `src/features/messages/services/emailService.ts`
+- `src/types/database.types.ts`
+- `supabase/migrations/20251216_007_contact_favorites.sql`
+- `tsconfig.tsbuildinfo`
+
+### Statistics
+```
+ 13 files changed, 7249 insertions(+), 4851 deletions(-)
+```
+
 ## [Checkpoint] - 2025-12-16 12:27:17
 
 ### Changed Files
