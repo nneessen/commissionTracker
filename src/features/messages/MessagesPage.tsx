@@ -9,9 +9,7 @@ import { MessagesLayout } from "./components/layout/MessagesLayout";
 import { ThreadList } from "./components/inbox/ThreadList";
 import { ThreadView } from "./components/thread/ThreadView";
 import { ComposeDialog } from "./components/compose/ComposeDialog";
-import { CreateLabelDialog } from "./components/labels/CreateLabelDialog";
 import { useEmailQuota } from "./hooks/useSendEmail";
-import { useLabels } from "./hooks/useLabels";
 import { useFolderCounts } from "./hooks/useFolderCounts";
 import {
   Inbox,
@@ -23,7 +21,6 @@ import {
   PenSquare,
   Star,
   Archive,
-  Tag,
   Mail,
   MessageSquare,
   Instagram,
@@ -51,15 +48,6 @@ export function MessagesPage() {
 
   // Folder counts and unread
   const { counts, totalUnread } = useFolderCounts();
-
-  // Labels
-  const { labels, createLabel } = useLabels();
-  const [isCreateLabelOpen, setIsCreateLabelOpen] = useState(false);
-  const [selectedLabelId, setSelectedLabelId] = useState<string | null>(null);
-
-  const handleCreateLabel = async (name: string, color: string) => {
-    await createLabel(name, color);
-  };
 
   const handleThreadSelect = (threadId: string) => {
     setSelectedThreadId(threadId);
@@ -126,7 +114,7 @@ export function MessagesPage() {
               <Button
                 onClick={handleComposeNew}
                 size="sm"
-                className="h-7 px-3 text-[11px]"
+                className="h-7 px-3 text-[11px] bg-primary hover:bg-primary/90 text-primary-foreground border-0 shadow-none"
               >
                 <PenSquare className="h-3 w-3 mr-1.5" />
                 Compose
@@ -148,15 +136,11 @@ export function MessagesPage() {
                 <div className="space-y-0.5">
                   {folders.map((folder) => {
                     const Icon = folder.icon;
-                    const isActive =
-                      activeFolder === folder.id && !selectedLabelId;
+                    const isActive = activeFolder === folder.id;
                     return (
                       <button
                         key={folder.id}
-                        onClick={() => {
-                          setActiveFolder(folder.id);
-                          setSelectedLabelId(null); // Clear label selection when folder clicked
-                        }}
+                        onClick={() => setActiveFolder(folder.id)}
                         className={cn(
                           "w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-[11px] transition-colors",
                           isActive
@@ -175,51 +159,6 @@ export function MessagesPage() {
                     );
                   })}
                 </div>
-
-                {/* Labels section */}
-                <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide px-2 mt-4 mb-2">
-                  Labels
-                </div>
-                <div className="space-y-0.5 mb-2">
-                  {labels.map((label) => {
-                    const isActive = selectedLabelId === label.id;
-                    return (
-                      <button
-                        key={label.id}
-                        onClick={() => {
-                          setSelectedLabelId(label.id);
-                          setActiveFolder("all"); // Show all when filtering by label
-                        }}
-                        className={cn(
-                          "w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-[11px] transition-colors",
-                          isActive
-                            ? "bg-primary/10 text-primary font-medium"
-                            : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
-                        )}
-                      >
-                        <div
-                          className="w-2.5 h-2.5 rounded-full"
-                          style={{ backgroundColor: label.color }}
-                        />
-                        <span className="flex-1 text-left truncate">
-                          {label.name}
-                        </span>
-                        {(label.message_count ?? 0) > 0 && (
-                          <span className="text-[10px]">
-                            {label.message_count}
-                          </span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-                <button
-                  onClick={() => setIsCreateLabelOpen(true)}
-                  className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-[11px] text-primary hover:bg-primary/10 transition-colors"
-                >
-                  <Tag className="h-3.5 w-3.5" />
-                  <span>Create label</span>
-                </button>
 
                 {/* Spacer */}
                 <div className="flex-1" />
@@ -284,7 +223,6 @@ export function MessagesPage() {
                   <MessagesLayout
                     list={
                       <ThreadList
-                        labelId={selectedLabelId}
                         searchQuery={searchQuery}
                         selectedThreadId={selectedThreadId}
                         onThreadSelect={handleThreadSelect}
@@ -391,13 +329,6 @@ export function MessagesPage() {
 
       {/* Compose Dialog */}
       <ComposeDialog open={isComposeOpen} onOpenChange={setIsComposeOpen} />
-
-      {/* Create Label Dialog */}
-      <CreateLabelDialog
-        open={isCreateLabelOpen}
-        onOpenChange={setIsCreateLabelOpen}
-        onCreateLabel={handleCreateLabel}
-      />
     </>
   );
 }

@@ -49,7 +49,6 @@ export interface Message {
 }
 
 export interface ThreadFilters {
-  labelId?: string;
   search?: string;
   filter?:
     | "all"
@@ -63,7 +62,78 @@ export interface ThreadFilters {
 }
 
 export async function getThreads(filters: ThreadFilters): Promise<Thread[]> {
-  const { userId, labelId, search, filter = "inbox" } = filters;
+  const { userId, search, filter = "inbox" } = filters;
+
+  // For "inbox" filter, only show threads with incoming messages
+  if (filter === "inbox") {
+    // Get thread IDs with incoming messages
+    const { data: inboxThreadIds, error: inboxError } = await supabase
+      .from("user_emails")
+      .select("thread_id")
+      .eq("user_id", userId)
+      .eq("is_incoming", true)
+      .not("thread_id", "is", null);
+
+    if (inboxError) {
+      console.error("Error fetching inbox thread IDs:", inboxError);
+      throw inboxError;
+    }
+
+    if (!inboxThreadIds || inboxThreadIds.length === 0) {
+      return [];
+    }
+
+    // Filter to only valid UUIDs
+    const uuidPattern =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const validThreadIds = inboxThreadIds
+      .map((t) => t.thread_id)
+      .filter(
+        (id): id is string => typeof id === "string" && uuidPattern.test(id),
+      );
+
+    const uniqueThreadIds = [...new Set(validThreadIds)];
+
+    if (uniqueThreadIds.length === 0) {
+      return [];
+    }
+
+    // Now get those threads
+    let query = supabase
+      .from("email_threads")
+      .select(
+        `
+        id,
+        subject,
+        snippet,
+        message_count,
+        unread_count,
+        last_message_at,
+        participant_emails,
+        is_starred,
+        is_archived,
+        labels
+      `,
+      )
+      .eq("user_id", userId)
+      .in("id", uniqueThreadIds)
+      .eq("is_archived", false)
+      .order("last_message_at", { ascending: false });
+
+    // Apply search
+    if (search) {
+      query = query.or(`subject.ilike.%${search}%,snippet.ilike.%${search}%`);
+    }
+
+    const { data: threads, error } = await query.limit(50);
+
+    if (error) {
+      console.error("Error fetching inbox threads:", error);
+      throw error;
+    }
+
+    return transformThreads(threads || [], userId);
+  }
 
   // For "sent" filter, we need to get thread IDs that have outgoing messages first
   if (filter === "sent") {
@@ -121,11 +191,6 @@ export async function getThreads(filters: ThreadFilters): Promise<Thread[]> {
       .eq("is_archived", false)
       .order("last_message_at", { ascending: false });
 
-    // Apply label filter
-    if (labelId) {
-      query = query.contains("labels", [labelId]);
-    }
-
     // Apply search
     if (search) {
       query = query.or(`subject.ilike.%${search}%,snippet.ilike.%${search}%`);
@@ -161,13 +226,10 @@ export async function getThreads(filters: ThreadFilters): Promise<Thread[]> {
     .eq("user_id", userId)
     .order("last_message_at", { ascending: false });
 
-  // Apply filter
+  // Apply filter (inbox and sent are handled above)
   switch (filter) {
     case "all":
       // All non-archived messages
-      query = query.eq("is_archived", false);
-      break;
-    case "inbox":
       query = query.eq("is_archived", false);
       break;
     case "starred":
@@ -176,11 +238,6 @@ export async function getThreads(filters: ThreadFilters): Promise<Thread[]> {
     case "archived":
       query = query.eq("is_archived", true);
       break;
-  }
-
-  // Apply label filter
-  if (labelId) {
-    query = query.contains("labels", [labelId]);
   }
 
   // Apply search
@@ -236,13 +293,30 @@ async function transformThreads(
   }));
 }
 
+export interface GetThreadOptions {
+  threadId: string;
+  userId: string;
+  // Pagination: fetch latest N messages initially
+  limit?: number;
+  // Offset for loading earlier messages
+  offset?: number;
+}
+
+export interface ThreadWithMessages {
+  thread: Thread;
+  messages: Message[];
+  totalMessages: number;
+  hasMore: boolean;
+}
+
 export async function getThread(
   threadId: string,
   userId: string,
-): Promise<{
-  thread: Thread;
-  messages: Message[];
-} | null> {
+  options?: { limit?: number; offset?: number },
+): Promise<ThreadWithMessages | null> {
+  const limit = options?.limit ?? 20; // Default: fetch latest 20 messages
+  const offset = options?.offset ?? 0;
+
   // Get thread
   const { data: thread, error: threadError } = await supabase
     .from("email_threads")
@@ -256,30 +330,24 @@ export async function getThread(
     return null;
   }
 
-  // Get messages in thread
+  const totalMessages = thread.message_count || 0;
+
+  // Get messages with pagination - latest messages first for initial load
+  // We'll reverse them in UI to show chronologically
   const { data: messages, error: messagesError } = await supabase
     .from("user_emails")
     .select("*")
     .eq("thread_id", threadId)
-    .order("created_at", { ascending: true });
+    .order("created_at", { ascending: false }) // Latest first
+    .range(offset, offset + limit - 1);
 
   if (messagesError) {
     console.error("Error fetching messages:", messagesError);
     throw messagesError;
   }
 
-  // Get labels
-  const { data: allLabels } = await supabase
-    .from("email_labels")
-    .select("id, name, color")
-    .eq("user_id", userId);
-
-  const labelMap = new Map(
-    allLabels?.map((l: { id: string; name: string; color: string }) => [
-      l.id,
-      l,
-    ]) || [],
-  );
+  // Reverse to show in chronological order (oldest to newest)
+  const chronologicalMessages = (messages || []).reverse();
 
   return {
     thread: {
@@ -292,11 +360,9 @@ export async function getThread(
       participantEmails: thread.participant_emails || [],
       isStarred: thread.is_starred || false,
       isArchived: thread.is_archived || false,
-      labels: (thread.labels || [])
-        .map((labelId: string) => labelMap.get(labelId))
-        .filter(Boolean) as ThreadLabel[],
+      labels: [], // Labels removed - simplified folder system
     },
-    messages: (messages || []).map((m: Record<string, unknown>) => ({
+    messages: chronologicalMessages.map((m: Record<string, unknown>) => ({
       id: m.id as string,
       threadId: (m.thread_id as string) || threadId,
       fromAddress: (m.from_address as string) || "",
@@ -319,6 +385,66 @@ export async function getThread(
       openCount: (m.open_count as number) || 0,
       clickCount: (m.click_count as number) || 0,
     })),
+    totalMessages,
+    hasMore: offset + limit < totalMessages,
+  };
+}
+
+// Fetch earlier messages for "Load more" functionality
+export async function getEarlierMessages(
+  threadId: string,
+  offset: number,
+  limit: number = 10,
+): Promise<{ messages: Message[]; hasMore: boolean }> {
+  // Get total count first
+  const { count } = await supabase
+    .from("user_emails")
+    .select("*", { count: "exact", head: true })
+    .eq("thread_id", threadId);
+
+  const totalMessages = count || 0;
+
+  // Fetch messages
+  const { data: messages, error } = await supabase
+    .from("user_emails")
+    .select("*")
+    .eq("thread_id", threadId)
+    .order("created_at", { ascending: false })
+    .range(offset, offset + limit - 1);
+
+  if (error) {
+    console.error("Error fetching earlier messages:", error);
+    throw error;
+  }
+
+  // Reverse to chronological order
+  const chronologicalMessages = (messages || []).reverse();
+
+  return {
+    messages: chronologicalMessages.map((m: Record<string, unknown>) => ({
+      id: m.id as string,
+      threadId: (m.thread_id as string) || threadId,
+      fromAddress: (m.from_address as string) || "",
+      toAddresses: (m.to_addresses as string[]) || [],
+      ccAddresses: (m.cc_addresses as string[]) || [],
+      bccAddresses: (m.bcc_addresses as string[]) || [],
+      subject: (m.subject as string) || "(No Subject)",
+      bodyHtml: (m.body_html as string) || "",
+      bodyText:
+        (m.body_text as string) ||
+        (m.body_html as string)?.replace(/<[^>]*>/g, "") ||
+        "",
+      createdAt: m.created_at as string,
+      isIncoming: (m.is_incoming as boolean) || false,
+      isRead: (m.is_read as boolean) || false,
+      hasAttachments: (m.has_attachments as boolean) || false,
+      attachments:
+        (m.attachments as { name: string; size: number; url?: string }[]) || [],
+      source: m.source as string | undefined,
+      openCount: (m.open_count as number) || 0,
+      clickCount: (m.click_count as number) || 0,
+    })),
+    hasMore: offset + limit < totalMessages,
   };
 }
 
@@ -350,15 +476,25 @@ export async function toggleThreadStar(
   threadId: string,
   isStarred: boolean,
 ): Promise<void> {
-  const { error } = await supabase
+  console.log(
+    "[toggleThreadStar] Updating thread:",
+    threadId,
+    "isStarred:",
+    isStarred,
+  );
+
+  const { data, error } = await supabase
     .from("email_threads")
     .update({ is_starred: isStarred })
-    .eq("id", threadId);
+    .eq("id", threadId)
+    .select();
 
   if (error) {
-    console.error("Error toggling star:", error);
+    console.error("[toggleThreadStar] Error:", error);
     throw error;
   }
+
+  console.log("[toggleThreadStar] Success, updated:", data);
 }
 
 export async function archiveThread(threadId: string): Promise<void> {
@@ -369,6 +505,18 @@ export async function archiveThread(threadId: string): Promise<void> {
 
   if (error) {
     console.error("Error archiving thread:", error);
+    throw error;
+  }
+}
+
+export async function unarchiveThread(threadId: string): Promise<void> {
+  const { error } = await supabase
+    .from("email_threads")
+    .update({ is_archived: false })
+    .eq("id", threadId);
+
+  if (error) {
+    console.error("Error unarchiving thread:", error);
     throw error;
   }
 }

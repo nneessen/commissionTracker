@@ -33,9 +33,14 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
 import { useSendEmail, useEmailQuota } from "../../hooks/useSendEmail";
+import { useCurrentUserProfile } from "@/hooks/admin/useUserApproval";
 import { ContactBrowser } from "./ContactBrowser";
 import type { Contact } from "../../services/contactService";
+
+// Super admin email - all admin-sent emails come from this address
+const SUPER_ADMIN_EMAIL = "nickneessen@thestandardhq.com";
 
 interface ComposeDialogProps {
   open: boolean;
@@ -58,8 +63,13 @@ export function ComposeDialog({
   replyTo,
   forward,
 }: ComposeDialogProps) {
+  const { user: _user } = useAuth();
   const { send, saveDraft, isSending, isSavingDraft } = useSendEmail();
   const { remainingDaily } = useEmailQuota();
+  const { data: userProfile } = useCurrentUserProfile();
+
+  // Check if user is admin (super admin always sends from the business email)
+  const isAdmin = userProfile?.is_admin || false;
 
   // Form state
   const [to, setTo] = useState<string[]>(replyTo ? [replyTo.to] : []);
@@ -115,6 +125,9 @@ export function ComposeDialog({
         scheduledFor: scheduledDate,
         trackOpens: true,
         trackClicks: true,
+        // Admins always send from the super admin email
+        source: "owner",
+        fromOverride: isAdmin ? SUPER_ADMIN_EMAIL : undefined,
       });
 
       if (result.success) {
@@ -250,9 +263,8 @@ export function ComposeDialog({
               {/* Cc/Bcc toggle */}
               <div className="flex justify-end">
                 <Button
-                  variant="ghost"
                   size="sm"
-                  className="h-5 px-2 text-[10px] text-muted-foreground"
+                  className="h-5 px-2 text-[10px] bg-transparent hover:bg-primary/10 text-muted-foreground hover:text-primary border-0 shadow-none"
                   onClick={() => setShowCcBcc(!showCcBcc)}
                 >
                   {showCcBcc ? (
@@ -311,17 +323,16 @@ export function ComposeDialog({
 
               {/* Schedule */}
               {showSchedule && (
-                <div className="flex items-center gap-2 p-2 bg-muted/50 rounded-sm">
-                  <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                <div className="flex items-center gap-2 p-2 bg-primary/5 rounded-sm">
+                  <Clock className="h-3.5 w-3.5 text-primary" />
                   <span className="text-[11px] text-muted-foreground">
                     Scheduled for:
                   </span>
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
-                        variant="outline"
                         size="sm"
-                        className="h-6 text-[10px]"
+                        className="h-6 text-[10px] bg-primary/10 hover:bg-primary/20 text-primary border-0 shadow-none"
                       >
                         {scheduledDate
                           ? format(scheduledDate, "PPp")
@@ -341,9 +352,8 @@ export function ComposeDialog({
                     </PopoverContent>
                   </Popover>
                   <Button
-                    variant="ghost"
                     size="sm"
-                    className="h-6 px-1"
+                    className="h-6 px-1 bg-transparent hover:bg-destructive/10 text-muted-foreground hover:text-destructive border-0 shadow-none"
                     onClick={() => {
                       setShowSchedule(false);
                       setScheduledDate(undefined);
@@ -363,31 +373,36 @@ export function ComposeDialog({
             </div>
 
             {/* Footer */}
-            <div className="flex items-center justify-between px-4 py-2 border-t border-border bg-muted/30">
-              <div className="flex items-center gap-2">
+            <div className="flex items-center justify-between px-4 py-2 border-t border-border/50 bg-muted/20">
+              <div className="flex items-center gap-3">
                 <Button
                   onClick={handleSend}
                   disabled={isSending || to.length === 0}
                   size="sm"
-                  className="h-7 text-[11px] gap-1.5"
+                  className="h-7 text-[11px] gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground border-0 shadow-none"
                 >
                   <Send className="h-3.5 w-3.5" />
                   {scheduledDate ? "Schedule" : "Send"}
                 </Button>
 
+                {/* Show admin indicator when sending as super admin */}
+                {isAdmin && (
+                  <span className="text-[10px] text-primary">
+                    Sending as {SUPER_ADMIN_EMAIL}
+                  </span>
+                )}
+
                 <Button
-                  variant="outline"
                   size="sm"
-                  className="h-7 px-2"
+                  className="h-7 px-2 bg-primary/10 hover:bg-primary/20 text-primary border-0 shadow-none"
                   onClick={() => setShowSchedule(!showSchedule)}
                 >
                   <Clock className="h-3.5 w-3.5" />
                 </Button>
 
                 <Button
-                  variant="outline"
                   size="sm"
-                  className="h-7 px-2"
+                  className="h-7 px-2 bg-muted hover:bg-muted/80 text-muted-foreground border-0 shadow-none"
                   disabled
                 >
                   <Paperclip className="h-3.5 w-3.5" />
@@ -400,9 +415,8 @@ export function ComposeDialog({
                 </span>
 
                 <Button
-                  variant="ghost"
                   size="sm"
-                  className="h-7 px-2"
+                  className="h-7 px-2 bg-transparent hover:bg-primary/10 text-muted-foreground hover:text-primary border-0 shadow-none"
                   onClick={handleSaveDraft}
                   disabled={isSavingDraft}
                 >
@@ -410,9 +424,8 @@ export function ComposeDialog({
                 </Button>
 
                 <Button
-                  variant="ghost"
                   size="sm"
-                  className="h-7 px-2 text-destructive"
+                  className="h-7 px-2 bg-transparent hover:bg-destructive/10 text-destructive border-0 shadow-none"
                   onClick={() => {
                     resetForm();
                     onOpenChange(false);

@@ -4,7 +4,11 @@
 import { supabase } from "@/services/base/supabase";
 
 // Email source types for domain selection
-export type EmailSource = "personal" | "workflow" | "bulk";
+// - personal: System emails from compose (mail.thestandardhq.com)
+// - workflow: Automated system emails (notifications.thestandardhq.com)
+// - bulk: Newsletters/campaigns (updates.thestandardhq.com)
+// - owner: Personal emails from owner's actual address (thestandardhq.com root)
+export type EmailSource = "personal" | "workflow" | "bulk" | "owner";
 
 export interface SendEmailParams {
   userId: string;
@@ -22,6 +26,7 @@ export interface SendEmailParams {
   trackOpens?: boolean;
   trackClicks?: boolean;
   source?: EmailSource; // Determines which domain to use
+  fromOverride?: string; // Override from address (for admins)
 }
 
 export interface EmailQuota {
@@ -46,10 +51,12 @@ export interface EmailDraft {
 // - personal: Direct emails from compose (best inbox placement)
 // - workflow: Automated system emails (isolated reputation)
 // - bulk: Newsletters/campaigns (protects other domains from spam complaints)
+// - owner: Root domain for owner's personal correspondence
 export const EMAIL_DOMAINS: Record<EmailSource, string> = {
   personal: "mail.thestandardhq.com",
   workflow: "notifications.thestandardhq.com",
   bulk: "updates.thestandardhq.com",
+  owner: "thestandardhq.com",
 } as const;
 
 // Helper to get domain based on email source
@@ -75,6 +82,7 @@ export async function sendEmail(
     trackOpens = true,
     trackClicks = true,
     source = "personal",
+    fromOverride,
   } = params;
 
   try {
@@ -129,8 +137,13 @@ export async function sendEmail(
       `${userData.first_name || ""} ${userData.last_name || ""}`.trim() ||
       "The Standard HQ";
     const emailDomain = getEmailDomain(source);
-    const fromAddress = `noreply@${emailDomain}`;
-    const replyTo = userData.email;
+    // Priority: fromOverride (admin) > owner source (user's email) > noreply@domain
+    const fromAddress = fromOverride
+      ? fromOverride
+      : source === "owner"
+        ? userData.email
+        : `noreply@${emailDomain}`;
+    const replyTo = fromOverride || userData.email;
 
     // If scheduled, save email to user_emails first, then create schedule entry
     if (scheduledFor && scheduledFor > new Date()) {
@@ -139,6 +152,7 @@ export async function sendEmail(
         .from("user_emails")
         .insert({
           user_id: userId,
+          sender_id: userId, // Required for RLS policy
           to_addresses: to,
           cc_addresses: cc || [],
           subject,
@@ -150,6 +164,7 @@ export async function sendEmail(
           tracking_id: trackingId,
           thread_id: threadId,
           is_incoming: false,
+          source: source, // Track email source
         })
         .select()
         .single();
@@ -237,6 +252,13 @@ export async function sendEmail(
     }
 
     // Send via edge function
+    console.log("[sendEmail] Invoking send-email function with:", {
+      to,
+      subject,
+      from: `${fromName} <${fromAddress}>`,
+      threadId: finalThreadId,
+    });
+
     const { data, error } = await supabase.functions.invoke("send-email", {
       body: {
         to,
@@ -254,8 +276,10 @@ export async function sendEmail(
       },
     });
 
+    console.log("[sendEmail] Edge function response:", { data, error });
+
     if (error) {
-      console.error("Error sending email:", error);
+      console.error("[sendEmail] Edge function error:", error);
       // Delete thread if we just created it and sending failed
       if (!threadId && finalThreadId) {
         await supabase.from("email_threads").delete().eq("id", finalThreadId);
@@ -263,11 +287,22 @@ export async function sendEmail(
       return { success: false, error: error.message };
     }
 
+    // Also check if the data indicates failure
+    if (data && !data.success) {
+      console.error("[sendEmail] Edge function returned failure:", data);
+      if (!threadId && finalThreadId) {
+        await supabase.from("email_threads").delete().eq("id", finalThreadId);
+      }
+      return { success: false, error: data.error || "Failed to send email" };
+    }
+
     // Create the sent email record in user_emails
-    const { error: emailRecordError } = await supabase
+    console.log("[sendEmail] Inserting email record into user_emails...");
+    const { data: emailRecord, error: emailRecordError } = await supabase
       .from("user_emails")
       .insert({
         user_id: userId,
+        sender_id: userId, // Required for RLS policy
         thread_id: finalThreadId,
         from_address: fromAddress,
         to_addresses: to,
@@ -279,13 +314,21 @@ export async function sendEmail(
         is_read: true,
         status: "sent",
         tracking_id: trackingId,
+        source: source, // Track email source for domain selection
         created_at: new Date().toISOString(),
-      });
+      })
+      .select()
+      .single();
 
     if (emailRecordError) {
       // Email was sent successfully but record wasn't saved
       // Log but don't fail - the email went out
-      console.error("Error saving sent email record:", emailRecordError);
+      console.error(
+        "[sendEmail] Error saving sent email record:",
+        emailRecordError,
+      );
+    } else {
+      console.log("[sendEmail] Email record saved:", emailRecord?.id);
     }
 
     // Update quota
@@ -405,6 +448,7 @@ export async function saveDraft(params: {
     .from("user_emails")
     .insert({
       user_id: userId,
+      sender_id: userId, // Required for RLS policy
       to_addresses: to,
       cc_addresses: cc,
       bcc_addresses: bcc,

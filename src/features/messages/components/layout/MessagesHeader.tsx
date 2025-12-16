@@ -28,12 +28,18 @@ export function MessagesHeader({
       </div>
 
       {/* Filters */}
-      <Button variant="ghost" size="sm" className="h-7 px-2">
+      <Button
+        size="sm"
+        className="h-7 px-2 bg-transparent hover:bg-primary/10 text-muted-foreground hover:text-primary border-0 shadow-none"
+      >
         <SlidersHorizontal className="h-3.5 w-3.5" />
       </Button>
 
       {/* Refresh */}
-      <Button variant="ghost" size="sm" className="h-7 px-2">
+      <Button
+        size="sm"
+        className="h-7 px-2 bg-transparent hover:bg-primary/10 text-muted-foreground hover:text-primary border-0 shadow-none"
+      >
         <RefreshCw className="h-3.5 w-3.5" />
       </Button>
     </div>

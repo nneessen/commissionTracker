@@ -25,9 +25,14 @@ export function useSendEmail() {
   const sendMutation = useMutation({
     mutationFn: (params: Omit<SendEmailParams, "userId">) =>
       sendEmail({ ...params, userId: user!.id }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["threads"] });
-      queryClient.invalidateQueries({ queryKey: ["quota"] });
+    onSuccess: (result) => {
+      // Only invalidate caches if the send was successful
+      if (result.success) {
+        queryClient.invalidateQueries({ queryKey: ["threads"] });
+        queryClient.invalidateQueries({ queryKey: ["folderCounts"] });
+        queryClient.invalidateQueries({ queryKey: ["totalUnread"] });
+        queryClient.invalidateQueries({ queryKey: ["quota"] });
+      }
     },
   });
 

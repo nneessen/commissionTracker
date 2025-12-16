@@ -15,7 +15,7 @@ export interface FolderCounts {
 
 async function fetchFolderCounts(userId: string): Promise<FolderCounts> {
   // Get all counts in parallel for performance
-  const [allResult, starredResult, archivedResult, sentResult] =
+  const [allResult, starredResult, archivedResult, sentResult, inboxResult] =
     await Promise.all([
       // All non-archived threads
       supabase
@@ -36,18 +36,25 @@ async function fetchFolderCounts(userId: string): Promise<FolderCounts> {
         .select("*", { count: "exact", head: true })
         .eq("user_id", userId)
         .eq("is_archived", true),
-      // Sent - count unique threads with outgoing messages
+      // Sent - count outgoing emails by sender_id (who actually sent them)
+      // Use sender_id because that's what identifies who sent the email
+      supabase
+        .from("user_emails")
+        .select("*", { count: "exact", head: true })
+        .eq("sender_id", userId)
+        .eq("is_incoming", false),
+      // Inbox - count threads that have incoming messages
       supabase
         .from("user_emails")
         .select("thread_id", { count: "exact", head: true })
         .eq("user_id", userId)
-        .eq("is_incoming", false)
+        .eq("is_incoming", true)
         .not("thread_id", "is", null),
     ]);
 
   return {
     all: allResult.count || 0,
-    inbox: allResult.count || 0, // Same as all for now
+    inbox: inboxResult.count || 0,
     sent: sentResult.count || 0,
     starred: starredResult.count || 0,
     archived: archivedResult.count || 0,

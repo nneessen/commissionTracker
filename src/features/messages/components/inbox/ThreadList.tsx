@@ -8,7 +8,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Inbox, Search } from "lucide-react";
 
 interface ThreadListProps {
-  labelId: string | null;
   searchQuery: string;
   selectedThreadId: string | null;
   onThreadSelect: (threadId: string) => void;
@@ -23,14 +22,12 @@ interface ThreadListProps {
 }
 
 export function ThreadList({
-  labelId,
   searchQuery,
   selectedThreadId,
   onThreadSelect,
   filter,
 }: ThreadListProps) {
   const { threads, isLoading, error } = useThreads({
-    labelId: labelId || undefined,
     search: searchQuery || undefined,
     filter,
   });
@@ -49,13 +46,7 @@ export function ThreadList({
   }
 
   if (!threads || threads.length === 0) {
-    return (
-      <EmptyState
-        filter={filter}
-        hasSearch={!!searchQuery}
-        hasLabel={!!labelId}
-      />
-    );
+    return <EmptyState filter={filter} hasSearch={!!searchQuery} />;
   }
 
   return (
@@ -95,25 +86,15 @@ function ThreadListSkeleton() {
 interface EmptyStateProps {
   filter: string;
   hasSearch: boolean;
-  hasLabel: boolean;
 }
 
-function EmptyState({ filter, hasSearch, hasLabel }: EmptyStateProps) {
+function EmptyState({ filter, hasSearch }: EmptyStateProps) {
   if (hasSearch) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-4 text-muted-foreground">
         <Search className="h-8 w-8 mb-3 opacity-20" />
         <p className="text-sm">No messages found</p>
         <p className="text-[10px] mt-1">Try a different search term</p>
-      </div>
-    );
-  }
-
-  if (hasLabel) {
-    return (
-      <div className="flex-1 flex flex-col items-center justify-center p-4 text-muted-foreground">
-        <Inbox className="h-8 w-8 mb-3 opacity-20" />
-        <p className="text-sm">No messages with this label</p>
       </div>
     );
   }

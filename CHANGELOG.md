@@ -6,6 +6,88 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-12-16 16:50:18
+
+### Changed Files
+- `CHANGELOG.md`
+- `PROJECT_STATS.md`
+- `plans/active/ACTIVE_SESSION_CONTINUATION.md`
+- `src/features/messages/MessagesPage.tsx`
+- `src/features/messages/components/compose/ComposeDialog.tsx`
+- `src/features/messages/components/inbox/ThreadList.tsx`
+- `src/features/messages/components/layout/MessagesHeader.tsx`
+- `src/features/messages/components/thread/ThreadView.tsx`
+- `src/features/messages/hooks/useFolderCounts.ts`
+- `src/features/messages/hooks/useSendEmail.ts`
+- `src/features/messages/hooks/useThread.ts`
+- `src/features/messages/hooks/useThreads.ts`
+- `src/features/messages/services/emailService.ts`
+- `src/features/messages/services/threadService.ts`
+- `supabase/functions/send-email/index.ts`
+- `supabase/migrations/20251216_001_fix_user_emails_rls_type_cast.sql`
+- `supabase/migrations/20251216_002_fix_user_emails_rls_correct_types.sql`
+- `supabase/migrations/20251216_003_update_admin_email.sql`
+- `supabase/migrations/20251216_008_fix_email_quota_rls.sql`
+
+### Statistics
+```
+ 19 files changed, 1374 insertions(+), 354 deletions(-)
+```
+
+## [Checkpoint] - 2025-12-16 16:50:02
+
+### Changed Files
+- `CHANGELOG.md`
+- `PROJECT_STATS.md`
+- `plans/active/ACTIVE_SESSION_CONTINUATION.md`
+- `src/features/messages/MessagesPage.tsx`
+- `src/features/messages/components/compose/ComposeDialog.tsx`
+- `src/features/messages/components/inbox/ThreadList.tsx`
+- `src/features/messages/components/layout/MessagesHeader.tsx`
+- `src/features/messages/components/thread/ThreadView.tsx`
+- `src/features/messages/hooks/useFolderCounts.ts`
+- `src/features/messages/hooks/useSendEmail.ts`
+- `src/features/messages/hooks/useThread.ts`
+- `src/features/messages/hooks/useThreads.ts`
+- `src/features/messages/services/emailService.ts`
+- `src/features/messages/services/threadService.ts`
+- `supabase/functions/send-email/index.ts`
+- `supabase/migrations/20251216_001_fix_user_emails_rls_type_cast.sql`
+- `supabase/migrations/20251216_002_fix_user_emails_rls_correct_types.sql`
+- `supabase/migrations/20251216_003_update_admin_email.sql`
+- `supabase/migrations/20251216_008_fix_email_quota_rls.sql`
+
+### Statistics
+```
+ 19 files changed, 1346 insertions(+), 354 deletions(-)
+```
+
+## [Checkpoint] - 2025-12-16 16:49:09
+
+### Changed Files
+- `plans/active/ACTIVE_SESSION_CONTINUATION.md`
+- `src/features/messages/MessagesPage.tsx`
+- `src/features/messages/components/compose/ComposeDialog.tsx`
+- `src/features/messages/components/inbox/ThreadList.tsx`
+- `src/features/messages/components/layout/MessagesHeader.tsx`
+- `src/features/messages/components/thread/ThreadView.tsx`
+- `src/features/messages/hooks/useFolderCounts.ts`
+- `src/features/messages/hooks/useSendEmail.ts`
+- `src/features/messages/hooks/useThread.ts`
+- `src/features/messages/hooks/useThreads.ts`
+- `src/features/messages/services/emailService.ts`
+- `src/features/messages/services/threadService.ts`
+- `supabase/functions/send-email/index.ts`
+- `supabase/migrations/20251216_001_fix_user_emails_rls_type_cast.sql`
+- `supabase/migrations/20251216_002_fix_user_emails_rls_correct_types.sql`
+- `supabase/migrations/20251216_003_update_admin_email.sql`
+- `supabase/migrations/20251216_008_fix_email_quota_rls.sql`
+
+### Statistics
+```
+ 17 files changed, 1314 insertions(+), 348 deletions(-)
+```
+
 ## [Checkpoint] - 2025-12-16 15:04:05
 
 ### Changed Files

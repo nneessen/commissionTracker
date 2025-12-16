@@ -7,16 +7,14 @@ import {
   getThreads,
   toggleThreadStar,
   archiveThread,
+  unarchiveThread,
   deleteThread,
-  addLabelToThread,
-  removeLabelFromThread,
   type Thread,
 } from "../services/threadService";
 
 export type { Thread } from "../services/threadService";
 
 interface UseThreadsOptions {
-  labelId?: string;
   search?: string;
   filter?:
     | "all"
@@ -32,7 +30,7 @@ export function useThreads(options: UseThreadsOptions = {}) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  const { labelId, search, filter = "inbox" } = options;
+  const { search, filter = "inbox" } = options;
 
   const {
     data: threads,
@@ -40,11 +38,10 @@ export function useThreads(options: UseThreadsOptions = {}) {
     error,
     refetch,
   } = useQuery({
-    queryKey: ["threads", user?.id, labelId, search, filter],
+    queryKey: ["threads", user?.id, search, filter],
     queryFn: () =>
       getThreads({
         userId: user!.id,
-        labelId,
         search,
         filter,
       }),
@@ -62,79 +59,89 @@ export function useThreads(options: UseThreadsOptions = {}) {
       isStarred: boolean;
     }) => toggleThreadStar(threadId, isStarred),
     onMutate: async ({ threadId, isStarred }) => {
-      // Optimistic update
+      // Cancel any pending queries
       await queryClient.cancelQueries({ queryKey: ["threads"] });
+      await queryClient.cancelQueries({ queryKey: ["thread", threadId] });
+
+      // Save previous state for rollback
       const previousThreads = queryClient.getQueryData<Thread[]>([
         "threads",
         user?.id,
-        labelId,
         search,
         filter,
       ]);
+      const previousThread = queryClient.getQueryData<{ thread: Thread }>([
+        "thread",
+        threadId,
+      ]);
 
+      // Optimistic update for threads list
       queryClient.setQueryData<Thread[]>(
-        ["threads", user?.id, labelId, search, filter],
+        ["threads", user?.id, search, filter],
         (old) => old?.map((t) => (t.id === threadId ? { ...t, isStarred } : t)),
       );
 
-      return { previousThreads };
+      // Optimistic update for single thread view
+      queryClient.setQueryData<{
+        thread: Thread;
+        messages: unknown[];
+        totalMessages: number;
+        hasMore: boolean;
+      }>(["thread", threadId], (old) =>
+        old ? { ...old, thread: { ...old.thread, isStarred } } : old,
+      );
+
+      return { previousThreads, previousThread };
     },
-    onError: (_err, _variables, context) => {
+    onError: (_err, variables, context) => {
+      // Rollback on error
       if (context?.previousThreads) {
         queryClient.setQueryData(
-          ["threads", user?.id, labelId, search, filter],
+          ["threads", user?.id, search, filter],
           context.previousThreads,
         );
       }
+      if (context?.previousThread) {
+        queryClient.setQueryData(
+          ["thread", variables.threadId],
+          context.previousThread,
+        );
+      }
     },
-    onSettled: () => {
+    onSettled: (_data, _error, variables) => {
+      // Invalidate to ensure data is fresh
       queryClient.invalidateQueries({ queryKey: ["threads"] });
+      queryClient.invalidateQueries({
+        queryKey: ["thread", variables.threadId],
+      });
+      queryClient.invalidateQueries({ queryKey: ["folderCounts"] });
     },
   });
 
   const archiveMutation = useMutation({
     mutationFn: (threadId: string) => archiveThread(threadId),
-    onSuccess: () => {
+    onSuccess: (_data, threadId) => {
       queryClient.invalidateQueries({ queryKey: ["threads"] });
+      queryClient.invalidateQueries({ queryKey: ["thread", threadId] });
+      queryClient.invalidateQueries({ queryKey: ["folderCounts"] });
+    },
+  });
+
+  const unarchiveMutation = useMutation({
+    mutationFn: (threadId: string) => unarchiveThread(threadId),
+    onSuccess: (_data, threadId) => {
+      queryClient.invalidateQueries({ queryKey: ["threads"] });
+      queryClient.invalidateQueries({ queryKey: ["thread", threadId] });
+      queryClient.invalidateQueries({ queryKey: ["folderCounts"] });
     },
   });
 
   const deleteMutation = useMutation({
     mutationFn: (threadId: string) => deleteThread(threadId, user!.id),
-    onSuccess: () => {
+    onSuccess: (_data, threadId) => {
       queryClient.invalidateQueries({ queryKey: ["threads"] });
-    },
-  });
-
-  const addLabelMutation = useMutation({
-    mutationFn: ({
-      threadId,
-      labelId,
-      currentLabels,
-    }: {
-      threadId: string;
-      labelId: string;
-      currentLabels: string[];
-    }) => addLabelToThread(threadId, labelId, currentLabels),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["threads"] });
-      queryClient.invalidateQueries({ queryKey: ["labels"] });
-    },
-  });
-
-  const removeLabelMutation = useMutation({
-    mutationFn: ({
-      threadId,
-      labelId,
-      currentLabels,
-    }: {
-      threadId: string;
-      labelId: string;
-      currentLabels: string[];
-    }) => removeLabelFromThread(threadId, labelId, currentLabels),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["threads"] });
-      queryClient.invalidateQueries({ queryKey: ["labels"] });
+      queryClient.invalidateQueries({ queryKey: ["thread", threadId] });
+      queryClient.invalidateQueries({ queryKey: ["folderCounts"] });
     },
   });
 
@@ -146,13 +153,11 @@ export function useThreads(options: UseThreadsOptions = {}) {
     toggleStar: (threadId: string, isStarred: boolean) =>
       starMutation.mutate({ threadId, isStarred }),
     archive: (threadId: string) => archiveMutation.mutate(threadId),
+    unarchive: (threadId: string) => unarchiveMutation.mutate(threadId),
     deleteThread: (threadId: string) => deleteMutation.mutate(threadId),
-    addLabel: (threadId: string, labelId: string, currentLabels: string[]) =>
-      addLabelMutation.mutate({ threadId, labelId, currentLabels }),
-    removeLabel: (threadId: string, labelId: string, currentLabels: string[]) =>
-      removeLabelMutation.mutate({ threadId, labelId, currentLabels }),
     isStarring: starMutation.isPending,
     isArchiving: archiveMutation.isPending,
+    isUnarchiving: unarchiveMutation.isPending,
     isDeleting: deleteMutation.isPending,
   };
 }
