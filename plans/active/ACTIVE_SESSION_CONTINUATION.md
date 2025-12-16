@@ -1,80 +1,48 @@
-# Continuation Prompt - Mailgun Email Fix
+# Continuation Prompt - Email System Status
 
 **Date:** 2025-12-16
-**Priority:** CRITICAL - Database insert failing
+**Status:** FIXED - RLS policy type casting issue resolved
 
 ---
 
-## Start New Conversation With:
+## Summary of Fix
 
-```
-Continue from ACTIVE_SESSION_CONTINUATION.md - fix the database insert error for sent emails.
+The "operator does not exist: uuid = text" error was NOT caused by `provider_message_id` as initially suspected.
 
-Mailgun is working (emails send successfully via API) but the record fails to save to user_emails with this error:
+**Actual Root Cause:**
+The RLS INSERT policy on `user_emails` was comparing UUID column `sender_id` with `auth.uid()` without proper type handling. When the JS client sends the UUID as a text string, PostgreSQL failed the comparison.
 
-operator does not exist: uuid = text
-
-The sent folder shows 0 emails because records aren't being saved to the database after successful Mailgun send.
-```
-
----
-
-## Current State
-
-### What's Working
-- Mailgun API integration complete (emails send via Mailgun successfully)
-- Edge functions deployed and configured
-- DNS records configured
-- Supabase secrets set
-
-### What's Broken
-**Database insert fails when saving sent email record**
-
-Error from browser console:
-```
-code: '42883'
-message: 'operator does not exist: uuid = text'
-hint: 'No operator matches the given name and argument types. You might need to add explicit type casts.'
-```
+**Fix Applied:**
+Created and applied migration `20251216_003_fix_user_emails_rls_text_columns.sql` which:
+1. Drops all existing `user_emails` RLS policies
+2. Recreates SELECT, INSERT, UPDATE, DELETE policies
+3. INSERT policy now uses `sender_id::text = auth.uid()::text` to handle type casting
 
 ---
 
-## Root Cause
+## Verification Steps
 
-The insert in `emailService.ts` (around line 327-352) includes `provider_message_id: data?.mailgunId`.
-
-Mailgun returns a string like `<20251216231856.abc123@updates.thestandardhq.com>` but the `provider_message_id` column in `user_emails` table is likely typed as UUID.
-
----
-
-## Fix Required
-
-**Option 1 - Quick fix (remove the field):**
-
-In `src/features/messages/services/emailService.ts`, around line 348, remove:
-```typescript
-provider_message_id: data?.mailgunId,  // DELETE THIS LINE
-```
-
-**Option 2 - Proper fix (change column type):**
-
-Create migration to alter column type:
-```sql
-ALTER TABLE user_emails ALTER COLUMN provider_message_id TYPE TEXT;
-```
+1. Send a test email
+2. Check browser console - should NOT see "CRITICAL: Email sent but record failed to save"
+3. Check Sent folder - should show the sent email
+4. Reply to a received email to test threading
 
 ---
 
-## Files Changed This Session
+## Files Changed
 
 | File | Change |
 |------|--------|
+| `supabase/migrations/20251216_003_fix_user_emails_rls_text_columns.sql` | NEW - RLS policy fix with type casting |
+| `supabase/functions/inbound-email/index.ts` | Fixed ESLint unused vars |
+
+Previous session:
 | `supabase/functions/send-email/index.ts` | Resend → Mailgun API |
 | `supabase/functions/inbound-email/index.ts` | NEW - webhook handler with security |
 | `supabase/functions/send-automated-email/index.ts` | Resend → Mailgun API |
 | `src/features/messages/services/emailService.ts` | Threading headers, Mailgun domain |
 | `src/features/messages/services/threadService.ts` | Removed `.eq("user_id")` from sent query |
-| `supabase/migrations/20251216_001_mailgun_migration.sql` | Created & Applied |
+| `supabase/migrations/20251216_001_mailgun_migration.sql` | Indexes & threading support |
 
 ---
 
@@ -83,15 +51,6 @@ ALTER TABLE user_emails ALTER COLUMN provider_message_id TYPE TEXT;
 - `MAILGUN_API_KEY` = (configured in Supabase)
 - `MAILGUN_DOMAIN` = `updates.thestandardhq.com`
 - `MAILGUN_WEBHOOK_SIGNING_KEY` = (configured in Supabase)
-
----
-
-## Verification After Fix
-
-1. Send a test email
-2. Check browser console - should NOT see "CRITICAL: Email sent but record failed to save"
-3. Check Sent folder - should show the sent email
-4. Reply to a received email to test threading
 
 ---
 
