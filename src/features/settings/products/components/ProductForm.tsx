@@ -33,6 +33,8 @@ const productFormSchema = z.object({
     'whole_life',
     'universal_life',
     'variable_life',
+    'indexed_universal_life',
+    'participating_whole_life',
     'health',
     'disability',
     'annuity'

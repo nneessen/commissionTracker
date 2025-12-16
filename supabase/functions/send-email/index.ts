@@ -76,14 +76,15 @@ serve(async (req) => {
       })
     }
 
-    // Get user's profile ID
+    // Get user's profile - in this app, user_profiles.id = auth.users.id
     const { data: profile, error: profileError } = await supabase
       .from('user_profiles')
-      .select('id')
-      .eq('user_id', user.id)
+      .select('id, email')
+      .eq('id', user.id)
       .single()
 
     if (profileError || !profile) {
+      console.error('Profile lookup failed:', profileError)
       return new Response(JSON.stringify({ error: 'User profile not found' }), {
         status: 404,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -184,9 +185,21 @@ serve(async (req) => {
     // Send via Gmail API
     const gmailResponse = await sendViaGmail(accessToken, rawMessage, body.threadId)
 
-    // Create email record in database
-    const { data: emailRecord, error: emailError } = await supabase.from('user_emails').insert({
-      user_id: body.recruitId || profile.id, // Link to recruit if specified, otherwise sender
+    // Determine the user_id for the email record
+    // If recruitId is provided, link to recruit; otherwise link to sender
+    const emailUserId = body.recruitId || profile.id
+
+    console.log('Creating email record:', {
+      emailUserId,
+      recruitIdProvided: !!body.recruitId,
+      senderId: profile.id,
+      subject: body.subject,
+    })
+
+    // Create email record in database using admin client to bypass RLS
+    // This ensures the email is always recorded even if RLS would block it
+    const { data: emailRecord, error: emailError } = await adminSupabase.from('user_emails').insert({
+      user_id: emailUserId,
       sender_id: profile.id,
       subject: body.subject,
       body_html: body.bodyHtml,
@@ -205,7 +218,11 @@ serve(async (req) => {
 
     if (emailError) {
       console.error('Failed to create email record:', emailError)
-      // Email was sent, but we couldn't record it - log and continue
+      // Email was sent, but we couldn't record it - this is a problem
+      // Log the full error for debugging
+      console.error('Insert error details:', JSON.stringify(emailError))
+    } else {
+      console.log('Email record created:', emailRecord?.id)
     }
 
     // Increment quota

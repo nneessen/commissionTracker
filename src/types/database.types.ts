@@ -4433,7 +4433,7 @@ export type Database = {
       get_user_permissions: {
         Args: { target_user_id: string }
         Returns: {
-          permission_code: string
+          code: string
         }[]
       }
       get_user_profile: {
@@ -4477,16 +4477,20 @@ export type Database = {
         Args: { permission_code: string; target_user_id: string }
         Returns: boolean
       }
-      has_role: {
-        Args: { role_name: string; target_user_id: string }
-        Returns: boolean
-      }
+      has_role:
+        | { Args: { role_to_check: string }; Returns: boolean }
+        | {
+            Args: { role_name: string; target_user_id: string }
+            Returns: boolean
+          }
       increment_email_quota: {
         Args: { p_provider: string; p_user_id: string }
         Returns: number
       }
       is_admin: { Args: never; Returns: boolean }
-      is_admin_user: { Args: { target_user_id?: string }; Returns: boolean }
+      is_admin_user:
+        | { Args: never; Returns: boolean }
+        | { Args: { target_user_id?: string }; Returns: boolean }
       is_caller_admin: { Args: never; Returns: boolean }
       is_user_approved: { Args: never; Returns: boolean }
       lookup_user_by_email: {
@@ -4606,6 +4610,8 @@ export type Database = {
         | "health"
         | "disability"
         | "annuity"
+        | "indexed_universal_life"
+        | "participating_whole_life"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -4764,6 +4770,8 @@ export const Constants = {
         "health",
         "disability",
         "annuity",
+        "indexed_universal_life",
+        "participating_whole_life",
       ],
     },
   },

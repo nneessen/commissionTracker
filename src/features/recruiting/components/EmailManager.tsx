@@ -1,12 +1,13 @@
 // src/features/recruiting/components/EmailManager.tsx
 
-import React, { useState } from 'react';
+import { useState } from 'react';
+import DOMPurify from 'dompurify';
 import {UserEmail} from '@/types/recruiting.types';
 import {Button} from '@/components/ui/button';
 import {Badge} from '@/components/ui/badge';
 import {Card} from '@/components/ui/card';
+import {Dialog, DialogContent, DialogHeader, DialogTitle} from '@/components/ui/dialog';
 import {Mail, Send, Clock, CheckCircle2, AlertCircle, Eye, FileText} from 'lucide-react';
-import {useSendEmail} from '../hooks/useRecruitEmails';
 import {ComposeEmailDialog} from './ComposeEmailDialog';
 
 interface EmailManagerProps {
@@ -51,6 +52,14 @@ export function EmailManager({
     if (diffHours < 24) return `${diffHours}h ago`;
     if (diffDays < 7) return `${diffDays}d ago`;
     return date.toLocaleDateString();
+  };
+
+  // Sanitize HTML content to prevent XSS
+  const sanitizeHtml = (html: string): string => {
+    return DOMPurify.sanitize(html, {
+      ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'u', 'a', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'img', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'div', 'span'],
+      ALLOWED_ATTR: ['href', 'src', 'alt', 'style', 'class', 'target'],
+    });
   };
 
   return (
@@ -164,51 +173,44 @@ export function EmailManager({
         />
       )}
 
-      {/* View Email Dialog */}
-      {selectedEmail && (
-        <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm">
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <Card className="max-w-2xl w-full max-h-[80vh] overflow-auto p-6">
-              <div className="space-y-4">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h3 className="text-lg font-semibold">{selectedEmail.subject}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {selectedEmail.sent_at && `Sent ${new Date(selectedEmail.sent_at).toLocaleString()}`}
-                    </p>
-                  </div>
-                  <Button variant="ghost" size="sm" onClick={() => setSelectedEmail(null)}>
-                    ×
-                  </Button>
-                </div>
+      {/* View Email Dialog - Using proper shadcn Dialog */}
+      <Dialog open={!!selectedEmail} onOpenChange={(open) => !open && setSelectedEmail(null)}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-auto">
+          <DialogHeader>
+            <DialogTitle>{selectedEmail?.subject}</DialogTitle>
+            {selectedEmail?.sent_at && (
+              <p className="text-sm text-muted-foreground">
+                Sent {new Date(selectedEmail.sent_at).toLocaleString()}
+              </p>
+            )}
+          </DialogHeader>
 
-                {selectedEmail.body_html ? (
-                  <div
-                    className="prose prose-sm max-w-none"
-                    dangerouslySetInnerHTML={{ __html: selectedEmail.body_html }}
-                  />
-                ) : (
-                  <div className="whitespace-pre-wrap text-sm">{selectedEmail.body_text}</div>
-                )}
+          <div className="space-y-4">
+            {selectedEmail?.body_html ? (
+              <div
+                className="prose prose-sm max-w-none dark:prose-invert"
+                dangerouslySetInnerHTML={{ __html: sanitizeHtml(selectedEmail.body_html) }}
+              />
+            ) : (
+              <div className="whitespace-pre-wrap text-sm">{selectedEmail?.body_text}</div>
+            )}
 
-                {selectedEmail.attachments && selectedEmail.attachments.length > 0 && (
-                  <div className="border-t pt-4">
-                    <h4 className="text-sm font-medium mb-2">Attachments</h4>
-                    <div className="space-y-2">
-                      {selectedEmail.attachments.map((attachment) => (
-                        <div key={attachment.id} className="flex items-center gap-2 text-sm">
-                          <FileText className="h-4 w-4" />
-                          <span>{attachment.file_name}</span>
-                        </div>
-                      ))}
+            {selectedEmail?.attachments && selectedEmail.attachments.length > 0 && (
+              <div className="border-t pt-4">
+                <h4 className="text-sm font-medium mb-2">Attachments</h4>
+                <div className="space-y-2">
+                  {selectedEmail.attachments.map((attachment) => (
+                    <div key={attachment.id} className="flex items-center gap-2 text-sm">
+                      <FileText className="h-4 w-4" />
+                      <span>{attachment.file_name}</span>
                     </div>
-                  </div>
-                )}
+                  ))}
+                </div>
               </div>
-            </Card>
+            )}
           </div>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
