@@ -15,8 +15,8 @@ echo "Applying migration: $MIGRATION_FILE"
 # Use the pooler connection with URL encoding
 export PGPASSWORD='N123j234n345!$!$'
 
-# Use pooler endpoint which is more reliable
-psql -h aws-0-us-east-1.pooler.supabase.com \
+# Use pooler endpoint (us-east-2 region)
+psql -h aws-1-us-east-2.pooler.supabase.com \
      -p 6543 \
      -U postgres.pcyaqwodnyrpkaiojnpz \
      -d postgres \

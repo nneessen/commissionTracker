@@ -6,6 +6,90 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-12-16 12:27:17
+
+### Changed Files
+- `.serena/memories/COMMUNICATIONS_HUB_ARCHITECTURE.md`
+- `CHANGELOG.md`
+- `PROJECT_STATS.md`
+- `plans/active/communications-hub-implementation-plan.md`
+- `scripts/apply-migration.sh`
+- `src/components/layout/Sidebar.tsx`
+- `src/features/messages/MessagesPage.tsx`
+- `src/features/messages/components/compose/ComposeDialog.tsx`
+- `src/features/messages/components/compose/index.ts`
+- `src/features/messages/components/inbox/ThreadList.tsx`
+- `src/features/messages/components/inbox/ThreadListItem.tsx`
+- `src/features/messages/components/inbox/index.ts`
+- `src/features/messages/components/layout/MessagesHeader.tsx`
+- `src/features/messages/components/layout/MessagesLayout.tsx`
+- `src/features/messages/components/layout/MessagesSidebar.tsx`
+- `src/features/messages/components/layout/index.ts`
+- `src/features/messages/components/thread/ThreadView.tsx`
+- `src/features/messages/components/thread/index.ts`
+- `src/features/messages/hooks/index.ts`
+- `src/features/messages/hooks/useLabels.ts`
+- `src/features/messages/hooks/useSendEmail.ts`
+- `src/features/messages/hooks/useThread.ts`
+- `src/features/messages/hooks/useThreads.ts`
+- `src/features/messages/index.ts`
+- `src/features/messages/services/emailService.ts`
+- `src/features/messages/services/index.ts`
+- `src/features/messages/services/labelService.ts`
+- `src/features/messages/services/threadService.ts`
+- `src/router.tsx`
+- `src/types/database.types.ts`
+- `supabase/migrations/20251216_004_messages_hub_foundation.sql`
+- `supabase/migrations/20251216_005_messages_hub_tracking.sql`
+- `supabase/migrations/20251216_006_add_messages_permission.sql`
+- `tsconfig.tsbuildinfo`
+
+### Statistics
+```
+ 34 files changed, 5436 insertions(+), 11 deletions(-)
+```
+
+## [Checkpoint] - 2025-12-16 12:24:35
+
+### Changed Files
+- `.serena/memories/COMMUNICATIONS_HUB_ARCHITECTURE.md`
+- `plans/active/communications-hub-implementation-plan.md`
+- `scripts/apply-migration.sh`
+- `src/components/layout/Sidebar.tsx`
+- `src/features/messages/MessagesPage.tsx`
+- `src/features/messages/components/compose/ComposeDialog.tsx`
+- `src/features/messages/components/compose/index.ts`
+- `src/features/messages/components/inbox/ThreadList.tsx`
+- `src/features/messages/components/inbox/ThreadListItem.tsx`
+- `src/features/messages/components/inbox/index.ts`
+- `src/features/messages/components/layout/MessagesHeader.tsx`
+- `src/features/messages/components/layout/MessagesLayout.tsx`
+- `src/features/messages/components/layout/MessagesSidebar.tsx`
+- `src/features/messages/components/layout/index.ts`
+- `src/features/messages/components/thread/ThreadView.tsx`
+- `src/features/messages/components/thread/index.ts`
+- `src/features/messages/hooks/index.ts`
+- `src/features/messages/hooks/useLabels.ts`
+- `src/features/messages/hooks/useSendEmail.ts`
+- `src/features/messages/hooks/useThread.ts`
+- `src/features/messages/hooks/useThreads.ts`
+- `src/features/messages/index.ts`
+- `src/features/messages/services/emailService.ts`
+- `src/features/messages/services/index.ts`
+- `src/features/messages/services/labelService.ts`
+- `src/features/messages/services/threadService.ts`
+- `src/router.tsx`
+- `src/types/database.types.ts`
+- `supabase/migrations/20251216_004_messages_hub_foundation.sql`
+- `supabase/migrations/20251216_005_messages_hub_tracking.sql`
+- `supabase/migrations/20251216_006_add_messages_permission.sql`
+- `tsconfig.tsbuildinfo`
+
+### Statistics
+```
+ 32 files changed, 5357 insertions(+), 3 deletions(-)
+```
+
 ## [Checkpoint] - 2025-12-16 10:21:34
 
 ### Changed Files

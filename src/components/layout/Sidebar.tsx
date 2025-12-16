@@ -19,6 +19,7 @@ import {
   ClipboardList,
   GraduationCap,
   Lock,
+  Mail,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Button } from "@/components/ui/button";
@@ -51,30 +52,91 @@ interface SidebarProps {
 }
 
 const navigationItems: NavigationItem[] = [
-  { icon: Home, label: "Dashboard", href: "/dashboard", permission: "nav.dashboard" },
-  { icon: TrendingUp, label: "Analytics", href: "/analytics", permission: "nav.dashboard" },
-  { icon: Target, label: "Targets", href: "/targets", permission: "nav.dashboard" },
-  { icon: BarChart3, label: "Reports", href: "/reports", permission: "nav.downline_reports" },
-  { icon: CreditCard, label: "Expenses", href: "/expenses", permission: "expenses.read.own" },
-  { icon: FileText, label: "Policies", href: "/policies", permission: "nav.policies" },
-  { icon: Users, label: "Team", href: "/hierarchy", permission: "nav.team_dashboard" },
-  { icon: UserPlus, label: "Recruiting", href: "/recruiting", permission: "nav.recruiting_pipeline" },
+  {
+    icon: Home,
+    label: "Dashboard",
+    href: "/dashboard",
+    permission: "nav.dashboard",
+  },
+  {
+    icon: TrendingUp,
+    label: "Analytics",
+    href: "/analytics",
+    permission: "nav.dashboard",
+  },
+  {
+    icon: Target,
+    label: "Targets",
+    href: "/targets",
+    permission: "nav.dashboard",
+  },
+  {
+    icon: BarChart3,
+    label: "Reports",
+    href: "/reports",
+    permission: "nav.downline_reports",
+  },
+  {
+    icon: CreditCard,
+    label: "Expenses",
+    href: "/expenses",
+    permission: "expenses.read.own",
+  },
+  {
+    icon: FileText,
+    label: "Policies",
+    href: "/policies",
+    permission: "nav.policies",
+  },
+  {
+    icon: Users,
+    label: "Team",
+    href: "/hierarchy",
+    permission: "nav.team_dashboard",
+  },
+  {
+    icon: UserPlus,
+    label: "Recruiting",
+    href: "/recruiting",
+    permission: "nav.recruiting_pipeline",
+  },
+  {
+    icon: Mail,
+    label: "Messages",
+    href: "/messages",
+    permission: "nav.messages",
+  },
   { icon: Settings, label: "Settings", href: "/settings", public: true },
 ];
 
 // Training Hub navigation items (for trainers and contracting managers)
 const trainingNavigationItems: NavigationItem[] = [
-  { icon: GraduationCap, label: "Training Hub", href: "/training-hub", permission: "nav.training_hub" },
+  {
+    icon: GraduationCap,
+    label: "Training Hub",
+    href: "/training-hub",
+    permission: "nav.training_hub",
+  },
 ];
 
 // Admin-only navigation items
 const adminNavigationItems: NavigationItem[] = [
-  { icon: Shield, label: "Admin", href: "/admin", permission: "nav.user_management" },
+  {
+    icon: Shield,
+    label: "Admin",
+    href: "/admin",
+    permission: "nav.user_management",
+  },
 ];
 
 // Recruit-only navigation items
 const recruitNavigationItems: NavigationItem[] = [
-  { icon: ClipboardList, label: "My Progress", href: "/recruiting/my-pipeline", public: true },
+  {
+    icon: ClipboardList,
+    label: "My Progress",
+    href: "/recruiting/my-pipeline",
+    public: true,
+  },
 ];
 
 export default function Sidebar({
@@ -87,18 +149,18 @@ export default function Sidebar({
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const { can, isLoading } = usePermissionCheck();
-  const { isPending, isLoading: authStatusLoading } = useAuthorizationStatus();
+  const { isPending, isLoading: _authStatusLoading } = useAuthorizationStatus();
   const { user } = useAuth();
 
   // Fetch user roles from profile
   const { data: userProfile } = useQuery({
-    queryKey: ['user-profile-roles', user?.id],
+    queryKey: ["user-profile-roles", user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
       const { data, error } = await supabase
-        .from('user_profiles')
-        .select('roles')
-        .eq('id', user.id)
+        .from("user_profiles")
+        .select("roles")
+        .eq("id", user.id)
         .single();
       if (error) throw error;
       return data as { roles: RoleName[] };
@@ -110,7 +172,7 @@ export default function Sidebar({
     return userProfile?.roles?.includes(role) || false;
   };
 
-  const isRecruit = hasRole('recruit' as RoleName);
+  const isRecruit = hasRole("recruit" as RoleName);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -130,7 +192,9 @@ export default function Sidebar({
 
   // Handler for locked nav item clicks (for pending users)
   const handleLockedNavClick = () => {
-    toast.error("Your account is pending approval. Please wait for administrator approval to access this feature.");
+    toast.error(
+      "Your account is pending approval. Please wait for administrator approval to access this feature.",
+    );
   };
 
   // If user is a recruit, show ONLY recruit navigation
@@ -265,9 +329,14 @@ export default function Sidebar({
                     className={`h-9 ${isCollapsed ? "w-9 p-0" : "w-full justify-start px-3"} opacity-50 cursor-not-allowed`}
                     title={isCollapsed ? `${item.label} (Locked)` : ""}
                   >
-                    <Icon size={16} className={`${isCollapsed ? "" : "mr-2.5"} text-muted-foreground`} />
+                    <Icon
+                      size={16}
+                      className={`${isCollapsed ? "" : "mr-2.5"} text-muted-foreground`}
+                    />
                     {!isCollapsed && (
-                      <span className="text-sm blur-[0.5px] text-muted-foreground">{item.label}</span>
+                      <span className="text-sm blur-[0.5px] text-muted-foreground">
+                        {item.label}
+                      </span>
                     )}
                   </Button>
                   <Lock
@@ -305,9 +374,8 @@ export default function Sidebar({
           })}
 
           {/* Separator for training/admin section */}
-          {(visibleTrainingItems.length > 0 || visibleAdminItems.length > 0) && !isCollapsed && (
-            <div className="my-2 border-t border-border" />
-          )}
+          {(visibleTrainingItems.length > 0 || visibleAdminItems.length > 0) &&
+            !isCollapsed && <div className="my-2 border-t border-border" />}
 
           {/* Training Hub Navigation Items */}
           {visibleTrainingItems.map((item) => {
@@ -326,9 +394,14 @@ export default function Sidebar({
                     className={`h-9 ${isCollapsed ? "w-9 p-0" : "w-full justify-start px-3"} opacity-50 cursor-not-allowed`}
                     title={isCollapsed ? `${item.label} (Locked)` : ""}
                   >
-                    <Icon size={16} className={`${isCollapsed ? "" : "mr-2.5"} text-muted-foreground`} />
+                    <Icon
+                      size={16}
+                      className={`${isCollapsed ? "" : "mr-2.5"} text-muted-foreground`}
+                    />
                     {!isCollapsed && (
-                      <span className="text-sm blur-[0.5px] text-muted-foreground">{item.label}</span>
+                      <span className="text-sm blur-[0.5px] text-muted-foreground">
+                        {item.label}
+                      </span>
                     )}
                   </Button>
                   <Lock
@@ -381,9 +454,14 @@ export default function Sidebar({
                     className={`h-9 ${isCollapsed ? "w-9 p-0" : "w-full justify-start px-3"} opacity-50 cursor-not-allowed`}
                     title={isCollapsed ? `${item.label} (Locked)` : ""}
                   >
-                    <Icon size={16} className={`${isCollapsed ? "" : "mr-2.5"} text-muted-foreground`} />
+                    <Icon
+                      size={16}
+                      className={`${isCollapsed ? "" : "mr-2.5"} text-muted-foreground`}
+                    />
                     {!isCollapsed && (
-                      <span className="text-sm blur-[0.5px] text-muted-foreground">{item.label}</span>
+                      <span className="text-sm blur-[0.5px] text-muted-foreground">
+                        {item.label}
+                      </span>
                     )}
                   </Button>
                   <Lock

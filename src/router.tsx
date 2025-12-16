@@ -26,13 +26,13 @@ import {
 } from "./features/auth";
 import { ReportsPage } from "./features/reports";
 import AdminControlCenter from "./features/admin/components/AdminControlCenter";
-import { PermissionGuard } from "./components/auth/PermissionGuard";
+// PermissionGuard reserved for future granular route permissions
+// import { PermissionGuard } from "./components/auth/PermissionGuard";
 import { RouteGuard } from "./components/auth/RouteGuard";
 import {
   OverrideDashboard,
   DownlinePerformance,
   HierarchyManagement,
-  HierarchyDashboard,
 } from "./features/hierarchy";
 import { HierarchyDashboardCompact } from "./features/hierarchy/HierarchyDashboardCompact";
 import { AgentDetailPage } from "./features/hierarchy/AgentDetailPage";
@@ -40,6 +40,7 @@ import { RecruitingDashboard } from "./features/recruiting/RecruitingDashboard";
 import { PipelineAdminPage } from "./features/recruiting/admin/PipelineAdminPage";
 import { MyRecruitingPipeline } from "./features/recruiting/pages/MyRecruitingPipeline";
 import { TrainingHubPage } from "./features/training-hub";
+import { MessagesPage } from "./features/messages";
 
 // Create root route with App layout
 const rootRoute = createRootRoute({
@@ -347,6 +348,17 @@ const trainingHubRoute = createRoute({
   ),
 });
 
+// Messages route - Communications Hub
+const messagesRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "messages",
+  component: () => (
+    <RouteGuard permission="nav.messages" noRecruits>
+      <MessagesPage />
+    </RouteGuard>
+  ),
+});
+
 // Create the route tree - all routes are already linked via getParentRoute
 const routeTree = rootRoute.addChildren([
   indexRoute,
@@ -377,6 +389,7 @@ const routeTree = rootRoute.addChildren([
   recruitingAdminRoute,
   myPipelineRoute,
   trainingHubRoute,
+  messagesRoute,
 ]);
 
 // Create and export the router

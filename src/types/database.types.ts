@@ -4,4604 +4,5330 @@ export type Json =
   | boolean
   | null
   | { [key: string]: Json | undefined }
-  | Json[]
+  | Json[];
 
 export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "13.0.5"
-  }
+    PostgrestVersion: "13.0.5";
+  };
   public: {
     Tables: {
+      bulk_email_campaigns: {
+        Row: {
+          bounced_count: number;
+          clicked_count: number;
+          completed_at: string | null;
+          created_at: string | null;
+          delivered_count: number;
+          failed_count: number;
+          id: string;
+          name: string;
+          opened_count: number;
+          recipient_count: number;
+          recipient_filter: Json | null;
+          recipient_source: string;
+          scheduled_for: string | null;
+          send_rate: number | null;
+          sent_count: number;
+          started_at: string | null;
+          status: string;
+          subject_override: string | null;
+          template_id: string | null;
+          unsubscribed_count: number;
+          updated_at: string | null;
+          user_id: string;
+        };
+        Insert: {
+          bounced_count?: number;
+          clicked_count?: number;
+          completed_at?: string | null;
+          created_at?: string | null;
+          delivered_count?: number;
+          failed_count?: number;
+          id?: string;
+          name: string;
+          opened_count?: number;
+          recipient_count?: number;
+          recipient_filter?: Json | null;
+          recipient_source: string;
+          scheduled_for?: string | null;
+          send_rate?: number | null;
+          sent_count?: number;
+          started_at?: string | null;
+          status?: string;
+          subject_override?: string | null;
+          template_id?: string | null;
+          unsubscribed_count?: number;
+          updated_at?: string | null;
+          user_id: string;
+        };
+        Update: {
+          bounced_count?: number;
+          clicked_count?: number;
+          completed_at?: string | null;
+          created_at?: string | null;
+          delivered_count?: number;
+          failed_count?: number;
+          id?: string;
+          name?: string;
+          opened_count?: number;
+          recipient_count?: number;
+          recipient_filter?: Json | null;
+          recipient_source?: string;
+          scheduled_for?: string | null;
+          send_rate?: number | null;
+          sent_count?: number;
+          started_at?: string | null;
+          status?: string;
+          subject_override?: string | null;
+          template_id?: string | null;
+          unsubscribed_count?: number;
+          updated_at?: string | null;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "bulk_email_campaigns_template_id_fkey";
+            columns: ["template_id"];
+            isOneToOne: false;
+            referencedRelation: "email_templates";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "bulk_email_campaigns_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      bulk_email_recipients: {
+        Row: {
+          campaign_id: string;
+          contact_id: string | null;
+          contact_type: string | null;
+          created_at: string | null;
+          email_address: string;
+          email_id: string | null;
+          error_message: string | null;
+          first_name: string | null;
+          id: string;
+          last_name: string | null;
+          sent_at: string | null;
+          status: string;
+          variables: Json | null;
+        };
+        Insert: {
+          campaign_id: string;
+          contact_id?: string | null;
+          contact_type?: string | null;
+          created_at?: string | null;
+          email_address: string;
+          email_id?: string | null;
+          error_message?: string | null;
+          first_name?: string | null;
+          id?: string;
+          last_name?: string | null;
+          sent_at?: string | null;
+          status?: string;
+          variables?: Json | null;
+        };
+        Update: {
+          campaign_id?: string;
+          contact_id?: string | null;
+          contact_type?: string | null;
+          created_at?: string | null;
+          email_address?: string;
+          email_id?: string | null;
+          error_message?: string | null;
+          first_name?: string | null;
+          id?: string;
+          last_name?: string | null;
+          sent_at?: string | null;
+          status?: string;
+          variables?: Json | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "bulk_email_recipients_campaign_id_fkey";
+            columns: ["campaign_id"];
+            isOneToOne: false;
+            referencedRelation: "bulk_email_campaigns";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "bulk_email_recipients_email_id_fkey";
+            columns: ["email_id"];
+            isOneToOne: false;
+            referencedRelation: "user_emails";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       carriers: {
         Row: {
-          code: string | null
-          commission_structure: Json | null
-          contact_info: Json | null
-          created_at: string | null
-          id: string
-          is_active: boolean | null
-          name: string
-          updated_at: string | null
-        }
+          code: string | null;
+          commission_structure: Json | null;
+          contact_info: Json | null;
+          created_at: string | null;
+          id: string;
+          is_active: boolean | null;
+          name: string;
+          updated_at: string | null;
+        };
         Insert: {
-          code?: string | null
-          commission_structure?: Json | null
-          contact_info?: Json | null
-          created_at?: string | null
-          id?: string
-          is_active?: boolean | null
-          name: string
-          updated_at?: string | null
-        }
+          code?: string | null;
+          commission_structure?: Json | null;
+          contact_info?: Json | null;
+          created_at?: string | null;
+          id?: string;
+          is_active?: boolean | null;
+          name: string;
+          updated_at?: string | null;
+        };
         Update: {
-          code?: string | null
-          commission_structure?: Json | null
-          contact_info?: Json | null
-          created_at?: string | null
-          id?: string
-          is_active?: boolean | null
-          name?: string
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
+          code?: string | null;
+          commission_structure?: Json | null;
+          contact_info?: Json | null;
+          created_at?: string | null;
+          id?: string;
+          is_active?: boolean | null;
+          name?: string;
+          updated_at?: string | null;
+        };
+        Relationships: [];
+      };
       chargebacks: {
         Row: {
-          chargeback_amount: number
-          chargeback_date: string
-          commission_id: string | null
-          created_at: string | null
-          id: string
-          reason: string | null
-          resolution_date: string | null
-          resolution_notes: string | null
-          status: Database["public"]["Enums"]["chargeback_status"] | null
-          updated_at: string | null
-        }
+          chargeback_amount: number;
+          chargeback_date: string;
+          commission_id: string | null;
+          created_at: string | null;
+          id: string;
+          reason: string | null;
+          resolution_date: string | null;
+          resolution_notes: string | null;
+          status: Database["public"]["Enums"]["chargeback_status"] | null;
+          updated_at: string | null;
+        };
         Insert: {
-          chargeback_amount: number
-          chargeback_date: string
-          commission_id?: string | null
-          created_at?: string | null
-          id?: string
-          reason?: string | null
-          resolution_date?: string | null
-          resolution_notes?: string | null
-          status?: Database["public"]["Enums"]["chargeback_status"] | null
-          updated_at?: string | null
-        }
+          chargeback_amount: number;
+          chargeback_date: string;
+          commission_id?: string | null;
+          created_at?: string | null;
+          id?: string;
+          reason?: string | null;
+          resolution_date?: string | null;
+          resolution_notes?: string | null;
+          status?: Database["public"]["Enums"]["chargeback_status"] | null;
+          updated_at?: string | null;
+        };
         Update: {
-          chargeback_amount?: number
-          chargeback_date?: string
-          commission_id?: string | null
-          created_at?: string | null
-          id?: string
-          reason?: string | null
-          resolution_date?: string | null
-          resolution_notes?: string | null
-          status?: Database["public"]["Enums"]["chargeback_status"] | null
-          updated_at?: string | null
-        }
+          chargeback_amount?: number;
+          chargeback_date?: string;
+          commission_id?: string | null;
+          created_at?: string | null;
+          id?: string;
+          reason?: string | null;
+          resolution_date?: string | null;
+          resolution_notes?: string | null;
+          status?: Database["public"]["Enums"]["chargeback_status"] | null;
+          updated_at?: string | null;
+        };
         Relationships: [
           {
-            foreignKeyName: "chargebacks_commission_id_fkey"
-            columns: ["commission_id"]
-            isOneToOne: false
-            referencedRelation: "commission_earning_detail"
-            referencedColumns: ["commission_id"]
+            foreignKeyName: "chargebacks_commission_id_fkey";
+            columns: ["commission_id"];
+            isOneToOne: false;
+            referencedRelation: "commission_earning_detail";
+            referencedColumns: ["commission_id"];
           },
           {
-            foreignKeyName: "chargebacks_commission_id_fkey"
-            columns: ["commission_id"]
-            isOneToOne: false
-            referencedRelation: "commission_earning_status"
-            referencedColumns: ["id"]
+            foreignKeyName: "chargebacks_commission_id_fkey";
+            columns: ["commission_id"];
+            isOneToOne: false;
+            referencedRelation: "commission_earning_status";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "chargebacks_commission_id_fkey"
-            columns: ["commission_id"]
-            isOneToOne: false
-            referencedRelation: "commissions"
-            referencedColumns: ["id"]
+            foreignKeyName: "chargebacks_commission_id_fkey";
+            columns: ["commission_id"];
+            isOneToOne: false;
+            referencedRelation: "commissions";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       clients: {
         Row: {
-          address: string | null
-          created_at: string | null
-          date_of_birth: string | null
-          email: string | null
-          id: string
-          name: string
-          notes: string | null
-          phone: string | null
-          status: string | null
-          updated_at: string | null
-          user_id: string | null
-        }
+          address: string | null;
+          created_at: string | null;
+          date_of_birth: string | null;
+          email: string | null;
+          id: string;
+          name: string;
+          notes: string | null;
+          phone: string | null;
+          status: string | null;
+          updated_at: string | null;
+          user_id: string | null;
+        };
         Insert: {
-          address?: string | null
-          created_at?: string | null
-          date_of_birth?: string | null
-          email?: string | null
-          id?: string
-          name: string
-          notes?: string | null
-          phone?: string | null
-          status?: string | null
-          updated_at?: string | null
-          user_id?: string | null
-        }
+          address?: string | null;
+          created_at?: string | null;
+          date_of_birth?: string | null;
+          email?: string | null;
+          id?: string;
+          name: string;
+          notes?: string | null;
+          phone?: string | null;
+          status?: string | null;
+          updated_at?: string | null;
+          user_id?: string | null;
+        };
         Update: {
-          address?: string | null
-          created_at?: string | null
-          date_of_birth?: string | null
-          email?: string | null
-          id?: string
-          name?: string
-          notes?: string | null
-          phone?: string | null
-          status?: string | null
-          updated_at?: string | null
-          user_id?: string | null
-        }
-        Relationships: []
-      }
+          address?: string | null;
+          created_at?: string | null;
+          date_of_birth?: string | null;
+          email?: string | null;
+          id?: string;
+          name?: string;
+          notes?: string | null;
+          phone?: string | null;
+          status?: string | null;
+          updated_at?: string | null;
+          user_id?: string | null;
+        };
+        Relationships: [];
+      };
       commissions: {
         Row: {
-          advance_months: number
-          amount: number
-          chargeback_amount: number | null
-          chargeback_date: string | null
-          chargeback_reason: string | null
-          created_at: string | null
-          earned_amount: number
-          id: string
-          last_payment_date: string | null
-          months_paid: number
-          notes: string | null
-          payment_date: string | null
-          policy_id: string | null
-          status: string
-          type: string
-          unearned_amount: number | null
-          updated_at: string | null
-          user_id: string | null
-        }
+          advance_months: number;
+          amount: number;
+          chargeback_amount: number | null;
+          chargeback_date: string | null;
+          chargeback_reason: string | null;
+          created_at: string | null;
+          earned_amount: number;
+          id: string;
+          last_payment_date: string | null;
+          months_paid: number;
+          notes: string | null;
+          payment_date: string | null;
+          policy_id: string | null;
+          status: string;
+          type: string;
+          unearned_amount: number | null;
+          updated_at: string | null;
+          user_id: string | null;
+        };
         Insert: {
-          advance_months?: number
-          amount: number
-          chargeback_amount?: number | null
-          chargeback_date?: string | null
-          chargeback_reason?: string | null
-          created_at?: string | null
-          earned_amount?: number
-          id?: string
-          last_payment_date?: string | null
-          months_paid?: number
-          notes?: string | null
-          payment_date?: string | null
-          policy_id?: string | null
-          status?: string
-          type: string
-          unearned_amount?: number | null
-          updated_at?: string | null
-          user_id?: string | null
-        }
+          advance_months?: number;
+          amount: number;
+          chargeback_amount?: number | null;
+          chargeback_date?: string | null;
+          chargeback_reason?: string | null;
+          created_at?: string | null;
+          earned_amount?: number;
+          id?: string;
+          last_payment_date?: string | null;
+          months_paid?: number;
+          notes?: string | null;
+          payment_date?: string | null;
+          policy_id?: string | null;
+          status?: string;
+          type: string;
+          unearned_amount?: number | null;
+          updated_at?: string | null;
+          user_id?: string | null;
+        };
         Update: {
-          advance_months?: number
-          amount?: number
-          chargeback_amount?: number | null
-          chargeback_date?: string | null
-          chargeback_reason?: string | null
-          created_at?: string | null
-          earned_amount?: number
-          id?: string
-          last_payment_date?: string | null
-          months_paid?: number
-          notes?: string | null
-          payment_date?: string | null
-          policy_id?: string | null
-          status?: string
-          type?: string
-          unearned_amount?: number | null
-          updated_at?: string | null
-          user_id?: string | null
-        }
+          advance_months?: number;
+          amount?: number;
+          chargeback_amount?: number | null;
+          chargeback_date?: string | null;
+          chargeback_reason?: string | null;
+          created_at?: string | null;
+          earned_amount?: number;
+          id?: string;
+          last_payment_date?: string | null;
+          months_paid?: number;
+          notes?: string | null;
+          payment_date?: string | null;
+          policy_id?: string | null;
+          status?: string;
+          type?: string;
+          unearned_amount?: number | null;
+          updated_at?: string | null;
+          user_id?: string | null;
+        };
         Relationships: [
           {
-            foreignKeyName: "commissions_policy_id_fkey"
-            columns: ["policy_id"]
-            isOneToOne: false
-            referencedRelation: "policies"
-            referencedColumns: ["id"]
+            foreignKeyName: "commissions_policy_id_fkey";
+            columns: ["policy_id"];
+            isOneToOne: false;
+            referencedRelation: "policies";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
+      communication_preferences: {
+        Row: {
+          contact_id: string;
+          contact_type: string;
+          created_at: string | null;
+          do_not_contact: boolean | null;
+          email_opt_in: boolean | null;
+          id: string;
+          preferred_channel: string | null;
+          slack_enabled: boolean | null;
+          sms_opt_in: boolean | null;
+          unsubscribe_reason: string | null;
+          unsubscribed_at: string | null;
+          updated_at: string | null;
+          user_id: string;
+        };
+        Insert: {
+          contact_id: string;
+          contact_type: string;
+          created_at?: string | null;
+          do_not_contact?: boolean | null;
+          email_opt_in?: boolean | null;
+          id?: string;
+          preferred_channel?: string | null;
+          slack_enabled?: boolean | null;
+          sms_opt_in?: boolean | null;
+          unsubscribe_reason?: string | null;
+          unsubscribed_at?: string | null;
+          updated_at?: string | null;
+          user_id: string;
+        };
+        Update: {
+          contact_id?: string;
+          contact_type?: string;
+          created_at?: string | null;
+          do_not_contact?: boolean | null;
+          email_opt_in?: boolean | null;
+          id?: string;
+          preferred_channel?: string | null;
+          slack_enabled?: boolean | null;
+          sms_opt_in?: boolean | null;
+          unsubscribe_reason?: string | null;
+          unsubscribed_at?: string | null;
+          updated_at?: string | null;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "communication_preferences_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       comp_guide: {
         Row: {
-          bonus_percentage: number | null
-          carrier_id: string | null
-          commission_percentage: number
-          contract_level: number
-          created_at: string | null
-          effective_date: string
-          expiration_date: string | null
-          id: string
-          maximum_premium: number | null
-          minimum_premium: number | null
-          product_id: string | null
-          product_type: Database["public"]["Enums"]["product_type"]
-          updated_at: string | null
-        }
+          bonus_percentage: number | null;
+          carrier_id: string | null;
+          commission_percentage: number;
+          contract_level: number;
+          created_at: string | null;
+          effective_date: string;
+          expiration_date: string | null;
+          id: string;
+          maximum_premium: number | null;
+          minimum_premium: number | null;
+          product_id: string | null;
+          product_type: Database["public"]["Enums"]["product_type"];
+          updated_at: string | null;
+        };
         Insert: {
-          bonus_percentage?: number | null
-          carrier_id?: string | null
-          commission_percentage: number
-          contract_level: number
-          created_at?: string | null
-          effective_date: string
-          expiration_date?: string | null
-          id?: string
-          maximum_premium?: number | null
-          minimum_premium?: number | null
-          product_id?: string | null
-          product_type: Database["public"]["Enums"]["product_type"]
-          updated_at?: string | null
-        }
+          bonus_percentage?: number | null;
+          carrier_id?: string | null;
+          commission_percentage: number;
+          contract_level: number;
+          created_at?: string | null;
+          effective_date: string;
+          expiration_date?: string | null;
+          id?: string;
+          maximum_premium?: number | null;
+          minimum_premium?: number | null;
+          product_id?: string | null;
+          product_type: Database["public"]["Enums"]["product_type"];
+          updated_at?: string | null;
+        };
         Update: {
-          bonus_percentage?: number | null
-          carrier_id?: string | null
-          commission_percentage?: number
-          contract_level?: number
-          created_at?: string | null
-          effective_date?: string
-          expiration_date?: string | null
-          id?: string
-          maximum_premium?: number | null
-          minimum_premium?: number | null
-          product_id?: string | null
-          product_type?: Database["public"]["Enums"]["product_type"]
-          updated_at?: string | null
-        }
+          bonus_percentage?: number | null;
+          carrier_id?: string | null;
+          commission_percentage?: number;
+          contract_level?: number;
+          created_at?: string | null;
+          effective_date?: string;
+          expiration_date?: string | null;
+          id?: string;
+          maximum_premium?: number | null;
+          minimum_premium?: number | null;
+          product_id?: string | null;
+          product_type?: Database["public"]["Enums"]["product_type"];
+          updated_at?: string | null;
+        };
         Relationships: [
           {
-            foreignKeyName: "comp_guide_carrier_id_fkey"
-            columns: ["carrier_id"]
-            isOneToOne: false
-            referencedRelation: "carriers"
-            referencedColumns: ["id"]
+            foreignKeyName: "comp_guide_carrier_id_fkey";
+            columns: ["carrier_id"];
+            isOneToOne: false;
+            referencedRelation: "carriers";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "comp_guide_product_id_fkey"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "products"
-            referencedColumns: ["id"]
+            foreignKeyName: "comp_guide_product_id_fkey";
+            columns: ["product_id"];
+            isOneToOne: false;
+            referencedRelation: "products";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       constants: {
         Row: {
-          category: string | null
-          created_at: string | null
-          description: string | null
-          id: string
-          key: string
-          updated_at: string | null
-          value: number
-        }
+          category: string | null;
+          created_at: string | null;
+          description: string | null;
+          id: string;
+          key: string;
+          updated_at: string | null;
+          value: number;
+        };
         Insert: {
-          category?: string | null
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          key: string
-          updated_at?: string | null
-          value: number
-        }
+          category?: string | null;
+          created_at?: string | null;
+          description?: string | null;
+          id?: string;
+          key: string;
+          updated_at?: string | null;
+          value: number;
+        };
         Update: {
-          category?: string | null
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          key?: string
-          updated_at?: string | null
-          value?: number
-        }
-        Relationships: []
-      }
+          category?: string | null;
+          created_at?: string | null;
+          description?: string | null;
+          id?: string;
+          key?: string;
+          updated_at?: string | null;
+          value?: number;
+        };
+        Relationships: [];
+      };
+      email_labels: {
+        Row: {
+          color: string;
+          created_at: string | null;
+          icon: string | null;
+          id: string;
+          is_system: boolean;
+          message_count: number;
+          name: string;
+          sort_order: number;
+          user_id: string;
+        };
+        Insert: {
+          color?: string;
+          created_at?: string | null;
+          icon?: string | null;
+          id?: string;
+          is_system?: boolean;
+          message_count?: number;
+          name: string;
+          sort_order?: number;
+          user_id: string;
+        };
+        Update: {
+          color?: string;
+          created_at?: string | null;
+          icon?: string | null;
+          id?: string;
+          is_system?: boolean;
+          message_count?: number;
+          name?: string;
+          sort_order?: number;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "email_labels_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       email_queue: {
         Row: {
-          body_html: string
-          body_text: string | null
-          created_at: string | null
-          error_message: string | null
-          id: string
-          recipient_id: string | null
-          sent_at: string | null
-          status: string
-          subject: string
-          template_id: string | null
-          updated_at: string | null
-          variables: Json | null
-        }
+          body_html: string;
+          body_text: string | null;
+          created_at: string | null;
+          error_message: string | null;
+          id: string;
+          recipient_id: string | null;
+          sent_at: string | null;
+          status: string;
+          subject: string;
+          template_id: string | null;
+          updated_at: string | null;
+          variables: Json | null;
+        };
         Insert: {
-          body_html: string
-          body_text?: string | null
-          created_at?: string | null
-          error_message?: string | null
-          id?: string
-          recipient_id?: string | null
-          sent_at?: string | null
-          status?: string
-          subject: string
-          template_id?: string | null
-          updated_at?: string | null
-          variables?: Json | null
-        }
+          body_html: string;
+          body_text?: string | null;
+          created_at?: string | null;
+          error_message?: string | null;
+          id?: string;
+          recipient_id?: string | null;
+          sent_at?: string | null;
+          status?: string;
+          subject: string;
+          template_id?: string | null;
+          updated_at?: string | null;
+          variables?: Json | null;
+        };
         Update: {
-          body_html?: string
-          body_text?: string | null
-          created_at?: string | null
-          error_message?: string | null
-          id?: string
-          recipient_id?: string | null
-          sent_at?: string | null
-          status?: string
-          subject?: string
-          template_id?: string | null
-          updated_at?: string | null
-          variables?: Json | null
-        }
+          body_html?: string;
+          body_text?: string | null;
+          created_at?: string | null;
+          error_message?: string | null;
+          id?: string;
+          recipient_id?: string | null;
+          sent_at?: string | null;
+          status?: string;
+          subject?: string;
+          template_id?: string | null;
+          updated_at?: string | null;
+          variables?: Json | null;
+        };
         Relationships: [
           {
-            foreignKeyName: "email_queue_recipient_id_fkey"
-            columns: ["recipient_id"]
-            isOneToOne: false
-            referencedRelation: "active_user_profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "email_queue_recipient_id_fkey";
+            columns: ["recipient_id"];
+            isOneToOne: false;
+            referencedRelation: "active_user_profiles";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "email_queue_recipient_id_fkey"
-            columns: ["recipient_id"]
-            isOneToOne: false
-            referencedRelation: "user_management_view"
-            referencedColumns: ["id"]
+            foreignKeyName: "email_queue_recipient_id_fkey";
+            columns: ["recipient_id"];
+            isOneToOne: false;
+            referencedRelation: "user_management_view";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "email_queue_recipient_id_fkey"
-            columns: ["recipient_id"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "email_queue_recipient_id_fkey";
+            columns: ["recipient_id"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "email_queue_template_id_fkey"
-            columns: ["template_id"]
-            isOneToOne: false
-            referencedRelation: "email_templates"
-            referencedColumns: ["id"]
+            foreignKeyName: "email_queue_template_id_fkey";
+            columns: ["template_id"];
+            isOneToOne: false;
+            referencedRelation: "email_templates";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       email_quota_tracking: {
         Row: {
-          date: string
-          emails_sent: number | null
-          id: string
-          provider: string
-          user_id: string
-        }
+          date: string;
+          emails_sent: number | null;
+          id: string;
+          provider: string;
+          user_id: string;
+        };
         Insert: {
-          date?: string
-          emails_sent?: number | null
-          id?: string
-          provider: string
-          user_id: string
-        }
+          date?: string;
+          emails_sent?: number | null;
+          id?: string;
+          provider: string;
+          user_id: string;
+        };
         Update: {
-          date?: string
-          emails_sent?: number | null
-          id?: string
-          provider?: string
-          user_id?: string
-        }
+          date?: string;
+          emails_sent?: number | null;
+          id?: string;
+          provider?: string;
+          user_id?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "email_quota_tracking_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "active_user_profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "email_quota_tracking_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "active_user_profiles";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "email_quota_tracking_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_management_view"
-            referencedColumns: ["id"]
+            foreignKeyName: "email_quota_tracking_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "user_management_view";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "email_quota_tracking_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "email_quota_tracking_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
+      email_scheduled: {
+        Row: {
+          created_at: string | null;
+          email_id: string | null;
+          error_message: string | null;
+          id: string;
+          max_retries: number | null;
+          processed_at: string | null;
+          retry_count: number | null;
+          scheduled_for: string;
+          status: string;
+          timezone: string;
+          updated_at: string | null;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string | null;
+          email_id?: string | null;
+          error_message?: string | null;
+          id?: string;
+          max_retries?: number | null;
+          processed_at?: string | null;
+          retry_count?: number | null;
+          scheduled_for: string;
+          status?: string;
+          timezone?: string;
+          updated_at?: string | null;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string | null;
+          email_id?: string | null;
+          error_message?: string | null;
+          id?: string;
+          max_retries?: number | null;
+          processed_at?: string | null;
+          retry_count?: number | null;
+          scheduled_for?: string;
+          status?: string;
+          timezone?: string;
+          updated_at?: string | null;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "email_scheduled_email_id_fkey";
+            columns: ["email_id"];
+            isOneToOne: false;
+            referencedRelation: "user_emails";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "email_scheduled_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      email_signatures: {
+        Row: {
+          content_html: string;
+          content_text: string;
+          created_at: string | null;
+          id: string;
+          include_social_links: boolean | null;
+          is_default: boolean;
+          name: string;
+          social_links: Json | null;
+          updated_at: string | null;
+          user_id: string;
+        };
+        Insert: {
+          content_html: string;
+          content_text: string;
+          created_at?: string | null;
+          id?: string;
+          include_social_links?: boolean | null;
+          is_default?: boolean;
+          name: string;
+          social_links?: Json | null;
+          updated_at?: string | null;
+          user_id: string;
+        };
+        Update: {
+          content_html?: string;
+          content_text?: string;
+          created_at?: string | null;
+          id?: string;
+          include_social_links?: boolean | null;
+          is_default?: boolean;
+          name?: string;
+          social_links?: Json | null;
+          updated_at?: string | null;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "email_signatures_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      email_snippets: {
+        Row: {
+          category: string | null;
+          content_html: string;
+          content_text: string;
+          created_at: string | null;
+          id: string;
+          last_used_at: string | null;
+          name: string;
+          shortcut: string | null;
+          updated_at: string | null;
+          usage_count: number | null;
+          user_id: string;
+        };
+        Insert: {
+          category?: string | null;
+          content_html: string;
+          content_text: string;
+          created_at?: string | null;
+          id?: string;
+          last_used_at?: string | null;
+          name: string;
+          shortcut?: string | null;
+          updated_at?: string | null;
+          usage_count?: number | null;
+          user_id: string;
+        };
+        Update: {
+          category?: string | null;
+          content_html?: string;
+          content_text?: string;
+          created_at?: string | null;
+          id?: string;
+          last_used_at?: string | null;
+          name?: string;
+          shortcut?: string | null;
+          updated_at?: string | null;
+          usage_count?: number | null;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "email_snippets_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       email_templates: {
         Row: {
-          blocks: Json | null
-          body_html: string
-          body_text: string | null
-          category: string | null
-          created_at: string | null
-          created_by: string | null
-          id: string
-          is_active: boolean | null
-          is_block_template: boolean | null
-          is_global: boolean | null
-          name: string
-          subject: string
-          updated_at: string | null
-          usage_count: number | null
-          variables: string[] | null
-        }
+          blocks: Json | null;
+          body_html: string;
+          body_text: string | null;
+          category: string | null;
+          created_at: string | null;
+          created_by: string | null;
+          id: string;
+          is_active: boolean | null;
+          is_block_template: boolean | null;
+          is_global: boolean | null;
+          name: string;
+          subject: string;
+          updated_at: string | null;
+          usage_count: number | null;
+          variables: string[] | null;
+        };
         Insert: {
-          blocks?: Json | null
-          body_html: string
-          body_text?: string | null
-          category?: string | null
-          created_at?: string | null
-          created_by?: string | null
-          id?: string
-          is_active?: boolean | null
-          is_block_template?: boolean | null
-          is_global?: boolean | null
-          name: string
-          subject: string
-          updated_at?: string | null
-          usage_count?: number | null
-          variables?: string[] | null
-        }
+          blocks?: Json | null;
+          body_html: string;
+          body_text?: string | null;
+          category?: string | null;
+          created_at?: string | null;
+          created_by?: string | null;
+          id?: string;
+          is_active?: boolean | null;
+          is_block_template?: boolean | null;
+          is_global?: boolean | null;
+          name: string;
+          subject: string;
+          updated_at?: string | null;
+          usage_count?: number | null;
+          variables?: string[] | null;
+        };
         Update: {
-          blocks?: Json | null
-          body_html?: string
-          body_text?: string | null
-          category?: string | null
-          created_at?: string | null
-          created_by?: string | null
-          id?: string
-          is_active?: boolean | null
-          is_block_template?: boolean | null
-          is_global?: boolean | null
-          name?: string
-          subject?: string
-          updated_at?: string | null
-          usage_count?: number | null
-          variables?: string[] | null
-        }
+          blocks?: Json | null;
+          body_html?: string;
+          body_text?: string | null;
+          category?: string | null;
+          created_at?: string | null;
+          created_by?: string | null;
+          id?: string;
+          is_active?: boolean | null;
+          is_block_template?: boolean | null;
+          is_global?: boolean | null;
+          name?: string;
+          subject?: string;
+          updated_at?: string | null;
+          usage_count?: number | null;
+          variables?: string[] | null;
+        };
         Relationships: [
           {
-            foreignKeyName: "email_templates_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "active_user_profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "email_templates_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "active_user_profiles";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "email_templates_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "user_management_view"
-            referencedColumns: ["id"]
+            foreignKeyName: "email_templates_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "user_management_view";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "email_templates_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "email_templates_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
+      email_threads: {
+        Row: {
+          created_at: string | null;
+          id: string;
+          is_archived: boolean;
+          is_starred: boolean;
+          labels: string[] | null;
+          last_message_at: string;
+          message_count: number;
+          participant_emails: string[];
+          snippet: string | null;
+          subject: string;
+          subject_hash: string;
+          unread_count: number;
+          updated_at: string | null;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string | null;
+          id?: string;
+          is_archived?: boolean;
+          is_starred?: boolean;
+          labels?: string[] | null;
+          last_message_at?: string;
+          message_count?: number;
+          participant_emails?: string[];
+          snippet?: string | null;
+          subject: string;
+          subject_hash: string;
+          unread_count?: number;
+          updated_at?: string | null;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string | null;
+          id?: string;
+          is_archived?: boolean;
+          is_starred?: boolean;
+          labels?: string[] | null;
+          last_message_at?: string;
+          message_count?: number;
+          participant_emails?: string[];
+          snippet?: string | null;
+          subject?: string;
+          subject_hash?: string;
+          unread_count?: number;
+          updated_at?: string | null;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "email_threads_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      email_tracking_events: {
+        Row: {
+          city: string | null;
+          country: string | null;
+          created_at: string | null;
+          device_type: string | null;
+          email_id: string;
+          event_type: string;
+          id: string;
+          ip_address: unknown;
+          link_index: number | null;
+          link_url: string | null;
+          tracking_id: string;
+          user_agent: string | null;
+        };
+        Insert: {
+          city?: string | null;
+          country?: string | null;
+          created_at?: string | null;
+          device_type?: string | null;
+          email_id: string;
+          event_type: string;
+          id?: string;
+          ip_address?: unknown;
+          link_index?: number | null;
+          link_url?: string | null;
+          tracking_id: string;
+          user_agent?: string | null;
+        };
+        Update: {
+          city?: string | null;
+          country?: string | null;
+          created_at?: string | null;
+          device_type?: string | null;
+          email_id?: string;
+          event_type?: string;
+          id?: string;
+          ip_address?: unknown;
+          link_index?: number | null;
+          link_url?: string | null;
+          tracking_id?: string;
+          user_agent?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "email_tracking_events_email_id_fkey";
+            columns: ["email_id"];
+            isOneToOne: false;
+            referencedRelation: "user_emails";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      email_tracking_links: {
+        Row: {
+          click_count: number | null;
+          created_at: string | null;
+          email_id: string;
+          first_clicked_at: string | null;
+          id: string;
+          link_index: number;
+          link_text: string | null;
+          original_url: string;
+          tracking_id: string;
+        };
+        Insert: {
+          click_count?: number | null;
+          created_at?: string | null;
+          email_id: string;
+          first_clicked_at?: string | null;
+          id?: string;
+          link_index: number;
+          link_text?: string | null;
+          original_url: string;
+          tracking_id: string;
+        };
+        Update: {
+          click_count?: number | null;
+          created_at?: string | null;
+          email_id?: string;
+          first_clicked_at?: string | null;
+          id?: string;
+          link_index?: number;
+          link_text?: string | null;
+          original_url?: string;
+          tracking_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "email_tracking_links_email_id_fkey";
+            columns: ["email_id"];
+            isOneToOne: false;
+            referencedRelation: "user_emails";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       email_triggers: {
         Row: {
-          created_at: string | null
-          created_by: string | null
-          delay_minutes: number | null
-          description: string | null
-          id: string
-          is_active: boolean | null
-          name: string
-          template_id: string
-          trigger_config: Json
-          trigger_type: string
-          updated_at: string | null
-        }
+          created_at: string | null;
+          created_by: string | null;
+          delay_minutes: number | null;
+          description: string | null;
+          id: string;
+          is_active: boolean | null;
+          name: string;
+          template_id: string;
+          trigger_config: Json;
+          trigger_type: string;
+          updated_at: string | null;
+        };
         Insert: {
-          created_at?: string | null
-          created_by?: string | null
-          delay_minutes?: number | null
-          description?: string | null
-          id?: string
-          is_active?: boolean | null
-          name: string
-          template_id: string
-          trigger_config: Json
-          trigger_type: string
-          updated_at?: string | null
-        }
+          created_at?: string | null;
+          created_by?: string | null;
+          delay_minutes?: number | null;
+          description?: string | null;
+          id?: string;
+          is_active?: boolean | null;
+          name: string;
+          template_id: string;
+          trigger_config: Json;
+          trigger_type: string;
+          updated_at?: string | null;
+        };
         Update: {
-          created_at?: string | null
-          created_by?: string | null
-          delay_minutes?: number | null
-          description?: string | null
-          id?: string
-          is_active?: boolean | null
-          name?: string
-          template_id?: string
-          trigger_config?: Json
-          trigger_type?: string
-          updated_at?: string | null
-        }
+          created_at?: string | null;
+          created_by?: string | null;
+          delay_minutes?: number | null;
+          description?: string | null;
+          id?: string;
+          is_active?: boolean | null;
+          name?: string;
+          template_id?: string;
+          trigger_config?: Json;
+          trigger_type?: string;
+          updated_at?: string | null;
+        };
         Relationships: [
           {
-            foreignKeyName: "email_triggers_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "active_user_profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "email_triggers_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "active_user_profiles";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "email_triggers_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "user_management_view"
-            referencedColumns: ["id"]
+            foreignKeyName: "email_triggers_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "user_management_view";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "email_triggers_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "email_triggers_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "email_triggers_template_id_fkey"
-            columns: ["template_id"]
-            isOneToOne: false
-            referencedRelation: "email_templates"
-            referencedColumns: ["id"]
+            foreignKeyName: "email_triggers_template_id_fkey";
+            columns: ["template_id"];
+            isOneToOne: false;
+            referencedRelation: "email_templates";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       email_watch_subscriptions: {
         Row: {
-          created_at: string | null
-          expiration: string | null
-          history_id: string | null
-          id: string
-          provider: string
-          updated_at: string | null
-          user_id: string
-        }
+          created_at: string | null;
+          expiration: string | null;
+          history_id: string | null;
+          id: string;
+          provider: string;
+          updated_at: string | null;
+          user_id: string;
+        };
         Insert: {
-          created_at?: string | null
-          expiration?: string | null
-          history_id?: string | null
-          id?: string
-          provider: string
-          updated_at?: string | null
-          user_id: string
-        }
+          created_at?: string | null;
+          expiration?: string | null;
+          history_id?: string | null;
+          id?: string;
+          provider: string;
+          updated_at?: string | null;
+          user_id: string;
+        };
         Update: {
-          created_at?: string | null
-          expiration?: string | null
-          history_id?: string | null
-          id?: string
-          provider?: string
-          updated_at?: string | null
-          user_id?: string
-        }
+          created_at?: string | null;
+          expiration?: string | null;
+          history_id?: string | null;
+          id?: string;
+          provider?: string;
+          updated_at?: string | null;
+          user_id?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "email_watch_subscriptions_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "active_user_profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "email_watch_subscriptions_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "active_user_profiles";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "email_watch_subscriptions_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_management_view"
-            referencedColumns: ["id"]
+            foreignKeyName: "email_watch_subscriptions_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "user_management_view";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "email_watch_subscriptions_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "email_watch_subscriptions_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       expense_categories: {
         Row: {
-          created_at: string
-          description: string | null
-          id: string
-          is_active: boolean
-          name: string
-          sort_order: number
-          updated_at: string
-          user_id: string
-        }
+          created_at: string;
+          description: string | null;
+          id: string;
+          is_active: boolean;
+          name: string;
+          sort_order: number;
+          updated_at: string;
+          user_id: string;
+        };
         Insert: {
-          created_at?: string
-          description?: string | null
-          id?: string
-          is_active?: boolean
-          name: string
-          sort_order?: number
-          updated_at?: string
-          user_id: string
-        }
+          created_at?: string;
+          description?: string | null;
+          id?: string;
+          is_active?: boolean;
+          name: string;
+          sort_order?: number;
+          updated_at?: string;
+          user_id: string;
+        };
         Update: {
-          created_at?: string
-          description?: string | null
-          id?: string
-          is_active?: boolean
-          name?: string
-          sort_order?: number
-          updated_at?: string
-          user_id?: string
-        }
+          created_at?: string;
+          description?: string | null;
+          id?: string;
+          is_active?: boolean;
+          name?: string;
+          sort_order?: number;
+          updated_at?: string;
+          user_id?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "expense_categories_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
+            foreignKeyName: "expense_categories_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       expense_templates: {
         Row: {
-          amount: number
-          category: string
-          created_at: string | null
-          description: string | null
-          expense_type: Database["public"]["Enums"]["expense_type"]
-          id: string
-          is_tax_deductible: boolean
-          notes: string | null
-          recurring_frequency: string | null
-          template_name: string
-          updated_at: string | null
-          user_id: string
-        }
+          amount: number;
+          category: string;
+          created_at: string | null;
+          description: string | null;
+          expense_type: Database["public"]["Enums"]["expense_type"];
+          id: string;
+          is_tax_deductible: boolean;
+          notes: string | null;
+          recurring_frequency: string | null;
+          template_name: string;
+          updated_at: string | null;
+          user_id: string;
+        };
         Insert: {
-          amount: number
-          category: string
-          created_at?: string | null
-          description?: string | null
-          expense_type?: Database["public"]["Enums"]["expense_type"]
-          id?: string
-          is_tax_deductible?: boolean
-          notes?: string | null
-          recurring_frequency?: string | null
-          template_name: string
-          updated_at?: string | null
-          user_id: string
-        }
+          amount: number;
+          category: string;
+          created_at?: string | null;
+          description?: string | null;
+          expense_type?: Database["public"]["Enums"]["expense_type"];
+          id?: string;
+          is_tax_deductible?: boolean;
+          notes?: string | null;
+          recurring_frequency?: string | null;
+          template_name: string;
+          updated_at?: string | null;
+          user_id: string;
+        };
         Update: {
-          amount?: number
-          category?: string
-          created_at?: string | null
-          description?: string | null
-          expense_type?: Database["public"]["Enums"]["expense_type"]
-          id?: string
-          is_tax_deductible?: boolean
-          notes?: string | null
-          recurring_frequency?: string | null
-          template_name?: string
-          updated_at?: string | null
-          user_id?: string
-        }
+          amount?: number;
+          category?: string;
+          created_at?: string | null;
+          description?: string | null;
+          expense_type?: Database["public"]["Enums"]["expense_type"];
+          id?: string;
+          is_tax_deductible?: boolean;
+          notes?: string | null;
+          recurring_frequency?: string | null;
+          template_name?: string;
+          updated_at?: string | null;
+          user_id?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "fk_expense_templates_user"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
+            foreignKeyName: "fk_expense_templates_user";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       expenses: {
         Row: {
-          amount: number
-          category: string
-          created_at: string | null
-          date: string
-          description: string
-          expense_type: Database["public"]["Enums"]["expense_type"]
-          id: string
-          is_recurring: boolean | null
-          is_tax_deductible: boolean
-          name: string
-          notes: string | null
-          receipt_url: string | null
-          recurring_end_date: string | null
-          recurring_frequency: string | null
-          recurring_group_id: string | null
-          updated_at: string | null
-          user_id: string | null
-        }
+          amount: number;
+          category: string;
+          created_at: string | null;
+          date: string;
+          description: string;
+          expense_type: Database["public"]["Enums"]["expense_type"];
+          id: string;
+          is_recurring: boolean | null;
+          is_tax_deductible: boolean;
+          name: string;
+          notes: string | null;
+          receipt_url: string | null;
+          recurring_end_date: string | null;
+          recurring_frequency: string | null;
+          recurring_group_id: string | null;
+          updated_at: string | null;
+          user_id: string | null;
+        };
         Insert: {
-          amount: number
-          category: string
-          created_at?: string | null
-          date: string
-          description: string
-          expense_type?: Database["public"]["Enums"]["expense_type"]
-          id?: string
-          is_recurring?: boolean | null
-          is_tax_deductible?: boolean
-          name: string
-          notes?: string | null
-          receipt_url?: string | null
-          recurring_end_date?: string | null
-          recurring_frequency?: string | null
-          recurring_group_id?: string | null
-          updated_at?: string | null
-          user_id?: string | null
-        }
+          amount: number;
+          category: string;
+          created_at?: string | null;
+          date: string;
+          description: string;
+          expense_type?: Database["public"]["Enums"]["expense_type"];
+          id?: string;
+          is_recurring?: boolean | null;
+          is_tax_deductible?: boolean;
+          name: string;
+          notes?: string | null;
+          receipt_url?: string | null;
+          recurring_end_date?: string | null;
+          recurring_frequency?: string | null;
+          recurring_group_id?: string | null;
+          updated_at?: string | null;
+          user_id?: string | null;
+        };
         Update: {
-          amount?: number
-          category?: string
-          created_at?: string | null
-          date?: string
-          description?: string
-          expense_type?: Database["public"]["Enums"]["expense_type"]
-          id?: string
-          is_recurring?: boolean | null
-          is_tax_deductible?: boolean
-          name?: string
-          notes?: string | null
-          receipt_url?: string | null
-          recurring_end_date?: string | null
-          recurring_frequency?: string | null
-          recurring_group_id?: string | null
-          updated_at?: string | null
-          user_id?: string | null
-        }
-        Relationships: []
-      }
+          amount?: number;
+          category?: string;
+          created_at?: string | null;
+          date?: string;
+          description?: string;
+          expense_type?: Database["public"]["Enums"]["expense_type"];
+          id?: string;
+          is_recurring?: boolean | null;
+          is_tax_deductible?: boolean;
+          name?: string;
+          notes?: string | null;
+          receipt_url?: string | null;
+          recurring_end_date?: string | null;
+          recurring_frequency?: string | null;
+          recurring_group_id?: string | null;
+          updated_at?: string | null;
+          user_id?: string | null;
+        };
+        Relationships: [];
+      };
       hierarchy_invitations: {
         Row: {
-          created_at: string
-          expires_at: string
-          id: string
-          invitee_email: string
-          invitee_id: string | null
-          inviter_id: string
-          message: string | null
-          responded_at: string | null
-          status: string
-          updated_at: string
-        }
+          created_at: string;
+          expires_at: string;
+          id: string;
+          invitee_email: string;
+          invitee_id: string | null;
+          inviter_id: string;
+          message: string | null;
+          responded_at: string | null;
+          status: string;
+          updated_at: string;
+        };
         Insert: {
-          created_at?: string
-          expires_at?: string
-          id?: string
-          invitee_email: string
-          invitee_id?: string | null
-          inviter_id: string
-          message?: string | null
-          responded_at?: string | null
-          status?: string
-          updated_at?: string
-        }
+          created_at?: string;
+          expires_at?: string;
+          id?: string;
+          invitee_email: string;
+          invitee_id?: string | null;
+          inviter_id: string;
+          message?: string | null;
+          responded_at?: string | null;
+          status?: string;
+          updated_at?: string;
+        };
         Update: {
-          created_at?: string
-          expires_at?: string
-          id?: string
-          invitee_email?: string
-          invitee_id?: string | null
-          inviter_id?: string
-          message?: string | null
-          responded_at?: string | null
-          status?: string
-          updated_at?: string
-        }
+          created_at?: string;
+          expires_at?: string;
+          id?: string;
+          invitee_email?: string;
+          invitee_id?: string | null;
+          inviter_id?: string;
+          message?: string | null;
+          responded_at?: string | null;
+          status?: string;
+          updated_at?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "hierarchy_invitations_invitee_id_fkey"
-            columns: ["invitee_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
+            foreignKeyName: "hierarchy_invitations_invitee_id_fkey";
+            columns: ["invitee_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "hierarchy_invitations_inviter_id_fkey"
-            columns: ["inviter_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
+            foreignKeyName: "hierarchy_invitations_inviter_id_fkey";
+            columns: ["inviter_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       message_threads: {
         Row: {
-          created_at: string | null
-          created_by: string
-          id: string
-          last_message_at: string | null
-          participant_ids: string[]
-          subject: string
-          updated_at: string | null
-        }
+          created_at: string | null;
+          created_by: string;
+          id: string;
+          last_message_at: string | null;
+          participant_ids: string[];
+          subject: string;
+          updated_at: string | null;
+        };
         Insert: {
-          created_at?: string | null
-          created_by: string
-          id?: string
-          last_message_at?: string | null
-          participant_ids: string[]
-          subject: string
-          updated_at?: string | null
-        }
+          created_at?: string | null;
+          created_by: string;
+          id?: string;
+          last_message_at?: string | null;
+          participant_ids: string[];
+          subject: string;
+          updated_at?: string | null;
+        };
         Update: {
-          created_at?: string | null
-          created_by?: string
-          id?: string
-          last_message_at?: string | null
-          participant_ids?: string[]
-          subject?: string
-          updated_at?: string | null
-        }
+          created_at?: string | null;
+          created_by?: string;
+          id?: string;
+          last_message_at?: string | null;
+          participant_ids?: string[];
+          subject?: string;
+          updated_at?: string | null;
+        };
         Relationships: [
           {
-            foreignKeyName: "message_threads_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "active_user_profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "message_threads_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "active_user_profiles";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "message_threads_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "user_management_view"
-            referencedColumns: ["id"]
+            foreignKeyName: "message_threads_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "user_management_view";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "message_threads_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "message_threads_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       messages: {
         Row: {
-          content: string
-          created_at: string | null
-          id: string
-          read_by: string[] | null
-          sender_id: string
-          thread_id: string
-          updated_at: string | null
-        }
+          content: string;
+          created_at: string | null;
+          id: string;
+          read_by: string[] | null;
+          sender_id: string;
+          thread_id: string;
+          updated_at: string | null;
+        };
         Insert: {
-          content: string
-          created_at?: string | null
-          id?: string
-          read_by?: string[] | null
-          sender_id: string
-          thread_id: string
-          updated_at?: string | null
-        }
+          content: string;
+          created_at?: string | null;
+          id?: string;
+          read_by?: string[] | null;
+          sender_id: string;
+          thread_id: string;
+          updated_at?: string | null;
+        };
         Update: {
-          content?: string
-          created_at?: string | null
-          id?: string
-          read_by?: string[] | null
-          sender_id?: string
-          thread_id?: string
-          updated_at?: string | null
-        }
+          content?: string;
+          created_at?: string | null;
+          id?: string;
+          read_by?: string[] | null;
+          sender_id?: string;
+          thread_id?: string;
+          updated_at?: string | null;
+        };
         Relationships: [
           {
-            foreignKeyName: "messages_sender_id_fkey"
-            columns: ["sender_id"]
-            isOneToOne: false
-            referencedRelation: "active_user_profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "messages_sender_id_fkey";
+            columns: ["sender_id"];
+            isOneToOne: false;
+            referencedRelation: "active_user_profiles";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "messages_sender_id_fkey"
-            columns: ["sender_id"]
-            isOneToOne: false
-            referencedRelation: "user_management_view"
-            referencedColumns: ["id"]
+            foreignKeyName: "messages_sender_id_fkey";
+            columns: ["sender_id"];
+            isOneToOne: false;
+            referencedRelation: "user_management_view";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "messages_sender_id_fkey"
-            columns: ["sender_id"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "messages_sender_id_fkey";
+            columns: ["sender_id"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "messages_thread_id_fkey"
-            columns: ["thread_id"]
-            isOneToOne: false
-            referencedRelation: "message_threads"
-            referencedColumns: ["id"]
+            foreignKeyName: "messages_thread_id_fkey";
+            columns: ["thread_id"];
+            isOneToOne: false;
+            referencedRelation: "message_threads";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
+      notification_preferences: {
+        Row: {
+          browser_push_enabled: boolean | null;
+          browser_push_subscription: Json | null;
+          created_at: string | null;
+          email_digest_enabled: boolean | null;
+          email_digest_frequency: string | null;
+          email_digest_time: string | null;
+          email_digest_timezone: string | null;
+          id: string;
+          in_app_enabled: boolean | null;
+          notify_on_click: boolean | null;
+          notify_on_open: boolean | null;
+          notify_on_reply: boolean | null;
+          quiet_hours_enabled: boolean | null;
+          quiet_hours_end: string | null;
+          quiet_hours_start: string | null;
+          updated_at: string | null;
+          user_id: string;
+        };
+        Insert: {
+          browser_push_enabled?: boolean | null;
+          browser_push_subscription?: Json | null;
+          created_at?: string | null;
+          email_digest_enabled?: boolean | null;
+          email_digest_frequency?: string | null;
+          email_digest_time?: string | null;
+          email_digest_timezone?: string | null;
+          id?: string;
+          in_app_enabled?: boolean | null;
+          notify_on_click?: boolean | null;
+          notify_on_open?: boolean | null;
+          notify_on_reply?: boolean | null;
+          quiet_hours_enabled?: boolean | null;
+          quiet_hours_end?: string | null;
+          quiet_hours_start?: string | null;
+          updated_at?: string | null;
+          user_id: string;
+        };
+        Update: {
+          browser_push_enabled?: boolean | null;
+          browser_push_subscription?: Json | null;
+          created_at?: string | null;
+          email_digest_enabled?: boolean | null;
+          email_digest_frequency?: string | null;
+          email_digest_time?: string | null;
+          email_digest_timezone?: string | null;
+          id?: string;
+          in_app_enabled?: boolean | null;
+          notify_on_click?: boolean | null;
+          notify_on_open?: boolean | null;
+          notify_on_reply?: boolean | null;
+          quiet_hours_enabled?: boolean | null;
+          quiet_hours_end?: string | null;
+          quiet_hours_start?: string | null;
+          updated_at?: string | null;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "notification_preferences_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: true;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       notifications: {
         Row: {
-          created_at: string
-          expires_at: string | null
-          id: string
-          message: string | null
-          metadata: Json | null
-          read: boolean
-          title: string
-          type: string
-          updated_at: string
-          user_id: string
-        }
+          created_at: string;
+          expires_at: string | null;
+          id: string;
+          message: string | null;
+          metadata: Json | null;
+          read: boolean;
+          title: string;
+          type: string;
+          updated_at: string;
+          user_id: string;
+        };
         Insert: {
-          created_at?: string
-          expires_at?: string | null
-          id?: string
-          message?: string | null
-          metadata?: Json | null
-          read?: boolean
-          title: string
-          type: string
-          updated_at?: string
-          user_id: string
-        }
+          created_at?: string;
+          expires_at?: string | null;
+          id?: string;
+          message?: string | null;
+          metadata?: Json | null;
+          read?: boolean;
+          title: string;
+          type: string;
+          updated_at?: string;
+          user_id: string;
+        };
         Update: {
-          created_at?: string
-          expires_at?: string | null
-          id?: string
-          message?: string | null
-          metadata?: Json | null
-          read?: boolean
-          title?: string
-          type?: string
-          updated_at?: string
-          user_id?: string
-        }
+          created_at?: string;
+          expires_at?: string | null;
+          id?: string;
+          message?: string | null;
+          metadata?: Json | null;
+          read?: boolean;
+          title?: string;
+          type?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "notifications_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "active_user_profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "notifications_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "active_user_profiles";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "notifications_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_management_view"
-            referencedColumns: ["id"]
+            foreignKeyName: "notifications_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "user_management_view";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "notifications_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "notifications_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       onboarding_phases: {
         Row: {
-          blocked_reason: string | null
-          completed_at: string | null
-          created_at: string | null
-          id: string
-          notes: string | null
-          phase_name: string
-          phase_order: number
-          started_at: string | null
-          status: string
-          updated_at: string | null
-          user_id: string
-        }
+          blocked_reason: string | null;
+          completed_at: string | null;
+          created_at: string | null;
+          id: string;
+          notes: string | null;
+          phase_name: string;
+          phase_order: number;
+          started_at: string | null;
+          status: string;
+          updated_at: string | null;
+          user_id: string;
+        };
         Insert: {
-          blocked_reason?: string | null
-          completed_at?: string | null
-          created_at?: string | null
-          id?: string
-          notes?: string | null
-          phase_name: string
-          phase_order: number
-          started_at?: string | null
-          status?: string
-          updated_at?: string | null
-          user_id: string
-        }
+          blocked_reason?: string | null;
+          completed_at?: string | null;
+          created_at?: string | null;
+          id?: string;
+          notes?: string | null;
+          phase_name: string;
+          phase_order: number;
+          started_at?: string | null;
+          status?: string;
+          updated_at?: string | null;
+          user_id: string;
+        };
         Update: {
-          blocked_reason?: string | null
-          completed_at?: string | null
-          created_at?: string | null
-          id?: string
-          notes?: string | null
-          phase_name?: string
-          phase_order?: number
-          started_at?: string | null
-          status?: string
-          updated_at?: string | null
-          user_id?: string
-        }
+          blocked_reason?: string | null;
+          completed_at?: string | null;
+          created_at?: string | null;
+          id?: string;
+          notes?: string | null;
+          phase_name?: string;
+          phase_order?: number;
+          started_at?: string | null;
+          status?: string;
+          updated_at?: string | null;
+          user_id?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "onboarding_phases_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "active_user_profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "onboarding_phases_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "active_user_profiles";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "onboarding_phases_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_management_view"
-            referencedColumns: ["id"]
+            foreignKeyName: "onboarding_phases_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "user_management_view";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "onboarding_phases_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "onboarding_phases_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       override_commissions: {
         Row: {
-          advance_months: number | null
-          base_agent_id: string
-          base_commission_amount: number
-          base_comp_level: number
-          carrier_id: string
-          chargeback_amount: number | null
-          chargeback_date: string | null
-          chargeback_reason: string | null
-          created_at: string | null
-          earned_amount: number | null
-          hierarchy_depth: number
-          id: string
-          months_paid: number | null
-          override_agent_id: string
-          override_commission_amount: number
-          override_comp_level: number
-          payment_date: string | null
-          policy_id: string
-          policy_premium: number
-          product_id: string | null
-          status: string
-          unearned_amount: number | null
-          updated_at: string | null
-        }
+          advance_months: number | null;
+          base_agent_id: string;
+          base_commission_amount: number;
+          base_comp_level: number;
+          carrier_id: string;
+          chargeback_amount: number | null;
+          chargeback_date: string | null;
+          chargeback_reason: string | null;
+          created_at: string | null;
+          earned_amount: number | null;
+          hierarchy_depth: number;
+          id: string;
+          months_paid: number | null;
+          override_agent_id: string;
+          override_commission_amount: number;
+          override_comp_level: number;
+          payment_date: string | null;
+          policy_id: string;
+          policy_premium: number;
+          product_id: string | null;
+          status: string;
+          unearned_amount: number | null;
+          updated_at: string | null;
+        };
         Insert: {
-          advance_months?: number | null
-          base_agent_id: string
-          base_commission_amount: number
-          base_comp_level: number
-          carrier_id: string
-          chargeback_amount?: number | null
-          chargeback_date?: string | null
-          chargeback_reason?: string | null
-          created_at?: string | null
-          earned_amount?: number | null
-          hierarchy_depth: number
-          id?: string
-          months_paid?: number | null
-          override_agent_id: string
-          override_commission_amount: number
-          override_comp_level: number
-          payment_date?: string | null
-          policy_id: string
-          policy_premium: number
-          product_id?: string | null
-          status?: string
-          unearned_amount?: number | null
-          updated_at?: string | null
-        }
+          advance_months?: number | null;
+          base_agent_id: string;
+          base_commission_amount: number;
+          base_comp_level: number;
+          carrier_id: string;
+          chargeback_amount?: number | null;
+          chargeback_date?: string | null;
+          chargeback_reason?: string | null;
+          created_at?: string | null;
+          earned_amount?: number | null;
+          hierarchy_depth: number;
+          id?: string;
+          months_paid?: number | null;
+          override_agent_id: string;
+          override_commission_amount: number;
+          override_comp_level: number;
+          payment_date?: string | null;
+          policy_id: string;
+          policy_premium: number;
+          product_id?: string | null;
+          status?: string;
+          unearned_amount?: number | null;
+          updated_at?: string | null;
+        };
         Update: {
-          advance_months?: number | null
-          base_agent_id?: string
-          base_commission_amount?: number
-          base_comp_level?: number
-          carrier_id?: string
-          chargeback_amount?: number | null
-          chargeback_date?: string | null
-          chargeback_reason?: string | null
-          created_at?: string | null
-          earned_amount?: number | null
-          hierarchy_depth?: number
-          id?: string
-          months_paid?: number | null
-          override_agent_id?: string
-          override_commission_amount?: number
-          override_comp_level?: number
-          payment_date?: string | null
-          policy_id?: string
-          policy_premium?: number
-          product_id?: string | null
-          status?: string
-          unearned_amount?: number | null
-          updated_at?: string | null
-        }
+          advance_months?: number | null;
+          base_agent_id?: string;
+          base_commission_amount?: number;
+          base_comp_level?: number;
+          carrier_id?: string;
+          chargeback_amount?: number | null;
+          chargeback_date?: string | null;
+          chargeback_reason?: string | null;
+          created_at?: string | null;
+          earned_amount?: number | null;
+          hierarchy_depth?: number;
+          id?: string;
+          months_paid?: number | null;
+          override_agent_id?: string;
+          override_commission_amount?: number;
+          override_comp_level?: number;
+          payment_date?: string | null;
+          policy_id?: string;
+          policy_premium?: number;
+          product_id?: string | null;
+          status?: string;
+          unearned_amount?: number | null;
+          updated_at?: string | null;
+        };
         Relationships: [
           {
-            foreignKeyName: "override_commissions_base_agent_id_fkey"
-            columns: ["base_agent_id"]
-            isOneToOne: false
-            referencedRelation: "active_user_profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "override_commissions_base_agent_id_fkey";
+            columns: ["base_agent_id"];
+            isOneToOne: false;
+            referencedRelation: "active_user_profiles";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "override_commissions_base_agent_id_fkey"
-            columns: ["base_agent_id"]
-            isOneToOne: false
-            referencedRelation: "user_management_view"
-            referencedColumns: ["id"]
+            foreignKeyName: "override_commissions_base_agent_id_fkey";
+            columns: ["base_agent_id"];
+            isOneToOne: false;
+            referencedRelation: "user_management_view";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "override_commissions_base_agent_id_fkey"
-            columns: ["base_agent_id"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "override_commissions_base_agent_id_fkey";
+            columns: ["base_agent_id"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "override_commissions_carrier_id_fkey"
-            columns: ["carrier_id"]
-            isOneToOne: false
-            referencedRelation: "carriers"
-            referencedColumns: ["id"]
+            foreignKeyName: "override_commissions_carrier_id_fkey";
+            columns: ["carrier_id"];
+            isOneToOne: false;
+            referencedRelation: "carriers";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "override_commissions_override_agent_id_fkey"
-            columns: ["override_agent_id"]
-            isOneToOne: false
-            referencedRelation: "active_user_profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "override_commissions_override_agent_id_fkey";
+            columns: ["override_agent_id"];
+            isOneToOne: false;
+            referencedRelation: "active_user_profiles";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "override_commissions_override_agent_id_fkey"
-            columns: ["override_agent_id"]
-            isOneToOne: false
-            referencedRelation: "user_management_view"
-            referencedColumns: ["id"]
+            foreignKeyName: "override_commissions_override_agent_id_fkey";
+            columns: ["override_agent_id"];
+            isOneToOne: false;
+            referencedRelation: "user_management_view";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "override_commissions_override_agent_id_fkey"
-            columns: ["override_agent_id"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "override_commissions_override_agent_id_fkey";
+            columns: ["override_agent_id"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "override_commissions_policy_id_fkey"
-            columns: ["policy_id"]
-            isOneToOne: false
-            referencedRelation: "policies"
-            referencedColumns: ["id"]
+            foreignKeyName: "override_commissions_policy_id_fkey";
+            columns: ["policy_id"];
+            isOneToOne: false;
+            referencedRelation: "policies";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "override_commissions_product_id_fkey"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "products"
-            referencedColumns: ["id"]
+            foreignKeyName: "override_commissions_product_id_fkey";
+            columns: ["product_id"];
+            isOneToOne: false;
+            referencedRelation: "products";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       permissions: {
         Row: {
-          action: string
-          code: string
-          created_at: string | null
-          description: string | null
-          id: string
-          resource: string
-          scope: string | null
-        }
+          action: string;
+          code: string;
+          created_at: string | null;
+          description: string | null;
+          id: string;
+          resource: string;
+          scope: string | null;
+        };
         Insert: {
-          action: string
-          code: string
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          resource: string
-          scope?: string | null
-        }
+          action: string;
+          code: string;
+          created_at?: string | null;
+          description?: string | null;
+          id?: string;
+          resource: string;
+          scope?: string | null;
+        };
         Update: {
-          action?: string
-          code?: string
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          resource?: string
-          scope?: string | null
-        }
-        Relationships: []
-      }
+          action?: string;
+          code?: string;
+          created_at?: string | null;
+          description?: string | null;
+          id?: string;
+          resource?: string;
+          scope?: string | null;
+        };
+        Relationships: [];
+      };
       phase_checklist_items: {
         Row: {
-          can_be_completed_by: string
-          created_at: string | null
-          document_type: string | null
-          external_link: string | null
-          id: string
-          is_active: boolean | null
-          is_required: boolean | null
-          item_description: string | null
-          item_name: string
-          item_order: number
-          item_type: string
-          metadata: Json | null
-          phase_id: string
-          requires_verification: boolean | null
-          updated_at: string | null
-          verification_by: string | null
-        }
+          can_be_completed_by: string;
+          created_at: string | null;
+          document_type: string | null;
+          external_link: string | null;
+          id: string;
+          is_active: boolean | null;
+          is_required: boolean | null;
+          item_description: string | null;
+          item_name: string;
+          item_order: number;
+          item_type: string;
+          metadata: Json | null;
+          phase_id: string;
+          requires_verification: boolean | null;
+          updated_at: string | null;
+          verification_by: string | null;
+        };
         Insert: {
-          can_be_completed_by: string
-          created_at?: string | null
-          document_type?: string | null
-          external_link?: string | null
-          id?: string
-          is_active?: boolean | null
-          is_required?: boolean | null
-          item_description?: string | null
-          item_name: string
-          item_order: number
-          item_type: string
-          metadata?: Json | null
-          phase_id: string
-          requires_verification?: boolean | null
-          updated_at?: string | null
-          verification_by?: string | null
-        }
+          can_be_completed_by: string;
+          created_at?: string | null;
+          document_type?: string | null;
+          external_link?: string | null;
+          id?: string;
+          is_active?: boolean | null;
+          is_required?: boolean | null;
+          item_description?: string | null;
+          item_name: string;
+          item_order: number;
+          item_type: string;
+          metadata?: Json | null;
+          phase_id: string;
+          requires_verification?: boolean | null;
+          updated_at?: string | null;
+          verification_by?: string | null;
+        };
         Update: {
-          can_be_completed_by?: string
-          created_at?: string | null
-          document_type?: string | null
-          external_link?: string | null
-          id?: string
-          is_active?: boolean | null
-          is_required?: boolean | null
-          item_description?: string | null
-          item_name?: string
-          item_order?: number
-          item_type?: string
-          metadata?: Json | null
-          phase_id?: string
-          requires_verification?: boolean | null
-          updated_at?: string | null
-          verification_by?: string | null
-        }
+          can_be_completed_by?: string;
+          created_at?: string | null;
+          document_type?: string | null;
+          external_link?: string | null;
+          id?: string;
+          is_active?: boolean | null;
+          is_required?: boolean | null;
+          item_description?: string | null;
+          item_name?: string;
+          item_order?: number;
+          item_type?: string;
+          metadata?: Json | null;
+          phase_id?: string;
+          requires_verification?: boolean | null;
+          updated_at?: string | null;
+          verification_by?: string | null;
+        };
         Relationships: [
           {
-            foreignKeyName: "phase_checklist_items_phase_id_fkey"
-            columns: ["phase_id"]
-            isOneToOne: false
-            referencedRelation: "pipeline_phases"
-            referencedColumns: ["id"]
+            foreignKeyName: "phase_checklist_items_phase_id_fkey";
+            columns: ["phase_id"];
+            isOneToOne: false;
+            referencedRelation: "pipeline_phases";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       pipeline_phases: {
         Row: {
-          auto_advance: boolean | null
-          created_at: string | null
-          estimated_days: number | null
-          id: string
-          is_active: boolean | null
-          phase_description: string | null
-          phase_name: string
-          phase_order: number
-          required_approver_role: string | null
-          template_id: string
-          updated_at: string | null
-        }
+          auto_advance: boolean | null;
+          created_at: string | null;
+          estimated_days: number | null;
+          id: string;
+          is_active: boolean | null;
+          phase_description: string | null;
+          phase_name: string;
+          phase_order: number;
+          required_approver_role: string | null;
+          template_id: string;
+          updated_at: string | null;
+        };
         Insert: {
-          auto_advance?: boolean | null
-          created_at?: string | null
-          estimated_days?: number | null
-          id?: string
-          is_active?: boolean | null
-          phase_description?: string | null
-          phase_name: string
-          phase_order: number
-          required_approver_role?: string | null
-          template_id: string
-          updated_at?: string | null
-        }
+          auto_advance?: boolean | null;
+          created_at?: string | null;
+          estimated_days?: number | null;
+          id?: string;
+          is_active?: boolean | null;
+          phase_description?: string | null;
+          phase_name: string;
+          phase_order: number;
+          required_approver_role?: string | null;
+          template_id: string;
+          updated_at?: string | null;
+        };
         Update: {
-          auto_advance?: boolean | null
-          created_at?: string | null
-          estimated_days?: number | null
-          id?: string
-          is_active?: boolean | null
-          phase_description?: string | null
-          phase_name?: string
-          phase_order?: number
-          required_approver_role?: string | null
-          template_id?: string
-          updated_at?: string | null
-        }
+          auto_advance?: boolean | null;
+          created_at?: string | null;
+          estimated_days?: number | null;
+          id?: string;
+          is_active?: boolean | null;
+          phase_description?: string | null;
+          phase_name?: string;
+          phase_order?: number;
+          required_approver_role?: string | null;
+          template_id?: string;
+          updated_at?: string | null;
+        };
         Relationships: [
           {
-            foreignKeyName: "pipeline_phases_template_id_fkey"
-            columns: ["template_id"]
-            isOneToOne: false
-            referencedRelation: "pipeline_templates"
-            referencedColumns: ["id"]
+            foreignKeyName: "pipeline_phases_template_id_fkey";
+            columns: ["template_id"];
+            isOneToOne: false;
+            referencedRelation: "pipeline_templates";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       pipeline_templates: {
         Row: {
-          created_at: string | null
-          created_by: string | null
-          description: string | null
-          id: string
-          is_active: boolean | null
-          is_default: boolean | null
-          name: string
-          updated_at: string | null
-        }
+          created_at: string | null;
+          created_by: string | null;
+          description: string | null;
+          id: string;
+          is_active: boolean | null;
+          is_default: boolean | null;
+          name: string;
+          updated_at: string | null;
+        };
         Insert: {
-          created_at?: string | null
-          created_by?: string | null
-          description?: string | null
-          id?: string
-          is_active?: boolean | null
-          is_default?: boolean | null
-          name: string
-          updated_at?: string | null
-        }
+          created_at?: string | null;
+          created_by?: string | null;
+          description?: string | null;
+          id?: string;
+          is_active?: boolean | null;
+          is_default?: boolean | null;
+          name: string;
+          updated_at?: string | null;
+        };
         Update: {
-          created_at?: string | null
-          created_by?: string | null
-          description?: string | null
-          id?: string
-          is_active?: boolean | null
-          is_default?: boolean | null
-          name?: string
-          updated_at?: string | null
-        }
+          created_at?: string | null;
+          created_by?: string | null;
+          description?: string | null;
+          id?: string;
+          is_active?: boolean | null;
+          is_default?: boolean | null;
+          name?: string;
+          updated_at?: string | null;
+        };
         Relationships: [
           {
-            foreignKeyName: "pipeline_templates_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "active_user_profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "pipeline_templates_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "active_user_profiles";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "pipeline_templates_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "user_management_view"
-            referencedColumns: ["id"]
+            foreignKeyName: "pipeline_templates_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "user_management_view";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "pipeline_templates_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "pipeline_templates_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       policies: {
         Row: {
-          annual_premium: number | null
-          cancellation_date: string | null
-          cancellation_reason: string | null
-          carrier_id: string
-          client_id: string | null
-          commission_percentage: number | null
-          created_at: string | null
-          effective_date: string
-          expiration_date: string | null
-          id: string
-          monthly_premium: number
-          notes: string | null
+          annual_premium: number | null;
+          cancellation_date: string | null;
+          cancellation_reason: string | null;
+          carrier_id: string;
+          client_id: string | null;
+          commission_percentage: number | null;
+          created_at: string | null;
+          effective_date: string;
+          expiration_date: string | null;
+          id: string;
+          monthly_premium: number;
+          notes: string | null;
           payment_frequency:
             | Database["public"]["Enums"]["payment_frequency"]
-            | null
-          policy_number: string
-          product: Database["public"]["Enums"]["product_type"]
-          product_id: string | null
-          referral_source: string | null
-          status: string
-          term_length: number | null
-          updated_at: string | null
-          user_id: string | null
-        }
+            | null;
+          policy_number: string;
+          product: Database["public"]["Enums"]["product_type"];
+          product_id: string | null;
+          referral_source: string | null;
+          status: string;
+          term_length: number | null;
+          updated_at: string | null;
+          user_id: string | null;
+        };
         Insert: {
-          annual_premium?: number | null
-          cancellation_date?: string | null
-          cancellation_reason?: string | null
-          carrier_id: string
-          client_id?: string | null
-          commission_percentage?: number | null
-          created_at?: string | null
-          effective_date: string
-          expiration_date?: string | null
-          id?: string
-          monthly_premium: number
-          notes?: string | null
+          annual_premium?: number | null;
+          cancellation_date?: string | null;
+          cancellation_reason?: string | null;
+          carrier_id: string;
+          client_id?: string | null;
+          commission_percentage?: number | null;
+          created_at?: string | null;
+          effective_date: string;
+          expiration_date?: string | null;
+          id?: string;
+          monthly_premium: number;
+          notes?: string | null;
           payment_frequency?:
             | Database["public"]["Enums"]["payment_frequency"]
-            | null
-          policy_number: string
-          product: Database["public"]["Enums"]["product_type"]
-          product_id?: string | null
-          referral_source?: string | null
-          status?: string
-          term_length?: number | null
-          updated_at?: string | null
-          user_id?: string | null
-        }
+            | null;
+          policy_number: string;
+          product: Database["public"]["Enums"]["product_type"];
+          product_id?: string | null;
+          referral_source?: string | null;
+          status?: string;
+          term_length?: number | null;
+          updated_at?: string | null;
+          user_id?: string | null;
+        };
         Update: {
-          annual_premium?: number | null
-          cancellation_date?: string | null
-          cancellation_reason?: string | null
-          carrier_id?: string
-          client_id?: string | null
-          commission_percentage?: number | null
-          created_at?: string | null
-          effective_date?: string
-          expiration_date?: string | null
-          id?: string
-          monthly_premium?: number
-          notes?: string | null
+          annual_premium?: number | null;
+          cancellation_date?: string | null;
+          cancellation_reason?: string | null;
+          carrier_id?: string;
+          client_id?: string | null;
+          commission_percentage?: number | null;
+          created_at?: string | null;
+          effective_date?: string;
+          expiration_date?: string | null;
+          id?: string;
+          monthly_premium?: number;
+          notes?: string | null;
           payment_frequency?:
             | Database["public"]["Enums"]["payment_frequency"]
-            | null
-          policy_number?: string
-          product?: Database["public"]["Enums"]["product_type"]
-          product_id?: string | null
-          referral_source?: string | null
-          status?: string
-          term_length?: number | null
-          updated_at?: string | null
-          user_id?: string | null
-        }
+            | null;
+          policy_number?: string;
+          product?: Database["public"]["Enums"]["product_type"];
+          product_id?: string | null;
+          referral_source?: string | null;
+          status?: string;
+          term_length?: number | null;
+          updated_at?: string | null;
+          user_id?: string | null;
+        };
         Relationships: [
           {
-            foreignKeyName: "policies_carrier_id_fkey"
-            columns: ["carrier_id"]
-            isOneToOne: false
-            referencedRelation: "carriers"
-            referencedColumns: ["id"]
+            foreignKeyName: "policies_carrier_id_fkey";
+            columns: ["carrier_id"];
+            isOneToOne: false;
+            referencedRelation: "carriers";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "policies_client_id_fkey"
-            columns: ["client_id"]
-            isOneToOne: false
-            referencedRelation: "clients"
-            referencedColumns: ["id"]
+            foreignKeyName: "policies_client_id_fkey";
+            columns: ["client_id"];
+            isOneToOne: false;
+            referencedRelation: "clients";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "policies_product_id_fkey"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "products"
-            referencedColumns: ["id"]
+            foreignKeyName: "policies_product_id_fkey";
+            columns: ["product_id"];
+            isOneToOne: false;
+            referencedRelation: "products";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       product_commission_overrides: {
         Row: {
-          bonus_percentage: number | null
-          commission_percentage: number
-          comp_level: Database["public"]["Enums"]["comp_level"]
-          created_at: string | null
-          effective_date: string
-          expiration_date: string | null
-          id: string
-          notes: string | null
-          product_id: string
-          updated_at: string | null
-        }
+          bonus_percentage: number | null;
+          commission_percentage: number;
+          comp_level: Database["public"]["Enums"]["comp_level"];
+          created_at: string | null;
+          effective_date: string;
+          expiration_date: string | null;
+          id: string;
+          notes: string | null;
+          product_id: string;
+          updated_at: string | null;
+        };
         Insert: {
-          bonus_percentage?: number | null
-          commission_percentage: number
-          comp_level: Database["public"]["Enums"]["comp_level"]
-          created_at?: string | null
-          effective_date?: string
-          expiration_date?: string | null
-          id?: string
-          notes?: string | null
-          product_id: string
-          updated_at?: string | null
-        }
+          bonus_percentage?: number | null;
+          commission_percentage: number;
+          comp_level: Database["public"]["Enums"]["comp_level"];
+          created_at?: string | null;
+          effective_date?: string;
+          expiration_date?: string | null;
+          id?: string;
+          notes?: string | null;
+          product_id: string;
+          updated_at?: string | null;
+        };
         Update: {
-          bonus_percentage?: number | null
-          commission_percentage?: number
-          comp_level?: Database["public"]["Enums"]["comp_level"]
-          created_at?: string | null
-          effective_date?: string
-          expiration_date?: string | null
-          id?: string
-          notes?: string | null
-          product_id?: string
-          updated_at?: string | null
-        }
+          bonus_percentage?: number | null;
+          commission_percentage?: number;
+          comp_level?: Database["public"]["Enums"]["comp_level"];
+          created_at?: string | null;
+          effective_date?: string;
+          expiration_date?: string | null;
+          id?: string;
+          notes?: string | null;
+          product_id?: string;
+          updated_at?: string | null;
+        };
         Relationships: [
           {
-            foreignKeyName: "product_commission_overrides_product_id_fkey"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "products"
-            referencedColumns: ["id"]
+            foreignKeyName: "product_commission_overrides_product_id_fkey";
+            columns: ["product_id"];
+            isOneToOne: false;
+            referencedRelation: "products";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       products: {
         Row: {
-          carrier_id: string
-          code: string | null
-          commission_percentage: number | null
-          created_at: string | null
-          description: string | null
-          id: string
-          is_active: boolean | null
-          max_age: number | null
-          max_premium: number | null
-          metadata: Json | null
-          min_age: number | null
-          min_premium: number | null
-          name: string
-          product_type: Database["public"]["Enums"]["product_type"]
-          updated_at: string | null
-        }
+          carrier_id: string;
+          code: string | null;
+          commission_percentage: number | null;
+          created_at: string | null;
+          description: string | null;
+          id: string;
+          is_active: boolean | null;
+          max_age: number | null;
+          max_premium: number | null;
+          metadata: Json | null;
+          min_age: number | null;
+          min_premium: number | null;
+          name: string;
+          product_type: Database["public"]["Enums"]["product_type"];
+          updated_at: string | null;
+        };
         Insert: {
-          carrier_id: string
-          code?: string | null
-          commission_percentage?: number | null
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          is_active?: boolean | null
-          max_age?: number | null
-          max_premium?: number | null
-          metadata?: Json | null
-          min_age?: number | null
-          min_premium?: number | null
-          name: string
-          product_type: Database["public"]["Enums"]["product_type"]
-          updated_at?: string | null
-        }
+          carrier_id: string;
+          code?: string | null;
+          commission_percentage?: number | null;
+          created_at?: string | null;
+          description?: string | null;
+          id?: string;
+          is_active?: boolean | null;
+          max_age?: number | null;
+          max_premium?: number | null;
+          metadata?: Json | null;
+          min_age?: number | null;
+          min_premium?: number | null;
+          name: string;
+          product_type: Database["public"]["Enums"]["product_type"];
+          updated_at?: string | null;
+        };
         Update: {
-          carrier_id?: string
-          code?: string | null
-          commission_percentage?: number | null
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          is_active?: boolean | null
-          max_age?: number | null
-          max_premium?: number | null
-          metadata?: Json | null
-          min_age?: number | null
-          min_premium?: number | null
-          name?: string
-          product_type?: Database["public"]["Enums"]["product_type"]
-          updated_at?: string | null
-        }
+          carrier_id?: string;
+          code?: string | null;
+          commission_percentage?: number | null;
+          created_at?: string | null;
+          description?: string | null;
+          id?: string;
+          is_active?: boolean | null;
+          max_age?: number | null;
+          max_premium?: number | null;
+          metadata?: Json | null;
+          min_age?: number | null;
+          min_premium?: number | null;
+          name?: string;
+          product_type?: Database["public"]["Enums"]["product_type"];
+          updated_at?: string | null;
+        };
         Relationships: [
           {
-            foreignKeyName: "products_carrier_id_fkey"
-            columns: ["carrier_id"]
-            isOneToOne: false
-            referencedRelation: "carriers"
-            referencedColumns: ["id"]
+            foreignKeyName: "products_carrier_id_fkey";
+            columns: ["carrier_id"];
+            isOneToOne: false;
+            referencedRelation: "carriers";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       recruit_checklist_progress: {
         Row: {
-          checklist_item_id: string
-          completed_at: string | null
-          completed_by: string | null
-          created_at: string | null
-          document_id: string | null
-          id: string
-          metadata: Json | null
-          notes: string | null
-          rejection_reason: string | null
-          status: string
-          updated_at: string | null
-          user_id: string
-          verified_at: string | null
-          verified_by: string | null
-        }
+          checklist_item_id: string;
+          completed_at: string | null;
+          completed_by: string | null;
+          created_at: string | null;
+          document_id: string | null;
+          id: string;
+          metadata: Json | null;
+          notes: string | null;
+          rejection_reason: string | null;
+          status: string;
+          updated_at: string | null;
+          user_id: string;
+          verified_at: string | null;
+          verified_by: string | null;
+        };
         Insert: {
-          checklist_item_id: string
-          completed_at?: string | null
-          completed_by?: string | null
-          created_at?: string | null
-          document_id?: string | null
-          id?: string
-          metadata?: Json | null
-          notes?: string | null
-          rejection_reason?: string | null
-          status?: string
-          updated_at?: string | null
-          user_id: string
-          verified_at?: string | null
-          verified_by?: string | null
-        }
+          checklist_item_id: string;
+          completed_at?: string | null;
+          completed_by?: string | null;
+          created_at?: string | null;
+          document_id?: string | null;
+          id?: string;
+          metadata?: Json | null;
+          notes?: string | null;
+          rejection_reason?: string | null;
+          status?: string;
+          updated_at?: string | null;
+          user_id: string;
+          verified_at?: string | null;
+          verified_by?: string | null;
+        };
         Update: {
-          checklist_item_id?: string
-          completed_at?: string | null
-          completed_by?: string | null
-          created_at?: string | null
-          document_id?: string | null
-          id?: string
-          metadata?: Json | null
-          notes?: string | null
-          rejection_reason?: string | null
-          status?: string
-          updated_at?: string | null
-          user_id?: string
-          verified_at?: string | null
-          verified_by?: string | null
-        }
+          checklist_item_id?: string;
+          completed_at?: string | null;
+          completed_by?: string | null;
+          created_at?: string | null;
+          document_id?: string | null;
+          id?: string;
+          metadata?: Json | null;
+          notes?: string | null;
+          rejection_reason?: string | null;
+          status?: string;
+          updated_at?: string | null;
+          user_id?: string;
+          verified_at?: string | null;
+          verified_by?: string | null;
+        };
         Relationships: [
           {
-            foreignKeyName: "recruit_checklist_progress_checklist_item_id_fkey"
-            columns: ["checklist_item_id"]
-            isOneToOne: false
-            referencedRelation: "phase_checklist_items"
-            referencedColumns: ["id"]
+            foreignKeyName: "recruit_checklist_progress_checklist_item_id_fkey";
+            columns: ["checklist_item_id"];
+            isOneToOne: false;
+            referencedRelation: "phase_checklist_items";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "recruit_checklist_progress_completed_by_fkey"
-            columns: ["completed_by"]
-            isOneToOne: false
-            referencedRelation: "active_user_profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "recruit_checklist_progress_completed_by_fkey";
+            columns: ["completed_by"];
+            isOneToOne: false;
+            referencedRelation: "active_user_profiles";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "recruit_checklist_progress_completed_by_fkey"
-            columns: ["completed_by"]
-            isOneToOne: false
-            referencedRelation: "user_management_view"
-            referencedColumns: ["id"]
+            foreignKeyName: "recruit_checklist_progress_completed_by_fkey";
+            columns: ["completed_by"];
+            isOneToOne: false;
+            referencedRelation: "user_management_view";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "recruit_checklist_progress_completed_by_fkey"
-            columns: ["completed_by"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "recruit_checklist_progress_completed_by_fkey";
+            columns: ["completed_by"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "recruit_checklist_progress_document_id_fkey"
-            columns: ["document_id"]
-            isOneToOne: false
-            referencedRelation: "user_documents"
-            referencedColumns: ["id"]
+            foreignKeyName: "recruit_checklist_progress_document_id_fkey";
+            columns: ["document_id"];
+            isOneToOne: false;
+            referencedRelation: "user_documents";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "recruit_checklist_progress_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "active_user_profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "recruit_checklist_progress_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "active_user_profiles";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "recruit_checklist_progress_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_management_view"
-            referencedColumns: ["id"]
+            foreignKeyName: "recruit_checklist_progress_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "user_management_view";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "recruit_checklist_progress_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "recruit_checklist_progress_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "recruit_checklist_progress_verified_by_fkey"
-            columns: ["verified_by"]
-            isOneToOne: false
-            referencedRelation: "active_user_profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "recruit_checklist_progress_verified_by_fkey";
+            columns: ["verified_by"];
+            isOneToOne: false;
+            referencedRelation: "active_user_profiles";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "recruit_checklist_progress_verified_by_fkey"
-            columns: ["verified_by"]
-            isOneToOne: false
-            referencedRelation: "user_management_view"
-            referencedColumns: ["id"]
+            foreignKeyName: "recruit_checklist_progress_verified_by_fkey";
+            columns: ["verified_by"];
+            isOneToOne: false;
+            referencedRelation: "user_management_view";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "recruit_checklist_progress_verified_by_fkey"
-            columns: ["verified_by"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "recruit_checklist_progress_verified_by_fkey";
+            columns: ["verified_by"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       recruit_phase_progress: {
         Row: {
-          blocked_reason: string | null
-          completed_at: string | null
-          created_at: string | null
-          id: string
-          notes: string | null
-          phase_id: string
-          started_at: string | null
-          status: string
-          template_id: string
-          updated_at: string | null
-          user_id: string
-        }
+          blocked_reason: string | null;
+          completed_at: string | null;
+          created_at: string | null;
+          id: string;
+          notes: string | null;
+          phase_id: string;
+          started_at: string | null;
+          status: string;
+          template_id: string;
+          updated_at: string | null;
+          user_id: string;
+        };
         Insert: {
-          blocked_reason?: string | null
-          completed_at?: string | null
-          created_at?: string | null
-          id?: string
-          notes?: string | null
-          phase_id: string
-          started_at?: string | null
-          status?: string
-          template_id: string
-          updated_at?: string | null
-          user_id: string
-        }
+          blocked_reason?: string | null;
+          completed_at?: string | null;
+          created_at?: string | null;
+          id?: string;
+          notes?: string | null;
+          phase_id: string;
+          started_at?: string | null;
+          status?: string;
+          template_id: string;
+          updated_at?: string | null;
+          user_id: string;
+        };
         Update: {
-          blocked_reason?: string | null
-          completed_at?: string | null
-          created_at?: string | null
-          id?: string
-          notes?: string | null
-          phase_id?: string
-          started_at?: string | null
-          status?: string
-          template_id?: string
-          updated_at?: string | null
-          user_id?: string
-        }
+          blocked_reason?: string | null;
+          completed_at?: string | null;
+          created_at?: string | null;
+          id?: string;
+          notes?: string | null;
+          phase_id?: string;
+          started_at?: string | null;
+          status?: string;
+          template_id?: string;
+          updated_at?: string | null;
+          user_id?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "recruit_phase_progress_phase_id_fkey"
-            columns: ["phase_id"]
-            isOneToOne: false
-            referencedRelation: "pipeline_phases"
-            referencedColumns: ["id"]
+            foreignKeyName: "recruit_phase_progress_phase_id_fkey";
+            columns: ["phase_id"];
+            isOneToOne: false;
+            referencedRelation: "pipeline_phases";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "recruit_phase_progress_template_id_fkey"
-            columns: ["template_id"]
-            isOneToOne: false
-            referencedRelation: "pipeline_templates"
-            referencedColumns: ["id"]
+            foreignKeyName: "recruit_phase_progress_template_id_fkey";
+            columns: ["template_id"];
+            isOneToOne: false;
+            referencedRelation: "pipeline_templates";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "recruit_phase_progress_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "active_user_profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "recruit_phase_progress_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "active_user_profiles";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "recruit_phase_progress_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_management_view"
-            referencedColumns: ["id"]
+            foreignKeyName: "recruit_phase_progress_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "user_management_view";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "recruit_phase_progress_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "recruit_phase_progress_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       role_permissions: {
         Row: {
-          created_at: string | null
-          permission_id: string
-          role_id: string
-        }
+          created_at: string | null;
+          permission_id: string;
+          role_id: string;
+        };
         Insert: {
-          created_at?: string | null
-          permission_id: string
-          role_id: string
-        }
+          created_at?: string | null;
+          permission_id: string;
+          role_id: string;
+        };
         Update: {
-          created_at?: string | null
-          permission_id?: string
-          role_id?: string
-        }
+          created_at?: string | null;
+          permission_id?: string;
+          role_id?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "role_permissions_permission_id_fkey"
-            columns: ["permission_id"]
-            isOneToOne: false
-            referencedRelation: "permissions"
-            referencedColumns: ["id"]
+            foreignKeyName: "role_permissions_permission_id_fkey";
+            columns: ["permission_id"];
+            isOneToOne: false;
+            referencedRelation: "permissions";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "role_permissions_role_id_fkey"
-            columns: ["role_id"]
-            isOneToOne: false
-            referencedRelation: "roles"
-            referencedColumns: ["id"]
+            foreignKeyName: "role_permissions_role_id_fkey";
+            columns: ["role_id"];
+            isOneToOne: false;
+            referencedRelation: "roles";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       roles: {
         Row: {
-          created_at: string | null
-          description: string | null
-          display_name: string
-          id: string
-          is_system_role: boolean | null
-          name: string
-          parent_role_id: string | null
-          respects_hierarchy: boolean | null
-          updated_at: string | null
-        }
+          created_at: string | null;
+          description: string | null;
+          display_name: string;
+          id: string;
+          is_system_role: boolean | null;
+          name: string;
+          parent_role_id: string | null;
+          respects_hierarchy: boolean | null;
+          updated_at: string | null;
+        };
         Insert: {
-          created_at?: string | null
-          description?: string | null
-          display_name: string
-          id?: string
-          is_system_role?: boolean | null
-          name: string
-          parent_role_id?: string | null
-          respects_hierarchy?: boolean | null
-          updated_at?: string | null
-        }
+          created_at?: string | null;
+          description?: string | null;
+          display_name: string;
+          id?: string;
+          is_system_role?: boolean | null;
+          name: string;
+          parent_role_id?: string | null;
+          respects_hierarchy?: boolean | null;
+          updated_at?: string | null;
+        };
         Update: {
-          created_at?: string | null
-          description?: string | null
-          display_name?: string
-          id?: string
-          is_system_role?: boolean | null
-          name?: string
-          parent_role_id?: string | null
-          respects_hierarchy?: boolean | null
-          updated_at?: string | null
-        }
+          created_at?: string | null;
+          description?: string | null;
+          display_name?: string;
+          id?: string;
+          is_system_role?: boolean | null;
+          name?: string;
+          parent_role_id?: string | null;
+          respects_hierarchy?: boolean | null;
+          updated_at?: string | null;
+        };
         Relationships: [
           {
-            foreignKeyName: "roles_parent_role_id_fkey"
-            columns: ["parent_role_id"]
-            isOneToOne: false
-            referencedRelation: "roles"
-            referencedColumns: ["id"]
+            foreignKeyName: "roles_parent_role_id_fkey";
+            columns: ["parent_role_id"];
+            isOneToOne: false;
+            referencedRelation: "roles";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       settings: {
         Row: {
-          created_at: string | null
-          currency: string | null
-          default_commission_rate: number | null
-          email_template_limit: number | null
-          fiscal_year_start: number | null
-          id: string
-          notifications_enabled: boolean | null
-          tax_rate: number | null
-          updated_at: string | null
-          user_id: string | null
-        }
+          created_at: string | null;
+          currency: string | null;
+          default_commission_rate: number | null;
+          email_template_limit: number | null;
+          fiscal_year_start: number | null;
+          id: string;
+          notifications_enabled: boolean | null;
+          tax_rate: number | null;
+          updated_at: string | null;
+          user_id: string | null;
+        };
         Insert: {
-          created_at?: string | null
-          currency?: string | null
-          default_commission_rate?: number | null
-          email_template_limit?: number | null
-          fiscal_year_start?: number | null
-          id?: string
-          notifications_enabled?: boolean | null
-          tax_rate?: number | null
-          updated_at?: string | null
-          user_id?: string | null
-        }
+          created_at?: string | null;
+          currency?: string | null;
+          default_commission_rate?: number | null;
+          email_template_limit?: number | null;
+          fiscal_year_start?: number | null;
+          id?: string;
+          notifications_enabled?: boolean | null;
+          tax_rate?: number | null;
+          updated_at?: string | null;
+          user_id?: string | null;
+        };
         Update: {
-          created_at?: string | null
-          currency?: string | null
-          default_commission_rate?: number | null
-          email_template_limit?: number | null
-          fiscal_year_start?: number | null
-          id?: string
-          notifications_enabled?: boolean | null
-          tax_rate?: number | null
-          updated_at?: string | null
-          user_id?: string | null
-        }
-        Relationships: []
-      }
+          created_at?: string | null;
+          currency?: string | null;
+          default_commission_rate?: number | null;
+          email_template_limit?: number | null;
+          fiscal_year_start?: number | null;
+          id?: string;
+          notifications_enabled?: boolean | null;
+          tax_rate?: number | null;
+          updated_at?: string | null;
+          user_id?: string | null;
+        };
+        Relationships: [];
+      };
       system_audit_log: {
         Row: {
-          action: string
-          data: Json | null
-          id: string
-          performed_at: string | null
-          performed_by: string | null
-          record_id: string | null
-          table_name: string
-        }
+          action: string;
+          data: Json | null;
+          id: string;
+          performed_at: string | null;
+          performed_by: string | null;
+          record_id: string | null;
+          table_name: string;
+        };
         Insert: {
-          action: string
-          data?: Json | null
-          id?: string
-          performed_at?: string | null
-          performed_by?: string | null
-          record_id?: string | null
-          table_name: string
-        }
+          action: string;
+          data?: Json | null;
+          id?: string;
+          performed_at?: string | null;
+          performed_by?: string | null;
+          record_id?: string | null;
+          table_name: string;
+        };
         Update: {
-          action?: string
-          data?: Json | null
-          id?: string
-          performed_at?: string | null
-          performed_by?: string | null
-          record_id?: string | null
-          table_name?: string
-        }
+          action?: string;
+          data?: Json | null;
+          id?: string;
+          performed_at?: string | null;
+          performed_by?: string | null;
+          record_id?: string | null;
+          table_name?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "system_audit_log_performed_by_fkey"
-            columns: ["performed_by"]
-            isOneToOne: false
-            referencedRelation: "active_user_profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "system_audit_log_performed_by_fkey";
+            columns: ["performed_by"];
+            isOneToOne: false;
+            referencedRelation: "active_user_profiles";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "system_audit_log_performed_by_fkey"
-            columns: ["performed_by"]
-            isOneToOne: false
-            referencedRelation: "user_management_view"
-            referencedColumns: ["id"]
+            foreignKeyName: "system_audit_log_performed_by_fkey";
+            columns: ["performed_by"];
+            isOneToOne: false;
+            referencedRelation: "user_management_view";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "system_audit_log_performed_by_fkey"
-            columns: ["performed_by"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "system_audit_log_performed_by_fkey";
+            columns: ["performed_by"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       trigger_event_types: {
         Row: {
-          available_variables: Json | null
-          category: string
-          created_at: string | null
-          description: string | null
-          event_name: string
-          id: string
-          is_active: boolean | null
-        }
+          available_variables: Json | null;
+          category: string;
+          created_at: string | null;
+          description: string | null;
+          event_name: string;
+          id: string;
+          is_active: boolean | null;
+        };
         Insert: {
-          available_variables?: Json | null
-          category: string
-          created_at?: string | null
-          description?: string | null
-          event_name: string
-          id?: string
-          is_active?: boolean | null
-        }
+          available_variables?: Json | null;
+          category: string;
+          created_at?: string | null;
+          description?: string | null;
+          event_name: string;
+          id?: string;
+          is_active?: boolean | null;
+        };
         Update: {
-          available_variables?: Json | null
-          category?: string
-          created_at?: string | null
-          description?: string | null
-          event_name?: string
-          id?: string
-          is_active?: boolean | null
-        }
-        Relationships: []
-      }
+          available_variables?: Json | null;
+          category?: string;
+          created_at?: string | null;
+          description?: string | null;
+          event_name?: string;
+          id?: string;
+          is_active?: boolean | null;
+        };
+        Relationships: [];
+      };
       user_activity_log: {
         Row: {
-          action_type: string
-          created_at: string | null
-          details: Json | null
-          id: string
-          performed_by: string | null
-          user_id: string
-        }
+          action_type: string;
+          created_at: string | null;
+          details: Json | null;
+          id: string;
+          performed_by: string | null;
+          user_id: string;
+        };
         Insert: {
-          action_type: string
-          created_at?: string | null
-          details?: Json | null
-          id?: string
-          performed_by?: string | null
-          user_id: string
-        }
+          action_type: string;
+          created_at?: string | null;
+          details?: Json | null;
+          id?: string;
+          performed_by?: string | null;
+          user_id: string;
+        };
         Update: {
-          action_type?: string
-          created_at?: string | null
-          details?: Json | null
-          id?: string
-          performed_by?: string | null
-          user_id?: string
-        }
+          action_type?: string;
+          created_at?: string | null;
+          details?: Json | null;
+          id?: string;
+          performed_by?: string | null;
+          user_id?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "user_activity_log_performed_by_fkey"
-            columns: ["performed_by"]
-            isOneToOne: false
-            referencedRelation: "active_user_profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "user_activity_log_performed_by_fkey";
+            columns: ["performed_by"];
+            isOneToOne: false;
+            referencedRelation: "active_user_profiles";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "user_activity_log_performed_by_fkey"
-            columns: ["performed_by"]
-            isOneToOne: false
-            referencedRelation: "user_management_view"
-            referencedColumns: ["id"]
+            foreignKeyName: "user_activity_log_performed_by_fkey";
+            columns: ["performed_by"];
+            isOneToOne: false;
+            referencedRelation: "user_management_view";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "user_activity_log_performed_by_fkey"
-            columns: ["performed_by"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "user_activity_log_performed_by_fkey";
+            columns: ["performed_by"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "user_activity_log_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "active_user_profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "user_activity_log_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "active_user_profiles";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "user_activity_log_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_management_view"
-            referencedColumns: ["id"]
+            foreignKeyName: "user_activity_log_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "user_management_view";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "user_activity_log_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "user_activity_log_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       user_documents: {
         Row: {
-          created_at: string | null
-          document_name: string
-          document_type: string
-          expires_at: string | null
-          file_name: string
-          file_size: number | null
-          file_type: string | null
-          id: string
-          notes: string | null
-          required: boolean | null
-          status: string
-          storage_path: string
-          updated_at: string | null
-          uploaded_at: string | null
-          uploaded_by: string | null
-          user_id: string
-        }
+          created_at: string | null;
+          document_name: string;
+          document_type: string;
+          expires_at: string | null;
+          file_name: string;
+          file_size: number | null;
+          file_type: string | null;
+          id: string;
+          notes: string | null;
+          required: boolean | null;
+          status: string;
+          storage_path: string;
+          updated_at: string | null;
+          uploaded_at: string | null;
+          uploaded_by: string | null;
+          user_id: string;
+        };
         Insert: {
-          created_at?: string | null
-          document_name: string
-          document_type: string
-          expires_at?: string | null
-          file_name: string
-          file_size?: number | null
-          file_type?: string | null
-          id?: string
-          notes?: string | null
-          required?: boolean | null
-          status?: string
-          storage_path: string
-          updated_at?: string | null
-          uploaded_at?: string | null
-          uploaded_by?: string | null
-          user_id: string
-        }
+          created_at?: string | null;
+          document_name: string;
+          document_type: string;
+          expires_at?: string | null;
+          file_name: string;
+          file_size?: number | null;
+          file_type?: string | null;
+          id?: string;
+          notes?: string | null;
+          required?: boolean | null;
+          status?: string;
+          storage_path: string;
+          updated_at?: string | null;
+          uploaded_at?: string | null;
+          uploaded_by?: string | null;
+          user_id: string;
+        };
         Update: {
-          created_at?: string | null
-          document_name?: string
-          document_type?: string
-          expires_at?: string | null
-          file_name?: string
-          file_size?: number | null
-          file_type?: string | null
-          id?: string
-          notes?: string | null
-          required?: boolean | null
-          status?: string
-          storage_path?: string
-          updated_at?: string | null
-          uploaded_at?: string | null
-          uploaded_by?: string | null
-          user_id?: string
-        }
+          created_at?: string | null;
+          document_name?: string;
+          document_type?: string;
+          expires_at?: string | null;
+          file_name?: string;
+          file_size?: number | null;
+          file_type?: string | null;
+          id?: string;
+          notes?: string | null;
+          required?: boolean | null;
+          status?: string;
+          storage_path?: string;
+          updated_at?: string | null;
+          uploaded_at?: string | null;
+          uploaded_by?: string | null;
+          user_id?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "user_documents_uploaded_by_fkey"
-            columns: ["uploaded_by"]
-            isOneToOne: false
-            referencedRelation: "active_user_profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "user_documents_uploaded_by_fkey";
+            columns: ["uploaded_by"];
+            isOneToOne: false;
+            referencedRelation: "active_user_profiles";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "user_documents_uploaded_by_fkey"
-            columns: ["uploaded_by"]
-            isOneToOne: false
-            referencedRelation: "user_management_view"
-            referencedColumns: ["id"]
+            foreignKeyName: "user_documents_uploaded_by_fkey";
+            columns: ["uploaded_by"];
+            isOneToOne: false;
+            referencedRelation: "user_management_view";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "user_documents_uploaded_by_fkey"
-            columns: ["uploaded_by"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "user_documents_uploaded_by_fkey";
+            columns: ["uploaded_by"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "user_documents_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "active_user_profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "user_documents_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "active_user_profiles";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "user_documents_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_management_view"
-            referencedColumns: ["id"]
+            foreignKeyName: "user_documents_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "user_management_view";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "user_documents_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "user_documents_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       user_email_attachments: {
         Row: {
-          created_at: string | null
-          email_id: string
-          file_name: string
-          file_size: number | null
-          file_type: string | null
-          id: string
-          storage_path: string
-        }
+          created_at: string | null;
+          email_id: string;
+          file_name: string;
+          file_size: number | null;
+          file_type: string | null;
+          id: string;
+          storage_path: string;
+        };
         Insert: {
-          created_at?: string | null
-          email_id: string
-          file_name: string
-          file_size?: number | null
-          file_type?: string | null
-          id?: string
-          storage_path: string
-        }
+          created_at?: string | null;
+          email_id: string;
+          file_name: string;
+          file_size?: number | null;
+          file_type?: string | null;
+          id?: string;
+          storage_path: string;
+        };
         Update: {
-          created_at?: string | null
-          email_id?: string
-          file_name?: string
-          file_size?: number | null
-          file_type?: string | null
-          id?: string
-          storage_path?: string
-        }
+          created_at?: string | null;
+          email_id?: string;
+          file_name?: string;
+          file_size?: number | null;
+          file_type?: string | null;
+          id?: string;
+          storage_path?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "user_email_attachments_email_id_fkey"
-            columns: ["email_id"]
-            isOneToOne: false
-            referencedRelation: "user_emails"
-            referencedColumns: ["id"]
+            foreignKeyName: "user_email_attachments_email_id_fkey";
+            columns: ["email_id"];
+            isOneToOne: false;
+            referencedRelation: "user_emails";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       user_email_oauth_tokens: {
         Row: {
-          access_token_encrypted: string
-          created_at: string | null
-          email_address: string
-          id: string
-          is_active: boolean | null
-          last_used_at: string | null
-          provider: string
-          refresh_token_encrypted: string | null
-          scopes: string[] | null
-          token_expiry: string | null
-          updated_at: string | null
-          user_id: string
-        }
+          access_token_encrypted: string;
+          created_at: string | null;
+          email_address: string;
+          id: string;
+          is_active: boolean | null;
+          last_used_at: string | null;
+          provider: string;
+          refresh_token_encrypted: string | null;
+          scopes: string[] | null;
+          token_expiry: string | null;
+          updated_at: string | null;
+          user_id: string;
+        };
         Insert: {
-          access_token_encrypted: string
-          created_at?: string | null
-          email_address: string
-          id?: string
-          is_active?: boolean | null
-          last_used_at?: string | null
-          provider: string
-          refresh_token_encrypted?: string | null
-          scopes?: string[] | null
-          token_expiry?: string | null
-          updated_at?: string | null
-          user_id: string
-        }
+          access_token_encrypted: string;
+          created_at?: string | null;
+          email_address: string;
+          id?: string;
+          is_active?: boolean | null;
+          last_used_at?: string | null;
+          provider: string;
+          refresh_token_encrypted?: string | null;
+          scopes?: string[] | null;
+          token_expiry?: string | null;
+          updated_at?: string | null;
+          user_id: string;
+        };
         Update: {
-          access_token_encrypted?: string
-          created_at?: string | null
-          email_address?: string
-          id?: string
-          is_active?: boolean | null
-          last_used_at?: string | null
-          provider?: string
-          refresh_token_encrypted?: string | null
-          scopes?: string[] | null
-          token_expiry?: string | null
-          updated_at?: string | null
-          user_id?: string
-        }
+          access_token_encrypted?: string;
+          created_at?: string | null;
+          email_address?: string;
+          id?: string;
+          is_active?: boolean | null;
+          last_used_at?: string | null;
+          provider?: string;
+          refresh_token_encrypted?: string | null;
+          scopes?: string[] | null;
+          token_expiry?: string | null;
+          updated_at?: string | null;
+          user_id?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "user_email_oauth_tokens_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "active_user_profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "user_email_oauth_tokens_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "active_user_profiles";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "user_email_oauth_tokens_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_management_view"
-            referencedColumns: ["id"]
+            foreignKeyName: "user_email_oauth_tokens_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "user_management_view";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "user_email_oauth_tokens_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "user_email_oauth_tokens_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       user_emails: {
         Row: {
-          body_html: string | null
-          body_text: string | null
-          cc_addresses: string[] | null
-          created_at: string | null
-          delivered_at: string | null
-          failed_reason: string | null
-          from_address: string | null
-          id: string
-          is_incoming: boolean | null
-          labels: string[] | null
-          metadata: Json | null
-          opened_at: string | null
-          provider: string | null
-          provider_message_id: string | null
-          reply_to_id: string | null
-          sender_id: string | null
-          sent_at: string | null
-          status: string
-          subject: string
-          thread_id: string | null
-          to_addresses: string[] | null
-          updated_at: string | null
-          user_id: string
-        }
+          attachment_count: number | null;
+          body_html: string | null;
+          body_text: string | null;
+          campaign_id: string | null;
+          cc_addresses: string[] | null;
+          click_count: number | null;
+          created_at: string | null;
+          delivered_at: string | null;
+          failed_reason: string | null;
+          first_clicked_at: string | null;
+          first_opened_at: string | null;
+          from_address: string | null;
+          has_attachments: boolean | null;
+          id: string;
+          in_reply_to_header: string | null;
+          is_incoming: boolean | null;
+          is_read: boolean | null;
+          labels: string[] | null;
+          message_id_header: string | null;
+          metadata: Json | null;
+          open_count: number | null;
+          opened_at: string | null;
+          provider: string | null;
+          provider_message_id: string | null;
+          references_header: string[] | null;
+          reply_to_id: string | null;
+          scheduled_for: string | null;
+          sender_id: string | null;
+          sent_at: string | null;
+          signature_id: string | null;
+          source: string | null;
+          status: string;
+          subject: string;
+          thread_id: string | null;
+          to_addresses: string[] | null;
+          tracking_id: string | null;
+          updated_at: string | null;
+          user_id: string;
+          workflow_id: string | null;
+        };
         Insert: {
-          body_html?: string | null
-          body_text?: string | null
-          cc_addresses?: string[] | null
-          created_at?: string | null
-          delivered_at?: string | null
-          failed_reason?: string | null
-          from_address?: string | null
-          id?: string
-          is_incoming?: boolean | null
-          labels?: string[] | null
-          metadata?: Json | null
-          opened_at?: string | null
-          provider?: string | null
-          provider_message_id?: string | null
-          reply_to_id?: string | null
-          sender_id?: string | null
-          sent_at?: string | null
-          status?: string
-          subject: string
-          thread_id?: string | null
-          to_addresses?: string[] | null
-          updated_at?: string | null
-          user_id: string
-        }
+          attachment_count?: number | null;
+          body_html?: string | null;
+          body_text?: string | null;
+          campaign_id?: string | null;
+          cc_addresses?: string[] | null;
+          click_count?: number | null;
+          created_at?: string | null;
+          delivered_at?: string | null;
+          failed_reason?: string | null;
+          first_clicked_at?: string | null;
+          first_opened_at?: string | null;
+          from_address?: string | null;
+          has_attachments?: boolean | null;
+          id?: string;
+          in_reply_to_header?: string | null;
+          is_incoming?: boolean | null;
+          is_read?: boolean | null;
+          labels?: string[] | null;
+          message_id_header?: string | null;
+          metadata?: Json | null;
+          open_count?: number | null;
+          opened_at?: string | null;
+          provider?: string | null;
+          provider_message_id?: string | null;
+          references_header?: string[] | null;
+          reply_to_id?: string | null;
+          scheduled_for?: string | null;
+          sender_id?: string | null;
+          sent_at?: string | null;
+          signature_id?: string | null;
+          source?: string | null;
+          status?: string;
+          subject: string;
+          thread_id?: string | null;
+          to_addresses?: string[] | null;
+          tracking_id?: string | null;
+          updated_at?: string | null;
+          user_id: string;
+          workflow_id?: string | null;
+        };
         Update: {
-          body_html?: string | null
-          body_text?: string | null
-          cc_addresses?: string[] | null
-          created_at?: string | null
-          delivered_at?: string | null
-          failed_reason?: string | null
-          from_address?: string | null
-          id?: string
-          is_incoming?: boolean | null
-          labels?: string[] | null
-          metadata?: Json | null
-          opened_at?: string | null
-          provider?: string | null
-          provider_message_id?: string | null
-          reply_to_id?: string | null
-          sender_id?: string | null
-          sent_at?: string | null
-          status?: string
-          subject?: string
-          thread_id?: string | null
-          to_addresses?: string[] | null
-          updated_at?: string | null
-          user_id?: string
-        }
+          attachment_count?: number | null;
+          body_html?: string | null;
+          body_text?: string | null;
+          campaign_id?: string | null;
+          cc_addresses?: string[] | null;
+          click_count?: number | null;
+          created_at?: string | null;
+          delivered_at?: string | null;
+          failed_reason?: string | null;
+          first_clicked_at?: string | null;
+          first_opened_at?: string | null;
+          from_address?: string | null;
+          has_attachments?: boolean | null;
+          id?: string;
+          in_reply_to_header?: string | null;
+          is_incoming?: boolean | null;
+          is_read?: boolean | null;
+          labels?: string[] | null;
+          message_id_header?: string | null;
+          metadata?: Json | null;
+          open_count?: number | null;
+          opened_at?: string | null;
+          provider?: string | null;
+          provider_message_id?: string | null;
+          references_header?: string[] | null;
+          reply_to_id?: string | null;
+          scheduled_for?: string | null;
+          sender_id?: string | null;
+          sent_at?: string | null;
+          signature_id?: string | null;
+          source?: string | null;
+          status?: string;
+          subject?: string;
+          thread_id?: string | null;
+          to_addresses?: string[] | null;
+          tracking_id?: string | null;
+          updated_at?: string | null;
+          user_id?: string;
+          workflow_id?: string | null;
+        };
         Relationships: [
           {
-            foreignKeyName: "user_emails_reply_to_id_fkey"
-            columns: ["reply_to_id"]
-            isOneToOne: false
-            referencedRelation: "user_emails"
-            referencedColumns: ["id"]
+            foreignKeyName: "user_emails_reply_to_id_fkey";
+            columns: ["reply_to_id"];
+            isOneToOne: false;
+            referencedRelation: "user_emails";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "user_emails_sender_id_fkey"
-            columns: ["sender_id"]
-            isOneToOne: false
-            referencedRelation: "active_user_profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "user_emails_sender_id_fkey";
+            columns: ["sender_id"];
+            isOneToOne: false;
+            referencedRelation: "active_user_profiles";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "user_emails_sender_id_fkey"
-            columns: ["sender_id"]
-            isOneToOne: false
-            referencedRelation: "user_management_view"
-            referencedColumns: ["id"]
+            foreignKeyName: "user_emails_sender_id_fkey";
+            columns: ["sender_id"];
+            isOneToOne: false;
+            referencedRelation: "user_management_view";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "user_emails_sender_id_fkey"
-            columns: ["sender_id"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "user_emails_sender_id_fkey";
+            columns: ["sender_id"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "user_emails_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "active_user_profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "user_emails_signature_id_fkey";
+            columns: ["signature_id"];
+            isOneToOne: false;
+            referencedRelation: "email_signatures";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "user_emails_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_management_view"
-            referencedColumns: ["id"]
+            foreignKeyName: "user_emails_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "active_user_profiles";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "user_emails_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "user_emails_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "user_management_view";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+          {
+            foreignKeyName: "user_emails_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       user_profiles: {
         Row: {
-          agent_status: Database["public"]["Enums"]["agent_status"] | null
-          approval_status: string
-          approved_at: string | null
-          approved_by: string | null
-          archive_reason: string | null
-          archived_at: string | null
-          archived_by: string | null
-          city: string | null
-          contract_level: number | null
-          created_at: string | null
-          current_onboarding_phase: string | null
-          custom_permissions: Json | null
-          date_of_birth: string | null
-          denial_reason: string | null
-          denied_at: string | null
-          email: string
-          facebook_handle: string | null
-          first_name: string | null
-          hierarchy_depth: number | null
-          hierarchy_path: string | null
-          id: string
-          instagram_url: string | null
-          instagram_username: string | null
-          is_admin: boolean
-          is_super_admin: boolean | null
-          last_name: string | null
-          license_expiration: string | null
-          license_number: string | null
-          licensing_info: Json | null
-          linkedin_url: string | null
-          linkedin_username: string | null
-          npn: string | null
-          onboarding_completed_at: string | null
-          onboarding_started_at: string | null
-          onboarding_status: string | null
-          personal_website: string | null
-          phone: string | null
-          pipeline_template_id: string | null
-          profile_photo_url: string | null
-          recruiter_id: string | null
-          referral_source: string | null
-          resident_state: string | null
-          roles: string[] | null
-          state: string | null
-          street_address: string | null
-          updated_at: string | null
-          upline_id: string | null
-          zip: string | null
-        }
+          agent_status: Database["public"]["Enums"]["agent_status"] | null;
+          approval_status: string;
+          approved_at: string | null;
+          approved_by: string | null;
+          archive_reason: string | null;
+          archived_at: string | null;
+          archived_by: string | null;
+          city: string | null;
+          contract_level: number | null;
+          created_at: string | null;
+          current_onboarding_phase: string | null;
+          custom_permissions: Json | null;
+          date_of_birth: string | null;
+          denial_reason: string | null;
+          denied_at: string | null;
+          email: string;
+          facebook_handle: string | null;
+          first_name: string | null;
+          hierarchy_depth: number | null;
+          hierarchy_path: string | null;
+          id: string;
+          instagram_url: string | null;
+          instagram_username: string | null;
+          is_admin: boolean;
+          is_super_admin: boolean | null;
+          last_name: string | null;
+          license_expiration: string | null;
+          license_number: string | null;
+          licensing_info: Json | null;
+          linkedin_url: string | null;
+          linkedin_username: string | null;
+          npn: string | null;
+          onboarding_completed_at: string | null;
+          onboarding_started_at: string | null;
+          onboarding_status: string | null;
+          personal_website: string | null;
+          phone: string | null;
+          pipeline_template_id: string | null;
+          profile_photo_url: string | null;
+          recruiter_id: string | null;
+          referral_source: string | null;
+          resident_state: string | null;
+          roles: string[] | null;
+          state: string | null;
+          street_address: string | null;
+          updated_at: string | null;
+          upline_id: string | null;
+          zip: string | null;
+        };
         Insert: {
-          agent_status?: Database["public"]["Enums"]["agent_status"] | null
-          approval_status?: string
-          approved_at?: string | null
-          approved_by?: string | null
-          archive_reason?: string | null
-          archived_at?: string | null
-          archived_by?: string | null
-          city?: string | null
-          contract_level?: number | null
-          created_at?: string | null
-          current_onboarding_phase?: string | null
-          custom_permissions?: Json | null
-          date_of_birth?: string | null
-          denial_reason?: string | null
-          denied_at?: string | null
-          email: string
-          facebook_handle?: string | null
-          first_name?: string | null
-          hierarchy_depth?: number | null
-          hierarchy_path?: string | null
-          id?: string
-          instagram_url?: string | null
-          instagram_username?: string | null
-          is_admin?: boolean
-          is_super_admin?: boolean | null
-          last_name?: string | null
-          license_expiration?: string | null
-          license_number?: string | null
-          licensing_info?: Json | null
-          linkedin_url?: string | null
-          linkedin_username?: string | null
-          npn?: string | null
-          onboarding_completed_at?: string | null
-          onboarding_started_at?: string | null
-          onboarding_status?: string | null
-          personal_website?: string | null
-          phone?: string | null
-          pipeline_template_id?: string | null
-          profile_photo_url?: string | null
-          recruiter_id?: string | null
-          referral_source?: string | null
-          resident_state?: string | null
-          roles?: string[] | null
-          state?: string | null
-          street_address?: string | null
-          updated_at?: string | null
-          upline_id?: string | null
-          zip?: string | null
-        }
+          agent_status?: Database["public"]["Enums"]["agent_status"] | null;
+          approval_status?: string;
+          approved_at?: string | null;
+          approved_by?: string | null;
+          archive_reason?: string | null;
+          archived_at?: string | null;
+          archived_by?: string | null;
+          city?: string | null;
+          contract_level?: number | null;
+          created_at?: string | null;
+          current_onboarding_phase?: string | null;
+          custom_permissions?: Json | null;
+          date_of_birth?: string | null;
+          denial_reason?: string | null;
+          denied_at?: string | null;
+          email: string;
+          facebook_handle?: string | null;
+          first_name?: string | null;
+          hierarchy_depth?: number | null;
+          hierarchy_path?: string | null;
+          id?: string;
+          instagram_url?: string | null;
+          instagram_username?: string | null;
+          is_admin?: boolean;
+          is_super_admin?: boolean | null;
+          last_name?: string | null;
+          license_expiration?: string | null;
+          license_number?: string | null;
+          licensing_info?: Json | null;
+          linkedin_url?: string | null;
+          linkedin_username?: string | null;
+          npn?: string | null;
+          onboarding_completed_at?: string | null;
+          onboarding_started_at?: string | null;
+          onboarding_status?: string | null;
+          personal_website?: string | null;
+          phone?: string | null;
+          pipeline_template_id?: string | null;
+          profile_photo_url?: string | null;
+          recruiter_id?: string | null;
+          referral_source?: string | null;
+          resident_state?: string | null;
+          roles?: string[] | null;
+          state?: string | null;
+          street_address?: string | null;
+          updated_at?: string | null;
+          upline_id?: string | null;
+          zip?: string | null;
+        };
         Update: {
-          agent_status?: Database["public"]["Enums"]["agent_status"] | null
-          approval_status?: string
-          approved_at?: string | null
-          approved_by?: string | null
-          archive_reason?: string | null
-          archived_at?: string | null
-          archived_by?: string | null
-          city?: string | null
-          contract_level?: number | null
-          created_at?: string | null
-          current_onboarding_phase?: string | null
-          custom_permissions?: Json | null
-          date_of_birth?: string | null
-          denial_reason?: string | null
-          denied_at?: string | null
-          email?: string
-          facebook_handle?: string | null
-          first_name?: string | null
-          hierarchy_depth?: number | null
-          hierarchy_path?: string | null
-          id?: string
-          instagram_url?: string | null
-          instagram_username?: string | null
-          is_admin?: boolean
-          is_super_admin?: boolean | null
-          last_name?: string | null
-          license_expiration?: string | null
-          license_number?: string | null
-          licensing_info?: Json | null
-          linkedin_url?: string | null
-          linkedin_username?: string | null
-          npn?: string | null
-          onboarding_completed_at?: string | null
-          onboarding_started_at?: string | null
-          onboarding_status?: string | null
-          personal_website?: string | null
-          phone?: string | null
-          pipeline_template_id?: string | null
-          profile_photo_url?: string | null
-          recruiter_id?: string | null
-          referral_source?: string | null
-          resident_state?: string | null
-          roles?: string[] | null
-          state?: string | null
-          street_address?: string | null
-          updated_at?: string | null
-          upline_id?: string | null
-          zip?: string | null
-        }
+          agent_status?: Database["public"]["Enums"]["agent_status"] | null;
+          approval_status?: string;
+          approved_at?: string | null;
+          approved_by?: string | null;
+          archive_reason?: string | null;
+          archived_at?: string | null;
+          archived_by?: string | null;
+          city?: string | null;
+          contract_level?: number | null;
+          created_at?: string | null;
+          current_onboarding_phase?: string | null;
+          custom_permissions?: Json | null;
+          date_of_birth?: string | null;
+          denial_reason?: string | null;
+          denied_at?: string | null;
+          email?: string;
+          facebook_handle?: string | null;
+          first_name?: string | null;
+          hierarchy_depth?: number | null;
+          hierarchy_path?: string | null;
+          id?: string;
+          instagram_url?: string | null;
+          instagram_username?: string | null;
+          is_admin?: boolean;
+          is_super_admin?: boolean | null;
+          last_name?: string | null;
+          license_expiration?: string | null;
+          license_number?: string | null;
+          licensing_info?: Json | null;
+          linkedin_url?: string | null;
+          linkedin_username?: string | null;
+          npn?: string | null;
+          onboarding_completed_at?: string | null;
+          onboarding_started_at?: string | null;
+          onboarding_status?: string | null;
+          personal_website?: string | null;
+          phone?: string | null;
+          pipeline_template_id?: string | null;
+          profile_photo_url?: string | null;
+          recruiter_id?: string | null;
+          referral_source?: string | null;
+          resident_state?: string | null;
+          roles?: string[] | null;
+          state?: string | null;
+          street_address?: string | null;
+          updated_at?: string | null;
+          upline_id?: string | null;
+          zip?: string | null;
+        };
         Relationships: [
           {
-            foreignKeyName: "user_profiles_approved_by_fkey"
-            columns: ["approved_by"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
+            foreignKeyName: "user_profiles_approved_by_fkey";
+            columns: ["approved_by"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "user_profiles_archived_by_fkey"
-            columns: ["archived_by"]
-            isOneToOne: false
-            referencedRelation: "active_user_profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "user_profiles_archived_by_fkey";
+            columns: ["archived_by"];
+            isOneToOne: false;
+            referencedRelation: "active_user_profiles";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "user_profiles_archived_by_fkey"
-            columns: ["archived_by"]
-            isOneToOne: false
-            referencedRelation: "user_management_view"
-            referencedColumns: ["id"]
+            foreignKeyName: "user_profiles_archived_by_fkey";
+            columns: ["archived_by"];
+            isOneToOne: false;
+            referencedRelation: "user_management_view";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "user_profiles_archived_by_fkey"
-            columns: ["archived_by"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "user_profiles_archived_by_fkey";
+            columns: ["archived_by"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "user_profiles_pipeline_template_id_fkey"
-            columns: ["pipeline_template_id"]
-            isOneToOne: false
-            referencedRelation: "pipeline_templates"
-            referencedColumns: ["id"]
+            foreignKeyName: "user_profiles_pipeline_template_id_fkey";
+            columns: ["pipeline_template_id"];
+            isOneToOne: false;
+            referencedRelation: "pipeline_templates";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "user_profiles_recruiter_id_fkey"
-            columns: ["recruiter_id"]
-            isOneToOne: false
-            referencedRelation: "active_user_profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "user_profiles_recruiter_id_fkey";
+            columns: ["recruiter_id"];
+            isOneToOne: false;
+            referencedRelation: "active_user_profiles";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "user_profiles_recruiter_id_fkey"
-            columns: ["recruiter_id"]
-            isOneToOne: false
-            referencedRelation: "user_management_view"
-            referencedColumns: ["id"]
+            foreignKeyName: "user_profiles_recruiter_id_fkey";
+            columns: ["recruiter_id"];
+            isOneToOne: false;
+            referencedRelation: "user_management_view";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "user_profiles_recruiter_id_fkey"
-            columns: ["recruiter_id"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "user_profiles_recruiter_id_fkey";
+            columns: ["recruiter_id"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "user_profiles_upline_id_fkey"
-            columns: ["upline_id"]
-            isOneToOne: false
-            referencedRelation: "active_user_profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "user_profiles_upline_id_fkey";
+            columns: ["upline_id"];
+            isOneToOne: false;
+            referencedRelation: "active_user_profiles";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "user_profiles_upline_id_fkey"
-            columns: ["upline_id"]
-            isOneToOne: false
-            referencedRelation: "user_management_view"
-            referencedColumns: ["id"]
+            foreignKeyName: "user_profiles_upline_id_fkey";
+            columns: ["upline_id"];
+            isOneToOne: false;
+            referencedRelation: "user_management_view";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "user_profiles_upline_id_fkey"
-            columns: ["upline_id"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "user_profiles_upline_id_fkey";
+            columns: ["upline_id"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       user_targets: {
         Row: {
-          achievements: Json | null
-          annual_income_target: number | null
-          annual_policies_target: number | null
-          avg_premium_target: number | null
-          created_at: string | null
-          expense_ratio_target: number | null
-          id: string
-          last_milestone_date: string | null
-          monthly_expense_target: number | null
-          monthly_income_target: number | null
-          monthly_policies_target: number | null
-          persistency_13_month_target: number | null
-          persistency_25_month_target: number | null
-          quarterly_income_target: number | null
-          updated_at: string | null
-          user_id: string | null
-        }
+          achievements: Json | null;
+          annual_income_target: number | null;
+          annual_policies_target: number | null;
+          avg_premium_target: number | null;
+          created_at: string | null;
+          expense_ratio_target: number | null;
+          id: string;
+          last_milestone_date: string | null;
+          monthly_expense_target: number | null;
+          monthly_income_target: number | null;
+          monthly_policies_target: number | null;
+          persistency_13_month_target: number | null;
+          persistency_25_month_target: number | null;
+          quarterly_income_target: number | null;
+          updated_at: string | null;
+          user_id: string | null;
+        };
         Insert: {
-          achievements?: Json | null
-          annual_income_target?: number | null
-          annual_policies_target?: number | null
-          avg_premium_target?: number | null
-          created_at?: string | null
-          expense_ratio_target?: number | null
-          id?: string
-          last_milestone_date?: string | null
-          monthly_expense_target?: number | null
-          monthly_income_target?: number | null
-          monthly_policies_target?: number | null
-          persistency_13_month_target?: number | null
-          persistency_25_month_target?: number | null
-          quarterly_income_target?: number | null
-          updated_at?: string | null
-          user_id?: string | null
-        }
+          achievements?: Json | null;
+          annual_income_target?: number | null;
+          annual_policies_target?: number | null;
+          avg_premium_target?: number | null;
+          created_at?: string | null;
+          expense_ratio_target?: number | null;
+          id?: string;
+          last_milestone_date?: string | null;
+          monthly_expense_target?: number | null;
+          monthly_income_target?: number | null;
+          monthly_policies_target?: number | null;
+          persistency_13_month_target?: number | null;
+          persistency_25_month_target?: number | null;
+          quarterly_income_target?: number | null;
+          updated_at?: string | null;
+          user_id?: string | null;
+        };
         Update: {
-          achievements?: Json | null
-          annual_income_target?: number | null
-          annual_policies_target?: number | null
-          avg_premium_target?: number | null
-          created_at?: string | null
-          expense_ratio_target?: number | null
-          id?: string
-          last_milestone_date?: string | null
-          monthly_expense_target?: number | null
-          monthly_income_target?: number | null
-          monthly_policies_target?: number | null
-          persistency_13_month_target?: number | null
-          persistency_25_month_target?: number | null
-          quarterly_income_target?: number | null
-          updated_at?: string | null
-          user_id?: string | null
-        }
+          achievements?: Json | null;
+          annual_income_target?: number | null;
+          annual_policies_target?: number | null;
+          avg_premium_target?: number | null;
+          created_at?: string | null;
+          expense_ratio_target?: number | null;
+          id?: string;
+          last_milestone_date?: string | null;
+          monthly_expense_target?: number | null;
+          monthly_income_target?: number | null;
+          monthly_policies_target?: number | null;
+          persistency_13_month_target?: number | null;
+          persistency_25_month_target?: number | null;
+          quarterly_income_target?: number | null;
+          updated_at?: string | null;
+          user_id?: string | null;
+        };
         Relationships: [
           {
-            foreignKeyName: "user_targets_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: true
-            referencedRelation: "users"
-            referencedColumns: ["id"]
+            foreignKeyName: "user_targets_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: true;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       workflow_actions: {
         Row: {
-          action_order: number
-          action_type: string
-          conditions: Json | null
-          config: Json
-          created_at: string | null
-          delay_minutes: number | null
-          id: string
-          max_retries: number | null
-          retry_on_failure: boolean | null
-          updated_at: string | null
-          workflow_id: string
-        }
+          action_order: number;
+          action_type: string;
+          conditions: Json | null;
+          config: Json;
+          created_at: string | null;
+          delay_minutes: number | null;
+          id: string;
+          max_retries: number | null;
+          retry_on_failure: boolean | null;
+          updated_at: string | null;
+          workflow_id: string;
+        };
         Insert: {
-          action_order: number
-          action_type: string
-          conditions?: Json | null
-          config?: Json
-          created_at?: string | null
-          delay_minutes?: number | null
-          id?: string
-          max_retries?: number | null
-          retry_on_failure?: boolean | null
-          updated_at?: string | null
-          workflow_id: string
-        }
+          action_order: number;
+          action_type: string;
+          conditions?: Json | null;
+          config?: Json;
+          created_at?: string | null;
+          delay_minutes?: number | null;
+          id?: string;
+          max_retries?: number | null;
+          retry_on_failure?: boolean | null;
+          updated_at?: string | null;
+          workflow_id: string;
+        };
         Update: {
-          action_order?: number
-          action_type?: string
-          conditions?: Json | null
-          config?: Json
-          created_at?: string | null
-          delay_minutes?: number | null
-          id?: string
-          max_retries?: number | null
-          retry_on_failure?: boolean | null
-          updated_at?: string | null
-          workflow_id?: string
-        }
+          action_order?: number;
+          action_type?: string;
+          conditions?: Json | null;
+          config?: Json;
+          created_at?: string | null;
+          delay_minutes?: number | null;
+          id?: string;
+          max_retries?: number | null;
+          retry_on_failure?: boolean | null;
+          updated_at?: string | null;
+          workflow_id?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "workflow_actions_workflow_id_fkey"
-            columns: ["workflow_id"]
-            isOneToOne: false
-            referencedRelation: "workflows"
-            referencedColumns: ["id"]
+            foreignKeyName: "workflow_actions_workflow_id_fkey";
+            columns: ["workflow_id"];
+            isOneToOne: false;
+            referencedRelation: "workflows";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       workflow_email_tracking: {
         Row: {
-          date: string | null
-          error_message: string | null
-          id: string
-          recipient_email: string
-          recipient_type: string
-          sent_at: string | null
-          success: boolean | null
-          user_id: string | null
-          workflow_id: string | null
-        }
+          date: string | null;
+          error_message: string | null;
+          id: string;
+          recipient_email: string;
+          recipient_type: string;
+          sent_at: string | null;
+          success: boolean | null;
+          user_id: string | null;
+          workflow_id: string | null;
+        };
         Insert: {
-          date?: string | null
-          error_message?: string | null
-          id?: string
-          recipient_email: string
-          recipient_type: string
-          sent_at?: string | null
-          success?: boolean | null
-          user_id?: string | null
-          workflow_id?: string | null
-        }
+          date?: string | null;
+          error_message?: string | null;
+          id?: string;
+          recipient_email: string;
+          recipient_type: string;
+          sent_at?: string | null;
+          success?: boolean | null;
+          user_id?: string | null;
+          workflow_id?: string | null;
+        };
         Update: {
-          date?: string | null
-          error_message?: string | null
-          id?: string
-          recipient_email?: string
-          recipient_type?: string
-          sent_at?: string | null
-          success?: boolean | null
-          user_id?: string | null
-          workflow_id?: string | null
-        }
+          date?: string | null;
+          error_message?: string | null;
+          id?: string;
+          recipient_email?: string;
+          recipient_type?: string;
+          sent_at?: string | null;
+          success?: boolean | null;
+          user_id?: string | null;
+          workflow_id?: string | null;
+        };
         Relationships: [
           {
-            foreignKeyName: "workflow_email_tracking_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "active_user_profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "workflow_email_tracking_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "active_user_profiles";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "workflow_email_tracking_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_management_view"
-            referencedColumns: ["id"]
+            foreignKeyName: "workflow_email_tracking_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "user_management_view";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "workflow_email_tracking_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "workflow_email_tracking_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "workflow_email_tracking_workflow_id_fkey"
-            columns: ["workflow_id"]
-            isOneToOne: false
-            referencedRelation: "workflows"
-            referencedColumns: ["id"]
+            foreignKeyName: "workflow_email_tracking_workflow_id_fkey";
+            columns: ["workflow_id"];
+            isOneToOne: false;
+            referencedRelation: "workflows";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       workflow_events: {
         Row: {
-          context: Json | null
-          created_at: string | null
-          event_name: string
-          fired_at: string | null
-          id: string
-          workflows_triggered: number | null
-        }
+          context: Json | null;
+          created_at: string | null;
+          event_name: string;
+          fired_at: string | null;
+          id: string;
+          workflows_triggered: number | null;
+        };
         Insert: {
-          context?: Json | null
-          created_at?: string | null
-          event_name: string
-          fired_at?: string | null
-          id?: string
-          workflows_triggered?: number | null
-        }
+          context?: Json | null;
+          created_at?: string | null;
+          event_name: string;
+          fired_at?: string | null;
+          id?: string;
+          workflows_triggered?: number | null;
+        };
         Update: {
-          context?: Json | null
-          created_at?: string | null
-          event_name?: string
-          fired_at?: string | null
-          id?: string
-          workflows_triggered?: number | null
-        }
-        Relationships: []
-      }
+          context?: Json | null;
+          created_at?: string | null;
+          event_name?: string;
+          fired_at?: string | null;
+          id?: string;
+          workflows_triggered?: number | null;
+        };
+        Relationships: [];
+      };
       workflow_rate_limits: {
         Row: {
-          created_at: string | null
-          daily_email_limit: number | null
-          daily_workflow_runs_limit: number | null
-          id: string
-          is_unlimited: boolean | null
-          max_recipients_per_action: number | null
-          per_recipient_daily_limit: number | null
-          per_workflow_hourly_limit: number | null
-          updated_at: string | null
-          user_id: string | null
-        }
+          created_at: string | null;
+          daily_email_limit: number | null;
+          daily_workflow_runs_limit: number | null;
+          id: string;
+          is_unlimited: boolean | null;
+          max_recipients_per_action: number | null;
+          per_recipient_daily_limit: number | null;
+          per_workflow_hourly_limit: number | null;
+          updated_at: string | null;
+          user_id: string | null;
+        };
         Insert: {
-          created_at?: string | null
-          daily_email_limit?: number | null
-          daily_workflow_runs_limit?: number | null
-          id?: string
-          is_unlimited?: boolean | null
-          max_recipients_per_action?: number | null
-          per_recipient_daily_limit?: number | null
-          per_workflow_hourly_limit?: number | null
-          updated_at?: string | null
-          user_id?: string | null
-        }
+          created_at?: string | null;
+          daily_email_limit?: number | null;
+          daily_workflow_runs_limit?: number | null;
+          id?: string;
+          is_unlimited?: boolean | null;
+          max_recipients_per_action?: number | null;
+          per_recipient_daily_limit?: number | null;
+          per_workflow_hourly_limit?: number | null;
+          updated_at?: string | null;
+          user_id?: string | null;
+        };
         Update: {
-          created_at?: string | null
-          daily_email_limit?: number | null
-          daily_workflow_runs_limit?: number | null
-          id?: string
-          is_unlimited?: boolean | null
-          max_recipients_per_action?: number | null
-          per_recipient_daily_limit?: number | null
-          per_workflow_hourly_limit?: number | null
-          updated_at?: string | null
-          user_id?: string | null
-        }
+          created_at?: string | null;
+          daily_email_limit?: number | null;
+          daily_workflow_runs_limit?: number | null;
+          id?: string;
+          is_unlimited?: boolean | null;
+          max_recipients_per_action?: number | null;
+          per_recipient_daily_limit?: number | null;
+          per_workflow_hourly_limit?: number | null;
+          updated_at?: string | null;
+          user_id?: string | null;
+        };
         Relationships: [
           {
-            foreignKeyName: "workflow_rate_limits_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: true
-            referencedRelation: "active_user_profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "workflow_rate_limits_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: true;
+            referencedRelation: "active_user_profiles";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "workflow_rate_limits_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: true
-            referencedRelation: "user_management_view"
-            referencedColumns: ["id"]
+            foreignKeyName: "workflow_rate_limits_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: true;
+            referencedRelation: "user_management_view";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "workflow_rate_limits_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: true
-            referencedRelation: "user_profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "workflow_rate_limits_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: true;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       workflow_runs: {
         Row: {
-          actions_completed: number | null
-          actions_executed: Json | null
-          actions_failed: number | null
-          completed_at: string | null
-          context: Json | null
-          created_at: string | null
-          duration_ms: number | null
-          emails_sent: number | null
-          error: string | null
-          error_details: Json | null
-          error_message: string | null
-          id: string
-          started_at: string | null
-          status: string
-          trigger_source: string | null
-          workflow_id: string
-        }
+          actions_completed: number | null;
+          actions_executed: Json | null;
+          actions_failed: number | null;
+          completed_at: string | null;
+          context: Json | null;
+          created_at: string | null;
+          duration_ms: number | null;
+          emails_sent: number | null;
+          error: string | null;
+          error_details: Json | null;
+          error_message: string | null;
+          id: string;
+          started_at: string | null;
+          status: string;
+          trigger_source: string | null;
+          workflow_id: string;
+        };
         Insert: {
-          actions_completed?: number | null
-          actions_executed?: Json | null
-          actions_failed?: number | null
-          completed_at?: string | null
-          context?: Json | null
-          created_at?: string | null
-          duration_ms?: number | null
-          emails_sent?: number | null
-          error?: string | null
-          error_details?: Json | null
-          error_message?: string | null
-          id?: string
-          started_at?: string | null
-          status?: string
-          trigger_source?: string | null
-          workflow_id: string
-        }
+          actions_completed?: number | null;
+          actions_executed?: Json | null;
+          actions_failed?: number | null;
+          completed_at?: string | null;
+          context?: Json | null;
+          created_at?: string | null;
+          duration_ms?: number | null;
+          emails_sent?: number | null;
+          error?: string | null;
+          error_details?: Json | null;
+          error_message?: string | null;
+          id?: string;
+          started_at?: string | null;
+          status?: string;
+          trigger_source?: string | null;
+          workflow_id: string;
+        };
         Update: {
-          actions_completed?: number | null
-          actions_executed?: Json | null
-          actions_failed?: number | null
-          completed_at?: string | null
-          context?: Json | null
-          created_at?: string | null
-          duration_ms?: number | null
-          emails_sent?: number | null
-          error?: string | null
-          error_details?: Json | null
-          error_message?: string | null
-          id?: string
-          started_at?: string | null
-          status?: string
-          trigger_source?: string | null
-          workflow_id?: string
-        }
+          actions_completed?: number | null;
+          actions_executed?: Json | null;
+          actions_failed?: number | null;
+          completed_at?: string | null;
+          context?: Json | null;
+          created_at?: string | null;
+          duration_ms?: number | null;
+          emails_sent?: number | null;
+          error?: string | null;
+          error_details?: Json | null;
+          error_message?: string | null;
+          id?: string;
+          started_at?: string | null;
+          status?: string;
+          trigger_source?: string | null;
+          workflow_id?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "workflow_runs_workflow_id_fkey"
-            columns: ["workflow_id"]
-            isOneToOne: false
-            referencedRelation: "workflows"
-            referencedColumns: ["id"]
+            foreignKeyName: "workflow_runs_workflow_id_fkey";
+            columns: ["workflow_id"];
+            isOneToOne: false;
+            referencedRelation: "workflows";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       workflow_templates: {
         Row: {
-          category: string
-          created_at: string | null
-          created_by: string | null
-          description: string | null
-          icon: string | null
-          id: string
-          is_featured: boolean | null
-          is_public: boolean | null
-          name: string
-          rating: number | null
-          updated_at: string | null
-          usage_count: number | null
-          workflow_config: Json
-        }
+          category: string;
+          created_at: string | null;
+          created_by: string | null;
+          description: string | null;
+          icon: string | null;
+          id: string;
+          is_featured: boolean | null;
+          is_public: boolean | null;
+          name: string;
+          rating: number | null;
+          updated_at: string | null;
+          usage_count: number | null;
+          workflow_config: Json;
+        };
         Insert: {
-          category: string
-          created_at?: string | null
-          created_by?: string | null
-          description?: string | null
-          icon?: string | null
-          id?: string
-          is_featured?: boolean | null
-          is_public?: boolean | null
-          name: string
-          rating?: number | null
-          updated_at?: string | null
-          usage_count?: number | null
-          workflow_config: Json
-        }
+          category: string;
+          created_at?: string | null;
+          created_by?: string | null;
+          description?: string | null;
+          icon?: string | null;
+          id?: string;
+          is_featured?: boolean | null;
+          is_public?: boolean | null;
+          name: string;
+          rating?: number | null;
+          updated_at?: string | null;
+          usage_count?: number | null;
+          workflow_config: Json;
+        };
         Update: {
-          category?: string
-          created_at?: string | null
-          created_by?: string | null
-          description?: string | null
-          icon?: string | null
-          id?: string
-          is_featured?: boolean | null
-          is_public?: boolean | null
-          name?: string
-          rating?: number | null
-          updated_at?: string | null
-          usage_count?: number | null
-          workflow_config?: Json
-        }
+          category?: string;
+          created_at?: string | null;
+          created_by?: string | null;
+          description?: string | null;
+          icon?: string | null;
+          id?: string;
+          is_featured?: boolean | null;
+          is_public?: boolean | null;
+          name?: string;
+          rating?: number | null;
+          updated_at?: string | null;
+          usage_count?: number | null;
+          workflow_config?: Json;
+        };
         Relationships: [
           {
-            foreignKeyName: "workflow_templates_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "active_user_profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "workflow_templates_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "active_user_profiles";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "workflow_templates_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "user_management_view"
-            referencedColumns: ["id"]
+            foreignKeyName: "workflow_templates_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "user_management_view";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "workflow_templates_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "workflow_templates_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       workflow_triggers: {
         Row: {
-          created_at: string | null
-          event_config: Json | null
-          id: string
-          is_active: boolean | null
-          last_triggered_at: string | null
-          next_trigger_at: string | null
-          schedule_config: Json | null
-          trigger_type: string
-          updated_at: string | null
-          webhook_config: Json | null
-          workflow_id: string
-        }
+          created_at: string | null;
+          event_config: Json | null;
+          id: string;
+          is_active: boolean | null;
+          last_triggered_at: string | null;
+          next_trigger_at: string | null;
+          schedule_config: Json | null;
+          trigger_type: string;
+          updated_at: string | null;
+          webhook_config: Json | null;
+          workflow_id: string;
+        };
         Insert: {
-          created_at?: string | null
-          event_config?: Json | null
-          id?: string
-          is_active?: boolean | null
-          last_triggered_at?: string | null
-          next_trigger_at?: string | null
-          schedule_config?: Json | null
-          trigger_type: string
-          updated_at?: string | null
-          webhook_config?: Json | null
-          workflow_id: string
-        }
+          created_at?: string | null;
+          event_config?: Json | null;
+          id?: string;
+          is_active?: boolean | null;
+          last_triggered_at?: string | null;
+          next_trigger_at?: string | null;
+          schedule_config?: Json | null;
+          trigger_type: string;
+          updated_at?: string | null;
+          webhook_config?: Json | null;
+          workflow_id: string;
+        };
         Update: {
-          created_at?: string | null
-          event_config?: Json | null
-          id?: string
-          is_active?: boolean | null
-          last_triggered_at?: string | null
-          next_trigger_at?: string | null
-          schedule_config?: Json | null
-          trigger_type?: string
-          updated_at?: string | null
-          webhook_config?: Json | null
-          workflow_id?: string
-        }
+          created_at?: string | null;
+          event_config?: Json | null;
+          id?: string;
+          is_active?: boolean | null;
+          last_triggered_at?: string | null;
+          next_trigger_at?: string | null;
+          schedule_config?: Json | null;
+          trigger_type?: string;
+          updated_at?: string | null;
+          webhook_config?: Json | null;
+          workflow_id?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "workflow_triggers_workflow_id_fkey"
-            columns: ["workflow_id"]
-            isOneToOne: false
-            referencedRelation: "workflows"
-            referencedColumns: ["id"]
+            foreignKeyName: "workflow_triggers_workflow_id_fkey";
+            columns: ["workflow_id"];
+            isOneToOne: false;
+            referencedRelation: "workflows";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       workflows: {
         Row: {
-          actions: Json
-          category: string | null
-          conditions: Json | null
-          config: Json
-          cooldown_minutes: number | null
-          created_at: string | null
-          created_by: string | null
-          description: string | null
-          id: string
-          last_modified_by: string | null
-          max_runs_per_day: number | null
-          max_runs_per_recipient: number | null
-          name: string
-          priority: number | null
-          status: string | null
-          trigger_type: string
-          updated_at: string | null
-        }
+          actions: Json;
+          category: string | null;
+          conditions: Json | null;
+          config: Json;
+          cooldown_minutes: number | null;
+          created_at: string | null;
+          created_by: string | null;
+          description: string | null;
+          id: string;
+          last_modified_by: string | null;
+          max_runs_per_day: number | null;
+          max_runs_per_recipient: number | null;
+          name: string;
+          priority: number | null;
+          status: string | null;
+          trigger_type: string;
+          updated_at: string | null;
+        };
         Insert: {
-          actions?: Json
-          category?: string | null
-          conditions?: Json | null
-          config?: Json
-          cooldown_minutes?: number | null
-          created_at?: string | null
-          created_by?: string | null
-          description?: string | null
-          id?: string
-          last_modified_by?: string | null
-          max_runs_per_day?: number | null
-          max_runs_per_recipient?: number | null
-          name: string
-          priority?: number | null
-          status?: string | null
-          trigger_type: string
-          updated_at?: string | null
-        }
+          actions?: Json;
+          category?: string | null;
+          conditions?: Json | null;
+          config?: Json;
+          cooldown_minutes?: number | null;
+          created_at?: string | null;
+          created_by?: string | null;
+          description?: string | null;
+          id?: string;
+          last_modified_by?: string | null;
+          max_runs_per_day?: number | null;
+          max_runs_per_recipient?: number | null;
+          name: string;
+          priority?: number | null;
+          status?: string | null;
+          trigger_type: string;
+          updated_at?: string | null;
+        };
         Update: {
-          actions?: Json
-          category?: string | null
-          conditions?: Json | null
-          config?: Json
-          cooldown_minutes?: number | null
-          created_at?: string | null
-          created_by?: string | null
-          description?: string | null
-          id?: string
-          last_modified_by?: string | null
-          max_runs_per_day?: number | null
-          max_runs_per_recipient?: number | null
-          name?: string
-          priority?: number | null
-          status?: string | null
-          trigger_type?: string
-          updated_at?: string | null
-        }
+          actions?: Json;
+          category?: string | null;
+          conditions?: Json | null;
+          config?: Json;
+          cooldown_minutes?: number | null;
+          created_at?: string | null;
+          created_by?: string | null;
+          description?: string | null;
+          id?: string;
+          last_modified_by?: string | null;
+          max_runs_per_day?: number | null;
+          max_runs_per_recipient?: number | null;
+          name?: string;
+          priority?: number | null;
+          status?: string | null;
+          trigger_type?: string;
+          updated_at?: string | null;
+        };
         Relationships: [
           {
-            foreignKeyName: "workflows_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "active_user_profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "workflows_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "active_user_profiles";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "workflows_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "user_management_view"
-            referencedColumns: ["id"]
+            foreignKeyName: "workflows_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "user_management_view";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "workflows_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "workflows_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "workflows_last_modified_by_fkey"
-            columns: ["last_modified_by"]
-            isOneToOne: false
-            referencedRelation: "active_user_profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "workflows_last_modified_by_fkey";
+            columns: ["last_modified_by"];
+            isOneToOne: false;
+            referencedRelation: "active_user_profiles";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "workflows_last_modified_by_fkey"
-            columns: ["last_modified_by"]
-            isOneToOne: false
-            referencedRelation: "user_management_view"
-            referencedColumns: ["id"]
+            foreignKeyName: "workflows_last_modified_by_fkey";
+            columns: ["last_modified_by"];
+            isOneToOne: false;
+            referencedRelation: "user_management_view";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "workflows_last_modified_by_fkey"
-            columns: ["last_modified_by"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "workflows_last_modified_by_fkey";
+            columns: ["last_modified_by"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
           },
-        ]
-      }
-    }
+        ];
+      };
+    };
     Views: {
       active_user_profiles: {
         Row: {
-          agent_status: Database["public"]["Enums"]["agent_status"] | null
-          approval_status: string | null
-          approved_at: string | null
-          approved_by: string | null
-          archive_reason: string | null
-          archived_at: string | null
-          archived_by: string | null
-          city: string | null
-          contract_level: number | null
-          created_at: string | null
-          current_onboarding_phase: string | null
-          custom_permissions: Json | null
-          date_of_birth: string | null
-          denial_reason: string | null
-          denied_at: string | null
-          email: string | null
-          facebook_handle: string | null
-          first_name: string | null
-          hierarchy_depth: number | null
-          hierarchy_path: string | null
-          id: string | null
-          instagram_url: string | null
-          instagram_username: string | null
-          is_admin: boolean | null
-          last_name: string | null
-          license_expiration: string | null
-          license_number: string | null
-          licensing_info: Json | null
-          linkedin_url: string | null
-          linkedin_username: string | null
-          npn: string | null
-          onboarding_completed_at: string | null
-          onboarding_started_at: string | null
-          onboarding_status: string | null
-          personal_website: string | null
-          phone: string | null
-          pipeline_template_id: string | null
-          profile_photo_url: string | null
-          recruiter_id: string | null
-          referral_source: string | null
-          resident_state: string | null
-          roles: string[] | null
-          state: string | null
-          street_address: string | null
-          updated_at: string | null
-          upline_id: string | null
-          zip: string | null
-        }
+          agent_status: Database["public"]["Enums"]["agent_status"] | null;
+          approval_status: string | null;
+          approved_at: string | null;
+          approved_by: string | null;
+          archive_reason: string | null;
+          archived_at: string | null;
+          archived_by: string | null;
+          city: string | null;
+          contract_level: number | null;
+          created_at: string | null;
+          current_onboarding_phase: string | null;
+          custom_permissions: Json | null;
+          date_of_birth: string | null;
+          denial_reason: string | null;
+          denied_at: string | null;
+          email: string | null;
+          facebook_handle: string | null;
+          first_name: string | null;
+          hierarchy_depth: number | null;
+          hierarchy_path: string | null;
+          id: string | null;
+          instagram_url: string | null;
+          instagram_username: string | null;
+          is_admin: boolean | null;
+          last_name: string | null;
+          license_expiration: string | null;
+          license_number: string | null;
+          licensing_info: Json | null;
+          linkedin_url: string | null;
+          linkedin_username: string | null;
+          npn: string | null;
+          onboarding_completed_at: string | null;
+          onboarding_started_at: string | null;
+          onboarding_status: string | null;
+          personal_website: string | null;
+          phone: string | null;
+          pipeline_template_id: string | null;
+          profile_photo_url: string | null;
+          recruiter_id: string | null;
+          referral_source: string | null;
+          resident_state: string | null;
+          roles: string[] | null;
+          state: string | null;
+          street_address: string | null;
+          updated_at: string | null;
+          upline_id: string | null;
+          zip: string | null;
+        };
         Insert: {
-          agent_status?: Database["public"]["Enums"]["agent_status"] | null
-          approval_status?: string | null
-          approved_at?: string | null
-          approved_by?: string | null
-          archive_reason?: string | null
-          archived_at?: string | null
-          archived_by?: string | null
-          city?: string | null
-          contract_level?: number | null
-          created_at?: string | null
-          current_onboarding_phase?: string | null
-          custom_permissions?: Json | null
-          date_of_birth?: string | null
-          denial_reason?: string | null
-          denied_at?: string | null
-          email?: string | null
-          facebook_handle?: string | null
-          first_name?: string | null
-          hierarchy_depth?: number | null
-          hierarchy_path?: string | null
-          id?: string | null
-          instagram_url?: string | null
-          instagram_username?: string | null
-          is_admin?: boolean | null
-          last_name?: string | null
-          license_expiration?: string | null
-          license_number?: string | null
-          licensing_info?: Json | null
-          linkedin_url?: string | null
-          linkedin_username?: string | null
-          npn?: string | null
-          onboarding_completed_at?: string | null
-          onboarding_started_at?: string | null
-          onboarding_status?: string | null
-          personal_website?: string | null
-          phone?: string | null
-          pipeline_template_id?: string | null
-          profile_photo_url?: string | null
-          recruiter_id?: string | null
-          referral_source?: string | null
-          resident_state?: string | null
-          roles?: string[] | null
-          state?: string | null
-          street_address?: string | null
-          updated_at?: string | null
-          upline_id?: string | null
-          zip?: string | null
-        }
+          agent_status?: Database["public"]["Enums"]["agent_status"] | null;
+          approval_status?: string | null;
+          approved_at?: string | null;
+          approved_by?: string | null;
+          archive_reason?: string | null;
+          archived_at?: string | null;
+          archived_by?: string | null;
+          city?: string | null;
+          contract_level?: number | null;
+          created_at?: string | null;
+          current_onboarding_phase?: string | null;
+          custom_permissions?: Json | null;
+          date_of_birth?: string | null;
+          denial_reason?: string | null;
+          denied_at?: string | null;
+          email?: string | null;
+          facebook_handle?: string | null;
+          first_name?: string | null;
+          hierarchy_depth?: number | null;
+          hierarchy_path?: string | null;
+          id?: string | null;
+          instagram_url?: string | null;
+          instagram_username?: string | null;
+          is_admin?: boolean | null;
+          last_name?: string | null;
+          license_expiration?: string | null;
+          license_number?: string | null;
+          licensing_info?: Json | null;
+          linkedin_url?: string | null;
+          linkedin_username?: string | null;
+          npn?: string | null;
+          onboarding_completed_at?: string | null;
+          onboarding_started_at?: string | null;
+          onboarding_status?: string | null;
+          personal_website?: string | null;
+          phone?: string | null;
+          pipeline_template_id?: string | null;
+          profile_photo_url?: string | null;
+          recruiter_id?: string | null;
+          referral_source?: string | null;
+          resident_state?: string | null;
+          roles?: string[] | null;
+          state?: string | null;
+          street_address?: string | null;
+          updated_at?: string | null;
+          upline_id?: string | null;
+          zip?: string | null;
+        };
         Update: {
-          agent_status?: Database["public"]["Enums"]["agent_status"] | null
-          approval_status?: string | null
-          approved_at?: string | null
-          approved_by?: string | null
-          archive_reason?: string | null
-          archived_at?: string | null
-          archived_by?: string | null
-          city?: string | null
-          contract_level?: number | null
-          created_at?: string | null
-          current_onboarding_phase?: string | null
-          custom_permissions?: Json | null
-          date_of_birth?: string | null
-          denial_reason?: string | null
-          denied_at?: string | null
-          email?: string | null
-          facebook_handle?: string | null
-          first_name?: string | null
-          hierarchy_depth?: number | null
-          hierarchy_path?: string | null
-          id?: string | null
-          instagram_url?: string | null
-          instagram_username?: string | null
-          is_admin?: boolean | null
-          last_name?: string | null
-          license_expiration?: string | null
-          license_number?: string | null
-          licensing_info?: Json | null
-          linkedin_url?: string | null
-          linkedin_username?: string | null
-          npn?: string | null
-          onboarding_completed_at?: string | null
-          onboarding_started_at?: string | null
-          onboarding_status?: string | null
-          personal_website?: string | null
-          phone?: string | null
-          pipeline_template_id?: string | null
-          profile_photo_url?: string | null
-          recruiter_id?: string | null
-          referral_source?: string | null
-          resident_state?: string | null
-          roles?: string[] | null
-          state?: string | null
-          street_address?: string | null
-          updated_at?: string | null
-          upline_id?: string | null
-          zip?: string | null
-        }
+          agent_status?: Database["public"]["Enums"]["agent_status"] | null;
+          approval_status?: string | null;
+          approved_at?: string | null;
+          approved_by?: string | null;
+          archive_reason?: string | null;
+          archived_at?: string | null;
+          archived_by?: string | null;
+          city?: string | null;
+          contract_level?: number | null;
+          created_at?: string | null;
+          current_onboarding_phase?: string | null;
+          custom_permissions?: Json | null;
+          date_of_birth?: string | null;
+          denial_reason?: string | null;
+          denied_at?: string | null;
+          email?: string | null;
+          facebook_handle?: string | null;
+          first_name?: string | null;
+          hierarchy_depth?: number | null;
+          hierarchy_path?: string | null;
+          id?: string | null;
+          instagram_url?: string | null;
+          instagram_username?: string | null;
+          is_admin?: boolean | null;
+          last_name?: string | null;
+          license_expiration?: string | null;
+          license_number?: string | null;
+          licensing_info?: Json | null;
+          linkedin_url?: string | null;
+          linkedin_username?: string | null;
+          npn?: string | null;
+          onboarding_completed_at?: string | null;
+          onboarding_started_at?: string | null;
+          onboarding_status?: string | null;
+          personal_website?: string | null;
+          phone?: string | null;
+          pipeline_template_id?: string | null;
+          profile_photo_url?: string | null;
+          recruiter_id?: string | null;
+          referral_source?: string | null;
+          resident_state?: string | null;
+          roles?: string[] | null;
+          state?: string | null;
+          street_address?: string | null;
+          updated_at?: string | null;
+          upline_id?: string | null;
+          zip?: string | null;
+        };
         Relationships: [
           {
-            foreignKeyName: "user_profiles_approved_by_fkey"
-            columns: ["approved_by"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
+            foreignKeyName: "user_profiles_approved_by_fkey";
+            columns: ["approved_by"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "user_profiles_archived_by_fkey"
-            columns: ["archived_by"]
-            isOneToOne: false
-            referencedRelation: "active_user_profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "user_profiles_archived_by_fkey";
+            columns: ["archived_by"];
+            isOneToOne: false;
+            referencedRelation: "active_user_profiles";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "user_profiles_archived_by_fkey"
-            columns: ["archived_by"]
-            isOneToOne: false
-            referencedRelation: "user_management_view"
-            referencedColumns: ["id"]
+            foreignKeyName: "user_profiles_archived_by_fkey";
+            columns: ["archived_by"];
+            isOneToOne: false;
+            referencedRelation: "user_management_view";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "user_profiles_archived_by_fkey"
-            columns: ["archived_by"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "user_profiles_archived_by_fkey";
+            columns: ["archived_by"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "user_profiles_pipeline_template_id_fkey"
-            columns: ["pipeline_template_id"]
-            isOneToOne: false
-            referencedRelation: "pipeline_templates"
-            referencedColumns: ["id"]
+            foreignKeyName: "user_profiles_pipeline_template_id_fkey";
+            columns: ["pipeline_template_id"];
+            isOneToOne: false;
+            referencedRelation: "pipeline_templates";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "user_profiles_recruiter_id_fkey"
-            columns: ["recruiter_id"]
-            isOneToOne: false
-            referencedRelation: "active_user_profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "user_profiles_recruiter_id_fkey";
+            columns: ["recruiter_id"];
+            isOneToOne: false;
+            referencedRelation: "active_user_profiles";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "user_profiles_recruiter_id_fkey"
-            columns: ["recruiter_id"]
-            isOneToOne: false
-            referencedRelation: "user_management_view"
-            referencedColumns: ["id"]
+            foreignKeyName: "user_profiles_recruiter_id_fkey";
+            columns: ["recruiter_id"];
+            isOneToOne: false;
+            referencedRelation: "user_management_view";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "user_profiles_recruiter_id_fkey"
-            columns: ["recruiter_id"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "user_profiles_recruiter_id_fkey";
+            columns: ["recruiter_id"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "user_profiles_upline_id_fkey"
-            columns: ["upline_id"]
-            isOneToOne: false
-            referencedRelation: "active_user_profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "user_profiles_upline_id_fkey";
+            columns: ["upline_id"];
+            isOneToOne: false;
+            referencedRelation: "active_user_profiles";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "user_profiles_upline_id_fkey"
-            columns: ["upline_id"]
-            isOneToOne: false
-            referencedRelation: "user_management_view"
-            referencedColumns: ["id"]
+            foreignKeyName: "user_profiles_upline_id_fkey";
+            columns: ["upline_id"];
+            isOneToOne: false;
+            referencedRelation: "user_management_view";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "user_profiles_upline_id_fkey"
-            columns: ["upline_id"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "user_profiles_upline_id_fkey";
+            columns: ["upline_id"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       commission_chargeback_summary: {
         Row: {
-          at_risk_amount: number | null
-          chargeback_rate_percentage: number | null
-          charged_back_count: number | null
-          high_risk_count: number | null
-          total_advances: number | null
-          total_chargeback_amount: number | null
-          total_chargebacks: number | null
-          total_earned: number | null
-          user_id: string | null
-        }
-        Relationships: []
-      }
+          at_risk_amount: number | null;
+          chargeback_rate_percentage: number | null;
+          charged_back_count: number | null;
+          high_risk_count: number | null;
+          total_advances: number | null;
+          total_chargeback_amount: number | null;
+          total_chargebacks: number | null;
+          total_earned: number | null;
+          user_id: string | null;
+        };
+        Relationships: [];
+      };
       commission_earning_detail: {
         Row: {
-          advance_amount: number | null
-          advance_months: number | null
-          annual_premium: number | null
-          chargeback_amount: number | null
-          chargeback_risk_level: string | null
-          commission_id: string | null
-          earned_amount: number | null
-          effective_date: string | null
-          is_fully_earned: boolean | null
-          monthly_earning_rate: number | null
-          months_paid: number | null
-          months_remaining: number | null
-          policy_id: string | null
-          policy_status: string | null
-          status: string | null
-          unearned_amount: number | null
-          user_id: string | null
-        }
+          advance_amount: number | null;
+          advance_months: number | null;
+          annual_premium: number | null;
+          chargeback_amount: number | null;
+          chargeback_risk_level: string | null;
+          commission_id: string | null;
+          earned_amount: number | null;
+          effective_date: string | null;
+          is_fully_earned: boolean | null;
+          monthly_earning_rate: number | null;
+          months_paid: number | null;
+          months_remaining: number | null;
+          policy_id: string | null;
+          policy_status: string | null;
+          status: string | null;
+          unearned_amount: number | null;
+          user_id: string | null;
+        };
         Relationships: [
           {
-            foreignKeyName: "commissions_policy_id_fkey"
-            columns: ["policy_id"]
-            isOneToOne: false
-            referencedRelation: "policies"
-            referencedColumns: ["id"]
+            foreignKeyName: "commissions_policy_id_fkey";
+            columns: ["policy_id"];
+            isOneToOne: false;
+            referencedRelation: "policies";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       commission_earning_status: {
         Row: {
-          advance_amount: number | null
-          advance_months: number | null
-          chargeback_amount: number | null
-          chargeback_date: string | null
-          chargeback_reason: string | null
-          chargeback_risk: string | null
-          created_at: string | null
-          earned_amount: number | null
-          id: string | null
-          is_fully_earned: boolean | null
-          last_payment_date: string | null
-          monthly_earning_rate: number | null
-          months_paid: number | null
-          months_remaining: number | null
-          percentage_earned: number | null
-          policy_id: string | null
-          status: string | null
-          type: string | null
-          unearned_amount: number | null
-          updated_at: string | null
-          user_id: string | null
-        }
+          advance_amount: number | null;
+          advance_months: number | null;
+          chargeback_amount: number | null;
+          chargeback_date: string | null;
+          chargeback_reason: string | null;
+          chargeback_risk: string | null;
+          created_at: string | null;
+          earned_amount: number | null;
+          id: string | null;
+          is_fully_earned: boolean | null;
+          last_payment_date: string | null;
+          monthly_earning_rate: number | null;
+          months_paid: number | null;
+          months_remaining: number | null;
+          percentage_earned: number | null;
+          policy_id: string | null;
+          status: string | null;
+          type: string | null;
+          unearned_amount: number | null;
+          updated_at: string | null;
+          user_id: string | null;
+        };
         Insert: {
-          advance_amount?: number | null
-          advance_months?: number | null
-          chargeback_amount?: number | null
-          chargeback_date?: string | null
-          chargeback_reason?: string | null
-          chargeback_risk?: never
-          created_at?: string | null
-          earned_amount?: number | null
-          id?: string | null
-          is_fully_earned?: never
-          last_payment_date?: string | null
-          monthly_earning_rate?: never
-          months_paid?: number | null
-          months_remaining?: never
-          percentage_earned?: never
-          policy_id?: string | null
-          status?: string | null
-          type?: string | null
-          unearned_amount?: number | null
-          updated_at?: string | null
-          user_id?: string | null
-        }
+          advance_amount?: number | null;
+          advance_months?: number | null;
+          chargeback_amount?: number | null;
+          chargeback_date?: string | null;
+          chargeback_reason?: string | null;
+          chargeback_risk?: never;
+          created_at?: string | null;
+          earned_amount?: number | null;
+          id?: string | null;
+          is_fully_earned?: never;
+          last_payment_date?: string | null;
+          monthly_earning_rate?: never;
+          months_paid?: number | null;
+          months_remaining?: never;
+          percentage_earned?: never;
+          policy_id?: string | null;
+          status?: string | null;
+          type?: string | null;
+          unearned_amount?: number | null;
+          updated_at?: string | null;
+          user_id?: string | null;
+        };
         Update: {
-          advance_amount?: number | null
-          advance_months?: number | null
-          chargeback_amount?: number | null
-          chargeback_date?: string | null
-          chargeback_reason?: string | null
-          chargeback_risk?: never
-          created_at?: string | null
-          earned_amount?: number | null
-          id?: string | null
-          is_fully_earned?: never
-          last_payment_date?: string | null
-          monthly_earning_rate?: never
-          months_paid?: number | null
-          months_remaining?: never
-          percentage_earned?: never
-          policy_id?: string | null
-          status?: string | null
-          type?: string | null
-          unearned_amount?: number | null
-          updated_at?: string | null
-          user_id?: string | null
-        }
+          advance_amount?: number | null;
+          advance_months?: number | null;
+          chargeback_amount?: number | null;
+          chargeback_date?: string | null;
+          chargeback_reason?: string | null;
+          chargeback_risk?: never;
+          created_at?: string | null;
+          earned_amount?: number | null;
+          id?: string | null;
+          is_fully_earned?: never;
+          last_payment_date?: string | null;
+          monthly_earning_rate?: never;
+          months_paid?: number | null;
+          months_remaining?: never;
+          percentage_earned?: never;
+          policy_id?: string | null;
+          status?: string | null;
+          type?: string | null;
+          unearned_amount?: number | null;
+          updated_at?: string | null;
+          user_id?: string | null;
+        };
         Relationships: [
           {
-            foreignKeyName: "commissions_policy_id_fkey"
-            columns: ["policy_id"]
-            isOneToOne: false
-            referencedRelation: "policies"
-            referencedColumns: ["id"]
+            foreignKeyName: "commissions_policy_id_fkey";
+            columns: ["policy_id"];
+            isOneToOne: false;
+            referencedRelation: "policies";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       commission_earning_summary: {
         Row: {
-          at_risk_count: number | null
-          avg_months_paid: number | null
-          fully_earned_count: number | null
-          portfolio_earned_percentage: number | null
-          total_advances: number | null
-          total_chargebacks: number | null
-          total_commissions: number | null
-          total_earned: number | null
-          total_unearned: number | null
-          user_id: string | null
-        }
-        Relationships: []
-      }
+          at_risk_count: number | null;
+          avg_months_paid: number | null;
+          fully_earned_count: number | null;
+          portfolio_earned_percentage: number | null;
+          total_advances: number | null;
+          total_chargebacks: number | null;
+          total_commissions: number | null;
+          total_earned: number | null;
+          total_unearned: number | null;
+          user_id: string | null;
+        };
+        Relationships: [];
+      };
       mv_carrier_performance: {
         Row: {
-          active_policies: number | null
-          avg_commission_amount: number | null
-          avg_commission_rate_pct: number | null
-          avg_premium: number | null
-          cancelled_policies: number | null
-          carrier_id: string | null
-          carrier_name: string | null
-          commission_count: number | null
-          lapsed_policies: number | null
-          latest_policy_update: string | null
-          persistency_rate: number | null
-          policies_13mo_plus: number | null
-          total_commission_amount: number | null
-          total_policies: number | null
-          total_premium: number | null
-          user_id: string | null
-        }
+          active_policies: number | null;
+          avg_commission_amount: number | null;
+          avg_commission_rate_pct: number | null;
+          avg_premium: number | null;
+          cancelled_policies: number | null;
+          carrier_id: string | null;
+          carrier_name: string | null;
+          commission_count: number | null;
+          lapsed_policies: number | null;
+          latest_policy_update: string | null;
+          persistency_rate: number | null;
+          policies_13mo_plus: number | null;
+          total_commission_amount: number | null;
+          total_policies: number | null;
+          total_premium: number | null;
+          user_id: string | null;
+        };
         Relationships: [
           {
-            foreignKeyName: "policies_carrier_id_fkey"
-            columns: ["carrier_id"]
-            isOneToOne: false
-            referencedRelation: "carriers"
-            referencedColumns: ["id"]
+            foreignKeyName: "policies_carrier_id_fkey";
+            columns: ["carrier_id"];
+            isOneToOne: false;
+            referencedRelation: "carriers";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       mv_client_ltv: {
         Row: {
-          active_policies: number | null
-          active_premium: number | null
-          avg_commission_per_policy: number | null
-          avg_policy_age_months: number | null
-          avg_premium_per_policy: number | null
-          cancelled_policies: number | null
-          client_id: string | null
-          client_name: string | null
-          client_tier: string | null
-          cross_sell_opportunity: boolean | null
-          email: string | null
-          first_policy_date: string | null
-          lapsed_policies: number | null
-          latest_policy_date: string | null
-          paid_commission: number | null
-          total_commission: number | null
-          total_policies: number | null
-          total_premium: number | null
-          user_id: string | null
-        }
+          active_policies: number | null;
+          active_premium: number | null;
+          avg_commission_per_policy: number | null;
+          avg_policy_age_months: number | null;
+          avg_premium_per_policy: number | null;
+          cancelled_policies: number | null;
+          client_id: string | null;
+          client_name: string | null;
+          client_tier: string | null;
+          cross_sell_opportunity: boolean | null;
+          email: string | null;
+          first_policy_date: string | null;
+          lapsed_policies: number | null;
+          latest_policy_date: string | null;
+          paid_commission: number | null;
+          total_commission: number | null;
+          total_policies: number | null;
+          total_premium: number | null;
+          user_id: string | null;
+        };
         Relationships: [
           {
-            foreignKeyName: "policies_client_id_fkey"
-            columns: ["client_id"]
-            isOneToOne: false
-            referencedRelation: "clients"
-            referencedColumns: ["id"]
+            foreignKeyName: "policies_client_id_fkey";
+            columns: ["client_id"];
+            isOneToOne: false;
+            referencedRelation: "clients";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       mv_cohort_retention: {
         Row: {
-          active_premium: number | null
-          cancelled_count: number | null
-          cohort_month: string | null
-          cohort_size: number | null
-          lapsed_count: number | null
-          months_since_issue: number | null
-          retention_rate: number | null
-          still_active: number | null
-          total_premium: number | null
-          user_id: string | null
-        }
-        Relationships: []
-      }
+          active_premium: number | null;
+          cancelled_count: number | null;
+          cohort_month: string | null;
+          cohort_size: number | null;
+          lapsed_count: number | null;
+          months_since_issue: number | null;
+          retention_rate: number | null;
+          still_active: number | null;
+          total_premium: number | null;
+          user_id: string | null;
+        };
+        Relationships: [];
+      };
       mv_commission_aging: {
         Row: {
-          aging_bucket: string | null
-          avg_at_risk: number | null
-          bucket_order: number | null
-          commission_count: number | null
-          policy_count: number | null
-          risk_level: string | null
-          total_at_risk: number | null
-          total_commission: number | null
-          total_earned: number | null
-          user_id: string | null
-        }
-        Relationships: []
-      }
+          aging_bucket: string | null;
+          avg_at_risk: number | null;
+          bucket_order: number | null;
+          commission_count: number | null;
+          policy_count: number | null;
+          risk_level: string | null;
+          total_at_risk: number | null;
+          total_commission: number | null;
+          total_earned: number | null;
+          user_id: string | null;
+        };
+        Relationships: [];
+      };
       mv_daily_production: {
         Row: {
-          active_policies: number | null
-          avg_premium: number | null
-          cancelled_policies: number | null
-          lapsed_policies: number | null
-          max_premium: number | null
-          min_premium: number | null
-          production_date: string | null
-          total_policies: number | null
-          total_premium: number | null
-          user_id: string | null
-        }
-        Relationships: []
-      }
+          active_policies: number | null;
+          avg_premium: number | null;
+          cancelled_policies: number | null;
+          lapsed_policies: number | null;
+          max_premium: number | null;
+          min_premium: number | null;
+          production_date: string | null;
+          total_policies: number | null;
+          total_premium: number | null;
+          user_id: string | null;
+        };
+        Relationships: [];
+      };
       mv_expense_summary: {
         Row: {
-          avg_amount: number | null
-          category: string | null
-          expense_month: string | null
-          expense_type: Database["public"]["Enums"]["expense_type"] | null
-          max_amount: number | null
-          min_amount: number | null
-          recurring_amount: number | null
-          recurring_count: number | null
-          total_amount: number | null
-          transaction_count: number | null
-          user_id: string | null
-        }
-        Relationships: []
-      }
+          avg_amount: number | null;
+          category: string | null;
+          expense_month: string | null;
+          expense_type: Database["public"]["Enums"]["expense_type"] | null;
+          max_amount: number | null;
+          min_amount: number | null;
+          recurring_amount: number | null;
+          recurring_count: number | null;
+          total_amount: number | null;
+          transaction_count: number | null;
+          user_id: string | null;
+        };
+        Relationships: [];
+      };
       mv_product_performance: {
         Row: {
-          active_policies: number | null
-          avg_commission: number | null
-          avg_commission_rate_pct: number | null
-          avg_premium: number | null
-          lapsed_policies: number | null
-          persistency_rate: number | null
-          product_id: string | null
-          product_name: string | null
-          product_type: Database["public"]["Enums"]["product_type"] | null
-          total_commission: number | null
-          total_policies: number | null
-          total_premium: number | null
-          user_id: string | null
-        }
+          active_policies: number | null;
+          avg_commission: number | null;
+          avg_commission_rate_pct: number | null;
+          avg_premium: number | null;
+          lapsed_policies: number | null;
+          persistency_rate: number | null;
+          product_id: string | null;
+          product_name: string | null;
+          product_type: Database["public"]["Enums"]["product_type"] | null;
+          total_commission: number | null;
+          total_policies: number | null;
+          total_premium: number | null;
+          user_id: string | null;
+        };
         Relationships: [
           {
-            foreignKeyName: "policies_product_id_fkey"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "products"
-            referencedColumns: ["id"]
+            foreignKeyName: "policies_product_id_fkey";
+            columns: ["product_id"];
+            isOneToOne: false;
+            referencedRelation: "products";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       mv_production_velocity: {
         Row: {
-          month_start: string | null
-          monthly_avg_premium: number | null
-          monthly_policies: number | null
-          monthly_premium: number | null
-          user_id: string | null
-          week_start: string | null
-          weekly_avg_premium: number | null
-          weekly_policies: number | null
-          weekly_premium: number | null
-        }
-        Relationships: []
-      }
+          month_start: string | null;
+          monthly_avg_premium: number | null;
+          monthly_policies: number | null;
+          monthly_premium: number | null;
+          user_id: string | null;
+          week_start: string | null;
+          weekly_avg_premium: number | null;
+          weekly_policies: number | null;
+          weekly_premium: number | null;
+        };
+        Relationships: [];
+      };
       override_commission_summary: {
         Row: {
-          charged_back_amount: number | null
-          earned_amount: number | null
-          override_agent_id: string | null
-          paid_amount: number | null
-          pending_amount: number | null
-          total_earned: number | null
-          total_override_amount: number | null
-          total_overrides: number | null
-          total_unearned: number | null
-        }
+          charged_back_amount: number | null;
+          earned_amount: number | null;
+          override_agent_id: string | null;
+          paid_amount: number | null;
+          pending_amount: number | null;
+          total_earned: number | null;
+          total_override_amount: number | null;
+          total_overrides: number | null;
+          total_unearned: number | null;
+        };
         Relationships: [
           {
-            foreignKeyName: "override_commissions_override_agent_id_fkey"
-            columns: ["override_agent_id"]
-            isOneToOne: false
-            referencedRelation: "active_user_profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "override_commissions_override_agent_id_fkey";
+            columns: ["override_agent_id"];
+            isOneToOne: false;
+            referencedRelation: "active_user_profiles";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "override_commissions_override_agent_id_fkey"
-            columns: ["override_agent_id"]
-            isOneToOne: false
-            referencedRelation: "user_management_view"
-            referencedColumns: ["id"]
+            foreignKeyName: "override_commissions_override_agent_id_fkey";
+            columns: ["override_agent_id"];
+            isOneToOne: false;
+            referencedRelation: "user_management_view";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "override_commissions_override_agent_id_fkey"
-            columns: ["override_agent_id"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "override_commissions_override_agent_id_fkey";
+            columns: ["override_agent_id"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       unearned_commission_summary: {
         Row: {
-          at_risk_count: number | null
-          avg_months_paid: number | null
-          fully_earned_count: number | null
-          portfolio_earned_percentage: number | null
-          total_advances: number | null
-          total_chargebacks: number | null
-          total_commissions: number | null
-          total_earned: number | null
-          total_unearned: number | null
-          user_id: string | null
-        }
-        Relationships: []
-      }
+          at_risk_count: number | null;
+          avg_months_paid: number | null;
+          fully_earned_count: number | null;
+          portfolio_earned_percentage: number | null;
+          total_advances: number | null;
+          total_chargebacks: number | null;
+          total_commissions: number | null;
+          total_earned: number | null;
+          total_unearned: number | null;
+          user_id: string | null;
+        };
+        Relationships: [];
+      };
       user_management_view: {
         Row: {
-          agent_status: Database["public"]["Enums"]["agent_status"] | null
-          approval_status: string | null
-          approved_at: string | null
-          approved_by: string | null
-          archive_reason: string | null
-          archived_at: string | null
-          archived_by: string | null
-          city: string | null
-          contract_level: number | null
-          created_at: string | null
-          current_onboarding_phase: string | null
-          custom_permissions: Json | null
-          date_of_birth: string | null
-          denial_reason: string | null
-          denied_at: string | null
-          email: string | null
-          facebook_handle: string | null
-          first_name: string | null
-          hierarchy_depth: number | null
-          hierarchy_path: string | null
-          id: string | null
-          in_recruiting_pipeline: boolean | null
-          in_users_list: boolean | null
-          instagram_url: string | null
-          instagram_username: string | null
-          is_admin: boolean | null
-          is_super_admin: boolean | null
-          last_name: string | null
-          license_expiration: string | null
-          license_number: string | null
-          licensing_info: Json | null
-          linkedin_url: string | null
-          linkedin_username: string | null
-          npn: string | null
-          onboarding_completed_at: string | null
-          onboarding_started_at: string | null
-          onboarding_status: string | null
-          personal_website: string | null
-          phone: string | null
-          pipeline_template_id: string | null
-          primary_role: string | null
-          profile_photo_url: string | null
-          recruiter_id: string | null
-          referral_source: string | null
-          resident_state: string | null
-          roles: string[] | null
-          state: string | null
-          street_address: string | null
-          updated_at: string | null
-          upline_id: string | null
-          zip: string | null
-        }
+          agent_status: Database["public"]["Enums"]["agent_status"] | null;
+          approval_status: string | null;
+          approved_at: string | null;
+          approved_by: string | null;
+          archive_reason: string | null;
+          archived_at: string | null;
+          archived_by: string | null;
+          city: string | null;
+          contract_level: number | null;
+          created_at: string | null;
+          current_onboarding_phase: string | null;
+          custom_permissions: Json | null;
+          date_of_birth: string | null;
+          denial_reason: string | null;
+          denied_at: string | null;
+          email: string | null;
+          facebook_handle: string | null;
+          first_name: string | null;
+          hierarchy_depth: number | null;
+          hierarchy_path: string | null;
+          id: string | null;
+          in_recruiting_pipeline: boolean | null;
+          in_users_list: boolean | null;
+          instagram_url: string | null;
+          instagram_username: string | null;
+          is_admin: boolean | null;
+          is_super_admin: boolean | null;
+          last_name: string | null;
+          license_expiration: string | null;
+          license_number: string | null;
+          licensing_info: Json | null;
+          linkedin_url: string | null;
+          linkedin_username: string | null;
+          npn: string | null;
+          onboarding_completed_at: string | null;
+          onboarding_started_at: string | null;
+          onboarding_status: string | null;
+          personal_website: string | null;
+          phone: string | null;
+          pipeline_template_id: string | null;
+          primary_role: string | null;
+          profile_photo_url: string | null;
+          recruiter_id: string | null;
+          referral_source: string | null;
+          resident_state: string | null;
+          roles: string[] | null;
+          state: string | null;
+          street_address: string | null;
+          updated_at: string | null;
+          upline_id: string | null;
+          zip: string | null;
+        };
         Insert: {
-          agent_status?: Database["public"]["Enums"]["agent_status"] | null
-          approval_status?: string | null
-          approved_at?: string | null
-          approved_by?: string | null
-          archive_reason?: string | null
-          archived_at?: string | null
-          archived_by?: string | null
-          city?: string | null
-          contract_level?: number | null
-          created_at?: string | null
-          current_onboarding_phase?: string | null
-          custom_permissions?: Json | null
-          date_of_birth?: string | null
-          denial_reason?: string | null
-          denied_at?: string | null
-          email?: string | null
-          facebook_handle?: string | null
-          first_name?: string | null
-          hierarchy_depth?: number | null
-          hierarchy_path?: string | null
-          id?: string | null
-          in_recruiting_pipeline?: never
-          in_users_list?: never
-          instagram_url?: string | null
-          instagram_username?: string | null
-          is_admin?: boolean | null
-          is_super_admin?: boolean | null
-          last_name?: string | null
-          license_expiration?: string | null
-          license_number?: string | null
-          licensing_info?: Json | null
-          linkedin_url?: string | null
-          linkedin_username?: string | null
-          npn?: string | null
-          onboarding_completed_at?: string | null
-          onboarding_started_at?: string | null
-          onboarding_status?: string | null
-          personal_website?: string | null
-          phone?: string | null
-          pipeline_template_id?: string | null
-          primary_role?: never
-          profile_photo_url?: string | null
-          recruiter_id?: string | null
-          referral_source?: string | null
-          resident_state?: string | null
-          roles?: string[] | null
-          state?: string | null
-          street_address?: string | null
-          updated_at?: string | null
-          upline_id?: string | null
-          zip?: string | null
-        }
+          agent_status?: Database["public"]["Enums"]["agent_status"] | null;
+          approval_status?: string | null;
+          approved_at?: string | null;
+          approved_by?: string | null;
+          archive_reason?: string | null;
+          archived_at?: string | null;
+          archived_by?: string | null;
+          city?: string | null;
+          contract_level?: number | null;
+          created_at?: string | null;
+          current_onboarding_phase?: string | null;
+          custom_permissions?: Json | null;
+          date_of_birth?: string | null;
+          denial_reason?: string | null;
+          denied_at?: string | null;
+          email?: string | null;
+          facebook_handle?: string | null;
+          first_name?: string | null;
+          hierarchy_depth?: number | null;
+          hierarchy_path?: string | null;
+          id?: string | null;
+          in_recruiting_pipeline?: never;
+          in_users_list?: never;
+          instagram_url?: string | null;
+          instagram_username?: string | null;
+          is_admin?: boolean | null;
+          is_super_admin?: boolean | null;
+          last_name?: string | null;
+          license_expiration?: string | null;
+          license_number?: string | null;
+          licensing_info?: Json | null;
+          linkedin_url?: string | null;
+          linkedin_username?: string | null;
+          npn?: string | null;
+          onboarding_completed_at?: string | null;
+          onboarding_started_at?: string | null;
+          onboarding_status?: string | null;
+          personal_website?: string | null;
+          phone?: string | null;
+          pipeline_template_id?: string | null;
+          primary_role?: never;
+          profile_photo_url?: string | null;
+          recruiter_id?: string | null;
+          referral_source?: string | null;
+          resident_state?: string | null;
+          roles?: string[] | null;
+          state?: string | null;
+          street_address?: string | null;
+          updated_at?: string | null;
+          upline_id?: string | null;
+          zip?: string | null;
+        };
         Update: {
-          agent_status?: Database["public"]["Enums"]["agent_status"] | null
-          approval_status?: string | null
-          approved_at?: string | null
-          approved_by?: string | null
-          archive_reason?: string | null
-          archived_at?: string | null
-          archived_by?: string | null
-          city?: string | null
-          contract_level?: number | null
-          created_at?: string | null
-          current_onboarding_phase?: string | null
-          custom_permissions?: Json | null
-          date_of_birth?: string | null
-          denial_reason?: string | null
-          denied_at?: string | null
-          email?: string | null
-          facebook_handle?: string | null
-          first_name?: string | null
-          hierarchy_depth?: number | null
-          hierarchy_path?: string | null
-          id?: string | null
-          in_recruiting_pipeline?: never
-          in_users_list?: never
-          instagram_url?: string | null
-          instagram_username?: string | null
-          is_admin?: boolean | null
-          is_super_admin?: boolean | null
-          last_name?: string | null
-          license_expiration?: string | null
-          license_number?: string | null
-          licensing_info?: Json | null
-          linkedin_url?: string | null
-          linkedin_username?: string | null
-          npn?: string | null
-          onboarding_completed_at?: string | null
-          onboarding_started_at?: string | null
-          onboarding_status?: string | null
-          personal_website?: string | null
-          phone?: string | null
-          pipeline_template_id?: string | null
-          primary_role?: never
-          profile_photo_url?: string | null
-          recruiter_id?: string | null
-          referral_source?: string | null
-          resident_state?: string | null
-          roles?: string[] | null
-          state?: string | null
-          street_address?: string | null
-          updated_at?: string | null
-          upline_id?: string | null
-          zip?: string | null
-        }
+          agent_status?: Database["public"]["Enums"]["agent_status"] | null;
+          approval_status?: string | null;
+          approved_at?: string | null;
+          approved_by?: string | null;
+          archive_reason?: string | null;
+          archived_at?: string | null;
+          archived_by?: string | null;
+          city?: string | null;
+          contract_level?: number | null;
+          created_at?: string | null;
+          current_onboarding_phase?: string | null;
+          custom_permissions?: Json | null;
+          date_of_birth?: string | null;
+          denial_reason?: string | null;
+          denied_at?: string | null;
+          email?: string | null;
+          facebook_handle?: string | null;
+          first_name?: string | null;
+          hierarchy_depth?: number | null;
+          hierarchy_path?: string | null;
+          id?: string | null;
+          in_recruiting_pipeline?: never;
+          in_users_list?: never;
+          instagram_url?: string | null;
+          instagram_username?: string | null;
+          is_admin?: boolean | null;
+          is_super_admin?: boolean | null;
+          last_name?: string | null;
+          license_expiration?: string | null;
+          license_number?: string | null;
+          licensing_info?: Json | null;
+          linkedin_url?: string | null;
+          linkedin_username?: string | null;
+          npn?: string | null;
+          onboarding_completed_at?: string | null;
+          onboarding_started_at?: string | null;
+          onboarding_status?: string | null;
+          personal_website?: string | null;
+          phone?: string | null;
+          pipeline_template_id?: string | null;
+          primary_role?: never;
+          profile_photo_url?: string | null;
+          recruiter_id?: string | null;
+          referral_source?: string | null;
+          resident_state?: string | null;
+          roles?: string[] | null;
+          state?: string | null;
+          street_address?: string | null;
+          updated_at?: string | null;
+          upline_id?: string | null;
+          zip?: string | null;
+        };
         Relationships: [
           {
-            foreignKeyName: "user_profiles_approved_by_fkey"
-            columns: ["approved_by"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
+            foreignKeyName: "user_profiles_approved_by_fkey";
+            columns: ["approved_by"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "user_profiles_archived_by_fkey"
-            columns: ["archived_by"]
-            isOneToOne: false
-            referencedRelation: "active_user_profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "user_profiles_archived_by_fkey";
+            columns: ["archived_by"];
+            isOneToOne: false;
+            referencedRelation: "active_user_profiles";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "user_profiles_archived_by_fkey"
-            columns: ["archived_by"]
-            isOneToOne: false
-            referencedRelation: "user_management_view"
-            referencedColumns: ["id"]
+            foreignKeyName: "user_profiles_archived_by_fkey";
+            columns: ["archived_by"];
+            isOneToOne: false;
+            referencedRelation: "user_management_view";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "user_profiles_archived_by_fkey"
-            columns: ["archived_by"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "user_profiles_archived_by_fkey";
+            columns: ["archived_by"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "user_profiles_pipeline_template_id_fkey"
-            columns: ["pipeline_template_id"]
-            isOneToOne: false
-            referencedRelation: "pipeline_templates"
-            referencedColumns: ["id"]
+            foreignKeyName: "user_profiles_pipeline_template_id_fkey";
+            columns: ["pipeline_template_id"];
+            isOneToOne: false;
+            referencedRelation: "pipeline_templates";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "user_profiles_recruiter_id_fkey"
-            columns: ["recruiter_id"]
-            isOneToOne: false
-            referencedRelation: "active_user_profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "user_profiles_recruiter_id_fkey";
+            columns: ["recruiter_id"];
+            isOneToOne: false;
+            referencedRelation: "active_user_profiles";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "user_profiles_recruiter_id_fkey"
-            columns: ["recruiter_id"]
-            isOneToOne: false
-            referencedRelation: "user_management_view"
-            referencedColumns: ["id"]
+            foreignKeyName: "user_profiles_recruiter_id_fkey";
+            columns: ["recruiter_id"];
+            isOneToOne: false;
+            referencedRelation: "user_management_view";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "user_profiles_recruiter_id_fkey"
-            columns: ["recruiter_id"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "user_profiles_recruiter_id_fkey";
+            columns: ["recruiter_id"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "user_profiles_upline_id_fkey"
-            columns: ["upline_id"]
-            isOneToOne: false
-            referencedRelation: "active_user_profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "user_profiles_upline_id_fkey";
+            columns: ["upline_id"];
+            isOneToOne: false;
+            referencedRelation: "active_user_profiles";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "user_profiles_upline_id_fkey"
-            columns: ["upline_id"]
-            isOneToOne: false
-            referencedRelation: "user_management_view"
-            referencedColumns: ["id"]
+            foreignKeyName: "user_profiles_upline_id_fkey";
+            columns: ["upline_id"];
+            isOneToOne: false;
+            referencedRelation: "user_management_view";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "user_profiles_upline_id_fkey"
-            columns: ["upline_id"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "user_profiles_upline_id_fkey";
+            columns: ["upline_id"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       users: {
         Row: {
-          agent_code: string | null
-          contract_comp_level: number | null
-          created_at: string | null
-          email: string | null
-          id: string | null
-          is_active: boolean | null
-          license_number: string | null
-          license_state: string | null
-          name: string | null
-          notes: string | null
-          phone: string | null
-          updated_at: string | null
-        }
+          agent_code: string | null;
+          contract_comp_level: number | null;
+          created_at: string | null;
+          email: string | null;
+          id: string | null;
+          is_active: boolean | null;
+          license_number: string | null;
+          license_state: string | null;
+          name: string | null;
+          notes: string | null;
+          phone: string | null;
+          updated_at: string | null;
+        };
         Insert: {
-          agent_code?: never
-          contract_comp_level?: never
-          created_at?: string | null
-          email?: string | null
-          id?: string | null
-          is_active?: never
-          license_number?: never
-          license_state?: never
-          name?: never
-          notes?: never
-          phone?: never
-          updated_at?: string | null
-        }
+          agent_code?: never;
+          contract_comp_level?: never;
+          created_at?: string | null;
+          email?: string | null;
+          id?: string | null;
+          is_active?: never;
+          license_number?: never;
+          license_state?: never;
+          name?: never;
+          notes?: never;
+          phone?: never;
+          updated_at?: string | null;
+        };
         Update: {
-          agent_code?: never
-          contract_comp_level?: never
-          created_at?: string | null
-          email?: string | null
-          id?: string | null
-          is_active?: never
-          license_number?: never
-          license_state?: never
-          name?: never
-          notes?: never
-          phone?: never
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-    }
+          agent_code?: never;
+          contract_comp_level?: never;
+          created_at?: string | null;
+          email?: string | null;
+          id?: string | null;
+          is_active?: never;
+          license_number?: never;
+          license_state?: never;
+          name?: never;
+          notes?: never;
+          phone?: never;
+          updated_at?: string | null;
+        };
+        Relationships: [];
+      };
+    };
     Functions: {
       add_to_read_by: {
-        Args: { message_id: string; user_id: string }
-        Returns: undefined
-      }
+        Args: { message_id: string; user_id: string };
+        Returns: undefined;
+      };
       admin_approve_user: {
-        Args: { approver_id: string; target_user_id: string }
-        Returns: boolean
-      }
-      admin_delete_user: { Args: { target_user_id: string }; Returns: Json }
-      admin_deleteuser: { Args: { target_user_id: string }; Returns: Json }
+        Args: { approver_id: string; target_user_id: string };
+        Returns: boolean;
+      };
+      admin_delete_user: { Args: { target_user_id: string }; Returns: Json };
+      admin_deleteuser: { Args: { target_user_id: string }; Returns: Json };
       admin_deny_user: {
-        Args: { approver_id: string; reason: string; target_user_id: string }
-        Returns: boolean
-      }
+        Args: { approver_id: string; reason: string; target_user_id: string };
+        Returns: boolean;
+      };
       admin_get_all_users: {
-        Args: never
+        Args: never;
         Returns: {
-          approval_status: string
-          approved_at: string
-          approved_by: string
-          city: string
-          contract_level: number
-          created_at: string
-          current_onboarding_phase: string
-          denial_reason: string
-          denied_at: string
-          email: string
-          first_name: string
-          full_name: string
-          hierarchy_depth: number
-          hierarchy_path: string
-          id: string
-          instagram_url: string
-          is_admin: boolean
-          last_name: string
-          license_expiration: string
-          license_number: string
-          linkedin_url: string
-          npn: string
-          onboarding_status: string
-          phone: string
-          resident_state: string
-          roles: string[]
-          state: string
-          street_address: string
-          updated_at: string
-          upline_id: string
-          zip: string
-        }[]
-      }
+          approval_status: string;
+          approved_at: string;
+          approved_by: string;
+          city: string;
+          contract_level: number;
+          created_at: string;
+          current_onboarding_phase: string;
+          denial_reason: string;
+          denied_at: string;
+          email: string;
+          first_name: string;
+          full_name: string;
+          hierarchy_depth: number;
+          hierarchy_path: string;
+          id: string;
+          instagram_url: string;
+          is_admin: boolean;
+          last_name: string;
+          license_expiration: string;
+          license_number: string;
+          linkedin_url: string;
+          npn: string;
+          onboarding_status: string;
+          phone: string;
+          resident_state: string;
+          roles: string[];
+          state: string;
+          street_address: string;
+          updated_at: string;
+          upline_id: string;
+          zip: string;
+        }[];
+      };
       admin_get_pending_users: {
-        Args: never
+        Args: never;
         Returns: {
-          approval_status: string
-          approved_at: string
-          approved_by: string
-          contract_level: number
-          created_at: string
-          denial_reason: string
-          denied_at: string
-          email: string
-          full_name: string
-          hierarchy_depth: number
-          hierarchy_path: string
-          id: string
-          is_admin: boolean
-          roles: string[]
-          updated_at: string
-          upline_id: string
-        }[]
-      }
-      admin_get_user_by_id: { Args: { p_user_id: string }; Returns: Json }
+          approval_status: string;
+          approved_at: string;
+          approved_by: string;
+          contract_level: number;
+          created_at: string;
+          denial_reason: string;
+          denied_at: string;
+          email: string;
+          full_name: string;
+          hierarchy_depth: number;
+          hierarchy_path: string;
+          id: string;
+          is_admin: boolean;
+          roles: string[];
+          updated_at: string;
+          upline_id: string;
+        }[];
+      };
+      admin_get_user_by_id: { Args: { p_user_id: string }; Returns: Json };
       admin_get_user_profile: {
-        Args: { target_user_id: string }
+        Args: { target_user_id: string };
         Returns: {
-          approval_status: string
-          approved_at: string
-          approved_by: string
-          contract_level: number
-          created_at: string
-          denial_reason: string
-          denied_at: string
-          email: string
-          full_name: string
-          hierarchy_depth: number
-          hierarchy_path: string
-          id: string
-          is_admin: boolean
-          roles: string[]
-          updated_at: string
-          upline_id: string
-        }[]
-      }
+          approval_status: string;
+          approved_at: string;
+          approved_by: string;
+          contract_level: number;
+          created_at: string;
+          denial_reason: string;
+          denied_at: string;
+          email: string;
+          full_name: string;
+          hierarchy_depth: number;
+          hierarchy_path: string;
+          id: string;
+          is_admin: boolean;
+          roles: string[];
+          updated_at: string;
+          upline_id: string;
+        }[];
+      };
       admin_set_admin_role: {
-        Args: { new_is_admin: boolean; target_user_id: string }
-        Returns: boolean
-      }
+        Args: { new_is_admin: boolean; target_user_id: string };
+        Returns: boolean;
+      };
       admin_set_pending_user: {
-        Args: { target_user_id: string }
-        Returns: boolean
-      }
+        Args: { target_user_id: string };
+        Returns: boolean;
+      };
       admin_update_user: {
-        Args: { p_updates: Json; p_user_id: string }
-        Returns: Json
-      }
+        Args: { p_updates: Json; p_user_id: string };
+        Returns: Json;
+      };
       assign_user_role: {
         Args: {
-          p_contract_level?: number
-          p_is_recruit?: boolean
-          p_requested_role?: string
-          p_user_id: string
-        }
-        Returns: string[]
-      }
+          p_contract_level?: number;
+          p_is_recruit?: boolean;
+          p_requested_role?: string;
+          p_user_id: string;
+        };
+        Returns: string[];
+      };
       calculate_chargeback_on_policy_lapse: {
-        Args: { p_lapse_date?: string; p_policy_id: string }
-        Returns: Json
-      }
-      calculate_client_age: { Args: { birth_date: string }; Returns: number }
+        Args: { p_lapse_date?: string; p_policy_id: string };
+        Returns: Json;
+      };
+      calculate_client_age: { Args: { birth_date: string }; Returns: number };
       calculate_commission_advance: {
         Args: {
-          p_advance_months: number
-          p_annual_premium: number
-          p_commission_percentage: number
-          p_contract_level?: number
-        }
-        Returns: number
-      }
+          p_advance_months: number;
+          p_annual_premium: number;
+          p_commission_percentage: number;
+          p_contract_level?: number;
+        };
+        Returns: number;
+      };
       calculate_earned_amount: {
         Args: {
-          p_advance_months: number
-          p_amount: number
-          p_months_paid: number
-        }
-        Returns: number
-      }
+          p_advance_months: number;
+          p_amount: number;
+          p_months_paid: number;
+        };
+        Returns: number;
+      };
       calculate_months_paid: {
-        Args: { p_effective_date: string; p_end_date?: string }
-        Returns: number
-      }
+        Args: { p_effective_date: string; p_end_date?: string };
+        Returns: number;
+      };
       calculate_next_run_time: {
         Args: {
-          p_day_of_month?: number
-          p_day_of_week?: number
-          p_from_time?: string
-          p_run_time: string
-          p_schedule_type: string
-          p_timezone: string
-        }
-        Returns: string
-      }
+          p_day_of_month?: number;
+          p_day_of_week?: number;
+          p_from_time?: string;
+          p_run_time: string;
+          p_schedule_type: string;
+          p_timezone: string;
+        };
+        Returns: string;
+      };
       calculate_unearned_amount: {
         Args: {
-          p_advance_months: number
-          p_amount: number
-          p_months_paid: number
-        }
-        Returns: number
-      }
+          p_advance_months: number;
+          p_amount: number;
+          p_months_paid: number;
+        };
+        Returns: number;
+      };
       can_manage_workflows: {
-        Args: { user_id_param: string }
-        Returns: boolean
-      }
+        Args: { user_id_param: string };
+        Returns: boolean;
+      };
       can_workflow_run: {
-        Args: { p_recipient_id?: string; p_workflow_id: string }
-        Returns: boolean
-      }
+        Args: { p_recipient_id?: string; p_workflow_id: string };
+        Returns: boolean;
+      };
       check_email_exists: {
-        Args: { target_email: string }
+        Args: { target_email: string };
         Returns: {
-          email_exists: boolean
-          error_message: string
-          user_id: string
-        }[]
-      }
+          email_exists: boolean;
+          error_message: string;
+          user_id: string;
+        }[];
+      };
       check_email_quota: {
-        Args: { p_limit?: number; p_provider: string; p_user_id: string }
-        Returns: boolean
-      }
+        Args: { p_limit?: number; p_provider: string; p_user_id: string };
+        Returns: boolean;
+      };
       check_user_template_limit: {
-        Args: { user_uuid: string }
-        Returns: boolean
-      }
+        Args: { user_uuid: string };
+        Returns: boolean;
+      };
       check_workflow_email_rate_limit: {
         Args: {
-          p_recipient_count?: number
-          p_recipient_email: string
-          p_user_id: string
-          p_workflow_id: string
-        }
-        Returns: Json
-      }
+          p_recipient_count?: number;
+          p_recipient_email: string;
+          p_user_id: string;
+          p_workflow_id: string;
+        };
+        Returns: Json;
+      };
       cleanup_old_reports: {
-        Args: { max_reports_per_user?: number }
-        Returns: number
-      }
+        Args: { max_reports_per_user?: number };
+        Returns: number;
+      };
       create_workflow_run: {
-        Args: { context_param?: Json; workflow_id_param: string }
-        Returns: string
-      }
+        Args: { context_param?: Json; workflow_id_param: string };
+        Returns: string;
+      };
+      email_subject_hash: { Args: { subject: string }; Returns: string };
+      ensure_system_labels: { Args: { p_user_id: string }; Returns: undefined };
       expire_old_invitations: {
-        Args: never
+        Args: never;
         Returns: {
-          expired_count: number
-        }[]
-      }
+          expired_count: number;
+        }[];
+      };
       get_at_risk_commissions: {
-        Args: { p_risk_threshold?: number; p_user_id: string }
+        Args: { p_risk_threshold?: number; p_user_id: string };
         Returns: {
-          advance_amount: number
-          commission_id: string
-          earned_amount: number
-          effective_date: string
-          months_paid: number
-          policy_id: string
-          policy_status: string
-          risk_level: string
-          unearned_amount: number
-        }[]
-      }
+          advance_amount: number;
+          commission_id: string;
+          earned_amount: number;
+          effective_date: string;
+          months_paid: number;
+          policy_id: string;
+          policy_status: string;
+          risk_level: string;
+          unearned_amount: number;
+        }[];
+      };
       get_clients_with_stats: {
-        Args: never
+        Args: never;
         Returns: {
-          active_policy_count: number
-          address: string
-          avg_premium: number
-          created_at: string
-          date_of_birth: string
-          email: string
-          id: string
-          last_policy_date: string
-          name: string
-          notes: string
-          phone: string
-          policy_count: number
-          status: string
-          total_premium: number
-          updated_at: string
-          user_id: string
-        }[]
-      }
-      get_current_user_profile_id: { Args: never; Returns: string }
+          active_policy_count: number;
+          address: string;
+          avg_premium: number;
+          created_at: string;
+          date_of_birth: string;
+          email: string;
+          id: string;
+          last_policy_date: string;
+          name: string;
+          notes: string;
+          phone: string;
+          policy_count: number;
+          status: string;
+          total_premium: number;
+          updated_at: string;
+          user_id: string;
+        }[];
+      };
+      get_current_user_profile_id: { Args: never; Returns: string };
       get_downline_ids: {
-        Args: { target_user_id: string }
+        Args: { target_user_id: string };
         Returns: {
-          downline_id: string
-        }[]
-      }
+          downline_id: string;
+        }[];
+      };
       get_downline_with_emails: {
-        Args: { p_max_count?: number; p_user_id: string }
+        Args: { p_max_count?: number; p_user_id: string };
         Returns: {
-          email: string
-          id: string
-        }[]
-      }
+          email: string;
+          id: string;
+        }[];
+      };
+      get_message_stats: { Args: { p_user_id: string }; Returns: Json };
       get_pipeline_template_for_user: {
         Args: {
-          p_agent_status: Database["public"]["Enums"]["agent_status"]
-          p_roles: string[]
-        }
-        Returns: string
-      }
+          p_agent_status: Database["public"]["Enums"]["agent_status"];
+          p_roles: string[];
+        };
+        Returns: string;
+      };
       get_policies_paginated: {
         Args: {
-          p_carrier_id?: string
-          p_cursor?: string
-          p_limit?: number
-          p_product_id?: string
-          p_status?: string
-          p_user_id?: string
-        }
+          p_carrier_id?: string;
+          p_cursor?: string;
+          p_limit?: number;
+          p_product_id?: string;
+          p_status?: string;
+          p_user_id?: string;
+        };
         Returns: {
-          annual_premium: number
-          carrier_id: string
-          carrier_name: string
-          client: Json
-          commission_percentage: number
-          created_at: string
-          effective_date: string
-          id: string
-          payment_frequency: Database["public"]["Enums"]["payment_frequency"]
-          policy_number: string
-          product: Database["public"]["Enums"]["product_type"]
-          product_id: string
-          product_name: string
-          status: Database["public"]["Enums"]["policy_status"]
-          user_id: string
-        }[]
-      }
+          annual_premium: number;
+          carrier_id: string;
+          carrier_name: string;
+          client: Json;
+          commission_percentage: number;
+          created_at: string;
+          effective_date: string;
+          id: string;
+          payment_frequency: Database["public"]["Enums"]["payment_frequency"];
+          policy_number: string;
+          product: Database["public"]["Enums"]["product_type"];
+          product_id: string;
+          product_name: string;
+          status: Database["public"]["Enums"]["policy_status"];
+          user_id: string;
+        }[];
+      };
       get_policy_count: {
         Args: {
-          p_carrier_id?: string
-          p_product_id?: string
-          p_status?: string
-          p_user_id?: string
-        }
-        Returns: number
-      }
+          p_carrier_id?: string;
+          p_product_id?: string;
+          p_status?: string;
+          p_user_id?: string;
+        };
+        Returns: number;
+      };
       get_product_commission_rate: {
         Args: {
-          p_comp_level: Database["public"]["Enums"]["comp_level"]
-          p_date?: string
-          p_product_id: string
-        }
-        Returns: number
-      }
+          p_comp_level: Database["public"]["Enums"]["comp_level"];
+          p_date?: string;
+          p_product_id: string;
+        };
+        Returns: number;
+      };
       get_role_permissions_with_inheritance: {
-        Args: { p_role_id: string }
+        Args: { p_role_id: string };
         Returns: {
-          inherited_from_role_name: string
-          permission_action: string
-          permission_code: string
-          permission_description: string
-          permission_id: string
-          permission_resource: string
-          permission_scope: string
-          permission_type: string
-        }[]
-      }
+          inherited_from_role_name: string;
+          permission_action: string;
+          permission_code: string;
+          permission_description: string;
+          permission_id: string;
+          permission_resource: string;
+          permission_scope: string;
+          permission_type: string;
+        }[];
+      };
       get_upline_chain: {
-        Args: { p_max_depth?: number; p_user_id: string }
+        Args: { p_max_depth?: number; p_user_id: string };
         Returns: {
-          depth: number
-          email: string
-          id: string
-        }[]
-      }
+          depth: number;
+          email: string;
+          id: string;
+        }[];
+      };
       get_user_commission_profile: {
-        Args: { p_lookback_months?: number; p_user_id: string }
+        Args: { p_lookback_months?: number; p_user_id: string };
         Returns: {
-          calculated_at: string
-          contract_level: number
-          data_quality: string
-          product_breakdown: Json
-          simple_avg_rate: number
-          weighted_avg_rate: number
-        }[]
-      }
+          calculated_at: string;
+          contract_level: number;
+          data_quality: string;
+          product_breakdown: Json;
+          simple_avg_rate: number;
+          weighted_avg_rate: number;
+        }[];
+      };
       get_user_permissions: {
-        Args: { target_user_id: string }
+        Args: { target_user_id: string };
         Returns: {
-          code: string
-        }[]
-      }
+          code: string;
+        }[];
+      };
       get_user_profile: {
-        Args: { user_id: string }
+        Args: { user_id: string };
         Returns: {
-          agent_code: string
-          contract_comp_level: number
-          created_at: string
-          email: string
-          id: string
-          is_active: boolean
-          license_number: string
-          license_state: string
-          name: string
-          notes: string
-          phone: string
-          updated_at: string
-        }[]
-      }
-      get_workflow_email_usage: { Args: { p_user_id: string }; Returns: Json }
+          agent_code: string;
+          contract_comp_level: number;
+          created_at: string;
+          email: string;
+          id: string;
+          is_active: boolean;
+          license_number: string;
+          license_state: string;
+          name: string;
+          notes: string;
+          phone: string;
+          updated_at: string;
+        }[];
+      };
+      get_user_upline_and_recruiter_ids: {
+        Args: { user_id: string };
+        Returns: {
+          recruiter_id: string;
+          upline_id: string;
+        }[];
+      };
+      get_workflow_email_usage: { Args: { p_user_id: string }; Returns: Json };
       getuser_commission_profile: {
-        Args: { p_lookback_months?: number; puser_id: string }
+        Args: { p_lookback_months?: number; puser_id: string };
         Returns: {
-          calculated_at: string
-          contract_level: number
-          data_quality: string
-          product_breakdown: Json
-          simple_avg_rate: number
-          weighted_avg_rate: number
-        }[]
-      }
+          calculated_at: string;
+          contract_level: number;
+          data_quality: string;
+          product_breakdown: Json;
+          simple_avg_rate: number;
+          weighted_avg_rate: number;
+        }[];
+      };
       hard_delete_user: {
         Args: {
-          p_confirm_text: string
-          p_deleted_by: string
-          p_user_id: string
-        }
-        Returns: Json
-      }
+          p_confirm_text: string;
+          p_deleted_by: string;
+          p_user_id: string;
+        };
+        Returns: Json;
+      };
       has_permission: {
-        Args: { permission_code: string; target_user_id: string }
-        Returns: boolean
-      }
+        Args: { permission_code: string; target_user_id: string };
+        Returns: boolean;
+      };
       has_role:
         | { Args: { role_to_check: string }; Returns: boolean }
         | {
-            Args: { role_name: string; target_user_id: string }
-            Returns: boolean
-          }
+            Args: { role_name: string; target_user_id: string };
+            Returns: boolean;
+          };
       increment_email_quota: {
-        Args: { p_provider: string; p_user_id: string }
-        Returns: number
-      }
-      is_admin: { Args: never; Returns: boolean }
+        Args: { p_provider: string; p_user_id: string };
+        Returns: number;
+      };
+      is_admin: { Args: never; Returns: boolean };
       is_admin_user:
         | { Args: never; Returns: boolean }
-        | { Args: { target_user_id?: string }; Returns: boolean }
-      is_caller_admin: { Args: never; Returns: boolean }
-      is_user_approved: { Args: never; Returns: boolean }
+        | { Args: { target_user_id?: string }; Returns: boolean };
+      is_caller_admin: { Args: never; Returns: boolean };
+      is_user_approved: { Args: never; Returns: boolean };
       lookup_user_by_email: {
-        Args: { p_email: string }
+        Args: { p_email: string };
         Returns: {
-          email: string
-          id: string
-          is_approved: boolean
-          upline_id: string
-        }[]
-      }
+          email: string;
+          id: string;
+          is_approved: boolean;
+          upline_id: string;
+        }[];
+      };
       mark_policy_cancelled: {
         Args: {
-          p_cancellation_date?: string
-          p_cancellation_reason?: string
-          p_policy_id: string
-        }
-        Returns: Json
-      }
+          p_cancellation_date?: string;
+          p_cancellation_reason?: string;
+          p_policy_id: string;
+        };
+        Returns: Json;
+      };
       mark_policy_lapsed: {
         Args: {
-          p_lapse_date?: string
-          p_lapse_reason?: string
-          p_policy_id: string
-        }
-        Returns: Json
-      }
+          p_lapse_date?: string;
+          p_lapse_reason?: string;
+          p_policy_id: string;
+        };
+        Returns: Json;
+      };
+      mark_thread_read: { Args: { p_thread_id: string }; Returns: undefined };
+      normalize_email_subject: { Args: { subject: string }; Returns: string };
       process_pending_workflow_runs: {
-        Args: never
+        Args: never;
         Returns: {
-          message: string
-          run_id: string
-          status: string
-          workflow_id: string
-        }[]
-      }
+          message: string;
+          run_id: string;
+          status: string;
+          workflow_id: string;
+        }[];
+      };
       process_workflow_trigger: {
-        Args: { p_context: Json; p_event_name: string }
-        Returns: undefined
-      }
+        Args: { p_context: Json; p_event_name: string };
+        Returns: undefined;
+      };
+      record_email_click: {
+        Args: {
+          p_city?: string;
+          p_country?: string;
+          p_device_type?: string;
+          p_ip_address?: unknown;
+          p_link_tracking_id: string;
+          p_user_agent?: string;
+        };
+        Returns: string;
+      };
+      record_email_open: {
+        Args: {
+          p_city?: string;
+          p_country?: string;
+          p_device_type?: string;
+          p_ip_address?: unknown;
+          p_tracking_id: string;
+          p_user_agent?: string;
+        };
+        Returns: boolean;
+      };
       record_workflow_email: {
         Args: {
-          p_error_message?: string
-          p_recipient_email: string
-          p_recipient_type: string
-          p_success?: boolean
-          p_user_id: string
-          p_workflow_id: string
-        }
-        Returns: string
-      }
-      refresh_all_report_materialized_views: { Args: never; Returns: undefined }
+          p_error_message?: string;
+          p_recipient_email: string;
+          p_recipient_type: string;
+          p_success?: boolean;
+          p_user_id: string;
+          p_workflow_id: string;
+        };
+        Returns: string;
+      };
+      refresh_all_report_materialized_views: {
+        Args: never;
+        Returns: undefined;
+      };
       test_rls_for_user: {
-        Args: { test_user_id: string }
+        Args: { test_user_id: string };
         Returns: {
-          policy_number: string
-          user_id: string
-          would_pass: boolean
-        }[]
-      }
+          policy_number: string;
+          user_id: string;
+          would_pass: boolean;
+        }[];
+      };
       trigger_workflows_for_event: {
-        Args: { context_data: Json; event_name_param: string }
-        Returns: undefined
-      }
+        Args: { context_data: Json; event_name_param: string };
+        Returns: undefined;
+      };
       update_override_earned_amount: {
-        Args: { p_months_paid: number; p_policy_id: string }
-        Returns: undefined
-      }
+        Args: { p_months_paid: number; p_policy_id: string };
+        Returns: undefined;
+      };
       update_user_metadata: {
-        Args: { metadata: Json; user_id: string }
-        Returns: undefined
-      }
+        Args: { metadata: Json; user_id: string };
+        Returns: undefined;
+      };
       validate_invitation_acceptance: {
-        Args: { p_invitation_id: string; p_invitee_id: string }
+        Args: { p_invitation_id: string; p_invitee_id: string };
         Returns: {
-          error_message: string
-          valid: boolean
-        }[]
-      }
+          error_message: string;
+          valid: boolean;
+        }[];
+      };
       validate_invitation_eligibility: {
-        Args: { p_invitee_email: string; p_inviter_id: string }
+        Args: { p_invitee_email: string; p_inviter_id: string };
         Returns: {
-          error_message: string
-          invitee_user_id: string
-          valid: boolean
-          warning_message: string
-        }[]
-      }
-    }
+          error_message: string;
+          invitee_user_id: string;
+          valid: boolean;
+          warning_message: string;
+        }[];
+      };
+    };
     Enums: {
-      agent_status: "unlicensed" | "licensed" | "not_applicable"
-      chargeback_status: "pending" | "resolved" | "disputed"
+      agent_status: "unlicensed" | "licensed" | "not_applicable";
+      chargeback_status: "pending" | "resolved" | "disputed";
       commission_status:
         | "pending"
         | "paid"
         | "reversed"
         | "disputed"
         | "clawback"
-        | "charged_back"
-      comp_level: "street" | "release" | "enhanced" | "premium"
+        | "charged_back";
+      comp_level: "street" | "release" | "enhanced" | "premium";
       expense_category:
         | "insurance_leads"
         | "software_tools"
         | "office_remote"
         | "professional_services"
         | "marketing"
-        | "uncategorized"
-      expense_type: "personal" | "business"
-      file_type: "csv" | "pdf" | "xlsx"
-      payment_frequency: "monthly" | "quarterly" | "semi_annual" | "annual"
-      policy_status: "active" | "pending" | "lapsed" | "cancelled" | "expired"
+        | "uncategorized";
+      expense_type: "personal" | "business";
+      file_type: "csv" | "pdf" | "xlsx";
+      payment_frequency: "monthly" | "quarterly" | "semi_annual" | "annual";
+      policy_status: "active" | "pending" | "lapsed" | "cancelled" | "expired";
       product_type:
         | "term_life"
         | "whole_life"
@@ -4611,34 +5337,37 @@ export type Database = {
         | "disability"
         | "annuity"
         | "indexed_universal_life"
-        | "participating_whole_life"
-    }
+        | "participating_whole_life";
+    };
     CompositeTypes: {
-      [_ in never]: never
-    }
-  }
-}
+      [_ in never]: never;
+    };
+  };
+};
 
-type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">;
 
-type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+type DefaultSchema = DatabaseWithoutInternals[Extract<
+  keyof Database,
+  "public"
+>];
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
+    schema: keyof DatabaseWithoutInternals;
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
     : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
+  schema: keyof DatabaseWithoutInternals;
 }
   ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
       DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
-      Row: infer R
+      Row: infer R;
     }
     ? R
     : never
@@ -4646,95 +5375,95 @@ export type Tables<
         DefaultSchema["Views"])
     ? (DefaultSchema["Tables"] &
         DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
-        Row: infer R
+        Row: infer R;
       }
       ? R
       : never
-    : never
+    : never;
 
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
+    schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
+  schema: keyof DatabaseWithoutInternals;
 }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-      Insert: infer I
+      Insert: infer I;
     }
     ? I
     : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
     ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-        Insert: infer I
+        Insert: infer I;
       }
       ? I
       : never
-    : never
+    : never;
 
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
+    schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
+  schema: keyof DatabaseWithoutInternals;
 }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-      Update: infer U
+      Update: infer U;
     }
     ? U
     : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
     ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-        Update: infer U
+        Update: infer U;
       }
       ? U
       : never
-    : never
+    : never;
 
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
   EnumName extends DefaultSchemaEnumNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
+    schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
     : never = never,
 > = DefaultSchemaEnumNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
+  schema: keyof DatabaseWithoutInternals;
 }
   ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
   : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
     ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
-    : never
+    : never;
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
+    schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
     : never = never,
 > = PublicCompositeTypeNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
+  schema: keyof DatabaseWithoutInternals;
 }
   ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
   : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
     ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
-    : never
+    : never;
 
 export const Constants = {
   public: {
@@ -4775,4 +5504,4 @@ export const Constants = {
       ],
     },
   },
-} as const
+} as const;
