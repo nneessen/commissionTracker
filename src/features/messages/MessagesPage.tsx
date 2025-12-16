@@ -93,30 +93,30 @@ export function MessagesPage() {
         <div className="flex-shrink-0 py-3">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-base font-semibold text-foreground">
+              <h1 className="text-lg font-semibold text-foreground">
                 Messages
               </h1>
-              <p className="text-[11px] text-muted-foreground mt-0.5">
+              <p className="text-sm text-muted-foreground mt-0.5">
                 Communications hub • {totalUnread} unread
               </p>
             </div>
             <div className="flex items-center gap-2">
               <div className="relative">
-                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   type="text"
                   placeholder="Search messages..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="h-7 w-48 pl-7 text-xs"
+                  className="h-8 w-52 pl-8 text-sm"
                 />
               </div>
               <Button
                 onClick={handleComposeNew}
                 size="sm"
-                className="h-7 px-3 text-[11px] bg-primary hover:bg-primary/90 text-primary-foreground border-0 shadow-none"
+                className="h-8 px-4 text-sm bg-primary hover:bg-primary/90 text-primary-foreground border-0 shadow-none"
               >
-                <PenSquare className="h-3 w-3 mr-1.5" />
+                <PenSquare className="h-4 w-4 mr-1.5" />
                 Compose
               </Button>
             </div>
@@ -130,7 +130,7 @@ export function MessagesPage() {
             <Card className="w-48 flex-shrink-0 flex flex-col overflow-hidden">
               <CardContent className="p-2 flex-1 flex flex-col min-h-0 overflow-auto">
                 {/* Folders */}
-                <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide px-2 mb-2">
+                <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide px-2 mb-2">
                   Folders
                 </div>
                 <div className="space-y-0.5">
@@ -142,16 +142,16 @@ export function MessagesPage() {
                         key={folder.id}
                         onClick={() => setActiveFolder(folder.id)}
                         className={cn(
-                          "w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-[11px] transition-colors",
+                          "w-full flex items-center gap-2 px-2 py-2 rounded-md text-sm transition-colors",
                           isActive
                             ? "bg-primary/10 text-primary font-medium"
                             : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
                         )}
                       >
-                        <Icon className="h-3.5 w-3.5" />
+                        <Icon className="h-4 w-4" />
                         <span className="flex-1 text-left">{folder.label}</span>
                         {folder.count !== undefined && folder.count > 0 && (
-                          <span className="text-[10px] font-medium">
+                          <span className="text-xs font-medium">
                             {folder.count}
                           </span>
                         )}
@@ -165,7 +165,7 @@ export function MessagesPage() {
 
                 {/* Quota section */}
                 <div className="border-t pt-2 mt-2">
-                  <div className="text-[10px] text-muted-foreground space-y-1">
+                  <div className="text-xs text-muted-foreground space-y-1">
                     <div className="flex justify-between">
                       <span>Daily quota</span>
                       <span className="font-medium text-foreground">
@@ -174,13 +174,13 @@ export function MessagesPage() {
                           : "0 / 50"}
                       </span>
                     </div>
-                    <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                    <div className="h-2 bg-muted rounded-full overflow-hidden">
                       <div
                         className="h-full bg-primary rounded-full transition-all"
                         style={{ width: `${percentUsed}%` }}
                       />
                     </div>
-                    <p className="text-[9px] text-muted-foreground/70">
+                    <p className="text-xs text-muted-foreground/70">
                       {remainingDaily} remaining • Resets at midnight
                     </p>
                   </div>
@@ -201,14 +201,14 @@ export function MessagesPage() {
                         <button
                           key={tab.id}
                           className={cn(
-                            "h-7 px-3 text-[11px] flex items-center gap-1.5 rounded-md transition-colors",
+                            "h-8 px-4 text-sm flex items-center gap-2 rounded-md transition-colors",
                             isActive
                               ? "bg-primary text-primary-foreground font-medium"
                               : "text-foreground hover:bg-muted",
                           )}
                           onClick={() => setActiveTab(tab.id)}
                         >
-                          <Icon className="h-3.5 w-3.5" />
+                          <Icon className="h-4 w-4" />
                           {tab.label}
                         </button>
                       );

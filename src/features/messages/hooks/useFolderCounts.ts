@@ -36,26 +36,35 @@ async function fetchFolderCounts(userId: string): Promise<FolderCounts> {
         .select("*", { count: "exact", head: true })
         .eq("user_id", userId)
         .eq("is_archived", true),
-      // Sent - count outgoing emails by sender_id (who actually sent them)
-      // Use sender_id because that's what identifies who sent the email
+      // Sent - get unique thread IDs with outgoing messages by this user
+      // Use sender_id to identify who sent the email
       supabase
         .from("user_emails")
-        .select("*", { count: "exact", head: true })
+        .select("thread_id")
         .eq("sender_id", userId)
-        .eq("is_incoming", false),
-      // Inbox - count threads that have incoming messages
+        .eq("is_incoming", false)
+        .not("thread_id", "is", null),
+      // Inbox - get unique thread IDs with incoming messages
       supabase
         .from("user_emails")
-        .select("thread_id", { count: "exact", head: true })
+        .select("thread_id")
         .eq("user_id", userId)
         .eq("is_incoming", true)
         .not("thread_id", "is", null),
     ]);
 
+  // Count unique thread IDs for sent and inbox
+  const sentThreadIds = new Set(
+    sentResult.data?.map((e) => e.thread_id).filter(Boolean) || [],
+  );
+  const inboxThreadIds = new Set(
+    inboxResult.data?.map((e) => e.thread_id).filter(Boolean) || [],
+  );
+
   return {
     all: allResult.count || 0,
-    inbox: inboxResult.count || 0,
-    sent: sentResult.count || 0,
+    inbox: inboxThreadIds.size,
+    sent: sentThreadIds.size,
     starred: starredResult.count || 0,
     archived: archivedResult.count || 0,
   };

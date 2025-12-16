@@ -1,132 +1,176 @@
 // File: /home/nneessen/projects/commissionTracker/supabase/functions/send-automated-email/index.ts
 // Send Automated Email Edge Function
-// Sends automated emails using Resend API
+// Sends automated emails using Mailgun API
 // This function is for system-generated emails (workflows, notifications) not user emails
 
-import {serve} from 'https://deno.land/std@0.168.0/http/server.ts'
-import {createSupabaseAdminClient} from '../_shared/supabase-client.ts'
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createSupabaseAdminClient } from "../_shared/supabase-client.ts";
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
+};
 
 interface SendEmailRequest {
-  to: string
-  subject: string
-  html: string
-  text?: string
-  from?: string
+  to: string;
+  subject: string;
+  html: string;
+  text?: string;
+  from?: string;
+  replyTo?: string;
 }
 
 serve(async (req) => {
   // Handle CORS preflight
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
   }
 
   try {
-    const body: SendEmailRequest = await req.json()
-    const { to, subject, html, text } = body
+    const body: SendEmailRequest = await req.json();
+    const { to, subject, html, text, replyTo } = body;
 
     if (!to || !subject || !html) {
       return new Response(
-        JSON.stringify({ error: 'Missing required fields: to, subject, html' }),
+        JSON.stringify({
+          error: "Missing required fields: to, subject, html",
+        }),
         {
           status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      )
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
     }
 
-    // Get Resend API key from environment
-    const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
+    // Get Mailgun credentials
+    const MAILGUN_API_KEY = Deno.env.get("MAILGUN_API_KEY");
+    const MAILGUN_DOMAIN = Deno.env.get("MAILGUN_DOMAIN");
 
-    if (!RESEND_API_KEY) {
-      console.log('RESEND_API_KEY not configured, simulating email send')
+    if (!MAILGUN_API_KEY || !MAILGUN_DOMAIN) {
+      console.log("Mailgun credentials not configured, simulating email send");
 
       // For now, just log the email and return success
       // This allows the workflow to complete even without email service
-      console.log('=== SIMULATED EMAIL ===')
-      console.log('To:', to)
-      console.log('Subject:', subject)
-      console.log('Body (text):', text || '(no text version)')
-      console.log('Body (HTML):', html.substring(0, 200) + '...')
-      console.log('=======================')
+      console.log("=== SIMULATED EMAIL ===");
+      console.log("To:", to);
+      console.log("Subject:", subject);
+      console.log("Body (text):", text || "(no text version)");
+      console.log("Body (HTML):", html.substring(0, 200) + "...");
+      console.log("=======================");
 
       // Log to database for debugging
-      const adminSupabase = createSupabaseAdminClient()
-      await adminSupabase.from('email_logs').insert({
-        to,
-        subject,
-        body_html: html,
-        body_text: text,
-        status: 'simulated',
-        provider: 'none',
-        created_at: new Date().toISOString()
-      }).catch(_err => {
-        // Ignore if table doesn't exist
-        console.log('Could not log to email_logs table')
-      })
+      const adminSupabase = createSupabaseAdminClient();
+      await adminSupabase
+        .from("email_logs")
+        .insert({
+          to,
+          subject,
+          body_html: html,
+          body_text: text,
+          status: "simulated",
+          provider: "none",
+          created_at: new Date().toISOString(),
+        })
+        .catch((_err) => {
+          // Ignore if table doesn't exist
+          console.log("Could not log to email_logs table");
+        });
 
       return new Response(
         JSON.stringify({
           success: true,
           messageId: `simulated-${Date.now()}`,
           simulated: true,
-          message: 'Email simulated (no email service configured)'
+          message: "Email simulated (no email service configured)",
         }),
         {
           status: 200,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      )
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
     }
 
-    // Send via Resend API
-    const response = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${RESEND_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        from: body.from || 'Commission Tracker <noreply@commissiontracker.com>',
-        to: [to],
-        subject,
-        html,
-        text,
-      }),
-    })
+    // Generate Message-ID for tracking
+    const messageId = `<${crypto.randomUUID()}@${MAILGUN_DOMAIN}>`;
 
-    const data = await response.json()
+    // Build form data for Mailgun API
+    const form = new FormData();
+    form.append(
+      "from",
+      body.from || `The Standard HQ <noreply@${MAILGUN_DOMAIN}>`,
+    );
+    form.append("to", to);
+    form.append("subject", subject);
+    form.append("html", html);
+
+    if (text) {
+      form.append("text", text);
+    }
+
+    if (replyTo) {
+      form.append("h:Reply-To", replyTo);
+    }
+
+    // Add Message-ID header
+    form.append("h:Message-Id", messageId);
+
+    // Enable tracking for automated emails
+    form.append("o:tracking", "yes");
+    form.append("o:tracking-clicks", "yes");
+    form.append("o:tracking-opens", "yes");
+
+    // Tag for analytics
+    form.append("o:tag", "automated");
+
+    console.log("Sending automated email via Mailgun:", {
+      to,
+      subject: subject.substring(0, 50),
+    });
+
+    // Send via Mailgun API
+    const response = await fetch(
+      `https://api.mailgun.net/v3/${MAILGUN_DOMAIN}/messages`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Basic ${btoa(`api:${MAILGUN_API_KEY}`)}`,
+        },
+        body: form,
+      },
+    );
+
+    const data = await response.json();
 
     if (!response.ok) {
-      console.error('Resend API error:', data)
-      throw new Error(data.message || 'Failed to send email')
+      console.error("Mailgun API error:", data);
+      throw new Error(data.message || "Failed to send email");
     }
+
+    console.log("Automated email sent successfully:", data.id);
 
     return new Response(
       JSON.stringify({
         success: true,
-        messageId: data.id,
-        message: 'Email sent successfully'
+        messageId: messageId,
+        mailgunId: data.id,
+        message: "Email sent successfully",
       }),
       {
         status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
-    )
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      },
+    );
   } catch (err) {
-    console.error('Send automated email error:', err)
-    const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+    console.error("Send automated email error:", err);
+    const errorMessage = err instanceof Error ? err.message : "Unknown error";
 
     return new Response(
       JSON.stringify({ success: false, error: errorMessage }),
       {
         status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
-    )
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      },
+    );
   }
-})
+});

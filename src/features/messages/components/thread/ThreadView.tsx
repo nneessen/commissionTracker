@@ -201,15 +201,15 @@ export function ThreadView({ threadId, onClose }: ThreadViewProps) {
       <div className="flex-shrink-0 border-b border-border px-4 py-3 bg-card">
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
-            <h2 className="text-sm font-semibold leading-tight">
+            <h2 className="text-base font-semibold leading-tight">
               {thread.subject}
             </h2>
             <div className="flex items-center gap-2 mt-1">
-              <span className="text-[10px] text-muted-foreground">
+              <span className="text-sm text-muted-foreground">
                 {totalMessages} message{totalMessages !== 1 ? "s" : ""}
               </span>
               {thread.isStarred && (
-                <Star className="h-3 w-3 text-yellow-500 fill-yellow-500" />
+                <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
               )}
             </div>
           </div>
@@ -263,22 +263,19 @@ export function ThreadView({ threadId, onClose }: ThreadViewProps) {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem className="text-[11px]" onClick={handleReply}>
-                  <Reply className="h-3.5 w-3.5 mr-2" /> Reply
+                <DropdownMenuItem className="text-sm" onClick={handleReply}>
+                  <Reply className="h-4 w-4 mr-2" /> Reply
                 </DropdownMenuItem>
-                <DropdownMenuItem
-                  className="text-[11px]"
-                  onClick={handleForward}
-                >
-                  <Forward className="h-3.5 w-3.5 mr-2" /> Forward
+                <DropdownMenuItem className="text-sm" onClick={handleForward}>
+                  <Forward className="h-4 w-4 mr-2" /> Forward
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
-                  className="text-[11px] text-destructive"
+                  className="text-sm text-destructive"
                   onClick={handleDelete}
                   disabled={isDeleting}
                 >
-                  <Trash2 className="h-3.5 w-3.5 mr-2" /> Delete
+                  <Trash2 className="h-4 w-4 mr-2" /> Delete
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -301,18 +298,18 @@ export function ThreadView({ threadId, onClose }: ThreadViewProps) {
             <div className="flex justify-center py-2">
               <Button
                 size="sm"
-                className="h-7 text-[10px] gap-1.5 bg-primary/10 hover:bg-primary/20 text-primary border-0 shadow-none"
+                className="h-8 text-sm gap-1.5 bg-primary/10 hover:bg-primary/20 text-primary border-0 shadow-none"
                 onClick={loadMoreMessages}
                 disabled={isLoadingMore}
               >
                 {isLoadingMore ? (
                   <>
-                    <Loader2 className="h-3 w-3 animate-spin" />
+                    <Loader2 className="h-4 w-4 animate-spin" />
                     Loading...
                   </>
                 ) : (
                   <>
-                    <ChevronUp className="h-3 w-3" />
+                    <ChevronUp className="h-4 w-4" />
                     Load earlier messages
                   </>
                 )}
@@ -323,7 +320,7 @@ export function ThreadView({ threadId, onClose }: ThreadViewProps) {
           {/* Collapsed messages indicator */}
           {collapsedCount > 0 && !hasMore && (
             <div className="flex items-center justify-center py-2">
-              <span className="text-[10px] text-muted-foreground">
+              <span className="text-sm text-muted-foreground">
                 {collapsedCount} earlier message
                 {collapsedCount !== 1 ? "s" : ""} collapsed
               </span>
@@ -352,26 +349,26 @@ export function ThreadView({ threadId, onClose }: ThreadViewProps) {
         <div className="flex items-center gap-1.5">
           <Button
             size="sm"
-            className="h-7 text-[11px] gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground border-0 shadow-none"
+            className="h-8 text-sm gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground border-0 shadow-none"
             onClick={handleReply}
           >
-            <Reply className="h-3.5 w-3.5" />
+            <Reply className="h-4 w-4" />
             Reply
           </Button>
           <Button
             size="sm"
-            className="h-7 text-[11px] gap-1.5 bg-primary/10 hover:bg-primary/20 text-primary border-0 shadow-none"
+            className="h-8 text-sm gap-1.5 bg-primary/10 hover:bg-primary/20 text-primary border-0 shadow-none"
             onClick={handleReply}
           >
-            <ReplyAll className="h-3.5 w-3.5" />
+            <ReplyAll className="h-4 w-4" />
             Reply All
           </Button>
           <Button
             size="sm"
-            className="h-7 text-[11px] gap-1.5 bg-primary/10 hover:bg-primary/20 text-primary border-0 shadow-none"
+            className="h-8 text-sm gap-1.5 bg-primary/10 hover:bg-primary/20 text-primary border-0 shadow-none"
             onClick={handleForward}
           >
-            <Forward className="h-3.5 w-3.5" />
+            <Forward className="h-4 w-4" />
             Forward
           </Button>
         </div>
@@ -391,6 +388,8 @@ export function ThreadView({ threadId, onClose }: ThreadViewProps) {
 interface MessageCardProps {
   message: {
     id: string;
+    senderId?: string;
+    senderName?: string;
     fromAddress: string;
     toAddresses: string[];
     ccAddresses?: string[];
@@ -416,9 +415,23 @@ function MessageCard({
   isLast: _isLast,
   onToggle,
 }: MessageCardProps) {
-  const initials = getInitials(message.fromAddress);
   const isAutomated = message.source === "workflow";
   const isSent = !message.isIncoming;
+
+  // Use senderName for display, fallback to formatted email
+  const displayName = isSent
+    ? "Me"
+    : message.senderName || formatEmailAddress(message.fromAddress);
+  const initials = isSent
+    ? "ME"
+    : message.senderName
+      ? message.senderName
+          .split(" ")
+          .map((n) => n[0])
+          .join("")
+          .toUpperCase()
+          .slice(0, 2)
+      : getInitials(message.fromAddress);
 
   return (
     <div
@@ -442,13 +455,13 @@ function MessageCard({
         <div className="flex items-center gap-2">
           <Avatar
             className={cn(
-              "h-7 w-7 flex-shrink-0",
+              "h-8 w-8 flex-shrink-0",
               isSent ? "ring-2 ring-primary/30" : "",
             )}
           >
             <AvatarFallback
               className={cn(
-                "text-[9px] font-medium",
+                "text-xs font-medium",
                 isSent
                   ? "bg-primary/20 text-primary"
                   : "bg-muted text-muted-foreground",
@@ -460,27 +473,27 @@ function MessageCard({
 
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5">
-              <span className="text-[11px] font-medium truncate">
-                {formatEmailAddress(message.fromAddress)}
+              <span className="text-sm font-medium truncate">
+                {displayName}
               </span>
               {isSent && (
                 <Badge
                   variant="outline"
-                  className="h-4 px-1 text-[8px] border-primary/40 text-primary"
+                  className="h-5 px-1.5 text-xs border-primary/40 text-primary"
                 >
-                  <Send className="h-2 w-2 mr-0.5" />
+                  <Send className="h-3 w-3 mr-0.5" />
                   Sent
                 </Badge>
               )}
               {isAutomated && (
-                <Badge variant="secondary" className="h-4 px-1 text-[8px]">
-                  <Bot className="h-2 w-2 mr-0.5" />
+                <Badge variant="secondary" className="h-5 px-1.5 text-xs">
+                  <Bot className="h-3 w-3 mr-0.5" />
                   Auto
                 </Badge>
               )}
             </div>
             {!isExpanded && (
-              <div className="text-[10px] text-muted-foreground truncate mt-0.5">
+              <div className="text-sm text-muted-foreground truncate mt-0.5">
                 {message.bodyText?.slice(0, 80)}...
               </div>
             )}
@@ -490,30 +503,30 @@ function MessageCard({
             {/* Tracking stats for sent messages */}
             {isSent && (message.openCount || 0) > 0 && (
               <span
-                className="text-[9px] text-muted-foreground flex items-center gap-0.5"
+                className="text-xs text-muted-foreground flex items-center gap-0.5"
                 title="Opens"
               >
-                <Eye className="h-2.5 w-2.5" />
+                <Eye className="h-3.5 w-3.5" />
                 {message.openCount}
               </span>
             )}
             {isSent && (message.clickCount || 0) > 0 && (
               <span
-                className="text-[9px] text-muted-foreground flex items-center gap-0.5"
+                className="text-xs text-muted-foreground flex items-center gap-0.5"
                 title="Clicks"
               >
-                <MousePointer className="h-2.5 w-2.5" />
+                <MousePointer className="h-3.5 w-3.5" />
                 {message.clickCount}
               </span>
             )}
 
-            <span className="text-[10px] text-muted-foreground">
+            <span className="text-sm text-muted-foreground">
               {formatMessageDate(message.createdAt)}
             </span>
             {isExpanded ? (
-              <ChevronUp className="h-3 w-3 text-muted-foreground" />
+              <ChevronUp className="h-4 w-4 text-muted-foreground" />
             ) : (
-              <ChevronDown className="h-3 w-3 text-muted-foreground" />
+              <ChevronDown className="h-4 w-4 text-muted-foreground" />
             )}
           </div>
         </div>
@@ -523,27 +536,27 @@ function MessageCard({
       {isExpanded && (
         <div>
           {/* Email metadata */}
-          <div className="px-3 py-2 bg-muted/20 text-[10px] text-muted-foreground space-y-0.5">
+          <div className="px-3 py-2 bg-muted/20 text-sm text-muted-foreground space-y-0.5">
             <div className="flex items-start gap-1">
-              <span className="font-medium w-8">From:</span>
+              <span className="font-medium w-10">From:</span>
               <span className="truncate">{message.fromAddress}</span>
             </div>
             <div className="flex items-start gap-1">
-              <span className="font-medium w-8">To:</span>
+              <span className="font-medium w-10">To:</span>
               <span className="truncate">
                 {message.toAddresses?.join(", ")}
               </span>
             </div>
             {message.ccAddresses && message.ccAddresses.length > 0 && (
               <div className="flex items-start gap-1">
-                <span className="font-medium w-8">CC:</span>
+                <span className="font-medium w-10">CC:</span>
                 <span className="truncate">
                   {message.ccAddresses.join(", ")}
                 </span>
               </div>
             )}
             <div className="flex items-start gap-1">
-              <span className="font-medium w-8">Date:</span>
+              <span className="font-medium w-10">Date:</span>
               <span>{format(new Date(message.createdAt), "PPpp")}</span>
             </div>
           </div>
@@ -551,7 +564,7 @@ function MessageCard({
           {/* Email body */}
           <div
             className={cn(
-              "px-4 py-3 text-[11px] leading-relaxed",
+              "px-4 py-3 text-sm leading-relaxed",
               // Prose styling for HTML content
               "prose prose-sm max-w-none",
               "prose-p:my-2 prose-p:leading-relaxed",
@@ -560,8 +573,8 @@ function MessageCard({
               "prose-li:my-0.5",
               "prose-a:text-primary prose-a:no-underline hover:prose-a:underline",
               "prose-blockquote:border-l-2 prose-blockquote:border-muted-foreground/30 prose-blockquote:pl-3 prose-blockquote:italic prose-blockquote:text-muted-foreground",
-              "prose-pre:bg-muted prose-pre:text-[10px]",
-              "prose-code:text-[10px] prose-code:bg-muted prose-code:px-1 prose-code:rounded",
+              "prose-pre:bg-muted prose-pre:text-xs",
+              "prose-code:text-xs prose-code:bg-muted prose-code:px-1 prose-code:rounded",
               // Dark mode support
               "dark:prose-invert",
             )}
@@ -577,8 +590,8 @@ function MessageCard({
             message.attachments &&
             message.attachments.length > 0 && (
               <div className="px-3 py-2 border-t border-border/50 bg-muted/20">
-                <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground mb-2">
-                  <Paperclip className="h-3 w-3" />
+                <div className="flex items-center gap-1.5 text-sm text-muted-foreground mb-2">
+                  <Paperclip className="h-4 w-4" />
                   <span>
                     {message.attachments.length} attachment
                     {message.attachments.length !== 1 ? "s" : ""}
@@ -589,14 +602,14 @@ function MessageCard({
                     <Button
                       key={i}
                       size="sm"
-                      className="h-6 text-[10px] gap-1 bg-primary/10 hover:bg-primary/20 text-primary border-0 shadow-none"
+                      className="h-7 text-sm gap-1 bg-primary/10 hover:bg-primary/20 text-primary border-0 shadow-none"
                     >
-                      <Paperclip className="h-2.5 w-2.5" />
-                      <span className="max-w-[100px] truncate">{att.name}</span>
+                      <Paperclip className="h-3.5 w-3.5" />
+                      <span className="max-w-[120px] truncate">{att.name}</span>
                       <span className="text-primary/70">
                         ({formatFileSize(att.size)})
                       </span>
-                      <ExternalLink className="h-2.5 w-2.5" />
+                      <ExternalLink className="h-3.5 w-3.5" />
                     </Button>
                   ))}
                 </div>

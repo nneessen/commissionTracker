@@ -47,16 +47,16 @@ export interface EmailDraft {
   updatedAt: string;
 }
 
-// Multi-domain configuration for different email types
-// - personal: Direct emails from compose (best inbox placement)
-// - workflow: Automated system emails (isolated reputation)
-// - bulk: Newsletters/campaigns (protects other domains from spam complaints)
-// - owner: Root domain for owner's personal correspondence
+// Mailgun domain configuration
+// All emails go through the same Mailgun domain for simplicity
+// Different email sources are tracked via the 'source' column
+const MAILGUN_DOMAIN = "updates.thestandardhq.com";
+
 export const EMAIL_DOMAINS: Record<EmailSource, string> = {
-  personal: "mail.thestandardhq.com",
-  workflow: "notifications.thestandardhq.com",
-  bulk: "updates.thestandardhq.com",
-  owner: "thestandardhq.com",
+  personal: MAILGUN_DOMAIN,
+  workflow: MAILGUN_DOMAIN,
+  bulk: MAILGUN_DOMAIN,
+  owner: MAILGUN_DOMAIN,
 } as const;
 
 // Helper to get domain based on email source
@@ -118,8 +118,31 @@ export async function sendEmail(
       }
     }
 
-    // Generate tracking ID
+    // Generate tracking ID and Message-ID for threading
     const trackingId = crypto.randomUUID();
+    const messageId = `<${crypto.randomUUID()}@${MAILGUN_DOMAIN}>`;
+
+    // Get threading headers if this is a reply
+    let inReplyToHeader: string | null = null;
+    let referencesArray: string[] = [];
+
+    if (replyToMessageId) {
+      // Fetch the parent message to get its Message-ID and References
+      const { data: parentMessage } = await supabase
+        .from("user_emails")
+        .select("message_id_header, references_header")
+        .eq("id", replyToMessageId)
+        .single();
+
+      if (parentMessage?.message_id_header) {
+        inReplyToHeader = parentMessage.message_id_header;
+        // Build References chain: parent's references + parent's Message-ID
+        referencesArray = [
+          ...(parentMessage.references_header || []),
+          parentMessage.message_id_header,
+        ];
+      }
+    }
 
     // Add tracking pixel if enabled
     if (trackOpens) {
@@ -272,7 +295,10 @@ export async function sendEmail(
         trackingId,
         userId,
         threadId: finalThreadId,
-        replyToMessageId,
+        // Threading headers for Mailgun
+        messageId,
+        inReplyTo: inReplyToHeader,
+        references: referencesArray.length > 0 ? referencesArray : undefined,
       },
     });
 
@@ -315,6 +341,12 @@ export async function sendEmail(
         status: "sent",
         tracking_id: trackingId,
         source: source, // Track email source for domain selection
+        // Threading headers for proper thread reconstruction
+        message_id_header: messageId,
+        in_reply_to_header: inReplyToHeader,
+        references_header: referencesArray.length > 0 ? referencesArray : null,
+        provider: "mailgun",
+        provider_message_id: data?.mailgunId,
         created_at: new Date().toISOString(),
       })
       .select()
@@ -322,14 +354,34 @@ export async function sendEmail(
 
     if (emailRecordError) {
       // Email was sent successfully but record wasn't saved
-      // Log but don't fail - the email went out
+      // This is a critical error - the email won't appear in the sent folder
       console.error(
-        "[sendEmail] Error saving sent email record:",
+        "[sendEmail] CRITICAL: Email sent but record failed to save:",
         emailRecordError,
       );
-    } else {
-      console.log("[sendEmail] Email record saved:", emailRecord?.id);
+      console.error("[sendEmail] Insert payload was:", {
+        user_id: userId,
+        sender_id: userId,
+        thread_id: finalThreadId,
+        from_address: fromAddress,
+        to_addresses: to,
+        subject,
+        is_incoming: false,
+        status: "sent",
+      });
+      // Return partial success with warning
+      return {
+        success: true,
+        messageId: data?.messageId || trackingId,
+        error:
+          "Email sent but failed to save record. It may not appear in Sent folder.",
+      };
     }
+
+    console.log(
+      "[sendEmail] Email record saved successfully:",
+      emailRecord?.id,
+    );
 
     // Update quota
     await incrementQuota(userId);
@@ -380,30 +432,66 @@ export async function getEmailQuota(userId: string): Promise<EmailQuota> {
 
 async function incrementQuota(userId: string): Promise<void> {
   const today = new Date().toISOString().split("T")[0];
-  const provider = "resend"; // Default email provider
+  const provider = "mailgun"; // Email provider
+
+  console.log(
+    "[incrementQuota] Incrementing quota for user:",
+    userId,
+    "date:",
+    today,
+  );
 
   // Check if record exists for today
-  const { data: existing } = await supabase
+  const { data: existing, error: selectError } = await supabase
     .from("email_quota_tracking")
     .select("id, emails_sent")
     .eq("user_id", userId)
     .eq("date", today)
     .single();
 
+  if (selectError && selectError.code !== "PGRST116") {
+    console.error(
+      "[incrementQuota] Error checking existing quota:",
+      selectError,
+    );
+  }
+
   if (existing) {
     // Increment existing record
-    await supabase
+    const newCount = (existing.emails_sent || 0) + 1;
+    console.log(
+      "[incrementQuota] Updating existing record, new count:",
+      newCount,
+    );
+
+    const { error: updateError } = await supabase
       .from("email_quota_tracking")
-      .update({ emails_sent: (existing.emails_sent || 0) + 1 })
+      .update({ emails_sent: newCount })
       .eq("id", existing.id);
+
+    if (updateError) {
+      console.error("[incrementQuota] Error updating quota:", updateError);
+    } else {
+      console.log("[incrementQuota] Quota updated successfully to:", newCount);
+    }
   } else {
     // Insert new record
-    await supabase.from("email_quota_tracking").insert({
-      user_id: userId,
-      date: today,
-      emails_sent: 1,
-      provider,
-    });
+    console.log("[incrementQuota] Creating new quota record");
+
+    const { error: insertError } = await supabase
+      .from("email_quota_tracking")
+      .insert({
+        user_id: userId,
+        date: today,
+        emails_sent: 1,
+        provider,
+      });
+
+    if (insertError) {
+      console.error("[incrementQuota] Error inserting quota:", insertError);
+    } else {
+      console.log("[incrementQuota] Quota record created successfully");
+    }
   }
 }
 

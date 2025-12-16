@@ -12,20 +12,24 @@ interface ThreadListItemProps {
   thread: Thread;
   isSelected: boolean;
   onClick: () => void;
+  isSentView?: boolean;
 }
 
 export function ThreadListItem({
   thread,
   isSelected,
   onClick,
+  isSentView = false,
 }: ThreadListItemProps) {
   const isUnread = thread.unreadCount > 0;
   const hasAttachments = thread.latestMessage?.hasAttachments;
   const isAutomated = thread.source === "workflow";
 
-  // Get initials from first participant
+  // Get initials and display name based on view type
   const firstParticipant = thread.participantEmails[0] || "Unknown";
-  const initials = getInitials(firstParticipant);
+  // In sent view, show "Me" as sender; otherwise show participant name
+  const displayName = isSentView ? "Me" : formatParticipant(firstParticipant);
+  const initials = isSentView ? "ME" : getInitials(firstParticipant);
 
   // Format relative time
   const timeAgo = formatDistanceToNow(new Date(thread.lastMessageAt), {
@@ -43,8 +47,8 @@ export function ThreadListItem({
     >
       <div className="flex items-start gap-2">
         {/* Avatar */}
-        <Avatar className="h-7 w-7 flex-shrink-0">
-          <AvatarFallback className="text-[10px] bg-muted">
+        <Avatar className="h-8 w-8 flex-shrink-0">
+          <AvatarFallback className="text-xs bg-muted">
             {initials}
           </AvatarFallback>
         </Avatar>
@@ -56,28 +60,28 @@ export function ThreadListItem({
             {/* Sender name */}
             <span
               className={cn(
-                "text-[11px] truncate flex-1",
+                "text-sm truncate flex-1",
                 isUnread
                   ? "font-semibold"
                   : "font-medium text-muted-foreground",
               )}
             >
-              {formatParticipant(firstParticipant)}
+              {displayName}
             </span>
 
             {/* Indicators */}
             {thread.isStarred && (
-              <Star className="h-3 w-3 text-yellow-500 fill-yellow-500 flex-shrink-0" />
+              <Star className="h-3.5 w-3.5 text-yellow-500 fill-yellow-500 flex-shrink-0" />
             )}
             {hasAttachments && (
-              <Paperclip className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+              <Paperclip className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
             )}
             {isAutomated && (
-              <Bot className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+              <Bot className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
             )}
 
             {/* Time */}
-            <span className="text-[10px] text-muted-foreground flex-shrink-0">
+            <span className="text-xs text-muted-foreground flex-shrink-0">
               {formatTimeAgo(timeAgo)}
             </span>
           </div>
@@ -85,7 +89,7 @@ export function ThreadListItem({
           {/* Subject */}
           <div
             className={cn(
-              "text-[11px] truncate",
+              "text-sm truncate",
               isUnread ? "font-medium" : "text-muted-foreground",
             )}
           >
@@ -93,7 +97,7 @@ export function ThreadListItem({
           </div>
 
           {/* Preview */}
-          <div className="text-[10px] text-muted-foreground truncate mt-0.5">
+          <div className="text-xs text-muted-foreground truncate mt-0.5">
             {thread.snippet}
           </div>
 
@@ -104,7 +108,7 @@ export function ThreadListItem({
                 <Badge
                   key={label.id}
                   variant="outline"
-                  className="h-4 px-1 text-[9px]"
+                  className="h-5 px-1.5 text-xs"
                   style={{
                     borderColor: label.color,
                     color: label.color,
@@ -114,7 +118,7 @@ export function ThreadListItem({
                 </Badge>
               ))}
               {thread.labels.length > 3 && (
-                <span className="text-[9px] text-muted-foreground">
+                <span className="text-xs text-muted-foreground">
                   +{thread.labels.length - 3}
                 </span>
               )}
@@ -126,7 +130,7 @@ export function ThreadListItem({
         {thread.messageCount > 1 && (
           <Badge
             variant="secondary"
-            className="h-4 min-w-[16px] px-1 text-[9px] flex-shrink-0"
+            className="h-5 min-w-[18px] px-1.5 text-xs flex-shrink-0"
           >
             {thread.messageCount}
           </Badge>

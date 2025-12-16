@@ -58,6 +58,7 @@ export function ThreadList({
             thread={thread}
             isSelected={selectedThreadId === thread.id}
             onClick={() => onThreadSelect(thread.id)}
+            isSentView={filter === "sent"}
           />
         ))}
       </div>

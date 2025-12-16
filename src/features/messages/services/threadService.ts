@@ -31,6 +31,8 @@ export interface ThreadLabel {
 export interface Message {
   id: string;
   threadId: string;
+  senderId?: string;
+  senderName?: string;
   fromAddress: string;
   toAddresses: string[];
   ccAddresses?: string[];
@@ -137,11 +139,11 @@ export async function getThreads(filters: ThreadFilters): Promise<Thread[]> {
 
   // For "sent" filter, we need to get thread IDs that have outgoing messages first
   if (filter === "sent") {
-    // Get thread IDs with outgoing messages
+    // Get thread IDs with outgoing messages - use sender_id to find emails sent BY this user
     const { data: sentThreadIds, error: sentError } = await supabase
       .from("user_emails")
       .select("thread_id")
-      .eq("user_id", userId)
+      .eq("sender_id", userId)
       .eq("is_incoming", false)
       .not("thread_id", "is", null);
 
@@ -170,6 +172,9 @@ export async function getThreads(filters: ThreadFilters): Promise<Thread[]> {
     }
 
     // Now get those threads
+    // Note: We don't filter by user_id here because the thread may have been
+    // created by the recipient (for inbound emails). We already have valid
+    // thread IDs from the first query based on sender_id.
     let query = supabase
       .from("email_threads")
       .select(
@@ -186,7 +191,6 @@ export async function getThreads(filters: ThreadFilters): Promise<Thread[]> {
         labels
       `,
       )
-      .eq("user_id", userId)
       .in("id", uniqueThreadIds)
       .eq("is_archived", false)
       .order("last_message_at", { ascending: false });
@@ -275,6 +279,30 @@ async function transformThreads(
     ]) || [],
   );
 
+  // Get latest message for each thread (for attachment indicator)
+  const threadIds = threads.map((t) => t.id as string);
+  const { data: latestMessages } = await supabase
+    .from("user_emails")
+    .select("id, thread_id, body_text, has_attachments")
+    .in("thread_id", threadIds)
+    .order("created_at", { ascending: false });
+
+  // Build map of thread_id -> latest message (first one per thread since ordered desc)
+  const latestMessageMap = new Map<
+    string,
+    { id: string; bodyText: string; hasAttachments: boolean }
+  >();
+  for (const msg of latestMessages || []) {
+    const threadId = msg.thread_id as string;
+    if (!latestMessageMap.has(threadId)) {
+      latestMessageMap.set(threadId, {
+        id: msg.id,
+        bodyText: msg.body_text || "",
+        hasAttachments: msg.has_attachments || false,
+      });
+    }
+  }
+
   // Transform to Thread interface
   return threads.map((t: Record<string, unknown>) => ({
     id: t.id as string,
@@ -289,6 +317,7 @@ async function transformThreads(
     labels: ((t.labels as string[]) || [])
       .map((labelId: string) => labelMap.get(labelId))
       .filter(Boolean) as ThreadLabel[],
+    latestMessage: latestMessageMap.get(t.id as string),
     source: undefined,
   }));
 }
@@ -317,6 +346,8 @@ export async function getThread(
   const limit = options?.limit ?? 20; // Default: fetch latest 20 messages
   const offset = options?.offset ?? 0;
 
+  console.log("[getThread] Fetching thread:", threadId, "for user:", userId);
+
   // Get thread
   const { data: thread, error: threadError } = await supabase
     .from("email_threads")
@@ -326,24 +357,47 @@ export async function getThread(
     .single();
 
   if (threadError || !thread) {
-    console.error("Error fetching thread:", threadError);
+    console.error("[getThread] Error fetching thread:", threadError);
     return null;
   }
+
+  console.log("[getThread] Thread found:", {
+    id: thread.id,
+    subject: thread.subject,
+  });
 
   const totalMessages = thread.message_count || 0;
 
   // Get messages with pagination - latest messages first for initial load
   // We'll reverse them in UI to show chronologically
+  // Join with user_profiles to get sender name
   const { data: messages, error: messagesError } = await supabase
     .from("user_emails")
-    .select("*")
+    .select(
+      `
+      *,
+      sender:user_profiles!user_emails_sender_id_fkey(id, first_name, last_name, email)
+    `,
+    )
     .eq("thread_id", threadId)
     .order("created_at", { ascending: false }) // Latest first
     .range(offset, offset + limit - 1);
 
   if (messagesError) {
-    console.error("Error fetching messages:", messagesError);
+    console.error("[getThread] Error fetching messages:", messagesError);
     throw messagesError;
+  }
+
+  console.log("[getThread] Messages fetched:", messages?.length || 0);
+  if (messages && messages.length > 0) {
+    const firstMsg = messages[0];
+    console.log("[getThread] First message sample:", {
+      id: firstMsg.id,
+      from_address: firstMsg.from_address,
+      sender: firstMsg.sender,
+      body_html_length: firstMsg.body_html?.length || 0,
+      body_text_length: firstMsg.body_text?.length || 0,
+    });
   }
 
   // Reverse to show in chronological order (oldest to newest)
@@ -362,29 +416,46 @@ export async function getThread(
       isArchived: thread.is_archived || false,
       labels: [], // Labels removed - simplified folder system
     },
-    messages: chronologicalMessages.map((m: Record<string, unknown>) => ({
-      id: m.id as string,
-      threadId: (m.thread_id as string) || threadId,
-      fromAddress: (m.from_address as string) || "",
-      toAddresses: (m.to_addresses as string[]) || [],
-      ccAddresses: (m.cc_addresses as string[]) || [],
-      bccAddresses: (m.bcc_addresses as string[]) || [],
-      subject: (m.subject as string) || "(No Subject)",
-      bodyHtml: (m.body_html as string) || "",
-      bodyText:
-        (m.body_text as string) ||
-        (m.body_html as string)?.replace(/<[^>]*>/g, "") ||
-        "",
-      createdAt: m.created_at as string,
-      isIncoming: (m.is_incoming as boolean) || false,
-      isRead: (m.is_read as boolean) || false,
-      hasAttachments: (m.has_attachments as boolean) || false,
-      attachments:
-        (m.attachments as { name: string; size: number; url?: string }[]) || [],
-      source: m.source as string | undefined,
-      openCount: (m.open_count as number) || 0,
-      clickCount: (m.click_count as number) || 0,
-    })),
+    messages: chronologicalMessages.map((m: Record<string, unknown>) => {
+      // Extract sender info from the joined data
+      const sender = m.sender as {
+        id: string;
+        first_name: string | null;
+        last_name: string | null;
+        email: string;
+      } | null;
+      const senderName = sender
+        ? `${sender.first_name || ""} ${sender.last_name || ""}`.trim() ||
+          sender.email
+        : undefined;
+
+      return {
+        id: m.id as string,
+        threadId: (m.thread_id as string) || threadId,
+        senderId: (m.sender_id as string) || undefined,
+        senderName,
+        fromAddress: (m.from_address as string) || "",
+        toAddresses: (m.to_addresses as string[]) || [],
+        ccAddresses: (m.cc_addresses as string[]) || [],
+        bccAddresses: (m.bcc_addresses as string[]) || [],
+        subject: (m.subject as string) || "(No Subject)",
+        bodyHtml: (m.body_html as string) || "",
+        bodyText:
+          (m.body_text as string) ||
+          (m.body_html as string)?.replace(/<[^>]*>/g, "") ||
+          "",
+        createdAt: m.created_at as string,
+        isIncoming: (m.is_incoming as boolean) || false,
+        isRead: (m.is_read as boolean) || false,
+        hasAttachments: (m.has_attachments as boolean) || false,
+        attachments:
+          (m.attachments as { name: string; size: number; url?: string }[]) ||
+          [],
+        source: m.source as string | undefined,
+        openCount: (m.open_count as number) || 0,
+        clickCount: (m.click_count as number) || 0,
+      };
+    }),
     totalMessages,
     hasMore: offset + limit < totalMessages,
   };
