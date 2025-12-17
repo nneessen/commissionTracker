@@ -1,12 +1,18 @@
 // src/features/targets/components/TargetInputDialog.tsx
 
-import React, { useState } from 'react';
-import {Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter} from '@/components/ui/dialog';
-import {Button} from '@/components/ui/button';
-import {Input} from '@/components/ui/input';
-import {Label} from '@/components/ui/label';
-import {Alert, AlertDescription} from '@/components/ui/alert';
-import {TrendingUp, Calculator, Target} from 'lucide-react';
+import React, { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { TrendingUp, Calculator, Target } from "lucide-react";
 
 interface TargetInputDialogProps {
   open: boolean;
@@ -24,39 +30,39 @@ export function TargetInputDialog({
   isFirstTime = false,
 }: TargetInputDialogProps) {
   const [inputValue, setInputValue] = useState<string>(
-    currentTarget > 0 ? currentTarget.toString() : ''
+    currentTarget > 0 ? currentTarget.toString() : "",
   );
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string>('');
+  const [error, setError] = useState<string>("");
 
   const currentYear = new Date().getFullYear();
 
   const handleSubmit = async () => {
-    const value = parseFloat(inputValue.replace(/,/g, ''));
+    const value = parseFloat(inputValue.replace(/,/g, ""));
 
     if (isNaN(value) || value <= 0) {
-      setError('Please enter a valid income target greater than 0');
+      setError("Please enter a valid income target greater than 0");
       return;
     }
 
     if (value < 10000) {
-      setError('Income target should be at least $10,000');
+      setError("Income target should be at least $10,000");
       return;
     }
 
     if (value > 10000000) {
-      setError('Income target seems too high. Please verify the amount.');
+      setError("Income target seems too high. Please verify the amount.");
       return;
     }
 
     setIsLoading(true);
-    setError('');
+    setError("");
 
     try {
       await onSave(value);
       onClose();
     } catch (_err) {
-      setError('Failed to save target. Please try again.');
+      setError("Failed to save target. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -64,15 +70,15 @@ export function TargetInputDialog({
 
   const formatInputValue = (value: string) => {
     // Remove non-numeric characters except decimal point
-    const numericValue = value.replace(/[^0-9.]/g, '');
+    const numericValue = value.replace(/[^0-9.]/g, "");
 
     // Add thousand separators for display
     if (numericValue) {
-      const parts = numericValue.split('.');
-      parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-      return parts.join('.');
+      const parts = numericValue.split(".");
+      parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+      return parts.join(".");
     }
-    return '';
+    return "";
   };
 
   return (
@@ -80,14 +86,17 @@ export function TargetInputDialog({
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Target className="h-5 w-5 text-primary" />
-            {isFirstTime ? 'Welcome to Your Targets Dashboard' : 'Set Your Annual Income Target'}
+            <Target className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+            {isFirstTime
+              ? "Welcome to Your Targets Dashboard"
+              : "Set Your Annual Income Target"}
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-zinc-500 dark:text-zinc-400">
             {isFirstTime ? (
               <>
-                Let's start by setting your commission income goal for {currentYear}.
-                Everything else will be calculated automatically based on your historical data.
+                Let's start by setting your commission income goal for{" "}
+                {currentYear}. Everything else will be calculated automatically
+                based on your historical data.
               </>
             ) : (
               <>
@@ -100,35 +109,44 @@ export function TargetInputDialog({
 
         <div className="space-y-4 py-4">
           {isFirstTime && (
-            <Alert>
-              <TrendingUp className="h-4 w-4" />
-              <AlertDescription>
+            <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3 flex items-start gap-2">
+              <TrendingUp className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+              <div className="text-blue-700 dark:text-blue-300">
                 <strong>How it works:</strong>
                 <ul className="mt-2 space-y-1 text-sm">
-                  <li>• We'll use your historical commission rates and policy data</li>
-                  <li>• Calculate how many policies you need to hit your target</li>
+                  <li>
+                    • We'll use your historical commission rates and policy data
+                  </li>
+                  <li>
+                    • Calculate how many policies you need to hit your target
+                  </li>
                   <li>• Break it down by quarter, month, week, and day</li>
                   <li>• Show you exactly what you need to achieve</li>
                 </ul>
-              </AlertDescription>
-            </Alert>
+              </div>
+            </div>
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="annual-target">
+            <Label
+              htmlFor="annual-target"
+              className="text-zinc-900 dark:text-zinc-100"
+            >
               Annual Commission Income Target for {currentYear}
             </Label>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 dark:text-zinc-400">
                 $
               </span>
               <Input
                 id="annual-target"
                 type="text"
                 value={formatInputValue(inputValue)}
-                onChange={(e) => setInputValue(e.target.value.replace(/,/g, ''))}
+                onChange={(e) =>
+                  setInputValue(e.target.value.replace(/,/g, ""))
+                }
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !isLoading) {
+                  if (e.key === "Enter" && !isLoading) {
                     handleSubmit();
                   }
                 }}
@@ -138,22 +156,27 @@ export function TargetInputDialog({
               />
             </div>
             {error && (
-              <p className="text-sm text-destructive">{error}</p>
+              <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
             )}
-            <p className="text-xs text-muted-foreground">
-              This is your total commission income goal for the year, not including expenses.
+            <p className="text-xs text-zinc-500 dark:text-zinc-400">
+              This is your total commission income goal for the year, not
+              including expenses.
             </p>
           </div>
 
-          <div className="rounded-lg bg-muted/30 p-3 space-y-2">
+          <div className="rounded-lg bg-zinc-100 dark:bg-zinc-800 p-3 space-y-2">
             <div className="flex items-start gap-2">
-              <Calculator className="h-4 w-4 text-muted-foreground mt-0.5" />
+              <Calculator className="h-4 w-4 text-zinc-500 dark:text-zinc-400 mt-0.5" />
               <div className="text-sm">
-                <p className="font-medium">What we'll calculate for you:</p>
-                <ul className="mt-1 space-y-0.5 text-muted-foreground">
+                <p className="font-medium text-zinc-900 dark:text-zinc-100">
+                  What we'll calculate for you:
+                </p>
+                <ul className="mt-1 space-y-0.5 text-zinc-500 dark:text-zinc-400">
                   <li>• Quarterly target: Annual ÷ 4</li>
                   <li>• Monthly target: Annual ÷ 12</li>
-                  <li>• Policies needed based on your average commission rate</li>
+                  <li>
+                    • Policies needed based on your average commission rate
+                  </li>
                   <li>• Daily and weekly pace requirements</li>
                 </ul>
               </div>
@@ -162,18 +185,11 @@ export function TargetInputDialog({
         </div>
 
         <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={onClose}
-            disabled={isLoading}
-          >
+          <Button variant="outline" onClick={onClose} disabled={isLoading}>
             Cancel
           </Button>
-          <Button
-            onClick={handleSubmit}
-            disabled={isLoading || !inputValue}
-          >
-            {isLoading ? 'Saving...' : 'Set Target'}
+          <Button onClick={handleSubmit} disabled={isLoading || !inputValue}>
+            {isLoading ? "Saving..." : "Set Target"}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -1,21 +1,24 @@
 // src/features/targets/TargetsPage.tsx
 
-import {useState, useEffect} from "react";
-import {useTargets, useUpdateTargets, useActualMetrics} from "../../hooks/targets";
-import {useHistoricalAverages} from "../../hooks/targets/useHistoricalAverages";
-import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
-import {Button} from "@/components/ui/button";
-import {Input} from "@/components/ui/input";
-import {Alert, AlertDescription} from "@/components/ui/alert";
-import {Edit2, Target, TrendingUp, DollarSign, Calendar, FileText, AlertCircle, ChevronRight} from "lucide-react";
-import {cn} from "@/lib/utils";
-import {formatCurrency, formatPercent} from "../../lib/format";
-import {MetricTooltip} from "../../components/ui/MetricTooltip";
+import { useState, useEffect } from "react";
+import {
+  useTargets,
+  useUpdateTargets,
+  useActualMetrics,
+} from "../../hooks/targets";
+import { useHistoricalAverages } from "../../hooks/targets/useHistoricalAverages";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Edit2, Target, AlertCircle } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { formatCurrency, formatPercent } from "../../lib/format";
 import showToast from "../../utils/toast";
-import {targetsCalculationService, CalculatedTargets} from "../../services/targets/targetsCalculationService";
-import {TargetInputDialog} from "./components/TargetInputDialog";
-import {CalculationBreakdown} from "./components/CalculationBreakdown";
-import {PersistencyScenarios} from "./components/PersistencyScenarios";
+import {
+  targetsCalculationService,
+  CalculatedTargets,
+} from "../../services/targets/targetsCalculationService";
+import { TargetInputDialog } from "./components/TargetInputDialog";
+import { PersistencyScenarios } from "./components/PersistencyScenarios";
 
 export function TargetsPage() {
   const { data: targets, isLoading, error } = useTargets();
@@ -24,7 +27,8 @@ export function TargetsPage() {
   const { averages, isLoading: averagesLoading } = useHistoricalAverages();
 
   const [showInputDialog, setShowInputDialog] = useState(false);
-  const [calculatedTargets, setCalculatedTargets] = useState<CalculatedTargets | null>(null);
+  const [calculatedTargets, setCalculatedTargets] =
+    useState<CalculatedTargets | null>(null);
   const [annualTarget, setAnnualTarget] = useState<number>(0);
   const [isEditingInline, setIsEditingInline] = useState(false);
   const [inlineEditValue, setInlineEditValue] = useState<string>("");
@@ -92,7 +96,7 @@ export function TargetsPage() {
   };
 
   const handleInlineSave = async () => {
-    const value = parseFloat(inlineEditValue.replace(/,/g, ''));
+    const value = parseFloat(inlineEditValue.replace(/,/g, ""));
 
     if (isNaN(value) || value <= 0) {
       showToast.error("Please enter a valid target amount");
@@ -110,16 +114,20 @@ export function TargetsPage() {
 
   if (isLoading || averagesLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-muted-foreground text-sm">Loading targets...</div>
+      <div className="h-[calc(100vh-4rem)] flex items-center justify-center bg-zinc-50 dark:bg-zinc-950">
+        <div className="text-zinc-500 dark:text-zinc-400 text-sm">
+          Loading targets...
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-error text-sm">Error: {error.message}</div>
+      <div className="h-[calc(100vh-4rem)] flex items-center justify-center bg-zinc-50 dark:bg-zinc-950">
+        <div className="text-red-600 dark:text-red-400 text-sm">
+          Error: {error.message}
+        </div>
       </div>
     );
   }
@@ -134,333 +142,581 @@ export function TargetsPage() {
   };
 
   const getProgressColor = (progress: number) => {
-    if (progress >= 100) return "text-success";
-    if (progress >= 75) return "text-info";
-    if (progress >= 50) return "text-warning";
-    return "text-error";
+    if (progress >= 100) return "text-emerald-600 dark:text-emerald-400";
+    if (progress >= 75) return "text-blue-600 dark:text-blue-400";
+    if (progress >= 50) return "text-amber-600 dark:text-amber-400";
+    return "text-red-600 dark:text-red-400";
   };
 
   return (
     <>
-      <div className="h-screen flex flex-col overflow-hidden">
+      <div className="h-[calc(100vh-4rem)] flex flex-col p-3 space-y-2.5 bg-zinc-50 dark:bg-zinc-950">
         {/* Compact Header */}
-        <div className="page-header py-3">
-          <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between bg-white dark:bg-zinc-900 rounded-lg px-3 py-2 border border-zinc-200 dark:border-zinc-800">
+          <div className="flex items-center gap-2">
+            <Target className="h-4 w-4 text-zinc-900 dark:text-zinc-100" />
             <div>
-              <h1 className="text-base font-semibold text-foreground">Income Targets {new Date().getFullYear()}</h1>
-              <p className="text-[11px] text-muted-foreground mt-0.5">
-                Based on {calculatedTargets.calculationMethod === 'historical' ? 'your historical data' : 'industry averages'}
+              <h1 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                Income Targets {new Date().getFullYear()}
+              </h1>
+              <p className="text-[10px] text-zinc-500 dark:text-zinc-400">
+                Based on{" "}
+                {calculatedTargets.calculationMethod === "historical"
+                  ? "your historical data"
+                  : "industry averages"}
               </p>
             </div>
-            {!isEditingInline ? (
-              <div className="flex items-center gap-2">
-                <div className="text-right">
-                  <div className="text-[10px] font-medium text-muted-foreground uppercase">NET Annual Target</div>
-                  <div className="text-lg font-bold">{formatCurrency(calculatedTargets.annualIncomeTarget)}</div>
-                </div>
-                <Button size="sm" variant="ghost" onClick={handleInlineEdit} className="h-6 w-6 p-0">
-                  <Edit2 className="h-3 w-3" />
-                </Button>
-              </div>
-            ) : (
-              <div className="flex items-center gap-1">
-                <Input
-                  type="text"
-                  value={inlineEditValue}
-                  onChange={(e) => setInlineEditValue(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleInlineSave();
-                    if (e.key === 'Escape') handleInlineCancel();
-                  }}
-                  className="w-32 h-7 text-sm font-bold"
-                  autoFocus
-                />
-                <Button size="sm" onClick={handleInlineSave} className="h-7 px-2 text-xs">Save</Button>
-                <Button size="sm" variant="ghost" onClick={handleInlineCancel} className="h-7 px-2 text-xs">Cancel</Button>
-              </div>
-            )}
           </div>
+          {!isEditingInline ? (
+            <div className="flex items-center gap-2">
+              <div className="text-right">
+                <div className="text-[10px] font-medium text-zinc-500 dark:text-zinc-400 uppercase">
+                  NET Annual Target
+                </div>
+                <div className="text-lg font-bold font-mono text-zinc-900 dark:text-zinc-100">
+                  {formatCurrency(calculatedTargets.annualIncomeTarget)}
+                </div>
+              </div>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={handleInlineEdit}
+                className="h-6 w-6 p-0"
+              >
+                <Edit2 className="h-3 w-3" />
+              </Button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-1">
+              <Input
+                type="text"
+                value={inlineEditValue}
+                onChange={(e) => setInlineEditValue(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleInlineSave();
+                  if (e.key === "Escape") handleInlineCancel();
+                }}
+                className="w-32 h-7 text-sm font-bold"
+                autoFocus
+              />
+              <Button
+                size="sm"
+                onClick={handleInlineSave}
+                className="h-7 px-2 text-xs"
+              >
+                Save
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={handleInlineCancel}
+                className="h-7 px-2 text-xs"
+              >
+                Cancel
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 p-3 overflow-auto">
+        <div className="flex-1 overflow-auto">
           <div className="max-w-7xl mx-auto space-y-2">
-
             {/* NET vs GROSS Breakdown - New Section */}
-            <Card>
-              <CardContent className="p-3">
-                <div className="text-[11px] font-medium text-muted-foreground uppercase mb-2">Income Calculation Breakdown</div>
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <div className="space-y-1">
-                      <div className="flex justify-between text-[11px]">
-                        <span className="text-muted-foreground">NET Income Target (Take Home)</span>
-                        <span className="font-mono font-bold text-success">{formatCurrency(calculatedTargets.annualIncomeTarget)}</span>
-                      </div>
-                      <div className="flex justify-between text-[11px]">
-                        <span className="text-muted-foreground">+ Annual Expenses</span>
-                        <span className="font-mono">{formatCurrency(calculatedTargets.monthlyExpenseTarget * 12)}</span>
-                      </div>
-                      <div className="h-px bg-border my-1" />
-                      <div className="flex justify-between text-[11px]">
-                        <span className="text-muted-foreground font-semibold">= GROSS Commission Needed</span>
-                        <span className="font-mono font-bold">{formatCurrency(calculatedTargets.annualIncomeTarget + (calculatedTargets.monthlyExpenseTarget * 12))}</span>
-                      </div>
+            <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-3">
+              <div className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-2">
+                Income Calculation Breakdown
+              </div>
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-[11px]">
+                      <span className="text-zinc-500 dark:text-zinc-400">
+                        NET Income Target (Take Home)
+                      </span>
+                      <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                        {formatCurrency(calculatedTargets.annualIncomeTarget)}
+                      </span>
                     </div>
-                  </div>
-
-                  <div className="border-l pl-4">
-                    <div className="space-y-1">
-                      <div className="flex justify-between text-[11px]">
-                        <span className="text-muted-foreground">Gross Commission</span>
-                        <span className="font-mono">{formatCurrency(calculatedTargets.annualIncomeTarget + (calculatedTargets.monthlyExpenseTarget * 12))}</span>
-                      </div>
-                      <div className="flex justify-between text-[11px]">
-                        <span className="text-muted-foreground">÷ Commission Rate</span>
-                        <span className="font-mono font-semibold">{(calculatedTargets.avgCommissionRate * 100).toFixed(1)}%</span>
-                      </div>
-                      <div className="h-px bg-border my-1" />
-                      <div className="flex justify-between text-[11px]">
-                        <span className="text-muted-foreground font-semibold">= Premium Needed</span>
-                        <span className="font-mono font-bold">{formatCurrency(calculatedTargets.totalPremiumNeeded)}</span>
-                      </div>
+                    <div className="flex justify-between text-[11px]">
+                      <span className="text-zinc-500 dark:text-zinc-400">
+                        + Annual Expenses
+                      </span>
+                      <span className="font-mono text-zinc-900 dark:text-zinc-100">
+                        {formatCurrency(
+                          calculatedTargets.monthlyExpenseTarget * 12,
+                        )}
+                      </span>
                     </div>
-                  </div>
-
-                  <div className="border-l pl-4">
-                    <div className="space-y-1">
-                      <div className="flex justify-between text-[11px]">
-                        <span className="text-muted-foreground">Premium Needed</span>
-                        <span className="font-mono">{formatCurrency(calculatedTargets.totalPremiumNeeded)}</span>
-                      </div>
-                      <div className="flex justify-between text-[11px]">
-                        <span className="text-muted-foreground">÷ Avg Premium</span>
-                        <span className="font-mono font-semibold">{formatCurrency(calculatedTargets.avgPolicyPremium)}</span>
-                      </div>
-                      <div className="h-px bg-border my-1" />
-                      <div className="flex justify-between text-[11px]">
-                        <span className="text-muted-foreground font-semibold">= Policies Needed</span>
-                        <span className="font-mono font-bold text-info">{calculatedTargets.annualPoliciesTarget} policies</span>
-                      </div>
+                    <div className="h-px bg-zinc-200 dark:bg-zinc-800 my-1" />
+                    <div className="flex justify-between text-[11px]">
+                      <span className="text-zinc-500 dark:text-zinc-400 font-semibold">
+                        = GROSS Commission Needed
+                      </span>
+                      <span className="font-mono font-bold text-zinc-900 dark:text-zinc-100">
+                        {formatCurrency(
+                          calculatedTargets.annualIncomeTarget +
+                            calculatedTargets.monthlyExpenseTarget * 12,
+                        )}
+                      </span>
                     </div>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+
+                <div className="border-l border-zinc-200 dark:border-zinc-800 pl-4">
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-[11px]">
+                      <span className="text-zinc-500 dark:text-zinc-400">
+                        Gross Commission
+                      </span>
+                      <span className="font-mono text-zinc-900 dark:text-zinc-100">
+                        {formatCurrency(
+                          calculatedTargets.annualIncomeTarget +
+                            calculatedTargets.monthlyExpenseTarget * 12,
+                        )}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-[11px]">
+                      <span className="text-zinc-500 dark:text-zinc-400">
+                        ÷ Commission Rate
+                      </span>
+                      <span className="font-mono font-semibold text-zinc-900 dark:text-zinc-100">
+                        {(calculatedTargets.avgCommissionRate * 100).toFixed(1)}
+                        %
+                      </span>
+                    </div>
+                    <div className="h-px bg-zinc-200 dark:bg-zinc-800 my-1" />
+                    <div className="flex justify-between text-[11px]">
+                      <span className="text-zinc-500 dark:text-zinc-400 font-semibold">
+                        = Premium Needed
+                      </span>
+                      <span className="font-mono font-bold text-zinc-900 dark:text-zinc-100">
+                        {formatCurrency(calculatedTargets.totalPremiumNeeded)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-l border-zinc-200 dark:border-zinc-800 pl-4">
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-[11px]">
+                      <span className="text-zinc-500 dark:text-zinc-400">
+                        Premium Needed
+                      </span>
+                      <span className="font-mono text-zinc-900 dark:text-zinc-100">
+                        {formatCurrency(calculatedTargets.totalPremiumNeeded)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-[11px]">
+                      <span className="text-zinc-500 dark:text-zinc-400">
+                        ÷ Avg Premium
+                      </span>
+                      <span className="font-mono font-semibold text-zinc-900 dark:text-zinc-100">
+                        {formatCurrency(calculatedTargets.avgPolicyPremium)}
+                      </span>
+                    </div>
+                    <div className="h-px bg-zinc-200 dark:bg-zinc-800 my-1" />
+                    <div className="flex justify-between text-[11px]">
+                      <span className="text-zinc-500 dark:text-zinc-400 font-semibold">
+                        = Policies Needed
+                      </span>
+                      <span className="font-mono font-bold text-blue-600 dark:text-blue-400">
+                        {calculatedTargets.annualPoliciesTarget} policies
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
 
             {/* Top Section: Income & Policy Breakdown */}
             <div className="grid grid-cols-2 gap-2">
-
               {/* Income Targets - Compact */}
-              <Card>
-                <CardContent className="p-3">
-                  <div className="text-[11px] font-medium text-muted-foreground uppercase mb-2">NET Income Targets</div>
-                  <div className="space-y-1">
-                    <div className="flex justify-between items-center text-[11px]">
-                      <span className="text-muted-foreground">Annual</span>
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono font-bold">{formatCurrency(calculatedTargets.annualIncomeTarget)}</span>
-                        <span className={cn("font-mono text-[10px]", getProgressColor((actualMetrics.ytdIncome / calculatedTargets.annualIncomeTarget) * 100))}>
-                          ({formatCurrency(actualMetrics.ytdIncome)} YTD)
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="flex justify-between items-center text-[11px]">
-                      <span className="text-muted-foreground">Quarterly</span>
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono font-bold">{formatCurrency(calculatedTargets.quarterlyIncomeTarget)}</span>
-                        <span className={cn("font-mono text-[10px]", getProgressColor((actualMetrics.qtdIncome / calculatedTargets.quarterlyIncomeTarget) * 100))}>
-                          ({formatCurrency(actualMetrics.qtdIncome)} QTD)
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="flex justify-between items-center text-[11px]">
-                      <span className="text-muted-foreground">Monthly</span>
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono font-bold">{formatCurrency(calculatedTargets.monthlyIncomeTarget)}</span>
-                        <span className={cn("font-mono text-[10px]", getProgressColor((actualMetrics.mtdIncome / calculatedTargets.monthlyIncomeTarget) * 100))}>
-                          ({formatCurrency(actualMetrics.mtdIncome)} MTD)
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="h-px bg-border my-1" />
-
-                    <div className="flex justify-between text-[11px]">
-                      <span className="text-muted-foreground">Weekly</span>
-                      <span className="font-mono">{formatCurrency(calculatedTargets.weeklyIncomeTarget)}</span>
-                    </div>
-                    <div className="flex justify-between text-[11px]">
-                      <span className="text-muted-foreground">Daily</span>
-                      <span className="font-mono">{formatCurrency(calculatedTargets.dailyIncomeTarget)}</span>
+              <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-3">
+                <div className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-2">
+                  NET Income Targets
+                </div>
+                <div className="space-y-1">
+                  <div className="flex justify-between items-center text-[11px]">
+                    <span className="text-zinc-500 dark:text-zinc-400">
+                      Annual
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono font-bold text-zinc-900 dark:text-zinc-100">
+                        {formatCurrency(calculatedTargets.annualIncomeTarget)}
+                      </span>
+                      <span
+                        className={cn(
+                          "font-mono text-[10px]",
+                          getProgressColor(
+                            (actualMetrics.ytdIncome /
+                              calculatedTargets.annualIncomeTarget) *
+                              100,
+                          ),
+                        )}
+                      >
+                        ({formatCurrency(actualMetrics.ytdIncome)} YTD)
+                      </span>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
+
+                  <div className="flex justify-between items-center text-[11px]">
+                    <span className="text-zinc-500 dark:text-zinc-400">
+                      Quarterly
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono font-bold text-zinc-900 dark:text-zinc-100">
+                        {formatCurrency(
+                          calculatedTargets.quarterlyIncomeTarget,
+                        )}
+                      </span>
+                      <span
+                        className={cn(
+                          "font-mono text-[10px]",
+                          getProgressColor(
+                            (actualMetrics.qtdIncome /
+                              calculatedTargets.quarterlyIncomeTarget) *
+                              100,
+                          ),
+                        )}
+                      >
+                        ({formatCurrency(actualMetrics.qtdIncome)} QTD)
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between items-center text-[11px]">
+                    <span className="text-zinc-500 dark:text-zinc-400">
+                      Monthly
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono font-bold text-zinc-900 dark:text-zinc-100">
+                        {formatCurrency(calculatedTargets.monthlyIncomeTarget)}
+                      </span>
+                      <span
+                        className={cn(
+                          "font-mono text-[10px]",
+                          getProgressColor(
+                            (actualMetrics.mtdIncome /
+                              calculatedTargets.monthlyIncomeTarget) *
+                              100,
+                          ),
+                        )}
+                      >
+                        ({formatCurrency(actualMetrics.mtdIncome)} MTD)
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="h-px bg-zinc-200 dark:bg-zinc-800 my-1" />
+
+                  <div className="flex justify-between text-[11px]">
+                    <span className="text-zinc-500 dark:text-zinc-400">
+                      Weekly
+                    </span>
+                    <span className="font-mono text-zinc-900 dark:text-zinc-100">
+                      {formatCurrency(calculatedTargets.weeklyIncomeTarget)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-[11px]">
+                    <span className="text-zinc-500 dark:text-zinc-400">
+                      Daily
+                    </span>
+                    <span className="font-mono text-zinc-900 dark:text-zinc-100">
+                      {formatCurrency(calculatedTargets.dailyIncomeTarget)}
+                    </span>
+                  </div>
+                </div>
+              </div>
 
               {/* Policy Targets - Compact */}
-              <Card>
-                <CardContent className="p-3">
-                  <div className="text-[11px] font-medium text-muted-foreground uppercase mb-2">Policy Targets</div>
-                  <div className="space-y-1">
-                    <div className="flex justify-between items-center text-[11px]">
-                      <span className="text-muted-foreground">Annual</span>
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono font-bold">{calculatedTargets.annualPoliciesTarget}</span>
-                        <span className={cn("font-mono text-[10px]", getProgressColor((actualMetrics.ytdPolicies / calculatedTargets.annualPoliciesTarget) * 100))}>
-                          ({actualMetrics.ytdPolicies} YTD)
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="flex justify-between items-center text-[11px]">
-                      <span className="text-muted-foreground">Quarterly</span>
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono font-bold">{calculatedTargets.quarterlyPoliciesTarget}</span>
-                        <span className="font-mono text-[10px] text-muted-foreground">
-                          ({Math.floor(actualMetrics.ytdPolicies / 4)} avg)
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="flex justify-between items-center text-[11px]">
-                      <span className="text-muted-foreground">Monthly</span>
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono font-bold">{calculatedTargets.monthlyPoliciesTarget}</span>
-                        <span className={cn("font-mono text-[10px]", getProgressColor((actualMetrics.mtdPolicies / calculatedTargets.monthlyPoliciesTarget) * 100))}>
-                          ({actualMetrics.mtdPolicies} MTD)
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="h-px bg-border my-1" />
-
-                    <div className="flex justify-between text-[11px]">
-                      <span className="text-muted-foreground">Weekly</span>
-                      <span className="font-mono">{calculatedTargets.weeklyPoliciesTarget}</span>
-                    </div>
-                    <div className="flex justify-between text-[11px]">
-                      <span className="text-muted-foreground">Daily</span>
-                      <span className="font-mono">{calculatedTargets.dailyPoliciesTarget}</span>
+              <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-3">
+                <div className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-2">
+                  Policy Targets
+                </div>
+                <div className="space-y-1">
+                  <div className="flex justify-between items-center text-[11px]">
+                    <span className="text-zinc-500 dark:text-zinc-400">
+                      Annual
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono font-bold text-zinc-900 dark:text-zinc-100">
+                        {calculatedTargets.annualPoliciesTarget}
+                      </span>
+                      <span
+                        className={cn(
+                          "font-mono text-[10px]",
+                          getProgressColor(
+                            (actualMetrics.ytdPolicies /
+                              calculatedTargets.annualPoliciesTarget) *
+                              100,
+                          ),
+                        )}
+                      >
+                        ({actualMetrics.ytdPolicies} YTD)
+                      </span>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
+
+                  <div className="flex justify-between items-center text-[11px]">
+                    <span className="text-zinc-500 dark:text-zinc-400">
+                      Quarterly
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono font-bold text-zinc-900 dark:text-zinc-100">
+                        {calculatedTargets.quarterlyPoliciesTarget}
+                      </span>
+                      <span className="font-mono text-[10px] text-zinc-400 dark:text-zinc-500">
+                        ({Math.floor(actualMetrics.ytdPolicies / 4)} avg)
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between items-center text-[11px]">
+                    <span className="text-zinc-500 dark:text-zinc-400">
+                      Monthly
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono font-bold text-zinc-900 dark:text-zinc-100">
+                        {calculatedTargets.monthlyPoliciesTarget}
+                      </span>
+                      <span
+                        className={cn(
+                          "font-mono text-[10px]",
+                          getProgressColor(
+                            (actualMetrics.mtdPolicies /
+                              calculatedTargets.monthlyPoliciesTarget) *
+                              100,
+                          ),
+                        )}
+                      >
+                        ({actualMetrics.mtdPolicies} MTD)
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="h-px bg-zinc-200 dark:bg-zinc-800 my-1" />
+
+                  <div className="flex justify-between text-[11px]">
+                    <span className="text-zinc-500 dark:text-zinc-400">
+                      Weekly
+                    </span>
+                    <span className="font-mono text-zinc-900 dark:text-zinc-100">
+                      {calculatedTargets.weeklyPoliciesTarget}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-[11px]">
+                    <span className="text-zinc-500 dark:text-zinc-400">
+                      Daily
+                    </span>
+                    <span className="font-mono text-zinc-900 dark:text-zinc-100">
+                      {calculatedTargets.dailyPoliciesTarget}
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Bottom Section: Expenses Breakdown, Metrics, Persistency */}
             <div className="grid grid-cols-3 gap-2">
-
               {/* Expense Breakdown - More Detail */}
-              <Card>
-                <CardContent className="p-3">
-                  <div className="text-[11px] font-medium text-muted-foreground uppercase mb-2">Expense Analysis</div>
-                  <div className="space-y-1">
-                    <div className="flex justify-between text-[11px]">
-                      <span className="text-muted-foreground">Monthly Target</span>
-                      <span className="font-mono font-semibold">{formatCurrency(calculatedTargets.monthlyExpenseTarget)}</span>
-                    </div>
-                    <div className="flex justify-between text-[11px]">
-                      <span className="text-muted-foreground">MTD Actual</span>
-                      <span className={cn("font-mono", actualMetrics.mtdExpenses > calculatedTargets.monthlyExpenseTarget ? "text-error" : "text-success")}>
-                        {formatCurrency(actualMetrics.mtdExpenses)}
-                      </span>
-                    </div>
-                    <div className="h-px bg-border my-1" />
-                    <div className="flex justify-between text-[11px]">
-                      <span className="text-muted-foreground">Annual Projection</span>
-                      <span className="font-mono">{formatCurrency(calculatedTargets.monthlyExpenseTarget * 12)}</span>
-                    </div>
-                    <div className="flex justify-between text-[11px]">
-                      <span className="text-muted-foreground">Expense Ratio</span>
-                      <span className="font-mono font-bold">{formatPercent(calculatedTargets.expenseRatio * 100)}</span>
-                    </div>
-                    <div className="h-px bg-border my-1" />
-                    <div className="text-[10px] text-muted-foreground">
-                      {calculatedTargets.expenseRatio > 0.3 ?
-                        "⚠️ High expense ratio" :
-                        "✓ Healthy expense ratio"}
-                    </div>
+              <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-3">
+                <div className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-2">
+                  Expense Analysis
+                </div>
+                <div className="space-y-1">
+                  <div className="flex justify-between text-[11px]">
+                    <span className="text-zinc-500 dark:text-zinc-400">
+                      Monthly Target
+                    </span>
+                    <span className="font-mono font-semibold text-zinc-900 dark:text-zinc-100">
+                      {formatCurrency(calculatedTargets.monthlyExpenseTarget)}
+                    </span>
                   </div>
-                </CardContent>
-              </Card>
+                  <div className="flex justify-between text-[11px]">
+                    <span className="text-zinc-500 dark:text-zinc-400">
+                      MTD Actual
+                    </span>
+                    <span
+                      className={cn(
+                        "font-mono",
+                        actualMetrics.mtdExpenses >
+                          calculatedTargets.monthlyExpenseTarget
+                          ? "text-red-600 dark:text-red-400"
+                          : "text-emerald-600 dark:text-emerald-400",
+                      )}
+                    >
+                      {formatCurrency(actualMetrics.mtdExpenses)}
+                    </span>
+                  </div>
+                  <div className="h-px bg-zinc-200 dark:bg-zinc-800 my-1" />
+                  <div className="flex justify-between text-[11px]">
+                    <span className="text-zinc-500 dark:text-zinc-400">
+                      Annual Projection
+                    </span>
+                    <span className="font-mono text-zinc-900 dark:text-zinc-100">
+                      {formatCurrency(
+                        calculatedTargets.monthlyExpenseTarget * 12,
+                      )}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-[11px]">
+                    <span className="text-zinc-500 dark:text-zinc-400">
+                      Expense Ratio
+                    </span>
+                    <span className="font-mono font-bold text-zinc-900 dark:text-zinc-100">
+                      {formatPercent(calculatedTargets.expenseRatio * 100)}
+                    </span>
+                  </div>
+                  <div className="h-px bg-zinc-200 dark:bg-zinc-800 my-1" />
+                  <div
+                    className={cn(
+                      "text-[10px]",
+                      calculatedTargets.expenseRatio > 0.3
+                        ? "text-amber-600 dark:text-amber-400"
+                        : "text-emerald-600 dark:text-emerald-400",
+                    )}
+                  >
+                    {calculatedTargets.expenseRatio > 0.3
+                      ? "⚠️ High expense ratio"
+                      : "✓ Healthy expense ratio"}
+                  </div>
+                </div>
+              </div>
 
               {/* Key Metrics */}
-              <Card>
-                <CardContent className="p-3">
-                  <div className="text-[11px] font-medium text-muted-foreground uppercase mb-2">Key Metrics</div>
-                  <div className="space-y-1">
-                    <div className="flex justify-between text-[11px]">
-                      <span className="text-muted-foreground">Commission Rate</span>
-                      <span className="font-mono font-semibold">{(calculatedTargets.avgCommissionRate * 100).toFixed(1)}%</span>
-                    </div>
-                    <div className="flex justify-between text-[11px]">
-                      <span className="text-muted-foreground">Avg Premium</span>
-                      <span className="font-mono font-semibold">{formatCurrency(calculatedTargets.avgPolicyPremium)}</span>
-                    </div>
-                    <div className="flex justify-between text-[11px]">
-                      <span className="text-muted-foreground">Current Avg</span>
-                      <span className={cn("font-mono",
-                        actualMetrics.currentAvgPremium < calculatedTargets.avgPolicyPremium ? "text-warning" : "text-success"
-                      )}>
-                        {formatCurrency(actualMetrics.currentAvgPremium)}
-                      </span>
-                    </div>
-                    <div className="h-px bg-border my-1" />
-                    <div className="flex justify-between text-[11px]">
-                      <span className="text-muted-foreground">Data Confidence</span>
-                      <span className={cn("font-semibold text-[10px]",
-                        calculatedTargets.confidence === 'high' ? "text-success" :
-                        calculatedTargets.confidence === 'medium' ? "text-warning" : "text-error"
-                      )}>
-                        {calculatedTargets.confidence.toUpperCase()}
-                      </span>
-                    </div>
-                    <div className="flex justify-between text-[11px]">
-                      <span className="text-muted-foreground">Method</span>
-                      <span className="text-[10px] font-medium">{calculatedTargets.calculationMethod}</span>
-                    </div>
+              <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-3">
+                <div className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-2">
+                  Key Metrics
+                </div>
+                <div className="space-y-1">
+                  <div className="flex justify-between text-[11px]">
+                    <span className="text-zinc-500 dark:text-zinc-400">
+                      Commission Rate
+                    </span>
+                    <span className="font-mono font-semibold text-zinc-900 dark:text-zinc-100">
+                      {(calculatedTargets.avgCommissionRate * 100).toFixed(1)}%
+                    </span>
                   </div>
-                </CardContent>
-              </Card>
+                  <div className="flex justify-between text-[11px]">
+                    <span className="text-zinc-500 dark:text-zinc-400">
+                      Avg Premium
+                    </span>
+                    <span className="font-mono font-semibold text-zinc-900 dark:text-zinc-100">
+                      {formatCurrency(calculatedTargets.avgPolicyPremium)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-[11px]">
+                    <span className="text-zinc-500 dark:text-zinc-400">
+                      Current Avg
+                    </span>
+                    <span
+                      className={cn(
+                        "font-mono",
+                        actualMetrics.currentAvgPremium <
+                          calculatedTargets.avgPolicyPremium
+                          ? "text-amber-600 dark:text-amber-400"
+                          : "text-emerald-600 dark:text-emerald-400",
+                      )}
+                    >
+                      {formatCurrency(actualMetrics.currentAvgPremium)}
+                    </span>
+                  </div>
+                  <div className="h-px bg-zinc-200 dark:bg-zinc-800 my-1" />
+                  <div className="flex justify-between text-[11px]">
+                    <span className="text-zinc-500 dark:text-zinc-400">
+                      Data Confidence
+                    </span>
+                    <span
+                      className={cn(
+                        "font-semibold text-[10px]",
+                        calculatedTargets.confidence === "high"
+                          ? "text-emerald-600 dark:text-emerald-400"
+                          : calculatedTargets.confidence === "medium"
+                            ? "text-amber-600 dark:text-amber-400"
+                            : "text-red-600 dark:text-red-400",
+                      )}
+                    >
+                      {calculatedTargets.confidence.toUpperCase()}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-[11px]">
+                    <span className="text-zinc-500 dark:text-zinc-400">
+                      Method
+                    </span>
+                    <span className="text-[10px] font-medium text-zinc-900 dark:text-zinc-100">
+                      {calculatedTargets.calculationMethod}
+                    </span>
+                  </div>
+                </div>
+              </div>
 
               {/* Persistency */}
-              <Card>
-                <CardContent className="p-3">
-                  <div className="text-[11px] font-medium text-muted-foreground uppercase mb-2">Persistency Rates</div>
-                  <div className="space-y-2">
-                    <div>
-                      <div className="flex justify-between text-[11px]">
-                        <span className="text-muted-foreground">13-Month Target</span>
-                        <span className="font-mono">{formatPercent(calculatedTargets.persistency13MonthTarget * 100)}</span>
-                      </div>
-                      <div className="flex justify-between text-[11px]">
-                        <span className="text-muted-foreground">13-Month Actual</span>
-                        <span className={cn("font-mono font-semibold",
-                          getProgressColor((actualMetrics.persistency13Month / calculatedTargets.persistency13MonthTarget) * 100))}>
-                          {formatPercent(actualMetrics.persistency13Month * 100)}
-                        </span>
-                      </div>
+              <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-3">
+                <div className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-2">
+                  Persistency Rates
+                </div>
+                <div className="space-y-2">
+                  <div>
+                    <div className="flex justify-between text-[11px]">
+                      <span className="text-zinc-500 dark:text-zinc-400">
+                        13-Month Target
+                      </span>
+                      <span className="font-mono text-zinc-900 dark:text-zinc-100">
+                        {formatPercent(
+                          calculatedTargets.persistency13MonthTarget * 100,
+                        )}
+                      </span>
                     </div>
-                    <div className="h-px bg-border my-1" />
-                    <div>
-                      <div className="flex justify-between text-[11px]">
-                        <span className="text-muted-foreground">25-Month Target</span>
-                        <span className="font-mono">{formatPercent(calculatedTargets.persistency25MonthTarget * 100)}</span>
-                      </div>
-                      <div className="flex justify-between text-[11px]">
-                        <span className="text-muted-foreground">25-Month Actual</span>
-                        <span className={cn("font-mono font-semibold",
-                          getProgressColor((actualMetrics.persistency25Month / calculatedTargets.persistency25MonthTarget) * 100))}>
-                          {formatPercent(actualMetrics.persistency25Month * 100)}
-                        </span>
-                      </div>
+                    <div className="flex justify-between text-[11px]">
+                      <span className="text-zinc-500 dark:text-zinc-400">
+                        13-Month Actual
+                      </span>
+                      <span
+                        className={cn(
+                          "font-mono font-semibold",
+                          getProgressColor(
+                            (actualMetrics.persistency13Month /
+                              calculatedTargets.persistency13MonthTarget) *
+                              100,
+                          ),
+                        )}
+                      >
+                        {formatPercent(actualMetrics.persistency13Month * 100)}
+                      </span>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
+                  <div className="h-px bg-zinc-200 dark:bg-zinc-800 my-1" />
+                  <div>
+                    <div className="flex justify-between text-[11px]">
+                      <span className="text-zinc-500 dark:text-zinc-400">
+                        25-Month Target
+                      </span>
+                      <span className="font-mono text-zinc-900 dark:text-zinc-100">
+                        {formatPercent(
+                          calculatedTargets.persistency25MonthTarget * 100,
+                        )}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-[11px]">
+                      <span className="text-zinc-500 dark:text-zinc-400">
+                        25-Month Actual
+                      </span>
+                      <span
+                        className={cn(
+                          "font-mono font-semibold",
+                          getProgressColor(
+                            (actualMetrics.persistency25Month /
+                              calculatedTargets.persistency25MonthTarget) *
+                              100,
+                          ),
+                        )}
+                      >
+                        {formatPercent(actualMetrics.persistency25Month * 100)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* What-If Persistency Scenarios */}
@@ -478,24 +734,35 @@ export function TargetsPage() {
             {(() => {
               const validation = targetsCalculationService.validateTargets(
                 calculatedTargets,
-                averages.hasData ? averages : undefined
+                averages.hasData ? averages : undefined,
               );
 
-              if (validation.warnings.length > 0 || validation.recommendations.length > 0) {
+              if (
+                validation.warnings.length > 0 ||
+                validation.recommendations.length > 0
+              ) {
                 return (
-                  <Alert className="p-2">
-                    <AlertCircle className="h-3 w-3" />
-                    <AlertDescription>
-                      <div className="space-y-0.5">
-                        {validation.warnings.map((warning, i) => (
-                          <p key={i} className="text-[11px] font-medium">{warning}</p>
-                        ))}
-                        {validation.recommendations.map((rec, i) => (
-                          <p key={i} className="text-[10px] text-muted-foreground">{rec}</p>
-                        ))}
-                      </div>
-                    </AlertDescription>
-                  </Alert>
+                  <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-2 flex items-start gap-2">
+                    <AlertCircle className="h-3 w-3 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+                    <div className="space-y-0.5">
+                      {validation.warnings.map((warning, i) => (
+                        <p
+                          key={i}
+                          className="text-[11px] font-medium text-amber-700 dark:text-amber-300"
+                        >
+                          {warning}
+                        </p>
+                      ))}
+                      {validation.recommendations.map((rec, i) => (
+                        <p
+                          key={i}
+                          className="text-[10px] text-amber-600 dark:text-amber-400"
+                        >
+                          {rec}
+                        </p>
+                      ))}
+                    </div>
+                  </div>
                 );
               }
               return null;
