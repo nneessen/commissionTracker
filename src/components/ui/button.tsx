@@ -1,5 +1,5 @@
 // src/components/ui/button.tsx
-// Custom button component - black/white theme with hover/active effects
+// Custom button component - black/white theme with visible hover/active effects
 
 import * as React from "react";
 import {Slot} from "@radix-ui/react-slot";
@@ -8,49 +8,49 @@ import {cva, type VariantProps} from "class-variance-authority";
 import {cn} from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors transition-shadow transition-transform duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 cursor-pointer select-none",
   {
     variants: {
       variant: {
-        // Default: Black button with elevation on hover, press effect on click
+        // Default: Black button - lightens on hover, darkens on click
         default:
-          "bg-foreground text-background shadow-sm hover:bg-foreground/90 hover:shadow-md hover:-translate-y-px active:bg-foreground/80 active:shadow-none active:translate-y-0",
+          "bg-foreground text-background shadow-md hover:bg-foreground/80 hover:shadow-lg hover:scale-[1.02] active:bg-foreground/70 active:shadow-sm active:scale-[0.98]",
 
-        // Primary: Same as default (alias for semantic clarity)
+        // Primary: Same as default
         primary:
-          "bg-foreground text-background shadow-sm hover:bg-foreground/90 hover:shadow-md hover:-translate-y-px active:bg-foreground/80 active:shadow-none active:translate-y-0",
+          "bg-foreground text-background shadow-md hover:bg-foreground/80 hover:shadow-lg hover:scale-[1.02] active:bg-foreground/70 active:shadow-sm active:scale-[0.98]",
 
-        // Secondary: Muted background with hover lift
+        // Secondary: Gray background
         secondary:
-          "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80 hover:shadow-md hover:-translate-y-px active:bg-secondary/70 active:shadow-none active:translate-y-0",
+          "bg-secondary text-secondary-foreground shadow-md hover:bg-secondary/70 hover:shadow-lg hover:scale-[1.02] active:bg-secondary/60 active:shadow-sm active:scale-[0.98]",
 
-        // Success: Green with hover/active effects
+        // Success: Green
         success:
-          "bg-[hsl(var(--success))] text-[hsl(var(--success-foreground))] shadow-sm hover:brightness-110 hover:shadow-md hover:-translate-y-px active:brightness-90 active:shadow-none active:translate-y-0",
+          "bg-[var(--success)] text-white shadow-md hover:brightness-110 hover:shadow-lg hover:scale-[1.02] active:brightness-90 active:shadow-sm active:scale-[0.98]",
 
-        // Warning: Amber with hover/active effects
+        // Warning: Amber
         warning:
-          "bg-[hsl(var(--warning))] text-[hsl(var(--warning-foreground))] shadow-sm hover:brightness-110 hover:shadow-md hover:-translate-y-px active:brightness-90 active:shadow-none active:translate-y-0",
+          "bg-[var(--warning)] text-white shadow-md hover:brightness-110 hover:shadow-lg hover:scale-[1.02] active:brightness-90 active:shadow-sm active:scale-[0.98]",
 
-        // Destructive: Red with hover/active effects
+        // Destructive: Red
         destructive:
-          "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90 hover:shadow-md hover:-translate-y-px active:bg-destructive/80 active:shadow-none active:translate-y-0",
+          "bg-destructive text-destructive-foreground shadow-md hover:bg-destructive/80 hover:shadow-lg hover:scale-[1.02] active:bg-destructive/70 active:shadow-sm active:scale-[0.98]",
 
-        // Outline: Border with fill on hover
+        // Outline: Bordered - fills on hover
         outline:
-          "border border-input bg-background text-foreground shadow-sm hover:bg-accent hover:text-accent-foreground hover:shadow-md hover:-translate-y-px active:bg-accent/80 active:shadow-none active:translate-y-0",
+          "border border-input bg-background text-foreground shadow-sm hover:bg-accent hover:text-accent-foreground hover:shadow-md hover:scale-[1.02] active:bg-accent/80 active:shadow-sm active:scale-[0.98]",
 
-        // Ghost: Transparent with background on hover
+        // Ghost: No background - appears on hover
         ghost:
-          "text-muted-foreground hover:text-foreground hover:bg-accent active:bg-accent/80",
+          "text-muted-foreground hover:text-foreground hover:bg-accent hover:shadow-sm active:bg-accent/70 active:scale-[0.98]",
 
-        // Muted: Subtle background
+        // Muted: Subtle gray background
         muted:
-          "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground active:bg-muted/70",
+          "bg-muted text-muted-foreground shadow-sm hover:bg-muted/70 hover:text-foreground hover:shadow-md active:bg-muted/60 active:shadow-sm active:scale-[0.98]",
 
-        // Link: Text-only with underline on hover
+        // Link: Underline on hover
         link:
-          "text-foreground underline-offset-4 hover:underline active:opacity-80",
+          "text-foreground underline-offset-4 hover:underline hover:text-foreground/80 active:text-foreground/60",
       },
       size: {
         default: "h-9 px-4 py-2",
