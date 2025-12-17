@@ -6,6 +6,38 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-12-17 10:02:37
+
+### Changed Files
+- `CHANGELOG.md`
+- `PROJECT_STATS.md`
+- `src/features/hierarchy/HierarchyDashboardCompact.tsx`
+- `src/features/hierarchy/components/AgentTable.tsx`
+- `src/features/hierarchy/components/HierarchyManagement.tsx`
+- `src/features/hierarchy/components/InvitationsList.tsx`
+- `src/features/hierarchy/components/TeamActivityFeed.tsx`
+- `src/features/hierarchy/components/TeamMetricsCard.tsx`
+
+### Statistics
+```
+ 8 files changed, 266 insertions(+), 266 deletions(-)
+```
+
+## [Checkpoint] - 2025-12-17 10:02:13
+
+### Changed Files
+- `src/features/hierarchy/HierarchyDashboardCompact.tsx`
+- `src/features/hierarchy/components/AgentTable.tsx`
+- `src/features/hierarchy/components/HierarchyManagement.tsx`
+- `src/features/hierarchy/components/InvitationsList.tsx`
+- `src/features/hierarchy/components/TeamActivityFeed.tsx`
+- `src/features/hierarchy/components/TeamMetricsCard.tsx`
+
+### Statistics
+```
+ 6 files changed, 246 insertions(+), 259 deletions(-)
+```
+
 ## [Checkpoint] - 2025-12-17 09:43:50
 
 ### Changed Files

@@ -1,12 +1,18 @@
 // src/features/hierarchy/components/TeamActivityFeed.tsx
 
-import {useState, useEffect} from 'react';
-import {Card, CardContent} from '@/components/ui/card';
-import {Button} from '@/components/ui/button';
-import {cn} from '@/lib/utils';
-import {UserPlus, UserMinus, TrendingUp, Award, AlertTriangle, Activity, ChevronUp, ChevronDown} from 'lucide-react';
-import {formatDate} from '@/lib/format';
-import type {UserProfile} from '@/types/hierarchy.types';
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  UserPlus,
+  UserMinus,
+  TrendingUp,
+  Award,
+  AlertTriangle,
+  Activity,
+  ChevronUp,
+  ChevronDown,
+} from "lucide-react";
+import type { UserProfile } from "@/types/hierarchy.types";
 
 // Extended agent type
 interface Agent extends UserProfile {
@@ -17,7 +23,7 @@ interface Agent extends UserProfile {
 
 interface ActivityItem {
   id: string;
-  type: 'joined' | 'left' | 'promoted' | 'achievement' | 'warning';
+  type: "joined" | "left" | "promoted" | "achievement" | "warning";
   agent: string;
   message: string;
   timestamp: Date;
@@ -37,10 +43,10 @@ function getRelativeTime(date: Date): string {
   const hours = Math.floor(minutes / 60);
   const days = Math.floor(hours / 24);
 
-  if (days > 0) return `${days} day${days > 1 ? 's' : ''} ago`;
-  if (hours > 0) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
-  if (minutes > 0) return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
-  return 'just now';
+  if (days > 0) return `${days} day${days > 1 ? "s" : ""} ago`;
+  if (hours > 0) return `${hours} hour${hours > 1 ? "s" : ""} ago`;
+  if (minutes > 0) return `${minutes} minute${minutes > 1 ? "s" : ""} ago`;
+  return "just now";
 }
 
 export function TeamActivityFeed({ agents }: TeamActivityFeedProps) {
@@ -56,17 +62,21 @@ export function TeamActivityFeed({ agents }: TeamActivityFeedProps) {
 
       agents.forEach((agent, _index) => {
         // Check if agent recently joined (based on created_at)
-        const createdDate = new Date(agent.created_at || new Date().toISOString());
-        const daysSinceJoined = Math.floor((now.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24));
+        const createdDate = new Date(
+          agent.created_at || new Date().toISOString(),
+        );
+        const daysSinceJoined = Math.floor(
+          (now.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24),
+        );
 
         if (daysSinceJoined <= 30) {
           activityList.push({
             id: `join-${agent.id}`,
-            type: 'joined',
+            type: "joined",
             agent: agent.name || agent.email,
-            message: 'joined the team',
+            message: "joined the team",
             timestamp: createdDate,
-            details: `Level ${agent.contract_level || 100}`
+            details: `Level ${agent.contract_level || 100}`,
           });
         }
 
@@ -74,11 +84,11 @@ export function TeamActivityFeed({ agents }: TeamActivityFeedProps) {
         if (!agent.is_active && daysSinceJoined > 30) {
           activityList.push({
             id: `inactive-${agent.id}`,
-            type: 'warning',
+            type: "warning",
             agent: agent.name || agent.email,
-            message: 'became inactive',
+            message: "became inactive",
             timestamp: new Date(agent.updated_at || new Date().toISOString()),
-            details: 'Review agent status'
+            details: "Review agent status",
           });
         }
 
@@ -87,7 +97,9 @@ export function TeamActivityFeed({ agents }: TeamActivityFeedProps) {
       });
 
       // Sort by timestamp, most recent first
-      activityList.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+      activityList.sort(
+        (a, b) => b.timestamp.getTime() - a.timestamp.getTime(),
+      );
 
       setActivities(activityList);
       setIsLoading(false);
@@ -101,45 +113,53 @@ export function TeamActivityFeed({ agents }: TeamActivityFeedProps) {
     }
   }, [agents]);
 
-  const getActivityIcon = (type: ActivityItem['type']) => {
+  const getActivityIcon = (type: ActivityItem["type"]) => {
     switch (type) {
-      case 'joined':
-        return <UserPlus className="h-3 w-3 text-success" />;
-      case 'left':
-        return <UserMinus className="h-3 w-3 text-error" />;
-      case 'promoted':
-        return <TrendingUp className="h-3 w-3 text-info" />;
-      case 'achievement':
-        return <Award className="h-3 w-3 text-warning" />;
-      case 'warning':
-        return <AlertTriangle className="h-3 w-3 text-error" />;
+      case "joined":
+        return (
+          <UserPlus className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
+        );
+      case "left":
+        return <UserMinus className="h-3 w-3 text-red-600 dark:text-red-400" />;
+      case "promoted":
+        return (
+          <TrendingUp className="h-3 w-3 text-blue-600 dark:text-blue-400" />
+        );
+      case "achievement":
+        return <Award className="h-3 w-3 text-amber-600 dark:text-amber-400" />;
+      case "warning":
+        return (
+          <AlertTriangle className="h-3 w-3 text-red-600 dark:text-red-400" />
+        );
       default:
-        return <Activity className="h-3 w-3 text-muted-foreground" />;
+        return (
+          <Activity className="h-3 w-3 text-zinc-500 dark:text-zinc-400" />
+        );
     }
   };
 
-  const getActivityColor = (type: ActivityItem['type']) => {
+  const getActivityColor = (type: ActivityItem["type"]) => {
     switch (type) {
-      case 'joined':
-      case 'achievement':
-        return 'text-success';
-      case 'left':
-      case 'warning':
-        return 'text-error';
-      case 'promoted':
-        return 'text-info';
+      case "joined":
+      case "achievement":
+        return "text-emerald-600 dark:text-emerald-400";
+      case "left":
+      case "warning":
+        return "text-red-600 dark:text-red-400";
+      case "promoted":
+        return "text-blue-600 dark:text-blue-400";
       default:
-        return 'text-muted-foreground';
+        return "text-zinc-500 dark:text-zinc-400";
     }
   };
 
   const displayedActivities = showAll ? activities : activities.slice(0, 5);
 
   return (
-    <Card>
-      <CardContent className="p-3">
+    <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800">
+      <div className="p-3">
         <div className="flex items-center justify-between mb-2">
-          <div className="text-[11px] font-medium text-muted-foreground uppercase">
+          <div className="text-[10px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
             Recent Activity
           </div>
           {activities.length > 5 && (
@@ -147,7 +167,7 @@ export function TeamActivityFeed({ agents }: TeamActivityFeedProps) {
               variant="ghost"
               size="sm"
               onClick={() => setShowAll(!showAll)}
-              className="h-5 px-2 text-[10px]"
+              className="h-5 px-2 text-[10px] text-zinc-600 dark:text-zinc-400"
             >
               {showAll ? (
                 <>
@@ -165,32 +185,32 @@ export function TeamActivityFeed({ agents }: TeamActivityFeedProps) {
         </div>
 
         {activities.length === 0 ? (
-          <div className="text-[11px] text-muted-foreground text-center py-4">
-            No recent activity
+          <div className="flex flex-col items-center justify-center py-4">
+            <Activity className="h-6 w-6 text-zinc-300 dark:text-zinc-600 mb-1" />
+            <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+              No recent activity
+            </p>
           </div>
         ) : (
           <div className="space-y-2">
             {displayedActivities.map((activity) => (
-              <div
-                key={activity.id}
-                className="flex items-start gap-2 py-1"
-              >
-                <div className="mt-0.5">
-                  {getActivityIcon(activity.type)}
-                </div>
+              <div key={activity.id} className="flex items-start gap-2 py-1">
+                <div className="mt-0.5">{getActivityIcon(activity.type)}</div>
                 <div className="flex-1 min-w-0">
                   <div className="text-[11px] leading-tight">
-                    <span className="font-medium">{activity.agent}</span>
-                    <span className={cn("ml-1", getActivityColor(activity.type))}>
+                    <span className="font-medium text-zinc-900 dark:text-zinc-100">
+                      {activity.agent}
+                    </span>
+                    <span className={`ml-1 ${getActivityColor(activity.type)}`}>
                       {activity.message}
                     </span>
                   </div>
                   {activity.details && (
-                    <div className="text-[10px] text-muted-foreground">
+                    <div className="text-[10px] text-zinc-500 dark:text-zinc-400">
                       {activity.details}
                     </div>
                   )}
-                  <div className="text-[9px] text-muted-foreground/70 mt-0.5">
+                  <div className="text-[9px] text-zinc-400 dark:text-zinc-500 mt-0.5">
                     {getRelativeTime(activity.timestamp)}
                   </div>
                 </div>
@@ -200,29 +220,29 @@ export function TeamActivityFeed({ agents }: TeamActivityFeedProps) {
         )}
 
         {/* Quick Stats */}
-        <div className="mt-3 pt-2 border-t border-border/50">
+        <div className="mt-3 pt-2 border-t border-zinc-200 dark:border-zinc-700">
           <div className="grid grid-cols-3 gap-2 text-[10px]">
             <div className="text-center">
-              <div className="font-mono font-semibold text-success">
-                +{activities.filter(a => a.type === 'joined').length}
+              <div className="font-mono font-semibold text-emerald-600 dark:text-emerald-400">
+                +{activities.filter((a) => a.type === "joined").length}
               </div>
-              <div className="text-muted-foreground">Joined</div>
+              <div className="text-zinc-500 dark:text-zinc-400">Joined</div>
             </div>
             <div className="text-center">
-              <div className="font-mono font-semibold text-info">
-                {activities.filter(a => a.type === 'promoted').length}
+              <div className="font-mono font-semibold text-blue-600 dark:text-blue-400">
+                {activities.filter((a) => a.type === "promoted").length}
               </div>
-              <div className="text-muted-foreground">Promoted</div>
+              <div className="text-zinc-500 dark:text-zinc-400">Promoted</div>
             </div>
             <div className="text-center">
-              <div className="font-mono font-semibold text-error">
-                -{activities.filter(a => a.type === 'left').length}
+              <div className="font-mono font-semibold text-red-600 dark:text-red-400">
+                -{activities.filter((a) => a.type === "left").length}
               </div>
-              <div className="text-muted-foreground">Left</div>
+              <div className="text-zinc-500 dark:text-zinc-400">Left</div>
             </div>
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

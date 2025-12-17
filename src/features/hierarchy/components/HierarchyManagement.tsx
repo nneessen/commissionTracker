@@ -1,18 +1,37 @@
 // src/features/hierarchy/components/HierarchyManagement.tsx
 
-import React, { useState } from 'react';
-import {Shield, AlertCircle, Edit} from 'lucide-react';
-import {Card, CardHeader, CardTitle, CardContent} from '@/components/ui/card';
-import {Badge} from '@/components/ui/badge';
-import {Button} from '@/components/ui/button';
-import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from '@/components/ui/table';
-import {Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle} from '@/components/ui/dialog';
-import {Label} from '@/components/ui/label';
-import {Empty, EmptyHeader, EmptyTitle, EmptyDescription} from '@/components/ui/empty';
-import {Alert, AlertDescription} from '@/components/ui/alert';
-import showToast from '@/utils/toast';
-import {useMyDownlines, useUpdateAgentHierarchy, useCurrentUserProfile} from '@/hooks';
-import type {UserProfile, HierarchyChangeRequest} from '@/types/hierarchy.types';
+import React, { useState } from "react";
+import { Shield, AlertCircle, Edit } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import showToast from "@/utils/toast";
+import {
+  useMyDownlines,
+  useUpdateAgentHierarchy,
+  useCurrentUserProfile,
+} from "@/hooks";
+import type {
+  UserProfile,
+  HierarchyChangeRequest,
+} from "@/types/hierarchy.types";
 
 interface HierarchyManagementProps {
   className?: string;
@@ -35,9 +54,9 @@ function EditHierarchyDialog({
   onSave: (request: HierarchyChangeRequest) => Promise<void>;
 }) {
   const [selectedUplineId, setSelectedUplineId] = useState<string | null>(
-    agent?.upline_id || null
+    agent?.upline_id || null,
   );
-  const [reason, setReason] = useState('');
+  const [reason, setReason] = useState("");
   const [isSaving, setIsSaving] = useState(false);
 
   const handleSave = async () => {
@@ -48,13 +67,13 @@ function EditHierarchyDialog({
       await onSave({
         agent_id: agent.id,
         new_upline_id: selectedUplineId,
-        reason: reason || 'Hierarchy adjustment',
+        reason: reason || "Hierarchy adjustment",
       });
-      showToast.success('Hierarchy updated successfully');
+      showToast.success("Hierarchy updated successfully");
       onOpenChange(false);
     } catch (error) {
-      showToast.error('Failed to update hierarchy');
-      console.error('Error updating hierarchy:', error);
+      showToast.error("Failed to update hierarchy");
+      console.error("Error updating hierarchy:", error);
     } finally {
       setIsSaving(false);
     }
@@ -62,7 +81,8 @@ function EditHierarchyDialog({
 
   // Filter out the agent itself and its downlines to prevent circular references
   const availableUplines = allAgents.filter(
-    (a) => a.id !== agent?.id && !(a.hierarchy_path || '').includes(agent?.id || '')
+    (a) =>
+      a.id !== agent?.id && !(a.hierarchy_path || "").includes(agent?.id || ""),
   );
 
   return (
@@ -81,7 +101,7 @@ function EditHierarchyDialog({
             <select
               id="upline"
               className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-              value={selectedUplineId || ''}
+              value={selectedUplineId || ""}
               onChange={(e) => setSelectedUplineId(e.target.value || null)}
             >
               <option value="">No Upline (Root Agent)</option>
@@ -107,18 +127,23 @@ function EditHierarchyDialog({
           <Alert>
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              Changing hierarchy will affect override calculations for all policies going forward.
-              Existing overrides will not be recalculated.
+              Changing hierarchy will affect override calculations for all
+              policies going forward. Existing overrides will not be
+              recalculated.
             </AlertDescription>
           </Alert>
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSaving}>
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={isSaving}
+          >
             Cancel
           </Button>
           <Button onClick={handleSave} disabled={isSaving}>
-            {isSaving ? 'Saving...' : 'Save Changes'}
+            {isSaving ? "Saving..." : "Save Changes"}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -152,106 +177,158 @@ export function HierarchyManagement({ className }: HierarchyManagementProps) {
 
   if (!isAdmin) {
     return (
-      <Card className={className}>
-        <CardHeader>
-          <CardTitle>Hierarchy Management</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Alert variant="destructive">
-            <Shield className="h-4 w-4" />
-            <AlertDescription>
-              You do not have permission to manage hierarchy. This feature is restricted to
-              administrators only.
-            </AlertDescription>
-          </Alert>
-        </CardContent>
-      </Card>
+      <div
+        className={`bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 ${className || ""}`}
+      >
+        <div className="px-3 py-2 border-b border-zinc-200 dark:border-zinc-800">
+          <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+            Hierarchy Management
+          </h3>
+        </div>
+        <div className="p-3">
+          <div className="flex items-start gap-2 p-2 bg-red-50 dark:bg-red-900/20 rounded border border-red-200 dark:border-red-800">
+            <Shield className="h-4 w-4 text-red-600 dark:text-red-400 mt-0.5" />
+            <p className="text-[11px] text-red-700 dark:text-red-300">
+              You do not have permission to manage hierarchy. This feature is
+              restricted to administrators only.
+            </p>
+          </div>
+        </div>
+      </div>
     );
   }
 
   // Group agents by hierarchy level
-  const agentsByLevel = (downlines || []).reduce((acc, agent) => {
-    const level = agent.hierarchy_depth ?? 0;
-    if (!acc[level]) acc[level] = [];
-    acc[level].push(agent);
-    return acc;
-  }, {} as Record<number, UserProfile[]>);
+  const agentsByLevel = (downlines || []).reduce(
+    (acc, agent) => {
+      const level = agent.hierarchy_depth ?? 0;
+      if (!acc[level]) acc[level] = [];
+      acc[level].push(agent);
+      return acc;
+    },
+    {} as Record<number, UserProfile[]>,
+  );
 
-  const levels = Object.keys(agentsByLevel).map(Number).sort((a, b) => a - b);
+  const levels = Object.keys(agentsByLevel)
+    .map(Number)
+    .sort((a, b) => a - b);
 
   return (
-    <Card className={className}>
-      <CardHeader>
-        <div className="flex items-center justify-between">
+    <div
+      className={`bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 ${className || ""}`}
+    >
+      <div className="flex items-center justify-between px-3 py-2 border-b border-zinc-200 dark:border-zinc-800">
+        <div className="flex items-center gap-2">
+          <Shield className="h-4 w-4 text-amber-600 dark:text-amber-400" />
           <div>
-            <CardTitle className="flex items-center gap-2">
-              <Shield className="h-5 w-5 text-amber-600" />
+            <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
               Hierarchy Management
-            </CardTitle>
-            <p className="text-sm text-muted-foreground mt-1">
+            </h3>
+            <p className="text-[10px] text-zinc-500 dark:text-zinc-400">
               {downlines?.length || 0} agents across {levels.length} levels
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <Badge variant="outline">Admin Only</Badge>
-          </div>
         </div>
-      </CardHeader>
-      <CardContent>
+        <Badge
+          variant="outline"
+          className="text-[9px] h-5 border-amber-300 dark:border-amber-600 text-amber-600 dark:text-amber-400"
+        >
+          Admin Only
+        </Badge>
+      </div>
+      <div className="p-3">
         {isLoading ? (
-          <Empty>
-            <EmptyHeader>
-              <EmptyTitle>Loading agents...</EmptyTitle>
-            </EmptyHeader>
-          </Empty>
+          <div className="flex flex-col items-center justify-center py-4">
+            <div className="text-[11px] text-zinc-500 dark:text-zinc-400">
+              Loading agents...
+            </div>
+          </div>
         ) : !downlines || downlines.length === 0 ? (
-          <Empty>
-            <EmptyHeader>
-              <EmptyTitle>No agents in hierarchy</EmptyTitle>
-              <EmptyDescription>
-                Agents will appear here once they are added to the system
-              </EmptyDescription>
-            </EmptyHeader>
-          </Empty>
+          <div className="flex flex-col items-center justify-center py-4">
+            <Shield className="h-6 w-6 text-zinc-300 dark:text-zinc-600 mb-1" />
+            <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+              No agents in hierarchy
+            </p>
+            <p className="text-[10px] text-zinc-400 dark:text-zinc-500">
+              Agents will appear here once they are added to the system
+            </p>
+          </div>
         ) : (
-          <div className="rounded-lg shadow-sm">
+          <div className="rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-800">
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Agent</TableHead>
-                  <TableHead>Level</TableHead>
-                  <TableHead>Reports To</TableHead>
-                  <TableHead className="text-right">Direct</TableHead>
-                  <TableHead className="text-right">Total Down</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                <TableRow className="h-8 bg-zinc-50 dark:bg-zinc-800/50 border-b border-zinc-200 dark:border-zinc-800">
+                  <TableHead className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400">
+                    Agent
+                  </TableHead>
+                  <TableHead className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400">
+                    Level
+                  </TableHead>
+                  <TableHead className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400">
+                    Reports To
+                  </TableHead>
+                  <TableHead className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 text-right">
+                    Direct
+                  </TableHead>
+                  <TableHead className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 text-right">
+                    Total Down
+                  </TableHead>
+                  <TableHead className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 text-right">
+                    Actions
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {downlines.map((agent) => {
-                  const directDownlines = downlines.filter(d => d.upline_id === agent.id).length;
-                  const totalDownlines = downlines.filter(d => (d.hierarchy_path || '').includes(agent.id) && d.id !== agent.id).length;
+                  const directDownlines = downlines.filter(
+                    (d) => d.upline_id === agent.id,
+                  ).length;
+                  const totalDownlines = downlines.filter(
+                    (d) =>
+                      (d.hierarchy_path || "").includes(agent.id) &&
+                      d.id !== agent.id,
+                  ).length;
                   const uplineEmail = agent.upline_id
-                    ? downlines.find(d => d.id === agent.upline_id)?.email
+                    ? downlines.find((d) => d.id === agent.upline_id)?.email
                     : null;
 
                   return (
-                    <TableRow key={agent.id}>
-                      <TableCell className="font-medium">{agent.email}</TableCell>
+                    <TableRow
+                      key={agent.id}
+                      className="h-9 border-b border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
+                    >
+                      <TableCell className="text-[11px] font-medium text-zinc-900 dark:text-zinc-100">
+                        {agent.email}
+                      </TableCell>
                       <TableCell>
-                        <span className="text-xs">L{agent.hierarchy_depth}</span>
+                        <span className="text-[10px] text-zinc-600 dark:text-zinc-400">
+                          L{agent.hierarchy_depth}
+                        </span>
                       </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {uplineEmail || <Badge variant="outline" className="text-xs">Root</Badge>}
+                      <TableCell className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                        {uplineEmail || (
+                          <Badge
+                            variant="outline"
+                            className="text-[9px] px-1 py-0 h-4 border-zinc-300 dark:border-zinc-600"
+                          >
+                            Root
+                          </Badge>
+                        )}
                       </TableCell>
-                      <TableCell className="text-right">{directDownlines}</TableCell>
-                      <TableCell className="text-right">{totalDownlines}</TableCell>
+                      <TableCell className="text-[11px] text-right text-zinc-700 dark:text-zinc-300">
+                        {directDownlines}
+                      </TableCell>
+                      <TableCell className="text-[11px] text-right text-zinc-700 dark:text-zinc-300">
+                        {totalDownlines}
+                      </TableCell>
                       <TableCell className="text-right">
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => handleEditAgent(agent)}
+                          className="h-6 w-6 p-0 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
                         >
-                          <Edit className="h-4 w-4" />
+                          <Edit className="h-3.5 w-3.5" />
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -261,7 +338,7 @@ export function HierarchyManagement({ className }: HierarchyManagementProps) {
             </Table>
           </div>
         )}
-      </CardContent>
+      </div>
 
       {/* Edit Dialog */}
       <EditHierarchyDialog
@@ -271,6 +348,6 @@ export function HierarchyManagement({ className }: HierarchyManagementProps) {
         onOpenChange={setDialogOpen}
         onSave={handleSaveHierarchy}
       />
-    </Card>
+    </div>
   );
 }

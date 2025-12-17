@@ -1,21 +1,53 @@
 // src/features/hierarchy/components/AgentTable.tsx
 
-import React, { useState, useEffect } from 'react';
-import {useNavigate} from '@tanstack/react-router';
-import {ChevronRight, ChevronDown, ChevronLeft, MoreVertical, Eye, Edit, UserCheck, UserX, MessageCircle, UserMinus} from 'lucide-react';
-import {cn} from '@/lib/utils';
-import {Button} from '@/components/ui/button';
-import {DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger} from '@/components/ui/dropdown-menu';
-import {AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle} from '@/components/ui/alert-dialog';
-import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '@/components/ui/select';
-import {formatCurrency, formatPercent} from '@/lib/format';
-import showToast from '@/utils/toast';
-import type {UserProfile} from '@/types/hierarchy.types';
-import {useQuery} from '@tanstack/react-query';
-import {hierarchyService} from '@/services/hierarchy/hierarchyService';
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "@tanstack/react-router";
+import {
+  ChevronRight,
+  ChevronDown,
+  ChevronLeft,
+  MoreVertical,
+  Eye,
+  Edit,
+  UserCheck,
+  UserX,
+  MessageCircle,
+  UserMinus,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { formatCurrency } from "@/lib/format";
+import showToast from "@/utils/toast";
+import type { UserProfile } from "@/types/hierarchy.types";
+import { useQuery } from "@tanstack/react-query";
+import { hierarchyService } from "@/services/hierarchy/hierarchyService";
 // import {policyService} from '@/services/policies/policyService';
 // import {commissionService} from '@/services/commissions/commissionService';
-import {supabase} from '@/services/base/supabase';
+import { supabase } from "@/services/base/supabase";
 
 interface AgentWithMetrics extends UserProfile {
   // Real calculated metrics
@@ -47,19 +79,19 @@ async function fetchAgentMetrics(agentId: string): Promise<{
   const policies = policyData.policies || [];
 
   const mtdPolicies = policies.filter((p: any) => {
-    const pDate = new Date(p.issueDate || '');
+    const pDate = new Date(p.issueDate || "");
     return pDate >= startOfMonth && pDate <= endOfMonth;
   });
 
   const mtdMetrics = mtdPolicies.reduce(
     (acc: { policies: number; ap: number }, policy: any) => {
       acc.policies++;
-      if (policy.status === 'active') {
-        acc.ap += parseFloat(String(policy.annualPremium) || '0');
+      if (policy.status === "active") {
+        acc.ap += parseFloat(String(policy.annualPremium) || "0");
       }
       return acc;
     },
-    { policies: 0, ap: 0 }
+    { policies: 0, ap: 0 },
   );
 
   // Get override commissions for this month
@@ -110,79 +142,83 @@ function AgentRow({
   const uplineLevel = uplineContractLevel || 100;
 
   // Debug: Log what we're getting
-  console.log('Debug Override Calculation:', {
+  console.log("Debug Override Calculation:", {
     agentEmail: agent.email,
     agentContractLevel,
     uplineLevel,
     agentData: agent,
-    hasContractLevel: 'contract_level' in agent,
-    uplineContractLevel
+    hasContractLevel: "contract_level" in agent,
+    uplineContractLevel,
   });
 
-  const overrideSpread = uplineLevel > agentContractLevel ? uplineLevel - agentContractLevel : 0;
+  const overrideSpread =
+    uplineLevel > agentContractLevel ? uplineLevel - agentContractLevel : 0;
 
   // Determine status display based on actual fields
   const getStatusDisplay = () => {
     if (agent.current_onboarding_phase) {
       return {
         label: agent.current_onboarding_phase,
-        className: 'bg-blue-500/10 text-blue-600',
+        className: "bg-blue-500/10 text-blue-600",
       };
     }
     switch (agent.approval_status) {
-      case 'approved':
+      case "approved":
         return {
           label: `Level ${agent.contract_level || 100}`,
-          className: 'bg-emerald-500/10 text-emerald-600',
+          className: "bg-emerald-500/10 text-emerald-600",
         };
-      case 'pending':
+      case "pending":
         return {
-          label: 'Pending Approval',
-          className: 'bg-yellow-500/10 text-yellow-600',
+          label: "Pending Approval",
+          className: "bg-yellow-500/10 text-yellow-600",
         };
-      case 'denied':
+      case "denied":
         return {
-          label: 'Denied',
-          className: 'bg-red-500/10 text-red-600',
+          label: "Denied",
+          className: "bg-red-500/10 text-red-600",
         };
       default:
         return {
-          label: agent.onboarding_status || 'Unknown',
-          className: 'bg-gray-500/10 text-gray-600',
+          label: agent.onboarding_status || "Unknown",
+          className: "bg-gray-500/10 text-gray-600",
         };
     }
   };
 
   const handleViewDetails = () => {
     navigate({
-      to: '/hierarchy/agent/$agentId',
+      to: "/hierarchy/agent/$agentId",
       params: { agentId: agent.id },
     });
   };
 
   const handleEditAgent = () => {
     // Will implement edit modal
-    showToast.success('Edit functionality coming soon');
+    showToast.success("Edit functionality coming soon");
   };
 
   const handleSendMessage = () => {
     // Navigate to email composer or open message modal
-    showToast.success('Message functionality coming soon');
+    showToast.success("Message functionality coming soon");
   };
 
   const statusDisplay = getStatusDisplay();
 
   return (
-    <tr className="hover:bg-muted/50">
+    <tr className="h-9 transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-800/50 border-b border-zinc-100 dark:border-zinc-800/50">
       {/* Agent Name with Hierarchy */}
-      <td className="px-2 py-1.5 text-xs text-muted-foreground">
-        <div className="flex items-center gap-1" style={{ paddingLeft: `${depth * 16}px` }}>
+      <td className="px-2 py-1.5 text-[11px] text-zinc-900 dark:text-zinc-100">
+        <div
+          className="flex items-center gap-1"
+          style={{ paddingLeft: `${depth * 16}px` }}
+        >
           {hasChildren && (
             <Button
               variant="ghost"
               size="sm"
               onClick={onToggle}
-              className="h-4 w-4 p-0"
+              className="h-4 w-4 p-0 text-zinc-500 dark:text-zinc-400"
             >
               {isExpanded ? (
                 <ChevronDown className="h-3 w-3" />
@@ -192,25 +228,27 @@ function AgentRow({
             </Button>
           )}
           {!hasChildren && depth > 0 && (
-            <span className="text-muted-foreground/50 text-[10px] mr-1">└─</span>
+            <span className="text-zinc-300 dark:text-zinc-600 text-[10px] mr-1">
+              └─
+            </span>
           )}
           <span className="font-medium">
             {agent.first_name && agent.last_name
               ? `${agent.first_name} ${agent.last_name}`
               : agent.email}
           </span>
-          {agent.approval_status === 'approved' && (
-            <UserCheck className="h-3 w-3 text-success" />
+          {agent.approval_status === "approved" && (
+            <UserCheck className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
           )}
         </div>
       </td>
 
       {/* Phase/Status */}
-      <td className="px-2 py-1.5 text-xs text-muted-foreground">
+      <td className="px-2 py-1.5 text-[11px]">
         <span
           className={cn(
-            'inline-block px-1.5 py-0.5 rounded text-[9px] font-medium',
-            statusDisplay.className
+            "inline-block px-1.5 py-0.5 rounded text-[9px] font-medium",
+            statusDisplay.className,
           )}
         >
           {statusDisplay.label}
@@ -218,40 +256,46 @@ function AgentRow({
       </td>
 
       {/* MTD AP */}
-      <td className="px-2 py-1.5 text-right text-xs font-mono">
+      <td className="px-2 py-1.5 text-right text-[11px] font-mono">
         {metrics.mtd_ap > 0 ? (
-          <span className="font-semibold text-foreground">{formatCurrency(metrics.mtd_ap)}</span>
+          <span className="font-semibold text-zinc-900 dark:text-zinc-100">
+            {formatCurrency(metrics.mtd_ap)}
+          </span>
         ) : (
-          <span className="text-muted-foreground">$0</span>
+          <span className="text-zinc-400 dark:text-zinc-500">$0</span>
         )}
       </td>
 
       {/* MTD Policies */}
-      <td className="px-2 py-1.5 text-center text-xs font-mono">
+      <td className="px-2 py-1.5 text-center text-[11px] font-mono">
         {metrics.mtd_policies > 0 ? (
-          <span className="font-semibold text-foreground">{metrics.mtd_policies}</span>
+          <span className="font-semibold text-zinc-900 dark:text-zinc-100">
+            {metrics.mtd_policies}
+          </span>
         ) : (
-          <span className="text-muted-foreground">0</span>
+          <span className="text-zinc-400 dark:text-zinc-500">0</span>
         )}
       </td>
 
       {/* Override Spread % */}
-      <td className="px-2 py-1.5 text-center text-xs font-mono">
+      <td className="px-2 py-1.5 text-center text-[11px] font-mono">
         {overrideSpread > 0 ? (
-          <span className="font-medium text-emerald-600">{overrideSpread}%</span>
+          <span className="font-medium text-emerald-600 dark:text-emerald-400">
+            {overrideSpread}%
+          </span>
         ) : (
-          <span className="text-muted-foreground">-</span>
+          <span className="text-zinc-400 dark:text-zinc-500">-</span>
         )}
       </td>
 
       {/* Override $ MTD */}
-      <td className="px-2 py-1.5 text-right text-xs font-mono">
+      <td className="px-2 py-1.5 text-right text-[11px] font-mono">
         {metrics.override_amount > 0 ? (
-          <span className="font-bold text-emerald-600">
+          <span className="font-bold text-emerald-600 dark:text-emerald-400">
             {formatCurrency(metrics.override_amount)}
           </span>
         ) : (
-          <span className="text-muted-foreground">$0</span>
+          <span className="text-zinc-400 dark:text-zinc-500">$0</span>
         )}
       </td>
 
@@ -259,27 +303,37 @@ function AgentRow({
       <td className="px-2 py-1.5 text-center">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 w-6 p-0 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
+            >
               <MoreVertical className="h-3 w-3" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-40">
-            <DropdownMenuItem className="text-xs" onClick={handleViewDetails}>
+            <DropdownMenuItem
+              className="text-[11px]"
+              onClick={handleViewDetails}
+            >
               <Eye className="mr-1.5 h-3 w-3" />
               View Details
             </DropdownMenuItem>
-            <DropdownMenuItem className="text-xs" onClick={handleEditAgent}>
+            <DropdownMenuItem className="text-[11px]" onClick={handleEditAgent}>
               <Edit className="mr-1.5 h-3 w-3" />
               Edit Agent
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-xs" onClick={handleSendMessage}>
+            <DropdownMenuItem
+              className="text-[11px]"
+              onClick={handleSendMessage}
+            >
               <MessageCircle className="mr-1.5 h-3 w-3" />
               Send Message
             </DropdownMenuItem>
             {depth > 0 && (
               <DropdownMenuItem
-                className="text-destructive text-xs"
+                className="text-destructive text-[11px]"
                 onClick={() => onRemove(agent)}
               >
                 <UserMinus className="mr-1.5 h-3 w-3" />
@@ -296,54 +350,58 @@ function AgentRow({
 export function AgentTable({ agents, isLoading, onRefresh }: AgentTableProps) {
   const _navigate = useNavigate();
   const [expandedAgents, setExpandedAgents] = useState<Set<string>>(new Set());
-  const [agentToRemove, setAgentToRemove] = useState<AgentWithMetrics | null>(null);
+  const [agentToRemove, setAgentToRemove] = useState<AgentWithMetrics | null>(
+    null,
+  );
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(5);
 
   // Get current user's contract level for override calculation
   const { data: currentUser } = useQuery({
-    queryKey: ['current-user-profile'],
+    queryKey: ["current-user-profile"],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) return null;
 
       const { data: profile } = await supabase
-        .from('user_profiles')
-        .select('id, contract_level')
-        .eq('id', user.id)
+        .from("user_profiles")
+        .select("id, contract_level")
+        .eq("id", user.id)
         .single();
 
-      console.log('Current User Profile:', profile);
+      console.log("Current User Profile:", profile);
       return profile;
-    }
+    },
   });
 
   // Add current user's contract level to agents that are direct downlines
   const { data: agentsWithUplines } = useQuery({
-    queryKey: ['agents-with-uplines', agents, currentUser],
+    queryKey: ["agents-with-uplines", agents, currentUser],
     queryFn: async () => {
       if (!currentUser) return agents;
 
-      console.log('Processing agents with uplines:', {
+      console.log("Processing agents with uplines:", {
         agents,
         currentUserId: currentUser.id,
-        currentUserContractLevel: currentUser.contract_level
+        currentUserContractLevel: currentUser.contract_level,
       });
 
       // For each agent, determine their upline's contract level
-      return agents.map(agent => {
+      return agents.map((agent) => {
         // If this agent's upline is the current user, use current user's contract level
         if (agent.upline_id === currentUser.id) {
           return {
             ...agent,
-            upline_contract_level: currentUser.contract_level || 100
+            upline_contract_level: currentUser.contract_level || 100,
           };
         }
 
         // Otherwise, this agent might be a downline of a downline, don't show override
         return {
           ...agent,
-          upline_contract_level: null
+          upline_contract_level: null,
         };
       });
     },
@@ -353,13 +411,13 @@ export function AgentTable({ agents, isLoading, onRefresh }: AgentTableProps) {
   const agentsToDisplay = agentsWithUplines || agents;
 
   // Build hierarchy structure
-  const agentMap = new Map(agentsToDisplay.map(a => [a.id, a]));
+  const agentMap = new Map(agentsToDisplay.map((a) => [a.id, a]));
   const rootAgents = agentsToDisplay.filter(
-    a => !a.upline_id || !agentMap.has(a.upline_id)
+    (a) => !a.upline_id || !agentMap.has(a.upline_id),
   );
   const childrenMap = new Map<string, AgentWithMetrics[]>();
 
-  agentsToDisplay.forEach(agent => {
+  agentsToDisplay.forEach((agent) => {
     if (agent.upline_id && agentMap.has(agent.upline_id)) {
       const children = childrenMap.get(agent.upline_id) || [];
       children.push(agent as AgentWithMetrics);
@@ -385,15 +443,15 @@ export function AgentTable({ agents, isLoading, onRefresh }: AgentTableProps) {
       await hierarchyService.updateAgentHierarchy({
         agent_id: agentToRemove.id,
         new_upline_id: null,
-        reason: 'Removed from team by upline'
+        reason: "Removed from team by upline",
       });
 
       showToast.success(`${agentToRemove.email} removed from team`);
       setAgentToRemove(null);
       onRefresh?.();
     } catch (error) {
-      console.error('Error removing agent:', error);
-      showToast.error('Failed to remove agent from team');
+      console.error("Error removing agent:", error);
+      showToast.error("Failed to remove agent from team");
     }
   };
 
@@ -420,11 +478,11 @@ export function AgentTable({ agents, isLoading, onRefresh }: AgentTableProps) {
   // Recursively render agents with their children
   const renderAgentRows = (
     agentList: AgentWithMetrics[],
-    depth = 0
+    depth = 0,
   ): React.ReactElement[] => {
     const rows: React.ReactElement[] = [];
 
-    agentList.forEach(agent => {
+    agentList.forEach((agent) => {
       const children = childrenMap.get(agent.id) || [];
       const isExpanded = expandedAgents.has(agent.id);
 
@@ -438,7 +496,7 @@ export function AgentTable({ agents, isLoading, onRefresh }: AgentTableProps) {
           hasChildren={children.length > 0}
           uplineContractLevel={agent.upline_contract_level || null}
           onRemove={setAgentToRemove}
-        />
+        />,
       );
 
       if (isExpanded && children.length > 0) {
@@ -451,75 +509,80 @@ export function AgentTable({ agents, isLoading, onRefresh }: AgentTableProps) {
 
   return (
     <>
-      <div className="bg-card rounded-md shadow-sm border border-border/50">
+      <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800">
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
-            <thead className="bg-muted border-b border-border">
-              <tr>
-                <th className="px-2 py-1.5 text-left font-semibold text-foreground text-xs">
+            <thead className="bg-zinc-50 dark:bg-zinc-800/50 border-b border-zinc-200 dark:border-zinc-800">
+              <tr className="h-8">
+                <th className="px-2 py-1.5 text-left text-[10px] font-semibold text-zinc-500 dark:text-zinc-400">
                   Agent
                 </th>
-                <th className="px-2 py-1.5 text-left font-semibold text-foreground text-xs">
+                <th className="px-2 py-1.5 text-left text-[10px] font-semibold text-zinc-500 dark:text-zinc-400">
                   Status
                 </th>
-                <th className="px-2 py-1.5 text-right font-semibold text-foreground text-xs">
+                <th className="px-2 py-1.5 text-right text-[10px] font-semibold text-zinc-500 dark:text-zinc-400">
                   MTD AP
                 </th>
-                <th className="px-2 py-1.5 text-center font-semibold text-foreground text-xs">
+                <th className="px-2 py-1.5 text-center text-[10px] font-semibold text-zinc-500 dark:text-zinc-400">
                   Policies
                 </th>
-                <th className="px-2 py-1.5 text-center font-semibold text-foreground text-xs">
+                <th className="px-2 py-1.5 text-center text-[10px] font-semibold text-zinc-500 dark:text-zinc-400">
                   Override %
                 </th>
-                <th className="px-2 py-1.5 text-right font-semibold text-foreground text-xs">
+                <th className="px-2 py-1.5 text-right text-[10px] font-semibold text-zinc-500 dark:text-zinc-400">
                   Override $
                 </th>
-                <th className="px-2 py-1.5 text-center font-semibold text-foreground text-xs">
+                <th className="px-2 py-1.5 text-center text-[10px] font-semibold text-zinc-500 dark:text-zinc-400">
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border">
-                {isLoading ? (
-                  <tr>
-                    <td colSpan={7} className="text-center py-8">
-                      <div className="text-[11px] text-muted-foreground">
-                        Loading team members...
-                      </div>
-                    </td>
-                  </tr>
-                ) : agentsToDisplay.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="text-center py-8">
-                      <div className="flex flex-col items-center gap-1">
-                        <UserX className="h-6 w-6 text-muted-foreground/30" />
-                        <span className="text-[11px] text-muted-foreground">
-                          No team members found
-                        </span>
-                        <span className="text-[10px] text-muted-foreground">
-                          Start by inviting agents to join your team
-                        </span>
-                      </div>
-                    </td>
-                  </tr>
-                ) : (
-                  renderAgentRows(paginatedRootAgents as AgentWithMetrics[])
-                )}
-              </tbody>
+            <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/50">
+              {isLoading ? (
+                <tr>
+                  <td colSpan={7} className="text-center py-8">
+                    <div className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                      Loading team members...
+                    </div>
+                  </td>
+                </tr>
+              ) : agentsToDisplay.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="text-center py-8">
+                    <div className="flex flex-col items-center gap-1">
+                      <UserX className="h-6 w-6 text-zinc-300 dark:text-zinc-600" />
+                      <span className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                        No team members found
+                      </span>
+                      <span className="text-[10px] text-zinc-400 dark:text-zinc-500">
+                        Start by inviting agents to join your team
+                      </span>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                renderAgentRows(paginatedRootAgents as AgentWithMetrics[])
+              )}
+            </tbody>
           </table>
         </div>
 
         {/* Pagination Controls */}
         {totalRootAgents > 0 && (
-          <div className="flex items-center justify-between px-3 py-2 border-t border-border bg-muted/30">
+          <div className="flex items-center justify-between px-3 py-2 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/30">
             <div className="flex items-center gap-4">
-              <span className="text-xs text-muted-foreground">
-                Total: {totalRootAgents} agent{totalRootAgents !== 1 ? 's' : ''}
+              <span className="text-[10px] text-zinc-500 dark:text-zinc-400">
+                Total: {totalRootAgents} agent{totalRootAgents !== 1 ? "s" : ""}
               </span>
               <div className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground">Rows per page:</span>
-                <Select value={rowsPerPage.toString()} onValueChange={handleRowsPerPageChange}>
-                  <SelectTrigger className="h-7 w-16 text-xs">
+                <span className="text-[10px] text-zinc-500 dark:text-zinc-400">
+                  Rows per page:
+                </span>
+                <Select
+                  value={rowsPerPage.toString()}
+                  onValueChange={handleRowsPerPageChange}
+                >
+                  <SelectTrigger className="h-6 w-14 text-[10px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -533,7 +596,7 @@ export function AgentTable({ agents, isLoading, onRefresh }: AgentTableProps) {
             </div>
 
             <div className="flex items-center gap-1">
-              <span className="text-xs text-muted-foreground">
+              <span className="text-[10px] text-zinc-500 dark:text-zinc-400">
                 Page {currentPage} of {totalPages || 1}
               </span>
               <Button
@@ -541,16 +604,18 @@ export function AgentTable({ agents, isLoading, onRefresh }: AgentTableProps) {
                 size="sm"
                 onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                 disabled={currentPage === 1}
-                className="h-7 w-7 p-0"
+                className="h-6 w-6 p-0 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
               >
                 <ChevronLeft className="h-3 w-3" />
               </Button>
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setCurrentPage(Math.min(totalPages || 1, currentPage + 1))}
+                onClick={() =>
+                  setCurrentPage(Math.min(totalPages || 1, currentPage + 1))
+                }
                 disabled={currentPage >= totalPages}
-                className="h-7 w-7 p-0"
+                className="h-6 w-6 p-0 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
               >
                 <ChevronRight className="h-3 w-3" />
               </Button>
@@ -568,7 +633,7 @@ export function AgentTable({ agents, isLoading, onRefresh }: AgentTableProps) {
           <AlertDialogHeader>
             <AlertDialogTitle>Remove Agent from Team?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will remove{' '}
+              This will remove{" "}
               <span className="font-semibold">{agentToRemove?.email}</span> from
               your team hierarchy. They will no longer be your downline and you
               will not receive overrides from their production.
