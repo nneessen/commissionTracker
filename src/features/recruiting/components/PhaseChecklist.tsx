@@ -1,4 +1,5 @@
 // src/features/recruiting/components/PhaseChecklist.tsx
+// Checklist component with modern zinc palette styling
 
 import React from 'react';
 import {RecruitChecklistProgress, PhaseChecklistItem, CHECKLIST_STATUS_COLORS} from '@/types/recruiting.types';
@@ -15,10 +16,10 @@ interface PhaseChecklistProps {
   checklistProgress: RecruitChecklistProgress[];
   isUpline?: boolean;
   currentUserId?: string;
-  currentPhaseId?: string; // The phase the recruit is currently in
-  viewedPhaseId?: string;  // The phase being viewed (might be different from current)
-  isAdmin?: boolean;       // Whether current user is admin/trainer/etc
-  onPhaseComplete?: () => void; // Callback when all items in phase are completed
+  currentPhaseId?: string;
+  viewedPhaseId?: string;
+  isAdmin?: boolean;
+  onPhaseComplete?: () => void;
 }
 
 export function PhaseChecklist({
@@ -33,58 +34,43 @@ export function PhaseChecklist({
 }: PhaseChecklistProps) {
   const updateItemStatus = useUpdateChecklistItemStatus();
 
-  // Create a map of itemId -> progress
   const progressMap = new Map(checklistProgress.map((p) => [p.checklist_item_id, p]));
-
-  // Sort items by item_order
   const sortedItems = [...checklistItems].sort((a, b) => a.item_order - b.item_order);
 
-  // Determine the checkbox state for an item based on sequential order and permissions
   const getCheckboxState = (
     item: PhaseChecklistItem,
     itemStatus: string,
     allItems: PhaseChecklistItem[]
   ): { isEnabled: boolean; disabledReason?: string } => {
-    // Check if user is logged in
     if (!currentUserId) {
       return { isEnabled: false, disabledReason: 'Not logged in' };
     }
 
-    // Document uploads use action buttons, not checkboxes
     if (item.item_type === 'document_upload') {
       return { isEnabled: false, disabledReason: 'Use upload button' };
     }
 
-    // Check if viewing a future phase (not the current phase)
     const isViewingFuturePhase = currentPhaseId && viewedPhaseId &&
                                   currentPhaseId !== viewedPhaseId;
 
     if (isViewingFuturePhase) {
-      // TODO: This needs proper phase order comparison
-      // For now, if viewing different phase than current, assume it's future
       return { isEnabled: false, disabledReason: 'Complete current phase first' };
     }
 
-    // NEW PERMISSION LOGIC: Be permissive by default
-    // Only block if item is specifically marked as system-only
     const isSystemOnlyItem = item.can_be_completed_by === 'system';
 
     if (isSystemOnlyItem && !isAdmin) {
       return { isEnabled: false, disabledReason: 'Admin approval required' };
     }
 
-    // Allow re-attempting rejected items regardless of order
     if (itemStatus === 'rejected' || itemStatus === 'needs_resubmission') {
       return { isEnabled: true };
     }
 
-    // If already completed/approved, allow unchecking (toggle off)
     if (itemStatus === 'completed' || itemStatus === 'approved') {
       return { isEnabled: true };
     }
 
-    // Sequential order enforcement within current phase
-    // Find the minimum order of incomplete required items
     const incompleteRequiredOrders = allItems
       .filter(i => {
         if (!i.is_required) return false;
@@ -94,7 +80,6 @@ export function PhaseChecklist({
       })
       .map(i => i.item_order);
 
-    // If no incomplete required items, check non-required items
     const firstIncompleteOrder = incompleteRequiredOrders.length > 0
       ? Math.min(...incompleteRequiredOrders)
       : Math.min(...allItems
@@ -104,26 +89,22 @@ export function PhaseChecklist({
             return status !== 'completed' && status !== 'approved';
           })
           .map(i => i.item_order)
-          .concat([Infinity])); // Add Infinity as fallback
+          .concat([Infinity]));
 
-    // Enable if this item is at the first incomplete order level (allows parallel completion)
     if (item.item_order === firstIncompleteOrder) {
       return { isEnabled: true };
     }
 
-    // Otherwise, item is locked until previous items complete
     if (item.item_order > firstIncompleteOrder) {
       return { isEnabled: false, disabledReason: 'Complete previous items first' };
     }
 
-    // Item is before the current level (should already be complete, but allow fixing)
     return { isEnabled: true };
   };
 
   const handleToggleComplete = async (itemId: string, currentStatus: string) => {
     if (!currentUserId) return;
 
-    // Toggle between completed and not_started
     const newStatus = currentStatus === 'completed' ? 'not_started' : 'completed';
 
     try {
@@ -136,7 +117,6 @@ export function PhaseChecklist({
         },
       });
       showToast.success(newStatus === 'completed' ? 'Task marked as complete' : 'Task unmarked');
-      // Phase advancement is handled server-side by checkPhaseAutoAdvancement()
     } catch (error: any) {
       console.error('Failed to update checklist item:', error);
       showToast.error(error?.message || 'Failed to update task. Please try again.');
@@ -156,7 +136,6 @@ export function PhaseChecklist({
         },
       });
       showToast.success('Item approved successfully');
-      // Phase advancement is handled server-side by checkPhaseAutoAdvancement()
     } catch (error: any) {
       console.error('Failed to approve item:', error);
       showToast.error(error?.message || 'Failed to approve item. Please try again.');
@@ -186,15 +165,13 @@ export function PhaseChecklist({
   const getActionButton = (item: PhaseChecklistItem, progress: RecruitChecklistProgress | undefined) => {
     const status = progress?.status || 'not_started';
 
-    // Document upload type
     if (item.item_type === 'document_upload') {
       if (isUpline) {
-        // Upline can approve/reject uploaded documents
         if (status === 'completed' || status === 'in_progress') {
           return (
             <div className="flex gap-2">
-              <Button size="sm" variant="outline" onClick={() => handleApprove(item.id)}>
-                <CheckCircle2 className="h-4 w-4 mr-1" />
+              <Button size="sm" variant="outline" onClick={() => handleApprove(item.id)} className="h-8">
+                <CheckCircle2 className="h-4 w-4 mr-1.5" />
                 Approve
               </Button>
               <Button
@@ -204,8 +181,9 @@ export function PhaseChecklist({
                   const reason = prompt('Reason for rejection:');
                   if (reason) handleReject(item.id, reason);
                 }}
+                className="h-8"
               >
-                <XCircle className="h-4 w-4 mr-1" />
+                <XCircle className="h-4 w-4 mr-1.5" />
                 Reject
               </Button>
             </div>
@@ -213,25 +191,24 @@ export function PhaseChecklist({
         }
         if (status === 'approved') {
           return (
-            <Badge variant="outline" className="text-green-600 bg-green-50">
-              <CheckCircle2 className="h-3 w-3 mr-1" />
+            <Badge variant="outline" className="text-sm text-emerald-700 bg-emerald-50 border-emerald-200 dark:text-emerald-400 dark:bg-emerald-950/30 dark:border-emerald-800">
+              <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
               Approved
             </Badge>
           );
         }
       } else {
-        // Recruit can upload document
         if (status === 'not_started' || status === 'needs_resubmission') {
           return (
-            <Button size="sm" variant="outline">
-              <Upload className="h-4 w-4 mr-1" />
+            <Button size="sm" variant="outline" className="h-8">
+              <Upload className="h-4 w-4 mr-1.5" />
               Upload
             </Button>
           );
         }
         if (status === 'completed' || status === 'in_progress') {
           return (
-            <Badge variant="secondary" className="text-yellow-700 bg-yellow-100">
+            <Badge variant="secondary" className="text-sm text-amber-700 bg-amber-50 border-amber-200 dark:text-amber-400 dark:bg-amber-950/30 dark:border-amber-800">
               Pending Approval
             </Badge>
           );
@@ -239,25 +216,23 @@ export function PhaseChecklist({
       }
     }
 
-    // Manual approval type
     if (item.item_type === 'manual_approval') {
       if (isUpline && status === 'not_started') {
         return (
-          <Button size="sm" variant="outline" onClick={() => handleApprove(item.id)}>
-            <CheckCircle2 className="h-4 w-4 mr-1" />
+          <Button size="sm" variant="outline" onClick={() => handleApprove(item.id)} className="h-8">
+            <CheckCircle2 className="h-4 w-4 mr-1.5" />
             Approve
           </Button>
         );
       }
     }
 
-    // Training module type
     if (item.item_type === 'training_module') {
       if (item.external_link && status !== 'completed' && status !== 'approved') {
         return (
-          <Button size="sm" variant="outline" asChild>
+          <Button size="sm" variant="outline" asChild className="h-8">
             <a href={item.external_link} target="_blank" rel="noopener noreferrer">
-              <ExternalLink className="h-4 w-4 mr-1" />
+              <ExternalLink className="h-4 w-4 mr-1.5" />
               View Training
             </a>
           </Button>
@@ -270,36 +245,39 @@ export function PhaseChecklist({
 
   if (sortedItems.length === 0) {
     return (
-      <div className="text-center py-8 text-muted-foreground">
-        No checklist items for this phase
+      <div className="py-8 text-center">
+        <FileText className="h-10 w-10 text-zinc-300 dark:text-zinc-600 mx-auto mb-3" />
+        <p className="text-sm text-zinc-500 dark:text-zinc-400">
+          No checklist items for this phase
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       {sortedItems.map((item) => {
         const progress = progressMap.get(item.id);
         const status = progress?.status || 'not_started';
         const isCompleted = status === 'completed' || status === 'approved';
         const isRejected = status === 'rejected';
-
-        // Get checkbox state using the new comprehensive logic
         const checkboxState = getCheckboxState(item, status, sortedItems);
 
         return (
           <div
             key={item.id}
-            className={`p-3 rounded-lg border transition-all hover:border-muted-foreground/30 ${
-              isCompleted ? 'bg-green-50/30 dark:bg-green-950/20' :
-              isRejected ? 'bg-red-50/30 dark:bg-red-950/20' :
-              checkboxState.isEnabled ? 'bg-muted/20' :
-              'bg-muted/10 opacity-75'
+            className={`p-4 rounded-lg border transition-all ${
+              isCompleted
+                ? 'bg-emerald-50/50 border-emerald-200 dark:bg-emerald-950/20 dark:border-emerald-800'
+                : isRejected
+                ? 'bg-red-50/50 border-red-200 dark:bg-red-950/20 dark:border-red-800'
+                : checkboxState.isEnabled
+                ? 'bg-white border-zinc-200 hover:border-zinc-300 dark:bg-zinc-900 dark:border-zinc-700 dark:hover:border-zinc-600'
+                : 'bg-zinc-50/50 border-zinc-200 opacity-75 dark:bg-zinc-900/50 dark:border-zinc-800'
             }`}
           >
-            {/* Row 1: Checkbox + Item name + Status badge + Action button */}
-            <div className="flex items-start gap-3 mb-2">
-              <div className="relative">
+            <div className="flex items-start gap-3">
+              <div className="relative mt-0.5">
                 <Checkbox
                   checked={isCompleted}
                   disabled={!checkboxState.isEnabled}
@@ -308,72 +286,70 @@ export function PhaseChecklist({
                       handleToggleComplete(item.id, status);
                     }
                   }}
-                  className="mt-0.5"
+                  className="h-5 w-5"
                 />
                 {!checkboxState.isEnabled && checkboxState.disabledReason !== 'Use upload button' && (
                   <div className="absolute -top-1 -right-1">
-                    <Lock className="h-3 w-3 text-muted-foreground" />
+                    <Lock className="h-3 w-3 text-zinc-400 dark:text-zinc-500" />
                   </div>
                 )}
               </div>
-              
+
               <div className="flex-1 min-w-0">
-                <div className="flex items-start justify-between gap-2">
+                <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <h4 className={`font-medium text-sm ${isCompleted ? 'line-through text-muted-foreground' : ''}`}>
+                    <h4 className={`text-sm font-medium ${isCompleted ? 'line-through text-zinc-500 dark:text-zinc-400' : 'text-zinc-900 dark:text-zinc-100'}`}>
                       {item.item_name}
                     </h4>
                     {item.is_required && (
-                      <Badge variant="outline" className="text-xs">
+                      <Badge variant="outline" className="text-xs border-zinc-300 text-zinc-600 dark:border-zinc-600 dark:text-zinc-400">
                         Required
                       </Badge>
                     )}
-                    <Badge 
-                      variant="secondary" 
+                    <Badge
+                      variant="secondary"
                       className={`text-xs ${CHECKLIST_STATUS_COLORS[status]}`}
                     >
                       {status.replace(/_/g, ' ')}
                     </Badge>
                   </div>
-                  
+
                   <div className="flex-shrink-0">
                     {getActionButton(item, progress)}
                   </div>
                 </div>
 
-                {/* Row 2: Description + Metadata */}
                 {item.item_description && (
-                  <p className="text-sm text-muted-foreground mt-1">{item.item_description}</p>
+                  <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1.5">{item.item_description}</p>
                 )}
 
-                {/* Show disabled reason if checkbox is locked and it's not a document upload */}
                 {!checkboxState.isEnabled && checkboxState.disabledReason && checkboxState.disabledReason !== 'Use upload button' && (
-                  <div className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
-                    <AlertCircle className="h-3 w-3" />
+                  <div className="mt-2 flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400">
+                    <AlertCircle className="h-3.5 w-3.5" />
                     <span>{checkboxState.disabledReason}</span>
                   </div>
                 )}
 
                 {progress?.rejection_reason && (
-                  <div className="mt-2 p-2 bg-red-100/50 dark:bg-red-950/50 rounded-sm text-sm">
-                    <span className="font-medium text-red-900 dark:text-red-100">Rejected: </span>
-                    <span className="text-red-800 dark:text-red-200">{progress.rejection_reason}</span>
+                  <div className="mt-3 p-3 bg-red-50 dark:bg-red-950/30 rounded-lg border border-red-200 dark:border-red-800">
+                    <span className="text-sm font-medium text-red-800 dark:text-red-300">Rejected: </span>
+                    <span className="text-sm text-red-700 dark:text-red-400">{progress.rejection_reason}</span>
                   </div>
                 )}
 
                 {progress?.notes && !progress.rejection_reason && (
-                  <p className="text-sm text-muted-foreground mt-2 italic">{progress.notes}</p>
+                  <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-2 italic">{progress.notes}</p>
                 )}
 
                 {progress?.document_id && (
-                  <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
+                  <div className="mt-2 flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400">
                     <FileText className="h-4 w-4" />
                     <span>Document uploaded</span>
                   </div>
                 )}
 
                 {progress?.completed_at && (
-                  <div className="mt-2 text-xs text-muted-foreground">
+                  <div className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
                     Completed {new Date(progress.completed_at).toLocaleDateString()}
                     {progress.completed_by && ` by ${progress.completed_by}`}
                   </div>

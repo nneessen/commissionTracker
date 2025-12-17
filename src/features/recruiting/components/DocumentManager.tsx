@@ -1,4 +1,5 @@
 // src/features/recruiting/components/DocumentManager.tsx
+// Document management with modern zinc palette styling
 
 import React, { useState } from 'react';
 import {UserDocument} from '@/types/recruiting.types';
@@ -6,7 +7,7 @@ import {Button} from '@/components/ui/button';
 import {Badge} from '@/components/ui/badge';
 import {Card} from '@/components/ui/card';
 import {DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger} from '@/components/ui/dropdown-menu';
-import {FileText, Download, Trash2, CheckCircle2, XCircle, MoreVertical, Upload, Eye} from 'lucide-react';
+import {FileText, Download, Trash2, CheckCircle2, XCircle, MoreVertical, Upload, Eye, FolderOpen} from 'lucide-react';
 import {useUploadDocument, useDeleteDocument, useUpdateDocumentStatus} from '../hooks/useRecruitDocuments';
 import {recruitingService} from '@/services/recruiting';
 import {UploadDocumentDialog} from './UploadDocumentDialog';
@@ -19,12 +20,12 @@ interface DocumentManagerProps {
   currentUserId?: string;
 }
 
-const DOCUMENT_STATUS_COLORS: Record<string, string> = {
-  pending: 'text-yellow-700 bg-yellow-100 dark:text-yellow-400 dark:bg-yellow-950',
-  received: 'text-blue-700 bg-blue-100 dark:text-blue-400 dark:bg-blue-950',
-  approved: 'text-green-700 bg-green-100 dark:text-green-400 dark:bg-green-950',
-  rejected: 'text-red-700 bg-red-100 dark:text-red-400 dark:bg-red-950',
-  expired: 'text-gray-700 bg-gray-100 dark:text-gray-400 dark:bg-gray-950',
+const DOCUMENT_STATUS_STYLES: Record<string, string> = {
+  pending: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-800',
+  received: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-800',
+  approved: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-800',
+  rejected: 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/30 dark:text-red-400 dark:border-red-800',
+  expired: 'bg-zinc-100 text-zinc-600 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700',
 };
 
 export function DocumentManager({ userId, documents, isUpline = false, currentUserId }: DocumentManagerProps) {
@@ -114,10 +115,10 @@ export function DocumentManager({ userId, documents, isUpline = false, currentUs
     <div className="space-y-4">
       {/* Header with Upload Button */}
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-medium text-muted-foreground">
-          {documents && documents.length > 0 ? `${documents.length} documents` : 'No documents'}
-        </h3>
-        <Button size="sm" onClick={() => setIsUploadDialogOpen(true)}>
+        <p className="text-sm text-zinc-600 dark:text-zinc-400">
+          {documents && documents.length > 0 ? `${documents.length} document${documents.length > 1 ? 's' : ''}` : 'No documents'}
+        </p>
+        <Button size="sm" onClick={() => setIsUploadDialogOpen(true)} className="h-9">
           <Upload className="h-4 w-4 mr-2" />
           Upload Document
         </Button>
@@ -125,50 +126,57 @@ export function DocumentManager({ userId, documents, isUpline = false, currentUs
 
       {/* Document List */}
       {documents && documents.length > 0 ? (
-        <div className="space-y-2">
+        <div className="space-y-3">
           {documents.map((doc) => (
-            <Card key={doc.id} className="p-4 hover:border-muted-foreground/30 transition-all">
+            <div
+              key={doc.id}
+              className="p-4 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 hover:border-zinc-300 dark:hover:border-zinc-600 transition-all"
+            >
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-start gap-3 flex-1 min-w-0">
-                  <FileText className="h-5 w-5 text-muted-foreground mt-0.5 flex-shrink-0" />
+                  <div className="p-2 rounded-lg bg-zinc-100 dark:bg-zinc-800">
+                    <FileText className="h-5 w-5 text-zinc-600 dark:text-zinc-400" />
+                  </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <h4 className="font-medium truncate">{doc.document_name}</h4>
+                      <h4 className="text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate">
+                        {doc.document_name}
+                      </h4>
                       {doc.required && (
-                        <Badge variant="outline" className="text-xs">
+                        <Badge variant="outline" className="text-xs border-zinc-300 text-zinc-600 dark:border-zinc-600 dark:text-zinc-400">
                           Required
                         </Badge>
                       )}
                     </div>
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
-                      <span>{doc.document_type.replace(/_/g, ' ')}</span>
-                      <span>•</span>
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-zinc-500 dark:text-zinc-400">
+                      <span className="capitalize">{doc.document_type.replace(/_/g, ' ')}</span>
+                      <span className="text-zinc-300 dark:text-zinc-600">•</span>
                       <span>{formatFileSize(doc.file_size || 0)}</span>
-                      <span>•</span>
+                      <span className="text-zinc-300 dark:text-zinc-600">•</span>
                       <span>Uploaded {new Date(doc.uploaded_at).toLocaleDateString()}</span>
                       {doc.expires_at && (
                         <>
-                          <span>•</span>
-                          <span className={new Date(doc.expires_at) < new Date() ? 'text-red-600' : ''}>
+                          <span className="text-zinc-300 dark:text-zinc-600">•</span>
+                          <span className={new Date(doc.expires_at) < new Date() ? 'text-red-600 dark:text-red-400 font-medium' : ''}>
                             Expires {new Date(doc.expires_at).toLocaleDateString()}
                           </span>
                         </>
                       )}
                     </div>
                     {doc.notes && (
-                      <p className="text-sm text-muted-foreground mt-2 italic">{doc.notes}</p>
+                      <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-2 italic">{doc.notes}</p>
                     )}
                   </div>
                 </div>
 
                 <div className="flex items-center gap-2 flex-shrink-0">
-                  <Badge className={DOCUMENT_STATUS_COLORS[doc.status]}>
+                  <Badge variant="outline" className={`text-xs capitalize ${DOCUMENT_STATUS_STYLES[doc.status]}`}>
                     {doc.status}
                   </Badge>
 
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm">
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
                         <MoreVertical className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
@@ -184,7 +192,7 @@ export function DocumentManager({ userId, documents, isUpline = false, currentUs
                       {isUpline && doc.status === 'pending' && (
                         <>
                           <DropdownMenuItem onClick={() => handleApprove(doc)}>
-                            <CheckCircle2 className="h-4 w-4 mr-2 text-green-600" />
+                            <CheckCircle2 className="h-4 w-4 mr-2 text-emerald-600" />
                             Approve
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleReject(doc)}>
@@ -196,7 +204,7 @@ export function DocumentManager({ userId, documents, isUpline = false, currentUs
                       {isUpline && (
                         <DropdownMenuItem
                           onClick={() => handleDelete(doc)}
-                          className="text-red-600"
+                          variant="destructive"
                         >
                           <Trash2 className="h-4 w-4 mr-2" />
                           Delete
@@ -206,14 +214,16 @@ export function DocumentManager({ userId, documents, isUpline = false, currentUs
                   </DropdownMenu>
                 </div>
               </div>
-            </Card>
+            </div>
           ))}
         </div>
       ) : (
-        <div className="text-center py-12 text-muted-foreground">
-          <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-          <p>No documents uploaded yet</p>
-          <p className="text-sm mt-1">Click "Upload Document" to add documents</p>
+        <div className="py-12 text-center">
+          <FolderOpen className="h-12 w-12 text-zinc-300 dark:text-zinc-600 mx-auto mb-4" />
+          <p className="text-base text-zinc-600 dark:text-zinc-400 mb-1">No documents uploaded yet</p>
+          <p className="text-sm text-zinc-500 dark:text-zinc-500">
+            Click "Upload Document" to add documents
+          </p>
         </div>
       )}
 
