@@ -1,11 +1,17 @@
 // src/features/analytics/components/CarriersProductsBreakdown.tsx
 
-import React from 'react';
-import {Card, CardContent} from '@/components/ui/card';
-import {cn} from '@/lib/utils';
-import {useAnalyticsData} from '../../../hooks';
-import {useAnalyticsDateRange} from '../context/AnalyticsDateContext';
-import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from '@/components/ui/table';
+import React from "react";
+import { cn } from "@/lib/utils";
+import { useAnalyticsData } from "../../../hooks";
+import { useAnalyticsDateRange } from "../context/AnalyticsDateContext";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 interface CarrierProductData {
   carrier: string;
@@ -35,42 +41,42 @@ export function CarriersProductsBreakdown() {
 
   if (isLoading) {
     return (
-      <Card>
-        <CardContent className="p-3">
-          <div className="text-[11px] font-medium text-muted-foreground uppercase">
-            Carriers & Products
-          </div>
-          <div className="p-3 text-center text-[10px] text-muted-foreground">
-            Loading...
-          </div>
-        </CardContent>
-      </Card>
+      <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-3">
+        <div className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+          Carriers & Products
+        </div>
+        <div className="p-3 text-center text-[10px] text-zinc-500 dark:text-zinc-400">
+          Loading...
+        </div>
+      </div>
     );
   }
 
   // Create a map of carrier IDs to names
   const carrierIdToName = new Map<string, string>();
-  raw.carriers?.forEach(carrier => {
+  raw.carriers?.forEach((carrier) => {
     carrierIdToName.set(carrier.id, carrier.name);
   });
 
   // Helper function to format product names
   const formatProductName = (product: string): string => {
     return product
-      .split('_')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-      .join(' ');
+      .split("_")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(" ");
   };
 
   // Group data by carrier and product
   const carrierMap = new Map<string, CarrierProductData>();
 
-  raw.policies.forEach(policy => {
-    const carrierName = policy.carrierId ?
-      (carrierIdToName.get(policy.carrierId) || 'Unknown Carrier') :
-      'Unknown Carrier';
-    const product = policy.product ? formatProductName(policy.product) : 'Unknown Product';
-    const commission = raw.commissions.find(c => c.policyId === policy.id);
+  raw.policies.forEach((policy) => {
+    const carrierName = policy.carrierId
+      ? carrierIdToName.get(policy.carrierId) || "Unknown Carrier"
+      : "Unknown Carrier";
+    const product = policy.product
+      ? formatProductName(policy.product)
+      : "Unknown Product";
+    const commission = raw.commissions.find((c) => c.policyId === policy.id);
 
     if (!carrierMap.has(carrierName)) {
       carrierMap.set(carrierName, {
@@ -86,7 +92,7 @@ export function CarriersProductsBreakdown() {
     const carrierData = carrierMap.get(carrierName)!;
 
     // Find or create product entry
-    let productData = carrierData.products.find(p => p.name === product);
+    let productData = carrierData.products.find((p) => p.name === product);
     if (!productData) {
       productData = {
         name: product,
@@ -105,7 +111,8 @@ export function CarriersProductsBreakdown() {
     if (commission) {
       productData.totalCommissions += commission.amount || 0;
       if (productData.totalPremium > 0) {
-        productData.avgCommissionRate = (productData.totalCommissions / productData.totalPremium) * 100;
+        productData.avgCommissionRate =
+          (productData.totalCommissions / productData.totalPremium) * 100;
       }
     }
 
@@ -118,17 +125,20 @@ export function CarriersProductsBreakdown() {
   // Calculate carrier average commission rates
   carrierMap.forEach((carrier) => {
     if (carrier.totalPremium > 0) {
-      carrier.avgCommissionRate = (carrier.totalCommissions / carrier.totalPremium) * 100;
+      carrier.avgCommissionRate =
+        (carrier.totalCommissions / carrier.totalPremium) * 100;
     }
   });
 
   // Sort carriers by total premium
-  const sortedCarriers = Array.from(carrierMap.values()).sort((a, b) => b.totalPremium - a.totalPremium);
+  const sortedCarriers = Array.from(carrierMap.values()).sort(
+    (a, b) => b.totalPremium - a.totalPremium,
+  );
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(value);
@@ -136,7 +146,7 @@ export function CarriersProductsBreakdown() {
 
   // Prepare flattened data for table
   const tableData: any[] = [];
-  sortedCarriers.forEach(carrier => {
+  sortedCarriers.forEach((carrier) => {
     // Add carrier summary row
     tableData.push({
       isCarrier: true,
@@ -144,76 +154,95 @@ export function CarriersProductsBreakdown() {
       policies: carrier.totalPolicies,
       premium: carrier.totalPremium,
       avgRate: carrier.avgCommissionRate,
-      commission: carrier.totalCommissions
+      commission: carrier.totalCommissions,
     });
 
     // Add product rows (top 3 products per carrier)
     carrier.products
       .sort((a, b) => b.totalPremium - a.totalPremium)
       .slice(0, 3)
-      .forEach(product => {
+      .forEach((product) => {
         tableData.push({
           isCarrier: false,
           name: `  → ${product.name}`,
           policies: product.policyCount,
           premium: product.totalPremium,
           avgRate: product.avgCommissionRate,
-          commission: product.totalCommissions
+          commission: product.totalCommissions,
         });
       });
   });
 
   return (
-    <Card>
-      <CardContent className="p-3">
-        <div className="flex items-center justify-between mb-2">
-          <div className="text-[11px] font-medium text-muted-foreground uppercase">Carriers & Products</div>
-          <span className="text-[10px] text-muted-foreground">{sortedCarriers.length} carriers</span>
+    <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-3">
+      <div className="flex items-center justify-between mb-2">
+        <div className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+          Carriers & Products
         </div>
+        <span className="text-[10px] text-zinc-400 dark:text-zinc-500">
+          {sortedCarriers.length} carriers
+        </span>
+      </div>
 
-        {tableData.length > 0 ? (
-          <Table className="text-[11px]">
-            <TableHeader>
-              <TableRow className="h-7">
-                <TableHead className="p-1.5 bg-primary/5">Carrier / Product</TableHead>
-                <TableHead className="p-1.5 bg-primary/5 text-right">Policies</TableHead>
-                <TableHead className="p-1.5 bg-primary/5 text-right">Premium</TableHead>
-                <TableHead className="p-1.5 bg-primary/5 text-right">Rate</TableHead>
-                <TableHead className="p-1.5 bg-primary/5 text-right">Commission</TableHead>
+      {tableData.length > 0 ? (
+        <Table className="text-[11px]">
+          <TableHeader>
+            <TableRow className="h-7 border-b border-zinc-200 dark:border-zinc-800">
+              <TableHead className="p-1.5 text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 bg-zinc-50 dark:bg-zinc-800/50">
+                Carrier / Product
+              </TableHead>
+              <TableHead className="p-1.5 text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 bg-zinc-50 dark:bg-zinc-800/50 text-right">
+                Policies
+              </TableHead>
+              <TableHead className="p-1.5 text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 bg-zinc-50 dark:bg-zinc-800/50 text-right">
+                Premium
+              </TableHead>
+              <TableHead className="p-1.5 text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 bg-zinc-50 dark:bg-zinc-800/50 text-right">
+                Rate
+              </TableHead>
+              <TableHead className="p-1.5 text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 bg-zinc-50 dark:bg-zinc-800/50 text-right">
+                Commission
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {tableData.map((row, idx) => (
+              <TableRow
+                key={idx}
+                className="border-b border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
+              >
+                <TableCell className="p-1.5">
+                  <span
+                    className={cn(
+                      row.isCarrier
+                        ? "font-semibold text-zinc-900 dark:text-zinc-100"
+                        : "text-[9px] text-zinc-500 dark:text-zinc-400",
+                    )}
+                  >
+                    {row.name}
+                  </span>
+                </TableCell>
+                <TableCell className="p-1.5 text-right font-mono text-zinc-500 dark:text-zinc-400">
+                  {row.policies}
+                </TableCell>
+                <TableCell className="p-1.5 text-right font-mono text-zinc-900 dark:text-zinc-100">
+                  {formatCurrency(row.premium)}
+                </TableCell>
+                <TableCell className="p-1.5 text-right font-mono text-emerald-600 dark:text-emerald-400">
+                  {row.avgRate.toFixed(1)}%
+                </TableCell>
+                <TableCell className="p-1.5 text-right font-mono font-semibold text-zinc-900 dark:text-zinc-100">
+                  {formatCurrency(row.commission)}
+                </TableCell>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {tableData.map((row, idx) => (
-                <TableRow key={idx} className={idx % 2 === 0 ? 'bg-muted/20' : ''}>
-                  <TableCell className="p-1.5">
-                    <span className={cn(
-                      row.isCarrier ? "font-semibold" : "text-[9px] text-muted-foreground"
-                    )}>
-                      {row.name}
-                    </span>
-                  </TableCell>
-                  <TableCell className="p-1.5 text-right font-mono">
-                    {row.policies}
-                  </TableCell>
-                  <TableCell className="p-1.5 text-right font-mono">
-                    {formatCurrency(row.premium)}
-                  </TableCell>
-                  <TableCell className="p-1.5 text-right font-mono text-green-600 dark:text-green-400">
-                    {row.avgRate.toFixed(1)}%
-                  </TableCell>
-                  <TableCell className="p-1.5 text-right font-mono font-semibold">
-                    {formatCurrency(row.commission)}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        ) : (
-          <div className="p-3 text-center text-[11px] text-muted-foreground/70">
-            No carrier data available
-          </div>
-        )}
-      </CardContent>
-    </Card>
+            ))}
+          </TableBody>
+        </Table>
+      ) : (
+        <div className="p-3 text-center text-[11px] text-zinc-400 dark:text-zinc-500">
+          No carrier data available
+        </div>
+      )}
+    </div>
   );
 }

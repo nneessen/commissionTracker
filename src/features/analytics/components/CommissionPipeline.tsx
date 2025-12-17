@@ -1,11 +1,10 @@
 // src/features/analytics/components/CommissionPipeline.tsx
 
-import React from 'react';
-import {Card, CardContent} from '@/components/ui/card';
-import {cn} from '@/lib/utils';
-import {useAnalyticsData} from '../../../hooks';
-import {useAnalyticsDateRange} from '../context/AnalyticsDateContext';
-import {AlertTriangle, Clock} from 'lucide-react';
+import React from "react";
+import { cn } from "@/lib/utils";
+import { useAnalyticsData } from "../../../hooks";
+import { useAnalyticsDateRange } from "../context/AnalyticsDateContext";
+import { AlertTriangle, Clock } from "lucide-react";
 
 /**
  * CommissionPipeline - Shows pending commissions and cash flow forecast
@@ -20,16 +19,14 @@ export function CommissionPipeline() {
 
   if (isLoading) {
     return (
-      <Card>
-        <CardContent className="p-3">
-          <div className="text-xs font-medium text-muted-foreground uppercase">
-            Commission Pipeline
-          </div>
-          <div className="p-3 text-center text-[11px] text-muted-foreground">
-            Loading...
-          </div>
-        </CardContent>
-      </Card>
+      <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-3">
+        <div className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+          Commission Pipeline
+        </div>
+        <div className="p-3 text-center text-[11px] text-zinc-500 dark:text-zinc-400">
+          Loading...
+        </div>
+      </div>
     );
   }
 
@@ -48,21 +45,23 @@ export function CommissionPipeline() {
   let pendingCount90 = 0;
   let atRisk = 0;
   let atRiskCount = 0;
-  let totalPaid = 0;
+  const _totalPaid = 0;
   let totalPending = 0;
 
-  raw.commissions.forEach(commission => {
-    const policy = raw.policies.find(p => p.id === commission.policyId);
+  raw.commissions.forEach((commission) => {
+    const policy = raw.policies.find((p) => p.id === commission.policyId);
 
-    if (commission.status === 'paid') {
+    if (commission.status === "paid") {
       // _totalPaid += commission.amount || 0;
-    } else if (commission.status === 'pending') {
+    } else if (commission.status === "pending") {
       totalPending += commission.amount || 0;
 
       // Estimate payment date based on policy date + typical payment cycle (30 days)
       if (policy?.effectiveDate) {
         const policyDate = new Date(policy.effectiveDate);
-        const estimatedPaymentDate = new Date(policyDate.getTime() + 30 * 24 * 60 * 60 * 1000);
+        const estimatedPaymentDate = new Date(
+          policyDate.getTime() + 30 * 24 * 60 * 60 * 1000,
+        );
 
         if (estimatedPaymentDate <= next30Days) {
           pending30 += commission.amount || 0;
@@ -79,9 +78,11 @@ export function CommissionPipeline() {
       // Check if policy is at risk (within first 6 months - contestability period)
       if (policy?.effectiveDate) {
         const policyDate = new Date(policy.effectiveDate);
-        const sixMonthsAgo = new Date(now.getTime() - 180 * 24 * 60 * 60 * 1000);
+        const sixMonthsAgo = new Date(
+          now.getTime() - 180 * 24 * 60 * 60 * 1000,
+        );
 
-        if (policyDate > sixMonthsAgo && policy.status === 'lapsed') {
+        if (policyDate > sixMonthsAgo && policy.status === "lapsed") {
           atRisk += commission.amount || 0;
           atRiskCount++;
         }
@@ -90,9 +91,9 @@ export function CommissionPipeline() {
   });
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(value);
@@ -103,126 +104,141 @@ export function CommissionPipeline() {
   const projectedQuarterly = avgDailyEarnings * 90;
 
   return (
-    <Card>
-      <CardContent className="p-3">
-        <div className="mb-2">
-          <div className="text-[11px] font-medium text-muted-foreground uppercase">Commission Pipeline</div>
-          <div className="text-[10px] text-muted-foreground">Cash Flow Forecast</div>
+    <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-3">
+      <div className="mb-2">
+        <div className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+          Commission Pipeline
+        </div>
+        <div className="text-[10px] text-zinc-400 dark:text-zinc-500">
+          Cash Flow Forecast
+        </div>
+      </div>
+
+      {/* Pipeline Timeline */}
+      <div className="space-y-2 mb-3">
+        {/* Next 30 Days */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Clock className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
+            <span className="text-[11px] text-zinc-500 dark:text-zinc-400">
+              Next 30 days
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold font-mono text-emerald-600 dark:text-emerald-400">
+              {formatCurrency(pending30)}
+            </span>
+            {pendingCount30 > 0 && (
+              <span className="text-[10px] text-zinc-400 dark:text-zinc-500">
+                ({pendingCount30})
+              </span>
+            )}
+          </div>
         </div>
 
-        {/* Pipeline Timeline */}
-        <div className="space-y-2 mb-3">
-          {/* Next 30 Days */}
+        {/* Next 60 Days */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Clock className="h-3 w-3 text-amber-600 dark:text-amber-400" />
+            <span className="text-[11px] text-zinc-500 dark:text-zinc-400">
+              Next 60 days
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold font-mono text-amber-600 dark:text-amber-400">
+              {formatCurrency(pending60)}
+            </span>
+            {pendingCount60 > 0 && (
+              <span className="text-[10px] text-zinc-400 dark:text-zinc-500">
+                ({pendingCount60})
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Next 90 Days */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Clock className="h-3 w-3 text-blue-600 dark:text-blue-400" />
+            <span className="text-[11px] text-zinc-500 dark:text-zinc-400">
+              Next 90 days
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold font-mono text-blue-600 dark:text-blue-400">
+              {formatCurrency(pending90)}
+            </span>
+            {pendingCount90 > 0 && (
+              <span className="text-[10px] text-zinc-400 dark:text-zinc-500">
+                ({pendingCount90})
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Divider */}
+        <div className="h-px bg-zinc-200 dark:bg-zinc-800" />
+
+        {/* At Risk */}
+        {atRisk > 0 && (
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Clock className="h-3 w-3 text-green-600 dark:text-green-400" />
-              <span className="text-[11px] text-muted-foreground">Next 30 days</span>
+              <AlertTriangle className="h-3 w-3 text-red-600 dark:text-red-400" />
+              <span className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                At Risk
+              </span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold font-mono text-green-600 dark:text-green-400">
-                {formatCurrency(pending30)}
+              <span className="text-xs font-bold font-mono text-red-600 dark:text-red-400">
+                {formatCurrency(atRisk)}
               </span>
-              {pendingCount30 > 0 && (
-                <span className="text-[10px] text-muted-foreground/70">
-                  ({pendingCount30})
+              {atRiskCount > 0 && (
+                <span className="text-[10px] text-zinc-400 dark:text-zinc-500">
+                  ({atRiskCount})
                 </span>
               )}
             </div>
           </div>
+        )}
+      </div>
 
-          {/* Next 60 Days */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Clock className="h-3 w-3 text-amber-600 dark:text-amber-400" />
-              <span className="text-[11px] text-muted-foreground">Next 60 days</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold font-mono text-amber-600 dark:text-amber-400">
-                {formatCurrency(pending60)}
-              </span>
-              {pendingCount60 > 0 && (
-                <span className="text-[10px] text-muted-foreground/70">
-                  ({pendingCount60})
-                </span>
-              )}
-            </div>
+      {/* Summary Stats */}
+      <div className="grid grid-cols-2 gap-2 p-2 bg-zinc-100 dark:bg-zinc-800 rounded">
+        <div className="text-center">
+          <div className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase">
+            Total Pending
           </div>
-
-          {/* Next 90 Days */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Clock className="h-3 w-3 text-primary" />
-              <span className="text-[11px] text-muted-foreground">Next 90 days</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold font-mono text-primary">
-                {formatCurrency(pending90)}
-              </span>
-              {pendingCount90 > 0 && (
-                <span className="text-[10px] text-muted-foreground/70">
-                  ({pendingCount90})
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* Divider */}
-          <div className="h-px bg-slate-800/20 dark:bg-slate-200/10" />
-
-          {/* At Risk */}
-          {atRisk > 0 && (
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <AlertTriangle className="h-3 w-3 text-red-600 dark:text-red-400" />
-                <span className="text-[11px] text-muted-foreground">At Risk</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold font-mono text-red-600 dark:text-red-400">
-                  {formatCurrency(atRisk)}
-                </span>
-                {atRiskCount > 0 && (
-                  <span className="text-[10px] text-muted-foreground/70">
-                    ({atRiskCount})
-                  </span>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Summary Stats */}
-        <div className="grid grid-cols-2 gap-2 p-2 bg-slate-800/30 dark:bg-slate-200/10 rounded">
-          <div className="text-center">
-            <div className="text-[10px] text-muted-foreground uppercase">Total Pending</div>
-            <div className="text-sm font-bold font-mono text-primary">
-              {formatCurrency(totalPending)}
-            </div>
-          </div>
-          <div className="text-center">
-            <div className="text-[10px] text-muted-foreground uppercase">Quarterly Proj</div>
-            <div className="text-sm font-bold font-mono text-green-600 dark:text-green-400">
-              {formatCurrency(projectedQuarterly)}
-            </div>
+          <div className="text-sm font-bold font-mono text-blue-600 dark:text-blue-400">
+            {formatCurrency(totalPending)}
           </div>
         </div>
+        <div className="text-center">
+          <div className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase">
+            Quarterly Proj
+          </div>
+          <div className="text-sm font-bold font-mono text-emerald-600 dark:text-emerald-400">
+            {formatCurrency(projectedQuarterly)}
+          </div>
+        </div>
+      </div>
 
-        {/* Cash Flow Status */}
-        <div className={cn(
+      {/* Cash Flow Status */}
+      <div
+        className={cn(
           "mt-2 p-1.5 rounded text-center text-[10px] font-medium",
           totalPending > 50000
-            ? "bg-green-500/10 text-green-600 dark:text-green-400"
+            ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
             : totalPending > 25000
-            ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
-            : "bg-red-500/10 text-red-600 dark:text-red-400"
-        )}>
-          {totalPending > 50000
-            ? "Strong pipeline - cash flow healthy"
-            : totalPending > 25000
+              ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+              : "bg-red-500/10 text-red-600 dark:text-red-400",
+        )}
+      >
+        {totalPending > 50000
+          ? "Strong pipeline - cash flow healthy"
+          : totalPending > 25000
             ? "Moderate pipeline - maintain activity"
-            : "Weak pipeline - increase sales activity"
-          }
-        </div>
-      </CardContent>
-    </Card>
+            : "Weak pipeline - increase sales activity"}
+      </div>
+    </div>
   );
 }

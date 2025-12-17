@@ -1,11 +1,15 @@
 // src/features/analytics/AnalyticsDashboard.tsx
 
 import React, { lazy, Suspense } from "react";
-import {TimePeriodSelector} from "./components/TimePeriodSelector";
-import {Button} from "@/components/ui/button";
-import {useAnalyticsData} from '@/hooks';
-import {downloadCSV, printAnalyticsToPDF} from "../../utils/exportHelpers";
-import {AnalyticsDateProvider, useAnalyticsDateRange} from "./context/AnalyticsDateContext";
+import { BarChart3 } from "lucide-react";
+import { TimePeriodSelector } from "./components/TimePeriodSelector";
+import { Button } from "@/components/ui/button";
+import { useAnalyticsData } from "@/hooks";
+import { downloadCSV, printAnalyticsToPDF } from "../../utils/exportHelpers";
+import {
+  AnalyticsDateProvider,
+  useAnalyticsDateRange,
+} from "./context/AnalyticsDateContext";
 
 // Lazy load analytics components for better performance
 const PaceMetrics = lazy(() =>
@@ -21,7 +25,9 @@ const ProductMatrix = lazy(() =>
   import("./components").then((m) => ({ default: m.ProductMatrix })),
 );
 const CarriersProductsBreakdown = lazy(() =>
-  import("./components").then((m) => ({ default: m.CarriersProductsBreakdown })),
+  import("./components").then((m) => ({
+    default: m.CarriersProductsBreakdown,
+  })),
 );
 const GeographicAnalysis = lazy(() =>
   import("./components").then((m) => ({ default: m.GeographicAnalysis })),
@@ -30,11 +36,14 @@ const GamePlan = lazy(() =>
   import("./components").then((m) => ({ default: m.GamePlan })),
 );
 const CommissionPipeline = lazy(() =>
-  import("./components/CommissionPipeline").then((m) => ({ default: m.CommissionPipeline })),
+  import("./components/CommissionPipeline").then((m) => ({
+    default: m.CommissionPipeline,
+  })),
 );
 
 function AnalyticsDashboardContent() {
-  const { timePeriod, setTimePeriod, customRange, setCustomRange, dateRange } = useAnalyticsDateRange();
+  const { timePeriod, setTimePeriod, customRange, setCustomRange, dateRange } =
+    useAnalyticsDateRange();
 
   const analyticsData = useAnalyticsData({
     startDate: dateRange.startDate,
@@ -81,54 +90,55 @@ function AnalyticsDashboardContent() {
   };
 
   return (
-    <>
-      {/* Page Header with TimePeriodSelector on same row */}
-      <div className="page-header py-2 border-b border-border/50 mb-3">
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex-shrink-0">
-            <h1 className="text-base font-semibold text-foreground">Analytics Dashboard</h1>
-            <p className="text-[11px] text-muted-foreground">
-              Real-time performance metrics and insights
-            </p>
-          </div>
+    <div className="h-[calc(100vh-4rem)] flex flex-col p-3 space-y-2.5 bg-zinc-50 dark:bg-zinc-950">
+      {/* Compact Header Card */}
+      <div className="flex items-center justify-between bg-white dark:bg-zinc-900 rounded-lg px-3 py-2 border border-zinc-200 dark:border-zinc-800">
+        <div className="flex items-center gap-2">
+          <BarChart3 className="h-4 w-4 text-zinc-900 dark:text-zinc-100" />
+          <h1 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+            Analytics
+          </h1>
+          <span className="text-[10px] text-zinc-500 dark:text-zinc-400">
+            Performance metrics and insights
+          </span>
+        </div>
 
-          {/* TimePeriodSelector and Export - all on same row */}
-          <div className="flex items-center gap-3">
-            <TimePeriodSelector
-              selectedPeriod={timePeriod}
-              onPeriodChange={setTimePeriod}
-              customRange={customRange}
-              onCustomRangeChange={setCustomRange}
-            />
-            <div className="flex gap-1.5 flex-shrink-0">
-              <Button
-                onClick={handleExportCSV}
-                size="sm"
-                variant="ghost"
-                className="h-6 px-2 text-[10px]"
-                title="Export data to CSV"
-              >
-                CSV
-              </Button>
-              <Button
-                onClick={handlePrintPDF}
-                size="sm"
-                variant="ghost"
-                className="h-6 px-2 text-[10px]"
-                title="Print report to PDF"
-              >
-                PDF
-              </Button>
-            </div>
+        {/* TimePeriodSelector and Export - all on same row */}
+        <div className="flex items-center gap-3">
+          <TimePeriodSelector
+            selectedPeriod={timePeriod}
+            onPeriodChange={setTimePeriod}
+            customRange={customRange}
+            onCustomRangeChange={setCustomRange}
+          />
+          <div className="flex gap-1.5 flex-shrink-0">
+            <Button
+              onClick={handleExportCSV}
+              size="sm"
+              variant="ghost"
+              className="h-6 px-2 text-[10px] text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
+              title="Export data to CSV"
+            >
+              CSV
+            </Button>
+            <Button
+              onClick={handlePrintPDF}
+              size="sm"
+              variant="ghost"
+              className="h-6 px-2 text-[10px] text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
+              title="Print report to PDF"
+            >
+              PDF
+            </Button>
           </div>
         </div>
       </div>
 
-      <div className="page-content">
-
+      {/* Main Content */}
+      <div className="flex-1 overflow-auto">
         {/* Loading State */}
         {analyticsData.isLoading ? (
-          <div className="p-4 text-center text-[11px] text-muted-foreground">
+          <div className="p-4 text-center text-[11px] text-zinc-500 dark:text-zinc-400">
             Loading analytics...
           </div>
         ) : (
@@ -162,11 +172,11 @@ function AnalyticsDashboardContent() {
         )}
 
         {/* Compact Footer Note */}
-        <div className="mt-3 px-2 py-1 text-[10px] text-muted-foreground/70 text-center max-w-[1920px]">
+        <div className="mt-3 px-2 py-1 text-[10px] text-zinc-400 dark:text-zinc-500 text-center max-w-[1920px]">
           Real-time calculations • Auto-refresh on data changes
         </div>
       </div>
-    </>
+    </div>
   );
 }
 

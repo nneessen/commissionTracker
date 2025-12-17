@@ -1,11 +1,17 @@
 // src/features/analytics/components/ProductMatrix.tsx
 
-import React from 'react';
-import {Card, CardContent} from '@/components/ui/card';
-import {useAnalyticsData} from '../../../hooks';
-import {cn} from '@/lib/utils';
-import {useAnalyticsDateRange} from '../context/AnalyticsDateContext';
-import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from '@/components/ui/table';
+import React from "react";
+import { useAnalyticsData } from "../../../hooks";
+import { cn } from "@/lib/utils";
+import { useAnalyticsDateRange } from "../context/AnalyticsDateContext";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 /**
  * ProductMatrix - Product performance matrix
@@ -19,31 +25,29 @@ export function ProductMatrix() {
 
   if (isLoading) {
     return (
-      <Card>
-        <CardContent className="p-3">
-          <div className="text-[11px] font-medium text-muted-foreground uppercase">
-            Product Mix
-          </div>
-          <div className="p-3 text-center text-[10px] text-muted-foreground">
-            Loading...
-          </div>
-        </CardContent>
-      </Card>
+      <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-3">
+        <div className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+          Product Mix
+        </div>
+        <div className="p-3 text-center text-[10px] text-zinc-500 dark:text-zinc-400">
+          Loading...
+        </div>
+      </div>
     );
   }
 
   // Helper function to format product names (whole_life -> Whole Life)
   const formatProductName = (product: string): string => {
     return product
-      .split('_')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-      .join(' ');
+      .split("_")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(" ");
   };
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(value);
@@ -53,14 +57,14 @@ export function ProductMatrix() {
   const productMap = new Map<string, { count: number; revenue: number }>();
   let totalRevenue = 0;
 
-  raw.policies.forEach(policy => {
-    const product = policy.product || 'Unknown';
+  raw.policies.forEach((policy) => {
+    const product = policy.product || "Unknown";
     const revenue = policy.annualPremium || 0;
 
     const existing = productMap.get(product) || { count: 0, revenue: 0 };
     productMap.set(product, {
       count: existing.count + 1,
-      revenue: existing.revenue + revenue
+      revenue: existing.revenue + revenue,
     });
 
     totalRevenue += revenue;
@@ -72,59 +76,76 @@ export function ProductMatrix() {
       product: product,
       count: data.count,
       revenue: data.revenue,
-      percentage: totalRevenue > 0 ? (data.revenue / totalRevenue) * 100 : 0
+      percentage: totalRevenue > 0 ? (data.revenue / totalRevenue) * 100 : 0,
     }))
     .sort((a, b) => b.revenue - a.revenue);
 
   return (
-    <Card>
-      <CardContent className="p-3">
-        <div className="flex items-center justify-between mb-2">
-          <div className="text-[11px] font-medium text-muted-foreground uppercase">Product Mix</div>
-          <span className="text-[10px] text-muted-foreground">{productData.length} products</span>
+    <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-3">
+      <div className="flex items-center justify-between mb-2">
+        <div className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+          Product Mix
         </div>
-        {productData.length > 0 ? (
-          <Table className="text-[11px]">
-            <TableHeader>
-              <TableRow className="h-7">
-                <TableHead className="p-1.5 bg-primary/5">Product</TableHead>
-                <TableHead className="p-1.5 bg-primary/5 text-right">Policies</TableHead>
-                <TableHead className="p-1.5 bg-primary/5 text-right">Mix %</TableHead>
-                <TableHead className="p-1.5 bg-primary/5 text-right">Revenue</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {productData.map((row, idx) => (
-                <TableRow key={idx} className={idx % 2 === 0 ? 'bg-muted/20' : ''}>
-                  <TableCell className="p-1.5 font-medium">
-                    {formatProductName(row.product)}
-                  </TableCell>
-                  <TableCell className="p-1.5 text-right font-mono text-muted-foreground">
-                    {row.count}
-                  </TableCell>
-                  <TableCell className="p-1.5 text-right">
-                    <span className={cn(
+        <span className="text-[10px] text-zinc-400 dark:text-zinc-500">
+          {productData.length} products
+        </span>
+      </div>
+      {productData.length > 0 ? (
+        <Table className="text-[11px]">
+          <TableHeader>
+            <TableRow className="h-7 border-b border-zinc-200 dark:border-zinc-800">
+              <TableHead className="p-1.5 text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 bg-zinc-50 dark:bg-zinc-800/50">
+                Product
+              </TableHead>
+              <TableHead className="p-1.5 text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 bg-zinc-50 dark:bg-zinc-800/50 text-right">
+                Policies
+              </TableHead>
+              <TableHead className="p-1.5 text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 bg-zinc-50 dark:bg-zinc-800/50 text-right">
+                Mix %
+              </TableHead>
+              <TableHead className="p-1.5 text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 bg-zinc-50 dark:bg-zinc-800/50 text-right">
+                Revenue
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {productData.map((row, idx) => (
+              <TableRow
+                key={idx}
+                className="border-b border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
+              >
+                <TableCell className="p-1.5 font-medium text-zinc-900 dark:text-zinc-100">
+                  {formatProductName(row.product)}
+                </TableCell>
+                <TableCell className="p-1.5 text-right font-mono text-zinc-500 dark:text-zinc-400">
+                  {row.count}
+                </TableCell>
+                <TableCell className="p-1.5 text-right">
+                  <span
+                    className={cn(
                       "font-mono",
-                      row.percentage >= 40 ? "text-green-600 dark:text-green-400" :
-                      row.percentage >= 20 ? "text-amber-600 dark:text-amber-400" :
-                      "text-red-600 dark:text-red-400"
-                    )}>
-                      {row.percentage.toFixed(1)}%
-                    </span>
-                  </TableCell>
-                  <TableCell className="p-1.5 text-right font-mono font-semibold">
-                    {formatCurrency(row.revenue)}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        ) : (
-          <div className="p-3 text-center text-[11px] text-muted-foreground/70">
-            No product data available
-          </div>
-        )}
-      </CardContent>
-    </Card>
+                      row.percentage >= 40
+                        ? "text-emerald-600 dark:text-emerald-400"
+                        : row.percentage >= 20
+                          ? "text-amber-600 dark:text-amber-400"
+                          : "text-red-600 dark:text-red-400",
+                    )}
+                  >
+                    {row.percentage.toFixed(1)}%
+                  </span>
+                </TableCell>
+                <TableCell className="p-1.5 text-right font-mono font-semibold text-zinc-900 dark:text-zinc-100">
+                  {formatCurrency(row.revenue)}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      ) : (
+        <div className="p-3 text-center text-[11px] text-zinc-400 dark:text-zinc-500">
+          No product data available
+        </div>
+      )}
+    </div>
   );
 }

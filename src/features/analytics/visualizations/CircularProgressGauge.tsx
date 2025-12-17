@@ -1,4 +1,6 @@
-import {cn} from '@/lib/utils';
+// src/features/analytics/visualizations/CircularProgressGauge.tsx
+
+import { cn } from "@/lib/utils";
 
 interface CircularProgressGaugeProps {
   percentage: number; // 0-100
@@ -7,7 +9,7 @@ interface CircularProgressGaugeProps {
   showLabel?: boolean;
   label?: string;
   className?: string;
-  color?: 'green' | 'yellow' | 'red' | 'blue';
+  color?: "green" | "yellow" | "red" | "blue";
 }
 
 export function CircularProgressGauge({
@@ -17,7 +19,7 @@ export function CircularProgressGauge({
   showLabel = true,
   label,
   className,
-  color = 'blue',
+  color = "blue",
 }: CircularProgressGaugeProps) {
   // Clamp percentage between 0 and 100
   const clampedPercentage = Math.min(100, Math.max(0, percentage));
@@ -27,23 +29,35 @@ export function CircularProgressGauge({
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (clampedPercentage / 100) * circumference;
 
-  // Color mapping
+  // Color mapping with zinc-compatible colors
   const colorClasses = {
-    green: 'stroke-green-600 dark:stroke-green-400',
-    yellow: 'stroke-yellow-600 dark:stroke-yellow-400',
-    red: 'stroke-red-600 dark:stroke-red-400',
-    blue: 'stroke-blue-600 dark:stroke-blue-400',
+    green: "stroke-emerald-600 dark:stroke-emerald-400",
+    yellow: "stroke-amber-600 dark:stroke-amber-400",
+    red: "stroke-red-600 dark:stroke-red-400",
+    blue: "stroke-blue-600 dark:stroke-blue-400",
   };
 
-  const fillColorClasses = {
-    green: 'fill-green-600 dark:fill-green-400',
-    yellow: 'fill-yellow-600 dark:fill-yellow-400',
-    red: 'fill-red-600 dark:fill-red-400',
-    blue: 'fill-blue-600 dark:fill-blue-400',
+  const _fillColorClasses = {
+    green: "fill-emerald-600 dark:fill-emerald-400",
+    yellow: "fill-amber-600 dark:fill-amber-400",
+    red: "fill-red-600 dark:fill-red-400",
+    blue: "fill-blue-600 dark:fill-blue-400",
+  };
+
+  const textColorClasses = {
+    green: "text-emerald-600 dark:text-emerald-400",
+    yellow: "text-amber-600 dark:text-amber-400",
+    red: "text-red-600 dark:text-red-400",
+    blue: "text-blue-600 dark:text-blue-400",
   };
 
   return (
-    <div className={cn('relative inline-flex items-center justify-center', className)}>
+    <div
+      className={cn(
+        "relative inline-flex items-center justify-center",
+        className,
+      )}
+    >
       <svg
         width={size}
         height={size}
@@ -58,7 +72,7 @@ export function CircularProgressGauge({
           fill="none"
           stroke="currentColor"
           strokeWidth={strokeWidth}
-          className="text-muted-foreground/20"
+          className="text-zinc-200 dark:text-zinc-700"
         />
 
         {/* Progress circle */}
@@ -71,18 +85,26 @@ export function CircularProgressGauge({
           strokeDasharray={circumference}
           strokeDashoffset={offset}
           strokeLinecap="round"
-          className={cn('transition-all duration-1000 ease-out', colorClasses[color])}
+          className={cn(
+            "transition-all duration-1000 ease-out",
+            colorClasses[color],
+          )}
         />
       </svg>
 
       {/* Center label */}
       {showLabel && (
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className={cn('text-4xl font-bold tabular-nums', fillColorClasses[color])}>
+          <span
+            className={cn(
+              "text-4xl font-bold tabular-nums",
+              textColorClasses[color],
+            )}
+          >
             {Math.round(clampedPercentage)}%
           </span>
           {label && (
-            <span className="text-xs text-muted-foreground mt-1 text-center max-w-[80%]">
+            <span className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 text-center max-w-[80%]">
               {label}
             </span>
           )}
