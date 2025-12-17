@@ -2,9 +2,8 @@
 
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
-import { UserPlus, Mail, Download, Settings2, Users, CheckCircle, XCircle, Clock } from "lucide-react";
+import { UserPlus, Mail, Download, Settings2 } from "lucide-react";
 import { useRecruits } from "./hooks/useRecruits";
 import { RecruitListTable } from "./components/RecruitListTable";
 import { RecruitDetailPanel } from "./components/RecruitDetailPanel";
@@ -116,27 +115,26 @@ function RecruitingDashboardContent() {
             </p>
           </div>
 
-          {/* Center: Stats Badges - Clean inline display */}
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-slate-800/50">
-              <Users className="h-4 w-4 text-slate-400" />
-              <span className="text-sm font-medium text-slate-300">{stats.total}</span>
-              <span className="text-sm text-slate-500">Total</span>
+          {/* Center: Stats - Simple monochrome display */}
+          <div className="flex items-center gap-4 text-sm">
+            <div className="flex items-center gap-1.5">
+              <span className="font-semibold text-foreground">{stats.total}</span>
+              <span className="text-muted-foreground">Total</span>
             </div>
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-blue-500/10">
-              <Clock className="h-4 w-4 text-blue-400" />
-              <span className="text-sm font-medium text-blue-300">{stats.active}</span>
-              <span className="text-sm text-blue-400/70">Active</span>
+            <div className="w-px h-4 bg-border" />
+            <div className="flex items-center gap-1.5">
+              <span className="font-semibold text-foreground">{stats.active}</span>
+              <span className="text-muted-foreground">Active</span>
             </div>
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-emerald-500/10">
-              <CheckCircle className="h-4 w-4 text-emerald-400" />
-              <span className="text-sm font-medium text-emerald-300">{stats.completed}</span>
-              <span className="text-sm text-emerald-400/70">Complete</span>
+            <div className="w-px h-4 bg-border" />
+            <div className="flex items-center gap-1.5">
+              <span className="font-semibold text-foreground">{stats.completed}</span>
+              <span className="text-muted-foreground">Complete</span>
             </div>
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-red-500/10">
-              <XCircle className="h-4 w-4 text-red-400" />
-              <span className="text-sm font-medium text-red-300">{stats.dropped}</span>
-              <span className="text-sm text-red-400/70">Dropped</span>
+            <div className="w-px h-4 bg-border" />
+            <div className="flex items-center gap-1.5">
+              <span className="font-semibold text-foreground">{stats.dropped}</span>
+              <span className="text-muted-foreground">Dropped</span>
             </div>
           </div>
 
@@ -152,7 +150,6 @@ function RecruitingDashboardContent() {
             </Button>
             <Button
               size="sm"
-              variant="primary"
               onClick={() => setAddRecruitDialogOpen(true)}
             >
               <UserPlus className="h-4 w-4 mr-1.5" />

@@ -1,5 +1,5 @@
 // src/components/ui/button.tsx
-// Custom button component with shadow-based elevation (no hard borders except outline)
+// Custom button component - black/white theme with subtle styling
 
 import * as React from "react";
 import {Slot} from "@radix-ui/react-slot";
@@ -8,48 +8,48 @@ import {cva, type VariantProps} from "class-variance-authority";
 import {cn} from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
-        // Default: Neutral slate button that highlights blue on hover
+        // Default: Black/dark button with subtle depth
         default:
-          "bg-gradient-to-b from-slate-700 to-slate-800 text-white shadow-sm hover:from-blue-500 hover:to-blue-600 hover:shadow-md hover:shadow-blue-500/20 active:shadow-inner data-[active=true]:from-blue-500 data-[active=true]:to-blue-600 data-[active=true]:shadow-blue-500/30",
+          "bg-foreground text-background shadow-sm hover:bg-foreground/90 active:bg-foreground/80 active:shadow-none",
 
-        // Primary: Always blue - use for main CTAs
+        // Primary: Same as default but with slight glow on hover
         primary:
-          "bg-gradient-to-b from-blue-500 to-blue-600 text-white shadow-sm shadow-blue-500/20 hover:from-blue-400 hover:to-blue-500 hover:shadow-md hover:shadow-blue-500/30 active:shadow-inner data-[active=true]:from-blue-400 data-[active=true]:to-blue-500",
+          "bg-foreground text-background shadow-sm hover:bg-foreground/90 hover:shadow-md active:bg-foreground/80 active:shadow-none",
 
-        // Secondary: Emerald/green on hover - use for secondary actions
+        // Secondary: Muted background
         secondary:
-          "bg-gradient-to-b from-slate-700 to-slate-800 text-white shadow-sm hover:from-emerald-500 hover:to-emerald-600 hover:shadow-md hover:shadow-emerald-500/20 active:shadow-inner data-[active=true]:from-emerald-500 data-[active=true]:to-emerald-600",
+          "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80 active:bg-secondary/70",
 
-        // Success: Always green - use for positive confirmations
+        // Success: Green using theme color
         success:
-          "bg-gradient-to-b from-emerald-500 to-emerald-600 text-white shadow-sm shadow-emerald-500/20 hover:from-emerald-400 hover:to-emerald-500 hover:shadow-md hover:shadow-emerald-500/30 active:shadow-inner",
+          "bg-[hsl(var(--success))] text-[hsl(var(--success-foreground))] shadow-sm hover:opacity-90 active:opacity-80",
 
-        // Warning: Amber/yellow - use for caution actions
+        // Warning: Amber using theme color
         warning:
-          "bg-gradient-to-b from-amber-500 to-amber-600 text-white shadow-sm shadow-amber-500/20 hover:from-amber-400 hover:to-amber-500 hover:shadow-md hover:shadow-amber-500/30 active:shadow-inner",
+          "bg-[hsl(var(--warning))] text-[hsl(var(--warning-foreground))] shadow-sm hover:opacity-90 active:opacity-80",
 
-        // Destructive: Red on hover, red when active - use for delete/remove
+        // Destructive: Red using theme color
         destructive:
-          "bg-gradient-to-b from-slate-700 to-slate-800 text-white shadow-sm hover:from-red-500 hover:to-red-600 hover:shadow-md hover:shadow-red-500/20 active:shadow-inner data-[active=true]:from-red-500 data-[active=true]:to-red-600 data-[active=true]:shadow-red-500/30",
+          "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90 active:bg-destructive/80",
 
-        // Outline: Has border (ring) - only variant with visible border
+        // Outline: Border with transparent bg
         outline:
-          "bg-slate-900/50 backdrop-blur-sm text-slate-300 ring-1 ring-slate-700 hover:bg-blue-500/20 hover:text-blue-300 hover:ring-blue-500/50 hover:shadow-md hover:shadow-blue-500/10 active:bg-blue-500/30 data-[active=true]:bg-blue-500/30 data-[active=true]:text-blue-300 data-[active=true]:ring-blue-500",
+          "border border-input bg-background text-foreground shadow-sm hover:bg-accent hover:text-accent-foreground active:bg-accent/80",
 
-        // Ghost: Transparent, subtle hover - use for toolbar buttons
+        // Ghost: No background, subtle hover
         ghost:
-          "text-slate-400 hover:text-white hover:bg-slate-800/50 active:bg-slate-700/50 data-[active=true]:bg-slate-800/70 data-[active=true]:text-white",
+          "text-muted-foreground hover:text-foreground hover:bg-accent active:bg-accent/80",
 
-        // Muted: Subtle muted background - use for less prominent actions
+        // Muted: Subtle muted background
         muted:
-          "bg-slate-800/50 text-slate-300 hover:bg-slate-700/70 hover:text-white active:bg-slate-700 data-[active=true]:bg-slate-700 data-[active=true]:text-white",
+          "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground active:bg-muted/70",
 
         // Link: Text-only with underline
-        link: "text-blue-400 underline-offset-4 hover:underline hover:text-blue-300",
+        link: "text-foreground underline-offset-4 hover:underline",
       },
       size: {
         default: "h-9 px-4 py-2",
