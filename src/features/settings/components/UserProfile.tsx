@@ -1,12 +1,14 @@
 // src/features/settings/components/UserProfile.tsx
+// Redesigned with zinc palette and compact design patterns
+
 import React, { useState, useEffect } from 'react';
-import {User, Save, AlertCircle, CheckCircle2, Users} from 'lucide-react';
-import {Button} from '@/components/ui/button';
-import {useAuth} from '../../../contexts/AuthContext';
-import {useUpdateUserProfile} from '../../../hooks/settings/useUpdateUserProfile';
-import {useUpdateAgentHierarchy} from '../../../hooks/hierarchy/useUpdateAgentHierarchy';
-import {SettingsCard} from './SettingsComponents';
-import {supabase} from '@/services/base/supabase';
+import { User, Save, AlertCircle, CheckCircle2, Users } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { useAuth } from '../../../contexts/AuthContext';
+import { useUpdateUserProfile } from '../../../hooks/settings/useUpdateUserProfile';
+import { useUpdateAgentHierarchy } from '../../../hooks/hierarchy/useUpdateAgentHierarchy';
+import { supabase } from '@/services/base/supabase';
 
 export function UserProfile() {
   const { user } = useAuth();
@@ -155,173 +157,193 @@ export function UserProfile() {
 
   if (!user) {
     return (
-      <SettingsCard title="User Profile" icon={<User size={20} />}>
-        <div className="flex items-center justify-center py-12 text-muted-foreground">
+      <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-6">
+        <div className="flex items-center justify-center text-[11px] text-zinc-500 dark:text-zinc-400">
           Loading user information...
         </div>
-      </SettingsCard>
+      </div>
     );
   }
 
   return (
-    <SettingsCard title="User Profile" icon={<User size={20} />}>
-      <div className="space-y-6">
-        {/* User Information */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label className="block text-sm font-medium text-muted-foreground mb-2">
-              Email
-            </label>
-            <div className="px-3 py-2 bg-gradient-to-r from-muted/30 to-card rounded-md text-foreground shadow-sm">
-              {user.email}
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-muted-foreground mb-2">
-              Name
-            </label>
-            <div className="px-3 py-2 bg-gradient-to-r from-muted/30 to-card rounded-md text-foreground shadow-sm">
-              {user.name || 'Not set'}
-            </div>
-          </div>
+    <div className="space-y-2">
+      {/* User Information Card */}
+      <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800">
+        <div className="flex items-center gap-2 px-3 py-2 border-b border-zinc-100 dark:border-zinc-800">
+          <User className="h-3.5 w-3.5 text-zinc-400" />
+          <h3 className="text-[11px] font-semibold text-zinc-900 dark:text-zinc-100 uppercase tracking-wide">
+            User Profile
+          </h3>
         </div>
-
-        {/* Upline Assignment */}
-        <form onSubmit={handleUplineSubmit} className="pt-6 border-t">
-          <div className="mb-6">
-            <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              Team Hierarchy
-            </h3>
-            <p className="text-sm text-muted-foreground">
-              Specify who your upline is. This determines who earns override commissions on your policies.
-              {currentUplineEmail && (
-                <span className="block mt-1 text-foreground font-medium">
-                  Current upline: {currentUplineEmail}
-                </span>
-              )}
-            </p>
-          </div>
-
-          <div className="max-w-md">
-            <label htmlFor="uplineEmail" className="block text-sm font-medium text-muted-foreground mb-2">
-              Upline Email (leave blank to remove)
-            </label>
-            <input
-              id="uplineEmail"
-              type="email"
-              value={uplineEmail}
-              onChange={handleUplineEmailChange}
-              placeholder="upline@example.com"
-              className={`block w-full px-3 py-2 rounded-md shadow-sm bg-card text-foreground focus:ring-2 focus:ring-primary ${
-                uplineError ? 'ring-2 ring-destructive' : ''
-              }`}
-            />
-            {uplineError && (
-              <div className="mt-2 flex items-center gap-2 text-sm text-destructive">
-                <AlertCircle className="h-4 w-4" />
-                {uplineError}
+        <div className="p-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-[10px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide mb-1">
+                Email
+              </label>
+              <div className="px-2 py-1.5 bg-zinc-50 dark:bg-zinc-800 rounded text-[11px] text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700">
+                {user.email}
               </div>
-            )}
-          </div>
+            </div>
 
-          <div className="mt-6 flex items-center gap-4">
-            <Button
-              type="submit"
-              disabled={updateHierarchy.isPending}
-              size="sm"
-              variant="outline"
-            >
-              <Save className="h-4 w-4 mr-2" />
-              {updateHierarchy.isPending ? 'Updating...' : 'Update Upline'}
-            </Button>
-
-            {showUplineSuccess && (
-              <div className="flex items-center gap-2 text-sm text-success">
-                <CheckCircle2 className="h-5 w-5" />
-                Upline updated successfully!
+            <div>
+              <label className="block text-[10px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide mb-1">
+                Name
+              </label>
+              <div className="px-2 py-1.5 bg-zinc-50 dark:bg-zinc-800 rounded text-[11px] text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700">
+                {user.name || 'Not set'}
               </div>
-            )}
-          </div>
-        </form>
-
-        {/* Contract Level Editor */}
-        <form onSubmit={handleSubmit} className="pt-6 border-t">
-          <div className="mb-6">
-            <h3 className="text-lg font-semibold mb-2">Commission Settings</h3>
-            <p className="text-sm text-muted-foreground">
-              Your contract level determines your commission rates. This setting only affects
-              new commissions and does not change existing policies or commission calculations.
-            </p>
-          </div>
-
-          <div className="max-w-xs">
-            <label htmlFor="contractLevel" className="block text-sm font-medium text-muted-foreground mb-2">
-              Contract Level (80-145)
-            </label>
-            <input
-              id="contractLevel"
-              type="number"
-              min="80"
-              max="145"
-              value={contractLevel}
-              onChange={handleContractLevelChange}
-              className={`block w-full px-3 py-2 rounded-md shadow-sm bg-card text-foreground focus:ring-2 focus:ring-primary ${
-                validationError ? 'ring-2 ring-destructive' : ''
-              }`}
-            />
-            {validationError && (
-              <div className="mt-2 flex items-center gap-2 text-sm text-destructive">
-                <AlertCircle className="h-4 w-4" />
-                {validationError}
-              </div>
-            )}
-          </div>
-
-          {/* Submit Button */}
-          <div className="mt-6 flex items-center gap-4">
-            <Button
-              type="submit"
-              disabled={updateProfile.isPending || !!validationError}
-              size="sm"
-            >
-              <Save className="h-4 w-4 mr-2" />
-              {updateProfile.isPending ? 'Saving...' : 'Save Changes'}
-            </Button>
-
-            {showSuccess && (
-              <div className="flex items-center gap-2 text-sm text-success">
-                <CheckCircle2 className="h-5 w-5" />
-                Contract level updated successfully!
-              </div>
-            )}
-
-            {updateProfile.isError && (
-              <div className="flex items-center gap-2 text-sm text-destructive">
-                <AlertCircle className="h-5 w-5" />
-                Failed to update contract level
-              </div>
-            )}
-          </div>
-        </form>
-
-        {/* Info Box */}
-        <div className="mt-6 p-4 bg-gradient-to-r from-info/15 via-status-earned/10 to-card rounded-md shadow-md">
-          <div className="flex items-start gap-3">
-            <AlertCircle className="h-5 w-5 text-info mt-0.5 flex-shrink-0" />
-            <div className="text-sm text-foreground">
-              <p className="font-medium mb-1">About Contract Levels</p>
-              <p className="text-muted-foreground">
-                Your contract level represents your commission tier with insurance carriers.
-                Higher levels typically earn higher commission percentages. When you create new
-                policies or commissions, your current contract level will be used to calculate
-                your earnings from the comp guide.
-              </p>
             </div>
           </div>
         </div>
       </div>
-    </SettingsCard>
+
+      {/* Team Hierarchy Card */}
+      <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800">
+        <div className="flex items-center gap-2 px-3 py-2 border-b border-zinc-100 dark:border-zinc-800">
+          <Users className="h-3.5 w-3.5 text-zinc-400" />
+          <h3 className="text-[11px] font-semibold text-zinc-900 dark:text-zinc-100 uppercase tracking-wide">
+            Team Hierarchy
+          </h3>
+        </div>
+        <div className="p-3">
+          <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mb-2">
+            Specify who your upline is. This determines who earns override commissions on your policies.
+            {currentUplineEmail && (
+              <span className="block mt-1 text-zinc-700 dark:text-zinc-300 font-medium">
+                Current upline: {currentUplineEmail}
+              </span>
+            )}
+          </p>
+
+          <form onSubmit={handleUplineSubmit}>
+            <div className="max-w-md">
+              <label
+                htmlFor="uplineEmail"
+                className="block text-[10px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide mb-1"
+              >
+                Upline Email (leave blank to remove)
+              </label>
+              <div className="flex gap-2">
+                <Input
+                  id="uplineEmail"
+                  type="email"
+                  value={uplineEmail}
+                  onChange={handleUplineEmailChange}
+                  placeholder="upline@example.com"
+                  className={`h-7 text-[11px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 ${
+                    uplineError ? 'border-red-500' : ''
+                  }`}
+                />
+                <Button
+                  type="submit"
+                  disabled={updateHierarchy.isPending}
+                  size="sm"
+                  variant="outline"
+                  className="h-7 px-2 text-[10px] border-zinc-200 dark:border-zinc-700"
+                >
+                  <Save className="h-3 w-3 mr-1" />
+                  {updateHierarchy.isPending ? 'Updating...' : 'Update'}
+                </Button>
+              </div>
+              {uplineError && (
+                <div className="mt-1.5 flex items-center gap-1 text-[10px] text-red-600 dark:text-red-400">
+                  <AlertCircle className="h-3 w-3" />
+                  {uplineError}
+                </div>
+              )}
+              {showUplineSuccess && (
+                <div className="mt-1.5 flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400">
+                  <CheckCircle2 className="h-3 w-3" />
+                  Upline updated successfully!
+                </div>
+              )}
+            </div>
+          </form>
+        </div>
+      </div>
+
+      {/* Commission Settings Card */}
+      <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800">
+        <div className="px-3 py-2 border-b border-zinc-100 dark:border-zinc-800">
+          <h3 className="text-[11px] font-semibold text-zinc-900 dark:text-zinc-100 uppercase tracking-wide">
+            Commission Settings
+          </h3>
+        </div>
+        <div className="p-3">
+          <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mb-2">
+            Your contract level determines your commission rates. This setting only affects
+            new commissions and does not change existing policies or commission calculations.
+          </p>
+
+          <form onSubmit={handleSubmit}>
+            <div className="max-w-xs">
+              <label
+                htmlFor="contractLevel"
+                className="block text-[10px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide mb-1"
+              >
+                Contract Level (80-145)
+              </label>
+              <div className="flex gap-2">
+                <Input
+                  id="contractLevel"
+                  type="number"
+                  min="80"
+                  max="145"
+                  value={contractLevel}
+                  onChange={handleContractLevelChange}
+                  className={`h-7 text-[11px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 w-24 ${
+                    validationError ? 'border-red-500' : ''
+                  }`}
+                />
+                <Button
+                  type="submit"
+                  disabled={updateProfile.isPending || !!validationError}
+                  size="sm"
+                  className="h-7 px-2 text-[10px]"
+                >
+                  <Save className="h-3 w-3 mr-1" />
+                  {updateProfile.isPending ? 'Saving...' : 'Save'}
+                </Button>
+              </div>
+              {validationError && (
+                <div className="mt-1.5 flex items-center gap-1 text-[10px] text-red-600 dark:text-red-400">
+                  <AlertCircle className="h-3 w-3" />
+                  {validationError}
+                </div>
+              )}
+              {showSuccess && (
+                <div className="mt-1.5 flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400">
+                  <CheckCircle2 className="h-3 w-3" />
+                  Contract level updated successfully!
+                </div>
+              )}
+              {updateProfile.isError && (
+                <div className="mt-1.5 flex items-center gap-1 text-[10px] text-red-600 dark:text-red-400">
+                  <AlertCircle className="h-3 w-3" />
+                  Failed to update contract level
+                </div>
+              )}
+            </div>
+          </form>
+        </div>
+      </div>
+
+      {/* Info Box */}
+      <div className="bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800 p-3">
+        <div className="flex items-start gap-2">
+          <AlertCircle className="h-3.5 w-3.5 text-blue-500 mt-0.5 flex-shrink-0" />
+          <div className="text-[10px]">
+            <p className="font-medium text-blue-700 dark:text-blue-300 mb-0.5">About Contract Levels</p>
+            <p className="text-blue-600 dark:text-blue-400">
+              Your contract level represents your commission tier with insurance carriers.
+              Higher levels typically earn higher commission percentages. When you create new
+              policies or commissions, your current contract level will be used to calculate
+              your earnings from the comp guide.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

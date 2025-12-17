@@ -1,5 +1,5 @@
 // src/features/admin/components/EditUserDialog.tsx
-// Comprehensive user edit dialog with full CRUD capabilities
+// Redesigned with zinc palette and compact design
 
 import { useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -23,7 +23,6 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Separator } from "@/components/ui/separator";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -76,17 +75,14 @@ interface EditableUserData {
   approval_status: "pending" | "approved" | "denied";
   agent_status: "unlicensed" | "licensed" | "not_applicable" | null;
   contract_level: number | null;
-  // Address fields
   street_address: string;
   city: string;
   state: string;
   zip: string;
   resident_state: string;
-  // License fields
   license_number: string;
   npn: string;
   license_expiration: string;
-  // Social
   linkedin_url: string;
   instagram_url: string;
 }
@@ -134,24 +130,20 @@ export default function EditUserDialog({
     Array<{ id: string; first_name: string; last_name: string; email: string }>
   >([]);
 
-  // Check for downlines when delete dialog opens
   useEffect(() => {
-    // Reset ALL state when dialog is closed or no user
     if (!showDeleteConfirm || !user) {
       setDownlineCount(0);
       setPotentialUplines([]);
       setReassignUplineId(null);
-      setCheckingDependencies(false); // FIX: Reset this too!
+      setCheckingDependencies(false);
       return;
     }
 
-    // Track if effect is still active (for cleanup)
     let isActive = true;
 
     const checkDownlines = async () => {
       setCheckingDependencies(true);
       try {
-        // Check for downlines (users with this user as upline)
         const { count, error: countError } = await supabase
           .from("user_profiles")
           .select("*", { count: "exact", head: true })
@@ -163,10 +155,9 @@ export default function EditUserDialog({
           return;
         }
 
-        if (!isActive) return; // Abort if dialog closed
+        if (!isActive) return;
         setDownlineCount(count || 0);
 
-        // If there are downlines, fetch potential uplines for reassignment
         if (count && count > 0) {
           const { data: uplines, error: uplinesError } = await supabase
             .from("user_profiles")
@@ -189,13 +180,11 @@ export default function EditUserDialog({
 
     checkDownlines();
 
-    // Cleanup: mark effect as inactive when dialog closes or deps change
     return () => {
       isActive = false;
     };
-  }, [showDeleteConfirm, user?.id, user]); // Include user in dependencies
+  }, [showDeleteConfirm, user?.id, user]);
 
-  // Populate form when user changes
   useEffect(() => {
     if (user && open) {
       setFormData({
@@ -255,7 +244,6 @@ export default function EditUserDialog({
       if (formData.contract_level !== user.contract_level)
         updates.contract_level = formData.contract_level;
 
-      // Address fields
       if (formData.street_address !== (user.street_address || ""))
         updates.street_address = formData.street_address || null;
       if (formData.city !== (user.city || ""))
@@ -266,14 +254,12 @@ export default function EditUserDialog({
       if (formData.resident_state !== (user.resident_state || ""))
         updates.resident_state = formData.resident_state || null;
 
-      // License fields
       if (formData.license_number !== (user.license_number || ""))
         updates.license_number = formData.license_number || null;
       if (formData.npn !== (user.npn || "")) updates.npn = formData.npn || null;
       if (formData.license_expiration !== (user.license_expiration || ""))
         updates.license_expiration = formData.license_expiration || null;
 
-      // Social fields
       if (formData.linkedin_url !== (user.linkedin_url || ""))
         updates.linkedin_url = formData.linkedin_url || null;
       if (formData.instagram_url !== (user.instagram_url || ""))
@@ -307,7 +293,6 @@ export default function EditUserDialog({
     setIsDeleting(true);
 
     try {
-      // If there are downlines and a reassignment target is selected, reassign first
       if (downlineCount > 0 && reassignUplineId) {
         const { data, error } = await supabase
           .from("user_profiles")
@@ -350,7 +335,6 @@ export default function EditUserDialog({
     setIsSendingInvite(true);
 
     try {
-      // Send password reset email which acts as confirmation email where users set their password
       const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
         redirectTo: `${window.location.origin}/auth/callback?type=recovery`,
       });
@@ -377,20 +361,19 @@ export default function EditUserDialog({
 
   if (!user) return null;
 
-  // When delete confirmation opens, close the parent dialog to prevent stacking
   const dialogOpen = open && !showDeleteConfirm;
 
   return (
     <>
       <Dialog open={dialogOpen} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader className="pb-2">
-            <DialogTitle className="text-base font-semibold flex items-center gap-2">
+        <DialogContent className="max-w-xl max-h-[85vh] overflow-y-auto p-0 bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800">
+          <DialogHeader className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/50">
+            <DialogTitle className="text-sm font-semibold flex items-center gap-2 text-zinc-900 dark:text-zinc-100">
               <User className="h-4 w-4" />
               Edit User
             </DialogTitle>
-            <DialogDescription className="text-xs">
-              {user.email} - Created{" "}
+            <DialogDescription className="text-[10px] text-zinc-500 dark:text-zinc-400">
+              {user.email} • Created{" "}
               {user.created_at
                 ? new Date(user.created_at).toLocaleDateString()
                 : "Unknown"}
@@ -398,539 +381,394 @@ export default function EditUserDialog({
           </DialogHeader>
 
           <Tabs defaultValue="basic" className="w-full">
-            <TabsList className="grid w-full grid-cols-4 h-8">
-              <TabsTrigger value="basic" className="text-xs">
+            <TabsList className="mx-4 mt-3 grid w-[calc(100%-2rem)] grid-cols-4 h-7 bg-zinc-100 dark:bg-zinc-800 p-0.5 rounded">
+              <TabsTrigger value="basic" className="text-[10px] h-6 rounded data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:shadow-sm">
                 Basic Info
               </TabsTrigger>
-              <TabsTrigger value="roles" className="text-xs">
+              <TabsTrigger value="roles" className="text-[10px] h-6 rounded data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:shadow-sm">
                 Roles & Status
               </TabsTrigger>
-              <TabsTrigger value="details" className="text-xs">
+              <TabsTrigger value="details" className="text-[10px] h-6 rounded data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:shadow-sm">
                 Details
               </TabsTrigger>
-              <TabsTrigger value="actions" className="text-xs">
+              <TabsTrigger value="actions" className="text-[10px] h-6 rounded data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:shadow-sm">
                 Actions
               </TabsTrigger>
             </TabsList>
 
-            {/* Basic Info Tab */}
-            <TabsContent value="basic" className="space-y-3 mt-3">
-              {/* Name Row */}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label className="text-[11px] text-muted-foreground">
-                    First Name
-                  </Label>
-                  <Input
-                    value={formData.first_name}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        first_name: e.target.value,
-                      }))
-                    }
-                    className="h-8 text-xs"
-                    placeholder="First name"
-                  />
-                </div>
-                <div>
-                  <Label className="text-[11px] text-muted-foreground">
-                    Last Name
-                  </Label>
-                  <Input
-                    value={formData.last_name}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        last_name: e.target.value,
-                      }))
-                    }
-                    className="h-8 text-xs"
-                    placeholder="Last name"
-                  />
-                </div>
-              </div>
-
-              {/* Email & Phone */}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label className="text-[11px] text-muted-foreground">
-                    Email
-                  </Label>
-                  <div className="relative">
-                    <Mail className="absolute left-2 top-2 h-3.5 w-3.5 text-muted-foreground" />
+            <div className="px-4 py-3">
+              <TabsContent value="basic" className="space-y-3 mt-0">
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <Label className="text-[10px] text-zinc-500 dark:text-zinc-400">First Name</Label>
                     <Input
-                      value={formData.email}
-                      disabled
-                      className="h-8 text-xs pl-7 bg-muted"
-                      title="Email cannot be changed"
-                    />
-                  </div>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">
-                    Email cannot be changed
-                  </p>
-                </div>
-                <div>
-                  <Label className="text-[11px] text-muted-foreground">
-                    Phone
-                  </Label>
-                  <div className="relative">
-                    <Phone className="absolute left-2 top-2 h-3.5 w-3.5 text-muted-foreground" />
-                    <Input
-                      value={formData.phone}
+                      value={formData.first_name}
                       onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          phone: e.target.value,
-                        }))
+                        setFormData((prev) => ({ ...prev, first_name: e.target.value }))
                       }
-                      className="h-8 text-xs pl-7"
-                      placeholder="(555) 123-4567"
+                      className="h-7 text-[11px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700"
+                      placeholder="First name"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-[10px] text-zinc-500 dark:text-zinc-400">Last Name</Label>
+                    <Input
+                      value={formData.last_name}
+                      onChange={(e) =>
+                        setFormData((prev) => ({ ...prev, last_name: e.target.value }))
+                      }
+                      className="h-7 text-[11px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700"
+                      placeholder="Last name"
                     />
                   </div>
                 </div>
-              </div>
 
-              {/* Upline & Contract Level */}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label className="text-[11px] text-muted-foreground">
-                    Upline
-                  </Label>
-                  <Select
-                    value={formData.upline_id || "none"}
-                    onValueChange={(value) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        upline_id: value === "none" ? null : value,
-                      }))
-                    }
-                  >
-                    <SelectTrigger className="h-8 text-xs">
-                      <SelectValue placeholder="No upline" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none" className="text-xs">
-                        No upline
-                      </SelectItem>
-                      {approvedUplines.map((u) => (
-                        <SelectItem key={u.id} value={u.id} className="text-xs">
-                          {u.full_name || u.email}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label className="text-[11px] text-muted-foreground">
-                    Contract Level
-                  </Label>
-                  <Select
-                    value={formData.contract_level?.toString() || "none"}
-                    onValueChange={(value) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        contract_level:
-                          value === "none" ? null : parseInt(value),
-                      }))
-                    }
-                  >
-                    <SelectTrigger className="h-8 text-xs">
-                      <SelectValue placeholder="Not set" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none" className="text-xs">
-                        Not set
-                      </SelectItem>
-                      {VALID_CONTRACT_LEVELS.map((level) => (
-                        <SelectItem
-                          key={level}
-                          value={level.toString()}
-                          className="text-xs"
-                        >
-                          {level}%
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </TabsContent>
-
-            {/* Roles & Status Tab */}
-            <TabsContent value="roles" className="space-y-3 mt-3">
-              {/* Approval Status */}
-              <div>
-                <Label className="text-[11px] text-muted-foreground">
-                  Approval Status
-                </Label>
-                <Select
-                  value={formData.approval_status}
-                  onValueChange={(value) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      approval_status: value as
-                        | "pending"
-                        | "approved"
-                        | "denied",
-                    }))
-                  }
-                >
-                  <SelectTrigger className="h-8 text-xs mt-1">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="approved" className="text-xs">
-                      Approved
-                    </SelectItem>
-                    <SelectItem value="pending" className="text-xs">
-                      Pending
-                    </SelectItem>
-                    <SelectItem value="denied" className="text-xs">
-                      Denied
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Agent Status */}
-              <div>
-                <Label className="text-[11px] text-muted-foreground">
-                  Agent Status
-                </Label>
-                <Select
-                  value={formData.agent_status || "none"}
-                  onValueChange={(value) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      agent_status:
-                        value === "none"
-                          ? null
-                          : (value as
-                              | "unlicensed"
-                              | "licensed"
-                              | "not_applicable"),
-                    }))
-                  }
-                >
-                  <SelectTrigger className="h-8 text-xs mt-1">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none" className="text-xs">
-                      Not Set
-                    </SelectItem>
-                    <SelectItem value="licensed" className="text-xs">
-                      Licensed (Active Agent)
-                    </SelectItem>
-                    <SelectItem value="unlicensed" className="text-xs">
-                      Unlicensed (In Training)
-                    </SelectItem>
-                    <SelectItem value="not_applicable" className="text-xs">
-                      Not Applicable
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-                <p className="text-[10px] text-muted-foreground mt-1">
-                  Licensed = Active agent who can receive workflow emails and
-                  sell policies
-                </p>
-              </div>
-
-              <Separator />
-
-              {/* Roles */}
-              <div>
-                <Label className="text-[11px] text-muted-foreground">
-                  Roles
-                </Label>
-                <div className="grid grid-cols-2 gap-2 mt-2">
-                  {roles?.map((role) => (
-                    <div
-                      key={role.id}
-                      className="flex items-center gap-2 p-2 bg-muted/20 rounded hover:bg-muted/40 transition-colors"
-                    >
-                      <Checkbox
-                        id={`role-${role.id}`}
-                        checked={formData.roles.includes(role.name as RoleName)}
-                        onCheckedChange={() =>
-                          handleRoleToggle(role.name as RoleName)
-                        }
-                        className="h-3.5 w-3.5"
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <Label className="text-[10px] text-zinc-500 dark:text-zinc-400">Email</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-2 top-1.5 h-3 w-3 text-zinc-400" />
+                      <Input
+                        value={formData.email}
+                        disabled
+                        className="h-7 text-[11px] pl-7 bg-zinc-100 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
+                        title="Email cannot be changed"
                       />
-                      <Label
-                        htmlFor={`role-${role.id}`}
-                        className="cursor-pointer text-xs font-normal flex-1"
-                        title={role.description ?? undefined}
-                      >
-                        {role.display_name}
-                      </Label>
                     </div>
-                  ))}
-                </div>
-              </div>
-            </TabsContent>
-
-            {/* Details Tab */}
-            <TabsContent value="details" className="space-y-3 mt-3">
-              {/* Address Section */}
-              <div>
-                <Label className="text-[11px] text-muted-foreground flex items-center gap-1">
-                  <MapPin className="h-3 w-3" /> Address
-                </Label>
-                <div className="space-y-2 mt-1">
-                  <Input
-                    value={formData.street_address}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        street_address: e.target.value,
-                      }))
-                    }
-                    className="h-8 text-xs"
-                    placeholder="Street address"
-                  />
-                  <div className="grid grid-cols-3 gap-2">
-                    <Input
-                      value={formData.city}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          city: e.target.value,
-                        }))
-                      }
-                      className="h-8 text-xs"
-                      placeholder="City"
-                    />
-                    <Input
-                      value={formData.state}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          state: e.target.value,
-                        }))
-                      }
-                      className="h-8 text-xs"
-                      placeholder="State"
-                    />
-                    <Input
-                      value={formData.zip}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          zip: e.target.value,
-                        }))
-                      }
-                      className="h-8 text-xs"
-                      placeholder="ZIP"
-                    />
+                    <p className="text-[9px] text-zinc-400 mt-0.5">Email cannot be changed</p>
                   </div>
                   <div>
-                    <Label className="text-[10px] text-muted-foreground">
-                      Resident State (for licensing)
-                    </Label>
-                    <Input
-                      value={formData.resident_state}
-                      onChange={(e) =>
+                    <Label className="text-[10px] text-zinc-500 dark:text-zinc-400">Phone</Label>
+                    <div className="relative">
+                      <Phone className="absolute left-2 top-1.5 h-3 w-3 text-zinc-400" />
+                      <Input
+                        value={formData.phone}
+                        onChange={(e) =>
+                          setFormData((prev) => ({ ...prev, phone: e.target.value }))
+                        }
+                        className="h-7 text-[11px] pl-7 bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700"
+                        placeholder="(555) 123-4567"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <Label className="text-[10px] text-zinc-500 dark:text-zinc-400">Upline</Label>
+                    <Select
+                      value={formData.upline_id || "none"}
+                      onValueChange={(value) =>
                         setFormData((prev) => ({
                           ...prev,
-                          resident_state: e.target.value,
+                          upline_id: value === "none" ? null : value,
                         }))
                       }
-                      className="h-8 text-xs"
-                      placeholder="Resident state"
+                    >
+                      <SelectTrigger className="h-7 text-[11px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700">
+                        <SelectValue placeholder="No upline" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none" className="text-[11px]">No upline</SelectItem>
+                        {approvedUplines.map((u) => (
+                          <SelectItem key={u.id} value={u.id} className="text-[11px]">
+                            {u.full_name || u.email}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className="text-[10px] text-zinc-500 dark:text-zinc-400">Contract Level</Label>
+                    <Select
+                      value={formData.contract_level?.toString() || "none"}
+                      onValueChange={(value) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          contract_level: value === "none" ? null : parseInt(value),
+                        }))
+                      }
+                    >
+                      <SelectTrigger className="h-7 text-[11px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700">
+                        <SelectValue placeholder="Not set" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none" className="text-[11px]">Not set</SelectItem>
+                        {VALID_CONTRACT_LEVELS.map((level) => (
+                          <SelectItem key={level} value={level.toString()} className="text-[11px]">
+                            {level}%
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="roles" className="space-y-3 mt-0">
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <Label className="text-[10px] text-zinc-500 dark:text-zinc-400">Approval Status</Label>
+                    <Select
+                      value={formData.approval_status}
+                      onValueChange={(value) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          approval_status: value as "pending" | "approved" | "denied",
+                        }))
+                      }
+                    >
+                      <SelectTrigger className="h-7 text-[11px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="approved" className="text-[11px]">Approved</SelectItem>
+                        <SelectItem value="pending" className="text-[11px]">Pending</SelectItem>
+                        <SelectItem value="denied" className="text-[11px]">Denied</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className="text-[10px] text-zinc-500 dark:text-zinc-400">Agent Status</Label>
+                    <Select
+                      value={formData.agent_status || "none"}
+                      onValueChange={(value) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          agent_status:
+                            value === "none"
+                              ? null
+                              : (value as "unlicensed" | "licensed" | "not_applicable"),
+                        }))
+                      }
+                    >
+                      <SelectTrigger className="h-7 text-[11px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none" className="text-[11px]">Not Set</SelectItem>
+                        <SelectItem value="licensed" className="text-[11px]">Licensed (Active)</SelectItem>
+                        <SelectItem value="unlicensed" className="text-[11px]">Unlicensed (Training)</SelectItem>
+                        <SelectItem value="not_applicable" className="text-[11px]">Not Applicable</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="border-t border-zinc-200 dark:border-zinc-800 pt-2">
+                  <Label className="text-[10px] text-zinc-500 dark:text-zinc-400 mb-1.5 block">Roles</Label>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {roles?.map((role) => (
+                      <div
+                        key={role.id}
+                        className="flex items-center gap-1.5 p-1.5 bg-zinc-50 dark:bg-zinc-800/50 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                      >
+                        <Checkbox
+                          id={`role-${role.id}`}
+                          checked={formData.roles.includes(role.name as RoleName)}
+                          onCheckedChange={() => handleRoleToggle(role.name as RoleName)}
+                          className="h-3 w-3"
+                        />
+                        <Label
+                          htmlFor={`role-${role.id}`}
+                          className="cursor-pointer text-[10px] font-normal text-zinc-700 dark:text-zinc-300 flex-1"
+                          title={role.description ?? undefined}
+                        >
+                          {role.display_name}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="details" className="space-y-3 mt-0">
+                <div>
+                  <Label className="text-[10px] text-zinc-500 dark:text-zinc-400 flex items-center gap-1 mb-1">
+                    <MapPin className="h-2.5 w-2.5" /> Address
+                  </Label>
+                  <div className="space-y-1.5">
+                    <Input
+                      value={formData.street_address}
+                      onChange={(e) =>
+                        setFormData((prev) => ({ ...prev, street_address: e.target.value }))
+                      }
+                      className="h-7 text-[11px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700"
+                      placeholder="Street address"
+                    />
+                    <div className="grid grid-cols-3 gap-1.5">
+                      <Input
+                        value={formData.city}
+                        onChange={(e) =>
+                          setFormData((prev) => ({ ...prev, city: e.target.value }))
+                        }
+                        className="h-7 text-[11px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700"
+                        placeholder="City"
+                      />
+                      <Input
+                        value={formData.state}
+                        onChange={(e) =>
+                          setFormData((prev) => ({ ...prev, state: e.target.value }))
+                        }
+                        className="h-7 text-[11px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700"
+                        placeholder="State"
+                      />
+                      <Input
+                        value={formData.zip}
+                        onChange={(e) =>
+                          setFormData((prev) => ({ ...prev, zip: e.target.value }))
+                        }
+                        className="h-7 text-[11px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700"
+                        placeholder="ZIP"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-[9px] text-zinc-400">Resident State (licensing)</Label>
+                      <Input
+                        value={formData.resident_state}
+                        onChange={(e) =>
+                          setFormData((prev) => ({ ...prev, resident_state: e.target.value }))
+                        }
+                        className="h-7 text-[11px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700"
+                        placeholder="Resident state"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t border-zinc-200 dark:border-zinc-800 pt-2">
+                  <Label className="text-[10px] text-zinc-500 dark:text-zinc-400 flex items-center gap-1 mb-1">
+                    <CreditCard className="h-2.5 w-2.5" /> License Information
+                  </Label>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    <div>
+                      <Label className="text-[9px] text-zinc-400">License #</Label>
+                      <Input
+                        value={formData.license_number}
+                        onChange={(e) =>
+                          setFormData((prev) => ({ ...prev, license_number: e.target.value }))
+                        }
+                        className="h-7 text-[11px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700"
+                        placeholder="License number"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-[9px] text-zinc-400">NPN</Label>
+                      <Input
+                        value={formData.npn}
+                        onChange={(e) =>
+                          setFormData((prev) => ({ ...prev, npn: e.target.value }))
+                        }
+                        className="h-7 text-[11px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700"
+                        placeholder="NPN"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-[9px] text-zinc-400">Expiration</Label>
+                      <Input
+                        type="date"
+                        value={formData.license_expiration}
+                        onChange={(e) =>
+                          setFormData((prev) => ({ ...prev, license_expiration: e.target.value }))
+                        }
+                        className="h-7 text-[11px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t border-zinc-200 dark:border-zinc-800 pt-2">
+                  <Label className="text-[10px] text-zinc-500 dark:text-zinc-400 flex items-center gap-1 mb-1">
+                    <Globe className="h-2.5 w-2.5" /> Social & Web
+                  </Label>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    <Input
+                      value={formData.linkedin_url}
+                      onChange={(e) =>
+                        setFormData((prev) => ({ ...prev, linkedin_url: e.target.value }))
+                      }
+                      className="h-7 text-[11px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700"
+                      placeholder="LinkedIn URL"
+                    />
+                    <Input
+                      value={formData.instagram_url}
+                      onChange={(e) =>
+                        setFormData((prev) => ({ ...prev, instagram_url: e.target.value }))
+                      }
+                      className="h-7 text-[11px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700"
+                      placeholder="Instagram URL"
                     />
                   </div>
                 </div>
-              </div>
+              </TabsContent>
 
-              <Separator />
-
-              {/* License Section */}
-              <div>
-                <Label className="text-[11px] text-muted-foreground flex items-center gap-1">
-                  <CreditCard className="h-3 w-3" /> License Information
-                </Label>
-                <div className="grid grid-cols-3 gap-2 mt-1">
-                  <div>
-                    <Label className="text-[10px] text-muted-foreground">
-                      License #
-                    </Label>
-                    <Input
-                      value={formData.license_number}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          license_number: e.target.value,
-                        }))
-                      }
-                      className="h-8 text-xs"
-                      placeholder="License number"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-[10px] text-muted-foreground">
-                      NPN
-                    </Label>
-                    <Input
-                      value={formData.npn}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          npn: e.target.value,
-                        }))
-                      }
-                      className="h-8 text-xs"
-                      placeholder="NPN"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-[10px] text-muted-foreground">
-                      Expiration
-                    </Label>
-                    <Input
-                      type="date"
-                      value={formData.license_expiration}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          license_expiration: e.target.value,
-                        }))
-                      }
-                      className="h-8 text-xs"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <Separator />
-
-              {/* Social Section */}
-              <div>
-                <Label className="text-[11px] text-muted-foreground flex items-center gap-1">
-                  <Globe className="h-3 w-3" /> Social & Web
-                </Label>
-                <div className="grid grid-cols-2 gap-2 mt-1">
-                  <Input
-                    value={formData.linkedin_url}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        linkedin_url: e.target.value,
-                      }))
-                    }
-                    className="h-8 text-xs"
-                    placeholder="LinkedIn URL"
-                  />
-                  <Input
-                    value={formData.instagram_url}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        instagram_url: e.target.value,
-                      }))
-                    }
-                    className="h-8 text-xs"
-                    placeholder="Instagram URL"
-                  />
-                </div>
-              </div>
-            </TabsContent>
-
-            {/* Actions Tab */}
-            <TabsContent value="actions" className="space-y-3 mt-3">
-              {/* Resend Invite */}
-              <div className="p-3 border rounded-lg">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium">
-                      Send Signup Confirmation Email
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Send a confirmation email to {user.email} to set up their
-                      password
-                    </p>
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleResendInvite}
-                    disabled={isSendingInvite}
-                  >
-                    <Send className="h-3.5 w-3.5 mr-1.5" />
-                    {isSendingInvite ? "Sending..." : "Send Confirmation"}
-                  </Button>
-                </div>
-              </div>
-
-              {/* User Info */}
-              <div className="p-3 bg-muted/30 rounded-lg text-xs space-y-1">
-                <p>
-                  <span className="text-muted-foreground">User ID:</span>{" "}
-                  {user.id}
-                </p>
-                <p>
-                  <span className="text-muted-foreground">Created:</span>{" "}
-                  {user.created_at
-                    ? new Date(user.created_at).toLocaleString()
-                    : "Unknown"}
-                </p>
-                <p>
-                  <span className="text-muted-foreground">Updated:</span>{" "}
-                  {user.updated_at
-                    ? new Date(user.updated_at).toLocaleString()
-                    : "Unknown"}
-                </p>
-                {user.onboarding_status && (
-                  <p>
-                    <span className="text-muted-foreground">Onboarding:</span>{" "}
-                    {user.onboarding_status}
-                  </p>
-                )}
-              </div>
-
-              <Separator />
-
-              {/* Danger Zone */}
-              <Alert variant="destructive" className="border-destructive/50">
-                <AlertTriangle className="h-4 w-4" />
-                <AlertDescription>
+              <TabsContent value="actions" className="space-y-3 mt-0">
+                <div className="p-2.5 border border-zinc-200 dark:border-zinc-700 rounded-lg bg-zinc-50 dark:bg-zinc-800/50">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="font-medium">Permanently Delete User</p>
-                      <p className="text-xs opacity-80">
-                        This will permanently delete the user and all their
-                        data. This cannot be undone.
-                      </p>
+                      <p className="text-[11px] font-medium text-zinc-700 dark:text-zinc-300">Send Signup Confirmation</p>
+                      <p className="text-[10px] text-zinc-500 dark:text-zinc-400">Email {user.email} to set password</p>
                     </div>
                     <Button
-                      variant="destructive"
+                      variant="outline"
                       size="sm"
-                      onClick={() => setShowDeleteConfirm(true)}
+                      className="h-6 text-[10px] px-2 border-zinc-200 dark:border-zinc-700"
+                      onClick={handleResendInvite}
+                      disabled={isSendingInvite}
                     >
-                      <Trash2 className="h-3.5 w-3.5 mr-1.5" />
-                      Delete
+                      <Send className="h-2.5 w-2.5 mr-1" />
+                      {isSendingInvite ? "Sending..." : "Send"}
                     </Button>
                   </div>
-                </AlertDescription>
-              </Alert>
-            </TabsContent>
+                </div>
+
+                <div className="p-2.5 bg-zinc-100 dark:bg-zinc-800 rounded-lg text-[10px] space-y-0.5">
+                  <p><span className="text-zinc-500 dark:text-zinc-400">ID:</span> <span className="text-zinc-700 dark:text-zinc-300 font-mono">{user.id}</span></p>
+                  <p><span className="text-zinc-500 dark:text-zinc-400">Created:</span> <span className="text-zinc-700 dark:text-zinc-300">{user.created_at ? new Date(user.created_at).toLocaleString() : "Unknown"}</span></p>
+                  <p><span className="text-zinc-500 dark:text-zinc-400">Updated:</span> <span className="text-zinc-700 dark:text-zinc-300">{user.updated_at ? new Date(user.updated_at).toLocaleString() : "Unknown"}</span></p>
+                  {user.onboarding_status && (
+                    <p><span className="text-zinc-500 dark:text-zinc-400">Onboarding:</span> <span className="text-zinc-700 dark:text-zinc-300">{user.onboarding_status}</span></p>
+                  )}
+                </div>
+
+                <Alert variant="destructive" className="border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-900/20 py-2">
+                  <AlertTriangle className="h-3 w-3" />
+                  <AlertDescription className="ml-2">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-[11px] font-medium text-red-700 dark:text-red-400">Delete User Permanently</p>
+                        <p className="text-[9px] text-red-600 dark:text-red-500">Cannot be undone</p>
+                      </div>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        className="h-6 text-[10px] px-2"
+                        onClick={() => setShowDeleteConfirm(true)}
+                      >
+                        <Trash2 className="h-2.5 w-2.5 mr-1" />
+                        Delete
+                      </Button>
+                    </div>
+                  </AlertDescription>
+                </Alert>
+              </TabsContent>
+            </div>
           </Tabs>
 
-          <DialogFooter className="gap-2 pt-3 border-t">
+          <DialogFooter className="px-4 py-2.5 gap-1.5 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/50">
             <Button
               type="button"
               variant="ghost"
               onClick={() => onOpenChange(false)}
               size="sm"
-              className="h-8"
+              className="h-6 text-[10px] px-2"
             >
               Cancel
             </Button>
             <Button
               onClick={handleSave}
               size="sm"
-              className="h-8"
+              className="h-6 text-[10px] px-2"
               disabled={isSaving}
             >
               {isSaving ? "Saving..." : "Save Changes"}
@@ -939,87 +777,72 @@ export default function EditUserDialog({
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Dialog - Standalone (parent Dialog closes when this opens) */}
       <AlertDialog
         open={showDeleteConfirm}
         onOpenChange={(isOpen) => {
           setShowDeleteConfirm(isOpen);
-          // Dialog will automatically reopen when showDeleteConfirm becomes false
-          // because dialogOpen = open && !showDeleteConfirm
         }}
       >
-        <AlertDialogContent className="max-w-md">
+        <AlertDialogContent className="max-w-md bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800">
           <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
-              <AlertTriangle className="h-5 w-5" />
+            <AlertDialogTitle className="flex items-center gap-2 text-sm text-red-600 dark:text-red-400">
+              <AlertTriangle className="h-4 w-4" />
               Permanently Delete User?
             </AlertDialogTitle>
             <AlertDialogDescription asChild>
-              <div className="space-y-3">
-                <p>
-                  Are you sure you want to permanently delete{" "}
-                  <strong>{user?.email}</strong>?
+              <div className="space-y-2">
+                <p className="text-[11px] text-zinc-600 dark:text-zinc-400">
+                  Delete <strong className="text-zinc-900 dark:text-zinc-100">{user?.email}</strong>?
                 </p>
 
-                {/* Loading state */}
                 {checkingDependencies && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                  <div className="flex items-center gap-2 text-[11px] text-zinc-500">
+                    <Loader2 className="h-3 w-3 animate-spin" />
                     Checking for downlines...
                   </div>
                 )}
 
-                {/* Downlines warning with reassignment */}
                 {!checkingDependencies && downlineCount > 0 && (
-                  <Alert className="border-orange-500/50 bg-orange-500/10">
-                    <Users className="h-4 w-4" />
-                    <AlertDescription>
-                      <p className="font-medium mb-1">
-                        This user has {downlineCount} downline
-                        {downlineCount > 1 ? "s" : ""} that must be reassigned
-                      </p>
-                      {potentialUplines.length > 0 ? (
-                        <div className="space-y-1">
-                          <p className="text-xs">Select new upline:</p>
-                          <Select
-                            value={reassignUplineId || ""}
-                            onValueChange={setReassignUplineId}
-                          >
-                            <SelectTrigger className="h-8 text-xs">
-                              <SelectValue placeholder="Select new upline..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {potentialUplines.map((upline) => (
-                                <SelectItem
-                                  key={upline.id}
-                                  value={upline.id}
-                                  className="text-xs"
-                                >
-                                  {upline.first_name} {upline.last_name} (
-                                  {upline.email})
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      ) : (
-                        <p className="text-xs">
-                          No eligible uplines available.
+                  <div className="p-2 border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 rounded">
+                    <div className="flex items-start gap-2">
+                      <Users className="h-3 w-3 text-amber-600 mt-0.5" />
+                      <div className="flex-1">
+                        <p className="text-[11px] font-medium text-amber-700 dark:text-amber-400">
+                          {downlineCount} downline{downlineCount > 1 ? "s" : ""} must be reassigned
                         </p>
-                      )}
-                    </AlertDescription>
-                  </Alert>
+                        {potentialUplines.length > 0 && (
+                          <div className="mt-1.5">
+                            <p className="text-[10px] text-amber-600 dark:text-amber-500 mb-1">Select new upline:</p>
+                            <Select
+                              value={reassignUplineId || ""}
+                              onValueChange={setReassignUplineId}
+                            >
+                              <SelectTrigger className="h-7 text-[11px] bg-white dark:bg-zinc-900 border-amber-200 dark:border-amber-800">
+                                <SelectValue placeholder="Select new upline..." />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {potentialUplines.map((upline) => (
+                                  <SelectItem key={upline.id} value={upline.id} className="text-[11px]">
+                                    {upline.first_name} {upline.last_name} ({upline.email})
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 )}
 
-                <p className="text-sm text-destructive font-medium">
-                  This will delete all associated data. This action cannot be
-                  undone.
+                <p className="text-[11px] font-medium text-red-600 dark:text-red-400">
+                  This will delete all associated data. Cannot be undone.
                 </p>
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+          <AlertDialogFooter className="gap-1.5">
+            <AlertDialogCancel disabled={isDeleting} className="h-7 text-[11px] px-3">Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               disabled={
@@ -1027,11 +850,11 @@ export default function EditUserDialog({
                 checkingDependencies ||
                 (downlineCount > 0 && !reassignUplineId)
               }
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="h-7 text-[11px] px-3 bg-red-600 hover:bg-red-700 text-white"
             >
               {isDeleting ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="mr-1.5 h-3 w-3 animate-spin" />
                   Deleting...
                 </>
               ) : downlineCount > 0 && !reassignUplineId ? (

@@ -168,24 +168,24 @@ export function ActivityTab({ searchQuery }: ActivityTabProps) {
   };
 
   return (
-    <div className="flex flex-col h-full space-y-2 p-3">
+    <div className="flex flex-col h-full p-3">
       {/* Stats row */}
-      <div className="flex items-center gap-4 text-xs">
-        <div className="flex items-center gap-1.5">
-          <Mail className="h-3.5 w-3.5 text-muted-foreground" />
-          <span className="font-medium">{recentEmails?.length || 0}</span>
-          <span className="text-muted-foreground">recent emails</span>
+      <div className="flex items-center gap-3 text-[11px] mb-2">
+        <div className="flex items-center gap-1">
+          <Mail className="h-3 w-3 text-blue-500" />
+          <span className="font-medium text-zinc-900 dark:text-zinc-100">{recentEmails?.length || 0}</span>
+          <span className="text-zinc-500 dark:text-zinc-400">emails</span>
         </div>
-        <div className="h-3 w-px bg-border" />
-        <div className="flex items-center gap-1.5">
-          <Bell className="h-3.5 w-3.5 text-muted-foreground" />
-          <span className="font-medium">{recentNotifications?.length || 0}</span>
-          <span className="text-muted-foreground">notifications</span>
+        <div className="h-3 w-px bg-zinc-200 dark:bg-zinc-700" />
+        <div className="flex items-center gap-1">
+          <Bell className="h-3 w-3 text-purple-500" />
+          <span className="font-medium text-zinc-900 dark:text-zinc-100">{recentNotifications?.length || 0}</span>
+          <span className="text-zinc-500 dark:text-zinc-400">notifications</span>
         </div>
       </div>
 
       {/* Activity list */}
-      <div className="flex-1 overflow-auto rounded-lg border bg-background">
+      <div className="flex-1 overflow-auto rounded-lg border border-zinc-200 dark:border-zinc-700">
         {isLoading ? (
           <div className="p-3 space-y-2">
             {[1, 2, 3, 4, 5].map((i) => (
@@ -195,28 +195,28 @@ export function ActivityTab({ searchQuery }: ActivityTabProps) {
         ) : filteredActivities.length === 0 ? (
           <div className="flex items-center justify-center h-full">
             <div className="text-center py-8">
-              <Clock className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-              <p className="text-xs text-muted-foreground">
+              <Clock className="h-6 w-6 mx-auto mb-2 text-zinc-400" />
+              <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
                 {searchQuery ? "No activity matches your search" : "No recent activity"}
               </p>
             </div>
           </div>
         ) : (
-          <div className="divide-y">
+          <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
             {filteredActivities.slice(0, 100).map((activity) => (
               <div
                 key={`${activity.type}-${activity.id}`}
-                className="flex items-start gap-3 p-2.5 hover:bg-muted/30 transition-colors"
+                className="flex items-start gap-2.5 px-2.5 py-2 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors"
               >
                 {/* Icon */}
                 <div className="mt-0.5">
                   {activity.type === "email" ? (
-                    <div className="h-6 w-6 rounded-full bg-blue-100 flex items-center justify-center">
-                      <Mail className="h-3 w-3 text-blue-600" />
+                    <div className="h-5 w-5 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                      <Mail className="h-2.5 w-2.5 text-blue-600 dark:text-blue-400" />
                     </div>
                   ) : (
-                    <div className="h-6 w-6 rounded-full bg-purple-100 flex items-center justify-center">
-                      <Bell className="h-3 w-3 text-purple-600" />
+                    <div className="h-5 w-5 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+                      <Bell className="h-2.5 w-2.5 text-purple-600 dark:text-purple-400" />
                     </div>
                   )}
                 </div>
@@ -226,24 +226,24 @@ export function ActivityTab({ searchQuery }: ActivityTabProps) {
                   {activity.type === "email" ? (
                     <>
                       <div className="flex items-center gap-1.5">
-                        <span className="text-[11px] font-medium truncate">
+                        <span className="text-[11px] font-medium text-zinc-900 dark:text-zinc-100 truncate">
                           {activity.subject}
                         </span>
                         {getEmailStatusIcon(activity.status)}
                       </div>
-                      <div className="text-[10px] text-muted-foreground truncate">
+                      <div className="text-[10px] text-zinc-500 dark:text-zinc-400 truncate">
                         To: {activity.recipient}
                       </div>
                     </>
                   ) : (
                     <>
                       <div className="flex items-center gap-1.5">
-                        <span className="text-[11px] font-medium truncate">
+                        <span className="text-[11px] font-medium text-zinc-900 dark:text-zinc-100 truncate">
                           {activity.title}
                         </span>
                         {getNotificationTypeIcon(activity.notification_type)}
                       </div>
-                      <div className="text-[10px] text-muted-foreground truncate">
+                      <div className="text-[10px] text-zinc-500 dark:text-zinc-400 truncate">
                         {activity.message || `Sent to ${activity.user_name}`}
                       </div>
                     </>
@@ -254,15 +254,15 @@ export function ActivityTab({ searchQuery }: ActivityTabProps) {
                 <div className="flex flex-col items-end gap-0.5 shrink-0">
                   <Badge
                     variant="outline"
-                    className={`text-[9px] h-4 px-1 ${
+                    className={`text-[9px] h-4 px-1 border ${
                       activity.type === "email"
-                        ? "text-blue-600 border-blue-200"
-                        : "text-purple-600 border-purple-200"
+                        ? "text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800"
+                        : "text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-800"
                     }`}
                   >
                     {activity.type === "email" ? "Email" : "Notification"}
                   </Badge>
-                  <span className="text-[9px] text-muted-foreground">
+                  <span className="text-[9px] text-zinc-500 dark:text-zinc-400">
                     {formatDistanceToNow(new Date(activity.created_at), {
                       addSuffix: true,
                     })}

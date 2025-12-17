@@ -1,12 +1,12 @@
 // src/features/settings/GoalsManagement.tsx
+// Redesigned with zinc palette and compact design patterns
+
 import React, { useState, useEffect } from 'react';
-import {Target, Save, AlertCircle, CheckCircle2, TrendingUp} from 'lucide-react';
-import {Button} from '@/components/ui/button';
-import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '@/components/ui/card';
-import {Input} from '@/components/ui/input';
-import {Label} from '@/components/ui/label';
-import {useUserTargets, useUpdateUserTargets} from '@/hooks';
-import {formatCurrency} from '@/utils/formatters';
+import { Target, Save, AlertCircle, CheckCircle2, TrendingUp } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { useUserTargets, useUpdateUserTargets } from '@/hooks';
+import { formatCurrency } from '@/utils/formatters';
 
 export function GoalsManagement() {
   const { data: userTargets, isLoading } = useUserTargets();
@@ -17,7 +17,6 @@ export function GoalsManagement() {
   const [monthlyIncomeTarget, setMonthlyIncomeTarget] = useState<string>('10000');
   const [annualPoliciesTarget, setAnnualPoliciesTarget] = useState<string>('100');
   const [monthlyPoliciesTarget, setMonthlyPoliciesTarget] = useState<string>('9');
-  // REMOVED: avgPremiumTarget - now always calculated from actual policies
   const [persistency13Target, setPersistency13Target] = useState<string>('85');
 
   const [validationError, setValidationError] = useState<string>('');
@@ -30,43 +29,35 @@ export function GoalsManagement() {
       setMonthlyIncomeTarget(userTargets.monthly_income_target?.toString() || '10000');
       setAnnualPoliciesTarget(userTargets.annual_policies_target?.toString() || '100');
       setMonthlyPoliciesTarget(userTargets.monthly_policies_target?.toString() || '9');
-      // REMOVED: setAvgPremiumTarget - calculated from actual policies instead
       setPersistency13Target(((userTargets.persistency_13_month_target || 0.85) * 100).toString());
     }
   }, [userTargets]);
 
   const validateForm = (): boolean => {
-    // Validate annual income
     const annualIncome = Number(annualIncomeTarget);
     if (isNaN(annualIncome) || annualIncome < 0) {
       setValidationError('Annual income target must be a positive number');
       return false;
     }
 
-    // Validate monthly income
     const monthlyIncome = Number(monthlyIncomeTarget);
     if (isNaN(monthlyIncome) || monthlyIncome < 0) {
       setValidationError('Monthly income target must be a positive number');
       return false;
     }
 
-    // Validate annual policies
     const annualPolicies = Number(annualPoliciesTarget);
     if (isNaN(annualPolicies) || annualPolicies < 0 || !Number.isInteger(annualPolicies)) {
       setValidationError('Annual policies target must be a positive integer');
       return false;
     }
 
-    // Validate monthly policies
     const monthlyPolicies = Number(monthlyPoliciesTarget);
     if (isNaN(monthlyPolicies) || monthlyPolicies < 0 || !Number.isInteger(monthlyPolicies)) {
       setValidationError('Monthly policies target must be a positive integer');
       return false;
     }
 
-    // REMOVED: Validate avg premium - now calculated from actual policies
-
-    // Validate persistency
     const persistency = Number(persistency13Target);
     if (isNaN(persistency) || persistency < 0 || persistency > 100) {
       setValidationError('Persistency target must be between 0 and 100');
@@ -91,7 +82,6 @@ export function GoalsManagement() {
         monthly_income_target: Number(monthlyIncomeTarget),
         annual_policies_target: parseInt(annualPoliciesTarget, 10),
         monthly_policies_target: parseInt(monthlyPoliciesTarget, 10),
-        // REMOVED: avg_premium_target - calculated from actual policies instead
         persistency_13_month_target: Number(persistency13Target) / 100,
       });
 
@@ -104,38 +94,42 @@ export function GoalsManagement() {
 
   if (isLoading) {
     return (
-      <Card>
-        <CardContent className="p-10 text-center text-muted-foreground">
+      <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-6">
+        <div className="flex items-center justify-center text-[11px] text-zinc-500 dark:text-zinc-400">
           Loading your goals...
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <Target className="h-5 w-5 text-primary" />
-            <CardTitle>Income & Production Goals</CardTitle>
+    <div className="space-y-2">
+      {/* Goals Form Card */}
+      <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800">
+        <div className="flex items-center gap-2 px-3 py-2 border-b border-zinc-100 dark:border-zinc-800">
+          <Target className="h-3.5 w-3.5 text-zinc-400" />
+          <div>
+            <h3 className="text-[11px] font-semibold text-zinc-900 dark:text-zinc-100 uppercase tracking-wide">
+              Income & Production Goals
+            </h3>
+            <p className="text-[10px] text-zinc-500 dark:text-zinc-400">
+              Set your annual and monthly targets for income and production
+            </p>
           </div>
-          <CardDescription>
-            Set your annual and monthly targets for income and production. These goals are used in the
-            Analytics dashboard to track your progress.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
+        </div>
+        <div className="p-3">
+          <form onSubmit={handleSubmit} className="space-y-4">
             {/* Income Targets */}
-            <div className="space-y-4">
-              <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                <TrendingUp className="h-4 w-4" />
+            <div className="space-y-2">
+              <h4 className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wide flex items-center gap-1">
+                <TrendingUp className="h-3 w-3" />
                 Income Targets
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="annualIncome">Annual Income Goal</Label>
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label htmlFor="annualIncome" className="block text-[10px] font-medium text-zinc-500 dark:text-zinc-400 mb-1">
+                    Annual Income Goal
+                  </label>
                   <Input
                     id="annualIncome"
                     type="number"
@@ -146,14 +140,17 @@ export function GoalsManagement() {
                     }}
                     placeholder="120000"
                     step="1000"
+                    className="h-7 text-[11px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700"
                   />
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-[10px] text-zinc-400 mt-0.5">
                     Target: {formatCurrency(Number(annualIncomeTarget) || 0)}
                   </p>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="monthlyIncome">Monthly Income Goal</Label>
+                <div>
+                  <label htmlFor="monthlyIncome" className="block text-[10px] font-medium text-zinc-500 dark:text-zinc-400 mb-1">
+                    Monthly Income Goal
+                  </label>
                   <Input
                     id="monthlyIncome"
                     type="number"
@@ -164,8 +161,9 @@ export function GoalsManagement() {
                     }}
                     placeholder="10000"
                     step="100"
+                    className="h-7 text-[11px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700"
                   />
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-[10px] text-zinc-400 mt-0.5">
                     Target: {formatCurrency(Number(monthlyIncomeTarget) || 0)}
                   </p>
                 </div>
@@ -173,11 +171,15 @@ export function GoalsManagement() {
             </div>
 
             {/* Production Targets */}
-            <div className="space-y-4">
-              <h3 className="text-sm font-semibold text-foreground">Production Targets</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="annualPolicies">Annual Policies Goal</Label>
+            <div className="space-y-2">
+              <h4 className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
+                Production Targets
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label htmlFor="annualPolicies" className="block text-[10px] font-medium text-zinc-500 dark:text-zinc-400 mb-1">
+                    Annual Policies Goal
+                  </label>
                   <Input
                     id="annualPolicies"
                     type="number"
@@ -188,14 +190,17 @@ export function GoalsManagement() {
                     }}
                     placeholder="100"
                     step="1"
+                    className="h-7 text-[11px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700"
                   />
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-[10px] text-zinc-400 mt-0.5">
                     Number of policies to sell this year
                   </p>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="monthlyPolicies">Monthly Policies Goal</Label>
+                <div>
+                  <label htmlFor="monthlyPolicies" className="block text-[10px] font-medium text-zinc-500 dark:text-zinc-400 mb-1">
+                    Monthly Policies Goal
+                  </label>
                   <Input
                     id="monthlyPolicies"
                     type="number"
@@ -206,8 +211,9 @@ export function GoalsManagement() {
                     }}
                     placeholder="9"
                     step="1"
+                    className="h-7 text-[11px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700"
                   />
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-[10px] text-zinc-400 mt-0.5">
                     Number of policies to sell per month
                   </p>
                 </div>
@@ -215,85 +221,85 @@ export function GoalsManagement() {
             </div>
 
             {/* Quality Targets */}
-            <div className="space-y-4">
-              <h3 className="text-sm font-semibold text-foreground">Quality Targets</h3>
-              <div className="grid grid-cols-1 gap-4">
-                {/* REMOVED: Average Premium Goal - This is now ALWAYS calculated from actual policies */}
-
-                <div className="space-y-2">
-                  <Label htmlFor="persistency">13-Month Persistency Goal (%)</Label>
-                  <Input
-                    id="persistency"
-                    type="number"
-                    value={persistency13Target}
-                    onChange={(e) => {
-                      setPersistency13Target(e.target.value);
-                      setShowSuccess(false);
-                    }}
-                    placeholder="85"
-                    step="1"
-                    min="0"
-                    max="100"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Target retention rate at 13 months: {persistency13Target}%
-                  </p>
-                </div>
+            <div className="space-y-2">
+              <h4 className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
+                Quality Targets
+              </h4>
+              <div className="max-w-xs">
+                <label htmlFor="persistency" className="block text-[10px] font-medium text-zinc-500 dark:text-zinc-400 mb-1">
+                  13-Month Persistency Goal (%)
+                </label>
+                <Input
+                  id="persistency"
+                  type="number"
+                  value={persistency13Target}
+                  onChange={(e) => {
+                    setPersistency13Target(e.target.value);
+                    setShowSuccess(false);
+                  }}
+                  placeholder="85"
+                  step="1"
+                  min="0"
+                  max="100"
+                  className="h-7 text-[11px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700"
+                />
+                <p className="text-[10px] text-zinc-400 mt-0.5">
+                  Target retention rate at 13 months: {persistency13Target}%
+                </p>
               </div>
             </div>
 
             {/* Validation Error */}
             {validationError && (
-              <div className="flex items-center gap-2 p-3 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg text-sm text-red-700 dark:text-red-300">
-                <AlertCircle className="h-4 w-4 flex-shrink-0" />
+              <div className="flex items-center gap-2 p-2 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded text-[10px] text-red-700 dark:text-red-300">
+                <AlertCircle className="h-3 w-3 flex-shrink-0" />
                 {validationError}
               </div>
             )}
 
             {/* Success Message */}
             {showSuccess && (
-              <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg text-sm text-green-700 dark:text-green-300">
-                <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
+              <div className="flex items-center gap-2 p-2 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded text-[10px] text-emerald-700 dark:text-emerald-300">
+                <CheckCircle2 className="h-3 w-3 flex-shrink-0" />
                 Goals updated successfully!
               </div>
             )}
 
             {/* Submit Button */}
-            <div className="flex justify-end pt-4">
+            <div className="flex justify-end pt-2">
               <Button
                 type="submit"
                 disabled={updateTargets.isPending}
-                className="flex items-center gap-2"
+                size="sm"
+                className="h-7 px-3 text-[10px]"
               >
-                <Save className="h-4 w-4" />
+                <Save className="h-3 w-3 mr-1" />
                 {updateTargets.isPending ? 'Saving...' : 'Save Goals'}
               </Button>
             </div>
           </form>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Info Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm">How Goals Are Used</CardTitle>
-        </CardHeader>
-        <CardContent className="text-sm text-muted-foreground space-y-2">
+      <div className="bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800 p-3">
+        <h4 className="text-[10px] font-semibold text-blue-700 dark:text-blue-300 mb-1.5">How Goals Are Used</h4>
+        <div className="space-y-1 text-[10px] text-blue-600 dark:text-blue-400">
           <p>
-            <strong className="text-foreground">Income Goal Tracker:</strong> Your annual income goal
+            <span className="font-medium text-blue-700 dark:text-blue-300">Income Goal Tracker:</span> Your annual income goal
             is displayed in the Analytics dashboard, showing your progress and projecting if you'll
             hit your target.
           </p>
           <p>
-            <strong className="text-foreground">Production Metrics:</strong> Policy goals help calculate
+            <span className="font-medium text-blue-700 dark:text-blue-300">Production Metrics:</span> Policy goals help calculate
             how many policies you need to sell per week/month to stay on track.
           </p>
           <p>
-            <strong className="text-foreground">Quality Benchmarks:</strong> Premium and persistency
+            <span className="font-medium text-blue-700 dark:text-blue-300">Quality Benchmarks:</span> Premium and persistency
             targets help you maintain quality while scaling production.
           </p>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }

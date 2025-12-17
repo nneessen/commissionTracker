@@ -1,4 +1,6 @@
 // src/features/admin/components/AdminControlCenter.tsx
+// Redesigned with zinc palette and compact design patterns
+
 import { useState } from "react";
 import {
   Users,
@@ -80,36 +82,27 @@ export default function AdminControlCenter() {
   );
 
   // Hierarchy-based filtering for non-admin users
-  // Admin sees all users, non-admin only sees their own hierarchy
   const hierarchyFilteredUsers = isAdmin
     ? allUsers
     : allUsers?.filter((u: UserProfile) => {
-        // User can see themselves
         if (u.id === currentUser?.id) return true;
-
-        // User can see users in their downline (hierarchy_path contains their ID)
         if (u.hierarchy_path?.includes(currentUser?.id || "")) return true;
-
         return false;
       });
 
-  // CRITICAL: Separate active agents from recruits based on ROLES
-  // Active agents: users with 'agent' role OR admins (is_admin=true)
-  // Recruits: users WITHOUT 'agent' role AND NOT admins
-  // Per GraduateToAgentDialog.tsx: Graduation sets roles=['agent'] AND onboarding_status='completed'
+  // Separate active agents from recruits based on ROLES
   const activeAgents = hierarchyFilteredUsers?.filter(
     (u: UserProfile) =>
       u.roles?.includes("agent" as RoleName) || u.is_admin === true,
   );
 
-  // Filter recruits from hierarchyFilteredUsers (users without 'agent' role and not admin)
   const recruitsInPipeline =
     hierarchyFilteredUsers?.filter(
       (u: UserProfile) =>
         !u.roles?.includes("agent" as RoleName) && u.is_admin !== true,
     ) || [];
 
-  // Calculate stats based on ACTIVE AGENTS only
+  // Calculate stats
   const totalUsers = activeAgents?.length || 0;
   const admins =
     activeAgents?.filter((u: UserProfile) => u.roles?.includes("admin"))
@@ -119,10 +112,10 @@ export default function AdminControlCenter() {
       (u: UserProfile) =>
         u.roles?.includes("agent") && !u.roles?.includes("admin"),
     ).length || 0;
-  const approved = activeAgents?.length || 0; // All active agents are approved by definition
+  const approved = activeAgents?.length || 0;
   const pending = recruitsInPipeline?.length || 0;
 
-  // Search filtering for active agents (Users & Access tab)
+  // Search filtering
   const filteredUsers = activeAgents?.filter((user: UserProfile) => {
     if (!searchQuery) return true;
     const query = searchQuery.toLowerCase();
@@ -132,28 +125,27 @@ export default function AdminControlCenter() {
     );
   });
 
-  // Pagination for Users & Access tab
+  // Pagination
   const totalPages = Math.ceil((filteredUsers?.length || 0) / itemsPerPage);
   const paginatedUsers = filteredUsers?.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage,
   );
 
-  // Recruits (users still in recruiting pipeline) - already set above from recruiting service
   const pendingRecruits = recruitsInPipeline;
 
   const getRoleColor = (roleName: RoleName): string => {
     const colors: Record<string, string> = {
-      admin: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
-      agent: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
+      admin: "bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300",
+      agent: "bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300",
       upline_manager:
-        "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200",
+        "bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300",
       trainer:
-        "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
+        "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300",
       recruiter:
-        "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
+        "bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300",
     };
-    return colors[roleName] || "bg-gray-100 text-gray-800";
+    return colors[roleName] || "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300";
   };
 
   const getRoleDisplayName = (roleName: RoleName): string => {
@@ -169,7 +161,6 @@ export default function AdminControlCenter() {
   const handleAddUser = async (userData: NewUserData) => {
     const result = await userApprovalService.createUser(userData);
     if (result.success) {
-      // Invalidate all user-related queries to refresh the UI
       queryClient.invalidateQueries({ queryKey: ["userApproval"] });
       queryClient.invalidateQueries({ queryKey: ["users"] });
       queryClient.invalidateQueries({ queryKey: ["recruits"] });
@@ -180,7 +171,6 @@ export default function AdminControlCenter() {
           `User created! Confirmation email sent to ${userData.email}`,
         );
       } else if (result.error) {
-        // Profile created but invite failed
         showToast.error(result.error);
       } else {
         showToast.success(
@@ -204,7 +194,6 @@ export default function AdminControlCenter() {
     const result = await userApprovalService.deleteUser(userId);
     if (result.success) {
       showToast.success(`${userName} deleted`);
-      // Invalidate all user-related queries to refresh the UI
       queryClient.invalidateQueries({ queryKey: ["userApproval"] });
       queryClient.invalidateQueries({ queryKey: ["users"] });
       queryClient.invalidateQueries({ queryKey: ["recruits"] });
@@ -214,59 +203,57 @@ export default function AdminControlCenter() {
   };
 
   return (
-    <div className="h-[calc(100vh-4rem)] flex flex-col p-4 space-y-3">
+    <div className="h-[calc(100vh-4rem)] flex flex-col p-3 space-y-2.5 bg-zinc-50 dark:bg-zinc-950">
       {/* Compact Header with inline stats */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-6">
+      <div className="flex items-center justify-between bg-white dark:bg-zinc-900 rounded-lg px-3 py-2 border border-zinc-200 dark:border-zinc-800">
+        <div className="flex items-center gap-5">
           <div className="flex items-center gap-2">
-            <Shield className="h-5 w-5 text-primary" />
-            <h1 className="text-xl font-bold">Admin</h1>
+            <Shield className="h-4 w-4 text-zinc-900 dark:text-zinc-100" />
+            <h1 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Admin Center</h1>
           </div>
 
-          {/* Inline compact stats - NO CARDS */}
-          <div className="flex items-center gap-4 text-sm">
-            <div className="flex items-center gap-1.5">
-              <Users className="h-3.5 w-3.5 text-muted-foreground" />
-              <span className="font-medium">{totalUsers}</span>
-              <span className="text-muted-foreground">users</span>
+          {/* Inline compact stats */}
+          <div className="flex items-center gap-3 text-[11px]">
+            <div className="flex items-center gap-1">
+              <Users className="h-3 w-3 text-zinc-400" />
+              <span className="font-medium text-zinc-900 dark:text-zinc-100">{totalUsers}</span>
+              <span className="text-zinc-500 dark:text-zinc-400">users</span>
             </div>
-            <div className="h-4 w-px bg-muted" />
-            <div className="flex items-center gap-1.5">
-              <Shield className="h-3.5 w-3.5 text-red-500" />
-              <span className="font-medium">{admins}</span>
-              <span className="text-muted-foreground">admins</span>
+            <div className="h-3 w-px bg-zinc-200 dark:bg-zinc-700" />
+            <div className="flex items-center gap-1">
+              <Shield className="h-3 w-3 text-red-500" />
+              <span className="font-medium text-zinc-900 dark:text-zinc-100">{admins}</span>
+              <span className="text-zinc-500 dark:text-zinc-400">admins</span>
             </div>
-            <div className="h-4 w-px bg-muted" />
-            <div className="flex items-center gap-1.5">
-              <UserCog className="h-3.5 w-3.5 text-blue-500" />
-              <span className="font-medium">{agents}</span>
-              <span className="text-muted-foreground">agents</span>
+            <div className="h-3 w-px bg-zinc-200 dark:bg-zinc-700" />
+            <div className="flex items-center gap-1">
+              <UserCog className="h-3 w-3 text-blue-500" />
+              <span className="font-medium text-zinc-900 dark:text-zinc-100">{agents}</span>
+              <span className="text-zinc-500 dark:text-zinc-400">agents</span>
             </div>
-            <div className="h-4 w-px bg-muted" />
-            <div className="flex items-center gap-1.5">
-              <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
-              <span className="font-medium">{approved}</span>
+            <div className="h-3 w-px bg-zinc-200 dark:bg-zinc-700" />
+            <div className="flex items-center gap-1">
+              <CheckCircle2 className="h-3 w-3 text-emerald-500" />
+              <span className="font-medium text-zinc-900 dark:text-zinc-100">{approved}</span>
             </div>
-            <div className="h-4 w-px bg-muted" />
-            <div className="flex items-center gap-1.5">
-              <XCircle className="h-3.5 w-3.5 text-yellow-500" />
-              <span className="font-medium">{pending}</span>
-              <span className="text-muted-foreground">pending</span>
+            <div className="h-3 w-px bg-zinc-200 dark:bg-zinc-700" />
+            <div className="flex items-center gap-1">
+              <XCircle className="h-3 w-3 text-amber-500" />
+              <span className="font-medium text-zinc-900 dark:text-zinc-100">{pending}</span>
+              <span className="text-zinc-500 dark:text-zinc-400">pending</span>
             </div>
           </div>
         </div>
-
-        {/* Actions moved to tab-specific headers */}
       </div>
 
       {/* Compact tabs */}
-      <div className="flex items-center gap-1 bg-muted/30 rounded-lg p-1">
+      <div className="flex items-center gap-0.5 bg-zinc-200/50 dark:bg-zinc-800/50 rounded-md p-0.5">
         <button
           onClick={() => setActiveView("users")}
-          className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded transition-all ${
+          className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-[11px] font-medium rounded transition-all ${
             activeView === "users"
-              ? "bg-background shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
+              ? "bg-white dark:bg-zinc-900 shadow-sm text-zinc-900 dark:text-zinc-100"
+              : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
           }`}
         >
           <Users className="h-3.5 w-3.5" />
@@ -274,10 +261,10 @@ export default function AdminControlCenter() {
         </button>
         <button
           onClick={() => setActiveView("recruits")}
-          className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded transition-all ${
+          className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-[11px] font-medium rounded transition-all ${
             activeView === "recruits"
-              ? "bg-background shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
+              ? "bg-white dark:bg-zinc-900 shadow-sm text-zinc-900 dark:text-zinc-100"
+              : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
           }`}
         >
           <UserPlus className="h-3.5 w-3.5" />
@@ -290,10 +277,10 @@ export default function AdminControlCenter() {
         </button>
         <button
           onClick={() => setActiveView("roles")}
-          className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded transition-all ${
+          className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-[11px] font-medium rounded transition-all ${
             activeView === "roles"
-              ? "bg-background shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
+              ? "bg-white dark:bg-zinc-900 shadow-sm text-zinc-900 dark:text-zinc-100"
+              : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
           }`}
         >
           <Shield className="h-3.5 w-3.5" />
@@ -301,10 +288,10 @@ export default function AdminControlCenter() {
         </button>
         <button
           onClick={() => setActiveView("system")}
-          className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded transition-all ${
+          className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-[11px] font-medium rounded transition-all ${
             activeView === "system"
-              ? "bg-background shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
+              ? "bg-white dark:bg-zinc-900 shadow-sm text-zinc-900 dark:text-zinc-100"
+              : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
           }`}
         >
           <Settings className="h-3.5 w-3.5" />
@@ -312,7 +299,7 @@ export default function AdminControlCenter() {
         </button>
       </div>
 
-      {/* Content area - fills remaining height */}
+      {/* Content area */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {activeView === "users" && (
           <div className="flex flex-col h-full space-y-2">
@@ -320,7 +307,7 @@ export default function AdminControlCenter() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="relative w-64">
-                  <Search className="absolute left-2 top-1/2 h-3 w-3 -translate-y-1/2 text-muted-foreground" />
+                  <Search className="absolute left-2 top-1/2 h-3 w-3 -translate-y-1/2 text-zinc-400" />
                   <Input
                     placeholder="Search users..."
                     value={searchQuery}
@@ -328,11 +315,11 @@ export default function AdminControlCenter() {
                       setSearchQuery(e.target.value);
                       setCurrentPage(1);
                     }}
-                    className="pl-7 h-7 text-xs"
+                    className="pl-7 h-7 text-[11px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800"
                   />
                 </div>
-                <div className="flex items-center gap-2 text-xs">
-                  <span className="text-muted-foreground">Show</span>
+                <div className="flex items-center gap-2 text-[11px]">
+                  <span className="text-zinc-500 dark:text-zinc-400">Show</span>
                   <Select
                     value={String(itemsPerPage)}
                     onValueChange={(v) => {
@@ -340,7 +327,7 @@ export default function AdminControlCenter() {
                       setCurrentPage(1);
                     }}
                   >
-                    <SelectTrigger className="h-7 w-16 text-xs">
+                    <SelectTrigger className="h-7 w-16 text-[11px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -351,14 +338,14 @@ export default function AdminControlCenter() {
                   </Select>
                 </div>
               </div>
-              <Button size="sm" onClick={() => setIsAddUserDialogOpen(true)}>
-                <Plus className="h-3.5 w-3.5 mr-1.5" />
+              <Button size="sm" className="h-6 text-[10px] px-2" onClick={() => setIsAddUserDialogOpen(true)}>
+                <Plus className="h-3 w-3 mr-1" />
                 Add User
               </Button>
             </div>
 
-            {/* Data table - ultra compact for hundreds of users */}
-            <div className="flex-1 overflow-auto rounded-lg shadow-sm bg-background border">
+            {/* Data table */}
+            <div className="flex-1 overflow-auto rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
               {usersLoading ? (
                 <div className="p-3 space-y-1">
                   {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
@@ -367,24 +354,24 @@ export default function AdminControlCenter() {
                 </div>
               ) : (
                 <Table>
-                  <TableHeader className="sticky top-0 bg-background z-10">
-                    <TableRow className="bg-muted/50 border-b">
-                      <TableHead className="h-8 text-[11px] font-semibold w-[200px]">
+                  <TableHeader className="sticky top-0 bg-zinc-50 dark:bg-zinc-800/50 z-10">
+                    <TableRow className="border-b border-zinc-200 dark:border-zinc-800 hover:bg-transparent">
+                      <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300 w-[200px]">
                         User
                       </TableHead>
-                      <TableHead className="h-8 text-[11px] font-semibold w-[140px]">
+                      <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300 w-[140px]">
                         Roles
                       </TableHead>
-                      <TableHead className="h-8 text-[11px] font-semibold w-[80px]">
+                      <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300 w-[80px]">
                         Status
                       </TableHead>
-                      <TableHead className="h-8 text-[11px] font-semibold w-[70px]">
+                      <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300 w-[70px]">
                         Level
                       </TableHead>
-                      <TableHead className="h-8 text-[11px] font-semibold w-[90px]">
+                      <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300 w-[90px]">
                         Created
                       </TableHead>
-                      <TableHead className="h-8 text-[11px] font-semibold w-[60px] text-right">
+                      <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300 w-[60px] text-right">
                         Actions
                       </TableHead>
                     </TableRow>
@@ -393,19 +380,19 @@ export default function AdminControlCenter() {
                     {paginatedUsers?.map((user: UserProfile) => (
                       <TableRow
                         key={user.id}
-                        className="hover:bg-muted/30 border-b"
+                        className="hover:bg-zinc-50 dark:hover:bg-zinc-800/50 border-b border-zinc-100 dark:border-zinc-800/50"
                       >
                         <TableCell className="py-1.5">
                           <div className="flex items-center gap-1.5">
-                            <div className="h-5 w-5 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-semibold shrink-0">
+                            <div className="h-5 w-5 rounded-full bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center text-[10px] font-semibold text-zinc-700 dark:text-zinc-300 shrink-0">
                               {user.full_name?.charAt(0) ||
                                 user.email?.charAt(0).toUpperCase()}
                             </div>
                             <div className="min-w-0">
-                              <div className="font-medium text-[11px] truncate leading-tight">
+                              <div className="font-medium text-[11px] text-zinc-900 dark:text-zinc-100 truncate leading-tight">
                                 {user.full_name || "No name"}
                               </div>
-                              <div className="text-[10px] text-muted-foreground truncate leading-tight">
+                              <div className="text-[10px] text-zinc-500 dark:text-zinc-400 truncate leading-tight">
                                 {user.email}
                               </div>
                             </div>
@@ -416,7 +403,7 @@ export default function AdminControlCenter() {
                             {user.roles?.slice(0, 2).map((roleName) => (
                               <Badge
                                 key={roleName}
-                                className={`${getRoleColor(roleName as RoleName)} text-[10px] px-1 py-0 h-4`}
+                                className={`${getRoleColor(roleName as RoleName)} text-[10px] px-1 py-0 h-4 border-0`}
                                 variant="secondary"
                               >
                                 {getRoleDisplayName(roleName as RoleName)}
@@ -425,7 +412,7 @@ export default function AdminControlCenter() {
                             {(user.roles?.length || 0) > 2 && (
                               <Badge
                                 variant="outline"
-                                className="text-[10px] px-1 py-0 h-4"
+                                className="text-[10px] px-1 py-0 h-4 border-zinc-300 dark:border-zinc-600"
                               >
                                 +{(user.roles?.length || 0) - 2}
                               </Badge>
@@ -436,26 +423,26 @@ export default function AdminControlCenter() {
                           {user.approval_status === "approved" ? (
                             <Badge
                               variant="outline"
-                              className="text-green-600 text-[10px] h-4 px-1"
+                              className="text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800 text-[10px] h-4 px-1"
                             >
                               Approved
                             </Badge>
                           ) : (
                             <Badge
                               variant="outline"
-                              className="text-yellow-600 text-[10px] h-4 px-1"
+                              className="text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800 text-[10px] h-4 px-1"
                             >
                               Pending
                             </Badge>
                           )}
                         </TableCell>
                         <TableCell className="py-1.5">
-                          <span className="text-[11px]">
+                          <span className="text-[11px] text-zinc-700 dark:text-zinc-300">
                             {user.contract_level || "-"}%
                           </span>
                         </TableCell>
                         <TableCell className="py-1.5">
-                          <span className="text-[10px] text-muted-foreground">
+                          <span className="text-[10px] text-zinc-500 dark:text-zinc-400">
                             {user.created_at
                               ? new Date(user.created_at).toLocaleDateString()
                               : "-"}
@@ -466,7 +453,7 @@ export default function AdminControlCenter() {
                             <Button
                               size="sm"
                               variant="ghost"
-                              className="h-5 px-1.5 text-[10px]"
+                              className="h-5 px-1.5 text-[10px] text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
                               onClick={() => handleEditUser(user)}
                               title="Edit user"
                             >
@@ -476,7 +463,7 @@ export default function AdminControlCenter() {
                             <Button
                               size="sm"
                               variant="ghost"
-                              className="h-5 px-1.5 text-destructive hover:text-destructive"
+                              className="h-5 px-1.5 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
                               onClick={() =>
                                 handleDeleteUser(
                                   user.id,
@@ -495,7 +482,7 @@ export default function AdminControlCenter() {
                       <TableRow>
                         <TableCell
                           colSpan={6}
-                          className="text-center text-xs text-muted-foreground py-6"
+                          className="text-center text-[11px] text-zinc-500 dark:text-zinc-400 py-6"
                         >
                           No users found
                         </TableCell>
@@ -508,8 +495,8 @@ export default function AdminControlCenter() {
 
             {/* Pagination controls */}
             {totalPages > 1 && (
-              <div className="flex items-center justify-between text-xs">
-                <div className="text-muted-foreground">
+              <div className="flex items-center justify-between text-[11px]">
+                <div className="text-zinc-500 dark:text-zinc-400">
                   Showing {(currentPage - 1) * itemsPerPage + 1}-
                   {Math.min(
                     currentPage * itemsPerPage,
@@ -521,7 +508,7 @@ export default function AdminControlCenter() {
                   <Button
                     size="sm"
                     variant="outline"
-                    className="h-7 px-2"
+                    className="h-6 px-2 border-zinc-200 dark:border-zinc-700"
                     onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                     disabled={currentPage === 1}
                   >
@@ -530,7 +517,6 @@ export default function AdminControlCenter() {
                   <div className="flex items-center gap-0.5">
                     {Array.from({ length: totalPages }, (_, i) => i + 1)
                       .filter((page) => {
-                        // Show first, last, current, and pages around current
                         return (
                           page === 1 ||
                           page === totalPages ||
@@ -538,28 +524,27 @@ export default function AdminControlCenter() {
                         );
                       })
                       .map((page, idx, arr) => (
-                        <>
+                        <span key={`page-${page}`}>
                           {idx > 0 && arr[idx - 1] !== page - 1 && (
-                            <span className="px-1 text-muted-foreground">
+                            <span className="px-1 text-zinc-400">
                               ...
                             </span>
                           )}
                           <Button
-                            key={page}
                             size="sm"
                             variant={currentPage === page ? "default" : "ghost"}
-                            className="h-7 w-7 p-0 text-xs"
+                            className="h-6 w-6 p-0 text-[11px]"
                             onClick={() => setCurrentPage(page)}
                           >
                             {page}
                           </Button>
-                        </>
+                        </span>
                       ))}
                   </div>
                   <Button
                     size="sm"
                     variant="outline"
-                    className="h-7 px-2"
+                    className="h-6 px-2 border-zinc-200 dark:border-zinc-700"
                     onClick={() =>
                       setCurrentPage((p) => Math.min(totalPages, p + 1))
                     }
@@ -576,19 +561,19 @@ export default function AdminControlCenter() {
         {activeView === "recruits" && (
           <div className="flex flex-col h-full space-y-2">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4 text-xs">
+              <div className="flex items-center gap-4 text-[11px]">
                 <div className="flex items-center gap-1.5">
-                  <UserPlus className="h-3.5 w-3.5 text-muted-foreground" />
-                  <span className="font-medium">{pending}</span>
-                  <span className="text-muted-foreground">
+                  <UserPlus className="h-3.5 w-3.5 text-zinc-400" />
+                  <span className="font-medium text-zinc-900 dark:text-zinc-100">{pending}</span>
+                  <span className="text-zinc-500 dark:text-zinc-400">
                     pending recruits
                   </span>
                 </div>
               </div>
             </div>
 
-            {/* Recruits table - ultra compact */}
-            <div className="flex-1 overflow-auto rounded-lg shadow-sm bg-background border">
+            {/* Recruits table */}
+            <div className="flex-1 overflow-auto rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
               {usersLoading ? (
                 <div className="p-3 space-y-1">
                   {[1, 2, 3, 4, 5].map((i) => (
@@ -597,31 +582,30 @@ export default function AdminControlCenter() {
                 </div>
               ) : (
                 <Table>
-                  <TableHeader className="sticky top-0 bg-background z-10">
-                    <TableRow className="bg-muted/50 border-b">
-                      <TableHead className="h-8 text-[11px] font-semibold w-[180px]">
+                  <TableHeader className="sticky top-0 bg-zinc-50 dark:bg-zinc-800/50 z-10">
+                    <TableRow className="border-b border-zinc-200 dark:border-zinc-800 hover:bg-transparent">
+                      <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300 w-[180px]">
                         Recruit
                       </TableHead>
-                      <TableHead className="h-8 text-[11px] font-semibold w-[130px]">
+                      <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300 w-[130px]">
                         Upline
                       </TableHead>
-                      <TableHead className="h-8 text-[11px] font-semibold w-[100px]">
+                      <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300 w-[100px]">
                         Resident State
                       </TableHead>
-                      <TableHead className="h-8 text-[11px] font-semibold w-[90px]">
+                      <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300 w-[90px]">
                         Applied
                       </TableHead>
-                      <TableHead className="h-8 text-[11px] font-semibold w-[100px]">
+                      <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300 w-[100px]">
                         Phase
                       </TableHead>
-                      <TableHead className="h-8 text-[11px] font-semibold w-[100px] text-right">
+                      <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300 w-[100px] text-right">
                         Actions
                       </TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {pendingRecruits?.map((recruit: UserProfile) => {
-                      // Get full names from nested objects if available
                       const recruitName =
                         recruit.first_name && recruit.last_name
                           ? `${recruit.first_name} ${recruit.last_name}`
@@ -633,7 +617,6 @@ export default function AdminControlCenter() {
                           : recruit.upline.email
                         : null;
 
-                      // Get the current phase - this should be from current_onboarding_phase
                       const currentPhase =
                         recruit.current_onboarding_phase ||
                         recruit.onboarding_status ||
@@ -642,18 +625,18 @@ export default function AdminControlCenter() {
                       return (
                         <TableRow
                           key={recruit.id}
-                          className="hover:bg-muted/30 border-b"
+                          className="hover:bg-zinc-50 dark:hover:bg-zinc-800/50 border-b border-zinc-100 dark:border-zinc-800/50"
                         >
                           <TableCell className="py-1.5">
                             <div className="flex items-center gap-1.5">
-                              <div className="h-5 w-5 rounded-full bg-yellow-100 flex items-center justify-center text-[10px] font-semibold shrink-0">
+                              <div className="h-5 w-5 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center text-[10px] font-semibold text-amber-700 dark:text-amber-300 shrink-0">
                                 {recruitName.charAt(0).toUpperCase()}
                               </div>
                               <div className="min-w-0">
-                                <div className="font-medium text-[11px] truncate leading-tight">
+                                <div className="font-medium text-[11px] text-zinc-900 dark:text-zinc-100 truncate leading-tight">
                                   {recruitName}
                                 </div>
-                                <div className="text-[10px] text-muted-foreground truncate leading-tight">
+                                <div className="text-[10px] text-zinc-500 dark:text-zinc-400 truncate leading-tight">
                                   {recruit.email}
                                 </div>
                               </div>
@@ -661,22 +644,22 @@ export default function AdminControlCenter() {
                           </TableCell>
                           <TableCell className="py-1.5">
                             {uplineName ? (
-                              <div className="text-[10px] text-muted-foreground truncate">
+                              <div className="text-[10px] text-zinc-600 dark:text-zinc-400 truncate">
                                 {uplineName}
                               </div>
                             ) : (
-                              <span className="text-[10px] text-muted-foreground">
+                              <span className="text-[10px] text-zinc-400 dark:text-zinc-500">
                                 -
                               </span>
                             )}
                           </TableCell>
                           <TableCell className="py-1.5">
-                            <span className="text-[10px] text-muted-foreground">
+                            <span className="text-[10px] text-zinc-600 dark:text-zinc-400">
                               {recruit.resident_state || "-"}
                             </span>
                           </TableCell>
                           <TableCell className="py-1.5">
-                            <span className="text-[10px] text-muted-foreground">
+                            <span className="text-[10px] text-zinc-500 dark:text-zinc-400">
                               {recruit.created_at
                                 ? new Date(
                                     recruit.created_at,
@@ -687,7 +670,7 @@ export default function AdminControlCenter() {
                           <TableCell className="py-1.5">
                             <Badge
                               variant="outline"
-                              className="text-blue-600 text-[10px] h-4 px-1"
+                              className="text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800 text-[10px] h-4 px-1"
                             >
                               {currentPhase.replace(/_/g, " ")}
                             </Badge>
@@ -697,17 +680,13 @@ export default function AdminControlCenter() {
                               <Button
                                 size="sm"
                                 variant="ghost"
-                                className="h-5 px-1.5 text-[10px]"
+                                className="h-5 px-1.5 text-[10px] text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
                                 onClick={() => handleEditUser(recruit)}
                                 title="View/Edit full profile"
                               >
                                 <Edit className="h-2.5 w-2.5 mr-0.5" />
                                 Edit
                               </Button>
-                              {/* Show Graduate button only if:
-                                  1. User has permission (Admin, Trainer, or Contracting Manager)
-                                  2. Recruit is in bootcamp phase or later
-                              */}
                               {canGraduateRecruits &&
                                 [
                                   "bootcamp",
@@ -719,7 +698,7 @@ export default function AdminControlCenter() {
                                   <Button
                                     size="sm"
                                     variant="ghost"
-                                    className="h-5 px-1.5 text-[10px] text-green-600 hover:text-green-700"
+                                    className="h-5 px-1.5 text-[10px] text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
                                     onClick={() => {
                                       setGraduatingRecruit(recruit);
                                       setIsGraduateDialogOpen(true);
@@ -738,8 +717,8 @@ export default function AdminControlCenter() {
                     {pendingRecruits?.length === 0 && (
                       <TableRow>
                         <TableCell
-                          colSpan={5}
-                          className="text-center text-xs text-muted-foreground py-6"
+                          colSpan={6}
+                          className="text-center text-[11px] text-zinc-500 dark:text-zinc-400 py-6"
                         >
                           No pending recruits
                         </TableCell>
@@ -755,67 +734,67 @@ export default function AdminControlCenter() {
         {activeView === "roles" && (
           <div className="flex flex-col h-full space-y-2">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4 text-sm">
+              <div className="flex items-center gap-4 text-[11px]">
                 <div className="flex items-center gap-1.5">
-                  <ScrollText className="h-3.5 w-3.5 text-muted-foreground" />
-                  <span className="font-medium">{roles?.length || 0}</span>
-                  <span className="text-muted-foreground">total roles</span>
+                  <ScrollText className="h-3.5 w-3.5 text-zinc-400" />
+                  <span className="font-medium text-zinc-900 dark:text-zinc-100">{roles?.length || 0}</span>
+                  <span className="text-zinc-500 dark:text-zinc-400">total roles</span>
                 </div>
               </div>
             </div>
 
-            <div className="flex-1 overflow-auto rounded-lg shadow-sm bg-background">
+            <div className="flex-1 overflow-auto rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
               <Table>
-                <TableHeader>
-                  <TableRow className="bg-muted/50">
-                    <TableHead className="w-[200px]">Role Name</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead className="w-[100px]">Permissions</TableHead>
-                    <TableHead className="w-[100px]">Users</TableHead>
-                    <TableHead className="w-[120px]">System Role</TableHead>
-                    <TableHead className="w-[100px] text-right">
+                <TableHeader className="sticky top-0 bg-zinc-50 dark:bg-zinc-800/50 z-10">
+                  <TableRow className="border-b border-zinc-200 dark:border-zinc-800 hover:bg-transparent">
+                    <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300 w-[200px]">Role Name</TableHead>
+                    <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300">Description</TableHead>
+                    <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300 w-[100px]">Permissions</TableHead>
+                    <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300 w-[100px]">Users</TableHead>
+                    <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300 w-[120px]">System Role</TableHead>
+                    <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300 w-[100px] text-right">
                       Actions
                     </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {roles?.map((role) => (
-                    <TableRow key={role.id} className="hover:bg-muted/30">
-                      <TableCell>
-                        <div className="font-medium text-sm">
+                    <TableRow key={role.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-800/50 border-b border-zinc-100 dark:border-zinc-800/50">
+                      <TableCell className="py-1.5">
+                        <div className="font-medium text-[11px] text-zinc-900 dark:text-zinc-100">
                           {role.display_name}
                         </div>
-                        <div className="text-xs text-muted-foreground">
+                        <div className="text-[10px] text-zinc-500 dark:text-zinc-400">
                           {role.name}
                         </div>
                       </TableCell>
-                      <TableCell>
-                        <div className="text-sm text-muted-foreground truncate max-w-md">
+                      <TableCell className="py-1.5">
+                        <div className="text-[11px] text-zinc-600 dark:text-zinc-400 truncate max-w-md">
                           {role.description || "-"}
                         </div>
                       </TableCell>
-                      <TableCell>
-                        <span className="text-sm">
+                      <TableCell className="py-1.5">
+                        <span className="text-[11px] text-zinc-700 dark:text-zinc-300">
                           {role.permissions?.length || 0}
                         </span>
                       </TableCell>
-                      <TableCell>
-                        <span className="text-sm">
+                      <TableCell className="py-1.5">
+                        <span className="text-[11px] text-zinc-700 dark:text-zinc-300">
                           {activeAgents?.filter((u: UserProfile) =>
                             u.roles?.includes(role.name as RoleName),
                           ).length || 0}
                         </span>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="py-1.5">
                         {role.is_system_role && (
-                          <Badge variant="outline" className="text-xs">
+                          <Badge variant="outline" className="text-[10px] h-4 px-1 border-zinc-300 dark:border-zinc-600">
                             System
                           </Badge>
                         )}
                       </TableCell>
-                      <TableCell className="text-right">
-                        <Button size="sm" variant="ghost" className="h-7 px-2">
-                          <Edit className="h-3 w-3" />
+                      <TableCell className="py-1.5 text-right">
+                        <Button size="sm" variant="ghost" className="h-5 px-1.5 text-zinc-600 dark:text-zinc-400">
+                          <Edit className="h-2.5 w-2.5" />
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -827,16 +806,16 @@ export default function AdminControlCenter() {
         )}
 
         {activeView === "system" && (
-          <div className="flex-1 flex items-center justify-center text-muted-foreground">
+          <div className="flex-1 flex items-center justify-center">
             <div className="text-center">
-              <Settings className="h-12 w-12 mx-auto mb-3 opacity-20" />
-              <p className="text-sm">System Settings view - Coming soon</p>
+              <Settings className="h-10 w-10 mx-auto mb-2 text-zinc-300 dark:text-zinc-600" />
+              <p className="text-[11px] text-zinc-500 dark:text-zinc-400">System Settings - Coming soon</p>
             </div>
           </div>
         )}
       </div>
 
-      {/* Edit User Dialog - Comprehensive */}
+      {/* Edit User Dialog */}
       <EditUserDialog
         user={editingUser}
         open={isEditDialogOpen}

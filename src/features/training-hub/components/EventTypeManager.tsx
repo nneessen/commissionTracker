@@ -29,13 +29,13 @@ const EVENT_CATEGORIES = [
 ];
 
 const CATEGORY_COLORS: Record<string, string> = {
-  recruit: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
-  policy: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
-  commission: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
-  user: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
-  email: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400',
-  system: 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400',
-  custom: 'bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400'
+  recruit: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-0',
+  policy: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border-0',
+  commission: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-0',
+  user: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 border-0',
+  email: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400 border-0',
+  system: 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-400 border-0',
+  custom: 'bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400 border-0'
 };
 
 export default function EventTypeManager() {
@@ -185,7 +185,7 @@ export default function EventTypeManager() {
   };
 
   if (isLoading) {
-    return <div className="p-3 text-xs text-muted-foreground">Loading event types...</div>;
+    return <div className="p-3 text-[11px] text-zinc-500 dark:text-zinc-400">Loading event types...</div>;
   }
 
   // Group events by category
@@ -199,16 +199,16 @@ export default function EventTypeManager() {
   return (
     <div className="space-y-3">
       {/* Header */}
-      <div className="flex items-center justify-between p-2 bg-muted/30 rounded">
+      <div className="flex items-center justify-between p-2.5 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg border border-zinc-200 dark:border-zinc-700">
         <div>
-          <h3 className="text-sm font-medium">Event Type Management</h3>
-          <p className="text-xs text-muted-foreground">Define events that can trigger workflows</p>
+          <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Event Type Management</h3>
+          <p className="text-[10px] text-zinc-500 dark:text-zinc-400">Define events that can trigger workflows</p>
         </div>
         <Button
           size="sm"
           onClick={handleCreate}
           disabled={editingId === 'new'}
-          className="h-7 text-xs"
+          className="h-6 text-[10px]"
         >
           <Plus className="h-3 w-3 mr-1" />
           Add Event
@@ -217,15 +217,15 @@ export default function EventTypeManager() {
 
       {/* New Event Form */}
       {editingId === 'new' && editData && (
-        <div className="p-3 space-y-2 bg-muted/20 rounded border">
+        <div className="p-3 space-y-2 bg-zinc-50 dark:bg-zinc-800/30 rounded-lg border border-zinc-200 dark:border-zinc-700">
           <div className="flex items-center justify-between mb-2">
-            <h4 className="text-xs font-medium">Create New Event Type</h4>
+            <h4 className="text-[11px] font-semibold text-zinc-900 dark:text-zinc-100">Create New Event Type</h4>
             <div className="flex gap-1">
               <Button
                 size="sm"
                 variant="ghost"
                 onClick={handleSave}
-                className="h-6 px-2"
+                className="h-5 px-1.5 text-[10px]"
                 disabled={createEvent.isPending}
               >
                 <Save className="h-3 w-3 mr-1" />
@@ -235,7 +235,7 @@ export default function EventTypeManager() {
                 size="sm"
                 variant="ghost"
                 onClick={handleCancel}
-                className="h-6 px-2"
+                className="h-5 px-1.5 text-[10px]"
               >
                 <X className="h-3 w-3" />
               </Button>
@@ -244,29 +244,29 @@ export default function EventTypeManager() {
 
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <Label className="text-[10px]">Event Name</Label>
+              <Label className="text-[10px] text-zinc-600 dark:text-zinc-400">Event Name</Label>
               <Input
-                className={cn("h-7 text-xs", errors.eventName && "border-destructive")}
+                className={cn("h-6 text-[11px] border-zinc-200 dark:border-zinc-700", errors.eventName && "border-red-400 dark:border-red-600")}
                 placeholder="category.action_name"
                 value={editData.eventName}
                 onChange={(e) => updateEditField('eventName', e.target.value)}
               />
               {errors.eventName && (
-                <p className="text-[10px] text-destructive mt-1">{errors.eventName}</p>
+                <p className="text-[10px] text-red-600 dark:text-red-400 mt-0.5">{errors.eventName}</p>
               )}
             </div>
             <div>
-              <Label className="text-[10px]">Category</Label>
+              <Label className="text-[10px] text-zinc-600 dark:text-zinc-400">Category</Label>
               <Select
                 value={editData.category}
                 onValueChange={(value) => updateEditField('category', value)}
               >
-                <SelectTrigger className={cn("h-7 text-xs", errors.category && "border-destructive")}>
+                <SelectTrigger className={cn("h-6 text-[11px] border-zinc-200 dark:border-zinc-700", errors.category && "border-red-400 dark:border-red-600")}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   {EVENT_CATEGORIES.map(cat => (
-                    <SelectItem key={cat} value={cat} className="text-xs">
+                    <SelectItem key={cat} value={cat} className="text-[11px]">
                       {cat}
                     </SelectItem>
                   ))}
@@ -276,22 +276,22 @@ export default function EventTypeManager() {
           </div>
 
           <div>
-            <Label className="text-[10px]">Description</Label>
+            <Label className="text-[10px] text-zinc-600 dark:text-zinc-400">Description</Label>
             <Input
-              className={cn("h-7 text-xs", errors.description && "border-destructive")}
+              className={cn("h-6 text-[11px] border-zinc-200 dark:border-zinc-700", errors.description && "border-red-400 dark:border-red-600")}
               placeholder="Brief description of when this event fires"
               value={editData.description}
               onChange={(e) => updateEditField('description', e.target.value)}
             />
             {errors.description && (
-              <p className="text-[10px] text-destructive mt-1">{errors.description}</p>
+              <p className="text-[10px] text-red-600 dark:text-red-400 mt-0.5">{errors.description}</p>
             )}
           </div>
 
           <div>
-            <Label className="text-[10px]">Available Variables (JSON)</Label>
+            <Label className="text-[10px] text-zinc-600 dark:text-zinc-400">Available Variables (JSON)</Label>
             <Textarea
-              className={cn("min-h-[60px] text-xs font-mono", errors.availableVariables && "border-destructive")}
+              className={cn("min-h-[60px] text-[11px] font-mono border-zinc-200 dark:border-zinc-700", errors.availableVariables && "border-red-400 dark:border-red-600")}
               placeholder='{"userId": "UUID", "userName": "string"}'
               value={JSON.stringify(editData.availableVariables, null, 2)}
               onChange={(e) => {
@@ -303,12 +303,12 @@ export default function EventTypeManager() {
               }}
             />
             {errors.availableVariables && (
-              <p className="text-[10px] text-destructive mt-1">{errors.availableVariables}</p>
+              <p className="text-[10px] text-red-600 dark:text-red-400 mt-0.5">{errors.availableVariables}</p>
             )}
           </div>
 
           {errors.submit && (
-            <p className="text-xs text-destructive">{errors.submit}</p>
+            <p className="text-[11px] text-red-600 dark:text-red-400">{errors.submit}</p>
           )}
         </div>
       )}
@@ -320,43 +320,44 @@ export default function EventTypeManager() {
             <Badge className={cn("text-[10px] px-2 py-0", CATEGORY_COLORS[category])}>
               {category}
             </Badge>
-            <span className="text-[10px] text-muted-foreground">
+            <span className="text-[10px] text-zinc-500 dark:text-zinc-400">
               {events.length} event{events.length !== 1 ? 's' : ''}
             </span>
           </div>
 
+          <div className="rounded-lg border border-zinc-200 dark:border-zinc-700 overflow-hidden">
           <Table>
             <TableHeader>
-              <TableRow className="h-7">
-                <TableHead className="text-[10px] font-medium">Event Name</TableHead>
-                <TableHead className="text-[10px] font-medium">Description</TableHead>
-                <TableHead className="text-[10px] font-medium">Variables</TableHead>
-                <TableHead className="text-[10px] font-medium text-center">Status</TableHead>
-                <TableHead className="text-[10px] font-medium text-right">Actions</TableHead>
+              <TableRow className="h-6 bg-zinc-50 dark:bg-zinc-800/50">
+                <TableHead className="text-[10px] font-semibold text-zinc-600 dark:text-zinc-300">Event Name</TableHead>
+                <TableHead className="text-[10px] font-semibold text-zinc-600 dark:text-zinc-300">Description</TableHead>
+                <TableHead className="text-[10px] font-semibold text-zinc-600 dark:text-zinc-300">Variables</TableHead>
+                <TableHead className="text-[10px] font-semibold text-zinc-600 dark:text-zinc-300 text-center">Status</TableHead>
+                <TableHead className="text-[10px] font-semibold text-zinc-600 dark:text-zinc-300 text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {events.map((event) => (
-                <TableRow key={event.id} className="h-8">
+                <TableRow key={event.id} className="h-8 border-b border-zinc-100 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800/50">
                   {editingId === event.id && editData ? (
                     <>
                       <TableCell className="py-1">
                         <Input
-                          className="h-6 text-xs"
+                          className="h-5 text-[11px] border-zinc-200 dark:border-zinc-700"
                           value={editData.eventName}
                           onChange={(e) => updateEditField('eventName', e.target.value)}
                         />
                       </TableCell>
                       <TableCell className="py-1">
                         <Input
-                          className="h-6 text-xs"
+                          className="h-5 text-[11px] border-zinc-200 dark:border-zinc-700"
                           value={editData.description}
                           onChange={(e) => updateEditField('description', e.target.value)}
                         />
                       </TableCell>
                       <TableCell className="py-1">
                         <Textarea
-                          className="h-6 text-xs font-mono p-1"
+                          className="h-5 text-[10px] font-mono p-1 border-zinc-200 dark:border-zinc-700"
                           value={JSON.stringify(editData.availableVariables, null, 0)}
                           onChange={(e) => {
                             try {
@@ -397,16 +398,16 @@ export default function EventTypeManager() {
                     </>
                   ) : (
                     <>
-                      <TableCell className="text-xs font-mono">
-                        <div className="flex items-center gap-1">
+                      <TableCell className="text-[11px] font-mono">
+                        <div className="flex items-center gap-1 text-zinc-900 dark:text-zinc-100">
                           <Zap className="h-3 w-3 text-amber-500" />
                           {event.eventName}
                         </div>
                       </TableCell>
-                      <TableCell className="text-xs text-muted-foreground">
+                      <TableCell className="text-[11px] text-zinc-500 dark:text-zinc-400">
                         {event.description}
                       </TableCell>
-                      <TableCell className="text-[10px] font-mono text-muted-foreground">
+                      <TableCell className="text-[10px] font-mono text-zinc-500 dark:text-zinc-400">
                         {event.availableVariables ?
                           Object.keys(event.availableVariables as object).length + ' vars' :
                           'None'
@@ -419,7 +420,7 @@ export default function EventTypeManager() {
                           onClick={() => handleToggleActive(event)}
                           className={cn(
                             "h-5 px-1",
-                            event.isActive ? "text-green-600" : "text-gray-400"
+                            event.isActive ? "text-emerald-600 dark:text-emerald-400" : "text-zinc-400 dark:text-zinc-500"
                           )}
                         >
                           {event.isActive ? (
@@ -435,7 +436,7 @@ export default function EventTypeManager() {
                             size="sm"
                             variant="ghost"
                             onClick={() => handleEdit(event)}
-                            className="h-5 px-1"
+                            className="h-5 px-1 text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
                           >
                             <Edit2 className="h-3 w-3" />
                           </Button>
@@ -443,7 +444,7 @@ export default function EventTypeManager() {
                             size="sm"
                             variant="ghost"
                             onClick={() => handleDelete(event.id)}
-                            className="h-5 px-1 text-destructive hover:text-destructive"
+                            className="h-5 px-1 text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300"
                           >
                             <Trash2 className="h-3 w-3" />
                           </Button>
@@ -455,6 +456,7 @@ export default function EventTypeManager() {
               ))}
             </TableBody>
           </Table>
+          </div>
         </div>
       ))}
     </div>

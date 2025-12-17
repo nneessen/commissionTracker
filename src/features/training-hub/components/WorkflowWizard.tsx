@@ -409,11 +409,11 @@ export default function WorkflowWizard({ open, onOpenChange, workflow }: Workflo
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[90vh] p-3 flex flex-col" hideCloseButton>
+      <DialogContent className="max-w-lg max-h-[90vh] p-3 flex flex-col bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800" hideCloseButton>
         {/* Header - compact but readable */}
-        <div className="shrink-0 pb-2 border-b bg-muted/30 -m-3 mb-2 p-3">
+        <div className="shrink-0 pb-2 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/50 -m-3 mb-2 p-3 rounded-t-lg">
           <div className="flex items-center justify-between">
-            <DialogTitle className="text-sm font-medium">
+            <DialogTitle className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
               {workflow ? 'Edit' : 'Create'} Workflow
             </DialogTitle>
           </div>
@@ -435,18 +435,18 @@ export default function WorkflowWizard({ open, onOpenChange, workflow }: Workflo
                   key={step.id}
                   className={cn(
                     "flex items-center gap-1",
-                    isActive && "font-medium text-foreground",
-                    isCompleted && !isActive && "text-muted-foreground",
-                    !isActive && !isCompleted && "text-muted-foreground/50",
-                    hasError && "text-destructive"
+                    isActive && "font-medium text-zinc-900 dark:text-zinc-100",
+                    isCompleted && !isActive && "text-zinc-500 dark:text-zinc-400",
+                    !isActive && !isCompleted && "text-zinc-400 dark:text-zinc-500",
+                    hasError && "text-red-600 dark:text-red-400"
                   )}
                 >
                   <span className={cn(
                     "flex items-center justify-center w-5 h-5 rounded-full text-[10px]",
-                    isActive && "bg-primary text-primary-foreground",
-                    isCompleted && !isActive && "bg-primary/20 text-primary",
-                    !isActive && !isCompleted && "bg-muted",
-                    hasError && "bg-destructive/20 text-destructive"
+                    isActive && "bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900",
+                    isCompleted && !isActive && "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400",
+                    !isActive && !isCompleted && "bg-zinc-200 dark:bg-zinc-700 text-zinc-500 dark:text-zinc-400",
+                    hasError && "bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400"
                   )}>
                     {isCompleted && !isActive ? (
                       <Check className="h-3 w-3" />
@@ -454,9 +454,9 @@ export default function WorkflowWizard({ open, onOpenChange, workflow }: Workflo
                       index + 1
                     )}
                   </span>
-                  <span className="text-xs">{step.label}</span>
+                  <span className="text-[11px]">{step.label}</span>
                   {index < WIZARD_STEPS.length - 1 && (
-                    <span className="text-muted-foreground/30 text-xs ml-1">→</span>
+                    <span className="text-zinc-300 dark:text-zinc-600 text-[11px] ml-1">→</span>
                   )}
                 </div>
               );
@@ -465,8 +465,8 @@ export default function WorkflowWizard({ open, onOpenChange, workflow }: Workflo
 
           {/* Display submit error if any */}
           {errors.submit && (
-            <div className="mt-2 p-2 rounded bg-destructive/10 border border-destructive/20">
-              <p className="text-xs text-destructive">{errors.submit}</p>
+            <div className="mt-2 p-2 rounded-md bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
+              <p className="text-[11px] text-red-600 dark:text-red-400">{errors.submit}</p>
             </div>
           )}
         </div>
@@ -479,14 +479,14 @@ export default function WorkflowWizard({ open, onOpenChange, workflow }: Workflo
         </div>
 
         {/* Footer - fixed at bottom, compact */}
-        <div className="shrink-0 pt-2 mt-2 border-t bg-muted/20 -m-3 p-3">
-          <div className="flex items-center justify-end gap-2">
+        <div className="shrink-0 pt-2 mt-2 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/30 -m-3 p-3 rounded-b-lg">
+          <div className="flex items-center justify-end gap-1.5">
             <Button
               variant="outline"
               onClick={handleBack}
               disabled={currentStep === 0 || isSubmitting}
               size="sm"
-              className="h-7 text-xs px-3"
+              className="h-6 text-[10px] px-2 border-zinc-200 dark:border-zinc-700"
             >
               <ArrowLeft className="h-3 w-3 mr-1" />
               Back
@@ -497,7 +497,7 @@ export default function WorkflowWizard({ open, onOpenChange, workflow }: Workflo
                 onClick={handleNext}
                 size="sm"
                 disabled={isSubmitting}
-                className="h-7 text-xs px-3"
+                className="h-6 text-[10px] px-2"
               >
                 Next
                 <ArrowRight className="h-3 w-3 ml-1" />
@@ -509,7 +509,7 @@ export default function WorkflowWizard({ open, onOpenChange, workflow }: Workflo
                   onClick={handleTestRun}
                   disabled={isSubmitting}
                   size="sm"
-                  className="h-7 text-xs px-3 border-amber-500/30 hover:border-amber-500 hover:bg-amber-50/50 dark:hover:bg-amber-950/20 text-amber-600 dark:text-amber-400"
+                  className="h-6 text-[10px] px-2 border-amber-300 dark:border-amber-700 hover:border-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30 text-amber-600 dark:text-amber-400"
                 >
                   <TestTube className="h-3 w-3 mr-1" />
                   Test Run
@@ -518,7 +518,7 @@ export default function WorkflowWizard({ open, onOpenChange, workflow }: Workflo
                   onClick={handleSave}
                   disabled={isSubmitting}
                   size="sm"
-                  className="h-7 text-xs px-3 bg-emerald-600 hover:bg-emerald-700 text-white"
+                  className="h-6 text-[10px] px-2 bg-emerald-600 hover:bg-emerald-700 text-white"
                 >
                   <Save className="h-3 w-3 mr-1" />
                   {isSubmitting ? 'Saving...' : (workflow ? 'Update' : 'Create')}

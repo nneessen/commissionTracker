@@ -47,54 +47,54 @@ function TemplateRow({
   canEdit: boolean
 }) {
   return (
-    <TableRow className="text-xs">
+    <TableRow className="text-[11px] border-b border-zinc-100 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800/50">
       <TableCell className="py-1.5">
-        <span className="font-medium">{template.name}</span>
+        <span className="font-medium text-zinc-900 dark:text-zinc-100">{template.name}</span>
       </TableCell>
-      <TableCell className="py-1.5 text-muted-foreground">
+      <TableCell className="py-1.5 text-zinc-500 dark:text-zinc-400">
         <span className="line-clamp-1">{template.subject}</span>
       </TableCell>
       <TableCell className="py-1.5">
-        <Badge variant="outline" className="text-[9px] px-1 py-0">
+        <Badge variant="outline" className="text-[9px] px-1 py-0 border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400">
           {CATEGORY_LABELS[template.category] || template.category}
         </Badge>
       </TableCell>
       <TableCell className="py-1.5">
         <Badge
-          variant={template.is_active ? 'default' : 'secondary'}
-          className={`text-[9px] px-1 py-0 ${template.is_active ? 'bg-green-500/10 text-green-600' : ''}`}
+          variant="secondary"
+          className={`text-[9px] px-1 py-0 ${template.is_active ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400'}`}
         >
           {template.is_active ? 'Active' : 'Inactive'}
         </Badge>
       </TableCell>
-      <TableCell className="py-1.5 text-muted-foreground">
+      <TableCell className="py-1.5 text-zinc-500 dark:text-zinc-400">
         {format(new Date(template.updated_at), 'MMM d')}
       </TableCell>
       <TableCell className="py-1.5 w-8">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-6 w-6">
+            <Button variant="ghost" size="icon" className="h-6 w-6 text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200">
               <MoreHorizontal className="h-3 w-3" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="text-xs">
-            <DropdownMenuItem onClick={onView} className="text-xs">
+          <DropdownMenuContent align="end" className="text-[11px]">
+            <DropdownMenuItem onClick={onView} className="text-[11px]">
               <Eye className="mr-1.5 h-3 w-3" />
               View
             </DropdownMenuItem>
             {canEdit && (
-              <DropdownMenuItem onClick={onEdit} className="text-xs">
+              <DropdownMenuItem onClick={onEdit} className="text-[11px]">
                 <Pencil className="mr-1.5 h-3 w-3" />
                 Edit
               </DropdownMenuItem>
             )}
-            <DropdownMenuItem onClick={onDuplicate} className="text-xs">
+            <DropdownMenuItem onClick={onDuplicate} className="text-[11px]">
               <Copy className="mr-1.5 h-3 w-3" />
               Duplicate
             </DropdownMenuItem>
             {canEdit && (
               <>
-                <DropdownMenuItem onClick={onToggleActive} className="text-xs">
+                <DropdownMenuItem onClick={onToggleActive} className="text-[11px]">
                   {template.is_active ? (
                     <>
                       <ToggleLeft className="mr-1.5 h-3 w-3" />
@@ -110,7 +110,7 @@ function TemplateRow({
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={onDelete}
-                  className="text-xs text-destructive focus:text-destructive"
+                  className="text-[11px] text-red-600 dark:text-red-400 focus:text-red-600 dark:focus:text-red-400"
                 >
                   <Trash2 className="mr-1.5 h-3 w-3" />
                   Delete
@@ -144,7 +144,7 @@ function TemplateTable({
 }) {
   if (templates.length === 0) {
     return (
-      <div className="py-3 text-center text-xs text-muted-foreground">
+      <div className="py-3 text-center text-[11px] text-zinc-500 dark:text-zinc-400">
         No templates
       </div>
     )
@@ -153,12 +153,12 @@ function TemplateTable({
   return (
     <Table>
       <TableHeader>
-        <TableRow className="hover:bg-transparent">
-          <TableHead className="h-6 text-[10px]">Name</TableHead>
-          <TableHead className="h-6 text-[10px]">Subject</TableHead>
-          <TableHead className="h-6 text-[10px]">Category</TableHead>
-          <TableHead className="h-6 text-[10px]">Status</TableHead>
-          <TableHead className="h-6 text-[10px]">Updated</TableHead>
+        <TableRow className="h-6 bg-zinc-50 dark:bg-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-800/50">
+          <TableHead className="h-6 text-[10px] font-semibold text-zinc-600 dark:text-zinc-300">Name</TableHead>
+          <TableHead className="h-6 text-[10px] font-semibold text-zinc-600 dark:text-zinc-300">Subject</TableHead>
+          <TableHead className="h-6 text-[10px] font-semibold text-zinc-600 dark:text-zinc-300">Category</TableHead>
+          <TableHead className="h-6 text-[10px] font-semibold text-zinc-600 dark:text-zinc-300">Status</TableHead>
+          <TableHead className="h-6 text-[10px] font-semibold text-zinc-600 dark:text-zinc-300">Updated</TableHead>
           <TableHead className="h-6 w-8"></TableHead>
         </TableRow>
       </TableHeader>
@@ -433,21 +433,27 @@ export function EmailTemplatesTab({ searchQuery }: EmailTemplatesTabProps) {
 
   // Template list view
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 p-3">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3 text-xs text-muted-foreground">
-          <span>{globalTemplates.length} global</span>
-          <span className="text-border">|</span>
-          <span>
-            {status ? `${status.count}/${status.limit}` : '...'} personal
-          </span>
+        <div className="flex items-center gap-3 text-[11px]">
+          <div className="flex items-center gap-1">
+            <Globe className="h-3 w-3 text-blue-500" />
+            <span className="font-medium text-zinc-900 dark:text-zinc-100">{globalTemplates.length}</span>
+            <span className="text-zinc-500 dark:text-zinc-400">global</span>
+          </div>
+          <div className="h-3 w-px bg-zinc-200 dark:bg-zinc-700" />
+          <div className="flex items-center gap-1">
+            <User className="h-3 w-3 text-purple-500" />
+            <span className="font-medium text-zinc-900 dark:text-zinc-100">{status ? `${status.count}/${status.limit}` : '...'}</span>
+            <span className="text-zinc-500 dark:text-zinc-400">personal</span>
+          </div>
         </div>
         <Button
           size="sm"
           onClick={() => setEditorState({ mode: 'create', templateId: null })}
           disabled={!canCreateNew}
-          className="h-6 gap-1 text-xs px-2"
+          className="h-6 gap-1 text-[10px] px-2"
         >
           <Plus className="h-3 w-3" />
           New Template
@@ -456,17 +462,17 @@ export function EmailTemplatesTab({ searchQuery }: EmailTemplatesTabProps) {
 
       {isLoading ? (
         <div className="flex h-40 items-center justify-center">
-          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+          <Loader2 className="h-4 w-4 animate-spin text-zinc-400" />
         </div>
       ) : allTemplates.length === 0 ? (
-        <div className="flex h-40 flex-col items-center justify-center gap-1.5 rounded border border-dashed">
-          <FileText className="h-6 w-6 text-muted-foreground/50" />
-          <p className="text-xs text-muted-foreground">No email templates yet</p>
+        <div className="flex h-40 flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed border-zinc-200 dark:border-zinc-700">
+          <FileText className="h-6 w-6 text-zinc-400" />
+          <p className="text-[11px] text-zinc-500 dark:text-zinc-400">No email templates yet</p>
           <Button
             variant="outline"
             size="sm"
             onClick={() => setEditorState({ mode: 'create', templateId: null })}
-            className="mt-1 h-6 text-xs"
+            className="mt-1 h-6 text-[10px] border-zinc-200 dark:border-zinc-700"
           >
             Create your first template
           </Button>
@@ -475,21 +481,21 @@ export function EmailTemplatesTab({ searchQuery }: EmailTemplatesTabProps) {
         <div className="space-y-2">
           {/* Global Templates Section */}
           <Collapsible open={globalOpen} onOpenChange={setGlobalOpen}>
-            <div className="rounded border">
+            <div className="rounded-lg border border-zinc-200 dark:border-zinc-700 overflow-hidden">
               <CollapsibleTrigger asChild>
-                <button className="flex w-full items-center justify-between px-2 py-1.5 hover:bg-muted/50">
-                  <div className="flex items-center gap-1.5 text-xs font-medium">
-                    <Globe className="h-3 w-3 text-muted-foreground" />
+                <button className="flex w-full items-center justify-between px-2.5 py-1.5 bg-zinc-50 dark:bg-zinc-800/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors">
+                  <div className="flex items-center gap-1.5 text-[11px] font-medium text-zinc-900 dark:text-zinc-100">
+                    <Globe className="h-3 w-3 text-blue-500" />
                     Global Templates
-                    <Badge variant="secondary" className="ml-1 h-4 px-1 text-[9px]">
+                    <Badge variant="secondary" className="ml-1 h-4 px-1 text-[9px] bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300">
                       {globalTemplates.length}
                     </Badge>
                   </div>
-                  <ChevronDown className={`h-3 w-3 transition-transform ${globalOpen ? '' : '-rotate-90'}`} />
+                  <ChevronDown className={`h-3 w-3 text-zinc-400 transition-transform ${globalOpen ? '' : '-rotate-90'}`} />
                 </button>
               </CollapsibleTrigger>
               <CollapsibleContent>
-                <div className="border-t">
+                <div className="border-t border-zinc-200 dark:border-zinc-700">
                   <TemplateTable
                     templates={globalTemplates}
                     onView={(id) => setEditorState({ mode: 'view', templateId: id })}
@@ -506,21 +512,21 @@ export function EmailTemplatesTab({ searchQuery }: EmailTemplatesTabProps) {
 
           {/* Personal Templates Section */}
           <Collapsible open={personalOpen} onOpenChange={setPersonalOpen}>
-            <div className="rounded border">
+            <div className="rounded-lg border border-zinc-200 dark:border-zinc-700 overflow-hidden">
               <CollapsibleTrigger asChild>
-                <button className="flex w-full items-center justify-between px-2 py-1.5 hover:bg-muted/50">
-                  <div className="flex items-center gap-1.5 text-xs font-medium">
-                    <User className="h-3 w-3 text-muted-foreground" />
+                <button className="flex w-full items-center justify-between px-2.5 py-1.5 bg-zinc-50 dark:bg-zinc-800/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors">
+                  <div className="flex items-center gap-1.5 text-[11px] font-medium text-zinc-900 dark:text-zinc-100">
+                    <User className="h-3 w-3 text-purple-500" />
                     My Templates
-                    <Badge variant="secondary" className="ml-1 h-4 px-1 text-[9px]">
+                    <Badge variant="secondary" className="ml-1 h-4 px-1 text-[9px] bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300">
                       {status ? `${status.count}/${status.limit}` : personalTemplates.length}
                     </Badge>
                   </div>
-                  <ChevronDown className={`h-3 w-3 transition-transform ${personalOpen ? '' : '-rotate-90'}`} />
+                  <ChevronDown className={`h-3 w-3 text-zinc-400 transition-transform ${personalOpen ? '' : '-rotate-90'}`} />
                 </button>
               </CollapsibleTrigger>
               <CollapsibleContent>
-                <div className="border-t">
+                <div className="border-t border-zinc-200 dark:border-zinc-700">
                   <TemplateTable
                     templates={personalTemplates}
                     onView={(id) => setEditorState({ mode: 'view', templateId: id })}

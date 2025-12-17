@@ -1,12 +1,31 @@
+// src/features/settings/carriers/components/CarrierForm.tsx
+// Redesigned with zinc palette and compact design patterns
+
 import React, { useEffect } from 'react';
-import {useForm} from 'react-hook-form';
-import {zodResolver} from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import {Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle} from '@/components/ui/sheet';
-import {Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage} from '@/components/ui/form';
-import {Input} from '@/components/ui/input';
-import {Button} from '@/components/ui/button';
-import {Carrier} from '../hooks/useCarriers';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Carrier } from '../hooks/useCarriers';
 
 const carrierFormSchema = z.object({
   name: z.string().min(1, 'Carrier name is required').max(100, 'Name is too long'),
@@ -63,10 +82,12 @@ export function CarrierForm({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="sm:max-w-[540px]">
-        <SheetHeader>
-          <SheetTitle>{carrier ? 'Edit Carrier' : 'Add New Carrier'}</SheetTitle>
-          <SheetDescription>
+      <SheetContent className="sm:max-w-md p-3 bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800">
+        <SheetHeader className="space-y-1 pb-3 border-b border-zinc-100 dark:border-zinc-800">
+          <SheetTitle className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+            {carrier ? 'Edit Carrier' : 'Add New Carrier'}
+          </SheetTitle>
+          <SheetDescription className="text-[10px] text-zinc-500 dark:text-zinc-400">
             {carrier
               ? 'Update carrier information. Changes will affect all associated products.'
               : 'Create a new insurance carrier. You can add products to this carrier later.'}
@@ -74,24 +95,27 @@ export function CarrierForm({
         </SheetHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6 py-6">
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-3 py-3">
             <FormField
               control={form.control}
               name="name"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Carrier Name *</FormLabel>
+                <FormItem className="space-y-1">
+                  <FormLabel className="text-[10px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
+                    Carrier Name *
+                  </FormLabel>
                   <FormControl>
                     <Input
                       placeholder="e.g., Foresters Financial"
                       {...field}
                       value={field.value || ''}
+                      className="h-7 text-[11px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700"
                     />
                   </FormControl>
-                  <FormDescription>
+                  <FormDescription className="text-[10px] text-zinc-400">
                     The official name of the insurance carrier
                   </FormDescription>
-                  <FormMessage />
+                  <FormMessage className="text-[10px]" />
                 </FormItem>
               )}
             />
@@ -100,19 +124,22 @@ export function CarrierForm({
               control={form.control}
               name="short_name"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Short Name (Optional)</FormLabel>
+                <FormItem className="space-y-1">
+                  <FormLabel className="text-[10px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
+                    Short Name (Optional)
+                  </FormLabel>
                   <FormControl>
                     <Input
                       placeholder="e.g., Foresters"
                       {...field}
                       value={field.value || ''}
+                      className="h-7 text-[11px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700"
                     />
                   </FormControl>
-                  <FormDescription>
+                  <FormDescription className="text-[10px] text-zinc-400">
                     A shorter version or acronym for display purposes
                   </FormDescription>
-                  <FormMessage />
+                  <FormMessage className="text-[10px]" />
                 </FormItem>
               )}
             />
@@ -121,18 +148,19 @@ export function CarrierForm({
               control={form.control}
               name="is_active"
               render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border border-zinc-200 dark:border-zinc-700 p-2">
                   <div className="space-y-0.5">
-                    <FormLabel className="text-base">Active Status</FormLabel>
-                    <FormDescription>
+                    <FormLabel className="text-[11px] font-medium text-zinc-900 dark:text-zinc-100">
+                      Active Status
+                    </FormLabel>
+                    <FormDescription className="text-[10px] text-zinc-500 dark:text-zinc-400">
                       Inactive carriers won't appear in dropdowns
                     </FormDescription>
                   </div>
                   <FormControl>
-                    <input
-                      type="checkbox"
+                    <Checkbox
                       checked={field.value}
-                      onChange={field.onChange}
+                      onCheckedChange={field.onChange}
                       className="h-4 w-4"
                     />
                   </FormControl>
@@ -140,16 +168,23 @@ export function CarrierForm({
               )}
             />
 
-            <SheetFooter className="gap-2">
+            <SheetFooter className="gap-1 pt-3 border-t border-zinc-100 dark:border-zinc-800">
               <Button
                 type="button"
                 variant="outline"
+                size="sm"
                 onClick={() => onOpenChange(false)}
                 disabled={isSubmitting}
+                className="h-7 px-2 text-[10px] border-zinc-200 dark:border-zinc-700"
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
+              <Button
+                type="submit"
+                size="sm"
+                disabled={isSubmitting}
+                className="h-7 px-2 text-[10px]"
+              >
                 {isSubmitting ? 'Saving...' : carrier ? 'Update Carrier' : 'Create Carrier'}
               </Button>
             </SheetFooter>
