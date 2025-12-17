@@ -1,9 +1,10 @@
 // src/features/recruiting/RecruitingDashboard.tsx
+// Redesigned with zinc palette and compact design patterns
 
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
-import { UserPlus, Mail, Download, Settings2 } from "lucide-react";
+import { UserPlus, Mail, Download, Settings2, Users } from "lucide-react";
 import { useRecruits } from "./hooks/useRecruits";
 import { RecruitListTable } from "./components/RecruitListTable";
 import { RecruitDetailPanel } from "./components/RecruitDetailPanel";
@@ -106,88 +107,98 @@ function RecruitingDashboardContent() {
   };
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden">
-      {/* Page Header - Clean professional style matching other pages */}
-      <div className="page-header py-3">
-        <div className="flex items-center justify-between">
-          {/* Left: Title and Description */}
-          <div>
-            <h1 className="text-lg font-semibold text-foreground">
+    <div className="h-[calc(100vh-4rem)] flex flex-col p-3 space-y-2.5 bg-zinc-50 dark:bg-zinc-950">
+      {/* Compact Header with inline stats */}
+      <div className="flex items-center justify-between bg-white dark:bg-zinc-900 rounded-lg px-3 py-2 border border-zinc-200 dark:border-zinc-800">
+        <div className="flex items-center gap-5">
+          <div className="flex items-center gap-2">
+            <Users className="h-4 w-4 text-zinc-900 dark:text-zinc-100" />
+            <h1 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
               Recruiting Pipeline
             </h1>
-            <p className="text-sm text-muted-foreground mt-0.5">
-              Manage and track your recruiting pipeline
-            </p>
           </div>
 
-          {/* Center: Stats - Simple monochrome display */}
-          <div className="flex items-center gap-4 text-sm">
-            <div className="flex items-center gap-1.5">
-              <span className="font-semibold text-foreground">
+          {/* Inline compact stats */}
+          <div className="flex items-center gap-3 text-[11px]">
+            <div className="flex items-center gap-1">
+              <span className="font-medium text-zinc-900 dark:text-zinc-100">
                 {stats.total}
               </span>
-              <span className="text-muted-foreground">Total</span>
+              <span className="text-zinc-500 dark:text-zinc-400">total</span>
             </div>
-            <div className="w-px h-4 bg-border" />
-            <div className="flex items-center gap-1.5">
-              <span className="font-semibold text-foreground">
+            <div className="h-3 w-px bg-zinc-200 dark:bg-zinc-700" />
+            <div className="flex items-center gap-1">
+              <span className="font-medium text-zinc-900 dark:text-zinc-100">
                 {stats.active}
               </span>
-              <span className="text-muted-foreground">Active</span>
+              <span className="text-zinc-500 dark:text-zinc-400">active</span>
             </div>
-            <div className="w-px h-4 bg-border" />
-            <div className="flex items-center gap-1.5">
-              <span className="font-semibold text-foreground">
+            <div className="h-3 w-px bg-zinc-200 dark:bg-zinc-700" />
+            <div className="flex items-center gap-1">
+              <span className="font-medium text-emerald-600 dark:text-emerald-400">
                 {stats.completed}
               </span>
-              <span className="text-muted-foreground">Complete</span>
+              <span className="text-zinc-500 dark:text-zinc-400">complete</span>
             </div>
-            <div className="w-px h-4 bg-border" />
-            <div className="flex items-center gap-1.5">
-              <span className="font-semibold text-foreground">
+            <div className="h-3 w-px bg-zinc-200 dark:bg-zinc-700" />
+            <div className="flex items-center gap-1">
+              <span className="font-medium text-red-600 dark:text-red-400">
                 {stats.dropped}
               </span>
-              <span className="text-muted-foreground">Dropped</span>
+              <span className="text-zinc-500 dark:text-zinc-400">dropped</span>
             </div>
           </div>
+        </div>
 
-          {/* Right: Action Buttons */}
-          <div className="flex items-center gap-2">
-            <Button size="sm" variant="muted" onClick={handleBulkEmail}>
-              <Mail className="h-4 w-4 mr-1.5" />
-              Email
-            </Button>
-            <Button size="sm" variant="muted" onClick={handleExportCSV}>
-              <Download className="h-4 w-4 mr-1.5" />
-              Export
-            </Button>
-            <Button
-              variant="default"
-              size="sm"
-              onClick={() => setAddRecruitDialogOpen(true)}
-            >
-              <UserPlus className="h-4 w-4 mr-1.5" />
-              Add Recruit
-            </Button>
-            <Button size="sm" variant="muted" asChild>
-              <Link to="/recruiting/admin/pipelines">
-                <Settings2 className="h-4 w-4" />
-              </Link>
-            </Button>
-          </div>
+        {/* Action Buttons */}
+        <div className="flex items-center gap-1.5">
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={handleBulkEmail}
+            className="h-6 text-[10px] px-2 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
+          >
+            <Mail className="h-3 w-3 mr-1" />
+            Email
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={handleExportCSV}
+            className="h-6 text-[10px] px-2 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
+          >
+            <Download className="h-3 w-3 mr-1" />
+            Export
+          </Button>
+          <Button
+            size="sm"
+            onClick={() => setAddRecruitDialogOpen(true)}
+            className="h-6 text-[10px] px-2"
+          >
+            <UserPlus className="h-3 w-3 mr-1" />
+            Add Recruit
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            asChild
+            className="h-6 w-6 p-0 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
+          >
+            <Link to="/recruiting/admin/pipelines">
+              <Settings2 className="h-3.5 w-3.5" />
+            </Link>
+          </Button>
         </div>
       </div>
 
-      {/* Main Content - Full width table */}
-      <div className="flex-1 p-3 overflow-hidden">
-        <div className="h-full bg-card rounded-lg shadow-sm overflow-hidden flex flex-col">
-          <RecruitListTable
-            recruits={recruits}
-            isLoading={recruitsLoading}
-            selectedRecruitId={selectedRecruit?.id}
-            onSelectRecruit={handleSelectRecruit}
-          />
-        </div>
+      {/* Main Content - Table */}
+      <div className="flex-1 overflow-hidden bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800">
+        <RecruitListTable
+          recruits={recruits}
+          isLoading={recruitsLoading}
+          selectedRecruitId={selectedRecruit?.id}
+          onSelectRecruit={handleSelectRecruit}
+        />
       </div>
 
       {/* Detail Panel as Sheet (slide-out) */}

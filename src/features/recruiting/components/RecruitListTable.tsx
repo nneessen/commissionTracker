@@ -1,4 +1,5 @@
 // src/features/recruiting/components/RecruitListTable.tsx
+// Redesigned with zinc palette and compact design patterns
 
 import React, { useState, useMemo } from "react";
 import { UserProfile } from "@/types/hierarchy.types";
@@ -22,7 +23,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatDistanceToNow } from "date-fns";
 import { usePhases } from "@/features/recruiting/hooks/usePipeline";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Users } from "lucide-react";
 import { ONBOARDING_STATUS_COLORS } from "@/types/recruiting.types";
 
 // Extended type for recruits with joined data
@@ -129,7 +130,10 @@ export function RecruitListTable({
     return (
       <div className="space-y-1 p-2">
         {[...Array(10)].map((_, i) => (
-          <Skeleton key={i} className="h-8 w-full" />
+          <Skeleton
+            key={i}
+            className="h-8 w-full bg-zinc-200 dark:bg-zinc-700"
+          />
         ))}
       </div>
     );
@@ -154,61 +158,64 @@ export function RecruitListTable({
   return (
     <div className="h-full flex flex-col">
       {/* Compact Filter Row */}
-      <div className="flex items-center gap-2 px-3 py-2 bg-muted/20">
+      <div className="flex items-center gap-2 px-3 py-1.5 bg-zinc-50 dark:bg-zinc-800/50 border-b border-zinc-200 dark:border-zinc-800">
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="h-7 w-[120px] text-sm">
+          <SelectTrigger className="h-6 w-[110px] text-[10px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all" className="text-sm">
+            <SelectItem value="all" className="text-[11px]">
               All Status
             </SelectItem>
-            <SelectItem value="interview_1" className="text-sm">
+            <SelectItem value="interview_1" className="text-[11px]">
               Interview 1
             </SelectItem>
-            <SelectItem value="zoom_interview" className="text-sm">
+            <SelectItem value="zoom_interview" className="text-[11px]">
               Zoom
             </SelectItem>
-            <SelectItem value="pre_licensing" className="text-sm">
+            <SelectItem value="pre_licensing" className="text-[11px]">
               Pre-License
             </SelectItem>
-            <SelectItem value="exam" className="text-sm">
+            <SelectItem value="exam" className="text-[11px]">
               Exam
             </SelectItem>
-            <SelectItem value="npn_received" className="text-sm">
+            <SelectItem value="npn_received" className="text-[11px]">
               NPN
             </SelectItem>
-            <SelectItem value="contracting" className="text-sm">
+            <SelectItem value="contracting" className="text-[11px]">
               Contracting
             </SelectItem>
-            <SelectItem value="bootcamp" className="text-sm">
+            <SelectItem value="bootcamp" className="text-[11px]">
               Bootcamp
             </SelectItem>
-            <SelectItem value="completed" className="text-sm">
+            <SelectItem value="completed" className="text-[11px]">
               Completed
             </SelectItem>
-            <SelectItem value="dropped" className="text-sm">
+            <SelectItem value="dropped" className="text-[11px]">
               Dropped
             </SelectItem>
           </SelectContent>
         </Select>
 
         <Select value={phaseFilter} onValueChange={setPhaseFilter}>
-          <SelectTrigger className="h-7 w-[120px] text-sm">
+          <SelectTrigger className="h-6 w-[110px] text-[10px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700">
             <SelectValue placeholder="Phase" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all" className="text-sm">
+            <SelectItem value="all" className="text-[11px]">
               All Phases
             </SelectItem>
             {phases && phases.length > 0
               ? phases
-                  .sort((a: any, b: any) => a.phase_order - b.phase_order)
-                  .map((phase: any) => (
+                  .sort(
+                    (a: { phase_order: number }, b: { phase_order: number }) =>
+                      a.phase_order - b.phase_order,
+                  )
+                  .map((phase: { id: string; phase_name: string }) => (
                     <SelectItem
                       key={phase.id}
                       value={phase.phase_name}
-                      className="text-sm"
+                      className="text-[11px]"
                     >
                       {phase.phase_name}
                     </SelectItem>
@@ -220,7 +227,11 @@ export function RecruitListTable({
                       .filter(Boolean),
                   ),
                 ).map((phase) => (
-                  <SelectItem key={phase} value={phase!} className="text-sm">
+                  <SelectItem
+                    key={phase}
+                    value={phase!}
+                    className="text-[11px]"
+                  >
                     {phase}
                   </SelectItem>
                 ))}
@@ -228,15 +239,15 @@ export function RecruitListTable({
         </Select>
 
         <Select value={recruiterFilter} onValueChange={setRecruiterFilter}>
-          <SelectTrigger className="h-7 w-[130px] text-sm">
+          <SelectTrigger className="h-6 w-[120px] text-[10px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700">
             <SelectValue placeholder="Recruiter" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all" className="text-sm">
+            <SelectItem value="all" className="text-[11px]">
               All Recruiters
             </SelectItem>
             {recruiters.map((r) => (
-              <SelectItem key={r.id} value={r.id} className="text-sm">
+              <SelectItem key={r.id} value={r.id} className="text-[11px]">
                 {r.name}
               </SelectItem>
             ))}
@@ -244,26 +255,36 @@ export function RecruitListTable({
         </Select>
 
         <div className="flex-1" />
-        <span className="text-sm text-muted-foreground">
+        <span className="text-[10px] text-zinc-500 dark:text-zinc-400">
           {filteredRecruits.length} recruits
         </span>
       </div>
 
-      {/* Table - Compact with essential columns only */}
+      {/* Table */}
       <div className="flex-1 overflow-auto">
         <Table>
-          <TableHeader className="sticky top-0 bg-card z-10">
-            <TableRow className="h-9">
-              <TableHead className="w-8 text-sm font-semibold"></TableHead>
-              <TableHead className="text-sm font-semibold">Name</TableHead>
-              <TableHead className="text-sm font-semibold">Email</TableHead>
-              <TableHead className="text-sm font-semibold">Status</TableHead>
-              <TableHead className="text-sm font-semibold">Phase</TableHead>
-              <TableHead className="text-sm font-semibold">Recruiter</TableHead>
-              <TableHead className="text-sm font-semibold w-16 text-center">
+          <TableHeader className="sticky top-0 bg-white dark:bg-zinc-900 z-10">
+            <TableRow className="h-8 border-b border-zinc-200 dark:border-zinc-800">
+              <TableHead className="w-8 text-[10px] font-semibold text-zinc-500 dark:text-zinc-400"></TableHead>
+              <TableHead className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400">
+                Name
+              </TableHead>
+              <TableHead className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400">
+                Email
+              </TableHead>
+              <TableHead className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400">
+                Status
+              </TableHead>
+              <TableHead className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400">
+                Phase
+              </TableHead>
+              <TableHead className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400">
+                Recruiter
+              </TableHead>
+              <TableHead className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 w-14 text-center">
                 Days
               </TableHead>
-              <TableHead className="text-sm font-semibold w-24">
+              <TableHead className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 w-20">
                 Updated
               </TableHead>
             </TableRow>
@@ -271,13 +292,15 @@ export function RecruitListTable({
           <TableBody>
             {paginatedRecruits.length === 0 ? (
               <TableRow>
-                <TableCell
-                  colSpan={8}
-                  className="text-center text-sm text-muted-foreground py-8"
-                >
-                  {filteredRecruits.length === 0 && recruits.length > 0
-                    ? "No recruits match filters"
-                    : "No recruits yet. Click 'Add Recruit' to start."}
+                <TableCell colSpan={8} className="text-center py-8">
+                  <div className="flex flex-col items-center">
+                    <Users className="h-8 w-8 text-zinc-300 dark:text-zinc-600 mb-2" />
+                    <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                      {filteredRecruits.length === 0 && recruits.length > 0
+                        ? "No recruits match filters"
+                        : "No recruits yet. Click 'Add Recruit' to start."}
+                    </p>
+                  </div>
                 </TableCell>
               </TableRow>
             ) : (
@@ -298,44 +321,54 @@ export function RecruitListTable({
                 return (
                   <TableRow
                     key={recruit.id}
-                    className={`h-10 cursor-pointer hover:bg-muted/50 ${selectedRecruitId === recruit.id ? "bg-blue-500/10" : ""}`}
+                    className={`h-9 cursor-pointer transition-colors border-b border-zinc-100 dark:border-zinc-800/50 ${
+                      selectedRecruitId === recruit.id
+                        ? "bg-zinc-100 dark:bg-zinc-800"
+                        : "hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
+                    }`}
                     onClick={() => onSelectRecruit(recruit)}
                   >
-                    <TableCell className="text-center py-2">
+                    <TableCell className="text-center py-1.5">
                       <div
-                        className={`w-2.5 h-2.5 rounded-full ${getStatusColor(recruit)} mx-auto`}
+                        className={`w-2 h-2 rounded-full ${getStatusColor(recruit)} mx-auto`}
                       />
                     </TableCell>
-                    <TableCell className="text-sm font-medium py-2">
+                    <TableCell className="text-[11px] font-medium text-zinc-900 dark:text-zinc-100 py-1.5">
                       {recruit.first_name && recruit.last_name
                         ? `${recruit.first_name} ${recruit.last_name}`
                         : recruit.email?.split("@")[0] || "Unknown"}
                     </TableCell>
-                    <TableCell className="text-sm text-muted-foreground py-2 truncate max-w-[200px]">
+                    <TableCell className="text-[11px] text-zinc-500 dark:text-zinc-400 py-1.5 truncate max-w-[180px]">
                       {recruit.email || "—"}
                     </TableCell>
-                    <TableCell className="py-2">
+                    <TableCell className="py-1.5">
                       <Badge
                         variant="secondary"
-                        className={`text-xs px-1.5 py-0 ${recruit.onboarding_status ? ONBOARDING_STATUS_COLORS[recruit.onboarding_status] : ""}`}
+                        className={`text-[9px] px-1.5 py-0 h-4 ${
+                          recruit.onboarding_status
+                            ? ONBOARDING_STATUS_COLORS[
+                                recruit.onboarding_status
+                              ]
+                            : ""
+                        }`}
                       >
                         {recruit.onboarding_status?.replace(/_/g, " ") || "New"}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-sm py-2">
+                    <TableCell className="text-[11px] text-zinc-600 dark:text-zinc-400 py-1.5">
                       {recruit.current_onboarding_phase || "—"}
                     </TableCell>
-                    <TableCell className="text-sm text-muted-foreground py-2">
+                    <TableCell className="text-[11px] text-zinc-500 dark:text-zinc-400 py-1.5">
                       {recruitWithRelations.recruiter?.first_name
                         ? `${recruitWithRelations.recruiter.first_name[0]}. ${recruitWithRelations.recruiter.last_name || ""}`
                         : recruitWithRelations.recruiter?.email?.split(
                             "@",
                           )[0] || "—"}
                     </TableCell>
-                    <TableCell className="text-sm text-muted-foreground text-center py-2">
+                    <TableCell className="text-[11px] text-zinc-500 dark:text-zinc-400 text-center py-1.5">
                       {daysInPipeline}
                     </TableCell>
-                    <TableCell className="text-sm text-muted-foreground py-2">
+                    <TableCell className="text-[10px] text-zinc-500 dark:text-zinc-400 py-1.5">
                       {formatDistanceToNow(updatedDate, { addSuffix: false })
                         .replace("about ", "")
                         .replace(" days", "d")
@@ -354,14 +387,16 @@ export function RecruitListTable({
       </div>
 
       {/* Compact Pagination Footer */}
-      <div className="flex items-center justify-between px-3 py-2 bg-muted/20">
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">Show:</span>
+      <div className="flex items-center justify-between px-3 py-1.5 bg-zinc-50 dark:bg-zinc-800/50 border-t border-zinc-200 dark:border-zinc-800">
+        <div className="flex items-center gap-1.5">
+          <span className="text-[10px] text-zinc-500 dark:text-zinc-400">
+            Show:
+          </span>
           <Select
             value={pageSize.toString()}
             onValueChange={(val) => setPageSize(parseInt(val))}
           >
-            <SelectTrigger className="h-7 w-[60px] text-sm">
+            <SelectTrigger className="h-5 w-[50px] text-[10px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -369,7 +404,7 @@ export function RecruitListTable({
                 <SelectItem
                   key={size}
                   value={size.toString()}
-                  className="text-sm"
+                  className="text-[11px]"
                 >
                   {size}
                 </SelectItem>
@@ -378,29 +413,31 @@ export function RecruitListTable({
           </Select>
         </div>
 
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-0.5">
           <Button
             variant="ghost"
-            size="xs"
+            size="sm"
             onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
             disabled={currentPage === 1}
+            className="h-5 w-5 p-0 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
           >
-            <ChevronLeft className="h-4 w-4" />
+            <ChevronLeft className="h-3.5 w-3.5" />
           </Button>
-          <span className="text-sm text-muted-foreground px-2">
+          <span className="text-[10px] text-zinc-500 dark:text-zinc-400 px-2">
             {currentPage} / {totalPages || 1}
           </span>
           <Button
             variant="ghost"
-            size="xs"
+            size="sm"
             onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
             disabled={currentPage === totalPages || totalPages === 0}
+            className="h-5 w-5 p-0 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
           >
-            <ChevronRight className="h-4 w-4" />
+            <ChevronRight className="h-3.5 w-3.5" />
           </Button>
         </div>
 
-        <span className="text-sm text-muted-foreground">
+        <span className="text-[10px] text-zinc-500 dark:text-zinc-400">
           {paginatedRecruits.length > 0 ? (currentPage - 1) * pageSize + 1 : 0}–
           {Math.min(currentPage * pageSize, filteredRecruits.length)} of{" "}
           {filteredRecruits.length}

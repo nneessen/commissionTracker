@@ -1,5 +1,5 @@
 // src/features/messages/components/inbox/ThreadList.tsx
-// List of email threads with virtual scrolling
+// List of email threads with zinc palette styling
 
 import { useThreads } from "../../hooks/useThreads";
 import { ThreadListItem } from "./ThreadListItem";
@@ -38,9 +38,11 @@ export function ThreadList({
 
   if (error) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center p-4 text-muted-foreground">
-        <p className="text-sm">Failed to load messages</p>
-        <p className="text-[10px] mt-1">{error.message}</p>
+      <div className="flex-1 flex flex-col items-center justify-center p-4 text-zinc-500 dark:text-zinc-400">
+        <p className="text-[11px]">Failed to load messages</p>
+        <p className="text-[10px] mt-1 text-zinc-400 dark:text-zinc-500">
+          {error.message}
+        </p>
       </div>
     );
   }
@@ -51,7 +53,7 @@ export function ThreadList({
 
   return (
     <ScrollArea className="flex-1">
-      <div className="divide-y divide-border">
+      <div>
         {threads.map((thread) => (
           <ThreadListItem
             key={thread.id}
@@ -68,16 +70,16 @@ export function ThreadList({
 
 function ThreadListSkeleton() {
   return (
-    <div className="p-2 space-y-2">
+    <div className="p-2 space-y-1">
       {Array.from({ length: 8 }).map((_, i) => (
-        <div key={i} className="p-2 space-y-2">
+        <div key={i} className="p-2 space-y-1.5">
           <div className="flex items-center gap-2">
-            <Skeleton className="h-4 w-4 rounded-full" />
-            <Skeleton className="h-3 w-32" />
-            <Skeleton className="h-3 w-16 ml-auto" />
+            <Skeleton className="h-7 w-7 rounded-full bg-zinc-200 dark:bg-zinc-700" />
+            <Skeleton className="h-3 w-28 bg-zinc-200 dark:bg-zinc-700" />
+            <Skeleton className="h-3 w-12 ml-auto bg-zinc-200 dark:bg-zinc-700" />
           </div>
-          <Skeleton className="h-3 w-full" />
-          <Skeleton className="h-3 w-3/4" />
+          <Skeleton className="h-3 w-full bg-zinc-200 dark:bg-zinc-700" />
+          <Skeleton className="h-3 w-3/4 bg-zinc-200 dark:bg-zinc-700" />
         </div>
       ))}
     </div>
@@ -92,10 +94,14 @@ interface EmptyStateProps {
 function EmptyState({ filter, hasSearch }: EmptyStateProps) {
   if (hasSearch) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center p-4 text-muted-foreground">
-        <Search className="h-8 w-8 mb-3 opacity-20" />
-        <p className="text-sm">No messages found</p>
-        <p className="text-[10px] mt-1">Try a different search term</p>
+      <div className="flex-1 flex flex-col items-center justify-center p-4">
+        <Search className="h-8 w-8 mb-3 text-zinc-300 dark:text-zinc-600" />
+        <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+          No messages found
+        </p>
+        <p className="text-[10px] mt-1 text-zinc-400 dark:text-zinc-500">
+          Try a different search term
+        </p>
       </div>
     );
   }
@@ -134,10 +140,12 @@ function EmptyState({ filter, hasSearch }: EmptyStateProps) {
   const { title, subtitle } = messages[filter] || messages.inbox;
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center p-4 text-muted-foreground">
-      <Inbox className="h-8 w-8 mb-3 opacity-20" />
-      <p className="text-sm">{title}</p>
-      <p className="text-[10px] mt-1">{subtitle}</p>
+    <div className="flex-1 flex flex-col items-center justify-center p-4">
+      <Inbox className="h-8 w-8 mb-3 text-zinc-300 dark:text-zinc-600" />
+      <p className="text-[11px] text-zinc-500 dark:text-zinc-400">{title}</p>
+      <p className="text-[10px] mt-1 text-zinc-400 dark:text-zinc-500">
+        {subtitle}
+      </p>
     </div>
   );
 }

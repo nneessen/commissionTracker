@@ -1,5 +1,5 @@
 // src/features/messages/components/thread/ThreadView.tsx
-// Display a full email thread conversation with pagination and professional styling
+// Display a full email thread with zinc palette styling
 
 import { useState, useEffect } from "react";
 import { useThread } from "../../hooks/useThread";
@@ -45,7 +45,6 @@ interface ThreadViewProps {
   onClose: () => void;
 }
 
-// Number of latest messages to show expanded by default
 const EXPANDED_MESSAGE_COUNT = 5;
 
 export function ThreadView({ threadId, onClose }: ThreadViewProps) {
@@ -71,19 +70,16 @@ export function ThreadView({ threadId, onClose }: ThreadViewProps) {
     isDeleting,
   } = useThreads();
 
-  // Track which messages are manually expanded/collapsed
   const [manualExpanded, setManualExpanded] = useState<Set<string>>(new Set());
   const [manualCollapsed, setManualCollapsed] = useState<Set<string>>(
     new Set(),
   );
 
-  // Reset expansion state when thread changes
   useEffect(() => {
     setManualExpanded(new Set());
     setManualCollapsed(new Set());
   }, [threadId]);
 
-  // Reply/Forward state
   const [composeState, setComposeState] = useState<{
     open: boolean;
     replyTo?: {
@@ -132,7 +128,7 @@ export function ThreadView({ threadId, onClose }: ThreadViewProps) {
       unarchive(thread.id);
     } else {
       archive(thread.id);
-      onClose(); // Only close when archiving, not unarchiving
+      onClose();
     }
   };
 
@@ -148,9 +144,11 @@ export function ThreadView({ threadId, onClose }: ThreadViewProps) {
 
   if (error || !thread) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center p-4 text-muted-foreground">
-        <p className="text-sm">Failed to load conversation</p>
-        <p className="text-[10px] mt-1">
+      <div className="h-full flex flex-col items-center justify-center p-4 bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800">
+        <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+          Failed to load conversation
+        </p>
+        <p className="text-[10px] mt-1 text-zinc-400 dark:text-zinc-500">
           {error?.message || "Thread not found"}
         </p>
       </div>
@@ -159,7 +157,6 @@ export function ThreadView({ threadId, onClose }: ThreadViewProps) {
 
   const toggleMessage = (messageId: string, currentlyExpanded: boolean) => {
     if (currentlyExpanded) {
-      // Collapse it
       setManualCollapsed((prev) => new Set(prev).add(messageId));
       setManualExpanded((prev) => {
         const next = new Set(prev);
@@ -167,7 +164,6 @@ export function ThreadView({ threadId, onClose }: ThreadViewProps) {
         return next;
       });
     } else {
-      // Expand it
       setManualExpanded((prev) => new Set(prev).add(messageId));
       setManualCollapsed((prev) => {
         const next = new Set(prev);
@@ -177,39 +173,33 @@ export function ThreadView({ threadId, onClose }: ThreadViewProps) {
     }
   };
 
-  // Determine which messages should be expanded
-  // Default: latest 5 messages expanded, older ones collapsed
   const getIsExpanded = (messageId: string, index: number): boolean => {
-    // Manual states take precedence
     if (manualExpanded.has(messageId)) return true;
     if (manualCollapsed.has(messageId)) return false;
-
-    // Default: expand latest EXPANDED_MESSAGE_COUNT messages
     const messagesFromEnd = messages.length - 1 - index;
     return messagesFromEnd < EXPANDED_MESSAGE_COUNT;
   };
 
-  // Count collapsed older messages
   const collapsedCount =
     messages.length > EXPANDED_MESSAGE_COUNT
       ? messages.length - EXPANDED_MESSAGE_COUNT
       : 0;
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden bg-background">
+    <div className="h-full flex flex-col overflow-hidden bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800">
       {/* Header */}
-      <div className="flex-shrink-0 border-b border-border px-4 py-3 bg-card">
-        <div className="flex items-start justify-between gap-4">
+      <div className="flex-shrink-0 border-b border-zinc-200 dark:border-zinc-800 px-3 py-2">
+        <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
-            <h2 className="text-base font-semibold leading-tight">
+            <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 leading-tight truncate">
               {thread.subject}
             </h2>
-            <div className="flex items-center gap-2 mt-1">
-              <span className="text-sm text-muted-foreground">
+            <div className="flex items-center gap-2 mt-0.5">
+              <span className="text-[10px] text-zinc-500 dark:text-zinc-400">
                 {totalMessages} message{totalMessages !== 1 ? "s" : ""}
               </span>
               {thread.isStarred && (
-                <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                <Star className="h-3 w-3 text-yellow-500 fill-yellow-500" />
               )}
             </div>
           </div>
@@ -217,74 +207,73 @@ export function ThreadView({ threadId, onClose }: ThreadViewProps) {
           <div className="flex items-center gap-0.5">
             <Button
               size="sm"
+              variant="ghost"
               className={cn(
-                "h-7 w-7 p-0 border-0 shadow-none",
+                "h-6 w-6 p-0",
                 thread.isArchived
-                  ? "bg-primary/20 hover:bg-primary/30 text-primary"
-                  : "bg-transparent hover:bg-primary/10 text-muted-foreground hover:text-primary",
+                  ? "bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300"
+                  : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300",
               )}
               onClick={handleArchiveToggle}
               disabled={isArchiving || isUnarchiving}
               title={thread.isArchived ? "Unarchive" : "Archive"}
             >
-              <Archive
-                className={cn(
-                  "h-3.5 w-3.5",
-                  thread.isArchived && "fill-primary/20",
-                )}
-              />
+              <Archive className="h-3 w-3" />
             </Button>
             <Button
               size="sm"
+              variant="ghost"
               className={cn(
-                "h-7 w-7 p-0 border-0 shadow-none",
+                "h-6 w-6 p-0",
                 thread.isStarred
-                  ? "bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-500"
-                  : "bg-transparent hover:bg-primary/10 text-muted-foreground hover:text-primary",
+                  ? "text-yellow-500 hover:text-yellow-600"
+                  : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300",
               )}
               onClick={handleToggleStar}
               disabled={isStarring}
               title={thread.isStarred ? "Unstar" : "Star"}
             >
               <Star
-                className={cn(
-                  "h-3.5 w-3.5",
-                  thread.isStarred && "fill-yellow-500",
-                )}
+                className={cn("h-3 w-3", thread.isStarred && "fill-yellow-500")}
               />
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
                   size="sm"
-                  className="h-7 w-7 p-0 bg-transparent hover:bg-primary/10 text-muted-foreground hover:text-primary border-0 shadow-none"
+                  variant="ghost"
+                  className="h-6 w-6 p-0 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
                 >
-                  <MoreVertical className="h-3.5 w-3.5" />
+                  <MoreVertical className="h-3 w-3" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem className="text-sm" onClick={handleReply}>
-                  <Reply className="h-4 w-4 mr-2" /> Reply
+                <DropdownMenuItem className="text-[11px]" onClick={handleReply}>
+                  <Reply className="h-3.5 w-3.5 mr-2" /> Reply
                 </DropdownMenuItem>
-                <DropdownMenuItem className="text-sm" onClick={handleForward}>
-                  <Forward className="h-4 w-4 mr-2" /> Forward
+                <DropdownMenuItem
+                  className="text-[11px]"
+                  onClick={handleForward}
+                >
+                  <Forward className="h-3.5 w-3.5 mr-2" /> Forward
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
-                  className="text-sm text-destructive"
+                  className="text-[11px] text-red-600 dark:text-red-400"
                   onClick={handleDelete}
                   disabled={isDeleting}
                 >
-                  <Trash2 className="h-4 w-4 mr-2" /> Delete
+                  <Trash2 className="h-3.5 w-3.5 mr-2" /> Delete
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
             <Button
               size="sm"
-              className="h-7 w-7 p-0 bg-transparent hover:bg-destructive/10 text-muted-foreground hover:text-destructive border-0 shadow-none"
+              variant="ghost"
+              className="h-6 w-6 p-0 text-zinc-500 dark:text-zinc-400 hover:text-red-600 dark:hover:text-red-400"
               onClick={onClose}
             >
-              <X className="h-3.5 w-3.5" />
+              <X className="h-3 w-3" />
             </Button>
           </div>
         </div>
@@ -292,24 +281,25 @@ export function ThreadView({ threadId, onClose }: ThreadViewProps) {
 
       {/* Messages */}
       <ScrollArea className="flex-1">
-        <div className="p-3 space-y-2">
-          {/* Load More Button (at top for older messages) */}
+        <div className="p-2 space-y-1.5">
+          {/* Load More Button */}
           {hasMore && (
-            <div className="flex justify-center py-2">
+            <div className="flex justify-center py-1.5">
               <Button
                 size="sm"
-                className="h-8 text-sm gap-1.5 bg-primary/10 hover:bg-primary/20 text-primary border-0 shadow-none"
+                variant="ghost"
+                className="h-6 text-[10px] gap-1 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
                 onClick={loadMoreMessages}
                 disabled={isLoadingMore}
               >
                 {isLoadingMore ? (
                   <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <Loader2 className="h-3 w-3 animate-spin" />
                     Loading...
                   </>
                 ) : (
                   <>
-                    <ChevronUp className="h-4 w-4" />
+                    <ChevronUp className="h-3 w-3" />
                     Load earlier messages
                   </>
                 )}
@@ -319,8 +309,8 @@ export function ThreadView({ threadId, onClose }: ThreadViewProps) {
 
           {/* Collapsed messages indicator */}
           {collapsedCount > 0 && !hasMore && (
-            <div className="flex items-center justify-center py-2">
-              <span className="text-sm text-muted-foreground">
+            <div className="flex items-center justify-center py-1.5">
+              <span className="text-[10px] text-zinc-500 dark:text-zinc-400">
                 {collapsedCount} earlier message
                 {collapsedCount !== 1 ? "s" : ""} collapsed
               </span>
@@ -345,30 +335,32 @@ export function ThreadView({ threadId, onClose }: ThreadViewProps) {
       </ScrollArea>
 
       {/* Quick Reply Footer */}
-      <div className="flex-shrink-0 border-t border-border/50 p-2 bg-card">
-        <div className="flex items-center gap-1.5">
+      <div className="flex-shrink-0 border-t border-zinc-200 dark:border-zinc-800 p-1.5">
+        <div className="flex items-center gap-1">
           <Button
             size="sm"
-            className="h-8 text-sm gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground border-0 shadow-none"
+            className="h-6 text-[10px] gap-1 px-2"
             onClick={handleReply}
           >
-            <Reply className="h-4 w-4" />
+            <Reply className="h-3 w-3" />
             Reply
           </Button>
           <Button
             size="sm"
-            className="h-8 text-sm gap-1.5 bg-primary/10 hover:bg-primary/20 text-primary border-0 shadow-none"
+            variant="ghost"
+            className="h-6 text-[10px] gap-1 px-2 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
             onClick={handleReply}
           >
-            <ReplyAll className="h-4 w-4" />
+            <ReplyAll className="h-3 w-3" />
             Reply All
           </Button>
           <Button
             size="sm"
-            className="h-8 text-sm gap-1.5 bg-primary/10 hover:bg-primary/20 text-primary border-0 shadow-none"
+            variant="ghost"
+            className="h-6 text-[10px] gap-1 px-2 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
             onClick={handleForward}
           >
-            <Forward className="h-4 w-4" />
+            <Forward className="h-3 w-3" />
             Forward
           </Button>
         </div>
@@ -418,7 +410,6 @@ function MessageCard({
   const isAutomated = message.source === "workflow";
   const isSent = !message.isIncoming;
 
-  // Use senderName for display, fallback to formatted email
   const displayName = isSent
     ? "Me"
     : message.senderName || formatEmailAddress(message.fromAddress);
@@ -437,34 +428,35 @@ function MessageCard({
     <div
       className={cn(
         "rounded-md overflow-hidden transition-all",
-        isExpanded ? "shadow-sm" : "",
         isSent
-          ? "bg-primary/5 border border-primary/20"
-          : "bg-card border border-border",
+          ? "bg-blue-50/50 dark:bg-blue-900/10 border border-blue-200/50 dark:border-blue-800/30"
+          : "bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700",
       )}
     >
-      {/* Header - always visible */}
+      {/* Header */}
       <button
         className={cn(
-          "w-full text-left px-3 py-2 transition-colors",
-          isExpanded ? "border-b border-border/50" : "",
-          "hover:bg-muted/30",
+          "w-full text-left px-2.5 py-1.5 transition-colors",
+          isExpanded
+            ? "border-b border-zinc-200/50 dark:border-zinc-700/50"
+            : "",
+          "hover:bg-zinc-100/50 dark:hover:bg-zinc-700/30",
         )}
         onClick={onToggle}
       >
         <div className="flex items-center gap-2">
           <Avatar
             className={cn(
-              "h-8 w-8 flex-shrink-0",
-              isSent ? "ring-2 ring-primary/30" : "",
+              "h-6 w-6 flex-shrink-0",
+              isSent ? "ring-1 ring-blue-300 dark:ring-blue-700" : "",
             )}
           >
             <AvatarFallback
               className={cn(
-                "text-xs font-medium",
+                "text-[9px] font-medium",
                 isSent
-                  ? "bg-primary/20 text-primary"
-                  : "bg-muted text-muted-foreground",
+                  ? "bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300"
+                  : "bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300",
               )}
             >
               {initials}
@@ -472,91 +464,93 @@ function MessageCard({
           </Avatar>
 
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-1.5">
-              <span className="text-sm font-medium truncate">
+            <div className="flex items-center gap-1">
+              <span className="text-[11px] font-medium text-zinc-900 dark:text-zinc-100 truncate">
                 {displayName}
               </span>
               {isSent && (
                 <Badge
                   variant="outline"
-                  className="h-5 px-1.5 text-xs border-primary/40 text-primary"
+                  className="h-4 px-1 text-[9px] border-blue-300 dark:border-blue-700 text-blue-600 dark:text-blue-400"
                 >
-                  <Send className="h-3 w-3 mr-0.5" />
+                  <Send className="h-2.5 w-2.5 mr-0.5" />
                   Sent
                 </Badge>
               )}
               {isAutomated && (
-                <Badge variant="secondary" className="h-5 px-1.5 text-xs">
-                  <Bot className="h-3 w-3 mr-0.5" />
+                <Badge
+                  variant="secondary"
+                  className="h-4 px-1 text-[9px] bg-zinc-100 dark:bg-zinc-800"
+                >
+                  <Bot className="h-2.5 w-2.5 mr-0.5" />
                   Auto
                 </Badge>
               )}
             </div>
             {!isExpanded && (
-              <div className="text-sm text-muted-foreground truncate mt-0.5">
+              <div className="text-[10px] text-zinc-500 dark:text-zinc-400 truncate mt-0.5">
                 {message.bodyText?.slice(0, 80)}...
               </div>
             )}
           </div>
 
-          <div className="flex items-center gap-2 flex-shrink-0">
-            {/* Tracking stats for sent messages */}
+          <div className="flex items-center gap-1.5 flex-shrink-0">
             {isSent && (message.openCount || 0) > 0 && (
               <span
-                className="text-xs text-muted-foreground flex items-center gap-0.5"
+                className="text-[9px] text-zinc-500 dark:text-zinc-400 flex items-center gap-0.5"
                 title="Opens"
               >
-                <Eye className="h-3.5 w-3.5" />
+                <Eye className="h-3 w-3" />
                 {message.openCount}
               </span>
             )}
             {isSent && (message.clickCount || 0) > 0 && (
               <span
-                className="text-xs text-muted-foreground flex items-center gap-0.5"
+                className="text-[9px] text-zinc-500 dark:text-zinc-400 flex items-center gap-0.5"
                 title="Clicks"
               >
-                <MousePointer className="h-3.5 w-3.5" />
+                <MousePointer className="h-3 w-3" />
                 {message.clickCount}
               </span>
             )}
 
-            <span className="text-sm text-muted-foreground">
+            <span className="text-[10px] text-zinc-500 dark:text-zinc-400">
               {formatMessageDate(message.createdAt)}
             </span>
             {isExpanded ? (
-              <ChevronUp className="h-4 w-4 text-muted-foreground" />
+              <ChevronUp className="h-3 w-3 text-zinc-400" />
             ) : (
-              <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              <ChevronDown className="h-3 w-3 text-zinc-400" />
             )}
           </div>
         </div>
       </button>
 
-      {/* Body - expanded only */}
+      {/* Body */}
       {isExpanded && (
         <div>
           {/* Email metadata */}
-          <div className="px-3 py-2 bg-muted/20 text-sm text-muted-foreground space-y-0.5">
+          <div className="px-2.5 py-1.5 bg-zinc-100/50 dark:bg-zinc-800/30 text-[10px] text-zinc-600 dark:text-zinc-400 space-y-0.5">
             <div className="flex items-start gap-1">
-              <span className="font-medium w-10">From:</span>
+              <span className="font-medium w-8">From:</span>
               <span className="truncate">{message.fromAddress}</span>
             </div>
             <div className="flex items-start gap-1">
-              <span className="font-medium w-10">To:</span>
+              <span className="font-medium w-8">To:</span>
               <span className="truncate">
                 {message.toAddresses?.join(", ")}
               </span>
             </div>
             {message.ccAddresses && message.ccAddresses.length > 0 && (
               <div className="flex items-start gap-1">
-                <span className="font-medium w-10">CC:</span>
+                <span className="font-medium w-8">CC:</span>
                 <span className="truncate">
                   {message.ccAddresses.join(", ")}
                 </span>
               </div>
             )}
             <div className="flex items-start gap-1">
-              <span className="font-medium w-10">Date:</span>
+              <span className="font-medium w-8">Date:</span>
               <span>{format(new Date(message.createdAt), "PPpp")}</span>
             </div>
           </div>
@@ -564,18 +558,16 @@ function MessageCard({
           {/* Email body */}
           <div
             className={cn(
-              "px-4 py-3 text-sm leading-relaxed",
-              // Prose styling for HTML content
+              "px-3 py-2 text-[11px] leading-relaxed text-zinc-700 dark:text-zinc-300",
               "prose prose-sm max-w-none",
-              "prose-p:my-2 prose-p:leading-relaxed",
-              "prose-headings:my-3 prose-headings:font-semibold",
-              "prose-ul:my-2 prose-ol:my-2",
+              "prose-p:my-1.5 prose-p:leading-relaxed",
+              "prose-headings:my-2 prose-headings:font-semibold",
+              "prose-ul:my-1.5 prose-ol:my-1.5",
               "prose-li:my-0.5",
-              "prose-a:text-primary prose-a:no-underline hover:prose-a:underline",
-              "prose-blockquote:border-l-2 prose-blockquote:border-muted-foreground/30 prose-blockquote:pl-3 prose-blockquote:italic prose-blockquote:text-muted-foreground",
-              "prose-pre:bg-muted prose-pre:text-xs",
-              "prose-code:text-xs prose-code:bg-muted prose-code:px-1 prose-code:rounded",
-              // Dark mode support
+              "prose-a:text-blue-600 dark:prose-a:text-blue-400 prose-a:no-underline hover:prose-a:underline",
+              "prose-blockquote:border-l-2 prose-blockquote:border-zinc-300 dark:prose-blockquote:border-zinc-600 prose-blockquote:pl-2.5 prose-blockquote:italic prose-blockquote:text-zinc-500 dark:prose-blockquote:text-zinc-400",
+              "prose-pre:bg-zinc-100 dark:prose-pre:bg-zinc-800 prose-pre:text-[10px]",
+              "prose-code:text-[10px] prose-code:bg-zinc-100 dark:prose-code:bg-zinc-800 prose-code:px-1 prose-code:rounded",
               "dark:prose-invert",
             )}
             dangerouslySetInnerHTML={{
@@ -589,27 +581,28 @@ function MessageCard({
           {message.hasAttachments &&
             message.attachments &&
             message.attachments.length > 0 && (
-              <div className="px-3 py-2 border-t border-border/50 bg-muted/20">
-                <div className="flex items-center gap-1.5 text-sm text-muted-foreground mb-2">
-                  <Paperclip className="h-4 w-4" />
+              <div className="px-2.5 py-1.5 border-t border-zinc-200/50 dark:border-zinc-700/50 bg-zinc-50/50 dark:bg-zinc-800/30">
+                <div className="flex items-center gap-1 text-[10px] text-zinc-500 dark:text-zinc-400 mb-1.5">
+                  <Paperclip className="h-3 w-3" />
                   <span>
                     {message.attachments.length} attachment
                     {message.attachments.length !== 1 ? "s" : ""}
                   </span>
                 </div>
-                <div className="flex flex-wrap gap-1.5">
+                <div className="flex flex-wrap gap-1">
                   {message.attachments.map((att, i) => (
                     <Button
                       key={i}
                       size="sm"
-                      className="h-7 text-sm gap-1 bg-primary/10 hover:bg-primary/20 text-primary border-0 shadow-none"
+                      variant="ghost"
+                      className="h-5 text-[9px] gap-0.5 px-1.5 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
                     >
-                      <Paperclip className="h-3.5 w-3.5" />
-                      <span className="max-w-[120px] truncate">{att.name}</span>
-                      <span className="text-primary/70">
+                      <Paperclip className="h-2.5 w-2.5" />
+                      <span className="max-w-[100px] truncate">{att.name}</span>
+                      <span className="text-zinc-400 dark:text-zinc-500">
                         ({formatFileSize(att.size)})
                       </span>
-                      <ExternalLink className="h-3.5 w-3.5" />
+                      <ExternalLink className="h-2.5 w-2.5" />
                     </Button>
                   ))}
                 </div>
@@ -623,24 +616,27 @@ function MessageCard({
 
 function ThreadViewSkeleton() {
   return (
-    <div className="flex-1 flex flex-col bg-background">
-      <div className="p-4 border-b border-border bg-card">
-        <Skeleton className="h-5 w-64 mb-2" />
-        <Skeleton className="h-3 w-32" />
+    <div className="h-full flex flex-col bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800">
+      <div className="p-3 border-b border-zinc-200 dark:border-zinc-800">
+        <Skeleton className="h-4 w-48 mb-1.5 bg-zinc-200 dark:bg-zinc-700" />
+        <Skeleton className="h-3 w-24 bg-zinc-200 dark:bg-zinc-700" />
       </div>
-      <div className="flex-1 p-3 space-y-2">
+      <div className="flex-1 p-2 space-y-1.5">
         {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} className="border border-border rounded-md p-3 bg-card">
-            <div className="flex items-center gap-2 mb-3">
-              <Skeleton className="h-7 w-7 rounded-full" />
+          <div
+            key={i}
+            className="border border-zinc-200 dark:border-zinc-700 rounded-md p-2.5 bg-zinc-50 dark:bg-zinc-800/50"
+          >
+            <div className="flex items-center gap-2 mb-2">
+              <Skeleton className="h-6 w-6 rounded-full bg-zinc-200 dark:bg-zinc-700" />
               <div className="flex-1">
-                <Skeleton className="h-3 w-32 mb-1" />
-                <Skeleton className="h-2 w-48" />
+                <Skeleton className="h-3 w-28 mb-1 bg-zinc-200 dark:bg-zinc-700" />
+                <Skeleton className="h-2 w-40 bg-zinc-200 dark:bg-zinc-700" />
               </div>
-              <Skeleton className="h-3 w-20" />
+              <Skeleton className="h-3 w-16 bg-zinc-200 dark:bg-zinc-700" />
             </div>
-            <Skeleton className="h-3 w-full mb-2" />
-            <Skeleton className="h-3 w-3/4" />
+            <Skeleton className="h-3 w-full mb-1.5 bg-zinc-200 dark:bg-zinc-700" />
+            <Skeleton className="h-3 w-3/4 bg-zinc-200 dark:bg-zinc-700" />
           </div>
         ))}
       </div>
@@ -680,7 +676,6 @@ function formatMessageDate(dateStr: string): string {
 
 function formatPlainText(text: string): string {
   if (!text) return "";
-  // Convert plain text to HTML with line breaks
   return text
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")

@@ -1,5 +1,5 @@
 // src/features/messages/components/inbox/ThreadListItem.tsx
-// Single thread row in the list
+// Single thread row with zinc palette styling
 
 import { formatDistanceToNow } from "date-fns";
 import { Badge } from "@/components/ui/badge";
@@ -27,7 +27,6 @@ export function ThreadListItem({
 
   // Get initials and display name based on view type
   const firstParticipant = thread.participantEmails[0] || "Unknown";
-  // In sent view, show "Me" as sender; otherwise show participant name
   const displayName = isSentView ? "Me" : formatParticipant(firstParticipant);
   const initials = isSentView ? "ME" : getInitials(firstParticipant);
 
@@ -39,16 +38,17 @@ export function ThreadListItem({
   return (
     <button
       className={cn(
-        "w-full text-left p-2.5 hover:bg-muted/50 transition-colors",
-        isSelected && "bg-primary/5 border-l-2 border-l-primary",
-        isUnread && "bg-primary/[0.02]",
+        "w-full text-left p-2 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors border-b border-zinc-100 dark:border-zinc-800/50",
+        isSelected &&
+          "bg-zinc-100 dark:bg-zinc-800 border-l-2 border-l-blue-500",
+        isUnread && "bg-blue-50/30 dark:bg-blue-900/10",
       )}
       onClick={onClick}
     >
       <div className="flex items-start gap-2">
         {/* Avatar */}
-        <Avatar className="h-8 w-8 flex-shrink-0">
-          <AvatarFallback className="text-xs bg-muted">
+        <Avatar className="h-7 w-7 flex-shrink-0">
+          <AvatarFallback className="text-[10px] bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300">
             {initials}
           </AvatarFallback>
         </Avatar>
@@ -56,14 +56,14 @@ export function ThreadListItem({
         {/* Content */}
         <div className="flex-1 min-w-0">
           {/* Header row */}
-          <div className="flex items-center gap-1.5 mb-0.5">
+          <div className="flex items-center gap-1 mb-0.5">
             {/* Sender name */}
             <span
               className={cn(
-                "text-sm truncate flex-1",
+                "text-[11px] truncate flex-1",
                 isUnread
-                  ? "font-semibold"
-                  : "font-medium text-muted-foreground",
+                  ? "font-semibold text-zinc-900 dark:text-zinc-100"
+                  : "font-medium text-zinc-600 dark:text-zinc-400",
               )}
             >
               {displayName}
@@ -71,17 +71,17 @@ export function ThreadListItem({
 
             {/* Indicators */}
             {thread.isStarred && (
-              <Star className="h-3.5 w-3.5 text-yellow-500 fill-yellow-500 flex-shrink-0" />
+              <Star className="h-3 w-3 text-yellow-500 fill-yellow-500 flex-shrink-0" />
             )}
             {hasAttachments && (
-              <Paperclip className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+              <Paperclip className="h-3 w-3 text-zinc-400 flex-shrink-0" />
             )}
             {isAutomated && (
-              <Bot className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+              <Bot className="h-3 w-3 text-zinc-400 flex-shrink-0" />
             )}
 
             {/* Time */}
-            <span className="text-xs text-muted-foreground flex-shrink-0">
+            <span className="text-[10px] text-zinc-500 dark:text-zinc-400 flex-shrink-0">
               {formatTimeAgo(timeAgo)}
             </span>
           </div>
@@ -89,15 +89,17 @@ export function ThreadListItem({
           {/* Subject */}
           <div
             className={cn(
-              "text-sm truncate",
-              isUnread ? "font-medium" : "text-muted-foreground",
+              "text-[11px] truncate",
+              isUnread
+                ? "font-medium text-zinc-800 dark:text-zinc-200"
+                : "text-zinc-600 dark:text-zinc-400",
             )}
           >
             {thread.subject}
           </div>
 
           {/* Preview */}
-          <div className="text-xs text-muted-foreground truncate mt-0.5">
+          <div className="text-[10px] text-zinc-500 dark:text-zinc-500 truncate mt-0.5">
             {thread.snippet}
           </div>
 
@@ -108,7 +110,7 @@ export function ThreadListItem({
                 <Badge
                   key={label.id}
                   variant="outline"
-                  className="h-5 px-1.5 text-xs"
+                  className="h-4 px-1 text-[9px] border-zinc-300 dark:border-zinc-600"
                   style={{
                     borderColor: label.color,
                     color: label.color,
@@ -118,7 +120,7 @@ export function ThreadListItem({
                 </Badge>
               ))}
               {thread.labels.length > 3 && (
-                <span className="text-xs text-muted-foreground">
+                <span className="text-[9px] text-zinc-400 dark:text-zinc-500">
                   +{thread.labels.length - 3}
                 </span>
               )}
@@ -130,7 +132,7 @@ export function ThreadListItem({
         {thread.messageCount > 1 && (
           <Badge
             variant="secondary"
-            className="h-5 min-w-[18px] px-1.5 text-xs flex-shrink-0"
+            className="h-4 min-w-[16px] px-1 text-[9px] bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 flex-shrink-0"
           >
             {thread.messageCount}
           </Badge>
@@ -142,7 +144,6 @@ export function ThreadListItem({
 
 // Helper functions
 function getInitials(email: string): string {
-  // Try to extract name from email
   const namePart = email.split("@")[0];
   const parts = namePart.split(/[._-]/);
 
@@ -154,7 +155,6 @@ function getInitials(email: string): string {
 }
 
 function formatParticipant(email: string): string {
-  // Try to make email more readable
   const namePart = email.split("@")[0];
   const parts = namePart.split(/[._-]/);
 
@@ -166,7 +166,6 @@ function formatParticipant(email: string): string {
 }
 
 function formatTimeAgo(timeAgo: string): string {
-  // Shorten time strings
   return timeAgo
     .replace(" minutes", "m")
     .replace(" minute", "m")

@@ -6,6 +6,40 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-12-17 09:43:50
+
+### Changed Files
+- `CHANGELOG.md`
+- `PROJECT_STATS.md`
+- `src/features/messages/MessagesPage.tsx`
+- `src/features/messages/components/inbox/ThreadList.tsx`
+- `src/features/messages/components/inbox/ThreadListItem.tsx`
+- `src/features/messages/components/layout/MessagesLayout.tsx`
+- `src/features/messages/components/thread/ThreadView.tsx`
+- `src/features/recruiting/RecruitingDashboard.tsx`
+- `src/features/recruiting/components/RecruitListTable.tsx`
+
+### Statistics
+```
+ 9 files changed, 631 insertions(+), 565 deletions(-)
+```
+
+## [Checkpoint] - 2025-12-17 09:42:56
+
+### Changed Files
+- `src/features/messages/MessagesPage.tsx`
+- `src/features/messages/components/inbox/ThreadList.tsx`
+- `src/features/messages/components/inbox/ThreadListItem.tsx`
+- `src/features/messages/components/layout/MessagesLayout.tsx`
+- `src/features/messages/components/thread/ThreadView.tsx`
+- `src/features/recruiting/RecruitingDashboard.tsx`
+- `src/features/recruiting/components/RecruitListTable.tsx`
+
+### Statistics
+```
+ 7 files changed, 605 insertions(+), 554 deletions(-)
+```
+
 ## [Checkpoint] - 2025-12-16 18:26:06
 
 ### Changed Files

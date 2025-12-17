@@ -1,8 +1,7 @@
 // src/features/messages/MessagesPage.tsx
-// Communications Hub - Main page matching app design system
+// Communications Hub - Redesigned with zinc palette and compact design patterns
 
 import { useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MessagesLayout } from "./components/layout/MessagesLayout";
@@ -24,6 +23,7 @@ import {
   Mail,
   MessageSquare,
   Instagram,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -57,7 +57,7 @@ export function MessagesPage() {
     setIsComposeOpen(true);
   };
 
-  // Tab configuration - Email, Slack, Instagram, Templates, Analytics, Settings
+  // Tab configuration
   const tabs: { id: TabType; label: string; icon: typeof Inbox }[] = [
     { id: "email", label: "Email", icon: Mail },
     { id: "slack", label: "Slack", icon: MessageSquare },
@@ -67,14 +67,14 @@ export function MessagesPage() {
     { id: "settings", label: "Settings", icon: Settings },
   ];
 
-  // Folder configuration for sidebar - uses real counts
+  // Folder configuration
   const folders: {
     id: FolderType;
     label: string;
     icon: typeof Inbox;
     count?: number;
   }[] = [
-    { id: "all", label: "All Messages", icon: Mail, count: counts.all },
+    { id: "all", label: "All", icon: Mail, count: counts.all },
     { id: "inbox", label: "Inbox", icon: Inbox, count: counts.inbox },
     { id: "sent", label: "Sent", icon: Send, count: counts.sent },
     { id: "starred", label: "Starred", icon: Star, count: counts.starred },
@@ -88,241 +88,262 @@ export function MessagesPage() {
 
   return (
     <>
-      <div className="flex flex-col" style={{ height: "calc(100vh - 3rem)" }}>
-        {/* Page Header - matching Expenses/Targets/Dashboard */}
-        <div className="flex-shrink-0 py-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-lg font-semibold text-foreground">
+      <div className="h-[calc(100vh-4rem)] flex flex-col p-3 space-y-2.5 bg-zinc-50 dark:bg-zinc-950">
+        {/* Compact Header with inline stats */}
+        <div className="flex items-center justify-between bg-white dark:bg-zinc-900 rounded-lg px-3 py-2 border border-zinc-200 dark:border-zinc-800">
+          <div className="flex items-center gap-5">
+            <div className="flex items-center gap-2">
+              <Mail className="h-4 w-4 text-zinc-900 dark:text-zinc-100" />
+              <h1 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
                 Messages
               </h1>
-              <p className="text-sm text-muted-foreground mt-0.5">
-                Communications hub • {totalUnread} unread
-              </p>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="relative">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  type="text"
-                  placeholder="Search messages..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="h-8 w-52 pl-8 text-sm"
-                />
+
+            {/* Inline compact stats */}
+            <div className="flex items-center gap-3 text-[11px]">
+              <div className="flex items-center gap-1">
+                <Inbox className="h-3 w-3 text-blue-500" />
+                <span className="font-medium text-zinc-900 dark:text-zinc-100">
+                  {totalUnread}
+                </span>
+                <span className="text-zinc-500 dark:text-zinc-400">unread</span>
               </div>
-              <Button
-                onClick={handleComposeNew}
-                size="sm"
-                className="h-8 px-4 text-sm bg-primary hover:bg-primary/90 text-primary-foreground border-0 shadow-none"
-              >
-                <PenSquare className="h-4 w-4 mr-1.5" />
-                Compose
-              </Button>
+              <div className="h-3 w-px bg-zinc-200 dark:bg-zinc-700" />
+              <div className="flex items-center gap-1">
+                <Mail className="h-3 w-3 text-zinc-400" />
+                <span className="font-medium text-zinc-900 dark:text-zinc-100">
+                  {counts.all}
+                </span>
+                <span className="text-zinc-500 dark:text-zinc-400">total</span>
+              </div>
+              <div className="h-3 w-px bg-zinc-200 dark:bg-zinc-700" />
+              <div className="flex items-center gap-1">
+                <span className="text-zinc-500 dark:text-zinc-400">Quota:</span>
+                <span className="font-medium text-zinc-900 dark:text-zinc-100">
+                  {quota ? `${quota.dailyUsed}/${quota.dailyLimit}` : "0/50"}
+                </span>
+                <span className="text-zinc-500 dark:text-zinc-400">
+                  ({remainingDaily} left)
+                </span>
+              </div>
             </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {/* Search Input */}
+            <div className="relative w-56">
+              <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-zinc-400" />
+              <Input
+                type="text"
+                placeholder="Search..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="h-7 pl-7 pr-7 text-xs bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
+              />
+              {searchQuery && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-0.5 top-1/2 -translate-y-1/2 h-6 w-6"
+                  onClick={() => setSearchQuery("")}
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              )}
+            </div>
+
+            <Button
+              onClick={handleComposeNew}
+              size="sm"
+              className="h-6 text-[10px] px-2"
+            >
+              <PenSquare className="h-3 w-3 mr-1" />
+              Compose
+            </Button>
           </div>
         </div>
 
-        {/* Main Content */}
-        <div className="flex-1 px-3 pb-3 overflow-hidden min-h-0">
-          <div className="h-full flex gap-2">
-            {/* Left Sidebar - Folders */}
-            <Card className="w-48 flex-shrink-0 flex flex-col overflow-hidden">
-              <CardContent className="p-2 flex-1 flex flex-col min-h-0 overflow-auto">
-                {/* Folders */}
-                <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide px-2 mb-2">
-                  Folders
-                </div>
-                <div className="space-y-0.5">
-                  {folders.map((folder) => {
-                    const Icon = folder.icon;
-                    const isActive = activeFolder === folder.id;
-                    return (
-                      <button
-                        key={folder.id}
-                        onClick={() => setActiveFolder(folder.id)}
-                        className={cn(
-                          "w-full flex items-center gap-2 px-2 py-2 rounded-md text-sm transition-colors",
-                          isActive
-                            ? "bg-primary/10 text-primary font-medium"
-                            : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
-                        )}
-                      >
-                        <Icon className="h-4 w-4" />
-                        <span className="flex-1 text-left">{folder.label}</span>
-                        {folder.count !== undefined && folder.count > 0 && (
-                          <span className="text-xs font-medium">
-                            {folder.count}
-                          </span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
+        {/* Compact tabs */}
+        <div className="flex items-center gap-0.5 bg-zinc-200/50 dark:bg-zinc-800/50 rounded-md p-0.5">
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={cn(
+                  "flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-[11px] font-medium rounded transition-all",
+                  isActive
+                    ? "bg-white dark:bg-zinc-900 shadow-sm text-zinc-900 dark:text-zinc-100"
+                    : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300",
+                )}
+              >
+                <Icon className="h-3.5 w-3.5" />
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
 
-                {/* Spacer */}
-                <div className="flex-1" />
+        {/* Content area */}
+        <div className="flex-1 flex gap-2 overflow-hidden">
+          {/* Left Sidebar - Folders */}
+          <div className="w-36 flex-shrink-0 flex flex-col overflow-hidden bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800">
+            <div className="p-2 flex-1 flex flex-col min-h-0 overflow-auto">
+              {/* Folders */}
+              <div className="text-[10px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide px-2 mb-1.5">
+                Folders
+              </div>
+              <div className="space-y-0.5">
+                {folders.map((folder) => {
+                  const Icon = folder.icon;
+                  const isActive = activeFolder === folder.id;
+                  return (
+                    <button
+                      key={folder.id}
+                      onClick={() => setActiveFolder(folder.id)}
+                      className={cn(
+                        "w-full flex items-center gap-1.5 px-2 py-1.5 rounded text-[11px] transition-colors",
+                        isActive
+                          ? "bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-medium"
+                          : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-800/50",
+                      )}
+                    >
+                      <Icon className="h-3.5 w-3.5" />
+                      <span className="flex-1 text-left">{folder.label}</span>
+                      {folder.count !== undefined && folder.count > 0 && (
+                        <span className="text-[10px] font-medium text-zinc-500 dark:text-zinc-400">
+                          {folder.count}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
 
-                {/* Quota section */}
-                <div className="border-t pt-2 mt-2">
-                  <div className="text-xs text-muted-foreground space-y-1">
-                    <div className="flex justify-between">
-                      <span>Daily quota</span>
-                      <span className="font-medium text-foreground">
-                        {quota
-                          ? `${quota.dailyUsed} / ${quota.dailyLimit}`
-                          : "0 / 50"}
-                      </span>
-                    </div>
-                    <div className="h-2 bg-muted rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-primary rounded-full transition-all"
-                        style={{ width: `${percentUsed}%` }}
-                      />
-                    </div>
-                    <p className="text-xs text-muted-foreground/70">
-                      {remainingDaily} remaining • Resets at midnight
-                    </p>
+              {/* Spacer */}
+              <div className="flex-1" />
+
+              {/* Quota section */}
+              <div className="border-t border-zinc-200 dark:border-zinc-800 pt-2 mt-2">
+                <div className="text-[10px] text-zinc-500 dark:text-zinc-400 space-y-1 px-1">
+                  <div className="flex justify-between">
+                    <span>Daily quota</span>
+                    <span className="font-medium text-zinc-700 dark:text-zinc-300">
+                      {quota
+                        ? `${quota.dailyUsed}/${quota.dailyLimit}`
+                        : "0/50"}
+                    </span>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Main Content Area */}
-            <div className="flex-1 flex flex-col gap-2 overflow-hidden min-h-0">
-              {/* Tabs - styled like filter buttons */}
-              <Card>
-                <CardContent className="p-2">
-                  <div className="flex gap-1">
-                    {tabs.map((tab) => {
-                      const Icon = tab.icon;
-                      const isActive = activeTab === tab.id;
-                      return (
-                        <button
-                          key={tab.id}
-                          className={cn(
-                            "h-8 px-4 text-sm flex items-center gap-2 rounded-md transition-colors",
-                            isActive
-                              ? "bg-primary text-primary-foreground font-medium"
-                              : "text-foreground hover:bg-muted",
-                          )}
-                          onClick={() => setActiveTab(tab.id)}
-                        >
-                          <Icon className="h-4 w-4" />
-                          {tab.label}
-                        </button>
-                      );
-                    })}
+                  <div className="h-1.5 bg-zinc-200 dark:bg-zinc-700 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-blue-500 rounded-full transition-all"
+                      style={{ width: `${percentUsed}%` }}
+                    />
                   </div>
-                </CardContent>
-              </Card>
-
-              {/* Tab Content */}
-              <div className="flex-1 overflow-hidden min-h-0">
-                {activeTab === "email" && (
-                  <MessagesLayout
-                    list={
-                      <ThreadList
-                        searchQuery={searchQuery}
-                        selectedThreadId={selectedThreadId}
-                        onThreadSelect={handleThreadSelect}
-                        filter={activeFolder}
-                      />
-                    }
-                    detail={
-                      selectedThreadId ? (
-                        <ThreadView
-                          threadId={selectedThreadId}
-                          onClose={() => setSelectedThreadId(null)}
-                        />
-                      ) : (
-                        <EmptyThreadView />
-                      )
-                    }
-                  />
-                )}
-
-                {activeTab === "slack" && (
-                  <Card className="h-full">
-                    <CardContent className="p-3 h-full flex items-center justify-center">
-                      <div className="text-center">
-                        <MessageSquare className="h-8 w-8 mx-auto mb-2 text-muted-foreground/30" />
-                        <p className="text-[11px] text-muted-foreground">
-                          Slack integration coming soon
-                        </p>
-                        <p className="text-[10px] text-muted-foreground/70 mt-1">
-                          Access channels, DMs, and team conversations
-                        </p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-
-                {activeTab === "instagram" && (
-                  <Card className="h-full">
-                    <CardContent className="p-3 h-full flex items-center justify-center">
-                      <div className="text-center">
-                        <Instagram className="h-8 w-8 mx-auto mb-2 text-muted-foreground/30" />
-                        <p className="text-[11px] text-muted-foreground">
-                          Instagram DMs coming soon
-                        </p>
-                        <p className="text-[10px] text-muted-foreground/70 mt-1">
-                          Active conversations from the last 30 days
-                        </p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-
-                {activeTab === "templates" && (
-                  <Card className="h-full">
-                    <CardContent className="p-3 h-full flex items-center justify-center">
-                      <div className="text-center">
-                        <FileText className="h-8 w-8 mx-auto mb-2 text-muted-foreground/30" />
-                        <p className="text-[11px] text-muted-foreground">
-                          Templates coming soon
-                        </p>
-                        <p className="text-[10px] text-muted-foreground/70 mt-1">
-                          Will be migrated from Training Hub
-                        </p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-
-                {activeTab === "analytics" && (
-                  <Card className="h-full">
-                    <CardContent className="p-3 h-full flex items-center justify-center">
-                      <div className="text-center">
-                        <BarChart3 className="h-8 w-8 mx-auto mb-2 text-muted-foreground/30" />
-                        <p className="text-[11px] text-muted-foreground">
-                          Analytics coming soon
-                        </p>
-                        <p className="text-[10px] text-muted-foreground/70 mt-1">
-                          Track opens, clicks, and delivery rates
-                        </p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-
-                {activeTab === "settings" && (
-                  <Card className="h-full">
-                    <CardContent className="p-3 h-full flex items-center justify-center">
-                      <div className="text-center">
-                        <Settings className="h-8 w-8 mx-auto mb-2 text-muted-foreground/30" />
-                        <p className="text-[11px] text-muted-foreground">
-                          Settings coming soon
-                        </p>
-                        <p className="text-[10px] text-muted-foreground/70 mt-1">
-                          Signatures, snippets, and notifications
-                        </p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
+                  <p className="text-[9px] text-zinc-400 dark:text-zinc-500">
+                    {remainingDaily} remaining
+                  </p>
+                </div>
               </div>
             </div>
+          </div>
+
+          {/* Main Content Area */}
+          <div className="flex-1 flex flex-col overflow-hidden min-h-0">
+            {activeTab === "email" && (
+              <MessagesLayout
+                list={
+                  <ThreadList
+                    searchQuery={searchQuery}
+                    selectedThreadId={selectedThreadId}
+                    onThreadSelect={handleThreadSelect}
+                    filter={activeFolder}
+                  />
+                }
+                detail={
+                  selectedThreadId ? (
+                    <ThreadView
+                      threadId={selectedThreadId}
+                      onClose={() => setSelectedThreadId(null)}
+                    />
+                  ) : (
+                    <EmptyThreadView />
+                  )
+                }
+              />
+            )}
+
+            {activeTab === "slack" && (
+              <div className="h-full flex items-center justify-center bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800">
+                <div className="text-center">
+                  <MessageSquare className="h-8 w-8 mx-auto mb-2 text-zinc-300 dark:text-zinc-600" />
+                  <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                    Slack integration coming soon
+                  </p>
+                  <p className="text-[10px] text-zinc-400 dark:text-zinc-500 mt-1">
+                    Access channels, DMs, and team conversations
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {activeTab === "instagram" && (
+              <div className="h-full flex items-center justify-center bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800">
+                <div className="text-center">
+                  <Instagram className="h-8 w-8 mx-auto mb-2 text-zinc-300 dark:text-zinc-600" />
+                  <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                    Instagram DMs coming soon
+                  </p>
+                  <p className="text-[10px] text-zinc-400 dark:text-zinc-500 mt-1">
+                    Active conversations from the last 30 days
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {activeTab === "templates" && (
+              <div className="h-full flex items-center justify-center bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800">
+                <div className="text-center">
+                  <FileText className="h-8 w-8 mx-auto mb-2 text-zinc-300 dark:text-zinc-600" />
+                  <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                    Templates coming soon
+                  </p>
+                  <p className="text-[10px] text-zinc-400 dark:text-zinc-500 mt-1">
+                    Will be migrated from Training Hub
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {activeTab === "analytics" && (
+              <div className="h-full flex items-center justify-center bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800">
+                <div className="text-center">
+                  <BarChart3 className="h-8 w-8 mx-auto mb-2 text-zinc-300 dark:text-zinc-600" />
+                  <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                    Analytics coming soon
+                  </p>
+                  <p className="text-[10px] text-zinc-400 dark:text-zinc-500 mt-1">
+                    Track opens, clicks, and delivery rates
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {activeTab === "settings" && (
+              <div className="h-full flex items-center justify-center bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800">
+                <div className="text-center">
+                  <Settings className="h-8 w-8 mx-auto mb-2 text-zinc-300 dark:text-zinc-600" />
+                  <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                    Settings coming soon
+                  </p>
+                  <p className="text-[10px] text-zinc-400 dark:text-zinc-500 mt-1">
+                    Signatures, snippets, and notifications
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -336,15 +357,13 @@ export function MessagesPage() {
 // Empty state when no thread is selected
 function EmptyThreadView() {
   return (
-    <Card className="h-full">
-      <CardContent className="h-full flex items-center justify-center p-3">
-        <div className="text-center">
-          <Inbox className="h-8 w-8 mx-auto mb-2 text-muted-foreground/30" />
-          <p className="text-[11px] text-muted-foreground">
-            Select a conversation to view
-          </p>
-        </div>
-      </CardContent>
-    </Card>
+    <div className="h-full flex items-center justify-center bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800">
+      <div className="text-center">
+        <Inbox className="h-8 w-8 mx-auto mb-2 text-zinc-300 dark:text-zinc-600" />
+        <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+          Select a conversation to view
+        </p>
+      </div>
+    </div>
   );
 }
