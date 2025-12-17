@@ -2,10 +2,10 @@
 // Custom button component with distinctive hover/active effects
 
 import * as React from "react";
-import {Slot} from "@radix-ui/react-slot";
-import {cva, type VariantProps} from "class-variance-authority";
+import { Slot } from "@radix-ui/react-slot";
+import { cva, type VariantProps } from "class-variance-authority";
 
-import {cn} from "@/lib/utils";
+import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
   "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 cursor-pointer select-none transition-all duration-200 ease-out",
@@ -46,11 +46,10 @@ const buttonVariants = cva(
 
         // Muted: Soft gray background
         muted:
-          "bg-zinc-100 text-zinc-600 shadow-sm hover:bg-zinc-200 hover:text-zinc-900 hover:shadow-md active:bg-zinc-300 active:scale-[0.98] dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700 dark:hover:text-zinc-100 dark:active:bg-zinc-900",
+          "bg-zinc-300 text-zinc-600 shadow-sm hover:bg-zinc-200 hover:text-zinc-900 hover:shadow-md active:bg-zinc-300 active:scale-[0.98] dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700 dark:hover:text-zinc-100 dark:active:bg-zinc-900",
 
         // Link: Text with underline animation
-        link:
-          "text-foreground underline-offset-4 hover:underline hover:text-zinc-600 active:text-zinc-400 dark:hover:text-zinc-300 dark:active:text-zinc-500",
+        link: "text-foreground underline-offset-4 hover:underline hover:text-zinc-600 active:text-zinc-400 dark:hover:text-zinc-300 dark:active:text-zinc-500",
       },
       size: {
         default: "h-9 px-4 py-2",

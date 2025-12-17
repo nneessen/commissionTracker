@@ -35,7 +35,9 @@ function RecruitingDashboardContent() {
   const { user } = useAuth();
   const { data: recruitsData, isLoading: recruitsLoading } = useRecruits();
 
-  const [selectedRecruit, setSelectedRecruit] = useState<UserProfile | null>(null);
+  const [selectedRecruit, setSelectedRecruit] = useState<UserProfile | null>(
+    null,
+  );
   const [addRecruitDialogOpen, setAddRecruitDialogOpen] = useState(false);
   const [detailSheetOpen, setDetailSheetOpen] = useState(false);
 
@@ -59,7 +61,8 @@ function RecruitingDashboardContent() {
     active: recruits.filter(
       (r) => r.onboarding_status && activePhases.includes(r.onboarding_status),
     ).length,
-    completed: recruits.filter((r) => r.onboarding_status === "completed").length,
+    completed: recruits.filter((r) => r.onboarding_status === "completed")
+      .length,
     dropped: recruits.filter((r) => r.onboarding_status === "dropped").length,
   };
 
@@ -109,7 +112,9 @@ function RecruitingDashboardContent() {
         <div className="flex items-center justify-between">
           {/* Left: Title and Description */}
           <div>
-            <h1 className="text-lg font-semibold text-foreground">Recruiting Pipeline</h1>
+            <h1 className="text-lg font-semibold text-foreground">
+              Recruiting Pipeline
+            </h1>
             <p className="text-sm text-muted-foreground mt-0.5">
               Manage and track your recruiting pipeline
             </p>
@@ -118,44 +123,53 @@ function RecruitingDashboardContent() {
           {/* Center: Stats - Simple monochrome display */}
           <div className="flex items-center gap-4 text-sm">
             <div className="flex items-center gap-1.5">
-              <span className="font-semibold text-foreground">{stats.total}</span>
+              <span className="font-semibold text-foreground">
+                {stats.total}
+              </span>
               <span className="text-muted-foreground">Total</span>
             </div>
             <div className="w-px h-4 bg-border" />
             <div className="flex items-center gap-1.5">
-              <span className="font-semibold text-foreground">{stats.active}</span>
+              <span className="font-semibold text-foreground">
+                {stats.active}
+              </span>
               <span className="text-muted-foreground">Active</span>
             </div>
             <div className="w-px h-4 bg-border" />
             <div className="flex items-center gap-1.5">
-              <span className="font-semibold text-foreground">{stats.completed}</span>
+              <span className="font-semibold text-foreground">
+                {stats.completed}
+              </span>
               <span className="text-muted-foreground">Complete</span>
             </div>
             <div className="w-px h-4 bg-border" />
             <div className="flex items-center gap-1.5">
-              <span className="font-semibold text-foreground">{stats.dropped}</span>
+              <span className="font-semibold text-foreground">
+                {stats.dropped}
+              </span>
               <span className="text-muted-foreground">Dropped</span>
             </div>
           </div>
 
           {/* Right: Action Buttons */}
           <div className="flex items-center gap-2">
-            <Button size="sm" variant="ghost" onClick={handleBulkEmail}>
+            <Button size="sm" variant="muted" onClick={handleBulkEmail}>
               <Mail className="h-4 w-4 mr-1.5" />
               Email
             </Button>
-            <Button size="sm" variant="ghost" onClick={handleExportCSV}>
+            <Button size="sm" variant="muted" onClick={handleExportCSV}>
               <Download className="h-4 w-4 mr-1.5" />
               Export
             </Button>
             <Button
+              variant="default"
               size="sm"
               onClick={() => setAddRecruitDialogOpen(true)}
             >
               <UserPlus className="h-4 w-4 mr-1.5" />
               Add Recruit
             </Button>
-            <Button size="sm" variant="ghost" asChild>
+            <Button size="sm" variant="muted" asChild>
               <Link to="/recruiting/admin/pipelines">
                 <Settings2 className="h-4 w-4" />
               </Link>
@@ -178,7 +192,10 @@ function RecruitingDashboardContent() {
 
       {/* Detail Panel as Sheet (slide-out) */}
       <Sheet open={detailSheetOpen} onOpenChange={setDetailSheetOpen}>
-        <SheetContent side="right" className="w-[500px] sm:max-w-[500px] p-0 overflow-hidden">
+        <SheetContent
+          side="right"
+          className="w-[500px] sm:max-w-[500px] p-0 overflow-hidden"
+        >
           {selectedRecruit && (
             <RecruitDetailPanel
               recruit={selectedRecruit}

@@ -1,3 +1,6 @@
+// src/components/ui/form.tsx
+// Modern form components with zinc palette and refined styling
+
 "use client"
 
 import * as React from "react"
@@ -73,7 +76,7 @@ const FormItem = React.forwardRef<
 
   return (
     <FormItemContext.Provider value={{ id }}>
-      <div ref={ref} className={cn("space-y-2", className)} {...props} />
+      <div ref={ref} className={cn("space-y-1.5", className)} {...props} />
     </FormItemContext.Provider>
   )
 })
@@ -88,7 +91,11 @@ const FormLabel = React.forwardRef<
   return (
     <Label
       ref={ref}
-      className={cn(error && "text-destructive", className)}
+      className={cn(
+        "text-sm font-medium text-zinc-700 dark:text-zinc-300",
+        error && "text-red-600 dark:text-red-400",
+        className
+      )}
       htmlFor={formItemId}
       {...props}
     />
@@ -128,7 +135,7 @@ const FormDescription = React.forwardRef<
     <p
       ref={ref}
       id={formDescriptionId}
-      className={cn("text-[0.8rem] text-muted-foreground", className)}
+      className={cn("text-xs text-zinc-500 dark:text-zinc-400", className)}
       {...props}
     />
   )
@@ -150,7 +157,10 @@ const FormMessage = React.forwardRef<
     <p
       ref={ref}
       id={formMessageId}
-      className={cn("text-[0.8rem] font-medium text-destructive", className)}
+      className={cn(
+        "text-xs font-medium text-red-600 dark:text-red-400",
+        className
+      )}
       {...props}
     >
       {body}

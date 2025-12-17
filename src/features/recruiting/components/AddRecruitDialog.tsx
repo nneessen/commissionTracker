@@ -894,10 +894,7 @@ export function AddRecruitDialog({
                 <form.Field name="linkedinusername">
                   {(field) => (
                     <div className="grid gap-1">
-                      <Label
-                        htmlFor="linkedinusername"
-                        className="text-[11px]"
-                      >
+                      <Label htmlFor="linkedinusername" className="text-[11px]">
                         LinkedIn Username
                       </Label>
                       <Input
