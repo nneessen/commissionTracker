@@ -1,9 +1,13 @@
 // src/features/expenses/components/ExpensePageHeader.tsx
 
-import {Button} from '@/components/ui/button';
-import {DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger} from '@/components/ui/dropdown-menu';
-import {Download, Plus} from 'lucide-react';
-import type {ExpenseFilters} from '../../../types/expense.types';
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Download, Plus } from "lucide-react";
 
 export interface ExpensePageHeaderProps {
   selectedMonth: Date;
@@ -34,9 +38,9 @@ export function ExpensePageHeader({
   onExportPDF,
   onAddExpense,
 }: ExpensePageHeaderProps) {
-  const monthYear = selectedMonth.toLocaleDateString('en-US', {
-    month: 'long',
-    year: 'numeric',
+  const monthYear = selectedMonth.toLocaleDateString("en-US", {
+    month: "long",
+    year: "numeric",
   });
 
   return (

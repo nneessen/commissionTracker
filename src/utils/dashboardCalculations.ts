@@ -1,6 +1,6 @@
 // src/utils/dashboardCalculations.ts
 
-import {TimePeriod, DAYS_PER_PERIOD, getDaysInPeriod} from "./dateRange";
+import { TimePeriod, DAYS_PER_PERIOD } from "./dateRange";
 
 export function scaleToDisplayPeriod(
   monthlyValue: number,
@@ -60,7 +60,8 @@ export function getPeriodSuffix(period: TimePeriod): string {
 }
 
 export function getBreakevenDisplay(
-  breakevenNeeded: number, _displayPeriod: TimePeriod,
+  breakevenNeeded: number,
+  _displayPeriod: TimePeriod,
 ): number {
   return breakevenNeeded;
 }

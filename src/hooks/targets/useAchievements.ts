@@ -1,9 +1,8 @@
 // src/hooks/targets/useAchievements.ts
 
-import {useQuery} from '@tanstack/react-query';
-import {targetsService} from '../../services/targets';
-import {supabase} from '../../services/base/supabase';
-import type {Achievement} from '../../types/targets.types';
+import { useQuery } from "@tanstack/react-query";
+import { targetsService } from "../../services/targets";
+import { supabase } from "../../services/base/supabase";
 
 export interface UseAchievementsOptions {
   enabled?: boolean;
@@ -18,13 +17,15 @@ export interface UseAchievementsOptions {
  */
 export const useAchievements = (options?: UseAchievementsOptions) => {
   return useQuery({
-    queryKey: ['achievements'],
+    queryKey: ["achievements"],
     queryFn: async () => {
       // Get current user
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
       if (!user) {
-        throw new Error('User not authenticated');
+        throw new Error("User not authenticated");
       }
 
       return await targetsService.getAchievements(user.id);

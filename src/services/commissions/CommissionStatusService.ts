@@ -10,11 +10,14 @@
  * - Get chargeback summaries and reporting
  */
 
-import {supabase} from '../base/supabase';
-import {logger} from '../base/logger';
-import {commissionLifecycleService} from './CommissionLifecycleService';
-import {DatabaseError, NotFoundError, ValidationError} from '../../errors/ServiceErrors';
-import {formatDateForDB} from '../../lib/date';
+import { supabase } from "../base/supabase";
+import { logger } from "../base/logger";
+import {
+  DatabaseError,
+  NotFoundError,
+  ValidationError,
+} from "../../errors/ServiceErrors";
+import { formatDateForDB } from "../../lib/date";
 
 export interface UpdateMonthsPaidParams {
   commissionId: string;
@@ -71,7 +74,7 @@ export interface AtRiskCommission {
   monthsPaid: number;
   earnedAmount: number;
   unearnedAmount: number;
-  riskLevel: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
+  riskLevel: "CRITICAL" | "HIGH" | "MEDIUM" | "LOW";
   effectiveDate: Date;
   policyStatus: string;
 }
@@ -100,14 +103,17 @@ class CommissionStatusService {
    * @param params - Update parameters (only commissionId and optionally lastPaymentDate)
    * @returns Updated commission details
    */
-  async updateMonthsPaid(params: UpdateMonthsPaidParams): Promise<UpdateMonthsPaidResult> {
+  async updateMonthsPaid(
+    params: UpdateMonthsPaidParams,
+  ): Promise<UpdateMonthsPaidResult> {
     const { commissionId, lastPaymentDate } = params;
 
     try {
       // Get commission and policy to calculate months_paid automatically
       const { data: commission, error: fetchError } = await supabase
-        .from('commissions')
-        .select(`
+        .from("commissions")
+        .select(
+          `
           id,
           advance_months,
           amount,
@@ -115,16 +121,17 @@ class CommissionStatusService {
           policies!inner (
             effective_date
           )
-        `)
-        .eq('id', commissionId)
+        `,
+        )
+        .eq("id", commissionId)
         .single();
 
       if (fetchError) {
-        throw new DatabaseError('updateMonthsPaid', fetchError);
+        throw new DatabaseError("updateMonthsPaid", fetchError);
       }
 
       if (!commission) {
-        throw new NotFoundError('Commission', commissionId);
+        throw new NotFoundError("Commission", commissionId);
       }
 
       // Get policy effective_date
@@ -132,26 +139,35 @@ class CommissionStatusService {
       const effectiveDate = policy?.effective_date;
 
       if (!effectiveDate) {
-        throw new ValidationError('Policy effective_date not found', [
-          { field: 'effectiveDate', message: 'Cannot calculate months_paid without effective_date', value: null }
+        throw new ValidationError("Policy effective_date not found", [
+          {
+            field: "effectiveDate",
+            message: "Cannot calculate months_paid without effective_date",
+            value: null,
+          },
         ]);
       }
 
       // Calculate months_paid using database function
-      const { data: monthsPaidData, error: calcError } = await supabase
-        .rpc('calculate_months_paid', {
+      const { data: monthsPaidData, error: calcError } = await supabase.rpc(
+        "calculate_months_paid",
+        {
           p_effective_date: effectiveDate,
-          p_end_date: formatDateForDB(lastPaymentDate || new Date())
-        });
+          p_end_date: formatDateForDB(lastPaymentDate || new Date()),
+        },
+      );
 
       if (calcError) {
-        throw new DatabaseError('calculate_months_paid', calcError);
+        throw new DatabaseError("calculate_months_paid", calcError);
       }
 
       const monthsPaid = monthsPaidData || 0;
 
       // Cap at advance_months
-      const cappedMonthsPaid = Math.min(monthsPaid, commission.advance_months || 9);
+      const cappedMonthsPaid = Math.min(
+        monthsPaid,
+        commission.advance_months || 9,
+      );
 
       // Calculate earned and unearned amounts
       const monthlyRate = commission.amount / (commission.advance_months || 9);
@@ -163,7 +179,7 @@ class CommissionStatusService {
         months_paid: cappedMonthsPaid,
         earned_amount: earnedAmount,
         unearned_amount: Math.max(0, unearnedAmount),
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       };
 
       if (lastPaymentDate) {
@@ -171,34 +187,41 @@ class CommissionStatusService {
       }
 
       const { data: updated, error: updateError } = await supabase
-        .from('commissions')
+        .from("commissions")
         .update(updateData)
-        .eq('id', commissionId)
-        .select('id, months_paid, earned_amount, unearned_amount')
+        .eq("id", commissionId)
+        .select("id, months_paid, earned_amount, unearned_amount")
         .single();
 
       if (updateError) {
-        throw new DatabaseError('updateMonthsPaid', updateError);
+        throw new DatabaseError("updateMonthsPaid", updateError);
       }
 
-      logger.info('Months paid auto-calculated and updated', {
-        commissionId,
-        effectiveDate,
-        monthsPaid: cappedMonthsPaid,
-        earnedAmount: updated.earned_amount,
-        unearnedAmount: updated.unearned_amount
-      }, 'CommissionStatusService');
+      logger.info(
+        "Months paid auto-calculated and updated",
+        {
+          commissionId,
+          effectiveDate,
+          monthsPaid: cappedMonthsPaid,
+          earnedAmount: updated.earned_amount,
+          unearnedAmount: updated.unearned_amount,
+        },
+        "CommissionStatusService",
+      );
 
       return {
         success: true,
         commissionId: updated.id,
         monthsPaid: updated.months_paid,
-        earnedAmount: parseFloat(updated.earned_amount || '0'),
-        unearnedAmount: parseFloat(updated.unearned_amount || '0'),
-        message: `Auto-calculated months paid: ${cappedMonthsPaid} months`
+        earnedAmount: parseFloat(updated.earned_amount || "0"),
+        unearnedAmount: parseFloat(updated.unearned_amount || "0"),
+        message: `Auto-calculated months paid: ${cappedMonthsPaid} months`,
       };
     } catch (error) {
-      logger.error('CommissionStatusService.updateMonthsPaid', error instanceof Error ? error : new Error(String(error)));
+      logger.error(
+        "CommissionStatusService.updateMonthsPaid",
+        error instanceof Error ? error : new Error(String(error)),
+      );
       throw error;
     }
   }
@@ -212,58 +235,67 @@ class CommissionStatusService {
    * @param params - Cancellation parameters
    * @returns Success indicator
    */
-  async markAsCancelled(params: MarkAsCancelledParams): Promise<{ success: boolean; message: string }> {
+  async markAsCancelled(
+    params: MarkAsCancelledParams,
+  ): Promise<{ success: boolean; message: string }> {
     const { commissionId, reason, cancelledDate } = params;
 
     try {
       // Validate reason is provided
       if (!reason || reason.trim().length === 0) {
-        throw new ValidationError('Cancellation reason is required', [
-          { field: 'reason', message: 'Reason cannot be empty', value: reason }
+        throw new ValidationError("Cancellation reason is required", [
+          { field: "reason", message: "Reason cannot be empty", value: reason },
         ]);
       }
 
       // Check if commission exists
       const { data: commission, error: fetchError } = await supabase
-        .from('commissions')
-        .select('id, status')
-        .eq('id', commissionId)
+        .from("commissions")
+        .select("id, status")
+        .eq("id", commissionId)
         .single();
 
       if (fetchError) {
-        throw new DatabaseError('markAsCancelled', fetchError);
+        throw new DatabaseError("markAsCancelled", fetchError);
       }
 
       if (!commission) {
-        throw new NotFoundError('Commission', commissionId);
+        throw new NotFoundError("Commission", commissionId);
       }
 
       // Update commission status to cancelled
       const { error: updateError } = await supabase
-        .from('commissions')
+        .from("commissions")
         .update({
-          status: 'cancelled',
+          status: "cancelled",
           chargeback_reason: reason,
           chargeback_date: formatDateForDB(cancelledDate || new Date()),
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
-        .eq('id', commissionId);
+        .eq("id", commissionId);
 
       if (updateError) {
-        throw new DatabaseError('markAsCancelled', updateError);
+        throw new DatabaseError("markAsCancelled", updateError);
       }
 
-      logger.info('Commission marked as cancelled', {
-        commissionId,
-        reason
-      }, 'CommissionStatusService');
+      logger.info(
+        "Commission marked as cancelled",
+        {
+          commissionId,
+          reason,
+        },
+        "CommissionStatusService",
+      );
 
       return {
         success: true,
-        message: `Commission cancelled: ${reason}`
+        message: `Commission cancelled: ${reason}`,
       };
     } catch (error) {
-      logger.error('CommissionStatusService.markAsCancelled', error instanceof Error ? error : new Error(String(error)));
+      logger.error(
+        "CommissionStatusService.markAsCancelled",
+        error instanceof Error ? error : new Error(String(error)),
+      );
       throw error;
     }
   }
@@ -278,18 +310,23 @@ class CommissionStatusService {
    * @param params - Chargeback parameters
    * @returns Chargeback calculation result
    */
-  async processChargeback(params: ProcessChargebackParams): Promise<ChargebackResult> {
+  async processChargeback(
+    params: ProcessChargebackParams,
+  ): Promise<ChargebackResult> {
     const { commissionId, policyId, lapseDate } = params;
 
     try {
       // Call the database function to calculate chargeback
-      const { data, error } = await supabase.rpc('calculate_chargeback_on_policy_lapse', {
-        p_policy_id: policyId,
-        p_lapse_date: formatDateForDB(lapseDate || new Date())
-      });
+      const { data, error } = await supabase.rpc(
+        "calculate_chargeback_on_policy_lapse",
+        {
+          p_policy_id: policyId,
+          p_lapse_date: formatDateForDB(lapseDate || new Date()),
+        },
+      );
 
       if (error) {
-        throw new DatabaseError('processChargeback', error);
+        throw new DatabaseError("processChargeback", error);
       }
 
       const result = data as any;
@@ -298,24 +335,31 @@ class CommissionStatusService {
         throw new Error(`Chargeback calculation failed: ${result.error}`);
       }
 
-      logger.info('Chargeback processed', {
-        commissionId,
-        policyId,
-        chargebackAmount: result.chargeback_amount,
-        monthsPaid: result.months_paid
-      }, 'CommissionStatusService');
+      logger.info(
+        "Chargeback processed",
+        {
+          commissionId,
+          policyId,
+          chargebackAmount: result.chargeback_amount,
+          monthsPaid: result.months_paid,
+        },
+        "CommissionStatusService",
+      );
 
       return {
         success: true,
         commissionId: result.commission_id,
-        chargebackAmount: parseFloat(result.chargeback_amount || '0'),
-        earnedAmount: parseFloat(result.earned_amount || '0'),
+        chargebackAmount: parseFloat(result.chargeback_amount || "0"),
+        earnedAmount: parseFloat(result.earned_amount || "0"),
         monthsPaid: result.months_paid || 0,
-        chargebackReason: result.chargeback_reason || 'Chargeback processed',
-        message: 'Chargeback successfully processed'
+        chargebackReason: result.chargeback_reason || "Chargeback processed",
+        message: "Chargeback successfully processed",
       };
     } catch (error) {
-      logger.error('CommissionStatusService.processChargeback', error instanceof Error ? error : new Error(String(error)));
+      logger.error(
+        "CommissionStatusService.processChargeback",
+        error instanceof Error ? error : new Error(String(error)),
+      );
       throw error;
     }
   }
@@ -329,58 +373,77 @@ class CommissionStatusService {
    * @param commissionId - Commission ID to reverse chargeback for
    * @returns Success indicator
    */
-  async reverseChargeback(commissionId: string): Promise<{ success: boolean; message: string }> {
+  async reverseChargeback(
+    commissionId: string,
+  ): Promise<{ success: boolean; message: string }> {
     try {
       // Get commission details
       // Note: Remote DB uses 'amount' column, not 'commission_amount'
       const { data: commission, error: fetchError } = await supabase
-        .from('commissions')
-        .select('id, status, chargeback_amount, amount')
-        .eq('id', commissionId)
+        .from("commissions")
+        .select("id, status, chargeback_amount, amount")
+        .eq("id", commissionId)
         .single();
 
       if (fetchError) {
-        throw new DatabaseError('reverseChargeback', fetchError);
+        throw new DatabaseError("reverseChargeback", fetchError);
       }
 
       if (!commission) {
-        throw new NotFoundError('Commission', commissionId);
+        throw new NotFoundError("Commission", commissionId);
       }
 
       // Validate commission was charged back
-      if (commission.status !== 'charged_back' && !commission.chargeback_amount) {
-        throw new ValidationError('Cannot reverse chargeback - commission was not charged back', [
-          { field: 'status', message: 'Commission status must be charged_back', value: commission.status }
-        ]);
+      if (
+        commission.status !== "charged_back" &&
+        !commission.chargeback_amount
+      ) {
+        throw new ValidationError(
+          "Cannot reverse chargeback - commission was not charged back",
+          [
+            {
+              field: "status",
+              message: "Commission status must be charged_back",
+              value: commission.status,
+            },
+          ],
+        );
       }
 
       // Reverse the chargeback
       const { error: updateError } = await supabase
-        .from('commissions')
+        .from("commissions")
         .update({
-          status: 'earned', // Restore to earned status
+          status: "earned", // Restore to earned status
           chargeback_amount: 0,
           chargeback_date: null,
           chargeback_reason: null,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
-        .eq('id', commissionId);
+        .eq("id", commissionId);
 
       if (updateError) {
-        throw new DatabaseError('reverseChargeback', updateError);
+        throw new DatabaseError("reverseChargeback", updateError);
       }
 
-      logger.info('Chargeback reversed', {
-        commissionId,
-        originalChargebackAmount: commission.chargeback_amount
-      }, 'CommissionStatusService');
+      logger.info(
+        "Chargeback reversed",
+        {
+          commissionId,
+          originalChargebackAmount: commission.chargeback_amount,
+        },
+        "CommissionStatusService",
+      );
 
       return {
         success: true,
-        message: 'Chargeback successfully reversed'
+        message: "Chargeback successfully reversed",
       };
     } catch (error) {
-      logger.error('CommissionStatusService.reverseChargeback', error instanceof Error ? error : new Error(String(error)));
+      logger.error(
+        "CommissionStatusService.reverseChargeback",
+        error instanceof Error ? error : new Error(String(error)),
+      );
       throw error;
     }
   }
@@ -396,13 +459,13 @@ class CommissionStatusService {
   async getChargebackSummary(userId: string): Promise<ChargebackSummary> {
     try {
       const { data, error } = await supabase
-        .from('commission_chargeback_summary')
-        .select('*')
-        .eq('user_id', userId)
+        .from("commission_chargeback_summary")
+        .select("*")
+        .eq("user_id", userId)
         .maybeSingle();
 
       if (error) {
-        throw new DatabaseError('getChargebackSummary', error);
+        throw new DatabaseError("getChargebackSummary", error);
       }
 
       // If no data found (user has no commissions), return zeros
@@ -415,22 +478,27 @@ class CommissionStatusService {
           chargebackRatePercentage: 0,
           chargedBackCount: 0,
           highRiskCount: 0,
-          atRiskAmount: 0
+          atRiskAmount: 0,
         };
       }
 
       return {
         totalChargebacks: data.total_chargebacks || 0,
-        totalChargebackAmount: parseFloat(data.total_chargeback_amount || '0'),
-        totalAdvances: parseFloat(data.total_advances || '0'),
-        totalEarned: parseFloat(data.total_earned || '0'),
-        chargebackRatePercentage: parseFloat(data.chargeback_rate_percentage || '0'),
+        totalChargebackAmount: parseFloat(data.total_chargeback_amount || "0"),
+        totalAdvances: parseFloat(data.total_advances || "0"),
+        totalEarned: parseFloat(data.total_earned || "0"),
+        chargebackRatePercentage: parseFloat(
+          data.chargeback_rate_percentage || "0",
+        ),
         chargedBackCount: data.charged_back_count || 0,
         highRiskCount: data.high_risk_count || 0,
-        atRiskAmount: parseFloat(data.at_risk_amount || '0')
+        atRiskAmount: parseFloat(data.at_risk_amount || "0"),
       };
     } catch (error) {
-      logger.error('CommissionStatusService.getChargebackSummary', error instanceof Error ? error : new Error(String(error)));
+      logger.error(
+        "CommissionStatusService.getChargebackSummary",
+        error instanceof Error ? error : new Error(String(error)),
+      );
       throw error;
     }
   }
@@ -447,31 +515,34 @@ class CommissionStatusService {
    */
   async getAtRiskCommissions(
     userId: string,
-    riskThreshold: number = 3
+    riskThreshold: number = 3,
   ): Promise<AtRiskCommission[]> {
     try {
-      const { data, error } = await supabase.rpc('get_at_risk_commissions', {
+      const { data, error } = await supabase.rpc("get_at_risk_commissions", {
         puser_id: userId,
-        p_risk_threshold: riskThreshold
+        p_risk_threshold: riskThreshold,
       });
 
       if (error) {
-        throw new DatabaseError('getAtRiskCommissions', error);
+        throw new DatabaseError("getAtRiskCommissions", error);
       }
 
       return (data || []).map((item: any) => ({
         commissionId: item.commission_id,
         policyId: item.policy_id,
-        advanceAmount: parseFloat(item.advance_amount || '0'),
+        advanceAmount: parseFloat(item.advance_amount || "0"),
         monthsPaid: item.months_paid || 0,
-        earnedAmount: parseFloat(item.earned_amount || '0'),
-        unearnedAmount: parseFloat(item.unearned_amount || '0'),
-        riskLevel: item.risk_level as 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW',
+        earnedAmount: parseFloat(item.earned_amount || "0"),
+        unearnedAmount: parseFloat(item.unearned_amount || "0"),
+        riskLevel: item.risk_level as "CRITICAL" | "HIGH" | "MEDIUM" | "LOW",
         effectiveDate: new Date(item.effective_date),
-        policyStatus: item.policy_status
+        policyStatus: item.policy_status,
       }));
     } catch (error) {
-      logger.error('CommissionStatusService.getAtRiskCommissions', error instanceof Error ? error : new Error(String(error)));
+      logger.error(
+        "CommissionStatusService.getAtRiskCommissions",
+        error instanceof Error ? error : new Error(String(error)),
+      );
       throw error;
     }
   }

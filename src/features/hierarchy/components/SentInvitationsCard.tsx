@@ -1,14 +1,24 @@
 // src/features/hierarchy/components/SentInvitationsCard.tsx
 // Card showing invitations sent by the current user
 
-import {useState} from 'react';
-import {useSentInvitations, useCancelInvitation} from '../../../hooks/hierarchy/useInvitations';
-import {Button} from '../../../components/ui/button';
-import {Ban, Loader2, ChevronDown, ChevronUp, Mail, Clock, XCircle} from 'lucide-react';
-import {formatDistanceToNow} from 'date-fns';
+import { useState } from "react";
+import {
+  useSentInvitations,
+  useCancelInvitation,
+} from "../../../hooks/hierarchy/useInvitations";
+import { Button } from "../../../components/ui/button";
+import {
+  Loader2,
+  ChevronDown,
+  ChevronUp,
+  Mail,
+  Clock,
+  XCircle,
+} from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
 
 export function SentInvitationsCard() {
-  const { data: sentInvitations, isLoading } = useSentInvitations('pending');
+  const { data: sentInvitations, isLoading } = useSentInvitations("pending");
   const cancelMutation = useCancelInvitation();
   const [expanded, setExpanded] = useState(true);
 
@@ -17,7 +27,7 @@ export function SentInvitationsCard() {
   }
 
   const handleCancel = async (invitationId: string) => {
-    if (confirm('Are you sure you want to cancel this invitation?')) {
+    if (confirm("Are you sure you want to cancel this invitation?")) {
       await cancelMutation.mutateAsync({ invitation_id: invitationId });
     }
   };
@@ -30,9 +40,7 @@ export function SentInvitationsCard() {
       >
         <div className="flex items-center gap-2">
           <Mail className="h-4 w-4 text-muted-foreground" />
-          <h3 className="text-sm font-semibold">
-            Pending Invitations Sent
-          </h3>
+          <h3 className="text-sm font-semibold">Pending Invitations Sent</h3>
           <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">
             {sentInvitations.length}
           </span>
@@ -77,12 +85,17 @@ export function SentInvitationsCard() {
                     <div className="flex items-center gap-1">
                       <Clock className="h-3 w-3" />
                       <span>
-                        {formatDistanceToNow(new Date(invitation.created_at), { addSuffix: true })}
+                        {formatDistanceToNow(new Date(invitation.created_at), {
+                          addSuffix: true,
+                        })}
                       </span>
                     </div>
                     {!isExpired && (
                       <span>
-                        Expires {formatDistanceToNow(new Date(invitation.expires_at), { addSuffix: true })}
+                        Expires{" "}
+                        {formatDistanceToNow(new Date(invitation.expires_at), {
+                          addSuffix: true,
+                        })}
                       </span>
                     )}
                   </div>

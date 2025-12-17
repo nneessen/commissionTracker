@@ -1,13 +1,27 @@
 // src/services/targets/targetsService.ts
 
-import {supabase, TABLES} from '../base/supabase';
-import type {UserTargets, CreateUserTargetsData, UpdateUserTargetsData, TargetProgress, AllTargetsProgress, ActualMetrics, ProgressStatus, PaceMetrics, Achievement, MilestoneCheck} from '../../types/targets.types';
-import type {Tables, TablesInsert, TablesUpdate} from '../../types/database.types';
+import { supabase, TABLES } from "../base/supabase";
+import type {
+  UserTargets,
+  UpdateUserTargetsData,
+  TargetProgress,
+  AllTargetsProgress,
+  ActualMetrics,
+  ProgressStatus,
+  PaceMetrics,
+  Achievement,
+  MilestoneCheck,
+} from "../../types/targets.types";
+import type {
+  Tables,
+  TablesInsert,
+  TablesUpdate,
+} from "../../types/database.types";
 
 // Database row type for user_targets
-type UserTargetsRow = Tables<'user_targets'>;
-type UserTargetsInsert = TablesInsert<'user_targets'>;
-type UserTargetsUpdate = TablesUpdate<'user_targets'>;
+type UserTargetsRow = Tables<"user_targets">;
+type UserTargetsInsert = TablesInsert<"user_targets">;
+type UserTargetsUpdate = TablesUpdate<"user_targets">;
 
 /**
  * Targets Service
@@ -23,12 +37,12 @@ class TargetsService {
   async getUserTargets(userId: string): Promise<UserTargets> {
     const { data, error } = await supabase
       .from(TABLES.USER_TARGETS)
-      .select('*')
-      .eq('user_id', userId)
+      .select("*")
+      .eq("user_id", userId)
       .single();
 
     // If no targets exist, create default ones
-    if (error?.code === 'PGRST116' || !data) {
+    if (error?.code === "PGRST116" || !data) {
       return this.createDefaultTargets(userId);
     }
 
@@ -78,7 +92,7 @@ class TargetsService {
    */
   async updateUserTargets(
     userId: string,
-    updates: UpdateUserTargetsData
+    updates: UpdateUserTargetsData,
   ): Promise<UserTargets> {
     // Convert camelCase to snake_case for database
     const dbUpdates: Partial<UserTargetsUpdate> = {};
@@ -115,7 +129,7 @@ class TargetsService {
     const { data, error } = await supabase
       .from(TABLES.USER_TARGETS)
       .update(dbUpdates)
-      .eq('user_id', userId)
+      .eq("user_id", userId)
       .select()
       .single();
 
@@ -133,7 +147,7 @@ class TargetsService {
     target: number,
     actual: number,
     daysRemaining: number,
-    daysTotal: number
+    daysTotal: number,
   ): TargetProgress {
     const percentage = (actual / target) * 100;
     const remaining = Math.max(0, target - actual);
@@ -155,13 +169,13 @@ class TargetsService {
     let status: ProgressStatus;
 
     if (percentage >= expectedProgress + 10) {
-      status = 'ahead';
+      status = "ahead";
     } else if (percentage >= expectedProgress - 10) {
-      status = 'on-track';
+      status = "on-track";
     } else if (percentage >= expectedProgress - 25) {
-      status = 'behind';
+      status = "behind";
     } else {
-      status = 'critical';
+      status = "critical";
     }
 
     return {
@@ -180,26 +194,40 @@ class TargetsService {
    */
   calculateAllProgress(
     targets: UserTargets,
-    actuals: ActualMetrics
+    actuals: ActualMetrics,
   ): AllTargetsProgress {
     const now = new Date();
     const yearStart = new Date(now.getFullYear(), 0, 1);
     const _yearEnd = new Date(now.getFullYear(), 11, 31);
     const _monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
     const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-    const quarterStart = new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1);
-    const quarterEnd = new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3 + 3, 0);
+    const quarterStart = new Date(
+      now.getFullYear(),
+      Math.floor(now.getMonth() / 3) * 3,
+      1,
+    );
+    const quarterEnd = new Date(
+      now.getFullYear(),
+      Math.floor(now.getMonth() / 3) * 3 + 3,
+      0,
+    );
 
     const daysInYear = 365;
-    const daysElapsedInYear = Math.floor((now.getTime() - yearStart.getTime()) / (1000 * 60 * 60 * 24));
+    const daysElapsedInYear = Math.floor(
+      (now.getTime() - yearStart.getTime()) / (1000 * 60 * 60 * 24),
+    );
     const daysRemainingInYear = daysInYear - daysElapsedInYear;
 
     const daysInMonth = monthEnd.getDate();
     const daysElapsedInMonth = now.getDate();
     const daysRemainingInMonth = daysInMonth - daysElapsedInMonth;
 
-    const daysInQuarter = Math.floor((quarterEnd.getTime() - quarterStart.getTime()) / (1000 * 60 * 60 * 24));
-    const daysElapsedInQuarter = Math.floor((now.getTime() - quarterStart.getTime()) / (1000 * 60 * 60 * 24));
+    const daysInQuarter = Math.floor(
+      (quarterEnd.getTime() - quarterStart.getTime()) / (1000 * 60 * 60 * 24),
+    );
+    const daysElapsedInQuarter = Math.floor(
+      (now.getTime() - quarterStart.getTime()) / (1000 * 60 * 60 * 24),
+    );
     const daysRemainingInQuarter = daysInQuarter - daysElapsedInQuarter;
 
     // Calculate income progress
@@ -207,21 +235,21 @@ class TargetsService {
       targets.annualIncomeTarget,
       actuals.ytdIncome,
       daysRemainingInYear,
-      daysInYear
+      daysInYear,
     );
 
     const monthlyIncome = this.calculateTargetProgress(
       targets.monthlyIncomeTarget,
       actuals.mtdIncome,
       daysRemainingInMonth,
-      daysInMonth
+      daysInMonth,
     );
 
     const quarterlyIncome = this.calculateTargetProgress(
       targets.quarterlyIncomeTarget,
       actuals.qtdIncome,
       daysRemainingInQuarter,
-      daysInQuarter
+      daysInQuarter,
     );
 
     // Calculate policy progress
@@ -229,14 +257,14 @@ class TargetsService {
       targets.annualPoliciesTarget,
       actuals.ytdPolicies,
       daysRemainingInYear,
-      daysInYear
+      daysInYear,
     );
 
     const monthlyPolicies = this.calculateTargetProgress(
       targets.monthlyPoliciesTarget,
       actuals.mtdPolicies,
       daysRemainingInMonth,
-      daysInMonth
+      daysInMonth,
     );
 
     // REMOVED: avgPremium target progress - always calculated from actual policies
@@ -245,7 +273,7 @@ class TargetsService {
       actuals.currentAvgPremium, // Use current as both target and actual
       actuals.currentAvgPremium,
       0, // Not time-based
-      1
+      1,
     );
 
     // Calculate persistency progress (higher is better, so we treat it differently)
@@ -253,14 +281,14 @@ class TargetsService {
       targets.persistency13MonthTarget,
       actuals.persistency13Month,
       0, // Not time-based
-      1
+      1,
     );
 
     const persistency25Month = this.calculateTargetProgress(
       targets.persistency25MonthTarget,
       actuals.persistency25Month,
       0, // Not time-based
-      1
+      1,
     );
 
     // Calculate expense progress (lower is better, so invert the logic)
@@ -268,14 +296,14 @@ class TargetsService {
       targets.monthlyExpenseTarget,
       actuals.mtdExpenses,
       daysRemainingInMonth,
-      daysInMonth
+      daysInMonth,
     );
 
     const expenseRatio = this.calculateTargetProgress(
       targets.expenseRatioTarget,
       actuals.currentExpenseRatio,
       0, // Not time-based
-      1
+      1,
     );
 
     // Calculate overall health score (0-100)
@@ -317,11 +345,11 @@ class TargetsService {
     // Add scores for each target (weight them appropriately)
     scores.push(Math.min(100, progress.annualIncome.percentage) * 0.25); // 25% weight
     scores.push(Math.min(100, progress.monthlyIncome.percentage) * 0.15); // 15% weight
-    scores.push(Math.min(100, progress.annualPolicies.percentage) * 0.20); // 20% weight
-    scores.push(Math.min(100, progress.monthlyPolicies.percentage) * 0.10); // 10% weight
-    scores.push(Math.min(100, progress.avgPremium.percentage) * 0.10); // 10% weight
-    scores.push(Math.min(100, progress.persistency13Month.percentage) * 0.10); // 10% weight
-    scores.push(Math.min(100, progress.persistency25Month.percentage) * 0.10); // 10% weight
+    scores.push(Math.min(100, progress.annualPolicies.percentage) * 0.2); // 20% weight
+    scores.push(Math.min(100, progress.monthlyPolicies.percentage) * 0.1); // 10% weight
+    scores.push(Math.min(100, progress.avgPremium.percentage) * 0.1); // 10% weight
+    scores.push(Math.min(100, progress.persistency13Month.percentage) * 0.1); // 10% weight
+    scores.push(Math.min(100, progress.persistency25Month.percentage) * 0.1); // 10% weight
 
     // Sum all weighted scores
     const totalScore = scores.reduce((sum, score) => sum + score, 0);
@@ -334,71 +362,81 @@ class TargetsService {
    */
   async checkMilestones(
     userId: string,
-    progress: AllTargetsProgress
+    progress: AllTargetsProgress,
   ): Promise<MilestoneCheck> {
     const targets = await this.getUserTargets(userId);
     const existingAchievements = targets.achievements;
     const newAchievements: Achievement[] = [];
 
     // Check income milestones
-    if (progress.annualIncome.percentage >= 100 &&
-        !this.hasAchievement(existingAchievements, 'income', 'gold')) {
+    if (
+      progress.annualIncome.percentage >= 100 &&
+      !this.hasAchievement(existingAchievements, "income", "gold")
+    ) {
       newAchievements.push({
         id: crypto.randomUUID(),
-        type: 'income',
-        level: 'gold',
-        name: 'Annual Income Goal Achieved',
-        description: 'Reached your annual income target!',
+        type: "income",
+        level: "gold",
+        name: "Annual Income Goal Achieved",
+        description: "Reached your annual income target!",
         earnedDate: new Date(),
         value: progress.annualIncome.actual,
       });
-    } else if (progress.annualIncome.percentage >= 75 &&
-               !this.hasAchievement(existingAchievements, 'income', 'silver')) {
+    } else if (
+      progress.annualIncome.percentage >= 75 &&
+      !this.hasAchievement(existingAchievements, "income", "silver")
+    ) {
       newAchievements.push({
         id: crypto.randomUUID(),
-        type: 'income',
-        level: 'silver',
-        name: '75% Income Progress',
-        description: 'Reached 75% of your annual income target!',
+        type: "income",
+        level: "silver",
+        name: "75% Income Progress",
+        description: "Reached 75% of your annual income target!",
         earnedDate: new Date(),
         value: progress.annualIncome.actual,
       });
-    } else if (progress.annualIncome.percentage >= 50 &&
-               !this.hasAchievement(existingAchievements, 'income', 'bronze')) {
+    } else if (
+      progress.annualIncome.percentage >= 50 &&
+      !this.hasAchievement(existingAchievements, "income", "bronze")
+    ) {
       newAchievements.push({
         id: crypto.randomUUID(),
-        type: 'income',
-        level: 'bronze',
-        name: 'Halfway There!',
-        description: 'Reached 50% of your annual income target!',
+        type: "income",
+        level: "bronze",
+        name: "Halfway There!",
+        description: "Reached 50% of your annual income target!",
         earnedDate: new Date(),
         value: progress.annualIncome.actual,
       });
     }
 
     // Check policy milestones
-    if (progress.annualPolicies.percentage >= 100 &&
-        !this.hasAchievement(existingAchievements, 'policies', 'gold')) {
+    if (
+      progress.annualPolicies.percentage >= 100 &&
+      !this.hasAchievement(existingAchievements, "policies", "gold")
+    ) {
       newAchievements.push({
         id: crypto.randomUUID(),
-        type: 'policies',
-        level: 'gold',
-        name: 'Policy Goal Achieved',
-        description: 'Reached your annual policy target!',
+        type: "policies",
+        level: "gold",
+        name: "Policy Goal Achieved",
+        description: "Reached your annual policy target!",
         earnedDate: new Date(),
         value: progress.annualPolicies.actual,
       });
     }
 
     // Check persistency milestones
-    if (progress.persistency13Month.percentage >= 100 &&
-        !this.hasAchievement(existingAchievements, 'persistency', 'gold')) {
+    if (
+      progress.persistency13Month.percentage >= 100 &&
+      !this.hasAchievement(existingAchievements, "persistency", "gold")
+    ) {
       newAchievements.push({
         id: crypto.randomUUID(),
-        type: 'persistency',
-        level: 'gold',
-        name: 'Persistency Champion',
-        description: 'Exceeded your 13-month persistency target!',
+        type: "persistency",
+        level: "gold",
+        name: "Persistency Champion",
+        description: "Exceeded your 13-month persistency target!",
         earnedDate: new Date(),
         value: progress.persistency13Month.actual,
       });
@@ -425,9 +463,9 @@ class TargetsService {
   private hasAchievement(
     achievements: Achievement[],
     type: string,
-    level: string
+    level: string,
   ): boolean {
-    return achievements.some(a => a.type === type && a.level === level);
+    return achievements.some((a) => a.type === type && a.level === level);
   }
 
   /**
@@ -444,7 +482,7 @@ class TargetsService {
   private mapRowToUserTargets(row: UserTargetsRow): UserTargets {
     return {
       id: row.id,
-      userId: row.user_id || '',
+      userId: row.user_id || "",
       annualIncomeTarget: row.annual_income_target || 0,
       monthlyIncomeTarget: row.monthly_income_target || 0,
       quarterlyIncomeTarget: row.quarterly_income_target || 0,
@@ -457,9 +495,11 @@ class TargetsService {
       monthlyExpenseTarget: row.monthly_expense_target || 0,
       expenseRatioTarget: row.expense_ratio_target || 0,
       achievements: (row.achievements as unknown as Achievement[]) || [],
-      lastMilestoneDate: row.last_milestone_date ? new Date(row.last_milestone_date) : null,
-      createdAt: new Date(row.created_at || ''),
-      updatedAt: new Date(row.updated_at || ''),
+      lastMilestoneDate: row.last_milestone_date
+        ? new Date(row.last_milestone_date)
+        : null,
+      createdAt: new Date(row.created_at || ""),
+      updatedAt: new Date(row.updated_at || ""),
     };
   }
 }

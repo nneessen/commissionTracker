@@ -1,12 +1,12 @@
 // src/services/reports/forecastingService.ts
 
-import {supabase} from '../base/supabase';
+import { supabase } from "../base/supabase";
 
 export interface ForecastResult {
   nextMonth: number;
   threeMonth: number;
   confidence: number; // 0-1
-  trend: 'up' | 'down' | 'stable';
+  trend: "up" | "down" | "stable";
   historicalMonths: number;
   warnings: string[];
 }
@@ -40,14 +40,17 @@ export class ForecastingService {
         nextMonth: 0,
         threeMonth: 0,
         confidence: 0,
-        trend: 'stable',
+        trend: "stable",
         historicalMonths: monthlyData.length,
-        warnings: ['Insufficient data: Need at least 3 months of commission history for forecasting'],
+        warnings: [
+          "Insufficient data: Need at least 3 months of commission history for forecasting",
+        ],
       };
     }
 
     // Calculate linear regression
-    const { slope, intercept, rSquared } = this.calculateLinearRegression(monthlyData);
+    const { slope, intercept, rSquared } =
+      this.calculateLinearRegression(monthlyData);
 
     // Project forward
     const nextMonthIndex = monthlyData.length;
@@ -58,7 +61,12 @@ export class ForecastingService {
     const threeMonth = nextMonth + month2 + month3;
 
     // Calculate confidence
-    const confidence = this.calculateConfidence(monthlyData, slope, intercept, rSquared);
+    const confidence = this.calculateConfidence(
+      monthlyData,
+      slope,
+      intercept,
+      rSquared,
+    );
 
     // Determine trend
     const trend = this.determineTrend(slope);
@@ -85,15 +93,15 @@ export class ForecastingService {
     twelveMonthsAgo.setDate(1); // Start of month
 
     const { data, error } = await supabase
-      .from('commissions')
-      .select('payment_date, amount, status')
-      .eq('user_id', userId)
-      .eq('status', 'paid')
-      .gte('payment_date', twelveMonthsAgo.toISOString())
-      .order('payment_date', { ascending: true });
+      .from("commissions")
+      .select("payment_date, amount, status")
+      .eq("user_id", userId)
+      .eq("status", "paid")
+      .gte("payment_date", twelveMonthsAgo.toISOString())
+      .order("payment_date", { ascending: true });
 
     if (error) {
-      console.error('Error fetching commission history:', error);
+      console.error("Error fetching commission history:", error);
       return [];
     }
 
@@ -106,7 +114,7 @@ export class ForecastingService {
   private static aggregateByMonth(commissions: any[]): MonthlyData[] {
     const monthlyMap: Record<string, number> = {};
 
-    commissions.forEach(commission => {
+    commissions.forEach((commission) => {
       const month = commission.payment_date.substring(0, 7); // YYYY-MM
       monthlyMap[month] = (monthlyMap[month] || 0) + (commission.amount || 0);
     });
@@ -139,16 +147,14 @@ export class ForecastingService {
     let sumY = 0;
     let sumXY = 0;
     let sumX2 = 0;
-    const sumY2 = 0;
 
-    monthlyData.forEach(data => {
+    monthlyData.forEach((data) => {
       const x = data.monthIndex;
       const y = data.total;
       sumX += x;
       sumY += y;
       sumXY += x * y;
       sumX2 += x * x;
-      // sumY2 += y * y;  // Unused in current calculation
     });
 
     // Calculate slope and intercept
@@ -160,13 +166,13 @@ export class ForecastingService {
     let ssTotal = 0;
     let ssResidual = 0;
 
-    monthlyData.forEach(data => {
+    monthlyData.forEach((data) => {
       const predicted = slope * data.monthIndex + intercept;
       ssTotal += (data.total - meanY) ** 2;
       ssResidual += (data.total - predicted) ** 2;
     });
 
-    const rSquared = ssTotal > 0 ? 1 - (ssResidual / ssTotal) : 0;
+    const rSquared = ssTotal > 0 ? 1 - ssResidual / ssTotal : 0;
 
     return { slope, intercept, rSquared };
   }
@@ -178,7 +184,9 @@ export class ForecastingService {
    * - Amount of historical data
    */
   private static calculateConfidence(
-    monthlyData: MonthlyData[], _slope: number, _intercept: number,
+    monthlyData: MonthlyData[],
+    _slope: number,
+    _intercept: number,
     rSquared: number,
   ): number {
     const n = monthlyData.length;
@@ -187,16 +195,17 @@ export class ForecastingService {
     let confidence = rSquared;
 
     // Calculate coefficient of variation (std dev / mean)
-    const values = monthlyData.map(d => d.total);
+    const values = monthlyData.map((d) => d.total);
     const mean = values.reduce((sum, val) => sum + val, 0) / n;
-    const variance = values.reduce((sum, val) => sum + (val - mean) ** 2, 0) / n;
+    const variance =
+      values.reduce((sum, val) => sum + (val - mean) ** 2, 0) / n;
     const stdDev = Math.sqrt(variance);
     const coefficientOfVariation = mean > 0 ? stdDev / mean : 1;
 
     // Lower variance = higher confidence
     // CV < 0.2 = very stable, CV > 0.5 = very volatile
     const varianceFactor = Math.max(0, 1 - coefficientOfVariation);
-    confidence *= 0.7 + (varianceFactor * 0.3);
+    confidence *= 0.7 + varianceFactor * 0.3;
 
     // More data = higher confidence
     // 3 months = 0.6 factor, 12+ months = 1.0 factor
@@ -210,12 +219,12 @@ export class ForecastingService {
   /**
    * Determine trend direction based on slope
    */
-  private static determineTrend(slope: number): 'up' | 'down' | 'stable' {
+  private static determineTrend(slope: number): "up" | "down" | "stable" {
     const threshold = 50; // $50/month change considered meaningful
 
-    if (slope > threshold) return 'up';
-    if (slope < -threshold) return 'down';
-    return 'stable';
+    if (slope > threshold) return "up";
+    if (slope < -threshold) return "down";
+    return "stable";
   }
 
   /**
@@ -230,27 +239,38 @@ export class ForecastingService {
 
     // Limited data warning
     if (monthlyData.length < 6) {
-      warnings.push('Limited historical data (less than 6 months). Predictions may be less accurate.');
+      warnings.push(
+        "Limited historical data (less than 6 months). Predictions may be less accurate.",
+      );
     }
 
     // Low confidence warning
     if (confidence < 0.5) {
-      warnings.push('Low confidence due to high variance in commission amounts.');
+      warnings.push(
+        "Low confidence due to high variance in commission amounts.",
+      );
     }
 
     // Poor fit warning
     if (rSquared < 0.5) {
-      warnings.push('Historical data does not follow a clear trend. Predictions based on average.');
+      warnings.push(
+        "Historical data does not follow a clear trend. Predictions based on average.",
+      );
     }
 
     // Check for recent volatility (last 3 months vs prior)
     if (monthlyData.length >= 6) {
-      const recentAvg = monthlyData.slice(-3).reduce((sum, d) => sum + d.total, 0) / 3;
-      const priorAvg = monthlyData.slice(0, -3).reduce((sum, d) => sum + d.total, 0) / (monthlyData.length - 3);
+      const recentAvg =
+        monthlyData.slice(-3).reduce((sum, d) => sum + d.total, 0) / 3;
+      const priorAvg =
+        monthlyData.slice(0, -3).reduce((sum, d) => sum + d.total, 0) /
+        (monthlyData.length - 3);
       const change = Math.abs((recentAvg - priorAvg) / priorAvg);
 
       if (change > 0.5) {
-        warnings.push('Recent commission pattern differs significantly from historical average.');
+        warnings.push(
+          "Recent commission pattern differs significantly from historical average.",
+        );
       }
     }
 

@@ -1,5 +1,9 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
-import {AdvancedTimePeriod, getAdvancedDateRange} from '../components/TimePeriodSelector';
+import React, { createContext, useContext, useState, ReactNode } from "react";
+import {
+  AdvancedTimePeriod,
+  AdvancedDateRange,
+  getAdvancedDateRange,
+} from "../components/TimePeriodSelector";
 
 interface DateRangeContextValue {
   timePeriod: AdvancedTimePeriod;
@@ -9,13 +13,12 @@ interface DateRangeContextValue {
     endDate: Date;
   };
   setCustomRange: (range: { startDate: Date; endDate: Date }) => void;
-  dateRange: {
-    startDate: Date;
-    endDate: Date;
-  };
+  dateRange: AdvancedDateRange;
 }
 
-const AnalyticsDateContext = createContext<DateRangeContextValue | undefined>(undefined);
+const AnalyticsDateContext = createContext<DateRangeContextValue | undefined>(
+  undefined,
+);
 
 // Helper function to create stable initial dates
 function getInitialCustomRange() {
@@ -30,7 +33,7 @@ function getInitialCustomRange() {
 }
 
 export function AnalyticsDateProvider({ children }: { children: ReactNode }) {
-  const [timePeriod, setTimePeriod] = useState<AdvancedTimePeriod>('MTD');
+  const [timePeriod, setTimePeriod] = useState<AdvancedTimePeriod>("MTD");
   const [customRange, setCustomRange] = useState<{
     startDate: Date;
     endDate: Date;
@@ -57,7 +60,9 @@ export function AnalyticsDateProvider({ children }: { children: ReactNode }) {
 export function useAnalyticsDateRange() {
   const context = useContext(AnalyticsDateContext);
   if (context === undefined) {
-    throw new Error('useAnalyticsDateRange must be used within an AnalyticsDateProvider');
+    throw new Error(
+      "useAnalyticsDateRange must be used within an AnalyticsDateProvider",
+    );
   }
   return context;
 }

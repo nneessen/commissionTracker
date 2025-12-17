@@ -1,10 +1,10 @@
 // src/features/recruiting/hooks/useRecruitDocuments.ts
-import {useQuery, useMutation, useQueryClient} from '@tanstack/react-query';
-import {recruitingService} from '@/services/recruiting';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { recruitingService } from "@/services/recruiting";
 
 export function useRecruitDocuments(recruitId: string | undefined) {
   return useQuery({
-    queryKey: ['recruits', recruitId, 'documents'],
+    queryKey: ["recruits", recruitId, "documents"],
     queryFn: () => recruitingService.getRecruitDocuments(recruitId!),
     enabled: !!recruitId,
   });
@@ -38,10 +38,12 @@ export function useUploadDocument() {
         documentName,
         uploadedBy,
         required,
-        expiresAt
+        expiresAt,
       ),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['recruits', variables.recruitId, 'documents'] });
+      queryClient.invalidateQueries({
+        queryKey: ["recruits", variables.recruitId, "documents"],
+      });
     },
   });
 }
@@ -50,10 +52,18 @@ export function useDeleteDocument() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, storagePath, recruitId }: { id: string; storagePath: string; recruitId: string }) =>
-      recruitingService.deleteDocument(id, storagePath),
+    mutationFn: ({
+      id,
+      storagePath,
+    }: {
+      id: string;
+      storagePath: string;
+      recruitId: string;
+    }) => recruitingService.deleteDocument(id, storagePath),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['recruits', variables.recruitId, 'documents'] });
+      queryClient.invalidateQueries({
+        queryKey: ["recruits", variables.recruitId, "documents"],
+      });
     },
   });
 }
@@ -65,22 +75,24 @@ export function useUpdateDocumentStatus() {
     mutationFn: ({
       id,
       status,
-      approvalNotes, recruitId,
+      approvalNotes,
     }: {
       id: string;
-      status: 'pending' | 'received' | 'approved' | 'rejected';
+      status: "pending" | "received" | "approved" | "rejected";
       approvalNotes?: string;
       recruitId: string;
     }) => recruitingService.updateDocumentStatus(id, status, approvalNotes),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['recruits', variables.recruitId, 'documents'] });
+      queryClient.invalidateQueries({
+        queryKey: ["recruits", variables.recruitId, "documents"],
+      });
     },
   });
 }
 
 export function useGetDocumentUrl(storagePath: string | null) {
   return useQuery({
-    queryKey: ['document-url', storagePath],
+    queryKey: ["document-url", storagePath],
     queryFn: () => recruitingService.getDocumentUrl(storagePath!),
     enabled: !!storagePath,
   });

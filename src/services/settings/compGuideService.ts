@@ -1,8 +1,6 @@
 // src/services/settings/compGuideService.ts
-import {logger} from "../base/logger";
-
-import {supabase} from "../base/supabase";
-import {Database} from "../../types/database.types";
+import { supabase } from "../base/supabase";
+import { Database } from "../../types/database.types";
 
 type CompGuideRow = Database["public"]["Tables"]["comp_guide"]["Row"];
 type CompGuideInsert = Database["public"]["Tables"]["comp_guide"]["Insert"];
@@ -377,8 +375,9 @@ class CompGuideService {
    */
   async getAllCommissionData() {
     const { data, error } = await supabase
-      .from('carriers')
-      .select(`
+      .from("carriers")
+      .select(
+        `
         id,
         name,
         products!products_carrier_id_fkey (
@@ -393,19 +392,20 @@ class CompGuideService {
           contract_level,
           commission_percentage
         )
-      `)
-      .eq('is_active', true)
-      .order('name');
+      `,
+      )
+      .eq("is_active", true)
+      .order("name");
 
     if (error) throw error;
-    
+
     // Transform the data into a grid-friendly format
     const gridData = [];
-    
+
     for (const carrier of data || []) {
       // Get unique products
       const productsMap = new Map();
-      
+
       // Add products from products table
       for (const product of carrier.products || []) {
         if (!productsMap.has(product.id)) {
@@ -416,50 +416,57 @@ class CompGuideService {
             productName: product.name,
             productType: product.product_type,
             isActive: product.is_active,
-            rates: {}
+            rates: {},
           });
         }
       }
-      
+
       // Add commission rates to products
       for (const compEntry of carrier.comp_guide || []) {
         if (compEntry.product_id && productsMap.has(compEntry.product_id)) {
           const product = productsMap.get(compEntry.product_id);
-          product.rates[compEntry.contract_level] = compEntry.commission_percentage;
+          product.rates[compEntry.contract_level] =
+            compEntry.commission_percentage;
         }
       }
-      
+
       // Add products without specific product_id (carrier-level rates)
       const carrierLevelRates = (carrier.comp_guide || [])
         .filter((entry: any) => !entry.product_id)
-        .reduce((acc: Record<number, number>, entry: any) => {
-          acc[entry.contract_level] = entry.commission_percentage;
-          return acc;
-        }, {} as Record<number, number>);
-      
+        .reduce(
+          (acc: Record<number, number>, entry: any) => {
+            acc[entry.contract_level] = entry.commission_percentage;
+            return acc;
+          },
+          {} as Record<number, number>,
+        );
+
       // If there are carrier-level rates but no products, add a placeholder
       if (Object.keys(carrierLevelRates).length > 0 && productsMap.size === 0) {
         gridData.push({
           carrierId: carrier.id,
           carrierName: carrier.name,
           productId: null,
-          productName: 'Default Rates',
+          productName: "Default Rates",
           productType: null,
           isActive: true,
-          rates: carrierLevelRates
+          rates: carrierLevelRates,
         });
       }
-      
+
       // Add all products to grid data
       for (const product of productsMap.values()) {
         // If product has no rates, use carrier-level rates
-        if (Object.keys(product.rates).length === 0 && Object.keys(carrierLevelRates).length > 0) {
+        if (
+          Object.keys(product.rates).length === 0 &&
+          Object.keys(carrierLevelRates).length > 0
+        ) {
           product.rates = carrierLevelRates;
         }
         gridData.push(product);
       }
     }
-    
+
     return gridData;
   }
 
@@ -482,4 +489,3 @@ class CompGuideService {
 }
 
 export const compGuideService = new CompGuideService();
-

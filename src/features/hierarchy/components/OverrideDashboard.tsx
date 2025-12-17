@@ -1,15 +1,27 @@
 // src/features/hierarchy/components/OverrideDashboard.tsx
 
-import React, { useState } from 'react';
-import {AlertCircle, DollarSign, Clock, TrendingUp, CheckCircle} from 'lucide-react';
-import {Card, CardHeader, CardTitle, CardContent} from '@/components/ui/card';
-import {Badge} from '@/components/ui/badge';
-import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from '@/components/ui/table';
-import {Empty, EmptyHeader, EmptyTitle, EmptyDescription} from '@/components/ui/empty';
-import {formatCurrency, formatDate} from '@/lib/format';
-import {cn} from '@/lib/utils';
-import {useMyOverrides, useMyOverrideSummary} from '@/hooks';
-import type {OverrideFilters} from '@/types/hierarchy.types';
+import React, { useState } from "react";
+import { DollarSign, Clock, TrendingUp, CheckCircle } from "lucide-react";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Empty,
+  EmptyHeader,
+  EmptyTitle,
+  EmptyDescription,
+} from "@/components/ui/empty";
+import { formatCurrency, formatDate } from "@/lib/format";
+import { cn } from "@/lib/utils";
+import { useMyOverrides, useMyOverrideSummary } from "@/hooks";
+import type { OverrideFilters } from "@/types/hierarchy.types";
 
 interface OverrideDashboardProps {
   className?: string;
@@ -20,21 +32,16 @@ interface OverrideDashboardProps {
  */
 function OverrideStatusBadge({ status }: { status: string }) {
   const variants: Record<string, { label: string }> = {
-    pending: { label: 'Pending' },
-    earned: { label: 'Earned' },
-    paid: { label: 'Paid' },
-    chargedback: { label: 'Chargedback' },
+    pending: { label: "Pending" },
+    earned: { label: "Earned" },
+    paid: { label: "Paid" },
+    chargedback: { label: "Chargedback" },
   };
 
   const config = variants[status] || variants.pending;
 
-  return (
-    <Badge variant="outline">
-      {config.label}
-    </Badge>
-  );
+  return <Badge variant="outline">{config.label}</Badge>;
 }
-
 
 /**
  * OverrideDashboard - Displays override commission table with filters and summary cards
@@ -47,38 +54,48 @@ export function OverrideDashboard({ className }: OverrideDashboardProps) {
   const { data: summary } = useMyOverrideSummary();
 
   return (
-    <div className={cn('space-y-4', className)}>
+    <div className={cn("space-y-4", className)}>
       {/* Summary Stats - Consolidated Single Box */}
       <div className="rounded-lg p-4 bg-gradient-to-br from-blue-50/50 to-violet-50/50 shadow-sm">
-        <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-3">Override Summary</h3>
+        <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+          Override Summary
+        </h3>
         <div className="space-y-2">
           <div className="flex justify-between items-baseline">
             <span className="text-xs text-muted-foreground flex items-center gap-1.5">
               <DollarSign className="h-3.5 w-3.5 text-blue-600" />
               Total Override Amount
             </span>
-            <span className="text-lg font-bold font-mono">{formatCurrency(summary?.total_override_amount || 0)}</span>
+            <span className="text-lg font-bold font-mono">
+              {formatCurrency(summary?.total_override_amount || 0)}
+            </span>
           </div>
           <div className="flex justify-between items-baseline">
             <span className="text-xs text-muted-foreground flex items-center gap-1.5">
               <Clock className="h-3.5 w-3.5 text-amber-600" />
               Pending
             </span>
-            <span className="text-lg font-bold font-mono">{formatCurrency(summary?.pending_amount || 0)}</span>
+            <span className="text-lg font-bold font-mono">
+              {formatCurrency(summary?.pending_amount || 0)}
+            </span>
           </div>
           <div className="flex justify-between items-baseline">
             <span className="text-xs text-muted-foreground flex items-center gap-1.5">
               <TrendingUp className="h-3.5 w-3.5 text-emerald-600" />
               Earned
             </span>
-            <span className="text-lg font-bold font-mono">{formatCurrency(summary?.earned_amount || 0)}</span>
+            <span className="text-lg font-bold font-mono">
+              {formatCurrency(summary?.earned_amount || 0)}
+            </span>
           </div>
           <div className="flex justify-between items-baseline">
             <span className="text-xs text-muted-foreground flex items-center gap-1.5">
               <CheckCircle className="h-3.5 w-3.5 text-violet-600" />
               Paid
             </span>
-            <span className="text-lg font-bold font-mono">{formatCurrency(summary?.paid_amount || 0)}</span>
+            <span className="text-lg font-bold font-mono">
+              {formatCurrency(summary?.paid_amount || 0)}
+            </span>
           </div>
         </div>
       </div>
@@ -103,7 +120,8 @@ export function OverrideDashboard({ className }: OverrideDashboardProps) {
               <EmptyHeader>
                 <EmptyTitle>No override commissions yet</EmptyTitle>
                 <EmptyDescription>
-                  Override commissions are automatically created when your downline agents write policies
+                  Override commissions are automatically created when your
+                  downline agents write policies
                 </EmptyDescription>
               </EmptyHeader>
             </Empty>
@@ -116,8 +134,12 @@ export function OverrideDashboard({ className }: OverrideDashboardProps) {
                     <TableHead>Downline Agent</TableHead>
                     <TableHead>Policy</TableHead>
                     <TableHead>Level</TableHead>
-                    <TableHead className="text-right">Base Commission</TableHead>
-                    <TableHead className="text-right">Override Amount</TableHead>
+                    <TableHead className="text-right">
+                      Base Commission
+                    </TableHead>
+                    <TableHead className="text-right">
+                      Override Amount
+                    </TableHead>
                     <TableHead>Status</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -130,7 +152,7 @@ export function OverrideDashboard({ className }: OverrideDashboardProps) {
                       <TableCell>
                         <div className="flex flex-col">
                           <span className="font-medium text-sm">
-                            {override.base_agent_email || 'Unknown'}
+                            {override.base_agent_email || "Unknown"}
                           </span>
                           <span className="text-xs text-muted-foreground">
                             Hierarchy Level {override.hierarchy_depth}
@@ -139,7 +161,7 @@ export function OverrideDashboard({ className }: OverrideDashboardProps) {
                       </TableCell>
                       <TableCell>
                         <span className="text-xs font-mono">
-                          {override.policy_number || 'N/A'}
+                          {override.policy_number || "N/A"}
                         </span>
                       </TableCell>
                       <TableCell>

@@ -1,17 +1,19 @@
 // src/features/recruiting/admin/PipelineAdminPage.tsx
 
-import React, { useState } from 'react';
-import {Button} from '@/components/ui/button';
+import React, { useState } from "react";
+import { Button } from "@/components/ui/button";
 // import {Card} from '@/components/ui/card';
-import {Plus, Settings2} from 'lucide-react';
-import {useNavigate} from '@tanstack/react-router';
-import {PipelineTemplatesList} from './PipelineTemplatesList';
-import {PipelineTemplateEditor} from './PipelineTemplateEditor';
-import { ArrowLeft } from 'lucide-react';
+import { Settings2 } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
+import { PipelineTemplatesList } from "./PipelineTemplatesList";
+import { PipelineTemplateEditor } from "./PipelineTemplateEditor";
+import { ArrowLeft } from "lucide-react";
 
 export function PipelineAdminPage() {
   const navigate = useNavigate();
-  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(
+    null,
+  );
 
   return (
     <div className="h-full flex flex-col gap-3 p-4">
@@ -21,7 +23,7 @@ export function PipelineAdminPage() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => navigate({ to: '/recruiting' })}
+            onClick={() => navigate({ to: "/recruiting" })}
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Recruiting

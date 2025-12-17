@@ -1,12 +1,11 @@
 // src/services/hierarchy/__tests__/hierarchyService.test.ts
 
-import {describe, it, expect, vi, beforeEach} from 'vitest';
-import {hierarchyService} from '../hierarchyService';
-import {supabase} from '../../base/supabase';
-import type {UserProfile} from '../../../types/hierarchy.types';
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { hierarchyService } from "../hierarchyService";
+import { supabase } from "../../base/supabase";
 
 // Mock Supabase
-vi.mock('../../base/supabase', () => ({
+vi.mock("../../base/supabase", () => ({
   supabase: {
     auth: {
       getUser: vi.fn(),
@@ -15,8 +14,8 @@ vi.mock('../../base/supabase', () => ({
   },
 }));
 
-describe('HierarchyService', () => {
-  const mockUser = { id: 'user-1', email: 'user@example.com' };
+describe("HierarchyService", () => {
+  const mockUser = { id: "user-1", email: "user@example.com" };
   const mockSelect = vi.fn();
   const mockEq = vi.fn();
   const mockSingle = vi.fn();
@@ -48,31 +47,31 @@ describe('HierarchyService', () => {
     } as any);
   });
 
-  describe('getMyHierarchyTree', () => {
-    it('should fetch hierarchy tree for current user', async () => {
-      const mockProfile= {
-        id: 'user-1',
-        email: 'user@example.com',
+  describe("getMyHierarchyTree", () => {
+    it("should fetch hierarchy tree for current user", async () => {
+      const mockProfile = {
+        id: "user-1",
+        email: "user@example.com",
         upline_id: null,
-        hierarchy_path: 'user-1',
+        hierarchy_path: "user-1",
         hierarchy_depth: 0,
-        approval_status: 'approved',
+        approval_status: "approved",
         is_admin: false,
-        created_at: '2025-01-01T00:00:00.000Z',
-        updated_at: '2025-01-01T00:00:00.000Z',
+        created_at: "2025-01-01T00:00:00.000Z",
+        updated_at: "2025-01-01T00:00:00.000Z",
       };
 
-      const mockDownlines= [
+      const mockDownlines = [
         {
-          id: 'downline-1',
-          email: 'downline@example.com',
-          upline_id: 'user-1',
-          hierarchy_path: 'user-1.downline-1',
+          id: "downline-1",
+          email: "downline@example.com",
+          upline_id: "user-1",
+          hierarchy_path: "user-1.downline-1",
           hierarchy_depth: 1,
-          approval_status: 'approved',
+          approval_status: "approved",
           is_admin: false,
-          created_at: '2025-01-01T00:00:00.000Z',
-          updated_at: '2025-01-01T00:00:00.000Z',
+          created_at: "2025-01-01T00:00:00.000Z",
+          updated_at: "2025-01-01T00:00:00.000Z",
         },
       ];
 
@@ -91,22 +90,22 @@ describe('HierarchyService', () => {
 
       expect(supabase.auth.getUser).toHaveBeenCalled();
       expect(result).toHaveLength(1);
-      expect(result[0].id).toBe('user-1');
+      expect(result[0].id).toBe("user-1");
       expect(result[0].children).toHaveLength(1);
-      expect(result[0].children[0].id).toBe('downline-1');
+      expect(result[0].children[0].id).toBe("downline-1");
     });
 
-    it('should handle user with no downlines', async () => {
-      const mockProfile= {
-        id: 'user-1',
-        email: 'user@example.com',
+    it("should handle user with no downlines", async () => {
+      const mockProfile = {
+        id: "user-1",
+        email: "user@example.com",
         upline_id: null,
-        hierarchy_path: 'user-1',
+        hierarchy_path: "user-1",
         hierarchy_depth: 0,
-        approval_status: 'approved',
+        approval_status: "approved",
         is_admin: false,
-        created_at: '2025-01-01T00:00:00.000Z',
-        updated_at: '2025-01-01T00:00:00.000Z',
+        created_at: "2025-01-01T00:00:00.000Z",
+        updated_at: "2025-01-01T00:00:00.000Z",
       };
 
       vi.mocked(supabase.auth.getUser).mockResolvedValue({
@@ -123,45 +122,47 @@ describe('HierarchyService', () => {
       expect(result[0].children).toHaveLength(0);
     });
 
-    it('should handle authentication errors', async () => {
+    it("should handle authentication errors", async () => {
       vi.mocked(supabase.auth.getUser).mockResolvedValue({
         data: { user: null },
-        error: new Error('Not authenticated'),
+        error: new Error("Not authenticated"),
       } as any);
 
-      await expect(hierarchyService.getMyHierarchyTree()).rejects.toThrow('Not authenticated');
+      await expect(hierarchyService.getMyHierarchyTree()).rejects.toThrow(
+        "Not authenticated",
+      );
     });
   });
 
-  describe('getMyDownlines', () => {
-    it('should fetch all downlines for current user', async () => {
+  describe("getMyDownlines", () => {
+    it("should fetch all downlines for current user", async () => {
       const mockProfile = {
-        id: 'user-1',
-        hierarchy_path: 'user-1',
+        id: "user-1",
+        hierarchy_path: "user-1",
       };
 
-      const mockDownlines= [
+      const mockDownlines = [
         {
-          id: 'downline-1',
-          email: 'downline1@example.com',
-          upline_id: 'user-1',
-          hierarchy_path: 'user-1.downline-1',
+          id: "downline-1",
+          email: "downline1@example.com",
+          upline_id: "user-1",
+          hierarchy_path: "user-1.downline-1",
           hierarchy_depth: 1,
-          approval_status: 'approved',
+          approval_status: "approved",
           is_admin: false,
-          created_at: '2025-01-01T00:00:00.000Z',
-          updated_at: '2025-01-01T00:00:00.000Z',
+          created_at: "2025-01-01T00:00:00.000Z",
+          updated_at: "2025-01-01T00:00:00.000Z",
         },
         {
-          id: 'downline-2',
-          email: 'downline2@example.com',
-          upline_id: 'user-1',
-          hierarchy_path: 'user-1.downline-2',
+          id: "downline-2",
+          email: "downline2@example.com",
+          upline_id: "user-1",
+          hierarchy_path: "user-1.downline-2",
           hierarchy_depth: 1,
-          approval_status: 'approved',
+          approval_status: "approved",
           is_admin: false,
-          created_at: '2025-01-01T00:00:00.000Z',
-          updated_at: '2025-01-01T00:00:00.000Z',
+          created_at: "2025-01-01T00:00:00.000Z",
+          updated_at: "2025-01-01T00:00:00.000Z",
         },
       ];
 
@@ -176,14 +177,14 @@ describe('HierarchyService', () => {
       const result = await hierarchyService.getMyDownlines();
 
       expect(result).toHaveLength(2);
-      expect(result[0].id).toBe('downline-1');
-      expect(result[1].id).toBe('downline-2');
+      expect(result[0].id).toBe("downline-1");
+      expect(result[1].id).toBe("downline-2");
     });
 
-    it('should return empty array when user has no downlines', async () => {
+    it("should return empty array when user has no downlines", async () => {
       const mockProfile = {
-        id: 'user-1',
-        hierarchy_path: 'user-1',
+        id: "user-1",
+        hierarchy_path: "user-1",
       };
 
       vi.mocked(supabase.auth.getUser).mockResolvedValue({
@@ -200,34 +201,34 @@ describe('HierarchyService', () => {
     });
   });
 
-  describe('updateAgentHierarchy', () => {
-    it('should update agent hierarchy successfully', async () => {
+  describe("updateAgentHierarchy", () => {
+    it("should update agent hierarchy successfully", async () => {
       const request = {
-        agent_id: 'downline-1',
-        new_upline_id: 'user-2',
-        reason: 'Organizational restructure',
+        agent_id: "downline-1",
+        new_upline_id: "user-2",
+        reason: "Organizational restructure",
       };
 
-      const updatedProfile= {
-        id: 'downline-1',
-        email: 'downline@example.com',
-        upline_id: 'user-2',
-        hierarchy_path: 'user-2.downline-1',
+      const updatedProfile = {
+        id: "downline-1",
+        email: "downline@example.com",
+        upline_id: "user-2",
+        hierarchy_path: "user-2.downline-1",
         hierarchy_depth: 1,
-        approval_status: 'approved',
+        approval_status: "approved",
         is_admin: false,
-        created_at: '2025-01-01T00:00:00.000Z',
-        updated_at: '2025-01-01T00:00:00.000Z',
+        created_at: "2025-01-01T00:00:00.000Z",
+        updated_at: "2025-01-01T00:00:00.000Z",
       };
 
       // Mock validation check
       mockSingle
         .mockResolvedValueOnce({
-          data: { id: 'downline-1', hierarchy_path: 'user-1.downline-1' },
+          data: { id: "downline-1", hierarchy_path: "user-1.downline-1" },
           error: null,
         })
         .mockResolvedValueOnce({
-          data: { id: 'user-2', hierarchy_path: 'user-2' },
+          data: { id: "user-2", hierarchy_path: "user-2" },
           error: null,
         });
 
@@ -236,22 +237,22 @@ describe('HierarchyService', () => {
 
       const result = await hierarchyService.updateAgentHierarchy(request);
 
-      expect(result.upline_id).toBe('user-2');
-      expect(result.id).toBe('downline-1');
+      expect(result.upline_id).toBe("user-2");
+      expect(result.id).toBe("downline-1");
     });
 
-    it('should prevent circular reference', async () => {
+    it("should prevent circular reference", async () => {
       const request = {
-        agent_id: 'user-1',
-        new_upline_id: 'downline-1',
-        reason: 'Invalid move',
+        agent_id: "user-1",
+        new_upline_id: "downline-1",
+        reason: "Invalid move",
       };
 
       // Mock agent fetch
       mockSingle.mockResolvedValueOnce({
         data: {
-          id: 'user-1',
-          hierarchy_path: 'user-1',
+          id: "user-1",
+          hierarchy_path: "user-1",
         },
         error: null,
       });
@@ -259,37 +260,39 @@ describe('HierarchyService', () => {
       // Mock proposed upline fetch (which is in agent's downline tree)
       mockSingle.mockResolvedValueOnce({
         data: {
-          id: 'downline-1',
-          hierarchy_path: 'user-1.downline-1', // Contains user-1, so circular!
+          id: "downline-1",
+          hierarchy_path: "user-1.downline-1", // Contains user-1, so circular!
         },
         error: null,
       });
 
-      await expect(hierarchyService.updateAgentHierarchy(request)).rejects.toThrow();
+      await expect(
+        hierarchyService.updateAgentHierarchy(request),
+      ).rejects.toThrow();
     });
 
-    it('should allow setting upline to null (making root agent)', async () => {
+    it("should allow setting upline to null (making root agent)", async () => {
       const request = {
-        agent_id: 'downline-1',
+        agent_id: "downline-1",
         new_upline_id: null,
-        reason: 'Promote to root',
+        reason: "Promote to root",
       };
 
-      const updatedProfile= {
-        id: 'downline-1',
-        email: 'downline@example.com',
+      const updatedProfile = {
+        id: "downline-1",
+        email: "downline@example.com",
         upline_id: null,
-        hierarchy_path: 'downline-1',
+        hierarchy_path: "downline-1",
         hierarchy_depth: 0,
-        approval_status: 'approved',
+        approval_status: "approved",
         is_admin: false,
-        created_at: '2025-01-01T00:00:00.000Z',
-        updated_at: '2025-01-01T00:00:00.000Z',
+        created_at: "2025-01-01T00:00:00.000Z",
+        updated_at: "2025-01-01T00:00:00.000Z",
       };
 
       // Mock agent fetch for validation
       mockSingle.mockResolvedValueOnce({
-        data: { id: 'downline-1', hierarchy_path: 'user-1.downline-1' },
+        data: { id: "downline-1", hierarchy_path: "user-1.downline-1" },
         error: null,
       });
 

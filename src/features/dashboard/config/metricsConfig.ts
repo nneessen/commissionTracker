@@ -7,9 +7,8 @@
  * Previously inline in DashboardHome.tsx (lines 778-835).
  */
 
-import {TimePeriod, getPeriodLabel} from '../../../utils/dateRange';
-import {PerformanceMetricRow} from '../../../types/dashboard.types';
-import {scaleToDisplayPeriod, scaleCountToDisplayPeriod} from '../../../utils/dashboardCalculations';
+import { TimePeriod, getPeriodLabel } from "../../../utils/dateRange";
+import { PerformanceMetricRow } from "../../../types/dashboard.types";
 
 interface MetricsConfigParams {
   timePeriod: TimePeriod;
@@ -39,14 +38,14 @@ interface MetricsConfigParams {
 /**
  * Generate performance metrics configuration for the table
  */
-export function generateMetricsConfig(params: MetricsConfigParams): PerformanceMetricRow[] {
+export function generateMetricsConfig(
+  params: MetricsConfigParams,
+): PerformanceMetricRow[] {
   const {
     timePeriod,
     periodCommissions,
     periodPolicies,
     periodClients,
-    periodExpenses,
-    periodAnalytics,
     constants,
   } = params;
 
@@ -58,35 +57,35 @@ export function generateMetricsConfig(params: MetricsConfigParams): PerformanceM
       metric: `${periodLabel} Policies`,
       current: periodPolicies.newCount,
       target: null,
-      unit: '#',
+      unit: "#",
       showTarget: false,
     },
     {
       metric: `${periodLabel} Premium Written`,
       current: periodPolicies.premiumWritten,
       target: null,
-      unit: '$',
+      unit: "$",
       showTarget: false,
     },
     {
       metric: `${periodLabel} Clients`,
       current: periodClients.newCount,
       target: null,
-      unit: '#',
+      unit: "#",
       showTarget: false,
     },
     {
-      metric: 'Avg Premium',
+      metric: "Avg Premium",
       current: periodPolicies.averagePremium,
       target: constants?.avgAP || null,
-      unit: '$',
+      unit: "$",
       showTarget: !!constants?.avgAP,
     },
     {
-      metric: 'Commission Rate',
+      metric: "Commission Rate",
       current: periodCommissions.averageRate,
       target: null,
-      unit: '%',
+      unit: "%",
       showTarget: false,
     },
   ];

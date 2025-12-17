@@ -1,9 +1,7 @@
 // src/services/settings/carrierService.ts
-import {logger} from "../base/logger";
-
-import {supabase} from "../base/supabase";
-import {Database} from "../../types/database.types";
-import {ServiceResponse} from "../base/BaseService";
+import { supabase } from "../base/supabase";
+import { Database } from "../../types/database.types";
+import { ServiceResponse } from "../base/BaseService";
 
 type CarrierRow = Database["public"]["Tables"]["carriers"]["Row"];
 type CarrierInsert = Database["public"]["Tables"]["carriers"]["Insert"];
@@ -309,4 +307,3 @@ class CarrierService {
 }
 
 export const carrierService = new CarrierService();
-

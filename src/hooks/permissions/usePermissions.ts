@@ -1,31 +1,67 @@
 // src/hooks/permissions/usePermissions.ts
 
-import {useQuery, useMutation, useQueryClient} from '@tanstack/react-query';
-import {useAuth} from '@/contexts/AuthContext';
-import type {UserPermissions, PermissionCode, RoleName, Role, Permission, PermissionWithSource} from '@/types/permissions.types';
-import {getUserPermissionsContext, getUserPermissions, getUserRoles, hasPermission, hasRole, isAdminUser, hasAnyPermission, hasAllPermissions, getAllRoles, getAllRolesWithPermissions, getAllPermissions, getRolePermissionsWithInheritance, setUserRoles, assignPermissionToRole, removePermissionFromRole, createRole, updateRole, deleteRole, createPermission, updatePermission, deletePermission, type CreateRoleInput, type UpdateRoleInput, type CreatePermissionInput, type UpdatePermissionInput} from '@/services/permissions/permissionService';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/contexts/AuthContext";
+import type {
+  PermissionCode,
+  RoleName,
+  Permission,
+  PermissionWithSource,
+} from "@/types/permissions.types";
+import {
+  getUserPermissionsContext,
+  getUserPermissions,
+  getUserRoles,
+  hasPermission,
+  hasRole,
+  isAdminUser,
+  getAllRoles,
+  getAllRolesWithPermissions,
+  getAllPermissions,
+  getRolePermissionsWithInheritance,
+  setUserRoles,
+  assignPermissionToRole,
+  removePermissionFromRole,
+  createRole,
+  updateRole,
+  deleteRole,
+  createPermission,
+  updatePermission,
+  deletePermission,
+  type CreateRoleInput,
+  type UpdateRoleInput,
+  type CreatePermissionInput,
+  type UpdatePermissionInput,
+} from "@/services/permissions/permissionService";
 
 // Re-export types for convenience
-export type { CreateRoleInput, UpdateRoleInput, CreatePermissionInput, UpdatePermissionInput };
+export type {
+  CreateRoleInput,
+  UpdateRoleInput,
+  CreatePermissionInput,
+  UpdatePermissionInput,
+};
 
 // ============================================
 // QUERY KEYS
 // ============================================
 
 export const permissionKeys = {
-  all: ['permissions'] as const,
-  userPermissions: (userId: string) => ['permissions', 'user', userId] as const,
-  userRoles: (userId: string) => ['permissions', 'roles', userId] as const,
-  userContext: (userId: string) => ['permissions', 'context', userId] as const,
-  allRoles: ['permissions', 'all-roles'] as const,
-  allPermissions: ['permissions', 'all-permissions'] as const,
+  all: ["permissions"] as const,
+  userPermissions: (userId: string) => ["permissions", "user", userId] as const,
+  userRoles: (userId: string) => ["permissions", "roles", userId] as const,
+  userContext: (userId: string) => ["permissions", "context", userId] as const,
+  allRoles: ["permissions", "all-roles"] as const,
+  allPermissions: ["permissions", "all-permissions"] as const,
   hasPermission: (userId: string, code: PermissionCode) =>
-    ['permissions', 'has', userId, code] as const,
-  hasRole: (userId: string, role: RoleName) => ['permissions', 'has-role', userId, role] as const,
-  isAdmin: (userId: string) => ['permissions', 'is-admin', userId] as const,
-  role: (id: string) => ['roles', id] as const,
-  rolePermissions: (id: string) => ['roles', id, 'permissions'] as const,
-  rolePermissionsInherited: (id: string) => ['roles', id, 'permissions', 'inherited'] as const,
+    ["permissions", "has", userId, code] as const,
+  hasRole: (userId: string, role: RoleName) =>
+    ["permissions", "has-role", userId, role] as const,
+  isAdmin: (userId: string) => ["permissions", "is-admin", userId] as const,
+  role: (id: string) => ["roles", id] as const,
+  rolePermissions: (id: string) => ["roles", id, "permissions"] as const,
+  rolePermissionsInherited: (id: string) =>
+    ["roles", id, "permissions", "inherited"] as const,
 };
 
 // ============================================
@@ -36,10 +72,10 @@ export const permissionKeys = {
  * Get current user's full permissions context (roles + permissions)
  */
 export function useUserPermissions() {
-  const {user} = useAuth();
+  const { user } = useAuth();
 
   return useQuery({
-    queryKey: permissionKeys.userContext(user?.id || ''),
+    queryKey: permissionKeys.userContext(user?.id || ""),
     queryFn: () => getUserPermissionsContext(user!.id),
     enabled: !!user?.id,
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
@@ -50,10 +86,10 @@ export function useUserPermissions() {
  * Get current user's permission codes only
  */
 export function useUserPermissionCodes() {
-  const {user} = useAuth();
+  const { user } = useAuth();
 
   return useQuery({
-    queryKey: permissionKeys.userPermissions(user?.id || ''),
+    queryKey: permissionKeys.userPermissions(user?.id || ""),
     queryFn: () => getUserPermissions(user!.id),
     enabled: !!user?.id,
     staleTime: 1000 * 60 * 5,
@@ -64,10 +100,10 @@ export function useUserPermissionCodes() {
  * Get current user's roles
  */
 export function useUserRoles() {
-  const {user} = useAuth();
+  const { user } = useAuth();
 
   return useQuery({
-    queryKey: permissionKeys.userRoles(user?.id || ''),
+    queryKey: permissionKeys.userRoles(user?.id || ""),
     queryFn: () => getUserRoles(user!.id),
     enabled: !!user?.id,
     staleTime: 1000 * 60 * 5,
@@ -78,10 +114,10 @@ export function useUserRoles() {
  * Check if current user has a specific permission
  */
 export function useHasPermission(permissionCode: PermissionCode) {
-  const {user} = useAuth();
+  const { user } = useAuth();
 
   return useQuery({
-    queryKey: permissionKeys.hasPermission(user?.id || '', permissionCode),
+    queryKey: permissionKeys.hasPermission(user?.id || "", permissionCode),
     queryFn: () => hasPermission(user!.id, permissionCode),
     enabled: !!user?.id && !!permissionCode,
     staleTime: 1000 * 60 * 5,
@@ -92,10 +128,10 @@ export function useHasPermission(permissionCode: PermissionCode) {
  * Check if current user has a specific role
  */
 export function useHasRole(roleName: RoleName) {
-  const {user} = useAuth();
+  const { user } = useAuth();
 
   return useQuery({
-    queryKey: permissionKeys.hasRole(user?.id || '', roleName),
+    queryKey: permissionKeys.hasRole(user?.id || "", roleName),
     queryFn: () => hasRole(user!.id, roleName),
     enabled: !!user?.id && !!roleName,
     staleTime: 1000 * 60 * 5,
@@ -106,10 +142,10 @@ export function useHasRole(roleName: RoleName) {
  * Check if current user is an admin
  */
 export function useIsAdmin() {
-  const {user} = useAuth();
+  const { user } = useAuth();
 
   return useQuery({
-    queryKey: permissionKeys.isAdmin(user?.id || ''),
+    queryKey: permissionKeys.isAdmin(user?.id || ""),
     queryFn: () => isAdminUser(user?.id),
     enabled: !!user?.id,
     staleTime: 1000 * 60 * 5,
@@ -121,8 +157,7 @@ export function useIsAdmin() {
  * Returns helper functions for permission checks
  */
 export function usePermissionCheck() {
-  const {user} = useAuth();
-  const {data: permissionsContext} = useUserPermissions();
+  const { data: permissionsContext } = useUserPermissions();
 
   const can = (permissionCode: PermissionCode): boolean => {
     if (!permissionsContext) return false;
@@ -131,12 +166,16 @@ export function usePermissionCheck() {
 
   const canAny = (permissionCodes: PermissionCode[]): boolean => {
     if (!permissionsContext) return false;
-    return permissionCodes.some((code) => permissionsContext.permissions.includes(code));
+    return permissionCodes.some((code) =>
+      permissionsContext.permissions.includes(code),
+    );
   };
 
   const canAll = (permissionCodes: PermissionCode[]): boolean => {
     if (!permissionsContext) return false;
-    return permissionCodes.every((code) => permissionsContext.permissions.includes(code));
+    return permissionCodes.every((code) =>
+      permissionsContext.permissions.includes(code),
+    );
   };
 
   const is = (roleName: RoleName): boolean => {
@@ -151,7 +190,7 @@ export function usePermissionCheck() {
 
   const isAdmin = (): boolean => {
     if (!permissionsContext) return false;
-    return permissionsContext.roles.includes('admin');
+    return permissionsContext.roles.includes("admin");
   };
 
   return {
@@ -187,7 +226,7 @@ export function useAllRoles() {
  */
 export function useAllRolesWithPermissions() {
   return useQuery({
-    queryKey: [...permissionKeys.allRoles, 'with-permissions'],
+    queryKey: [...permissionKeys.allRoles, "with-permissions"],
     queryFn: getAllRolesWithPermissions,
     staleTime: 1000 * 60 * 10, // Cache for 10 minutes
   });
@@ -210,7 +249,9 @@ export function useAllPermissions() {
  */
 export function useRolePermissionsWithInheritance(roleId: string | undefined) {
   return useQuery({
-    queryKey: roleId ? permissionKeys.rolePermissionsInherited(roleId) : ['empty'],
+    queryKey: roleId
+      ? permissionKeys.rolePermissionsInherited(roleId)
+      : ["empty"],
     queryFn: () => getRolePermissionsWithInheritance(roleId!),
     enabled: !!roleId,
     staleTime: 1000 * 60 * 5, // 5 minutes
@@ -250,8 +291,13 @@ export function useAssignPermissionToRole() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ roleId, permissionId }: { roleId: string; permissionId: string }) =>
-      assignPermissionToRole(roleId, permissionId),
+    mutationFn: ({
+      roleId,
+      permissionId,
+    }: {
+      roleId: string;
+      permissionId: string;
+    }) => assignPermissionToRole(roleId, permissionId),
 
     // Optimistic update - instant feedback
     onMutate: async ({ roleId, permissionId }) => {
@@ -262,20 +308,22 @@ export function useAssignPermissionToRole() {
 
       // Snapshot previous value for rollback
       const previousData = queryClient.getQueryData<PermissionWithSource[]>(
-        permissionKeys.rolePermissionsInherited(roleId)
+        permissionKeys.rolePermissionsInherited(roleId),
       );
 
       // Optimistically add permission to cache
       if (previousData) {
         const allPermissions = queryClient.getQueryData<Permission[]>(
-          permissionKeys.allPermissions
+          permissionKeys.allPermissions,
         );
-        const newPermission = allPermissions?.find((p) => p.id === permissionId);
+        const newPermission = allPermissions?.find(
+          (p) => p.id === permissionId,
+        );
 
         if (newPermission) {
           queryClient.setQueryData<PermissionWithSource[]>(
             permissionKeys.rolePermissionsInherited(roleId),
-            [...previousData, { ...newPermission, permissionType: 'direct' }]
+            [...previousData, { ...newPermission, permissionType: "direct" }],
           );
         }
       }
@@ -288,10 +336,10 @@ export function useAssignPermissionToRole() {
       if (context?.previousData) {
         queryClient.setQueryData(
           permissionKeys.rolePermissionsInherited(roleId),
-          context.previousData
+          context.previousData,
         );
       }
-      console.error('Failed to assign permission:', err);
+      console.error("Failed to assign permission:", err);
     },
 
     // Refetch on success to ensure consistency
@@ -316,8 +364,13 @@ export function useRemovePermissionFromRole() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ roleId, permissionId }: { roleId: string; permissionId: string }) =>
-      removePermissionFromRole(roleId, permissionId),
+    mutationFn: ({
+      roleId,
+      permissionId,
+    }: {
+      roleId: string;
+      permissionId: string;
+    }) => removePermissionFromRole(roleId, permissionId),
 
     // Optimistic update
     onMutate: async ({ roleId, permissionId }) => {
@@ -326,14 +379,14 @@ export function useRemovePermissionFromRole() {
       });
 
       const previousData = queryClient.getQueryData<PermissionWithSource[]>(
-        permissionKeys.rolePermissionsInherited(roleId)
+        permissionKeys.rolePermissionsInherited(roleId),
       );
 
       // Optimistically remove permission from cache
       if (previousData) {
         queryClient.setQueryData<PermissionWithSource[]>(
           permissionKeys.rolePermissionsInherited(roleId),
-          previousData.filter((p) => p.id !== permissionId)
+          previousData.filter((p) => p.id !== permissionId),
         );
       }
 
@@ -345,10 +398,10 @@ export function useRemovePermissionFromRole() {
       if (context?.previousData) {
         queryClient.setQueryData(
           permissionKeys.rolePermissionsInherited(roleId),
-          context.previousData
+          context.previousData,
         );
       }
-      console.error('Failed to remove permission:', err);
+      console.error("Failed to remove permission:", err);
     },
 
     // Refetch on success
@@ -390,8 +443,13 @@ export function useUpdateRole() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ roleId, input }: { roleId: string; input: UpdateRoleInput }) =>
-      updateRole(roleId, input),
+    mutationFn: ({
+      roleId,
+      input,
+    }: {
+      roleId: string;
+      input: UpdateRoleInput;
+    }) => updateRole(roleId, input),
     onSuccess: (_, { roleId }) => {
       queryClient.invalidateQueries({ queryKey: permissionKeys.allRoles });
       queryClient.invalidateQueries({ queryKey: permissionKeys.role(roleId) });
@@ -430,7 +488,9 @@ export function useCreatePermission() {
   return useMutation({
     mutationFn: (input: CreatePermissionInput) => createPermission(input),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: permissionKeys.allPermissions });
+      queryClient.invalidateQueries({
+        queryKey: permissionKeys.allPermissions,
+      });
     },
   });
 }
@@ -442,10 +502,17 @@ export function useUpdatePermission() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ permissionId, input }: { permissionId: string; input: UpdatePermissionInput }) =>
-      updatePermission(permissionId, input),
+    mutationFn: ({
+      permissionId,
+      input,
+    }: {
+      permissionId: string;
+      input: UpdatePermissionInput;
+    }) => updatePermission(permissionId, input),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: permissionKeys.allPermissions });
+      queryClient.invalidateQueries({
+        queryKey: permissionKeys.allPermissions,
+      });
       // Invalidate all queries as permission changes affect everyone
       queryClient.invalidateQueries({ queryKey: permissionKeys.all });
     },
@@ -461,7 +528,9 @@ export function useDeletePermission() {
   return useMutation({
     mutationFn: (permissionId: string) => deletePermission(permissionId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: permissionKeys.allPermissions });
+      queryClient.invalidateQueries({
+        queryKey: permissionKeys.allPermissions,
+      });
       // Invalidate all queries as permission deletions affect everyone
       queryClient.invalidateQueries({ queryKey: permissionKeys.all });
     },

@@ -1,13 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import {Upload, X, Check, AlertCircle, Download, Eye} from 'lucide-react';
-import {Button} from '@/components/ui/button';
-import {cn} from '@/lib/utils';
-import {FFG_COMP_GUIDE_DATA, getUniqueCarriers, getProductsByCarrier} from '../data/ffgCompGuideData';
-import {Carrier} from '../../../types/carrier.types';
-import {Comp, CreateCompData} from '../../../types/commission.types';
-import {Database} from '../../../types/database.types';
-import {carrierService} from '../../../services/settings/carrierService';
-import {compGuideService} from '../../../services/settings/compGuideService';
+import React, { useState, useEffect } from "react";
+import { Upload, X, Check, AlertCircle, Download } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import {
+  FFG_COMP_GUIDE_DATA,
+  getUniqueCarriers,
+  getProductsByCarrier,
+} from "../data/ffgCompGuideData";
+import { Carrier } from "../../../types/carrier.types";
+import { Comp, CreateCompData } from "../../../types/commission.types";
+import { Database } from "../../../types/database.types";
+import { carrierService } from "../../../services/settings/carrierService";
+import { compGuideService } from "../../../services/settings/compGuideService";
 
 interface CompGuideImporterProps {
   isOpen: boolean;
@@ -28,11 +32,15 @@ export const CompGuideImporter: React.FC<CompGuideImporterProps> = ({
   isOpen,
   onClose,
   onImportComplete,
-  existingCarriers
+  existingCarriers,
 }) => {
-  const [step, setStep] = useState<'preview' | 'mapping' | 'importing' | 'complete'>('preview');
+  const [step, setStep] = useState<
+    "preview" | "mapping" | "importing" | "complete"
+  >("preview");
   const [selectedCarriers, setSelectedCarriers] = useState<string[]>([]);
-  const [carrierMapping, setCarrierMapping] = useState<Record<string, string>>({});
+  const [carrierMapping, setCarrierMapping] = useState<Record<string, string>>(
+    {},
+  );
   const [_importing, setImporting] = useState(false);
   const [progress, setProgress] = useState(0);
   const [importResults, setImportResults] = useState<{
@@ -45,7 +53,7 @@ export const CompGuideImporter: React.FC<CompGuideImporterProps> = ({
 
   useEffect(() => {
     if (isOpen) {
-      setStep('preview');
+      setStep("preview");
       setSelectedCarriers(ffgCarriers);
       setProgress(0);
       setImportResults({ success: 0, errors: [], imported: [] });
@@ -53,32 +61,36 @@ export const CompGuideImporter: React.FC<CompGuideImporterProps> = ({
   }, [isOpen]);
 
   const getImportSummary = (): ImportSummary => {
-    const filteredData = FFG_COMP_GUIDE_DATA.filter(item =>
-      selectedCarriers.includes(item.carrier)
+    const filteredData = FFG_COMP_GUIDE_DATA.filter((item) =>
+      selectedCarriers.includes(item.carrier),
     );
 
-    const carriersToCreate = selectedCarriers.filter(carrier =>
-      !existingCarriers.some(existing => existing.name === carrier)
+    const carriersToCreate = selectedCarriers.filter(
+      (carrier) =>
+        !existingCarriers.some((existing) => existing.name === carrier),
     );
 
-    const existingCarrierNames = selectedCarriers.filter(carrier =>
-      existingCarriers.some(existing => existing.name === carrier)
+    const existingCarrierNames = selectedCarriers.filter((carrier) =>
+      existingCarriers.some((existing) => existing.name === carrier),
     );
 
     return {
       totalRecords: filteredData.length,
       carriersToCreate,
       existingCarriers: existingCarrierNames,
-      productsToImport: [...new Set(filteredData.map(item => item.product))].length,
-      contractLevels: [...new Set(filteredData.map(item => item.contractLevel))]
+      productsToImport: [...new Set(filteredData.map((item) => item.product))]
+        .length,
+      contractLevels: [
+        ...new Set(filteredData.map((item) => item.contractLevel)),
+      ],
     };
   };
 
   const handleCarrierToggle = (carrier: string) => {
-    setSelectedCarriers(prev =>
+    setSelectedCarriers((prev) =>
       prev.includes(carrier)
-        ? prev.filter(c => c !== carrier)
-        : [...prev, carrier]
+        ? prev.filter((c) => c !== carrier)
+        : [...prev, carrier],
     );
   };
 
@@ -87,27 +99,27 @@ export const CompGuideImporter: React.FC<CompGuideImporterProps> = ({
 
     // Initialize carrier mapping for carriers that need to be created
     const newMapping: Record<string, string> = {};
-    summary.carriersToCreate.forEach(carrier => {
-      newMapping[carrier] = 'create-new';
+    summary.carriersToCreate.forEach((carrier) => {
+      newMapping[carrier] = "create-new";
     });
-    summary.existingCarriers.forEach(carrier => {
-      const existing = existingCarriers.find(c => c.name === carrier);
+    summary.existingCarriers.forEach((carrier) => {
+      const existing = existingCarriers.find((c) => c.name === carrier);
       if (existing) {
         newMapping[carrier] = existing.id;
       }
     });
 
     setCarrierMapping(newMapping);
-    setStep('mapping');
+    setStep("mapping");
   };
 
   const startImport = async () => {
-    setStep('importing');
+    setStep("importing");
     setImporting(true);
     setProgress(0);
 
-    const filteredData = FFG_COMP_GUIDE_DATA.filter(item =>
-      selectedCarriers.includes(item.carrier)
+    const filteredData = FFG_COMP_GUIDE_DATA.filter((item) =>
+      selectedCarriers.includes(item.carrier),
     );
 
     const errors: string[] = [];
@@ -117,20 +129,21 @@ export const CompGuideImporter: React.FC<CompGuideImporterProps> = ({
     try {
       // First, create any new carriers
       const carriersToCreate = Object.entries(carrierMapping)
-        .filter(([_, mapping]) => mapping === 'create-new')
+        .filter(([_, mapping]) => mapping === "create-new")
         .map(([carrier, _]) => carrier);
 
       const newCarrierIds: Record<string, string> = {};
 
       for (const carrierName of carriersToCreate) {
         try {
-          const { data: newCarrier, error } = await carrierService.createCarrier({
-            name: carrierName,
-            short_name: carrierName,
-            is_active: true,
-            default_commission_rates: {},
-            contact_info: {}
-          });
+          const { data: newCarrier, error } =
+            await carrierService.createCarrier({
+              name: carrierName,
+              short_name: carrierName,
+              is_active: true,
+              default_commission_rates: {},
+              contact_info: {},
+            });
           if (error) throw new Error(error.message);
           if (newCarrier) {
             newCarrierIds[carrierName] = newCarrier.id;
@@ -151,53 +164,64 @@ export const CompGuideImporter: React.FC<CompGuideImporterProps> = ({
       for (let i = 0; i < filteredData.length; i += batchSize) {
         const batch = filteredData.slice(i, i + batchSize);
 
-        await Promise.all(batch.map(async (item) => {
-          try {
-            const carrierId = finalCarrierMapping[item.carrier];
-            if (!carrierId || carrierId === 'create-new') {
-              throw new Error(`No carrier ID found for ${item.carrier}`);
-            }
+        await Promise.all(
+          batch.map(async (item) => {
+            try {
+              const carrierId = finalCarrierMapping[item.carrier];
+              if (!carrierId || carrierId === "create-new") {
+                throw new Error(`No carrier ID found for ${item.carrier}`);
+              }
 
-            // Map the product type from FFG data to database enum
-            const mapProductType = (product: string): Database["public"]["Enums"]["product_type"] => {
-              const productMap: Record<string, Database["public"]["Enums"]["product_type"]> = {
-                'Term Life': 'term_life',
-                'Whole Life': 'whole_life',
-                'Universal Life': 'universal_life',
-                'Variable Life': 'variable_life',
-                'Health': 'health',
-                'Disability': 'disability',
-                'Annuity': 'annuity',
-                'Long Term Care': 'health'
+              // Map the product type from FFG data to database enum
+              const mapProductType = (
+                product: string,
+              ): Database["public"]["Enums"]["product_type"] => {
+                const productMap: Record<
+                  string,
+                  Database["public"]["Enums"]["product_type"]
+                > = {
+                  "Term Life": "term_life",
+                  "Whole Life": "whole_life",
+                  "Universal Life": "universal_life",
+                  "Variable Life": "variable_life",
+                  Health: "health",
+                  Disability: "disability",
+                  Annuity: "annuity",
+                  "Long Term Care": "health",
+                };
+                return productMap[product] || "health";
               };
-              return productMap[product] || 'health';
-            };
 
-            const formData: CreateCompData = {
-              carrier_id: carrierId,
-              product_type: mapProductType(item.product),
-              contract_level: item.contractLevel, // Use contract level directly as number
-              commission_percentage: item.commissionRate,
-              bonus_percentage: 0,
-              effective_date: new Date(item.effectiveDate).toISOString().split('T')[0],
-              minimum_premium: 0,
-              maximum_premium: 0
-            };
+              const formData: CreateCompData = {
+                carrier_id: carrierId,
+                product_type: mapProductType(item.product),
+                contract_level: item.contractLevel, // Use contract level directly as number
+                commission_percentage: item.commissionRate,
+                bonus_percentage: 0,
+                effective_date: new Date(item.effectiveDate)
+                  .toISOString()
+                  .split("T")[0],
+                minimum_premium: 0,
+                maximum_premium: 0,
+              };
 
-            const { data: created, error: createError } = await compGuideService.createEntry(formData);
-            if (createError) throw new Error(createError.message);
-            if (created) {
-              imported.push(created);
+              const { data: created, error: createError } =
+                await compGuideService.createEntry(formData);
+              if (createError) throw new Error(createError.message);
+              if (created) {
+                imported.push(created);
+              }
+            } catch (error) {
+              errors.push(
+                `Failed to import ${item.carrier} - ${item.product} (${item.contractLevel}): ${error}`,
+              );
             }
-          } catch (error) {
-            errors.push(`Failed to import ${item.carrier} - ${item.product} (${item.contractLevel}): ${error}`);
-          }
-        }));
+          }),
+        );
 
         processed += batch.length;
         setProgress((processed / filteredData.length) * 100);
       }
-
     } catch (error) {
       errors.push(`Import failed: ${error}`);
     }
@@ -205,11 +229,11 @@ export const CompGuideImporter: React.FC<CompGuideImporterProps> = ({
     setImportResults({
       success: imported.length,
       errors,
-      imported
+      imported,
     });
 
     setImporting(false);
-    setStep('complete');
+    setStep("complete");
 
     if (imported.length > 0) {
       onImportComplete(imported);
@@ -217,22 +241,23 @@ export const CompGuideImporter: React.FC<CompGuideImporterProps> = ({
   };
 
   const exportData = () => {
-    const filteredData = FFG_COMP_GUIDE_DATA.filter(item =>
-      selectedCarriers.includes(item.carrier)
+    const filteredData = FFG_COMP_GUIDE_DATA.filter((item) =>
+      selectedCarriers.includes(item.carrier),
     );
 
     const csvContent = [
-      'Carrier,Product,Contract Level,Commission Rate,Effective Date',
-      ...filteredData.map(item =>
-        `"${item.carrier}","${item.product}",${item.contractLevel},${item.commissionRate},"${item.effectiveDate}"`
-      )
-    ].join('\n');
+      "Carrier,Product,Contract Level,Commission Rate,Effective Date",
+      ...filteredData.map(
+        (item) =>
+          `"${item.carrier}","${item.product}",${item.contractLevel},${item.commissionRate},"${item.effectiveDate}"`,
+      ),
+    ].join("\n");
 
-    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const blob = new Blob([csvContent], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
-    a.download = 'ffg-comp-guide-data.csv';
+    a.download = "ffg-comp-guide-data.csv";
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -246,7 +271,7 @@ export const CompGuideImporter: React.FC<CompGuideImporterProps> = ({
       <div
         className={cn(
           "bg-card rounded-xl p-6 max-h-[80vh] overflow-auto shadow-2xl",
-          step === 'preview' ? 'w-[800px]' : 'w-[600px]'
+          step === "preview" ? "w-[800px]" : "w-[600px]",
         )}
       >
         <div className="flex justify-between items-center mb-6">
@@ -258,25 +283,27 @@ export const CompGuideImporter: React.FC<CompGuideImporterProps> = ({
           </Button>
         </div>
 
-        {step === 'preview' && (
+        {step === "preview" && (
           <>
             <div className="mb-6">
               <h3 className="text-lg font-semibold mb-3">
                 Select Carriers to Import
               </h3>
               <p className="text-muted-foreground mb-4">
-                Choose which carriers from the FFG Comp Guide you want to import. This will import all products and contract levels for the selected carriers.
+                Choose which carriers from the FFG Comp Guide you want to
+                import. This will import all products and contract levels for
+                the selected carriers.
               </p>
 
               <div className="grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-3">
-                {ffgCarriers.map(carrier => (
+                {ffgCarriers.map((carrier) => (
                   <label
                     key={carrier}
                     className={cn(
                       "flex items-center gap-2 p-3 rounded-lg cursor-pointer transition-all duration-200 shadow-sm hover:shadow-md",
                       selectedCarriers.includes(carrier)
                         ? "bg-gradient-to-r from-primary/15 via-info/10 to-card"
-                        : "bg-card"
+                        : "bg-card",
                     )}
                   >
                     <input
@@ -294,24 +321,42 @@ export const CompGuideImporter: React.FC<CompGuideImporterProps> = ({
             </div>
 
             <div className="p-4 bg-muted rounded-lg mb-6">
-              <h4 className="m-0 mb-3 text-base font-semibold">Import Summary</h4>
+              <h4 className="m-0 mb-3 text-base font-semibold">
+                Import Summary
+              </h4>
               <div className="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-3">
                 <div>
-                  <span className="text-sm text-muted-foreground">Total Records</span>
-                  <div className="text-xl font-semibold">{summary.totalRecords}</div>
-                </div>
-                <div>
-                  <span className="text-sm text-muted-foreground">Carriers</span>
-                  <div className="text-xl font-semibold">{selectedCarriers.length}</div>
-                </div>
-                <div>
-                  <span className="text-sm text-muted-foreground">Products</span>
-                  <div className="text-xl font-semibold">{summary.productsToImport}</div>
-                </div>
-                <div>
-                  <span className="text-sm text-muted-foreground">Contract Levels</span>
+                  <span className="text-sm text-muted-foreground">
+                    Total Records
+                  </span>
                   <div className="text-xl font-semibold">
-                    {summary.contractLevels.length} ({summary.contractLevels[0]}-{summary.contractLevels[summary.contractLevels.length - 1]})
+                    {summary.totalRecords}
+                  </div>
+                </div>
+                <div>
+                  <span className="text-sm text-muted-foreground">
+                    Carriers
+                  </span>
+                  <div className="text-xl font-semibold">
+                    {selectedCarriers.length}
+                  </div>
+                </div>
+                <div>
+                  <span className="text-sm text-muted-foreground">
+                    Products
+                  </span>
+                  <div className="text-xl font-semibold">
+                    {summary.productsToImport}
+                  </div>
+                </div>
+                <div>
+                  <span className="text-sm text-muted-foreground">
+                    Contract Levels
+                  </span>
+                  <div className="text-xl font-semibold">
+                    {summary.contractLevels.length} ({summary.contractLevels[0]}
+                    -{summary.contractLevels[summary.contractLevels.length - 1]}
+                    )
                   </div>
                 </div>
               </div>
@@ -319,7 +364,8 @@ export const CompGuideImporter: React.FC<CompGuideImporterProps> = ({
               {summary.carriersToCreate.length > 0 && (
                 <div className="mt-3 p-2 bg-gradient-to-r from-warning/20 via-status-pending/10 to-card rounded-md shadow-sm">
                   <div className="text-sm font-medium text-warning">
-                    New carriers to be created: {summary.carriersToCreate.join(', ')}
+                    New carriers to be created:{" "}
+                    {summary.carriersToCreate.join(", ")}
                   </div>
                 </div>
               )}
@@ -336,10 +382,7 @@ export const CompGuideImporter: React.FC<CompGuideImporterProps> = ({
               </Button>
 
               <div className="flex gap-3">
-                <Button
-                  onClick={onClose}
-                  variant="outline"
-                >
+                <Button onClick={onClose} variant="outline">
                   Cancel
                 </Button>
                 <Button
@@ -354,32 +397,34 @@ export const CompGuideImporter: React.FC<CompGuideImporterProps> = ({
           </>
         )}
 
-        {step === 'mapping' && (
+        {step === "mapping" && (
           <>
             <div className="mb-6">
-              <h3 className="text-lg font-semibold mb-3">
-                Carrier Mapping
-              </h3>
+              <h3 className="text-lg font-semibold mb-3">Carrier Mapping</h3>
               <p className="text-muted-foreground mb-4">
                 Confirm how carriers should be handled during import.
               </p>
 
               <div className="grid gap-3">
-                {selectedCarriers.map(carrier => {
-                  const existingCarrier = existingCarriers.find(c => c.name === carrier);
+                {selectedCarriers.map((carrier) => {
+                  const existingCarrier = existingCarriers.find(
+                    (c) => c.name === carrier,
+                  );
                   return (
                     <div
                       key={carrier}
                       className="p-3 rounded-lg flex justify-between items-center shadow-sm bg-card"
                     >
                       <span className="font-medium">{carrier}</span>
-                      <span className={cn(
-                        "text-sm px-2 py-1 rounded shadow-sm",
-                        existingCarrier
-                          ? "bg-gradient-to-r from-success/20 to-status-active/10 text-success"
-                          : "bg-gradient-to-r from-warning/20 to-status-pending/10 text-warning"
-                      )}>
-                        {existingCarrier ? 'Map to existing' : 'Create new'}
+                      <span
+                        className={cn(
+                          "text-sm px-2 py-1 rounded shadow-sm",
+                          existingCarrier
+                            ? "bg-gradient-to-r from-success/20 to-status-active/10 text-success"
+                            : "bg-gradient-to-r from-warning/20 to-status-pending/10 text-warning",
+                        )}
+                      >
+                        {existingCarrier ? "Map to existing" : "Create new"}
                       </span>
                     </div>
                   );
@@ -388,10 +433,7 @@ export const CompGuideImporter: React.FC<CompGuideImporterProps> = ({
             </div>
 
             <div className="flex justify-end gap-3">
-              <Button
-                onClick={() => setStep('preview')}
-                variant="outline"
-              >
+              <Button onClick={() => setStep("preview")} variant="outline">
                 Back
               </Button>
               <Button
@@ -404,7 +446,7 @@ export const CompGuideImporter: React.FC<CompGuideImporterProps> = ({
           </>
         )}
 
-        {step === 'importing' && (
+        {step === "importing" && (
           <div className="text-center p-10">
             <Upload size={48} className="mb-4 text-primary inline-block" />
             <h3 className="text-lg font-semibold mb-2">
@@ -427,24 +469,31 @@ export const CompGuideImporter: React.FC<CompGuideImporterProps> = ({
           </div>
         )}
 
-        {step === 'complete' && (
+        {step === "complete" && (
           <>
             <div className="text-center mb-6">
               {importResults.success > 0 ? (
                 <Check size={48} className="text-success mb-4 inline-block" />
               ) : (
-                <AlertCircle size={48} className="text-error mb-4 inline-block" />
+                <AlertCircle
+                  size={48}
+                  className="text-error mb-4 inline-block"
+                />
               )}
 
               <h3 className="text-lg font-semibold mb-2">
-                {importResults.success > 0 ? 'Import Completed' : 'Import Failed'}
+                {importResults.success > 0
+                  ? "Import Completed"
+                  : "Import Failed"}
               </h3>
             </div>
 
             <div className="p-4 bg-muted rounded-lg mb-6">
               <div className="grid grid-cols-[repeat(auto-fit,minmax(120px,1fr))] gap-3">
                 <div>
-                  <span className="text-sm text-muted-foreground">Imported</span>
+                  <span className="text-sm text-muted-foreground">
+                    Imported
+                  </span>
                   <div className="text-xl font-semibold text-success">
                     {importResults.success}
                   </div>

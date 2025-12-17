@@ -1,20 +1,20 @@
 // src/types/carrier.types.ts
 // Carrier type definitions - DATABASE-FIRST pattern
 
-import type { Database, Json } from './database.types';
+import type { Database } from "./database.types";
 
 // =============================================================================
 // DATABASE-DERIVED TYPES (Source of Truth)
 // =============================================================================
 
 /** Raw database row type for carriers table */
-export type CarrierRow = Database['public']['Tables']['carriers']['Row'];
+export type CarrierRow = Database["public"]["Tables"]["carriers"]["Row"];
 
 /** Insert type for creating new carriers */
-export type CarrierInsert = Database['public']['Tables']['carriers']['Insert'];
+export type CarrierInsert = Database["public"]["Tables"]["carriers"]["Insert"];
 
 /** Update type for modifying carriers */
-export type CarrierUpdate = Database['public']['Tables']['carriers']['Update'];
+export type CarrierUpdate = Database["public"]["Tables"]["carriers"]["Update"];
 
 // =============================================================================
 // CARRIER INTERFACE
@@ -23,7 +23,7 @@ export type CarrierUpdate = Database['public']['Tables']['carriers']['Update'];
 /**
  * Carrier - extends database row with typed contact_info
  */
-export interface Carrier extends Omit<CarrierRow, 'contact_info'> {
+export interface Carrier extends Omit<CarrierRow, "contact_info"> {
   contact_info: CarrierContactInfo | null;
 }
 
@@ -72,79 +72,81 @@ export interface CarrierStats {
 // DEFAULT DATA
 // =============================================================================
 
-export const DEFAULT_CARRIERS: Array<Omit<Carrier, 'id' | 'created_at' | 'updated_at'>> = [
+export const DEFAULT_CARRIERS: Array<
+  Omit<Carrier, "id" | "created_at" | "updated_at">
+> = [
   {
-    name: 'United Home Life',
+    name: "United Home Life",
     code: null,
     is_active: true,
     commission_structure: null,
     contact_info: null,
   },
   {
-    name: 'Legal & General America',
+    name: "Legal & General America",
     code: null,
     is_active: true,
     commission_structure: null,
     contact_info: null,
   },
   {
-    name: 'American Home Life',
+    name: "American Home Life",
     code: null,
     is_active: true,
     commission_structure: null,
     contact_info: null,
   },
   {
-    name: 'SBLI',
+    name: "SBLI",
     code: null,
     is_active: true,
     commission_structure: null,
     contact_info: null,
   },
   {
-    name: 'Baltimore Life',
+    name: "Baltimore Life",
     code: null,
     is_active: true,
     commission_structure: null,
     contact_info: null,
   },
   {
-    name: 'John Hancock',
+    name: "John Hancock",
     code: null,
     is_active: true,
     commission_structure: null,
     contact_info: null,
   },
   {
-    name: 'American-Amicable Group',
+    name: "American-Amicable Group",
     code: null,
     is_active: true,
     commission_structure: null,
     contact_info: null,
   },
   {
-    name: 'Corebridge Financial',
+    name: "Corebridge Financial",
     code: null,
     is_active: true,
     commission_structure: null,
     contact_info: null,
   },
   {
-    name: 'Transamerica',
+    name: "Transamerica",
     code: null,
     is_active: true,
     commission_structure: null,
     contact_info: null,
   },
   {
-    name: 'ELCO Mutual',
+    name: "ELCO Mutual",
     code: null,
     is_active: true,
     commission_structure: null,
     contact_info: null,
   },
   {
-    name: 'Kansas City Life',
+    name: "Kansas City Life",
     code: null,
     is_active: true,
     commission_structure: null,

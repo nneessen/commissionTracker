@@ -27,8 +27,14 @@ serve(async (req) => {
       },
     );
 
-    const { email, fullName, roles, isAdmin, skipPipeline, profileId } =
-      await req.json();
+    const {
+      email,
+      fullName,
+      roles,
+      isAdmin,
+      skipPipeline,
+      profileId: _profileId,
+    } = await req.json();
 
     if (!email) {
       throw new Error("Email is required");
@@ -71,7 +77,8 @@ serve(async (req) => {
     // Send password reset email so user can set their own password
     let emailSent = false;
     if (authUser.user) {
-      const siteUrl = Deno.env.get("SITE_URL") || "https://www.thestandardhq.com";
+      const siteUrl =
+        Deno.env.get("SITE_URL") || "https://www.thestandardhq.com";
       const { error: resetError } =
         await supabaseAdmin.auth.resetPasswordForEmail(email, {
           redirectTo: `${siteUrl}/auth/reset-password`,

@@ -1,30 +1,30 @@
 // Import and re-export ProductType from product.types.ts instead of redefining
-import type {ProductType} from './product.types';
-import type {Database} from './database.types';
+import type { ProductType } from "./product.types";
+import type { Database } from "./database.types";
 
 // ============================================================================
 // Comp Guide Types (DB-first pattern from comp_guide table)
 // ============================================================================
 
 /** Raw database row from comp_guide table */
-export type CompGuideRow = Database['public']['Tables']['comp_guide']['Row'];
+export type CompGuideRow = Database["public"]["Tables"]["comp_guide"]["Row"];
 /** Insert type for comp_guide table */
-export type CompGuideInsert = Database['public']['Tables']['comp_guide']['Insert'];
+export type CompGuideInsert =
+  Database["public"]["Tables"]["comp_guide"]["Insert"];
 /** Update type for comp_guide table */
-export type CompGuideUpdate = Database['public']['Tables']['comp_guide']['Update'];
+export type CompGuideUpdate =
+  Database["public"]["Tables"]["comp_guide"]["Update"];
 
 /**
  * Comp Guide entry - carrier product compensation rates
- * Extends database row with camelCase aliases for UI consistency
+ * Uses database row type as source of truth
  */
-export interface Comp extends CompGuideRow {
-  // No additional fields needed - database schema is the source of truth
-}
+export type Comp = CompGuideRow;
 
 /** Create compensation guide data (form input) */
 export interface CreateCompData {
   carrier_id: string;
-  product_type: Database['public']['Enums']['product_type'];
+  product_type: Database["public"]["Enums"]["product_type"];
   contract_level: number;
   product_id?: string;
   commission_percentage: number;
@@ -38,7 +38,7 @@ export interface CreateCompData {
 /** Update compensation guide data */
 export interface UpdateCompData {
   carrier_id?: string;
-  product_type?: Database['public']['Enums']['product_type'];
+  product_type?: Database["public"]["Enums"]["product_type"];
   contract_level?: number;
   product_id?: string;
   commission_percentage?: number;
@@ -52,7 +52,7 @@ export interface UpdateCompData {
 /** Filters for querying comp guide entries */
 export interface CompFilters {
   carrier_id?: string;
-  product_type?: Database['public']['Enums']['product_type'];
+  product_type?: Database["public"]["Enums"]["product_type"];
   contract_level?: number;
   product_id?: string;
   effective_from?: string;
@@ -61,7 +61,7 @@ export interface CompFilters {
 
 /** Product summary statistics from comp guide */
 export interface ProductSummary {
-  product_type: Database['public']['Enums']['product_type'];
+  product_type: Database["public"]["Enums"]["product_type"];
   carrier_count: number;
   avg_commission: number;
   min_contract_level: number;
@@ -89,7 +89,12 @@ export interface CommissionClientInfo {
  */
 export type Client = CommissionClientInfo;
 
-export type CommissionType = 'first_year' | 'renewal' | 'trail' | 'bonus' | 'override';
+export type CommissionType =
+  | "first_year"
+  | "renewal"
+  | "trail"
+  | "bonus"
+  | "override";
 
 /**
  * Commission Status Lifecycle
@@ -110,8 +115,14 @@ export type CommissionType = 'first_year' | 'renewal' | 'trail' | 'bonus' | 'ove
  * - User should use policy action buttons (Cancel Policy, Mark as Lapsed) instead
  * - Commission status FOLLOWS policy status, not vice versa
  */
-export type CommissionStatus = 'pending' | 'earned' | 'paid' | 'clawback' | 'charged_back' | 'cancelled';
-export type CalculationBasis = 'premium' | 'fixed' | 'tiered';
+export type CommissionStatus =
+  | "pending"
+  | "earned"
+  | "paid"
+  | "clawback"
+  | "charged_back"
+  | "cancelled";
+export type CalculationBasis = "premium" | "fixed" | "tiered";
 
 export interface Commission {
   id: string;
@@ -131,27 +142,27 @@ export interface Commission {
   monthlyPremium?: number; // Optional for backward compatibility
 
   // ADVANCE (upfront payment) - Database field names
-  amount: number;                // Total commission amount (maps to DB 'commission_amount' field)
-  rate: number;                  // Commission rate as percentage (maps to DB 'rate' field)
-  advanceMonths: number;         // Number of months in advance (default 9, maps to DB 'advance_months')
+  amount: number; // Total commission amount (maps to DB 'commission_amount' field)
+  rate: number; // Commission rate as percentage (maps to DB 'rate' field)
+  advanceMonths: number; // Number of months in advance (default 9, maps to DB 'advance_months')
 
   // EARNING TRACKING (as client pays premiums) - Database field names
-  monthsPaid: number;            // How many premiums the client has paid (maps to DB 'months_paid')
-  earnedAmount: number;          // Portion of advance that's been earned (maps to DB 'earned_amount')
-  unearnedAmount: number;        // Portion of advance still at risk of chargeback (maps to DB 'unearned_amount')
-  lastPaymentDate?: Date;        // When the last premium was paid (maps to DB 'last_payment_date')
+  monthsPaid: number; // How many premiums the client has paid (maps to DB 'months_paid')
+  earnedAmount: number; // Portion of advance that's been earned (maps to DB 'earned_amount')
+  unearnedAmount: number; // Portion of advance still at risk of chargeback (maps to DB 'unearned_amount')
+  lastPaymentDate?: Date; // When the last premium was paid (maps to DB 'last_payment_date')
 
   // CHARGEBACK TRACKING (when policy lapses/cancels)
-  chargebackAmount?: number;     // Amount that must be repaid if policy cancels/lapses (maps to DB 'chargeback_amount')
-  chargebackDate?: Date;         // When the chargeback was applied (maps to DB 'chargeback_date')
-  chargebackReason?: string;     // Reason for chargeback (maps to DB 'chargeback_reason')
+  chargebackAmount?: number; // Amount that must be repaid if policy cancels/lapses (maps to DB 'chargeback_amount')
+  chargebackDate?: Date; // When the chargeback was applied (maps to DB 'chargeback_date')
+  chargebackReason?: string; // Reason for chargeback (maps to DB 'chargeback_reason')
 
   // DEPRECATED: Use 'amount' instead
   /** @deprecated Use 'amount' field instead - kept for backward compatibility */
   advanceAmount?: number;
 
   // COMMISSION RATE
-  commissionRate: number;        // Commission rate as DECIMAL from comp guide (e.g., 0.95 for 95%)
+  commissionRate: number; // Commission rate as DECIMAL from comp guide (e.g., 0.95 for 95%)
 
   // Comp Guide Integration
   contractCompLevel?: number; // Agent's contract level (80-145)
@@ -177,7 +188,7 @@ export interface Commission {
   notes?: string;
 }
 
-export type { ProductType } from './product.types';
+export type { ProductType } from "./product.types";
 
 export interface NewCommissionForm {
   clientName: string;
@@ -238,5 +249,8 @@ export interface CommissionFilters {
 }
 
 // Service layer types
-export type CreateCommissionData = Omit<Commission, 'id' | 'createdAt' | 'updatedAt' | 'created_at' | 'updated_at'>;
+export type CreateCommissionData = Omit<
+  Commission,
+  "id" | "createdAt" | "updatedAt" | "created_at" | "updated_at"
+>;
 export type UpdateCommissionData = Partial<CreateCommissionData>;

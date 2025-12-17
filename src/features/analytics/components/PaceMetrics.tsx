@@ -73,19 +73,24 @@ export function PaceMetrics() {
 
   // Calculate time remaining based on selected period
   const now = new Date();
-  const msRemaining = dateRange.endDate.getTime() - now.getTime();
+  const msRemaining = dateRange.actualEndDate.getTime() - now.getTime();
   const daysRemaining = Math.max(
-    1,
+    0,
     Math.floor(msRemaining / (24 * 60 * 60 * 1000)),
+  );
+  const hoursRemaining = Math.floor(
+    (msRemaining % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000),
   );
 
   // Calculate days elapsed in period
   const msElapsed = now.getTime() - dateRange.startDate.getTime();
-  const daysElapsed = Math.max(
-    1,
-    Math.floor(msElapsed / (24 * 60 * 60 * 1000)),
+  const daysElapsed = Math.max(1, Math.ceil(msElapsed / (24 * 60 * 60 * 1000)));
+
+  // Total days in period (from start to actual end)
+  const totalDaysInPeriod = Math.ceil(
+    (dateRange.actualEndDate.getTime() - dateRange.startDate.getTime()) /
+      (24 * 60 * 60 * 1000),
   );
-  const totalDaysInPeriod = daysElapsed + daysRemaining;
 
   // Calculate current pace and projections
   const currentAPPace = periodPolicies.premiumWritten / daysElapsed; // AP per day currently
@@ -97,11 +102,14 @@ export function PaceMetrics() {
   ); // Projected total policies
 
   // Calculate pace targets (what's needed to break even)
+  const totalDaysRemaining = daysRemaining + hoursRemaining / 24;
   const policiesPerDayNeeded =
-    policiesNeeded > 0 ? policiesNeeded / daysRemaining : 0;
+    policiesNeeded > 0 && totalDaysRemaining > 0
+      ? policiesNeeded / totalDaysRemaining
+      : 0;
   const dailyTarget = Math.ceil(policiesPerDayNeeded);
   const _weeklyTarget = Math.ceil(policiesPerDayNeeded * 7);
-  const _monthlyTarget = Math.ceil(policiesPerDayNeeded * 30);
+  const _monthlyTarget = Math.ceil(policiesPerDayNeeded * totalDaysRemaining);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -243,7 +251,9 @@ export function PaceMetrics() {
         <div className="flex items-center justify-between text-[11px]">
           <span className="text-zinc-500 dark:text-zinc-400">Time Left</span>
           <span className="font-mono font-bold text-zinc-900 dark:text-zinc-100">
-            {daysRemaining} days
+            {daysRemaining > 0
+              ? `${daysRemaining} ${daysRemaining === 1 ? "day" : "days"}`
+              : `${hoursRemaining} ${hoursRemaining === 1 ? "hour" : "hours"}`}
           </span>
         </div>
       </div>

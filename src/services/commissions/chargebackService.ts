@@ -1,10 +1,11 @@
 // src/services/chargebackService.ts
-import {logger} from '../base/logger';
-
-import {supabase, TABLES} from '../base/supabase';
-import {Chargeback, CreateChargebackData} from '../../types/user.types';
-import {formatDateForDB} from '../../lib/date';
-import {workflowEventEmitter, WORKFLOW_EVENTS} from '../events/workflowEventEmitter';
+import { supabase, TABLES } from "../base/supabase";
+import { Chargeback, CreateChargebackData } from "../../types/user.types";
+import { formatDateForDB } from "../../lib/date";
+import {
+  workflowEventEmitter,
+  WORKFLOW_EVENTS,
+} from "../events/workflowEventEmitter";
 
 export type { CreateChargebackData };
 
@@ -12,8 +13,8 @@ class ChargebackService {
   async getAll(): Promise<Chargeback[]> {
     const { data, error } = await supabase
       .from(TABLES.CHARGEBACKS)
-      .select('*')
-      .order('chargeback_date', { ascending: false });
+      .select("*")
+      .order("chargeback_date", { ascending: false });
 
     if (error) {
       throw new Error(`Failed to fetch chargebacks: ${error.message}`);
@@ -25,12 +26,12 @@ class ChargebackService {
   async getById(id: string): Promise<Chargeback | null> {
     const { data, error } = await supabase
       .from(TABLES.CHARGEBACKS)
-      .select('*')
-      .eq('id', id)
+      .select("*")
+      .eq("id", id)
       .single();
 
     if (error) {
-      if (error.code === 'PGRST116') {
+      if (error.code === "PGRST116") {
         return null; // Not found
       }
       throw new Error(`Failed to fetch chargeback: ${error.message}`);
@@ -42,12 +43,14 @@ class ChargebackService {
   async getByPolicyId(policyId: string): Promise<Chargeback[]> {
     const { data, error } = await supabase
       .from(TABLES.CHARGEBACKS)
-      .select('*')
-      .eq('policy_id', policyId)
-      .order('chargeback_date', { ascending: false });
+      .select("*")
+      .eq("policy_id", policyId)
+      .order("chargeback_date", { ascending: false });
 
     if (error) {
-      throw new Error(`Failed to fetch chargebacks for policy: ${error.message}`);
+      throw new Error(
+        `Failed to fetch chargebacks for policy: ${error.message}`,
+      );
     }
 
     return data?.map(this.transformFromDB) || [];
@@ -56,26 +59,30 @@ class ChargebackService {
   async getByAgentId(userId: string): Promise<Chargeback[]> {
     const { data, error } = await supabase
       .from(TABLES.CHARGEBACKS)
-      .select('*')
-      .eq('user_id', userId)
-      .order('chargeback_date', { ascending: false });
+      .select("*")
+      .eq("user_id", userId)
+      .order("chargeback_date", { ascending: false });
 
     if (error) {
-      throw new Error(`Failed to fetch chargebacks for agent: ${error.message}`);
+      throw new Error(
+        `Failed to fetch chargebacks for agent: ${error.message}`,
+      );
     }
 
     return data?.map(this.transformFromDB) || [];
   }
 
-  async getByStatus(status: Chargeback['status']): Promise<Chargeback[]> {
+  async getByStatus(status: Chargeback["status"]): Promise<Chargeback[]> {
     const { data, error } = await supabase
       .from(TABLES.CHARGEBACKS)
-      .select('*')
-      .eq('status', status)
-      .order('chargeback_date', { ascending: false });
+      .select("*")
+      .eq("status", status)
+      .order("chargeback_date", { ascending: false });
 
     if (error) {
-      throw new Error(`Failed to fetch chargebacks by status: ${error.message}`);
+      throw new Error(
+        `Failed to fetch chargebacks by status: ${error.message}`,
+      );
     }
 
     return data?.map(this.transformFromDB) || [];
@@ -105,17 +112,20 @@ class ChargebackService {
       chargebackType: chargeback.chargebackType,
       chargebackReason: chargeback.chargebackReason,
       occurredAt: chargeback.chargebackDate.toISOString(),
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
 
     return chargeback;
   }
 
-  async updateStatus(id: string, status: Chargeback['status']): Promise<Chargeback> {
+  async updateStatus(
+    id: string,
+    status: Chargeback["status"],
+  ): Promise<Chargeback> {
     const { data, error } = await supabase
       .from(TABLES.CHARGEBACKS)
       .update({ status })
-      .eq('id', id)
+      .eq("id", id)
       .select()
       .single();
 
@@ -130,49 +140,63 @@ class ChargebackService {
     const { error } = await supabase
       .from(TABLES.CHARGEBACKS)
       .delete()
-      .eq('id', id);
+      .eq("id", id);
 
     if (error) {
       throw new Error(`Failed to delete chargeback: ${error.message}`);
     }
   }
 
-  async getTotalChargebackAmount(userId?: string, startDate?: Date, endDate?: Date): Promise<number> {
-    let query = supabase
-      .from(TABLES.CHARGEBACKS)
-      .select('chargeback_amount');
+  async getTotalChargebackAmount(
+    userId?: string,
+    startDate?: Date,
+    endDate?: Date,
+  ): Promise<number> {
+    let query = supabase.from(TABLES.CHARGEBACKS).select("chargeback_amount");
 
     if (userId) {
-      query = query.eq('user_id', userId);
+      query = query.eq("user_id", userId);
     }
 
     if (startDate) {
-      query = query.gte('chargeback_date', formatDateForDB(startDate));
+      query = query.gte("chargeback_date", formatDateForDB(startDate));
     }
 
     if (endDate) {
-      query = query.lte('chargeback_date', formatDateForDB(endDate));
+      query = query.lte("chargeback_date", formatDateForDB(endDate));
     }
 
     const { data, error } = await query;
 
     if (error) {
-      throw new Error(`Failed to calculate total chargeback amount: ${error.message}`);
+      throw new Error(
+        `Failed to calculate total chargeback amount: ${error.message}`,
+      );
     }
 
-    return data?.reduce((total, chargeback) => total + parseFloat(chargeback.chargeback_amount), 0) || 0;
+    return (
+      data?.reduce(
+        (total, chargeback) => total + parseFloat(chargeback.chargeback_amount),
+        0,
+      ) || 0
+    );
   }
 
-  async getChargebacksByDateRange(startDate: Date, endDate: Date): Promise<Chargeback[]> {
+  async getChargebacksByDateRange(
+    startDate: Date,
+    endDate: Date,
+  ): Promise<Chargeback[]> {
     const { data, error } = await supabase
       .from(TABLES.CHARGEBACKS)
-      .select('*')
-      .gte('chargeback_date', formatDateForDB(startDate))
-      .lte('chargeback_date', formatDateForDB(endDate))
-      .order('chargeback_date', { ascending: false });
+      .select("*")
+      .gte("chargeback_date", formatDateForDB(startDate))
+      .lte("chargeback_date", formatDateForDB(endDate))
+      .order("chargeback_date", { ascending: false });
 
     if (error) {
-      throw new Error(`Failed to fetch chargebacks by date range: ${error.message}`);
+      throw new Error(
+        `Failed to fetch chargebacks by date range: ${error.message}`,
+      );
     }
 
     return data?.map(this.transformFromDB) || [];
@@ -181,12 +205,14 @@ class ChargebackService {
   async getByCommissionId(commissionId: string): Promise<Chargeback[]> {
     const { data, error } = await supabase
       .from(TABLES.CHARGEBACKS)
-      .select('*')
-      .eq('commission_id', commissionId)
-      .order('chargeback_date', { ascending: false });
+      .select("*")
+      .eq("commission_id", commissionId)
+      .order("chargeback_date", { ascending: false });
 
     if (error) {
-      throw new Error(`Failed to fetch chargebacks for commission: ${error.message}`);
+      throw new Error(
+        `Failed to fetch chargebacks for commission: ${error.message}`,
+      );
     }
 
     return data?.map(this.transformFromDB) || [];
@@ -194,15 +220,17 @@ class ChargebackService {
 
   async getByCommissionIds(commissionIds: string[]): Promise<Chargeback[]> {
     if (commissionIds.length === 0) return [];
-    
+
     const { data, error } = await supabase
       .from(TABLES.CHARGEBACKS)
-      .select('*')
-      .in('commission_id', commissionIds)
-      .order('chargeback_date', { ascending: false });
+      .select("*")
+      .in("commission_id", commissionIds)
+      .order("chargeback_date", { ascending: false });
 
     if (error) {
-      throw new Error(`Failed to fetch chargebacks for commissions: ${error.message}`);
+      throw new Error(
+        `Failed to fetch chargebacks for commissions: ${error.message}`,
+      );
     }
 
     return data?.map(this.transformFromDB) || [];
@@ -216,10 +244,10 @@ class ChargebackService {
   }> {
     let query = supabase
       .from(TABLES.CHARGEBACKS)
-      .select('chargeback_amount, status');
+      .select("chargeback_amount, status");
 
     if (userId) {
-      query = query.eq('user_id', userId);
+      query = query.eq("user_id", userId);
     }
 
     const { data, error } = await query;
@@ -239,9 +267,12 @@ class ChargebackService {
       const amount = parseFloat(chargeback.chargeback_amount);
       metrics.totalAmount += amount;
 
-      if (chargeback.status === 'pending' || chargeback.status === 'disputed') {
+      if (chargeback.status === "pending" || chargeback.status === "disputed") {
         metrics.pendingAmount += amount;
-      } else if (chargeback.status === 'processed' || chargeback.status === 'resolved') {
+      } else if (
+        chargeback.status === "processed" ||
+        chargeback.status === "resolved"
+      ) {
         metrics.processedAmount += amount;
       }
     });
@@ -258,7 +289,9 @@ class ChargebackService {
       chargebackType: dbRecord.chargeback_type,
       chargebackAmount: parseFloat(dbRecord.chargeback_amount),
       chargebackReason: dbRecord.chargeback_reason,
-      policyLapseDate: dbRecord.policy_lapse_date ? new Date(dbRecord.policy_lapse_date) : undefined,
+      policyLapseDate: dbRecord.policy_lapse_date
+        ? new Date(dbRecord.policy_lapse_date)
+        : undefined,
       chargebackDate: new Date(dbRecord.chargeback_date),
       status: dbRecord.status,
       createdAt: new Date(dbRecord.created_at),
@@ -274,9 +307,11 @@ class ChargebackService {
       chargeback_type: data.chargebackType,
       chargeback_amount: data.chargebackAmount,
       chargeback_reason: data.chargebackReason,
-      policy_lapse_date: data.policyLapseDate ? formatDateForDB(data.policyLapseDate) : null,
+      policy_lapse_date: data.policyLapseDate
+        ? formatDateForDB(data.policyLapseDate)
+        : null,
       chargeback_date: formatDateForDB(data.chargebackDate),
-      status: data.status || 'pending',
+      status: data.status || "pending",
     };
   }
 }

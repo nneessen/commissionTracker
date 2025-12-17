@@ -1,14 +1,13 @@
-import {supabase} from '@/services/base/supabase';
-import type {Database} from '@/types/database.types';
+import { supabase } from "@/services/base/supabase";
+import type { Database } from "@/types/database.types";
 
-type ProductRow = Database['public']['Tables']['products']['Row'];
-type ProductInsert = Database['public']['Tables']['products']['Insert'];
-type ProductUpdate = Database['public']['Tables']['products']['Update'];
+type ProductRow = Database["public"]["Tables"]["products"]["Row"];
+type ProductUpdate = Database["public"]["Tables"]["products"]["Update"];
 
 export interface ProductCreateData {
   carrier_id: string;
   name: string;
-  product_type: Database['public']['Enums']['product_type'];
+  product_type: Database["public"]["Enums"]["product_type"];
   code?: string;
   description?: string;
   min_premium?: number;
@@ -27,9 +26,9 @@ class ProductService {
    */
   async getAllProducts(): Promise<ProductRow[]> {
     const { data, error } = await this.client
-      .from('products')
-      .select('*')
-      .order('name');
+      .from("products")
+      .select("*")
+      .order("name");
 
     if (error) throw error;
     return data || [];
@@ -40,10 +39,10 @@ class ProductService {
    */
   async getProductsByCarrier(carrierId: string): Promise<ProductRow[]> {
     const { data, error } = await this.client
-      .from('products')
-      .select('*')
-      .eq('carrier_id', carrierId)
-      .order('name');
+      .from("products")
+      .select("*")
+      .eq("carrier_id", carrierId)
+      .order("name");
 
     if (error) throw error;
     return data || [];
@@ -54,10 +53,10 @@ class ProductService {
    */
   async getActiveProducts(): Promise<ProductRow[]> {
     const { data, error } = await this.client
-      .from('products')
-      .select('*')
-      .eq('is_active', true)
-      .order('name');
+      .from("products")
+      .select("*")
+      .eq("is_active", true)
+      .order("name");
 
     if (error) throw error;
     return data || [];
@@ -68,9 +67,9 @@ class ProductService {
    */
   async getProductById(id: string): Promise<ProductRow | null> {
     const { data, error } = await this.client
-      .from('products')
-      .select('*')
-      .eq('id', id)
+      .from("products")
+      .select("*")
+      .eq("id", id)
       .single();
 
     if (error) throw error;
@@ -82,10 +81,10 @@ class ProductService {
    */
   async createProduct(product: ProductCreateData): Promise<ProductRow> {
     const { data, error } = await this.client
-      .from('products')
+      .from("products")
       .insert({
         ...product,
-        is_active: product.is_active ?? true
+        is_active: product.is_active ?? true,
       })
       .select()
       .single();
@@ -99,9 +98,9 @@ class ProductService {
    */
   async updateProduct(id: string, updates: ProductUpdate): Promise<ProductRow> {
     const { data, error } = await this.client
-      .from('products')
+      .from("products")
       .update(updates)
-      .eq('id', id)
+      .eq("id", id)
       .select()
       .single();
 
@@ -114,9 +113,9 @@ class ProductService {
    */
   async deleteProduct(id: string): Promise<void> {
     const { error } = await this.client
-      .from('products')
+      .from("products")
       .update({ is_active: false })
-      .eq('id', id);
+      .eq("id", id);
 
     if (error) throw error;
   }
@@ -126,10 +125,10 @@ class ProductService {
    */
   async searchProducts(searchTerm: string): Promise<ProductRow[]> {
     const { data, error } = await this.client
-      .from('products')
-      .select('*')
-      .ilike('name', `%${searchTerm}%`)
-      .order('name');
+      .from("products")
+      .select("*")
+      .ilike("name", `%${searchTerm}%`)
+      .order("name");
 
     if (error) throw error;
     return data || [];
@@ -138,13 +137,17 @@ class ProductService {
   /**
    * Bulk create products
    */
-  async bulkCreateProducts(products: ProductCreateData[]): Promise<ProductRow[]> {
+  async bulkCreateProducts(
+    products: ProductCreateData[],
+  ): Promise<ProductRow[]> {
     const { data, error } = await this.client
-      .from('products')
-      .insert(products.map(p => ({
-        ...p,
-        is_active: p.is_active ?? true
-      })))
+      .from("products")
+      .insert(
+        products.map((p) => ({
+          ...p,
+          is_active: p.is_active ?? true,
+        })),
+      )
       .select();
 
     if (error) throw error;

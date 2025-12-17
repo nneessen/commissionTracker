@@ -7,10 +7,9 @@
  * Previously inline in DashboardHome.tsx (lines 1246-1414).
  */
 
-import { TimePeriod, getPeriodLabel } from '../../../utils/dateRange';
-import { KPISection } from '../../../types/dashboard.types';
-import { formatCurrency, formatPercent } from '../../../lib/format';
-import { scaleToDisplayPeriod, scaleCountToDisplayPeriod, getPeriodSuffix } from '../../../utils/dashboardCalculations';
+import { TimePeriod } from "../../../utils/dateRange";
+import { KPISection } from "../../../types/dashboard.types";
+import { formatCurrency, formatPercent } from "../../../lib/format";
 
 interface KPIConfigParams {
   timePeriod: TimePeriod;
@@ -71,48 +70,69 @@ interface KPIConfigParams {
  */
 export function generateKPIConfig(params: KPIConfigParams): KPISection[] {
   const {
-    timePeriod,
-    periodCommissions,
     periodExpenses,
     periodPolicies,
-    periodClients,
-    periodAnalytics,
     currentState,
     derivedMetrics,
-    breakevenDisplay,
-    policiesNeededDisplay,
+    periodAnalytics,
   } = params;
-
-  const periodLabel = getPeriodLabel(timePeriod);
-  const periodSuffix = getPeriodSuffix(timePeriod);
 
   // KPI Breakdown: Detailed metrics not shown elsewhere
   return [
     {
-      category: 'Financial Details',
+      category: "Financial Details",
       kpis: [
-        { label: 'Profit Margin', value: formatPercent(periodAnalytics.profitMargin) },
-        { label: 'Recurring Expenses', value: formatCurrency(periodExpenses.recurring) },
-        { label: 'One-Time Expenses', value: formatCurrency(periodExpenses.oneTime) },
-        { label: 'Tax Deductible', value: formatCurrency(periodExpenses.taxDeductible) },
+        {
+          label: "Profit Margin",
+          value: formatPercent(periodAnalytics.profitMargin),
+        },
+        {
+          label: "Recurring Expenses",
+          value: formatCurrency(periodExpenses.recurring),
+        },
+        {
+          label: "One-Time Expenses",
+          value: formatCurrency(periodExpenses.oneTime),
+        },
+        {
+          label: "Tax Deductible",
+          value: formatCurrency(periodExpenses.taxDeductible),
+        },
       ],
     },
     {
-      category: 'Policy Health',
+      category: "Policy Health",
       kpis: [
-        { label: 'Active Policies', value: currentState.activePolicies },
-        { label: 'Retention Rate', value: formatPercent(currentState.retentionRate) },
-        { label: 'Cancelled', value: periodPolicies.cancelled },
-        { label: 'Lapsed', value: periodPolicies.lapsed },
-        { label: 'Lapse Rate', value: formatPercent(derivedMetrics.lapsedRate) },
+        { label: "Active Policies", value: currentState.activePolicies },
+        {
+          label: "Retention Rate",
+          value: formatPercent(currentState.retentionRate),
+        },
+        { label: "Cancelled", value: periodPolicies.cancelled },
+        { label: "Lapsed", value: periodPolicies.lapsed },
+        {
+          label: "Lapse Rate",
+          value: formatPercent(derivedMetrics.lapsedRate),
+        },
       ],
     },
     {
-      category: 'Client Details',
+      category: "Client Details",
       kpis: [
-        { label: 'Total Clients', value: currentState.totalClients },
-        { label: 'Policies/Client', value: currentState.totalClients > 0 ? (currentState.totalPolicies / currentState.totalClients).toFixed(2) : '0' },
-        { label: 'Avg Client Value', value: formatCurrency(derivedMetrics.avgClientValue) },
+        { label: "Total Clients", value: currentState.totalClients },
+        {
+          label: "Policies/Client",
+          value:
+            currentState.totalClients > 0
+              ? (
+                  currentState.totalPolicies / currentState.totalClients
+                ).toFixed(2)
+              : "0",
+        },
+        {
+          label: "Avg Client Value",
+          value: formatCurrency(derivedMetrics.avgClientValue),
+        },
       ],
     },
   ];

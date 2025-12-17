@@ -1,9 +1,12 @@
 // src/hooks/targets/useTargetProgress.ts
 
-import {useQuery} from '@tanstack/react-query';
-import {targetsService} from '../../services/targets';
-import {supabase} from '../../services/base/supabase';
-import type {AllTargetsProgress, ActualMetrics, TimePeriod} from '../../types/targets.types';
+import { useQuery } from "@tanstack/react-query";
+import { targetsService } from "../../services/targets";
+import { supabase } from "../../services/base/supabase";
+import type {
+  AllTargetsProgress,
+  ActualMetrics,
+} from "../../types/targets.types";
 
 export interface UseTargetProgressOptions {
   actuals: ActualMetrics;
@@ -21,20 +24,25 @@ export interface UseTargetProgressOptions {
  */
 export const useTargetProgress = (options: UseTargetProgressOptions) => {
   return useQuery({
-    queryKey: ['targetProgress', options.actuals],
+    queryKey: ["targetProgress", options.actuals],
     queryFn: async (): Promise<AllTargetsProgress> => {
       // Get current user
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
       if (!user) {
-        throw new Error('User not authenticated');
+        throw new Error("User not authenticated");
       }
 
       // Get user targets
       const targets = await targetsService.getUserTargets(user.id);
 
       // Calculate progress
-      const progress = targetsService.calculateAllProgress(targets, options.actuals);
+      const progress = targetsService.calculateAllProgress(
+        targets,
+        options.actuals,
+      );
 
       // Check for new milestones
       await targetsService.checkMilestones(user.id, progress);

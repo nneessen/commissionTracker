@@ -1,14 +1,19 @@
 // src/hooks/kpi/useMetricsWithDateRange.ts
 
 // React 19.1 optimizes automatically - useMemo removed
-import {useQuery} from "@tanstack/react-query";
-import {TimePeriod, DateRange, getDateRange, isInDateRange, getTimeRemaining, getDaysInPeriod, getAveragePeriodValue} from "../../utils/dateRange";
-import {parseLocalDate, formatDateForDB} from "../../lib/date";
-import {usePolicies} from "../policies";
-import {useCommissions} from "../commissions/useCommissions";
-import {useExpenses} from "../expenses/useExpenses";
-import {useCarriers} from "../carriers/useCarriers";
-import {Commission, Policy, Expense, ProductType} from "../../types";
+import {
+  TimePeriod,
+  DateRange,
+  getDateRange,
+  isInDateRange,
+  getTimeRemaining,
+} from "../../utils/dateRange";
+import { parseLocalDate, formatDateForDB } from "../../lib/date";
+import { usePolicies } from "../policies";
+import { useCommissions } from "../commissions/useCommissions";
+import { useExpenses } from "../expenses/useExpenses";
+import { useCarriers } from "../carriers/useCarriers";
+import { ProductType } from "../../types";
 
 interface UseMetricsWithDateRangeOptions {
   timePeriod: TimePeriod;
@@ -92,14 +97,14 @@ export interface DateFilteredMetrics {
 export function useMetricsWithDateRange(
   options: UseMetricsWithDateRangeOptions,
 ): DateFilteredMetrics {
-  const {timePeriod, periodOffset = 0, enabled = true, targetAvgPremium = 1500} = options;
+  const { timePeriod, periodOffset = 0, targetAvgPremium = 1500 } = options;
 
   // Get base data
-  const {data: policies = [], isLoading: policiesLoading} = usePolicies();
-  const {data: commissions = [], isLoading: commissionsLoading} =
+  const { data: policies = [], isLoading: policiesLoading } = usePolicies();
+  const { data: commissions = [], isLoading: commissionsLoading } =
     useCommissions();
-  const {data: expenses = [], isLoading: expensesLoading} = useExpenses();
-  const {data: _carriers = [], isLoading: carriersLoading} = useCarriers();
+  const { data: expenses = [], isLoading: expensesLoading } = useExpenses();
+  const { data: _carriers = [], isLoading: carriersLoading } = useCarriers();
 
   const isLoading =
     policiesLoading || commissionsLoading || expensesLoading || carriersLoading;
@@ -110,7 +115,7 @@ export function useMetricsWithDateRange(
   // Create a string-based version for internal filtering (using local timezone to avoid UTC shift)
   const dateRangeForFiltering = {
     start: formatDateForDB(dateRange.startDate),
-    end: formatDateForDB(dateRange.endDate)
+    end: formatDateForDB(dateRange.endDate),
   };
 
   // Filter commissions by date range
@@ -122,7 +127,7 @@ export function useMetricsWithDateRange(
       const date =
         c.status === "paid" && c.paymentDate ? c.paymentDate : c.createdAt;
       if (!date) return false;
-      const dateObj = typeof date === 'string' ? parseLocalDate(date) : date;
+      const dateObj = typeof date === "string" ? parseLocalDate(date) : date;
       return dateObj.getFullYear() === currentYear;
     });
 
@@ -151,7 +156,7 @@ export function useMetricsWithDateRange(
     const hasCurrentYearData = expenses.some((e) => {
       const date = e.date || e.created_at;
       if (!date) return false;
-      const dateObj = typeof date === 'string' ? parseLocalDate(date) : date;
+      const dateObj = typeof date === "string" ? parseLocalDate(date) : date;
       return dateObj.getFullYear() === currentYear;
     });
 
@@ -177,7 +182,7 @@ export function useMetricsWithDateRange(
     const hasCurrentYearData = policies.some((p) => {
       const date = p.effectiveDate || p.createdAt;
       if (!date) return false;
-      const dateObj = typeof date === 'string' ? parseLocalDate(date) : date;
+      const dateObj = typeof date === "string" ? parseLocalDate(date) : date;
       return dateObj.getFullYear() === currentYear;
     });
 
@@ -387,9 +392,7 @@ export function useMetricsWithDateRange(
     const totalPolicies = policies.length;
 
     // Get unique clients from all policies
-    const allClients = new Set(
-      policies.map((p) => p.client?.name),
-    );
+    const allClients = new Set(policies.map((p) => p.client?.name));
     const totalClients = allClients.size;
 
     // ✅ FIXED: Pending pipeline - only commissions from active/pending policies
@@ -485,14 +488,15 @@ export function useMetricsWithDateRange(
           monthlyTarget = policiesNeeded;
           break;
 
-        case "yearly": {
-          // For yearly, calculate monthly and weekly targets
-          const monthsRemaining = 12 - new Date().getMonth();
-          policiesPerDayNeeded = policiesNeeded / daysRemaining;
-          dailyTarget = Math.ceil(policiesPerDayNeeded);
-          weeklyTarget = Math.ceil(policiesPerDayNeeded * 7);
-          monthlyTarget = Math.ceil(policiesNeeded / monthsRemaining);
-        }
+        case "yearly":
+          {
+            // For yearly, calculate monthly and weekly targets
+            const monthsRemaining = 12 - new Date().getMonth();
+            policiesPerDayNeeded = policiesNeeded / daysRemaining;
+            dailyTarget = Math.ceil(policiesPerDayNeeded);
+            weeklyTarget = Math.ceil(policiesPerDayNeeded * 7);
+            monthlyTarget = Math.ceil(policiesNeeded / monthsRemaining);
+          }
           break;
       }
     }
@@ -523,4 +527,3 @@ export function useMetricsWithDateRange(
     isLoading,
   };
 }
-

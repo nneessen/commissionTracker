@@ -1,19 +1,37 @@
 // src/features/recruiting/admin/PhaseEditor.tsx
 
-import React, { useState } from 'react';
-import {Button} from '@/components/ui/button';
-import {Badge} from '@/components/ui/badge';
-import {TableRow} from '@/components/ui/table';
-import {Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter} from '@/components/ui/dialog';
-import {Input} from '@/components/ui/input';
-import {Label} from '@/components/ui/label';
-import {Textarea} from '@/components/ui/textarea';
-import {Checkbox} from '@/components/ui/checkbox';
-import {Plus, Edit2, Trash2, ChevronDown, ChevronRight, GripVertical, Loader2} from 'lucide-react';
-import {showToast} from '@/utils/toast';
-import {usePhases, useCreatePhase, useUpdatePipelinePhase, useDeletePhase} from '../hooks/usePipeline';
-import {ChecklistItemEditor} from './ChecklistItemEditor';
-import type {PipelinePhase, CreatePhaseInput} from '@/types/recruiting.types';
+import React, { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Plus,
+  Edit2,
+  Trash2,
+  ChevronDown,
+  ChevronRight,
+  GripVertical,
+  Loader2,
+} from "lucide-react";
+import { showToast } from "@/utils/toast";
+import {
+  usePhases,
+  useCreatePhase,
+  useUpdatePipelinePhase,
+  useDeletePhase,
+} from "../hooks/usePipeline";
+import { ChecklistItemEditor } from "./ChecklistItemEditor";
+import type { PipelinePhase, CreatePhaseInput } from "@/types/recruiting.types";
 
 interface PhaseEditorProps {
   templateId: string;
@@ -30,19 +48,19 @@ export function PhaseEditor({ templateId }: PhaseEditorProps) {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [phaseForm, setPhaseForm] = useState<CreatePhaseInput>({
-    phase_name: '',
-    phase_description: '',
+    phase_name: "",
+    phase_description: "",
     estimated_days: 7,
     auto_advance: false,
   });
 
   const sortedPhases = [...(phases || [])].sort(
-    (a, b) => a.phase_order - b.phase_order
+    (a, b) => a.phase_order - b.phase_order,
   );
 
   const handleCreatePhase = async () => {
     if (!phaseForm.phase_name.trim()) {
-      showToast.error('Phase name is required');
+      showToast.error("Phase name is required");
       return;
     }
 
@@ -51,16 +69,16 @@ export function PhaseEditor({ templateId }: PhaseEditorProps) {
         templateId,
         data: phaseForm,
       });
-      showToast.success('Phase created');
+      showToast.success("Phase created");
       setCreateDialogOpen(false);
       setPhaseForm({
-        phase_name: '',
-        phase_description: '',
+        phase_name: "",
+        phase_description: "",
         estimated_days: 7,
         auto_advance: false,
       });
     } catch (_error) {
-      showToast.error('Failed to create phase');
+      showToast.error("Failed to create phase");
     }
   };
 
@@ -77,23 +95,23 @@ export function PhaseEditor({ templateId }: PhaseEditorProps) {
           auto_advance: editingPhase.auto_advance,
         },
       });
-      showToast.success('Phase updated');
+      showToast.success("Phase updated");
       setEditingPhase(null);
     } catch (_error) {
-      showToast.error('Failed to update phase');
+      showToast.error("Failed to update phase");
     }
   };
 
   const handleDeletePhase = async (id: string) => {
     try {
       await deletePhase.mutateAsync({ phaseId: id, templateId });
-      showToast.success('Phase deleted');
+      showToast.success("Phase deleted");
       setDeleteConfirmId(null);
       if (expandedPhase === id) {
         setExpandedPhase(null);
       }
     } catch (_error) {
-      showToast.error('Failed to delete phase');
+      showToast.error("Failed to delete phase");
     }
   };
 
@@ -115,7 +133,11 @@ export function PhaseEditor({ templateId }: PhaseEditorProps) {
         <h3 className="text-sm font-semibold">
           Pipeline Phases ({sortedPhases.length})
         </h3>
-        <Button size="sm" variant="outline" onClick={() => setCreateDialogOpen(true)}>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => setCreateDialogOpen(true)}
+        >
           <Plus className="h-4 w-4 mr-2" />
           Add Phase
         </Button>
@@ -145,7 +167,9 @@ export function PhaseEditor({ templateId }: PhaseEditorProps) {
                 <span className="text-xs text-muted-foreground font-mono w-6">
                   {phase.phase_order}
                 </span>
-                <span className="text-sm font-medium flex-1">{phase.phase_name}</span>
+                <span className="text-sm font-medium flex-1">
+                  {phase.phase_name}
+                </span>
                 <Badge variant="outline" className="text-xs">
                   {phase.estimated_days || 0} days
                 </Badge>
@@ -210,9 +234,12 @@ export function PhaseEditor({ templateId }: PhaseEditorProps) {
             <div className="space-y-2">
               <Label className="text-sm">Description</Label>
               <Textarea
-                value={phaseForm.phase_description || ''}
+                value={phaseForm.phase_description || ""}
                 onChange={(e) =>
-                  setPhaseForm({ ...phaseForm, phase_description: e.target.value })
+                  setPhaseForm({
+                    ...phaseForm,
+                    phase_description: e.target.value,
+                  })
                 }
                 placeholder="Optional description..."
                 className="text-sm min-h-16"
@@ -246,10 +273,16 @@ export function PhaseEditor({ templateId }: PhaseEditorProps) {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setCreateDialogOpen(false)}
+            >
               Cancel
             </Button>
-            <Button onClick={handleCreatePhase} disabled={createPhase.isPending}>
+            <Button
+              onClick={handleCreatePhase}
+              disabled={createPhase.isPending}
+            >
               {createPhase.isPending && (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
               )}
@@ -272,7 +305,10 @@ export function PhaseEditor({ templateId }: PhaseEditorProps) {
                 <Input
                   value={editingPhase.phase_name}
                   onChange={(e) =>
-                    setEditingPhase({ ...editingPhase, phase_name: e.target.value })
+                    setEditingPhase({
+                      ...editingPhase,
+                      phase_name: e.target.value,
+                    })
                   }
                   className="h-8 text-sm"
                 />
@@ -280,7 +316,7 @@ export function PhaseEditor({ templateId }: PhaseEditorProps) {
               <div className="space-y-2">
                 <Label className="text-sm">Description</Label>
                 <Textarea
-                  value={editingPhase.phase_description || ''}
+                  value={editingPhase.phase_description || ""}
                   onChange={(e) =>
                     setEditingPhase({
                       ...editingPhase,
@@ -309,10 +345,16 @@ export function PhaseEditor({ templateId }: PhaseEditorProps) {
                   id="edit_auto_advance"
                   checked={editingPhase.auto_advance}
                   onCheckedChange={(checked) =>
-                    setEditingPhase({ ...editingPhase, auto_advance: !!checked })
+                    setEditingPhase({
+                      ...editingPhase,
+                      auto_advance: !!checked,
+                    })
                   }
                 />
-                <label htmlFor="edit_auto_advance" className="text-sm cursor-pointer">
+                <label
+                  htmlFor="edit_auto_advance"
+                  className="text-sm cursor-pointer"
+                >
                   Auto-advance when all items complete
                 </label>
               </div>
@@ -322,7 +364,10 @@ export function PhaseEditor({ templateId }: PhaseEditorProps) {
             <Button variant="outline" onClick={() => setEditingPhase(null)}>
               Cancel
             </Button>
-            <Button onClick={handleUpdatePhase} disabled={updatePhase.isPending}>
+            <Button
+              onClick={handleUpdatePhase}
+              disabled={updatePhase.isPending}
+            >
               {updatePhase.isPending && (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
               )}
@@ -333,7 +378,10 @@ export function PhaseEditor({ templateId }: PhaseEditorProps) {
       </Dialog>
 
       {/* Delete Confirmation */}
-      <Dialog open={!!deleteConfirmId} onOpenChange={() => setDeleteConfirmId(null)}>
+      <Dialog
+        open={!!deleteConfirmId}
+        onOpenChange={() => setDeleteConfirmId(null)}
+      >
         <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle>Delete Phase?</DialogTitle>
@@ -347,7 +395,9 @@ export function PhaseEditor({ templateId }: PhaseEditorProps) {
             </Button>
             <Button
               variant="destructive"
-              onClick={() => deleteConfirmId && handleDeletePhase(deleteConfirmId)}
+              onClick={() =>
+                deleteConfirmId && handleDeletePhase(deleteConfirmId)
+              }
               disabled={deletePhase.isPending}
             >
               {deletePhase.isPending && (

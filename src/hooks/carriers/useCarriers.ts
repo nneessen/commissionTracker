@@ -1,19 +1,19 @@
 // /home/nneessen/projects/commissionTracker/src/hooks/carriers/useCarriers.ts
-import {logger} from '../../services/base/logger';
+import { logger } from "../../services/base/logger";
 
-import {useQuery, useMutation, useQueryClient} from '@tanstack/react-query';
-import {carrierService} from '../../services/settings/carrierService';
-import {Carrier, NewCarrierForm} from '../../types/carrier.types';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { carrierService } from "../../services/settings/carrierService";
+import { NewCarrierForm } from "../../types/carrier.types";
 
 // Query keys for React Query cache management
 export const carrierQueryKeys = {
-  all: ['carriers'] as const,
-  lists: () => [...carrierQueryKeys.all, 'list'] as const,
+  all: ["carriers"] as const,
+  lists: () => [...carrierQueryKeys.all, "list"] as const,
   list: () => [...carrierQueryKeys.lists()] as const,
-  detail: (id: string) => [...carrierQueryKeys.all, 'detail', id] as const,
-  active: () => [...carrierQueryKeys.all, 'active'] as const,
-  byName: (name: string) => [...carrierQueryKeys.all, 'byName', name] as const,
-  search: (term: string) => [...carrierQueryKeys.all, 'search', term] as const,
+  detail: (id: string) => [...carrierQueryKeys.all, "detail", id] as const,
+  active: () => [...carrierQueryKeys.all, "active"] as const,
+  byName: (name: string) => [...carrierQueryKeys.all, "byName", name] as const,
+  search: (term: string) => [...carrierQueryKeys.all, "search", term] as const,
 };
 
 /**
@@ -27,7 +27,7 @@ export function useCarriers(options?: {
   const {
     enabled = true,
     staleTime = 5 * 60 * 1000, // 5 minutes
-    refetchOnWindowFocus = false
+    refetchOnWindowFocus = false,
   } = options || {};
 
   return useQuery({
@@ -37,7 +37,7 @@ export function useCarriers(options?: {
       if (result.success && result.data) {
         return result.data;
       }
-      throw new Error(result.error?.message || 'Failed to fetch carriers');
+      throw new Error(result.error?.message || "Failed to fetch carriers");
     },
     enabled,
     staleTime,
@@ -48,14 +48,14 @@ export function useCarriers(options?: {
 /**
  * Hook to fetch a carrier by ID
  */
-export function useCarrier(id: string, options?: {
-  enabled?: boolean;
-  staleTime?: number;
-}) {
-  const {
-    enabled = true,
-    staleTime = 5 * 60 * 1000,
-  } = options || {};
+export function useCarrier(
+  id: string,
+  options?: {
+    enabled?: boolean;
+    staleTime?: number;
+  },
+) {
+  const { enabled = true, staleTime = 5 * 60 * 1000 } = options || {};
 
   return useQuery({
     queryKey: carrierQueryKeys.detail(id),
@@ -64,7 +64,7 @@ export function useCarrier(id: string, options?: {
       if (result.success) {
         return result.data;
       }
-      throw new Error(result.error?.message || 'Failed to fetch carrier');
+      throw new Error(result.error?.message || "Failed to fetch carrier");
     },
     enabled: enabled && !!id,
     staleTime,
@@ -78,10 +78,7 @@ export function useActiveCarriers(options?: {
   enabled?: boolean;
   staleTime?: number;
 }) {
-  const {
-    enabled = true,
-    staleTime = 5 * 60 * 1000,
-  } = options || {};
+  const { enabled = true, staleTime = 5 * 60 * 1000 } = options || {};
 
   return useQuery({
     queryKey: carrierQueryKeys.active(),
@@ -90,7 +87,9 @@ export function useActiveCarriers(options?: {
       if (result.success && result.data) {
         return result.data;
       }
-      throw new Error(result.error?.message || 'Failed to fetch active carriers');
+      throw new Error(
+        result.error?.message || "Failed to fetch active carriers",
+      );
     },
     enabled,
     staleTime,
@@ -100,10 +99,13 @@ export function useActiveCarriers(options?: {
 /**
  * Hook to search carriers by name
  */
-export function useSearchCarriers(searchTerm: string, options?: {
-  enabled?: boolean;
-  staleTime?: number;
-}) {
+export function useSearchCarriers(
+  searchTerm: string,
+  options?: {
+    enabled?: boolean;
+    staleTime?: number;
+  },
+) {
   const {
     enabled = true,
     staleTime = 30 * 1000, // 30 seconds for search results
@@ -119,7 +121,7 @@ export function useSearchCarriers(searchTerm: string, options?: {
       if (result.success && result.data) {
         return result.data;
       }
-      throw new Error(result.error?.message || 'Failed to search carriers');
+      throw new Error(result.error?.message || "Failed to search carriers");
     },
     enabled: enabled && searchTerm.length > 0,
     staleTime,
@@ -138,16 +140,23 @@ export function useCreateCarrier() {
       if (result.success && result.data) {
         return result.data;
       }
-      throw new Error(result.error?.message || 'Failed to create carrier');
+      throw new Error(result.error?.message || "Failed to create carrier");
     },
     onSuccess: (newCarrier) => {
       // Invalidate and refetch carriers list
       queryClient.invalidateQueries({ queryKey: carrierQueryKeys.lists() });
       // Add the new carrier to the cache
-      queryClient.setQueryData(carrierQueryKeys.detail(newCarrier.id), newCarrier);
+      queryClient.setQueryData(
+        carrierQueryKeys.detail(newCarrier.id),
+        newCarrier,
+      );
     },
     onError: (error) => {
-      logger.error('Error creating carrier', error instanceof Error ? error : String(error), 'Migration');
+      logger.error(
+        "Error creating carrier",
+        error instanceof Error ? error : String(error),
+        "Migration",
+      );
     },
   });
 }
@@ -159,21 +168,34 @@ export function useUpdateCarrier() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<NewCarrierForm> }) => {
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: Partial<NewCarrierForm>;
+    }) => {
       const result = await carrierService.update(id, data);
       if (result.success && result.data) {
         return result.data;
       }
-      throw new Error(result.error?.message || 'Failed to update carrier');
+      throw new Error(result.error?.message || "Failed to update carrier");
     },
     onSuccess: (updatedCarrier) => {
       // Update the specific carrier in cache
-      queryClient.setQueryData(carrierQueryKeys.detail(updatedCarrier.id), updatedCarrier);
+      queryClient.setQueryData(
+        carrierQueryKeys.detail(updatedCarrier.id),
+        updatedCarrier,
+      );
       // Invalidate lists to ensure they're fresh
       queryClient.invalidateQueries({ queryKey: carrierQueryKeys.lists() });
     },
     onError: (error) => {
-      logger.error('Error updating carrier', error instanceof Error ? error : String(error), 'Migration');
+      logger.error(
+        "Error updating carrier",
+        error instanceof Error ? error : String(error),
+        "Migration",
+      );
     },
   });
 }
@@ -188,18 +210,23 @@ export function useDeleteCarrier() {
     mutationFn: async (id: string) => {
       const result = await carrierService.delete(id);
       if (!result.success) {
-        throw new Error(result.error?.message || 'Failed to delete carrier');
+        throw new Error(result.error?.message || "Failed to delete carrier");
       }
     },
     onSuccess: (_, deletedId) => {
       // Remove from cache
-      queryClient.removeQueries({ queryKey: carrierQueryKeys.detail(deletedId) });
+      queryClient.removeQueries({
+        queryKey: carrierQueryKeys.detail(deletedId),
+      });
       // Invalidate lists
       queryClient.invalidateQueries({ queryKey: carrierQueryKeys.lists() });
     },
     onError: (error) => {
-      logger.error('Error deleting carrier', error instanceof Error ? error : String(error), 'Migration');
+      logger.error(
+        "Error deleting carrier",
+        error instanceof Error ? error : String(error),
+        "Migration",
+      );
     },
   });
 }
-

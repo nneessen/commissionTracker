@@ -1,10 +1,14 @@
 // src/services/expenses/expenseCategoryService.ts
 
-import {supabase} from '../base/supabase';
-import type {ExpenseCategory, CreateExpenseCategoryData, UpdateExpenseCategoryData, DEFAULT_EXPENSE_CATEGORIES} from '../../types/expense.types';
+import { supabase } from "../base/supabase";
+import type {
+  ExpenseCategory,
+  CreateExpenseCategoryData,
+  UpdateExpenseCategoryData,
+} from "../../types/expense.types";
 
 class ExpenseCategoryService {
-  private readonly TABLE_NAME = 'expense_categories';
+  private readonly TABLE_NAME = "expense_categories";
 
   /**
    * Get all active categories for the current user
@@ -12,10 +16,10 @@ class ExpenseCategoryService {
   async getAll(): Promise<ExpenseCategory[]> {
     const { data, error } = await supabase
       .from(this.TABLE_NAME)
-      .select('*')
-      .eq('is_active', true)
-      .order('sort_order', { ascending: true })
-      .order('name', { ascending: true });
+      .select("*")
+      .eq("is_active", true)
+      .order("sort_order", { ascending: true })
+      .order("name", { ascending: true });
 
     if (error) {
       throw new Error(`Failed to fetch expense categories: ${error.message}`);
@@ -30,12 +34,14 @@ class ExpenseCategoryService {
   async getAllIncludingInactive(): Promise<ExpenseCategory[]> {
     const { data, error } = await supabase
       .from(this.TABLE_NAME)
-      .select('*')
-      .order('sort_order', { ascending: true })
-      .order('name', { ascending: true });
+      .select("*")
+      .order("sort_order", { ascending: true })
+      .order("name", { ascending: true });
 
     if (error) {
-      throw new Error(`Failed to fetch all expense categories: ${error.message}`);
+      throw new Error(
+        `Failed to fetch all expense categories: ${error.message}`,
+      );
     }
 
     return (data || []) as ExpenseCategory[];
@@ -47,8 +53,8 @@ class ExpenseCategoryService {
   async getById(id: string): Promise<ExpenseCategory> {
     const { data, error } = await supabase
       .from(this.TABLE_NAME)
-      .select('*')
-      .eq('id', id)
+      .select("*")
+      .eq("id", id)
       .single();
 
     if (error) {
@@ -56,7 +62,7 @@ class ExpenseCategoryService {
     }
 
     if (!data) {
-      throw new Error('Category not found');
+      throw new Error("Category not found");
     }
 
     return data as ExpenseCategory;
@@ -65,7 +71,9 @@ class ExpenseCategoryService {
   /**
    * Create a new category
    */
-  async create(categoryData: CreateExpenseCategoryData): Promise<ExpenseCategory> {
+  async create(
+    categoryData: CreateExpenseCategoryData,
+  ): Promise<ExpenseCategory> {
     const { data, error } = await supabase
       .from(this.TABLE_NAME)
       .insert({
@@ -77,8 +85,8 @@ class ExpenseCategoryService {
       .single();
 
     if (error) {
-      if (error.code === '23505') {
-        throw new Error('A category with this name already exists');
+      if (error.code === "23505") {
+        throw new Error("A category with this name already exists");
       }
       throw new Error(`Failed to create category: ${error.message}`);
     }
@@ -89,17 +97,20 @@ class ExpenseCategoryService {
   /**
    * Update an existing category
    */
-  async update(id: string, updates: UpdateExpenseCategoryData): Promise<ExpenseCategory> {
+  async update(
+    id: string,
+    updates: UpdateExpenseCategoryData,
+  ): Promise<ExpenseCategory> {
     const { data, error } = await supabase
       .from(this.TABLE_NAME)
       .update(updates)
-      .eq('id', id)
+      .eq("id", id)
       .select()
       .single();
 
     if (error) {
-      if (error.code === '23505') {
-        throw new Error('A category with this name already exists');
+      if (error.code === "23505") {
+        throw new Error("A category with this name already exists");
       }
       throw new Error(`Failed to update category: ${error.message}`);
     }
@@ -114,7 +125,7 @@ class ExpenseCategoryService {
     const { error } = await supabase
       .from(this.TABLE_NAME)
       .update({ is_active: false })
-      .eq('id', id);
+      .eq("id", id);
 
     if (error) {
       throw new Error(`Failed to delete category: ${error.message}`);
@@ -128,10 +139,12 @@ class ExpenseCategoryService {
     const { error } = await supabase
       .from(this.TABLE_NAME)
       .delete()
-      .eq('id', id);
+      .eq("id", id);
 
     if (error) {
-      throw new Error(`Failed to permanently delete category: ${error.message}`);
+      throw new Error(
+        `Failed to permanently delete category: ${error.message}`,
+      );
     }
   }
 
@@ -147,7 +160,8 @@ class ExpenseCategoryService {
     }
 
     // Import the default categories constant
-    const { DEFAULT_EXPENSE_CATEGORIES } = await import('../../types/expense.types');
+    const { DEFAULT_EXPENSE_CATEGORIES } =
+      await import("../../types/expense.types");
 
     // Create all default categories
     const createPromises = DEFAULT_EXPENSE_CATEGORIES.map((category, index) =>
@@ -156,14 +170,14 @@ class ExpenseCategoryService {
         description: category.description,
         is_active: true,
         sort_order: index,
-      })
+      }),
     );
 
     try {
       await Promise.all(createPromises);
     } catch (error) {
       // Some categories might already exist, which is fine
-      console.warn('Some default categories could not be created:', error);
+      console.warn("Some default categories could not be created:", error);
     }
   }
 
@@ -173,8 +187,8 @@ class ExpenseCategoryService {
   async hasCategories(): Promise<boolean> {
     const { count, error } = await supabase
       .from(this.TABLE_NAME)
-      .select('*', { count: 'exact', head: true })
-      .eq('is_active', true);
+      .select("*", { count: "exact", head: true })
+      .eq("is_active", true);
 
     if (error) {
       throw new Error(`Failed to check categories: ${error.message}`);
@@ -194,17 +208,16 @@ class ExpenseCategoryService {
 
     // Update each category's sort order
     const updatePromises = updates.map(({ id, sort_order }) =>
-      supabase
-        .from(this.TABLE_NAME)
-        .update({ sort_order })
-        .eq('id', id)
+      supabase.from(this.TABLE_NAME).update({ sort_order }).eq("id", id),
     );
 
     const results = await Promise.all(updatePromises);
 
-    const failedUpdate = results.find(result => result.error);
+    const failedUpdate = results.find((result) => result.error);
     if (failedUpdate?.error) {
-      throw new Error(`Failed to reorder categories: ${failedUpdate.error.message}`);
+      throw new Error(
+        `Failed to reorder categories: ${failedUpdate.error.message}`,
+      );
     }
   }
 
@@ -215,7 +228,7 @@ class ExpenseCategoryService {
     const { data, error } = await supabase
       .from(this.TABLE_NAME)
       .update({ is_active: true })
-      .eq('id', id)
+      .eq("id", id)
       .select()
       .single();
 
@@ -230,14 +243,19 @@ class ExpenseCategoryService {
 export const expenseCategoryService = new ExpenseCategoryService();
 
 // Export the old functional API for backward compatibility if needed
-export {
-  expenseCategoryService as default,
-};
+export { expenseCategoryService as default };
 
 // Legacy functional exports (for gradual migration)
 export const getExpenseCategories = () => expenseCategoryService.getAll();
-export const getAllExpenseCategories = () => expenseCategoryService.getAllIncludingInactive();
-export const createExpenseCategory = (data: CreateExpenseCategoryData) => expenseCategoryService.create(data);
-export const updateExpenseCategory = (id: string, data: UpdateExpenseCategoryData) => expenseCategoryService.update(id, data);
-export const deleteExpenseCategory = (id: string) => expenseCategoryService.delete(id);
-export const reorderExpenseCategories = (ids: string[]) => expenseCategoryService.reorderCategories(ids);
+export const getAllExpenseCategories = () =>
+  expenseCategoryService.getAllIncludingInactive();
+export const createExpenseCategory = (data: CreateExpenseCategoryData) =>
+  expenseCategoryService.create(data);
+export const updateExpenseCategory = (
+  id: string,
+  data: UpdateExpenseCategoryData,
+) => expenseCategoryService.update(id, data);
+export const deleteExpenseCategory = (id: string) =>
+  expenseCategoryService.delete(id);
+export const reorderExpenseCategories = (ids: string[]) =>
+  expenseCategoryService.reorderCategories(ids);

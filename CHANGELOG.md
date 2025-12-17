@@ -6,6 +6,83 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-12-17 12:31:37
+
+### Changed Files
+- `src/features/analytics/components/PaceMetrics.tsx`
+- `src/features/analytics/components/TimePeriodSelector.tsx`
+- `src/features/analytics/context/AnalyticsDateContext.tsx`
+- `src/features/comps/CompGuide.tsx`
+- `src/features/dashboard/config/kpiConfig.ts`
+- `src/features/dashboard/config/metricsConfig.ts`
+- `src/features/dashboard/config/statsConfig.ts`
+- `src/features/email/components/block-builder/EmailBlockBuilder.tsx`
+- `src/features/email/components/block-builder/blocks/TextBlock.tsx`
+- `src/features/expenses/components/ExpensePageHeader.tsx`
+- `src/features/hierarchy/components/AgentDetailModal.tsx`
+- `src/features/hierarchy/components/EditAgentModal.tsx`
+- `src/features/hierarchy/components/HierarchyTree.tsx`
+- `src/features/hierarchy/components/OverrideDashboard.tsx`
+- `src/features/hierarchy/components/SendInvitationModal.tsx`
+- `src/features/hierarchy/components/SentInvitationsCard.tsx`
+- `src/features/recruiting/admin/PhaseEditor.tsx`
+- `src/features/recruiting/admin/PipelineAdminPage.tsx`
+- `src/features/recruiting/admin/PipelineTemplatesList.tsx`
+- `src/features/recruiting/hooks/useRecruitDocuments.ts`
+- `src/features/reports/components/ReportSelector.tsx`
+- `src/features/settings/components/CompGuideImporter.tsx`
+- `src/features/training-hub/components/ActionConfigPanel.tsx`
+- `src/hooks/admin/useUserApproval.ts`
+- `src/hooks/base/useLocalStorage.ts`
+- `src/hooks/carriers/useCarriers.ts`
+- `src/hooks/commissions/useCommissions.ts`
+- `src/hooks/comps/useCompRates.ts`
+- `src/hooks/expenses/useExpenseCategories.ts`
+- `src/hooks/expenses/useGenerateRecurring.ts`
+- `src/hooks/kpi/useMetricsWithDateRange.ts`
+- `src/hooks/permissions/usePermissions.ts`
+- `src/hooks/targets/useAchievements.ts`
+- `src/hooks/targets/useTargetProgress.ts`
+- `src/services/analytics/attributionService.ts`
+- `src/services/analytics/breakevenService.ts`
+- `src/services/analytics/goalTrackingService.ts`
+- `src/services/commissions/CommissionRepository.ts`
+- `src/services/commissions/CommissionStatusService.ts`
+- `src/services/commissions/__tests__/commissionRateService.test.ts`
+- `src/services/commissions/chargebackService.ts`
+- `src/services/commissions/commissionRateService.ts`
+- `src/services/commissions/index.ts`
+- `src/services/expenses/expenseCategoryService.ts`
+- `src/services/hierarchy/__tests__/hierarchyService.test.ts`
+- `src/services/hierarchy/invitationService.ts`
+- `src/services/kpi/metricCalculationService.ts`
+- `src/services/messaging/realtimeMessaging.ts`
+- `src/services/reports/drillDownService.ts`
+- `src/services/reports/forecastingService.ts`
+- `src/services/reports/reportExportService.ts`
+- `src/services/settings/AgentRepository.ts`
+- `src/services/settings/agentService.ts`
+- `src/services/settings/agentSettingsService.ts`
+- `src/services/settings/carrierService.ts`
+- `src/services/settings/compGuideService.ts`
+- `src/services/settings/index.ts`
+- `src/services/settings/productService.ts`
+- `src/services/targets/targetsService.ts`
+- `src/services/workflow-recipient-resolver.ts`
+- `src/types/carrier.types.ts`
+- `src/types/commission.types.ts`
+- `src/types/expense.types.ts`
+- `src/types/legacy/user-v1.types.ts`
+- `src/utils/__tests__/dateRange.test.ts`
+- `src/utils/dashboardCalculations.ts`
+- `src/utils/dataMigration.ts`
+- `supabase/functions/create-auth-user/index.ts`
+
+### Statistics
+```
+ 68 files changed, 89 insertions(+), 120 deletions(-)
+```
+
 ## [Checkpoint] - 2025-12-17 10:38:01
 
 ### Changed Files

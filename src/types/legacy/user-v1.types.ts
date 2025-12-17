@@ -16,12 +16,11 @@
 import type {
   UserProfile,
   CreateUserProfileData,
-  UpdateUserProfileData,
   User,
   Agent,
   CreateUserData,
   UpdateUserData,
-} from '../user.types';
+} from "../user.types";
 
 // Re-export deprecated types for discoverability
 // These are already exported from user.types.ts
@@ -42,20 +41,21 @@ export function migrateLegacyUser(legacy: User | Agent): Partial<UserProfile> {
   const result: Partial<UserProfile> = {
     id: legacy.id,
     email: legacy.email,
-    first_name: legacy.name?.split(' ')[0] ?? null,
-    last_name: legacy.name?.split(' ').slice(1).join(' ') ?? null,
+    first_name: legacy.name?.split(" ")[0] ?? null,
+    last_name: legacy.name?.split(" ").slice(1).join(" ") ?? null,
     phone: legacy.phone ?? null,
     contract_level: legacy.contractCompLevel ?? null,
     license_number: legacy.licenseNumber ?? null,
     // Note: is_active maps to approval_status (hard deletes only, no soft delete)
-    approval_status: legacy.isActive === false ? 'denied' : 'approved',
+    approval_status: legacy.isActive === false ? "denied" : "approved",
   };
 
   // Only set optional fields if they have values
   if (legacy.agentCode) result.agent_code = legacy.agentCode;
   if (legacy.licenseState) result.license_state = legacy.licenseState;
   if (legacy.notes) result.notes = legacy.notes;
-  if (legacy.hireDate) result.hire_date = legacy.hireDate.toISOString().split('T')[0];
+  if (legacy.hireDate)
+    result.hire_date = legacy.hireDate.toISOString().split("T")[0];
 
   return result;
 }
@@ -63,11 +63,13 @@ export function migrateLegacyUser(legacy: User | Agent): Partial<UserProfile> {
 /**
  * Maps legacy CreateUserData to CreateUserProfileData
  */
-export function migrateLegacyCreateUserData(legacy: CreateUserData): CreateUserProfileData {
+export function migrateLegacyCreateUserData(
+  legacy: CreateUserData,
+): CreateUserProfileData {
   return {
     email: legacy.email,
-    first_name: legacy.name?.split(' ')[0],
-    last_name: legacy.name?.split(' ').slice(1).join(' '),
+    first_name: legacy.name?.split(" ")[0],
+    last_name: legacy.name?.split(" ").slice(1).join(" "),
     phone: legacy.phone,
     contract_level: legacy.contractCompLevel,
     license_number: legacy.licenseNumber,
@@ -79,8 +81,13 @@ export function migrateLegacyCreateUserData(legacy: CreateUserData): CreateUserP
  * Type guard to detect legacy User/Agent objects
  */
 export function isLegacyUser(obj: unknown): obj is User {
-  if (typeof obj !== 'object' || obj === null) return false;
+  if (typeof obj !== "object" || obj === null) return false;
   const record = obj as Record<string, unknown>;
   // Legacy users have 'name' instead of 'first_name'/'last_name'
-  return 'id' in record && 'email' in record && 'name' in record && !('first_name' in record);
+  return (
+    "id" in record &&
+    "email" in record &&
+    "name" in record &&
+    !("first_name" in record)
+  );
 }

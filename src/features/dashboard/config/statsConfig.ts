@@ -2,7 +2,7 @@
 
 import { TimePeriod, getPeriodLabel } from "../../../utils/dateRange";
 import { StatItemConfig } from "../../../types/dashboard.types";
-import { formatCurrency, formatPercent } from "../../../lib/format";
+import { formatCurrency } from "../../../lib/format";
 import { getPeriodSuffix } from "../../../utils/dashboardCalculations";
 import { METRIC_COLORS } from "../../../constants/dashboard";
 
@@ -66,13 +66,10 @@ export function generateStatsConfig(
     timePeriod,
     periodCommissions,
     periodExpenses,
-    periodPolicies,
     periodAnalytics,
     currentState,
-    derivedMetrics,
     breakevenDisplay,
     policiesNeededDisplay,
-    chargebackSummary,
   } = params;
 
   const periodSuffix = getPeriodSuffix(timePeriod);
@@ -84,7 +81,10 @@ export function generateStatsConfig(
       label: `${periodLabel} Commission`,
       value: formatCurrency(periodCommissions.paid),
       trend: periodAnalytics.surplusDeficit >= 0 ? "up" : "down",
-      color: periodCommissions.paid > 0 ? METRIC_COLORS.COMMISSION_EARNED : METRIC_COLORS.NET_INCOME_NEGATIVE,
+      color:
+        periodCommissions.paid > 0
+          ? METRIC_COLORS.COMMISSION_EARNED
+          : METRIC_COLORS.NET_INCOME_NEGATIVE,
       tooltip: {
         title: `${periodLabel} Commission Paid`,
         description: `Commission payments received during the ${timePeriod.toLowerCase()} period.`,
@@ -105,7 +105,10 @@ export function generateStatsConfig(
       label: `${periodLabel} Net Income`,
       value: formatCurrency(Math.abs(periodAnalytics.surplusDeficit)),
       trend: periodAnalytics.surplusDeficit >= 0 ? "up" : "down",
-      color: periodAnalytics.surplusDeficit >= 0 ? METRIC_COLORS.NET_INCOME_POSITIVE : METRIC_COLORS.NET_INCOME_NEGATIVE,
+      color:
+        periodAnalytics.surplusDeficit >= 0
+          ? METRIC_COLORS.NET_INCOME_POSITIVE
+          : METRIC_COLORS.NET_INCOME_NEGATIVE,
       tooltip: {
         title: `${periodLabel} Net Income`,
         description: `Net income (Commission - Expenses) for the ${timePeriod.toLowerCase()} period.`,
@@ -125,7 +128,10 @@ export function generateStatsConfig(
     {
       label: "Breakeven" + periodSuffix,
       value: formatCurrency(Math.max(0, breakevenDisplay)),
-      color: periodAnalytics.breakevenNeeded <= 0 ? METRIC_COLORS.BREAKEVEN_MET : METRIC_COLORS.BREAKEVEN,
+      color:
+        periodAnalytics.breakevenNeeded <= 0
+          ? METRIC_COLORS.BREAKEVEN_MET
+          : METRIC_COLORS.BREAKEVEN,
       tooltip: {
         title: "Breakeven Needed" + periodSuffix,
         description: `Commission needed to cover expenses.`,

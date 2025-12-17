@@ -1,7 +1,6 @@
 // src/services/settings/AgentRepository.ts
-import {logger} from '../base/logger';
-import {BaseRepository} from '../base/BaseRepository';
-import {Agent} from '../../types/user.types';
+import { BaseRepository } from "../base/BaseRepository";
+import { Agent } from "../../types/user.types";
 
 export interface AgentCreateData {
   name: string;
@@ -41,7 +40,7 @@ export class AgentRepository extends BaseRepository<
   AgentUpdateData
 > {
   constructor() {
-    super('agents');
+    super("agents");
   }
 
   protected transformFromDB(dbRecord: Record<string, unknown>): Agent {
@@ -49,39 +48,54 @@ export class AgentRepository extends BaseRepository<
     return {
       id: agentRecord.id,
       name: agentRecord.name,
-      email: agentRecord.email || '',
+      email: agentRecord.email || "",
       contractCompLevel: agentRecord.contract_comp_level,
       isActive: agentRecord.is_active,
       createdAt: new Date(agentRecord.created_at),
-      updatedAt: agentRecord.updated_at ? new Date(agentRecord.updated_at) : new Date(),
-      phone: agentRecord.phone || '',
+      updatedAt: agentRecord.updated_at
+        ? new Date(agentRecord.updated_at)
+        : new Date(),
+      phone: agentRecord.phone || "",
       licenseNumber: agentRecord.license_number,
       licenseStates: agentRecord.license_states || [],
-      hireDate: agentRecord.hire_date ? new Date(agentRecord.hire_date) : undefined,
+      hireDate: agentRecord.hire_date
+        ? new Date(agentRecord.hire_date)
+        : undefined,
       ytdCommission: agentRecord.ytd_commission || 0,
       ytdPremium: agentRecord.ytd_premium || 0,
-      rawuser_meta_data: {}
+      rawuser_meta_data: {},
     };
   }
 
-  protected transformToDB(data: AgentCreateData | AgentUpdateData, isUpdate = false): any {
+  protected transformToDB(
+    data: AgentCreateData | AgentUpdateData,
+    isUpdate = false,
+  ): any {
     const dbData: any = {};
 
     if (data.name !== undefined) dbData.name = data.name;
     if (data.email !== undefined) dbData.email = data.email;
     if (data.phone !== undefined) dbData.phone = data.phone;
-    if (data.contract_comp_level !== undefined) dbData.contract_comp_level = data.contract_comp_level;
-    if (data.license_number !== undefined) dbData.license_number = data.license_number;
-    if (data.license_states !== undefined) dbData.license_states = data.license_states;
-    if (data.hire_date !== undefined) dbData.hire_date = data.hire_date ? data.hire_date.toISOString().split('T')[0] : null;
+    if (data.contract_comp_level !== undefined)
+      dbData.contract_comp_level = data.contract_comp_level;
+    if (data.license_number !== undefined)
+      dbData.license_number = data.license_number;
+    if (data.license_states !== undefined)
+      dbData.license_states = data.license_states;
+    if (data.hire_date !== undefined)
+      dbData.hire_date = data.hire_date
+        ? data.hire_date.toISOString().split("T")[0]
+        : null;
     if (data.is_active !== undefined) dbData.is_active = data.is_active;
-    if (data.ytd_commission !== undefined) dbData.ytd_commission = data.ytd_commission;
+    if (data.ytd_commission !== undefined)
+      dbData.ytd_commission = data.ytd_commission;
     if (data.ytd_premium !== undefined) dbData.ytd_premium = data.ytd_premium;
 
     // Set defaults for create operations
     if (!isUpdate) {
       if (dbData.is_active === undefined) dbData.is_active = true;
-      if (dbData.contract_comp_level === undefined) dbData.contract_comp_level = 100;
+      if (dbData.contract_comp_level === undefined)
+        dbData.contract_comp_level = 100;
       if (dbData.ytd_commission === undefined) dbData.ytd_commission = 0;
       if (dbData.ytd_premium === undefined) dbData.ytd_premium = 0;
     }
@@ -94,17 +108,17 @@ export class AgentRepository extends BaseRepository<
     try {
       const { data, error } = await this.client
         .from(this.tableName)
-        .select('*')
-        .eq('is_active', true)
-        .order('name');
+        .select("*")
+        .eq("is_active", true)
+        .order("name");
 
       if (error) {
-        throw this.handleError(error, 'findActiveAgents');
+        throw this.handleError(error, "findActiveAgents");
       }
 
       return data?.map(this.transformFromDB.bind(this)) || [];
     } catch (error) {
-      throw this.wrapError(error, 'findActiveAgents');
+      throw this.wrapError(error, "findActiveAgents");
     }
   }
 
@@ -112,17 +126,17 @@ export class AgentRepository extends BaseRepository<
     try {
       const { data, error } = await this.client
         .from(this.tableName)
-        .select('*')
-        .eq('contract_comp_level', contractLevel)
-        .order('name');
+        .select("*")
+        .eq("contract_comp_level", contractLevel)
+        .order("name");
 
       if (error) {
-        throw this.handleError(error, 'findByContractLevel');
+        throw this.handleError(error, "findByContractLevel");
       }
 
       return data?.map(this.transformFromDB.bind(this)) || [];
     } catch (error) {
-      throw this.wrapError(error, 'findByContractLevel');
+      throw this.wrapError(error, "findByContractLevel");
     }
   }
 
@@ -130,20 +144,20 @@ export class AgentRepository extends BaseRepository<
     try {
       const { data, error } = await this.client
         .from(this.tableName)
-        .select('*')
-        .eq('email', email)
+        .select("*")
+        .eq("email", email)
         .single();
 
       if (error) {
-        if (error.code === 'PGRST116') {
+        if (error.code === "PGRST116") {
           return null; // Not found
         }
-        throw this.handleError(error, 'findByEmail');
+        throw this.handleError(error, "findByEmail");
       }
 
       return data ? this.transformFromDB(data) : null;
     } catch (error) {
-      throw this.wrapError(error, 'findByEmail');
+      throw this.wrapError(error, "findByEmail");
     }
   }
 
@@ -151,22 +165,22 @@ export class AgentRepository extends BaseRepository<
     try {
       let query = this.client
         .from(this.tableName)
-        .select('id')
-        .eq('email', email);
+        .select("id")
+        .eq("email", email);
 
       if (excludeId) {
-        query = query.neq('id', excludeId);
+        query = query.neq("id", excludeId);
       }
 
       const { data, error } = await query;
 
       if (error) {
-        throw this.handleError(error, 'checkEmailExists');
+        throw this.handleError(error, "checkEmailExists");
       }
 
       return (data?.length || 0) > 0;
     } catch (error) {
-      throw this.wrapError(error, 'checkEmailExists');
+      throw this.wrapError(error, "checkEmailExists");
     }
   }
 
@@ -174,36 +188,40 @@ export class AgentRepository extends BaseRepository<
     try {
       const { data, error } = await this.client
         .from(this.tableName)
-        .select('*')
-        .ilike('name', `%${searchTerm}%`)
-        .order('name');
+        .select("*")
+        .ilike("name", `%${searchTerm}%`)
+        .order("name");
 
       if (error) {
-        throw this.handleError(error, 'searchByName');
+        throw this.handleError(error, "searchByName");
       }
 
       return data?.map(this.transformFromDB.bind(this)) || [];
     } catch (error) {
-      throw this.wrapError(error, 'searchByName');
+      throw this.wrapError(error, "searchByName");
     }
   }
 
-  async updateYtdStats(userId: string, commission: number, premium: number): Promise<void> {
+  async updateYtdStats(
+    userId: string,
+    commission: number,
+    premium: number,
+  ): Promise<void> {
     try {
       const { error } = await this.client
         .from(this.tableName)
         .update({
           ytd_commission: commission,
           ytd_premium: premium,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
-        .eq('id', userId);
+        .eq("id", userId);
 
       if (error) {
-        throw this.handleError(error, 'updateYtdStats');
+        throw this.handleError(error, "updateYtdStats");
       }
     } catch (error) {
-      throw this.wrapError(error, 'updateYtdStats');
+      throw this.wrapError(error, "updateYtdStats");
     }
   }
 }

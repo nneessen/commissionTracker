@@ -1,20 +1,25 @@
 // src/features/hierarchy/components/SendInvitationModal.tsx
 // Modal for sending hierarchy invitations - email-only input
 
-import {useState} from 'react';
-import {useForm} from '@tanstack/react-form';
-import {zodValidator} from '@tanstack/zod-form-adapter';
-import {z} from 'zod';
-import {Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle} from '../../../components/ui/dialog';
-import {Button} from '../../../components/ui/button';
-import {Input} from '../../../components/ui/input';
-import {Label} from '../../../components/ui/label';
-import {Textarea} from '../../../components/ui/textarea';
-import {useSendInvitation} from '../../../hooks/hierarchy/useInvitations';
-import {Loader2, Mail, Send} from 'lucide-react';
+import { useForm } from "@tanstack/react-form";
+import { z } from "zod";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "../../../components/ui/dialog";
+import { Button } from "../../../components/ui/button";
+import { Input } from "../../../components/ui/input";
+import { Label } from "../../../components/ui/label";
+import { Textarea } from "../../../components/ui/textarea";
+import { useSendInvitation } from "../../../hooks/hierarchy/useInvitations";
+import { Loader2, Mail, Send } from "lucide-react";
 
 const _sendInvitationSchema = z.object({
-  invitee_email: z.string().email('Invalid email address'),
+  invitee_email: z.string().email("Invalid email address"),
   message: z.string().optional(),
 });
 
@@ -23,13 +28,16 @@ interface SendInvitationModalProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export function SendInvitationModal({ open, onOpenChange }: SendInvitationModalProps) {
+export function SendInvitationModal({
+  open,
+  onOpenChange,
+}: SendInvitationModalProps) {
   const sendInvitationMutation = useSendInvitation();
 
   const form = useForm({
     defaultValues: {
-      invitee_email: '',
-      message: '',
+      invitee_email: "",
+      message: "",
     },
     onSubmit: async ({ value }) => {
       const response = await sendInvitationMutation.mutateAsync({
@@ -53,7 +61,8 @@ export function SendInvitationModal({ open, onOpenChange }: SendInvitationModalP
             Invite Agent to Your Downline
           </DialogTitle>
           <DialogDescription>
-            Send an invitation by email. They must have a registered account to accept.
+            Send an invitation by email. They must have a registered account to
+            accept.
           </DialogDescription>
         </DialogHeader>
 
@@ -66,9 +75,7 @@ export function SendInvitationModal({ open, onOpenChange }: SendInvitationModalP
         >
           <div className="grid gap-4 py-4">
             {/* Email Field */}
-            <form.Field
-              name="invitee_email"
-            >
+            <form.Field name="invitee_email">
               {(field) => (
                 <div className="grid gap-2">
                   <Label htmlFor="invitee_email" className="font-semibold">
@@ -83,9 +90,12 @@ export function SendInvitationModal({ open, onOpenChange }: SendInvitationModalP
                     onBlur={field.handleBlur}
                     autoFocus
                   />
-                  {field.state.meta.errors && field.state.meta.errors.length > 0 && (
-                    <p className="text-sm text-destructive">{field.state.meta.errors.join(', ')}</p>
-                  )}
+                  {field.state.meta.errors &&
+                    field.state.meta.errors.length > 0 && (
+                      <p className="text-sm text-destructive">
+                        {field.state.meta.errors.join(", ")}
+                      </p>
+                    )}
                   <p className="text-xs text-muted-foreground">
                     The email must belong to a registered user
                   </p>
@@ -126,8 +136,12 @@ export function SendInvitationModal({ open, onOpenChange }: SendInvitationModalP
               Cancel
             </Button>
             <Button type="submit" disabled={sendInvitationMutation.isPending}>
-              {sendInvitationMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {!sendInvitationMutation.isPending && <Send className="mr-2 h-4 w-4" />}
+              {sendInvitationMutation.isPending && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
+              {!sendInvitationMutation.isPending && (
+                <Send className="mr-2 h-4 w-4" />
+              )}
               Send Invitation
             </Button>
           </DialogFooter>

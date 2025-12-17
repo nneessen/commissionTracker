@@ -4,42 +4,43 @@
  * Handles real-time subscriptions for messages and threads using Supabase Realtime.
  */
 
-import {supabase} from '../base/supabase';
-import type {Message, MessageThread} from '@/types/messaging.types';
-import type {RealtimeChannel} from '@supabase/supabase-js';
+import { supabase } from "../base/supabase";
+import type { Message, MessageThread } from "@/types/messaging.types";
 
 /**
  * Subscribe to messages in a specific thread
  */
 export const subscribeToThreadMessages = (
   threadId: string,
-  onNewMessage: (message: Message) => void
+  onNewMessage: (message: Message) => void,
 ): (() => void) => {
   const channel = supabase
     .channel(`thread:${threadId}`)
     .on(
-      'postgres_changes',
+      "postgres_changes",
       {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'messages',
-        filter: `thread_id=eq.${threadId}`
+        event: "INSERT",
+        schema: "public",
+        table: "messages",
+        filter: `thread_id=eq.${threadId}`,
       },
       async (payload) => {
         // Fetch full message with sender info
         const { data } = await supabase
-          .from('messages')
-          .select(`
+          .from("messages")
+          .select(
+            `
             *,
             sender:user_profiles!sender_id(id, first_name, last_name, profile_photo_url)
-          `)
-          .eq('id', payload.new.id)
+          `,
+          )
+          .eq("id", payload.new.id)
           .single();
 
         if (data) {
           onNewMessage(data as Message);
         }
-      }
+      },
     )
     .subscribe();
 
@@ -54,16 +55,16 @@ export const subscribeToThreadMessages = (
  */
 export const subscribeToAllThreads = (
   profileId: string,
-  onThreadUpdate: (thread: MessageThread) => void
+  onThreadUpdate: (thread: MessageThread) => void,
 ): (() => void) => {
   const channel = supabase
-    .channel('all-threads')
+    .channel("all-threads")
     .on(
-      'postgres_changes',
+      "postgres_changes",
       {
-        event: '*', // INSERT, UPDATE, DELETE
-        schema: 'public',
-        table: 'message_threads'
+        event: "*", // INSERT, UPDATE, DELETE
+        schema: "public",
+        table: "message_threads",
       },
       async (payload) => {
         const thread = payload.new as any;
@@ -72,19 +73,21 @@ export const subscribeToAllThreads = (
         if (thread?.participant_ids?.includes(profileId)) {
           // Fetch full thread with creator info
           const { data } = await supabase
-            .from('message_threads')
-            .select(`
+            .from("message_threads")
+            .select(
+              `
               *,
               created_by_profile:user_profiles!created_by(id, first_name, last_name, profile_photo_url)
-            `)
-            .eq('id', thread.id)
+            `,
+            )
+            .eq("id", thread.id)
             .single();
 
           if (data) {
             onThreadUpdate(data as MessageThread);
           }
         }
-      }
+      },
     )
     .subscribe();
 
@@ -100,25 +103,25 @@ export const subscribeToAllThreads = (
  */
 export const subscribeToUserMessages = (
   profileId: string,
-  onNewMessage: (message: Message, threadId: string) => void
+  onNewMessage: (message: Message, threadId: string) => void,
 ): (() => void) => {
   const channel = supabase
-    .channel('user-messages')
+    .channel("user-messages")
     .on(
-      'postgres_changes',
+      "postgres_changes",
       {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'messages'
+        event: "INSERT",
+        schema: "public",
+        table: "messages",
       },
       async (payload) => {
         const message = payload.new as any;
 
         // Check if this message is in a thread the user participates in
         const { data: thread } = await supabase
-          .from('message_threads')
-          .select('id, participant_ids')
-          .eq('id', message.thread_id)
+          .from("message_threads")
+          .select("id, participant_ids")
+          .eq("id", message.thread_id)
           .single();
 
         if (thread?.participant_ids?.includes(profileId)) {
@@ -126,12 +129,14 @@ export const subscribeToUserMessages = (
           if (message.sender_id !== profileId) {
             // Fetch full message with sender info
             const { data: fullMessage } = await supabase
-              .from('messages')
-              .select(`
+              .from("messages")
+              .select(
+                `
                 *,
                 sender:user_profiles!sender_id(id, first_name, last_name, profile_photo_url)
-              `)
-              .eq('id', message.id)
+              `,
+              )
+              .eq("id", message.id)
               .single();
 
             if (fullMessage) {
@@ -139,7 +144,7 @@ export const subscribeToUserMessages = (
             }
           }
         }
-      }
+      },
     )
     .subscribe();
 

@@ -15,10 +15,21 @@
  * already gives us the correct period. Scaling is ONLY for pace metrics.
  */
 
-import {getTimeRemaining, DAYS_PER_PERIOD} from '../../utils/dateRange';
-import type {ActualTotalMetrics, CurrentStateMetrics, DerivedMetrics, PaceMetrics, GroupedMetrics, CalculatedMetrics, MetricCalculationInput} from './types';
-import type {Commission, Policy, Expense, ProductType} from '../../types';
-import type {PolicyClient, PolicyClientExtended} from '../../types/policy.types';
+import { getTimeRemaining } from "../../utils/dateRange";
+import type {
+  ActualTotalMetrics,
+  CurrentStateMetrics,
+  DerivedMetrics,
+  PaceMetrics,
+  GroupedMetrics,
+  CalculatedMetrics,
+  MetricCalculationInput,
+} from "./types";
+import type { Commission, Policy, Expense, ProductType } from "../../types";
+import type {
+  PolicyClient,
+  PolicyClientExtended,
+} from "../../types/policy.types";
 
 /**
  * CATEGORY 1: Calculate actual historical totals for the period
@@ -34,21 +45,24 @@ import type {PolicyClient, PolicyClientExtended} from '../../types/policy.types'
 export function calculateActualTotals(
   periodCommissions: Commission[],
   periodExpenses: Expense[],
-  periodPolicies: Policy[]
+  periodPolicies: Policy[],
 ): ActualTotalMetrics {
   // Commission metrics - use advanceAmount (total commission value)
   const commissionEarned = periodCommissions
-    .filter((c) => c.status === 'paid')
+    .filter((c) => c.status === "paid")
     .reduce((sum, c) => sum + (c.advanceAmount || 0), 0);
 
   const commissionPending = periodCommissions
-    .filter((c) => c.status === 'pending')
+    .filter((c) => c.status === "pending")
     .reduce((sum, c) => sum + (c.advanceAmount || 0), 0);
 
   const commissionCount = periodCommissions.length;
 
   // Expense metrics
-  const totalExpenses = periodExpenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+  const totalExpenses = periodExpenses.reduce(
+    (sum, e) => sum + (e.amount || 0),
+    0,
+  );
   const expenseCount = periodExpenses.length;
 
   const recurringExpenses = periodExpenses
@@ -65,7 +79,10 @@ export function calculateActualTotals(
   const netIncome = commissionEarned - totalExpenses;
 
   // Policy metrics
-  const premiumWritten = periodPolicies.reduce((sum, p) => sum + (p.annualPremium || 0), 0);
+  const premiumWritten = periodPolicies.reduce(
+    (sum, p) => sum + (p.annualPremium || 0),
+    0,
+  );
 
   const commissionableValue = periodPolicies.reduce((sum, p) => {
     const premium = p.annualPremium || 0;
@@ -74,8 +91,12 @@ export function calculateActualTotals(
   }, 0);
 
   const newPoliciesCount = periodPolicies.length;
-  const cancelledCount = periodPolicies.filter((p) => p.status === 'cancelled').length;
-  const lapsedCount = periodPolicies.filter((p) => p.status === 'lapsed').length;
+  const cancelledCount = periodPolicies.filter(
+    (p) => p.status === "cancelled",
+  ).length;
+  const lapsedCount = periodPolicies.filter(
+    (p) => p.status === "lapsed",
+  ).length;
 
   // Client metrics (unique clients from period policies)
   const uniqueClients = new Map<string, Policy>();
@@ -87,7 +108,10 @@ export function calculateActualTotals(
   });
 
   const newClientsCount = uniqueClients.size;
-  const clientTotalValue = periodPolicies.reduce((sum, p) => sum + (p.annualPremium || 0), 0);
+  const clientTotalValue = periodPolicies.reduce(
+    (sum, p) => sum + (p.annualPremium || 0),
+    0,
+  );
 
   return {
     commissionEarned,
@@ -121,25 +145,32 @@ export function calculateActualTotals(
  */
 export function calculateCurrentState(
   allPolicies: Policy[],
-  allCommissions: Commission[]
+  allCommissions: Commission[],
 ): CurrentStateMetrics {
-  const activePolicies = allPolicies.filter((p) => p.status === 'active').length;
-  const pendingPolicies = allPolicies.filter((p) => p.status === 'pending').length;
+  const activePolicies = allPolicies.filter(
+    (p) => p.status === "active",
+  ).length;
+  const pendingPolicies = allPolicies.filter(
+    (p) => p.status === "pending",
+  ).length;
   const totalPolicies = allPolicies.length;
 
   // Unique clients from all policies
   const allClients = new Set(
-    allPolicies.map((p) => p.client?.name).filter((name): name is string => !!name)
+    allPolicies
+      .map((p) => p.client?.name)
+      .filter((name): name is string => !!name),
   );
   const totalClients = allClients.size;
 
   // Pending pipeline - ALL pending commissions (not filtered by period)
   const pendingPipeline = allCommissions
-    .filter((c) => c.status === 'pending')
+    .filter((c) => c.status === "pending")
     .reduce((sum, c) => sum + (c.advanceAmount || 0), 0);
 
   // Retention rate
-  const retentionRate = totalPolicies > 0 ? (activePolicies / totalPolicies) * 100 : 0;
+  const retentionRate =
+    totalPolicies > 0 ? (activePolicies / totalPolicies) * 100 : 0;
 
   return {
     activePolicies,
@@ -165,7 +196,7 @@ export function calculateDerivedMetrics(
   actualTotals: ActualTotalMetrics,
   currentState: CurrentStateMetrics,
   periodCommissions: Commission[],
-  periodPolicies: Policy[]
+  periodPolicies: Policy[],
 ): DerivedMetrics {
   const {
     premiumWritten,
@@ -182,32 +213,39 @@ export function calculateDerivedMetrics(
   } = actualTotals;
 
   // Average premium
-  const averagePremium = newPoliciesCount > 0 ? premiumWritten / newPoliciesCount : 0;
+  const averagePremium =
+    newPoliciesCount > 0 ? premiumWritten / newPoliciesCount : 0;
 
   // Average commission rate (as percentage)
   const averageCommissionRate =
     commissionCount > 0
-      ? periodCommissions.reduce((sum, c) => sum + (c.commissionRate || 0), 0) / commissionCount
+      ? periodCommissions.reduce((sum, c) => sum + (c.commissionRate || 0), 0) /
+        commissionCount
       : 0;
 
   // Average commission amount
   const totalCommissionValue = periodCommissions.reduce(
     (sum, c) => sum + (c.advanceAmount || 0),
-    0
+    0,
   );
-  const averageCommissionAmount = commissionCount > 0 ? totalCommissionValue / commissionCount : 0;
+  const averageCommissionAmount =
+    commissionCount > 0 ? totalCommissionValue / commissionCount : 0;
 
   // Average expense amount
-  const averageExpenseAmount = expenseCount > 0 ? totalExpenses / expenseCount : 0;
+  const averageExpenseAmount =
+    expenseCount > 0 ? totalExpenses / expenseCount : 0;
 
   // Lapse rate
-  const lapsedRate = newPoliciesCount > 0 ? (lapsedCount / newPoliciesCount) * 100 : 0;
+  const lapsedRate =
+    newPoliciesCount > 0 ? (lapsedCount / newPoliciesCount) * 100 : 0;
 
   // Cancellation rate
-  const cancellationRate = newPoliciesCount > 0 ? (cancelledCount / newPoliciesCount) * 100 : 0;
+  const cancellationRate =
+    newPoliciesCount > 0 ? (cancelledCount / newPoliciesCount) * 100 : 0;
 
   // Average client value
-  const avgClientValue = newClientsCount > 0 ? clientTotalValue / newClientsCount : 0;
+  const avgClientValue =
+    newClientsCount > 0 ? clientTotalValue / newClientsCount : 0;
 
   // Average client age
   const uniqueClients = new Map<string, PolicyClient | PolicyClientExtended>();
@@ -229,11 +267,14 @@ export function calculateDerivedMetrics(
   const avgClientAge = ageCount > 0 ? totalAge / ageCount : 0;
 
   // Profit margin
-  const profitMargin = commissionEarned > 0 ? (netIncome / commissionEarned) * 100 : 0;
+  const profitMargin =
+    commissionEarned > 0 ? (netIncome / commissionEarned) * 100 : 0;
 
   // Policies per client
   const policiesPerClient =
-    currentState.totalClients > 0 ? currentState.totalPolicies / currentState.totalClients : 0;
+    currentState.totalClients > 0
+      ? currentState.totalPolicies / currentState.totalClients
+      : 0;
 
   // Average commission per policy
   const avgCommissionPerPolicy =
@@ -270,7 +311,7 @@ export function calculateDerivedMetrics(
 export function calculatePaceMetrics(
   actualTotals: ActualTotalMetrics,
   derived: DerivedMetrics,
-  timePeriod: string
+  timePeriod: string,
 ): PaceMetrics {
   const { netIncome } = actualTotals;
   const { avgCommissionPerPolicy } = derived;
@@ -280,11 +321,16 @@ export function calculatePaceMetrics(
 
   // Calculate policies needed to break even
   const policiesNeeded =
-    avgCommissionPerPolicy > 0 ? Math.ceil(breakevenNeeded / avgCommissionPerPolicy) : 0;
+    avgCommissionPerPolicy > 0
+      ? Math.ceil(breakevenNeeded / avgCommissionPerPolicy)
+      : 0;
 
   // Get time remaining in the current period
   const timeRemaining = getTimeRemaining(timePeriod as any);
-  const daysRemaining = Math.max(1, timeRemaining.days + timeRemaining.hours / 24);
+  const daysRemaining = Math.max(
+    1,
+    timeRemaining.days + timeRemaining.hours / 24,
+  );
 
   // Calculate per-period targets
   let dailyTarget = 0;
@@ -300,7 +346,7 @@ export function calculatePaceMetrics(
     dailyTarget = Math.ceil(policiesPerDayNeeded);
 
     switch (timePeriod) {
-      case 'daily':
+      case "daily":
         // For daily, we need to close this many policies today
         dailyTarget = policiesNeeded;
         breakevenPerDay = breakevenNeeded;
@@ -308,7 +354,7 @@ export function calculatePaceMetrics(
         breakevenPerMonth = breakevenNeeded * 30;
         break;
 
-      case 'weekly':
+      case "weekly":
         // For weekly, distribute over remaining days
         weeklyTarget = policiesNeeded;
         breakevenPerWeek = breakevenNeeded;
@@ -316,7 +362,7 @@ export function calculatePaceMetrics(
         breakevenPerMonth = breakevenNeeded * 4.33;
         break;
 
-      case 'monthly':
+      case "monthly":
         // For monthly, distribute over remaining days
         weeklyTarget = Math.ceil(policiesPerDayNeeded * 7);
         monthlyTarget = policiesNeeded;
@@ -325,15 +371,18 @@ export function calculatePaceMetrics(
         breakevenPerDay = breakevenNeeded / 30;
         break;
 
-      case 'yearly': {
-        // For yearly, calculate monthly and weekly targets
-        const monthsRemaining = 12 - new Date().getMonth();
-        weeklyTarget = Math.ceil(policiesPerDayNeeded * 7);
-        monthlyTarget = Math.ceil(policiesNeeded / Math.max(1, monthsRemaining));
-        breakevenPerMonth = breakevenNeeded / 12;
-        breakevenPerWeek = breakevenNeeded / 52;
-        breakevenPerDay = breakevenNeeded / 365;
-      }
+      case "yearly":
+        {
+          // For yearly, calculate monthly and weekly targets
+          const monthsRemaining = 12 - new Date().getMonth();
+          weeklyTarget = Math.ceil(policiesPerDayNeeded * 7);
+          monthlyTarget = Math.ceil(
+            policiesNeeded / Math.max(1, monthsRemaining),
+          );
+          breakevenPerMonth = breakevenNeeded / 12;
+          breakevenPerWeek = breakevenNeeded / 52;
+          breakevenPerDay = breakevenNeeded / 365;
+        }
         break;
     }
   }
@@ -360,7 +409,7 @@ export function calculatePaceMetrics(
 export function calculateGroupedMetrics(
   periodCommissions: Commission[],
   periodExpenses: Expense[],
-  periodPolicies: Policy[]
+  periodPolicies: Policy[],
 ): GroupedMetrics {
   // Commission by carrier
   const commissionByCarrier: Record<string, number> = {};
@@ -373,7 +422,10 @@ export function calculateGroupedMetrics(
   });
 
   // Commission by product
-  const commissionByProduct: Record<ProductType, number> = {} as Record<ProductType, number>;
+  const commissionByProduct: Record<ProductType, number> = {} as Record<
+    ProductType,
+    number
+  >;
   periodCommissions.forEach((c) => {
     if (c.product) {
       commissionByProduct[c.product] =
@@ -384,15 +436,17 @@ export function calculateGroupedMetrics(
   // Commission by state
   const commissionByState: Record<string, number> = {};
   periodCommissions.forEach((c) => {
-    const state = c.client?.state || 'Unknown';
-    commissionByState[state] = (commissionByState[state] || 0) + (c.advanceAmount || 0);
+    const state = c.client?.state || "Unknown";
+    commissionByState[state] =
+      (commissionByState[state] || 0) + (c.advanceAmount || 0);
   });
 
   // Expenses by category
   const expensesByCategory: Record<string, number> = {};
   periodExpenses.forEach((e) => {
-    const category = e.category || 'Uncategorized';
-    expensesByCategory[category] = (expensesByCategory[category] || 0) + e.amount;
+    const category = e.category || "Uncategorized";
+    expensesByCategory[category] =
+      (expensesByCategory[category] || 0) + e.amount;
   });
 
   // Clients by state
@@ -402,7 +456,7 @@ export function calculateGroupedMetrics(
     const key = p.client?.name;
     if (key && p.client && !uniqueClients.has(key)) {
       uniqueClients.set(key, p.client);
-      const state = p.client.state || 'Unknown';
+      const state = p.client.state || "Unknown";
       clientsByState[state] = (clientsByState[state] || 0) + 1;
     }
   });
@@ -422,7 +476,9 @@ export function calculateGroupedMetrics(
  * Orchestrates all calculations and returns complete metrics package.
  * This is the primary function to call from hooks.
  */
-export function calculateAllMetrics(input: MetricCalculationInput): CalculatedMetrics {
+export function calculateAllMetrics(
+  input: MetricCalculationInput,
+): CalculatedMetrics {
   const {
     allPolicies,
     periodPolicies,
@@ -434,16 +490,24 @@ export function calculateAllMetrics(input: MetricCalculationInput): CalculatedMe
   } = input;
 
   // Calculate all 4 categories
-  const actualTotals = calculateActualTotals(periodCommissions, periodExpenses, periodPolicies);
+  const actualTotals = calculateActualTotals(
+    periodCommissions,
+    periodExpenses,
+    periodPolicies,
+  );
   const currentState = calculateCurrentState(allPolicies, allCommissions);
   const derived = calculateDerivedMetrics(
     actualTotals,
     currentState,
     periodCommissions,
-    periodPolicies
+    periodPolicies,
   );
   const pace = calculatePaceMetrics(actualTotals, derived, timePeriod);
-  const grouped = calculateGroupedMetrics(periodCommissions, periodExpenses, periodPolicies);
+  const grouped = calculateGroupedMetrics(
+    periodCommissions,
+    periodExpenses,
+    periodPolicies,
+  );
 
   return {
     actualTotals,

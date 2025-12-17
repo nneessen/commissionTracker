@@ -1,19 +1,20 @@
 // /home/nneessen/projects/commissionTracker/src/hooks/admin/useUserApproval.ts
 
-import {useQuery, useMutation, useQueryClient} from '@tanstack/react-query';
-import {userApprovalService, UserProfile, ApprovalStats} from '@/services/users/userService';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { userApprovalService } from "@/services/users/userService";
 
 /**
  * Query keys for user approval
  */
 export const userApprovalKeys = {
-  all: ['userApproval'] as const,
-  currentProfile: () => [...userApprovalKeys.all, 'currentProfile'] as const,
-  profile: (userId: string) => [...userApprovalKeys.all, 'profile', userId] as const,
-  allUsers: () => [...userApprovalKeys.all, 'allUsers'] as const,
-  pendingUsers: () => [...userApprovalKeys.all, 'pendingUsers'] as const,
-  stats: () => [...userApprovalKeys.all, 'stats'] as const,
-  isAdmin: () => [...userApprovalKeys.all, 'isAdmin'] as const,
+  all: ["userApproval"] as const,
+  currentProfile: () => [...userApprovalKeys.all, "currentProfile"] as const,
+  profile: (userId: string) =>
+    [...userApprovalKeys.all, "profile", userId] as const,
+  allUsers: () => [...userApprovalKeys.all, "allUsers"] as const,
+  pendingUsers: () => [...userApprovalKeys.all, "pendingUsers"] as const,
+  stats: () => [...userApprovalKeys.all, "stats"] as const,
+  isAdmin: () => [...userApprovalKeys.all, "isAdmin"] as const,
 };
 
 /**
@@ -94,10 +95,12 @@ export function useApproveUser() {
     onSuccess: () => {
       // Invalidate and refetch all user-related queries
       queryClient.invalidateQueries({ queryKey: userApprovalKeys.allUsers() });
-      queryClient.invalidateQueries({ queryKey: userApprovalKeys.pendingUsers() });
+      queryClient.invalidateQueries({
+        queryKey: userApprovalKeys.pendingUsers(),
+      });
       queryClient.invalidateQueries({ queryKey: userApprovalKeys.stats() });
-      queryClient.invalidateQueries({ queryKey: ['users-paginated'] });
-      queryClient.invalidateQueries({ queryKey: ['users-metrics'] });
+      queryClient.invalidateQueries({ queryKey: ["users-paginated"] });
+      queryClient.invalidateQueries({ queryKey: ["users-metrics"] });
     },
   });
 }
@@ -114,10 +117,12 @@ export function useDenyUser() {
     onSuccess: () => {
       // Invalidate and refetch all user-related queries
       queryClient.invalidateQueries({ queryKey: userApprovalKeys.allUsers() });
-      queryClient.invalidateQueries({ queryKey: userApprovalKeys.pendingUsers() });
+      queryClient.invalidateQueries({
+        queryKey: userApprovalKeys.pendingUsers(),
+      });
       queryClient.invalidateQueries({ queryKey: userApprovalKeys.stats() });
-      queryClient.invalidateQueries({ queryKey: ['users-paginated'] });
-      queryClient.invalidateQueries({ queryKey: ['users-metrics'] });
+      queryClient.invalidateQueries({ queryKey: ["users-paginated"] });
+      queryClient.invalidateQueries({ queryKey: ["users-metrics"] });
     },
   });
 }
@@ -133,10 +138,12 @@ export function useSetPendingUser() {
     onSuccess: () => {
       // Invalidate and refetch all user-related queries
       queryClient.invalidateQueries({ queryKey: userApprovalKeys.allUsers() });
-      queryClient.invalidateQueries({ queryKey: userApprovalKeys.pendingUsers() });
+      queryClient.invalidateQueries({
+        queryKey: userApprovalKeys.pendingUsers(),
+      });
       queryClient.invalidateQueries({ queryKey: userApprovalKeys.stats() });
-      queryClient.invalidateQueries({ queryKey: ['users-paginated'] });
-      queryClient.invalidateQueries({ queryKey: ['users-metrics'] });
+      queryClient.invalidateQueries({ queryKey: ["users-paginated"] });
+      queryClient.invalidateQueries({ queryKey: ["users-metrics"] });
     },
   });
 }
@@ -147,7 +154,7 @@ export function useSetPendingUser() {
  */
 export function useApprovalStatus() {
   return useQuery({
-    queryKey: [...userApprovalKeys.currentProfile(), 'status'],
+    queryKey: [...userApprovalKeys.currentProfile(), "status"],
     queryFn: () => userApprovalService.getCurrentUserStatus(),
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
@@ -165,10 +172,12 @@ export function useSetAdminRole() {
     onSuccess: () => {
       // Invalidate and refetch all user-related queries
       queryClient.invalidateQueries({ queryKey: userApprovalKeys.allUsers() });
-      queryClient.invalidateQueries({ queryKey: userApprovalKeys.pendingUsers() });
+      queryClient.invalidateQueries({
+        queryKey: userApprovalKeys.pendingUsers(),
+      });
       queryClient.invalidateQueries({ queryKey: userApprovalKeys.stats() });
-      queryClient.invalidateQueries({ queryKey: ['users-paginated'] });
-      queryClient.invalidateQueries({ queryKey: ['users-metrics'] });
+      queryClient.invalidateQueries({ queryKey: ["users-paginated"] });
+      queryClient.invalidateQueries({ queryKey: ["users-metrics"] });
     },
   });
 }
@@ -181,9 +190,10 @@ export function useAuthorizationStatus() {
 
   return {
     isAdmin: profile?.is_admin === true,
-    isApproved: profile?.approval_status === 'approved' || profile?.is_admin === true,
-    isPending: profile?.approval_status === 'pending',
-    isDenied: profile?.approval_status === 'denied',
+    isApproved:
+      profile?.approval_status === "approved" || profile?.is_admin === true,
+    isPending: profile?.approval_status === "pending",
+    isDenied: profile?.approval_status === "denied",
     denialReason: profile?.denial_reason,
     isLoading: profileLoading,
     profile,
@@ -197,15 +207,22 @@ export function useUpdateContractLevel() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ userId, contractLevel }: { userId: string; contractLevel: number | null }) =>
-      userApprovalService.updateContractLevel(userId, contractLevel),
+    mutationFn: ({
+      userId,
+      contractLevel,
+    }: {
+      userId: string;
+      contractLevel: number | null;
+    }) => userApprovalService.updateContractLevel(userId, contractLevel),
     onSuccess: () => {
       // Invalidate and refetch all user-related queries
       queryClient.invalidateQueries({ queryKey: userApprovalKeys.allUsers() });
-      queryClient.invalidateQueries({ queryKey: userApprovalKeys.pendingUsers() });
+      queryClient.invalidateQueries({
+        queryKey: userApprovalKeys.pendingUsers(),
+      });
       queryClient.invalidateQueries({ queryKey: userApprovalKeys.stats() });
-      queryClient.invalidateQueries({ queryKey: ['users-paginated'] });
-      queryClient.invalidateQueries({ queryKey: ['users-metrics'] });
+      queryClient.invalidateQueries({ queryKey: ["users-paginated"] });
+      queryClient.invalidateQueries({ queryKey: ["users-metrics"] });
     },
   });
 }

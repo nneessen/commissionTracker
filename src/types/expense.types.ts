@@ -1,19 +1,17 @@
 // src/types/expense.types.ts
 
-import type {Database} from './database.types';
-
 // Expense type enum
-export type ExpenseType = 'personal' | 'business';
+export type ExpenseType = "personal" | "business";
 
 // Recurring frequency options
 export type RecurringFrequency =
-  | 'daily'
-  | 'weekly'
-  | 'biweekly'
-  | 'monthly'
-  | 'quarterly'
-  | 'semiannually'
-  | 'annually';
+  | "daily"
+  | "weekly"
+  | "biweekly"
+  | "monthly"
+  | "quarterly"
+  | "semiannually"
+  | "annually";
 
 /**
  * Main Expense interface matching database schema
@@ -78,8 +76,8 @@ export interface UpdateExpenseData {
  * Filter options for querying expenses
  */
 export interface ExpenseFilters {
-  expenseType?: ExpenseType | 'all';
-  category?: string | 'all';
+  expenseType?: ExpenseType | "all";
+  category?: string | "all";
   startDate?: string;
   endDate?: string;
   searchTerm?: string;
@@ -182,7 +180,7 @@ export interface CategoryBreakdownData {
  * Comparison data for business vs personal
  */
 export interface ExpenseComparisonData {
-  type: 'personal' | 'business';
+  type: "personal" | "business";
   amount: number;
   count: number;
   avgAmount: number;
@@ -200,7 +198,7 @@ export interface AdvancedExpenseFilters extends ExpenseFilters {
  * Export options for CSV/PDF
  */
 export interface ExpenseExportOptions {
-  format: 'csv' | 'pdf';
+  format: "csv" | "pdf";
   filters?: AdvancedExpenseFilters;
   includeCharts?: boolean;
   includeSummary?: boolean;
@@ -257,31 +255,119 @@ export interface UpdateExpenseTemplateData {
  */
 export const DEFAULT_EXPENSE_CATEGORIES = [
   // Business Categories
-  { name: 'Office Supplies', description: 'Pens, paper, printer ink, etc.', type: 'business' },
-  { name: 'Travel', description: 'Transportation, hotels, flights', type: 'business' },
-  { name: 'Meals & Entertainment', description: 'Business meals, client entertainment', type: 'business' },
-  { name: 'Utilities', description: 'Electricity, water, internet, phone', type: 'business' },
-  { name: 'Insurance', description: 'Business insurance (health, liability, property)', type: 'business' },
-  { name: 'Marketing', description: 'Advertising, promotional materials', type: 'business' },
-  { name: 'Professional Services', description: 'Legal, accounting, consulting', type: 'business' },
-  { name: 'Technology', description: 'Software subscriptions, hardware', type: 'business' },
-  { name: 'Rent & Lease', description: 'Office space, equipment leases', type: 'business' },
-  { name: 'Training & Education', description: 'Courses, conferences, books', type: 'business' },
-  { name: 'Vehicle', description: 'Gas, maintenance, registration (business use)', type: 'business' },
+  {
+    name: "Office Supplies",
+    description: "Pens, paper, printer ink, etc.",
+    type: "business",
+  },
+  {
+    name: "Travel",
+    description: "Transportation, hotels, flights",
+    type: "business",
+  },
+  {
+    name: "Meals & Entertainment",
+    description: "Business meals, client entertainment",
+    type: "business",
+  },
+  {
+    name: "Utilities",
+    description: "Electricity, water, internet, phone",
+    type: "business",
+  },
+  {
+    name: "Insurance",
+    description: "Business insurance (health, liability, property)",
+    type: "business",
+  },
+  {
+    name: "Marketing",
+    description: "Advertising, promotional materials",
+    type: "business",
+  },
+  {
+    name: "Professional Services",
+    description: "Legal, accounting, consulting",
+    type: "business",
+  },
+  {
+    name: "Technology",
+    description: "Software subscriptions, hardware",
+    type: "business",
+  },
+  {
+    name: "Rent & Lease",
+    description: "Office space, equipment leases",
+    type: "business",
+  },
+  {
+    name: "Training & Education",
+    description: "Courses, conferences, books",
+    type: "business",
+  },
+  {
+    name: "Vehicle",
+    description: "Gas, maintenance, registration (business use)",
+    type: "business",
+  },
 
   // Personal Categories
-  { name: 'Credit Card Bill', description: 'Credit card monthly payments', type: 'personal' },
-  { name: 'Mortgage/Rent', description: 'Home mortgage or rent payments', type: 'personal' },
-  { name: 'Groceries', description: 'Food and household supplies', type: 'personal' },
-  { name: 'Car Payment', description: 'Auto loan or lease payments', type: 'personal' },
-  { name: 'Healthcare', description: 'Medical, dental, prescriptions', type: 'personal' },
-  { name: 'Entertainment', description: 'Movies, concerts, hobbies', type: 'personal' },
-  { name: 'Childcare', description: 'Daycare, babysitting, after-school programs', type: 'personal' },
-  { name: 'Shopping', description: 'Clothing, personal items', type: 'personal' },
-  { name: 'Subscriptions', description: 'Streaming, gym, personal memberships', type: 'personal' },
-  { name: 'Personal Insurance', description: 'Personal insurance (auto, life, home)', type: 'personal' },
-  { name: 'Dining Out', description: 'Restaurants, takeout (personal)', type: 'personal' },
+  {
+    name: "Credit Card Bill",
+    description: "Credit card monthly payments",
+    type: "personal",
+  },
+  {
+    name: "Mortgage/Rent",
+    description: "Home mortgage or rent payments",
+    type: "personal",
+  },
+  {
+    name: "Groceries",
+    description: "Food and household supplies",
+    type: "personal",
+  },
+  {
+    name: "Car Payment",
+    description: "Auto loan or lease payments",
+    type: "personal",
+  },
+  {
+    name: "Healthcare",
+    description: "Medical, dental, prescriptions",
+    type: "personal",
+  },
+  {
+    name: "Entertainment",
+    description: "Movies, concerts, hobbies",
+    type: "personal",
+  },
+  {
+    name: "Childcare",
+    description: "Daycare, babysitting, after-school programs",
+    type: "personal",
+  },
+  {
+    name: "Shopping",
+    description: "Clothing, personal items",
+    type: "personal",
+  },
+  {
+    name: "Subscriptions",
+    description: "Streaming, gym, personal memberships",
+    type: "personal",
+  },
+  {
+    name: "Personal Insurance",
+    description: "Personal insurance (auto, life, home)",
+    type: "personal",
+  },
+  {
+    name: "Dining Out",
+    description: "Restaurants, takeout (personal)",
+    type: "personal",
+  },
 
   // General
-  { name: 'Other', description: 'Miscellaneous expenses', type: 'other' },
+  { name: "Other", description: "Miscellaneous expenses", type: "other" },
 ];

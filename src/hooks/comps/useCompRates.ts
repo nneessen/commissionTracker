@@ -1,19 +1,24 @@
-import {useQuery, useMutation, useQueryClient} from '@tanstack/react-query';
-import {compGuideService, CompGuideCreateData} from '../../services/settings/compGuideService';
-import {Database} from '../../types/database.types';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  compGuideService,
+  CompGuideCreateData,
+} from "../../services/settings/compGuideService";
+import { Database } from "../../types/database.types";
 
-type CompGuideRow = Database['public']['Tables']['comp_guide']['Row'];
-type CompGuideInsert = Database['public']['Tables']['comp_guide']['Insert'];
+type CompGuideInsert = Database["public"]["Tables"]["comp_guide"]["Insert"];
 
 // Query keys
 export const compRatesKeys = {
-  all: ['comp-rates'] as const,
-  lists: () => [...compRatesKeys.all, 'list'] as const,
-  list: (filters?: Record<string, any>) => [...compRatesKeys.lists(), filters] as const,
-  details: () => [...compRatesKeys.all, 'detail'] as const,
+  all: ["comp-rates"] as const,
+  lists: () => [...compRatesKeys.all, "list"] as const,
+  list: (filters?: Record<string, any>) =>
+    [...compRatesKeys.lists(), filters] as const,
+  details: () => [...compRatesKeys.all, "detail"] as const,
   detail: (id: string) => [...compRatesKeys.details(), id] as const,
-  byProduct: (productId: string) => [...compRatesKeys.all, 'product', productId] as const,
-  byCarrier: (carrierId: string) => [...compRatesKeys.all, 'carrier', carrierId] as const,
+  byProduct: (productId: string) =>
+    [...compRatesKeys.all, "product", productId] as const,
+  byCarrier: (carrierId: string) =>
+    [...compRatesKeys.all, "carrier", carrierId] as const,
 };
 
 /**
@@ -35,10 +40,13 @@ export function useCompRates() {
  */
 export function useCompRatesByProduct(productId: string | undefined) {
   return useQuery({
-    queryKey: productId ? compRatesKeys.byProduct(productId) : ['comp-rates', 'empty'],
+    queryKey: productId
+      ? compRatesKeys.byProduct(productId)
+      : ["comp-rates", "empty"],
     queryFn: async () => {
       if (!productId) return [];
-      const { data, error } = await compGuideService.getEntriesByProduct(productId);
+      const { data, error } =
+        await compGuideService.getEntriesByProduct(productId);
       if (error) throw new Error(error.message);
       return data;
     },
@@ -51,10 +59,13 @@ export function useCompRatesByProduct(productId: string | undefined) {
  */
 export function useCompRatesByCarrier(carrierId: string | undefined) {
   return useQuery({
-    queryKey: carrierId ? compRatesKeys.byCarrier(carrierId) : ['comp-rates', 'empty'],
+    queryKey: carrierId
+      ? compRatesKeys.byCarrier(carrierId)
+      : ["comp-rates", "empty"],
     queryFn: async () => {
       if (!carrierId) return [];
-      const { data, error } = await compGuideService.getEntriesByCarrier(carrierId);
+      const { data, error } =
+        await compGuideService.getEntriesByCarrier(carrierId);
       if (error) throw new Error(error.message);
       return data;
     },
@@ -129,7 +140,7 @@ export function useBulkCreateCompRates() {
 
   return useMutation({
     mutationFn: async (entries: CompGuideInsert[]) => {
-      const { data, error} = await compGuideService.createBulkEntries(entries);
+      const { data, error } = await compGuideService.createBulkEntries(entries);
       if (error) throw new Error(error.message);
       return data;
     },
@@ -146,9 +157,11 @@ export function useBulkUpdateCompRates() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (updates: Array<{ id: string; updates: Partial<CompGuideCreateData> }>) => {
+    mutationFn: async (
+      updates: Array<{ id: string; updates: Partial<CompGuideCreateData> }>,
+    ) => {
       const promises = updates.map(({ id, updates: data }) =>
-        compGuideService.updateEntry(id, data)
+        compGuideService.updateEntry(id, data),
       );
       const results = await Promise.all(promises);
       const errors = results.filter((r) => r.error);

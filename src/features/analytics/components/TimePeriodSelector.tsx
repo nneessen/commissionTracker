@@ -15,7 +15,8 @@ export type AdvancedTimePeriod =
 
 export interface AdvancedDateRange {
   startDate: Date;
-  endDate: Date;
+  endDate: Date; // Today's end (for data filtering)
+  actualEndDate: Date; // Real period end (for time calculations)
   period: AdvancedTimePeriod;
 }
 
@@ -37,20 +38,33 @@ export function getAdvancedDateRange(
   const now = new Date();
   now.setHours(0, 0, 0, 0);
 
-  const endDate = new Date();
-  endDate.setHours(23, 59, 59, 999); // End of day for proper date range
+  const endDate = new Date(); // TODAY's end (for filtering)
+  endDate.setHours(23, 59, 59, 999);
 
   let startDate: Date;
+  let actualEndDate: Date; // REAL period end (for time calculations)
 
   switch (period) {
     case "MTD":
       // Month to date
       startDate = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+      // actualEndDate = last day of current month
+      actualEndDate = new Date(
+        now.getFullYear(),
+        now.getMonth() + 1,
+        0,
+        23,
+        59,
+        59,
+        999,
+      );
       break;
 
     case "YTD":
       // Year to date
       startDate = new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0);
+      // actualEndDate = Dec 31 of current year
+      actualEndDate = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999);
       break;
 
     case "L30":
@@ -58,6 +72,8 @@ export function getAdvancedDateRange(
       startDate = new Date(now);
       startDate.setDate(startDate.getDate() - 30);
       startDate.setHours(0, 0, 0, 0);
+      // For rolling windows, actualEndDate = endDate (today)
+      actualEndDate = endDate;
       break;
 
     case "L60":
@@ -65,6 +81,7 @@ export function getAdvancedDateRange(
       startDate = new Date(now);
       startDate.setDate(startDate.getDate() - 60);
       startDate.setHours(0, 0, 0, 0);
+      actualEndDate = endDate;
       break;
 
     case "L90":
@@ -72,6 +89,7 @@ export function getAdvancedDateRange(
       startDate = new Date(now);
       startDate.setDate(startDate.getDate() - 90);
       startDate.setHours(0, 0, 0, 0);
+      actualEndDate = endDate;
       break;
 
     case "L12M":
@@ -79,6 +97,7 @@ export function getAdvancedDateRange(
       startDate = new Date(now);
       startDate.setFullYear(startDate.getFullYear() - 1);
       startDate.setHours(0, 0, 0, 0);
+      actualEndDate = endDate;
       break;
 
     case "CUSTOM":
@@ -87,19 +106,38 @@ export function getAdvancedDateRange(
         return {
           startDate: customRange.startDate,
           endDate: customRange.endDate,
+          actualEndDate: customRange.endDate, // For custom, use selected end
           period,
         };
       }
       // Default to MTD if no custom range provided
       startDate = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+      actualEndDate = new Date(
+        now.getFullYear(),
+        now.getMonth() + 1,
+        0,
+        23,
+        59,
+        59,
+        999,
+      );
       break;
 
     default:
       // Default to MTD
       startDate = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+      actualEndDate = new Date(
+        now.getFullYear(),
+        now.getMonth() + 1,
+        0,
+        23,
+        59,
+        59,
+        999,
+      );
   }
 
-  return { startDate, endDate, period };
+  return { startDate, endDate, actualEndDate, period };
 }
 
 /**

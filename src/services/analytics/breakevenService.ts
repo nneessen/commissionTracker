@@ -1,9 +1,8 @@
 // src/services/analytics/breakevenService.ts
 
-import {supabase, TABLES} from '../base/supabase';
-import {commissionService, chargebackService, constantsService, expenseService} from '../index';
-import {BREAKEVEN_RATES, CHARGEBACK_THRESHOLDS, EMERGENCY_FUND, FINANCIAL_CONSTANTS} from '../../constants/financial';
-import type {NetCommissionMetrics} from '../commissions/CommissionAnalyticsService';
+import { commissionService, expenseService } from "../index";
+import { BREAKEVEN_RATES, EMERGENCY_FUND } from "../../constants/financial";
+import type { NetCommissionMetrics } from "../commissions/CommissionAnalyticsService";
 
 export interface BreakevenScenario {
   scenarioName: string;
@@ -13,7 +12,7 @@ export interface BreakevenScenario {
   requiredCommissions: number;
   netIncome: number;
   breakevenPoint: number; // Months to breakeven
-  riskLevel: 'low' | 'medium' | 'high';
+  riskLevel: "low" | "medium" | "high";
 }
 
 export interface BreakevenAnalysis {
@@ -51,45 +50,52 @@ class BreakevenService {
   async calculateBreakevenAnalysis(
     userId?: string,
     targetProfit: number = 5000,
-    analysisMonths: number = 12
+    analysisMonths: number = 12,
   ): Promise<BreakevenAnalysis> {
     // Get current metrics
-    const currentMetrics = await commissionService.calculateNetCommissionAfterChargebacks(
-      userId,
-      new Date(Date.now() - analysisMonths * 30 * 24 * 60 * 60 * 1000),
-      new Date()
-    );
+    const currentMetrics =
+      await commissionService.calculateNetCommissionAfterChargebacks(
+        userId,
+        new Date(Date.now() - analysisMonths * 30 * 24 * 60 * 60 * 1000),
+        new Date(),
+      );
 
     // Get monthly expenses
     const expenses = await expenseService.getAll();
-    const monthlyExpenses = expenses.reduce((total, expense) => total + expense.amount, 0);
+    const monthlyExpenses = expenses.reduce(
+      (total, expense) => total + expense.amount,
+      0,
+    );
 
     // Calculate scenarios
     const optimisticScenario = await this.calculateScenario(
-      'Optimistic (5% chargeback rate)',
+      "Optimistic (5% chargeback rate)",
       BREAKEVEN_RATES.OPTIMISTIC_CHARGEBACK_RATE,
       currentMetrics,
       monthlyExpenses,
       targetProfit,
-      analysisMonths
+      analysisMonths,
     );
 
     const realisticScenario = await this.calculateScenario(
-      'Realistic (Current rate)',
-      Math.max(currentMetrics.chargebackRate / 100, BREAKEVEN_RATES.MINIMUM_REALISTIC_RATE),
+      "Realistic (Current rate)",
+      Math.max(
+        currentMetrics.chargebackRate / 100,
+        BREAKEVEN_RATES.MINIMUM_REALISTIC_RATE,
+      ),
       currentMetrics,
       monthlyExpenses,
       targetProfit,
-      analysisMonths
+      analysisMonths,
     );
 
     const pessimisticScenario = await this.calculateScenario(
-      'Pessimistic (25% chargeback rate)',
+      "Pessimistic (25% chargeback rate)",
       BREAKEVEN_RATES.PESSIMISTIC_CHARGEBACK_RATE,
       currentMetrics,
       monthlyExpenses,
       targetProfit,
-      analysisMonths
+      analysisMonths,
     );
 
     // Generate recommendations
@@ -98,7 +104,7 @@ class BreakevenService {
       monthlyExpenses,
       targetProfit,
       [optimisticScenario, realisticScenario, pessimisticScenario],
-      analysisMonths
+      analysisMonths,
     );
 
     return {
@@ -125,30 +131,33 @@ class BreakevenService {
     currentMetrics: NetCommissionMetrics,
     monthlyExpenses: number,
     targetProfit: number,
-    timeFrame: number
+    timeFrame: number,
   ): Promise<BreakevenScenario> {
     // Calculate required gross commissions to achieve target after chargebacks and expenses
-    const monthlyTarget = (monthlyExpenses + (targetProfit / timeFrame));
+    const monthlyTarget = monthlyExpenses + targetProfit / timeFrame;
     const requiredNetIncome = monthlyTarget;
     const requiredGrossCommissions = requiredNetIncome / (1 - chargebackRate);
 
     const expectedChargebacks = requiredGrossCommissions * chargebackRate;
-    const netIncome = requiredGrossCommissions - expectedChargebacks - monthlyExpenses;
+    const netIncome =
+      requiredGrossCommissions - expectedChargebacks - monthlyExpenses;
 
     // Calculate breakeven point (months to reach target)
-    const currentMonthlyNet = (currentMetrics.netIncome / timeFrame) - monthlyExpenses;
-    const breakevenPoint = currentMonthlyNet > 0
-      ? Math.ceil(targetProfit / currentMonthlyNet)
-      : Infinity;
+    const currentMonthlyNet =
+      currentMetrics.netIncome / timeFrame - monthlyExpenses;
+    const breakevenPoint =
+      currentMonthlyNet > 0
+        ? Math.ceil(targetProfit / currentMonthlyNet)
+        : Infinity;
 
     // Determine risk level
-    let riskLevel: 'low' | 'medium' | 'high';
-    if (chargebackRate <= 0.10) {
-      riskLevel = 'low';
-    } else if (chargebackRate <= 0.20) {
-      riskLevel = 'medium';
+    let riskLevel: "low" | "medium" | "high";
+    if (chargebackRate <= 0.1) {
+      riskLevel = "low";
+    } else if (chargebackRate <= 0.2) {
+      riskLevel = "medium";
     } else {
-      riskLevel = 'high';
+      riskLevel = "high";
     }
 
     return {
@@ -168,45 +177,64 @@ class BreakevenService {
     monthlyExpenses: number,
     targetProfit: number,
     scenarios: BreakevenScenario[],
-    analysisMonths: number = 12
+    analysisMonths: number = 12,
   ): Promise<string[]> {
     const recommendations: string[] = [];
 
     // Chargeback rate recommendations
     if (currentMetrics.chargebackRate > 20) {
-      recommendations.push('CRITICAL: Chargeback rate above 20% - review policy quality and client screening');
+      recommendations.push(
+        "CRITICAL: Chargeback rate above 20% - review policy quality and client screening",
+      );
     } else if (currentMetrics.chargebackRate > 15) {
-      recommendations.push('HIGH: Chargeback rate above 15% - implement better policy retention strategies');
+      recommendations.push(
+        "HIGH: Chargeback rate above 15% - implement better policy retention strategies",
+      );
     }
 
     // Income recommendations
-    const currentMonthlyNet = currentMetrics.netIncome / analysisMonths - monthlyExpenses;
+    const currentMonthlyNet =
+      currentMetrics.netIncome / analysisMonths - monthlyExpenses;
     if (currentMonthlyNet < 0) {
-      recommendations.push('URGENT: Currently operating at a loss - focus on increasing commission volume');
+      recommendations.push(
+        "URGENT: Currently operating at a loss - focus on increasing commission volume",
+      );
     }
 
     // Commission volume recommendations
-    const realisticScenario = scenarios.find(s => s.scenarioName.includes('Realistic'));
+    const realisticScenario = scenarios.find((s) =>
+      s.scenarioName.includes("Realistic"),
+    );
     if (realisticScenario) {
-      const currentMonthlyCommissions = currentMetrics.totalCommissions / analysisMonths;
-      const requiredMonthlyCommissions = realisticScenario.requiredCommissions / realisticScenario.timeFrame;
+      const currentMonthlyCommissions =
+        currentMetrics.totalCommissions / analysisMonths;
+      const requiredMonthlyCommissions =
+        realisticScenario.requiredCommissions / realisticScenario.timeFrame;
 
       if (requiredMonthlyCommissions > currentMonthlyCommissions * 2) {
-        recommendations.push(`Need to ${Math.ceil(requiredMonthlyCommissions / currentMonthlyCommissions)}x current commission volume`);
+        recommendations.push(
+          `Need to ${Math.ceil(requiredMonthlyCommissions / currentMonthlyCommissions)}x current commission volume`,
+        );
       }
     }
 
     // Expense recommendations
     if (monthlyExpenses > targetProfit / 2) {
-      recommendations.push('Consider reducing monthly expenses to improve profitability timeline');
+      recommendations.push(
+        "Consider reducing monthly expenses to improve profitability timeline",
+      );
     }
 
     // Contract level recommendations
-    recommendations.push('Review contract comp levels - higher levels reduce chargeback risk and increase rates');
+    recommendations.push(
+      "Review contract comp levels - higher levels reduce chargeback risk and increase rates",
+    );
 
     // Diversification recommendations
-    if (scenarios.every(s => s.breakevenPoint > 18)) {
-      recommendations.push('Consider diversifying product mix or carriers to improve commission rates');
+    if (scenarios.every((s) => s.breakevenPoint > 18)) {
+      recommendations.push(
+        "Consider diversifying product mix or carriers to improve commission rates",
+      );
     }
 
     return recommendations;
@@ -215,27 +243,41 @@ class BreakevenService {
   async calculateProfitTarget(
     targetAmount: number,
     userId?: string,
-    analysisMonths: number = 12
+    analysisMonths: number = 12,
   ): Promise<ProfitTarget> {
-    const currentMetrics = await commissionService.calculateNetCommissionAfterChargebacks(userId);
+    const currentMetrics =
+      await commissionService.calculateNetCommissionAfterChargebacks(userId);
     const expenses = await expenseService.getAll();
-    const monthlyExpenses = expenses.reduce((total, expense) => total + expense.amount, 0);
+    const monthlyExpenses = expenses.reduce(
+      (total, expense) => total + expense.amount,
+      0,
+    );
 
-    const currentProgress = Math.max(0, currentMetrics.netIncome - (monthlyExpenses * analysisMonths));
-    const progressPercentage = Math.min(100, (currentProgress / targetAmount) * 100);
+    const currentProgress = Math.max(
+      0,
+      currentMetrics.netIncome - monthlyExpenses * analysisMonths,
+    );
+    const progressPercentage = Math.min(
+      100,
+      (currentProgress / targetAmount) * 100,
+    );
 
     const remainingTarget = Math.max(0, targetAmount - currentProgress);
     const chargebackRate = currentMetrics.chargebackRate / 100;
     const riskAdjustedTarget = remainingTarget / (1 - chargebackRate);
 
     // Calculate required monthly commissions (gross) to reach target in specified timeframe
-    const requiredNetMonthly = (remainingTarget / analysisMonths) + monthlyExpenses;
-    const requiredMonthlyCommissions = requiredNetMonthly / (1 - chargebackRate);
+    const requiredNetMonthly =
+      remainingTarget / analysisMonths + monthlyExpenses;
+    const requiredMonthlyCommissions =
+      requiredNetMonthly / (1 - chargebackRate);
 
-    const currentMonthlyNet = (currentMetrics.netIncome / analysisMonths) - monthlyExpenses;
-    const monthsToTarget = currentMonthlyNet > 0
-      ? Math.ceil(remainingTarget / currentMonthlyNet)
-      : 999;
+    const currentMonthlyNet =
+      currentMetrics.netIncome / analysisMonths - monthlyExpenses;
+    const monthsToTarget =
+      currentMonthlyNet > 0
+        ? Math.ceil(remainingTarget / currentMonthlyNet)
+        : 999;
 
     return {
       targetAmount,
@@ -248,7 +290,8 @@ class BreakevenService {
   }
 
   async getChargebackProjections(
-    userId?: string, _projectionMonths: number = 6
+    userId?: string,
+    _projectionMonths: number = 6,
   ): Promise<{
     currentChargebacks: number;
     projectedChargebacks: number;
@@ -259,35 +302,47 @@ class BreakevenService {
     }>;
     mitigation: string[];
   }> {
-    const commissions = await commissionService.getCommissionsWithChargebackRisk(userId);
+    const commissions =
+      await commissionService.getCommissionsWithChargebackRisk(userId);
 
     let currentChargebacks = 0;
     let projectedChargebacks = 0;
-    const riskFactors: Array<{ factor: string; risk: number; description: string }> = [];
+    const riskFactors: Array<{
+      factor: string;
+      risk: number;
+      description: string;
+    }> = [];
 
     // Analyze existing chargebacks and risk
-    commissions.forEach(({ commission, chargeback_risk, existing_chargebacks }) => {
-      currentChargebacks += existing_chargebacks.reduce((sum: number, cb: any) => sum + cb.chargebackAmount, 0);
+    commissions.forEach(
+      ({ commission, chargeback_risk, existing_chargebacks }) => {
+        currentChargebacks += existing_chargebacks.reduce(
+          (sum: number, cb: any) => sum + cb.chargebackAmount,
+          0,
+        );
 
-      // Project future chargebacks based on risk level
-      if (chargeback_risk.riskLevel === 'high') {
-        projectedChargebacks += (commission.advanceAmount ?? 0) * 0.8; // 80% chance
-      } else if (chargeback_risk.riskLevel === 'medium') {
-        projectedChargebacks += (commission.advanceAmount ?? 0) * 0.3; // 30% chance
-      } else {
-        projectedChargebacks += (commission.advanceAmount ?? 0) * 0.05; // 5% chance
-      }
-    });
+        // Project future chargebacks based on risk level
+        if (chargeback_risk.riskLevel === "high") {
+          projectedChargebacks += (commission.advanceAmount ?? 0) * 0.8; // 80% chance
+        } else if (chargeback_risk.riskLevel === "medium") {
+          projectedChargebacks += (commission.advanceAmount ?? 0) * 0.3; // 30% chance
+        } else {
+          projectedChargebacks += (commission.advanceAmount ?? 0) * 0.05; // 5% chance
+        }
+      },
+    );
 
     // Identify risk factors
-    const highRiskCount = commissions.filter(c => c.chargeback_risk.riskLevel === 'high').length;
-    const recentCommissions = commissions.filter(c =>
-      c.chargeback_risk.monthsSincePaid < 6
+    const highRiskCount = commissions.filter(
+      (c) => c.chargeback_risk.riskLevel === "high",
+    ).length;
+    const recentCommissions = commissions.filter(
+      (c) => c.chargeback_risk.monthsSincePaid < 6,
     ).length;
 
     if (highRiskCount > 0) {
       riskFactors.push({
-        factor: 'High Risk Commissions',
+        factor: "High Risk Commissions",
         risk: (highRiskCount / commissions.length) * 100,
         description: `${highRiskCount} commissions with high chargeback risk`,
       });
@@ -295,18 +350,18 @@ class BreakevenService {
 
     if (recentCommissions > commissions.length * 0.5) {
       riskFactors.push({
-        factor: 'Recent Payment Risk',
+        factor: "Recent Payment Risk",
         risk: (recentCommissions / commissions.length) * 100,
-        description: 'High percentage of recently paid commissions',
+        description: "High percentage of recently paid commissions",
       });
     }
 
     const mitigation = [
-      'Monitor high-risk policies for early warning signs',
-      'Implement client retention strategies',
-      'Diversify carrier and product mix',
-      'Focus on higher contract comp levels',
-      'Build emergency fund for chargeback coverage',
+      "Monitor high-risk policies for early warning signs",
+      "Implement client retention strategies",
+      "Diversify carrier and product mix",
+      "Focus on higher contract comp levels",
+      "Build emergency fund for chargeback coverage",
     ];
 
     return {
@@ -317,7 +372,10 @@ class BreakevenService {
     };
   }
 
-  async calculateEmergencyFund(userId?: string, analysisMonths: number = 12): Promise<{
+  async calculateEmergencyFund(
+    userId?: string,
+    analysisMonths: number = 12,
+  ): Promise<{
     recommendedFund: number;
     currentRisk: number;
     monthsOfCoverage: number;
@@ -328,33 +386,42 @@ class BreakevenService {
     }>;
   }> {
     const projectionMonths = EMERGENCY_FUND.PROJECTION_MONTHS; // Use a consistent 12-month projection for clarity
-    const chargebackProjections = await this.getChargebackProjections(userId, projectionMonths);
-    const currentMetrics = await commissionService.calculateNetCommissionAfterChargebacks(userId);
+    const chargebackProjections = await this.getChargebackProjections(
+      userId,
+      projectionMonths,
+    );
+    const currentMetrics =
+      await commissionService.calculateNetCommissionAfterChargebacks(userId);
 
-    const monthlyProjectedChargebacks = chargebackProjections.projectedChargebacks / projectionMonths;
+    const monthlyProjectedChargebacks =
+      chargebackProjections.projectedChargebacks / projectionMonths;
 
     // Calculate recommended fund based on scenarios
     const scenarios = [
       {
-        scenario: 'Conservative (3 months of projected chargebacks)',
-        requiredFund: monthlyProjectedChargebacks * EMERGENCY_FUND.CONSERVATIVE_MONTHS,
+        scenario: "Conservative (3 months of projected chargebacks)",
+        requiredFund:
+          monthlyProjectedChargebacks * EMERGENCY_FUND.CONSERVATIVE_MONTHS,
         probability: 0.8,
       },
       {
-        scenario: 'Moderate (6 months of projected chargebacks)',
-        requiredFund: monthlyProjectedChargebacks * EMERGENCY_FUND.MODERATE_MONTHS,
+        scenario: "Moderate (6 months of projected chargebacks)",
+        requiredFund:
+          monthlyProjectedChargebacks * EMERGENCY_FUND.MODERATE_MONTHS,
         probability: 0.6,
       },
       {
-        scenario: 'Aggressive (12 months of projected chargebacks)',
-        requiredFund: monthlyProjectedChargebacks * EMERGENCY_FUND.AGGRESSIVE_MONTHS,
+        scenario: "Aggressive (12 months of projected chargebacks)",
+        requiredFund:
+          monthlyProjectedChargebacks * EMERGENCY_FUND.AGGRESSIVE_MONTHS,
         probability: 0.2,
       },
     ];
 
     const recommendedFund = scenarios[1].requiredFund; // Use moderate scenario
     const monthlyCommissions = currentMetrics.totalCommissions / analysisMonths;
-    const monthsOfCoverage = monthlyCommissions > 0 ? recommendedFund / monthlyCommissions : 0;
+    const monthsOfCoverage =
+      monthlyCommissions > 0 ? recommendedFund / monthlyCommissions : 0;
 
     return {
       recommendedFund,
