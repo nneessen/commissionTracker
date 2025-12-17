@@ -6,6 +6,38 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-12-17 10:17:39
+
+### Changed Files
+- `CHANGELOG.md`
+- `PROJECT_STATS.md`
+- `plans/active/CONTINUATION_policies_page_redesign.md`
+- `src/features/policies/PolicyDashboard.tsx`
+- `src/features/policies/PolicyForm.tsx`
+- `src/features/policies/PolicyList.tsx`
+- `src/features/policies/components/PolicyDashboardHeader.tsx`
+- `src/features/policies/components/PolicyDialog.tsx`
+
+### Statistics
+```
+ 8 files changed, 646 insertions(+), 563 deletions(-)
+```
+
+## [Checkpoint] - 2025-12-17 10:15:03
+
+### Changed Files
+- `plans/active/CONTINUATION_policies_page_redesign.md`
+- `src/features/policies/PolicyDashboard.tsx`
+- `src/features/policies/PolicyForm.tsx`
+- `src/features/policies/PolicyList.tsx`
+- `src/features/policies/components/PolicyDashboardHeader.tsx`
+- `src/features/policies/components/PolicyDialog.tsx`
+
+### Statistics
+```
+ 6 files changed, 624 insertions(+), 523 deletions(-)
+```
+
 ## [Checkpoint] - 2025-12-17 10:02:37
 
 ### Changed Files

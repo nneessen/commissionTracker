@@ -36,12 +36,12 @@ export function PolicyDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
-        <DialogHeader className="pb-2">
-          <DialogTitle className="text-lg font-semibold text-foreground">
+      <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800">
+        <DialogHeader className="pb-2 border-b border-zinc-200 dark:border-zinc-800">
+          <DialogTitle className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
             {policyId ? "Edit Policy" : "New Policy"}
           </DialogTitle>
-          <DialogDescription className="text-xs text-muted-foreground mt-1">
+          <DialogDescription className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-1">
             {policyId
               ? "Update the policy details below"
               : "Fill in the details to add a new policy"}
@@ -50,7 +50,7 @@ export function PolicyDialog({
 
         <div className="mt-1">
           {isLoadingPolicy && policyId ? (
-            <div className="flex items-center justify-center p-8 text-muted-foreground">
+            <div className="flex items-center justify-center p-8 text-zinc-500 dark:text-zinc-400 text-[11px]">
               Loading policy data...
             </div>
           ) : (

@@ -43,7 +43,7 @@ export const PolicyDashboard: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center p-20 text-muted-foreground">
+      <div className="flex items-center justify-center p-20 text-zinc-500 dark:text-zinc-400">
         Loading policies...
       </div>
     );
@@ -51,9 +51,9 @@ export const PolicyDashboard: React.FC = () => {
 
   if (error) {
     return (
-      <div className="flex items-center gap-3 p-4 bg-gradient-to-br from-destructive/20 via-error/10 to-card rounded-lg shadow-md">
-        <AlertCircle size={20} className="text-destructive" />
-        <span className="text-destructive font-medium">
+      <div className="flex items-center gap-3 p-4 bg-red-500/10 rounded-lg border border-red-200 dark:border-red-800">
+        <AlertCircle size={20} className="text-red-600 dark:text-red-400" />
+        <span className="text-red-600 dark:text-red-400 font-medium">
           Error loading policies: {(error as Error).message}
         </span>
         <Button
@@ -69,7 +69,7 @@ export const PolicyDashboard: React.FC = () => {
   }
 
   return (
-    <div className="h-screen flex flex-col">
+    <div className="h-[calc(100vh-4rem)] flex flex-col p-3 space-y-2.5 bg-zinc-50 dark:bg-zinc-950">
       <PolicyList
         onEditPolicy={handleEditPolicy}
         onNewPolicy={() => setIsPolicyFormOpen(true)}
