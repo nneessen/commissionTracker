@@ -1,19 +1,19 @@
 // src/features/auth/Login.tsx
 
 import React, { useState } from "react";
-import {useNavigate} from "@tanstack/react-router";
-import {useAuth} from "../../contexts/AuthContext";
-import {Button} from "../../components/ui/button";
-import {Card, CardContent} from "../../components/ui/card";
-import {Separator} from "../../components/ui/separator";
-import {SESSION_STORAGE_KEYS} from "../../constants/auth.constants";
+import { useNavigate } from "@tanstack/react-router";
+import { useAuth } from "../../contexts/AuthContext";
+import { Button } from "../../components/ui/button";
+import { Card, CardContent } from "../../components/ui/card";
+import { Separator } from "../../components/ui/separator";
+import { SESSION_STORAGE_KEYS } from "../../constants/auth.constants";
 // import {AuthMode} from "./hooks/useAuthValidation";
-import {AuthErrorDisplay} from "./components/AuthErrorDisplay";
-import {AuthSuccessMessage} from "./components/AuthSuccessMessage";
-import {SignInForm} from "./components/SignInForm";
-import {ResetPasswordForm} from "./components/ResetPasswordForm";
-import {Alert, AlertDescription} from "../../components/ui/alert";
-import {Info} from "lucide-react";
+import { AuthErrorDisplay } from "./components/AuthErrorDisplay";
+import { AuthSuccessMessage } from "./components/AuthSuccessMessage";
+import { SignInForm } from "./components/SignInForm";
+import { ResetPasswordForm } from "./components/ResetPasswordForm";
+import { Alert, AlertDescription } from "../../components/ui/alert";
+import { Info } from "lucide-react";
 
 interface LoginProps {
   onSuccess?: () => void;
@@ -24,7 +24,12 @@ export const Login: React.FC<LoginProps> = ({ onSuccess }) => {
   const navigate = useNavigate();
   // Temporarily create mock validation functions
   const formErrors = {};
-  const validateForm = (_email: string, _password: string, _confirmPassword: string, _mode: string) => true;
+  const validateForm = (
+    _email: string,
+    _password: string,
+    _confirmPassword: string,
+    _mode: string,
+  ) => true;
   const clearErrors = () => {};
   const [mode, setMode] = useState<"signin" | "reset">("signin");
   const [email, setEmail] = useState("");
@@ -71,6 +76,7 @@ export const Login: React.FC<LoginProps> = ({ onSuccess }) => {
         setTimeout(() => {
           navigate({
             to: "/auth/verify-email",
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- router state type
           } as any); // Type assertion needed for router state
         }, 1500);
       }
@@ -194,7 +200,8 @@ export const Login: React.FC<LoginProps> = ({ onSuccess }) => {
                 <Alert className="mt-4 bg-muted/50">
                   <Info className="h-4 w-4" />
                   <AlertDescription>
-                    This system is invitation-only. Contact your manager for access.
+                    This system is invitation-only. Contact your manager for
+                    access.
                   </AlertDescription>
                 </Alert>
               </>

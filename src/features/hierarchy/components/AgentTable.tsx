@@ -78,12 +78,14 @@ async function fetchAgentMetrics(agentId: string): Promise<{
   const policyData = await hierarchyService.getAgentPolicies(agentId);
   const policies = policyData.policies || [];
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- policy data type
   const mtdPolicies = policies.filter((p: any) => {
     const pDate = new Date(p.issueDate || "");
     return pDate >= startOfMonth && pDate <= endOfMonth;
   });
 
   const mtdMetrics = mtdPolicies.reduce(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- policy data type
     (acc: { policies: number; ap: number }, policy: any) => {
       acc.policies++;
       if (policy.status === "active") {

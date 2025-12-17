@@ -215,6 +215,7 @@ export default function EventTypeManager() {
   );
 
   // Update edit data field
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic field value type
   const updateEditField = (field: keyof EditableEventType, value: any) => {
     if (editData) {
       setEditData({ ...editData, [field]: value });

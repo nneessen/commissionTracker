@@ -1,17 +1,17 @@
 // src/features/recruiting/admin/PipelineTemplateEditor.tsx
 
-import React, { useState } from 'react';
-import {Button} from '@/components/ui/button';
-import {Card} from '@/components/ui/card';
-import {Badge} from '@/components/ui/badge';
-import {Input} from '@/components/ui/input';
-import {Label} from '@/components/ui/label';
-import {Textarea} from '@/components/ui/textarea';
-import {Checkbox} from '@/components/ui/checkbox';
-import {ArrowLeft, Save, Loader2} from 'lucide-react';
-import {showToast} from '@/utils/toast';
-import {useTemplate, useUpdateTemplate} from '../hooks/usePipeline';
-import {PhaseEditor} from './PhaseEditor';
+import React, { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ArrowLeft, Save, Loader2 } from "lucide-react";
+import { showToast } from "@/utils/toast";
+import { useTemplate, useUpdateTemplate } from "../hooks/usePipeline";
+import { PhaseEditor } from "./PhaseEditor";
 
 interface PipelineTemplateEditorProps {
   templateId: string;
@@ -25,8 +25,8 @@ export function PipelineTemplateEditor({
   const { data: template, isLoading } = useTemplate(templateId);
   const updateTemplate = useUpdateTemplate();
 
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
   const [isActive, setIsActive] = useState(true);
   const [hasChanges, setHasChanges] = useState(false);
 
@@ -34,21 +34,22 @@ export function PipelineTemplateEditor({
   React.useEffect(() => {
     if (template) {
       setName(template.name);
-      setDescription(template.description || '');
+      setDescription(template.description || "");
       setIsActive(template.is_active);
       setHasChanges(false);
     }
   }, [template]);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic field value
   const handleFieldChange = (field: string, value: any) => {
     switch (field) {
-      case 'name':
+      case "name":
         setName(value);
         break;
-      case 'description':
+      case "description":
         setDescription(value);
         break;
-      case 'is_active':
+      case "is_active":
         setIsActive(value);
         break;
     }
@@ -57,7 +58,7 @@ export function PipelineTemplateEditor({
 
   const handleSave = async () => {
     if (!name.trim()) {
-      showToast.error('Template name is required');
+      showToast.error("Template name is required");
       return;
     }
 
@@ -70,10 +71,10 @@ export function PipelineTemplateEditor({
           is_active: isActive,
         },
       });
-      showToast.success('Template saved');
+      showToast.success("Template saved");
       setHasChanges(false);
     } catch (_error) {
-      showToast.error('Failed to save template');
+      showToast.error("Failed to save template");
     }
   };
 
@@ -132,7 +133,7 @@ export function PipelineTemplateEditor({
             <Label className="text-xs">Name</Label>
             <Input
               value={name}
-              onChange={(e) => handleFieldChange('name', e.target.value)}
+              onChange={(e) => handleFieldChange("name", e.target.value)}
               className="h-8 text-sm"
             />
           </div>
@@ -141,10 +142,12 @@ export function PipelineTemplateEditor({
             <div className="flex items-center gap-2 h-8">
               <Checkbox
                 checked={isActive}
-                onCheckedChange={(checked: boolean) => handleFieldChange('is_active', checked)}
+                onCheckedChange={(checked: boolean) =>
+                  handleFieldChange("is_active", checked)
+                }
               />
               <span className="text-sm">
-                {isActive ? 'Active' : 'Inactive'}
+                {isActive ? "Active" : "Inactive"}
               </span>
             </div>
           </div>
@@ -152,7 +155,7 @@ export function PipelineTemplateEditor({
             <Label className="text-xs">Description</Label>
             <Textarea
               value={description}
-              onChange={(e) => handleFieldChange('description', e.target.value)}
+              onChange={(e) => handleFieldChange("description", e.target.value)}
               placeholder="Optional description..."
               className="text-sm min-h-16"
             />

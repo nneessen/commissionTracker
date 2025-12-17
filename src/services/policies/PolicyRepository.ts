@@ -67,6 +67,7 @@ export class PolicyRepository extends BaseRepository<
       effectiveDateFrom?: string; // YYYY-MM-DD format
       effectiveDateTo?: string; // YYYY-MM-DD format
       searchTerm?: string;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DB record has dynamic schema
       [key: string]: any;
     },
   ): Promise<Policy[]> {
@@ -519,6 +520,7 @@ export class PolicyRepository extends BaseRepository<
     effectiveDateFrom?: string;
     effectiveDateTo?: string;
     searchTerm?: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DB record has dynamic schema
     [key: string]: any;
   }): Promise<{
     totalPolicies: number;
@@ -628,11 +630,13 @@ export class PolicyRepository extends BaseRepository<
     }
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DB record has dynamic schema
   protected transformFromDB(dbRecord: any): Policy {
     // Handle joined client data from foreign key relationship
     let clientData;
     if (dbRecord.clients) {
       // Client was joined - parse address JSONB field
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DB record has dynamic schema
       let address: any = {};
       if (dbRecord.clients.address) {
         if (typeof dbRecord.clients.address === "string") {
@@ -693,7 +697,9 @@ export class PolicyRepository extends BaseRepository<
     return policy;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- transform function requires flexible typing
   protected transformToDB(data: any, _isUpdate = false): any {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DB record has dynamic schema
     const dbData: any = {};
 
     if (data.policyNumber !== undefined)

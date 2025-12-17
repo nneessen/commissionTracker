@@ -280,6 +280,7 @@ class ChargebackService {
     return metrics;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DB record has dynamic schema
   private transformFromDB(dbRecord: any): Chargeback {
     return {
       id: dbRecord.id,
@@ -299,6 +300,7 @@ class ChargebackService {
     };
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- return type varies based on processing
   private transformToDB(data: CreateChargebackData): any {
     return {
       policy_id: data.policyId,

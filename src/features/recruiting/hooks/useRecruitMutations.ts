@@ -1,37 +1,42 @@
 // src/features/recruiting/hooks/useRecruitMutations.ts
-import {useMutation, useQueryClient} from '@tanstack/react-query';
-import {recruitingService} from '@/services/recruiting';
-import type {UpdateRecruitInput} from '@/types/recruiting.types';
-import type {CreateRecruitInput} from '@/types/recruiting.types';
-import {showToast} from '@/utils/toast';
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { recruitingService } from "@/services/recruiting";
+import type { UpdateRecruitInput } from "@/types/recruiting.types";
+import type { CreateRecruitInput } from "@/types/recruiting.types";
+import { showToast } from "@/utils/toast";
 
 export function useCreateRecruit() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (recruit: CreateRecruitInput) => recruitingService.createRecruit(recruit),
+    mutationFn: (recruit: CreateRecruitInput) =>
+      recruitingService.createRecruit(recruit),
     onSuccess: (data) => {
       const name = `${data.first_name} ${data.last_name}`.trim() || data.email;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- internal response metadata
       const emailSent = (data as any)._emailSent;
 
       if (emailSent) {
         showToast.success(
           `Successfully added ${name}. A password reset email has been sent to ${data.email}. They should check their inbox (and spam folder) for login instructions.`,
-          { duration: 8000 }
+          { duration: 8000 },
         );
       } else {
         showToast.warning(
           `Added ${name} but the invite email could not be sent. Use the "Resend Invite" button in their profile to send login instructions.`,
-          { duration: 8000 }
+          { duration: 8000 },
         );
       }
 
-      queryClient.invalidateQueries({ queryKey: ['recruits'] });
-      queryClient.invalidateQueries({ queryKey: ['recruiting-stats'] });
+      queryClient.invalidateQueries({ queryKey: ["recruits"] });
+      queryClient.invalidateQueries({ queryKey: ["recruiting-stats"] });
     },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- error object type
     onError: (error: any) => {
-      console.error('Failed to create recruit:', error);
-      showToast.error(error?.message || 'Failed to add recruit. Please try again.');
+      console.error("Failed to create recruit:", error);
+      showToast.error(
+        error?.message || "Failed to add recruit. Please try again.",
+      );
     },
   });
 }
@@ -40,18 +45,26 @@ export function useUpdateRecruit() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, updates }: { id: string; updates: UpdateRecruitInput }) =>
-      recruitingService.updateRecruit(id, updates),
+    mutationFn: ({
+      id,
+      updates,
+    }: {
+      id: string;
+      updates: UpdateRecruitInput;
+    }) => recruitingService.updateRecruit(id, updates),
     onSuccess: (data, variables) => {
       const name = `${data.first_name} ${data.last_name}`.trim() || data.email;
       showToast.success(`Successfully updated ${name}`);
-      queryClient.invalidateQueries({ queryKey: ['recruits'] });
-      queryClient.invalidateQueries({ queryKey: ['recruits', variables.id] });
-      queryClient.invalidateQueries({ queryKey: ['recruiting-stats'] });
+      queryClient.invalidateQueries({ queryKey: ["recruits"] });
+      queryClient.invalidateQueries({ queryKey: ["recruits", variables.id] });
+      queryClient.invalidateQueries({ queryKey: ["recruiting-stats"] });
     },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- error object type
     onError: (error: any) => {
-      console.error('Failed to update recruit:', error);
-      showToast.error(error?.message || 'Failed to update recruit. Please try again.');
+      console.error("Failed to update recruit:", error);
+      showToast.error(
+        error?.message || "Failed to update recruit. Please try again.",
+      );
     },
   });
 }
@@ -62,8 +75,8 @@ export function useDeleteRecruit() {
   return useMutation({
     mutationFn: (id: string) => recruitingService.deleteRecruit(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['recruits'] });
-      queryClient.invalidateQueries({ queryKey: ['recruiting-stats'] });
+      queryClient.invalidateQueries({ queryKey: ["recruits"] });
+      queryClient.invalidateQueries({ queryKey: ["recruiting-stats"] });
     },
   });
 }

@@ -1,53 +1,72 @@
 // src/features/hierarchy/AgentDetailPage.tsx
 
-import React, { useState } from 'react';
-import {useParams, useNavigate} from '@tanstack/react-router';
-import {useQuery} from '@tanstack/react-query';
-import {Target, AlertCircle, ArrowLeft, Mail, User, Phone, MapPin, FileCheck, DollarSign, TrendingUp, Users} from 'lucide-react';
-import {Card, CardContent, CardHeader, CardTitle} from '@/components/ui/card';
-import {Button} from '@/components/ui/button';
-import {Badge} from '@/components/ui/badge';
-import {Tabs, TabsContent, TabsList, TabsTrigger} from '@/components/ui/tabs';
-import {Progress} from '@/components/ui/progress';
-import {Separator} from '@/components/ui/separator';
-import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from '@/components/ui/table';
-import {hierarchyService} from '@/services/hierarchy/hierarchyService';
-import {formatCurrency, formatDate} from '@/lib/format';
-import {cn} from '@/lib/utils';
-import showToast from '@/utils/toast';
-import {EditAgentModal} from './components/EditAgentModal';
+import React, { useState } from "react";
+import { useParams, useNavigate } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import {
+  Target,
+  AlertCircle,
+  ArrowLeft,
+  Mail,
+  User,
+  Phone,
+  MapPin,
+  FileCheck,
+  DollarSign,
+  TrendingUp,
+  Users,
+} from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Progress } from "@/components/ui/progress";
+import { Separator } from "@/components/ui/separator";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { hierarchyService } from "@/services/hierarchy/hierarchyService";
+import { formatCurrency, formatDate } from "@/lib/format";
+import { cn } from "@/lib/utils";
+import showToast from "@/utils/toast";
+import { EditAgentModal } from "./components/EditAgentModal";
 
 export function AgentDetailPage() {
-  const { agentId } = useParams({ from: '/hierarchy/agent/$agentId' });
+  const { agentId } = useParams({ from: "/hierarchy/agent/$agentId" });
   const navigate = useNavigate();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   // Fetch comprehensive agent data
   const { data: agentData, isLoading: loadingAgent } = useQuery({
-    queryKey: ['agent-details', agentId],
+    queryKey: ["agent-details", agentId],
     queryFn: () => hierarchyService.getAgentDetails(agentId),
   });
 
   const { data: policies, isLoading: loadingPolicies } = useQuery({
-    queryKey: ['agent-policies', agentId],
+    queryKey: ["agent-policies", agentId],
     queryFn: () => hierarchyService.getAgentPolicies(agentId),
     enabled: !!agentId,
   });
 
   const { data: commissions, isLoading: loadingCommissions } = useQuery({
-    queryKey: ['agent-commissions', agentId],
+    queryKey: ["agent-commissions", agentId],
     queryFn: () => hierarchyService.getAgentCommissions(agentId),
     enabled: !!agentId,
   });
 
   const { data: overrides, isLoading: _loadingOverrides } = useQuery({
-    queryKey: ['agent-overrides', agentId],
+    queryKey: ["agent-overrides", agentId],
     queryFn: () => hierarchyService.getAgentOverrides(agentId),
     enabled: !!agentId,
   });
 
   const { data: teamComparison } = useQuery({
-    queryKey: ['team-comparison', agentId],
+    queryKey: ["team-comparison", agentId],
     queryFn: () => hierarchyService.getTeamComparison(agentId),
     enabled: !!agentId,
   });
@@ -55,7 +74,9 @@ export function AgentDetailPage() {
   if (loadingAgent) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-sm text-muted-foreground">Loading agent details...</div>
+        <div className="text-sm text-muted-foreground">
+          Loading agent details...
+        </div>
       </div>
     );
   }
@@ -65,7 +86,11 @@ export function AgentDetailPage() {
       <div className="flex flex-col items-center justify-center min-h-[400px] gap-2">
         <AlertCircle className="h-8 w-8 text-muted-foreground" />
         <div className="text-sm text-muted-foreground">Agent not found</div>
-        <Button variant="outline" size="sm" onClick={() => navigate({ to: '/hierarchy' })}>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => navigate({ to: "/hierarchy" })}
+        >
           Back to Team
         </Button>
       </div>
@@ -75,29 +100,45 @@ export function AgentDetailPage() {
   // Calculate additional metrics
   const policyList = policies?.policies || [];
   const mtdMetrics = {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- policy data type
     policies: policyList.filter((p: any) => {
       const pDate = new Date(p.issueDate);
       const now = new Date();
-      return pDate.getMonth() === now.getMonth() && pDate.getFullYear() === now.getFullYear();
+      return (
+        pDate.getMonth() === now.getMonth() &&
+        pDate.getFullYear() === now.getFullYear()
+      );
     }).length,
-    premium: policyList.filter((p: any) => {
-      const pDate = new Date(p.issueDate);
-      const now = new Date();
-      return pDate.getMonth() === now.getMonth() && pDate.getFullYear() === now.getFullYear();
-    }).reduce((sum: number, p: any) => sum + (p.annualPremium || 0), 0),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- policy data type
+    premium: policyList
+      .filter((p: any) => {
+        const pDate = new Date(p.issueDate);
+        const now = new Date();
+        return (
+          pDate.getMonth() === now.getMonth() &&
+          pDate.getFullYear() === now.getFullYear()
+        );
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- policy data type
+      })
+      .reduce((sum: number, p: any) => sum + (p.annualPremium || 0), 0),
   };
 
   const ytdMetrics = {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- policy data type
     policies: policyList.filter((p: any) => {
       const pDate = new Date(p.issueDate);
       const now = new Date();
       return pDate.getFullYear() === now.getFullYear();
     }).length,
-    premium: policyList.filter((p: any) => {
-      const pDate = new Date(p.issueDate);
-      const now = new Date();
-      return pDate.getFullYear() === now.getFullYear();
-    }).reduce((sum: number, p: any) => sum + (p.annualPremium || 0), 0),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- policy data type
+    premium: policyList
+      .filter((p: any) => {
+        const pDate = new Date(p.issueDate);
+        const now = new Date();
+        return pDate.getFullYear() === now.getFullYear();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- policy data type
+      })
+      .reduce((sum: number, p: any) => sum + (p.annualPremium || 0), 0),
   };
 
   const commissionMetrics = {
@@ -120,7 +161,7 @@ export function AgentDetailPage() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => navigate({ to: '/hierarchy' })}
+            onClick={() => navigate({ to: "/hierarchy" })}
             className="h-7 px-2"
           >
             <ArrowLeft className="h-3 w-3 mr-0.5" />
@@ -130,14 +171,24 @@ export function AgentDetailPage() {
           <h1 className="text-sm font-semibold">Agent Details</h1>
         </div>
         <div className="flex gap-2">
-          <Button size="sm" variant="outline" onClick={() => {
-            // TODO: Integrate with email system when ready
-            showToast.success(`Message feature coming soon for ${agentData.email}`);
-          }}>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              // TODO: Integrate with email system when ready
+              showToast.success(
+                `Message feature coming soon for ${agentData.email}`,
+              );
+            }}
+          >
             <Mail className="h-3 w-3 mr-1" />
             Send Message
           </Button>
-          <Button size="sm" variant="outline" onClick={() => setIsEditModalOpen(true)}>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setIsEditModalOpen(true)}
+          >
             Edit Profile
           </Button>
         </div>
@@ -184,7 +235,7 @@ export function AgentDetailPage() {
                       {agentData.current_onboarding_phase}
                     </Badge>
                   )}
-                  {agentData.approval_status === 'approved' ? (
+                  {agentData.approval_status === "approved" ? (
                     <Badge className="bg-emerald-500/10 text-emerald-600 text-[10px]">
                       Active
                     </Badge>
@@ -221,7 +272,9 @@ export function AgentDetailPage() {
           <CardContent className="p-2">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-[10px] text-muted-foreground">MTD Policies</p>
+                <p className="text-[10px] text-muted-foreground">
+                  MTD Policies
+                </p>
                 <p className="text-sm font-bold">{mtdMetrics.policies}</p>
               </div>
               <FileCheck className="h-3 w-3 text-muted-foreground" />
@@ -234,7 +287,9 @@ export function AgentDetailPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-[10px] text-muted-foreground">MTD Premium</p>
-                <p className="text-sm font-bold">{formatCurrency(mtdMetrics.premium)}</p>
+                <p className="text-sm font-bold">
+                  {formatCurrency(mtdMetrics.premium)}
+                </p>
               </div>
               <DollarSign className="h-3 w-3 text-muted-foreground" />
             </div>
@@ -245,7 +300,9 @@ export function AgentDetailPage() {
           <CardContent className="p-2">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-[10px] text-muted-foreground">YTD Policies</p>
+                <p className="text-[10px] text-muted-foreground">
+                  YTD Policies
+                </p>
                 <p className="text-sm font-bold">{ytdMetrics.policies}</p>
               </div>
               <Target className="h-3 w-3 text-muted-foreground" />
@@ -258,7 +315,9 @@ export function AgentDetailPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-[10px] text-muted-foreground">YTD Premium</p>
-                <p className="text-sm font-bold">{formatCurrency(ytdMetrics.premium)}</p>
+                <p className="text-sm font-bold">
+                  {formatCurrency(ytdMetrics.premium)}
+                </p>
               </div>
               <TrendingUp className="h-3 w-3 text-muted-foreground" />
             </div>
@@ -269,10 +328,18 @@ export function AgentDetailPage() {
       {/* Detailed Tabs */}
       <Tabs defaultValue="policies" className="space-y-2">
         <TabsList className="grid grid-cols-4 w-full max-w-md h-8">
-          <TabsTrigger value="policies" className="text-[10px]">Policies</TabsTrigger>
-          <TabsTrigger value="commissions" className="text-[10px]">Commissions</TabsTrigger>
-          <TabsTrigger value="overrides" className="text-[10px]">Overrides</TabsTrigger>
-          <TabsTrigger value="team" className="text-[10px]">Team</TabsTrigger>
+          <TabsTrigger value="policies" className="text-[10px]">
+            Policies
+          </TabsTrigger>
+          <TabsTrigger value="commissions" className="text-[10px]">
+            Commissions
+          </TabsTrigger>
+          <TabsTrigger value="overrides" className="text-[10px]">
+            Overrides
+          </TabsTrigger>
+          <TabsTrigger value="team" className="text-[10px]">
+            Team
+          </TabsTrigger>
         </TabsList>
 
         {/* Policies Tab */}
@@ -297,24 +364,35 @@ export function AgentDetailPage() {
                   <TableBody>
                     {loadingPolicies ? (
                       <TableRow>
-                        <TableCell colSpan={6} className="text-center text-xs text-muted-foreground">
+                        <TableCell
+                          colSpan={6}
+                          className="text-center text-xs text-muted-foreground"
+                        >
                           Loading policies...
                         </TableCell>
                       </TableRow>
                     ) : policyList.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={6} className="text-center text-xs text-muted-foreground">
+                        <TableCell
+                          colSpan={6}
+                          className="text-center text-xs text-muted-foreground"
+                        >
                           No policies found
                         </TableCell>
                       </TableRow>
                     ) : (
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- policy data type
                       policyList.slice(0, 10).map((policy: any) => (
                         <TableRow key={policy.id}>
                           <TableCell className="text-[11px] font-mono">
                             {policy.policyNumber}
                           </TableCell>
-                          <TableCell className="text-[11px]">{policy.product}</TableCell>
-                          <TableCell className="text-[11px]">{policy.carrier}</TableCell>
+                          <TableCell className="text-[11px]">
+                            {policy.product}
+                          </TableCell>
+                          <TableCell className="text-[11px]">
+                            {policy.carrier}
+                          </TableCell>
                           <TableCell className="text-[11px]">
                             {formatDate(policy.issueDate)}
                           </TableCell>
@@ -325,10 +403,11 @@ export function AgentDetailPage() {
                             <Badge
                               variant="outline"
                               className={cn(
-                                'text-[9px]',
-                                policy.status === 'active' && 'text-emerald-600',
-                                policy.status === 'lapsed' && 'text-yellow-600',
-                                policy.status === 'cancelled' && 'text-red-600'
+                                "text-[9px]",
+                                policy.status === "active" &&
+                                  "text-emerald-600",
+                                policy.status === "lapsed" && "text-yellow-600",
+                                policy.status === "cancelled" && "text-red-600",
                               )}
                             >
                               {policy.status}
@@ -350,7 +429,9 @@ export function AgentDetailPage() {
             <Card>
               <CardContent className="p-1.5">
                 <p className="text-[10px] text-muted-foreground">Total</p>
-                <p className="text-sm font-bold">{formatCurrency(commissionMetrics.total)}</p>
+                <p className="text-sm font-bold">
+                  {formatCurrency(commissionMetrics.total)}
+                </p>
               </CardContent>
             </Card>
             <Card>
@@ -399,23 +480,33 @@ export function AgentDetailPage() {
                   <TableBody>
                     {loadingCommissions ? (
                       <TableRow>
-                        <TableCell colSpan={6} className="text-center text-xs text-muted-foreground">
+                        <TableCell
+                          colSpan={6}
+                          className="text-center text-xs text-muted-foreground"
+                        >
                           Loading commissions...
                         </TableCell>
                       </TableRow>
-                    ) : !commissions?.recent || commissions.recent.length === 0 ? (
+                    ) : !commissions?.recent ||
+                      commissions.recent.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={6} className="text-center text-xs text-muted-foreground">
+                        <TableCell
+                          colSpan={6}
+                          className="text-center text-xs text-muted-foreground"
+                        >
                           No commissions found
                         </TableCell>
                       </TableRow>
                     ) : (
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- commission data type
                       commissions.recent.map((commission: any) => (
                         <TableRow key={commission.id}>
                           <TableCell className="text-[11px]">
                             {formatDate(commission.date)}
                           </TableCell>
-                          <TableCell className="text-[11px]">{commission.type}</TableCell>
+                          <TableCell className="text-[11px]">
+                            {commission.type}
+                          </TableCell>
                           <TableCell className="text-[11px] font-mono">
                             {commission.policyNumber}
                           </TableCell>
@@ -423,15 +514,18 @@ export function AgentDetailPage() {
                             {formatCurrency(commission.amount)}
                           </TableCell>
                           <TableCell className="text-[11px]">
-                            {formatCurrency(commission.amount * 0.2)} {/* Estimate 20% earned */}
+                            {formatCurrency(commission.amount * 0.2)}{" "}
+                            {/* Estimate 20% earned */}
                           </TableCell>
                           <TableCell>
                             <Badge
                               variant="outline"
                               className={cn(
-                                'text-[9px]',
-                                commission.status === 'paid' && 'text-emerald-600',
-                                commission.status === 'pending' && 'text-yellow-600'
+                                "text-[9px]",
+                                commission.status === "paid" &&
+                                  "text-emerald-600",
+                                commission.status === "pending" &&
+                                  "text-yellow-600",
                               )}
                             >
                               {commission.status}
@@ -452,7 +546,9 @@ export function AgentDetailPage() {
           <div className="grid grid-cols-2 gap-2 mb-2">
             <Card>
               <CardContent className="p-2">
-                <p className="text-[10px] text-muted-foreground">MTD Overrides</p>
+                <p className="text-[10px] text-muted-foreground">
+                  MTD Overrides
+                </p>
                 <p className="text-sm font-bold text-emerald-600">
                   {formatCurrency(overrideMetrics.total)}
                 </p>
@@ -460,7 +556,9 @@ export function AgentDetailPage() {
             </Card>
             <Card>
               <CardContent className="p-2">
-                <p className="text-[10px] text-muted-foreground">YTD Overrides</p>
+                <p className="text-[10px] text-muted-foreground">
+                  YTD Overrides
+                </p>
                 <p className="text-sm font-bold text-emerald-600">
                   {formatCurrency(overrideMetrics.ytd)}
                 </p>
@@ -469,26 +567,34 @@ export function AgentDetailPage() {
           </div>
           <Card>
             <CardHeader className="pb-2 pt-2">
-              <CardTitle className="text-xs">Override Commission Summary</CardTitle>
+              <CardTitle className="text-xs">
+                Override Commission Summary
+              </CardTitle>
             </CardHeader>
             <CardContent>
               {overrideMetrics.total > 0 ? (
                 <div className="space-y-2">
                   <p className="text-xs text-muted-foreground">
-                    This agent has earned override commissions from their downline's production.
+                    This agent has earned override commissions from their
+                    downline's production.
                   </p>
                   <div className="flex items-center justify-between text-xs">
                     <span>MTD Override Income:</span>
-                    <span className="font-bold text-emerald-600">{formatCurrency(overrideMetrics.total)}</span>
+                    <span className="font-bold text-emerald-600">
+                      {formatCurrency(overrideMetrics.total)}
+                    </span>
                   </div>
                   <div className="flex items-center justify-between text-xs">
                     <span>YTD Override Income:</span>
-                    <span className="font-bold text-emerald-600">{formatCurrency(overrideMetrics.ytd)}</span>
+                    <span className="font-bold text-emerald-600">
+                      {formatCurrency(overrideMetrics.ytd)}
+                    </span>
                   </div>
                 </div>
               ) : (
                 <p className="text-xs text-muted-foreground text-center py-4">
-                  No override commissions earned yet. This agent will earn overrides when their downline agents write business.
+                  No override commissions earned yet. This agent will earn
+                  overrides when their downline agents write business.
                 </p>
               )}
             </CardContent>
@@ -506,37 +612,64 @@ export function AgentDetailPage() {
                 <CardContent className="space-y-2">
                   <div className="space-y-1">
                     <div className="flex justify-between text-xs">
-                      <span className="text-muted-foreground">Policies Rank</span>
+                      <span className="text-muted-foreground">
+                        Policies Rank
+                      </span>
                       <span className="font-semibold">
-                        #{teamComparison.policies_rank} of {teamComparison.team_size}
+                        #{teamComparison.policies_rank} of{" "}
+                        {teamComparison.team_size}
                       </span>
                     </div>
                     <Progress
-                      value={((teamComparison.team_size - teamComparison.policies_rank + 1) / teamComparison.team_size) * 100}
+                      value={
+                        ((teamComparison.team_size -
+                          teamComparison.policies_rank +
+                          1) /
+                          teamComparison.team_size) *
+                        100
+                      }
                       className="h-1"
                     />
                   </div>
                   <div className="space-y-1">
                     <div className="flex justify-between text-xs">
-                      <span className="text-muted-foreground">Premium Rank</span>
+                      <span className="text-muted-foreground">
+                        Premium Rank
+                      </span>
                       <span className="font-semibold">
-                        #{teamComparison.premium_rank} of {teamComparison.team_size}
+                        #{teamComparison.premium_rank} of{" "}
+                        {teamComparison.team_size}
                       </span>
                     </div>
                     <Progress
-                      value={((teamComparison.team_size - teamComparison.premium_rank + 1) / teamComparison.team_size) * 100}
+                      value={
+                        ((teamComparison.team_size -
+                          teamComparison.premium_rank +
+                          1) /
+                          teamComparison.team_size) *
+                        100
+                      }
                       className="h-1"
                     />
                   </div>
                   <div className="space-y-1">
                     <div className="flex justify-between text-xs">
-                      <span className="text-muted-foreground">Commission Rank</span>
+                      <span className="text-muted-foreground">
+                        Commission Rank
+                      </span>
                       <span className="font-semibold">
-                        #{teamComparison.commission_rank} of {teamComparison.team_size}
+                        #{teamComparison.commission_rank} of{" "}
+                        {teamComparison.team_size}
                       </span>
                     </div>
                     <Progress
-                      value={((teamComparison.team_size - teamComparison.commission_rank + 1) / teamComparison.team_size) * 100}
+                      value={
+                        ((teamComparison.team_size -
+                          teamComparison.commission_rank +
+                          1) /
+                          teamComparison.team_size) *
+                        100
+                      }
                       className="h-1"
                     />
                   </div>
@@ -546,18 +679,22 @@ export function AgentDetailPage() {
               <div className="grid grid-cols-2 gap-2">
                 <Card>
                   <CardContent className="p-2">
-                    <p className="text-[10px] text-muted-foreground">vs Team Avg Policies</p>
+                    <p className="text-[10px] text-muted-foreground">
+                      vs Team Avg Policies
+                    </p>
                     <p className="text-xs font-bold">
-                      {teamComparison.policies_vs_avg > 0 ? '+' : ''}
+                      {teamComparison.policies_vs_avg > 0 ? "+" : ""}
                       {teamComparison.policies_vs_avg}%
                     </p>
                   </CardContent>
                 </Card>
                 <Card>
                   <CardContent className="p-2">
-                    <p className="text-[10px] text-muted-foreground">vs Team Avg Premium</p>
+                    <p className="text-[10px] text-muted-foreground">
+                      vs Team Avg Premium
+                    </p>
                     <p className="text-xs font-bold">
-                      {teamComparison.premium_vs_avg > 0 ? '+' : ''}
+                      {teamComparison.premium_vs_avg > 0 ? "+" : ""}
                       {teamComparison.premium_vs_avg}%
                     </p>
                   </CardContent>
@@ -568,7 +705,9 @@ export function AgentDetailPage() {
             <Card>
               <CardContent className="p-8 text-center">
                 <Users className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                <p className="text-xs text-muted-foreground">No team comparison data available</p>
+                <p className="text-xs text-muted-foreground">
+                  No team comparison data available
+                </p>
               </CardContent>
             </Card>
           )}

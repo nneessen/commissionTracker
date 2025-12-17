@@ -238,7 +238,9 @@ export function MyRecruitingPipeline() {
       : profile.email.substring(0, 2).toUpperCase();
 
   // Get current phase checklist items
+
   const currentPhaseData = template?.phases?.find(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- phase template type
     (p: any) => p.id === currentPhase?.phase_id,
   );
   const currentChecklistItems = currentPhaseData?.checklist_items || [];
@@ -398,6 +400,7 @@ export function MyRecruitingPipeline() {
                 const isExpanded = expandedPhase === phase.id;
 
                 const phaseData = template?.phases?.find(
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- phase template type
                   (p: any) => p.id === phase.phase_id,
                 );
                 const phaseName = phaseData?.phase_name || "Unknown Phase";
@@ -480,8 +483,10 @@ export function MyRecruitingPipeline() {
                             <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400 mb-3">
                               Checklist Items
                             </p>
+                            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any -- checklist item type */}
                             {phaseChecklistItems.map((item: any) => {
                               const progressItem = allChecklistProgress?.find(
+                                // eslint-disable-next-line @typescript-eslint/no-explicit-any -- progress item type
                                 (p: any) => p.checklist_item_id === item.id,
                               );
                               const itemCompleted =

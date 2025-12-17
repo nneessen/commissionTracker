@@ -1,8 +1,17 @@
 // src/features/reports/components/charts/TrendLineChart.tsx
 
-import React from 'react';
-import {LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer} from 'recharts';
-import {formatCurrency} from '../../../../lib/format';
+import React from "react";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
+import { formatCurrency } from "../../../../lib/format";
 
 export interface TrendLineChartData {
   label: string;
@@ -15,7 +24,7 @@ export interface TrendLineChartProps {
     dataKey: string;
     name: string;
     color: string;
-    format?: 'currency' | 'number' | 'percent';
+    format?: "currency" | "number" | "percent";
   }[];
   height?: number;
   showGrid?: boolean;
@@ -59,30 +68,38 @@ export function TrendLineChart({
     );
   }
 
-  const formatValue = (value: number, format?: 'currency' | 'number' | 'percent') => {
-    if (typeof value !== 'number') return value;
+  const formatValue = (
+    value: number,
+    format?: "currency" | "number" | "percent",
+  ) => {
+    if (typeof value !== "number") return value;
 
     switch (format) {
-      case 'currency':
+      case "currency":
         return formatCurrency(value);
-      case 'percent':
+      case "percent":
         return `${value.toFixed(1)}%`;
-      case 'number':
+      case "number":
       default:
         return value.toLocaleString();
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- chart data type
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (!active || !payload || !payload.length) return null;
 
     return (
       <div className="bg-card border border-border rounded-lg shadow-lg p-3">
         <p className="text-xs font-semibold text-foreground mb-2">{label}</p>
+        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any -- chart data type */}
         {payload.map((entry: any, index: number) => {
-          const line = lines.find(l => l.dataKey === entry.dataKey);
+          const line = lines.find((l) => l.dataKey === entry.dataKey);
           return (
-            <div key={index} className="flex items-center justify-between gap-4 text-xs">
+            <div
+              key={index}
+              className="flex items-center justify-between gap-4 text-xs"
+            >
               <span className="flex items-center gap-2">
                 <span
                   className="w-3 h-0.5 rounded"
@@ -116,23 +133,41 @@ export function TrendLineChart({
           )}
           <XAxis
             dataKey="label"
-            tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+            tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
             stroke="hsl(var(--border))"
-            label={xAxisLabel ? { value: xAxisLabel, position: 'insideBottom', offset: -5, style: { fontSize: 12 } } : undefined}
+            label={
+              xAxisLabel
+                ? {
+                    value: xAxisLabel,
+                    position: "insideBottom",
+                    offset: -5,
+                    style: { fontSize: 12 },
+                  }
+                : undefined
+            }
           />
           <YAxis
-            tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+            tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
             stroke="hsl(var(--border))"
             tickFormatter={(value) => {
               // Use first line's format for Y-axis
               return formatValue(value, lines[0]?.format);
             }}
-            label={yAxisLabel ? { value: yAxisLabel, angle: -90, position: 'insideLeft', style: { fontSize: 12 } } : undefined}
+            label={
+              yAxisLabel
+                ? {
+                    value: yAxisLabel,
+                    angle: -90,
+                    position: "insideLeft",
+                    style: { fontSize: 12 },
+                  }
+                : undefined
+            }
           />
           <Tooltip content={<CustomTooltip />} />
           {showLegend && (
             <Legend
-              wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }}
+              wrapperStyle={{ fontSize: "12px", paddingTop: "10px" }}
               iconType="line"
             />
           )}

@@ -60,6 +60,7 @@ export function RateEditDialog({
         const newRateIds: Record<number, string> = {};
 
         if (data) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- rate data type
           data.forEach((entry: any) => {
             const level = entry.contract_level;
             const percentage = entry.commission_percentage * 100;

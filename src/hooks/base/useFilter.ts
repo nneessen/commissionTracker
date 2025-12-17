@@ -1,9 +1,17 @@
 // /home/nneessen/projects/commissionTracker/src/hooks/base/useFilter.ts
 
-import {useState} from 'react';
+import { useState } from "react";
 
-export type FilterOperator = 'equals' | 'contains' | 'startsWith' | 'endsWith' |
-  'greaterThan' | 'lessThan' | 'between' | 'in' | 'notIn';
+export type FilterOperator =
+  | "equals"
+  | "contains"
+  | "startsWith"
+  | "endsWith"
+  | "greaterThan"
+  | "lessThan"
+  | "between"
+  | "in"
+  | "notIn";
 
 export interface Filter<T> {
   field: keyof T;
@@ -13,7 +21,7 @@ export interface Filter<T> {
 }
 
 export interface FilterGroup<T> {
-  operator: 'and' | 'or';
+  operator: "and" | "or";
   filters: (Filter<T> | FilterGroup<T>)[];
 }
 
@@ -33,49 +41,60 @@ export interface UseFilterResult<T> {
  * Apply a single filter to a value
  */
 function applyFilter<T>(item: T, filter: Filter<T>): boolean {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- generic filter type
   const fieldValue = item[filter.field] as any;
   const filterValue = filter.value;
   const caseSensitive = filter.caseSensitive ?? false;
 
   // Handle null/undefined values
   if (fieldValue === null || fieldValue === undefined) {
-    return filter.operator === 'equals' && filterValue === fieldValue;
+    return filter.operator === "equals" && filterValue === fieldValue;
   }
 
   // Convert to string for string operations
-  const fieldStr = caseSensitive ? String(fieldValue) : String(fieldValue).toLowerCase();
-  const filterStr = caseSensitive ? String(filterValue) : String(filterValue).toLowerCase();
+  const fieldStr = caseSensitive
+    ? String(fieldValue)
+    : String(fieldValue).toLowerCase();
+  const filterStr = caseSensitive
+    ? String(filterValue)
+    : String(filterValue).toLowerCase();
 
   switch (filter.operator) {
-    case 'equals':
+    case "equals":
       return fieldValue === filterValue;
 
-    case 'contains':
+    case "contains":
       return fieldStr.includes(filterStr);
 
-    case 'startsWith':
+    case "startsWith":
       return fieldStr.startsWith(filterStr);
 
-    case 'endsWith':
+    case "endsWith":
       return fieldStr.endsWith(filterStr);
 
-    case 'greaterThan':
+    case "greaterThan":
       return filterValue !== null && fieldValue > filterValue;
 
-    case 'lessThan':
+    case "lessThan":
       return filterValue !== null && fieldValue < filterValue;
 
-    case 'between':
+    case "between":
       if (Array.isArray(filterValue) && filterValue.length === 2) {
         return fieldValue >= filterValue[0] && fieldValue <= filterValue[1];
       }
       return false;
 
-    case 'in':
-      return Array.isArray(filterValue) && (filterValue as unknown[]).includes(fieldValue);
+    case "in":
+      return (
+        Array.isArray(filterValue) &&
+        (filterValue as unknown[]).includes(fieldValue)
+      );
 
-    case 'notIn':
-      return Array.isArray(filterValue) && !(filterValue as unknown[]).includes(fieldValue);
+    case "notIn":
+      return (
+        Array.isArray(filterValue) &&
+        !(filterValue as unknown[]).includes(fieldValue)
+      );
 
     default:
       return true;
@@ -86,13 +105,13 @@ function applyFilter<T>(item: T, filter: Filter<T>): boolean {
  * Apply a filter configuration to an item
  */
 function applyFilterConfig<T>(item: T, config: FilterConfig<T>): boolean {
-  if ('field' in config) {
+  if ("field" in config) {
     // Single filter
     return applyFilter(item, config);
   } else {
     // Filter group
-    const results = config.filters.map(f => applyFilterConfig(item, f));
-    return config.operator === 'and'
+    const results = config.filters.map((f) => applyFilterConfig(item, f));
+    return config.operator === "and"
       ? results.every(Boolean)
       : results.some(Boolean);
   }
@@ -104,7 +123,7 @@ function applyFilterConfig<T>(item: T, config: FilterConfig<T>): boolean {
 function countFilters<T>(config: FilterConfig<T> | null): number {
   if (!config) return 0;
 
-  if ('field' in config) {
+  if ("field" in config) {
     return 1;
   } else {
     return config.filters.reduce((count, f) => count + countFilters(f), 0);
@@ -119,28 +138,30 @@ function countFilters<T>(config: FilterConfig<T> | null): number {
  */
 export function useFilter<T>(
   data: T[],
-  initialFilters: FilterConfig<T> | null = null
+  initialFilters: FilterConfig<T> | null = null,
 ): UseFilterResult<T> {
-  const [filters, setFilters] = useState<FilterConfig<T> | null>(initialFilters);
+  const [filters, setFilters] = useState<FilterConfig<T> | null>(
+    initialFilters,
+  );
 
   const filteredData = filters
-    ? data.filter(item => applyFilterConfig(item, filters))
+    ? data.filter((item) => applyFilterConfig(item, filters))
     : data;
 
   const addFilter = (newFilter: Filter<T>) => {
     if (!filters) {
       setFilters(newFilter);
-    } else if ('field' in filters) {
+    } else if ("field" in filters) {
       // Convert single filter to group
       setFilters({
-        operator: 'and',
-        filters: [filters, newFilter]
+        operator: "and",
+        filters: [filters, newFilter],
       });
     } else {
       // Add to existing group
       setFilters({
         ...filters,
-        filters: [...filters.filters, newFilter]
+        filters: [...filters.filters, newFilter],
       });
     }
   };
@@ -148,12 +169,14 @@ export function useFilter<T>(
   const removeFilter = (field: keyof T) => {
     if (!filters) return;
 
-    const removeFromConfig = (config: FilterConfig<T>): FilterConfig<T> | null => {
-      if ('field' in config) {
+    const removeFromConfig = (
+      config: FilterConfig<T>,
+    ): FilterConfig<T> | null => {
+      if ("field" in config) {
         return config.field === field ? null : config;
       } else {
         const updatedFilters = config.filters
-          .map(f => removeFromConfig(f))
+          .map((f) => removeFromConfig(f))
           .filter(Boolean) as FilterConfig<T>[];
 
         if (updatedFilters.length === 0) return null;
@@ -161,7 +184,7 @@ export function useFilter<T>(
 
         return {
           ...config,
-          filters: updatedFilters
+          filters: updatedFilters,
         };
       }
     };
@@ -180,6 +203,6 @@ export function useFilter<T>(
     addFilter,
     removeFilter,
     clearFilters,
-    filterCount: countFilters(filters)
+    filterCount: countFilters(filters),
   };
 }

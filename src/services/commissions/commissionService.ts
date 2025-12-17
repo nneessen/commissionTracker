@@ -149,6 +149,7 @@ class CommissionService {
       policyLapseDate?: Date;
       chargebackDate: Date;
     },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- return type varies based on processing
   ): Promise<any> {
     return commissionAnalyticsService.createChargebackForCommission(
       commissionId,

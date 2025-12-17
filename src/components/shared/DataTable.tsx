@@ -1,23 +1,27 @@
-import React, { useState } from 'react';
-import {ChevronUp, ChevronDown} from 'lucide-react';
-import {DataTableProps} from '../../types';
+import React, { useState } from "react";
+import { ChevronUp, ChevronDown } from "lucide-react";
+import { DataTableProps } from "../../types";
 
 export function DataTable<T>({
   data,
   columns,
   loading = false,
-  emptyMessage = 'No data available',
+  emptyMessage = "No data available",
   onRowClick,
 }: DataTableProps<T>) {
   const [sortConfig, setSortConfig] = useState<{
     key: string;
-    direction: 'asc' | 'desc';
+    direction: "asc" | "desc";
   } | null>(null);
 
   const handleSort = (key: string) => {
-    let direction: 'asc' | 'desc' = 'asc';
-    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
-      direction = 'desc';
+    let direction: "asc" | "desc" = "asc";
+    if (
+      sortConfig &&
+      sortConfig.key === key &&
+      sortConfig.direction === "asc"
+    ) {
+      direction = "desc";
     }
     setSortConfig({ key, direction });
   };
@@ -26,14 +30,16 @@ export function DataTable<T>({
     if (!sortConfig) return data;
 
     return [...data].sort((a, b) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic data shape
       const aValue = (a as any)[sortConfig.key];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic data shape
       const bValue = (b as any)[sortConfig.key];
 
       if (aValue < bValue) {
-        return sortConfig.direction === 'asc' ? -1 : 1;
+        return sortConfig.direction === "asc" ? -1 : 1;
       }
       if (aValue > bValue) {
-        return sortConfig.direction === 'asc' ? 1 : -1;
+        return sortConfig.direction === "asc" ? 1 : -1;
       }
       return 0;
     });
@@ -49,11 +55,7 @@ export function DataTable<T>({
   }
 
   if (data.length === 0) {
-    return (
-      <div className="empty-message">
-        {emptyMessage}
-      </div>
-    );
+    return <div className="empty-message">{emptyMessage}</div>;
   }
 
   return (
@@ -64,8 +66,12 @@ export function DataTable<T>({
             {columns.map((column, index) => (
               <th
                 key={column.key ? String(column.key) : `header-${index}`}
-                className={column.sortable ? 'sortable' : ''}
-                onClick={column.sortable ? () => handleSort(String(column.key)) : undefined}
+                className={column.sortable ? "sortable" : ""}
+                onClick={
+                  column.sortable
+                    ? () => handleSort(String(column.key))
+                    : undefined
+                }
               >
                 <div className="header-content">
                   <span>{column.header}</span>
@@ -74,17 +80,19 @@ export function DataTable<T>({
                       <ChevronUp
                         size={12}
                         className={
-                          sortConfig?.key === column.key && sortConfig?.direction === 'asc'
-                            ? 'sort-active'
-                            : 'sort-inactive'
+                          sortConfig?.key === column.key &&
+                          sortConfig?.direction === "asc"
+                            ? "sort-active"
+                            : "sort-inactive"
                         }
                       />
                       <ChevronDown
                         size={12}
                         className={
-                          sortConfig?.key === column.key && sortConfig?.direction === 'desc'
-                            ? 'sort-active'
-                            : 'sort-inactive'
+                          sortConfig?.key === column.key &&
+                          sortConfig?.direction === "desc"
+                            ? "sort-active"
+                            : "sort-inactive"
                         }
                       />
                     </div>
@@ -98,16 +106,24 @@ export function DataTable<T>({
           {sortedData.map((item, index) => (
             <tr
               key={index}
-              className={onRowClick ? 'clickable-row' : ''}
+              className={onRowClick ? "clickable-row" : ""}
               onClick={onRowClick ? () => onRowClick(item) : undefined}
             >
               {columns.map((column, colIndex) => (
-                <td key={column.key ? String(column.key) : `cell-${index}-${colIndex}`}>
+                <td
+                  key={
+                    column.key
+                      ? String(column.key)
+                      : `cell-${index}-${colIndex}`
+                  }
+                >
                   {column.accessor
-                    ? typeof column.accessor === 'function'
+                    ? typeof column.accessor === "function"
                       ? column.accessor(item)
-                      : String((item as any)[column.accessor] || '')
-                    : String((item as any)[column.key] || '')}
+                      : // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic data shape
+                        String((item as any)[column.accessor] || "")
+                    : // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic data shape
+                      String((item as any)[column.key] || "")}
                 </td>
               ))}
             </tr>

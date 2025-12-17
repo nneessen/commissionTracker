@@ -135,6 +135,7 @@ class CommissionStatusService {
       }
 
       // Get policy effective_date
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Supabase response type
       const policy = (commission as any).policies;
       const effectiveDate = policy?.effective_date;
 
@@ -175,6 +176,7 @@ class CommissionStatusService {
       const unearnedAmount = commission.amount - earnedAmount;
 
       // Update commission with calculated values
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DB record has dynamic schema
       const updateData: any = {
         months_paid: cappedMonthsPaid,
         earned_amount: earnedAmount,
@@ -329,6 +331,7 @@ class CommissionStatusService {
         throw new DatabaseError("processChargeback", error);
       }
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- return type varies based on processing
       const result = data as any;
 
       if (!result.success) {
@@ -527,6 +530,7 @@ class CommissionStatusService {
         throw new DatabaseError("getAtRiskCommissions", error);
       }
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Supabase response type
       return (data || []).map((item: any) => ({
         commissionId: item.commission_id,
         policyId: item.policy_id,

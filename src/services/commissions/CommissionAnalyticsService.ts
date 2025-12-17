@@ -1,14 +1,18 @@
 // src/services/commissions/CommissionAnalyticsService.ts
 // Handles commission metrics, reporting, and chargeback analysis
 
-import {Commission} from '../../types/commission.types';
-import {supabase, TABLES} from '../base/supabase';
-import {RISK_SCORE_WEIGHTS, CHARGEBACK_THRESHOLDS, RISK_LEVELS} from '../../constants/financial';
-import {commissionCRUDService} from './CommissionCRUDService';
-import {logger} from '../base/logger';
+import { Commission } from "../../types/commission.types";
+import { supabase, TABLES } from "../base/supabase";
+import {
+  RISK_SCORE_WEIGHTS,
+  CHARGEBACK_THRESHOLDS,
+  RISK_LEVELS,
+} from "../../constants/financial";
+import { commissionCRUDService } from "./CommissionCRUDService";
+import { logger } from "../base/logger";
 
 export interface ChargebackRisk {
-  riskLevel: 'low' | 'medium' | 'high';
+  riskLevel: "low" | "medium" | "high";
   monthsSincePaid: number;
   chargebackGracePeriod: number;
   hasActiveChargebacks: boolean;
@@ -19,6 +23,7 @@ export interface ChargebackRisk {
 export interface CommissionWithChargebackRisk {
   commission: Commission;
   chargeback_risk: ChargebackRisk;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- chargeback records have dynamic shape
   existing_chargebacks: any[];
 }
 
@@ -50,7 +55,10 @@ class CommissionAnalyticsService {
    */
   private handleError(error: unknown, context: string): never {
     const message = error instanceof Error ? error.message : String(error);
-    logger.error(`CommissionAnalyticsService.${context}`, error instanceof Error ? error : new Error(String(error)));
+    logger.error(
+      `CommissionAnalyticsService.${context}`,
+      error instanceof Error ? error : new Error(String(error)),
+    );
     throw new Error(`${context} failed: ${message}`);
   }
 
@@ -73,22 +81,26 @@ class CommissionAnalyticsService {
    * console.log(`Total: $${metrics.totalAmount}, Avg Rate: ${metrics.avgCommissionRate}%`);
    * ```
    */
-  async getCommissionMetrics(userId?: string, startDate?: Date, endDate?: Date): Promise<CommissionMetrics> {
+  async getCommissionMetrics(
+    userId?: string,
+    startDate?: Date,
+    endDate?: Date,
+  ): Promise<CommissionMetrics> {
     try {
       let query = supabase
         .from(TABLES.COMMISSIONS)
-        .select('commission_amount, commission_rate, is_auto_calculated');
+        .select("commission_amount, commission_rate, is_auto_calculated");
 
       if (userId) {
-        query = query.eq('user_id', userId);
+        query = query.eq("user_id", userId);
       }
 
       if (startDate) {
-        query = query.gte('created_at', startDate.toISOString());
+        query = query.gte("created_at", startDate.toISOString());
       }
 
       if (endDate) {
-        query = query.lte('created_at', endDate.toISOString());
+        query = query.lte("created_at", endDate.toISOString());
       }
 
       const { data, error } = await query;
@@ -127,7 +139,7 @@ class CommissionAnalyticsService {
 
       return metrics;
     } catch (error) {
-      throw this.handleError(error, 'getCommissionMetrics');
+      throw this.handleError(error, "getCommissionMetrics");
     }
   }
 
@@ -149,23 +161,28 @@ class CommissionAnalyticsService {
     try {
       const commission = await commissionCRUDService.getById(commissionId);
       if (!commission) {
-        throw new Error('Commission not found');
+        throw new Error("Commission not found");
       }
 
-      const { chargebackService } = await import('./index');
+      const { chargebackService } = await import("./index");
 
       // Use standard chargeback grace period (24 months)
       const chargebackGracePeriod = 24;
 
       // Calculate months since commission was paid
       const monthsSincePaid = commission.paidDate
-        ? Math.floor((Date.now() - commission.paidDate.getTime()) / (1000 * 60 * 60 * 24 * 30))
+        ? Math.floor(
+            (Date.now() - commission.paidDate.getTime()) /
+              (1000 * 60 * 60 * 24 * 30),
+          )
         : 0;
 
       // Check for existing chargebacks
-      const existingChargebacks = await chargebackService.getByCommissionId(commission.id);
-      const hasActiveChargebacks = existingChargebacks.some(cb =>
-        cb.status === 'pending' || cb.status === 'disputed'
+      const existingChargebacks = await chargebackService.getByCommissionId(
+        commission.id,
+      );
+      const hasActiveChargebacks = existingChargebacks.some(
+        (cb) => cb.status === "pending" || cb.status === "disputed",
       );
 
       // Calculate risk factors
@@ -174,42 +191,42 @@ class CommissionAnalyticsService {
 
       // Time-based risk
       if (monthsSincePaid < 6) {
-        riskFactors.push('Recent payment - higher lapse risk');
+        riskFactors.push("Recent payment - higher lapse risk");
         riskScore += 3;
       } else if (monthsSincePaid < 12) {
-        riskFactors.push('Within first year - moderate lapse risk');
+        riskFactors.push("Within first year - moderate lapse risk");
         riskScore += 2;
       } else if (monthsSincePaid >= chargebackGracePeriod) {
-        riskFactors.push('Beyond grace period - low risk');
+        riskFactors.push("Beyond grace period - low risk");
         riskScore -= 2;
       }
 
       // Commission amount risk
       if ((commission.advanceAmount ?? 0) > 5000) {
-        riskFactors.push('High commission amount');
+        riskFactors.push("High commission amount");
         riskScore += 2;
       }
 
       // Existing chargeback risk
       if (hasActiveChargebacks) {
-        riskFactors.push('Has active chargebacks');
+        riskFactors.push("Has active chargebacks");
         riskScore += 3;
       }
 
       // Auto-calculated vs manual commission risk
       if (!commission.isAutoCalculated) {
-        riskFactors.push('Manually calculated commission');
+        riskFactors.push("Manually calculated commission");
         riskScore += 1;
       }
 
       // Determine risk level
-      let riskLevel: 'low' | 'medium' | 'high';
+      let riskLevel: "low" | "medium" | "high";
       if (riskScore <= 1) {
-        riskLevel = 'low';
+        riskLevel = "low";
       } else if (riskScore <= 4) {
-        riskLevel = 'medium';
+        riskLevel = "medium";
       } else {
-        riskLevel = 'high';
+        riskLevel = "high";
       }
 
       return {
@@ -221,7 +238,7 @@ class CommissionAnalyticsService {
         riskFactors,
       };
     } catch (error) {
-      throw this.handleError(error, 'getChargebackRisk');
+      throw this.handleError(error, "getChargebackRisk");
     }
   }
 
@@ -240,18 +257,25 @@ class CommissionAnalyticsService {
    * );
    * ```
    */
-  calculateChargebackRiskForCommission(commission: Commission, existingChargebacks: any[]): ChargebackRisk {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- chargeback records have dynamic shape
+  calculateChargebackRiskForCommission(
+    commission: Commission,
+    existingChargebacks: any[],
+  ): ChargebackRisk {
     // Use standard chargeback grace period
     const chargebackGracePeriod = CHARGEBACK_THRESHOLDS.GRACE_PERIOD_MONTHS;
 
     // Calculate months since commission was paid
     const monthsSincePaid = commission.paidDate
-      ? Math.floor((Date.now() - commission.paidDate.getTime()) / (1000 * 60 * 60 * 24 * 30))
+      ? Math.floor(
+          (Date.now() - commission.paidDate.getTime()) /
+            (1000 * 60 * 60 * 24 * 30),
+        )
       : 0;
 
     // Check for existing chargebacks
-    const hasActiveChargebacks = existingChargebacks.some(cb =>
-      cb.status === 'pending' || cb.status === 'disputed'
+    const hasActiveChargebacks = existingChargebacks.some(
+      (cb) => cb.status === "pending" || cb.status === "disputed",
     );
 
     // Calculate risk factors
@@ -260,42 +284,45 @@ class CommissionAnalyticsService {
 
     // Time-based risk
     if (monthsSincePaid < CHARGEBACK_THRESHOLDS.RECENT_PAYMENT_MONTHS) {
-      riskFactors.push('Recent payment - higher lapse risk');
+      riskFactors.push("Recent payment - higher lapse risk");
       riskScore += RISK_SCORE_WEIGHTS.RECENT_PAYMENT;
     } else if (monthsSincePaid < CHARGEBACK_THRESHOLDS.FIRST_YEAR_MONTHS) {
-      riskFactors.push('Within first year - moderate lapse risk');
+      riskFactors.push("Within first year - moderate lapse risk");
       riskScore += RISK_SCORE_WEIGHTS.FIRST_YEAR_PAYMENT;
     } else if (monthsSincePaid >= chargebackGracePeriod) {
-      riskFactors.push('Beyond grace period - low risk');
+      riskFactors.push("Beyond grace period - low risk");
       riskScore -= 2;
     }
 
     // Commission amount risk
-    if ((commission.advanceAmount ?? 0) > CHARGEBACK_THRESHOLDS.HIGH_COMMISSION_AMOUNT) {
-      riskFactors.push('High commission amount');
+    if (
+      (commission.advanceAmount ?? 0) >
+      CHARGEBACK_THRESHOLDS.HIGH_COMMISSION_AMOUNT
+    ) {
+      riskFactors.push("High commission amount");
       riskScore += RISK_SCORE_WEIGHTS.HIGH_COMMISSION_AMOUNT;
     }
 
     // Existing chargeback risk
     if (hasActiveChargebacks) {
-      riskFactors.push('Has active chargebacks');
+      riskFactors.push("Has active chargebacks");
       riskScore += RISK_SCORE_WEIGHTS.ACTIVE_CHARGEBACK;
     }
 
     // Auto-calculated vs manual commission risk
     if (!commission.isAutoCalculated) {
-      riskFactors.push('Manually calculated commission');
+      riskFactors.push("Manually calculated commission");
       riskScore += RISK_SCORE_WEIGHTS.MANUAL_CALCULATION;
     }
 
     // Determine risk level
-    let riskLevel: 'low' | 'medium' | 'high';
+    let riskLevel: "low" | "medium" | "high";
     if (riskScore <= RISK_LEVELS.LOW_THRESHOLD) {
-      riskLevel = 'low';
+      riskLevel = "low";
     } else if (riskScore <= RISK_LEVELS.MEDIUM_THRESHOLD) {
-      riskLevel = 'medium';
+      riskLevel = "medium";
     } else {
-      riskLevel = 'high';
+      riskLevel = "high";
     }
 
     return {
@@ -337,33 +364,35 @@ class CommissionAnalyticsService {
   async createChargebackForCommission(
     commissionId: string,
     chargebackData: {
-      chargebackType: 'policy_lapse' | 'refund' | 'cancellation';
+      chargebackType: "policy_lapse" | "refund" | "cancellation";
       chargebackAmount?: number;
       chargebackReason?: string;
       policyLapseDate?: Date;
       chargebackDate: Date;
-    }
+    },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- return type varies based on chargeback processing
   ): Promise<any> {
     try {
       const commission = await commissionCRUDService.getById(commissionId);
       if (!commission) {
-        throw new Error('Commission not found');
+        throw new Error("Commission not found");
       }
 
-      const { chargebackService } = await import('./index');
+      const { chargebackService } = await import("./index");
 
       return chargebackService.create({
-        policyId: commission.policyId || '',
+        policyId: commission.policyId || "",
         commissionId: commission.id,
         userId: commission.userId,
         chargebackType: chargebackData.chargebackType,
-        chargebackAmount: chargebackData.chargebackAmount || commission.advanceAmount || 0,
+        chargebackAmount:
+          chargebackData.chargebackAmount || commission.advanceAmount || 0,
         chargebackReason: chargebackData.chargebackReason,
         policyLapseDate: chargebackData.policyLapseDate,
         chargebackDate: chargebackData.chargebackDate,
       });
     } catch (error) {
-      throw this.handleError(error, 'createChargebackForCommission');
+      throw this.handleError(error, "createChargebackForCommission");
     }
   }
 
@@ -382,28 +411,42 @@ class CommissionAnalyticsService {
    * });
    * ```
    */
-  async getCommissionsWithChargebackRisk(userId?: string): Promise<CommissionWithChargebackRisk[]> {
+  async getCommissionsWithChargebackRisk(
+    userId?: string,
+  ): Promise<CommissionWithChargebackRisk[]> {
     try {
       // Fetch all commissions first
-      const commissions = userId ? await commissionCRUDService.getCommissionsByUser(userId) : await commissionCRUDService.getAll();
+      const commissions = userId
+        ? await commissionCRUDService.getCommissionsByUser(userId)
+        : await commissionCRUDService.getAll();
       if (commissions.length === 0) return [];
 
-      const { chargebackService } = await import('./index');
-      const commissionIds = commissions.map(c => c.id);
+      const { chargebackService } = await import("./index");
+      const commissionIds = commissions.map((c) => c.id);
 
       // Single query for all chargebacks
-      const allChargebacks = await chargebackService.getByCommissionIds(commissionIds);
+      const allChargebacks =
+        await chargebackService.getByCommissionIds(commissionIds);
 
       // Group chargebacks by commission ID
-      const chargebacksByCommissionId = allChargebacks.reduce((acc, cb) => {
-        (acc[cb.commissionId] = acc[cb.commissionId] || []).push(cb);
-        return acc;
-      }, {} as Record<string, any[]>);
+
+      const chargebacksByCommissionId = allChargebacks.reduce(
+        (acc, cb) => {
+          (acc[cb.commissionId] = acc[cb.commissionId] || []).push(cb);
+          return acc;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- chargeback grouping type
+        },
+        {} as Record<string, any[]>,
+      );
 
       // Calculate risk for each commission using the grouped data
-      return commissions.map(commission => {
-        const existingChargebacks = chargebacksByCommissionId[commission.id] || [];
-        const chargebackRisk = this.calculateChargebackRiskForCommission(commission, existingChargebacks);
+      return commissions.map((commission) => {
+        const existingChargebacks =
+          chargebacksByCommissionId[commission.id] || [];
+        const chargebackRisk = this.calculateChargebackRiskForCommission(
+          commission,
+          existingChargebacks,
+        );
         return {
           commission,
           chargeback_risk: chargebackRisk,
@@ -411,7 +454,7 @@ class CommissionAnalyticsService {
         };
       });
     } catch (error) {
-      throw this.handleError(error, 'getCommissionsWithChargebackRisk');
+      throw this.handleError(error, "getCommissionsWithChargebackRisk");
     }
   }
 
@@ -438,17 +481,23 @@ class CommissionAnalyticsService {
   async calculateNetCommissionAfterChargebacks(
     userId?: string,
     startDate?: Date,
-    endDate?: Date
+    endDate?: Date,
   ): Promise<NetCommissionMetrics> {
     try {
-      const metrics = await this.getCommissionMetrics(userId, startDate, endDate);
-      const { chargebackService } = await import('./index');
+      const metrics = await this.getCommissionMetrics(
+        userId,
+        startDate,
+        endDate,
+      );
+      const { chargebackService } = await import("./index");
 
-      const chargebackMetrics = await chargebackService.getChargebackMetrics(userId);
+      const chargebackMetrics =
+        await chargebackService.getChargebackMetrics(userId);
 
-      const chargebackRate = metrics.totalAmount > 0
-        ? (chargebackMetrics.totalAmount / metrics.totalAmount) * 100
-        : 0;
+      const chargebackRate =
+        metrics.totalAmount > 0
+          ? (chargebackMetrics.totalAmount / metrics.totalAmount) * 100
+          : 0;
 
       const netIncome = metrics.totalAmount - chargebackMetrics.totalAmount;
 
@@ -464,7 +513,7 @@ class CommissionAnalyticsService {
         riskAdjustedProjection,
       };
     } catch (error) {
-      throw this.handleError(error, 'calculateNetCommissionAfterChargebacks');
+      throw this.handleError(error, "calculateNetCommissionAfterChargebacks");
     }
   }
 }

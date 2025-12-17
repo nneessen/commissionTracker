@@ -1,8 +1,16 @@
 // src/services/expenses/expenseService.ts
 
-import {supabase, TABLES} from '../base/supabase';
-import {isSameMonth, isSameYear} from '../../lib/date';
-import type {Expense, CreateExpenseData, UpdateExpenseData, ExpenseFilters, ExpenseTotals, MonthlyExpenseBreakdown, YearlyExpenseSummary} from '../../types/expense.types';
+import { supabase, TABLES } from "../base/supabase";
+import { isSameMonth, isSameYear } from "../../lib/date";
+import type {
+  Expense,
+  CreateExpenseData,
+  UpdateExpenseData,
+  ExpenseFilters,
+  ExpenseTotals,
+  MonthlyExpenseBreakdown,
+  YearlyExpenseSummary,
+} from "../../types/expense.types";
 
 class ExpenseService {
   /**
@@ -11,38 +19,38 @@ class ExpenseService {
   async getAll(filters?: ExpenseFilters): Promise<Expense[]> {
     let query = supabase
       .from(TABLES.EXPENSES)
-      .select('*')
-      .order('date', { ascending: false });
+      .select("*")
+      .order("date", { ascending: false });
 
     // Apply filters
-    if (filters?.expenseType && filters.expenseType !== 'all') {
-      query = query.eq('expense_type', filters.expenseType);
+    if (filters?.expenseType && filters.expenseType !== "all") {
+      query = query.eq("expense_type", filters.expenseType);
     }
 
-    if (filters?.category && filters.category !== 'all') {
-      query = query.eq('category', filters.category);
+    if (filters?.category && filters.category !== "all") {
+      query = query.eq("category", filters.category);
     }
 
     if (filters?.startDate) {
-      query = query.gte('date', filters.startDate);
+      query = query.gte("date", filters.startDate);
     }
 
     if (filters?.endDate) {
-      query = query.lte('date', filters.endDate);
+      query = query.lte("date", filters.endDate);
     }
 
     if (filters?.deductibleOnly) {
-      query = query.eq('is_tax_deductible', true);
+      query = query.eq("is_tax_deductible", true);
     }
 
     if (filters?.recurringOnly) {
-      query = query.eq('is_recurring', true);
+      query = query.eq("is_recurring", true);
     }
 
     if (filters?.searchTerm) {
       // Search in name and description
       query = query.or(
-        `name.ilike.%${filters.searchTerm}%,description.ilike.%${filters.searchTerm}%`
+        `name.ilike.%${filters.searchTerm}%,description.ilike.%${filters.searchTerm}%`,
       );
     }
 
@@ -61,8 +69,8 @@ class ExpenseService {
   async getById(id: string): Promise<Expense> {
     const { data, error } = await supabase
       .from(TABLES.EXPENSES)
-      .select('*')
-      .eq('id', id)
+      .select("*")
+      .eq("id", id)
       .single();
 
     if (error) {
@@ -70,7 +78,7 @@ class ExpenseService {
     }
 
     if (!data) {
-      throw new Error('Expense not found');
+      throw new Error("Expense not found");
     }
 
     return data as Expense;
@@ -82,17 +90,20 @@ class ExpenseService {
    */
   async create(expenseData: CreateExpenseData): Promise<Expense> {
     // Get current user
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
     if (!user) {
-      throw new Error('User not authenticated');
+      throw new Error("User not authenticated");
     }
 
     // Generate recurring_group_id if this is a recurring expense
     const isRecurring = expenseData.is_recurring || false;
-    const recurringGroupId = isRecurring && !expenseData.recurring_group_id
-      ? this.generateUUID()
-      : expenseData.recurring_group_id;
+    const recurringGroupId =
+      isRecurring && !expenseData.recurring_group_id
+        ? this.generateUUID()
+        : expenseData.recurring_group_id;
 
     const { data, error } = await supabase
       .from(TABLES.EXPENSES)
@@ -115,13 +126,14 @@ class ExpenseService {
     // AUTO-GENERATE future recurring expenses
     if (isRecurring && expenseData.recurring_frequency) {
       try {
-        const { recurringExpenseService } = await import('./recurringExpenseService');
+        const { recurringExpenseService } =
+          await import("./recurringExpenseService");
         await recurringExpenseService.generateRecurringExpenses(
           { ...expenseData, recurring_group_id: recurringGroupId },
-          user.id
+          user.id,
         );
       } catch (recurringError) {
-        console.error('Failed to generate recurring expenses:', recurringError);
+        console.error("Failed to generate recurring expenses:", recurringError);
         // Don't fail the main creation if recurring generation fails
       }
     }
@@ -143,7 +155,7 @@ class ExpenseService {
     const { data, error } = await supabase
       .from(TABLES.EXPENSES)
       .update(updates)
-      .eq('id', id)
+      .eq("id", id)
       .select()
       .single();
 
@@ -161,7 +173,7 @@ class ExpenseService {
     const { error } = await supabase
       .from(TABLES.EXPENSES)
       .delete()
-      .eq('id', id);
+      .eq("id", id);
 
     if (error) {
       throw new Error(`Failed to delete expense: ${error.message}`);
@@ -174,13 +186,15 @@ class ExpenseService {
   async getByDateRange(startDate: string, endDate: string): Promise<Expense[]> {
     const { data, error } = await supabase
       .from(TABLES.EXPENSES)
-      .select('*')
-      .gte('date', startDate)
-      .lte('date', endDate)
-      .order('date', { ascending: false });
+      .select("*")
+      .gte("date", startDate)
+      .lte("date", endDate)
+      .order("date", { ascending: false });
 
     if (error) {
-      throw new Error(`Failed to fetch expenses by date range: ${error.message}`);
+      throw new Error(
+        `Failed to fetch expenses by date range: ${error.message}`,
+      );
     }
 
     return (data || []) as Expense[];
@@ -194,38 +208,41 @@ class ExpenseService {
 
     const now = new Date();
 
-    const totals = expenses.reduce((acc, expense) => {
-      acc.total += expense.amount;
+    const totals = expenses.reduce(
+      (acc, expense) => {
+        acc.total += expense.amount;
 
-      if (expense.expense_type === 'personal') {
-        acc.personal += expense.amount;
-      } else {
-        acc.business += expense.amount;
-      }
+        if (expense.expense_type === "personal") {
+          acc.personal += expense.amount;
+        } else {
+          acc.business += expense.amount;
+        }
 
-      if (expense.is_tax_deductible) {
-        acc.deductible += expense.amount;
-      }
+        if (expense.is_tax_deductible) {
+          acc.deductible += expense.amount;
+        }
 
-      // Check if expense is in current month using proper date comparison
-      if (isSameMonth(expense.date, now)) {
-        acc.monthlyTotal += expense.amount;
-      }
+        // Check if expense is in current month using proper date comparison
+        if (isSameMonth(expense.date, now)) {
+          acc.monthlyTotal += expense.amount;
+        }
 
-      // Check if expense is in current year using proper date comparison
-      if (isSameYear(expense.date, now)) {
-        acc.yearlyTotal += expense.amount;
-      }
+        // Check if expense is in current year using proper date comparison
+        if (isSameYear(expense.date, now)) {
+          acc.yearlyTotal += expense.amount;
+        }
 
-      return acc;
-    }, {
-      total: 0,
-      personal: 0,
-      business: 0,
-      deductible: 0,
-      monthlyTotal: 0,
-      yearlyTotal: 0,
-    });
+        return acc;
+      },
+      {
+        total: 0,
+        personal: 0,
+        business: 0,
+        deductible: 0,
+        monthlyTotal: 0,
+        yearlyTotal: 0,
+      },
+    );
 
     return totals;
   }
@@ -240,7 +257,7 @@ class ExpenseService {
 
     const monthlyData: Record<string, MonthlyExpenseBreakdown> = {};
 
-    expenses.forEach(expense => {
+    expenses.forEach((expense) => {
       const monthKey = expense.date.substring(0, 7); // YYYY-MM
 
       if (!monthlyData[monthKey]) {
@@ -256,7 +273,7 @@ class ExpenseService {
 
       monthlyData[monthKey].total += expense.amount;
 
-      if (expense.expense_type === 'personal') {
+      if (expense.expense_type === "personal") {
         monthlyData[monthKey].personal += expense.amount;
       } else {
         monthlyData[monthKey].business += expense.amount;
@@ -274,7 +291,9 @@ class ExpenseService {
     });
 
     // Convert to array and sort by month
-    return Object.values(monthlyData).sort((a, b) => a.month.localeCompare(b.month));
+    return Object.values(monthlyData).sort((a, b) =>
+      a.month.localeCompare(b.month),
+    );
   }
 
   /**
@@ -293,7 +312,7 @@ class ExpenseService {
       byCategory: {},
     };
 
-    monthlyBreakdown.forEach(month => {
+    monthlyBreakdown.forEach((month) => {
       summary.total += month.total;
       summary.personal += month.personal;
       summary.business += month.business;
@@ -314,9 +333,11 @@ class ExpenseService {
   /**
    * Import expenses from CSV data
    */
-  async importFromCSV(csvData: string): Promise<{ imported: number; errors: string[] }> {
-    const lines = csvData.trim().split('\n');
-    const headers = lines[0].toLowerCase().replace(/['"]/g, '').split(',');
+  async importFromCSV(
+    csvData: string,
+  ): Promise<{ imported: number; errors: string[] }> {
+    const lines = csvData.trim().split("\n");
+    const headers = lines[0].toLowerCase().replace(/['"]/g, "").split(",");
 
     let imported = 0;
     const errors: string[] = [];
@@ -324,27 +345,41 @@ class ExpenseService {
     for (let i = 1; i < lines.length; i++) {
       try {
         const values = lines[i].match(/(".*?"|[^,]+)/g) || [];
-        const cleanValues = values.map(v => v.replace(/^["']|["']$/g, ''));
+        const cleanValues = values.map((v) => v.replace(/^["']|["']$/g, ""));
 
-        const recurringFreqValue = cleanValues[headers.indexOf('recurring frequency')];
+        const recurringFreqValue =
+          cleanValues[headers.indexOf("recurring frequency")];
 
         const expenseData: CreateExpenseData = {
-          date: cleanValues[headers.indexOf('date')] || new Date().toISOString().split('T')[0],
-          name: cleanValues[headers.indexOf('name')] || 'Imported Expense',
-          description: cleanValues[headers.indexOf('description')] || null,
-          amount: parseFloat(cleanValues[headers.indexOf('amount')] || '0'),
-          category: cleanValues[headers.indexOf('category')] || 'Other',
-          expense_type: (cleanValues[headers.indexOf('type')] as 'personal' | 'business') || 'personal',
-          is_tax_deductible: cleanValues[headers.indexOf('tax deductible')]?.toLowerCase() === 'yes',
-          is_recurring: cleanValues[headers.indexOf('recurring')]?.toLowerCase() === 'yes',
-          recurring_frequency: recurringFreqValue && recurringFreqValue.trim() !== '' ? recurringFreqValue as any : null,
-          notes: cleanValues[headers.indexOf('notes')] || null,
+          date:
+            cleanValues[headers.indexOf("date")] ||
+            new Date().toISOString().split("T")[0],
+          name: cleanValues[headers.indexOf("name")] || "Imported Expense",
+          description: cleanValues[headers.indexOf("description")] || null,
+          amount: parseFloat(cleanValues[headers.indexOf("amount")] || "0"),
+          category: cleanValues[headers.indexOf("category")] || "Other",
+          expense_type:
+            (cleanValues[headers.indexOf("type")] as "personal" | "business") ||
+            "personal",
+          is_tax_deductible:
+            cleanValues[headers.indexOf("tax deductible")]?.toLowerCase() ===
+            "yes",
+          is_recurring:
+            cleanValues[headers.indexOf("recurring")]?.toLowerCase() === "yes",
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- CSV import with dynamic frequency values
+          recurring_frequency:
+            recurringFreqValue && recurringFreqValue.trim() !== ""
+              ? (recurringFreqValue as any)
+              : null,
+          notes: cleanValues[headers.indexOf("notes")] || null,
         };
 
         await this.create(expenseData);
         imported++;
       } catch (error) {
-        errors.push(`Row ${i + 1}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        errors.push(
+          `Row ${i + 1}: ${error instanceof Error ? error.message : "Unknown error"}`,
+        );
       }
     }
 

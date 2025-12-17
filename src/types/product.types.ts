@@ -1,18 +1,18 @@
 // Product-related types for the commission tracker application
 
-import {Database} from './database.types';
+import { Database } from "./database.types";
 
 // ProductType is the database enum for product types
 export type ProductType = Database["public"]["Enums"]["product_type"];
 
 // Compensation levels matching database enum
 export type CompLevel =
-  | 'street'
-  | 'bronze'
-  | 'silver'
-  | 'gold'
-  | 'platinum'
-  | 'diamond';
+  | "street"
+  | "bronze"
+  | "silver"
+  | "gold"
+  | "platinum"
+  | "diamond";
 
 // Base product interface matching database schema
 export interface Product {
@@ -28,7 +28,8 @@ export interface Product {
   max_age?: number;
   commission_percentage?: number; // Default commission rate if not in comp_guide
   is_active: boolean;
-  metadata?: Record<string, any>; // JSONB field for extra data
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- JSONB field for extra data
+  metadata?: Record<string, any>;
   created_at: Date;
   updated_at: Date;
 }
@@ -93,7 +94,7 @@ export interface ProductOption {
 // ============================================================================
 
 // Data quality levels for commission rate calculations
-export type CommissionDataQuality = 'HIGH' | 'MEDIUM' | 'LOW' | 'INSUFFICIENT';
+export type CommissionDataQuality = "HIGH" | "MEDIUM" | "LOW" | "INSUFFICIENT";
 
 // Individual product's contribution to weighted average
 export interface ProductCommissionBreakdown {

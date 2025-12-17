@@ -69,6 +69,54 @@ export interface ProductSummary {
 }
 
 // ============================================================================
+// Commission Database Types (DB-first pattern from commissions table)
+// ============================================================================
+
+/** Raw database row from commissions table */
+export type CommissionRow = Database["public"]["Tables"]["commissions"]["Row"];
+/** Insert type for commissions table */
+export type CommissionInsert =
+  Database["public"]["Tables"]["commissions"]["Insert"];
+/** Update type for commissions table */
+export type CommissionUpdate =
+  Database["public"]["Tables"]["commissions"]["Update"];
+
+/**
+ * Extended DB record type that includes:
+ * - Standard CommissionRow fields
+ * - Legacy field aliases (for backward compatibility)
+ * - Joined/computed fields from queries
+ */
+export interface CommissionDBRecord extends Partial<CommissionRow> {
+  id: string;
+  // Legacy aliases
+  commission_amount?: number;
+  advance_amount?: number;
+  paid_date?: string | null;
+  // Extended fields from joins/queries
+  carrier_id?: string;
+  calculation_basis?: string;
+  annual_premium?: number;
+  monthly_premium?: number;
+  rate?: number;
+  contract_comp_level?: number;
+  is_auto_calculated?: boolean;
+  expected_date?: string | null;
+  actual_date?: string | null;
+  month_earned?: number;
+  year_earned?: number;
+  quarter_earned?: number;
+  client?: CommissionClientInfo | Record<string, unknown>;
+  product?: string;
+}
+
+/** Type for data passed to transformToDB */
+export type CommissionToDB =
+  | Partial<CreateCommissionData>
+  | Partial<UpdateCommissionData>
+  | Partial<Commission>;
+
+// ============================================================================
 // Commission Types
 // ============================================================================
 

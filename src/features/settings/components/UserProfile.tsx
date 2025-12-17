@@ -119,6 +119,7 @@ export function UserProfile() {
         setShowUplineSuccess(true);
         setTimeout(() => setShowUplineSuccess(false), 3000);
         return;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- error object type
       } catch (error: any) {
         setUplineError(error.message || "Failed to remove upline");
         return;
@@ -152,6 +153,7 @@ export function UserProfile() {
       setCurrentUplineEmail(upline.email);
       setShowUplineSuccess(true);
       setTimeout(() => setShowUplineSuccess(false), 3000);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- error object type
     } catch (error: any) {
       setUplineError(error.message || "Failed to update upline");
     }

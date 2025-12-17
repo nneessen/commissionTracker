@@ -1,15 +1,25 @@
 // src/features/training-hub/components/workflow-wizard/WorkflowTriggerSetup.tsx
 
-import {useState, useEffect} from 'react';
-import {Play, Calendar, Zap, Webhook} from 'lucide-react';
-import {Button} from '@/components/ui/button';
-import {Input} from '@/components/ui/input';
-import {Label} from '@/components/ui/label';
-import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '@/components/ui/select';
-import {cn} from '@/lib/utils';
-import type {WorkflowFormData, TriggerType, WorkflowTrigger} from '@/types/workflow.types';
-import {useTriggerEventTypes} from '@/hooks/workflows';
-import EventSelectionDialog from './EventSelectionDialog';
+import { useState, useEffect } from "react";
+import { Play, Calendar, Zap, Webhook } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { cn } from "@/lib/utils";
+import type {
+  WorkflowFormData,
+  TriggerType,
+  WorkflowTrigger,
+} from "@/types/workflow.types";
+import { useTriggerEventTypes } from "@/hooks/workflows";
+import EventSelectionDialog from "./EventSelectionDialog";
 
 interface WorkflowTriggerSetupProps {
   data: WorkflowFormData;
@@ -18,30 +28,39 @@ interface WorkflowTriggerSetupProps {
 }
 
 const TRIGGER_TYPES = [
-  { value: 'manual' as TriggerType, label: 'Manual', icon: Play },
-  { value: 'schedule' as TriggerType, label: 'Schedule', icon: Calendar },
-  { value: 'event' as TriggerType, label: 'Event', icon: Zap },
-  { value: 'webhook' as TriggerType, label: 'Webhook', icon: Webhook }
+  { value: "manual" as TriggerType, label: "Manual", icon: Play },
+  { value: "schedule" as TriggerType, label: "Schedule", icon: Calendar },
+  { value: "event" as TriggerType, label: "Event", icon: Zap },
+  { value: "webhook" as TriggerType, label: "Webhook", icon: Webhook },
 ];
 
-export default function WorkflowTriggerSetup({ data, onChange, errors }: WorkflowTriggerSetupProps) {
+export default function WorkflowTriggerSetup({
+  data,
+  onChange,
+  errors,
+}: WorkflowTriggerSetupProps) {
   const { data: eventTypes = [] } = useTriggerEventTypes();
-  const [scheduleTime, setScheduleTime] = useState(data.trigger?.schedule?.time || '09:00');
-  const [scheduleDayOfWeek, setScheduleDayOfWeek] = useState(data.trigger?.schedule?.dayOfWeek || 'daily');
+  const [scheduleTime, setScheduleTime] = useState(
+    data.trigger?.schedule?.time || "09:00",
+  );
+  const [scheduleDayOfWeek, setScheduleDayOfWeek] = useState(
+    data.trigger?.schedule?.dayOfWeek || "daily",
+  );
   const [eventDialogOpen, setEventDialogOpen] = useState(false);
 
   // Update parent when schedule changes
   useEffect(() => {
-    if (data.triggerType === 'schedule') {
+    if (data.triggerType === "schedule") {
       const newTrigger: WorkflowTrigger = {
-        type: 'schedule',
+        type: "schedule",
         schedule: {
           time: scheduleTime,
           dayOfWeek: scheduleDayOfWeek,
-        }
+        },
       };
       onChange({ trigger: newTrigger });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- onChange is a stable prop callback
   }, [scheduleTime, scheduleDayOfWeek, data.triggerType]);
 
   const handleTriggerTypeChange = (type: TriggerType) => {
@@ -49,62 +68,62 @@ export default function WorkflowTriggerSetup({ data, onChange, errors }: Workflo
     let newTrigger: WorkflowTrigger;
 
     switch (type) {
-      case 'manual':
-        newTrigger = { type: 'manual' };
+      case "manual":
+        newTrigger = { type: "manual" };
         break;
-      case 'schedule':
+      case "schedule":
         newTrigger = {
-          type: 'schedule',
+          type: "schedule",
           schedule: {
             time: scheduleTime,
-            dayOfWeek: scheduleDayOfWeek
-          }
+            dayOfWeek: scheduleDayOfWeek,
+          },
         };
         break;
-      case 'event':
+      case "event":
         newTrigger = {
-          type: 'event',
-          eventName: data.trigger?.eventName // Preserve selected event if any
+          type: "event",
+          eventName: data.trigger?.eventName, // Preserve selected event if any
         };
         break;
-      case 'webhook':
+      case "webhook":
         newTrigger = {
-          type: 'webhook',
-          webhookConfig: data.trigger?.webhookConfig
+          type: "webhook",
+          webhookConfig: data.trigger?.webhookConfig,
         };
         break;
       default:
-        newTrigger = { type: 'manual' };
+        newTrigger = { type: "manual" };
     }
 
-    console.log('[WorkflowTriggerSetup] Changing trigger type to:', {
+    console.log("[WorkflowTriggerSetup] Changing trigger type to:", {
       newType: type,
       newTrigger,
-      preservedEventName: data.trigger?.eventName
+      preservedEventName: data.trigger?.eventName,
     });
 
     // Update both triggerType and trigger together
     onChange({
       triggerType: type,
-      trigger: newTrigger
+      trigger: newTrigger,
     });
   };
 
   const handleEventChange = (eventName: string) => {
     const newTrigger: WorkflowTrigger = {
-      type: 'event',
-      eventName
+      type: "event",
+      eventName,
     };
 
-    console.log('[WorkflowTriggerSetup] Selecting event:', {
+    console.log("[WorkflowTriggerSetup] Selecting event:", {
       eventName,
-      newTrigger
+      newTrigger,
     });
 
     // Ensure both triggerType and trigger are updated
     onChange({
-      triggerType: 'event',
-      trigger: newTrigger
+      triggerType: "event",
+      trigger: newTrigger,
     });
   };
 
@@ -133,7 +152,7 @@ export default function WorkflowTriggerSetup({ data, onChange, errors }: Workflo
                 : "bg-background border-input hover:border-amber-400 hover:bg-amber-50/50 dark:hover:bg-amber-950/20",
               webhook: isSelected
                 ? "bg-violet-500/10 text-violet-600 border-violet-500/50 dark:text-violet-400"
-                : "bg-background border-input hover:border-violet-400 hover:bg-violet-50/50 dark:hover:bg-violet-950/20"
+                : "bg-background border-input hover:border-violet-400 hover:bg-violet-50/50 dark:hover:bg-violet-950/20",
             }[trigger.value];
 
             return (
@@ -144,7 +163,7 @@ export default function WorkflowTriggerSetup({ data, onChange, errors }: Workflo
                 className={cn(
                   "flex items-center gap-2 px-3 py-2 rounded-md border transition-all text-xs",
                   colorTheme,
-                  isSelected && "shadow-sm"
+                  isSelected && "shadow-sm",
                 )}
               >
                 <Icon className="h-4 w-4" />
@@ -159,27 +178,34 @@ export default function WorkflowTriggerSetup({ data, onChange, errors }: Workflo
       {data.triggerType && (
         <div className="p-2 rounded-md bg-muted/30">
           <Label className="text-xs font-medium text-muted-foreground mb-2 block">
-            Configure {data.triggerType.charAt(0).toUpperCase() + data.triggerType.slice(1)} Trigger
+            Configure{" "}
+            {data.triggerType.charAt(0).toUpperCase() +
+              data.triggerType.slice(1)}{" "}
+            Trigger
           </Label>
 
-          {data.triggerType === 'manual' && (
+          {data.triggerType === "manual" && (
             <div className="p-2 rounded bg-blue-500/10 border border-blue-500/20">
               <p className="text-xs text-blue-600 dark:text-blue-400">
-                This workflow will only run when you manually trigger it from the workflows list.
+                This workflow will only run when you manually trigger it from
+                the workflows list.
               </p>
             </div>
           )}
 
-          {data.triggerType === 'schedule' && (
+          {data.triggerType === "schedule" && (
             <div className="space-y-2">
               <div className="p-2 rounded bg-emerald-500/10 border border-emerald-500/20">
                 <p className="text-xs text-emerald-600 dark:text-emerald-400 mb-2">
-                  Schedule this workflow to run automatically at a specific time.
+                  Schedule this workflow to run automatically at a specific
+                  time.
                 </p>
               </div>
               <div className="flex gap-2">
                 <div className="flex-1">
-                  <Label className="text-[10px] text-muted-foreground">Time</Label>
+                  <Label className="text-[10px] text-muted-foreground">
+                    Time
+                  </Label>
                   <Input
                     type="time"
                     value={scheduleTime}
@@ -188,7 +214,9 @@ export default function WorkflowTriggerSetup({ data, onChange, errors }: Workflo
                   />
                 </div>
                 <div className="flex-1">
-                  <Label className="text-[10px] text-muted-foreground">Frequency</Label>
+                  <Label className="text-[10px] text-muted-foreground">
+                    Frequency
+                  </Label>
                   <Select
                     value={scheduleDayOfWeek}
                     onValueChange={(v) => setScheduleDayOfWeek(v)}
@@ -197,15 +225,33 @@ export default function WorkflowTriggerSetup({ data, onChange, errors }: Workflo
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="daily" className="text-xs">Daily</SelectItem>
-                      <SelectItem value="weekday" className="text-xs">Weekdays</SelectItem>
-                      <SelectItem value="monday" className="text-xs">Monday</SelectItem>
-                      <SelectItem value="tuesday" className="text-xs">Tuesday</SelectItem>
-                      <SelectItem value="wednesday" className="text-xs">Wednesday</SelectItem>
-                      <SelectItem value="thursday" className="text-xs">Thursday</SelectItem>
-                      <SelectItem value="friday" className="text-xs">Friday</SelectItem>
-                      <SelectItem value="saturday" className="text-xs">Saturday</SelectItem>
-                      <SelectItem value="sunday" className="text-xs">Sunday</SelectItem>
+                      <SelectItem value="daily" className="text-xs">
+                        Daily
+                      </SelectItem>
+                      <SelectItem value="weekday" className="text-xs">
+                        Weekdays
+                      </SelectItem>
+                      <SelectItem value="monday" className="text-xs">
+                        Monday
+                      </SelectItem>
+                      <SelectItem value="tuesday" className="text-xs">
+                        Tuesday
+                      </SelectItem>
+                      <SelectItem value="wednesday" className="text-xs">
+                        Wednesday
+                      </SelectItem>
+                      <SelectItem value="thursday" className="text-xs">
+                        Thursday
+                      </SelectItem>
+                      <SelectItem value="friday" className="text-xs">
+                        Friday
+                      </SelectItem>
+                      <SelectItem value="saturday" className="text-xs">
+                        Saturday
+                      </SelectItem>
+                      <SelectItem value="sunday" className="text-xs">
+                        Sunday
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -216,15 +262,18 @@ export default function WorkflowTriggerSetup({ data, onChange, errors }: Workflo
             </div>
           )}
 
-          {data.triggerType === 'event' && (
+          {data.triggerType === "event" && (
             <div className="space-y-2">
               <div className="p-2 rounded bg-amber-500/10 border border-amber-500/20">
                 <p className="text-xs text-amber-600 dark:text-amber-400">
-                  Trigger this workflow when specific events occur in your system.
+                  Trigger this workflow when specific events occur in your
+                  system.
                 </p>
               </div>
               <div>
-                <Label className="text-[10px] text-muted-foreground">Select Event</Label>
+                <Label className="text-[10px] text-muted-foreground">
+                  Select Event
+                </Label>
                 <Button
                   type="button"
                   variant="outline"
@@ -232,13 +281,15 @@ export default function WorkflowTriggerSetup({ data, onChange, errors }: Workflo
                   className={cn(
                     "w-full h-8 justify-between text-xs bg-background border-amber-500/30 hover:border-amber-500",
                     errors.trigger && "border-destructive",
-                    !data.trigger?.eventName && "text-muted-foreground"
+                    !data.trigger?.eventName && "text-muted-foreground",
                   )}
                 >
                   {data.trigger?.eventName ? (
                     <span className="flex items-center gap-2">
                       <Zap className="h-3 w-3 text-amber-600 dark:text-amber-400" />
-                      <span className="font-medium">{data.trigger.eventName}</span>
+                      <span className="font-medium">
+                        {data.trigger.eventName}
+                      </span>
                     </span>
                   ) : (
                     <span>Choose an event to listen for...</span>
@@ -246,7 +297,9 @@ export default function WorkflowTriggerSetup({ data, onChange, errors }: Workflo
                   <Zap className="h-3 w-3 ml-2" />
                 </Button>
                 {errors.trigger && (
-                  <p className="text-xs text-destructive mt-1">{errors.trigger}</p>
+                  <p className="text-xs text-destructive mt-1">
+                    {errors.trigger}
+                  </p>
                 )}
 
                 {/* Show selected event details */}
@@ -256,7 +309,9 @@ export default function WorkflowTriggerSetup({ data, onChange, errors }: Workflo
                       Event: {data.trigger.eventName}
                     </p>
                     {(() => {
-                      const selectedEventType = eventTypes.find(e => e.eventName === data.trigger?.eventName);
+                      const selectedEventType = eventTypes.find(
+                        (e) => e.eventName === data.trigger?.eventName,
+                      );
                       if (selectedEventType?.description) {
                         return (
                           <p className="text-[10px] text-muted-foreground">
@@ -281,10 +336,11 @@ export default function WorkflowTriggerSetup({ data, onChange, errors }: Workflo
             </div>
           )}
 
-          {data.triggerType === 'webhook' && (
+          {data.triggerType === "webhook" && (
             <div className="p-2 rounded bg-violet-500/10 border border-violet-500/20">
               <p className="text-xs text-violet-600 dark:text-violet-400">
-                A unique webhook URL will be generated after you create this workflow.
+                A unique webhook URL will be generated after you create this
+                workflow.
               </p>
             </div>
           )}

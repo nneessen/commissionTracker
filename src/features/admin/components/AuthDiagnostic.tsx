@@ -1,15 +1,24 @@
-import {useEffect, useState} from 'react';
-import {supabase} from '@/services/base/supabase';
-import {useCurrentUserProfile, useAuthorizationStatus} from '@/hooks/admin/useUserApproval';
-import {Card, CardContent, CardHeader, CardTitle} from '@/components/ui/card';
-import {Button} from '@/components/ui/button';
-import {AlertCircle, CheckCircle, XCircle} from 'lucide-react';
+import { useEffect, useState } from "react";
+import { supabase } from "@/services/base/supabase";
+import {
+  useCurrentUserProfile,
+  useAuthorizationStatus,
+} from "@/hooks/admin/useUserApproval";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { AlertCircle, CheckCircle, XCircle } from "lucide-react";
 
 export function AuthDiagnostic() {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- auth user type
   const [authUser, setAuthUser] = useState<any>(null);
   const [authError, setAuthError] = useState<string | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- session data type
   const [sessionData, setSessionData] = useState<any>(null);
-  const { data: profile, error: profileError, isLoading: profileLoading } = useCurrentUserProfile();
+  const {
+    data: profile,
+    error: profileError,
+    isLoading: profileLoading,
+  } = useCurrentUserProfile();
   const authStatus = useAuthorizationStatus();
 
   useEffect(() => {
@@ -24,7 +33,7 @@ export function AuthDiagnostic() {
       if (data?.session) {
         setSessionData({
           expires_at: data.session.expires_at,
-          refresh_token: data.session.refresh_token ? 'Present' : 'Missing',
+          refresh_token: data.session.refresh_token ? "Present" : "Missing",
           user_email: data.session.user?.email,
           user_id: data.session.user?.id,
         });
@@ -57,14 +66,32 @@ export function AuthDiagnostic() {
           <CardContent>
             {authUser ? (
               <div className="space-y-2 text-sm">
-                <p><strong>ID:</strong> {authUser.id}</p>
-                <p><strong>Email:</strong> {authUser.email}</p>
-                <p><strong>Role:</strong> {authUser.role || 'N/A'}</p>
-                <p><strong>Created:</strong> {new Date(authUser.created_at).toLocaleString()}</p>
+                <p>
+                  <strong>ID:</strong> {authUser.id}
+                </p>
+                <p>
+                  <strong>Email:</strong> {authUser.email}
+                </p>
+                <p>
+                  <strong>Role:</strong> {authUser.role || "N/A"}
+                </p>
+                <p>
+                  <strong>Created:</strong>{" "}
+                  {new Date(authUser.created_at).toLocaleString()}
+                </p>
                 <details>
-                  <summary className="cursor-pointer text-muted-foreground">View Metadata</summary>
+                  <summary className="cursor-pointer text-muted-foreground">
+                    View Metadata
+                  </summary>
                   <pre className="mt-2 p-2 bg-muted rounded text-xs overflow-auto">
-                    {JSON.stringify({ app: authUser.app_metadata, user: authUser.user_metadata }, null, 2)}
+                    {JSON.stringify(
+                      {
+                        app: authUser.app_metadata,
+                        user: authUser.user_metadata,
+                      },
+                      null,
+                      2,
+                    )}
                   </pre>
                 </details>
               </div>
@@ -84,10 +111,19 @@ export function AuthDiagnostic() {
           <CardContent>
             {sessionData ? (
               <div className="space-y-2 text-sm">
-                <p><strong>User ID:</strong> {sessionData.user_id}</p>
-                <p><strong>Email:</strong> {sessionData.user_email}</p>
-                <p><strong>Expires:</strong> {new Date(sessionData.expires_at * 1000).toLocaleString()}</p>
-                <p><strong>Refresh Token:</strong> {sessionData.refresh_token}</p>
+                <p>
+                  <strong>User ID:</strong> {sessionData.user_id}
+                </p>
+                <p>
+                  <strong>Email:</strong> {sessionData.user_email}
+                </p>
+                <p>
+                  <strong>Expires:</strong>{" "}
+                  {new Date(sessionData.expires_at * 1000).toLocaleString()}
+                </p>
+                <p>
+                  <strong>Refresh Token:</strong> {sessionData.refresh_token}
+                </p>
               </div>
             ) : (
               <p className="text-muted-foreground">No session data</p>
@@ -109,27 +145,44 @@ export function AuthDiagnostic() {
               <p className="text-muted-foreground">Loading...</p>
             ) : profile ? (
               <div className="space-y-2 text-sm">
-                <p><strong>ID:</strong> {profile.id}</p>
-                <p><strong>Email:</strong> {profile.email}</p>
-                <p><strong>Status:</strong>
-                  <span className={`ml-2 px-2 py-1 rounded text-xs ${
-                    profile.approval_status === 'approved' ? 'bg-green-500/20 text-green-700' :
-                    profile.approval_status === 'pending' ? 'bg-yellow-500/20 text-yellow-700' :
-                    'bg-red-500/20 text-red-700'
-                  }`}>
+                <p>
+                  <strong>ID:</strong> {profile.id}
+                </p>
+                <p>
+                  <strong>Email:</strong> {profile.email}
+                </p>
+                <p>
+                  <strong>Status:</strong>
+                  <span
+                    className={`ml-2 px-2 py-1 rounded text-xs ${
+                      profile.approval_status === "approved"
+                        ? "bg-green-500/20 text-green-700"
+                        : profile.approval_status === "pending"
+                          ? "bg-yellow-500/20 text-yellow-700"
+                          : "bg-red-500/20 text-red-700"
+                    }`}
+                  >
                     {profile.approval_status}
                   </span>
                 </p>
-                <p><strong>Is Admin:</strong>
-                  <span className={`ml-2 ${profile.is_admin ? 'text-green-600' : 'text-gray-500'}`}>
-                    {profile.is_admin ? 'Yes' : 'No'}
+                <p>
+                  <strong>Is Admin:</strong>
+                  <span
+                    className={`ml-2 ${profile.is_admin ? "text-green-600" : "text-gray-500"}`}
+                  >
+                    {profile.is_admin ? "Yes" : "No"}
                   </span>
                 </p>
                 {profile.approved_at && (
-                  <p><strong>Approved:</strong> {new Date(profile.approved_at).toLocaleString()}</p>
+                  <p>
+                    <strong>Approved:</strong>{" "}
+                    {new Date(profile.approved_at).toLocaleString()}
+                  </p>
                 )}
                 {profile.denial_reason && (
-                  <p className="text-red-600"><strong>Denial Reason:</strong> {profile.denial_reason}</p>
+                  <p className="text-red-600">
+                    <strong>Denial Reason:</strong> {profile.denial_reason}
+                  </p>
                 )}
               </div>
             ) : profileError ? (
@@ -157,7 +210,7 @@ export function AuthDiagnostic() {
                 ) : (
                   <XCircle className="h-4 w-4 text-red-500" />
                 )}
-                {authStatus.isAdmin ? 'Yes' : 'No'}
+                {authStatus.isAdmin ? "Yes" : "No"}
               </p>
               <p className="flex items-center gap-2">
                 <strong>Is Approved:</strong>
@@ -166,20 +219,25 @@ export function AuthDiagnostic() {
                 ) : (
                   <XCircle className="h-4 w-4 text-red-500" />
                 )}
-                {authStatus.isApproved ? 'Yes' : 'No'}
+                {authStatus.isApproved ? "Yes" : "No"}
               </p>
               <p className="flex items-center gap-2">
                 <strong>Is Pending:</strong>
-                {authStatus.isPending ? 'Yes' : 'No'}
+                {authStatus.isPending ? "Yes" : "No"}
               </p>
               <p className="flex items-center gap-2">
                 <strong>Is Denied:</strong>
-                {authStatus.isDenied ? 'Yes' : 'No'}
+                {authStatus.isDenied ? "Yes" : "No"}
               </p>
               {authStatus.denialReason && (
-                <p><strong>Denial Reason:</strong> {authStatus.denialReason}</p>
+                <p>
+                  <strong>Denial Reason:</strong> {authStatus.denialReason}
+                </p>
               )}
-              <p><strong>Is Loading:</strong> {authStatus.isLoading ? 'Yes' : 'No'}</p>
+              <p>
+                <strong>Is Loading:</strong>{" "}
+                {authStatus.isLoading ? "Yes" : "No"}
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -221,7 +279,7 @@ export function AuthDiagnostic() {
             </div>
 
             <div className="flex items-center gap-2">
-              {profile?.approval_status === 'approved' || profile?.is_admin ? (
+              {profile?.approval_status === "approved" || profile?.is_admin ? (
                 <CheckCircle className="h-4 w-4 text-green-500" />
               ) : (
                 <XCircle className="h-4 w-4 text-red-500" />
@@ -263,7 +321,7 @@ export function AuthDiagnostic() {
               onClick={async () => {
                 const { error } = await supabase.auth.refreshSession();
                 if (error) {
-                  alert('Failed to refresh session: ' + error.message);
+                  alert("Failed to refresh session: " + error.message);
                 } else {
                   window.location.reload();
                 }
@@ -276,7 +334,7 @@ export function AuthDiagnostic() {
             <Button
               onClick={async () => {
                 await supabase.auth.signOut();
-                window.location.href = '/login';
+                window.location.href = "/login";
               }}
               variant="outline"
             >

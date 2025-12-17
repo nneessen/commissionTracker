@@ -1,15 +1,15 @@
 // Client type definitions for the insurance sales tracker application
 
-import {Database} from './database.types';
-import {Policy} from './policy.types';
+import { Database } from "./database.types";
+import { Policy } from "./policy.types";
 
 // Extract types from database schema
-export type ClientRow = Database['public']['Tables']['clients']['Row'];
-export type ClientInsert = Database['public']['Tables']['clients']['Insert'];
-export type ClientUpdate = Database['public']['Tables']['clients']['Update'];
+export type ClientRow = Database["public"]["Tables"]["clients"]["Row"];
+export type ClientInsert = Database["public"]["Tables"]["clients"]["Insert"];
+export type ClientUpdate = Database["public"]["Tables"]["clients"]["Update"];
 
 // Client status enum - matches database constraints
-export type ClientStatus = 'active' | 'inactive' | 'lead';
+export type ClientStatus = "active" | "inactive" | "lead";
 
 // Core client interface with all fields from database
 export interface Client {
@@ -19,7 +19,7 @@ export interface Client {
   email: string | null;
   phone: string | null;
   address: string | null;
-  date_of_birth: string | null;  // ISO date string format
+  date_of_birth: string | null; // ISO date string format
   notes: string | null;
   status: ClientStatus;
   created_at: string;
@@ -32,7 +32,7 @@ export interface CreateClientData {
   email?: string;
   phone?: string;
   address?: string;
-  date_of_birth?: string;  // ISO date string
+  date_of_birth?: string; // ISO date string
   notes?: string;
   status?: ClientStatus;
 }
@@ -62,34 +62,42 @@ export interface ClientWithPolicies extends Client {
     avgPremium: number;
     firstPolicyDate: string | null;
     lastPolicyDate: string | null;
-    avgPolicyAge: number;  // in months
+    avgPolicyAge: number; // in months
   };
 }
 
 // Filter options for client queries
 export interface ClientFilters {
-  searchTerm?: string;  // Search in name, email, phone
-  status?: ClientStatus | 'all';
+  searchTerm?: string; // Search in name, email, phone
+  status?: ClientStatus | "all";
   hasEmail?: boolean;
   hasPhone?: boolean;
   hasPolicies?: boolean;
   hasActivePolicies?: boolean;
-  minAge?: number;  // Filter by client age
+  minAge?: number; // Filter by client age
   maxAge?: number;
-  minPremium?: number;  // Filter by total premium
+  minPremium?: number; // Filter by total premium
   maxPremium?: number;
 }
 
 // Sort configuration for client lists
 export interface ClientSortConfig {
-  field: 'name' | 'email' | 'created_at' | 'policy_count' | 'total_premium' | 'last_policy_date' | 'date_of_birth' | 'status';
-  direction: 'asc' | 'desc';
+  field:
+    | "name"
+    | "email"
+    | "created_at"
+    | "policy_count"
+    | "total_premium"
+    | "last_policy_date"
+    | "date_of_birth"
+    | "status";
+  direction: "asc" | "desc";
 }
 
 // Client option for select dropdowns
 export interface ClientSelectOption {
-  value: string;  // client ID
-  label: string;  // client name
+  value: string; // client ID
+  label: string; // client name
   email?: string;
   phone?: string;
   policyCount?: number;
@@ -98,14 +106,19 @@ export interface ClientSelectOption {
 }
 
 // Client value segment for analytics
-export type ClientSegment = 'high_value' | 'medium_value' | 'low_value' | 'at_risk' | 'inactive';
+export type ClientSegment =
+  | "high_value"
+  | "medium_value"
+  | "low_value"
+  | "at_risk"
+  | "inactive";
 
 // Client with segment analysis
 export interface ClientWithSegment extends ClientWithStats {
   segment: ClientSegment;
   segmentReason: string;
   recommendedAction?: string;
-  retentionScore?: number;  // 0-100
+  retentionScore?: number; // 0-100
   lifetimeValue?: number;
 }
 
@@ -117,7 +130,7 @@ export interface ClientImportData {
   address?: string;
   date_of_birth?: string;
   notes?: string;
-  external_id?: string;  // For tracking imports
+  external_id?: string; // For tracking imports
 }
 
 // Client export data (for CSV/Excel exports)
@@ -135,24 +148,33 @@ export interface ClientExportData extends Client {
 export interface ClientActivity {
   id: string;
   client_id: string;
-  activity_type: 'created' | 'updated' | 'policy_added' | 'policy_cancelled' | 'contacted' | 'note_added';
+  activity_type:
+    | "created"
+    | "updated"
+    | "policy_added"
+    | "policy_cancelled"
+    | "contacted"
+    | "note_added";
   activity_date: string;
   description: string;
   user_id: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic metadata shape
   metadata?: Record<string, any>;
 }
 
 // Client communication preference
 export interface ClientCommunicationPreference {
   client_id: string;
-  preferred_contact_method: 'email' | 'phone' | 'text' | 'mail';
+  preferred_contact_method: "email" | "phone" | "text" | "mail";
   best_time_to_contact?: string;
   do_not_contact?: boolean;
-  communication_frequency?: 'weekly' | 'monthly' | 'quarterly' | 'annually';
+  communication_frequency?: "weekly" | "monthly" | "quarterly" | "annually";
 }
 
 // Helper function to calculate age from date of birth
-export function calculateAge(dateOfBirth: string | null | undefined): number | null {
+export function calculateAge(
+  dateOfBirth: string | null | undefined,
+): number | null {
   if (!dateOfBirth) return null;
 
   try {
@@ -166,7 +188,10 @@ export function calculateAge(dateOfBirth: string | null | undefined): number | n
     const monthDiff = today.getMonth() - birthDate.getMonth();
 
     // Adjust age if birthday hasn't occurred this year
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+    if (
+      monthDiff < 0 ||
+      (monthDiff === 0 && today.getDate() < birthDate.getDate())
+    ) {
       age--;
     }
 
@@ -178,7 +203,7 @@ export function calculateAge(dateOfBirth: string | null | undefined): number | n
 
 // Helper function to format client name for display
 export function formatClientName(client: Partial<Client>): string {
-  if (!client.name) return 'Unknown Client';
+  if (!client.name) return "Unknown Client";
   return client.name.trim();
 }
 
@@ -187,12 +212,12 @@ export function formatClientContact(client: Partial<Client>): string {
   const parts: string[] = [];
   if (client.email) parts.push(client.email);
   if (client.phone) parts.push(client.phone);
-  return parts.join(' | ') || 'No contact info';
+  return parts.join(" | ") || "No contact info";
 }
 
 // Helper function to get client initials for avatars
 export function getClientInitials(name: string): string {
-  if (!name) return '?';
+  if (!name) return "?";
 
   const words = name.trim().split(/\s+/);
   if (words.length === 1) {
@@ -208,15 +233,15 @@ export function calculateClientSegment(stats: ClientWithStats): ClientSegment {
 
   // Inactive clients
   if (active_policy_count === 0) {
-    return policy_count > 0 ? 'at_risk' : 'inactive';
+    return policy_count > 0 ? "at_risk" : "inactive";
   }
 
   // Value-based segmentation
-  if (total_premium >= 10000) return 'high_value';
-  if (total_premium >= 5000) return 'medium_value';
-  if (active_policy_count > 0) return 'low_value';
+  if (total_premium >= 10000) return "high_value";
+  if (total_premium >= 5000) return "medium_value";
+  if (active_policy_count > 0) return "low_value";
 
-  return 'inactive';
+  return "inactive";
 }
 
 // Helper function to validate email
@@ -228,15 +253,15 @@ export function isValidEmail(email: string): boolean {
 // Helper function to validate phone number (US format)
 export function isValidPhone(phone: string): boolean {
   const phoneRegex = /^\(?([0-9]{3})\)?[-.\s]?([0-9]{3})[-.\s]?([0-9]{4})$/;
-  return phoneRegex.test(phone.replace(/\s/g, ''));
+  return phoneRegex.test(phone.replace(/\s/g, ""));
 }
 
 // Helper function to format phone number
 export function formatPhoneNumber(phone: string | null | undefined): string {
-  if (!phone) return '';
+  if (!phone) return "";
 
   // Remove all non-digits
-  const cleaned = phone.replace(/\D/g, '');
+  const cleaned = phone.replace(/\D/g, "");
 
   // Format as (XXX) XXX-XXXX
   if (cleaned.length === 10) {
@@ -249,20 +274,20 @@ export function formatPhoneNumber(phone: string | null | undefined): string {
 
 // Helper function to get age group for analytics
 export function getAgeGroup(age: number | null): string {
-  if (age === null) return 'Unknown';
-  if (age < 30) return 'Under 30';
-  if (age < 40) return '30-39';
-  if (age < 50) return '40-49';
-  if (age < 60) return '50-59';
-  if (age < 70) return '60-69';
-  return '70+';
+  if (age === null) return "Unknown";
+  if (age < 30) return "Under 30";
+  if (age < 40) return "30-39";
+  if (age < 50) return "40-49";
+  if (age < 60) return "50-59";
+  if (age < 70) return "60-69";
+  return "70+";
 }
 
 // Helper function to check if client is eligible for a product based on age
 export function isClientEligibleForProduct(
   clientAge: number | null,
   productMinAge: number | null,
-  productMaxAge: number | null
+  productMaxAge: number | null,
 ): boolean {
   if (clientAge === null) return false;
   if (productMinAge !== null && clientAge < productMinAge) return false;
@@ -271,21 +296,25 @@ export function isClientEligibleForProduct(
 }
 
 // Type guard to check if object is a Client
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- type guard requires any
 export function isClient(obj: any): obj is Client {
   return (
     obj &&
-    typeof obj === 'object' &&
-    typeof obj.id === 'string' &&
-    typeof obj.name === 'string' &&
-    typeof obj.created_at === 'string'
+    typeof obj === "object" &&
+    typeof obj.id === "string" &&
+    typeof obj.name === "string" &&
+    typeof obj.created_at === "string"
   );
 }
 
 // Type guard to check if object has stats
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- type guard requires any
 export function hasClientStats(obj: any): obj is ClientWithStats {
   return (
     isClient(obj) &&
-    typeof (obj as any).policy_count === 'number' &&
-    typeof (obj as any).total_premium === 'number'
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- type assertion for guard
+    typeof (obj as any).policy_count === "number" &&
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- type assertion for guard
+    typeof (obj as any).total_premium === "number"
   );
 }

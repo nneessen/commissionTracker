@@ -432,8 +432,10 @@ class CompGuideService {
 
       // Add products without specific product_id (carrier-level rates)
       const carrierLevelRates = (carrier.comp_guide || [])
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- comp guide entry type
         .filter((entry: any) => !entry.product_id)
         .reduce(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- comp guide entry type
           (acc: Record<number, number>, entry: any) => {
             acc[entry.contract_level] = entry.commission_percentage;
             return acc;

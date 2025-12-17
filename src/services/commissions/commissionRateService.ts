@@ -222,6 +222,7 @@ class CommissionRateService {
     }
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DB record has dynamic schema
   private transformFromDB(dbData: any): CommissionRate {
     return {
       id: dbData.id,
@@ -234,7 +235,9 @@ class CommissionRateService {
     };
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- return type varies based on processing
   private transformToDB(data: Partial<CreateCommissionRateData>): any {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DB record has dynamic schema
     const dbData: any = {};
 
     if (data.carrierId !== undefined) dbData.carrier_id = data.carrierId;
@@ -291,16 +294,18 @@ class CommissionRateService {
       // Parse the JSONB product breakdown
       const breakdown: ProductCommissionBreakdown[] = (
         result.product_breakdown || []
-      ).map((item: any) => ({
-        productId: item.productId,
-        productName: item.productName,
-        carrierName: item.carrierName,
-        commissionRate: parseFloat(item.commissionRate),
-        premiumWeight: parseFloat(item.premiumWeight),
-        totalPremium: parseFloat(item.totalPremium),
-        policyCount: parseInt(item.policyCount, 10),
-        effectiveDate: new Date(item.effectiveDate),
-      }));
+      )
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Supabase response type
+        .map((item: any) => ({
+          productId: item.productId,
+          productName: item.productName,
+          carrierName: item.carrierName,
+          commissionRate: parseFloat(item.commissionRate),
+          premiumWeight: parseFloat(item.premiumWeight),
+          totalPremium: parseFloat(item.totalPremium),
+          policyCount: parseInt(item.policyCount, 10),
+          effectiveDate: new Date(item.effectiveDate),
+        }));
 
       // Determine recommended rate based on data quality
       const dataQuality: CommissionDataQuality = result.data_quality;

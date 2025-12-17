@@ -60,6 +60,7 @@ interface AgentDetailModalProps {
 }
 
 // Safe formatters with proper null handling
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic date type
 const safeFormatDate = (date: any): string => {
   if (!date || date === undefined || date === null || date === "") return "N/A";
   try {
@@ -71,11 +72,13 @@ const safeFormatDate = (date: any): string => {
   }
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic amount type
 const safeFormatCurrency = (amount: any): string => {
   if (amount === null || amount === undefined || isNaN(amount)) return "$0";
   return formatCurrency(Number(amount));
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic value type
 const safeFormatPercent = (value: any, decimals?: number): string => {
   if (value === null || value === undefined || isNaN(value)) return "0%";
   return formatPercent(Number(value), decimals);

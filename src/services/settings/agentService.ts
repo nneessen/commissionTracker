@@ -21,11 +21,13 @@ export class AgentService {
     return userService.getById(id);
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- generic user data
   create(_data: any) {
     // Users are created through Supabase Auth
     throw new Error("Users must be created through authentication signup");
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- generic user data
   update(id: string, data: any) {
     return userService.updateUser(id, data);
   }

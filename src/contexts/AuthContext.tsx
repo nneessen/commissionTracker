@@ -1,12 +1,16 @@
 // /home/nneessen/projects/commissionTracker/src/contexts/AuthContext.tsx
 
 import React, { createContext, useContext, useEffect, useState } from "react";
-import {supabase} from "../services/base/supabase";
-import {User as SupabaseUser, Session, AuthChangeEvent} from "@supabase/supabase-js";
-import {useQueryClient} from "@tanstack/react-query";
-import {User} from "../types";
-import {userService} from "../services/settings/userService";
-import {logger} from "../services/base/logger";
+import { supabase } from "../services/base/supabase";
+import {
+  User as SupabaseUser,
+  Session,
+  AuthChangeEvent,
+} from "@supabase/supabase-js";
+import { useQueryClient } from "@tanstack/react-query";
+import { User } from "../types";
+import { userService } from "../services/settings/userService";
+import { logger } from "../services/base/logger";
 
 export interface SignUpResult {
   requiresVerification: boolean;
@@ -25,6 +29,7 @@ interface AuthContextType {
   resetPassword: (email: string) => Promise<void>;
   updatePassword: (newPassword: string) => Promise<void>;
   refreshSession: () => Promise<void>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- user metadata type
   updateUserMetadata: (metadata: any) => Promise<void>;
   resendVerificationEmail: (email: string) => Promise<void>;
 }
@@ -95,6 +100,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return () => {
       subscription.unsubscribe();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- checkSession and queryClient are stable and only needed on mount
   }, []);
 
   const checkSession = async () => {
@@ -338,6 +344,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- user metadata type
   const updateUserMetadata = async (metadata: any) => {
     try {
       if (!user) {

@@ -446,6 +446,7 @@ class TargetsService {
     if (newAchievements.length > 0) {
       const allAchievements = [...existingAchievements, ...newAchievements];
       await this.updateUserTargets(userId, {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- JSON type for achievements
         achievements: allAchievements as any, // JSON type
         last_milestone_date: new Date().toISOString(),
       } as UpdateUserTargetsData);

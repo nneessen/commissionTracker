@@ -87,6 +87,7 @@ export class ForecastingService {
   /**
    * Fetch last 12 months of paid commission data
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- aggregation result type
   private static async fetchHistoricalData(userId: string): Promise<any[]> {
     const twelveMonthsAgo = new Date();
     twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
@@ -111,6 +112,7 @@ export class ForecastingService {
   /**
    * Aggregate commissions by month
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- aggregation result type
   private static aggregateByMonth(commissions: any[]): MonthlyData[] {
     const monthlyMap: Record<string, number> = {};
 

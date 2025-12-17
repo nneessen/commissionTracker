@@ -67,6 +67,7 @@ export const subscribeToAllThreads = (
         table: "message_threads",
       },
       async (payload) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Supabase realtime payload type
         const thread = payload.new as any;
 
         // Only notify if user is a participant
@@ -115,6 +116,7 @@ export const subscribeToUserMessages = (
         table: "messages",
       },
       async (payload) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Supabase realtime payload type
         const message = payload.new as any;
 
         // Check if this message is in a thread the user participates in

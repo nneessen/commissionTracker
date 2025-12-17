@@ -94,6 +94,7 @@ export class DrillDownService {
     if (error) throw error;
 
     // Transform to DrillDownRecords
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- report data has dynamic shape
     const records: DrillDownRecord[] = (data || []).map((c: any) => ({
       id: c.id,
       type: "commission" as const,
@@ -157,6 +158,7 @@ export class DrillDownService {
     if (error) throw error;
 
     // Transform to DrillDownRecords
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- report data has dynamic shape
     const records: DrillDownRecord[] = (data || []).map((c: any) => ({
       id: c.client_id,
       type: "client" as const,
@@ -229,8 +231,10 @@ export class DrillDownService {
     if (error) throw error;
 
     // Transform to DrillDownRecords
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- report data has dynamic shape
     const records: DrillDownRecord[] = (data || []).map((p: any) => {
       const totalCommission = (p.commissions || []).reduce(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- report data has dynamic shape
         (sum: number, c: any) => sum + (c.amount || 0),
         0,
       );
@@ -315,6 +319,7 @@ export class DrillDownService {
     });
     if (error) throw error;
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- report data has dynamic shape
     const records: DrillDownRecord[] = (data || []).map((p: any) => ({
       id: p.id,
       type: "policy" as const,

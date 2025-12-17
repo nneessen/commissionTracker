@@ -722,6 +722,7 @@ async function executeUpdateField(
  */
 async function buildTemplateVariables(
   context: Record<string, unknown>,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic data shape
   ownerProfile: any,
   supabase: ReturnType<typeof createSupabaseAdminClient>,
 ): Promise<Record<string, string>> {

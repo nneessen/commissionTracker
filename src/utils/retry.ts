@@ -1,18 +1,21 @@
 // src/utils/retry.ts
 // Retry logic for handling transient failures
 
-import {logger} from '../services/base/logger';
+import { logger } from "../services/base/logger";
 
 export interface RetryOptions {
   maxAttempts?: number;
   delayMs?: number;
   backoffMultiplier?: number;
   maxDelayMs?: number;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- error constructor signature
   retryableErrors?: Array<new (...args: any[]) => Error>;
   onRetry?: (attempt: number, error: Error) => void;
 }
 
-const DEFAULT_OPTIONS: Required<Omit<RetryOptions, 'retryableErrors' | 'onRetry'>> = {
+const DEFAULT_OPTIONS: Required<
+  Omit<RetryOptions, "retryableErrors" | "onRetry">
+> = {
   maxAttempts: 3,
   delayMs: 1000,
   backoffMultiplier: 2,
@@ -22,25 +25,29 @@ const DEFAULT_OPTIONS: Required<Omit<RetryOptions, 'retryableErrors' | 'onRetry'
 /**
  * Determines if an error is retryable
  */
-function isRetryable(error: unknown, retryableErrors?: Array<new (...args: any[]) => Error>): boolean {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- error constructor signature
+function isRetryable(
+  error: unknown,
+  retryableErrors?: Array<new (...args: any[]) => Error>,
+): boolean {
   if (!retryableErrors || retryableErrors.length === 0) {
     // By default, retry on network errors and 5xx server errors
     if (error instanceof Error) {
       const message = error.message.toLowerCase();
       return (
-        message.includes('network') ||
-        message.includes('timeout') ||
-        message.includes('connection') ||
-        message.includes('econnrefused') ||
-        message.includes('enotfound') ||
-        message.includes('50') // 500-level errors
+        message.includes("network") ||
+        message.includes("timeout") ||
+        message.includes("connection") ||
+        message.includes("econnrefused") ||
+        message.includes("enotfound") ||
+        message.includes("50") // 500-level errors
       );
     }
     return false;
   }
 
   // Check if error matches any of the specified retryable error types
-  return retryableErrors.some(ErrorClass => error instanceof ErrorClass);
+  return retryableErrors.some((ErrorClass) => error instanceof ErrorClass);
 }
 
 /**
@@ -50,7 +57,7 @@ function calculateDelay(
   attempt: number,
   baseDelay: number,
   multiplier: number,
-  maxDelay: number
+  maxDelay: number,
 ): number {
   const delay = baseDelay * Math.pow(multiplier, attempt - 1);
   return Math.min(delay, maxDelay);
@@ -60,7 +67,7 @@ function calculateDelay(
  * Sleep for specified milliseconds
  */
 function sleep(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 /**
@@ -76,7 +83,7 @@ function sleep(ms: number): Promise<void> {
  */
 export async function withRetry<T>(
   operation: () => Promise<T>,
-  options: RetryOptions = {}
+  options: RetryOptions = {},
 ): Promise<T> {
   const opts = { ...DEFAULT_OPTIONS, ...options };
   let lastError: Error;
@@ -88,21 +95,26 @@ export async function withRetry<T>(
       lastError = error instanceof Error ? error : new Error(String(error));
 
       // If it's the last attempt or error is not retryable, throw immediately
-      if (attempt === opts.maxAttempts || !isRetryable(error, options.retryableErrors)) {
+      if (
+        attempt === opts.maxAttempts ||
+        !isRetryable(error, options.retryableErrors)
+      ) {
         throw lastError;
       }
 
       // Calculate delay and notify about retry
-      const delay = calculateDelay(attempt, opts.delayMs, opts.backoffMultiplier, opts.maxDelayMs);
-
-      logger.warn(
-        `Retry attempt ${attempt}/${opts.maxAttempts}`,
-        {
-          error: lastError.message,
-          nextRetryIn: delay,
-          operation: operation.name || 'anonymous',
-        }
+      const delay = calculateDelay(
+        attempt,
+        opts.delayMs,
+        opts.backoffMultiplier,
+        opts.maxDelayMs,
       );
+
+      logger.warn(`Retry attempt ${attempt}/${opts.maxAttempts}`, {
+        error: lastError.message,
+        nextRetryIn: delay,
+        operation: operation.name || "anonymous",
+      });
 
       // Call onRetry callback if provided
       options.onRetry?.(attempt, lastError);
@@ -131,11 +143,13 @@ export async function withRetry<T>(
  */
 export function Retry(options: RetryOptions = {}) {
   return function (
-    _target: any, _propertyKey: string,
-    descriptor: PropertyDescriptor
+    _target: any,
+    _propertyKey: string, // eslint-disable-line @typescript-eslint/no-explicit-any -- decorator target type
+    descriptor: PropertyDescriptor,
   ) {
     const originalMethod = descriptor.value;
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- decorator args type
     descriptor.value = async function (...args: any[]) {
       return withRetry(() => originalMethod.apply(this, args), options);
     };
@@ -150,19 +164,19 @@ export function Retry(options: RetryOptions = {}) {
 export class CircuitBreaker {
   private failureCount = 0;
   private lastFailureTime?: Date;
-  private state: 'CLOSED' | 'OPEN' | 'HALF_OPEN' = 'CLOSED';
+  private state: "CLOSED" | "OPEN" | "HALF_OPEN" = "CLOSED";
 
   constructor(
     private readonly threshold: number = 5,
-    private readonly resetTimeoutMs: number = 60000
+    private readonly resetTimeoutMs: number = 60000,
   ) {}
 
   async execute<T>(operation: () => Promise<T>): Promise<T> {
-    if (this.state === 'OPEN') {
+    if (this.state === "OPEN") {
       if (this.shouldAttemptReset()) {
-        this.state = 'HALF_OPEN';
+        this.state = "HALF_OPEN";
       } else {
-        throw new Error('Circuit breaker is OPEN');
+        throw new Error("Circuit breaker is OPEN");
       }
     }
 
@@ -184,7 +198,7 @@ export class CircuitBreaker {
 
   private onSuccess() {
     this.failureCount = 0;
-    this.state = 'CLOSED';
+    this.state = "CLOSED";
   }
 
   private onFailure() {
@@ -192,21 +206,21 @@ export class CircuitBreaker {
     this.lastFailureTime = new Date();
 
     if (this.failureCount >= this.threshold) {
-      this.state = 'OPEN';
-      logger.error('Circuit breaker opened', {
+      this.state = "OPEN";
+      logger.error("Circuit breaker opened", {
         failureCount: this.failureCount,
-        threshold: this.threshold
+        threshold: this.threshold,
       });
     }
   }
 
-  getState(): 'CLOSED' | 'OPEN' | 'HALF_OPEN' {
+  getState(): "CLOSED" | "OPEN" | "HALF_OPEN" {
     return this.state;
   }
 
   reset() {
     this.failureCount = 0;
-    this.state = 'CLOSED';
+    this.state = "CLOSED";
     this.lastFailureTime = undefined;
   }
 }

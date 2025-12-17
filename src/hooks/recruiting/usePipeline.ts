@@ -1,17 +1,19 @@
 // /home/nneessen/projects/commissionTracker/src/hooks/recruiting/usePipeline.ts
 
-import {useQuery, useMutation, useQueryClient} from '@tanstack/react-query';
-import {pipelineService} from '../../services/recruiting/pipelineService';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { pipelineService } from "../../services/recruiting/pipelineService";
 
 // Query keys
 const PIPELINE_KEYS = {
-  all: ['pipelines'] as const,
-  templates: () => [...PIPELINE_KEYS.all, 'templates'] as const,
+  all: ["pipelines"] as const,
+  templates: () => [...PIPELINE_KEYS.all, "templates"] as const,
   template: (id: string) => [...PIPELINE_KEYS.templates(), id] as const,
-  activeTemplate: () => [...PIPELINE_KEYS.templates(), 'active'] as const,
-  phases: (templateId: string) => [...PIPELINE_KEYS.all, 'phases', templateId] as const,
-  phase: (phaseId: string) => [...PIPELINE_KEYS.all, 'phase', phaseId] as const,
-  checklistItems: (phaseId: string) => [...PIPELINE_KEYS.all, 'checklist', phaseId] as const,
+  activeTemplate: () => [...PIPELINE_KEYS.templates(), "active"] as const,
+  phases: (templateId: string) =>
+    [...PIPELINE_KEYS.all, "phases", templateId] as const,
+  phase: (phaseId: string) => [...PIPELINE_KEYS.all, "phase", phaseId] as const,
+  checklistItems: (phaseId: string) =>
+    [...PIPELINE_KEYS.all, "checklist", phaseId] as const,
 };
 
 // ========================================
@@ -50,7 +52,7 @@ export function usePipelinePhases(templateId?: string) {
   const effectiveTemplateId = templateId || activeTemplate?.id;
 
   return useQuery({
-    queryKey: PIPELINE_KEYS.phases(effectiveTemplateId || ''),
+    queryKey: PIPELINE_KEYS.phases(effectiveTemplateId || ""),
     queryFn: () => pipelineService.getPhases(effectiveTemplateId!),
     enabled: !!effectiveTemplateId,
   });
@@ -84,11 +86,21 @@ export function useCreatePhase() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ templateId, phaseData }: { templateId: string; phaseData: any }) =>
-      pipelineService.createPhase(templateId, phaseData),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- generic mutation type
+    mutationFn: ({
+      templateId,
+      phaseData,
+    }: {
+      templateId: string;
+      phaseData: any;
+    }) => pipelineService.createPhase(templateId, phaseData),
     onSuccess: (_, { templateId }) => {
-      queryClient.invalidateQueries({ queryKey: PIPELINE_KEYS.phases(templateId) });
-      queryClient.invalidateQueries({ queryKey: PIPELINE_KEYS.template(templateId) });
+      queryClient.invalidateQueries({
+        queryKey: PIPELINE_KEYS.phases(templateId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: PIPELINE_KEYS.template(templateId),
+      });
     },
   });
 }
@@ -97,6 +109,7 @@ export function useUpdatePhase() {
   const queryClient = useQueryClient();
 
   return useMutation({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- generic mutation type
     mutationFn: ({ phaseId, updates }: { phaseId: string; updates: any }) =>
       pipelineService.updatePhase(phaseId, updates),
     onSuccess: (data) => {
@@ -122,10 +135,17 @@ export function useReorderPhases() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ templateId, phaseIds }: { templateId: string; phaseIds: string[] }) =>
-      pipelineService.reorderPhases(templateId, phaseIds),
+    mutationFn: ({
+      templateId,
+      phaseIds,
+    }: {
+      templateId: string;
+      phaseIds: string[];
+    }) => pipelineService.reorderPhases(templateId, phaseIds),
     onSuccess: (_, { templateId }) => {
-      queryClient.invalidateQueries({ queryKey: PIPELINE_KEYS.phases(templateId) });
+      queryClient.invalidateQueries({
+        queryKey: PIPELINE_KEYS.phases(templateId),
+      });
     },
   });
 }

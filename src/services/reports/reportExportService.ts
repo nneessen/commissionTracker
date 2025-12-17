@@ -168,6 +168,7 @@ export class ReportExportService {
    * Export to CSV
    */
   private static exportToCSV(report: Report, options: ExportOptions): void {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- export format specific
     const csvData: Record<string, any>[] = [];
 
     // Add summary metrics
@@ -202,6 +203,7 @@ export class ReportExportService {
         // Add table data
         if (section.tableData) {
           section.tableData.rows.forEach((row) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- export format specific
             const rowData: Record<string, any> = { Section: section.title };
             section.tableData!.headers.forEach((header, index) => {
               rowData[header] = row[index];

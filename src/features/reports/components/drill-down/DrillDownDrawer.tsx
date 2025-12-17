@@ -1,14 +1,21 @@
 // src/features/reports/components/drill-down/DrillDownDrawer.tsx
 
-import React, { useState } from 'react';
-import {Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter} from '@/components/ui/sheet';
-import {Button} from '@/components/ui/button';
-import {Skeleton} from '@/components/ui/skeleton';
-import {Badge} from '@/components/ui/badge';
-import {Download, ChevronUp, ChevronDown} from 'lucide-react';
-import {DrillDownRecord, DrillDownContext} from '@/types/reports.types';
-import {useDrillDown} from '@/hooks/reports/useDrillDown';
-import {cn} from '@/lib/utils';
+import React, { useState } from "react";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetFooter,
+} from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
+import { Download, ChevronUp, ChevronDown } from "lucide-react";
+import { DrillDownRecord, DrillDownContext } from "@/types/reports.types";
+import { useDrillDown } from "@/hooks/reports/useDrillDown";
+import { cn } from "@/lib/utils";
 
 interface DrillDownDrawerProps {
   open: boolean;
@@ -16,20 +23,24 @@ interface DrillDownDrawerProps {
   context: DrillDownContext | null;
 }
 
-type SortDirection = 'asc' | 'desc';
+type SortDirection = "asc" | "desc";
 type SortKey = keyof DrillDownRecord;
 
-export function DrillDownDrawer({ open, onClose, context }: DrillDownDrawerProps) {
+export function DrillDownDrawer({
+  open,
+  onClose,
+  context,
+}: DrillDownDrawerProps) {
   const { data, isLoading, error } = useDrillDown(context);
-  const [sortKey, setSortKey] = useState<SortKey>('amount');
-  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const [sortKey, setSortKey] = useState<SortKey>("amount");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
 
   const handleSort = (key: SortKey) => {
     if (sortKey === key) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
     } else {
       setSortKey(key);
-      setSortDirection('desc');
+      setSortDirection("desc");
     }
   };
 
@@ -40,12 +51,12 @@ export function DrillDownDrawer({ open, onClose, context }: DrillDownDrawerProps
       const bVal = b[sortKey];
       if (aVal === undefined || aVal === null) return 1;
       if (bVal === undefined || bVal === null) return -1;
-      if (typeof aVal === 'number' && typeof bVal === 'number') {
-        return sortDirection === 'asc' ? aVal - bVal : bVal - aVal;
+      if (typeof aVal === "number" && typeof bVal === "number") {
+        return sortDirection === "asc" ? aVal - bVal : bVal - aVal;
       }
       const aStr = String(aVal);
       const bStr = String(bVal);
-      return sortDirection === 'asc'
+      return sortDirection === "asc"
         ? aStr.localeCompare(bStr)
         : bStr.localeCompare(aStr);
     });
@@ -58,49 +69,55 @@ export function DrillDownDrawer({ open, onClose, context }: DrillDownDrawerProps
     const rows = sortedRecords.map((record) =>
       data.columns.map((col) => {
         const val = record[col.key];
-        if (col.format === 'currency' && typeof val === 'number') {
+        if (col.format === "currency" && typeof val === "number") {
           return val.toFixed(2);
         }
-        return val ?? '';
-      })
+        return val ?? "";
+      }),
     );
 
     const csvContent = [
-      headers.join(','),
-      ...rows.map((row) => row.map((cell) => `"${cell}"`).join(',')),
-    ].join('\n');
+      headers.join(","),
+      ...rows.map((row) => row.map((cell) => `"${cell}"`).join(",")),
+    ].join("\n");
 
-    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const blob = new Blob([csvContent], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
-    a.download = `${context?.type || 'drill-down'}-${new Date().toISOString().split('T')[0]}.csv`;
+    a.download = `${context?.type || "drill-down"}-${new Date().toISOString().split("T")[0]}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic value type
   const formatValue = (value: any, format?: string): string => {
-    if (value === undefined || value === null) return '-';
-    if (format === 'currency') {
-      return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
+    if (value === undefined || value === null) return "-";
+    if (format === "currency") {
+      return new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "USD",
         minimumFractionDigits: 0,
         maximumFractionDigits: 0,
       }).format(value);
     }
-    if (format === 'number') {
-      return new Intl.NumberFormat('en-US').format(value);
+    if (format === "number") {
+      return new Intl.NumberFormat("en-US").format(value);
     }
     return String(value);
   };
 
   return (
     <Sheet open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
-      <SheetContent side="right" className="w-full sm:max-w-xl p-0 flex flex-col">
+      <SheetContent
+        side="right"
+        className="w-full sm:max-w-xl p-0 flex flex-col"
+      >
         {/* Header */}
         <SheetHeader className="p-4 border-b">
-          <SheetTitle className="text-base">{context?.title || 'Details'}</SheetTitle>
+          <SheetTitle className="text-base">
+            {context?.title || "Details"}
+          </SheetTitle>
           {context?.subtitle && (
             <SheetDescription className="text-xs">
               {context.subtitle}
@@ -134,34 +151,47 @@ export function DrillDownDrawer({ open, onClose, context }: DrillDownDrawerProps
               <div className="mb-4 p-3 bg-muted/50 rounded-lg">
                 <div className="flex items-baseline gap-4 flex-wrap">
                   <div>
-                    <span className="text-xs text-muted-foreground">Records</span>
-                    <p className="text-lg font-bold">{data.summary.totalRecords}</p>
-                  </div>
-                  <div>
-                    <span className="text-xs text-muted-foreground">Total Amount</span>
+                    <span className="text-xs text-muted-foreground">
+                      Records
+                    </span>
                     <p className="text-lg font-bold">
-                      {formatValue(data.summary.totalAmount, 'currency')}
+                      {data.summary.totalRecords}
                     </p>
                   </div>
-                  {data.summary.avgAmount !== undefined && data.summary.avgAmount > 0 && (
-                    <div>
-                      <span className="text-xs text-muted-foreground">Avg Amount</span>
-                      <p className="text-lg font-bold">
-                        {formatValue(data.summary.avgAmount, 'currency')}
-                      </p>
-                    </div>
-                  )}
-                  {data.summary.additionalMetrics &&
-                    Object.entries(data.summary.additionalMetrics).map(([key, value]) => (
-                      <div key={key}>
-                        <span className="text-xs text-muted-foreground capitalize">
-                          {key.replace(/([A-Z])/g, ' $1').trim()}
+                  <div>
+                    <span className="text-xs text-muted-foreground">
+                      Total Amount
+                    </span>
+                    <p className="text-lg font-bold">
+                      {formatValue(data.summary.totalAmount, "currency")}
+                    </p>
+                  </div>
+                  {data.summary.avgAmount !== undefined &&
+                    data.summary.avgAmount > 0 && (
+                      <div>
+                        <span className="text-xs text-muted-foreground">
+                          Avg Amount
                         </span>
-                        <p className="text-sm font-semibold">
-                          {typeof value === 'number' ? formatValue(value, 'currency') : value}
+                        <p className="text-lg font-bold">
+                          {formatValue(data.summary.avgAmount, "currency")}
                         </p>
                       </div>
-                    ))}
+                    )}
+                  {data.summary.additionalMetrics &&
+                    Object.entries(data.summary.additionalMetrics).map(
+                      ([key, value]) => (
+                        <div key={key}>
+                          <span className="text-xs text-muted-foreground capitalize">
+                            {key.replace(/([A-Z])/g, " $1").trim()}
+                          </span>
+                          <p className="text-sm font-semibold">
+                            {typeof value === "number"
+                              ? formatValue(value, "currency")
+                              : value}
+                          </p>
+                        </div>
+                      ),
+                    )}
                 </div>
               </div>
 
@@ -179,13 +209,12 @@ export function DrillDownDrawer({ open, onClose, context }: DrillDownDrawerProps
                           >
                             <div className="flex items-center gap-1">
                               {col.label}
-                              {sortKey === col.key && (
-                                sortDirection === 'asc' ? (
+                              {sortKey === col.key &&
+                                (sortDirection === "asc" ? (
                                   <ChevronUp className="h-3 w-3" />
                                 ) : (
                                   <ChevronDown className="h-3 w-3" />
-                                )
-                              )}
+                                ))}
                             </div>
                           </th>
                         ))}
@@ -201,17 +230,18 @@ export function DrillDownDrawer({ open, onClose, context }: DrillDownDrawerProps
                             <td
                               key={col.key}
                               className={cn(
-                                'px-2 py-1.5',
-                                col.format === 'currency' && 'text-right font-mono',
-                                col.format === 'number' && 'text-right'
+                                "px-2 py-1.5",
+                                col.format === "currency" &&
+                                  "text-right font-mono",
+                                col.format === "number" && "text-right",
                               )}
                             >
-                              {col.key === 'status' ? (
+                              {col.key === "status" ? (
                                 <Badge
                                   variant={
-                                    record.status?.toLowerCase() === 'active'
-                                      ? 'default'
-                                      : 'secondary'
+                                    record.status?.toLowerCase() === "active"
+                                      ? "default"
+                                      : "secondary"
                                   }
                                   className="text-[10px] px-1.5 py-0"
                                 >

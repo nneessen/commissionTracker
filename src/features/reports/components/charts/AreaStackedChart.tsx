@@ -1,8 +1,17 @@
 // src/features/reports/components/charts/AreaStackedChart.tsx
 
-import React from 'react';
-import {AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer} from 'recharts';
-import {formatCurrency} from '../../../../lib/format';
+import React from "react";
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
+import { formatCurrency } from "../../../../lib/format";
 
 export interface AreaStackedChartData {
   label: string;
@@ -15,14 +24,14 @@ export interface AreaStackedChartProps {
     dataKey: string;
     name: string;
     color: string;
-    format?: 'currency' | 'number' | 'percent';
+    format?: "currency" | "number" | "percent";
   }[];
   height?: number;
   showGrid?: boolean;
   showLegend?: boolean;
   xAxisLabel?: string;
   yAxisLabel?: string;
-  stackOffset?: 'none' | 'expand' | 'wiggle' | 'silhouette';
+  stackOffset?: "none" | "expand" | "wiggle" | "silhouette";
 }
 
 /**
@@ -49,7 +58,7 @@ export function AreaStackedChart({
   showLegend = true,
   xAxisLabel,
   yAxisLabel,
-  stackOffset = 'none',
+  stackOffset = "none",
 }: AreaStackedChartProps) {
   if (!data || data.length === 0) {
     return (
@@ -62,38 +71,53 @@ export function AreaStackedChart({
     );
   }
 
-  const formatValue = (value: number, format?: 'currency' | 'number' | 'percent') => {
-    if (typeof value !== 'number') return value;
+  const formatValue = (
+    value: number,
+    format?: "currency" | "number" | "percent",
+  ) => {
+    if (typeof value !== "number") return value;
 
     switch (format) {
-      case 'currency':
+      case "currency":
         return formatCurrency(value);
-      case 'percent':
+      case "percent":
         return `${value.toFixed(1)}%`;
-      case 'number':
+      case "number":
       default:
         return value.toLocaleString();
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- chart data type
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (!active || !payload || !payload.length) return null;
 
     // Calculate total if stacked
-    const total = stackOffset === 'none'
-      ? null
-      : payload.reduce((sum: number, entry: any) => sum + (entry.value || 0), 0);
+    const total =
+      stackOffset === "none"
+        ? null
+        : // eslint-disable-next-line @typescript-eslint/no-explicit-any -- chart data type
+          payload.reduce(
+            (sum: number, entry: any) => sum + (entry.value || 0),
+            0,
+          );
 
     return (
       <div className="bg-card border border-border rounded-lg shadow-lg p-3 max-w-xs">
         <p className="text-xs font-semibold text-foreground mb-2">{label}</p>
         <div className="space-y-1">
+          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any -- chart data type */}
           {payload.reverse().map((entry: any, index: number) => {
-            const area = areas.find(a => a.dataKey === entry.dataKey);
-            const percentage = total ? ((entry.value / total) * 100).toFixed(1) : null;
+            const area = areas.find((a) => a.dataKey === entry.dataKey);
+            const percentage = total
+              ? ((entry.value / total) * 100).toFixed(1)
+              : null;
 
             return (
-              <div key={index} className="flex items-center justify-between gap-4 text-xs">
+              <div
+                key={index}
+                className="flex items-center justify-between gap-4 text-xs"
+              >
                 <span className="flex items-center gap-2">
                   <span
                     className="w-3 h-3 rounded"
@@ -131,7 +155,14 @@ export function AreaStackedChart({
         >
           <defs>
             {areas.map((area, index) => (
-              <linearGradient key={index} id={`gradient-${area.dataKey}`} x1="0" y1="0" x2="0" y2="1">
+              <linearGradient
+                key={index}
+                id={`gradient-${area.dataKey}`}
+                x1="0"
+                y1="0"
+                x2="0"
+                y2="1"
+              >
                 <stop offset="5%" stopColor={area.color} stopOpacity={0.8} />
                 <stop offset="95%" stopColor={area.color} stopOpacity={0.1} />
               </linearGradient>
@@ -146,25 +177,43 @@ export function AreaStackedChart({
           )}
           <XAxis
             dataKey="label"
-            tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+            tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
             stroke="hsl(var(--border))"
-            label={xAxisLabel ? { value: xAxisLabel, position: 'insideBottom', offset: -5, style: { fontSize: 12 } } : undefined}
+            label={
+              xAxisLabel
+                ? {
+                    value: xAxisLabel,
+                    position: "insideBottom",
+                    offset: -5,
+                    style: { fontSize: 12 },
+                  }
+                : undefined
+            }
           />
           <YAxis
-            tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+            tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
             stroke="hsl(var(--border))"
             tickFormatter={(value) => {
-              if (stackOffset === 'expand') {
+              if (stackOffset === "expand") {
                 return `${(value * 100).toFixed(0)}%`;
               }
               return formatValue(value, areas[0]?.format);
             }}
-            label={yAxisLabel ? { value: yAxisLabel, angle: -90, position: 'insideLeft', style: { fontSize: 12 } } : undefined}
+            label={
+              yAxisLabel
+                ? {
+                    value: yAxisLabel,
+                    angle: -90,
+                    position: "insideLeft",
+                    style: { fontSize: 12 },
+                  }
+                : undefined
+            }
           />
           <Tooltip content={<CustomTooltip />} />
           {showLegend && (
             <Legend
-              wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }}
+              wrapperStyle={{ fontSize: "12px", paddingTop: "10px" }}
               iconType="rect"
             />
           )}

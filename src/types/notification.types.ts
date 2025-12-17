@@ -5,15 +5,15 @@
  */
 
 export type NotificationType =
-  | 'recruit_graduated'
-  | 'document_approved'
-  | 'document_rejected'
-  | 'document_uploaded'
-  | 'new_message'
-  | 'phase_completed'
-  | 'phase_advanced'
-  | 'checklist_item_completed'
-  | 'email_received';
+  | "recruit_graduated"
+  | "document_approved"
+  | "document_rejected"
+  | "document_uploaded"
+  | "new_message"
+  | "phase_completed"
+  | "phase_advanced"
+  | "checklist_item_completed"
+  | "email_received";
 
 export interface Notification {
   id: string;
@@ -22,6 +22,7 @@ export interface Notification {
   title: string;
   message: string | null;
   read: boolean;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic metadata shape
   metadata: Record<string, any> | null;
   created_at: string;
   expires_at: string | null;
@@ -33,6 +34,7 @@ export interface CreateNotificationRequest {
   type: NotificationType;
   title: string;
   message?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic metadata shape
   metadata?: Record<string, any>;
   expires_at?: string; // ISO timestamp
 }
@@ -87,15 +89,15 @@ export interface NotificationItemProps {
 
 // Helper type for notification icons
 export type NotificationIcon =
-  | 'graduate'
-  | 'document-approved'
-  | 'document-rejected'
-  | 'document-uploaded'
-  | 'message'
-  | 'phase-completed'
-  | 'phase-advanced'
-  | 'checklist-completed'
-  | 'email';
+  | "graduate"
+  | "document-approved"
+  | "document-rejected"
+  | "document-uploaded"
+  | "message"
+  | "phase-completed"
+  | "phase-advanced"
+  | "checklist-completed"
+  | "email";
 
 // Notification display configuration
 export interface NotificationConfig {

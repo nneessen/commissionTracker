@@ -340,6 +340,7 @@ export function useMetricsWithDateRange(
   // Calculate period client metrics
   const periodClients = (() => {
     // Get unique clients from filtered policies
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic client data shape
     const clientsInPeriod = new Map<string, any>();
 
     filteredPolicies.forEach((p) => {

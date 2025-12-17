@@ -227,6 +227,7 @@ export const DashboardHome: React.FC = () => {
       showToast.success(`Policy ${result.policyNumber} created successfully!`);
       setActiveDialog(null);
       return result;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- error object type
     } catch (error: any) {
       const errorMessage =
         error?.message || "Failed to create policy. Please try again.";

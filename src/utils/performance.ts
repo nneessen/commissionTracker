@@ -1,7 +1,7 @@
 // src/utils/performance.ts
 // Performance monitoring utilities for tracking query timing and metrics
 
-import {logger} from '../services/base/logger';
+import { logger } from "../services/base/logger";
 
 /**
  * Performance metric data
@@ -50,7 +50,7 @@ class PerformanceMonitor {
 
     // Log slow operations
     if (metric.duration > this.slowThresholdMs) {
-      logger.warn('Slow operation detected', {
+      logger.warn("Slow operation detected", {
         name: metric.name,
         duration: `${metric.duration}ms`,
         traceId: metric.traceId,
@@ -63,10 +63,10 @@ class PerformanceMonitor {
    * Get statistics for a specific operation
    */
   getStats(name: string): PerformanceStats | null {
-    const filtered = this.metrics.filter(m => m.name === name);
+    const filtered = this.metrics.filter((m) => m.name === name);
     if (filtered.length === 0) return null;
 
-    const durations = filtered.map(m => m.duration).sort((a, b) => a - b);
+    const durations = filtered.map((m) => m.duration).sort((a, b) => a - b);
     const total = durations.reduce((sum, d) => sum + d, 0);
 
     return {
@@ -86,9 +86,9 @@ class PerformanceMonitor {
    * Get all statistics grouped by operation name
    */
   getAllStats(): PerformanceStats[] {
-    const names = [...new Set(this.metrics.map(m => m.name))];
+    const names = [...new Set(this.metrics.map((m) => m.name))];
     return names
-      .map(name => this.getStats(name))
+      .map((name) => this.getStats(name))
       .filter(Boolean) as PerformanceStats[];
   }
 
@@ -98,7 +98,7 @@ class PerformanceMonitor {
   getSlowOperations(thresholdMs?: number): PerformanceMetric[] {
     const threshold = thresholdMs ?? this.slowThresholdMs;
     return this.metrics
-      .filter(m => m.duration > threshold)
+      .filter((m) => m.duration > threshold)
       .sort((a, b) => b.duration - a.duration)
       .slice(0, 100);
   }
@@ -129,13 +129,16 @@ class PerformanceMonitor {
   } {
     const stats = this.getAllStats();
     const totalOps = this.metrics.length;
-    const slowOps = this.metrics.filter(m => m.duration > this.slowThresholdMs).length;
-    const avgDuration = this.metrics.reduce((sum, m) => sum + m.duration, 0) / totalOps || 0;
+    const slowOps = this.metrics.filter(
+      (m) => m.duration > this.slowThresholdMs,
+    ).length;
+    const avgDuration =
+      this.metrics.reduce((sum, m) => sum + m.duration, 0) / totalOps || 0;
 
     const topSlowest = stats
       .sort((a, b) => b.avgDuration - a.avgDuration)
       .slice(0, 10)
-      .map(s => ({ name: s.name, avgDuration: s.avgDuration }));
+      .map((s) => ({ name: s.name, avgDuration: s.avgDuration }));
 
     return {
       totalOperations: totalOps,
@@ -157,7 +160,7 @@ export const performanceMonitor = new PerformanceMonitor();
 export async function measureAsync<T>(
   name: string,
   fn: () => Promise<T>,
-  metadata?: Record<string, unknown>
+  metadata?: Record<string, unknown>,
 ): Promise<T> {
   const startTime = performance.now();
   const traceId = getCurrentTraceId();
@@ -174,7 +177,7 @@ export async function measureAsync<T>(
       traceId,
     });
 
-    logger.debug('Operation completed', {
+    logger.debug("Operation completed", {
       name,
       duration: `${duration.toFixed(2)}ms`,
       traceId,
@@ -188,7 +191,10 @@ export async function measureAsync<T>(
       name: `${name}:error`,
       duration,
       timestamp: new Date(),
-      metadata: { ...metadata, error: error instanceof Error ? error.message : String(error) },
+      metadata: {
+        ...metadata,
+        error: error instanceof Error ? error.message : String(error),
+      },
       traceId,
     });
 
@@ -202,7 +208,7 @@ export async function measureAsync<T>(
 export function measure<T>(
   name: string,
   fn: () => T,
-  metadata?: Record<string, unknown>
+  metadata?: Record<string, unknown>,
 ): T {
   const startTime = performance.now();
   const traceId = getCurrentTraceId();
@@ -227,7 +233,10 @@ export function measure<T>(
       name: `${name}:error`,
       duration,
       timestamp: new Date(),
-      metadata: { ...metadata, error: error instanceof Error ? error.message : String(error) },
+      metadata: {
+        ...metadata,
+        error: error instanceof Error ? error.message : String(error),
+      },
       traceId,
     });
 
@@ -240,13 +249,14 @@ export function measure<T>(
  */
 export function Measure(name?: string) {
   return function (
-    target: any,
+    target: any, // eslint-disable-line @typescript-eslint/no-explicit-any -- decorator target type
     propertyKey: string,
-    descriptor: PropertyDescriptor
+    descriptor: PropertyDescriptor,
   ) {
     const originalMethod = descriptor.value;
     const metricName = name || `${target.constructor.name}.${propertyKey}`;
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- decorator args type
     descriptor.value = async function (...args: any[]) {
       return measureAsync(metricName, () => originalMethod.apply(this, args), {
         class: target.constructor.name,
@@ -265,7 +275,10 @@ export class Timer {
   private startTime: number;
   private endTime?: number;
 
-  constructor(private name: string, private metadata?: Record<string, unknown>) {
+  constructor(
+    private name: string,
+    private metadata?: Record<string, unknown>,
+  ) {
     this.startTime = performance.now();
   }
 
@@ -333,7 +346,7 @@ export function clearTraceId(): void {
  */
 export async function withTraceId<T>(
   traceId: string,
-  fn: () => Promise<T>
+  fn: () => Promise<T>,
 ): Promise<T> {
   const previousTraceId = currentTraceId;
   setTraceId(traceId);
@@ -359,7 +372,7 @@ export const queryPerformance = {
   async trackQuery<T>(
     queryName: string,
     tableName: string,
-    fn: () => Promise<T>
+    fn: () => Promise<T>,
   ): Promise<T> {
     return measureAsync(`db:${tableName}.${queryName}`, fn, {
       table: tableName,
@@ -372,10 +385,10 @@ export const queryPerformance = {
    */
   getQueryStats(tableName?: string): PerformanceStats[] {
     const allStats = performanceMonitor.getAllStats();
-    const dbStats = allStats.filter(s => s.name.startsWith('db:'));
+    const dbStats = allStats.filter((s) => s.name.startsWith("db:"));
 
     if (tableName) {
-      return dbStats.filter(s => s.name.includes(`.${tableName}.`));
+      return dbStats.filter((s) => s.name.includes(`.${tableName}.`));
     }
 
     return dbStats;
@@ -387,6 +400,6 @@ export const queryPerformance = {
   getSlowQueries(thresholdMs = 500): PerformanceMetric[] {
     return performanceMonitor
       .getSlowOperations(thresholdMs)
-      .filter(m => m.name.startsWith('db:'));
+      .filter((m) => m.name.startsWith("db:"));
   },
 };

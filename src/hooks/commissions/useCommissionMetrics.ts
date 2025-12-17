@@ -1,9 +1,9 @@
 // src/hooks/commissions/useCommissionMetrics.ts
 
-import {useQuery} from '@tanstack/react-query';
-import {commissionService} from '../../services';
-import {CommissionSummary} from '../../types/commission.types';
-import {useCarriers} from '../carriers/useCarriers';
+import { useQuery } from "@tanstack/react-query";
+import { commissionService } from "../../services";
+import { CommissionSummary } from "../../types/commission.types";
+import { useCarriers } from "../carriers/useCarriers";
 
 export interface UseCommissionMetricsOptions {
   enabled?: boolean;
@@ -20,7 +20,7 @@ export function useCommissionMetrics(options?: UseCommissionMetricsOptions) {
   const { data: carriers = [] } = useCarriers();
 
   return useQuery({
-    queryKey: ['commission-metrics'],
+    queryKey: ["commission-metrics"],
     queryFn: async () => {
       // Get all commissions
       const commissions = await commissionService.getAll();
@@ -46,7 +46,7 @@ export function useCommissionMetrics(options?: UseCommissionMetricsOptions) {
         { name: string; totalCommissions: number; count: number }
       >();
       commissions.forEach((commission) => {
-        const carrier = carriers.find(c => c.id === commission.carrierId);
+        const carrier = carriers.find((c) => c.id === commission.carrierId);
         const carrierName = carrier?.name || "Unknown";
         const existing = carrierMap.get(commission.carrierId) || {
           name: carrierName,
@@ -89,6 +89,7 @@ export function useCommissionMetrics(options?: UseCommissionMetricsOptions) {
 
       const productBreakdown = Array.from(productMap.entries()).map(
         ([product, data]) => ({
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic product type
           product: product as any,
           count: data.count,
           totalCommissions: data.totalCommissions,
@@ -101,7 +102,10 @@ export function useCommissionMetrics(options?: UseCommissionMetricsOptions) {
         { count: number; totalCommissions: number }
       >();
       commissions.forEach((commission) => {
-        const clientState = commission.client.state || commission.client.name.split(' ').pop() || 'Unknown';
+        const clientState =
+          commission.client.state ||
+          commission.client.name.split(" ").pop() ||
+          "Unknown";
         const existing = stateMap.get(clientState) || {
           count: 0,
           totalCommissions: 0,

@@ -142,6 +142,7 @@ export function PhaseChecklist({
         userId,
         itemId,
         statusData: {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- checklist status type
           status: newStatus as any,
           completed_by: newStatus === "completed" ? currentUserId : undefined,
         },
@@ -149,6 +150,7 @@ export function PhaseChecklist({
       showToast.success(
         newStatus === "completed" ? "Task marked as complete" : "Task unmarked",
       );
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- error object type
     } catch (error: any) {
       console.error("Failed to update checklist item:", error);
       showToast.error(
@@ -170,6 +172,7 @@ export function PhaseChecklist({
         },
       });
       showToast.success("Item approved successfully");
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- error object type
     } catch (error: any) {
       console.error("Failed to approve item:", error);
       showToast.error(
@@ -192,6 +195,7 @@ export function PhaseChecklist({
         },
       });
       showToast.success("Item rejected");
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- error object type
     } catch (error: any) {
       console.error("Failed to reject item:", error);
       showToast.error(

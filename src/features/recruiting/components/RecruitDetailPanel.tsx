@@ -174,7 +174,9 @@ export function RecruitDetailPanel({
       : recruit.email?.substring(0, 2).toUpperCase() || "??";
 
   const phases = template?.phases || [];
+
   const sortedPhases = [...phases].sort(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- phase template type
     (a: any, b: any) => a.phase_order - b.phase_order,
   );
   const progressMap = new Map(phaseProgress?.map((p) => [p.phase_id, p]) || []);
@@ -182,6 +184,7 @@ export function RecruitDetailPanel({
     phaseProgress?.filter((p) => p.status === "completed").length || 0;
 
   const viewingPhaseId = selectedPhaseId || currentPhase?.phase_id;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- phase template type
   const viewingPhase = sortedPhases.find((p: any) => p.id === viewingPhaseId);
   const viewingChecklistItems = viewingPhase?.checklist_items || [];
 
@@ -334,6 +337,7 @@ export function RecruitDetailPanel({
           </div>
           <TooltipProvider delayDuration={200}>
             <div className="flex items-center gap-0.5">
+              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any -- phase template type */}
               {sortedPhases.map((phase: any, index: number) => {
                 const progress = progressMap.get(phase.id);
                 const status = progress?.status || "not_started";

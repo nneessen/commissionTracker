@@ -1,9 +1,12 @@
-import {useQuery, useMutation, useQueryClient} from '@tanstack/react-query';
-import {compGuideService, type CompGuideCreateData} from '@/services/settings/compGuideService';
-import {toast} from 'sonner';
-import type {Database} from '@/types/database.types';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  compGuideService,
+  type CompGuideCreateData,
+} from "@/services/settings/compGuideService";
+import { toast } from "sonner";
+import type { Database } from "@/types/database.types";
 
-type ProductType = Database['public']['Enums']['product_type'];
+type ProductType = Database["public"]["Enums"]["product_type"];
 
 export interface CommissionRate {
   id: string;
@@ -51,8 +54,12 @@ export function useCommissionRates() {
   const queryClient = useQueryClient();
 
   // Fetch all commission data in grid format
-  const { data: gridData = [], isLoading, error } = useQuery({
-    queryKey: ['commission-grid'],
+  const {
+    data: gridData = [],
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ["commission-grid"],
     queryFn: async () => {
       const data = await compGuideService.getAllCommissionData();
       return data || [];
@@ -60,21 +67,25 @@ export function useCommissionRates() {
   });
 
   // Transform grid data to product-with-rates format
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- grid data type
   const productsWithRates: ProductWithRates[] = gridData.map((row: any) => {
     const ratesCount = Object.keys(row.rates || {}).length;
     return {
-      productId: row.productId || '',
-      productName: row.productName || '',
-      carrierId: row.carrierId || '',
-      carrierName: row.carrierName || '',
-      productType: row.productType || 'term_life',
-      rates: Object.entries(row.rates || {}).reduce((acc, [level, percentage]) => {
-        acc[Number(level)] = {
-          id: '', // We'll need to fetch this when editing
-          percentage: Number(percentage),
-        };
-        return acc;
-      }, {} as Record<number, { id: string; percentage: number }>),
+      productId: row.productId || "",
+      productName: row.productName || "",
+      carrierId: row.carrierId || "",
+      carrierName: row.carrierName || "",
+      productType: row.productType || "term_life",
+      rates: Object.entries(row.rates || {}).reduce(
+        (acc, [level, percentage]) => {
+          acc[Number(level)] = {
+            id: "", // We'll need to fetch this when editing
+            percentage: Number(percentage),
+          };
+          return acc;
+        },
+        {} as Record<number, { id: string; percentage: number }>,
+      ),
       rateCoverage: `${ratesCount}/${CONTRACT_LEVELS.length}`,
     };
   });
@@ -101,8 +112,8 @@ export function useCommissionRates() {
       return result.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['commission-grid'] });
-      toast.success('Commission rate created successfully');
+      queryClient.invalidateQueries({ queryKey: ["commission-grid"] });
+      toast.success("Commission rate created successfully");
     },
     onError: (error: Error) => {
       toast.error(`Failed to create rate: ${error.message}`);
@@ -122,8 +133,8 @@ export function useCommissionRates() {
       return result.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['commission-grid'] });
-      toast.success('Commission rate updated successfully');
+      queryClient.invalidateQueries({ queryKey: ["commission-grid"] });
+      toast.success("Commission rate updated successfully");
     },
     onError: (error: Error) => {
       toast.error(`Failed to update rate: ${error.message}`);
@@ -138,8 +149,8 @@ export function useCommissionRates() {
       return result.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['commission-grid'] });
-      toast.success('Commission rate deleted successfully');
+      queryClient.invalidateQueries({ queryKey: ["commission-grid"] });
+      toast.success("Commission rate deleted successfully");
     },
     onError: (error: Error) => {
       toast.error(`Failed to delete rate: ${error.message}`);
@@ -150,7 +161,7 @@ export function useCommissionRates() {
   const bulkCreateRates = useMutation({
     mutationFn: async (rates: CreateRateData[]) => {
       const result = await compGuideService.createBulkEntries(
-        rates.map(r => ({
+        rates.map((r) => ({
           carrier_id: r.carrier_id,
           product_id: r.product_id || undefined,
           product_type: r.product_type || undefined,
@@ -158,14 +169,16 @@ export function useCommissionRates() {
           commission_percentage: r.commission_percentage,
           effective_date: r.effective_date,
           expiration_date: r.expiration_date || undefined,
-        }))
+        })),
       );
       if (result.error) throw new Error(result.error.message);
       return result.data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['commission-grid'] });
-      toast.success(`Successfully imported ${data?.length || 0} commission rates`);
+      queryClient.invalidateQueries({ queryKey: ["commission-grid"] });
+      toast.success(
+        `Successfully imported ${data?.length || 0} commission rates`,
+      );
     },
     onError: (error: Error) => {
       toast.error(`Failed to import rates: ${error.message}`);

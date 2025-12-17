@@ -1,7 +1,7 @@
 // src/services/recruiting/authUserService.ts
 
-import { createClient } from '@supabase/supabase-js';
-import type { Database } from '@/types/database.types';
+import { createClient } from "@supabase/supabase-js";
+import type { Database } from "@/types/database.types";
 
 // Use anon key - service role key is not available client-side
 // This service will create Edge Function calls instead
@@ -11,9 +11,9 @@ const supabaseClient = createClient<Database>(
   {
     auth: {
       autoRefreshToken: false,
-      persistSession: false
-    }
-  }
+      persistSession: false,
+    },
+  },
 );
 
 export interface CreateAuthUserParams {
@@ -28,6 +28,7 @@ export interface CreateAuthUserResult {
   user: {
     id: string;
     email: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Supabase auth user type
     [key: string]: any;
   };
   emailSent: boolean;
@@ -44,36 +45,39 @@ export async function createAuthUserWithProfile({
   fullName,
   roles,
   isAdmin = false,
-  skipPipeline = false
+  skipPipeline = false,
 }: CreateAuthUserParams): Promise<CreateAuthUserResult> {
   try {
     // Call Edge Function to create user with proper password reset email
-    const { data, error } = await supabaseClient.functions.invoke('create-auth-user', {
-      body: {
-        email,
-        fullName,
-        roles,
-        isAdmin,
-        skipPipeline
-      }
-    });
+    const { data, error } = await supabaseClient.functions.invoke(
+      "create-auth-user",
+      {
+        body: {
+          email,
+          fullName,
+          roles,
+          isAdmin,
+          skipPipeline,
+        },
+      },
+    );
 
     if (error) {
-      console.error('Auth user creation error:', error);
+      console.error("Auth user creation error:", error);
       throw new Error(`Failed to create auth user: ${error.message || error}`);
     }
 
     if (!data?.user) {
-      throw new Error('No user returned from auth creation');
+      throw new Error("No user returned from auth creation");
     }
 
     return {
       user: data.user,
       emailSent: data.emailSent ?? false,
-      message: data.message ?? 'User created'
+      message: data.message ?? "User created",
     };
   } catch (error) {
-    console.error('Create auth user with profile error:', error);
+    console.error("Create auth user with profile error:", error);
     throw error;
   }
 }
@@ -83,13 +87,13 @@ export async function createAuthUserWithProfile({
  */
 export async function checkUserExists(email: string): Promise<boolean> {
   const { data, error } = await supabaseClient
-    .from('user_profiles')
-    .select('id')
-    .eq('email', email)
+    .from("user_profiles")
+    .select("id")
+    .eq("email", email)
     .maybeSingle();
 
-  if (error && error.code !== 'PGRST116') {
-    console.error('Error checking user existence:', error);
+  if (error && error.code !== "PGRST116") {
+    console.error("Error checking user existence:", error);
     return false;
   }
 

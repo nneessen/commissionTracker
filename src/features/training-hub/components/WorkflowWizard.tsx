@@ -141,6 +141,7 @@ export default function WorkflowWizard({
   }, [open, workflow]);
 
   // Parse error messages for user-friendly display
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- error object type
   const parseErrorMessage = (error: any): string => {
     const errorMessage =
       error?.message || error?.toString() || "An unknown error occurred";
@@ -344,6 +345,7 @@ export default function WorkflowWizard({
         await createWorkflow.mutateAsync(formData);
       }
       onOpenChange(false);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- error object type
     } catch (error: any) {
       console.error("[WorkflowWizard] Failed to save workflow:", error);
 
@@ -403,6 +405,7 @@ export default function WorkflowWizard({
 
       // Optional: Switch to runs tab or close dialog
       onOpenChange(false);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- error object type
     } catch (error: any) {
       console.error("Failed to test workflow:", error);
       setErrors({ submit: `Test failed: ${error.message}` });

@@ -326,6 +326,7 @@ export function calculatePaceMetrics(
       : 0;
 
   // Get time remaining in the current period
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- time period string matching
   const timeRemaining = getTimeRemaining(timePeriod as any);
   const daysRemaining = Math.max(
     1,

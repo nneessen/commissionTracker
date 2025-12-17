@@ -11,6 +11,7 @@ type CompGuideInsert = Database["public"]["Tables"]["comp_guide"]["Insert"];
 export const compRatesKeys = {
   all: ["comp-rates"] as const,
   lists: () => [...compRatesKeys.all, "list"] as const,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- generic filter type
   list: (filters?: Record<string, any>) =>
     [...compRatesKeys.lists(), filters] as const,
   details: () => [...compRatesKeys.all, "detail"] as const,

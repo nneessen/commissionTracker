@@ -29,12 +29,13 @@ export interface AgentDetails {
 }
 
 export interface AgentActivity {
-  type: 'policy' | 'commission' | 'override' | 'other';
-  category?: 'policy' | 'commission' | 'override';
+  type: "policy" | "commission" | "override" | "other";
+  category?: "policy" | "commission" | "override";
   title: string;
   description: string;
   timestamp?: string;
   date?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic metadata shape
   metadata?: Record<string, any>;
 }
 
@@ -66,7 +67,7 @@ export interface AgentPolicy {
   product: string;
   carrier: string;
   annualPremium: number;
-  status: 'active' | 'lapsed' | 'cancelled';
+  status: "active" | "lapsed" | "cancelled";
   issueDate: string;
 }
 
@@ -85,7 +86,7 @@ export interface AgentCommission {
   policyNumber: string;
   type: string;
   amount: number;
-  status: 'pending' | 'earned' | 'paid';
+  status: "pending" | "earned" | "paid";
 }
 
 export interface AgentOverridesData {

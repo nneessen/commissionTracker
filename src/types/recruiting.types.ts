@@ -1,8 +1,8 @@
 // src/types/recruiting.types.ts
 
-import type {Database} from './database.types';
+import type { Database } from "./database.types";
 
-export type AgentStatus = Database['public']['Enums']['agent_status'];
+export type AgentStatus = Database["public"]["Enums"]["agent_status"];
 
 export interface LicensingInfo {
   licenseNumber?: string;
@@ -75,6 +75,7 @@ export interface PhaseChecklistItem {
   verification_by: string | null;
   document_type?: string | null;
   external_link?: string | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic metadata shape
   metadata?: Record<string, any> | null;
   is_active: boolean;
 }
@@ -84,7 +85,7 @@ export interface RecruitPhaseProgress {
   user_id: string;
   phase_id: string;
   template_id: string;
-  status: 'not_started' | 'in_progress' | 'completed' | 'blocked' | 'skipped';
+  status: "not_started" | "in_progress" | "completed" | "blocked" | "skipped";
   started_at: string | null;
   completed_at: string | null;
   blocked_reason: string | null;
@@ -97,7 +98,15 @@ export interface RecruitChecklistProgress {
   id: string;
   user_id: string;
   checklist_item_id: string;
-  status: 'not_started' | 'pending' | 'in_progress' | 'completed' | 'verified' | 'approved' | 'rejected' | 'needs_resubmission';
+  status:
+    | "not_started"
+    | "pending"
+    | "in_progress"
+    | "completed"
+    | "verified"
+    | "approved"
+    | "rejected"
+    | "needs_resubmission";
   completed_at: string | null;
   completed_by: string | null;
   verified_at: string | null;
@@ -105,44 +114,51 @@ export interface RecruitChecklistProgress {
   rejection_reason: string | null;
   notes: string | null;
   document_id?: string | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic metadata shape
   metadata?: Record<string, any> | null;
 }
 
 // Type guards
-export function isLicensedAgent(status: AgentStatus | null | undefined): boolean {
-  return status === 'licensed';
+export function isLicensedAgent(
+  status: AgentStatus | null | undefined,
+): boolean {
+  return status === "licensed";
 }
 
-export function requiresPipeline(status: AgentStatus | null | undefined): boolean {
-  return status === 'unlicensed' || status === 'licensed';
+export function requiresPipeline(
+  status: AgentStatus | null | undefined,
+): boolean {
+  return status === "unlicensed" || status === "licensed";
 }
 
-export function shouldSkipPipeline(status: AgentStatus | null | undefined): boolean {
-  return status === 'not_applicable';
+export function shouldSkipPipeline(
+  status: AgentStatus | null | undefined,
+): boolean {
+  return status === "not_applicable";
 }
 
 // Status color mappings for UI badges
 export const ONBOARDING_STATUS_COLORS: Record<string, string> = {
-  interview_1: 'bg-blue-100 text-blue-800',
-  interview_2: 'bg-blue-100 text-blue-800',
-  contracting: 'bg-purple-100 text-purple-800',
-  licensing: 'bg-yellow-100 text-yellow-800',
-  training: 'bg-orange-100 text-orange-800',
-  active: 'bg-green-100 text-green-800',
-  completed: 'bg-green-100 text-green-800',
-  blocked: 'bg-red-100 text-red-800',
-  withdrawn: 'bg-gray-100 text-gray-800',
+  interview_1: "bg-blue-100 text-blue-800",
+  interview_2: "bg-blue-100 text-blue-800",
+  contracting: "bg-purple-100 text-purple-800",
+  licensing: "bg-yellow-100 text-yellow-800",
+  training: "bg-orange-100 text-orange-800",
+  active: "bg-green-100 text-green-800",
+  completed: "bg-green-100 text-green-800",
+  blocked: "bg-red-100 text-red-800",
+  withdrawn: "bg-gray-100 text-gray-800",
 };
 
 export const CHECKLIST_STATUS_COLORS: Record<string, string> = {
-  not_started: 'bg-gray-100 text-gray-600',
-  pending: 'bg-gray-100 text-gray-800',
-  in_progress: 'bg-blue-100 text-blue-800',
-  completed: 'bg-green-100 text-green-800',
-  verified: 'bg-emerald-100 text-emerald-800',
-  approved: 'bg-emerald-100 text-emerald-800',
-  rejected: 'bg-red-100 text-red-800',
-  needs_resubmission: 'bg-amber-100 text-amber-800',
+  not_started: "bg-gray-100 text-gray-600",
+  pending: "bg-gray-100 text-gray-800",
+  in_progress: "bg-blue-100 text-blue-800",
+  completed: "bg-green-100 text-green-800",
+  verified: "bg-emerald-100 text-emerald-800",
+  approved: "bg-emerald-100 text-emerald-800",
+  rejected: "bg-red-100 text-red-800",
+  needs_resubmission: "bg-amber-100 text-amber-800",
 };
 
 // =============================================================================
@@ -151,58 +167,90 @@ export const CHECKLIST_STATUS_COLORS: Record<string, string> = {
 
 // OnboardingStatus mirrors pipeline phases
 export type OnboardingStatus =
-  | 'interview_1'
-  | 'zoom_interview'
-  | 'pre_licensing'
-  | 'exam'
-  | 'npn_received'
-  | 'contracting'
-  | 'bootcamp'
-  | 'completed'
-  | 'dropped';
+  | "interview_1"
+  | "zoom_interview"
+  | "pre_licensing"
+  | "exam"
+  | "npn_received"
+  | "contracting"
+  | "bootcamp"
+  | "completed"
+  | "dropped";
 
 // PhaseName matches database pipeline_phases.phase_name values
 export type PhaseName =
-  | 'Interview 1'
-  | 'Zoom Interview'
-  | 'Pre-Licensing'
-  | 'Exam'
-  | 'NPN Received'
-  | 'Contracting'
-  | 'Bootcamp';
+  | "Interview 1"
+  | "Zoom Interview"
+  | "Pre-Licensing"
+  | "Exam"
+  | "NPN Received"
+  | "Contracting"
+  | "Bootcamp";
 
-export type PhaseStatus = 'not_started' | 'in_progress' | 'completed' | 'blocked';
-export type PhaseProgressStatus = 'not_started' | 'in_progress' | 'completed' | 'blocked' | 'skipped';
-export type ChecklistItemStatus = 'not_started' | 'in_progress' | 'completed' | 'approved' | 'rejected' | 'needs_resubmission';
-export type ChecklistItemType = 'document_upload' | 'task_completion' | 'training_module' | 'manual_approval' | 'automated_check' | 'signature_required';
-export type CompletedBy = 'recruit' | 'upline' | 'system';
-export type RequiredApproverRole = 'upline' | 'admin' | 'system';
+export type PhaseStatus =
+  | "not_started"
+  | "in_progress"
+  | "completed"
+  | "blocked";
+export type PhaseProgressStatus =
+  | "not_started"
+  | "in_progress"
+  | "completed"
+  | "blocked"
+  | "skipped";
+export type ChecklistItemStatus =
+  | "not_started"
+  | "in_progress"
+  | "completed"
+  | "approved"
+  | "rejected"
+  | "needs_resubmission";
+export type ChecklistItemType =
+  | "document_upload"
+  | "task_completion"
+  | "training_module"
+  | "manual_approval"
+  | "automated_check"
+  | "signature_required";
+export type CompletedBy = "recruit" | "upline" | "system";
+export type RequiredApproverRole = "upline" | "admin" | "system";
 
 export type DocumentType =
-  | 'application'
-  | 'background_check'
-  | 'license'
-  | 'contract'
-  | 'resume'
-  | 'identification'
-  | 'certification'
-  | 'other';
+  | "application"
+  | "background_check"
+  | "license"
+  | "contract"
+  | "resume"
+  | "identification"
+  | "certification"
+  | "other";
 
-export type DocumentStatus = 'pending' | 'received' | 'approved' | 'rejected' | 'expired';
-export type EmailStatus = 'draft' | 'sending' | 'sent' | 'delivered' | 'opened' | 'failed';
+export type DocumentStatus =
+  | "pending"
+  | "received"
+  | "approved"
+  | "rejected"
+  | "expired";
+export type EmailStatus =
+  | "draft"
+  | "sending"
+  | "sent"
+  | "delivered"
+  | "opened"
+  | "failed";
 
 export type ActivityAction =
-  | 'created'
-  | 'updated'
-  | 'deleted'
-  | 'phase_changed'
-  | 'document_uploaded'
-  | 'document_approved'
-  | 'document_rejected'
-  | 'email_sent'
-  | 'status_changed'
-  | 'note_added'
-  | 'other';
+  | "created"
+  | "updated"
+  | "deleted"
+  | "phase_changed"
+  | "document_uploaded"
+  | "document_approved"
+  | "document_rejected"
+  | "email_sent"
+  | "status_changed"
+  | "note_added"
+  | "other";
 
 // Entity interfaces
 export interface OnboardingPhase {
@@ -354,10 +402,11 @@ export interface CreateChecklistItemInput {
   is_required?: boolean;
   can_be_completed_by?: CompletedBy;
   requires_verification?: boolean;
-  verification_by?: 'upline' | 'system';
+  verification_by?: "upline" | "system";
   external_link?: string;
   document_type?: string;
-  metadata?: Record<string, unknown>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic metadata shape
+  metadata?: Record<string, any>;
 }
 
 export interface UpdateChecklistItemInput {
@@ -368,10 +417,11 @@ export interface UpdateChecklistItemInput {
   is_required?: boolean;
   can_be_completed_by?: CompletedBy;
   requires_verification?: boolean;
-  verification_by?: 'upline' | 'system';
+  verification_by?: "upline" | "system";
   external_link?: string;
   document_type?: string;
-  metadata?: Record<string, unknown>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic metadata shape
+  metadata?: Record<string, any>;
 }
 
 export interface UpdateChecklistItemStatusInput {
@@ -381,42 +431,48 @@ export interface UpdateChecklistItemStatusInput {
   rejection_reason?: string;
   document_id?: string;
   notes?: string;
-  metadata?: Record<string, unknown>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic metadata shape
+  metadata?: Record<string, any>;
 }
 
 // Display name mappings
 export const PHASE_DISPLAY_NAMES: Record<PhaseName, string> = {
-  'Interview 1': 'Interview 1',
-  'Zoom Interview': 'Zoom Interview',
-  'Pre-Licensing': 'Pre-Licensing',
-  'Exam': 'Exam',
-  'NPN Received': 'NPN Received',
-  'Contracting': 'Contracting',
-  'Bootcamp': 'Bootcamp',
+  "Interview 1": "Interview 1",
+  "Zoom Interview": "Zoom Interview",
+  "Pre-Licensing": "Pre-Licensing",
+  Exam: "Exam",
+  "NPN Received": "NPN Received",
+  Contracting: "Contracting",
+  Bootcamp: "Bootcamp",
 };
 
-export const CHECKLIST_ITEM_TYPE_DISPLAY_NAMES: Record<ChecklistItemType, string> = {
-  document_upload: 'Document Upload',
-  task_completion: 'Task Completion',
-  training_module: 'Training Module',
-  manual_approval: 'Manual Approval',
-  automated_check: 'Automated Check',
-  signature_required: 'Signature Required',
+export const CHECKLIST_ITEM_TYPE_DISPLAY_NAMES: Record<
+  ChecklistItemType,
+  string
+> = {
+  document_upload: "Document Upload",
+  task_completion: "Task Completion",
+  training_module: "Training Module",
+  manual_approval: "Manual Approval",
+  automated_check: "Automated Check",
+  signature_required: "Signature Required",
 };
 
 // Status icons
 export const PHASE_PROGRESS_ICONS: Record<PhaseProgressStatus, string> = {
-  not_started: '⚪',
-  in_progress: '🟡',
-  completed: '✅',
-  blocked: '🔴',
-  skipped: '⏭️',
+  not_started: "⚪",
+  in_progress: "🟡",
+  completed: "✅",
+  blocked: "🔴",
+  skipped: "⏭️",
 };
 
 export const PHASE_PROGRESS_COLORS: Record<PhaseProgressStatus, string> = {
-  not_started: 'text-muted-foreground bg-muted',
-  in_progress: 'text-yellow-700 bg-yellow-100 dark:text-yellow-400 dark:bg-yellow-950',
-  completed: 'text-green-700 bg-green-100 dark:text-green-400 dark:bg-green-950',
-  blocked: 'text-red-700 bg-red-100 dark:text-red-400 dark:bg-red-950',
-  skipped: 'text-gray-700 bg-gray-100 dark:text-gray-400 dark:bg-gray-950',
+  not_started: "text-muted-foreground bg-muted",
+  in_progress:
+    "text-yellow-700 bg-yellow-100 dark:text-yellow-400 dark:bg-yellow-950",
+  completed:
+    "text-green-700 bg-green-100 dark:text-green-400 dark:bg-green-950",
+  blocked: "text-red-700 bg-red-100 dark:text-red-400 dark:bg-red-950",
+  skipped: "text-gray-700 bg-gray-100 dark:text-gray-400 dark:bg-gray-950",
 };

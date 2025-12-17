@@ -70,7 +70,9 @@ export class AgentRepository extends BaseRepository<
   protected transformToDB(
     data: AgentCreateData | AgentUpdateData,
     isUpdate = false,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DB transformation requires flexible return type
   ): any {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DB transformation requires flexible object
     const dbData: any = {};
 
     if (data.name !== undefined) dbData.name = data.name;

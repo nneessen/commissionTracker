@@ -1,22 +1,48 @@
 // Workflow types for automation system
 
-import type {RecipientConfig} from './workflow-recipients.types';
+import type { RecipientConfig } from "./workflow-recipients.types";
 
-export type WorkflowStatus = 'draft' | 'active' | 'paused' | 'archived';
-export type WorkflowCategory = 'email' | 'recruiting' | 'commission' | 'general';
-export type TriggerType = 'manual' | 'schedule' | 'event' | 'webhook';
-export type WorkflowRunStatus = 'running' | 'completed' | 'failed' | 'cancelled';
+export type WorkflowStatus = "draft" | "active" | "paused" | "archived";
+export type WorkflowCategory =
+  | "email"
+  | "recruiting"
+  | "commission"
+  | "general";
+export type TriggerType = "manual" | "schedule" | "event" | "webhook";
+export type WorkflowRunStatus =
+  | "running"
+  | "completed"
+  | "failed"
+  | "cancelled";
 
 export interface WorkflowCondition {
   field: string;
-  operator: 'equals' | 'not_equals' | 'contains' | 'not_contains' | 'greater_than' | 'less_than' | 'in' | 'not_in';
+  operator:
+    | "equals"
+    | "not_equals"
+    | "contains"
+    | "not_contains"
+    | "greater_than"
+    | "less_than"
+    | "in"
+    | "not_in";
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic condition value
   value: any;
-  combineWith?: 'AND' | 'OR';
+  combineWith?: "AND" | "OR";
 }
 
 export interface WorkflowAction {
   id?: string;
-  type: 'send_email' | 'create_notification' | 'update_field' | 'create_task' | 'webhook' | 'wait' | 'branch' | 'assignuser' | 'ai_decision';
+  type:
+    | "send_email"
+    | "create_notification"
+    | "update_field"
+    | "create_task"
+    | "webhook"
+    | "wait"
+    | "branch"
+    | "assignuser"
+    | "ai_decision";
   order: number;
   config: {
     // Email action - NEW structured recipient config (preferred)
@@ -91,7 +117,7 @@ export interface WorkflowTrigger {
     dayOfWeek?: string;
     dayOfMonth?: number;
     // Flexible scheduling options
-    frequency?: 'hourly' | 'daily' | 'weekdays' | 'weekly' | 'monthly';
+    frequency?: "hourly" | "daily" | "weekdays" | "weekly" | "monthly";
     selectedDays?: string[]; // For weekly: ['monday', 'wednesday', 'friday']
     intervalHours?: number; // For hourly: run every X hours
   };
@@ -111,6 +137,7 @@ export interface Workflow {
   triggerType: TriggerType;
 
   // Configuration
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic workflow config
   config: Record<string, any>;
   conditions: WorkflowCondition[];
   actions: WorkflowAction[];
@@ -141,14 +168,17 @@ export interface WorkflowRun {
   durationMs?: number;
 
   // Context and results
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic workflow context
   context: Record<string, any>;
   actionsExecuted: Array<{
     actionId: string;
-    status: 'success' | 'failed' | 'skipped';
+    status: "success" | "failed" | "skipped";
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic action result
     result?: any;
     error?: string;
   }>;
   errorMessage?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic error details
   errorDetails?: Record<string, any>;
 
   // Performance metrics

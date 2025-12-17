@@ -1,23 +1,29 @@
 // File: /home/nneessen/projects/commissionTracker/src/hooks/workflows/useWorkflows.ts
 
-import {useQuery, useMutation, useQueryClient} from '@tanstack/react-query';
-import {toast} from 'sonner';
-import {workflowService} from '@/services/workflowService';
-import type {WorkflowFormData, WorkflowStatus, TriggerEventType} from '@/types/workflow.types';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { workflowService } from "@/services/workflowService";
+import type {
+  WorkflowFormData,
+  WorkflowStatus,
+  TriggerEventType,
+} from "@/types/workflow.types";
 
 // =====================================================
 // QUERY KEYS
 // =====================================================
 
 const QUERY_KEYS = {
-  workflows: (status?: WorkflowStatus) => ['workflows', status] as const,
-  workflow: (id: string) => ['workflow', id] as const,
-  workflowRuns: (workflowId?: string) => ['workflow-runs', workflowId] as const,
-  workflowRun: (id: string) => ['workflow-run', id] as const,
-  workflowTemplates: (category?: string) => ['workflow-templates', category] as const,
-  triggerEventTypes: ['trigger-event-types'] as const,
-  eventTypes: ['event-types'] as const,
-  workflowStats: (workflowId: string) => ['workflow-stats', workflowId] as const
+  workflows: (status?: WorkflowStatus) => ["workflows", status] as const,
+  workflow: (id: string) => ["workflow", id] as const,
+  workflowRuns: (workflowId?: string) => ["workflow-runs", workflowId] as const,
+  workflowRun: (id: string) => ["workflow-run", id] as const,
+  workflowTemplates: (category?: string) =>
+    ["workflow-templates", category] as const,
+  triggerEventTypes: ["trigger-event-types"] as const,
+  eventTypes: ["event-types"] as const,
+  workflowStats: (workflowId: string) =>
+    ["workflow-stats", workflowId] as const,
 };
 
 // =====================================================
@@ -42,7 +48,7 @@ export function useWorkflow(id: string) {
     queryFn: () => workflowService.getWorkflow(id),
     enabled: !!id,
     retry: 1,
-    retryDelay: 1000
+    retryDelay: 1000,
   });
 }
 
@@ -50,14 +56,15 @@ export function useCreateWorkflow() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (formData: WorkflowFormData) => workflowService.createWorkflow(formData),
+    mutationFn: (formData: WorkflowFormData) =>
+      workflowService.createWorkflow(formData),
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['workflows'] });
+      queryClient.invalidateQueries({ queryKey: ["workflows"] });
       toast.success(`Workflow "${data.name}" created successfully`);
     },
     onError: (error: Error) => {
       toast.error(`Failed to create workflow: ${error.message}`);
-    }
+    },
   });
 }
 
@@ -70,27 +77,29 @@ export function useUpdateWorkflow(id: string) {
     onSuccess: (data) => {
       // CRITICAL: Update the cache directly with the new data
       queryClient.setQueryData(QUERY_KEYS.workflow(id), data);
-      queryClient.setQueryData(['workflows'], (old: any) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- TanStack Query cache type
+      queryClient.setQueryData(["workflows"], (old: any) => {
         if (!old) return [data];
-        return old.map((w: any) => w.id === id ? data : w);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- TanStack Query cache type
+        return old.map((w: any) => (w.id === id ? data : w));
       });
 
       // Also invalidate to ensure fresh data on next fetch
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.workflow(id) });
-      queryClient.invalidateQueries({ queryKey: ['workflows'] });
+      queryClient.invalidateQueries({ queryKey: ["workflows"] });
 
       toast.success(`Workflow "${data.name}" updated successfully`);
 
-      console.log('[useUpdateWorkflow] Cache updated with:', {
+      console.log("[useUpdateWorkflow] Cache updated with:", {
         id,
         triggerType: data.triggerType,
-        'config.trigger': data.config?.trigger
+        "config.trigger": data.config?.trigger,
       });
     },
     onError: (error: Error) => {
       toast.error(`Failed to update workflow: ${error.message}`);
-      console.error('[useUpdateWorkflow] Update failed:', error);
-    }
+      console.error("[useUpdateWorkflow] Update failed:", error);
+    },
   });
 }
 
@@ -100,12 +109,12 @@ export function useDeleteWorkflow() {
   return useMutation({
     mutationFn: (id: string) => workflowService.deleteWorkflow(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['workflows'] });
-      toast.success('Workflow deleted successfully');
+      queryClient.invalidateQueries({ queryKey: ["workflows"] });
+      toast.success("Workflow deleted successfully");
     },
     onError: (error: Error) => {
       toast.error(`Failed to delete workflow: ${error.message}`);
-    }
+    },
   });
 }
 
@@ -117,20 +126,20 @@ export function useUpdateWorkflowStatus() {
       workflowService.updateWorkflowStatus(id, status),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.workflow(data.id) });
-      queryClient.invalidateQueries({ queryKey: ['workflows'] });
+      queryClient.invalidateQueries({ queryKey: ["workflows"] });
 
       const statusMessages: Record<WorkflowStatus, string> = {
-        active: 'activated',
-        paused: 'paused',
-        draft: 'set to draft',
-        archived: 'archived'
+        active: "activated",
+        paused: "paused",
+        draft: "set to draft",
+        archived: "archived",
       };
 
       toast.success(`Workflow ${statusMessages[data.status]}`);
     },
     onError: (error: Error) => {
       toast.error(`Failed to update workflow status: ${error.message}`);
-    }
+    },
   });
 }
 
@@ -156,7 +165,7 @@ export function useWorkflowRun(id: string) {
     queryFn: () => workflowService.getWorkflowRun(id),
     enabled: !!id,
     retry: 1,
-    retryDelay: 1000
+    retryDelay: 1000,
     // TODO: Add refetchInterval when run is in progress
   });
 }
@@ -165,16 +174,26 @@ export function useTriggerWorkflow() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ workflowId, context }: { workflowId: string; context?: Record<string, any> }) =>
-      workflowService.triggerWorkflow(workflowId, context),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic context data
+    mutationFn: ({
+      workflowId,
+      context,
+    }: {
+      workflowId: string;
+      context?: Record<string, any>;
+    }) => workflowService.triggerWorkflow(workflowId, context),
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.workflowRuns(data.workflowId) });
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.workflowStats(data.workflowId) });
-      toast.success('Workflow triggered successfully');
+      queryClient.invalidateQueries({
+        queryKey: QUERY_KEYS.workflowRuns(data.workflowId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: QUERY_KEYS.workflowStats(data.workflowId),
+      });
+      toast.success("Workflow triggered successfully");
     },
     onError: (error: Error) => {
       toast.error(`Failed to trigger workflow: ${error.message}`);
-    }
+    },
   });
 }
 
@@ -184,13 +203,17 @@ export function useCancelWorkflowRun() {
   return useMutation({
     mutationFn: (runId: string) => workflowService.cancelWorkflowRun(runId),
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.workflowRun(data.id) });
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.workflowRuns(data.workflowId) });
-      toast.success('Workflow run cancelled');
+      queryClient.invalidateQueries({
+        queryKey: QUERY_KEYS.workflowRun(data.id),
+      });
+      queryClient.invalidateQueries({
+        queryKey: QUERY_KEYS.workflowRuns(data.workflowId),
+      });
+      toast.success("Workflow run cancelled");
     },
     onError: (error: Error) => {
       toast.error(`Failed to cancel workflow run: ${error.message}`);
-    }
+    },
   });
 }
 
@@ -216,12 +239,12 @@ export function useCreateWorkflowFromTemplate() {
     mutationFn: ({ templateId, name }: { templateId: string; name: string }) =>
       workflowService.createWorkflowFromTemplate(templateId, name),
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['workflows'] });
+      queryClient.invalidateQueries({ queryKey: ["workflows"] });
       toast.success(`Workflow "${data.name}" created from template`);
     },
     onError: (error: Error) => {
       toast.error(`Failed to create workflow from template: ${error.message}`);
-    }
+    },
   });
 }
 
@@ -255,16 +278,16 @@ export function useCreateEventType() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: Omit<TriggerEventType, 'id' | 'created_at'>) =>
+    mutationFn: (data: Omit<TriggerEventType, "id" | "created_at">) =>
       workflowService.createEventType(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.eventTypes });
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.triggerEventTypes });
-      toast.success('Event type created successfully');
+      toast.success("Event type created successfully");
     },
     onError: (error) => {
-      console.error('Failed to create event type:', error);
-      toast.error('Failed to create event type');
+      console.error("Failed to create event type:", error);
+      toast.error("Failed to create event type");
     },
   });
 }
@@ -278,11 +301,11 @@ export function useUpdateEventType() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.eventTypes });
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.triggerEventTypes });
-      toast.success('Event type updated successfully');
+      toast.success("Event type updated successfully");
     },
     onError: (error) => {
-      console.error('Failed to update event type:', error);
-      toast.error('Failed to update event type');
+      console.error("Failed to update event type:", error);
+      toast.error("Failed to update event type");
     },
   });
 }
@@ -295,11 +318,11 @@ export function useDeleteEventType() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.eventTypes });
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.triggerEventTypes });
-      toast.success('Event type deleted successfully');
+      toast.success("Event type deleted successfully");
     },
     onError: (error) => {
-      console.error('Failed to delete event type:', error);
-      toast.error('Failed to delete event type');
+      console.error("Failed to delete event type:", error);
+      toast.error("Failed to delete event type");
     },
   });
 }
@@ -315,7 +338,7 @@ export function useWorkflowStats(workflowId: string) {
     enabled: !!workflowId,
     staleTime: 30000, // 30 seconds
     retry: 1,
-    retryDelay: 1000
+    retryDelay: 1000,
   });
 }
 
@@ -327,16 +350,22 @@ export function useTestWorkflow() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ workflowId, testContext }: {
+    mutationFn: ({
+      workflowId,
+      testContext,
+    }: {
       workflowId: string;
-      testContext: Record<string, any>
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic context data
+      testContext: Record<string, any>;
     }) => workflowService.testWorkflow(workflowId, testContext),
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.workflowRuns(data.workflowId) });
-      toast.success('Test run started - check the runs tab for results');
+      queryClient.invalidateQueries({
+        queryKey: QUERY_KEYS.workflowRuns(data.workflowId),
+      });
+      toast.success("Test run started - check the runs tab for results");
     },
     onError: (error: Error) => {
       toast.error(`Failed to test workflow: ${error.message}`);
-    }
+    },
   });
 }

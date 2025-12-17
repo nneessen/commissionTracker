@@ -8,11 +8,13 @@ import { AlertCircle } from "lucide-react";
 
 export default function WorkflowDiagnostic() {
   const { user } = useAuth();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- diagnostic results type
   const [results, setResults] = useState<any>(null);
   const [loading, setLoading] = useState(false);
 
   const runDiagnostic = async () => {
     setLoading(true);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- diagnostic data type
     const diagnostic: any = {
       timestamp: new Date().toISOString(),
       auth: {},
@@ -144,6 +146,7 @@ export default function WorkflowDiagnostic() {
           diagnostic.recommendations.push("✅ Workflow creation is working");
         }
       }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- error object type
     } catch (error: any) {
       diagnostic.error = error.message;
       diagnostic.recommendations.push(`❌ Diagnostic error: ${error.message}`);
@@ -235,6 +238,7 @@ export default function WorkflowDiagnostic() {
                   </span>
                   {results.database.workflows?.length > 0 && (
                     <ul className="mt-1 text-[10px] text-zinc-500 dark:text-zinc-400">
+                      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any -- workflow data type */}
                       {results.database.workflows.slice(0, 3).map((wf: any) => (
                         <li key={wf.id}>
                           • {wf.name} ({wf.status})

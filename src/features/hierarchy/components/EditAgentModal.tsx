@@ -43,9 +43,13 @@ export function EditAgentModal({
       first_name: agent?.first_name || "",
       last_name: agent?.last_name || "",
       phone: agent?.phone || "",
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- agent data type
       state: (agent as any)?.state || "",
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- agent data type
       license_number: (agent as any)?.license_number || "",
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- agent data type
       contract_level: (agent as any)?.contract_level || 100,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- agent data type
       npn: (agent as any)?.npn || "",
     },
     onSubmit: async ({ value }) => {

@@ -58,7 +58,7 @@ export const CompGuideImporter: React.FC<CompGuideImporterProps> = ({
       setProgress(0);
       setImportResults({ success: 0, errors: [], imported: [] });
     }
-  }, [isOpen]);
+  }, [isOpen, ffgCarriers]);
 
   const getImportSummary = (): ImportSummary => {
     const filteredData = FFG_COMP_GUIDE_DATA.filter((item) =>

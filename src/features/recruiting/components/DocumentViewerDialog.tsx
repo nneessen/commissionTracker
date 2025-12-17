@@ -1,11 +1,17 @@
 // src/features/recruiting/components/DocumentViewerDialog.tsx
 
-import React, { useEffect, useState } from 'react';
-import {Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle} from '@/components/ui/dialog';
-import {Button} from '@/components/ui/button';
-import {Download, Loader2, FileText} from 'lucide-react';
-import {UserDocument} from '@/types/recruiting.types';
-import {recruitingService} from '@/services/recruiting';
+import React, { useEffect, useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Download, Loader2, FileText } from "lucide-react";
+import { UserDocument } from "@/types/recruiting.types";
+import { recruitingService } from "@/services/recruiting";
 
 interface DocumentViewerDialogProps {
   open: boolean;
@@ -13,40 +19,49 @@ interface DocumentViewerDialogProps {
   document: UserDocument;
 }
 
-export function DocumentViewerDialog({ open, onOpenChange, document: userDocument }: DocumentViewerDialogProps) {
+export function DocumentViewerDialog({
+  open,
+  onOpenChange,
+  document: userDocument,
+}: DocumentViewerDialogProps) {
   const [documentUrl, setDocumentUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
+    let currentUrl: string | null = null;
+
+    const loadDocument = async () => {
+      setIsLoading(true);
+      try {
+        const blob = await recruitingService.downloadDocument(
+          userDocument.storage_path,
+        );
+        const url = URL.createObjectURL(blob);
+        currentUrl = url;
+        setDocumentUrl(url);
+      } catch (error) {
+        console.error("Failed to load document:", error);
+        alert("Failed to load document");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
     if (open && userDocument) {
       loadDocument();
     }
 
     return () => {
-      if (documentUrl) {
-        URL.revokeObjectURL(documentUrl);
+      if (currentUrl) {
+        URL.revokeObjectURL(currentUrl);
       }
     };
   }, [open, userDocument]);
 
-  const loadDocument = async () => {
-    setIsLoading(true);
-    try {
-      const blob = await recruitingService.downloadDocument(userDocument.storage_path);
-      const url = URL.createObjectURL(blob);
-      setDocumentUrl(url);
-    } catch (error) {
-      console.error('Failed to load document:', error);
-      alert('Failed to load document');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const handleDownload = () => {
     if (!documentUrl) return;
 
-    const a = globalThis.document.createElement('a');
+    const a = globalThis.document.createElement("a");
     a.href = documentUrl;
     a.download = userDocument.file_name;
     globalThis.document.body.appendChild(a);
@@ -54,8 +69,8 @@ export function DocumentViewerDialog({ open, onOpenChange, document: userDocumen
     globalThis.document.body.removeChild(a);
   };
 
-  const isImage = userDocument.file_type?.startsWith('image/');
-  const isPdf = userDocument.file_type === 'application/pdf';
+  const isImage = userDocument.file_type?.startsWith("image/");
+  const isPdf = userDocument.file_type === "application/pdf";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -63,7 +78,8 @@ export function DocumentViewerDialog({ open, onOpenChange, document: userDocumen
         <DialogHeader>
           <DialogTitle>{userDocument.document_name}</DialogTitle>
           <DialogDescription>
-            {userDocument.document_type.replace(/_/g, ' ')} • {userDocument.file_name}
+            {userDocument.document_type.replace(/_/g, " ")} •{" "}
+            {userDocument.file_name}
           </DialogDescription>
         </DialogHeader>
 
@@ -96,7 +112,9 @@ export function DocumentViewerDialog({ open, onOpenChange, document: userDocumen
                 <div className="text-center py-12 text-muted-foreground">
                   <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
                   <p>Preview not available for this file type</p>
-                  <p className="text-sm mt-1">Click "Download" to view the file</p>
+                  <p className="text-sm mt-1">
+                    Click "Download" to view the file
+                  </p>
                 </div>
               )}
             </div>

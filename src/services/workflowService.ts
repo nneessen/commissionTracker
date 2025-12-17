@@ -1,7 +1,15 @@
 // File: /home/nneessen/projects/commissionTracker/src/services/workflowService.ts
 
-import {supabase} from '@/services/base/supabase';
-import type {Workflow, WorkflowRun, WorkflowTemplate, TriggerEventType, WorkflowFormData, WorkflowStats, WorkflowStatus} from '@/types/workflow.types';
+import { supabase } from "@/services/base/supabase";
+import type {
+  Workflow,
+  WorkflowRun,
+  WorkflowTemplate,
+  TriggerEventType,
+  WorkflowFormData,
+  WorkflowStats,
+  WorkflowStatus,
+} from "@/types/workflow.types";
 
 class WorkflowService {
   // =====================================================
@@ -10,12 +18,12 @@ class WorkflowService {
 
   async getWorkflows(status?: WorkflowStatus) {
     const query = supabase
-      .from('workflows')
-      .select('*')
-      .order('created_at', { ascending: false });
+      .from("workflows")
+      .select("*")
+      .order("created_at", { ascending: false });
 
     if (status) {
-      query.eq('status', status);
+      query.eq("status", status);
     }
 
     const { data, error } = await query;
@@ -26,13 +34,15 @@ class WorkflowService {
 
   async getWorkflow(id: string) {
     const { data, error } = await supabase
-      .from('workflows')
-      .select(`
+      .from("workflows")
+      .select(
+        `
         *,
         workflow_triggers (*),
         workflow_actions (*)
-      `)
-      .eq('id', id)
+      `,
+      )
+      .eq("id", id)
       .single();
 
     if (error) throw error;
@@ -41,37 +51,37 @@ class WorkflowService {
 
   async createWorkflow(formData: WorkflowFormData) {
     const { data: user } = await supabase.auth.getUser();
-    if (!user.user) throw new Error('User not authenticated');
+    if (!user.user) throw new Error("User not authenticated");
 
     // Create workflow with proper structure
     const { data: workflow, error: workflowError } = await supabase
-      .from('workflows')
+      .from("workflows")
       .insert({
         name: formData.name.trim(),
         description: formData.description?.trim(),
         category: formData.category,
         trigger_type: formData.triggerType,
-        status: formData.status || 'draft',
+        status: formData.status || "draft",
         config: {
           trigger: formData.trigger,
-          continueOnError: formData.settings?.continueOnError
+          continueOnError: formData.settings?.continueOnError,
         },
         conditions: formData.conditions || [],
         // Store actions in JSON column with ALL config including recipients
-        actions: formData.actions.map(a => ({
+        actions: formData.actions.map((a) => ({
           type: a.type,
           order: a.order,
           config: a.config, // This includes recipientType, recipientEmail, etc.
           delayMinutes: a.delayMinutes || 0,
           conditions: a.conditions || [],
           retryOnFailure: a.retryOnFailure ?? true,
-          maxRetries: a.maxRetries || 3
+          maxRetries: a.maxRetries || 3,
         })),
         max_runs_per_day: formData.settings?.maxRunsPerDay || 50,
         max_runs_per_recipient: formData.settings?.maxRunsPerRecipient,
         cooldown_minutes: formData.settings?.cooldownMinutes,
         priority: Number(formData.settings?.priority) || 50,
-        created_by: user.user.id
+        created_by: user.user.id,
       })
       .select()
       .single();
@@ -86,48 +96,52 @@ class WorkflowService {
 
   async updateWorkflow(id: string, updates: Partial<WorkflowFormData>) {
     const { data: user } = await supabase.auth.getUser();
-    if (!user.user) throw new Error('User not authenticated');
+    if (!user.user) throw new Error("User not authenticated");
 
     // Debug: Log incoming updates
-    console.log('[WorkflowService] updateWorkflow called with:', {
+    console.log("[WorkflowService] updateWorkflow called with:", {
       id,
       triggerType: updates.triggerType,
       trigger: updates.trigger,
       hasActions: !!updates.actions,
-      fullUpdates: updates
+      fullUpdates: updates,
     });
 
     // First, fetch the existing workflow to merge config properly
     const { data: existingWorkflow, error: fetchError } = await supabase
-      .from('workflows')
-      .select('config')
-      .eq('id', id)
+      .from("workflows")
+      .select("config")
+      .eq("id", id)
       .single();
 
     if (fetchError) throw fetchError;
 
     // Build update object - only include fields that are provided
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic update object
     const updateData: any = {
       last_modified_by: user.user.id,
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
     };
 
     if (updates.name !== undefined) updateData.name = updates.name.trim();
-    if (updates.description !== undefined) updateData.description = updates.description?.trim();
+    if (updates.description !== undefined)
+      updateData.description = updates.description?.trim();
     if (updates.category !== undefined) updateData.category = updates.category;
-    if (updates.triggerType !== undefined) updateData.trigger_type = updates.triggerType;
-    if (updates.conditions !== undefined) updateData.conditions = updates.conditions;
+    if (updates.triggerType !== undefined)
+      updateData.trigger_type = updates.triggerType;
+    if (updates.conditions !== undefined)
+      updateData.conditions = updates.conditions;
 
     // Store complete action configuration including recipients
     if (updates.actions !== undefined) {
-      updateData.actions = updates.actions.map(a => ({
+      updateData.actions = updates.actions.map((a) => ({
         type: a.type,
         order: a.order,
         config: a.config, // This MUST include recipientType, recipientEmail, etc.
         delayMinutes: a.delayMinutes || 0,
         conditions: a.conditions || [],
         retryOnFailure: a.retryOnFailure ?? true,
-        maxRetries: a.maxRetries || 3
+        maxRetries: a.maxRetries || 3,
       }));
     }
 
@@ -149,17 +163,21 @@ class WorkflowService {
 
     // CRITICAL FIX: Properly handle trigger updates
     const existingConfig = existingWorkflow?.config || {};
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic config object
     const configUpdate: any = { ...existingConfig };
 
     // When trigger is provided, use it completely (don't merge with old trigger)
     if (updates.trigger !== undefined) {
       // Replace the entire trigger object with the new one
       configUpdate.trigger = updates.trigger;
-      console.log('[WorkflowService] Replacing trigger with:', updates.trigger);
+      console.log("[WorkflowService] Replacing trigger with:", updates.trigger);
     } else if (updates.triggerType !== undefined && !updates.trigger) {
       // If only triggerType is provided without trigger object, create minimal trigger
       configUpdate.trigger = { type: updates.triggerType };
-      console.log('[WorkflowService] Creating minimal trigger for type:', updates.triggerType);
+      console.log(
+        "[WorkflowService] Creating minimal trigger for type:",
+        updates.triggerType,
+      );
     }
 
     if (updates.settings?.continueOnError !== undefined) {
@@ -170,32 +188,32 @@ class WorkflowService {
     updateData.config = configUpdate;
 
     // Debug logging to track trigger persistence
-    console.log('[WorkflowService] Final update data being sent to Supabase:', {
+    console.log("[WorkflowService] Final update data being sent to Supabase:", {
       id,
       trigger_type: updateData.trigger_type,
-      'config.trigger': updateData.config?.trigger,
+      "config.trigger": updateData.config?.trigger,
       fullConfig: updateData.config,
-      fullUpdateData: updateData
+      fullUpdateData: updateData,
     });
 
     // Update main workflow
     const { data: workflow, error: workflowError } = await supabase
-      .from('workflows')
+      .from("workflows")
       .update(updateData)
-      .eq('id', id)
+      .eq("id", id)
       .select()
       .single();
 
     if (workflowError) {
-      console.error('[WorkflowService] Update failed:', workflowError);
+      console.error("[WorkflowService] Update failed:", workflowError);
       throw workflowError;
     }
 
-    console.log('[WorkflowService] Updated workflow result:', {
+    console.log("[WorkflowService] Updated workflow result:", {
       id: workflow.id,
       trigger_type: workflow.trigger_type,
-      'config.trigger': workflow.config?.trigger,
-      fullWorkflow: workflow
+      "config.trigger": workflow.config?.trigger,
+      fullWorkflow: workflow,
     });
 
     // Don't use workflow_actions table - everything is in the JSON column
@@ -204,19 +222,16 @@ class WorkflowService {
   }
 
   async deleteWorkflow(id: string) {
-    const { error } = await supabase
-      .from('workflows')
-      .delete()
-      .eq('id', id);
+    const { error } = await supabase.from("workflows").delete().eq("id", id);
 
     if (error) throw error;
   }
 
   async updateWorkflowStatus(id: string, status: WorkflowStatus) {
     const { data, error } = await supabase
-      .from('workflows')
+      .from("workflows")
       .update({ status })
-      .eq('id', id)
+      .eq("id", id)
       .select()
       .single();
 
@@ -230,8 +245,9 @@ class WorkflowService {
 
   async getWorkflowRuns(workflowId?: string, limit = 50) {
     let query = supabase
-      .from('workflow_runs')
-      .select(`
+      .from("workflow_runs")
+      .select(
+        `
         *,
         workflow:workflows (
           id,
@@ -239,12 +255,13 @@ class WorkflowService {
           status,
           trigger_type
         )
-      `)
-      .order('started_at', { ascending: false })
+      `,
+      )
+      .order("started_at", { ascending: false })
       .limit(limit);
 
     if (workflowId) {
-      query = query.eq('workflow_id', workflowId);
+      query = query.eq("workflow_id", workflowId);
     }
 
     const { data, error } = await query;
@@ -255,30 +272,35 @@ class WorkflowService {
 
   async getWorkflowRun(id: string) {
     const { data, error } = await supabase
-      .from('workflow_runs')
-      .select(`
+      .from("workflow_runs")
+      .select(
+        `
         *,
         workflows (*)
-      `)
-      .eq('id', id)
+      `,
+      )
+      .eq("id", id)
       .single();
 
     if (error) throw error;
     return data as WorkflowRun;
   }
 
-  async triggerWorkflow(workflowId: string, context: Record<string, unknown> = {}) {
+  async triggerWorkflow(
+    workflowId: string,
+    context: Record<string, unknown> = {},
+  ) {
     const { data: user } = await supabase.auth.getUser();
-    if (!user.user) throw new Error('User not authenticated');
+    if (!user.user) throw new Error("User not authenticated");
 
     // Get the workflow to understand its structure
     const { data: workflow, error: wfError } = await supabase
-      .from('workflows')
-      .select('*')
-      .eq('id', workflowId)
+      .from("workflows")
+      .select("*")
+      .eq("id", workflowId)
       .single();
 
-    if (wfError || !workflow) throw new Error('Workflow not found');
+    if (wfError || !workflow) throw new Error("Workflow not found");
 
     // Build proper context with recipient information
     const enrichedContext: Record<string, unknown> = {
@@ -286,40 +308,43 @@ class WorkflowService {
       triggeredBy: user.user.id,
       triggeredByEmail: user.user.email,
       triggeredAt: new Date().toISOString(),
-      workflowName: workflow.name
+      workflowName: workflow.name,
     };
 
     // If no recipientId provided, use the current user as default recipient
     if (!enrichedContext.recipientId) {
       enrichedContext.recipientId = user.user.id;
       enrichedContext.recipientEmail = user.user.email;
-      enrichedContext.recipientName = user.user.user_metadata?.name || user.user.email;
+      enrichedContext.recipientName =
+        user.user.user_metadata?.name || user.user.email;
     }
 
     // Check if workflow can run (skip this check if the RPC doesn't exist)
     try {
-      const { data: canRun, error: checkError } = await supabase
-        .rpc('can_workflow_run', {
+      const { data: canRun, error: checkError } = await supabase.rpc(
+        "can_workflow_run",
+        {
           p_workflow_id: workflowId,
-          p_recipient_id: enrichedContext.recipientId as string
-        });
+          p_recipient_id: enrichedContext.recipientId as string,
+        },
+      );
 
       if (!checkError && !canRun) {
-        throw new Error('Workflow cannot run due to execution limits');
+        throw new Error("Workflow cannot run due to execution limits");
       }
     } catch (err) {
       // If RPC doesn't exist, continue anyway
-      console.warn('can_workflow_run check failed, continuing:', err);
+      console.warn("can_workflow_run check failed, continuing:", err);
     }
 
     // Create workflow run with enriched context
     const { data: run, error: runError } = await supabase
-      .from('workflow_runs')
+      .from("workflow_runs")
       .insert({
         workflow_id: workflowId,
-        trigger_source: 'manual',
-        status: 'running',
-        context: enrichedContext
+        trigger_source: "manual",
+        status: "running",
+        context: enrichedContext,
       })
       .select()
       .single();
@@ -329,29 +354,35 @@ class WorkflowService {
     // Trigger edge function to process workflow asynchronously
     // Note: We don't await this - the workflow runs in the background
     // But we do log errors for debugging
-    supabase.functions.invoke('process-workflow', {
-      body: { runId: run.id, workflowId }
-    }).then((response) => {
-      if (response.error) {
-        console.error('Workflow processor returned error:', response.error);
-      } else {
-        console.log('Workflow processor invoked successfully:', response.data);
-      }
-    }).catch((err) => {
-      console.error('Failed to invoke workflow processor:', err);
-    });
+    supabase.functions
+      .invoke("process-workflow", {
+        body: { runId: run.id, workflowId },
+      })
+      .then((response) => {
+        if (response.error) {
+          console.error("Workflow processor returned error:", response.error);
+        } else {
+          console.log(
+            "Workflow processor invoked successfully:",
+            response.data,
+          );
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to invoke workflow processor:", err);
+      });
 
     return run as WorkflowRun;
   }
 
   async cancelWorkflowRun(runId: string) {
     const { data, error } = await supabase
-      .from('workflow_runs')
+      .from("workflow_runs")
       .update({
-        status: 'cancelled',
-        completed_at: new Date().toISOString()
+        status: "cancelled",
+        completed_at: new Date().toISOString(),
       })
-      .eq('id', runId)
+      .eq("id", runId)
       .select()
       .single();
 
@@ -365,12 +396,12 @@ class WorkflowService {
 
   async getWorkflowTemplates(category?: string) {
     const query = supabase
-      .from('workflow_templates')
-      .select('*')
-      .order('usage_count', { ascending: false });
+      .from("workflow_templates")
+      .select("*")
+      .order("usage_count", { ascending: false });
 
     if (category) {
-      query.eq('category', category);
+      query.eq("category", category);
     }
 
     const { data, error } = await query;
@@ -381,28 +412,28 @@ class WorkflowService {
 
   async createWorkflowFromTemplate(templateId: string, name: string) {
     const { data: template, error: templateError } = await supabase
-      .from('workflow_templates')
-      .select('*')
-      .eq('id', templateId)
+      .from("workflow_templates")
+      .select("*")
+      .eq("id", templateId)
       .single();
 
     if (templateError) throw templateError;
 
     // Increment usage count
     await supabase
-      .from('workflow_templates')
+      .from("workflow_templates")
       .update({ usage_count: (template.usage_count || 0) + 1 })
-      .eq('id', templateId);
+      .eq("id", templateId);
 
     // Create workflow from template
     const workflowConfig = template.workflow_config as Partial<Workflow>;
     const formData: WorkflowFormData = {
       name,
       description: workflowConfig.description,
-      category: workflowConfig.category || 'general',
-      triggerType: workflowConfig.triggerType || 'manual',
+      category: workflowConfig.category || "general",
+      triggerType: workflowConfig.triggerType || "manual",
       trigger: {
-        type: workflowConfig.triggerType || 'manual',
+        type: workflowConfig.triggerType || "manual",
         eventName: undefined,
         schedule: undefined,
         webhookConfig: undefined,
@@ -414,8 +445,8 @@ class WorkflowService {
         maxRunsPerRecipient: workflowConfig.maxRunsPerRecipient,
         cooldownMinutes: workflowConfig.cooldownMinutes,
         continueOnError: false,
-        priority: workflowConfig.priority || 50
-      }
+        priority: workflowConfig.priority || 50,
+      },
     };
 
     return this.createWorkflow(formData);
@@ -427,14 +458,15 @@ class WorkflowService {
 
   async getTriggerEventTypes() {
     const { data, error } = await supabase
-      .from('trigger_event_types')
-      .select('*')
-      .eq('is_active', true)
-      .order('category');
+      .from("trigger_event_types")
+      .select("*")
+      .eq("is_active", true)
+      .order("category");
 
     if (error) throw error;
-    
+
     // Convert snake_case to camelCase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DB record type
     return (data || []).map((item: any) => ({
       id: item.id,
       eventName: item.event_name,
@@ -442,20 +474,21 @@ class WorkflowService {
       description: item.description,
       availableVariables: item.available_variables,
       isActive: item.is_active,
-      createdAt: item.created_at
+      createdAt: item.created_at,
     })) as TriggerEventType[];
   }
 
   // Event Type Management Methods
   async getEventTypes() {
     const { data, error } = await supabase
-      .from('trigger_event_types')
-      .select('*')
-      .order('category, event_name');
+      .from("trigger_event_types")
+      .select("*")
+      .order("category, event_name");
 
     if (error) throw error;
-    
+
     // Convert snake_case to camelCase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DB record type
     return (data || []).map((item: any) => ({
       id: item.id,
       eventName: item.event_name,
@@ -463,28 +496,28 @@ class WorkflowService {
       description: item.description,
       availableVariables: item.available_variables,
       isActive: item.is_active,
-      createdAt: item.created_at
+      createdAt: item.created_at,
     })) as TriggerEventType[];
   }
 
-  async createEventType(eventData: Omit<TriggerEventType, 'id' | 'createdAt'>) {
+  async createEventType(eventData: Omit<TriggerEventType, "id" | "createdAt">) {
     // Convert camelCase to snake_case for database
     const dbData = {
       event_name: eventData.eventName,
       category: eventData.category,
       description: eventData.description,
       available_variables: eventData.availableVariables,
-      is_active: eventData.isActive ?? true
+      is_active: eventData.isActive ?? true,
     };
 
     const { data, error } = await supabase
-      .from('trigger_event_types')
+      .from("trigger_event_types")
       .insert(dbData)
       .select()
       .single();
 
     if (error) throw error;
-    
+
     // Convert back to camelCase
     return {
       id: data.id,
@@ -493,28 +526,32 @@ class WorkflowService {
       description: data.description,
       availableVariables: data.available_variables,
       isActive: data.is_active,
-      createdAt: data.created_at
+      createdAt: data.created_at,
     } as TriggerEventType;
   }
 
   async updateEventType(id: string, updates: Partial<TriggerEventType>) {
     // Convert camelCase to snake_case for database
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic update object
     const dbUpdates: any = {};
-    if (updates.eventName !== undefined) dbUpdates.event_name = updates.eventName;
+    if (updates.eventName !== undefined)
+      dbUpdates.event_name = updates.eventName;
     if (updates.category !== undefined) dbUpdates.category = updates.category;
-    if (updates.description !== undefined) dbUpdates.description = updates.description;
-    if (updates.availableVariables !== undefined) dbUpdates.available_variables = updates.availableVariables;
+    if (updates.description !== undefined)
+      dbUpdates.description = updates.description;
+    if (updates.availableVariables !== undefined)
+      dbUpdates.available_variables = updates.availableVariables;
     if (updates.isActive !== undefined) dbUpdates.is_active = updates.isActive;
 
     const { data, error } = await supabase
-      .from('trigger_event_types')
+      .from("trigger_event_types")
       .update(dbUpdates)
-      .eq('id', id)
+      .eq("id", id)
       .select()
       .single();
 
     if (error) throw error;
-    
+
     // Convert back to camelCase
     return {
       id: data.id,
@@ -523,15 +560,15 @@ class WorkflowService {
       description: data.description,
       availableVariables: data.available_variables,
       isActive: data.is_active,
-      createdAt: data.created_at
+      createdAt: data.created_at,
     } as TriggerEventType;
   }
 
   async deleteEventType(id: string) {
     const { error } = await supabase
-      .from('trigger_event_types')
+      .from("trigger_event_types")
       .delete()
-      .eq('id', id);
+      .eq("id", id);
 
     if (error) throw error;
   }
@@ -548,35 +585,43 @@ class WorkflowService {
     }
 
     const { data: runs, error } = await supabase
-      .from('workflow_runs')
-      .select('status, duration_ms, started_at')
-      .eq('workflow_id', workflowId);
+      .from("workflow_runs")
+      .select("status, duration_ms, started_at")
+      .eq("workflow_id", workflowId);
 
     if (error) throw error;
 
     const typedRuns = (runs || []) as RunRecord[];
     const totalRuns = typedRuns.length;
-    const successfulRuns = typedRuns.filter((r) => r.status === 'completed').length;
-    const failedRuns = typedRuns.filter((r) => r.status === 'failed').length;
+    const successfulRuns = typedRuns.filter(
+      (r) => r.status === "completed",
+    ).length;
+    const failedRuns = typedRuns.filter((r) => r.status === "failed").length;
 
     const durations = typedRuns
       .filter((r) => r.duration_ms !== null)
       .map((r) => r.duration_ms as number);
 
-    const averageDuration = durations.length > 0
-      ? durations.reduce((a, b) => a + b, 0) / durations.length
-      : 0;
+    const averageDuration =
+      durations.length > 0
+        ? durations.reduce((a, b) => a + b, 0) / durations.length
+        : 0;
 
-    const lastRun = typedRuns.length > 0
-      ? typedRuns.sort((a, b) => new Date(b.started_at).getTime() - new Date(a.started_at).getTime())[0]
-      : null;
+    const lastRun =
+      typedRuns.length > 0
+        ? typedRuns.sort(
+            (a, b) =>
+              new Date(b.started_at).getTime() -
+              new Date(a.started_at).getTime(),
+          )[0]
+        : null;
 
     return {
       totalRuns,
       successfulRuns,
       failedRuns,
       averageDuration,
-      lastRunAt: lastRun?.started_at
+      lastRunAt: lastRun?.started_at,
     };
   }
 
@@ -584,20 +629,22 @@ class WorkflowService {
   // HELPER METHODS
   // =====================================================
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- trigger config has dynamic shape
   private buildTriggerConfig(trigger: any) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- trigger config has dynamic shape
     const config: any = {};
 
     switch (trigger.type) {
-      case 'schedule':
+      case "schedule":
         config.schedule_config = trigger.schedule;
         break;
-      case 'event':
+      case "event":
         config.event_config = {
           event_name: trigger.eventName,
-          conditions: trigger.conditions || []
+          conditions: trigger.conditions || [],
         };
         break;
-      case 'webhook':
+      case "webhook":
         config.webhook_config = trigger.webhookConfig;
         break;
     }
@@ -608,12 +655,12 @@ class WorkflowService {
   async testWorkflow(workflowId: string, testContext: Record<string, unknown>) {
     // Create a test run
     const { data: run, error } = await supabase
-      .from('workflow_runs')
+      .from("workflow_runs")
       .insert({
         workflow_id: workflowId,
-        trigger_source: 'test',
-        status: 'running',
-        context: { ...testContext, isTest: true }
+        trigger_source: "test",
+        status: "running",
+        context: { ...testContext, isTest: true },
       })
       .select()
       .single();
@@ -621,11 +668,13 @@ class WorkflowService {
     if (error) throw error;
 
     // Trigger edge function to process test workflow
-    supabase.functions.invoke('process-workflow', {
-      body: { runId: run.id, workflowId, isTest: true }
-    }).catch((err) => {
-      console.error('Failed to invoke workflow processor for test:', err);
-    });
+    supabase.functions
+      .invoke("process-workflow", {
+        body: { runId: run.id, workflowId, isTest: true },
+      })
+      .catch((err) => {
+        console.error("Failed to invoke workflow processor for test:", err);
+      });
 
     return run as WorkflowRun;
   }

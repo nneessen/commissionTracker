@@ -317,6 +317,7 @@ class BreakevenService {
     commissions.forEach(
       ({ commission, chargeback_risk, existing_chargebacks }) => {
         currentChargebacks += existing_chargebacks.reduce(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- chargeback records have dynamic shape
           (sum: number, cb: any) => sum + cb.chargebackAmount,
           0,
         );

@@ -112,6 +112,7 @@ export function CommissionRatesManagement() {
       // Get existing rates for this product
       const existingRates = await getProductRates(productId);
       const existingRatesByLevel = new Map(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- rate data type
         existingRates.map((r: any) => [r.contract_level, r.id]),
       );
 
@@ -152,9 +153,11 @@ export function CommissionRatesManagement() {
       // Delete rates that were removed
       const levelsToKeep = new Set(Object.keys(rates).map(Number));
       const ratesToDelete = existingRates.filter(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- rate data type
         (r: any) => !levelsToKeep.has(r.contract_level),
       );
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- rate data type
       const deletePromises = ratesToDelete.map((r: any) =>
         deleteRate.mutateAsync(r.id),
       );
@@ -217,6 +220,7 @@ export function CommissionRatesManagement() {
         // Get existing rate for this product/level
         const existingRates = await getProductRates(product.id);
         const existingRate = existingRates.find(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- rate data type
           (r: any) => r.contract_level === contractLevel,
         );
 

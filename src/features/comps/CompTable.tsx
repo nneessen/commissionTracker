@@ -1,16 +1,40 @@
 // src/features/comps/CompTable.tsx
 
 import React, { useState } from "react";
-import {ChevronLeft, ChevronRight, ArrowUp, ArrowDown, Building2, Package, Percent, Calendar, AlertCircle} from "lucide-react";
-import {Comp} from "../../types/commission.types";
-import {Button} from "@/components/ui/button";
-import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/components/ui/table";
-import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
+import {
+  ChevronLeft,
+  ChevronRight,
+  ArrowUp,
+  ArrowDown,
+  Building2,
+  Package,
+  Percent,
+  Calendar,
+  AlertCircle,
+} from "lucide-react";
+import { Comp } from "../../types/commission.types";
+import { Button } from "@/components/ui/button";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface CompTableProps {
   data: Comp[];
   isLoading: boolean;
   error?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- pagination state type
   onPaginationChange?: (newPagination: any) => void;
 }
 
@@ -118,10 +142,16 @@ export function CompTable({ data, isLoading, error }: CompTableProps) {
               <span className="font-medium">{total}</span> results
             </p>
             <div className="flex items-center space-x-2">
-              <label htmlFor="pageSize" className="text-sm text-muted-foreground">
+              <label
+                htmlFor="pageSize"
+                className="text-sm text-muted-foreground"
+              >
                 Per page:
               </label>
-              <Select value={pageSize.toString()} onValueChange={handlePageSizeChange}>
+              <Select
+                value={pageSize.toString()}
+                onValueChange={handlePageSizeChange}
+              >
                 <SelectTrigger className="w-20">
                   <SelectValue />
                 </SelectTrigger>
@@ -204,7 +234,8 @@ export function CompTable({ data, isLoading, error }: CompTableProps) {
           Error Loading Comp Data
         </h3>
         <p className="text-sm text-muted-foreground mb-4">
-          {error || "An unexpected error occurred while loading the comp guide."}
+          {error ||
+            "An unexpected error occurred while loading the comp guide."}
         </p>
         <Button onClick={() => window.location.reload()} size="sm">
           Retry
@@ -272,7 +303,9 @@ export function CompTable({ data, isLoading, error }: CompTableProps) {
                 <TableCell colSpan={5} className="h-32 text-center">
                   <div className="flex items-center justify-center">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mr-3"></div>
-                    <span className="text-muted-foreground">Loading comp data...</span>
+                    <span className="text-muted-foreground">
+                      Loading comp data...
+                    </span>
                   </div>
                 </TableCell>
               </TableRow>
@@ -310,7 +343,7 @@ export function CompTable({ data, isLoading, error }: CompTableProps) {
                             .split("_")
                             .map(
                               (word) =>
-                                word.charAt(0).toUpperCase() + word.slice(1)
+                                word.charAt(0).toUpperCase() + word.slice(1),
                             )
                             .join(" ")}
                         </div>
@@ -340,7 +373,7 @@ export function CompTable({ data, isLoading, error }: CompTableProps) {
                         <div className="text-xs text-muted-foreground/70">
                           Expires:{" "}
                           {new Date(
-                            record.expiration_date
+                            record.expiration_date,
                           ).toLocaleDateString()}
                         </div>
                       )}

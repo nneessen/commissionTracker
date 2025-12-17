@@ -135,6 +135,7 @@ class CommissionCalculationService {
       const userId = data.userId;
       if (!contractCompLevel && userId) {
         try {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Supabase response type
           const user = await (agentService as any).getAgentById(userId);
           if (user) {
             contractCompLevel = user.contractCompLevel;
@@ -165,6 +166,7 @@ class CommissionCalculationService {
         () =>
           compGuideService.getCommissionRate(
             carrier.name,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DB record has dynamic schema
             data.product as any, // Cast to any - product types match DB enum values
             contractCompLevel,
           ),

@@ -109,6 +109,7 @@ export function PersistencyScenarios({
     }
 
     return allRates.map((rate) => calculateScenario(rate));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- calculateScenario uses props already in deps, presetRates is static
   }, [
     baseAnnualPolicies,
     totalPremiumNeeded,

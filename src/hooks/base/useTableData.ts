@@ -1,8 +1,8 @@
 // src/hooks/base/useTableData.ts
 
-import {useFilter, FilterConfig} from './useFilter';
-import {useSort, SortConfig, SortDirection} from './useSort';
-import {usePagination} from './usePagination';
+import { useFilter, FilterConfig } from "./useFilter";
+import { useSort, SortConfig, SortDirection } from "./useSort";
+import { usePagination } from "./usePagination";
 
 export interface UseTableDataOptions<T> {
   // Filter options
@@ -27,13 +27,16 @@ export interface UseTableDataResult<T> {
   // Filter state and controls
   filters: FilterConfig<T> | null;
   setFilters: (filters: FilterConfig<T> | null) => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- generic filter type
   addFilter: (filter: any) => void;
   removeFilter: (field: keyof T) => void;
   clearFilters: () => void;
   filterCount: number;
 
   // Sort state and controls
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- generic sort type
   sortConfig: SortConfig<T> | any | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- generic sort type
   setSortConfig: (config: SortConfig<T> | any | null) => void;
   toggleSort: (field: keyof T) => void;
   clearSort: () => void;
@@ -71,15 +74,18 @@ export interface UseTableDataResult<T> {
  */
 export function useTableData<T>(
   data: T[],
-  options: UseTableDataOptions<T> = {}
+  options: UseTableDataOptions<T> = {},
 ): UseTableDataResult<T> {
   const {
     initialFilters = null,
-    initialSort = { field: 'createdAt' as keyof T, direction: 'desc' as SortDirection },
+    initialSort = {
+      field: "createdAt" as keyof T,
+      direction: "desc" as SortDirection,
+    },
     multiSort = false,
     initialPage = 1,
     initialPageSize = 10,
-    pageSizeOptions = [10, 25, 50, 100]
+    pageSizeOptions = [10, 25, 50, 100],
   } = options;
 
   // Apply filtering
@@ -90,20 +96,15 @@ export function useTableData<T>(
     addFilter,
     removeFilter,
     clearFilters,
-    filterCount
+    filterCount,
   } = useFilter<T>(data, initialFilters);
 
   // Apply sorting
-  const {
-    sortedData,
-    sortConfig,
-    setSortConfig,
-    toggleSort,
-    clearSort
-  } = useSort<T>(filteredData, {
-    initialSort,
-    multiSort
-  });
+  const { sortedData, sortConfig, setSortConfig, toggleSort, clearSort } =
+    useSort<T>(filteredData, {
+      initialSort,
+      multiSort,
+    });
 
   // Apply pagination
   const {
@@ -113,11 +114,11 @@ export function useTableData<T>(
     nextPage,
     previousPage,
     setPageSize,
-    resetPagination
+    resetPagination,
   } = usePagination<T>(sortedData, {
     initialPage,
     initialPageSize,
-    pageSizeOptions
+    pageSizeOptions,
   });
 
   return {
@@ -151,6 +152,6 @@ export function useTableData<T>(
     nextPage,
     previousPage,
     setPageSize,
-    resetPagination
+    resetPagination,
   };
 }

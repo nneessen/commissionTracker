@@ -448,6 +448,7 @@ class CommissionCRUDService {
 
       // Get the linked policy to validate it's active
       if (commission.policyId) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- accessing protected Supabase client
         const { data: policy, error: policyError } = await (
           this.repository as any
         ).client
@@ -481,6 +482,7 @@ class CommissionCRUDService {
         updated_at: new Date(),
       };
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- accessing protected Supabase client
       const { data: updated, error: updateError } = await (
         this.repository as any
       ).client
@@ -547,12 +549,14 @@ class CommissionCRUDService {
 
       if (filters.carrierId) {
         commissions = commissions.filter(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- filtering on raw DB records
           (c) => (c as any).carrier_id === filters.carrierId,
         );
       }
 
       if (filters.userId) {
         commissions = commissions.filter(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- filtering on raw DB records
           (c) => (c as any).user_id === filters.userId,
         );
       }
@@ -565,12 +569,14 @@ class CommissionCRUDService {
 
       if (filters.calculationBasis) {
         commissions = commissions.filter(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- filtering on raw DB records
           (c) => (c as any).calculation_basis === filters.calculationBasis,
         );
       }
 
       if (filters.startDate) {
         commissions = commissions.filter((c) => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- filtering on raw DB records
           const commDate = (c as any).expected_date
             ? new Date((c as any).expected_date)
             : null;
@@ -580,6 +586,7 @@ class CommissionCRUDService {
 
       if (filters.endDate) {
         commissions = commissions.filter((c) => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- filtering on raw DB records
           const commDate = (c as any).expected_date
             ? new Date((c as any).expected_date)
             : null;
@@ -589,12 +596,14 @@ class CommissionCRUDService {
 
       if (filters.minAmount !== undefined) {
         commissions = commissions.filter(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- filtering on raw DB records
           (c) => parseFloat((c as any).commission_amount) >= filters.minAmount!,
         );
       }
 
       if (filters.maxAmount !== undefined) {
         commissions = commissions.filter(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- filtering on raw DB records
           (c) => parseFloat((c as any).commission_amount) <= filters.maxAmount!,
         );
       }
@@ -613,6 +622,7 @@ class CommissionCRUDService {
    *
    * @private
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DB record has dynamic schema
   private transformFromDB(dbRecord: any): Commission {
     return {
       id: dbRecord.id,
@@ -680,10 +690,13 @@ class CommissionCRUDService {
    *
    * @private
    */
+
   private transformToDB(
     data: Partial<CreateCommissionData>,
     isUpdate = false,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DB transformation requires flexible return type
   ): any {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DB transformation requires flexible object
     const dbData: any = {};
 
     if (data.policyId !== undefined) dbData.policy_id = data.policyId;

@@ -1,8 +1,18 @@
 // src/features/reports/components/charts/ScatterCorrelationChart.tsx
 
-import React from 'react';
-import {ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ZAxis} from 'recharts';
-import {formatCurrency} from '../../../../lib/format';
+import React from "react";
+import {
+  ScatterChart,
+  Scatter,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  ZAxis,
+} from "recharts";
+import { formatCurrency } from "../../../../lib/format";
 
 export interface ScatterCorrelationChartData {
   name: string;
@@ -18,8 +28,8 @@ export interface ScatterCorrelationChartProps {
   height?: number;
   showGrid?: boolean;
   showLegend?: boolean;
-  xFormat?: 'currency' | 'number' | 'percent';
-  yFormat?: 'currency' | 'number' | 'percent';
+  xFormat?: "currency" | "number" | "percent";
+  yFormat?: "currency" | "number" | "percent";
   color?: string;
   showTrendLine?: boolean;
 }
@@ -47,9 +57,9 @@ export function ScatterCorrelationChart({
   height = 300,
   showGrid = true,
   showLegend = false,
-  xFormat = 'number',
-  yFormat = 'number',
-  color = '#3b82f6',
+  xFormat = "number",
+  yFormat = "number",
+  color = "#3b82f6",
   showTrendLine = false,
 }: ScatterCorrelationChartProps) {
   if (!data || data.length === 0) {
@@ -63,15 +73,18 @@ export function ScatterCorrelationChart({
     );
   }
 
-  const formatValue = (value: number, format?: 'currency' | 'number' | 'percent') => {
-    if (typeof value !== 'number') return value;
+  const formatValue = (
+    value: number,
+    format?: "currency" | "number" | "percent",
+  ) => {
+    if (typeof value !== "number") return value;
 
     switch (format) {
-      case 'currency':
+      case "currency":
         return formatCurrency(value);
-      case 'percent':
+      case "percent":
         return `${value.toFixed(1)}%`;
-      case 'number':
+      case "number":
       default:
         return value.toLocaleString();
     }
@@ -90,12 +103,12 @@ export function ScatterCorrelationChart({
     const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
     const intercept = (sumY - slope * sumX) / n;
 
-    const xMin = Math.min(...data.map(d => d.x));
-    const xMax = Math.max(...data.map(d => d.x));
+    const xMin = Math.min(...data.map((d) => d.x));
+    const xMax = Math.max(...data.map((d) => d.x));
 
     return [
-      { x: xMin, y: slope * xMin + intercept, name: 'Trend' },
-      { x: xMax, y: slope * xMax + intercept, name: 'Trend' },
+      { x: xMin, y: slope * xMin + intercept, name: "Trend" },
+      { x: xMax, y: slope * xMax + intercept, name: "Trend" },
     ];
   };
 
@@ -113,7 +126,9 @@ export function ScatterCorrelationChart({
     const sumY2 = data.reduce((sum, d) => sum + d.y * d.y, 0);
 
     const numerator = n * sumXY - sumX * sumY;
-    const denominator = Math.sqrt((n * sumX2 - sumX * sumX) * (n * sumY2 - sumY * sumY));
+    const denominator = Math.sqrt(
+      (n * sumX2 - sumX * sumX) * (n * sumY2 - sumY * sumY),
+    );
 
     if (denominator === 0) return null;
 
@@ -123,6 +138,7 @@ export function ScatterCorrelationChart({
 
   const rSquared = calculateCorrelation();
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- chart data type
   const CustomTooltip = ({ active, payload }: any) => {
     if (!active || !payload || !payload.length) return null;
 
@@ -130,17 +146,26 @@ export function ScatterCorrelationChart({
 
     return (
       <div className="bg-card border border-border rounded-lg shadow-lg p-3">
-        <p className="text-xs font-semibold text-foreground mb-2">{data.name}</p>
+        <p className="text-xs font-semibold text-foreground mb-2">
+          {data.name}
+        </p>
         <div className="space-y-1 text-xs text-muted-foreground">
           <div>
-            {xAxisLabel}: <span className="font-medium text-foreground">{formatValue(data.x, xFormat)}</span>
+            {xAxisLabel}:{" "}
+            <span className="font-medium text-foreground">
+              {formatValue(data.x, xFormat)}
+            </span>
           </div>
           <div>
-            {yAxisLabel}: <span className="font-medium text-foreground">{formatValue(data.y, yFormat)}</span>
+            {yAxisLabel}:{" "}
+            <span className="font-medium text-foreground">
+              {formatValue(data.y, yFormat)}
+            </span>
           </div>
           {data.z && (
             <div>
-              Size: <span className="font-medium text-foreground">{data.z}</span>
+              Size:{" "}
+              <span className="font-medium text-foreground">{data.z}</span>
             </div>
           )}
         </div>
@@ -151,9 +176,7 @@ export function ScatterCorrelationChart({
   return (
     <div className="w-full">
       <ResponsiveContainer width="100%" height={height}>
-        <ScatterChart
-          margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
-        >
+        <ScatterChart margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
           {showGrid && (
             <CartesianGrid
               strokeDasharray="3 3"
@@ -165,23 +188,38 @@ export function ScatterCorrelationChart({
             type="number"
             dataKey="x"
             name={xAxisLabel}
-            tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+            tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
             stroke="hsl(var(--border))"
             tickFormatter={(value) => formatValue(value, xFormat)}
-            label={{ value: xAxisLabel, position: 'insideBottom', offset: -5, style: { fontSize: 12 } }}
+            label={{
+              value: xAxisLabel,
+              position: "insideBottom",
+              offset: -5,
+              style: { fontSize: 12 },
+            }}
           />
           <YAxis
             type="number"
             dataKey="y"
             name={yAxisLabel}
-            tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+            tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
             stroke="hsl(var(--border))"
             tickFormatter={(value) => formatValue(value, yFormat)}
-            label={{ value: yAxisLabel, angle: -90, position: 'insideLeft', style: { fontSize: 12 } }}
+            label={{
+              value: yAxisLabel,
+              angle: -90,
+              position: "insideLeft",
+              style: { fontSize: 12 },
+            }}
           />
           <ZAxis type="number" dataKey="z" range={[50, 400]} />
-          <Tooltip content={<CustomTooltip />} cursor={{ strokeDasharray: '3 3' }} />
-          {showLegend && <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />}
+          <Tooltip
+            content={<CustomTooltip />}
+            cursor={{ strokeDasharray: "3 3" }}
+          />
+          {showLegend && (
+            <Legend wrapperStyle={{ fontSize: "12px", paddingTop: "10px" }} />
+          )}
 
           {/* Trend line */}
           {trendLineData && (
@@ -189,7 +227,7 @@ export function ScatterCorrelationChart({
               name="Trend Line"
               data={trendLineData}
               fill={color}
-              line={{ stroke: color, strokeWidth: 2, strokeDasharray: '5 5' }}
+              line={{ stroke: color, strokeWidth: 2, strokeDasharray: "5 5" }}
               shape={<></>}
             />
           )}
@@ -207,10 +245,19 @@ export function ScatterCorrelationChart({
       {/* R² indicator */}
       {rSquared !== null && showTrendLine && (
         <div className="mt-2 text-center text-xs text-muted-foreground">
-          Correlation (R²): <span className="font-medium text-foreground">{rSquared.toFixed(3)}</span>
-          {rSquared > 0.7 && <span className="ml-2 text-green-600">Strong correlation</span>}
-          {rSquared >= 0.4 && rSquared <= 0.7 && <span className="ml-2 text-amber-600">Moderate correlation</span>}
-          {rSquared < 0.4 && <span className="ml-2 text-red-600">Weak correlation</span>}
+          Correlation (R²):{" "}
+          <span className="font-medium text-foreground">
+            {rSquared.toFixed(3)}
+          </span>
+          {rSquared > 0.7 && (
+            <span className="ml-2 text-green-600">Strong correlation</span>
+          )}
+          {rSquared >= 0.4 && rSquared <= 0.7 && (
+            <span className="ml-2 text-amber-600">Moderate correlation</span>
+          )}
+          {rSquared < 0.4 && (
+            <span className="ml-2 text-red-600">Weak correlation</span>
+          )}
         </div>
       )}
     </div>

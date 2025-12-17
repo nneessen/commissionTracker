@@ -188,6 +188,7 @@ export function ClientSegmentation() {
               </TableRow>
             </TableHeader>
             <TableBody>
+              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any -- cross-sell data type */}
               {crossSell.slice(0, 3).map((row: any, idx: number) => (
                 <TableRow
                   key={idx}

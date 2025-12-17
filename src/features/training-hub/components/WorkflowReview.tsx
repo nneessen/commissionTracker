@@ -1,9 +1,18 @@
 // src/features/training-hub/components/workflow-wizard/WorkflowReview.tsx
 
-import {Edit2, Mail, Bell, Clock, Webhook, Play, Calendar, Zap} from 'lucide-react';
-import {Button} from '@/components/ui/button';
-import {Badge} from '@/components/ui/badge';
-import type {WorkflowFormData} from '@/types/workflow.types';
+import {
+  Edit2,
+  Mail,
+  Bell,
+  Clock,
+  Webhook,
+  Play,
+  Calendar,
+  Zap,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import type { WorkflowFormData } from "@/types/workflow.types";
 
 interface WorkflowReviewProps {
   data: WorkflowFormData;
@@ -12,38 +21,47 @@ interface WorkflowReviewProps {
 
 export default function WorkflowReview({ data, onEdit }: WorkflowReviewProps) {
   const ACTION_LABELS: Record<string, string> = {
-    send_email: 'Email',
-    create_notification: 'Notify',
-    wait: 'Wait',
-    webhook: 'Webhook'
+    send_email: "Email",
+    create_notification: "Notify",
+    wait: "Wait",
+    webhook: "Webhook",
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- icon component type
   const ACTION_ICONS: Record<string, any> = {
     send_email: Mail,
     create_notification: Bell,
     wait: Clock,
-    webhook: Webhook
+    webhook: Webhook,
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- icon component type
   const TRIGGER_ICONS: Record<string, any> = {
     manual: Play,
     schedule: Calendar,
     event: Zap,
-    webhook: Webhook
+    webhook: Webhook,
   };
 
   const TRIGGER_COLORS = {
-    manual: 'bg-blue-500/10 text-blue-600 border-blue-500/30 dark:text-blue-400',
-    schedule: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30 dark:text-emerald-400',
-    event: 'bg-amber-500/10 text-amber-600 border-amber-500/30 dark:text-amber-400',
-    webhook: 'bg-violet-500/10 text-violet-600 border-violet-500/30 dark:text-violet-400'
+    manual:
+      "bg-blue-500/10 text-blue-600 border-blue-500/30 dark:text-blue-400",
+    schedule:
+      "bg-emerald-500/10 text-emerald-600 border-emerald-500/30 dark:text-emerald-400",
+    event:
+      "bg-amber-500/10 text-amber-600 border-amber-500/30 dark:text-amber-400",
+    webhook:
+      "bg-violet-500/10 text-violet-600 border-violet-500/30 dark:text-violet-400",
   };
 
   const ACTION_COLORS = {
-    send_email: 'bg-blue-500/10 text-blue-600 border-blue-500/30 dark:text-blue-400',
-    create_notification: 'bg-amber-500/10 text-amber-600 border-amber-500/30 dark:text-amber-400',
-    wait: 'bg-gray-500/10 text-gray-600 border-gray-500/30 dark:text-gray-400',
-    webhook: 'bg-violet-500/10 text-violet-600 border-violet-500/30 dark:text-violet-400'
+    send_email:
+      "bg-blue-500/10 text-blue-600 border-blue-500/30 dark:text-blue-400",
+    create_notification:
+      "bg-amber-500/10 text-amber-600 border-amber-500/30 dark:text-amber-400",
+    wait: "bg-gray-500/10 text-gray-600 border-gray-500/30 dark:text-gray-400",
+    webhook:
+      "bg-violet-500/10 text-violet-600 border-violet-500/30 dark:text-violet-400",
   };
 
   return (
@@ -51,7 +69,9 @@ export default function WorkflowReview({ data, onEdit }: WorkflowReviewProps) {
       {/* Basic Info */}
       <div className="p-3 rounded-lg bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20">
         <div className="flex items-center justify-between mb-2">
-          <p className="text-sm font-semibold text-primary">Basic Information</p>
+          <p className="text-sm font-semibold text-primary">
+            Basic Information
+          </p>
           <Button
             type="button"
             variant="ghost"
@@ -63,11 +83,17 @@ export default function WorkflowReview({ data, onEdit }: WorkflowReviewProps) {
           </Button>
         </div>
         <div className="space-y-2">
-          <p className="text-base font-medium">{data.name || 'Untitled Workflow'}</p>
+          <p className="text-base font-medium">
+            {data.name || "Untitled Workflow"}
+          </p>
           <div className="flex items-center gap-2">
-            <Badge variant="secondary" className="text-xs">{data.category}</Badge>
+            <Badge variant="secondary" className="text-xs">
+              {data.category}
+            </Badge>
             {data.description && (
-              <span className="text-sm text-muted-foreground">{data.description}</span>
+              <span className="text-sm text-muted-foreground">
+                {data.description}
+              </span>
             )}
           </div>
         </div>
@@ -76,7 +102,9 @@ export default function WorkflowReview({ data, onEdit }: WorkflowReviewProps) {
       {/* Trigger */}
       <div className="p-3 rounded-lg bg-muted/30">
         <div className="flex items-center justify-between mb-2">
-          <p className="text-sm font-semibold text-muted-foreground">Trigger Configuration</p>
+          <p className="text-sm font-semibold text-muted-foreground">
+            Trigger Configuration
+          </p>
           <Button
             type="button"
             variant="ghost"
@@ -88,38 +116,47 @@ export default function WorkflowReview({ data, onEdit }: WorkflowReviewProps) {
           </Button>
         </div>
         <div className="flex items-start gap-3">
-          {data.triggerType && (() => {
-            const TriggerIcon = TRIGGER_ICONS[data.triggerType];
-            const colorClass = TRIGGER_COLORS[data.triggerType as keyof typeof TRIGGER_COLORS];
-            return (
-              <>
-                <div className={`p-2 rounded-lg border ${colorClass}`}>
-                  {TriggerIcon && <TriggerIcon className="h-5 w-5" />}
-                </div>
-                <div className="flex-1 space-y-1">
-                  <p className="text-sm font-medium capitalize">{data.triggerType} Trigger</p>
-                  <p className="text-sm text-muted-foreground">
-                    {data.triggerType === 'schedule' && data.trigger?.schedule && (
-                      <>
-                        {data.trigger.schedule.dayOfWeek === 'daily' ? 'Every day' :
-                         data.trigger.schedule.dayOfWeek === 'weekday' ? 'Weekdays' :
-                         `Every ${data.trigger.schedule.dayOfWeek}`} at {data.trigger.schedule.time}
-                      </>
-                    )}
-                    {data.triggerType === 'event' && data.trigger?.eventName && (
-                      <>{data.trigger.eventName}</>
-                    )}
-                    {data.triggerType === 'manual' && (
-                      <>Manual trigger only - run from workflows list</>
-                    )}
-                    {data.triggerType === 'webhook' && (
-                      <>Via webhook URL (generated after creation)</>
-                    )}
-                  </p>
-                </div>
-              </>
-            );
-          })()}
+          {data.triggerType &&
+            (() => {
+              const TriggerIcon = TRIGGER_ICONS[data.triggerType];
+              const colorClass =
+                TRIGGER_COLORS[data.triggerType as keyof typeof TRIGGER_COLORS];
+              return (
+                <>
+                  <div className={`p-2 rounded-lg border ${colorClass}`}>
+                    {TriggerIcon && <TriggerIcon className="h-5 w-5" />}
+                  </div>
+                  <div className="flex-1 space-y-1">
+                    <p className="text-sm font-medium capitalize">
+                      {data.triggerType} Trigger
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {data.triggerType === "schedule" &&
+                        data.trigger?.schedule && (
+                          <>
+                            {data.trigger.schedule.dayOfWeek === "daily"
+                              ? "Every day"
+                              : data.trigger.schedule.dayOfWeek === "weekday"
+                                ? "Weekdays"
+                                : `Every ${data.trigger.schedule.dayOfWeek}`}{" "}
+                            at {data.trigger.schedule.time}
+                          </>
+                        )}
+                      {data.triggerType === "event" &&
+                        data.trigger?.eventName && (
+                          <>{data.trigger.eventName}</>
+                        )}
+                      {data.triggerType === "manual" && (
+                        <>Manual trigger only - run from workflows list</>
+                      )}
+                      {data.triggerType === "webhook" && (
+                        <>Via webhook URL (generated after creation)</>
+                      )}
+                    </p>
+                  </div>
+                </>
+              );
+            })()}
         </div>
       </div>
 
@@ -142,34 +179,51 @@ export default function WorkflowReview({ data, onEdit }: WorkflowReviewProps) {
         {data.actions.length === 0 ? (
           <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
             <p className="text-sm text-amber-600 dark:text-amber-400">
-              ⚠️ No actions configured. Add at least one action to define workflow behavior.
+              ⚠️ No actions configured. Add at least one action to define
+              workflow behavior.
             </p>
           </div>
         ) : (
           <div className="space-y-2">
             {data.actions.map((action, i) => {
               const ActionIcon = ACTION_ICONS[action.type];
-              const colorClass = ACTION_COLORS[action.type as keyof typeof ACTION_COLORS];
+              const colorClass =
+                ACTION_COLORS[action.type as keyof typeof ACTION_COLORS];
               return (
-                <div key={i} className={`flex items-center gap-3 p-2 rounded-lg border ${colorClass} bg-opacity-50`}>
+                <div
+                  key={i}
+                  className={`flex items-center gap-3 p-2 rounded-lg border ${colorClass} bg-opacity-50`}
+                >
                   <div className="flex items-center justify-center w-8 h-8 rounded-full bg-background border">
                     <span className="text-xs font-bold">{i + 1}</span>
                   </div>
                   {ActionIcon && <ActionIcon className="h-4 w-4" />}
                   <div className="flex-1">
-                    <span className="text-sm font-medium">{ACTION_LABELS[action.type] || action.type}</span>
-                    {action.type === 'send_email' && action.config.templateId && (
-                      <span className="text-xs text-muted-foreground ml-2">Template configured</span>
+                    <span className="text-sm font-medium">
+                      {ACTION_LABELS[action.type] || action.type}
+                    </span>
+                    {action.type === "send_email" &&
+                      action.config.templateId && (
+                        <span className="text-xs text-muted-foreground ml-2">
+                          Template configured
+                        </span>
+                      )}
+                    {action.type === "wait" && action.config.waitMinutes && (
+                      <span className="text-xs text-muted-foreground ml-2">
+                        {action.config.waitMinutes} minutes
+                      </span>
                     )}
-                    {action.type === 'wait' && action.config.waitMinutes && (
-                      <span className="text-xs text-muted-foreground ml-2">{action.config.waitMinutes} minutes</span>
+                    {action.type === "webhook" && action.config.webhookUrl && (
+                      <span className="text-xs text-muted-foreground ml-2">
+                        URL configured
+                      </span>
                     )}
-                    {action.type === 'webhook' && action.config.webhookUrl && (
-                      <span className="text-xs text-muted-foreground ml-2">URL configured</span>
-                    )}
-                    {action.type === 'create_notification' && action.config.title && (
-                      <span className="text-xs text-muted-foreground ml-2">{action.config.title}</span>
-                    )}
+                    {action.type === "create_notification" &&
+                      action.config.title && (
+                        <span className="text-xs text-muted-foreground ml-2">
+                          {action.config.title}
+                        </span>
+                      )}
                   </div>
                   {action.delayMinutes && action.delayMinutes > 0 && (
                     <Badge variant="secondary" className="text-xs">
@@ -185,14 +239,22 @@ export default function WorkflowReview({ data, onEdit }: WorkflowReviewProps) {
 
       {/* Settings */}
       <div className="p-3 rounded-lg bg-muted/20 border border-muted/40">
-        <p className="text-sm font-semibold text-muted-foreground mb-2">Workflow Settings</p>
+        <p className="text-sm font-semibold text-muted-foreground mb-2">
+          Workflow Settings
+        </p>
         <div className="space-y-3">
           <div className="flex items-start gap-2">
             <div className="w-2 h-2 rounded-full bg-blue-500 mt-1"></div>
             <div>
-              <span className="text-sm">Max runs per day: <strong className="text-foreground">{data.settings?.maxRunsPerDay || 50}</strong></span>
+              <span className="text-sm">
+                Max runs per day:{" "}
+                <strong className="text-foreground">
+                  {data.settings?.maxRunsPerDay || 50}
+                </strong>
+              </span>
               <p className="text-[10px] text-muted-foreground mt-0.5">
-                Limits how many times this workflow can execute in a 24-hour period
+                Limits how many times this workflow can execute in a 24-hour
+                period
               </p>
             </div>
           </div>
@@ -201,7 +263,8 @@ export default function WorkflowReview({ data, onEdit }: WorkflowReviewProps) {
             <div className="w-2 h-2 rounded-full bg-amber-500 mt-1"></div>
             <div>
               <span className="text-sm">
-                Priority: <strong className="text-foreground">
+                Priority:{" "}
+                <strong className="text-foreground">
                   {(() => {
                     const priority = data.settings?.priority || 50;
                     if (priority >= 80) return `High (${priority}/100)`;
@@ -215,10 +278,14 @@ export default function WorkflowReview({ data, onEdit }: WorkflowReviewProps) {
               <p className="text-[10px] text-muted-foreground mt-0.5">
                 {(() => {
                   const priority = data.settings?.priority || 50;
-                  if (priority >= 80) return "Executes before lower priority workflows when multiple are triggered";
-                  if (priority >= 60) return "Slightly elevated execution priority";
-                  if (priority >= 40) return "Standard execution priority (default)";
-                  if (priority >= 20) return "Executes after higher priority workflows";
+                  if (priority >= 80)
+                    return "Executes before lower priority workflows when multiple are triggered";
+                  if (priority >= 60)
+                    return "Slightly elevated execution priority";
+                  if (priority >= 40)
+                    return "Standard execution priority (default)";
+                  if (priority >= 20)
+                    return "Executes after higher priority workflows";
                   return "Lowest execution priority - runs last";
                 })()}
               </p>
@@ -229,7 +296,12 @@ export default function WorkflowReview({ data, onEdit }: WorkflowReviewProps) {
             <div className="flex items-start gap-2">
               <div className="w-2 h-2 rounded-full bg-green-500 mt-1"></div>
               <div>
-                <span className="text-sm">Cooldown: <strong className="text-foreground">{data.settings.cooldownMinutes} minutes</strong></span>
+                <span className="text-sm">
+                  Cooldown:{" "}
+                  <strong className="text-foreground">
+                    {data.settings.cooldownMinutes} minutes
+                  </strong>
+                </span>
                 <p className="text-[10px] text-muted-foreground mt-0.5">
                   Minimum wait time between workflow runs for the same recipient
                 </p>
@@ -241,7 +313,12 @@ export default function WorkflowReview({ data, onEdit }: WorkflowReviewProps) {
             <div className="flex items-start gap-2">
               <div className="w-2 h-2 rounded-full bg-purple-500 mt-1"></div>
               <div>
-                <span className="text-sm">Max per recipient: <strong className="text-foreground">{data.settings.maxRunsPerRecipient}</strong></span>
+                <span className="text-sm">
+                  Max per recipient:{" "}
+                  <strong className="text-foreground">
+                    {data.settings.maxRunsPerRecipient}
+                  </strong>
+                </span>
                 <p className="text-[10px] text-muted-foreground mt-0.5">
                   Maximum times this workflow can run for a single recipient
                 </p>
@@ -253,7 +330,10 @@ export default function WorkflowReview({ data, onEdit }: WorkflowReviewProps) {
             <div className="flex items-start gap-2">
               <div className="w-2 h-2 rounded-full bg-orange-500 mt-1"></div>
               <div>
-                <span className="text-sm">Continue on error: <strong className="text-foreground">Enabled</strong></span>
+                <span className="text-sm">
+                  Continue on error:{" "}
+                  <strong className="text-foreground">Enabled</strong>
+                </span>
                 <p className="text-[10px] text-muted-foreground mt-0.5">
                   Workflow continues executing even if an action fails
                 </p>

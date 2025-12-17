@@ -1,36 +1,100 @@
 // /home/nneessen/projects/commissionTracker/src/features/admin/components/UserManagementDashboard.tsx
 
-import React, { useState, useEffect } from 'react';
-import {format} from 'date-fns';
-import {Search, Filter, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, AlertCircle, Shield, UserCheck, UserX, Clock} from 'lucide-react';
-import {cn} from '@/lib/utils';
-import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from '@/components/ui/table';
-import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '@/components/ui/select';
-import {Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle} from '@/components/ui/dialog';
-import {Button} from '@/components/ui/button';
-import {Input} from '@/components/ui/input';
-import {Textarea} from '@/components/ui/textarea';
-import {Badge} from '@/components/ui/badge';
-import {useUsersView} from '../../../hooks/admin/useUsersView';
-import {useApproveUser, useDenyUser, useSetPendingUser, useSetAdminRole, useCurrentUserProfile, useUpdateContractLevel} from '../../../hooks/admin/useUserApproval';
-import {UserProfile, VALID_CONTRACT_LEVELS} from '@/services/users/userService';
-import {Checkbox} from '@/components/ui/checkbox';
+import React, { useState, useEffect } from "react";
+import { format } from "date-fns";
+import {
+  Search,
+  Filter,
+  ChevronUp,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+  AlertCircle,
+  Shield,
+  UserCheck,
+  UserX,
+  Clock,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { useUsersView } from "../../../hooks/admin/useUsersView";
+import {
+  useApproveUser,
+  useDenyUser,
+  useSetPendingUser,
+  useSetAdminRole,
+  useCurrentUserProfile,
+  useUpdateContractLevel,
+} from "../../../hooks/admin/useUserApproval";
+import {
+  UserProfile,
+  VALID_CONTRACT_LEVELS,
+} from "@/services/users/userService";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export const UserManagementDashboard: React.FC = () => {
-  const {users, metrics, isLoading, error, currentPage, totalPages, pageSize, totalItems, goToPage, nextPage, previousPage, setPageSize, filters, setFilters, clearFilters, filterCount, sortConfig, toggleSort, refresh} = useUsersView();
+  const {
+    users,
+    metrics,
+    isLoading,
+    error,
+    currentPage,
+    totalPages,
+    pageSize,
+    totalItems,
+    goToPage,
+    nextPage,
+    previousPage,
+    setPageSize,
+    filters,
+    setFilters,
+    clearFilters,
+    filterCount,
+    sortConfig,
+    toggleSort,
+    refresh,
+  } = useUsersView();
 
   const approveUser = useApproveUser();
   const denyUser = useDenyUser();
   const setPendingUser = useSetPendingUser();
   const setAdminRole = useSetAdminRole();
   const updateContractLevel = useUpdateContractLevel();
-  const {data: currentUserProfile} = useCurrentUserProfile();
+  const { data: currentUserProfile } = useCurrentUserProfile();
 
   const [showFilters, setShowFilters] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [denyDialogOpen, setDenyDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
-  const [denialReason, setDenialReason] = useState('');
+  const [denialReason, setDenialReason] = useState("");
 
   // Handle search with debounce
   useEffect(() => {
@@ -38,7 +102,7 @@ export const UserManagementDashboard: React.FC = () => {
       setFilters({ searchTerm });
     }, 300);
     return () => clearTimeout(timer);
-  }, [searchTerm]);
+  }, [searchTerm, setFilters]);
 
   const handleApprove = async (userId: string) => {
     const result = await approveUser.mutateAsync(userId);
@@ -56,7 +120,7 @@ export const UserManagementDashboard: React.FC = () => {
 
   const handleDenyClick = (user: UserProfile) => {
     setSelectedUser(user);
-    setDenialReason('');
+    setDenialReason("");
     setDenyDialogOpen(true);
   };
 
@@ -65,13 +129,13 @@ export const UserManagementDashboard: React.FC = () => {
 
     const result = await denyUser.mutateAsync({
       userId: selectedUser.id,
-      reason: denialReason || 'No reason provided',
+      reason: denialReason || "No reason provided",
     });
 
     if (result.success) {
       setDenyDialogOpen(false);
       setSelectedUser(null);
-      setDenialReason('');
+      setDenialReason("");
       refresh();
     }
   };
@@ -79,7 +143,7 @@ export const UserManagementDashboard: React.FC = () => {
   const handleAdminToggle = async (userId: string, currentIsAdmin: boolean) => {
     // Prevent users from removing their own admin status
     if (userId === currentUserProfile?.id && currentIsAdmin) {
-      console.warn('Cannot remove your own admin privileges');
+      console.warn("Cannot remove your own admin privileges");
       return;
     }
 
@@ -93,9 +157,15 @@ export const UserManagementDashboard: React.FC = () => {
     }
   };
 
-  const handleContractLevelChange = async (userId: string, contractLevel: string) => {
-    const level = contractLevel === 'none' ? null : parseInt(contractLevel);
-    const result = await updateContractLevel.mutateAsync({ userId, contractLevel: level });
+  const handleContractLevelChange = async (
+    userId: string,
+    contractLevel: string,
+  ) => {
+    const level = contractLevel === "none" ? null : parseInt(contractLevel);
+    const result = await updateContractLevel.mutateAsync({
+      userId,
+      contractLevel: level,
+    });
     if (result.success) {
       refresh();
     }
@@ -117,11 +187,12 @@ export const UserManagementDashboard: React.FC = () => {
               {/* Scope Indicator */}
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                  {filterCount > 0 ? 'Filtered Users' : 'All Users'}
+                  {filterCount > 0 ? "Filtered Users" : "All Users"}
                 </span>
                 {filterCount > 0 && (
                   <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary font-medium">
-                    {filterCount} {filterCount === 1 ? 'filter' : 'filters'} active
+                    {filterCount} {filterCount === 1 ? "filter" : "filters"}{" "}
+                    active
                   </span>
                 )}
               </div>
@@ -130,8 +201,12 @@ export const UserManagementDashboard: React.FC = () => {
                 {/* Count metrics */}
                 <div className="flex items-center gap-6">
                   <div className="flex items-baseline gap-1.5">
-                    <span className="text-xl font-bold">{metrics.totalUsers}</span>
-                    <span className="text-xs text-muted-foreground">total users</span>
+                    <span className="text-xl font-bold">
+                      {metrics.totalUsers}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      total users
+                    </span>
                   </div>
                   <div className="flex items-center gap-1">
                     <div className="w-2 h-2 rounded-full bg-yellow-500" />
@@ -154,18 +229,29 @@ export const UserManagementDashboard: React.FC = () => {
                 <div className="flex items-center gap-4">
                   <div>
                     <span className="font-semibold">{users.length}</span>
-                    <span className="text-muted-foreground ml-1">on this page</span>
+                    <span className="text-muted-foreground ml-1">
+                      on this page
+                    </span>
                   </div>
                   <div className="text-muted-foreground">•</div>
                   <div>
-                    <span className="font-semibold">{users.filter(u => u.approval_status === 'pending').length}</span>
-                    <span className="text-muted-foreground ml-1">pending (page)</span>
+                    <span className="font-semibold">
+                      {
+                        users.filter((u) => u.approval_status === "pending")
+                          .length
+                      }
+                    </span>
+                    <span className="text-muted-foreground ml-1">
+                      pending (page)
+                    </span>
                   </div>
                 </div>
               </div>
             </>
           ) : (
-            <div className="text-sm text-muted-foreground">Loading metrics...</div>
+            <div className="text-sm text-muted-foreground">
+              Loading metrics...
+            </div>
           )}
         </div>
       </div>
@@ -174,7 +260,10 @@ export const UserManagementDashboard: React.FC = () => {
       <div className="bg-background border-b border-border/50">
         <div className="flex gap-3 p-2 px-4">
           <div className="flex-1 relative flex items-center">
-            <Search size={16} className="absolute left-2.5 text-muted-foreground/60" />
+            <Search
+              size={16}
+              className="absolute left-2.5 text-muted-foreground/60"
+            />
             <Input
               type="text"
               placeholder="Search by email..."
@@ -185,7 +274,7 @@ export const UserManagementDashboard: React.FC = () => {
           </div>
           <Button
             onClick={() => setShowFilters(!showFilters)}
-            variant={showFilters ? 'default' : 'outline'}
+            variant={showFilters ? "default" : "outline"}
             size="sm"
             className="h-8"
           >
@@ -208,10 +297,13 @@ export const UserManagementDashboard: React.FC = () => {
         {showFilters && (
           <div className="flex gap-3 p-2 px-4 bg-muted/50">
             <Select
-              value={filters.approvalStatus || 'all'}
+              value={filters.approvalStatus || "all"}
               onValueChange={(value) =>
                 setFilters({
-                  approvalStatus: value === 'all' ? undefined : value as 'pending' | 'approved' | 'denied'
+                  approvalStatus:
+                    value === "all"
+                      ? undefined
+                      : (value as "pending" | "approved" | "denied"),
                 })
               }
             >
@@ -230,54 +322,69 @@ export const UserManagementDashboard: React.FC = () => {
       </div>
 
       {/* Table Container - Scrollable */}
-      <div className="overflow-auto" style={{ maxHeight: 'calc(100vh - 280px)' }}>
+      <div
+        className="overflow-auto"
+        style={{ maxHeight: "calc(100vh - 280px)" }}
+      >
         <Table>
           <TableHeader className="sticky top-0 bg-background z-10 border-b border-border/50">
             <TableRow className="hover:bg-transparent">
               <TableHead
                 className="h-10 px-3 cursor-pointer hover:text-foreground transition-colors"
-                onClick={() => toggleSort('email')}
+                onClick={() => toggleSort("email")}
               >
                 <div className="flex items-center gap-1">
                   Email
-                  {sortConfig.field === 'email' && (
-                    sortConfig.direction === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
-                  )}
+                  {sortConfig.field === "email" &&
+                    (sortConfig.direction === "asc" ? (
+                      <ChevronUp size={14} />
+                    ) : (
+                      <ChevronDown size={14} />
+                    ))}
                 </div>
               </TableHead>
               <TableHead
                 className="h-10 px-3 cursor-pointer hover:text-foreground transition-colors"
-                onClick={() => toggleSort('approval_status')}
+                onClick={() => toggleSort("approval_status")}
               >
                 <div className="flex items-center gap-1">
                   Status
-                  {sortConfig.field === 'approval_status' && (
-                    sortConfig.direction === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
-                  )}
+                  {sortConfig.field === "approval_status" &&
+                    (sortConfig.direction === "asc" ? (
+                      <ChevronUp size={14} />
+                    ) : (
+                      <ChevronDown size={14} />
+                    ))}
                 </div>
               </TableHead>
               <TableHead className="h-10 px-3">Admin Role</TableHead>
               <TableHead className="h-10 px-3">Contract Level</TableHead>
               <TableHead
                 className="h-10 px-3 cursor-pointer hover:text-foreground transition-colors"
-                onClick={() => toggleSort('created_at')}
+                onClick={() => toggleSort("created_at")}
               >
                 <div className="flex items-center gap-1">
                   Created
-                  {sortConfig.field === 'created_at' && (
-                    sortConfig.direction === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
-                  )}
+                  {sortConfig.field === "created_at" &&
+                    (sortConfig.direction === "asc" ? (
+                      <ChevronUp size={14} />
+                    ) : (
+                      <ChevronDown size={14} />
+                    ))}
                 </div>
               </TableHead>
               <TableHead
                 className="h-10 px-3 cursor-pointer hover:text-foreground transition-colors"
-                onClick={() => toggleSort('approved_at')}
+                onClick={() => toggleSort("approved_at")}
               >
                 <div className="flex items-center gap-1">
                   Status Date
-                  {sortConfig.field === 'approved_at' && (
-                    sortConfig.direction === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
-                  )}
+                  {sortConfig.field === "approved_at" &&
+                    (sortConfig.direction === "asc" ? (
+                      <ChevronUp size={14} />
+                    ) : (
+                      <ChevronDown size={14} />
+                    ))}
                 </div>
               </TableHead>
               <TableHead className="h-10 px-3">Notes</TableHead>
@@ -290,7 +397,9 @@ export const UserManagementDashboard: React.FC = () => {
                 <TableCell colSpan={8} className="text-center py-20">
                   <div className="flex flex-col items-center gap-2">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                    <span className="text-sm text-muted-foreground">Loading users...</span>
+                    <span className="text-sm text-muted-foreground">
+                      Loading users...
+                    </span>
                   </div>
                 </TableCell>
               </TableRow>
@@ -299,8 +408,12 @@ export const UserManagementDashboard: React.FC = () => {
                 <TableCell colSpan={8} className="text-center py-20">
                   <div className="flex flex-col items-center gap-2">
                     <AlertCircle className="h-8 w-8 text-destructive" />
-                    <span className="text-sm text-destructive">Error: {error}</span>
-                    <Button onClick={refresh} size="sm" variant="outline">Retry</Button>
+                    <span className="text-sm text-destructive">
+                      Error: {error}
+                    </span>
+                    <Button onClick={refresh} size="sm" variant="outline">
+                      Retry
+                    </Button>
                   </div>
                 </TableCell>
               </TableRow>
@@ -310,7 +423,9 @@ export const UserManagementDashboard: React.FC = () => {
                   <div className="flex flex-col items-center gap-2">
                     <Shield className="h-8 w-8 text-muted-foreground/50" />
                     <span className="text-sm text-muted-foreground">
-                      {filterCount > 0 ? 'No users match your filters' : 'No users found'}
+                      {filterCount > 0
+                        ? "No users match your filters"
+                        : "No users found"}
                     </span>
                   </div>
                 </TableCell>
@@ -325,15 +440,24 @@ export const UserManagementDashboard: React.FC = () => {
                     <Badge
                       variant="outline"
                       className={cn(
-                        'capitalize',
-                        user.approval_status === 'pending' && 'bg-yellow-100 text-yellow-800 border-yellow-300',
-                        user.approval_status === 'approved' && 'bg-green-100 text-green-800 border-green-300',
-                        user.approval_status === 'denied' && 'bg-red-100 text-red-800 border-red-300'
+                        "capitalize",
+                        user.approval_status === "pending" &&
+                          "bg-yellow-100 text-yellow-800 border-yellow-300",
+                        user.approval_status === "approved" &&
+                          "bg-green-100 text-green-800 border-green-300",
+                        user.approval_status === "denied" &&
+                          "bg-red-100 text-red-800 border-red-300",
                       )}
                     >
-                      {user.approval_status === 'pending' && <Clock className="h-3 w-3 mr-1" />}
-                      {user.approval_status === 'approved' && <UserCheck className="h-3 w-3 mr-1" />}
-                      {user.approval_status === 'denied' && <UserX className="h-3 w-3 mr-1" />}
+                      {user.approval_status === "pending" && (
+                        <Clock className="h-3 w-3 mr-1" />
+                      )}
+                      {user.approval_status === "approved" && (
+                        <UserCheck className="h-3 w-3 mr-1" />
+                      )}
+                      {user.approval_status === "denied" && (
+                        <UserX className="h-3 w-3 mr-1" />
+                      )}
                       {user.approval_status}
                     </Badge>
                   </TableCell>
@@ -341,24 +465,35 @@ export const UserManagementDashboard: React.FC = () => {
                     <div className="flex items-center gap-2">
                       <Checkbox
                         checked={user.is_admin}
-                        onCheckedChange={() => handleAdminToggle(user.id, user.is_admin)}
-                        disabled={user.id === currentUserProfile?.id && user.is_admin}
+                        onCheckedChange={() =>
+                          handleAdminToggle(user.id, user.is_admin)
+                        }
+                        disabled={
+                          user.id === currentUserProfile?.id && user.is_admin
+                        }
                       />
                       {user.is_admin && (
-                        <Badge variant="outline" className="border-primary text-primary text-xs">
+                        <Badge
+                          variant="outline"
+                          className="border-primary text-primary text-xs"
+                        >
                           <Shield className="h-3 w-3 mr-1" />
                           Admin
                         </Badge>
                       )}
                       {user.id === currentUserProfile?.id && user.is_admin && (
-                        <span className="text-[10px] text-muted-foreground">(You)</span>
+                        <span className="text-[10px] text-muted-foreground">
+                          (You)
+                        </span>
                       )}
                     </div>
                   </TableCell>
                   <TableCell className="py-1.5 px-3">
                     <Select
-                      value={user.contract_level?.toString() || 'none'}
-                      onValueChange={(value) => handleContractLevelChange(user.id, value)}
+                      value={user.contract_level?.toString() || "none"}
+                      onValueChange={(value) =>
+                        handleContractLevelChange(user.id, value)
+                      }
                     >
                       <SelectTrigger className="h-7 text-xs w-[90px]">
                         <SelectValue placeholder="Not set" />
@@ -374,41 +509,53 @@ export const UserManagementDashboard: React.FC = () => {
                     </Select>
                   </TableCell>
                   <TableCell className="py-1.5 px-3 text-[12px] text-muted-foreground">
-                    {user.created_at ? format(new Date(user.created_at), 'MMM d, yyyy h:mm a') : '-'}
+                    {user.created_at
+                      ? format(new Date(user.created_at), "MMM d, yyyy h:mm a")
+                      : "-"}
                   </TableCell>
                   <TableCell className="py-1.5 px-3 text-[12px] text-muted-foreground">
-                    {user.approved_at && format(new Date(user.approved_at), 'MMM d, yyyy h:mm a')}
-                    {user.denied_at && format(new Date(user.denied_at), 'MMM d, yyyy h:mm a')}
+                    {user.approved_at &&
+                      format(new Date(user.approved_at), "MMM d, yyyy h:mm a")}
+                    {user.denied_at &&
+                      format(new Date(user.denied_at), "MMM d, yyyy h:mm a")}
                   </TableCell>
                   <TableCell className="py-1.5 px-3 text-[11px] text-muted-foreground max-w-[200px] truncate">
                     {user.denial_reason && (
-                      <span className="text-destructive" title={user.denial_reason}>
+                      <span
+                        className="text-destructive"
+                        title={user.denial_reason}
+                      >
                         {user.denial_reason}
                       </span>
                     )}
                   </TableCell>
                   <TableCell className="py-1.5 px-3 text-right">
                     {user.is_admin ? (
-                      <span className="text-xs text-muted-foreground">Protected</span>
+                      <span className="text-xs text-muted-foreground">
+                        Protected
+                      </span>
                     ) : (
                       <Select
                         value={user.approval_status}
                         onValueChange={(value) => {
-                          if (value === 'denied') {
+                          if (value === "denied") {
                             handleDenyClick(user);
-                          } else if (value === 'approved') {
+                          } else if (value === "approved") {
                             handleApprove(user.id);
-                          } else if (value === 'pending') {
+                          } else if (value === "pending") {
                             handleSetPending(user.id);
                           }
                         }}
                       >
                         <SelectTrigger
                           className={cn(
-                            'h-7 text-xs w-[110px] !px-2 !gap-1 font-medium border-2',
-                            user.approval_status === 'approved' && '!bg-green-100 !text-green-800 !border-green-300 hover:!bg-green-200',
-                            user.approval_status === 'pending' && '!bg-yellow-100 !text-yellow-800 !border-yellow-300 hover:!bg-yellow-200',
-                            user.approval_status === 'denied' && '!bg-red-100 !text-red-800 !border-red-300 hover:!bg-red-200'
+                            "h-7 text-xs w-[110px] !px-2 !gap-1 font-medium border-2",
+                            user.approval_status === "approved" &&
+                              "!bg-green-100 !text-green-800 !border-green-300 hover:!bg-green-200",
+                            user.approval_status === "pending" &&
+                              "!bg-yellow-100 !text-yellow-800 !border-yellow-300 hover:!bg-yellow-200",
+                            user.approval_status === "denied" &&
+                              "!bg-red-100 !text-red-800 !border-red-300 hover:!bg-red-200",
                           )}
                         >
                           <SelectValue />
@@ -432,11 +579,16 @@ export const UserManagementDashboard: React.FC = () => {
       <div className="flex items-center justify-between px-4 py-2 bg-background border-t border-border/50 flex-shrink-0">
         <div className="flex items-center gap-4">
           <div className="text-sm text-muted-foreground">
-            Showing <span className="font-medium text-foreground">{((currentPage - 1) * pageSize) + 1}</span> to{' '}
+            Showing{" "}
+            <span className="font-medium text-foreground">
+              {(currentPage - 1) * pageSize + 1}
+            </span>{" "}
+            to{" "}
             <span className="font-medium text-foreground">
               {Math.min(currentPage * pageSize, totalItems)}
-            </span> of{' '}
-            <span className="font-medium text-foreground">{totalItems}</span> users
+            </span>{" "}
+            of <span className="font-medium text-foreground">{totalItems}</span>{" "}
+            users
           </div>
           <Select
             value={pageSize.toString()}
@@ -496,10 +648,14 @@ export const UserManagementDashboard: React.FC = () => {
                     className="h-8 min-w-8 px-2"
                   >
                     1
-                  </Button>
+                  </Button>,
                 );
                 if (start > 2) {
-                  pages.push(<span key="dots1" className="px-1 text-muted-foreground">...</span>);
+                  pages.push(
+                    <span key="dots1" className="px-1 text-muted-foreground">
+                      ...
+                    </span>,
+                  );
                 }
               }
 
@@ -508,18 +664,22 @@ export const UserManagementDashboard: React.FC = () => {
                   <Button
                     key={i}
                     onClick={() => goToPage(i)}
-                    variant={currentPage === i ? 'default' : 'outline'}
+                    variant={currentPage === i ? "default" : "outline"}
                     size="sm"
                     className="h-8 min-w-8 px-2"
                   >
                     {i}
-                  </Button>
+                  </Button>,
                 );
               }
 
               if (end < totalPages) {
                 if (end < totalPages - 1) {
-                  pages.push(<span key="dots2" className="px-1 text-muted-foreground">...</span>);
+                  pages.push(
+                    <span key="dots2" className="px-1 text-muted-foreground">
+                      ...
+                    </span>,
+                  );
                 }
                 pages.push(
                   <Button
@@ -530,7 +690,7 @@ export const UserManagementDashboard: React.FC = () => {
                     className="h-8 min-w-8 px-2"
                   >
                     {totalPages}
-                  </Button>
+                  </Button>,
                 );
               }
 
@@ -566,7 +726,8 @@ export const UserManagementDashboard: React.FC = () => {
           <DialogHeader>
             <DialogTitle>Deny User Access</DialogTitle>
             <DialogDescription>
-              Please provide a reason for denying access to {selectedUser?.email}
+              Please provide a reason for denying access to{" "}
+              {selectedUser?.email}
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
@@ -587,7 +748,7 @@ export const UserManagementDashboard: React.FC = () => {
               onClick={() => {
                 setDenyDialogOpen(false);
                 setSelectedUser(null);
-                setDenialReason('');
+                setDenialReason("");
               }}
             >
               Cancel
@@ -597,7 +758,7 @@ export const UserManagementDashboard: React.FC = () => {
               onClick={handleDenyConfirm}
               disabled={denyUser.isPending || !denialReason.trim()}
             >
-              {denyUser.isPending ? 'Denying...' : 'Deny Access'}
+              {denyUser.isPending ? "Denying..." : "Deny Access"}
             </Button>
           </DialogFooter>
         </DialogContent>

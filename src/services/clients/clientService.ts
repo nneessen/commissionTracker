@@ -49,6 +49,7 @@ class ClientService {
 
     const sortField = sort?.field || "name";
     const sortDirection = sort?.direction || "asc";
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic sort field
     query = query.order(sortField as any, {
       ascending: sortDirection === "asc",
     });
@@ -237,6 +238,7 @@ class ClientService {
         }
         return acc;
       },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic object construction
       {} as any,
     );
 
@@ -294,6 +296,7 @@ class ClientService {
         label: client.name,
         email: client.email || undefined,
         phone: client.phone || undefined,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DB record with stats
         policyCount: (client as any).policy_count,
         status: client.status,
       }));
@@ -344,7 +347,10 @@ class ClientService {
   /**
    * Create or find client by name (legacy method for backward compatibility)
    */
-  async createOrFind(clientData: CreateClientData, userId: string): Promise<Client> {
+  async createOrFind(
+    clientData: CreateClientData,
+    userId: string,
+  ): Promise<Client> {
     if (!userId) {
       throw new Error("User ID is required to create or find client");
     }

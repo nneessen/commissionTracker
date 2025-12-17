@@ -22,6 +22,7 @@ export class CommissionRepository extends BaseRepository<
    * Transform database record to Commission object
    * Maps database column names to TypeScript interface property names
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DB record has dynamic schema from various sources
   protected transformFromDB(dbRecord: any): Commission {
     return {
       id: dbRecord.id,
@@ -361,7 +362,12 @@ export class CommissionRepository extends BaseRepository<
     }
   }
 
-  protected transformToDB(data: any, _isUpdate = false): any {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DB data transformation requires flexible typing
+  protected transformToDB(
+    data: Partial<CreateCommissionData>,
+    _isUpdate = false,
+  ): any {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const dbData: any = {};
 
     if (data.policyId !== undefined) dbData.policy_id = data.policyId;

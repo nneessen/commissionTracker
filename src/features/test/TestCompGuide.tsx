@@ -1,19 +1,21 @@
 // /home/nneessen/projects/commissionTracker/src/features/test/TestCompGuide.tsx
 
-import React, { useEffect, useState } from 'react';
-import {useAuth} from '../../contexts/AuthContext';
-import {useCarriers} from '../../hooks/carriers';
-import {useProducts} from '../../hooks/products/useProducts';
-import {useCompGuide} from '../../hooks/comps';
-import {supabase} from '../../services/base/supabase';
+import React, { useEffect, useState } from "react";
+import { useAuth } from "../../contexts/AuthContext";
+import { useCarriers } from "../../hooks/carriers";
+import { useProducts } from "../../hooks/products/useProducts";
+import { useCompGuide } from "../../hooks/comps";
+import { supabase } from "../../services/base/supabase";
 
 export const TestCompGuide: React.FC = () => {
   const { user } = useAuth();
   const { data: carriers = [] } = useCarriers();
-  const [selectedCarrierId, setSelectedCarrierId] = useState<string>('');
+  const [selectedCarrierId, setSelectedCarrierId] = useState<string>("");
   const { data: products = [] } = useProducts(selectedCarrierId);
-  const [selectedProductId, setSelectedProductId] = useState<string>('');
+  const [selectedProductId, setSelectedProductId] = useState<string>("");
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- test component data
   const [compGuideData, setCompGuideData] = useState<any[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- test component data
   const [directQuery, setDirectQuery] = useState<any>(null);
 
   const userContractLevel = user?.contractCompLevel || 100;
@@ -21,7 +23,7 @@ export const TestCompGuide: React.FC = () => {
   // Use the hook
   const { data: hookData, error: hookError } = useCompGuide(
     selectedProductId,
-    userContractLevel
+    userContractLevel,
   );
 
   // Direct query test
@@ -29,16 +31,16 @@ export const TestCompGuide: React.FC = () => {
     const testDirectQuery = async () => {
       if (!selectedProductId) return;
 
-      const today = new Date().toISOString().split('T')[0];
+      const today = new Date().toISOString().split("T")[0];
 
       const { data, error } = await supabase
-        .from('comp_guide')
-        .select('*')
-        .eq('product_id', selectedProductId)
-        .eq('contract_level', userContractLevel)
-        .lte('effective_date', today)
+        .from("comp_guide")
+        .select("*")
+        .eq("product_id", selectedProductId)
+        .eq("contract_level", userContractLevel)
+        .lte("effective_date", today)
         .or(`expiration_date.is.null,expiration_date.gte.${today}`)
-        .order('effective_date', { ascending: false })
+        .order("effective_date", { ascending: false })
         .limit(1)
         .maybeSingle();
 
@@ -52,8 +54,9 @@ export const TestCompGuide: React.FC = () => {
   useEffect(() => {
     const loadCompGuideData = async () => {
       const { data, error } = await supabase
-        .from('comp_guide')
-        .select(`
+        .from("comp_guide")
+        .select(
+          `
           *,
           products (
             id,
@@ -64,9 +67,10 @@ export const TestCompGuide: React.FC = () => {
               name
             )
           )
-        `)
-        .order('product_id', { ascending: true })
-        .order('contract_level', { ascending: true });
+        `,
+        )
+        .order("product_id", { ascending: true })
+        .order("contract_level", { ascending: true });
 
       if (!error) {
         setCompGuideData(data || []);
@@ -88,24 +92,30 @@ export const TestCompGuide: React.FC = () => {
 
       <div className="grid grid-cols-2 gap-4 mb-6">
         <div>
-          <label className="block text-sm font-medium mb-2">Select Carrier</label>
+          <label className="block text-sm font-medium mb-2">
+            Select Carrier
+          </label>
           <select
             className="w-full p-2 border rounded"
             value={selectedCarrierId}
             onChange={(e) => {
               setSelectedCarrierId(e.target.value);
-              setSelectedProductId('');
+              setSelectedProductId("");
             }}
           >
             <option value="">-- Select Carrier --</option>
-            {carriers.map(c => (
-              <option key={c.id} value={c.id}>{c.name}</option>
+            {carriers.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
             ))}
           </select>
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-2">Select Product</label>
+          <label className="block text-sm font-medium mb-2">
+            Select Product
+          </label>
           <select
             className="w-full p-2 border rounded"
             value={selectedProductId}
@@ -113,9 +123,10 @@ export const TestCompGuide: React.FC = () => {
             disabled={!selectedCarrierId}
           >
             <option value="">-- Select Product --</option>
-            {products.map(p => (
+            {products.map((p) => (
               <option key={p.id} value={p.id}>
-                {p.name} ({((p.commission_percentage ?? 0) * 100).toFixed(1)}% base)
+                {p.name} ({((p.commission_percentage ?? 0) * 100).toFixed(1)}%
+                base)
               </option>
             ))}
           </select>
@@ -138,9 +149,13 @@ export const TestCompGuide: React.FC = () => {
           <div className="bg-green-50 border border-green-200 p-4 rounded">
             <h3 className="font-semibold mb-2">Direct Query Result:</h3>
             {directQuery?.error ? (
-              <p className="text-red-500">Error: {JSON.stringify(directQuery.error)}</p>
+              <p className="text-red-500">
+                Error: {JSON.stringify(directQuery.error)}
+              </p>
             ) : directQuery?.data ? (
-              <pre className="text-sm">{JSON.stringify(directQuery.data, null, 2)}</pre>
+              <pre className="text-sm">
+                {JSON.stringify(directQuery.data, null, 2)}
+              </pre>
             ) : (
               <p className="text-gray-500">No data from direct query</p>
             )}
@@ -149,7 +164,9 @@ export const TestCompGuide: React.FC = () => {
       )}
 
       <div className="bg-gray-50 border border-gray-200 p-4 rounded">
-        <h3 className="font-semibold mb-2">All Comp Guide Entries ({compGuideData.length}):</h3>
+        <h3 className="font-semibold mb-2">
+          All Comp Guide Entries ({compGuideData.length}):
+        </h3>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -166,17 +183,26 @@ export const TestCompGuide: React.FC = () => {
               {compGuideData.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="p-4 text-center text-gray-500">
-                    No comp_guide entries found. The FIX_COMP_GUIDE_DATA.sql script needs to be run in Supabase!
+                    No comp_guide entries found. The FIX_COMP_GUIDE_DATA.sql
+                    script needs to be run in Supabase!
                   </td>
                 </tr>
               ) : (
                 compGuideData.map((item, idx) => (
                   <tr key={idx} className="border-b">
-                    <td className="p-2">{item.products?.carriers?.name || 'N/A'}</td>
-                    <td className="p-2">{item.products?.name || item.product_id}</td>
+                    <td className="p-2">
+                      {item.products?.carriers?.name || "N/A"}
+                    </td>
+                    <td className="p-2">
+                      {item.products?.name || item.product_id}
+                    </td>
                     <td className="p-2">{item.contract_level}</td>
-                    <td className="p-2">{(item.commission_percentage * 100).toFixed(1)}%</td>
-                    <td className="p-2">{(item.bonus_percentage * 100).toFixed(1)}%</td>
+                    <td className="p-2">
+                      {(item.commission_percentage * 100).toFixed(1)}%
+                    </td>
+                    <td className="p-2">
+                      {(item.bonus_percentage * 100).toFixed(1)}%
+                    </td>
                     <td className="p-2">{item.effective_date}</td>
                   </tr>
                 ))

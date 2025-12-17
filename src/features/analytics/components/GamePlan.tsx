@@ -281,6 +281,7 @@ export function GamePlan() {
               </TableRow>
             </TableHeader>
             <TableBody>
+              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any -- smart moves data type */}
               {gamePlan.smartMoves.slice(0, 3).map((row: any, idx: number) => (
                 <TableRow
                   key={idx}
@@ -339,6 +340,7 @@ export function GamePlan() {
               </TableRow>
             </TableHeader>
             <TableBody>
+              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any -- scenario data type */}
               {gamePlan.scenarios.slice(0, 4).map((row: any, idx: number) => {
                 const isGood = row.goalPercent >= 100;
                 const isClose = row.goalPercent >= 90;

@@ -1,53 +1,67 @@
 // src/utils/exportHelpers.ts
 
-import {format} from 'date-fns';
+import { format } from "date-fns";
 
 /**
  * Convert data to CSV format
  */
-export function convertToCSV(data: Record<string, any>[], headers?: string[]): string {
-  if (data.length === 0) return '';
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- export format varies
+export function convertToCSV(
+  data: Record<string, any>[],
+  headers?: string[],
+): string {
+  if (data.length === 0) return "";
 
   // Use provided headers or extract from first object
   const keys = headers || Object.keys(data[0]);
 
   // Create header row
-  const headerRow = keys.join(',');
+  const headerRow = keys.join(",");
 
   // Create data rows
-  const dataRows = data.map(row => {
-    return keys.map(key => {
-      const value = row[key];
+  const dataRows = data.map((row) => {
+    return keys
+      .map((key) => {
+        const value = row[key];
 
-      // Handle different value types
-      if (value === null || value === undefined) return '';
-      if (typeof value === 'string' && value.includes(',')) {
-        return `"${value.replace(/"/g, '""')}"`;
-      }
-      if (value instanceof Date) {
-        return format(value, 'yyyy-MM-dd');
-      }
+        // Handle different value types
+        if (value === null || value === undefined) return "";
+        if (typeof value === "string" && value.includes(",")) {
+          return `"${value.replace(/"/g, '""')}"`;
+        }
+        if (value instanceof Date) {
+          return format(value, "yyyy-MM-dd");
+        }
 
-      return value.toString();
-    }).join(',');
+        return value.toString();
+      })
+      .join(",");
   });
 
-  return [headerRow, ...dataRows].join('\n');
+  return [headerRow, ...dataRows].join("\n");
 }
 
 /**
  * Download CSV file
  */
-export function downloadCSV(data: Record<string, any>[], filename: string, headers?: string[]): void {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- export format varies
+export function downloadCSV(
+  data: Record<string, any>[],
+  filename: string,
+  headers?: string[],
+): void {
   const csv = convertToCSV(data, headers);
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement('a');
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const link = document.createElement("a");
 
   if (link.download !== undefined) {
     const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', `${filename}_${format(new Date(), 'yyyy-MM-dd')}.csv`);
-    link.style.visibility = 'hidden';
+    link.setAttribute("href", url);
+    link.setAttribute(
+      "download",
+      `${filename}_${format(new Date(), "yyyy-MM-dd")}.csv`,
+    );
+    link.style.visibility = "hidden";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -57,13 +71,17 @@ export function downloadCSV(data: Record<string, any>[], filename: string, heade
 /**
  * Copy data to clipboard as CSV
  */
-export async function copyToClipboardAsCSV(data: Record<string, any>[], headers?: string[]): Promise<boolean> {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- export format varies
+export async function copyToClipboardAsCSV(
+  data: Record<string, any>[],
+  headers?: string[],
+): Promise<boolean> {
   try {
     const csv = convertToCSV(data, headers);
     await navigator.clipboard.writeText(csv);
     return true;
   } catch (error) {
-    console.error('Failed to copy to clipboard:', error);
+    console.error("Failed to copy to clipboard:", error);
     return false;
   }
 }
@@ -73,6 +91,7 @@ export async function copyToClipboardAsCSV(data: Record<string, any>[], headers?
  */
 export interface AnalyticsSectionExport {
   sectionName: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- export format varies
   data: Record<string, any>[];
   headers?: string[];
 }
@@ -80,8 +99,10 @@ export interface AnalyticsSectionExport {
 /**
  * Download multiple analytics sections as separate CSV files
  */
-export function downloadAnalyticsSections(sections: AnalyticsSectionExport[]): void {
-  sections.forEach(section => {
+export function downloadAnalyticsSections(
+  sections: AnalyticsSectionExport[],
+): void {
+  sections.forEach((section) => {
     downloadCSV(section.data, section.sectionName, section.headers);
   });
 }
@@ -105,7 +126,7 @@ export function downloadAnalyticsSections(sections: AnalyticsSectionExport[]): v
  */
 export function generatePrintableHTML(
   title: string,
-  sections: { title: string; content: string }[]
+  sections: { title: string; content: string }[],
 ): string {
   return `
 <!DOCTYPE html>
@@ -483,18 +504,22 @@ export function generatePrintableHTML(
     <h1>${title}</h1>
     <div class="report-subtitle">Performance Analytics & Strategic Insights</div>
     <div class="report-metadata">
-      <span>Report Date: ${format(new Date(), 'MMMM d, yyyy')}</span>
-      <span>Generated: ${format(new Date(), 'h:mm a')}</span>
+      <span>Report Date: ${format(new Date(), "MMMM d, yyyy")}</span>
+      <span>Generated: ${format(new Date(), "h:mm a")}</span>
       <span class="confidential">Confidential</span>
     </div>
   </div>
 
-  ${sections.map((section, _index) => `
+  ${sections
+    .map(
+      (section, _index) => `
     <div class="no-break">
       <h2>${section.title}</h2>
       ${section.content}
     </div>
-  `).join('\n')}
+  `,
+    )
+    .join("\n")}
 
   <div class="report-footer">
     <div>This report contains confidential business information. Distribution is restricted to authorized personnel only.</div>
@@ -510,10 +535,10 @@ export function generatePrintableHTML(
  */
 export function printAnalyticsToPDF(
   title: string,
-  sections: { title: string; content: string }[]
+  sections: { title: string; content: string }[],
 ): void {
   const html = generatePrintableHTML(title, sections);
-  const printWindow = window.open('', '_blank');
+  const printWindow = window.open("", "_blank");
 
   if (printWindow) {
     printWindow.document.write(html);
@@ -526,23 +551,29 @@ export function printAnalyticsToPDF(
       }, 250);
     };
   } else {
-    console.error('Failed to open print window. Please check popup blocker settings.');
+    console.error(
+      "Failed to open print window. Please check popup blocker settings.",
+    );
   }
 }
 
 /**
  * Format analytics metrics for export
  */
-export function formatMetricsForExport(metrics: Record<string, any>): Record<string, any> {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- export format varies
+export function formatMetricsForExport(
+  metrics: Record<string, any>,
+): Record<string, any> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- export format varies
   const formatted: Record<string, any> = {};
 
   for (const [key, value] of Object.entries(metrics)) {
     if (value instanceof Date) {
-      formatted[key] = format(value, 'yyyy-MM-dd');
-    } else if (typeof value === 'number') {
+      formatted[key] = format(value, "yyyy-MM-dd");
+    } else if (typeof value === "number") {
       // Format numbers with 2 decimal places
       formatted[key] = Math.round(value * 100) / 100;
-    } else if (typeof value === 'object' && value !== null) {
+    } else if (typeof value === "object" && value !== null) {
       // Skip nested objects for flat CSV export
       formatted[key] = JSON.stringify(value);
     } else {

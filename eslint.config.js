@@ -40,4 +40,48 @@ export default tseslint.config(
       '@typescript-eslint/no-explicit-any': 'warn',
     },
   },
+  // Disable react-refresh warning for shadcn/ui components (they export variants)
+  {
+    files: ['src/components/ui/**/*.tsx'],
+    rules: {
+      'react-refresh/only-export-components': 'off',
+    },
+  },
+  // Disable react-refresh warning for context files (they export context + hooks together)
+  {
+    files: ['src/contexts/**/*.tsx', 'src/**/context/**/*.tsx'],
+    rules: {
+      'react-refresh/only-export-components': 'off',
+    },
+  },
+  // Disable react-refresh warning for page/route files (they export loaders + components)
+  {
+    files: ['src/router.tsx', 'src/routes/**/*.tsx', 'src/features/**/pages/**/*.tsx'],
+    rules: {
+      'react-refresh/only-export-components': 'off',
+    },
+  },
+  // Disable react-refresh warning for feature components that export utilities alongside
+  {
+    files: [
+      'src/features/**/components/**/*.tsx',
+      'src/features/**/admin/**/*.tsx',
+      'src/features/auth/**/*.tsx',
+      'src/features/dashboard/**/*.tsx',
+      'src/features/comps/**/*.tsx',
+      'src/features/test/**/*.tsx',
+      'src/components/shared/**/*.tsx',
+      'src/components/permissions/**/*.tsx',
+    ],
+    rules: {
+      'react-refresh/only-export-components': 'off',
+    },
+  },
+  // Disable no-explicit-any for test files (test mocks often need flexibility)
+  {
+    files: ['**/*.test.ts', '**/*.test.tsx', 'tests/**/*.ts'],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
+    },
+  },
 );

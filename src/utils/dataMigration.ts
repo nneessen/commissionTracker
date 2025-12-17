@@ -281,6 +281,7 @@ class DataMigrationService {
             ? new Date(commission.actualDate)
             : undefined,
           notes: commission.notes,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- legacy data migration type assertion
         } as any);
         result.details.commissions++;
       } catch (error) {

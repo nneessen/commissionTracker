@@ -15,6 +15,7 @@ export interface UserTargets {
   persistency_25_month_target: number;
   monthly_expense_target: number;
   expense_ratio_target: number;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- JSON type for achievements
   achievements: any[];
   last_milestone_date: string | null;
   created_at: string;

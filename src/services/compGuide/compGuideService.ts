@@ -1,7 +1,7 @@
 // /home/nneessen/projects/commissionTracker/src/services/compGuide/compGuideService.ts
 // Service layer for Commission Guide data from Supabase database
 
-import {supabase} from "../base/supabase";
+import { supabase } from "../base/supabase";
 
 export interface CompGuideRecord {
   id: string;
@@ -222,6 +222,7 @@ class CompGuideService {
   /**
    * Transform database record to application format
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DB record has dynamic schema
   private transformFromDB(dbRecord: any): CompGuideRecord {
     return {
       id: dbRecord.id,
@@ -337,4 +338,3 @@ class CompGuideService {
 }
 
 export const compGuideService = new CompGuideService();
-

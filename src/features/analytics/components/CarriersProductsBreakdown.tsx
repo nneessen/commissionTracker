@@ -145,6 +145,7 @@ export function CarriersProductsBreakdown() {
   };
 
   // Prepare flattened data for table
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic table data shape
   const tableData: any[] = [];
   sortedCarriers.forEach((carrier) => {
     // Add carrier summary row

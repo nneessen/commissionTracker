@@ -105,6 +105,7 @@ const normalizeUrl = (url: string): string => {
 
 // Helper to extract error message from Zod error
 // TODO: another helper function...why is it in here?
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- error object type
 const getErrorMessage = (errors: any[]): string => {
   if (!errors || errors.length === 0) return "";
   return errors
@@ -192,6 +193,7 @@ export function AddRecruitDialog({
       if (error) throw error;
 
       // Filter users who have agent, admin, trainer, or upline_manager roles
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- user profile type
       return (data || []).filter((u: any) => {
         const roles = u.roles as RoleName[];
         return (
@@ -817,6 +819,7 @@ export function AddRecruitDialog({
                         <SelectValue placeholder="Select upline (optional)" />
                       </SelectTrigger>
                       <SelectContent>
+                        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any -- upline user profile */}
                         {potentialUplines?.map((upline: any) => (
                           <SelectItem key={upline.id} value={upline.id}>
                             {upline.first_name} {upline.last_name} (
