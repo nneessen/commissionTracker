@@ -1,8 +1,18 @@
-import React, { useState } from 'react';
-import {Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle} from '@/components/ui/dialog';
-import {Button} from '@/components/ui/button';
-import {Textarea} from '@/components/ui/textarea';
-import {Download} from 'lucide-react';
+// src/features/settings/commission-rates/components/RateBulkImport.tsx
+// Redesigned with zinc palette and compact design patterns
+
+import React, { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Download } from "lucide-react";
 
 interface RateBulkImportProps {
   open: boolean;
@@ -17,7 +27,7 @@ export function RateBulkImport({
   onImport,
   isImporting = false,
 }: RateBulkImportProps) {
-  const [csvText, setCsvText] = useState('');
+  const [csvText, setCsvText] = useState("");
 
   const downloadTemplate = () => {
     const template = `Product Name,Contract Level,Commission %
@@ -27,18 +37,18 @@ Whole Life 0-75,90,100.0
 Term Life 20yr,80,90.0
 Term Life 20yr,85,92.5`;
 
-    const blob = new Blob([template], { type: 'text/csv' });
+    const blob = new Blob([template], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
-    a.download = 'commission-rates-import-template.csv';
+    a.download = "commission-rates-import-template.csv";
     a.click();
     URL.revokeObjectURL(url);
   };
 
   const handleImport = () => {
     if (!csvText.trim()) {
-      alert('Please paste CSV data');
+      alert("Please paste CSV data");
       return;
     }
 
@@ -47,62 +57,82 @@ Term Life 20yr,85,92.5`;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
-        <DialogHeader>
-          <DialogTitle>Bulk Import Commission Rates</DialogTitle>
-          <DialogDescription>
-            Import commission rates for multiple products and contract levels at once
+      <DialogContent className="sm:max-w-lg p-3 bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800">
+        <DialogHeader className="space-y-1 pb-3 border-b border-zinc-100 dark:border-zinc-800">
+          <DialogTitle className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+            Bulk Import Commission Rates
+          </DialogTitle>
+          <DialogDescription className="text-[10px] text-zinc-500 dark:text-zinc-400">
+            Import commission rates for multiple products and contract levels at
+            once
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="space-y-3 py-3">
           <div className="flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">
+            <p className="text-[10px] text-zinc-500 dark:text-zinc-400">
               Format: Product Name, Contract Level, Commission %
             </p>
-            <Button variant="outline" size="sm" onClick={downloadTemplate}>
-              <Download className="h-4 w-4 mr-2" />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={downloadTemplate}
+              className="h-6 px-2 text-[10px] border-zinc-200 dark:border-zinc-700"
+            >
+              <Download className="h-3 w-3 mr-1" />
               Template
             </Button>
           </div>
 
           <div>
-            <label className="text-sm font-medium mb-2 block">
+            <label className="text-[10px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide mb-1 block">
               Paste CSV Data
             </label>
             <Textarea
               value={csvText}
               onChange={(e) => setCsvText(e.target.value)}
               placeholder="Whole Life 0-75,80,95.0&#10;Whole Life 0-75,85,97.5&#10;Term Life 20yr,80,90.0"
-              className="h-64 font-mono text-sm"
+              className="h-40 font-mono text-[11px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700"
             />
           </div>
 
-          <div className="rounded-md bg-muted p-3 space-y-2">
-            <p className="text-sm font-medium">Requirements:</p>
-            <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
+          <div className="rounded p-2 bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700 space-y-1.5">
+            <p className="text-[10px] font-medium text-zinc-600 dark:text-zinc-300">
+              Requirements:
+            </p>
+            <ul className="text-[10px] text-zinc-500 dark:text-zinc-400 space-y-0.5 list-disc list-inside">
               <li>Products must already exist in the system</li>
-              <li>Contract levels: 80, 85, 90, 95, 100, 105, 110, 115, 120, 125, 130, 135, 140, 145</li>
+              <li>
+                Contract levels: 80, 85, 90, 95, 100, 105, 110, 115, 120, 125,
+                130, 135, 140, 145
+              </li>
               <li>Commission percentages: 0-100</li>
               <li>CSV will update existing rates or create new ones</li>
             </ul>
           </div>
         </div>
 
-        <DialogFooter className="gap-2">
+        <DialogFooter className="gap-1 pt-3 border-t border-zinc-100 dark:border-zinc-800">
           <Button
             type="button"
             variant="outline"
+            size="sm"
             onClick={() => {
               onOpenChange(false);
-              setCsvText('');
+              setCsvText("");
             }}
             disabled={isImporting}
+            className="h-7 px-2 text-[10px] border-zinc-200 dark:border-zinc-700"
           >
             Cancel
           </Button>
-          <Button onClick={handleImport} disabled={isImporting || !csvText.trim()}>
-            {isImporting ? 'Importing...' : 'Import Rates'}
+          <Button
+            onClick={handleImport}
+            size="sm"
+            disabled={isImporting || !csvText.trim()}
+            className="h-7 px-2 text-[10px]"
+          >
+            {isImporting ? "Importing..." : "Import Rates"}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -1,4 +1,6 @@
 // src/features/settings/ConstantsManagement.tsx
+// Redesigned with zinc palette and compact design patterns
+
 import React, { useState } from "react";
 import {
   useConstants,
@@ -6,14 +8,7 @@ import {
 } from "../../hooks/expenses/useConstants";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
-import { Card, CardContent } from "../../components/ui/card";
-import {
-  AlertCircle,
-  CheckCircle2,
-  Settings,
-  DollarSign,
-  Save,
-} from "lucide-react";
+import { AlertCircle, CheckCircle, Settings, DollarSign } from "lucide-react";
 
 export const ConstantsManagement: React.FC = () => {
   const { data: constants, isLoading } = useConstants();
@@ -56,7 +51,7 @@ export const ConstantsManagement: React.FC = () => {
 
     try {
       await updateConstant.mutateAsync({ field, value });
-      setSuccessMessage("Saved!");
+      setSuccessMessage(`${getFieldLabel(field)} updated successfully!`);
 
       // Clear success message after 3 seconds
       setTimeout(() => setSuccessMessage(""), 3000);
@@ -68,83 +63,122 @@ export const ConstantsManagement: React.FC = () => {
     }
   };
 
+  const getFieldLabel = (field: string): string => {
+    const labels: Record<string, string> = {
+      avgAP: "Average Annual Premium Override",
+    };
+    return labels[field] || field;
+  };
+
+  const getFieldDescription = (field: string): string => {
+    const descriptions: Record<string, string> = {
+      avgAP:
+        "Optional: Override the calculated average annual premium. This value will be used in targets calculations instead of your historical average. Leave at 0 to use automatic calculations.",
+    };
+    return descriptions[field] || "";
+  };
+
   if (isLoading) {
     return (
-      <Card>
-        <CardContent className="p-3">
-          <div className="flex items-center justify-center py-4 text-muted-foreground text-[11px]">
-            Loading constants...
-          </div>
-        </CardContent>
-      </Card>
+      <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-6">
+        <div className="flex items-center justify-center text-[11px] text-zinc-500 dark:text-zinc-400">
+          Loading constants...
+        </div>
+      </div>
     );
   }
 
   return (
-    <Card>
-      <CardContent className="p-3">
-        {/* Header */}
-        <div className="flex items-center gap-2 mb-3">
-          <Settings className="h-3.5 w-3.5 text-muted-foreground" />
-          <span className="text-[11px] font-medium text-muted-foreground uppercase">
-            System Constants
-          </span>
+    <div className="space-y-2">
+      {/* Header */}
+      <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800">
+        <div className="flex items-center gap-2 px-3 py-2 border-b border-zinc-100 dark:border-zinc-800">
+          <Settings className="h-3.5 w-3.5 text-zinc-400" />
+          <div>
+            <h3 className="text-[11px] font-semibold text-zinc-900 dark:text-zinc-100 uppercase tracking-wide">
+              System Constants
+            </h3>
+            <p className="text-[10px] text-zinc-500 dark:text-zinc-400">
+              Configure default values used throughout the application for
+              calculations and comparisons
+            </p>
+          </div>
         </div>
 
-        {/* Average Annual Premium */}
-        <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <DollarSign className="h-3 w-3 text-muted-foreground" />
-            <span className="text-[11px] font-medium">
-              Average Annual Premium Override
-            </span>
-          </div>
-
-          <p className="text-[10px] text-muted-foreground">
-            Optional: Override the calculated average annual premium for
-            targets. Leave at 0 to use automatic calculations.
-          </p>
-
-          <div className="flex items-center gap-2">
-            <Input
-              type="number"
-              value={formData.avgAP}
-              onChange={(e) => handleInputChange("avgAP", e.target.value)}
-              min={0}
-              step={100}
-              className={`w-32 h-7 text-[11px] font-mono ${errors.avgAP ? "border-destructive" : ""}`}
-            />
-            <Button
-              onClick={() => validateAndSave("avgAP")}
-              disabled={updateConstant.isPending}
-              size="sm"
-              className="h-6 px-2 text-[10px]"
-            >
-              <Save className="h-3 w-3 mr-1" />
-              {updateConstant.isPending ? "Saving..." : "Save"}
-            </Button>
-            {successMessage && (
-              <div className="flex items-center gap-1 text-[10px] text-success">
-                <CheckCircle2 className="h-3 w-3" />
-                {successMessage}
-              </div>
-            )}
-          </div>
-
-          {errors.avgAP && (
-            <div className="flex items-center gap-1 text-[10px] text-destructive">
-              <AlertCircle className="h-3 w-3" />
-              {errors.avgAP}
+        <div className="p-3">
+          {/* Success Message */}
+          {successMessage && (
+            <div className="flex items-center gap-2 p-2 mb-3 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded text-[10px] text-emerald-700 dark:text-emerald-300">
+              <CheckCircle className="h-3 w-3 flex-shrink-0" />
+              {successMessage}
             </div>
           )}
 
-          <div className="text-[10px] text-muted-foreground pt-2 border-t border-border/50">
-            Set a value only if you want to override automatic calculation.
-            Useful for planning around different policy types or expected
-            premium changes.
+          {/* Average Annual Premium */}
+          <div className="flex items-start gap-2">
+            <DollarSign className="h-3.5 w-3.5 text-zinc-400 mt-0.5" />
+            <div className="flex-1">
+              <label className="block text-[10px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide mb-0.5">
+                {getFieldLabel("avgAP")}
+              </label>
+              <p className="text-[10px] text-zinc-400 mb-2">
+                {getFieldDescription("avgAP")}
+              </p>
+
+              <div className="flex gap-2 items-start max-w-sm">
+                <div className="flex-1">
+                  <Input
+                    type="number"
+                    value={formData.avgAP}
+                    onChange={(e) => handleInputChange("avgAP", e.target.value)}
+                    onBlur={() => validateAndSave("avgAP")}
+                    min={0}
+                    step={100}
+                    className={`h-7 text-[11px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 ${errors.avgAP ? "border-red-500" : ""}`}
+                  />
+                  {errors.avgAP && (
+                    <div className="flex items-center gap-1 mt-1 text-[10px] text-red-600 dark:text-red-400">
+                      <AlertCircle className="h-3 w-3" />
+                      {errors.avgAP}
+                    </div>
+                  )}
+                </div>
+                <Button
+                  onClick={() => validateAndSave("avgAP")}
+                  disabled={updateConstant.isPending}
+                  size="sm"
+                  className="h-7 px-2 text-[10px]"
+                >
+                  {updateConstant.isPending ? "Saving..." : "Save"}
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+
+      {/* Info Box */}
+      <div className="bg-amber-50 dark:bg-amber-950/30 rounded-lg border border-amber-200 dark:border-amber-800 p-3">
+        <div className="flex items-start gap-2">
+          <AlertCircle className="h-3.5 w-3.5 text-amber-500 mt-0.5 flex-shrink-0" />
+          <div className="text-[10px]">
+            <p className="font-medium text-amber-700 dark:text-amber-300 mb-0.5">
+              About Premium Override
+            </p>
+            <p className="text-amber-600 dark:text-amber-400">
+              By default, your targets are calculated using your actual
+              historical average policy premium. Set a value here only if you
+              want to override the automatic calculation. This is useful if
+              you're planning to focus on different policy types or expect your
+              average premium to change significantly.
+            </p>
+            <p className="text-amber-600 dark:text-amber-400 mt-1">
+              Leave at 0 to use your actual historical average from your policy
+              data.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };

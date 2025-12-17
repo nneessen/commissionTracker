@@ -1,6 +1,7 @@
 // src/features/settings/commission-rates/CommissionRatesManagement.tsx
+// Redesigned with zinc palette and compact design patterns
+
 import React, { useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -12,6 +13,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Search, Edit, Upload, Percent } from "lucide-react";
 import {
   useCommissionRates,
@@ -60,7 +69,7 @@ export function CommissionRatesManagement() {
   const [selectedProduct, setSelectedProduct] =
     useState<ProductWithRates | null>(null);
 
-  // Filter products (React 19.1 optimizes automatically)
+  // Filter products
   let filteredProducts = productsWithRates;
 
   if (filterCarrierId) {
@@ -122,7 +131,7 @@ export function CommissionRatesManagement() {
             await updateRate.mutateAsync({
               id: existingRateId,
               data: {
-                commission_percentage: percentage / 100, // Convert percentage to decimal
+                commission_percentage: percentage / 100,
               },
             });
           } else {
@@ -248,102 +257,119 @@ export function CommissionRatesManagement() {
 
   if (isLoading) {
     return (
-      <Card>
-        <CardContent className="p-3">
-          <div className="flex items-center justify-center py-4 text-muted-foreground text-[11px]">
-            Loading commission rates...
-          </div>
-        </CardContent>
-      </Card>
+      <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-6">
+        <div className="flex items-center justify-center text-[11px] text-zinc-500 dark:text-zinc-400">
+          Loading commission rates...
+        </div>
+      </div>
     );
   }
 
   return (
     <>
-      <Card>
-        <CardContent className="p-3">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <Percent className="h-3.5 w-3.5 text-muted-foreground" />
-              <span className="text-[11px] font-medium text-muted-foreground uppercase">
+      <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800">
+        {/* Header */}
+        <div className="flex items-center justify-between px-3 py-2 border-b border-zinc-100 dark:border-zinc-800">
+          <div className="flex items-center gap-2">
+            <Percent className="h-3.5 w-3.5 text-zinc-400" />
+            <div>
+              <h3 className="text-[11px] font-semibold text-zinc-900 dark:text-zinc-100 uppercase tracking-wide">
                 Commission Rates
-              </span>
-              <span className="text-[10px] text-muted-foreground">
-                ({productsWithRates.length})
-              </span>
+              </h3>
+              <p className="text-[10px] text-zinc-500 dark:text-zinc-400">
+                Configure contract level commission percentages for each product
+              </p>
             </div>
-            <Button
-              onClick={() => setIsBulkImportOpen(true)}
-              size="sm"
-              className="h-6 px-2 text-[10px]"
-            >
-              <Upload className="h-3 w-3 mr-1" />
-              Bulk Import
-            </Button>
           </div>
+          <Button
+            size="sm"
+            className="h-6 px-2 text-[10px]"
+            onClick={() => setIsBulkImportOpen(true)}
+          >
+            <Upload className="h-3 w-3 mr-1" />
+            Bulk Import
+          </Button>
+        </div>
 
+        <div className="p-3 space-y-2">
           {/* Filters */}
-          <div className="flex gap-2 flex-wrap mb-2">
-            <div className="relative flex-1 min-w-[150px]">
-              <Search className="absolute left-2 top-1/2 h-3 w-3 -translate-y-1/2 text-muted-foreground" />
+          <div className="flex gap-2 flex-wrap">
+            <div className="relative flex-1 min-w-[180px] max-w-xs">
+              <Search className="absolute left-2 top-1/2 h-3 w-3 -translate-y-1/2 text-zinc-400" />
               <Input
                 type="text"
                 placeholder="Search products..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-7 h-7 text-[11px]"
+                className="pl-7 h-7 text-[11px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700"
               />
             </div>
-            <select
-              value={filterCarrierId}
-              onChange={(e) => setFilterCarrierId(e.target.value)}
-              className="h-7 px-2 text-[11px] border rounded bg-background min-w-[120px]"
+            <Select
+              value={filterCarrierId || "all"}
+              onValueChange={(v) => setFilterCarrierId(v === "all" ? "" : v)}
             >
-              <option value="">All Carriers</option>
-              {carriers.map((carrier) => (
-                <option key={carrier.id} value={carrier.id}>
-                  {carrier.name}
-                </option>
-              ))}
-            </select>
-            <select
-              value={filterProductType}
-              onChange={(e) =>
-                setFilterProductType(e.target.value as ProductType | "")
+              <SelectTrigger className="w-36 h-7 text-[11px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700">
+                <SelectValue placeholder="All Carriers" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Carriers</SelectItem>
+                {carriers.map((carrier) => (
+                  <SelectItem key={carrier.id} value={carrier.id}>
+                    {carrier.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select
+              value={filterProductType || "all"}
+              onValueChange={(v) =>
+                setFilterProductType(v === "all" ? "" : (v as ProductType))
               }
-              className="h-7 px-2 text-[11px] border rounded bg-background min-w-[110px]"
             >
-              <option value="">All Types</option>
-              {PRODUCT_TYPES.map((type) => (
-                <option key={type} value={type}>
-                  {type.replace("_", " ")}
-                </option>
-              ))}
-            </select>
-            <label className="flex items-center gap-1.5 px-2 h-7 border rounded bg-background">
-              <input
-                type="checkbox"
+              <SelectTrigger className="w-36 h-7 text-[11px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700">
+                <SelectValue placeholder="All Types" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Types</SelectItem>
+                {PRODUCT_TYPES.map((type) => (
+                  <SelectItem key={type} value={type}>
+                    {type.replace("_", " ")}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <label className="flex items-center gap-1.5 px-2 h-7 border border-zinc-200 dark:border-zinc-700 rounded bg-white dark:bg-zinc-900">
+              <Checkbox
                 checked={showEmptyOnly}
-                onChange={(e) => setShowEmptyOnly(e.target.checked)}
+                onCheckedChange={(checked) =>
+                  setShowEmptyOnly(checked as boolean)
+                }
                 className="h-3 w-3"
               />
-              <span className="text-[10px]">Empty only</span>
+              <span className="text-[10px] text-zinc-600 dark:text-zinc-400">
+                Empty only
+              </span>
             </label>
           </div>
 
           {/* Table */}
-          <div className="rounded border">
+          <div className="rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-800">
             <Table>
-              <TableHeader>
-                <TableRow className="hover:bg-transparent">
-                  <TableHead className="text-[10px] h-7">Carrier</TableHead>
-                  <TableHead className="text-[10px] h-7">Product</TableHead>
-                  <TableHead className="text-[10px] h-7">Type</TableHead>
-                  <TableHead className="text-[10px] h-7 text-center">
-                    Coverage
+              <TableHeader className="sticky top-0 bg-zinc-50 dark:bg-zinc-800/50 z-10">
+                <TableRow className="border-b border-zinc-200 dark:border-zinc-800 hover:bg-transparent">
+                  <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300">
+                    Carrier
                   </TableHead>
-                  <TableHead className="text-[10px] h-7 text-right">
+                  <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300">
+                    Product
+                  </TableHead>
+                  <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300 w-[100px]">
+                    Type
+                  </TableHead>
+                  <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300 w-[100px] text-center">
+                    Rate Coverage
+                  </TableHead>
+                  <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300 w-[60px] text-right">
                     Actions
                   </TableHead>
                 </TableRow>
@@ -353,7 +379,7 @@ export function CommissionRatesManagement() {
                   <TableRow>
                     <TableCell
                       colSpan={5}
-                      className="text-center py-4 text-muted-foreground text-[11px]"
+                      className="text-center text-[11px] text-zinc-500 dark:text-zinc-400 py-6"
                     >
                       {showEmptyOnly
                         ? "No products without rates found."
@@ -371,22 +397,29 @@ export function CommissionRatesManagement() {
                     const isEmpty = filled === 0;
 
                     return (
-                      <TableRow key={product.productId}>
-                        <TableCell className="text-[11px] font-medium py-1.5">
-                          {product.carrierName}
+                      <TableRow
+                        key={product.productId}
+                        className="hover:bg-zinc-50 dark:hover:bg-zinc-800/50 border-b border-zinc-100 dark:border-zinc-800/50"
+                      >
+                        <TableCell className="py-1.5">
+                          <span className="font-medium text-[11px] text-zinc-900 dark:text-zinc-100">
+                            {product.carrierName}
+                          </span>
                         </TableCell>
-                        <TableCell className="text-[11px] py-1.5">
-                          {product.productName}
+                        <TableCell className="py-1.5">
+                          <span className="text-[11px] text-zinc-700 dark:text-zinc-300">
+                            {product.productName}
+                          </span>
                         </TableCell>
                         <TableCell className="py-1.5">
                           <Badge
                             variant="outline"
-                            className="text-[9px] px-1.5 py-0"
+                            className="text-[10px] h-4 px-1 border-zinc-300 dark:border-zinc-600"
                           >
                             {product.productType.replace("_", " ")}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-center py-1.5">
+                        <TableCell className="py-1.5 text-center">
                           <Badge
                             variant={
                               isComplete
@@ -395,19 +428,20 @@ export function CommissionRatesManagement() {
                                   ? "destructive"
                                   : "secondary"
                             }
-                            className="text-[9px] px-1.5 py-0"
+                            className="text-[10px] h-4 px-1"
                           >
                             {product.rateCoverage}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-right py-1.5">
+                        <TableCell className="py-1.5 text-right">
                           <Button
                             variant="ghost"
                             size="sm"
+                            className="h-5 px-1.5 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
                             onClick={() => handleEditRates(product)}
-                            className="h-6 w-6 p-0"
                           >
-                            <Edit className="h-3 w-3" />
+                            <Edit className="h-2.5 w-2.5 mr-0.5" />
+                            <span className="text-[10px]">Edit</span>
                           </Button>
                         </TableCell>
                       </TableRow>
@@ -417,8 +451,8 @@ export function CommissionRatesManagement() {
               </TableBody>
             </Table>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Edit Rates Dialog */}
       <RateEditDialog

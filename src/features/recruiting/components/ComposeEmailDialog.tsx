@@ -1,29 +1,39 @@
 // src/features/recruiting/components/ComposeEmailDialog.tsx
 
-import {useState, useMemo} from 'react'
-import {Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle} from '@/components/ui/dialog'
-import {EmailComposer} from '@/features/email'
-import {TemplatePicker} from '@/features/email/components/TemplatePicker'
-import {blocksToHtml} from '@/features/email/components/block-builder'
-import {useSendEmail} from '../hooks/useRecruitEmails'
-import type {SendEmailRequest, EmailTemplate} from '@/types/email.types'
+import { useState, useMemo } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { EmailComposer } from "@/features/email";
+import { TemplatePicker } from "@/features/email/components/TemplatePicker";
+import { blocksToHtml } from "@/features/email/components/block-builder";
+import { useSendEmail } from "../hooks/useRecruitEmails";
+import type { SendEmailRequest } from "@/services/emailService";
+import type { EmailTemplate } from "@/types/email.types";
 
 interface ComposeEmailDialogProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  recruitId: string
-  recruitEmail: string
-  recruitName: string
-  senderId: string
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  recruitId: string;
+  recruitEmail: string;
+  recruitName: string;
+  senderId: string;
 }
 
 // Replace variables in text with actual values
-function replaceVariables(text: string, variables: Record<string, string>): string {
-  let result = text
+function replaceVariables(
+  text: string,
+  variables: Record<string, string>,
+): string {
+  let result = text;
   for (const [key, value] of Object.entries(variables)) {
-    result = result.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), value)
+    result = result.replace(new RegExp(`\\{\\{${key}\\}\\}`, "g"), value);
   }
-  return result
+  return result;
 }
 
 export function ComposeEmailDialog({
@@ -31,18 +41,23 @@ export function ComposeEmailDialog({
   onOpenChange,
   recruitId,
   recruitEmail,
-  recruitName, senderId: _senderId,
+  recruitName,
+  senderId: _senderId,
 }: ComposeEmailDialogProps) {
-  const [selectedTemplate, setSelectedTemplate] = useState<EmailTemplate | null>(null)
-  const sendEmail = useSendEmail()
+  const [selectedTemplate, setSelectedTemplate] =
+    useState<EmailTemplate | null>(null);
+  const sendEmail = useSendEmail();
 
   // Variables available for substitution
-  const variables = useMemo(() => ({
-    recruit_name: recruitName,
-    recruit_first_name: recruitName.split(' ')[0] || recruitName,
-    recruit_email: recruitEmail,
-    // Add more variables as needed
-  }), [recruitName, recruitEmail])
+  const variables = useMemo(
+    () => ({
+      recruit_name: recruitName,
+      recruit_first_name: recruitName.split(" ")[0] || recruitName,
+      recruit_email: recruitEmail,
+      // Add more variables as needed
+    }),
+    [recruitName, recruitEmail],
+  );
 
   const handleSend = async (email: SendEmailRequest) => {
     try {
@@ -50,41 +65,45 @@ export function ComposeEmailDialog({
       await sendEmail.mutateAsync({
         ...email,
         recruitId, // Add recruit context
-      })
+      });
 
       // Close dialog on success
-      onOpenChange(false)
+      onOpenChange(false);
     } catch (error) {
-      console.error('Failed to send email:', error)
-      alert('Failed to send email')
+      console.error("Failed to send email:", error);
+      alert("Failed to send email");
     }
-  }
+  };
 
   const handleTemplateSelect = (template: EmailTemplate) => {
-    setSelectedTemplate(template)
-  }
+    setSelectedTemplate(template);
+  };
 
   // Get template data with variable substitution
   const templateData = useMemo(() => {
     if (!selectedTemplate) {
-      return { subject: '', bodyHtml: '' }
+      return { subject: "", bodyHtml: "" };
     }
 
     // If template has blocks, convert to HTML
-    let bodyHtml = ''
-    if (selectedTemplate.blocks && Array.isArray(selectedTemplate.blocks) && selectedTemplate.blocks.length > 0) {
-      bodyHtml = blocksToHtml(selectedTemplate.blocks, variables)
+    let bodyHtml = "";
+    if (
+      selectedTemplate.blocks &&
+      Array.isArray(selectedTemplate.blocks) &&
+      selectedTemplate.blocks.length > 0
+    ) {
+      bodyHtml = blocksToHtml(selectedTemplate.blocks, variables);
     } else if (selectedTemplate.body_html) {
-      bodyHtml = replaceVariables(selectedTemplate.body_html, variables)
+      bodyHtml = replaceVariables(selectedTemplate.body_html, variables);
     }
 
     // Replace variables in subject
     const subject = selectedTemplate.subject
       ? replaceVariables(selectedTemplate.subject, variables)
-      : ''
+      : "";
 
-    return { subject, bodyHtml }
-  }, [selectedTemplate, variables])
+    return { subject, bodyHtml };
+  }, [selectedTemplate, variables]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -128,5 +147,5 @@ export function ComposeEmailDialog({
         </div>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

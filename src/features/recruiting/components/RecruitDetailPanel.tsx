@@ -1,33 +1,61 @@
 // src/features/recruiting/components/RecruitDetailPanel.tsx
+// Redesigned with horizontal phase stepper - compact and efficient
 
-import React, { useState } from 'react';
-import {UserProfile} from '@/types/hierarchy.types';
-import {Tabs, TabsContent, TabsList, TabsTrigger} from '@/components/ui/tabs';
-import {Button} from '@/components/ui/button';
-import {Card} from '@/components/ui/card';
-import {Badge} from '@/components/ui/badge';
-import {Skeleton} from '@/components/ui/skeleton';
-import {Avatar, AvatarFallback, AvatarImage} from '@/components/ui/avatar';
-import {Mail, Phone, FileText, Activity, ArrowRight, AlertCircle, User, Instagram, Linkedin, Trash2, SendHorizontal, Loader2} from 'lucide-react';
-import {DeleteRecruitDialogOptimized} from './DeleteRecruitDialog.optimized';
-import {useRouter} from '@tanstack/react-router';
-import {PhaseTimeline} from './PhaseTimeline';
-import {PhaseChecklist} from './PhaseChecklist';
-import {DocumentManager} from './DocumentManager';
-import {EmailManager} from './EmailManager';
-import {useRecruitPhaseProgress, useCurrentPhase, useChecklistProgress, useAdvancePhase, useBlockPhase, useUpdatePhaseStatus, useInitializeRecruitProgress} from '../hooks/useRecruitProgress';
-import {useActiveTemplate} from '../hooks/usePipeline';
-import {useCurrentUserProfile} from '@/hooks/admin/useUserApproval';
+import React, { useState } from "react";
+import { UserProfile } from "@/types/hierarchy.types";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
+  Mail,
+  Phone,
+  Activity,
+  ArrowRight,
+  AlertCircle,
+  Trash2,
+  SendHorizontal,
+  Loader2,
+  CheckCircle2,
+  Clock,
+  ListChecks,
+  FolderOpen,
+  Check,
+  Circle,
+  Ban,
+} from "lucide-react";
+import { DeleteRecruitDialogOptimized } from "./DeleteRecruitDialog.optimized";
+import { useRouter } from "@tanstack/react-router";
+import { PhaseChecklist } from "./PhaseChecklist";
+import { DocumentManager } from "./DocumentManager";
+import { EmailManager } from "./EmailManager";
+import {
+  useRecruitPhaseProgress,
+  useCurrentPhase,
+  useChecklistProgress,
+  useAdvancePhase,
+  useBlockPhase,
+  useUpdatePhaseStatus,
+  useInitializeRecruitProgress,
+} from "../hooks/useRecruitProgress";
+import { useActiveTemplate } from "../hooks/usePipeline";
+import { useCurrentUserProfile } from "@/hooks/admin/useUserApproval";
+import { useRecruitDocuments } from "../hooks/useRecruitDocuments";
+import { useRecruitEmails } from "../hooks/useRecruitEmails";
+import { useRecruitActivityLog } from "../hooks/useRecruitActivity";
+import { ONBOARDING_STATUS_COLORS } from "@/types/recruiting.types";
+import { supabase } from "@/services/base/supabase";
+import { showToast } from "@/utils/toast";
+import { cn } from "@/lib/utils";
 
-import {useRecruitDocuments} from '../hooks/useRecruitDocuments';
-import {useRecruitEmails} from '../hooks/useRecruitEmails';
-import {useRecruitActivityLog} from '../hooks/useRecruitActivity';
-import {ONBOARDING_STATUS_COLORS} from '@/types/recruiting.types';
-import {supabase} from '@/services/base/supabase';
-import {showToast} from '@/utils/toast';
-
-// Default pipeline template ID (from seed migration)
-const DEFAULT_TEMPLATE_ID = '00000000-0000-0000-0000-000000000001';
+const DEFAULT_TEMPLATE_ID = "00000000-0000-0000-0000-000000000001";
 
 interface RecruitDetailPanelProps {
   recruit: UserProfile;
@@ -36,38 +64,39 @@ interface RecruitDetailPanelProps {
   onRecruitDeleted?: () => void;
 }
 
-export function RecruitDetailPanel({ recruit, currentUserId, isUpline = false, onRecruitDeleted }: RecruitDetailPanelProps) {
-  const [activeTab, setActiveTab] = useState('progress');
+export function RecruitDetailPanel({
+  recruit,
+  currentUserId,
+  isUpline = false,
+  onRecruitDeleted,
+}: RecruitDetailPanelProps) {
+  const [activeTab, setActiveTab] = useState("checklist");
   const [selectedPhaseId, setSelectedPhaseId] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [resendingInvite, setResendingInvite] = useState(false);
   const _router = useRouter();
 
-  // Get current user profile to check roles
   const { data: currentUserProfile } = useCurrentUserProfile();
-
-  // Fetch recruit's progress data
-  const { data: phaseProgress, isLoading: progressLoading } = useRecruitPhaseProgress(recruit.id);
-  const { data: currentPhase, isLoading: currentPhaseLoading } = useCurrentPhase(recruit.id);
+  const { data: phaseProgress, isLoading: progressLoading } =
+    useRecruitPhaseProgress(recruit.id);
+  const { data: currentPhase, isLoading: currentPhaseLoading } =
+    useCurrentPhase(recruit.id);
   const { data: template, isLoading: templateLoading } = useActiveTemplate();
-  const { data: checklistProgress, isLoading: _checklistLoading } = useChecklistProgress(
+  const { data: checklistProgress } = useChecklistProgress(
     recruit.id,
-    selectedPhaseId || currentPhase?.phase_id
+    selectedPhaseId || currentPhase?.phase_id,
   );
   const { data: documents } = useRecruitDocuments(recruit.id);
   const { data: emails } = useRecruitEmails(recruit.id);
   const { data: activityLog } = useRecruitActivityLog(recruit.id);
 
-  // Mutations
   const advancePhase = useAdvancePhase();
   const blockPhase = useBlockPhase();
   const updatePhaseStatus = useUpdatePhaseStatus();
   const initializeProgress = useInitializeRecruitProgress();
 
   const handleAdvancePhase = async () => {
-    if (!currentPhase) return;
-    if (!confirm('Are you sure you want to advance this recruit to the next phase?')) return;
-
+    if (!currentPhase || !confirm("Advance to next phase?")) return;
     await advancePhase.mutateAsync({
       userId: recruit.id,
       currentPhaseId: currentPhase.phase_id,
@@ -76,78 +105,46 @@ export function RecruitDetailPanel({ recruit, currentUserId, isUpline = false, o
 
   const handleBlockPhase = async () => {
     if (!currentPhase) return;
-    const reason = prompt('Please enter the reason for blocking:');
-    if (!reason) return;
-
-    await blockPhase.mutateAsync({
-      userId: recruit.id,
-      phaseId: currentPhase.phase_id,
-      reason,
-    });
+    const reason = prompt("Reason for blocking:");
+    if (reason)
+      await blockPhase.mutateAsync({
+        userId: recruit.id,
+        phaseId: currentPhase.phase_id,
+        reason,
+      });
   };
 
   const handleUnblockPhase = async () => {
-    if (!currentPhase) return;
-    if (!confirm('Are you sure you want to unblock this phase and resume progress?')) return;
-
+    if (!currentPhase || !confirm("Unblock this phase?")) return;
     await updatePhaseStatus.mutateAsync({
       userId: recruit.id,
       phaseId: currentPhase.phase_id,
-      status: 'in_progress',
-      notes: 'Unblocked by admin',
+      status: "in_progress",
+      notes: "Unblocked",
     });
   };
 
   const handlePhaseClick = (phaseId: string) => {
     setSelectedPhaseId(phaseId);
-    setActiveTab('checklist'); // Auto-switch to checklist tab
-  };
-
-  const handleDeleteSuccess = () => {
-    // Call parent callback to clear the selection
-    onRecruitDeleted?.();
+    setActiveTab("checklist");
   };
 
   const handleResendInvite = async () => {
-    if (!recruit.email) {
-      showToast.error('No email address available for this recruit');
-      return;
-    }
-
+    if (!recruit.email) return;
     setResendingInvite(true);
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(recruit.email, {
-        redirectTo: `${window.location.origin}/auth/reset-password`,
-      });
-
-      if (error) {
-        console.error('Resend invite error:', error);
-        showToast.error(`Failed to send invite email: ${error.message}`);
-      } else {
-        showToast.success(
-          `Invite email sent to ${recruit.email}. They should check their inbox (and spam folder) for login instructions.`,
-          { duration: 6000 }
-        );
-      }
-    } catch (err) {
-      console.error('Resend invite error:', err);
-      showToast.error('Failed to send invite email. Please try again.');
+      const { error } = await supabase.auth.resetPasswordForEmail(
+        recruit.email,
+        {
+          redirectTo: `${window.location.origin}/auth/reset-password`,
+        },
+      );
+      if (error) showToast.error(error.message);
+      else showToast.success("Invite sent!");
     } finally {
       setResendingInvite(false);
     }
   };
-
-  const isLoading = progressLoading || currentPhaseLoading || templateLoading;
-
-  if (isLoading) {
-    return (
-      <div className="p-6 space-y-4">
-        <Skeleton className="h-24 w-full" />
-        <Skeleton className="h-64 w-full" />
-        <Skeleton className="h-64 w-full" />
-      </div>
-    );
-  }
 
   const handleInitializeProgress = async () => {
     await initializeProgress.mutateAsync({
@@ -156,115 +153,114 @@ export function RecruitDetailPanel({ recruit, currentUserId, isUpline = false, o
     });
   };
 
-  // Handle case where recruit has no phase progress - but still show full UI
+  if (progressLoading || currentPhaseLoading || templateLoading) {
+    return (
+      <div className="p-3 space-y-2">
+        <Skeleton className="h-14 w-full" />
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-32 w-full" />
+      </div>
+    );
+  }
+
   const hasPipelineProgress = phaseProgress && phaseProgress.length > 0;
+  const displayName =
+    recruit.first_name && recruit.last_name
+      ? `${recruit.first_name} ${recruit.last_name}`
+      : recruit.email;
+  const initials =
+    recruit.first_name && recruit.last_name
+      ? `${recruit.first_name[0]}${recruit.last_name[0]}`.toUpperCase()
+      : recruit.email?.substring(0, 2).toUpperCase() || "??";
 
-  // Don't block the entire UI just because template isn't loaded
-  // User should still be able to see recruit info and delete them
+  const phases = template?.phases || [];
+  const sortedPhases = [...phases].sort(
+    (a: any, b: any) => a.phase_order - b.phase_order,
+  );
+  const progressMap = new Map(phaseProgress?.map((p) => [p.phase_id, p]) || []);
+  const completedCount =
+    phaseProgress?.filter((p) => p.status === "completed").length || 0;
 
-  const displayName = recruit.first_name && recruit.last_name
-    ? `${recruit.first_name} ${recruit.last_name}`
-    : recruit.email;
-  const initials = recruit.first_name && recruit.last_name
-    ? `${recruit.first_name[0]}${recruit.last_name[0]}`.toUpperCase()
-    : recruit.email.substring(0, 2).toUpperCase();
+  const viewingPhaseId = selectedPhaseId || currentPhase?.phase_id;
+  const viewingPhase = sortedPhases.find((p: any) => p.id === viewingPhaseId);
+  const viewingChecklistItems = viewingPhase?.checklist_items || [];
 
   return (
-    <div className="h-full overflow-y-auto overflow-x-hidden p-3">
-      {/* Header */}
-      <Card className="p-3 mb-2">
-        <div className="flex items-start gap-2">
-          <Avatar className="h-10 w-10 shrink-0">
-            <AvatarImage src={recruit.profile_photo_url || undefined} alt={displayName} />
-            <AvatarFallback>{initials || <User className="h-6 w-6" />}</AvatarFallback>
+    <div className="h-full flex flex-col bg-zinc-50 dark:bg-zinc-950">
+      {/* Compact Header */}
+      <div className="px-3 py-2.5 bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800">
+        <div className="flex items-center gap-2.5">
+          <Avatar className="h-9 w-9 shrink-0">
+            <AvatarImage src={recruit.profile_photo_url || undefined} />
+            <AvatarFallback className="text-xs font-medium bg-zinc-200 dark:bg-zinc-700">
+              {initials}
+            </AvatarFallback>
           </Avatar>
-
           <div className="flex-1 min-w-0">
-            <h2 className="text-base font-bold truncate">
-              {displayName}
-            </h2>
-
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground mb-1">
+            <div className="flex items-center gap-2">
+              <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 truncate">
+                {displayName}
+              </h2>
+              <Badge
+                variant="secondary"
+                className={cn(
+                  "text-[10px] px-1.5 py-0 h-4",
+                  recruit.onboarding_status
+                    ? ONBOARDING_STATUS_COLORS[recruit.onboarding_status]
+                    : "",
+                )}
+              >
+                {recruit.onboarding_status?.replace(/_/g, " ") || "New"}
+              </Badge>
+            </div>
+            <div className="flex items-center gap-2 text-[11px] text-zinc-500 dark:text-zinc-400">
               {recruit.email && (
-                <div className="flex items-center gap-1 truncate">
-                  <Mail className="h-3 w-3 shrink-0" />
-                  <span className="truncate">{recruit.email}</span>
-                </div>
+                <a
+                  href={`mailto:${recruit.email}`}
+                  className="flex items-center gap-0.5 hover:text-zinc-700 dark:hover:text-zinc-300 truncate"
+                >
+                  <Mail className="h-3 w-3" />
+                  <span className="truncate max-w-[140px]">
+                    {recruit.email}
+                  </span>
+                </a>
               )}
               {recruit.phone && (
-                <div className="flex items-center gap-1">
-                  <Phone className="h-3 w-3 shrink-0" />
-                  <span>{recruit.phone}</span>
-                </div>
-              )}
-            </div>
-
-            {/* Social Media Links */}
-            {(recruit.instagram_url || recruit.linkedin_url) && (
-              <div className="flex flex-wrap items-center gap-2 text-xs mb-2">
-                {recruit.instagram_url && (
-                  <a
-                    href={recruit.instagram_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1 text-blue-600 hover:text-blue-700 hover:underline"
-                  >
-                    <Instagram className="h-3 w-3" />
-                    <span className="truncate max-w-[100px]">@{recruit.instagram_username || 'IG'}</span>
-                  </a>
-                )}
-                {recruit.linkedin_url && (
-                  <a
-                    href={recruit.linkedin_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1 text-blue-600 hover:text-blue-700 hover:underline"
-                  >
-                    <Linkedin className="h-3 w-3" />
-                    <span className="truncate max-w-[100px]">{recruit.linkedin_username || 'LI'}</span>
-                  </a>
-                )}
-              </div>
-            )}
-
-            <div className="flex flex-wrap items-center gap-1">
-              <Badge variant="secondary" className={`text-xs ${recruit.onboarding_status ? ONBOARDING_STATUS_COLORS[recruit.onboarding_status] : ONBOARDING_STATUS_COLORS.interview_1}`}>
-                {recruit.onboarding_status?.replace(/_/g, ' ') || 'Interview 1'}
-              </Badge>
-              {currentPhase && currentPhase.status === 'blocked' && (
-                <Badge variant="destructive" className="text-xs">
-                  Blocked
-                </Badge>
+                <a
+                  href={`tel:${recruit.phone}`}
+                  className="flex items-center gap-0.5 hover:text-zinc-700 dark:hover:text-zinc-300"
+                >
+                  <Phone className="h-3 w-3" />
+                  {recruit.phone}
+                </a>
               )}
             </div>
           </div>
         </div>
 
-        {/* Quick Actions - Always show delete, conditionally show pipeline actions */}
-        {/* Show actions if: user is upline, user is admin, or user has permission */}
+        {/* Quick Actions - Inline */}
         {(isUpline || currentUserProfile?.is_admin) && (
-          <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t">
-            {/* Pipeline actions - only show if pipeline is initialized */}
+          <div className="flex items-center gap-1 mt-2">
             {hasPipelineProgress ? (
               <>
                 <Button
                   size="sm"
                   variant="outline"
                   onClick={handleAdvancePhase}
-                  disabled={!currentPhase || currentPhase?.status === 'blocked'}
-                  className="text-xs h-7"
+                  disabled={!currentPhase || currentPhase?.status === "blocked"}
+                  className="h-6 text-[10px] px-2"
                 >
-                  <ArrowRight className="h-3 w-3 mr-1" />
+                  <ArrowRight className="h-3 w-3 mr-0.5" />
                   Advance
                 </Button>
-                {currentPhase?.status === 'blocked' ? (
+                {currentPhase?.status === "blocked" ? (
                   <Button
                     size="sm"
                     variant="default"
                     onClick={handleUnblockPhase}
-                    className="text-xs h-7"
+                    className="h-6 text-[10px] px-2"
                   >
-                    <AlertCircle className="h-3 w-3 mr-1" />
+                    <CheckCircle2 className="h-3 w-3 mr-0.5" />
                     Unblock
                   </Button>
                 ) : (
@@ -273,9 +269,9 @@ export function RecruitDetailPanel({ recruit, currentUserId, isUpline = false, o
                     variant="outline"
                     onClick={handleBlockPhase}
                     disabled={!currentPhase}
-                    className="text-xs h-7"
+                    className="h-6 text-[10px] px-2"
                   >
-                    <AlertCircle className="h-3 w-3 mr-1" />
+                    <Ban className="h-3 w-3 mr-0.5" />
                     Block
                   </Button>
                 )}
@@ -286,182 +282,273 @@ export function RecruitDetailPanel({ recruit, currentUserId, isUpline = false, o
                 variant="outline"
                 onClick={handleInitializeProgress}
                 disabled={initializeProgress.isPending}
-                className="text-xs h-7"
+                className="h-6 text-[10px] px-2"
               >
-                {initializeProgress.isPending ? 'Initializing...' : 'Initialize Pipeline'}
+                {initializeProgress.isPending ? (
+                  <Loader2 className="h-3 w-3 mr-0.5 animate-spin" />
+                ) : (
+                  <Clock className="h-3 w-3 mr-0.5" />
+                )}
+                Initialize
               </Button>
             )}
-            {/* Resend Invite button - sends password reset email */}
             <Button
               size="sm"
               variant="outline"
               onClick={handleResendInvite}
-              disabled={resendingInvite || !recruit.email}
-              className="text-xs h-7"
-              title="Send password reset email so recruit can login"
+              disabled={resendingInvite}
+              className="h-6 text-[10px] px-2"
             >
               {resendingInvite ? (
-                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                <Loader2 className="h-3 w-3 animate-spin" />
               ) : (
-                <SendHorizontal className="h-3 w-3 mr-1" />
+                <SendHorizontal className="h-3 w-3 mr-0.5" />
               )}
-              {resendingInvite ? 'Sending...' : 'Resend Invite'}
+              Invite
             </Button>
             <div className="flex-1" />
-            {/* Delete button - but prevent self-deletion */}
-            {currentUserId !== recruit.id ? (
+            {currentUserId !== recruit.id && (
               <Button
                 size="sm"
-                variant="destructive"
+                variant="ghost"
                 onClick={() => setDeleteDialogOpen(true)}
-                className="text-xs h-7"
+                className="h-6 text-[10px] px-1.5 text-red-600 hover:text-red-700 hover:bg-red-50"
               >
-                <Trash2 className="h-3 w-3 mr-1" />
-                Delete
-              </Button>
-            ) : (
-              <Button
-                size="sm"
-                variant="destructive"
-                disabled
-                className="text-xs h-7"
-                title="You cannot delete yourself"
-              >
-                <Trash2 className="h-3 w-3 mr-1" />
-                Delete
+                <Trash2 className="h-3 w-3" />
               </Button>
             )}
           </div>
         )}
-      </Card>
+      </div>
 
-      {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="mb-2 w-full flex overflow-x-auto">
-          <TabsTrigger value="progress" className="text-xs px-2">Progress</TabsTrigger>
-          <TabsTrigger value="checklist" className="text-xs px-2">Checklist</TabsTrigger>
-          <TabsTrigger value="documents" className="text-xs px-2">
-            Docs{documents && documents.length > 0 && ` (${documents.length})`}
+      {/* Horizontal Phase Stepper */}
+      {hasPipelineProgress && sortedPhases.length > 0 && (
+        <div className="px-3 py-2 bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[10px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
+              Pipeline Progress
+            </span>
+            <span className="text-[10px] text-zinc-500 dark:text-zinc-400">
+              {completedCount}/{sortedPhases.length} complete
+            </span>
+          </div>
+          <TooltipProvider delayDuration={200}>
+            <div className="flex items-center gap-0.5">
+              {sortedPhases.map((phase: any, index: number) => {
+                const progress = progressMap.get(phase.id);
+                const status = progress?.status || "not_started";
+                const isActive = phase.id === viewingPhaseId;
+                const isCurrent = phase.id === currentPhase?.phase_id;
+
+                return (
+                  <Tooltip key={phase.id}>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={() => handlePhaseClick(phase.id)}
+                        className={cn(
+                          "flex-1 h-7 rounded transition-all relative group",
+                          "flex items-center justify-center",
+                          status === "completed" &&
+                            "bg-emerald-500 hover:bg-emerald-600",
+                          status === "in_progress" &&
+                            "bg-amber-500 hover:bg-amber-600",
+                          status === "blocked" && "bg-red-500 hover:bg-red-600",
+                          status === "not_started" &&
+                            "bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600",
+                          isActive &&
+                            "ring-2 ring-zinc-900 dark:ring-zinc-100 ring-offset-1",
+                        )}
+                      >
+                        {status === "completed" ? (
+                          <Check className="h-3.5 w-3.5 text-white" />
+                        ) : status === "in_progress" ? (
+                          <span className="text-[10px] font-bold text-white">
+                            {index + 1}
+                          </span>
+                        ) : status === "blocked" ? (
+                          <Ban className="h-3 w-3 text-white" />
+                        ) : (
+                          <span className="text-[10px] font-medium text-zinc-500 dark:text-zinc-400">
+                            {index + 1}
+                          </span>
+                        )}
+                        {isCurrent && status !== "completed" && (
+                          <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-amber-500" />
+                        )}
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="text-xs">
+                      <p className="font-medium">{phase.phase_name}</p>
+                      <p className="text-zinc-400 capitalize">
+                        {status.replace("_", " ")}
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                );
+              })}
+            </div>
+          </TooltipProvider>
+          {viewingPhase && (
+            <div className="mt-1.5 flex items-center justify-between">
+              <span className="text-xs font-medium text-zinc-900 dark:text-zinc-100">
+                {viewingPhase.phase_name}
+              </span>
+              {viewingPhaseId &&
+                progressMap.get(viewingPhaseId)?.status === "blocked" && (
+                  <Badge
+                    variant="destructive"
+                    className="text-[10px] h-4 px-1.5"
+                  >
+                    <AlertCircle className="h-2.5 w-2.5 mr-0.5" />
+                    Blocked
+                  </Badge>
+                )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* No Pipeline State */}
+      {!hasPipelineProgress && (
+        <div className="px-3 py-4 bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 text-center">
+          <Circle className="h-8 w-8 text-zinc-300 dark:text-zinc-600 mx-auto mb-2" />
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-2">
+            Pipeline not initialized
+          </p>
+          {isUpline && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleInitializeProgress}
+              disabled={initializeProgress.isPending}
+              className="h-7 text-xs"
+            >
+              {initializeProgress.isPending
+                ? "Initializing..."
+                : "Initialize Pipeline"}
+            </Button>
+          )}
+        </div>
+      )}
+
+      {/* Content Tabs */}
+      <Tabs
+        value={activeTab}
+        onValueChange={setActiveTab}
+        className="flex-1 flex flex-col min-h-0"
+      >
+        <TabsList className="mx-3 mt-2 grid grid-cols-4 h-8 bg-zinc-200/50 dark:bg-zinc-800/50 p-0.5 rounded-md">
+          <TabsTrigger
+            value="checklist"
+            className="text-[11px] h-7 rounded data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:shadow-sm"
+          >
+            <ListChecks className="h-3.5 w-3.5 mr-1" />
+            Tasks
           </TabsTrigger>
-          <TabsTrigger value="emails" className="text-xs px-2">
-            Email{emails && emails.length > 0 && ` (${emails.length})`}
+          <TabsTrigger
+            value="documents"
+            className="text-[11px] h-7 rounded data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:shadow-sm"
+          >
+            <FolderOpen className="h-3.5 w-3.5 mr-1" />
+            Docs
           </TabsTrigger>
-          <TabsTrigger value="activity" className="text-xs px-2">Activity</TabsTrigger>
+          <TabsTrigger
+            value="emails"
+            className="text-[11px] h-7 rounded data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:shadow-sm"
+          >
+            <Mail className="h-3.5 w-3.5 mr-1" />
+            Email
+          </TabsTrigger>
+          <TabsTrigger
+            value="activity"
+            className="text-[11px] h-7 rounded data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:shadow-sm"
+          >
+            <Activity className="h-3.5 w-3.5 mr-1" />
+            Log
+          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="progress" className="space-y-4">
-          {hasPipelineProgress && template ? (
-            <PhaseTimeline
-              phaseProgress={phaseProgress}
-              phases={(template.phases || []) as any}
-              onPhaseClick={handlePhaseClick}
+        <div className="flex-1 overflow-y-auto p-3">
+          <TabsContent value="checklist" className="mt-0 h-full">
+            {hasPipelineProgress && viewingChecklistItems.length > 0 ? (
+              <PhaseChecklist
+                userId={recruit.id}
+                checklistItems={viewingChecklistItems}
+                checklistProgress={checklistProgress || []}
+                isUpline={isUpline}
+                currentUserId={currentUserId}
+                currentPhaseId={currentPhase?.phase_id}
+                viewedPhaseId={viewingPhaseId}
+                isAdmin={currentUserProfile?.is_admin || false}
+                onPhaseComplete={() => {}}
+              />
+            ) : (
+              <div className="py-8 text-center">
+                <ListChecks className="h-8 w-8 text-zinc-300 dark:text-zinc-600 mx-auto mb-2" />
+                <p className="text-xs text-zinc-500">
+                  {hasPipelineProgress
+                    ? "No tasks for this phase"
+                    : "Initialize pipeline to view tasks"}
+                </p>
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="documents" className="mt-0">
+            <DocumentManager
+              userId={recruit.id}
+              documents={documents}
+              isUpline={isUpline}
+              currentUserId={currentUserId}
             />
-          ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              <p className="mb-4">No pipeline progress initialized for this recruit.</p>
-              {isUpline && (
-                <Button
-                  size="sm"
-                  onClick={handleInitializeProgress}
-                  disabled={initializeProgress.isPending}
-                >
-                  {initializeProgress.isPending ? 'Initializing...' : 'Initialize Pipeline'}
-                </Button>
-              )}
-            </div>
-          )}
-        </TabsContent>
+          </TabsContent>
 
-        <TabsContent value="checklist" className="space-y-4">
-          {hasPipelineProgress && template ? (
-            (() => {
-              // Find the phase to display (selected or current)
-              const targetPhaseId = selectedPhaseId || currentPhase?.phase_id;
-              const targetPhase = template.phases?.find((p: any) => p.id === targetPhaseId);
-              const targetChecklistItems = targetPhase?.checklist_items;
+          <TabsContent value="emails" className="mt-0">
+            <EmailManager
+              recruitId={recruit.id}
+              recruitEmail={recruit.email}
+              recruitName={displayName}
+              emails={emails}
+              isUpline={isUpline}
+              currentUserId={currentUserId}
+            />
+          </TabsContent>
 
-              if (!targetChecklistItems || targetChecklistItems.length === 0) {
-                return (
-                  <div className="text-center py-8 text-muted-foreground">
-                    {selectedPhaseId ? 'No checklist items for selected phase' : 'No current phase or checklist items'}
-                  </div>
-                );
-              }
-
-              return (
-                <PhaseChecklist
-                  userId={recruit.id}
-                  checklistItems={targetChecklistItems}
-                  checklistProgress={checklistProgress || []}
-                  isUpline={isUpline}
-                  currentUserId={currentUserId}
-                  currentPhaseId={currentPhase?.phase_id}
-                  viewedPhaseId={targetPhaseId}
-                  isAdmin={currentUserProfile?.is_admin || false}
-                  onPhaseComplete={() => setActiveTab('progress')}
-                />
-              );
-            })()
-          ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              Pipeline not initialized. Initialize pipeline to view checklist items.
-            </div>
-          )}
-        </TabsContent>
-
-        <TabsContent value="documents" className="space-y-4">
-          <DocumentManager
-            userId={recruit.id}
-            documents={documents}
-            isUpline={isUpline}
-            currentUserId={currentUserId}
-          />
-        </TabsContent>
-
-        <TabsContent value="emails" className="space-y-4">
-          <EmailManager
-            recruitId={recruit.id}
-            recruitEmail={recruit.email}
-            recruitName={displayName}
-            emails={emails}
-            isUpline={isUpline}
-            currentUserId={currentUserId}
-          />
-        </TabsContent>
-
-        <TabsContent value="activity" className="space-y-4">
-          {activityLog && activityLog.length > 0 ? (
-            <div className="space-y-2">
-              {activityLog.map((activity) => (
-                <Card key={activity.id} className="p-4">
-                  <div className="flex items-start gap-3">
-                    <Activity className="h-5 w-5 text-muted-foreground mt-0.5" />
-                    <div className="flex-1">
-                      <p className="font-medium">{activity.action_type.replace(/_/g, ' ')}</p>
-                      <p className="text-sm text-muted-foreground">
+          <TabsContent value="activity" className="mt-0">
+            {activityLog && activityLog.length > 0 ? (
+              <div className="space-y-1.5">
+                {activityLog.slice(0, 20).map((activity) => (
+                  <div
+                    key={activity.id}
+                    className="flex items-start gap-2 py-1.5 px-2 rounded bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800"
+                  >
+                    <Activity className="h-3 w-3 text-zinc-400 mt-0.5 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[11px] font-medium text-zinc-700 dark:text-zinc-300 truncate">
+                        {activity.action_type.replace(/_/g, " ")}
+                      </p>
+                      <p className="text-[10px] text-zinc-400">
                         {new Date(activity.created_at).toLocaleString()}
                       </p>
-                      {activity.details && (
-                        <pre className="mt-2 text-xs bg-muted p-2 rounded overflow-auto">
-                          {JSON.stringify(activity.details, null, 2)}
-                        </pre>
-                      )}
                     </div>
                   </div>
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-8 text-muted-foreground">No activity logged yet</div>
-          )}
-        </TabsContent>
+                ))}
+              </div>
+            ) : (
+              <div className="py-8 text-center">
+                <Activity className="h-8 w-8 text-zinc-300 dark:text-zinc-600 mx-auto mb-2" />
+                <p className="text-xs text-zinc-500">No activity yet</p>
+              </div>
+            )}
+          </TabsContent>
+        </div>
       </Tabs>
 
       <DeleteRecruitDialogOptimized
         recruit={recruit}
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
-        onSuccess={handleDeleteSuccess}
+        onSuccess={() => onRecruitDeleted?.()}
       />
     </div>
   );

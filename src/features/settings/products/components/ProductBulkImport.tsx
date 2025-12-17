@@ -1,13 +1,23 @@
-import React, { useState } from 'react';
-import {Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle} from '@/components/ui/dialog';
-import {Button} from '@/components/ui/button';
-import {Textarea} from '@/components/ui/textarea';
-import {Download} from 'lucide-react';
-import {useCarriers} from '../../carriers/hooks/useCarriers';
-import type {Database} from '@/types/database.types';
-import type {ProductFormData} from '@/types/product.types';
+// src/features/settings/products/components/ProductBulkImport.tsx
+// Redesigned with zinc palette and compact design patterns
 
-type ProductType = Database['public']['Enums']['product_type'];
+import React, { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Download } from "lucide-react";
+import { useCarriers } from "../../carriers/hooks/useCarriers";
+import type { Database } from "@/types/database.types";
+import type { ProductFormData } from "@/types/product.types";
+
+type ProductType = Database["public"]["Enums"]["product_type"];
 
 interface ProductBulkImportProps {
   open: boolean;
@@ -23,8 +33,8 @@ export function ProductBulkImport({
   isImporting = false,
 }: ProductBulkImportProps) {
   const { carriers } = useCarriers();
-  const [csvText, setCsvText] = useState('');
-  const [error, setError] = useState('');
+  const [csvText, setCsvText] = useState("");
+  const [error, setError] = useState("");
 
   const downloadTemplate = () => {
     const template = `Carrier Name,Product Name,Product Type
@@ -32,25 +42,25 @@ Foresters,Whole Life 0-75,whole_life
 Foresters,Term Life 20yr,term_life
 SBLI,Universal Life,universal_life`;
 
-    const blob = new Blob([template], { type: 'text/csv' });
+    const blob = new Blob([template], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
-    a.download = 'products-import-template.csv';
+    a.download = "products-import-template.csv";
     a.click();
     URL.revokeObjectURL(url);
   };
 
   const handleImport = () => {
-    setError('');
+    setError("");
 
     if (!csvText.trim()) {
-      setError('Please paste CSV data');
+      setError("Please paste CSV data");
       return;
     }
 
     try {
-      const lines = csvText.trim().split('\n');
+      const lines = csvText.trim().split("\n");
       const products: ProductFormData[] = [];
 
       // Skip header row
@@ -58,24 +68,30 @@ SBLI,Universal Life,universal_life`;
         const line = lines[i].trim();
         if (!line) continue;
 
-        const [carrierName, productName, productTypeStr] = line.split(',').map(s => s.trim());
+        const [carrierName, productName, productTypeStr] = line
+          .split(",")
+          .map((s) => s.trim());
 
         if (!carrierName || !productName) {
-          setError(`Invalid data on line ${i + 1}: missing carrier or product name`);
+          setError(
+            `Invalid data on line ${i + 1}: missing carrier or product name`,
+          );
           return;
         }
 
         // Find carrier
-        const carrier = carriers.find(c =>
-          c.name.toLowerCase() === carrierName.toLowerCase()
+        const carrier = carriers.find(
+          (c) => c.name.toLowerCase() === carrierName.toLowerCase(),
         );
 
         if (!carrier) {
-          setError(`Carrier "${carrierName}" not found on line ${i + 1}. Please create the carrier first.`);
+          setError(
+            `Carrier "${carrierName}" not found on line ${i + 1}. Please create the carrier first.`,
+          );
           return;
         }
 
-        const productType = (productTypeStr || 'term_life') as ProductType;
+        const productType = (productTypeStr || "term_life") as ProductType;
 
         products.push({
           carrier_id: carrier.id,
@@ -86,85 +102,105 @@ SBLI,Universal Life,universal_life`;
       }
 
       if (products.length === 0) {
-        setError('No valid products found in CSV');
+        setError("No valid products found in CSV");
         return;
       }
 
       onImport(products);
-      setCsvText('');
+      setCsvText("");
     } catch (err) {
-      setError(`Failed to parse CSV: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      setError(
+        `Failed to parse CSV: ${err instanceof Error ? err.message : "Unknown error"}`,
+      );
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
-        <DialogHeader>
-          <DialogTitle>Bulk Import Products</DialogTitle>
-          <DialogDescription>
-            Import multiple products at once using CSV format. Carriers must already exist.
+      <DialogContent className="sm:max-w-lg p-3 bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800">
+        <DialogHeader className="space-y-1 pb-3 border-b border-zinc-100 dark:border-zinc-800">
+          <DialogTitle className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+            Bulk Import Products
+          </DialogTitle>
+          <DialogDescription className="text-[10px] text-zinc-500 dark:text-zinc-400">
+            Import multiple products at once using CSV format. Carriers must
+            already exist.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="space-y-3 py-3">
           <div className="flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">
+            <p className="text-[10px] text-zinc-500 dark:text-zinc-400">
               Format: Carrier Name, Product Name, Product Type
             </p>
-            <Button variant="outline" size="sm" onClick={downloadTemplate}>
-              <Download className="h-4 w-4 mr-2" />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={downloadTemplate}
+              className="h-6 px-2 text-[10px] border-zinc-200 dark:border-zinc-700"
+            >
+              <Download className="h-3 w-3 mr-1" />
               Template
             </Button>
           </div>
 
           <div>
-            <label className="text-sm font-medium mb-2 block">
+            <label className="text-[10px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide mb-1 block">
               Paste CSV Data
             </label>
             <Textarea
               value={csvText}
               onChange={(e) => {
                 setCsvText(e.target.value);
-                setError('');
+                setError("");
               }}
               placeholder="Foresters,Whole Life 0-75,whole_life&#10;Foresters,Term Life 20yr,term_life&#10;SBLI,Universal Life,universal_life"
-              className="h-48 font-mono text-sm"
+              className="h-32 font-mono text-[11px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700"
             />
           </div>
 
           {error && (
-            <div className="rounded-md bg-destructive/10 border border-destructive p-3">
-              <p className="text-sm text-destructive">{error}</p>
+            <div className="rounded p-2 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800">
+              <p className="text-[10px] text-red-600 dark:text-red-400">
+                {error}
+              </p>
             </div>
           )}
 
-          <div className="rounded-md bg-muted p-3">
-            <p className="text-sm text-muted-foreground">
-              <strong>Valid Product Types:</strong> term_life, whole_life, universal_life,
-              variable_life, health, disability, annuity
+          <div className="rounded p-2 bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700">
+            <p className="text-[10px] text-zinc-500 dark:text-zinc-400">
+              <span className="font-medium text-zinc-600 dark:text-zinc-300">
+                Valid Product Types:
+              </span>{" "}
+              term_life, whole_life, universal_life, variable_life,
+              indexed_universal_life, participating_whole_life, health,
+              disability, annuity
             </p>
           </div>
         </div>
 
-        <DialogFooter className="gap-2">
+        <DialogFooter className="gap-1 pt-3 border-t border-zinc-100 dark:border-zinc-800">
           <Button
             type="button"
             variant="outline"
+            size="sm"
             onClick={() => {
               onOpenChange(false);
-              setCsvText('');
-              setError('');
+              setCsvText("");
+              setError("");
             }}
             disabled={isImporting}
+            className="h-7 px-2 text-[10px] border-zinc-200 dark:border-zinc-700"
           >
             Cancel
           </Button>
           <Button
             onClick={handleImport}
+            size="sm"
             disabled={isImporting || !csvText.trim()}
+            className="h-7 px-2 text-[10px]"
           >
-            {isImporting ? 'Importing...' : 'Import Products'}
+            {isImporting ? "Importing..." : "Import Products"}
           </Button>
         </DialogFooter>
       </DialogContent>

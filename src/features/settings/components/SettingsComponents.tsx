@@ -1,4 +1,6 @@
 // src/features/settings/components/SettingsComponents.tsx
+// Redesigned with zinc palette and compact design patterns
+
 import React from "react";
 
 interface SettingsCardProps {
@@ -15,16 +17,16 @@ export const SettingsCard: React.FC<SettingsCardProps> = ({
   className = "",
 }) => {
   return (
-    <div className={`metric-card p-3 ${className}`}>
-      <div className="flex items-center justify-between mb-2">
-        <h4 className="text-sm font-medium">{title}</h4>
-        {icon && (
-          <div className="p-1.5 rounded bg-muted text-muted-foreground">
-            {icon}
-          </div>
-        )}
+    <div
+      className={`bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 ${className}`}
+    >
+      <div className="flex items-center justify-between px-3 py-2 border-b border-zinc-100 dark:border-zinc-800">
+        <h4 className="text-[11px] font-semibold text-zinc-900 dark:text-zinc-100 uppercase tracking-wide">
+          {title}
+        </h4>
+        {icon && <div className="text-zinc-400 dark:text-zinc-500">{icon}</div>}
       </div>
-      <div className="text-xs">{children}</div>
+      <div className="p-3">{children}</div>
     </div>
   );
 };
@@ -41,16 +43,18 @@ export const SettingsHeader: React.FC<SettingsHeaderProps> = ({
   children,
 }) => {
   return (
-    <div className="mb-3">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-semibold">{title}</h1>
-          {description && (
-            <p className="text-xs text-muted-foreground">{description}</p>
-          )}
-        </div>
-        {children && <div>{children}</div>}
+    <div className="flex items-center justify-between bg-white dark:bg-zinc-900 rounded-lg px-3 py-2 border border-zinc-200 dark:border-zinc-800 mb-2">
+      <div>
+        <h1 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+          {title}
+        </h1>
+        {description && (
+          <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+            {description}
+          </p>
+        )}
       </div>
+      {children && <div>{children}</div>}
     </div>
   );
 };
@@ -72,5 +76,5 @@ export const SettingsGrid: React.FC<SettingsGridProps> = ({
       4: "grid-cols-4",
     }[columns] || "grid-cols-2";
 
-  return <div className={`grid gap-3 mb-3 ${gridColsClass}`}>{children}</div>;
+  return <div className={`grid ${gridColsClass} gap-2`}>{children}</div>;
 };

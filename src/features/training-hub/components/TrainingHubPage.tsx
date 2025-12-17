@@ -1,14 +1,14 @@
 // src/features/training-hub/components/TrainingHubPage.tsx
-import {useState, useEffect} from "react";
-import {Users, Mail, Zap, Activity, Search, X} from "lucide-react";
-import {Input} from "@/components/ui/input";
-import {Badge} from "@/components/ui/badge";
-import {Button} from "@/components/ui/button";
-import {useQuery} from "@tanstack/react-query";
-import {supabase} from "@/services/base/supabase";
-import {RecruitingTab} from "./RecruitingTab";
-import {ActivityTab} from "./ActivityTab";
-import {EmailTemplatesTab} from "./EmailTemplatesTab";
+import { useState, useEffect } from "react";
+import { Users, Mail, Zap, Activity, Search, X } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/services/base/supabase";
+import { RecruitingTab } from "./RecruitingTab";
+import { ActivityTab } from "./ActivityTab";
+import { EmailTemplatesTab } from "./EmailTemplatesTab";
 import AutomationTab from "./AutomationTab";
 
 type TabView = "recruiting" | "templates" | "automation" | "activity";
@@ -19,7 +19,10 @@ export default function TrainingHubPage() {
   // Persist tab selection in localStorage
   const [activeView, setActiveView] = useState<TabView>(() => {
     const saved = localStorage.getItem(TAB_STORAGE_KEY);
-    if (saved && ["recruiting", "templates", "automation", "activity"].includes(saved)) {
+    if (
+      saved &&
+      ["recruiting", "templates", "automation", "activity"].includes(saved)
+    ) {
       return saved as TabView;
     }
     return "recruiting";
@@ -43,11 +46,14 @@ export default function TrainingHubPage() {
       if (error) throw error;
 
       const total = data?.length || 0;
-      const inProgress = data?.filter(r =>
-        r.onboarding_status &&
-        !["completed", "dropped"].includes(r.onboarding_status)
-      ).length || 0;
-      const completed = data?.filter(r => r.onboarding_status === "completed").length || 0;
+      const inProgress =
+        data?.filter(
+          (r) =>
+            r.onboarding_status &&
+            !["completed", "dropped"].includes(r.onboarding_status),
+        ).length || 0;
+      const completed =
+        data?.filter((r) => r.onboarding_status === "completed").length || 0;
 
       return { total, inProgress, completed };
     },
@@ -68,98 +74,123 @@ export default function TrainingHubPage() {
   });
 
   const tabs = [
-    { id: "recruiting" as TabView, label: "Recruiting Pipeline", icon: Users, count: recruitStats?.inProgress },
-    { id: "templates" as TabView, label: "Email Templates", icon: Mail, count: templateStats?.count },
+    {
+      id: "recruiting" as TabView,
+      label: "Recruiting Pipeline",
+      icon: Users,
+      count: recruitStats?.inProgress,
+    },
+    {
+      id: "templates" as TabView,
+      label: "Email Templates",
+      icon: Mail,
+      count: templateStats?.count,
+    },
     { id: "automation" as TabView, label: "Automation", icon: Zap },
     { id: "activity" as TabView, label: "Activity", icon: Activity },
   ];
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden">
-      {/* Compact Header */}
-      <div className="page-header py-3">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-base font-semibold">Training Hub</h1>
-            <p className="text-[11px] text-muted-foreground mt-0.5">
-              Manage recruiting, automation, and communications
-            </p>
+    <div className="h-[calc(100vh-4rem)] flex flex-col p-3 space-y-2.5 bg-zinc-50 dark:bg-zinc-950">
+      {/* Compact Header with inline stats */}
+      <div className="flex items-center justify-between bg-white dark:bg-zinc-900 rounded-lg px-3 py-2 border border-zinc-200 dark:border-zinc-800">
+        <div className="flex items-center gap-5">
+          <div className="flex items-center gap-2">
+            <Users className="h-4 w-4 text-zinc-900 dark:text-zinc-100" />
+            <h1 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+              Training Hub
+            </h1>
           </div>
-          {/* Search Input */}
-          <div className="relative w-56">
-            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
-            <Input
-              type="text"
-              placeholder="Search..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-7 pl-7 pr-7 text-xs"
-            />
-            {searchQuery && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="absolute right-0.5 top-1/2 -translate-y-1/2 h-6 w-6"
-                onClick={() => setSearchQuery("")}
-              >
-                <X className="h-3 w-3" />
-              </Button>
-            )}
+
+          {/* Inline compact stats */}
+          <div className="flex items-center gap-3 text-[11px]">
+            <div className="flex items-center gap-1">
+              <Users className="h-3 w-3 text-amber-500" />
+              <span className="font-medium text-zinc-900 dark:text-zinc-100">
+                {recruitStats?.inProgress || 0}
+              </span>
+              <span className="text-zinc-500 dark:text-zinc-400">recruits</span>
+            </div>
+            <div className="h-3 w-px bg-zinc-200 dark:bg-zinc-700" />
+            <div className="flex items-center gap-1">
+              <Mail className="h-3 w-3 text-blue-500" />
+              <span className="font-medium text-zinc-900 dark:text-zinc-100">
+                {templateStats?.count || 0}
+              </span>
+              <span className="text-zinc-500 dark:text-zinc-400">
+                templates
+              </span>
+            </div>
           </div>
+        </div>
+
+        {/* Search Input */}
+        <div className="relative w-56">
+          <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-zinc-400" />
+          <Input
+            type="text"
+            placeholder="Search..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="h-7 pl-7 pr-7 text-xs bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
+          />
+          {searchQuery && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute right-0.5 top-1/2 -translate-y-1/2 h-6 w-6"
+              onClick={() => setSearchQuery("")}
+            >
+              <X className="h-3 w-3" />
+            </Button>
+          )}
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 p-3 overflow-hidden">
-        <div className="h-full flex flex-col">
-          {/* Tabs */}
-          <div className="flex items-center gap-1 mb-3">
-            {tabs.map((tab) => {
-              const Icon = tab.icon;
-              const isActive = activeView === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveView(tab.id)}
-                  className={`
-                    flex items-center gap-1 px-3 py-1.5 rounded-md text-xs transition-colors
-                    ${isActive
-                      ? 'bg-primary text-primary-foreground'
-                      : 'hover:bg-muted'
-                    }
-                  `}
+      {/* Compact tabs */}
+      <div className="flex items-center gap-0.5 bg-zinc-200/50 dark:bg-zinc-800/50 rounded-md p-0.5">
+        {tabs.map((tab) => {
+          const Icon = tab.icon;
+          const isActive = activeView === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveView(tab.id)}
+              className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-[11px] font-medium rounded transition-all ${
+                isActive
+                  ? "bg-white dark:bg-zinc-900 shadow-sm text-zinc-900 dark:text-zinc-100"
+                  : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
+              }`}
+            >
+              <Icon className="h-3 w-3" />
+              <span>{tab.label}</span>
+              {tab.count !== undefined && tab.count > 0 && (
+                <Badge
+                  variant="secondary"
+                  className={`ml-1 h-4 px-1 text-[10px] ${
+                    isActive
+                      ? "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300"
+                      : "bg-zinc-300/50 dark:bg-zinc-700/50"
+                  }`}
                 >
-                  <Icon className="h-3 w-3" />
-                  <span>{tab.label}</span>
-                  {tab.count !== undefined && tab.count > 0 && (
-                    <Badge
-                      variant={isActive ? "secondary" : "outline"}
-                      className="ml-1 h-4 px-1 text-[10px]"
-                    >
-                      {tab.count}
-                    </Badge>
-                  )}
-                </button>
-              );
-            })}
-          </div>
+                  {tab.count}
+                </Badge>
+              )}
+            </button>
+          );
+        })}
+      </div>
 
-          {/* Content */}
-          <div className="flex-1 overflow-hidden">
-            {activeView === "recruiting" && (
-              <RecruitingTab searchQuery={searchQuery} />
-            )}
-            {activeView === "templates" && (
-              <EmailTemplatesTab searchQuery={searchQuery} />
-            )}
-            {activeView === "automation" && (
-              <AutomationTab />
-            )}
-            {activeView === "activity" && (
-              <ActivityTab searchQuery={searchQuery} />
-            )}
-          </div>
-        </div>
+      {/* Content */}
+      <div className="flex-1 overflow-hidden bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800">
+        {activeView === "recruiting" && (
+          <RecruitingTab searchQuery={searchQuery} />
+        )}
+        {activeView === "templates" && (
+          <EmailTemplatesTab searchQuery={searchQuery} />
+        )}
+        {activeView === "automation" && <AutomationTab />}
+        {activeView === "activity" && <ActivityTab searchQuery={searchQuery} />}
       </div>
     </div>
   );

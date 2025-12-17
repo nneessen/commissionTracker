@@ -1,34 +1,62 @@
 // src/components/ui/button.tsx
-// Custom button component with shadow-based elevation (no hard borders)
+// Custom button component with distinctive hover/active effects
 
 import * as React from "react";
-import {Slot} from "@radix-ui/react-slot";
-import {cva, type VariantProps} from "class-variance-authority";
+import { Slot } from "@radix-ui/react-slot";
+import { cva, type VariantProps } from "class-variance-authority";
 
-import {cn} from "@/lib/utils";
+import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all duration-200 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 cursor-pointer select-none transition-all duration-200 ease-out",
   {
     variants: {
       variant: {
+        // Default: Black -> Gray on hover -> Darker on click
         default:
-          "bg-gradient-to-b from-slate-700 to-slate-800 text-white shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)] hover:from-blue-500 hover:to-blue-600 hover:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.2),0_0_20px_rgba(59,130,246,0.3)] active:shadow-[inset_0_2px_4px_0_rgba(0,0,0,0.2)] data-[active=true]:from-blue-500 data-[active=true]:to-blue-600 data-[active=true]:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.2),0_4px_12px_rgba(59,130,246,0.4)] transition-all duration-150",
-        destructive:
-          "bg-gradient-to-b from-slate-700 to-slate-800 text-white shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)] hover:from-red-500 hover:to-red-600 hover:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.2),0_0_20px_rgba(239,68,68,0.3)] active:shadow-[inset_0_2px_4px_0_rgba(0,0,0,0.2)] data-[active=true]:from-red-500 data-[active=true]:to-red-600 data-[active=true]:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.2),0_4px_12px_rgba(239,68,68,0.4)] transition-all duration-150",
-        outline:
-          "bg-slate-900/50 backdrop-blur-sm text-slate-300 ring-1 ring-slate-700 hover:bg-blue-500/20 hover:text-blue-300 hover:ring-blue-500/50 hover:shadow-[0_0_20px_rgba(59,130,246,0.2)] active:bg-blue-500/30 data-[active=true]:bg-blue-500/30 data-[active=true]:text-blue-300 data-[active=true]:ring-blue-500 data-[active=true]:shadow-[0_0_16px_rgba(59,130,246,0.3)] transition-all duration-150",
+          "bg-zinc-900 text-white shadow-md hover:bg-zinc-700 hover:shadow-lg hover:scale-[1.02] active:bg-zinc-950 active:shadow-sm active:scale-[0.98]",
+
+        // Primary: Same visual as default
+        primary:
+          "bg-zinc-900 text-white shadow-md hover:bg-zinc-700 hover:shadow-lg hover:scale-[1.02] active:bg-zinc-950 active:shadow-sm active:scale-[0.98]",
+
+        // Secondary: Light gray -> Darker gray on hover
         secondary:
-          "bg-gradient-to-b from-slate-700 to-slate-800 text-white shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)] hover:from-emerald-500 hover:to-emerald-600 hover:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.2),0_0_20px_rgba(16,185,129,0.3)] active:shadow-[inset_0_2px_4px_0_rgba(0,0,0,0.2)] data-[active=true]:from-emerald-500 data-[active=true]:to-emerald-600 data-[active=true]:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.2),0_4px_12px_rgba(16,185,129,0.4)] transition-all duration-150",
+          "bg-zinc-200 text-zinc-900 shadow-md hover:bg-zinc-300 hover:shadow-lg hover:scale-[1.02] active:bg-zinc-400 active:shadow-sm active:scale-[0.98] dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700 dark:active:bg-zinc-900",
+
+        // Success: Green with visible shift
+        success:
+          "bg-emerald-600 text-white shadow-md hover:bg-emerald-500 hover:shadow-lg hover:shadow-emerald-500/25 hover:scale-[1.02] active:bg-emerald-700 active:shadow-sm active:scale-[0.98]",
+
+        // Warning: Amber with visible shift
+        warning:
+          "bg-amber-500 text-white shadow-md hover:bg-amber-400 hover:shadow-lg hover:shadow-amber-500/25 hover:scale-[1.02] active:bg-amber-600 active:shadow-sm active:scale-[0.98]",
+
+        // Destructive: Red with visible shift
+        destructive:
+          "bg-red-600 text-white shadow-md hover:bg-red-500 hover:shadow-lg hover:shadow-red-500/25 hover:scale-[1.02] active:bg-red-700 active:shadow-sm active:scale-[0.98]",
+
+        // Outline: Transparent -> Filled on hover
+        outline:
+          "border-2 border-zinc-300 bg-transparent text-foreground hover:bg-zinc-100 hover:border-zinc-400 hover:shadow-md hover:scale-[1.02] active:bg-zinc-200 active:scale-[0.98] dark:border-zinc-700 dark:hover:bg-zinc-800 dark:hover:border-zinc-600 dark:active:bg-zinc-900",
+
+        // Ghost: Invisible -> Visible on hover
         ghost:
-          "text-slate-400 hover:text-white hover:bg-slate-800/50 active:bg-slate-700/50 data-[active=true]:bg-slate-800/70 data-[active=true]:text-white transition-all duration-150",
-        link: "text-blue-400 underline-offset-4 hover:underline hover:text-blue-300",
+          "text-muted-foreground hover:text-foreground hover:bg-zinc-100 hover:shadow-sm active:bg-zinc-200 active:scale-[0.98] dark:hover:bg-zinc-800 dark:active:bg-zinc-900",
+
+        // Muted: Soft gray background
+        muted:
+          "bg-zinc-300 text-zinc-600 shadow-sm hover:bg-zinc-200 hover:text-zinc-900 hover:shadow-md active:bg-zinc-300 active:scale-[0.98] dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700 dark:hover:text-zinc-100 dark:active:bg-zinc-900",
+
+        // Link: Text with underline animation
+        link: "text-foreground underline-offset-4 hover:underline hover:text-zinc-600 active:text-zinc-400 dark:hover:text-zinc-300 dark:active:text-zinc-500",
       },
       size: {
         default: "h-9 px-4 py-2",
         sm: "h-8 rounded-md px-3 text-xs",
         lg: "h-10 rounded-md px-8",
         icon: "h-9 w-9",
+        xs: "h-6 rounded px-2 text-xs",
       },
     },
     defaultVariants: {
@@ -39,7 +67,8 @@ const buttonVariants = cva(
 );
 
 export interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
+  extends
+    React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
   asChild?: boolean;
 }

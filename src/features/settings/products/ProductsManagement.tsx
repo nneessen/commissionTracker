@@ -1,6 +1,7 @@
 // src/features/settings/products/ProductsManagement.tsx
+// Redesigned with zinc palette and compact design patterns
+
 import React, { useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -22,6 +23,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Plus, Search, Edit, Trash2, Upload, Package } from "lucide-react";
 import { useProducts, Product } from "./hooks/useProducts";
 import { useCarriers } from "../carriers/hooks/useCarriers";
@@ -47,7 +55,7 @@ export function ProductsManagement() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
-  // Filter products based on search and carrier filter (React 19.1 optimizes automatically)
+  // Filter products based on search and carrier filter
   let filteredProducts = products;
 
   if (filterCarrierId) {
@@ -108,90 +116,100 @@ export function ProductsManagement() {
 
   if (isLoading) {
     return (
-      <Card>
-        <CardContent className="p-3">
-          <div className="flex items-center justify-center py-4 text-muted-foreground text-[11px]">
-            Loading products...
-          </div>
-        </CardContent>
-      </Card>
+      <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-6">
+        <div className="flex items-center justify-center text-[11px] text-zinc-500 dark:text-zinc-400">
+          Loading products...
+        </div>
+      </div>
     );
   }
 
   return (
     <>
-      <Card>
-        <CardContent className="p-3">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <Package className="h-3.5 w-3.5 text-muted-foreground" />
-              <span className="text-[11px] font-medium text-muted-foreground uppercase">
+      <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800">
+        {/* Header */}
+        <div className="flex items-center justify-between px-3 py-2 border-b border-zinc-100 dark:border-zinc-800">
+          <div className="flex items-center gap-2">
+            <Package className="h-3.5 w-3.5 text-zinc-400" />
+            <div>
+              <h3 className="text-[11px] font-semibold text-zinc-900 dark:text-zinc-100 uppercase tracking-wide">
                 Products
-              </span>
-              <span className="text-[10px] text-muted-foreground">
-                ({products.length})
-              </span>
-            </div>
-            <div className="flex gap-1">
-              <Button
-                variant="outline"
-                onClick={() => setIsBulkImportOpen(true)}
-                size="sm"
-                className="h-6 px-2 text-[10px]"
-              >
-                <Upload className="h-3 w-3 mr-1" />
-                Import
-              </Button>
-              <Button
-                onClick={handleAddProduct}
-                size="sm"
-                className="h-6 px-2 text-[10px]"
-              >
-                <Plus className="h-3 w-3 mr-1" />
-                New Product
-              </Button>
+              </h3>
+              <p className="text-[10px] text-zinc-500 dark:text-zinc-400">
+                Manage insurance products and their details
+              </p>
             </div>
           </div>
+          <div className="flex gap-1">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-6 px-2 text-[10px] border-zinc-200 dark:border-zinc-700"
+              onClick={() => setIsBulkImportOpen(true)}
+            >
+              <Upload className="h-3 w-3 mr-1" />
+              Bulk Import
+            </Button>
+            <Button
+              size="sm"
+              className="h-6 px-2 text-[10px]"
+              onClick={handleAddProduct}
+            >
+              <Plus className="h-3 w-3 mr-1" />
+              New Product
+            </Button>
+          </div>
+        </div>
 
+        <div className="p-3 space-y-2">
           {/* Filters */}
-          <div className="flex gap-2 mb-2">
-            <div className="relative flex-1">
-              <Search className="absolute left-2 top-1/2 h-3 w-3 -translate-y-1/2 text-muted-foreground" />
+          <div className="flex gap-2">
+            <div className="relative flex-1 max-w-xs">
+              <Search className="absolute left-2 top-1/2 h-3 w-3 -translate-y-1/2 text-zinc-400" />
               <Input
                 type="text"
                 placeholder="Search products..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-7 h-7 text-[11px]"
+                className="pl-7 h-7 text-[11px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700"
               />
             </div>
-            <select
-              value={filterCarrierId}
-              onChange={(e) => setFilterCarrierId(e.target.value)}
-              className="h-7 px-2 text-[11px] border rounded bg-background min-w-[140px]"
+            <Select
+              value={filterCarrierId || "all"}
+              onValueChange={(v) => setFilterCarrierId(v === "all" ? "" : v)}
             >
-              <option value="">All Carriers</option>
-              {carriers.map((carrier) => (
-                <option key={carrier.id} value={carrier.id}>
-                  {carrier.name}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger className="w-48 h-7 text-[11px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700">
+                <SelectValue placeholder="All Carriers" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Carriers</SelectItem>
+                {carriers.map((carrier) => (
+                  <SelectItem key={carrier.id} value={carrier.id}>
+                    {carrier.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Table */}
-          <div className="rounded border">
+          <div className="rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-800">
             <Table>
-              <TableHeader>
-                <TableRow className="hover:bg-transparent">
-                  <TableHead className="text-[10px] h-7">
+              <TableHeader className="sticky top-0 bg-zinc-50 dark:bg-zinc-800/50 z-10">
+                <TableRow className="border-b border-zinc-200 dark:border-zinc-800 hover:bg-transparent">
+                  <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300">
                     Product Name
                   </TableHead>
-                  <TableHead className="text-[10px] h-7">Carrier</TableHead>
-                  <TableHead className="text-[10px] h-7">Type</TableHead>
-                  <TableHead className="text-[10px] h-7">Status</TableHead>
-                  <TableHead className="text-[10px] h-7 text-right">
+                  <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300 w-[150px]">
+                    Carrier
+                  </TableHead>
+                  <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300 w-[120px]">
+                    Type
+                  </TableHead>
+                  <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300 w-[80px]">
+                    Status
+                  </TableHead>
+                  <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300 w-[80px] text-right">
                     Actions
                   </TableHead>
                 </TableRow>
@@ -201,7 +219,7 @@ export function ProductsManagement() {
                   <TableRow>
                     <TableCell
                       colSpan={5}
-                      className="text-center py-4 text-muted-foreground text-[11px]"
+                      className="text-center text-[11px] text-zinc-500 dark:text-zinc-400 py-6"
                     >
                       {searchTerm || filterCarrierId
                         ? "No products found matching your filters."
@@ -210,17 +228,24 @@ export function ProductsManagement() {
                   </TableRow>
                 ) : (
                   filteredProducts.map((product) => (
-                    <TableRow key={product.id}>
-                      <TableCell className="text-[11px] font-medium py-1.5">
-                        {product.name}
+                    <TableRow
+                      key={product.id}
+                      className="hover:bg-zinc-50 dark:hover:bg-zinc-800/50 border-b border-zinc-100 dark:border-zinc-800/50"
+                    >
+                      <TableCell className="py-1.5">
+                        <span className="font-medium text-[11px] text-zinc-900 dark:text-zinc-100">
+                          {product.name}
+                        </span>
                       </TableCell>
-                      <TableCell className="text-[11px] text-muted-foreground py-1.5">
-                        {getCarrierName(product.carrier_id)}
+                      <TableCell className="py-1.5">
+                        <span className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                          {getCarrierName(product.carrier_id)}
+                        </span>
                       </TableCell>
                       <TableCell className="py-1.5">
                         <Badge
                           variant="outline"
-                          className="text-[9px] px-1.5 py-0"
+                          className="text-[10px] h-4 px-1 border-zinc-300 dark:border-zinc-600"
                         >
                           {product.product_type.replace("_", " ")}
                         </Badge>
@@ -228,28 +253,29 @@ export function ProductsManagement() {
                       <TableCell className="py-1.5">
                         <Badge
                           variant={product.is_active ? "default" : "secondary"}
-                          className="text-[9px] px-1.5 py-0"
+                          className="text-[10px] h-4 px-1"
                         >
                           {product.is_active ? "Active" : "Inactive"}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-right py-1.5">
-                        <div className="flex justify-end gap-1">
+                      <TableCell className="py-1.5 text-right">
+                        <div className="flex items-center justify-end gap-1">
                           <Button
                             variant="ghost"
                             size="sm"
+                            className="h-5 px-1.5 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
                             onClick={() => handleEditProduct(product)}
-                            className="h-6 w-6 p-0"
                           >
-                            <Edit className="h-3 w-3" />
+                            <Edit className="h-2.5 w-2.5 mr-0.5" />
+                            <span className="text-[10px]">Edit</span>
                           </Button>
                           <Button
                             variant="ghost"
                             size="sm"
+                            className="h-5 px-1.5 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
                             onClick={() => handleDeleteClick(product)}
-                            className="h-6 w-6 p-0"
                           >
-                            <Trash2 className="h-3 w-3 text-destructive" />
+                            <Trash2 className="h-2.5 w-2.5" />
                           </Button>
                         </div>
                       </TableCell>
@@ -259,8 +285,8 @@ export function ProductsManagement() {
               </TableBody>
             </Table>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Form Dialog */}
       <ProductForm
@@ -284,26 +310,29 @@ export function ProductsManagement() {
         open={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
       >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-sm">
+        <AlertDialogContent className="max-w-sm p-3 bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800">
+          <AlertDialogHeader className="space-y-1">
+            <AlertDialogTitle className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
               Delete Product?
             </AlertDialogTitle>
-            <AlertDialogDescription className="text-[11px] space-y-1">
-              <p>
+            <AlertDialogDescription className="space-y-2 text-[11px]">
+              <p className="text-zinc-600 dark:text-zinc-400">
                 Are you sure you want to delete{" "}
-                <strong>{selectedProduct?.name}</strong>?
+                <strong className="text-zinc-900 dark:text-zinc-100">
+                  {selectedProduct?.name}
+                </strong>
+                ?
               </p>
-              <p className="text-muted-foreground">
+              <p className="text-[10px] text-zinc-500 dark:text-zinc-400">
                 This will also delete all associated commission rates. This
                 action cannot be undone.
               </p>
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
+          <AlertDialogFooter className="gap-1 pt-3">
             <AlertDialogCancel
               disabled={deleteProduct.isPending}
-              className="h-7 text-[11px]"
+              className="h-7 px-2 text-[10px] border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900"
             >
               Cancel
             </AlertDialogCancel>
@@ -313,7 +342,7 @@ export function ProductsManagement() {
                 handleDeleteConfirm();
               }}
               disabled={deleteProduct.isPending}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90 h-7 text-[11px]"
+              className="h-7 px-2 text-[10px] bg-red-600 text-white hover:bg-red-700"
             >
               {deleteProduct.isPending ? "Deleting..." : "Delete Product"}
             </AlertDialogAction>
