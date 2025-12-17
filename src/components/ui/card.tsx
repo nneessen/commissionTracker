@@ -1,20 +1,59 @@
-import * as React from "react";
+// src/components/ui/card.tsx
+// Modern card with subtle glass effect and optional hover states
 
+import * as React from "react";
+import {cva, type VariantProps} from "class-variance-authority";
 import {cn} from "@/lib/utils";
 
-const Card = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => (
-  <div
-    ref={ref}
-    className={cn(
-      "rounded-xl bg-card text-card-foreground shadow-md backdrop-blur-sm",
-      className,
-    )}
-    {...props}
-  />
-));
+const cardVariants = cva(
+  "rounded-xl text-card-foreground transition-all duration-300 ease-out",
+  {
+    variants: {
+      variant: {
+        // Default: Clean with subtle shadow
+        default:
+          "bg-card shadow-lg shadow-black/5 dark:shadow-black/20",
+
+        // Glass: Frosted glass effect
+        glass:
+          "bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl shadow-lg shadow-black/5 dark:shadow-black/30",
+
+        // Elevated: More prominent shadow
+        elevated:
+          "bg-card shadow-xl shadow-black/10 dark:shadow-black/40",
+
+        // Interactive: Hover lift effect
+        interactive:
+          "bg-card shadow-lg shadow-black/5 dark:shadow-black/20 hover:shadow-xl hover:shadow-black/10 dark:hover:shadow-black/40 hover:-translate-y-1 hover:bg-zinc-50 dark:hover:bg-zinc-800/80 cursor-pointer",
+
+        // Outlined: Subtle border instead of shadow
+        outlined:
+          "bg-card border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700",
+
+        // Ghost: Minimal, transparent
+        ghost:
+          "bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800/50",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+    },
+  }
+);
+
+export interface CardProps
+  extends React.HTMLAttributes<HTMLDivElement>,
+    VariantProps<typeof cardVariants> {}
+
+const Card = React.forwardRef<HTMLDivElement, CardProps>(
+  ({ className, variant, ...props }, ref) => (
+    <div
+      ref={ref}
+      className={cn(cardVariants({ variant }), className)}
+      {...props}
+    />
+  )
+);
 Card.displayName = "Card";
 
 const CardHeader = React.forwardRef<
@@ -23,10 +62,7 @@ const CardHeader = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn(
-      "flex flex-col space-y-1.5 p-6 relative",
-      className,
-    )}
+    className={cn("flex flex-col space-y-1.5 p-5", className)}
     {...props}
   />
 ));
@@ -39,8 +75,8 @@ const CardTitle = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      "text-lg font-semibold leading-none tracking-tight",
-      className,
+      "text-lg font-semibold leading-none tracking-tight text-foreground",
+      className
     )}
     {...props}
   />
@@ -53,7 +89,7 @@ const CardDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn("text-sm text-muted-foreground/80", className)}
+    className={cn("text-sm text-muted-foreground", className)}
     {...props}
   />
 ));
@@ -63,7 +99,7 @@ const CardContent = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => (
-  <div ref={ref} className={cn("p-6 pt-0", className)} {...props} />
+  <div ref={ref} className={cn("p-5 pt-0", className)} {...props} />
 ));
 CardContent.displayName = "CardContent";
 
@@ -73,7 +109,7 @@ const CardFooter = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn("flex items-center p-6 pt-0", className)}
+    className={cn("flex items-center p-5 pt-0", className)}
     {...props}
   />
 ));
@@ -86,4 +122,5 @@ export {
   CardTitle,
   CardDescription,
   CardContent,
+  cardVariants,
 };
