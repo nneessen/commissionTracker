@@ -1,11 +1,21 @@
 // src/features/dashboard/components/PeriodNavigator.tsx
 
 import React from "react";
-import {ChevronLeft, ChevronRight, Calendar} from "lucide-react";
-import {Button} from "../../../components/ui/button";
-import {DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger} from "../../../components/ui/dropdown-menu";
-import {TimePeriod, DateRange, getPeriodDescriptor, getDateRange} from "../../../utils/dateRange";
-import {cn} from "../../../lib/utils";
+import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
+import { Button } from "../../../components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "../../../components/ui/dropdown-menu";
+import {
+  TimePeriod,
+  DateRange,
+  getPeriodDescriptor,
+  getDateRange,
+} from "../../../utils/dateRange";
+import { cn } from "../../../lib/utils";
 
 interface PeriodNavigatorProps {
   timePeriod: TimePeriod;
@@ -15,13 +25,7 @@ interface PeriodNavigatorProps {
 }
 
 /**
- * PeriodNavigator - Navigation controls for cycling through time periods
- *
- * Features:
- * - Previous/Next arrows for sequential navigation
- * - Clickable period label with dropdown for quick jumps
- * - "Jump to Current" button when viewing historical periods
- * - Next button disabled at current period (no future navigation per requirements)
+ * PeriodNavigator - Compact zinc-styled navigation controls
  */
 export const PeriodNavigator: React.FC<PeriodNavigatorProps> = ({
   timePeriod,
@@ -41,7 +45,11 @@ export const PeriodNavigator: React.FC<PeriodNavigatorProps> = ({
   };
 
   const dropdownOptions = generateDropdownOptions();
-  const currentPeriodLabel = getPeriodDescriptor(timePeriod, periodOffset, dateRange);
+  const currentPeriodLabel = getPeriodDescriptor(
+    timePeriod,
+    periodOffset,
+    dateRange,
+  );
   const isAtCurrentPeriod = periodOffset === 0;
 
   const handlePrevious = () => {
@@ -69,7 +77,7 @@ export const PeriodNavigator: React.FC<PeriodNavigatorProps> = ({
         onClick={handlePrevious}
         variant="outline"
         size="sm"
-        className="h-6 w-6 p-0"
+        className="h-6 w-6 p-0 border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
         title="Previous period"
       >
         <ChevronLeft className="h-3 w-3" />
@@ -81,20 +89,24 @@ export const PeriodNavigator: React.FC<PeriodNavigatorProps> = ({
           <Button
             variant="ghost"
             size="sm"
-            className="h-6 px-2 text-[11px] font-medium hover:bg-muted"
+            className="h-6 px-2 text-[10px] font-medium text-zinc-900 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800"
             title="Select period"
           >
             {currentPeriodLabel}
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="center" className="max-h-[300px] overflow-y-auto">
+        <DropdownMenuContent
+          align="center"
+          className="max-h-[300px] overflow-y-auto bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700"
+        >
           {dropdownOptions.map((option) => (
             <DropdownMenuItem
               key={option.offset}
               onClick={() => handleSelectFromDropdown(option.offset)}
               className={cn(
-                "cursor-pointer text-[11px]",
-                option.offset === periodOffset && "bg-muted font-semibold"
+                "cursor-pointer text-[10px] text-zinc-700 dark:text-zinc-300",
+                option.offset === periodOffset &&
+                  "bg-zinc-100 dark:bg-zinc-800 font-semibold text-zinc-900 dark:text-zinc-100",
               )}
             >
               {option.label}
@@ -108,7 +120,7 @@ export const PeriodNavigator: React.FC<PeriodNavigatorProps> = ({
         onClick={handleNext}
         variant="outline"
         size="sm"
-        className="h-6 w-6 p-0"
+        className="h-6 w-6 p-0 border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
         disabled={isAtCurrentPeriod}
         title={isAtCurrentPeriod ? "Already at current period" : "Next period"}
       >
@@ -121,7 +133,7 @@ export const PeriodNavigator: React.FC<PeriodNavigatorProps> = ({
           onClick={handleJumpToCurrent}
           variant="ghost"
           size="sm"
-          className="h-6 px-2 gap-1 text-[10px]"
+          className="h-6 px-2 gap-1 text-[10px] text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
           title="Jump to current period"
         >
           <Calendar className="h-3 w-3" />

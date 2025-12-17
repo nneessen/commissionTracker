@@ -37,7 +37,6 @@ import {
   getBreakevenDisplay,
   getPoliciesNeededDisplay,
   getPeriodSuffix,
-  scaleToDisplayPeriod,
 } from "../../utils/dashboardCalculations";
 import { clientService } from "../../services/clients/clientService";
 
@@ -239,34 +238,34 @@ export const DashboardHome: React.FC = () => {
 
   return (
     <>
-      <div className="h-screen flex flex-col overflow-hidden">
-        {/* Compact Header - matching Targets/Expenses pages */}
-        <div className="page-header py-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-base font-semibold text-foreground">Dashboard</h1>
-              <p className="text-[11px] text-muted-foreground mt-0.5">
-                Performance overview and key metrics
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <TimePeriodSwitcher
-                timePeriod={timePeriod}
-                onTimePeriodChange={handleTimePeriodChange}
-              />
-              <PeriodNavigator
-                timePeriod={timePeriod}
-                periodOffset={periodOffset}
-                onOffsetChange={setPeriodOffset}
-                dateRange={dateRange}
-              />
-              <DateRangeDisplay timePeriod={timePeriod} dateRange={dateRange} />
-            </div>
+      <div className="h-[calc(100vh-4rem)] flex flex-col p-3 space-y-2.5 bg-zinc-50 dark:bg-zinc-950">
+        {/* Compact Header Card */}
+        <div className="flex items-center justify-between bg-white dark:bg-zinc-900 rounded-lg px-3 py-2 border border-zinc-200 dark:border-zinc-800">
+          <div className="flex items-center gap-2">
+            <h1 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+              Dashboard
+            </h1>
+            <span className="text-[10px] text-zinc-500 dark:text-zinc-400">
+              Performance overview
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <TimePeriodSwitcher
+              timePeriod={timePeriod}
+              onTimePeriodChange={handleTimePeriodChange}
+            />
+            <PeriodNavigator
+              timePeriod={timePeriod}
+              periodOffset={periodOffset}
+              onOffsetChange={setPeriodOffset}
+              dateRange={dateRange}
+            />
+            <DateRangeDisplay timePeriod={timePeriod} dateRange={dateRange} />
           </div>
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 p-3 overflow-auto">
+        <div className="flex-1 overflow-auto">
           <div className="max-w-7xl mx-auto space-y-2">
             {/* Main 3-column layout */}
             <div className="grid gap-2 grid-cols-[260px_1fr_280px]">

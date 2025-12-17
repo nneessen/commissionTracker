@@ -32,10 +32,14 @@ export const DateRangeDisplay: React.FC<DateRangeDisplayProps> = ({
   };
 
   return (
-    <div className="flex items-center gap-1.5 px-2 py-1 bg-muted/20 rounded text-[11px] text-muted-foreground">
-      <span className="font-medium text-foreground">{getPeriodDescription(timePeriod)}</span>
-      <span className="text-muted-foreground/50">•</span>
-      <span>{formatDateRange(dateRange)}</span>
+    <div className="flex items-center gap-1.5 px-2 py-1 bg-zinc-100 dark:bg-zinc-800 rounded text-[10px]">
+      <span className="font-medium text-zinc-900 dark:text-zinc-100">
+        {getPeriodDescription(timePeriod)}
+      </span>
+      <span className="text-zinc-400 dark:text-zinc-500">•</span>
+      <span className="text-zinc-500 dark:text-zinc-400">
+        {formatDateRange(dateRange)}
+      </span>
     </div>
   );
 };

@@ -1,117 +1,138 @@
 // src/features/dashboard/components/SkeletonLoaders.tsx
 import React, { memo } from "react";
-import {Card} from "@/components/ui/card";
-import {cn} from "@/lib/utils";
+import { cn } from "@/lib/utils";
 
 // KPI card skeleton matching exact dimensions
 export const KpiSkeleton = memo(({ className }: { className?: string }) => (
-  <Card className={cn("h-28 p-3 rounded-md animate-pulse", className)}>
+  <div
+    className={cn(
+      "h-28 p-3 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 animate-pulse",
+      className,
+    )}
+  >
     <div className="flex flex-col justify-between h-full">
       <div className="space-y-2">
-        <div className="h-5 bg-muted rounded w-20" />
-        <div className="h-3 bg-muted rounded w-32" />
+        <div className="h-5 bg-zinc-200 dark:bg-zinc-700 rounded w-20" />
+        <div className="h-3 bg-zinc-200 dark:bg-zinc-700 rounded w-32" />
       </div>
-      <div className="h-8 bg-muted rounded" />
+      <div className="h-8 bg-zinc-200 dark:bg-zinc-700 rounded" />
     </div>
-  </Card>
+  </div>
 ));
 
 KpiSkeleton.displayName = "KpiSkeleton";
 
 // Chart skeleton with fixed height
-export const ChartSkeleton = memo(({
-  height = "h-56",
-  className
-}: {
-  height?: string;
-  className?: string;
-}) => (
-  <Card className={cn(height, "p-4 animate-pulse", className)}>
-    <div className="flex justify-between items-center mb-3">
-      <div className="h-4 bg-muted rounded w-32" />
-      <div className="flex gap-2">
-        <div className="h-7 bg-muted rounded w-20" />
-        <div className="h-7 bg-muted rounded w-20" />
+export const ChartSkeleton = memo(
+  ({ height = "h-56", className }: { height?: string; className?: string }) => (
+    <div
+      className={cn(
+        height,
+        "p-4 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 animate-pulse",
+        className,
+      )}
+    >
+      <div className="flex justify-between items-center mb-3">
+        <div className="h-4 bg-zinc-200 dark:bg-zinc-700 rounded w-32" />
+        <div className="flex gap-2">
+          <div className="h-7 bg-zinc-200 dark:bg-zinc-700 rounded w-20" />
+          <div className="h-7 bg-zinc-200 dark:bg-zinc-700 rounded w-20" />
+        </div>
       </div>
+      <div className="h-full bg-zinc-200 dark:bg-zinc-700 rounded" />
     </div>
-    <div className="h-full bg-muted rounded" />
-  </Card>
-));
+  ),
+);
 
 ChartSkeleton.displayName = "ChartSkeleton";
 
 // Table skeleton with rows
-export const TableSkeleton = memo(({
-  rows = 5,
-  columns = 4,
-  className
-}: {
-  rows?: number;
-  columns?: number;
-  className?: string;
-}) => (
-  <Card className={cn("p-4 animate-pulse", className)}>
-    <div className="flex justify-between items-center mb-3">
-      <div className="h-4 bg-muted rounded w-32" />
-      <div className="flex gap-2">
-        <div className="h-7 bg-muted rounded w-32" />
-        <div className="h-7 bg-muted rounded w-7" />
+export const TableSkeleton = memo(
+  ({
+    rows = 5,
+    columns = 4,
+    className,
+  }: {
+    rows?: number;
+    columns?: number;
+    className?: string;
+  }) => (
+    <div
+      className={cn(
+        "p-4 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 animate-pulse",
+        className,
+      )}
+    >
+      <div className="flex justify-between items-center mb-3">
+        <div className="h-4 bg-zinc-200 dark:bg-zinc-700 rounded w-32" />
+        <div className="flex gap-2">
+          <div className="h-7 bg-zinc-200 dark:bg-zinc-700 rounded w-32" />
+          <div className="h-7 bg-zinc-200 dark:bg-zinc-700 rounded w-7" />
+        </div>
+      </div>
+      <div className="border border-zinc-200 dark:border-zinc-700 rounded-md p-3">
+        {/* Header */}
+        <div className="flex gap-3 pb-2 border-b border-zinc-200 dark:border-zinc-700">
+          {[...Array(columns)].map((_, i) => (
+            <div
+              key={i}
+              className="h-3 bg-zinc-200 dark:bg-zinc-700 rounded flex-1"
+            />
+          ))}
+        </div>
+        {/* Rows */}
+        <div className="space-y-2 mt-2">
+          {[...Array(rows)].map((_, i) => (
+            <div key={i} className="flex gap-3">
+              {[...Array(columns)].map((_, j) => (
+                <div
+                  key={j}
+                  className="h-3 bg-zinc-200 dark:bg-zinc-700 rounded flex-1"
+                />
+              ))}
+            </div>
+          ))}
+        </div>
       </div>
     </div>
-    <div className="border rounded-md p-3">
-      {/* Header */}
-      <div className="flex gap-3 pb-2 border-b">
-        {[...Array(columns)].map((_, i) => (
-          <div key={i} className="h-3 bg-muted rounded flex-1" />
-        ))}
-      </div>
-      {/* Rows */}
-      <div className="space-y-2 mt-2">
-        {[...Array(rows)].map((_, i) => (
-          <div key={i} className="flex gap-3">
-            {[...Array(columns)].map((_, j) => (
-              <div key={j} className="h-3 bg-muted rounded flex-1" />
-            ))}
-          </div>
-        ))}
-      </div>
-    </div>
-  </Card>
-));
+  ),
+);
 
 TableSkeleton.displayName = "TableSkeleton";
 
 // Grid skeleton for KPI sections
-export const GridSkeleton = memo(({
-  items = 6,
-  columns = "grid-cols-1 md:grid-cols-2 xl:grid-cols-3",
-  className
-}: {
-  items?: number;
-  columns?: string;
-  className?: string;
-}) => (
-  <div className={cn("grid gap-3", columns, className)}>
-    {[...Array(items)].map((_, i) => (
-      <KpiSkeleton key={i} />
-    ))}
-  </div>
-));
+export const GridSkeleton = memo(
+  ({
+    items = 6,
+    columns = "grid-cols-1 md:grid-cols-2 xl:grid-cols-3",
+    className,
+  }: {
+    items?: number;
+    columns?: string;
+    className?: string;
+  }) => (
+    <div className={cn("grid gap-3", columns, className)}>
+      {[...Array(items)].map((_, i) => (
+        <KpiSkeleton key={i} />
+      ))}
+    </div>
+  ),
+);
 
 GridSkeleton.displayName = "GridSkeleton";
 
 // Dashboard skeleton - full page loader
 export const DashboardSkeleton = memo(() => (
-  <div className="page-layout-dense animate-pulse">
+  <div className="p-3 space-y-2.5 bg-zinc-50 dark:bg-zinc-950 animate-pulse">
     {/* Header */}
-    <div className="flex justify-between items-center mb-4">
+    <div className="flex justify-between items-center p-3 bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800">
       <div>
-        <div className="h-5 bg-muted rounded w-32 mb-2" />
-        <div className="h-3 bg-muted rounded w-48" />
+        <div className="h-5 bg-zinc-200 dark:bg-zinc-700 rounded w-32 mb-2" />
+        <div className="h-3 bg-zinc-200 dark:bg-zinc-700 rounded w-48" />
       </div>
       <div className="flex gap-2">
-        <div className="h-8 bg-muted rounded w-32" />
-        <div className="h-8 bg-muted rounded w-20" />
+        <div className="h-8 bg-zinc-200 dark:bg-zinc-700 rounded w-32" />
+        <div className="h-8 bg-zinc-200 dark:bg-zinc-700 rounded w-20" />
       </div>
     </div>
 
