@@ -1,5 +1,5 @@
 // src/components/ui/button.tsx
-// Custom button component - black/white theme with visible hover/active effects
+// Custom button component with distinctive hover/active effects
 
 import * as React from "react";
 import {Slot} from "@radix-ui/react-slot";
@@ -8,49 +8,49 @@ import {cva, type VariantProps} from "class-variance-authority";
 import {cn} from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors transition-shadow transition-transform duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 cursor-pointer select-none",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 cursor-pointer select-none transition-all duration-200 ease-out",
   {
     variants: {
       variant: {
-        // Default: Black button - lightens on hover, darkens on click
+        // Default: Black -> Gray on hover -> Darker on click
         default:
-          "bg-foreground text-background shadow-md hover:bg-foreground/80 hover:shadow-lg hover:scale-[1.02] active:bg-foreground/70 active:shadow-sm active:scale-[0.98]",
+          "bg-zinc-900 text-white shadow-md hover:bg-zinc-700 hover:shadow-lg hover:scale-[1.02] active:bg-zinc-950 active:shadow-sm active:scale-[0.98]",
 
-        // Primary: Same as default
+        // Primary: Same visual as default
         primary:
-          "bg-foreground text-background shadow-md hover:bg-foreground/80 hover:shadow-lg hover:scale-[1.02] active:bg-foreground/70 active:shadow-sm active:scale-[0.98]",
+          "bg-zinc-900 text-white shadow-md hover:bg-zinc-700 hover:shadow-lg hover:scale-[1.02] active:bg-zinc-950 active:shadow-sm active:scale-[0.98]",
 
-        // Secondary: Gray background
+        // Secondary: Light gray -> Darker gray on hover
         secondary:
-          "bg-secondary text-secondary-foreground shadow-md hover:bg-secondary/70 hover:shadow-lg hover:scale-[1.02] active:bg-secondary/60 active:shadow-sm active:scale-[0.98]",
+          "bg-zinc-200 text-zinc-900 shadow-md hover:bg-zinc-300 hover:shadow-lg hover:scale-[1.02] active:bg-zinc-400 active:shadow-sm active:scale-[0.98] dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700 dark:active:bg-zinc-900",
 
-        // Success: Green
+        // Success: Green with visible shift
         success:
-          "bg-[var(--success)] text-white shadow-md hover:brightness-110 hover:shadow-lg hover:scale-[1.02] active:brightness-90 active:shadow-sm active:scale-[0.98]",
+          "bg-emerald-600 text-white shadow-md hover:bg-emerald-500 hover:shadow-lg hover:shadow-emerald-500/25 hover:scale-[1.02] active:bg-emerald-700 active:shadow-sm active:scale-[0.98]",
 
-        // Warning: Amber
+        // Warning: Amber with visible shift
         warning:
-          "bg-[var(--warning)] text-white shadow-md hover:brightness-110 hover:shadow-lg hover:scale-[1.02] active:brightness-90 active:shadow-sm active:scale-[0.98]",
+          "bg-amber-500 text-white shadow-md hover:bg-amber-400 hover:shadow-lg hover:shadow-amber-500/25 hover:scale-[1.02] active:bg-amber-600 active:shadow-sm active:scale-[0.98]",
 
-        // Destructive: Red
+        // Destructive: Red with visible shift
         destructive:
-          "bg-destructive text-destructive-foreground shadow-md hover:bg-destructive/80 hover:shadow-lg hover:scale-[1.02] active:bg-destructive/70 active:shadow-sm active:scale-[0.98]",
+          "bg-red-600 text-white shadow-md hover:bg-red-500 hover:shadow-lg hover:shadow-red-500/25 hover:scale-[1.02] active:bg-red-700 active:shadow-sm active:scale-[0.98]",
 
-        // Outline: Bordered - fills on hover
+        // Outline: Transparent -> Filled on hover
         outline:
-          "border border-input bg-background text-foreground shadow-sm hover:bg-accent hover:text-accent-foreground hover:shadow-md hover:scale-[1.02] active:bg-accent/80 active:shadow-sm active:scale-[0.98]",
+          "border-2 border-zinc-300 bg-transparent text-foreground hover:bg-zinc-100 hover:border-zinc-400 hover:shadow-md hover:scale-[1.02] active:bg-zinc-200 active:scale-[0.98] dark:border-zinc-700 dark:hover:bg-zinc-800 dark:hover:border-zinc-600 dark:active:bg-zinc-900",
 
-        // Ghost: No background - appears on hover
+        // Ghost: Invisible -> Visible on hover
         ghost:
-          "text-muted-foreground hover:text-foreground hover:bg-accent hover:shadow-sm active:bg-accent/70 active:scale-[0.98]",
+          "text-muted-foreground hover:text-foreground hover:bg-zinc-100 hover:shadow-sm active:bg-zinc-200 active:scale-[0.98] dark:hover:bg-zinc-800 dark:active:bg-zinc-900",
 
-        // Muted: Subtle gray background
+        // Muted: Soft gray background
         muted:
-          "bg-muted text-muted-foreground shadow-sm hover:bg-muted/70 hover:text-foreground hover:shadow-md active:bg-muted/60 active:shadow-sm active:scale-[0.98]",
+          "bg-zinc-100 text-zinc-600 shadow-sm hover:bg-zinc-200 hover:text-zinc-900 hover:shadow-md active:bg-zinc-300 active:scale-[0.98] dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700 dark:hover:text-zinc-100 dark:active:bg-zinc-900",
 
-        // Link: Underline on hover
+        // Link: Text with underline animation
         link:
-          "text-foreground underline-offset-4 hover:underline hover:text-foreground/80 active:text-foreground/60",
+          "text-foreground underline-offset-4 hover:underline hover:text-zinc-600 active:text-zinc-400 dark:hover:text-zinc-300 dark:active:text-zinc-500",
       },
       size: {
         default: "h-9 px-4 py-2",
