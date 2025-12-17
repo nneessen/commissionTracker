@@ -6,7 +6,8 @@ import {EmailComposer} from '@/features/email'
 import {TemplatePicker} from '@/features/email/components/TemplatePicker'
 import {blocksToHtml} from '@/features/email/components/block-builder'
 import {useSendEmail} from '../hooks/useRecruitEmails'
-import type {SendEmailRequest, EmailTemplate} from '@/types/email.types'
+import type {SendEmailRequest} from '@/services/emailService'
+import type {EmailTemplate} from '@/types/email.types'
 
 interface ComposeEmailDialogProps {
   open: boolean

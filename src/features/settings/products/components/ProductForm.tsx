@@ -20,6 +20,8 @@ const PRODUCT_TYPES: ProductType[] = [
   'whole_life',
   'universal_life',
   'variable_life',
+  'indexed_universal_life',
+  'participating_whole_life',
   'health',
   'disability',
   'annuity'

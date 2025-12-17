@@ -7,7 +7,7 @@ import {Send, Loader2, X, Paperclip, Trash2, FileText} from 'lucide-react'
 import {TipTapEditor} from './TipTapEditor'
 import {sanitizeForEmail} from '../services/sanitizationService'
 import {convertHtmlToText} from '../services/htmlToTextService'
-import type {SendEmailRequest} from '@/types/email.types'
+import type {SendEmailRequest} from '@/services/emailService'
 
 interface Attachment {
   id: string
@@ -120,10 +120,9 @@ export function EmailComposer({
       to,
       cc: cc.length > 0 ? cc : undefined,
       subject,
-      bodyHtml: sanitizedHtml,
-      bodyText,
+      html: sanitizedHtml,
+      text: bodyText,
       recruitId,
-      attachments: attachmentData.length > 0 ? attachmentData : undefined,
     }
 
     await onSend?.(emailRequest)

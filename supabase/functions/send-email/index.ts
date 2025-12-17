@@ -1,417 +1,251 @@
 // Send Email Edge Function
-// Sends email via Gmail API using stored OAuth tokens
-// Supports attachments and threading
+// Unified email sending via Resend API
+// Handles all email types: recruiter->recruit, recruit->recruiter, automated
 
-import {serve} from 'https://deno.land/std@0.168.0/http/server.ts'
-import {decrypt} from '../_shared/encryption.ts'
-import {createSupabaseClient, createSupabaseAdminClient} from '../_shared/supabase-client.ts'
-import {encode as base64Encode} from 'https://deno.land/std@0.168.0/encoding/base64.ts'
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import {
+  createSupabaseClient,
+  createSupabaseAdminClient,
+} from "../_shared/supabase-client.ts";
 
-// CORS headers
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
+};
 
 interface SendEmailRequest {
-  to: string[] // Array of recipient email addresses
-  cc?: string[]
-  subject: string
-  bodyHtml: string
-  bodyText?: string
-  attachments?: Array<{
-    filename: string
-    content: string // Base64 encoded
-    mimeType: string
-  }>
-  threadId?: string // For replies, include the thread ID
-  replyToEmailId?: string // Reference to user_emails.id if replying
-  recruitId?: string // Optional: Link to recruit (user_id in user_emails)
+  to: string[]; // Recipient email addresses
+  cc?: string[]; // CC recipients
+  subject: string;
+  // Support both naming conventions
+  html?: string; // HTML body (new convention)
+  text?: string; // Text body (new convention)
+  bodyHtml?: string; // HTML body (legacy convention)
+  bodyText?: string; // Text body (legacy convention)
+  replyTo?: string; // Sender's email for replies
+  from?: string; // Custom from address (optional)
+  // Metadata for database tracking
+  recruitId?: string; // Link to recruit (user_id in user_emails)
+  senderId?: string; // Who sent it (sender_id in user_emails)
+  metadata?: Record<string, unknown>;
 }
 
 interface SendEmailResponse {
-  success: boolean
-  emailId?: string // Our database ID
-  gmailMessageId?: string // Gmail's message ID
-  threadId?: string
-  error?: string
+  success: boolean;
+  emailId?: string; // Our database ID
+  resendMessageId?: string; // Resend's message ID
+  error?: string;
 }
 
 serve(async (req) => {
   // Handle CORS preflight
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
   }
 
-  if (req.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
+  if (req.method !== "POST") {
+    return new Response(JSON.stringify({ error: "Method not allowed" }), {
       status: 405,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
+
+  const adminSupabase = createSupabaseAdminClient();
 
   try {
-    // Get the user's JWT from the Authorization header
-    const authHeader = req.headers.get('Authorization')
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: 'Missing authorization header' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
-    }
+    // Get the user's JWT from the Authorization header (optional - for authenticated requests)
+    const authHeader = req.headers.get("Authorization");
+    let authenticatedUserId: string | null = null;
 
-    // Create Supabase client with user's JWT
-    const supabase = createSupabaseClient(authHeader)
-
-    // Get the current user
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser()
-
-    if (userError || !user) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
-    }
-
-    // Get user's profile - in this app, user_profiles.id = auth.users.id
-    const { data: profile, error: profileError } = await supabase
-      .from('user_profiles')
-      .select('id, email')
-      .eq('id', user.id)
-      .single()
-
-    if (profileError || !profile) {
-      console.error('Profile lookup failed:', profileError)
-      return new Response(JSON.stringify({ error: 'User profile not found' }), {
-        status: 404,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
+    if (authHeader) {
+      const supabase = createSupabaseClient(authHeader);
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      authenticatedUserId = user?.id || null;
     }
 
     // Parse request body
-    const body: SendEmailRequest = await req.json()
+    const body: SendEmailRequest = await req.json();
 
-    if (!body.to || body.to.length === 0 || !body.subject || !body.bodyHtml) {
-      return new Response(JSON.stringify({ error: 'Missing required fields: to, subject, bodyHtml' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
-    }
+    // Normalize field names (support both conventions)
+    const htmlContent = body.html || body.bodyHtml;
+    const textContent = body.text || body.bodyText;
 
-    // Use admin client to access OAuth tokens (bypasses RLS)
-    const adminSupabase = createSupabaseAdminClient()
-
-    // Get user's Gmail OAuth token
-    const { data: oauthToken, error: tokenError } = await adminSupabase
-      .from('user_email_oauth_tokens')
-      .select('*')
-      .eq('user_id', profile.id)
-      .eq('provider', 'gmail')
-      .eq('is_active', true)
-      .single()
-
-    if (tokenError || !oauthToken) {
+    // Validate required fields
+    if (!body.to || body.to.length === 0 || !body.subject || !htmlContent) {
       return new Response(
-        JSON.stringify({ error: 'Gmail not connected. Please connect your Gmail account in settings.' }),
+        JSON.stringify({
+          error: "Missing required fields: to, subject, html/bodyHtml",
+        }),
         {
           status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      )
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
     }
 
-    // Check quota
-    const quotaCheckResult = await adminSupabase.rpc('check_email_quota', {
-      p_user_id: profile.id,
-      p_provider: 'gmail',
-      p_limit: 500, // Personal Gmail limit
-    })
+    // Filter out empty strings from recipients
+    const toAddresses = body.to.filter((email) => email && email.trim());
+    const ccAddresses = body.cc?.filter((email) => email && email.trim()) || [];
 
-    if (!quotaCheckResult.data) {
+    if (toAddresses.length === 0) {
       return new Response(
-        JSON.stringify({ error: 'Daily email quota exceeded. Gmail allows 500 emails per day.' }),
+        JSON.stringify({ error: "No valid recipient email addresses" }),
         {
-          status: 429,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      )
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
     }
 
-    // Decrypt access token
-    let accessToken: string
-    try {
-      accessToken = await decrypt(oauthToken.access_token_encrypted)
-    } catch (decryptError) {
-      console.error('Token decryption failed:', decryptError)
-      return new Response(JSON.stringify({ error: 'Failed to decrypt OAuth token' }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
-    }
-
-    // Check if token is expired and refresh if needed
-    if (oauthToken.token_expiry && new Date(oauthToken.token_expiry) < new Date()) {
-      console.log('Token expired, attempting refresh...')
-      try {
-        accessToken = await refreshGmailToken(oauthToken, adminSupabase, profile.id)
-      } catch (refreshError) {
-        console.error('Token refresh failed:', refreshError)
-        return new Response(
-          JSON.stringify({
-            error: 'Gmail token expired and refresh failed. Please reconnect your Gmail account.',
-          }),
-          {
-            status: 401,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          }
-        )
-      }
-    }
-
-    // Build the email message
-    const rawMessage = buildRawEmail({
-      from: oauthToken.email_address,
-      to: body.to,
-      cc: body.cc,
+    console.log("Sending email:", {
+      to: toAddresses,
+      cc: ccAddresses,
       subject: body.subject,
-      bodyHtml: body.bodyHtml,
-      bodyText: body.bodyText,
-      attachments: body.attachments,
-    })
+      senderId: body.senderId || authenticatedUserId,
+      recruitId: body.recruitId,
+      hasReplyTo: !!body.replyTo,
+    });
 
-    // Send via Gmail API
-    const gmailResponse = await sendViaGmail(accessToken, rawMessage, body.threadId)
+    // Get Resend API key from environment
+    const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 
-    // Determine the user_id for the email record
-    // If recruitId is provided, link to recruit; otherwise link to sender
-    const emailUserId = body.recruitId || profile.id
+    let resendMessageId: string | null = null;
+    let emailStatus: "sent" | "simulated" = "sent";
 
-    console.log('Creating email record:', {
-      emailUserId,
-      recruitIdProvided: !!body.recruitId,
-      senderId: profile.id,
-      subject: body.subject,
-    })
+    if (!RESEND_API_KEY) {
+      console.log("RESEND_API_KEY not configured, simulating email send");
+      console.log("=== SIMULATED EMAIL ===");
+      console.log("To:", toAddresses.join(", "));
+      console.log("CC:", ccAddresses.join(", ") || "(none)");
+      console.log("Subject:", body.subject);
+      console.log("Reply-To:", body.replyTo || "(none)");
+      console.log("=======================");
 
-    // Create email record in database using admin client to bypass RLS
-    // This ensures the email is always recorded even if RLS would block it
-    const { data: emailRecord, error: emailError } = await adminSupabase.from('user_emails').insert({
-      user_id: emailUserId,
-      sender_id: profile.id,
-      subject: body.subject,
-      body_html: body.bodyHtml,
-      body_text: body.bodyText,
-      status: 'sent',
-      sent_at: new Date().toISOString(),
-      provider: 'gmail',
-      provider_message_id: gmailResponse.id,
-      thread_id: gmailResponse.threadId,
-      is_incoming: false,
-      from_address: oauthToken.email_address,
-      to_addresses: body.to,
-      cc_addresses: body.cc,
-      reply_to_id: body.replyToEmailId,
-    }).select().single()
-
-    if (emailError) {
-      console.error('Failed to create email record:', emailError)
-      // Email was sent, but we couldn't record it - this is a problem
-      // Log the full error for debugging
-      console.error('Insert error details:', JSON.stringify(emailError))
+      resendMessageId = `simulated-${Date.now()}`;
+      emailStatus = "simulated";
     } else {
-      console.log('Email record created:', emailRecord?.id)
+      // Send via Resend API
+      const resendPayload: Record<string, unknown> = {
+        from: body.from || "Commission Tracker <noreply@thestandardhq.com>",
+        to: toAddresses,
+        subject: body.subject,
+        html: htmlContent,
+      };
+
+      if (textContent) {
+        resendPayload.text = textContent;
+      }
+
+      if (ccAddresses.length > 0) {
+        resendPayload.cc = ccAddresses;
+      }
+
+      if (body.replyTo) {
+        resendPayload.reply_to = body.replyTo;
+      }
+
+      const response = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${RESEND_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(resendPayload),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.error("Resend API error:", data);
+        throw new Error(data.message || "Failed to send email via Resend");
+      }
+
+      resendMessageId = data.id;
+      console.log("Email sent via Resend:", resendMessageId);
     }
 
-    // Increment quota
-    await adminSupabase.rpc('increment_email_quota', {
-      p_user_id: profile.id,
-      p_provider: 'gmail',
-    })
+    // Store email record in database
+    // Determine user_id: if recruitId provided, use it; otherwise use first recipient's profile
+    let emailUserId = body.recruitId;
 
-    // Update last_used_at on OAuth token
-    await adminSupabase
-      .from('user_email_oauth_tokens')
-      .update({ last_used_at: new Date().toISOString() })
-      .eq('id', oauthToken.id)
+    if (!emailUserId && toAddresses.length > 0) {
+      // Try to find recipient's profile ID
+      const { data: recipientProfile } = await adminSupabase
+        .from("user_profiles")
+        .select("id")
+        .eq("email", toAddresses[0])
+        .single();
+
+      emailUserId = recipientProfile?.id;
+    }
+
+    // Determine sender_id
+    const senderProfileId = body.senderId || authenticatedUserId;
+
+    const emailRecord: Record<string, unknown> = {
+      subject: body.subject,
+      body_html: htmlContent,
+      body_text: textContent,
+      status: emailStatus === "simulated" ? "draft" : "sent",
+      sent_at: new Date().toISOString(),
+      provider: "resend",
+      provider_message_id: resendMessageId,
+      is_incoming: false,
+      to_addresses: toAddresses,
+      cc_addresses: ccAddresses.length > 0 ? ccAddresses : null,
+      metadata: body.metadata || null,
+    };
+
+    // Only set user_id if we have one
+    if (emailUserId) {
+      emailRecord.user_id = emailUserId;
+    }
+
+    // Only set sender_id if we have one
+    if (senderProfileId) {
+      emailRecord.sender_id = senderProfileId;
+    }
+
+    // Set from_address based on replyTo or default
+    emailRecord.from_address =
+      body.replyTo || body.from || "noreply@commissiontracker.com";
+
+    const { data: savedEmail, error: dbError } = await adminSupabase
+      .from("user_emails")
+      .insert(emailRecord)
+      .select()
+      .single();
+
+    if (dbError) {
+      console.error("Failed to save email record:", dbError);
+      // Email was sent but not recorded - still return success
+    } else {
+      console.log("Email record saved:", savedEmail?.id);
+    }
 
     const response: SendEmailResponse = {
       success: true,
-      emailId: emailRecord?.id,
-      gmailMessageId: gmailResponse.id,
-      threadId: gmailResponse.threadId,
-    }
+      emailId: savedEmail?.id,
+      resendMessageId: resendMessageId || undefined,
+    };
 
     return new Response(JSON.stringify(response), {
       status: 200,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   } catch (err) {
-    console.error('Send email error:', err)
-    const errorMessage = err instanceof Error ? err.message : 'Unknown error'
-    return new Response(JSON.stringify({ success: false, error: errorMessage }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
+    console.error("Send email error:", err);
+    const errorMessage = err instanceof Error ? err.message : "Unknown error";
+
+    return new Response(
+      JSON.stringify({ success: false, error: errorMessage }),
+      {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      },
+    );
   }
-})
-
-/**
- * Build RFC 2822 compliant email message
- */
-function buildRawEmail(params: {
-  from: string
-  to: string[]
-  cc?: string[]
-  subject: string
-  bodyHtml: string
-  bodyText?: string
-  attachments?: Array<{ filename: string; content: string; mimeType: string }>
-}): string {
-  const boundary = `boundary_${Date.now()}`
-  const hasAttachments = params.attachments && params.attachments.length > 0
-
-  let message = ''
-
-  // Headers
-  message += `From: ${params.from}\r\n`
-  message += `To: ${params.to.join(', ')}\r\n`
-  if (params.cc && params.cc.length > 0) {
-    message += `Cc: ${params.cc.join(', ')}\r\n`
-  }
-  message += `Subject: ${params.subject}\r\n`
-  message += `MIME-Version: 1.0\r\n`
-
-  if (hasAttachments) {
-    message += `Content-Type: multipart/mixed; boundary="${boundary}"\r\n`
-    message += `\r\n`
-    message += `--${boundary}\r\n`
-  }
-
-  // Body part
-  const altBoundary = `alt_${Date.now()}`
-  message += `Content-Type: multipart/alternative; boundary="${altBoundary}"\r\n`
-  message += `\r\n`
-
-  // Plain text version
-  if (params.bodyText) {
-    message += `--${altBoundary}\r\n`
-    message += `Content-Type: text/plain; charset="UTF-8"\r\n`
-    message += `\r\n`
-    message += `${params.bodyText}\r\n`
-  }
-
-  // HTML version
-  message += `--${altBoundary}\r\n`
-  message += `Content-Type: text/html; charset="UTF-8"\r\n`
-  message += `\r\n`
-  message += `${params.bodyHtml}\r\n`
-  message += `--${altBoundary}--\r\n`
-
-  // Attachments
-  if (hasAttachments && params.attachments) {
-    for (const attachment of params.attachments) {
-      message += `--${boundary}\r\n`
-      message += `Content-Type: ${attachment.mimeType}; name="${attachment.filename}"\r\n`
-      message += `Content-Disposition: attachment; filename="${attachment.filename}"\r\n`
-      message += `Content-Transfer-Encoding: base64\r\n`
-      message += `\r\n`
-      message += `${attachment.content}\r\n`
-    }
-    message += `--${boundary}--\r\n`
-  }
-
-  return message
-}
-
-/**
- * Send email via Gmail API
- */
-async function sendViaGmail(
-  accessToken: string,
-  rawMessage: string,
-  threadId?: string
-): Promise<{ id: string; threadId: string }> {
-  // Gmail API requires URL-safe base64 encoding
-  const encoder = new TextEncoder()
-  const data = encoder.encode(rawMessage)
-  const base64Message = base64Encode(data)
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=+$/, '')
-
-  const requestBody: Record<string, string> = { raw: base64Message }
-  if (threadId) {
-    requestBody.threadId = threadId
-  }
-
-  const response = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(requestBody),
-  })
-
-  if (!response.ok) {
-    const errorText = await response.text()
-    console.error('Gmail API error:', errorText)
-    throw new Error(`Gmail API error: ${response.status}`)
-  }
-
-  return response.json()
-}
-
-/**
- * Refresh Gmail OAuth token
- */
-async function refreshGmailToken(
-  oauthToken: any,
-  adminSupabase: any,
-  userId: string
-): Promise<string> {
-  if (!oauthToken.refresh_token_encrypted) {
-    throw new Error('No refresh token available')
-  }
-
-  const refreshToken = await decrypt(oauthToken.refresh_token_encrypted)
-
-  const GOOGLE_CLIENT_ID = Deno.env.get('GOOGLE_CLIENT_ID')!
-  const GOOGLE_CLIENT_SECRET = Deno.env.get('GOOGLE_CLIENT_SECRET')!
-
-  const response = await fetch('https://oauth2.googleapis.com/token', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    body: new URLSearchParams({
-      client_id: GOOGLE_CLIENT_ID,
-      client_secret: GOOGLE_CLIENT_SECRET,
-      refresh_token: refreshToken,
-      grant_type: 'refresh_token',
-    }),
-  })
-
-  if (!response.ok) {
-    throw new Error('Failed to refresh token')
-  }
-
-  const tokens = await response.json()
-  const { encrypt } = await import('../_shared/encryption.ts')
-
-  // Update token in database
-  await adminSupabase
-    .from('user_email_oauth_tokens')
-    .update({
-      access_token_encrypted: await encrypt(tokens.access_token),
-      token_expiry: new Date(Date.now() + tokens.expires_in * 1000).toISOString(),
-      updated_at: new Date().toISOString(),
-    })
-    .eq('user_id', userId)
-    .eq('provider', 'gmail')
-
-  return tokens.access_token
-}
+});
