@@ -1,5 +1,5 @@
 // src/components/ui/button.tsx
-// Custom button component - black/white theme with subtle styling
+// Custom button component - black/white theme with hover/active effects
 
 import * as React from "react";
 import {Slot} from "@radix-ui/react-slot";
@@ -12,44 +12,45 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        // Default: Black/dark button with subtle depth
+        // Default: Black button with elevation on hover, press effect on click
         default:
-          "bg-foreground text-background shadow-sm hover:bg-foreground/90 active:bg-foreground/80 active:shadow-none",
+          "bg-foreground text-background shadow-sm hover:bg-foreground/90 hover:shadow-md hover:-translate-y-px active:bg-foreground/80 active:shadow-none active:translate-y-0",
 
-        // Primary: Same as default but with slight glow on hover
+        // Primary: Same as default (alias for semantic clarity)
         primary:
-          "bg-foreground text-background shadow-sm hover:bg-foreground/90 hover:shadow-md active:bg-foreground/80 active:shadow-none",
+          "bg-foreground text-background shadow-sm hover:bg-foreground/90 hover:shadow-md hover:-translate-y-px active:bg-foreground/80 active:shadow-none active:translate-y-0",
 
-        // Secondary: Muted background
+        // Secondary: Muted background with hover lift
         secondary:
-          "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80 active:bg-secondary/70",
+          "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80 hover:shadow-md hover:-translate-y-px active:bg-secondary/70 active:shadow-none active:translate-y-0",
 
-        // Success: Green using theme color
+        // Success: Green with hover/active effects
         success:
-          "bg-[hsl(var(--success))] text-[hsl(var(--success-foreground))] shadow-sm hover:opacity-90 active:opacity-80",
+          "bg-[hsl(var(--success))] text-[hsl(var(--success-foreground))] shadow-sm hover:brightness-110 hover:shadow-md hover:-translate-y-px active:brightness-90 active:shadow-none active:translate-y-0",
 
-        // Warning: Amber using theme color
+        // Warning: Amber with hover/active effects
         warning:
-          "bg-[hsl(var(--warning))] text-[hsl(var(--warning-foreground))] shadow-sm hover:opacity-90 active:opacity-80",
+          "bg-[hsl(var(--warning))] text-[hsl(var(--warning-foreground))] shadow-sm hover:brightness-110 hover:shadow-md hover:-translate-y-px active:brightness-90 active:shadow-none active:translate-y-0",
 
-        // Destructive: Red using theme color
+        // Destructive: Red with hover/active effects
         destructive:
-          "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90 active:bg-destructive/80",
+          "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90 hover:shadow-md hover:-translate-y-px active:bg-destructive/80 active:shadow-none active:translate-y-0",
 
-        // Outline: Border with transparent bg
+        // Outline: Border with fill on hover
         outline:
-          "border border-input bg-background text-foreground shadow-sm hover:bg-accent hover:text-accent-foreground active:bg-accent/80",
+          "border border-input bg-background text-foreground shadow-sm hover:bg-accent hover:text-accent-foreground hover:shadow-md hover:-translate-y-px active:bg-accent/80 active:shadow-none active:translate-y-0",
 
-        // Ghost: No background, subtle hover
+        // Ghost: Transparent with background on hover
         ghost:
           "text-muted-foreground hover:text-foreground hover:bg-accent active:bg-accent/80",
 
-        // Muted: Subtle muted background
+        // Muted: Subtle background
         muted:
           "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground active:bg-muted/70",
 
-        // Link: Text-only with underline
-        link: "text-foreground underline-offset-4 hover:underline",
+        // Link: Text-only with underline on hover
+        link:
+          "text-foreground underline-offset-4 hover:underline active:opacity-80",
       },
       size: {
         default: "h-9 px-4 py-2",
