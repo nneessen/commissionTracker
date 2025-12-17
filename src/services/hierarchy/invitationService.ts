@@ -92,12 +92,18 @@ class InvitationService {
           request.message,
         );
 
+        // Determine sender: owner uses personal email, others use system noreply
+        const senderEmail = this.getSenderEmailAddress(
+          inviterProfile?.email,
+          inviterName,
+        );
+
         await emailService.sendEmail({
           to: [request.invitee_email],
           subject: `${inviterName} invited you to join their team`,
           html: emailHTML,
           text: emailService.htmlToText(emailHTML),
-          from: "Team Invitations <noreply@nickneessen.com>",
+          from: senderEmail,
         });
 
         logger.info(
@@ -424,12 +430,18 @@ class InvitationService {
           invitation.message,
         );
 
+        // Determine sender: owner uses personal email, others use system noreply
+        const senderEmail = this.getSenderEmailAddress(
+          inviterProfile?.email,
+          inviterName,
+        );
+
         await emailService.sendEmail({
           to: [invitation.invitee_email],
           subject: `Reminder: ${inviterName} invited you to join their team`,
           html: emailHTML,
           text: emailService.htmlToText(emailHTML),
-          from: "Team Invitations <noreply@nickneessen.com>",
+          from: senderEmail,
         });
 
         logger.info(
@@ -738,7 +750,28 @@ class InvitationService {
    * Enrich invitations with additional details for display
    */
   /**
+   * Get the sender email address for invitation emails
+   * Returns the inviter's personal email if they're the owner, otherwise noreply
+   */
+  private getSenderEmailAddress(
+    inviterEmail: string | null | undefined,
+    inviterName: string,
+  ): string {
+    // Owner email - when the owner sends invitations, use their personal email
+    const OWNER_EMAIL = "nickneessen@thestandardhq.com";
+    const SYSTEM_EMAIL = "noreply@thestandardhq.com";
+
+    if (inviterEmail?.toLowerCase() === OWNER_EMAIL.toLowerCase()) {
+      return `${inviterName} <${OWNER_EMAIL}>`;
+    }
+
+    // For all other users, use the system noreply address
+    return `The Standard HQ <${SYSTEM_EMAIL}>`;
+  }
+
+  /**
    * Generate invitation email HTML
+   * Uses zinc-based styling to match the application design
    */
   private generateInvitationEmailHTML(
     inviterName: string,
@@ -758,50 +791,61 @@ class InvitationService {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Hierarchy Invitation</title>
+  <title>Team Invitation</title>
 </head>
-<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-  <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 10px 10px 0 0; text-align: center;">
-    <h1 style="color: white; margin: 0; font-size: 24px;">Hierarchy Invitation</h1>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.5; color: #3f3f46; max-width: 560px; margin: 0 auto; padding: 16px; background-color: #fafafa;">
+  <!-- Header -->
+  <div style="background-color: #18181b; padding: 20px 24px; border-radius: 6px 6px 0 0;">
+    <h1 style="color: #fafafa; margin: 0; font-size: 16px; font-weight: 600; letter-spacing: -0.02em;">Team Invitation</h1>
   </div>
-  
-  <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px; border: 1px solid #e5e7eb; border-top: none;">
-    <p style="font-size: 16px; margin-top: 0;">Hi there!</p>
-    
-    <p style="font-size: 16px;"><strong>${inviterName}</strong> has invited you to join their team hierarchy.</p>
-    
+
+  <!-- Main Content -->
+  <div style="background-color: #ffffff; padding: 24px; border: 1px solid #e4e4e7; border-top: none; border-radius: 0 0 6px 6px;">
+    <p style="font-size: 14px; margin: 0 0 16px 0; color: #52525b;">Hi there,</p>
+
+    <p style="font-size: 14px; margin: 0 0 20px 0; color: #27272a;">
+      <strong style="color: #18181b;">${inviterName}</strong> has invited you to join their team.
+    </p>
+
     ${
       message
         ? `
-    <div style="background: white; padding: 15px; border-left: 4px solid #667eea; margin: 20px 0; border-radius: 4px;">
-      <p style="margin: 0; font-style: italic; color: #555;">"${message}"</p>
+    <div style="background-color: #f4f4f5; padding: 12px 16px; border-left: 3px solid #18181b; margin: 0 0 20px 0; border-radius: 0 4px 4px 0;">
+      <p style="margin: 0; font-size: 13px; font-style: italic; color: #52525b;">"${message}"</p>
     </div>
     `
         : ""
     }
-    
-    <p style="font-size: 16px;">To accept this invitation and join the team:</p>
-    
-    <ol style="font-size: 15px; line-height: 1.8;">
-      <li>Log into your account at <strong>${inviteeEmail}</strong></li>
-      <li>Navigate to the Team/Hierarchy page</li>
-      <li>You'll see a banner at the top with the invitation details</li>
-      <li>Click "Accept" to join the hierarchy</li>
+
+    <p style="font-size: 13px; margin: 0 0 12px 0; color: #52525b; font-weight: 500;">To accept this invitation:</p>
+
+    <ol style="font-size: 13px; line-height: 1.7; margin: 0 0 24px 0; padding-left: 20px; color: #3f3f46;">
+      <li style="margin-bottom: 4px;">Log into your account using <strong style="color: #18181b;">${inviteeEmail}</strong></li>
+      <li style="margin-bottom: 4px;">Go to the Team page</li>
+      <li style="margin-bottom: 4px;">Click Accept on the invitation banner</li>
     </ol>
-    
-    <div style="text-align: center; margin: 30px 0;">
-      <a href="${hierarchyUrl}" style="display: inline-block; background: #667eea; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 16px;">View Invitation</a>
+
+    <!-- CTA Button -->
+    <div style="text-align: center; margin: 24px 0;">
+      <a href="${hierarchyUrl}" style="display: inline-block; background-color: #18181b; color: #fafafa; padding: 10px 20px; text-decoration: none; border-radius: 4px; font-weight: 500; font-size: 13px;">View Invitation</a>
     </div>
-    
-    <p style="font-size: 14px; color: #666; margin-top: 30px;">
-      <strong>Note:</strong> This invitation will expire in 7 days. If you don't wish to accept, you can decline it from the same page.
+
+    <p style="font-size: 12px; color: #71717a; margin: 20px 0 0 0;">
+      This invitation expires in 7 days. You can decline it from the Team page if needed.
     </p>
-    
-    <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
-    
-    <p style="font-size: 13px; color: #888; text-align: center;">
-      If you didn't expect this invitation or have questions, please contact your upline or system administrator.
+
+    <!-- Divider -->
+    <hr style="border: none; border-top: 1px solid #e4e4e7; margin: 20px 0;">
+
+    <!-- Footer -->
+    <p style="font-size: 11px; color: #a1a1aa; text-align: center; margin: 0;">
+      If you didn't expect this invitation, please contact your team leader.
     </p>
+  </div>
+
+  <!-- Email Footer -->
+  <div style="text-align: center; padding: 16px 0;">
+    <p style="font-size: 11px; color: #a1a1aa; margin: 0;">The Standard HQ</p>
   </div>
 </body>
 </html>
