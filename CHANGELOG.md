@@ -6,6 +6,44 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-12-17 13:49:04
+
+### Changed Files
+- `CHANGELOG.md`
+- `PROJECT_STATS.md`
+- `src/features/hierarchy/HierarchyDashboardCompact.tsx`
+- `src/features/hierarchy/components/InvitationsList.tsx`
+- `src/features/hierarchy/components/SentInvitationsCard.tsx`
+- `src/hooks/hierarchy/useInvitations.ts`
+- `src/services/emailService.ts`
+- `src/services/hierarchy/invitationService.ts`
+- `src/types/invitation.types.ts`
+- `supabase/migrations/20251217_001_validate_invitation_eligibility.sql`
+- `supabase/migrations/20251217_002_cleanup_stale_pending_invitations.sql`
+
+### Statistics
+```
+ 11 files changed, 669 insertions(+), 107 deletions(-)
+```
+
+## [Checkpoint] - 2025-12-17 13:48:47
+
+### Changed Files
+- `src/features/hierarchy/HierarchyDashboardCompact.tsx`
+- `src/features/hierarchy/components/InvitationsList.tsx`
+- `src/features/hierarchy/components/SentInvitationsCard.tsx`
+- `src/hooks/hierarchy/useInvitations.ts`
+- `src/services/emailService.ts`
+- `src/services/hierarchy/invitationService.ts`
+- `src/types/invitation.types.ts`
+- `supabase/migrations/20251217_001_validate_invitation_eligibility.sql`
+- `supabase/migrations/20251217_002_cleanup_stale_pending_invitations.sql`
+
+### Statistics
+```
+ 9 files changed, 648 insertions(+), 103 deletions(-)
+```
+
 ## [Checkpoint] - 2025-12-17 12:31:37
 
 ### Changed Files

@@ -10,6 +10,7 @@ export interface SendEmailRequest {
   subject: string;
   html: string; // HTML body
   text?: string; // Plain text body
+  from?: string; // Sender email address (required by Mailgun edge function)
   replyTo?: string; // Sender's email for replies
   // Metadata for database tracking
   recruitId?: string; // Link to recruit (user_id in user_emails)

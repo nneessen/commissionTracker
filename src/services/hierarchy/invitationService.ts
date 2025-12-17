@@ -3,6 +3,7 @@
 
 import { supabase } from "../base/supabase";
 import { logger } from "../base/logger";
+import { emailService } from "../emailService";
 import type {
   HierarchyInvitation,
   SendInvitationRequest,
@@ -11,6 +12,7 @@ import type {
   AcceptInvitationResponse,
   DenyInvitationRequest,
   CancelInvitationRequest,
+  ResendInvitationRequest,
   InvitationValidationResult,
   InvitationWithDetails,
   InvitationStats,
@@ -67,6 +69,57 @@ class InvitationService {
 
       if (insertError) {
         throw new DatabaseError("sendInvitation", insertError);
+      }
+
+      // Get inviter's profile for email
+      const { data: inviterProfile } = await supabase
+        .from("user_profiles")
+        .select("first_name, last_name, email")
+        .eq("id", user.id)
+        .single();
+
+      const inviterName = inviterProfile
+        ? `${inviterProfile.first_name || ""} ${inviterProfile.last_name || ""}`.trim() ||
+          inviterProfile.email ||
+          "A team member"
+        : "A team member";
+
+      // Send invitation email via Mailgun
+      try {
+        const emailHTML = this.generateInvitationEmailHTML(
+          inviterName,
+          request.invitee_email,
+          request.message,
+        );
+
+        await emailService.sendEmail({
+          to: [request.invitee_email],
+          subject: `${inviterName} invited you to join their team`,
+          html: emailHTML,
+          text: emailService.htmlToText(emailHTML),
+          from: "Team Invitations <noreply@nickneessen.com>",
+        });
+
+        logger.info(
+          "Invitation email sent",
+          {
+            invitationId: invitation.id,
+            inviteeEmail: request.invitee_email,
+          },
+          "InvitationService",
+        );
+      } catch (emailError) {
+        // Log email failure but don't fail the invitation
+        logger.error(
+          "Failed to send invitation email",
+          emailError instanceof Error
+            ? emailError
+            : new Error(String(emailError)),
+        );
+        // Add warning to response
+        validation.warnings.push(
+          "Invitation created but email notification failed to send",
+        );
       }
 
       logger.info(
@@ -291,6 +344,128 @@ class InvitationService {
     } catch (error) {
       logger.error(
         "InvitationService.cancelInvitation",
+        error instanceof Error ? error : new Error(String(error)),
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Resend an invitation (updates expiration date)
+   */
+  async resendInvitation(
+    request: ResendInvitationRequest,
+  ): Promise<{ success: boolean; error?: string }> {
+    try {
+      // Get current user (inviter)
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+      if (userError || !user) {
+        throw new Error("Not authenticated");
+      }
+
+      // Verify invitation belongs to user and is pending
+      const { data: invitation, error: fetchError } = await supabase
+        .from("hierarchy_invitations")
+        .select("*")
+        .eq("id", request.invitation_id)
+        .eq("inviter_id", user.id)
+        .eq("status", "pending")
+        .single();
+
+      if (fetchError || !invitation) {
+        return {
+          success: false,
+          error: "Invitation not found or already processed",
+        };
+      }
+
+      // Check if invitation is expired
+      const now = new Date();
+      const expiresAt = new Date(invitation.expires_at);
+      const isExpired = now > expiresAt;
+
+      // Update expires_at to 7 days from now
+      const newExpiresAt = new Date();
+      newExpiresAt.setDate(newExpiresAt.getDate() + 7);
+
+      const { error: updateError } = await supabase
+        .from("hierarchy_invitations")
+        .update({
+          expires_at: newExpiresAt.toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", request.invitation_id);
+
+      if (updateError) {
+        throw new DatabaseError("resendInvitation", updateError);
+      }
+
+      // Get inviter's profile for email
+      const { data: inviterProfile } = await supabase
+        .from("user_profiles")
+        .select("first_name, last_name, email")
+        .eq("id", user.id)
+        .single();
+
+      const inviterName = inviterProfile
+        ? `${inviterProfile.first_name || ""} ${inviterProfile.last_name || ""}`.trim() ||
+          inviterProfile.email ||
+          "A team member"
+        : "A team member";
+
+      // Send invitation email via Mailgun
+      try {
+        const emailHTML = this.generateInvitationEmailHTML(
+          inviterName,
+          invitation.invitee_email,
+          invitation.message,
+        );
+
+        await emailService.sendEmail({
+          to: [invitation.invitee_email],
+          subject: `Reminder: ${inviterName} invited you to join their team`,
+          html: emailHTML,
+          text: emailService.htmlToText(emailHTML),
+          from: "Team Invitations <noreply@nickneessen.com>",
+        });
+
+        logger.info(
+          "Invitation resend email sent",
+          {
+            invitationId: request.invitation_id,
+            inviteeEmail: invitation.invitee_email,
+          },
+          "InvitationService",
+        );
+      } catch (emailError) {
+        // Log email failure but don't fail the resend
+        logger.error(
+          "Failed to send invitation resend email",
+          emailError instanceof Error
+            ? emailError
+            : new Error(String(emailError)),
+        );
+      }
+
+      logger.info(
+        "Invitation resent",
+        {
+          inviterId: user.id,
+          invitationId: request.invitation_id,
+          inviteeEmail: invitation.invitee_email,
+          wasExpired: isExpired,
+          newExpiresAt: newExpiresAt.toISOString(),
+        },
+        "InvitationService",
+      );
+
+      return { success: true };
+    } catch (error) {
+      logger.error(
+        "InvitationService.resendInvitation",
         error instanceof Error ? error : new Error(String(error)),
       );
       throw error;
@@ -562,6 +737,77 @@ class InvitationService {
   /**
    * Enrich invitations with additional details for display
    */
+  /**
+   * Generate invitation email HTML
+   */
+  private generateInvitationEmailHTML(
+    inviterName: string,
+    inviteeEmail: string,
+    message?: string | null,
+  ): string {
+    // Use environment variable or fallback to production URL
+    const appUrl =
+      typeof window !== "undefined"
+        ? window.location.origin
+        : import.meta.env.VITE_APP_URL || "https://yourapp.com";
+    const hierarchyUrl = `${appUrl}/hierarchy`;
+
+    return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hierarchy Invitation</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 10px 10px 0 0; text-align: center;">
+    <h1 style="color: white; margin: 0; font-size: 24px;">Hierarchy Invitation</h1>
+  </div>
+  
+  <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px; border: 1px solid #e5e7eb; border-top: none;">
+    <p style="font-size: 16px; margin-top: 0;">Hi there!</p>
+    
+    <p style="font-size: 16px;"><strong>${inviterName}</strong> has invited you to join their team hierarchy.</p>
+    
+    ${
+      message
+        ? `
+    <div style="background: white; padding: 15px; border-left: 4px solid #667eea; margin: 20px 0; border-radius: 4px;">
+      <p style="margin: 0; font-style: italic; color: #555;">"${message}"</p>
+    </div>
+    `
+        : ""
+    }
+    
+    <p style="font-size: 16px;">To accept this invitation and join the team:</p>
+    
+    <ol style="font-size: 15px; line-height: 1.8;">
+      <li>Log into your account at <strong>${inviteeEmail}</strong></li>
+      <li>Navigate to the Team/Hierarchy page</li>
+      <li>You'll see a banner at the top with the invitation details</li>
+      <li>Click "Accept" to join the hierarchy</li>
+    </ol>
+    
+    <div style="text-align: center; margin: 30px 0;">
+      <a href="${hierarchyUrl}" style="display: inline-block; background: #667eea; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 16px;">View Invitation</a>
+    </div>
+    
+    <p style="font-size: 14px; color: #666; margin-top: 30px;">
+      <strong>Note:</strong> This invitation will expire in 7 days. If you don't wish to accept, you can decline it from the same page.
+    </p>
+    
+    <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
+    
+    <p style="font-size: 13px; color: #888; text-align: center;">
+      If you didn't expect this invitation or have questions, please contact your upline or system administrator.
+    </p>
+  </div>
+</body>
+</html>
+    `.trim();
+  }
+
   private async enrichInvitationsWithDetails(
     invitations: HierarchyInvitation[],
   ): Promise<InvitationWithDetails[]> {

@@ -1,73 +1,49 @@
 // src/features/hierarchy/components/InvitationsList.tsx
 
-import { useState, useEffect } from "react";
+import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Send, X, Clock, CheckCircle, XCircle } from "lucide-react";
+import {
+  Send,
+  X,
+  Clock,
+  CheckCircle,
+  XCircle,
+  Loader2,
+  AlertTriangle,
+} from "lucide-react";
 import { formatDate } from "@/lib/format";
-import { supabase } from "@/services/base/supabase";
-import { useAuth } from "@/contexts/AuthContext";
-import showToast from "@/utils/toast";
-
-interface Invitation {
-  id: string;
-  invitee_email: string;
-  status: "pending" | "accepted" | "rejected" | "expired";
-  created_at: string;
-  expires_at: string;
-}
+import {
+  useSentInvitations,
+  useResendInvitation,
+  useCancelInvitation,
+} from "@/hooks/hierarchy/useInvitations";
 
 export function InvitationsList() {
-  const { user } = useAuth();
-  const [invitations, setInvitations] = useState<Invitation[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { data: invitationsRaw, isLoading } = useSentInvitations("pending");
+  const resendMutation = useResendInvitation();
+  const cancelMutation = useCancelInvitation();
 
-  useEffect(() => {
-    if (user) {
-      loadInvitations();
-    }
-  }, [user]);
+  // Filter out stale invitations where invitee already joined hierarchy
+  const invitations = useMemo(() => {
+    if (!invitationsRaw) return [];
+    return invitationsRaw.filter((inv) => {
+      // Hide invitations where invitee is already in a hierarchy
+      // These are stale and should not be shown - they should be cleaned up
+      if (inv.invitee_has_upline) return false;
+      // Hide invitations where invitee already has downlines (can't join as downline)
+      if (inv.invitee_has_downlines) return false;
+      return true;
+    });
+  }, [invitationsRaw]);
 
-  const loadInvitations = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("hierarchy_invitations")
-        .select("*")
-        .eq("inviter_id", user?.id)
-        .order("created_at", { ascending: false })
-        .limit(5);
-
-      if (error) throw error;
-      setInvitations(data || []);
-    } catch (error) {
-      console.error("Failed to load invitations:", error);
-    } finally {
-      setIsLoading(false);
-    }
+  const handleResendInvitation = async (invitationId: string) => {
+    await resendMutation.mutateAsync({ invitation_id: invitationId });
   };
 
-  const handleResendInvitation = async (invitation: Invitation) => {
-    try {
-      // Would implement resend logic here
-      showToast.success(`Invitation resent to ${invitation.invitee_email}`);
-      await loadInvitations();
-    } catch (_error) {
-      showToast.error("Failed to resend invitation");
-    }
-  };
-
-  const handleCancelInvitation = async (invitation: Invitation) => {
-    try {
-      const { error } = await supabase
-        .from("hierarchy_invitations")
-        .update({ status: "expired" })
-        .eq("id", invitation.id);
-
-      if (error) throw error;
-      showToast.success("Invitation cancelled");
-      await loadInvitations();
-    } catch (_error) {
-      showToast.error("Failed to cancel invitation");
+  const handleCancelInvitation = async (invitationId: string) => {
+    if (confirm("Are you sure you want to cancel this invitation?")) {
+      await cancelMutation.mutateAsync({ invitation_id: invitationId });
     }
   };
 
@@ -124,7 +100,7 @@ export function InvitationsList() {
           <div className="text-[10px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
             Pending Invitations
           </div>
-          {invitations.length > 5 && (
+          {invitations && invitations.length > 5 && (
             <Button
               variant="ghost"
               size="sm"
@@ -139,7 +115,7 @@ export function InvitationsList() {
           <div className="text-[11px] text-zinc-500 dark:text-zinc-400 text-center py-2">
             Loading invitations...
           </div>
-        ) : invitations.length === 0 ? (
+        ) : !invitations || invitations.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-4">
             <Send className="h-6 w-6 text-zinc-300 dark:text-zinc-600 mb-1" />
             <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
@@ -148,47 +124,99 @@ export function InvitationsList() {
           </div>
         ) : (
           <div className="space-y-1.5">
-            {invitations.slice(0, 5).map((invitation) => (
-              <div
-                key={invitation.id}
-                className="flex items-center justify-between py-1.5 px-2 rounded transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
-              >
-                <div className="flex items-center gap-2">
-                  <div>
-                    <div className="text-[11px] font-medium text-zinc-900 dark:text-zinc-100">
-                      {invitation.invitee_email}
-                    </div>
-                    <div className="text-[10px] text-zinc-500 dark:text-zinc-400">
-                      Sent {formatDate(invitation.created_at)}
-                    </div>
-                  </div>
-                  {getStatusBadge(invitation.status)}
-                </div>
+            {invitations?.slice(0, 5).map((invitation) => {
+              const isStale =
+                invitation.can_accept === false && !invitation.is_expired;
+              const isExpired = invitation.is_expired || false;
+              const isInvalid = isStale || isExpired;
 
-                {invitation.status === "pending" && (
-                  <div className="flex items-center gap-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleResendInvitation(invitation)}
-                      className="h-5 w-5 p-0 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
-                      title="Resend invitation"
-                    >
-                      <Send className="h-3 w-3" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleCancelInvitation(invitation)}
-                      className="h-5 w-5 p-0 text-red-500 dark:text-red-400 hover:text-red-600 dark:hover:text-red-300"
-                      title="Cancel invitation"
-                    >
-                      <X className="h-3 w-3" />
-                    </Button>
+              // Get reason for invalid state
+              let invalidReason = "";
+              if (invitation.invitee_has_upline) {
+                invalidReason = "Invitee already in a hierarchy";
+              } else if (invitation.invitee_has_downlines) {
+                invalidReason = "Invitee has downlines";
+              } else if (isExpired) {
+                invalidReason = "Invitation expired";
+              }
+
+              return (
+                <div
+                  key={invitation.id}
+                  className={`flex items-center justify-between py-1.5 px-2 rounded transition-colors ${
+                    isInvalid
+                      ? "bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800"
+                      : "hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
+                  }`}
+                >
+                  <div className="flex items-center gap-2 flex-1">
+                    <div className="flex-1">
+                      <div className="text-[11px] font-medium text-zinc-900 dark:text-zinc-100">
+                        {invitation.invitee_email}
+                      </div>
+                      <div className="text-[10px] text-zinc-500 dark:text-zinc-400">
+                        Sent {formatDate(invitation.created_at)}
+                      </div>
+                      {isInvalid && invalidReason && (
+                        <div className="text-[9px] text-amber-600 dark:text-amber-400 flex items-center gap-1 mt-0.5">
+                          <AlertTriangle className="h-2.5 w-2.5" />
+                          {invalidReason}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1">
+                      {getStatusBadge(invitation.status)}
+                      {isStale && (
+                        <Badge
+                          variant="outline"
+                          className="text-[9px] px-1 py-0 h-4 text-amber-600 dark:text-amber-400 border-amber-300 dark:border-amber-600"
+                        >
+                          <AlertTriangle className="h-2 w-2 mr-0.5" />
+                          Stale
+                        </Badge>
+                      )}
+                    </div>
                   </div>
-                )}
-              </div>
-            ))}
+
+                  {invitation.status === "pending" && (
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleResendInvitation(invitation.id)}
+                        disabled={resendMutation.isPending || isInvalid}
+                        className="h-5 w-5 p-0 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 disabled:opacity-30"
+                        title={isInvalid ? invalidReason : "Resend invitation"}
+                      >
+                        {resendMutation.isPending ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <Send className="h-3 w-3" />
+                        )}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleCancelInvitation(invitation.id)}
+                        disabled={cancelMutation.isPending || isInvalid}
+                        className="h-5 w-5 p-0 text-red-500 dark:text-red-400 hover:text-red-600 dark:hover:text-red-300 disabled:opacity-30"
+                        title={
+                          isInvalid
+                            ? "Cannot cancel invalid invitation - delete manually if needed"
+                            : "Cancel invitation"
+                        }
+                      >
+                        {cancelMutation.isPending ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <X className="h-3 w-3" />
+                        )}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
       </div>

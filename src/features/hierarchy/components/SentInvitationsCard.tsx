@@ -14,13 +14,23 @@ import {
   Mail,
   Clock,
   XCircle,
+  AlertTriangle,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
 export function SentInvitationsCard() {
-  const { data: sentInvitations, isLoading } = useSentInvitations("pending");
+  const { data: sentInvitationsRaw, isLoading } = useSentInvitations("pending");
   const cancelMutation = useCancelInvitation();
   const [expanded, setExpanded] = useState(true);
+
+  // Filter out stale invitations where invitee already joined hierarchy
+  const sentInvitations = sentInvitationsRaw?.filter((inv) => {
+    // Hide invitations where invitee is already in a hierarchy
+    if (inv.invitee_has_upline) return false;
+    // Hide invitations where invitee already has downlines
+    if (inv.invitee_has_downlines) return false;
+    return true;
+  });
 
   if (isLoading || !sentInvitations || sentInvitations.length === 0) {
     return null;
@@ -56,11 +66,27 @@ export function SentInvitationsCard() {
         <div className="px-4 pb-4 space-y-2">
           {sentInvitations.map((invitation) => {
             const isExpired = invitation.is_expired || false;
+            const isStale = invitation.can_accept === false && !isExpired;
+            const isInvalid = isStale || isExpired;
+
+            // Get reason for invalid state
+            let invalidReason = "";
+            if (invitation.invitee_has_upline) {
+              invalidReason = "Invitee already in a hierarchy";
+            } else if (invitation.invitee_has_downlines) {
+              invalidReason = "Invitee has downlines";
+            } else if (isExpired) {
+              invalidReason = "Invitation expired";
+            }
 
             return (
               <div
                 key={invitation.id}
-                className="flex items-center justify-between p-3 rounded-md bg-muted/30 hover:bg-muted/50 transition-colors border border-transparent hover:border-border"
+                className={`flex items-center justify-between p-3 rounded-md transition-colors border ${
+                  isInvalid
+                    ? "bg-amber-50/50 border-amber-200 dark:bg-amber-950/20 dark:border-amber-800"
+                    : "bg-muted/30 hover:bg-muted/50 border-transparent hover:border-border"
+                }`}
               >
                 <div className="flex-1 space-y-1">
                   <div className="flex items-center gap-2">
@@ -73,11 +99,24 @@ export function SentInvitationsCard() {
                         Expired
                       </span>
                     )}
+                    {isStale && (
+                      <span className="text-xs bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 px-2 py-0.5 rounded-full flex items-center gap-1">
+                        <AlertTriangle className="h-2.5 w-2.5" />
+                        Stale
+                      </span>
+                    )}
                   </div>
 
                   {invitation.message && (
                     <p className="text-xs text-muted-foreground italic pl-5">
                       "{invitation.message}"
+                    </p>
+                  )}
+
+                  {isInvalid && invalidReason && (
+                    <p className="text-xs text-amber-600 dark:text-amber-400 pl-5 flex items-center gap-1">
+                      <AlertTriangle className="h-3 w-3" />
+                      {invalidReason}
                     </p>
                   )}
 
@@ -105,8 +144,13 @@ export function SentInvitationsCard() {
                   size="sm"
                   variant="ghost"
                   onClick={() => handleCancel(invitation.id)}
-                  disabled={isExpired || cancelMutation.isPending}
-                  className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                  disabled={isInvalid || cancelMutation.isPending}
+                  className="text-destructive hover:text-destructive hover:bg-destructive/10 disabled:opacity-30"
+                  title={
+                    isInvalid
+                      ? "Cannot cancel invalid invitation"
+                      : "Cancel invitation"
+                  }
                 >
                   {cancelMutation.isPending ? (
                     <Loader2 className="h-4 w-4 animate-spin" />

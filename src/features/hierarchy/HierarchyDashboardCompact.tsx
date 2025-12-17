@@ -18,6 +18,7 @@ import { SendInvitationModal } from "./components/SendInvitationModal";
 import { TeamMetricsCard } from "./components/TeamMetricsCard";
 import { AgentTable } from "./components/AgentTable";
 import { InvitationsList } from "./components/InvitationsList";
+import { PendingInvitationBanner } from "./components/PendingInvitationBanner";
 import { TeamActivityFeed } from "./components/TeamActivityFeed";
 import showToast from "@/utils/toast";
 import { downloadCSV } from "@/utils/exportHelpers";
@@ -211,6 +212,9 @@ export function HierarchyDashboardCompact() {
 
         {/* Main Content */}
         <div className="flex-1 overflow-auto space-y-2">
+          {/* Pending Invitation Banner (for invitees) */}
+          <PendingInvitationBanner />
+
           {/* Team Metrics Card */}
           <TeamMetricsCard
             stats={stats}

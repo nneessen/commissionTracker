@@ -4,7 +4,12 @@
 /**
  * Invitation status values
  */
-export type InvitationStatus = 'pending' | 'accepted' | 'denied' | 'cancelled' | 'expired';
+export type InvitationStatus =
+  | "pending"
+  | "accepted"
+  | "denied"
+  | "cancelled"
+  | "expired";
 
 /**
  * Core invitation record from database
@@ -68,6 +73,13 @@ export interface DenyInvitationRequest {
  * Request to cancel an invitation (inviter side)
  */
 export interface CancelInvitationRequest {
+  invitation_id: string;
+}
+
+/**
+ * Request to resend an invitation (inviter side)
+ */
+export interface ResendInvitationRequest {
   invitation_id: string;
 }
 
