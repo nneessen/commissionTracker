@@ -150,13 +150,8 @@ serve(async (req) => {
       throw new Error("Email is required");
     }
 
-    // Check if user already exists
-    const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
-    const userExists = existingUsers?.users?.some((u) => u.email === email);
-
-    if (userExists) {
-      throw new Error("User with this email already exists");
-    }
+    // Normalize email to lowercase for consistent checking
+    const normalizedEmail = email.toLowerCase().trim();
 
     // Generate a secure random password (user will set their own via reset email)
     const tempPassword = crypto.randomUUID() + crypto.randomUUID();
@@ -165,7 +160,7 @@ serve(async (req) => {
     // Then send password reset email so user can set their own password
     const { data: authUser, error: authError } =
       await supabaseAdmin.auth.admin.createUser({
-        email,
+        email: normalizedEmail,
         password: tempPassword,
         email_confirm: true, // Pre-confirm email to avoid magic link issues
         user_metadata: {
@@ -209,7 +204,7 @@ serve(async (req) => {
         const { data: linkData, error: linkError } =
           await supabaseAdmin.auth.admin.generateLink({
             type: "recovery",
-            email: email,
+            email: normalizedEmail,
             options: {
               redirectTo: `${siteUrl}/auth/reset-password`,
             },
@@ -229,7 +224,7 @@ serve(async (req) => {
           );
         } else if (linkData?.properties?.action_link) {
           const result = await sendPasswordResetEmail(
-            email,
+            normalizedEmail,
             linkData.properties.action_link,
             MAILGUN_API_KEY,
             MAILGUN_DOMAIN,
@@ -255,7 +250,7 @@ serve(async (req) => {
     // Log final status
     console.log("[create-auth-user] Complete:", {
       userId: authUser.user?.id,
-      email: email,
+      email: normalizedEmail,
       emailSent,
     });
 

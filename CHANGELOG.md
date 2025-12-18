@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-12-18 08:14:30
+
+### Changed Files
+- `supabase/functions/check-user-exists/index.ts`
+- `supabase/functions/create-auth-user/index.ts`
+- `supabase/migrations/20251218_001_cleanup_orphan_identities.sql`
+- `supabase/migrations/20251218_002_delete_specific_orphan.sql`
+- `supabase/migrations/20251218_003_check_hidden_user.sql`
+- `supabase/migrations/20251218_004_delete_nick_identity.sql`
+
+### Statistics
+```
+ 6 files changed, 239 insertions(+), 11 deletions(-)
+```
+
 ## [Checkpoint] - 2025-12-18 07:51:02
 
 ### Changed Files
