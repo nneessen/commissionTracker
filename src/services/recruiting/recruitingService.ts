@@ -51,11 +51,12 @@ export const recruitingService = {
     const recruitIds = (initialData || [])
       .filter((u) => {
         const hasActiveAgentRole = u.roles?.includes("active_agent");
+        const hasAgentRole = u.roles?.includes("agent");
         const hasAdminRole = u.roles?.includes("admin");
         const isAdmin = u.is_admin === true;
 
-        // Exclude if they're an active agent or admin
-        if (hasActiveAgentRole || hasAdminRole || isAdmin) {
+        // Exclude if they're an active agent, agent, or admin
+        if (hasActiveAgentRole || hasAgentRole || hasAdminRole || isAdmin) {
           return false;
         }
 
@@ -632,11 +633,12 @@ export const recruitingService = {
     // Filter out active agents and admins
     const recruits = ((data as UserProfile[]) || []).filter((u) => {
       const hasActiveAgentRole = u.roles?.includes("active_agent");
+      const hasAgentRole = u.roles?.includes("agent");
       const hasAdminRole = u.roles?.includes("admin");
       const isAdmin = u.is_admin === true;
 
-      // Exclude if they're an active agent or admin
-      if (hasActiveAgentRole || hasAdminRole || isAdmin) {
+      // Exclude if they're an active agent, agent, or admin
+      if (hasActiveAgentRole || hasAgentRole || hasAdminRole || isAdmin) {
         return false;
       }
 
@@ -698,11 +700,12 @@ export const recruitingService = {
     const recruits = (data || [])
       .filter((u) => {
         const hasActiveAgentRole = u.roles?.includes("active_agent");
+        const hasAgentRole = u.roles?.includes("agent");
         const hasAdminRole = u.roles?.includes("admin");
         const isAdmin = u.is_admin === true;
 
-        // Exclude if they're an active agent or admin
-        if (hasActiveAgentRole || hasAdminRole || isAdmin) {
+        // Exclude if they're an active agent, agent, or admin
+        if (hasActiveAgentRole || hasAgentRole || hasAdminRole || isAdmin) {
           return false;
         }
 

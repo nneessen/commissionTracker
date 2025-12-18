@@ -301,6 +301,10 @@ export default function AddUserDialog({
                     ...prev,
                     approval_status: "approved",
                     onboarding_status: null,
+                    // Auto-add 'agent' role when selecting Approved (Agent) status
+                    roles: prev.roles.includes("agent" as RoleName)
+                      ? prev.roles
+                      : [...prev.roles, "agent" as RoleName],
                   }))
                 }
               >

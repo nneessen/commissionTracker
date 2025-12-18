@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-12-18 07:51:02
+
+### Changed Files
+- `src/features/admin/components/AddUserDialog.tsx`
+- `src/services/recruiting/recruitingService.ts`
+- `supabase/functions/create-auth-user/index.ts`
+
+### Statistics
+```
+ 3 files changed, 43 insertions(+), 7 deletions(-)
+```
+
 ## [Checkpoint] - 2025-12-17 17:08:29
 
 ### Changed Files

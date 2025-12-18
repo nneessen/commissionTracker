@@ -14,7 +14,7 @@ async function sendPasswordResetEmail(
   email: string,
   resetLink: string,
   mailgunApiKey: string,
-  mailgunDomain: string
+  mailgunDomain: string,
 ): Promise<{ success: boolean; error?: string }> {
   const emailHtml = `
 <!DOCTYPE html>
@@ -112,7 +112,10 @@ If you didn't expect this email, you can safely ignore it.
     return { success: true };
   } catch (err) {
     console.error("[create-auth-user] Email send error:", err);
-    return { success: false, error: err instanceof Error ? err.message : "Unknown error" };
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Unknown error",
+    };
   }
 }
 
@@ -184,12 +187,23 @@ serve(async (req) => {
     // Send password reset email via Mailgun (not Supabase's built-in email)
     let emailSent = false;
     if (authUser.user) {
-      const siteUrl = Deno.env.get("SITE_URL") || "https://www.thestandardhq.com";
+      const siteUrl =
+        Deno.env.get("SITE_URL") || "https://www.thestandardhq.com";
       const MAILGUN_API_KEY = Deno.env.get("MAILGUN_API_KEY");
       const MAILGUN_DOMAIN = Deno.env.get("MAILGUN_DOMAIN");
 
+      // Log env var presence for diagnostics (not values)
+      console.log("[create-auth-user] Env check:", {
+        hasMailgunKey: !!MAILGUN_API_KEY,
+        hasMailgunDomain: !!MAILGUN_DOMAIN,
+        hasSiteUrl: !!Deno.env.get("SITE_URL"),
+        hasServiceRoleKey: !!Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"),
+      });
+
       if (!MAILGUN_API_KEY || !MAILGUN_DOMAIN) {
-        console.error("[create-auth-user] Missing Mailgun credentials for email");
+        console.error(
+          "[create-auth-user] Missing Mailgun credentials for email",
+        );
       } else {
         // Generate a password reset link using Supabase Admin SDK
         const { data: linkData, error: linkError } =
@@ -201,29 +215,56 @@ serve(async (req) => {
             },
           });
 
+        // Log link generation result for diagnostics
+        console.log("[create-auth-user] Link generation:", {
+          success: !linkError,
+          hasLink: !!linkData?.properties?.action_link,
+          error: linkError?.message || null,
+        });
+
         if (linkError) {
-          console.error("[create-auth-user] Failed to generate reset link:", linkError);
+          console.error(
+            "[create-auth-user] Failed to generate reset link:",
+            linkError,
+          );
         } else if (linkData?.properties?.action_link) {
           const result = await sendPasswordResetEmail(
             email,
             linkData.properties.action_link,
             MAILGUN_API_KEY,
-            MAILGUN_DOMAIN
+            MAILGUN_DOMAIN,
           );
           emailSent = result.success;
+
+          // Log email send result for diagnostics
+          console.log("[create-auth-user] Email send result:", {
+            success: result.success,
+            error: result.error || null,
+          });
+
           if (!result.success) {
-            console.error("[create-auth-user] Email send failed:", result.error);
+            console.error(
+              "[create-auth-user] Email send failed:",
+              result.error,
+            );
           }
         }
       }
     }
+
+    // Log final status
+    console.log("[create-auth-user] Complete:", {
+      userId: authUser.user?.id,
+      email: email,
+      emailSent,
+    });
 
     return new Response(
       JSON.stringify({
         user: authUser.user,
         message: emailSent
           ? "User created successfully. Password reset email sent."
-          : "User created but email could not be sent. User may need manual password reset.",
+          : "User created but email could not be sent. Check edge function logs.",
         emailSent,
       }),
       {
