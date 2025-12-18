@@ -2,8 +2,15 @@
 
 import React, { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { useConstants } from "../../hooks";
+import {
+  useConstants,
+  useMyHierarchyStats,
+  useRecruitingStats,
+} from "../../hooks";
 import { useMetricsWithDateRange } from "@/hooks";
+import { useUnreadNotificationCount } from "../../hooks/notifications/useNotifications";
+import { useUnreadMessageCount } from "../../hooks/messaging/useMessages";
+import { useFeatureAccess } from "../../hooks/subscription/useFeatureAccess";
 import { useCreateExpense } from "../../hooks/expenses/useCreateExpense";
 import { useCreatePolicy } from "../../hooks/policies";
 import { useChargebackSummary } from "../../hooks/commissions/useChargebackSummary";
@@ -31,6 +38,9 @@ import { generateStatsConfig } from "./config/statsConfig";
 import { generateMetricsConfig } from "./config/metricsConfig";
 import { generateKPIConfig } from "./config/kpiConfig";
 import { generateAlertsConfig } from "./config/alertsConfig";
+
+// Components
+import { TeamRecruitingSection } from "./components/TeamRecruitingSection";
 
 // Utils
 import {
@@ -76,6 +86,22 @@ export const DashboardHome: React.FC = () => {
   const createExpense = useCreateExpense();
   const createPolicy = useCreatePolicy();
   const { data: chargebackSummary } = useChargebackSummary();
+
+  // Feature access for premium sections
+  const { hasAccess: hasTeamAccess } = useFeatureAccess("hierarchy");
+  const { hasAccess: hasRecruitingAccess } = useFeatureAccess("recruiting");
+
+  // Team & Recruiting data (only fetch if user has access or is admin)
+  const { data: hierarchyStats } = useMyHierarchyStats({
+    enabled: hasTeamAccess || dashboardFeatures.isAdmin,
+  });
+  const { data: recruitingStats } = useRecruitingStats({
+    enabled: hasRecruitingAccess || dashboardFeatures.isAdmin,
+  });
+
+  // Notification & messaging counts
+  const unreadNotifications = useUnreadNotificationCount();
+  const { data: unreadMessages } = useUnreadMessageCount();
 
   // Calculate derived metrics
   const derivedMetrics = calculateDerivedMetrics(periodPolicies, periodClients);
@@ -311,6 +337,15 @@ export const DashboardHome: React.FC = () => {
 
             {/* KPI Breakdown */}
             <KPIGridHeatmap sections={kpiConfig} />
+
+            {/* Team & Recruiting Section (Premium - Team tier) */}
+            <TeamRecruitingSection
+              hierarchyStats={hierarchyStats}
+              recruitingStats={recruitingStats}
+              unreadNotifications={unreadNotifications}
+              unreadMessages={unreadMessages ?? 0}
+              hasAccess={hasTeamAccess || dashboardFeatures.isAdmin}
+            />
           </div>
         </div>
       </div>

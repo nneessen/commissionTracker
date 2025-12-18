@@ -61,16 +61,21 @@ const SectionContent: React.FC<{
   </>
 );
 
+interface KPIGridHeatmapProps extends DetailedKPIGridProps {
+  title?: string;
+}
+
 /**
  * KPI Grid Component - Compact zinc-styled layout
  */
-export const KPIGridHeatmap: React.FC<DetailedKPIGridProps> = ({
+export const KPIGridHeatmap: React.FC<KPIGridHeatmapProps> = ({
   sections,
+  title = "Detailed KPI Breakdown",
 }) => {
   return (
     <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-3">
       <div className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-2">
-        Detailed KPI Breakdown
+        {title}
       </div>
       <TooltipProvider delayDuration={200}>
         <div className="grid grid-cols-3 gap-4">
