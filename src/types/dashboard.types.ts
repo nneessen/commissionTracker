@@ -29,6 +29,10 @@ export interface StatItemConfig {
   trend?: "up" | "down";
   color: string;
   tooltip?: MetricTooltipConfig;
+  /** Whether this stat is gated (user lacks access) */
+  gated?: boolean;
+  /** Tooltip to show when gated */
+  gatedTooltip?: string;
 }
 
 /**
@@ -51,6 +55,10 @@ export interface KPISection {
     label: string;
     value: string | number;
   }>;
+  /** Whether this section is gated (user lacks access) */
+  gated?: boolean;
+  /** Required tier for display when gated */
+  requiredTier?: string;
 }
 
 /**
@@ -70,6 +78,12 @@ export interface QuickAction {
   label: string;
   action: string;
   icon?: React.ComponentType<{ size?: number; color?: string }>;
+  /** Whether user has access to this action (for gating) */
+  hasAccess?: boolean;
+  /** Tooltip when locked */
+  lockedTooltip?: string;
+  /** Required tier name for display */
+  requiredTier?: string;
 }
 
 /**

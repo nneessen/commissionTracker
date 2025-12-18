@@ -20,12 +20,18 @@ import {
   GraduationCap,
   Lock,
   Mail,
+  Crown,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { usePermissionCheck } from "@/hooks/permissions/usePermissions";
 import { useAuthorizationStatus } from "@/hooks/admin/useUserApproval";
 import { useAuth } from "@/contexts/AuthContext";
+import {
+  useSubscription,
+  FEATURE_PLAN_REQUIREMENTS,
+  type FeatureKey,
+} from "@/hooks/subscription";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/services/base/supabase";
 import type { PermissionCode } from "@/types/permissions.types";
@@ -41,6 +47,8 @@ interface NavigationItem {
   permission?: PermissionCode;
   /** If true, show to everyone (no permission check) */
   public?: boolean;
+  /** Subscription feature required to access this nav item */
+  subscriptionFeature?: FeatureKey;
 }
 
 interface SidebarProps {
@@ -69,18 +77,21 @@ const navigationItems: NavigationItem[] = [
     label: "Targets",
     href: "/targets",
     permission: "nav.dashboard",
+    subscriptionFeature: "targets_basic",
   },
   {
     icon: BarChart3,
     label: "Reports",
     href: "/reports",
     permission: "nav.downline_reports",
+    subscriptionFeature: "reports_view",
   },
   {
     icon: CreditCard,
     label: "Expenses",
     href: "/expenses",
     permission: "expenses.read.own",
+    subscriptionFeature: "expenses",
   },
   {
     icon: FileText,
@@ -93,18 +104,21 @@ const navigationItems: NavigationItem[] = [
     label: "Team",
     href: "/hierarchy",
     permission: "nav.team_dashboard",
+    subscriptionFeature: "hierarchy",
   },
   {
     icon: UserPlus,
     label: "Recruiting",
     href: "/recruiting",
     permission: "nav.recruiting_pipeline",
+    subscriptionFeature: "recruiting",
   },
   {
     icon: Mail,
     label: "Messages",
     href: "/messages",
     permission: "nav.messages",
+    subscriptionFeature: "email",
   },
   { icon: Settings, label: "Settings", href: "/settings", public: true },
 ];
@@ -150,7 +164,21 @@ export default function Sidebar({
   const [isMobile, setIsMobile] = useState(false);
   const { can, isLoading } = usePermissionCheck();
   const { isPending, isLoading: _authStatusLoading } = useAuthorizationStatus();
-  const { user } = useAuth();
+  const { user, supabaseUser } = useAuth();
+  const { subscription, isLoading: subLoading } = useSubscription();
+
+  // Admin email bypass
+  const ADMIN_EMAIL = "nick@nickneessen.com";
+  const isAdmin = supabaseUser?.email === ADMIN_EMAIL;
+
+  // Check if a subscription feature is available
+  const hasFeature = (feature: FeatureKey | undefined): boolean => {
+    if (!feature) return true; // No feature required
+    if (isAdmin) return true; // Admin bypass
+    if (subLoading) return true; // Assume access while loading to avoid flickering
+    const features = subscription?.plan?.features;
+    return features?.[feature] ?? false;
+  };
 
   // Fetch user roles from profile
   const { data: userProfile } = useQuery({
@@ -194,6 +222,22 @@ export default function Sidebar({
   const handleLockedNavClick = () => {
     toast.error(
       "Your account is pending approval. Please wait for administrator approval to access this feature.",
+    );
+  };
+
+  // Handler for subscription-locked nav item clicks
+  const handleSubscriptionLockedClick = (feature: FeatureKey) => {
+    const requiredPlan = FEATURE_PLAN_REQUIREMENTS[feature];
+    toast.error(
+      `This feature requires the ${requiredPlan} plan. Go to Settings > Billing to upgrade.`,
+      {
+        action: {
+          label: "Upgrade",
+          onClick: () => {
+            window.location.href = "/settings?tab=billing";
+          },
+        },
+      },
     );
   };
 
@@ -314,9 +358,15 @@ export default function Sidebar({
           {visibleNavItems.map((item) => {
             const Icon = item.icon;
             // Check if this item should be locked (pending user + not a public item)
-            const isLocked = isPending && !item.public;
+            const isPendingLocked = isPending && !item.public;
+            // Check if this item requires a subscription feature the user doesn't have
+            const isSubscriptionLocked =
+              item.subscriptionFeature && !hasFeature(item.subscriptionFeature);
+            const requiredPlan = item.subscriptionFeature
+              ? FEATURE_PLAN_REQUIREMENTS[item.subscriptionFeature]
+              : null;
 
-            if (isLocked) {
+            if (isPendingLocked) {
               // Render locked nav item for pending users
               return (
                 <div
@@ -342,6 +392,43 @@ export default function Sidebar({
                   <Lock
                     size={12}
                     className={`absolute ${isCollapsed ? "bottom-0 right-0" : "right-2 top-1/2 -translate-y-1/2"} text-muted-foreground/70`}
+                  />
+                </div>
+              );
+            }
+
+            if (isSubscriptionLocked && item.subscriptionFeature) {
+              // Render subscription-locked nav item with crown icon
+              return (
+                <div
+                  key={item.href}
+                  className={`relative mb-1 ${isCollapsed ? "mx-auto" : ""}`}
+                  onClick={() =>
+                    handleSubscriptionLockedClick(item.subscriptionFeature!)
+                  }
+                >
+                  <Button
+                    variant="ghost"
+                    className={`h-9 ${isCollapsed ? "w-9 p-0" : "w-full justify-start px-3"} opacity-60 cursor-pointer hover:opacity-80`}
+                    title={
+                      isCollapsed
+                        ? `${item.label} (${requiredPlan} required)`
+                        : `Requires ${requiredPlan} plan`
+                    }
+                  >
+                    <Icon
+                      size={16}
+                      className={`${isCollapsed ? "" : "mr-2.5"} text-muted-foreground`}
+                    />
+                    {!isCollapsed && (
+                      <span className="text-sm text-muted-foreground">
+                        {item.label}
+                      </span>
+                    )}
+                  </Button>
+                  <Crown
+                    size={12}
+                    className={`absolute ${isCollapsed ? "bottom-0 right-0" : "right-2 top-1/2 -translate-y-1/2"} text-amber-500`}
                   />
                 </div>
               );

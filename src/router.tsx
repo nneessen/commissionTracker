@@ -154,34 +154,46 @@ const settingsRoute = createRoute({
   ),
 });
 
-// Targets route - requires approval, blocks recruits
+// Targets route - requires approval, blocks recruits, requires targets_basic subscription feature
 const targetsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "targets",
   component: () => (
-    <RouteGuard permission="nav.dashboard" noRecruits>
+    <RouteGuard
+      permission="nav.dashboard"
+      noRecruits
+      subscriptionFeature="targets_basic"
+    >
       <TargetsPage />
     </RouteGuard>
   ),
 });
 
-// Reports route - requires approval, blocks recruits
+// Reports route - requires approval, blocks recruits, requires reports_view subscription feature
 const reportsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "reports",
   component: () => (
-    <RouteGuard permission="nav.downline_reports" noRecruits>
+    <RouteGuard
+      permission="nav.downline_reports"
+      noRecruits
+      subscriptionFeature="reports_view"
+    >
       <ReportsPage />
     </RouteGuard>
   ),
 });
 
-// Expenses route - requires approval, blocks recruits
+// Expenses route - requires approval, blocks recruits, requires expenses subscription feature
 const expensesRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "expenses",
   component: () => (
-    <RouteGuard permission="expenses.read.own" noRecruits>
+    <RouteGuard
+      permission="expenses.read.own"
+      noRecruits
+      subscriptionFeature="expenses"
+    >
       <ExpenseDashboardCompact />
     </RouteGuard>
   ),
@@ -242,12 +254,16 @@ const authDiagnosticRoute = createRoute({
 });
 
 // Hierarchy routes - Agency hierarchy and override commissions
-// All hierarchy routes require approval and block recruits
+// All hierarchy routes require approval, block recruits, and require hierarchy subscription feature
 const hierarchyIndexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "hierarchy",
   component: () => (
-    <RouteGuard permission="nav.team_dashboard" noRecruits>
+    <RouteGuard
+      permission="nav.team_dashboard"
+      noRecruits
+      subscriptionFeature="hierarchy"
+    >
       <HierarchyDashboardCompact />
     </RouteGuard>
   ),
@@ -257,7 +273,11 @@ const hierarchyTreeRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "hierarchy/tree",
   component: () => (
-    <RouteGuard permission="nav.team_dashboard" noRecruits>
+    <RouteGuard
+      permission="nav.team_dashboard"
+      noRecruits
+      subscriptionFeature="hierarchy"
+    >
       <HierarchyDashboardCompact />
     </RouteGuard>
   ),
@@ -267,7 +287,11 @@ const hierarchyOverridesRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "hierarchy/overrides",
   component: () => (
-    <RouteGuard permission="nav.team_dashboard" noRecruits>
+    <RouteGuard
+      permission="nav.team_dashboard"
+      noRecruits
+      subscriptionFeature="overrides"
+    >
       <OverrideDashboard />
     </RouteGuard>
   ),
@@ -277,7 +301,11 @@ const hierarchyDownlinesRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "hierarchy/downlines",
   component: () => (
-    <RouteGuard permission="nav.team_dashboard" noRecruits>
+    <RouteGuard
+      permission="nav.team_dashboard"
+      noRecruits
+      subscriptionFeature="downline_reports"
+    >
       <DownlinePerformance />
     </RouteGuard>
   ),
@@ -287,7 +315,11 @@ const hierarchyManageRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "hierarchy/manage",
   component: () => (
-    <RouteGuard permission="nav.team_dashboard" noRecruits>
+    <RouteGuard
+      permission="nav.team_dashboard"
+      noRecruits
+      subscriptionFeature="hierarchy"
+    >
       <HierarchyManagement />
     </RouteGuard>
   ),
@@ -298,18 +330,26 @@ const agentDetailRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "hierarchy/agent/$agentId",
   component: () => (
-    <RouteGuard permission="nav.team_dashboard" noRecruits>
+    <RouteGuard
+      permission="nav.team_dashboard"
+      noRecruits
+      subscriptionFeature="hierarchy"
+    >
       <AgentDetailPage />
     </RouteGuard>
   ),
 });
 
-// Recruiting route - requires approval, blocks recruits (admin/recruiter view)
+// Recruiting route - requires approval, blocks recruits (admin/recruiter view), requires recruiting subscription feature
 const recruitingRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "recruiting",
   component: () => (
-    <RouteGuard permission="nav.recruiting_pipeline" noRecruits>
+    <RouteGuard
+      permission="nav.recruiting_pipeline"
+      noRecruits
+      subscriptionFeature="recruiting"
+    >
       <RecruitingDashboard />
     </RouteGuard>
   ),
@@ -348,12 +388,16 @@ const trainingHubRoute = createRoute({
   ),
 });
 
-// Messages route - Communications Hub
+// Messages route - Communications Hub, requires email subscription feature
 const messagesRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "messages",
   component: () => (
-    <RouteGuard permission="nav.messages" noRecruits>
+    <RouteGuard
+      permission="nav.messages"
+      noRecruits
+      subscriptionFeature="email"
+    >
       <MessagesPage />
     </RouteGuard>
   ),

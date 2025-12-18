@@ -5,6 +5,7 @@ import { StatItemConfig } from "../../../types/dashboard.types";
 import { formatCurrency } from "../../../lib/format";
 import { getPeriodSuffix } from "../../../utils/dashboardCalculations";
 import { METRIC_COLORS } from "../../../constants/dashboard";
+import type { DashboardFeatures } from "../../../hooks/dashboard";
 
 interface StatsConfigParams {
   timePeriod: TimePeriod;
@@ -57,6 +58,8 @@ interface StatsConfigParams {
     highRiskCount: number;
     atRiskAmount: number;
   };
+  /** Dashboard feature access for gating */
+  features?: DashboardFeatures;
 }
 
 export function generateStatsConfig(
@@ -70,10 +73,14 @@ export function generateStatsConfig(
     currentState,
     breakevenDisplay,
     policiesNeededDisplay,
+    features,
   } = params;
 
   const periodSuffix = getPeriodSuffix(timePeriod);
   const periodLabel = getPeriodLabel(timePeriod);
+
+  // Check if user can view expenses (determines gating for expense-dependent stats)
+  const canViewExpenses = features?.canViewExpenses ?? true;
 
   // Key Metrics: Core financial health snapshot (no duplicates with other sections)
   return [
@@ -100,6 +107,9 @@ export function generateStatsConfig(
         description: `Total expenses during the ${timePeriod.toLowerCase()} period.`,
         formula: `SUM(amount) WHERE date IN period`,
       },
+      // Gate: Requires expenses feature (Starter+)
+      gated: !canViewExpenses,
+      gatedTooltip: "Upgrade to Starter to track expenses",
     },
     {
       label: `${periodLabel} Net Income`,
@@ -114,6 +124,9 @@ export function generateStatsConfig(
         description: `Net income (Commission - Expenses) for the ${timePeriod.toLowerCase()} period.`,
         formula: `Commission Earned - Total Expenses`,
       },
+      // Gate: Requires expenses feature (needs expenses to calculate)
+      gated: !canViewExpenses,
+      gatedTooltip: "Upgrade to Starter to see net income",
     },
     {
       label: "Pending Pipeline",
@@ -137,6 +150,9 @@ export function generateStatsConfig(
         description: `Commission needed to cover expenses.`,
         formula: "IF deficit: (Expenses - Commission), ELSE: 0",
       },
+      // Gate: Requires expenses feature (needs expenses to calculate breakeven)
+      gated: !canViewExpenses,
+      gatedTooltip: "Upgrade to Starter to see breakeven",
     },
     {
       label: "Policies Needed" + periodSuffix,
@@ -147,6 +163,9 @@ export function generateStatsConfig(
         description: `Policies to sell to reach breakeven.`,
         formula: "Breakeven Needed / Avg Commission per Policy",
       },
+      // Gate: Requires expenses feature (depends on breakeven calculation)
+      gated: !canViewExpenses,
+      gatedTooltip: "Upgrade to Starter to see policies needed",
     },
   ];
 }

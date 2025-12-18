@@ -6,6 +6,54 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-12-18 15:20:08
+
+### Changed Files
+- `.claude/commands/continue-prompt.md`
+- `docs/lemon-squeezy-setup.md`
+- `plans/active/DASHBOARD_GATING_CONTINUATION.md`
+- `plans/active/dashboard-feature-gating.md`
+- `plans/active/feature-gating-implementation.md`
+- `scripts/generate-continuation-prompt.sh`
+- `src/components/auth/RouteGuard.tsx`
+- `src/components/layout/Sidebar.tsx`
+- `src/components/subscription/FeatureGate.tsx`
+- `src/components/subscription/UpgradePrompt.tsx`
+- `src/components/subscription/index.ts`
+- `src/features/dashboard/DashboardHome.tsx`
+- `src/features/dashboard/components/GatedAction.tsx`
+- `src/features/dashboard/components/GatedKPISection.tsx`
+- `src/features/dashboard/components/GatedStat.tsx`
+- `src/features/dashboard/components/KPIGridHeatmap.tsx`
+- `src/features/dashboard/components/QuickActionsPanel.tsx`
+- `src/features/dashboard/components/StatItem.tsx`
+- `src/features/dashboard/components/index.ts`
+- `src/features/dashboard/config/kpiConfig.ts`
+- `src/features/dashboard/config/metricsConfig.ts`
+- `src/features/dashboard/config/statsConfig.ts`
+- `src/features/hierarchy/components/SendInvitationModal.tsx`
+- `src/features/settings/billing/BillingTab.tsx`
+- `src/hooks/dashboard/index.ts`
+- `src/hooks/dashboard/useDashboardFeatures.ts`
+- `src/hooks/subscription/index.ts`
+- `src/hooks/subscription/useFeatureAccess.ts`
+- `src/hooks/subscription/useTeamSizeLimit.ts`
+- `src/hooks/subscription/useUsageTracking.ts`
+- `src/router.tsx`
+- `src/services/subscription/subscriptionService.ts`
+- `src/types/dashboard.types.ts`
+- `src/types/database.types.ts`
+- `supabase/functions/lemon-webhook/index.ts`
+- `supabase/migrations/20251218_006_lemon_squeezy_integration.sql`
+- `supabase/migrations/20251218_007_billing_email_templates.sql`
+- `supabase/migrations/20251218_008_pro_tier_updates.sql`
+- `tsconfig.tsbuildinfo`
+
+### Statistics
+```
+ 39 files changed, 10270 insertions(+), 5204 deletions(-)
+```
+
 ## [Checkpoint] - 2025-12-18 11:02:56
 
 ### Changed Files

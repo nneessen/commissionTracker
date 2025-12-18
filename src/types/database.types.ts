@@ -2689,6 +2689,178 @@ export type Database = {
         };
         Relationships: [];
       };
+      subscription_events: {
+        Row: {
+          created_at: string;
+          error_message: string | null;
+          event_data: Json;
+          event_name: string | null;
+          event_type: string;
+          id: string;
+          lemon_event_id: string | null;
+          lemon_webhook_id: string | null;
+          processed_at: string | null;
+          subscription_id: string | null;
+          user_id: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          error_message?: string | null;
+          event_data?: Json;
+          event_name?: string | null;
+          event_type: string;
+          id?: string;
+          lemon_event_id?: string | null;
+          lemon_webhook_id?: string | null;
+          processed_at?: string | null;
+          subscription_id?: string | null;
+          user_id?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          error_message?: string | null;
+          event_data?: Json;
+          event_name?: string | null;
+          event_type?: string;
+          id?: string;
+          lemon_event_id?: string | null;
+          lemon_webhook_id?: string | null;
+          processed_at?: string | null;
+          subscription_id?: string | null;
+          user_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "subscription_events_subscription_id_fkey";
+            columns: ["subscription_id"];
+            isOneToOne: false;
+            referencedRelation: "user_subscriptions";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "subscription_events_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "active_user_profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "subscription_events_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "user_management_view";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "subscription_events_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      subscription_payments: {
+        Row: {
+          amount: number;
+          billing_reason: string | null;
+          card_brand: string | null;
+          card_last_four: string | null;
+          created_at: string;
+          currency: string;
+          discount_amount: number;
+          id: string;
+          invoice_url: string | null;
+          lemon_invoice_id: string | null;
+          lemon_order_id: string | null;
+          lemon_subscription_id: string | null;
+          paid_at: string | null;
+          receipt_url: string | null;
+          refund_amount: number | null;
+          refunded_at: string | null;
+          status: string;
+          subscription_id: string | null;
+          tax_amount: number;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          amount: number;
+          billing_reason?: string | null;
+          card_brand?: string | null;
+          card_last_four?: string | null;
+          created_at?: string;
+          currency?: string;
+          discount_amount?: number;
+          id?: string;
+          invoice_url?: string | null;
+          lemon_invoice_id?: string | null;
+          lemon_order_id?: string | null;
+          lemon_subscription_id?: string | null;
+          paid_at?: string | null;
+          receipt_url?: string | null;
+          refund_amount?: number | null;
+          refunded_at?: string | null;
+          status?: string;
+          subscription_id?: string | null;
+          tax_amount?: number;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          amount?: number;
+          billing_reason?: string | null;
+          card_brand?: string | null;
+          card_last_four?: string | null;
+          created_at?: string;
+          currency?: string;
+          discount_amount?: number;
+          id?: string;
+          invoice_url?: string | null;
+          lemon_invoice_id?: string | null;
+          lemon_order_id?: string | null;
+          lemon_subscription_id?: string | null;
+          paid_at?: string | null;
+          receipt_url?: string | null;
+          refund_amount?: number | null;
+          refunded_at?: string | null;
+          status?: string;
+          subscription_id?: string | null;
+          tax_amount?: number;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "subscription_payments_subscription_id_fkey";
+            columns: ["subscription_id"];
+            isOneToOne: false;
+            referencedRelation: "user_subscriptions";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "subscription_payments_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "active_user_profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "subscription_payments_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "user_management_view";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "subscription_payments_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       subscription_plans: {
         Row: {
           analytics_sections: string[];
@@ -2699,11 +2871,15 @@ export type Database = {
           features: Json;
           id: string;
           is_active: boolean;
+          lemon_product_id: string | null;
+          lemon_variant_id_annual: string | null;
+          lemon_variant_id_monthly: string | null;
           name: string;
           price_annual: number;
           price_monthly: number;
           sms_enabled: boolean;
           sort_order: number;
+          team_size_limit: number | null;
           updated_at: string;
         };
         Insert: {
@@ -2715,11 +2891,15 @@ export type Database = {
           features?: Json;
           id?: string;
           is_active?: boolean;
+          lemon_product_id?: string | null;
+          lemon_variant_id_annual?: string | null;
+          lemon_variant_id_monthly?: string | null;
           name: string;
           price_annual?: number;
           price_monthly?: number;
           sms_enabled?: boolean;
           sort_order?: number;
+          team_size_limit?: number | null;
           updated_at?: string;
         };
         Update: {
@@ -2731,11 +2911,15 @@ export type Database = {
           features?: Json;
           id?: string;
           is_active?: boolean;
+          lemon_product_id?: string | null;
+          lemon_variant_id_annual?: string | null;
+          lemon_variant_id_monthly?: string | null;
           name?: string;
           price_annual?: number;
           price_monthly?: number;
           sms_enabled?: boolean;
           sort_order?: number;
+          team_size_limit?: number | null;
           updated_at?: string;
         };
         Relationships: [];
@@ -3644,6 +3828,7 @@ export type Database = {
           grandfathered_until: string | null;
           id: string;
           lemon_customer_id: string | null;
+          lemon_order_id: string | null;
           lemon_subscription_id: string | null;
           plan_id: string;
           status: string;
@@ -3661,6 +3846,7 @@ export type Database = {
           grandfathered_until?: string | null;
           id?: string;
           lemon_customer_id?: string | null;
+          lemon_order_id?: string | null;
           lemon_subscription_id?: string | null;
           plan_id: string;
           status?: string;
@@ -3678,6 +3864,7 @@ export type Database = {
           grandfathered_until?: string | null;
           id?: string;
           lemon_customer_id?: string | null;
+          lemon_order_id?: string | null;
           lemon_subscription_id?: string | null;
           plan_id?: string;
           status?: string;
@@ -5330,6 +5517,7 @@ export type Database = {
         Args: { p_limit?: number; p_provider: string; p_user_id: string };
         Returns: boolean;
       };
+      check_team_size_limit: { Args: { p_user_id: string }; Returns: Json };
       check_user_template_limit: {
         Args: { user_uuid: string };
         Returns: boolean;
@@ -5438,6 +5626,35 @@ export type Database = {
           p_roles: string[];
         };
         Returns: string;
+      };
+      get_plan_by_lemon_variant: {
+        Args: { p_variant_id: string };
+        Returns: {
+          analytics_sections: string[];
+          created_at: string;
+          description: string | null;
+          display_name: string;
+          email_limit: number;
+          features: Json;
+          id: string;
+          is_active: boolean;
+          lemon_product_id: string | null;
+          lemon_variant_id_annual: string | null;
+          lemon_variant_id_monthly: string | null;
+          name: string;
+          price_annual: number;
+          price_monthly: number;
+          sms_enabled: boolean;
+          sort_order: number;
+          team_size_limit: number | null;
+          updated_at: string;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "subscription_plans";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
       };
       get_policies_paginated: {
         Args: {
@@ -5628,6 +5845,26 @@ export type Database = {
       };
       mark_thread_read: { Args: { p_thread_id: string }; Returns: undefined };
       normalize_email_subject: { Args: { subject: string }; Returns: string };
+      process_lemon_subscription_event: {
+        Args: {
+          p_billing_interval: string;
+          p_cancelled_at: string;
+          p_current_period_end: string;
+          p_current_period_start: string;
+          p_event_data: Json;
+          p_event_name: string;
+          p_event_type: string;
+          p_lemon_customer_id: string;
+          p_lemon_event_id: string;
+          p_lemon_order_id: string;
+          p_lemon_subscription_id: string;
+          p_lemon_variant_id: string;
+          p_status: string;
+          p_trial_ends_at: string;
+          p_user_id: string;
+        };
+        Returns: string;
+      };
       process_pending_workflow_runs: {
         Args: never;
         Returns: {
@@ -5662,6 +5899,26 @@ export type Database = {
           p_user_agent?: string;
         };
         Returns: boolean;
+      };
+      record_lemon_payment: {
+        Args: {
+          p_amount: number;
+          p_billing_reason: string;
+          p_card_brand: string;
+          p_card_last_four: string;
+          p_currency: string;
+          p_discount_amount: number;
+          p_invoice_url: string;
+          p_lemon_invoice_id: string;
+          p_lemon_order_id: string;
+          p_lemon_subscription_id: string;
+          p_paid_at: string;
+          p_receipt_url: string;
+          p_status: string;
+          p_tax_amount: number;
+          p_user_id: string;
+        };
+        Returns: string;
       };
       record_workflow_email: {
         Args: {

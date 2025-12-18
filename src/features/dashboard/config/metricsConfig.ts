@@ -9,6 +9,7 @@
 
 import { TimePeriod, getPeriodLabel } from "../../../utils/dateRange";
 import { PerformanceMetricRow } from "../../../types/dashboard.types";
+import type { DashboardFeatures } from "../../../hooks/dashboard";
 
 interface MetricsConfigParams {
   timePeriod: TimePeriod;
@@ -33,6 +34,8 @@ interface MetricsConfigParams {
   constants?: {
     avgAP?: number;
   };
+  /** Dashboard feature access for gating */
+  features?: DashboardFeatures;
 }
 
 /**
@@ -47,9 +50,13 @@ export function generateMetricsConfig(
     periodPolicies,
     periodClients,
     constants,
+    features,
   } = params;
 
   const periodLabel = getPeriodLabel(timePeriod);
+
+  // Check if user can view targets (Starter+ required)
+  const canViewTargets = features?.canViewBasicTargets ?? true;
 
   // Performance Overview: Production metrics (no financial duplicates - those are in Key Metrics)
   return [
@@ -79,7 +86,8 @@ export function generateMetricsConfig(
       current: periodPolicies.averagePremium,
       target: constants?.avgAP || null,
       unit: "$",
-      showTarget: !!constants?.avgAP,
+      // Only show target if user has targets feature AND a target is set
+      showTarget: canViewTargets && !!constants?.avgAP,
     },
     {
       metric: "Commission Rate",

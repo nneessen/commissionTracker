@@ -8,6 +8,7 @@ import { useCreateExpense } from "../../hooks/expenses/useCreateExpense";
 import { useCreatePolicy } from "../../hooks/policies";
 import { useChargebackSummary } from "../../hooks/commissions/useChargebackSummary";
 import { useAuth } from "../../contexts/AuthContext";
+import { useDashboardFeatures } from "../../hooks/dashboard";
 import { TimePeriod } from "../../utils/dateRange";
 import showToast from "../../utils/toast";
 import type { CreateExpenseData } from "../../types/expense.types";
@@ -44,6 +45,7 @@ export const DashboardHome: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { data: constants } = useConstants();
+  const dashboardFeatures = useDashboardFeatures();
   const [timePeriod, setTimePeriod] = useState<TimePeriod>("monthly");
   const [periodOffset, setPeriodOffset] = useState<number>(0);
   const [activeDialog, setActiveDialog] = useState<"policy" | "expense" | null>(
@@ -102,6 +104,7 @@ export const DashboardHome: React.FC = () => {
     breakevenDisplay,
     policiesNeededDisplay,
     chargebackSummary,
+    features: dashboardFeatures,
   });
 
   const metricsConfig = generateMetricsConfig({
@@ -112,6 +115,7 @@ export const DashboardHome: React.FC = () => {
     periodExpenses,
     periodAnalytics,
     constants,
+    features: dashboardFeatures,
   });
 
   const kpiConfig = generateKPIConfig({
@@ -125,6 +129,7 @@ export const DashboardHome: React.FC = () => {
     derivedMetrics,
     breakevenDisplay,
     policiesNeededDisplay,
+    features: dashboardFeatures,
   });
 
   const alertsConfig = generateAlertsConfig({
@@ -140,9 +145,21 @@ export const DashboardHome: React.FC = () => {
   });
 
   const quickActions = [
-    { label: "Add Policy", action: "Add Policy" },
-    { label: "Add Expense", action: "Add Expense" },
-    { label: "View Reports", action: "View Reports" },
+    { label: "Add Policy", action: "Add Policy", hasAccess: true },
+    {
+      label: "Add Expense",
+      action: "Add Expense",
+      hasAccess: dashboardFeatures.canAddExpense,
+      lockedTooltip: "Upgrade to Starter to track expenses",
+      requiredTier: "Starter",
+    },
+    {
+      label: "View Reports",
+      action: "View Reports",
+      hasAccess: dashboardFeatures.canViewReports,
+      lockedTooltip: "Upgrade to Starter to view reports",
+      requiredTier: "Starter",
+    },
   ];
 
   // Action handlers

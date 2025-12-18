@@ -32,6 +32,7 @@ export function useUsageTracking(): UseUsageTrackingResult {
     data: emailUsage,
     isLoading: emailLoading,
     error: emailError,
+    refetch: refetchEmail,
   } = useQuery({
     queryKey: subscriptionKeys.usage(userId || "", "emails_sent"),
     queryFn: async () => {
@@ -66,6 +67,12 @@ export function useUsageTracking(): UseUsageTrackingResult {
   const isEmailOverLimit = emailUsage?.isOverLimit || false;
   const isSmsEnabled = smsUsage?.limit === 0; // SMS is usage-based, no limit
 
+  // Refetch function that refreshes both metrics
+  const refetch = () => {
+    refetchEmail();
+    refetchSms();
+  };
+
   return {
     emailUsage: emailUsage ?? null,
     smsUsage: smsUsage ?? null,
@@ -74,6 +81,6 @@ export function useUsageTracking(): UseUsageTrackingResult {
     isEmailWarning,
     isEmailOverLimit,
     isSmsEnabled,
-    refetch: refetchSms,
+    refetch,
   };
 }

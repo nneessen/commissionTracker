@@ -10,9 +10,11 @@
 import { TimePeriod } from "../../../utils/dateRange";
 import { KPISection } from "../../../types/dashboard.types";
 import { formatCurrency, formatPercent } from "../../../lib/format";
+import type { DashboardFeatures } from "../../../hooks/dashboard";
 
 interface KPIConfigParams {
   timePeriod: TimePeriod;
+  features?: DashboardFeatures;
   periodCommissions: {
     earned: number;
     count: number;
@@ -75,7 +77,11 @@ export function generateKPIConfig(params: KPIConfigParams): KPISection[] {
     currentState,
     derivedMetrics,
     periodAnalytics,
+    features,
   } = params;
+
+  // Determine if Financial Details section should be gated (requires expenses feature)
+  const canViewExpenses = features?.canViewExpenses ?? true;
 
   // KPI Breakdown: Detailed metrics not shown elsewhere
   return [
@@ -99,6 +105,8 @@ export function generateKPIConfig(params: KPIConfigParams): KPISection[] {
           value: formatCurrency(periodExpenses.taxDeductible),
         },
       ],
+      gated: !canViewExpenses,
+      requiredTier: "Starter",
     },
     {
       category: "Policy Health",

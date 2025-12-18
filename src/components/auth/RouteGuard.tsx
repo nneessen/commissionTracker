@@ -5,8 +5,10 @@ import { Navigate } from "@tanstack/react-router";
 import { useAuthorizationStatus } from "@/hooks/admin/useUserApproval";
 import { usePermissionCheck } from "@/hooks/permissions/usePermissions";
 import { useAuth } from "@/contexts/AuthContext";
+import { useFeatureAccess, type FeatureKey } from "@/hooks/subscription";
 import { PendingApproval } from "@/features/auth/PendingApproval";
 import { PermissionDenied } from "@/features/auth";
+import { UpgradePrompt } from "@/components/subscription";
 import type { PermissionCode } from "@/types/permissions.types";
 
 interface RouteGuardProps {
@@ -25,6 +27,8 @@ interface RouteGuardProps {
   noRecruits?: boolean;
   /** Required email for super-admin routes */
   requireEmail?: string;
+  /** Required subscription feature to access this route */
+  subscriptionFeature?: FeatureKey;
   /** Custom fallback component */
   fallback?: React.ReactNode;
 }
@@ -64,6 +68,7 @@ export const RouteGuard: React.FC<RouteGuardProps> = ({
   recruitOnly = false,
   noRecruits = false,
   requireEmail,
+  subscriptionFeature,
   fallback,
 }) => {
   const { supabaseUser } = useAuth();
@@ -82,11 +87,18 @@ export const RouteGuard: React.FC<RouteGuardProps> = ({
     isLoading: permLoading,
   } = usePermissionCheck();
 
-  // Admin email - hardcoded for security
-  const ADMIN_EMAIL = "nick@nickneessen.com";
+  // Feature access check (only if subscriptionFeature is specified)
+  const featureAccess = useFeatureAccess(subscriptionFeature || "dashboard");
+  const checkingFeature = subscriptionFeature && featureAccess.isLoading;
+
+  // Admin emails - hardcoded for security (super admins bypass all checks)
+  const ADMIN_EMAILS = [
+    "nick@nickneessen.com",
+    "nickneessen@thestandardhq.com",
+  ];
 
   // Show loading state while checking
-  if (authLoading || permLoading) {
+  if (authLoading || permLoading || checkingFeature) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">
@@ -99,9 +111,9 @@ export const RouteGuard: React.FC<RouteGuardProps> = ({
     );
   }
 
-  // Admin bypass - always allow admin email
+  // Admin bypass - always allow admin emails
   const currentEmail = supabaseUser?.email;
-  if (currentEmail === ADMIN_EMAIL) {
+  if (currentEmail && ADMIN_EMAILS.includes(currentEmail)) {
     return <>{children}</>;
   }
 
@@ -153,6 +165,15 @@ export const RouteGuard: React.FC<RouteGuardProps> = ({
   // Show permission denied if check fails (and not approved)
   if (!hasPermission && !isApproved) {
     return <>{fallback || <PermissionDenied />}</>;
+  }
+
+  // Check subscription feature access (after permission checks)
+  if (subscriptionFeature && !featureAccess.hasAccess) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh] p-4">
+        <UpgradePrompt feature={subscriptionFeature} variant="card" />
+      </div>
+    );
   }
 
   // All checks passed - render children
