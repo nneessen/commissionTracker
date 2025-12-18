@@ -11,16 +11,16 @@
 
 ## Why Mailgun Over Resend
 
-| Capability | Resend | Mailgun |
-|------------|--------|---------|
-| Outbound Email | ✅ | ✅ |
-| Inbound Email | ❌ (webhooks only) | ✅ (Routes + Webhooks) |
-| True Threading | ❌ | ✅ (Message-ID/In-Reply-To) |
-| Attachments Inbound | ❌ | ✅ |
-| Reply Detection | Manual parsing | Automatic routing |
-| Deliverability | Good | Excellent |
-| 1000+ Users | Limited | ✅ Built for scale |
-| Price at Scale | Higher | More cost-effective |
+| Capability          | Resend             | Mailgun                     |
+| ------------------- | ------------------ | --------------------------- |
+| Outbound Email      | ✅                 | ✅                          |
+| Inbound Email       | ❌ (webhooks only) | ✅ (Routes + Webhooks)      |
+| True Threading      | ❌                 | ✅ (Message-ID/In-Reply-To) |
+| Attachments Inbound | ❌                 | ✅                          |
+| Reply Detection     | Manual parsing     | Automatic routing           |
+| Deliverability      | Good               | Excellent                   |
+| 1000+ Users         | Limited            | ✅ Built for scale          |
+| Price at Scale      | Higher             | More cost-effective         |
 
 **Bottom Line:** Resend is great for notifications. Mailgun is built for full email systems.
 
@@ -69,12 +69,14 @@
 ### Phase 1: Mailgun Setup (Day 1)
 
 #### 1.1 Mailgun Account Configuration
+
 ```
 Domain: mail.thestandardhq.com (or updates.thestandardhq.com)
 Region: US
 ```
 
 **DNS Records to Add:**
+
 ```
 TXT  mail._domainkey.thestandardhq.com  → [Mailgun DKIM key]
 TXT  thestandardhq.com                  → v=spf1 include:mailgun.org ~all
@@ -83,6 +85,7 @@ MX   mail.thestandardhq.com             → mxb.mailgun.org (priority 10)
 ```
 
 #### 1.2 Mailgun Routes (Inbound Handling)
+
 ```
 Route 1: Catch-all for replies
   Expression: match_recipient(".*@mail.thestandardhq.com")
@@ -91,6 +94,7 @@ Route 1: Catch-all for replies
 ```
 
 #### 1.3 Environment Variables
+
 ```bash
 # Supabase Secrets to set:
 MAILGUN_API_KEY=key-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
@@ -116,26 +120,27 @@ MAILGUN_BASE_URL=https://api.mailgun.net/v3  # or EU endpoint if needed
 ```
 
 **Mailgun Send API:**
+
 ```typescript
 const form = new FormData();
-form.append('from', from);
-form.append('to', to.join(','));
-form.append('subject', subject);
-form.append('html', html);
-form.append('text', text);
-form.append('h:Message-Id', `<${crypto.randomUUID()}@mail.thestandardhq.com>`);
+form.append("from", from);
+form.append("to", to.join(","));
+form.append("subject", subject);
+form.append("html", html);
+form.append("text", text);
+form.append("h:Message-Id", `<${crypto.randomUUID()}@mail.thestandardhq.com>`);
 
 if (inReplyTo) {
-  form.append('h:In-Reply-To', inReplyTo);
-  form.append('h:References', references.join(' '));
+  form.append("h:In-Reply-To", inReplyTo);
+  form.append("h:References", references.join(" "));
 }
 
 const response = await fetch(`${MAILGUN_BASE_URL}/${MAILGUN_DOMAIN}/messages`, {
-  method: 'POST',
+  method: "POST",
   headers: {
-    'Authorization': `Basic ${btoa(`api:${MAILGUN_API_KEY}`)}`
+    Authorization: `Basic ${btoa(`api:${MAILGUN_API_KEY}`)}`,
   },
-  body: form
+  body: form,
 });
 ```
 
@@ -172,6 +177,7 @@ Same changes as send-email but for workflow/automated sends.
 #### 3.1 Fix `threadService.ts` Sent Folder Bug
 
 **Current Bug (line ~191):**
+
 ```typescript
 // Step 1: Gets thread IDs where sender_id = userId ✅
 // Step 2: Queries email_threads with .eq("user_id", userId) ❌
@@ -179,6 +185,7 @@ Same changes as send-email but for workflow/automated sends.
 ```
 
 **Fix:**
+
 ```typescript
 // Remove the .eq("user_id", userId) constraint when querying
 // threads for sent emails, since we already have valid thread IDs
@@ -187,6 +194,7 @@ Same changes as send-email but for workflow/automated sends.
 #### 3.2 Enhance Threading Logic in `emailService.ts`
 
 **Add proper header handling:**
+
 ```typescript
 // When replying:
 // - Set In-Reply-To to the message we're replying to
@@ -202,14 +210,14 @@ Same changes as send-email but for workflow/automated sends.
 
 ```typescript
 // Change from:
-source: 'personal' | 'bulk' | 'workflow' | 'owner'
+source: "personal" | "bulk" | "workflow" | "owner";
 
 // Email domains mapping update:
 const EMAIL_DOMAINS = {
-  personal: 'mail.thestandardhq.com',
-  bulk: 'mail.thestandardhq.com',
-  workflow: 'mail.thestandardhq.com',
-  owner: 'mail.thestandardhq.com', // or user's actual email if configured
+  personal: "mail.thestandardhq.com",
+  bulk: "mail.thestandardhq.com",
+  workflow: "mail.thestandardhq.com",
+  owner: "mail.thestandardhq.com", // or user's actual email if configured
 };
 ```
 
@@ -271,6 +279,7 @@ CREATE POLICY "Users can update own settings" ON user_mailbox_settings
 ### Phase 5: Testing & Validation (Day 3-4)
 
 #### 5.1 Outbound Testing
+
 - [ ] Send email via compose dialog
 - [ ] Verify email arrives at recipient
 - [ ] Check Message-ID header is set
@@ -280,6 +289,7 @@ CREATE POLICY "Users can update own settings" ON user_mailbox_settings
 - [ ] Test bulk campaigns
 
 #### 5.2 Inbound Testing
+
 - [ ] Reply to a sent email
 - [ ] Verify webhook receives reply
 - [ ] Verify reply appears in correct thread
@@ -289,6 +299,7 @@ CREATE POLICY "Users can update own settings" ON user_mailbox_settings
 - [ ] Test thread reconstruction from References header
 
 #### 5.3 Threading Testing
+
 - [ ] New outbound creates thread
 - [ ] Reply maintains thread
 - [ ] Multiple replies chain correctly
@@ -301,39 +312,40 @@ CREATE POLICY "Users can update own settings" ON user_mailbox_settings
 
 ### Edge Functions (Create/Modify)
 
-| File | Action | Description |
-|------|--------|-------------|
-| `supabase/functions/send-email/index.ts` | MODIFY | Replace Resend → Mailgun API |
-| `supabase/functions/inbound-email/index.ts` | CREATE | New webhook handler |
+| File                                               | Action | Description                  |
+| -------------------------------------------------- | ------ | ---------------------------- |
+| `supabase/functions/send-email/index.ts`           | MODIFY | Replace Resend → Mailgun API |
+| `supabase/functions/inbound-email/index.ts`        | CREATE | New webhook handler          |
 | `supabase/functions/send-automated-email/index.ts` | MODIFY | Replace Resend → Mailgun API |
 
 ### Frontend Services (Modify)
 
-| File | Action | Description |
-|------|--------|-------------|
-| `src/features/messages/services/emailService.ts` | MODIFY | Update domain config, add headers |
-| `src/features/messages/services/threadService.ts` | MODIFY | Fix sent folder bug |
+| File                                              | Action | Description                       |
+| ------------------------------------------------- | ------ | --------------------------------- |
+| `src/features/messages/services/emailService.ts`  | MODIFY | Update domain config, add headers |
+| `src/features/messages/services/threadService.ts` | MODIFY | Fix sent folder bug               |
 
 ### Database
 
-| File | Action | Description |
-|------|--------|-------------|
+| File                                                     | Action | Description                   |
+| -------------------------------------------------------- | ------ | ----------------------------- |
 | `supabase/migrations/20251216_001_mailgun_migration.sql` | CREATE | Add indexes, optional columns |
 
 ### Environment
 
-| Variable | Action |
-|----------|--------|
-| `RESEND_API_KEY` | REMOVE |
-| `MAILGUN_API_KEY` | ADD |
-| `MAILGUN_DOMAIN` | ADD |
-| `MAILGUN_WEBHOOK_SIGNING_KEY` | ADD |
+| Variable                      | Action |
+| ----------------------------- | ------ |
+| `RESEND_API_KEY`              | REMOVE |
+| `MAILGUN_API_KEY`             | ADD    |
+| `MAILGUN_DOMAIN`              | ADD    |
+| `MAILGUN_WEBHOOK_SIGNING_KEY` | ADD    |
 
 ---
 
 ## Email Flow After Migration
 
 ### Outbound Flow
+
 ```
 User composes email in React UI
   → emailService.sendEmail()
@@ -345,6 +357,7 @@ User composes email in React UI
 ```
 
 ### Inbound Flow
+
 ```
 External email arrives at mail.thestandardhq.com
   → Mailgun Route matches
@@ -359,6 +372,7 @@ External email arrives at mail.thestandardhq.com
 ```
 
 ### Threading Logic
+
 ```
 Finding thread for incoming email:
   1. Check In-Reply-To header → find parent message → use its thread_id
@@ -372,6 +386,7 @@ Finding thread for incoming email:
 ## Rollback Plan
 
 If issues arise:
+
 1. Keep Resend API key active during transition
 2. Edge functions can fall back to Resend if Mailgun fails
 3. Database schema changes are additive (no destructive changes)
@@ -381,12 +396,13 @@ If issues arise:
 
 ## Cost Comparison
 
-| Provider | Free Tier | Paid Tier |
-|----------|-----------|-----------|
-| Resend | 100/day | $20/mo for 50k |
-| Mailgun | 5,000/mo for 3 months | $15/mo for 10k, then $0.80/1k |
+| Provider | Free Tier             | Paid Tier                     |
+| -------- | --------------------- | ----------------------------- |
+| Resend   | 100/day               | $20/mo for 50k                |
+| Mailgun  | 5,000/mo for 3 months | $15/mo for 10k, then $0.80/1k |
 
 For 1000 users × ~10 emails/day = 10,000 emails/month
+
 - Resend: ~$40/mo
 - Mailgun: ~$15/mo (includes inbound)
 
