@@ -337,12 +337,21 @@ export default function EditUserDialog({
     setIsSendingInvite(true);
 
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
-        redirectTo: `${window.location.origin}/auth/callback?type=recovery`,
-      });
+      // Use custom Mailgun edge function instead of Supabase's built-in email
+      const { data, error: fnError } = await supabase.functions.invoke(
+        "send-password-reset",
+        {
+          body: {
+            email: user.email,
+            redirectTo: `${window.location.origin}/auth/callback?type=recovery`,
+          },
+        }
+      );
 
-      if (error) {
-        showToast.error(`Failed to send confirmation email: ${error.message}`);
+      if (fnError) {
+        showToast.error(`Failed to send confirmation email: ${fnError.message}`);
+      } else if (data?.success === false) {
+        showToast.error(`Failed to send confirmation email: ${data.error}`);
       } else {
         showToast.success(
           `Confirmation email sent to ${user.email} to set password`,

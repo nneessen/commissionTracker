@@ -295,11 +295,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setError(null);
       setLoading(true);
 
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/reset-password`,
-      });
+      // Use custom Mailgun edge function instead of Supabase's built-in email
+      const { data, error: fnError } = await supabase.functions.invoke(
+        "send-password-reset",
+        {
+          body: {
+            email,
+            redirectTo: `${window.location.origin}/auth/reset-password`,
+          },
+        }
+      );
 
-      if (error) throw error;
+      if (fnError) throw fnError;
+      if (data?.success === false) throw new Error(data.error);
 
       logger.auth("Password reset email sent");
     } catch (err) {

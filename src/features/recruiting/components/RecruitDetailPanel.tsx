@@ -133,13 +133,18 @@ export function RecruitDetailPanel({
     if (!recruit.email) return;
     setResendingInvite(true);
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(
-        recruit.email,
+      // Use custom Mailgun edge function instead of Supabase's built-in email
+      const { data, error: fnError } = await supabase.functions.invoke(
+        "send-password-reset",
         {
-          redirectTo: `${window.location.origin}/auth/reset-password`,
-        },
+          body: {
+            email: recruit.email,
+            redirectTo: `${window.location.origin}/auth/reset-password`,
+          },
+        }
       );
-      if (error) showToast.error(error.message);
+      if (fnError) showToast.error(fnError.message);
+      else if (data?.success === false) showToast.error(data.error);
       else showToast.success("Invite sent!");
     } finally {
       setResendingInvite(false);
