@@ -10,6 +10,7 @@ import {
   AnalyticsDateProvider,
   useAnalyticsDateRange,
 } from "./context/AnalyticsDateContext";
+import { AnalyticsSectionGate } from "@/components/subscription";
 
 // Lazy load analytics components for better performance
 const PaceMetrics = lazy(() =>
@@ -39,6 +40,9 @@ const CommissionPipeline = lazy(() =>
   import("./components/CommissionPipeline").then((m) => ({
     default: m.CommissionPipeline,
   })),
+);
+const PredictiveAnalytics = lazy(() =>
+  import("./components").then((m) => ({ default: m.PredictiveAnalytics })),
 );
 
 function AnalyticsDashboardContent() {
@@ -143,31 +147,62 @@ function AnalyticsDashboardContent() {
           </div>
         ) : (
           <div className="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-2 max-w-[1920px] mx-auto w-full">
-            {/* Compact Grid Layout */}
-            <Suspense fallback={null}>
-              <PaceMetrics />
-            </Suspense>
-            <Suspense fallback={null}>
-              <PolicyStatusBreakdown />
-            </Suspense>
-            <Suspense fallback={null}>
-              <ProductMatrix />
-            </Suspense>
-            <Suspense fallback={null}>
-              <CarriersProductsBreakdown />
-            </Suspense>
-            <Suspense fallback={null}>
-              <GeographicAnalysis />
-            </Suspense>
-            <Suspense fallback={null}>
-              <ClientSegmentation />
-            </Suspense>
-            <Suspense fallback={null}>
-              <GamePlan />
-            </Suspense>
-            <Suspense fallback={null}>
-              <CommissionPipeline />
-            </Suspense>
+            {/* Free Tier Sections (3) */}
+            <AnalyticsSectionGate section="pace_metrics">
+              <Suspense fallback={null}>
+                <PaceMetrics />
+              </Suspense>
+            </AnalyticsSectionGate>
+
+            <AnalyticsSectionGate section="carriers_products">
+              <Suspense fallback={null}>
+                <CarriersProductsBreakdown />
+              </Suspense>
+            </AnalyticsSectionGate>
+
+            <AnalyticsSectionGate section="product_matrix">
+              <Suspense fallback={null}>
+                <ProductMatrix />
+              </Suspense>
+            </AnalyticsSectionGate>
+
+            {/* Starter Tier Sections (+3 = 6 total) */}
+            <AnalyticsSectionGate section="policy_status_breakdown">
+              <Suspense fallback={null}>
+                <PolicyStatusBreakdown />
+              </Suspense>
+            </AnalyticsSectionGate>
+
+            <AnalyticsSectionGate section="geographic">
+              <Suspense fallback={null}>
+                <GeographicAnalysis />
+              </Suspense>
+            </AnalyticsSectionGate>
+
+            <AnalyticsSectionGate section="client_segmentation">
+              <Suspense fallback={null}>
+                <ClientSegmentation />
+              </Suspense>
+            </AnalyticsSectionGate>
+
+            {/* Pro Tier Sections (+3 = 9 total) */}
+            <AnalyticsSectionGate section="game_plan">
+              <Suspense fallback={null}>
+                <GamePlan />
+              </Suspense>
+            </AnalyticsSectionGate>
+
+            <AnalyticsSectionGate section="commission_pipeline">
+              <Suspense fallback={null}>
+                <CommissionPipeline />
+              </Suspense>
+            </AnalyticsSectionGate>
+
+            <AnalyticsSectionGate section="predictive_analytics">
+              <Suspense fallback={null}>
+                <PredictiveAnalytics />
+              </Suspense>
+            </AnalyticsSectionGate>
           </div>
         )}
 

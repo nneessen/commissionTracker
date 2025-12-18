@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-12-18 16:06:52
+
+### Changed Files
+- `src/components/subscription/AnalyticsSectionGate.tsx`
+- `src/components/subscription/index.ts`
+- `src/features/analytics/AnalyticsDashboard.tsx`
+- `src/hooks/subscription/index.ts`
+- `src/hooks/subscription/useAnalyticsSectionAccess.ts`
+- `supabase/migrations/20251218_009_fix_override_commissions_trigger.sql`
+- `supabase/migrations/20251218_010_update_analytics_tier_access.sql`
+
+### Statistics
+```
+ 7 files changed, 574 insertions(+), 34 deletions(-)
+```
+
 ## [Checkpoint] - 2025-12-18 15:20:08
 
 ### Changed Files

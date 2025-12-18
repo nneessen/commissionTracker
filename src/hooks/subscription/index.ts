@@ -12,3 +12,10 @@ export {
   type FeatureKey,
 } from "./useFeatureAccess";
 export { useTeamSizeLimit, type TeamSizeLimitStatus } from "./useTeamSizeLimit";
+export {
+  useAnalyticsSectionAccess,
+  useAccessibleAnalyticsSections,
+  ANALYTICS_SECTION_NAMES,
+  ANALYTICS_SECTION_TIERS,
+  type AnalyticsSectionKey,
+} from "./useAnalyticsSectionAccess";
