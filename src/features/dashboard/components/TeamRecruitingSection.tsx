@@ -101,27 +101,27 @@ const RecruitingPipelinePanel: React.FC<{
       </div>
 
       {/* Summary Stats Row */}
-      <div className="grid grid-cols-4 gap-3 mb-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mb-3">
         <div className="text-center">
-          <div className="text-lg font-bold text-zinc-900 dark:text-zinc-100">
+          <div className="text-base sm:text-lg font-bold text-zinc-900 dark:text-zinc-100">
             {recruitingStats?.total ?? 0}
           </div>
           <div className="text-[9px] text-zinc-500 uppercase">Total</div>
         </div>
         <div className="text-center">
-          <div className="text-lg font-bold text-blue-600 dark:text-blue-400">
+          <div className="text-base sm:text-lg font-bold text-blue-600 dark:text-blue-400">
             {recruitingStats?.active ?? 0}
           </div>
           <div className="text-[9px] text-zinc-500 uppercase">Active</div>
         </div>
         <div className="text-center">
-          <div className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
+          <div className="text-base sm:text-lg font-bold text-emerald-600 dark:text-emerald-400">
             {recruitingStats?.completed ?? 0}
           </div>
           <div className="text-[9px] text-zinc-500 uppercase">Completed</div>
         </div>
         <div className="text-center">
-          <div className="text-lg font-bold text-zinc-400">
+          <div className="text-base sm:text-lg font-bold text-zinc-400">
             {recruitingStats?.dropped ?? 0}
           </div>
           <div className="text-[9px] text-zinc-500 uppercase">Dropped</div>
@@ -133,7 +133,7 @@ const RecruitingPipelinePanel: React.FC<{
         <div className="text-[9px] text-zinc-400 uppercase mb-1.5">
           By Phase
         </div>
-        <div className="grid grid-cols-4 gap-x-3 gap-y-0.5">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-2 sm:gap-x-3 gap-y-0.5">
           {phases.map((phase) => (
             <div
               key={phase.key}
@@ -224,13 +224,15 @@ export const TeamRecruitingSection: React.FC<TeamRecruitingSectionProps> = ({
   hasAccess,
 }) => {
   const content = (
-    <div className="grid gap-2 grid-cols-[260px_1fr_280px]">
+    <div className="grid gap-2 grid-cols-1 md:grid-cols-2 lg:grid-cols-[260px_1fr_280px]">
       <TeamDetailsPanel hierarchyStats={hierarchyStats} />
       <RecruitingPipelinePanel recruitingStats={recruitingStats} />
-      <MessagesNotificationsPanel
-        unreadNotifications={unreadNotifications}
-        unreadMessages={unreadMessages}
-      />
+      <div className="md:col-span-2 lg:col-span-1">
+        <MessagesNotificationsPanel
+          unreadNotifications={unreadNotifications}
+          unreadMessages={unreadMessages}
+        />
+      </div>
     </div>
   );
 

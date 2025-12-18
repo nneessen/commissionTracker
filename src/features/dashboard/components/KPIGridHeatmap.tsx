@@ -78,13 +78,21 @@ export const KPIGridHeatmap: React.FC<KPIGridHeatmapProps> = ({
         {title}
       </div>
       <TooltipProvider delayDuration={200}>
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {sections.map((section, sectionIndex) => (
             <div
               key={sectionIndex}
               className={cn(
+                // Border left only on lg when not first item
+                "lg:first:border-l-0",
                 sectionIndex > 0 &&
-                  "border-l border-zinc-200 dark:border-zinc-700 pl-4",
+                  "lg:border-l lg:border-zinc-200 lg:dark:border-zinc-700 lg:pl-4",
+                // Top border for stacked items on mobile/tablet
+                sectionIndex > 0 &&
+                  "border-t border-zinc-200 dark:border-zinc-700 pt-4 sm:border-t-0 sm:pt-0",
+                // Handle 2-col border on sm
+                sectionIndex === 2 &&
+                  "sm:border-t sm:border-zinc-200 sm:dark:border-zinc-700 sm:pt-4 lg:border-t-0 lg:pt-0",
               )}
             >
               {section.gated ? (

@@ -24,7 +24,7 @@ export const TimePeriodSwitcher: React.FC<TimePeriodSwitcherProps> = ({
           variant="ghost"
           size="sm"
           className={cn(
-            "h-6 px-2 text-[10px] font-medium capitalize rounded transition-all",
+            "h-6 px-1.5 sm:px-2 text-[9px] sm:text-[10px] font-medium capitalize rounded transition-all",
             timePeriod === period
               ? "bg-white dark:bg-zinc-900 shadow-sm text-zinc-900 dark:text-zinc-100"
               : "bg-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300",

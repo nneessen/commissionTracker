@@ -282,18 +282,18 @@ export const DashboardHome: React.FC = () => {
 
   return (
     <>
-      <div className="h-[calc(100vh-4rem)] flex flex-col p-3 space-y-2.5 bg-zinc-50 dark:bg-zinc-950">
+      <div className="h-[calc(100vh-4rem)] flex flex-col p-2 sm:p-3 space-y-2 sm:space-y-2.5 bg-zinc-50 dark:bg-zinc-950">
         {/* Compact Header Card */}
-        <div className="flex items-center justify-between bg-white dark:bg-zinc-900 rounded-lg px-3 py-2 border border-zinc-200 dark:border-zinc-800">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between bg-white dark:bg-zinc-900 rounded-lg px-2 sm:px-3 py-2 border border-zinc-200 dark:border-zinc-800">
           <div className="flex items-center gap-2">
             <h1 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
               Dashboard
             </h1>
-            <span className="text-[10px] text-zinc-500 dark:text-zinc-400">
+            <span className="text-[10px] text-zinc-500 dark:text-zinc-400 hidden sm:inline">
               Performance overview
             </span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
             <TimePeriodSwitcher
               timePeriod={timePeriod}
               onTimePeriodChange={handleTimePeriodChange}
@@ -311,8 +311,8 @@ export const DashboardHome: React.FC = () => {
         {/* Main Content */}
         <div className="flex-1 overflow-auto">
           <div className="max-w-7xl mx-auto space-y-2">
-            {/* Main 3-column layout */}
-            <div className="grid gap-2 grid-cols-[260px_1fr_280px]">
+            {/* Main 3-column layout - stacks on mobile, 2-col on md, 3-col on lg */}
+            <div className="grid gap-2 grid-cols-1 md:grid-cols-2 lg:grid-cols-[260px_1fr_280px]">
               <QuickStatsPanel stats={statsConfig} timePeriod={timePeriod} />
 
               <PerformanceOverviewCard
@@ -325,7 +325,7 @@ export const DashboardHome: React.FC = () => {
                 periodSuffix={periodSuffix}
               />
 
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-2 md:col-span-2 lg:col-span-1">
                 <AlertsPanel alerts={alertsConfig} />
                 <QuickActionsPanel
                   actions={quickActions}
