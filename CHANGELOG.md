@@ -6,6 +6,58 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-12-18 11:02:56
+
+### Changed Files
+- `CHANGELOG.md`
+- `PROJECT_STATS.md`
+- `src/features/settings/SettingsDashboard.tsx`
+- `src/features/settings/billing/BillingTab.tsx`
+- `src/features/settings/billing/components/CurrentPlanCard.tsx`
+- `src/features/settings/billing/components/PlanComparisonTable.tsx`
+- `src/features/settings/billing/components/UsageOverview.tsx`
+- `src/features/settings/billing/index.ts`
+- `src/hooks/admin/__tests__/useUsersView.role-based-filter.test.ts`
+- `src/hooks/subscription/index.ts`
+- `src/hooks/subscription/useSubscription.ts`
+- `src/hooks/subscription/useSubscriptionPlans.ts`
+- `src/hooks/subscription/useUsageTracking.ts`
+- `src/services/subscription/index.ts`
+- `src/services/subscription/subscriptionService.ts`
+- `src/types/database.types.ts`
+- `supabase/migrations/20251218_005_subscription_tiering_system.sql`
+- `tsconfig.tsbuildinfo`
+
+### Statistics
+```
+ 18 files changed, 2090 insertions(+), 15 deletions(-)
+```
+
+## [Checkpoint] - 2025-12-18 11:02:32
+
+### Changed Files
+- `src/features/settings/SettingsDashboard.tsx`
+- `src/features/settings/billing/BillingTab.tsx`
+- `src/features/settings/billing/components/CurrentPlanCard.tsx`
+- `src/features/settings/billing/components/PlanComparisonTable.tsx`
+- `src/features/settings/billing/components/UsageOverview.tsx`
+- `src/features/settings/billing/index.ts`
+- `src/hooks/admin/__tests__/useUsersView.role-based-filter.test.ts`
+- `src/hooks/subscription/index.ts`
+- `src/hooks/subscription/useSubscription.ts`
+- `src/hooks/subscription/useSubscriptionPlans.ts`
+- `src/hooks/subscription/useUsageTracking.ts`
+- `src/services/subscription/index.ts`
+- `src/services/subscription/subscriptionService.ts`
+- `src/types/database.types.ts`
+- `supabase/migrations/20251218_005_subscription_tiering_system.sql`
+- `tsconfig.tsbuildinfo`
+
+### Statistics
+```
+ 16 files changed, 2060 insertions(+), 10 deletions(-)
+```
+
 ## [Checkpoint] - 2025-12-18 08:14:30
 
 ### Changed Files

@@ -18,6 +18,9 @@ describe("useUsersView role-based filtering logic", () => {
     approval_status: "pending",
     is_admin: false,
 
+    // Required non-nullable fields with defaults
+    subscription_tier: "free",
+
     // All nullable fields set to null by default
     agent_status: null,
     approved_at: null,

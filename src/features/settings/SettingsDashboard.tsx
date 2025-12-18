@@ -1,12 +1,20 @@
 // src/features/settings/SettingsDashboard.tsx
 // Redesigned with zinc palette and compact design patterns
 
-import { User, Settings, Building2, Package, Percent } from "lucide-react";
+import {
+  User,
+  Settings,
+  Building2,
+  Package,
+  Percent,
+  CreditCard,
+} from "lucide-react";
 import { UserProfile } from "./components/UserProfile";
 import { CarriersManagement } from "./carriers/CarriersManagement";
 import { ProductsManagement } from "./products/ProductsManagement";
 import { CommissionRatesManagement } from "./commission-rates/CommissionRatesManagement";
 import { ConstantsManagement } from "./ConstantsManagement";
+import { BillingTab } from "./billing";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { usePermissionCheck } from "@/hooks/permissions/usePermissions";
 
@@ -37,8 +45,11 @@ export function SettingsDashboard() {
       </div>
 
       {/* Content area with tabs */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Tabs defaultValue={defaultTab} className="flex flex-col flex-1">
+      <div className="flex-1 flex flex-col min-h-0">
+        <Tabs
+          defaultValue={defaultTab}
+          className="flex flex-col flex-1 min-h-0"
+        >
           {/* Compact tabs */}
           <TabsList className="flex items-center gap-0.5 bg-zinc-200/50 dark:bg-zinc-800/50 rounded-md p-0.5 h-auto w-full">
             {canManageCarriers && (
@@ -80,32 +91,43 @@ export function SettingsDashboard() {
               <User className="h-3.5 w-3.5" />
               {canManageCarriers ? "Agents" : "Profile"}
             </TabsTrigger>
+            <TabsTrigger
+              value="billing"
+              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-[11px] font-medium rounded transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:shadow-sm data-[state=active]:text-zinc-900 dark:data-[state=active]:text-zinc-100 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
+            >
+              <CreditCard className="h-3.5 w-3.5" />
+              Billing
+            </TabsTrigger>
           </TabsList>
 
           {/* Tab content */}
-          <div className="flex-1 overflow-auto mt-2">
+          <div className="flex-1 overflow-y-auto mt-2">
             {canManageCarriers && (
               <>
-                <TabsContent value="carriers" className="mt-0 h-full">
+                <TabsContent value="carriers" className="mt-0">
                   <CarriersManagement />
                 </TabsContent>
 
-                <TabsContent value="products" className="mt-0 h-full">
+                <TabsContent value="products" className="mt-0">
                   <ProductsManagement />
                 </TabsContent>
 
-                <TabsContent value="rates" className="mt-0 h-full">
+                <TabsContent value="rates" className="mt-0">
                   <CommissionRatesManagement />
                 </TabsContent>
 
-                <TabsContent value="constants" className="mt-0 h-full">
+                <TabsContent value="constants" className="mt-0">
                   <ConstantsManagement />
                 </TabsContent>
               </>
             )}
 
-            <TabsContent value="agents" className="mt-0 h-full">
+            <TabsContent value="agents" className="mt-0">
               <UserProfile />
+            </TabsContent>
+
+            <TabsContent value="billing" className="mt-0">
+              <BillingTab />
             </TabsContent>
           </div>
         </Tabs>
