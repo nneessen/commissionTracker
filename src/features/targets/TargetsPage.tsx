@@ -298,9 +298,7 @@ export function TargetsPage() {
                         + Annual Expenses
                       </span>
                       <span className="font-mono text-zinc-900 dark:text-zinc-100">
-                        {formatCurrency(
-                          calculatedTargets.monthlyExpenseTarget * 12,
-                        )}
+                        {formatCurrency(calculatedTargets.annualExpenses)}
                       </span>
                     </div>
                     <div className="h-px bg-zinc-200 dark:bg-zinc-800 my-1" />
@@ -311,7 +309,7 @@ export function TargetsPage() {
                       <span className="font-mono font-bold text-zinc-900 dark:text-zinc-100">
                         {formatCurrency(
                           calculatedTargets.annualIncomeTarget +
-                            calculatedTargets.monthlyExpenseTarget * 12,
+                            calculatedTargets.annualExpenses,
                         )}
                       </span>
                     </div>
@@ -327,7 +325,7 @@ export function TargetsPage() {
                       <span className="font-mono text-zinc-900 dark:text-zinc-100">
                         {formatCurrency(
                           calculatedTargets.annualIncomeTarget +
-                            calculatedTargets.monthlyExpenseTarget * 12,
+                            calculatedTargets.annualExpenses,
                         )}
                       </span>
                     </div>
@@ -607,12 +605,10 @@ export function TargetsPage() {
                   <div className="h-px bg-zinc-200 dark:bg-zinc-800 my-1" />
                   <div className="flex justify-between text-[11px]">
                     <span className="text-zinc-500 dark:text-zinc-400">
-                      Annual Projection
+                      Annual Total
                     </span>
                     <span className="font-mono text-zinc-900 dark:text-zinc-100">
-                      {formatCurrency(
-                        calculatedTargets.monthlyExpenseTarget * 12,
-                      )}
+                      {formatCurrency(calculatedTargets.annualExpenses)}
                     </span>
                   </div>
                   <div className="flex justify-between text-[11px]">

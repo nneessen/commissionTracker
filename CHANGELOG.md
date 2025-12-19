@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-12-19 16:31:02
+
+### Changed Files
+- `src/features/targets/TargetsPage.tsx`
+- `src/features/targets/components/CalculationBreakdown.tsx`
+- `src/hooks/targets/useHistoricalAverages.ts`
+- `src/services/targets/targetsCalculationService.ts`
+
+### Statistics
+```
+ 4 files changed, 66 insertions(+), 18 deletions(-)
+```
+
 ## [Checkpoint] - 2025-12-19 16:02:21
 
 ### Changed Files

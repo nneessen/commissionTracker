@@ -41,6 +41,7 @@ export function useHistoricalAverages(): {
         avgPolicyPremium: 0,
         avgPoliciesPerMonth: 0,
         avgExpensesPerMonth: 0,
+        projectedAnnualExpenses: 0,
         persistency13Month: 0,
         persistency25Month: 0,
         hasData: false,
@@ -103,7 +104,7 @@ export function useHistoricalAverages(): {
           monthlyPolicyCounts.length
         : 0; // NO defaults - show zero if no data
 
-    // Calculate average monthly expenses
+    // Calculate average monthly expenses (for monthly display context)
     const monthlyExpenseTotals: number[] = [];
     for (let i = 0; i < 12; i++) {
       const monthStart = new Date(now.getFullYear(), now.getMonth() - i, 1);
@@ -128,6 +129,52 @@ export function useHistoricalAverages(): {
         ? monthlyExpenseTotals.reduce((sum, total) => sum + total, 0) /
           monthlyExpenseTotals.length
         : 0; // NO defaults - show zero if no expense data
+
+    // CRITICAL: Calculate projected annual expenses based on EXPENSE DEFINITIONS, not generated records
+    // The system auto-generates future records for recurring expenses, so we need to:
+    // 1. For recurring expenses: Calculate annual impact based on frequency (not sum generated records)
+    // 2. For one-time expenses: Just their face value
+
+    // Helper to calculate annual multiplier based on frequency
+    const getAnnualMultiplier = (frequency: string | null): number => {
+      switch (frequency) {
+        case "daily":
+          return 365;
+        case "weekly":
+          return 52;
+        case "biweekly":
+          return 26;
+        case "monthly":
+          return 12;
+        case "quarterly":
+          return 4;
+        case "semiannually":
+          return 2;
+        case "annually":
+          return 1;
+        default:
+          return 1; // One-time or unknown
+      }
+    };
+
+    // Group recurring expenses by their recurring_group_id to avoid counting generated records multiple times
+    const processedRecurringGroups = new Set<string>();
+    let projectedAnnualExpenses = 0;
+
+    for (const expense of expenses) {
+      if (expense.is_recurring && expense.recurring_group_id) {
+        // For recurring expenses, only count each group once
+        if (!processedRecurringGroups.has(expense.recurring_group_id)) {
+          processedRecurringGroups.add(expense.recurring_group_id);
+          const multiplier = getAnnualMultiplier(expense.recurring_frequency);
+          projectedAnnualExpenses += (expense.amount || 0) * multiplier;
+        }
+        // Skip duplicate records from the same recurring group
+      } else {
+        // One-time expense: just add its value (no multiplication)
+        projectedAnnualExpenses += expense.amount || 0;
+      }
+    }
 
     // Calculate persistency rates
     // 13-month persistency: policies still active after 13 months
@@ -169,6 +216,7 @@ export function useHistoricalAverages(): {
       avgPolicyPremium,
       avgPoliciesPerMonth,
       avgExpensesPerMonth,
+      projectedAnnualExpenses,
       persistency13Month,
       persistency25Month,
       hasData: true,

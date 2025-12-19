@@ -20,8 +20,9 @@ export function CalculationBreakdown({
   const expenseRatioPercent = (targets.expenseRatio * 100).toFixed(1);
 
   // Calculate gross commission needed (income + expenses)
-  const annualExpenses = targets.monthlyExpenseTarget * 12;
-  const grossCommissionNeeded = targets.annualIncomeTarget + annualExpenses;
+  // Use targets.annualExpenses which is the actual sum of expenses (not monthlyExpenseTarget * 12)
+  const grossCommissionNeeded =
+    targets.annualIncomeTarget + targets.annualExpenses;
 
   return (
     <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800">
@@ -79,7 +80,7 @@ export function CalculationBreakdown({
               </div>
               <div className="flex justify-between text-zinc-500 dark:text-zinc-400">
                 <span>+ Annual Business Expenses:</span>
-                <span>{formatCurrency(annualExpenses)}</span>
+                <span>{formatCurrency(targets.annualExpenses)}</span>
               </div>
               <div className="border-t border-zinc-200 dark:border-zinc-700 pt-1 flex justify-between font-semibold text-zinc-900 dark:text-zinc-100">
                 <span>= GROSS Commission Needed:</span>
