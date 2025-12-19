@@ -91,16 +91,17 @@ export default function AdminControlCenter() {
       });
 
   // Separate active agents from recruits based on ROLES
-  const activeAgents = hierarchyFilteredUsers?.filter(
-    (u: UserProfile) =>
-      u.roles?.includes("agent" as RoleName) || u.is_admin === true,
-  );
+  // A user is an "active agent" if they have 'agent' OR 'active_agent' role, OR is_admin
+  const isActiveAgent = (u: UserProfile) =>
+    u.roles?.includes("agent" as RoleName) ||
+    u.roles?.includes("active_agent" as RoleName) ||
+    u.is_admin === true;
 
+  const activeAgents = hierarchyFilteredUsers?.filter(isActiveAgent);
+
+  // Recruits are users who have neither 'agent' nor 'active_agent' role and are not admins
   const recruitsInPipeline =
-    hierarchyFilteredUsers?.filter(
-      (u: UserProfile) =>
-        !u.roles?.includes("agent" as RoleName) && u.is_admin !== true,
-    ) || [];
+    hierarchyFilteredUsers?.filter((u: UserProfile) => !isActiveAgent(u)) || [];
 
   // Calculate stats
   const totalUsers = activeAgents?.length || 0;

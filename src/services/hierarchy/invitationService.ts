@@ -499,17 +499,38 @@ class InvitationService {
         throw new Error("Not authenticated");
       }
 
-      let query = supabase
-        .from("hierarchy_invitations")
-        .select("*")
-        .eq("invitee_id", user.id)
-        .order("created_at", { ascending: false });
+      // Query by invitee_id OR by invitee_email (for invitations sent before user existed)
+      // We need to make two separate queries since Supabase doesn't support OR easily
+      const [byIdResult, byEmailResult] = await Promise.all([
+        supabase
+          .from("hierarchy_invitations")
+          .select("*")
+          .eq("invitee_id", user.id)
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("hierarchy_invitations")
+          .select("*")
+          .eq("invitee_email", user.email?.toLowerCase() || "")
+          .is("invitee_id", null) // Only get ones without invitee_id (created before user existed)
+          .order("created_at", { ascending: false }),
+      ]);
 
+      // Merge results, removing duplicates by id
+      const allInvitations = [
+        ...(byIdResult.data || []),
+        ...(byEmailResult.data || []),
+      ];
+      const uniqueInvitations = allInvitations.filter(
+        (inv, index, self) => index === self.findIndex((i) => i.id === inv.id),
+      );
+
+      // Apply status filter if provided
+      let invitations = uniqueInvitations;
       if (status) {
-        query = query.eq("status", status);
+        invitations = uniqueInvitations.filter((inv) => inv.status === status);
       }
 
-      const { data: invitations, error } = await query;
+      const error = byIdResult.error || byEmailResult.error;
 
       if (error) {
         throw new DatabaseError("getReceivedInvitations", error);

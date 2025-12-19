@@ -16,14 +16,18 @@ import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
 import { Label } from "../../../components/ui/label";
 import { Textarea } from "../../../components/ui/textarea";
-import {
-  Alert,
-  AlertDescription,
-  AlertTitle,
-} from "../../../components/ui/alert";
+import { Alert, AlertDescription } from "../../../components/ui/alert";
 import { useSendInvitation } from "../../../hooks/hierarchy/useInvitations";
 import { useTeamSizeLimit } from "../../../hooks/subscription";
-import { Loader2, Mail, Send, AlertTriangle, Crown, Users } from "lucide-react";
+import {
+  Loader2,
+  Mail,
+  Send,
+  AlertTriangle,
+  Crown,
+  Users,
+  MessageSquare,
+} from "lucide-react";
 
 const _sendInvitationSchema = z.object({
   invitee_email: z.string().email("Invalid email address"),
@@ -70,28 +74,28 @@ export function SendInvitationModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Mail className="h-5 w-5" />
-            Invite Agent to Your Downline
+      <DialogContent className="sm:max-w-[400px] p-0 gap-0">
+        {/* Header */}
+        <DialogHeader className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-700/50 bg-zinc-50 dark:bg-zinc-800/50">
+          <DialogTitle className="flex items-center gap-1.5 text-sm font-medium">
+            <Send className="h-3.5 w-3.5 text-zinc-500" />
+            Invite Agent to Downline
           </DialogTitle>
-          <DialogDescription>
-            Send an invitation by email. They must have a registered account to
-            accept.
+          <DialogDescription className="text-[11px] text-zinc-500 dark:text-zinc-400">
+            Send an email invitation to add someone to your team
           </DialogDescription>
         </DialogHeader>
 
         {/* Team size limit status */}
         {teamLimit && teamLimit.limit !== null && teamLimit.limit > 0 && (
-          <div className="flex items-center gap-2 text-xs text-muted-foreground pb-2 border-b">
-            <Users className="h-3.5 w-3.5" />
+          <div className="flex items-center gap-1.5 px-4 py-2 text-[10px] text-zinc-500 dark:text-zinc-400 border-b border-zinc-200 dark:border-zinc-700/50 bg-zinc-50/50 dark:bg-zinc-800/30">
+            <Users className="h-3 w-3" />
             <span>
-              Team: {teamLimit.current} / {teamLimit.limit} direct downlines
+              Team: {teamLimit.current} / {teamLimit.limit}
             </span>
             {teamLimit.remaining !== null && teamLimit.remaining > 0 && (
-              <span className="text-emerald-600">
-                ({teamLimit.remaining} remaining)
+              <span className="text-emerald-600 dark:text-emerald-400">
+                ({teamLimit.remaining} available)
               </span>
             )}
           </div>
@@ -99,39 +103,51 @@ export function SendInvitationModal({
 
         {/* Limit reached - block sending */}
         {isAtLimit && (
-          <Alert variant="destructive" className="mt-3">
-            <Crown className="h-4 w-4" />
-            <AlertTitle>Team Size Limit Reached</AlertTitle>
-            <AlertDescription className="space-y-2">
-              <p>
-                You've reached the maximum of {teamLimit?.limit} direct
-                downlines for your {teamLimit?.planName} plan.
-              </p>
-              <p>Upgrade to Team for unlimited team members.</p>
-              <Link to="/settings" search={{ tab: "billing" }}>
-                <Button size="sm" variant="outline" className="mt-2">
-                  <Crown className="h-3.5 w-3.5 mr-1.5" />
-                  View Plans
-                </Button>
-              </Link>
-            </AlertDescription>
-          </Alert>
+          <div className="mx-4 mt-3">
+            <Alert
+              variant="destructive"
+              className="py-2 px-3 border-red-500/30"
+            >
+              <div className="flex items-start gap-2">
+                <Crown className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-[11px] font-medium">
+                    Team Size Limit Reached
+                  </p>
+                  <p className="text-[10px] mt-0.5 opacity-80">
+                    Max {teamLimit?.limit} direct downlines on{" "}
+                    {teamLimit?.planName}
+                  </p>
+                  <Link to="/settings" search={{ tab: "billing" }}>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="mt-2 h-6 text-[10px] px-2"
+                    >
+                      <Crown className="h-2.5 w-2.5 mr-1" />
+                      Upgrade
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </Alert>
+          </div>
         )}
 
         {/* Warning - approaching limit */}
         {showWarning && (
-          <Alert className="mt-3 border-amber-500/50 bg-amber-50 dark:bg-amber-950/20">
-            <AlertTriangle className="h-4 w-4 text-amber-600" />
-            <AlertTitle className="text-amber-800 dark:text-amber-200">
-              Approaching Team Limit
-            </AlertTitle>
-            <AlertDescription className="text-amber-700 dark:text-amber-300">
-              You have {teamLimit?.remaining} spot
-              {teamLimit?.remaining === 1 ? "" : "s"} remaining on your{" "}
-              {teamLimit?.planName} plan. Consider upgrading to Team for
-              unlimited team members.
-            </AlertDescription>
-          </Alert>
+          <div className="mx-4 mt-3">
+            <Alert className="py-2 px-3 border-amber-500/30 bg-amber-50/50 dark:bg-amber-950/20">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="h-3.5 w-3.5 mt-0.5 text-amber-600 shrink-0" />
+                <AlertDescription className="text-[10px] text-amber-700 dark:text-amber-300">
+                  {teamLimit?.remaining} spot
+                  {teamLimit?.remaining === 1 ? "" : "s"} remaining on{" "}
+                  {teamLimit?.planName}
+                </AlertDescription>
+              </div>
+            </Alert>
+          </div>
         )}
 
         <form
@@ -141,31 +157,35 @@ export function SendInvitationModal({
             form.handleSubmit();
           }}
         >
-          <div className="grid gap-4 py-4">
+          <div className="p-4 space-y-3">
             {/* Email Field */}
             <form.Field name="invitee_email">
               {(field) => (
-                <div className="grid gap-2">
-                  <Label htmlFor="invitee_email" className="font-semibold">
-                    Email Address *
+                <div>
+                  <Label className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                    Email Address <span className="text-red-500">*</span>
                   </Label>
-                  <Input
-                    id="invitee_email"
-                    type="email"
-                    placeholder="agent@example.com"
-                    value={field.state.value}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                    onBlur={field.handleBlur}
-                    autoFocus
-                  />
+                  <div className="relative mt-1">
+                    <Mail className="absolute left-2 top-1.5 h-3 w-3 text-zinc-400" />
+                    <Input
+                      id="invitee_email"
+                      type="email"
+                      placeholder="agent@example.com"
+                      value={field.state.value}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      onBlur={field.handleBlur}
+                      autoFocus
+                      className="h-7 text-[11px] pl-7 bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700"
+                    />
+                  </div>
                   {field.state.meta.errors &&
                     field.state.meta.errors.length > 0 && (
-                      <p className="text-sm text-destructive">
+                      <p className="text-[10px] text-red-500 mt-0.5">
                         {field.state.meta.errors.join(", ")}
                       </p>
                     )}
-                  <p className="text-xs text-muted-foreground">
-                    The email must belong to a registered user
+                  <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-0.5">
+                    Invitation email will be sent automatically
                   </p>
                 </div>
               )}
@@ -174,46 +194,51 @@ export function SendInvitationModal({
             {/* Optional Message */}
             <form.Field name="message">
               {(field) => (
-                <div className="grid gap-2">
-                  <Label htmlFor="message" className="text-muted-foreground">
+                <div>
+                  <Label className="text-[11px] text-zinc-500 dark:text-zinc-400">
                     Message (optional)
                   </Label>
-                  <Textarea
-                    id="message"
-                    placeholder="Add a personal message to your invitation..."
-                    value={field.state.value}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                    onBlur={field.handleBlur}
-                    rows={3}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Optional message to include with your invitation
-                  </p>
+                  <div className="relative mt-1">
+                    <MessageSquare className="absolute left-2 top-2 h-3 w-3 text-zinc-400" />
+                    <Textarea
+                      id="message"
+                      placeholder="Add a personal message..."
+                      value={field.state.value}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      onBlur={field.handleBlur}
+                      rows={2}
+                      className="text-[11px] pl-7 pt-1.5 min-h-[52px] resize-none bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700"
+                    />
+                  </div>
                 </div>
               )}
             </form.Field>
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="px-4 py-3 border-t border-zinc-200 dark:border-zinc-700/50 bg-zinc-50/50 dark:bg-zinc-800/30">
             <Button
               type="button"
-              variant="outline"
+              variant="ghost"
+              size="sm"
               onClick={() => onOpenChange(false)}
               disabled={sendInvitationMutation.isPending}
+              className="h-7 text-[11px]"
             >
               Cancel
             </Button>
             <Button
               type="submit"
+              size="sm"
               disabled={
                 sendInvitationMutation.isPending || limitLoading || !!isAtLimit
               }
+              className="h-7 text-[11px]"
             >
               {(sendInvitationMutation.isPending || limitLoading) && (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className="mr-1.5 h-3 w-3 animate-spin" />
               )}
               {!sendInvitationMutation.isPending && !limitLoading && (
-                <Send className="mr-2 h-4 w-4" />
+                <Send className="mr-1.5 h-3 w-3" />
               )}
               {isAtLimit ? "Limit Reached" : "Send Invitation"}
             </Button>

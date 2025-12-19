@@ -1,5 +1,5 @@
 // src/features/admin/components/AddUserDialog.tsx
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -12,16 +12,23 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAllRolesWithPermissions } from "@/hooks/permissions/usePermissions";
 import { useAllUsers } from "@/hooks/admin/useUserApproval";
-import { Mail, User, Phone, Users } from "lucide-react";
+import { Mail, User, Phone, Users, Check, ChevronsUpDown } from "lucide-react";
+import { cn } from "@/lib/utils";
 import type { RoleName } from "@/types/permissions.types";
 import type { ApprovalStatus } from "@/types/user.types";
 
@@ -48,8 +55,8 @@ const INITIAL_FORM_DATA: NewUserData = {
   last_name: "",
   phone: "",
   upline_id: null,
-  roles: [],
-  approval_status: "approved",
+  roles: ["recruit"], // Default to recruit since approval_status defaults to "pending"
+  approval_status: "pending",
   onboarding_status: null,
 };
 
@@ -63,6 +70,7 @@ export default function AddUserDialog({
 
   const [formData, setFormData] = useState<NewUserData>(INITIAL_FORM_DATA);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [uplineOpen, setUplineOpen] = useState(false);
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -73,7 +81,7 @@ export default function AddUserDialog({
     }
     if (!formData.first_name) newErrors.first_name = "Required";
     if (!formData.last_name) newErrors.last_name = "Required";
-    if (formData.roles.length === 0) newErrors.roles = "Select at least one";
+    // Roles are auto-set by status toggle (agent/recruit), no need to validate
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -99,8 +107,18 @@ export default function AddUserDialog({
     }));
   };
 
-  const approvedUplines =
-    allUsers?.filter((u) => u.approval_status === "approved") ?? [];
+  // Only show approved users as potential uplines
+  const approvedUplines = useMemo(
+    () => allUsers?.filter((u) => u.approval_status === "approved") ?? [],
+    [allUsers],
+  );
+
+  // Get selected upline display name
+  const selectedUplineName = useMemo(() => {
+    if (!formData.upline_id) return null;
+    const upline = approvedUplines.find((u) => u.id === formData.upline_id);
+    return upline?.full_name || upline?.email || null;
+  }, [formData.upline_id, approvedUplines]);
 
   return (
     <Dialog
@@ -217,68 +235,122 @@ export default function AddUserDialog({
               <Label className="text-[11px] text-zinc-500 dark:text-zinc-400">
                 Upline
               </Label>
-              <div className="relative">
-                <Users className="absolute left-2 top-1.5 h-3 w-3 text-zinc-400 z-10" />
-                <Select
-                  value={formData.upline_id || "none"}
-                  onValueChange={(value) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      upline_id: value === "none" ? null : value,
-                    }))
-                  }
-                >
-                  <SelectTrigger className="h-7 text-[11px] pl-7 bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700">
-                    <SelectValue placeholder="None" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none" className="text-[11px]">
-                      No upline
-                    </SelectItem>
-                    {approvedUplines.map((user) => (
-                      <SelectItem
-                        key={user.id}
-                        value={user.id}
-                        className="text-[11px]"
-                      >
-                        {user.full_name || user.email}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              <Popover open={uplineOpen} onOpenChange={setUplineOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={uplineOpen}
+                    className="h-7 w-full justify-between text-[11px] pl-7 bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 font-normal"
+                  >
+                    <Users className="absolute left-2 h-3 w-3 text-zinc-400" />
+                    <span className="truncate">
+                      {selectedUplineName || "No upline"}
+                    </span>
+                    <ChevronsUpDown className="ml-1 h-3 w-3 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[250px] p-0 z-[100]" align="start">
+                  <Command>
+                    <CommandInput
+                      placeholder="Search upline..."
+                      className="h-8 text-[11px]"
+                    />
+                    <CommandList>
+                      <CommandEmpty className="py-3 text-[11px]">
+                        No user found.
+                      </CommandEmpty>
+                      <CommandGroup>
+                        <CommandItem
+                          value="none"
+                          onSelect={() => {
+                            setFormData((prev) => ({
+                              ...prev,
+                              upline_id: null,
+                            }));
+                            setUplineOpen(false);
+                          }}
+                          className="text-[11px]"
+                        >
+                          <Check
+                            className={cn(
+                              "mr-1.5 h-3 w-3",
+                              formData.upline_id === null
+                                ? "opacity-100"
+                                : "opacity-0",
+                            )}
+                          />
+                          No upline
+                        </CommandItem>
+                        {approvedUplines.map((user) => (
+                          <CommandItem
+                            key={user.id}
+                            value={user.full_name || user.email}
+                            onSelect={() => {
+                              setFormData((prev) => ({
+                                ...prev,
+                                upline_id: user.id,
+                              }));
+                              setUplineOpen(false);
+                            }}
+                            className="text-[11px]"
+                          >
+                            <Check
+                              className={cn(
+                                "mr-1.5 h-3 w-3",
+                                formData.upline_id === user.id
+                                  ? "opacity-100"
+                                  : "opacity-0",
+                              )}
+                            />
+                            {user.full_name || user.email}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
 
           {/* Roles - Compact Inline Checkboxes */}
+          {/* Filter out 'recruit' and 'active_agent' - these are managed by the status toggle */}
           <div>
             <Label className="text-[11px] text-zinc-500 dark:text-zinc-400">
-              Roles <span className="text-red-500">*</span>
+              Additional Roles
               {errors.roles && (
                 <span className="text-red-500 ml-1">({errors.roles})</span>
               )}
             </Label>
             <div className="flex flex-wrap gap-x-4 gap-y-1.5 mt-1.5 bg-zinc-100 dark:bg-zinc-800/50 p-2 rounded border border-zinc-200 dark:border-zinc-700/50">
-              {roles?.map((role) => (
-                <div key={role.id} className="flex items-center gap-1.5">
-                  <Checkbox
-                    id={`role-${role.id}`}
-                    checked={formData.roles.includes(role.name as RoleName)}
-                    onCheckedChange={() =>
-                      handleRoleToggle(role.name as RoleName)
-                    }
-                    className="h-3 w-3"
-                  />
-                  <Label
-                    htmlFor={`role-${role.id}`}
-                    className="cursor-pointer text-[11px] font-normal text-zinc-700 dark:text-zinc-300"
-                    title={role.description ?? undefined}
-                  >
-                    {role.display_name}
-                  </Label>
-                </div>
-              ))}
+              {roles
+                ?.filter(
+                  (role) => !["recruit", "active_agent"].includes(role.name),
+                )
+                .map((role) => (
+                  <div key={role.id} className="flex items-center gap-1.5">
+                    <Checkbox
+                      id={`role-${role.id}`}
+                      checked={formData.roles.includes(role.name as RoleName)}
+                      onCheckedChange={() =>
+                        handleRoleToggle(role.name as RoleName)
+                      }
+                      className="h-3 w-3"
+                    />
+                    <Label
+                      htmlFor={`role-${role.id}`}
+                      className="cursor-pointer text-[11px] font-normal text-zinc-700 dark:text-zinc-300"
+                      title={role.description ?? undefined}
+                    >
+                      {role.display_name}
+                    </Label>
+                  </div>
+                ))}
             </div>
+            <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-0.5">
+              Base role (agent/recruit) is set by status below
+            </p>
           </div>
 
           {/* Status Toggle Buttons */}
@@ -297,15 +369,21 @@ export default function AddUserDialog({
                 size="sm"
                 className="h-7 text-[10px]"
                 onClick={() =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    approval_status: "approved",
-                    onboarding_status: null,
-                    // Auto-add 'agent' role when selecting Approved (Agent) status
-                    roles: prev.roles.includes("agent" as RoleName)
-                      ? prev.roles
-                      : [...prev.roles, "agent" as RoleName],
-                  }))
+                  setFormData((prev) => {
+                    // Remove recruit role, add agent role
+                    const filteredRoles: RoleName[] = prev.roles.filter(
+                      (r) => r !== "recruit" && r !== "active_agent",
+                    );
+                    const hasAgent = filteredRoles.some((r) => r === "agent");
+                    return {
+                      ...prev,
+                      approval_status: "approved",
+                      onboarding_status: null,
+                      roles: hasAgent
+                        ? filteredRoles
+                        : [...filteredRoles, "agent" as RoleName],
+                    };
+                  })
                 }
               >
                 Approved (Agent)
@@ -318,10 +396,22 @@ export default function AddUserDialog({
                 size="sm"
                 className="h-7 text-[10px]"
                 onClick={() =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    approval_status: "pending",
-                  }))
+                  setFormData((prev) => {
+                    // Remove agent/active_agent roles, add recruit role
+                    const filteredRoles: RoleName[] = prev.roles.filter(
+                      (r) => r !== "agent" && r !== "active_agent",
+                    );
+                    const hasRecruit = filteredRoles.some(
+                      (r) => r === "recruit",
+                    );
+                    return {
+                      ...prev,
+                      approval_status: "pending",
+                      roles: hasRecruit
+                        ? filteredRoles
+                        : [...filteredRoles, "recruit" as RoleName],
+                    };
+                  })
                 }
               >
                 Pending (Recruit)

@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-12-19 08:01:12
+
+### Changed Files
+- `src/features/admin/components/AddUserDialog.tsx`
+- `src/features/admin/components/AdminControlCenter.tsx`
+- `src/features/hierarchy/components/SendInvitationModal.tsx`
+- `src/services/hierarchy/invitationService.ts`
+- `supabase/migrations/20251219_001_fix_handle_new_user_roles.sql`
+- `tsconfig.tsbuildinfo`
+
+### Statistics
+```
+ 6 files changed, 417 insertions(+), 173 deletions(-)
+```
+
 ## [Checkpoint] - 2025-12-18 19:05:23
 
 ### Changed Files
