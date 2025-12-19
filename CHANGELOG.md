@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-12-19 14:50:34
+
+### Changed Files
+- `src/features/messages/components/compose/ComposeDialog.tsx`
+- `src/features/messages/components/compose/ContactBrowser.tsx`
+- `src/features/messages/hooks/useContactBrowser.ts`
+- `src/features/messages/services/contactService.ts`
+
+### Statistics
+```
+ 4 files changed, 362 insertions(+), 284 deletions(-)
+```
+
 ## [Checkpoint] - 2025-12-19 14:03:35
 
 ### Changed Files

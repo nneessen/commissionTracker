@@ -58,7 +58,7 @@ export function useContactBrowser(options: UseContactBrowserOptions = {}) {
         f.favoritesOnly = true;
         break;
       case "team":
-        f.teamOnly = true; // Show only user's downlines
+        f.teamOnly = true; // Show full team tree from upline (siblings, cousins, downlines)
         break;
       // "all" shows all team members (default type: "team" above)
     }

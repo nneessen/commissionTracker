@@ -32,6 +32,40 @@ export interface PaginatedResult<T> {
 }
 
 // ============================================================================
+// HELPER: Get team root path for hierarchy visibility
+// ============================================================================
+
+/**
+ * Get the team root path for hierarchy visibility.
+ * Returns upline's path so agent can see siblings/cousins in the tree.
+ * This allows agents to email anyone in their upline's organization.
+ */
+async function getTeamRootPath(userId: string): Promise<string | null> {
+  const { data: profile } = await supabase
+    .from("user_profiles")
+    .select("hierarchy_path, upline_id")
+    .eq("id", userId)
+    .single();
+
+  if (!profile?.hierarchy_path) return null;
+
+  // If user has an upline, get upline's hierarchy_path
+  // This allows seeing the full team tree (siblings, cousins, etc.)
+  if (profile.upline_id) {
+    const { data: upline } = await supabase
+      .from("user_profiles")
+      .select("hierarchy_path")
+      .eq("id", profile.upline_id)
+      .single();
+
+    return upline?.hierarchy_path || profile.hierarchy_path;
+  }
+
+  // User is at root level, return their own path
+  return profile.hierarchy_path;
+}
+
+// ============================================================================
 // PAGINATED CONTACTS - Main function for contact browser
 // ============================================================================
 
@@ -66,17 +100,6 @@ export async function getPaginatedContacts(
       return getFavoriteContacts(userId, search, page, pageSize);
     }
 
-    // Get user's hierarchy path for team filtering
-    let hierarchyPath: string | null = null;
-    if (teamOnly) {
-      const { data: profile } = await supabase
-        .from("user_profiles")
-        .select("hierarchy_path")
-        .eq("id", userId)
-        .single();
-      hierarchyPath = profile?.hierarchy_path || null;
-    }
-
     // Query team members
     if (type === "all" || type === "team") {
       let teamQuery = supabase
@@ -85,7 +108,8 @@ export async function getPaginatedContacts(
           count: "exact",
         })
         .not("email", "is", null)
-        .eq("approval_status", "approved");
+        .eq("approval_status", "approved")
+        .neq("id", userId); // Exclude current user from results
 
       // Apply search filter
       if (search && search.length >= 2) {
@@ -100,9 +124,15 @@ export async function getPaginatedContacts(
         teamQuery = teamQuery.contains("roles", [role]);
       }
 
-      // Apply team filter (only downlines)
-      if (teamOnly && hierarchyPath) {
-        teamQuery = teamQuery.like("hierarchy_path", `${hierarchyPath}.%`);
+      // Apply team filter - show full team tree from upline (siblings, cousins, etc.)
+      if (teamOnly) {
+        const teamRootPath = await getTeamRootPath(userId);
+        if (teamRootPath) {
+          // Show upline + everyone under the team root
+          teamQuery = teamQuery.or(
+            `hierarchy_path.eq.${teamRootPath},hierarchy_path.like.${teamRootPath}.%`,
+          );
+        }
       }
 
       // Apply pagination for team-only queries
