@@ -137,23 +137,48 @@ export function TargetsPage() {
     return null;
   }
 
+  // Calculate target year (next year if in Q4)
+  const now = new Date();
+  const currentMonth = now.getMonth();
+  const isQ4 = currentMonth >= 9;
+  const targetYear = isQ4 ? now.getFullYear() + 1 : now.getFullYear();
+
   // First-time users: show only the dialog to set their initial target
   if (isFirstTime || !calculatedTargets) {
     return (
       <>
-        <div className="h-[calc(100vh-4rem)] flex flex-col items-center justify-center p-3 bg-zinc-50 dark:bg-zinc-950">
-          <div className="text-center max-w-md">
-            <Target className="h-12 w-12 mx-auto mb-4 text-zinc-400" />
-            <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100 mb-2">
-              Set Your Income Target
-            </h1>
-            <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-4">
-              Enter your annual net income goal to get started. We'll calculate
-              monthly and weekly targets for you.
-            </p>
-            <Button onClick={() => setShowInputDialog(true)}>
-              Set My Target
-            </Button>
+        <div className="h-[calc(100vh-4rem)] flex flex-col p-3 bg-zinc-50 dark:bg-zinc-950">
+          {/* Header Card - matches app styling */}
+          <div className="flex items-center justify-between bg-white dark:bg-zinc-900 rounded-lg px-3 py-2 border border-zinc-200 dark:border-zinc-800 mb-4">
+            <div className="flex items-center gap-2">
+              <Target className="h-4 w-4 text-zinc-900 dark:text-zinc-100" />
+              <h1 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                Income Targets {targetYear}
+              </h1>
+            </div>
+          </div>
+
+          {/* Welcome Content */}
+          <div className="flex-1 flex items-center justify-center">
+            <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-6 max-w-md text-center">
+              <div className="p-3 bg-blue-500/10 rounded-full w-fit mx-auto mb-4">
+                <Target className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+              </div>
+              <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-2">
+                Set Your {targetYear} Income Target
+              </h2>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-4">
+                Enter your annual net income goal to get started. We'll
+                automatically calculate monthly, weekly, and daily targets based
+                on your historical data.
+              </p>
+              <Button
+                onClick={() => setShowInputDialog(true)}
+                className="w-full"
+              >
+                Get Started
+              </Button>
+            </div>
           </div>
         </div>
         <TargetInputDialog
@@ -188,7 +213,7 @@ export function TargetsPage() {
             <Target className="h-4 w-4 text-zinc-900 dark:text-zinc-100" />
             <div>
               <h1 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-                Income Targets {new Date().getFullYear()}
+                Income Targets {targetYear}
               </h1>
               <p className="text-[10px] text-zinc-500 dark:text-zinc-400">
                 Based on{" "}

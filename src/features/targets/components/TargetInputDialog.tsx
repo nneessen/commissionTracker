@@ -35,7 +35,11 @@ export function TargetInputDialog({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>("");
 
-  const currentYear = new Date().getFullYear();
+  // If we're in Q4 (Oct-Dec), suggest next year's target
+  const now = new Date();
+  const currentMonth = now.getMonth(); // 0-indexed
+  const isQ4 = currentMonth >= 9; // October, November, December
+  const targetYear = isQ4 ? now.getFullYear() + 1 : now.getFullYear();
 
   const handleSubmit = async () => {
     const value = parseFloat(inputValue.replace(/,/g, ""));
@@ -95,13 +99,13 @@ export function TargetInputDialog({
             {isFirstTime ? (
               <>
                 Let's start by setting your commission income goal for{" "}
-                {currentYear}. Everything else will be calculated automatically
+                {targetYear}. Everything else will be calculated automatically
                 based on your historical data.
               </>
             ) : (
               <>
-                Enter your annual commission income target for {currentYear}.
-                All other metrics will be calculated automatically.
+                Enter your annual commission income target for {targetYear}. All
+                other metrics will be calculated automatically.
               </>
             )}
           </DialogDescription>
@@ -132,7 +136,7 @@ export function TargetInputDialog({
               htmlFor="annual-target"
               className="text-zinc-900 dark:text-zinc-100"
             >
-              Annual Commission Income Target for {currentYear}
+              Annual Commission Income Target for {targetYear}
             </Label>
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 dark:text-zinc-400">
