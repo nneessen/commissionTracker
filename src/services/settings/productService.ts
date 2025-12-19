@@ -109,13 +109,10 @@ class ProductService {
   }
 
   /**
-   * Delete a product (soft delete by setting is_active to false)
+   * Delete a product
    */
   async deleteProduct(id: string): Promise<void> {
-    const { error } = await this.client
-      .from("products")
-      .update({ is_active: false })
-      .eq("id", id);
+    const { error } = await this.client.from("products").delete().eq("id", id);
 
     if (error) throw error;
   }
