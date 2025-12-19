@@ -2,7 +2,11 @@
 // Hook to determine which dashboard features are available based on subscription tier
 
 import { useMemo } from "react";
-import { useSubscription } from "@/hooks/subscription";
+import {
+  useSubscription,
+  useOwnerDownlineAccess,
+  isOwnerDownlineGrantedFeature,
+} from "@/hooks/subscription";
 import { useAuth } from "@/contexts/AuthContext";
 
 // Admin emails that bypass all gating
@@ -35,10 +39,14 @@ export interface DashboardFeatures {
  * - Starter: + expenses, reports_view, targets_basic
  * - Pro: + reports_export, targets_full
  * - Team: Same as Pro for dashboard
+ *
+ * Direct downlines of owners get Team-tier features
  */
 export function useDashboardFeatures(): DashboardFeatures {
   const { subscription, isLoading } = useSubscription();
   const { supabaseUser } = useAuth();
+  const { isDirectDownlineOfOwner, isLoading: downlineLoading } =
+    useOwnerDownlineAccess();
 
   return useMemo(() => {
     // Check if user is admin (bypass all gating)
@@ -60,8 +68,8 @@ export function useDashboardFeatures(): DashboardFeatures {
       };
     }
 
-    // Still loading subscription data
-    if (isLoading) {
+    // Still loading subscription or downline data
+    if (isLoading || downlineLoading) {
       return {
         canViewExpenses: false,
         canAddExpense: false,
@@ -75,31 +83,54 @@ export function useDashboardFeatures(): DashboardFeatures {
       };
     }
 
-    // Get features from subscription plan
-    const features = subscription?.plan?.features;
-    const planName = subscription?.plan?.name?.toLowerCase() || "free";
+    // Helper to check feature access (subscription OR owner downline)
+    const hasFeature = (feature: string): boolean => {
+      // Check subscription plan
+      if (
+        subscription?.plan?.features?.[
+          feature as keyof typeof subscription.plan.features
+        ]
+      ) {
+        return true;
+      }
+      // Check owner downline access
+      if (isDirectDownlineOfOwner && isOwnerDownlineGrantedFeature(feature)) {
+        return true;
+      }
+      return false;
+    };
 
-    // Map plan name to tier type
-    const tier = (
+    // Get plan name for tier display
+    const planName = subscription?.plan?.name?.toLowerCase() || "free";
+    const baseTier = (
       ["free", "starter", "pro", "team"].includes(planName) ? planName : "free"
     ) as "free" | "starter" | "pro" | "team";
 
+    // If direct downline of owner, treat as team tier
+    const tier = isDirectDownlineOfOwner ? "team" : baseTier;
+
     return {
       // Expense features require 'expenses' feature flag
-      canViewExpenses: features?.expenses ?? false,
-      canAddExpense: features?.expenses ?? false,
+      canViewExpenses: hasFeature("expenses"),
+      canAddExpense: hasFeature("expenses"),
 
       // Report features
-      canViewReports: features?.reports_view ?? false,
-      canExportReports: features?.reports_export ?? false,
+      canViewReports: hasFeature("reports_view"),
+      canExportReports: hasFeature("reports_export"),
 
       // Target features
-      canViewBasicTargets: features?.targets_basic ?? false,
-      canViewFullTargets: features?.targets_full ?? false,
+      canViewBasicTargets: hasFeature("targets_basic"),
+      canViewFullTargets: hasFeature("targets_full"),
 
       tier,
       isLoading: false,
       isAdmin: false,
     };
-  }, [subscription, isLoading, supabaseUser?.email]);
+  }, [
+    subscription,
+    isLoading,
+    downlineLoading,
+    isDirectDownlineOfOwner,
+    supabaseUser?.email,
+  ]);
 }

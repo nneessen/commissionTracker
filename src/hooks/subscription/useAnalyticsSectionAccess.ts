@@ -3,6 +3,7 @@
 
 import { useMemo } from "react";
 import { useSubscription } from "./useSubscription";
+import { useOwnerDownlineAccess } from "./useOwnerDownlineAccess";
 
 // Analytics section identifiers that match database analytics_sections array
 export type AnalyticsSectionKey =
@@ -59,6 +60,8 @@ export interface UseAnalyticsSectionAccessResult {
  * Hook to check if the current user has access to a specific analytics section
  * based on their subscription plan.
  *
+ * Direct downlines of owners get access to ALL analytics sections.
+ *
  * @param section - The analytics section key to check access for
  * @returns Section access status and related metadata
  *
@@ -72,13 +75,26 @@ export function useAnalyticsSectionAccess(
   section: AnalyticsSectionKey,
 ): UseAnalyticsSectionAccessResult {
   const { subscription, isLoading, tierName } = useSubscription();
+  const { isDirectDownlineOfOwner, isLoading: downlineLoading } =
+    useOwnerDownlineAccess();
 
   return useMemo(() => {
-    if (isLoading) {
+    if (isLoading || downlineLoading) {
       return {
         hasAccess: false,
         isLoading: true,
         currentPlan: "Loading...",
+        requiredPlan: ANALYTICS_SECTION_TIERS[section],
+        sectionName: ANALYTICS_SECTION_NAMES[section],
+      };
+    }
+
+    // Direct downlines of owner get access to ALL analytics sections
+    if (isDirectDownlineOfOwner) {
+      return {
+        hasAccess: true,
+        isLoading: false,
+        currentPlan: "Team (via upline)",
         requiredPlan: ANALYTICS_SECTION_TIERS[section],
         sectionName: ANALYTICS_SECTION_NAMES[section],
       };
@@ -95,11 +111,20 @@ export function useAnalyticsSectionAccess(
       requiredPlan: ANALYTICS_SECTION_TIERS[section],
       sectionName: ANALYTICS_SECTION_NAMES[section],
     };
-  }, [subscription, isLoading, section, tierName]);
+  }, [
+    subscription,
+    isLoading,
+    downlineLoading,
+    isDirectDownlineOfOwner,
+    section,
+    tierName,
+  ]);
 }
 
 /**
  * Hook to get all accessible analytics sections for the current user.
+ *
+ * Direct downlines of owners get access to ALL analytics sections.
  *
  * @returns Object with accessible sections array and loading state
  */
@@ -110,6 +135,8 @@ export function useAccessibleAnalyticsSections(): {
   tierName: string;
 } {
   const { subscription, isLoading, tierName } = useSubscription();
+  const { isDirectDownlineOfOwner, isLoading: downlineLoading } =
+    useOwnerDownlineAccess();
 
   return useMemo(() => {
     const allSections: AnalyticsSectionKey[] = [
@@ -124,12 +151,22 @@ export function useAccessibleAnalyticsSections(): {
       "predictive_analytics",
     ];
 
-    if (isLoading) {
+    if (isLoading || downlineLoading) {
       return {
         accessibleSections: [],
         lockedSections: allSections,
         isLoading: true,
         tierName: "Loading...",
+      };
+    }
+
+    // Direct downlines of owner get access to ALL analytics sections
+    if (isDirectDownlineOfOwner) {
+      return {
+        accessibleSections: allSections,
+        lockedSections: [],
+        isLoading: false,
+        tierName: "Team (via upline)",
       };
     }
 
@@ -149,5 +186,11 @@ export function useAccessibleAnalyticsSections(): {
       isLoading: false,
       tierName,
     };
-  }, [subscription, isLoading, tierName]);
+  }, [
+    subscription,
+    isLoading,
+    downlineLoading,
+    isDirectDownlineOfOwner,
+    tierName,
+  ]);
 }
