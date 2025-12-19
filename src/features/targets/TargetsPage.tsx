@@ -132,8 +132,39 @@ export function TargetsPage() {
     );
   }
 
-  if (!targets || !calculatedTargets) {
+  // If targets exist but annual target is 0 (first time), show dialog only
+  if (!targets) {
     return null;
+  }
+
+  // First-time users: show only the dialog to set their initial target
+  if (isFirstTime || !calculatedTargets) {
+    return (
+      <>
+        <div className="h-[calc(100vh-4rem)] flex flex-col items-center justify-center p-3 bg-zinc-50 dark:bg-zinc-950">
+          <div className="text-center max-w-md">
+            <Target className="h-12 w-12 mx-auto mb-4 text-zinc-400" />
+            <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100 mb-2">
+              Set Your Income Target
+            </h1>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-4">
+              Enter your annual net income goal to get started. We'll calculate
+              monthly and weekly targets for you.
+            </p>
+            <Button onClick={() => setShowInputDialog(true)}>
+              Set My Target
+            </Button>
+          </div>
+        </div>
+        <TargetInputDialog
+          open={showInputDialog}
+          onClose={() => setShowInputDialog(false)}
+          onSave={handleSaveTarget}
+          currentTarget={annualTarget}
+          isFirstTime={isFirstTime}
+        />
+      </>
+    );
   }
 
   const _getProgress = (actual: number, target: number) => {
