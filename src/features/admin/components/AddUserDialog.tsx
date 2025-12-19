@@ -31,6 +31,7 @@ import { Mail, User, Phone, Users, Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { RoleName } from "@/types/permissions.types";
 import type { ApprovalStatus } from "@/types/user.types";
+import { getDisplayName } from "@/types/user.types";
 
 interface AddUserDialogProps {
   open: boolean;
@@ -117,7 +118,7 @@ export default function AddUserDialog({
   const selectedUplineName = useMemo(() => {
     if (!formData.upline_id) return null;
     const upline = approvedUplines.find((u) => u.id === formData.upline_id);
-    return upline?.full_name || upline?.email || null;
+    return upline ? getDisplayName(upline) : null;
   }, [formData.upline_id, approvedUplines]);
 
   return (
@@ -285,7 +286,7 @@ export default function AddUserDialog({
                         {approvedUplines.map((user) => (
                           <CommandItem
                             key={user.id}
-                            value={user.full_name || user.email}
+                            value={getDisplayName(user)}
                             onSelect={() => {
                               setFormData((prev) => ({
                                 ...prev,
@@ -303,7 +304,7 @@ export default function AddUserDialog({
                                   : "opacity-0",
                               )}
                             />
-                            {user.full_name || user.email}
+                            {getDisplayName(user)}
                           </CommandItem>
                         ))}
                       </CommandGroup>

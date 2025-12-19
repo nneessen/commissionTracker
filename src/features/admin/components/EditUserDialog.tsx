@@ -57,6 +57,7 @@ import {
 } from "lucide-react";
 import type { RoleName } from "@/types/permissions.types";
 import type { UserProfile } from "@/services/users/userService";
+import { getDisplayName } from "@/types/user.types";
 
 interface EditUserDialogProps {
   user: UserProfile | null;
@@ -537,7 +538,7 @@ export default function EditUserDialog({
                             value={u.id}
                             className="text-[11px]"
                           >
-                            {u.full_name || u.email}
+                            {getDisplayName(u)}
                           </SelectItem>
                         ))}
                       </SelectContent>

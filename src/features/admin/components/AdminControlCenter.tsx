@@ -53,6 +53,7 @@ import {
 } from "@/components/ui/select";
 import type { RoleName } from "@/types/permissions.types";
 import type { UserProfile } from "@/services/users/userService";
+import { getFullName, getDisplayName } from "@/types/user.types";
 
 export default function AdminControlCenter() {
   const [activeView, setActiveView] = useState<
@@ -121,9 +122,10 @@ export default function AdminControlCenter() {
   const filteredUsers = activeAgents?.filter((user: UserProfile) => {
     if (!searchQuery) return true;
     const query = searchQuery.toLowerCase();
+    const fullName = getFullName(user);
     return (
       user.email?.toLowerCase().includes(query) ||
-      user.full_name?.toLowerCase().includes(query)
+      fullName.toLowerCase().includes(query)
     );
   });
 
@@ -413,12 +415,12 @@ export default function AdminControlCenter() {
                         <TableCell className="py-1.5">
                           <div className="flex items-center gap-1.5">
                             <div className="h-5 w-5 rounded-full bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center text-[10px] font-semibold text-zinc-700 dark:text-zinc-300 shrink-0">
-                              {user.full_name?.charAt(0) ||
+                              {user.first_name?.charAt(0)?.toUpperCase() ||
                                 user.email?.charAt(0).toUpperCase()}
                             </div>
                             <div className="min-w-0">
                               <div className="font-medium text-[11px] text-zinc-900 dark:text-zinc-100 truncate leading-tight">
-                                {user.full_name || "No name"}
+                                {getDisplayName(user)}
                               </div>
                               <div className="text-[10px] text-zinc-500 dark:text-zinc-400 truncate leading-tight">
                                 {user.email}
@@ -493,10 +495,7 @@ export default function AdminControlCenter() {
                               variant="ghost"
                               className="h-5 px-1.5 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
                               onClick={() =>
-                                handleDeleteUser(
-                                  user.id,
-                                  user.full_name || user.email,
-                                )
+                                handleDeleteUser(user.id, getDisplayName(user))
                               }
                               title="Delete user"
                             >
