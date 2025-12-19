@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-12-19 09:36:18
+
+### Changed Files
+- `plans/active/fix-overrides-team-tabs.md`
+- `src/services/hierarchy/hierarchyService.ts`
+- `supabase/migrations/20251219_002_upline_visibility_rls.sql`
+- `supabase/migrations/20251219_003_fix_override_commissions_rls.sql`
+- `supabase/migrations/20251219_004_upline_view_downline_profiles.sql`
+
+### Statistics
+```
+ 5 files changed, 352 insertions(+), 4 deletions(-)
+```
+
 ## [Checkpoint] - 2025-12-19 08:01:12
 
 ### Changed Files

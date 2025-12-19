@@ -802,7 +802,7 @@ class HierarchyService {
         {
           agentId: agent.id,
           email: agent.email,
-          userId: agent.user_id,
+          userId: agent.id,
         },
         "HierarchyService",
       );
@@ -811,7 +811,7 @@ class HierarchyService {
       const { data: policies, error: policiesError } = await supabase
         .from("policies")
         .select("*")
-        .eq("user_id", agent.user_id) // Use user_id from profile, not the profile ID
+        .eq("user_id", agent.id) // Use profile id which IS the auth user id
         .order("effective_date", { ascending: false });
 
       if (policiesError) {
@@ -826,7 +826,7 @@ class HierarchyService {
         "Policies fetched",
         {
           count: policies?.length || 0,
-          agentUserId: agent.user_id,
+          agentUserId: agent.id,
         },
         "HierarchyService",
       );
@@ -849,7 +849,7 @@ class HierarchyService {
       const { data: recentPolicies, error: recentError } = await supabase
         .from("policies")
         .select("*")
-        .eq("user_id", agent.user_id) // Use user_id from profile, not the profile ID
+        .eq("user_id", agent.id) // Use profile id which IS the auth user id
         .order("created_at", { ascending: false })
         .limit(5);
 
