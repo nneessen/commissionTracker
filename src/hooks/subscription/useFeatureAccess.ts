@@ -122,16 +122,6 @@ export function useFeatureAccess(feature: FeatureKey): UseFeatureAccessResult {
 
     const hasAccess = hasSubscriptionAccess || hasOwnerDownlineAccess;
 
-    // Debug log for troubleshooting
-    console.log("[useFeatureAccess]", {
-      feature,
-      isDirectDownlineOfOwner,
-      isGrantedFeature: isOwnerDownlineGrantedFeature(feature),
-      hasSubscriptionAccess,
-      hasOwnerDownlineAccess,
-      hasAccess,
-    });
-
     return {
       hasAccess,
       isLoading: false,
