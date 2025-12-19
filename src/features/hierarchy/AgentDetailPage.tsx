@@ -1,10 +1,9 @@
 // src/features/hierarchy/AgentDetailPage.tsx
 
-import React, { useState } from "react";
+import { useState } from "react";
 import { useParams, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import {
-  Target,
   AlertCircle,
   ArrowLeft,
   Mail,
@@ -15,13 +14,10 @@ import {
   DollarSign,
   TrendingUp,
   Users,
+  Edit,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Progress as _Progress } from "@/components/ui/progress";
-import { Separator } from "@/components/ui/separator";
 import {
   Table,
   TableBody,
@@ -40,6 +36,9 @@ export function AgentDetailPage() {
   const { agentId } = useParams({ from: "/hierarchy/agent/$agentId" });
   const navigate = useNavigate();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<
+    "policies" | "commissions" | "overrides" | "team"
+  >("policies");
 
   // Fetch comprehensive agent data
   const { data: agentData, isLoading: loadingAgent } = useQuery({
@@ -59,7 +58,7 @@ export function AgentDetailPage() {
     enabled: !!agentId,
   });
 
-  const { data: overrides, isLoading: _loadingOverrides } = useQuery({
+  const { data: overrides } = useQuery({
     queryKey: ["agent-overrides", agentId],
     queryFn: () => hierarchyService.getAgentOverrides(agentId),
     enabled: !!agentId,
@@ -74,7 +73,7 @@ export function AgentDetailPage() {
   if (loadingAgent) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-sm text-muted-foreground">
+        <div className="text-[11px] text-zinc-500 dark:text-zinc-400">
           Loading agent details...
         </div>
       </div>
@@ -84,11 +83,14 @@ export function AgentDetailPage() {
   if (!agentData) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] gap-2">
-        <AlertCircle className="h-8 w-8 text-muted-foreground" />
-        <div className="text-sm text-muted-foreground">Agent not found</div>
+        <AlertCircle className="h-6 w-6 text-zinc-400" />
+        <div className="text-[11px] text-zinc-500 dark:text-zinc-400">
+          Agent not found
+        </div>
         <Button
           variant="outline"
           size="sm"
+          className="h-6 text-[10px] px-2"
           onClick={() => navigate({ to: "/hierarchy" })}
         >
           Back to Team
@@ -99,556 +101,585 @@ export function AgentDetailPage() {
 
   // Calculate additional metrics
   const policyList = policies?.policies || [];
-  const mtdMetrics = {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- policy data type
-    policies: policyList.filter((p: any) => {
-      const pDate = new Date(p.issueDate);
-      const now = new Date();
-      return (
-        pDate.getMonth() === now.getMonth() &&
-        pDate.getFullYear() === now.getFullYear()
-      );
-    }).length,
+  const now = new Date();
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
 
-    premium: policyList
-      .filter((p: any) => {
-        const pDate = new Date(p.issueDate);
-        const now = new Date();
-        return (
-          pDate.getMonth() === now.getMonth() &&
-          pDate.getFullYear() === now.getFullYear()
-        );
-      })
-      .reduce((sum: number, p: any) => sum + (p.annualPremium || 0), 0),
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const mtdPolicies = policyList.filter((p: any) => {
+    const pDate = new Date(p.issueDate);
+    return (
+      pDate.getMonth() === currentMonth && pDate.getFullYear() === currentYear
+    );
+  });
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const ytdPolicies = policyList.filter((p: any) => {
+    const pDate = new Date(p.issueDate);
+    return pDate.getFullYear() === currentYear;
+  });
+
+  const mtdMetrics = {
+    policies: mtdPolicies.length,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    premium: mtdPolicies.reduce(
+      (sum: number, p: any) => sum + (p.annualPremium || 0),
+      0,
+    ),
   };
 
   const ytdMetrics = {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- policy data type
-    policies: policyList.filter((p: any) => {
-      const pDate = new Date(p.issueDate);
-      const now = new Date();
-      return pDate.getFullYear() === now.getFullYear();
-    }).length,
-
-    premium: policyList
-      .filter((p: any) => {
-        const pDate = new Date(p.issueDate);
-        const now = new Date();
-        return pDate.getFullYear() === now.getFullYear();
-      })
-      .reduce((sum: number, p: any) => sum + (p.annualPremium || 0), 0),
+    policies: ytdPolicies.length,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    premium: ytdPolicies.reduce(
+      (sum: number, p: any) => sum + (p.annualPremium || 0),
+      0,
+    ),
   };
 
+  // FIXED: Correct commission metrics mapping
   const commissionMetrics = {
-    total: commissions?.totalEarned || 0,
-    earned: commissions?.paid || 0,
-    unearned: commissions?.pending || 0,
+    advances: commissions?.advances || 0,
+    earned: commissions?.totalEarned || 0,
+    unearned: commissions?.unearned || 0,
     chargebacks: commissions?.chargebacks || 0,
   };
 
   const overrideMetrics = {
-    total: overrides?.mtd || 0,
+    mtd: overrides?.mtd || 0,
     ytd: overrides?.ytd || 0,
   };
 
+  const agentName =
+    agentData.first_name && agentData.last_name
+      ? `${agentData.first_name} ${agentData.last_name}`
+      : agentData.email;
+
   return (
-    <div className="container mx-auto p-2 space-y-2">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
+    <div className="h-[calc(100vh-4rem)] flex flex-col p-3 space-y-2.5 bg-zinc-50 dark:bg-zinc-950">
+      {/* Compact Header with inline stats */}
+      <div className="flex items-center justify-between bg-white dark:bg-zinc-900 rounded-lg px-3 py-2 border border-zinc-200 dark:border-zinc-800">
+        <div className="flex items-center gap-4">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => navigate({ to: "/hierarchy" })}
-            className="h-7 px-2"
+            className="h-6 px-2 text-[10px] text-zinc-600 dark:text-zinc-400"
           >
-            <ArrowLeft className="h-3 w-3 mr-0.5" />
+            <ArrowLeft className="h-3 w-3 mr-1" />
             Back
           </Button>
-          <Separator orientation="vertical" className="h-5" />
-          <h1 className="text-sm font-semibold">Agent Details</h1>
-        </div>
-        <div className="flex gap-2">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => {
-              // TODO: Integrate with email system when ready
-              showToast.success(
-                `Message feature coming soon for ${agentData.email}`,
-              );
-            }}
-          >
-            <Mail className="h-3 w-3 mr-1" />
-            Send Message
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setIsEditModalOpen(true)}
-          >
-            Edit Profile
-          </Button>
-        </div>
-      </div>
+          <div className="h-3 w-px bg-zinc-200 dark:bg-zinc-700" />
 
-      {/* Agent Info Card */}
-      <Card>
-        <CardContent className="p-2">
-          <div className="flex items-start justify-between">
-            <div className="flex gap-2">
-              <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
-                <User className="h-5 w-5 text-muted-foreground" />
-              </div>
-              <div className="space-y-0.5">
-                <h2 className="text-sm font-semibold">
-                  {agentData.first_name && agentData.last_name
-                    ? `${agentData.first_name} ${agentData.last_name}`
-                    : agentData.email}
-                </h2>
-                <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
-                  <span className="flex items-center gap-1">
-                    <Mail className="h-3 w-3" />
-                    {agentData.email}
-                  </span>
-                  {agentData.phone && (
-                    <span className="flex items-center gap-1">
-                      <Phone className="h-3 w-3" />
+          {/* Agent info inline */}
+          <div className="flex items-center gap-2">
+            <div className="h-7 w-7 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center">
+              <User className="h-3.5 w-3.5 text-zinc-500 dark:text-zinc-400" />
+            </div>
+            <div>
+              <h1 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                {agentName}
+              </h1>
+              <div className="flex items-center gap-2 text-[10px] text-zinc-500 dark:text-zinc-400">
+                <span className="flex items-center gap-0.5">
+                  <Mail className="h-2.5 w-2.5" />
+                  {agentData.email}
+                </span>
+                {agentData.phone && (
+                  <>
+                    <span className="text-zinc-300 dark:text-zinc-600">|</span>
+                    <span className="flex items-center gap-0.5">
+                      <Phone className="h-2.5 w-2.5" />
                       {agentData.phone}
                     </span>
-                  )}
-                  {agentData.state && (
-                    <span className="flex items-center gap-1">
-                      <MapPin className="h-3 w-3" />
+                  </>
+                )}
+                {agentData.state && (
+                  <>
+                    <span className="text-zinc-300 dark:text-zinc-600">|</span>
+                    <span className="flex items-center gap-0.5">
+                      <MapPin className="h-2.5 w-2.5" />
                       {agentData.state}
                     </span>
-                  )}
-                </div>
-                <div className="flex items-center gap-2 pt-1">
-                  <Badge variant="outline" className="text-[10px]">
-                    Contract Level {agentData.contract_level || 100}
-                  </Badge>
-                  {agentData.current_onboarding_phase && (
-                    <Badge variant="outline" className="text-[10px]">
-                      {agentData.current_onboarding_phase}
-                    </Badge>
-                  )}
-                  {agentData.approval_status === "approved" ? (
-                    <Badge className="bg-emerald-500/10 text-emerald-600 text-[10px]">
-                      Active
-                    </Badge>
-                  ) : (
-                    <Badge className="bg-yellow-500/10 text-yellow-600 text-[10px]">
-                      {agentData.approval_status}
-                    </Badge>
-                  )}
-                </div>
+                  </>
+                )}
               </div>
-            </div>
-            <div className="text-right space-y-1">
-              <div className="text-xs text-muted-foreground">
-                Joined {formatDate(agentData.created_at)}
-              </div>
-              {agentData.uplineEmail && (
-                <div className="text-xs text-muted-foreground">
-                  Upline: {agentData.uplineEmail}
-                </div>
-              )}
-              {agentData.license_number && (
-                <div className="text-xs text-muted-foreground">
-                  License: {agentData.license_number}
-                </div>
-              )}
             </div>
           </div>
-        </CardContent>
-      </Card>
 
-      {/* Performance Metrics Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-        <Card>
-          <CardContent className="p-2">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[10px] text-muted-foreground">
-                  MTD Policies
-                </p>
-                <p className="text-sm font-bold">{mtdMetrics.policies}</p>
-              </div>
-              <FileCheck className="h-3 w-3 text-muted-foreground" />
-            </div>
-          </CardContent>
-        </Card>
+          <div className="h-3 w-px bg-zinc-200 dark:bg-zinc-700" />
 
-        <Card>
-          <CardContent className="p-2">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[10px] text-muted-foreground">MTD Premium</p>
-                <p className="text-sm font-bold">
-                  {formatCurrency(mtdMetrics.premium)}
-                </p>
-              </div>
-              <DollarSign className="h-3 w-3 text-muted-foreground" />
+          {/* Inline compact stats */}
+          <div className="flex items-center gap-3 text-[11px]">
+            <Badge
+              variant="outline"
+              className="text-[10px] h-5 px-1.5 border-zinc-300 dark:border-zinc-600"
+            >
+              Level {agentData.contract_level || 80}%
+            </Badge>
+            {agentData.approval_status === "approved" ? (
+              <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300 text-[10px] h-5 px-1.5">
+                Active
+              </Badge>
+            ) : (
+              <Badge className="bg-yellow-100 text-yellow-700 dark:bg-yellow-900/50 dark:text-yellow-300 text-[10px] h-5 px-1.5">
+                {agentData.approval_status}
+              </Badge>
+            )}
+            <div className="h-3 w-px bg-zinc-200 dark:bg-zinc-700" />
+            <div className="flex items-center gap-1">
+              <FileCheck className="h-3 w-3 text-zinc-400" />
+              <span className="font-medium text-zinc-900 dark:text-zinc-100">
+                {mtdMetrics.policies}
+              </span>
+              <span className="text-zinc-500 dark:text-zinc-400">MTD</span>
             </div>
-          </CardContent>
-        </Card>
+            <div className="h-3 w-px bg-zinc-200 dark:bg-zinc-700" />
+            <div className="flex items-center gap-1">
+              <DollarSign className="h-3 w-3 text-emerald-500" />
+              <span className="font-medium text-zinc-900 dark:text-zinc-100">
+                {formatCurrency(mtdMetrics.premium)}
+              </span>
+            </div>
+            <div className="h-3 w-px bg-zinc-200 dark:bg-zinc-700" />
+            <div className="flex items-center gap-1">
+              <TrendingUp className="h-3 w-3 text-blue-500" />
+              <span className="font-medium text-zinc-900 dark:text-zinc-100">
+                {ytdMetrics.policies}
+              </span>
+              <span className="text-zinc-500 dark:text-zinc-400">YTD</span>
+            </div>
+          </div>
+        </div>
 
-        <Card>
-          <CardContent className="p-2">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[10px] text-muted-foreground">
-                  YTD Policies
-                </p>
-                <p className="text-sm font-bold">{ytdMetrics.policies}</p>
-              </div>
-              <Target className="h-3 w-3 text-muted-foreground" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-2">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[10px] text-muted-foreground">YTD Premium</p>
-                <p className="text-sm font-bold">
-                  {formatCurrency(ytdMetrics.premium)}
-                </p>
-              </div>
-              <TrendingUp className="h-3 w-3 text-muted-foreground" />
-            </div>
-          </CardContent>
-        </Card>
+        <div className="flex items-center gap-1">
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-6 px-2 text-[10px] text-zinc-600 dark:text-zinc-400"
+            onClick={() =>
+              showToast.success(
+                `Message feature coming soon for ${agentData.email}`,
+              )
+            }
+          >
+            <Mail className="h-3 w-3 mr-1" />
+            Message
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-6 px-2 text-[10px] text-zinc-600 dark:text-zinc-400"
+            onClick={() => setIsEditModalOpen(true)}
+          >
+            <Edit className="h-3 w-3 mr-1" />
+            Edit
+          </Button>
+        </div>
       </div>
 
-      {/* Detailed Tabs */}
-      <Tabs defaultValue="policies" className="space-y-2">
-        <TabsList className="grid grid-cols-4 w-full max-w-md h-8">
-          <TabsTrigger value="policies" className="text-[10px]">
-            Policies
-          </TabsTrigger>
-          <TabsTrigger value="commissions" className="text-[10px]">
-            Commissions
-          </TabsTrigger>
-          <TabsTrigger value="overrides" className="text-[10px]">
-            Overrides
-          </TabsTrigger>
-          <TabsTrigger value="team" className="text-[10px]">
-            Team
-          </TabsTrigger>
-        </TabsList>
+      {/* Compact tabs */}
+      <div className="flex items-center gap-0.5 bg-zinc-200/50 dark:bg-zinc-800/50 rounded-md p-0.5 w-fit">
+        <button
+          onClick={() => setActiveTab("policies")}
+          className={cn(
+            "flex items-center justify-center gap-1.5 px-3 py-1.5 text-[11px] font-medium rounded transition-all",
+            activeTab === "policies"
+              ? "bg-white dark:bg-zinc-900 shadow-sm text-zinc-900 dark:text-zinc-100"
+              : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300",
+          )}
+        >
+          <FileCheck className="h-3.5 w-3.5" />
+          Policies
+        </button>
+        <button
+          onClick={() => setActiveTab("commissions")}
+          className={cn(
+            "flex items-center justify-center gap-1.5 px-3 py-1.5 text-[11px] font-medium rounded transition-all",
+            activeTab === "commissions"
+              ? "bg-white dark:bg-zinc-900 shadow-sm text-zinc-900 dark:text-zinc-100"
+              : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300",
+          )}
+        >
+          <DollarSign className="h-3.5 w-3.5" />
+          Commissions
+        </button>
+        <button
+          onClick={() => setActiveTab("overrides")}
+          className={cn(
+            "flex items-center justify-center gap-1.5 px-3 py-1.5 text-[11px] font-medium rounded transition-all",
+            activeTab === "overrides"
+              ? "bg-white dark:bg-zinc-900 shadow-sm text-zinc-900 dark:text-zinc-100"
+              : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300",
+          )}
+        >
+          <TrendingUp className="h-3.5 w-3.5" />
+          Overrides
+        </button>
+        <button
+          onClick={() => setActiveTab("team")}
+          className={cn(
+            "flex items-center justify-center gap-1.5 px-3 py-1.5 text-[11px] font-medium rounded transition-all",
+            activeTab === "team"
+              ? "bg-white dark:bg-zinc-900 shadow-sm text-zinc-900 dark:text-zinc-100"
+              : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300",
+          )}
+        >
+          <Users className="h-3.5 w-3.5" />
+          Team
+        </button>
+      </div>
 
+      {/* Content area */}
+      <div className="flex-1 overflow-auto">
         {/* Policies Tab */}
-        <TabsContent value="policies" className="space-y-2">
-          <Card>
-            <CardHeader className="pb-2 pt-2">
-              <CardTitle className="text-xs">Policy History</CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="text-[10px]">Policy #</TableHead>
-                      <TableHead className="text-[10px]">Product</TableHead>
-                      <TableHead className="text-[10px]">Carrier</TableHead>
-                      <TableHead className="text-[10px]">Effective</TableHead>
-                      <TableHead className="text-[10px]">Premium</TableHead>
-                      <TableHead className="text-[10px]">Status</TableHead>
+        {activeTab === "policies" && (
+          <div className="rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
+            <Table>
+              <TableHeader className="sticky top-0 bg-zinc-50 dark:bg-zinc-800/50 z-10">
+                <TableRow className="border-b border-zinc-200 dark:border-zinc-800 hover:bg-transparent">
+                  <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300">
+                    Policy #
+                  </TableHead>
+                  <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300">
+                    Product
+                  </TableHead>
+                  <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300">
+                    Carrier
+                  </TableHead>
+                  <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300">
+                    Effective
+                  </TableHead>
+                  <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300 text-right">
+                    Premium
+                  </TableHead>
+                  <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300">
+                    Status
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {loadingPolicies ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={6}
+                      className="text-center text-[11px] text-zinc-500 dark:text-zinc-400 py-8"
+                    >
+                      Loading policies...
+                    </TableCell>
+                  </TableRow>
+                ) : policyList.length === 0 ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={6}
+                      className="text-center text-[11px] text-zinc-500 dark:text-zinc-400 py-8"
+                    >
+                      No policies found
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  policyList.map((policy: any) => (
+                    <TableRow
+                      key={policy.id}
+                      className="hover:bg-zinc-50 dark:hover:bg-zinc-800/50 border-b border-zinc-100 dark:border-zinc-800/50"
+                    >
+                      <TableCell className="py-1.5 text-[11px] font-mono text-zinc-900 dark:text-zinc-100">
+                        {policy.policyNumber}
+                      </TableCell>
+                      <TableCell className="py-1.5 text-[11px] text-zinc-900 dark:text-zinc-100">
+                        {policy.product}
+                      </TableCell>
+                      <TableCell className="py-1.5 text-[11px] text-zinc-900 dark:text-zinc-100">
+                        {policy.carrier}
+                      </TableCell>
+                      <TableCell className="py-1.5 text-[11px] text-zinc-900 dark:text-zinc-100">
+                        {formatDate(policy.issueDate)}
+                      </TableCell>
+                      <TableCell className="py-1.5 text-[11px] font-semibold text-zinc-900 dark:text-zinc-100 text-right">
+                        {formatCurrency(policy.annualPremium)}
+                      </TableCell>
+                      <TableCell className="py-1.5">
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            "text-[9px] h-4 px-1",
+                            policy.status === "active" &&
+                              "text-emerald-600 border-emerald-300 dark:border-emerald-700",
+                            policy.status === "lapsed" &&
+                              "text-yellow-600 border-yellow-300 dark:border-yellow-700",
+                            policy.status === "cancelled" &&
+                              "text-red-600 border-red-300 dark:border-red-700",
+                          )}
+                        >
+                          {policy.status}
+                        </Badge>
+                      </TableCell>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {loadingPolicies ? (
-                      <TableRow>
-                        <TableCell
-                          colSpan={6}
-                          className="text-center text-xs text-muted-foreground"
-                        >
-                          Loading policies...
-                        </TableCell>
-                      </TableRow>
-                    ) : policyList.length === 0 ? (
-                      <TableRow>
-                        <TableCell
-                          colSpan={6}
-                          className="text-center text-xs text-muted-foreground"
-                        >
-                          No policies found
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- policy data type
-                      policyList.slice(0, 10).map((policy: any) => (
-                        <TableRow key={policy.id}>
-                          <TableCell className="text-[11px] font-mono">
-                            {policy.policyNumber}
-                          </TableCell>
-                          <TableCell className="text-[11px]">
-                            {policy.product}
-                          </TableCell>
-                          <TableCell className="text-[11px]">
-                            {policy.carrier}
-                          </TableCell>
-                          <TableCell className="text-[11px]">
-                            {formatDate(policy.issueDate)}
-                          </TableCell>
-                          <TableCell className="text-[11px] font-semibold">
-                            {formatCurrency(policy.annualPremium)}
-                          </TableCell>
-                          <TableCell>
-                            <Badge
-                              variant="outline"
-                              className={cn(
-                                "text-[9px]",
-                                policy.status === "active" &&
-                                  "text-emerald-600",
-                                policy.status === "lapsed" && "text-yellow-600",
-                                policy.status === "cancelled" && "text-red-600",
-                              )}
-                            >
-                              {policy.status}
-                            </Badge>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        )}
 
         {/* Commissions Tab */}
-        <TabsContent value="commissions" className="space-y-2">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-1">
-            <Card>
-              <CardContent className="p-1.5">
-                <p className="text-[10px] text-muted-foreground">Total</p>
-                <p className="text-sm font-bold">
-                  {formatCurrency(commissionMetrics.total)}
-                </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-1.5">
-                <p className="text-[10px] text-muted-foreground">Earned</p>
-                <p className="text-sm font-bold text-emerald-600">
-                  {formatCurrency(commissionMetrics.earned)}
-                </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-1.5">
-                <p className="text-[10px] text-muted-foreground">Unearned</p>
-                <p className="text-sm font-bold text-yellow-600">
-                  {formatCurrency(commissionMetrics.unearned)}
-                </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-1.5">
-                <p className="text-[10px] text-muted-foreground">Chargebacks</p>
-                <p className="text-sm font-bold text-red-600">
-                  {formatCurrency(commissionMetrics.chargebacks)}
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-
-          <Card>
-            <CardHeader className="pb-2 pt-2">
-              <CardTitle className="text-xs">Commission History</CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="text-[10px]">Date</TableHead>
-                      <TableHead className="text-[10px]">Type</TableHead>
-                      <TableHead className="text-[10px]">Policy</TableHead>
-                      <TableHead className="text-[10px]">Amount</TableHead>
-                      <TableHead className="text-[10px]">Earned</TableHead>
-                      <TableHead className="text-[10px]">Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {loadingCommissions ? (
-                      <TableRow>
-                        <TableCell
-                          colSpan={6}
-                          className="text-center text-xs text-muted-foreground"
-                        >
-                          Loading commissions...
-                        </TableCell>
-                      </TableRow>
-                    ) : !commissions?.recent ||
-                      commissions.recent.length === 0 ? (
-                      <TableRow>
-                        <TableCell
-                          colSpan={6}
-                          className="text-center text-xs text-muted-foreground"
-                        >
-                          No commissions found
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- commission data type
-                      commissions.recent.map((commission: any) => (
-                        <TableRow key={commission.id}>
-                          <TableCell className="text-[11px]">
-                            {formatDate(commission.date)}
-                          </TableCell>
-                          <TableCell className="text-[11px]">
-                            {commission.type}
-                          </TableCell>
-                          <TableCell className="text-[11px] font-mono">
-                            {commission.policyNumber}
-                          </TableCell>
-                          <TableCell className="text-[11px] font-semibold">
-                            {formatCurrency(commission.amount)}
-                          </TableCell>
-                          <TableCell className="text-[11px]">
-                            {formatCurrency(commission.amount * 0.2)}{" "}
-                            {/* Estimate 20% earned */}
-                          </TableCell>
-                          <TableCell>
-                            <Badge
-                              variant="outline"
-                              className={cn(
-                                "text-[9px]",
-                                commission.status === "paid" &&
-                                  "text-emerald-600",
-                                commission.status === "pending" &&
-                                  "text-yellow-600",
-                              )}
-                            >
-                              {commission.status}
-                            </Badge>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
+        {activeTab === "commissions" && (
+          <div className="space-y-2">
+            {/* Inline commission stats header */}
+            <div className="flex items-center justify-between bg-white dark:bg-zinc-900 rounded-lg px-3 py-2 border border-zinc-200 dark:border-zinc-800">
+              <div className="flex items-center gap-4 text-[11px]">
+                <div className="flex items-center gap-1">
+                  <span className="text-zinc-500 dark:text-zinc-400">
+                    Advances:
+                  </span>
+                  <span className="font-semibold text-zinc-900 dark:text-zinc-100">
+                    {formatCurrency(commissionMetrics.advances)}
+                  </span>
+                </div>
+                <div className="h-3 w-px bg-zinc-200 dark:bg-zinc-700" />
+                <div className="flex items-center gap-1">
+                  <span className="text-zinc-500 dark:text-zinc-400">
+                    Earned:
+                  </span>
+                  <span className="font-semibold text-emerald-600">
+                    {formatCurrency(commissionMetrics.earned)}
+                  </span>
+                </div>
+                <div className="h-3 w-px bg-zinc-200 dark:bg-zinc-700" />
+                <div className="flex items-center gap-1">
+                  <span className="text-zinc-500 dark:text-zinc-400">
+                    Unearned:
+                  </span>
+                  <span className="font-semibold text-yellow-600">
+                    {formatCurrency(commissionMetrics.unearned)}
+                  </span>
+                </div>
+                <div className="h-3 w-px bg-zinc-200 dark:bg-zinc-700" />
+                <div className="flex items-center gap-1">
+                  <span className="text-zinc-500 dark:text-zinc-400">
+                    Chargebacks:
+                  </span>
+                  <span className="font-semibold text-red-600">
+                    {formatCurrency(commissionMetrics.chargebacks)}
+                  </span>
+                </div>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+            </div>
+
+            {/* Commission table */}
+            <div className="rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
+              <Table>
+                <TableHeader className="sticky top-0 bg-zinc-50 dark:bg-zinc-800/50 z-10">
+                  <TableRow className="border-b border-zinc-200 dark:border-zinc-800 hover:bg-transparent">
+                    <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300">
+                      Date
+                    </TableHead>
+                    <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300">
+                      Type
+                    </TableHead>
+                    <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300">
+                      Policy
+                    </TableHead>
+                    <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300 text-right">
+                      Advance
+                    </TableHead>
+                    <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300 text-right">
+                      Earned
+                    </TableHead>
+                    <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300 text-right">
+                      Unearned
+                    </TableHead>
+                    <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300 text-center">
+                      Progress
+                    </TableHead>
+                    <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300">
+                      Status
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {loadingCommissions ? (
+                    <TableRow>
+                      <TableCell
+                        colSpan={8}
+                        className="text-center text-[11px] text-zinc-500 dark:text-zinc-400 py-8"
+                      >
+                        Loading commissions...
+                      </TableCell>
+                    </TableRow>
+                  ) : !commissions?.recent ||
+                    commissions.recent.length === 0 ? (
+                    <TableRow>
+                      <TableCell
+                        colSpan={8}
+                        className="text-center text-[11px] text-zinc-500 dark:text-zinc-400 py-8"
+                      >
+                        No commissions found
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    commissions.recent.map((commission: any) => (
+                      <TableRow
+                        key={commission.id}
+                        className="hover:bg-zinc-50 dark:hover:bg-zinc-800/50 border-b border-zinc-100 dark:border-zinc-800/50"
+                      >
+                        <TableCell className="py-1.5 text-[11px] text-zinc-900 dark:text-zinc-100">
+                          {formatDate(commission.date)}
+                        </TableCell>
+                        <TableCell className="py-1.5 text-[11px] text-zinc-900 dark:text-zinc-100 capitalize">
+                          {commission.type}
+                        </TableCell>
+                        <TableCell className="py-1.5 text-[11px] font-mono text-zinc-900 dark:text-zinc-100">
+                          {commission.policyNumber}
+                        </TableCell>
+                        <TableCell className="py-1.5 text-[11px] font-semibold text-zinc-900 dark:text-zinc-100 text-right">
+                          {formatCurrency(commission.amount)}
+                        </TableCell>
+                        <TableCell className="py-1.5 text-[11px] font-semibold text-emerald-600 text-right">
+                          {formatCurrency(commission.earnedAmount || 0)}
+                        </TableCell>
+                        <TableCell className="py-1.5 text-[11px] text-yellow-600 text-right">
+                          {formatCurrency(commission.unearnedAmount || 0)}
+                        </TableCell>
+                        <TableCell className="py-1.5 text-[11px] text-zinc-500 dark:text-zinc-400 text-center">
+                          {commission.monthsPaid || 0}/
+                          {commission.advanceMonths || 9} mo
+                        </TableCell>
+                        <TableCell className="py-1.5">
+                          <Badge
+                            variant="outline"
+                            className={cn(
+                              "text-[9px] h-4 px-1",
+                              commission.status === "paid" &&
+                                "text-emerald-600 border-emerald-300 dark:border-emerald-700",
+                              commission.status === "pending" &&
+                                "text-yellow-600 border-yellow-300 dark:border-yellow-700",
+                            )}
+                          >
+                            {commission.status}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        )}
 
         {/* Overrides Tab */}
-        <TabsContent value="overrides" className="space-y-2">
-          <div className="grid grid-cols-2 gap-2 mb-2">
-            <Card>
-              <CardContent className="p-2">
-                <p className="text-[10px] text-muted-foreground">
-                  MTD Overrides
-                </p>
-                <p className="text-sm font-bold text-emerald-600">
-                  {formatCurrency(overrideMetrics.total)}
-                </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-2">
-                <p className="text-[10px] text-muted-foreground">
-                  YTD Overrides
-                </p>
-                <p className="text-sm font-bold text-emerald-600">
-                  {formatCurrency(overrideMetrics.ytd)}
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-          <Card>
-            <CardHeader className="pb-2 pt-2">
-              <CardTitle className="text-xs">
-                Override Commission Summary
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {overrideMetrics.total > 0 ? (
+        {activeTab === "overrides" && (
+          <div className="space-y-2">
+            {/* Inline override stats header */}
+            <div className="flex items-center justify-between bg-white dark:bg-zinc-900 rounded-lg px-3 py-2 border border-zinc-200 dark:border-zinc-800">
+              <div className="flex items-center gap-4 text-[11px]">
+                <div className="flex items-center gap-1">
+                  <span className="text-zinc-500 dark:text-zinc-400">
+                    MTD Overrides:
+                  </span>
+                  <span className="font-semibold text-emerald-600">
+                    {formatCurrency(overrideMetrics.mtd)}
+                  </span>
+                </div>
+                <div className="h-3 w-px bg-zinc-200 dark:bg-zinc-700" />
+                <div className="flex items-center gap-1">
+                  <span className="text-zinc-500 dark:text-zinc-400">
+                    YTD Overrides:
+                  </span>
+                  <span className="font-semibold text-emerald-600">
+                    {formatCurrency(overrideMetrics.ytd)}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-4">
+              {overrideMetrics.mtd > 0 || overrideMetrics.ytd > 0 ? (
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between text-xs">
-                    <span>MTD Override Income:</span>
-                    <span className="font-bold text-emerald-600">
-                      {formatCurrency(overrideMetrics.total)}
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="text-zinc-500 dark:text-zinc-400">
+                      MTD Override Income:
+                    </span>
+                    <span className="font-semibold text-emerald-600">
+                      {formatCurrency(overrideMetrics.mtd)}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between text-xs">
-                    <span>YTD Override Income:</span>
-                    <span className="font-bold text-emerald-600">
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="text-zinc-500 dark:text-zinc-400">
+                      YTD Override Income:
+                    </span>
+                    <span className="font-semibold text-emerald-600">
                       {formatCurrency(overrideMetrics.ytd)}
                     </span>
                   </div>
                 </div>
               ) : (
-                <p className="text-xs text-muted-foreground text-center py-4">
+                <p className="text-[11px] text-zinc-500 dark:text-zinc-400 text-center py-4">
                   No override commissions yet
                 </p>
               )}
-            </CardContent>
-          </Card>
-        </TabsContent>
+            </div>
+          </div>
+        )}
 
-        {/* Team Tab - Shows this agent's direct reports */}
-        <TabsContent value="team" className="space-y-2">
-          {teamComparison?.directReports?.length > 0 ? (
-            <div className="space-y-2">
-              {/* Team Summary */}
-              <div className="grid grid-cols-3 gap-2">
-                <Card>
-                  <CardContent className="p-2">
-                    <p className="text-[10px] text-muted-foreground">
-                      Direct Reports
-                    </p>
-                    <p className="text-sm font-bold">
-                      {teamComparison.totalMembers}
-                    </p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="p-2">
-                    <p className="text-[10px] text-muted-foreground">
-                      Team Policies
-                    </p>
-                    <p className="text-sm font-bold">
-                      {teamComparison.totalPolicies}
-                    </p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="p-2">
-                    <p className="text-[10px] text-muted-foreground">
-                      Team Premium
-                    </p>
-                    <p className="text-sm font-bold text-emerald-600">
-                      {formatCurrency(teamComparison.totalPremium)}
-                    </p>
-                  </CardContent>
-                </Card>
-              </div>
+        {/* Team Tab */}
+        {activeTab === "team" && (
+          <div className="space-y-2">
+            {teamComparison?.directReports?.length > 0 ? (
+              <>
+                {/* Inline team stats header */}
+                <div className="flex items-center justify-between bg-white dark:bg-zinc-900 rounded-lg px-3 py-2 border border-zinc-200 dark:border-zinc-800">
+                  <div className="flex items-center gap-4 text-[11px]">
+                    <div className="flex items-center gap-1">
+                      <Users className="h-3 w-3 text-zinc-400" />
+                      <span className="font-semibold text-zinc-900 dark:text-zinc-100">
+                        {teamComparison.totalMembers}
+                      </span>
+                      <span className="text-zinc-500 dark:text-zinc-400">
+                        direct reports
+                      </span>
+                    </div>
+                    <div className="h-3 w-px bg-zinc-200 dark:bg-zinc-700" />
+                    <div className="flex items-center gap-1">
+                      <FileCheck className="h-3 w-3 text-zinc-400" />
+                      <span className="font-semibold text-zinc-900 dark:text-zinc-100">
+                        {teamComparison.totalPolicies}
+                      </span>
+                      <span className="text-zinc-500 dark:text-zinc-400">
+                        team policies
+                      </span>
+                    </div>
+                    <div className="h-3 w-px bg-zinc-200 dark:bg-zinc-700" />
+                    <div className="flex items-center gap-1">
+                      <DollarSign className="h-3 w-3 text-emerald-500" />
+                      <span className="font-semibold text-emerald-600">
+                        {formatCurrency(teamComparison.totalPremium)}
+                      </span>
+                      <span className="text-zinc-500 dark:text-zinc-400">
+                        team premium
+                      </span>
+                    </div>
+                  </div>
+                </div>
 
-              {/* Team Members Table */}
-              <Card>
-                <CardHeader className="pb-2 pt-2">
-                  <CardTitle className="text-xs">Direct Reports</CardTitle>
-                </CardHeader>
-                <CardContent className="p-0">
+                {/* Team table */}
+                <div className="rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
                   <Table>
-                    <TableHeader>
-                      <TableRow className="text-[10px]">
-                        <TableHead className="h-7 px-2">Agent</TableHead>
-                        <TableHead className="h-7 px-2 text-right">
+                    <TableHeader className="sticky top-0 bg-zinc-50 dark:bg-zinc-800/50 z-10">
+                      <TableRow className="border-b border-zinc-200 dark:border-zinc-800 hover:bg-transparent">
+                        <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300">
+                          Agent
+                        </TableHead>
+                        <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300 text-right">
                           Level
                         </TableHead>
-                        <TableHead className="h-7 px-2 text-right">
+                        <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300 text-right">
                           Policies
                         </TableHead>
-                        <TableHead className="h-7 px-2 text-right">
+                        <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300 text-right">
                           Premium
                         </TableHead>
                       </TableRow>
@@ -663,19 +694,20 @@ export function AgentDetailPage() {
                           policies: number;
                           premium: number;
                         }) => (
-                          <TableRow key={member.id} className="text-xs">
-                            <TableCell className="py-1 px-2">
-                              <div className="truncate max-w-[120px]">
-                                {member.name}
-                              </div>
+                          <TableRow
+                            key={member.id}
+                            className="hover:bg-zinc-50 dark:hover:bg-zinc-800/50 border-b border-zinc-100 dark:border-zinc-800/50"
+                          >
+                            <TableCell className="py-1.5 text-[11px] text-zinc-900 dark:text-zinc-100">
+                              {member.name}
                             </TableCell>
-                            <TableCell className="py-1 px-2 text-right">
+                            <TableCell className="py-1.5 text-[11px] text-zinc-900 dark:text-zinc-100 text-right">
                               {member.contractLevel}%
                             </TableCell>
-                            <TableCell className="py-1 px-2 text-right">
+                            <TableCell className="py-1.5 text-[11px] text-zinc-900 dark:text-zinc-100 text-right">
                               {member.policies}
                             </TableCell>
-                            <TableCell className="py-1 px-2 text-right font-medium">
+                            <TableCell className="py-1.5 text-[11px] font-semibold text-zinc-900 dark:text-zinc-100 text-right">
                               {formatCurrency(member.premium)}
                             </TableCell>
                           </TableRow>
@@ -683,21 +715,19 @@ export function AgentDetailPage() {
                       )}
                     </TableBody>
                   </Table>
-                </CardContent>
-              </Card>
-            </div>
-          ) : (
-            <Card>
-              <CardContent className="p-6 text-center">
-                <Users className="h-6 w-6 text-muted-foreground mx-auto mb-2" />
-                <p className="text-xs text-muted-foreground">
+                </div>
+              </>
+            ) : (
+              <div className="rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-6 text-center">
+                <Users className="h-5 w-5 text-zinc-400 mx-auto mb-2" />
+                <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
                   No direct reports
                 </p>
-              </CardContent>
-            </Card>
-          )}
-        </TabsContent>
-      </Tabs>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* Edit Agent Modal */}
       <EditAgentModal

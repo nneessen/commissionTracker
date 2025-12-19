@@ -1004,14 +1004,22 @@ class HierarchyService {
         { totalEarned: 0, pending: 0, paid: 0, advances: 0, chargebacks: 0 },
       );
 
+      // Calculate unearned = advances - totalEarned
+      const unearned = Math.max(0, metrics.advances - metrics.totalEarned);
+
       return {
         ...metrics,
+        unearned,
         recent: (commissions || []).slice(0, 10).map((c) => ({
           id: c.id,
           date: c.created_at || new Date().toISOString(),
           policyNumber: c.policy?.policy_number || "N/A",
           type: c.type,
-          amount: c.amount,
+          amount: parseFloat(String(c.amount) || "0"),
+          earnedAmount: parseFloat(String(c.earned_amount) || "0"),
+          unearnedAmount: parseFloat(String(c.unearned_amount) || "0"),
+          monthsPaid: c.months_paid || 0,
+          advanceMonths: c.advance_months || 9,
           status: c.status,
         })),
       };
