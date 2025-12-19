@@ -1,15 +1,15 @@
 # Project Statistics
 
-Last Updated: 2025-12-19 12:00:55
+Last Updated: 2025-12-19 14:03:35
 
 ## Metrics
-- Total Files: 28393
-- Total Lines of Code: 123663
-- Total Commits: 382
+- Total Files: 28394
+- Total Lines of Code: 124118
+- Total Commits: 389
 
 ## Recent Activity
-dd90724 docs: CHANGELOG.md,PROJECT_STATS.md,20251219_001_fix_contract_level_and_earned_propagation.sql
-ce84ae9 fix(security): filter policies page to show only user's own policies
-343bf37 docs: multiple changes in .,plans/active,src/services/hierarchy
-7267ee2 docs: multiple changes in .,src/features/admin/components,src/features/hierarchy/components
-ea3a2f1 refactor: extract table names to centralized tables.ts module
+f99f07f chore: remove debug console.log from useFeatureAccess
+84b51d9 feat(targets): use 2026 target year in Q4 and improve welcome screen styling
+c97c932 debug: add console log to useFeatureAccess for troubleshooting
+31e51c7 fix(targets): show welcome screen for first-time users instead of blank page
+9a4b750 fix(subscription): add owner downline access to dashboard and analytics hooks
