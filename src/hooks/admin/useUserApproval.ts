@@ -226,3 +226,38 @@ export function useUpdateContractLevel() {
     },
   });
 }
+
+/**
+ * Hook to delete a user (admin only)
+ * CRITICAL: Properly invalidates all related queries to update UI after deletion
+ */
+export function useDeleteUser() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (userId: string) => userApprovalService.delete(userId),
+    onSuccess: () => {
+      // Invalidate ALL user-related queries
+      queryClient.invalidateQueries({ queryKey: userApprovalKeys.all });
+      queryClient.invalidateQueries({ queryKey: userApprovalKeys.allUsers() });
+      queryClient.invalidateQueries({
+        queryKey: userApprovalKeys.pendingUsers(),
+      });
+      queryClient.invalidateQueries({ queryKey: userApprovalKeys.stats() });
+      queryClient.invalidateQueries({ queryKey: ["users-paginated"] });
+      queryClient.invalidateQueries({ queryKey: ["users-metrics"] });
+
+      // CRITICAL: Invalidate hierarchy/team queries so deleted user disappears from lists
+      queryClient.invalidateQueries({ queryKey: ["hierarchy"] });
+      queryClient.invalidateQueries({ queryKey: ["hierarchyTree"] });
+      queryClient.invalidateQueries({ queryKey: ["hierarchyStats"] });
+      queryClient.invalidateQueries({ queryKey: ["downlines"] });
+      queryClient.invalidateQueries({ queryKey: ["myDownlines"] });
+      queryClient.invalidateQueries({ queryKey: ["downlinePerformance"] });
+      queryClient.invalidateQueries({ queryKey: ["allDownlinePerformance"] });
+      queryClient.invalidateQueries({ queryKey: ["teamComparison"] });
+      queryClient.invalidateQueries({ queryKey: ["agentDetails"] });
+      queryClient.invalidateQueries({ queryKey: ["agentTeam"] });
+    },
+  });
+}

@@ -24,7 +24,7 @@ import {
   PendingApproval,
   DeniedAccess,
 } from "./features/auth";
-import { ReportsPage } from "./features/reports";
+import { ReportsDashboard } from "./features/reports";
 import AdminControlCenter from "./features/admin/components/AdminControlCenter";
 // PermissionGuard reserved for future granular route permissions
 // import { PermissionGuard } from "./components/auth/PermissionGuard";
@@ -179,7 +179,7 @@ const reportsRoute = createRoute({
       noRecruits
       subscriptionFeature="reports_view"
     >
-      <ReportsPage />
+      <ReportsDashboard />
     </RouteGuard>
   ),
 });

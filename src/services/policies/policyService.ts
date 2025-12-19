@@ -20,6 +20,21 @@ import {
 } from "../events/workflowEventEmitter";
 
 /**
+ * Get the current authenticated user's ID
+ * CRITICAL: Used to filter policies to only the current user's data
+ */
+async function getCurrentUserId(): Promise<string | null> {
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
+  if (error || !user) {
+    return null;
+  }
+  return user.id;
+}
+
+/**
  * Service layer for policies - handles business logic
  * Uses PolicyRepository for all data access
  */
@@ -28,9 +43,11 @@ class PolicyService {
 
   /**
    * Get all policies ordered by creation date
+   * CRITICAL: Filters to only current user's policies
    */
   async getAll(): Promise<Policy[]> {
-    return this.repository.findAll();
+    const userId = await getCurrentUserId();
+    return this.repository.findAll({ userId: userId || undefined });
   }
 
   /**
@@ -131,13 +148,19 @@ class PolicyService {
 
   /**
    * Get policies filtered by various criteria
+   * CRITICAL: Filters to only current user's policies
    * Note: For simple filters, prefer using this method for server-side filtering
    * For complex client-side operations, use hooks with client-side filtering
    */
   async getFiltered(filters: PolicyFilters): Promise<Policy[]> {
+    // Get current user ID to filter policies
+    const userId = await getCurrentUserId();
+
     // Build filtered query - delegate to repository for complex filters
-    // For now, do client-side filtering for simplicity
-    const allPolicies = await this.repository.findAll();
+    // Pass userId to ensure we only get current user's policies
+    const allPolicies = await this.repository.findAll({
+      userId: userId || undefined,
+    });
 
     return allPolicies.filter((policy) => {
       if (filters.status && policy.status !== filters.status) return false;
@@ -164,6 +187,7 @@ class PolicyService {
 
   /**
    * Get paginated policies with filters and sorting
+   * CRITICAL: Filters to only current user's policies
    * @param page - Current page number (1-based)
    * @param pageSize - Number of items per page
    * @param filters - Optional filters to apply
@@ -176,6 +200,9 @@ class PolicyService {
     filters?: PolicyFilters,
     sortConfig?: { field: string; direction: "asc" | "desc" },
   ): Promise<Policy[]> {
+    // Get current user ID to filter policies
+    const userId = await getCurrentUserId();
+
     // Convert PolicyFilters to repository filter format
     const repoFilters = filters
       ? {
@@ -193,6 +220,7 @@ class PolicyService {
       pageSize,
       orderBy: sortConfig?.field || "created_at",
       orderDirection: sortConfig?.direction || ("desc" as const),
+      userId: userId || undefined, // CRITICAL: Filter to current user's policies
     };
 
     return this.repository.findAll(options, repoFilters);
@@ -200,10 +228,14 @@ class PolicyService {
 
   /**
    * Get count of policies matching filters
+   * CRITICAL: Filters to only current user's policies
    * @param filters - Optional filters to apply
    * @returns Total count of matching policies
    */
   async getCount(filters?: PolicyFilters): Promise<number> {
+    // Get current user ID to filter policies
+    const userId = await getCurrentUserId();
+
     // Convert PolicyFilters to repository filter format
     const repoFilters = filters
       ? {
@@ -216,11 +248,12 @@ class PolicyService {
         }
       : undefined;
 
-    return this.repository.countPolicies(repoFilters);
+    return this.repository.countPolicies(repoFilters, userId || undefined);
   }
 
   /**
    * Get aggregate metrics for policies matching filters
+   * CRITICAL: Filters to only current user's policies
    * Returns totals across ALL matching policies (not just current page)
    * @param filters - Optional filters to apply
    * @returns Aggregate metrics including counts, premiums, and YTD data
@@ -236,6 +269,9 @@ class PolicyService {
     ytdPolicies: number;
     ytdPremium: number;
   }> {
+    // Get current user ID to filter policies
+    const userId = await getCurrentUserId();
+
     // Convert PolicyFilters to repository filter format
     const repoFilters = filters
       ? {
@@ -248,7 +284,10 @@ class PolicyService {
         }
       : undefined;
 
-    return this.repository.getAggregateMetrics(repoFilters);
+    return this.repository.getAggregateMetrics(
+      repoFilters,
+      userId || undefined,
+    );
   }
 
   /**

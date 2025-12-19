@@ -35,7 +35,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAllRolesWithPermissions } from "@/hooks/permissions/usePermissions";
-import { useAllUsers } from "@/hooks/admin/useUserApproval";
+import { useAllUsers, useDeleteUser } from "@/hooks/admin/useUserApproval";
 import {
   userApprovalService,
   VALID_CONTRACT_LEVELS,
@@ -96,6 +96,7 @@ export default function EditUserDialog({
   const queryClient = useQueryClient();
   const { data: roles } = useAllRolesWithPermissions();
   const { data: allUsers } = useAllUsers();
+  const deleteUserMutation = useDeleteUser();
 
   const [formData, setFormData] = useState<EditableUserData>({
     first_name: "",
@@ -295,6 +296,7 @@ export default function EditUserDialog({
     setIsDeleting(true);
 
     try {
+      // Step 1: Reassign downlines if needed
       if (downlineCount > 0 && reassignUplineId) {
         const { data, error } = await supabase
           .from("user_profiles")
@@ -308,18 +310,30 @@ export default function EditUserDialog({
         showToast.success(`Reassigned ${data?.length || 0} downline(s)`);
       }
 
-      const result = await userApprovalService.deleteUser(user.id);
-
-      if (result.success) {
-        showToast.success("User permanently deleted");
-        queryClient.invalidateQueries({ queryKey: ["userApproval"] });
-        queryClient.invalidateQueries({ queryKey: ["recruits"] });
-        setShowDeleteConfirm(false);
-        onOpenChange(false);
-        onDeleted?.();
-      } else {
-        showToast.error(result.error || "Failed to delete user");
-      }
+      // Step 2: Delete user using mutation hook for proper cache invalidation
+      deleteUserMutation.mutate(user.id, {
+        onSuccess: (result) => {
+          if (result.success) {
+            showToast.success("User permanently deleted");
+            // Query invalidation is handled by the mutation hook
+            setShowDeleteConfirm(false);
+            onOpenChange(false);
+            onDeleted?.();
+          } else {
+            showToast.error(result.error || "Failed to delete user");
+          }
+          setIsDeleting(false);
+        },
+        onError: (error) => {
+          showToast.error(
+            error instanceof Error
+              ? error.message
+              : "An error occurred while deleting",
+          );
+          console.error("Delete error:", error);
+          setIsDeleting(false);
+        },
+      });
     } catch (error) {
       showToast.error(
         error instanceof Error
@@ -327,7 +341,6 @@ export default function EditUserDialog({
           : "An error occurred while deleting",
       );
       console.error("Delete error:", error);
-    } finally {
       setIsDeleting(false);
     }
   };
@@ -345,11 +358,13 @@ export default function EditUserDialog({
             email: user.email,
             redirectTo: `${window.location.origin}/auth/callback?type=recovery`,
           },
-        }
+        },
       );
 
       if (fnError) {
-        showToast.error(`Failed to send confirmation email: ${fnError.message}`);
+        showToast.error(
+          `Failed to send confirmation email: ${fnError.message}`,
+        );
       } else if (data?.success === false) {
         showToast.error(`Failed to send confirmation email: ${data.error}`);
       } else {

@@ -20,7 +20,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Progress } from "@/components/ui/progress";
+import { Progress as _Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import {
   Table,
@@ -109,7 +109,7 @@ export function AgentDetailPage() {
         pDate.getFullYear() === now.getFullYear()
       );
     }).length,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- policy data type
+
     premium: policyList
       .filter((p: any) => {
         const pDate = new Date(p.issueDate);
@@ -118,7 +118,6 @@ export function AgentDetailPage() {
           pDate.getMonth() === now.getMonth() &&
           pDate.getFullYear() === now.getFullYear()
         );
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- policy data type
       })
       .reduce((sum: number, p: any) => sum + (p.annualPremium || 0), 0),
   };
@@ -130,13 +129,12 @@ export function AgentDetailPage() {
       const now = new Date();
       return pDate.getFullYear() === now.getFullYear();
     }).length,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- policy data type
+
     premium: policyList
       .filter((p: any) => {
         const pDate = new Date(p.issueDate);
         const now = new Date();
         return pDate.getFullYear() === now.getFullYear();
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- policy data type
       })
       .reduce((sum: number, p: any) => sum + (p.annualPremium || 0), 0),
   };
@@ -574,10 +572,6 @@ export function AgentDetailPage() {
             <CardContent>
               {overrideMetrics.total > 0 ? (
                 <div className="space-y-2">
-                  <p className="text-xs text-muted-foreground">
-                    This agent has earned override commissions from their
-                    downline's production.
-                  </p>
                   <div className="flex items-center justify-between text-xs">
                     <span>MTD Override Income:</span>
                     <span className="font-bold text-emerald-600">
@@ -593,120 +587,111 @@ export function AgentDetailPage() {
                 </div>
               ) : (
                 <p className="text-xs text-muted-foreground text-center py-4">
-                  No override commissions earned yet. This agent will earn
-                  overrides when their downline agents write business.
+                  No override commissions yet
                 </p>
               )}
             </CardContent>
           </Card>
         </TabsContent>
 
-        {/* Team Tab */}
+        {/* Team Tab - Shows this agent's direct reports */}
         <TabsContent value="team" className="space-y-2">
-          {teamComparison ? (
+          {teamComparison?.directReports?.length > 0 ? (
             <div className="space-y-2">
-              <Card>
-                <CardHeader className="pb-2 pt-2">
-                  <CardTitle className="text-xs">Performance vs Team</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <div className="space-y-1">
-                    <div className="flex justify-between text-xs">
-                      <span className="text-muted-foreground">
-                        Policies Rank
-                      </span>
-                      <span className="font-semibold">
-                        #{teamComparison.policies_rank} of{" "}
-                        {teamComparison.team_size}
-                      </span>
-                    </div>
-                    <Progress
-                      value={
-                        ((teamComparison.team_size -
-                          teamComparison.policies_rank +
-                          1) /
-                          teamComparison.team_size) *
-                        100
-                      }
-                      className="h-1"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <div className="flex justify-between text-xs">
-                      <span className="text-muted-foreground">
-                        Premium Rank
-                      </span>
-                      <span className="font-semibold">
-                        #{teamComparison.premium_rank} of{" "}
-                        {teamComparison.team_size}
-                      </span>
-                    </div>
-                    <Progress
-                      value={
-                        ((teamComparison.team_size -
-                          teamComparison.premium_rank +
-                          1) /
-                          teamComparison.team_size) *
-                        100
-                      }
-                      className="h-1"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <div className="flex justify-between text-xs">
-                      <span className="text-muted-foreground">
-                        Commission Rank
-                      </span>
-                      <span className="font-semibold">
-                        #{teamComparison.commission_rank} of{" "}
-                        {teamComparison.team_size}
-                      </span>
-                    </div>
-                    <Progress
-                      value={
-                        ((teamComparison.team_size -
-                          teamComparison.commission_rank +
-                          1) /
-                          teamComparison.team_size) *
-                        100
-                      }
-                      className="h-1"
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <div className="grid grid-cols-2 gap-2">
+              {/* Team Summary */}
+              <div className="grid grid-cols-3 gap-2">
                 <Card>
                   <CardContent className="p-2">
                     <p className="text-[10px] text-muted-foreground">
-                      vs Team Avg Policies
+                      Direct Reports
                     </p>
-                    <p className="text-xs font-bold">
-                      {teamComparison.policies_vs_avg > 0 ? "+" : ""}
-                      {teamComparison.policies_vs_avg}%
+                    <p className="text-sm font-bold">
+                      {teamComparison.totalMembers}
                     </p>
                   </CardContent>
                 </Card>
                 <Card>
                   <CardContent className="p-2">
                     <p className="text-[10px] text-muted-foreground">
-                      vs Team Avg Premium
+                      Team Policies
                     </p>
-                    <p className="text-xs font-bold">
-                      {teamComparison.premium_vs_avg > 0 ? "+" : ""}
-                      {teamComparison.premium_vs_avg}%
+                    <p className="text-sm font-bold">
+                      {teamComparison.totalPolicies}
+                    </p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-2">
+                    <p className="text-[10px] text-muted-foreground">
+                      Team Premium
+                    </p>
+                    <p className="text-sm font-bold text-emerald-600">
+                      {formatCurrency(teamComparison.totalPremium)}
                     </p>
                   </CardContent>
                 </Card>
               </div>
+
+              {/* Team Members Table */}
+              <Card>
+                <CardHeader className="pb-2 pt-2">
+                  <CardTitle className="text-xs">Direct Reports</CardTitle>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="text-[10px]">
+                        <TableHead className="h-7 px-2">Agent</TableHead>
+                        <TableHead className="h-7 px-2 text-right">
+                          Level
+                        </TableHead>
+                        <TableHead className="h-7 px-2 text-right">
+                          Policies
+                        </TableHead>
+                        <TableHead className="h-7 px-2 text-right">
+                          Premium
+                        </TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {teamComparison.directReports.map(
+                        (member: {
+                          id: string;
+                          name: string;
+                          email: string;
+                          contractLevel: number;
+                          policies: number;
+                          premium: number;
+                        }) => (
+                          <TableRow key={member.id} className="text-xs">
+                            <TableCell className="py-1 px-2">
+                              <div className="truncate max-w-[120px]">
+                                {member.name}
+                              </div>
+                            </TableCell>
+                            <TableCell className="py-1 px-2 text-right">
+                              {member.contractLevel}%
+                            </TableCell>
+                            <TableCell className="py-1 px-2 text-right">
+                              {member.policies}
+                            </TableCell>
+                            <TableCell className="py-1 px-2 text-right font-medium">
+                              {formatCurrency(member.premium)}
+                            </TableCell>
+                          </TableRow>
+                        ),
+                      )}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
             </div>
           ) : (
             <Card>
-              <CardContent className="p-8 text-center">
-                <Users className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+              <CardContent className="p-6 text-center">
+                <Users className="h-6 w-6 text-muted-foreground mx-auto mb-2" />
                 <p className="text-xs text-muted-foreground">
-                  No team comparison data available
+                  No direct reports
                 </p>
               </CardContent>
             </Card>

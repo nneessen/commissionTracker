@@ -1075,97 +1075,105 @@ class HierarchyService {
   }
 
   /**
-   * Get team comparison data for a specific agent
+   * Get an agent's direct team (their downlines) with metrics
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Supabase response type
-  async getTeamComparison(agentId: string): Promise<any> {
+  async getAgentTeam(agentId: string): Promise<any> {
     try {
-      // Get all agents at the same level for peer comparison
-      const { data: agent } = await supabase
+      // Get direct downlines (agents where upline_id = this agent)
+      const { data: directReports, error: reportsError } = await supabase
         .from("user_profiles")
-        .select("hierarchy_depth")
-        .eq("id", agentId)
-        .single();
+        .select("id, email, first_name, last_name, contract_level, created_at")
+        .eq("upline_id", agentId)
+        .order("created_at", { ascending: false });
 
-      if (!agent) {
-        throw new NotFoundError("Agent", agentId);
+      if (reportsError) {
+        throw new DatabaseError("getAgentTeam.directReports", reportsError);
       }
 
-      const { data: peers } = await supabase
-        .from("user_profiles")
-        .select("id, email")
-        .eq("hierarchy_depth", agent.hierarchy_depth);
+      if (!directReports || directReports.length === 0) {
+        return {
+          directReports: [],
+          totalMembers: 0,
+          totalPremium: 0,
+          totalPolicies: 0,
+        };
+      }
 
-      const peerIds = (peers || []).map((p) => p.id);
+      const reportIds = directReports.map((r) => r.id);
 
-      // Get performance data for all peers
-      const { data: peerPolicies } = await supabase
+      // Get policies for all direct reports
+      const { data: policies } = await supabase
         .from("policies")
         .select("user_id, annual_premium, status")
-        .in("user_id", peerIds);
+        .in("user_id", reportIds);
 
-      // Aggregate peer performance
-      const peerPerformance = peerIds.map((peerId) => {
-        const agentPolicies = (peerPolicies || []).filter(
-          (p) => p.user_id === peerId,
+      // Get commissions for all direct reports
+      const { data: commissions } = await supabase
+        .from("commissions")
+        .select("user_id, amount, status")
+        .in("user_id", reportIds);
+
+      // Aggregate metrics per team member
+      const teamMembers = directReports.map((member) => {
+        const memberPolicies = (policies || []).filter(
+          (p) => p.user_id === member.id,
         );
-        const active = agentPolicies.filter((p) => p.status === "active");
-        const totalPremium = active.reduce(
+        const activePolicies = memberPolicies.filter(
+          (p) => p.status === "active",
+        );
+        const totalPremium = activePolicies.reduce(
           (sum, p) => sum + parseFloat(String(p.annual_premium) || "0"),
           0,
         );
-        const persistency =
-          agentPolicies.length > 0
-            ? (active.length / agentPolicies.length) * 100
-            : 0;
+
+        const memberCommissions = (commissions || []).filter(
+          (c) => c.user_id === member.id,
+        );
+        const totalCommissions = memberCommissions.reduce(
+          (sum, c) => sum + parseFloat(String(c.amount) || "0"),
+          0,
+        );
 
         return {
-          id: peerId,
-          email: peers?.find((p) => p.id === peerId)?.email || "",
+          id: member.id,
+          email: member.email,
+          name:
+            member.first_name && member.last_name
+              ? `${member.first_name} ${member.last_name}`
+              : member.email,
+          contractLevel: member.contract_level || 100,
+          policies: activePolicies.length,
           premium: totalPremium,
-          policies: active.length,
-          persistency,
+          commissions: totalCommissions,
         };
       });
 
-      // Sort and rank
-      peerPerformance.sort((a, b) => b.premium - a.premium);
-      const agentRank = peerPerformance.findIndex((p) => p.id === agentId) + 1;
-      const totalAgents = peerPerformance.length;
-      const percentile =
-        totalAgents > 0
-          ? Math.round(((totalAgents - agentRank + 1) / totalAgents) * 100)
-          : 0;
-
-      // Calculate averages
-      const avgPremium =
-        peerPerformance.reduce((sum, p) => sum + p.premium, 0) / totalAgents;
-      const avgPolicies =
-        peerPerformance.reduce((sum, p) => sum + p.policies, 0) / totalAgents;
-      const avgPersistency =
-        peerPerformance.reduce((sum, p) => sum + p.persistency, 0) /
-        totalAgents;
+      // Calculate totals
+      const totalPremium = teamMembers.reduce((sum, m) => sum + m.premium, 0);
+      const totalPolicies = teamMembers.reduce((sum, m) => sum + m.policies, 0);
 
       return {
-        premiumRank: agentRank,
-        policyRank: agentRank, // Would need separate sorting for accuracy
-        persistencyRank: agentRank, // Would need separate sorting for accuracy
-        totalAgents,
-        premiumPercentile: percentile,
-        policyPercentile: percentile,
-        persistencyPercentile: percentile,
-        avgPremium,
-        avgPolicies,
-        avgPersistency,
-        topPeers: peerPerformance.slice(0, 10),
+        directReports: teamMembers,
+        totalMembers: teamMembers.length,
+        totalPremium,
+        totalPolicies,
       };
     } catch (error) {
       logger.error(
-        "HierarchyService.getTeamComparison",
+        "HierarchyService.getAgentTeam",
         error instanceof Error ? error : new Error(String(error)),
       );
       throw error;
     }
+  }
+
+  /**
+   * @deprecated Use getAgentTeam instead
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  async getTeamComparison(agentId: string): Promise<any> {
+    return this.getAgentTeam(agentId);
   }
 
   /**

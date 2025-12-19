@@ -59,6 +59,7 @@ export class PolicyRepository extends BaseRepository<
       orderDirection?: "asc" | "desc";
       limit?: number;
       offset?: number;
+      userId?: string; // Filter by specific user - CRITICAL for Policies page
     },
     filters?: {
       status?: string;
@@ -82,6 +83,13 @@ export class PolicyRepository extends BaseRepository<
             address
           )
         `);
+
+      // CRITICAL: Filter by user ID when specified
+      // This ensures Policies page shows only the user's own policies
+      // RLS still allows access to downline policies for Team/Hierarchy pages
+      if (options?.userId) {
+        query = query.eq("user_id", options.userId);
+      }
 
       // Apply filters
       if (filters) {
@@ -402,21 +410,31 @@ export class PolicyRepository extends BaseRepository<
 
   /**
    * Count total policies with filters (separate from pagination for performance)
+   * @param filters - Optional filters including userId for user-specific counts
+   * @param currentUserId - CRITICAL: Current user's ID to filter to only their policies
    */
-  async countPolicies(filters?: {
-    status?: string;
-    carrierId?: string;
-    productId?: string;
-    product?: string;
-    userId?: string;
-    effectiveDateFrom?: string; // YYYY-MM-DD format
-    effectiveDateTo?: string; // YYYY-MM-DD format
-    searchTerm?: string;
-  }): Promise<number> {
+  async countPolicies(
+    filters?: {
+      status?: string;
+      carrierId?: string;
+      productId?: string;
+      product?: string;
+      userId?: string;
+      effectiveDateFrom?: string; // YYYY-MM-DD format
+      effectiveDateTo?: string; // YYYY-MM-DD format
+      searchTerm?: string;
+    },
+    currentUserId?: string,
+  ): Promise<number> {
     try {
       let query = this.client
         .from(this.tableName)
         .select("id", { count: "exact", head: true }); // Only count, don't fetch data
+
+      // CRITICAL: Filter by current user ID when specified
+      if (currentUserId) {
+        query = query.eq("user_id", currentUserId);
+      }
 
       if (filters) {
         // Standard equality filters
@@ -512,17 +530,22 @@ export class PolicyRepository extends BaseRepository<
   /**
    * Get aggregate metrics for policies matching filters
    * Returns totals across ALL matching policies (not just current page)
+   * @param filters - Optional filters to apply
+   * @param currentUserId - CRITICAL: Current user's ID to filter to only their policies
    */
-  async getAggregateMetrics(filters?: {
-    status?: string;
-    carrierId?: string;
-    product?: string;
-    effectiveDateFrom?: string;
-    effectiveDateTo?: string;
-    searchTerm?: string;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DB record has dynamic schema
-    [key: string]: any;
-  }): Promise<{
+  async getAggregateMetrics(
+    filters?: {
+      status?: string;
+      carrierId?: string;
+      product?: string;
+      effectiveDateFrom?: string;
+      effectiveDateTo?: string;
+      searchTerm?: string;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DB record has dynamic schema
+      [key: string]: any;
+    },
+    currentUserId?: string,
+  ): Promise<{
     totalPolicies: number;
     activePolicies: number;
     pendingPolicies: number;
@@ -538,6 +561,11 @@ export class PolicyRepository extends BaseRepository<
       let query = this.client
         .from(this.tableName)
         .select("status, annual_premium, effective_date", { count: "exact" });
+
+      // CRITICAL: Filter by current user ID when specified
+      if (currentUserId) {
+        query = query.eq("user_id", currentUserId);
+      }
 
       // Apply filters (same logic as findAll)
       if (filters) {

@@ -19,7 +19,7 @@ import {
   ChevronRight,
   GraduationCap,
 } from "lucide-react";
-import { useAllUsers } from "@/hooks/admin/useUserApproval";
+import { useAllUsers, useDeleteUser } from "@/hooks/admin/useUserApproval";
 import {
   useAllRolesWithPermissions,
   useUpdateUserRoles,
@@ -73,6 +73,7 @@ export default function AdminControlCenter() {
   const { data: allUsers, isLoading: usersLoading } = useAllUsers();
   const { data: roles } = useAllRolesWithPermissions();
   const { mutate: _updateUserRoles } = useUpdateUserRoles();
+  const deleteUserMutation = useDeleteUser();
   const queryClient = useQueryClient();
 
   // Check if current user can graduate recruits (Admin, Trainer, or Contracting Manager)
@@ -195,15 +196,22 @@ export default function AdminControlCenter() {
       return;
     }
 
-    const result = await userApprovalService.deleteUser(userId);
-    if (result.success) {
-      showToast.success(`${userName} deleted`);
-      queryClient.invalidateQueries({ queryKey: ["userApproval"] });
-      queryClient.invalidateQueries({ queryKey: ["users"] });
-      queryClient.invalidateQueries({ queryKey: ["recruits"] });
-    } else {
-      showToast.error(result.error || "Failed to delete user");
-    }
+    // Use mutation hook for proper cache invalidation
+    deleteUserMutation.mutate(userId, {
+      onSuccess: (result) => {
+        if (result.success) {
+          showToast.success(`${userName} deleted`);
+          // Query invalidation is handled by the mutation hook
+        } else {
+          showToast.error(result.error || "Failed to delete user");
+        }
+      },
+      onError: (error) => {
+        showToast.error(
+          error instanceof Error ? error.message : "Failed to delete user",
+        );
+      },
+    });
   };
 
   return (
