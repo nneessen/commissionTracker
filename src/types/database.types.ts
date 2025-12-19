@@ -5584,6 +5584,7 @@ export type Database = {
           user_id: string;
         }[];
       };
+      get_current_user_hierarchy_path: { Args: never; Returns: string };
       get_current_user_profile_id: { Args: never; Returns: string };
       get_downline_ids: {
         Args: { target_user_id: string };
@@ -5817,6 +5818,11 @@ export type Database = {
         };
         Returns: boolean;
       };
+      is_direct_downline_of_owner: {
+        Args: { p_user_id: string };
+        Returns: boolean;
+      };
+      is_upline_of: { Args: { target_user_id: string }; Returns: boolean };
       is_user_approved: { Args: never; Returns: boolean };
       lookup_user_by_email: {
         Args: { p_email: string };
@@ -5934,6 +5940,10 @@ export type Database = {
       refresh_all_report_materialized_views: {
         Args: never;
         Returns: undefined;
+      };
+      regenerate_override_commissions: {
+        Args: { p_policy_id: string };
+        Returns: number;
       };
       test_rls_for_user: {
         Args: { test_user_id: string };

@@ -19,3 +19,10 @@ export {
   ANALYTICS_SECTION_TIERS,
   type AnalyticsSectionKey,
 } from "./useAnalyticsSectionAccess";
+export {
+  useOwnerDownlineAccess,
+  isOwnerDownlineGrantedFeature,
+  OWNER_EMAILS,
+  OWNER_DOWNLINE_GRANTED_FEATURES,
+  type OwnerDownlineGrantedFeature,
+} from "./useOwnerDownlineAccess";

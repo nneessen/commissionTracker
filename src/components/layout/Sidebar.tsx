@@ -31,6 +31,8 @@ import {
   useSubscription,
   FEATURE_PLAN_REQUIREMENTS,
   type FeatureKey,
+  useOwnerDownlineAccess,
+  isOwnerDownlineGrantedFeature,
 } from "@/hooks/subscription";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/services/base/supabase";
@@ -166,18 +168,33 @@ export default function Sidebar({
   const { isPending, isLoading: _authStatusLoading } = useAuthorizationStatus();
   const { user, supabaseUser } = useAuth();
   const { subscription, isLoading: subLoading } = useSubscription();
+  const { isDirectDownlineOfOwner, isLoading: downlineLoading } =
+    useOwnerDownlineAccess();
 
-  // Admin email bypass
-  const ADMIN_EMAIL = "nick@nickneessen.com";
-  const isAdmin = supabaseUser?.email === ADMIN_EMAIL;
+  // Admin email bypass - matches ADMIN_EMAILS in RouteGuard
+  const ADMIN_EMAILS = [
+    "nick@nickneessen.com",
+    "nickneessen@thestandardhq.com",
+  ];
+  const isAdmin =
+    supabaseUser?.email && ADMIN_EMAILS.includes(supabaseUser.email);
 
   // Check if a subscription feature is available
   const hasFeature = (feature: FeatureKey | undefined): boolean => {
     if (!feature) return true; // No feature required
     if (isAdmin) return true; // Admin bypass
-    if (subLoading) return true; // Assume access while loading to avoid flickering
+    if (subLoading || downlineLoading) return true; // Assume access while loading to avoid flickering
+
+    // Check subscription plan features
     const features = subscription?.plan?.features;
-    return features?.[feature] ?? false;
+    if (features?.[feature]) return true;
+
+    // Check if user is direct downline of owner and feature is granted
+    if (isDirectDownlineOfOwner && isOwnerDownlineGrantedFeature(feature)) {
+      return true;
+    }
+
+    return false;
   };
 
   // Fetch user roles from profile

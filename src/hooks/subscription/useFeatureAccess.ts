@@ -4,6 +4,10 @@
 import { useMemo } from "react";
 import { useSubscription } from "./useSubscription";
 import type { SubscriptionFeatures } from "@/services/subscription/subscriptionService";
+import {
+  useOwnerDownlineAccess,
+  isOwnerDownlineGrantedFeature,
+} from "./useOwnerDownlineAccess";
 
 export type FeatureKey = keyof SubscriptionFeatures;
 
@@ -88,9 +92,13 @@ export function useFeatureAccess(feature: FeatureKey): UseFeatureAccessResult {
     tierName,
   } = useSubscription();
 
+  // Check if user is a direct downline of the owner
+  const { isDirectDownlineOfOwner, isLoading: isLoadingDownlineCheck } =
+    useOwnerDownlineAccess();
+
   return useMemo(() => {
     // While loading, assume no access (will update once loaded)
-    if (isLoading) {
+    if (isLoading || isLoadingDownlineCheck) {
       return {
         hasAccess: false,
         isLoading: true,
@@ -105,12 +113,19 @@ export function useFeatureAccess(feature: FeatureKey): UseFeatureAccessResult {
 
     // Check if feature is enabled in the user's plan
     const features = subscription?.plan?.features;
-    const hasAccess = features?.[feature] ?? false;
+    const hasSubscriptionAccess = features?.[feature] ?? false;
+
+    // Direct downlines of owner get access to granted features
+    // (Team-tier features, but NOT admin features)
+    const hasOwnerDownlineAccess =
+      isDirectDownlineOfOwner && isOwnerDownlineGrantedFeature(feature);
+
+    const hasAccess = hasSubscriptionAccess || hasOwnerDownlineAccess;
 
     return {
       hasAccess,
       isLoading: false,
-      currentPlan: tierName,
+      currentPlan: hasOwnerDownlineAccess ? "Team (via upline)" : tierName,
       requiredPlan: FEATURE_PLAN_REQUIREMENTS[feature],
       upgradeRequired: !hasAccess,
       featureName: FEATURE_DISPLAY_NAMES[feature],
@@ -120,6 +135,8 @@ export function useFeatureAccess(feature: FeatureKey): UseFeatureAccessResult {
   }, [
     subscription,
     isLoading,
+    isLoadingDownlineCheck,
+    isDirectDownlineOfOwner,
     feature,
     isGrandfathered,
     grandfatherDaysRemaining,
@@ -138,9 +155,11 @@ export function useAnyFeatureAccess(features: FeatureKey[]): {
   lockedFeatures: FeatureKey[];
 } {
   const { subscription, isLoading } = useSubscription();
+  const { isDirectDownlineOfOwner, isLoading: isLoadingDownlineCheck } =
+    useOwnerDownlineAccess();
 
   return useMemo(() => {
-    if (isLoading) {
+    if (isLoading || isLoadingDownlineCheck) {
       return {
         hasAccess: false,
         isLoading: true,
@@ -150,8 +169,18 @@ export function useAnyFeatureAccess(features: FeatureKey[]): {
     }
 
     const planFeatures = subscription?.plan?.features;
-    const accessibleFeatures = features.filter((f) => planFeatures?.[f]);
-    const lockedFeatures = features.filter((f) => !planFeatures?.[f]);
+
+    // Check both subscription access and owner downline access
+    const accessibleFeatures = features.filter(
+      (f) =>
+        planFeatures?.[f] ||
+        (isDirectDownlineOfOwner && isOwnerDownlineGrantedFeature(f)),
+    );
+    const lockedFeatures = features.filter(
+      (f) =>
+        !planFeatures?.[f] &&
+        !(isDirectDownlineOfOwner && isOwnerDownlineGrantedFeature(f)),
+    );
 
     return {
       hasAccess: accessibleFeatures.length > 0,
@@ -159,7 +188,13 @@ export function useAnyFeatureAccess(features: FeatureKey[]): {
       accessibleFeatures,
       lockedFeatures,
     };
-  }, [subscription, isLoading, features]);
+  }, [
+    subscription,
+    isLoading,
+    isLoadingDownlineCheck,
+    isDirectDownlineOfOwner,
+    features,
+  ]);
 }
 
 /**
@@ -172,9 +207,11 @@ export function useAllFeaturesAccess(features: FeatureKey[]): {
   missingFeatures: FeatureKey[];
 } {
   const { subscription, isLoading } = useSubscription();
+  const { isDirectDownlineOfOwner, isLoading: isLoadingDownlineCheck } =
+    useOwnerDownlineAccess();
 
   return useMemo(() => {
-    if (isLoading) {
+    if (isLoading || isLoadingDownlineCheck) {
       return {
         hasAccess: false,
         isLoading: true,
@@ -183,12 +220,24 @@ export function useAllFeaturesAccess(features: FeatureKey[]): {
     }
 
     const planFeatures = subscription?.plan?.features;
-    const missingFeatures = features.filter((f) => !planFeatures?.[f]);
+
+    // Check both subscription access and owner downline access
+    const missingFeatures = features.filter(
+      (f) =>
+        !planFeatures?.[f] &&
+        !(isDirectDownlineOfOwner && isOwnerDownlineGrantedFeature(f)),
+    );
 
     return {
       hasAccess: missingFeatures.length === 0,
       isLoading: false,
       missingFeatures,
     };
-  }, [subscription, isLoading, features]);
+  }, [
+    subscription,
+    isLoading,
+    isLoadingDownlineCheck,
+    isDirectDownlineOfOwner,
+    features,
+  ]);
 }
