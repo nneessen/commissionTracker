@@ -15,14 +15,10 @@ import {
   VALID_CONTRACT_LEVELS,
   isValidContractLevel,
 } from "../../lib/constants";
-
-// Re-export for backward compatibility
 export { VALID_CONTRACT_LEVELS };
 
-// Type aliases from database
 type RoleName = string;
 
-// Filter interface for querying users
 interface UserServiceFilter {
   roles?: RoleName[];
   approvalStatus?: ApprovalStatus;

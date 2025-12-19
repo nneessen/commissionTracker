@@ -21,9 +21,6 @@ export interface ProductCreateData {
 class ProductService {
   private client = supabase;
 
-  /**
-   * Get all products
-   */
   async getAllProducts(): Promise<ProductRow[]> {
     const { data, error } = await this.client
       .from("products")
@@ -34,9 +31,6 @@ class ProductService {
     return data || [];
   }
 
-  /**
-   * Get products by carrier
-   */
   async getProductsByCarrier(carrierId: string): Promise<ProductRow[]> {
     const { data, error } = await this.client
       .from("products")
@@ -48,9 +42,6 @@ class ProductService {
     return data || [];
   }
 
-  /**
-   * Get active products
-   */
   async getActiveProducts(): Promise<ProductRow[]> {
     const { data, error } = await this.client
       .from("products")

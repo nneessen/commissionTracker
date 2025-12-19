@@ -22,7 +22,7 @@ export interface UpdateCommissionRateData extends Partial<CreateCommissionRateDa
 class CommissionRateService {
   async getAll(): Promise<CommissionRate[]> {
     const { data, error } = await supabase
-      .from(TABLES.COMMISSION_RATES)
+      .from(TABLES.COMP_GUIDE)
       .select("*")
       .order("contract_level", { ascending: true });
 
@@ -35,7 +35,7 @@ class CommissionRateService {
 
   async getByProduct(productId: string): Promise<CommissionRate[]> {
     const { data, error } = await supabase
-      .from(TABLES.COMMISSION_RATES)
+      .from(TABLES.COMP_GUIDE)
       .select("*")
       .eq("product_id", productId)
       .order("contract_level", { ascending: true });
@@ -51,7 +51,7 @@ class CommissionRateService {
 
   async getByCarrier(carrierId: string): Promise<CommissionRate[]> {
     const { data, error } = await supabase
-      .from(TABLES.COMMISSION_RATES)
+      .from(TABLES.COMP_GUIDE)
       .select("*")
       .eq("carrier_id", carrierId)
       .order("contract_level", { ascending: true });
@@ -70,7 +70,7 @@ class CommissionRateService {
     productId: string,
   ): Promise<CommissionRate[]> {
     const { data, error } = await supabase
-      .from(TABLES.COMMISSION_RATES)
+      .from(TABLES.COMP_GUIDE)
       .select("*")
       .eq("carrier_id", carrierId)
       .eq("product_id", productId)
@@ -87,7 +87,7 @@ class CommissionRateService {
 
   async getByContractLevel(contractLevel: number): Promise<CommissionRate[]> {
     const { data, error } = await supabase
-      .from(TABLES.COMMISSION_RATES)
+      .from(TABLES.COMP_GUIDE)
       .select(
         `
         *,
@@ -114,7 +114,7 @@ class CommissionRateService {
     contractLevel: number,
   ): Promise<number | null> {
     const { data, error } = await supabase
-      .from(TABLES.COMMISSION_RATES)
+      .from(TABLES.COMP_GUIDE)
       .select("commission_percentage")
       .eq("carrier_id", carrierId)
       .eq("product_id", productId)
@@ -135,7 +135,7 @@ class CommissionRateService {
     const dbData = this.transformToDB(rateData);
 
     const { data, error } = await supabase
-      .from(TABLES.COMMISSION_RATES)
+      .from(TABLES.COMP_GUIDE)
       .insert(dbData)
       .select()
       .single();
@@ -153,7 +153,7 @@ class CommissionRateService {
     const dbData = ratesData.map(this.transformToDB);
 
     const { data, error } = await supabase
-      .from(TABLES.COMMISSION_RATES)
+      .from(TABLES.COMP_GUIDE)
       .insert(dbData)
       .select();
 
@@ -172,7 +172,7 @@ class CommissionRateService {
     dbData.updated_at = new Date().toISOString();
 
     const { data, error } = await supabase
-      .from(TABLES.COMMISSION_RATES)
+      .from(TABLES.COMP_GUIDE)
       .update(dbData)
       .eq("id", id)
       .select()
@@ -187,7 +187,7 @@ class CommissionRateService {
 
   async delete(id: string): Promise<void> {
     const { error } = await supabase
-      .from(TABLES.COMMISSION_RATES)
+      .from(TABLES.COMP_GUIDE)
       .delete()
       .eq("id", id);
 
@@ -198,7 +198,7 @@ class CommissionRateService {
 
   async deleteByProduct(productId: string): Promise<void> {
     const { error } = await supabase
-      .from(TABLES.COMMISSION_RATES)
+      .from(TABLES.COMP_GUIDE)
       .delete()
       .eq("product_id", productId);
 
@@ -211,7 +211,7 @@ class CommissionRateService {
 
   async deleteByCarrier(carrierId: string): Promise<void> {
     const { error } = await supabase
-      .from(TABLES.COMMISSION_RATES)
+      .from(TABLES.COMP_GUIDE)
       .delete()
       .eq("carrier_id", carrierId);
 
