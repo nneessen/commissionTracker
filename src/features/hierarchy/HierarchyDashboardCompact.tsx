@@ -33,8 +33,6 @@ interface Agent extends UserProfile {
 
 interface TeamFilters {
   status: "all" | "active" | "inactive" | "pending";
-  level: string;
-  performance: "all" | "above" | "below";
   directOnly: boolean;
   searchTerm: string;
 }
@@ -60,9 +58,7 @@ export function HierarchyDashboardCompact() {
   const [showFilters, setShowFilters] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [filters, setFilters] = useState<TeamFilters>({
-    status: "all",
-    level: "all",
-    performance: "all",
+    status: "active",
     directOnly: false,
     searchTerm: "",
   });
@@ -75,19 +71,15 @@ export function HierarchyDashboardCompact() {
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  // Calculate filter count
+  // Calculate filter count (excluding default "active" status)
   const filterCount =
-    (filters.status !== "all" ? 1 : 0) +
-    (filters.level !== "all" ? 1 : 0) +
-    (filters.performance !== "all" ? 1 : 0) +
+    (filters.status !== "active" ? 1 : 0) +
     (filters.directOnly ? 1 : 0) +
     (filters.searchTerm ? 1 : 0);
 
   const clearFilters = () => {
     setFilters({
-      status: "all",
-      level: "all",
-      performance: "all",
+      status: "active",
       directOnly: false,
       searchTerm: "",
     });
@@ -114,39 +106,15 @@ export function HierarchyDashboardCompact() {
       agents = agents.filter((agent) => {
         if (filters.status === "active") return agent.is_active;
         if (filters.status === "inactive") return !agent.is_active;
-        // Add pending logic if needed
+        if (filters.status === "pending")
+          return agent.approval_status === "pending";
         return true;
       });
-    }
-
-    // Apply level filter (based on contract_level)
-    if (filters.level !== "all") {
-      // Convert filter levels to contract level ranges
-      const levelMap: Record<string, [number, number]> = {
-        Associate: [80, 99],
-        Senior: [100, 109],
-        Executive: [110, 124],
-        Director: [125, 145],
-      };
-
-      const range = levelMap[filters.level];
-      if (range) {
-        agents = agents.filter((agent) => {
-          const level = agent.contract_level || 100;
-          return level >= range[0] && level <= range[1];
-        });
-      }
     }
 
     // Apply direct only filter
     if (filters.directOnly) {
       agents = agents.filter((agent) => agent.parent_agent_id === user?.id);
-    }
-
-    // Apply performance filter (would need actual metrics)
-    if (filters.performance !== "all") {
-      // This would require actual performance data
-      // For now, just return the filtered list
     }
 
     return agents;
@@ -278,43 +246,6 @@ export function HierarchyDashboardCompact() {
                   <SelectItem value="active">Active</SelectItem>
                   <SelectItem value="inactive">Inactive</SelectItem>
                   <SelectItem value="pending">Pending</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Select
-                value={filters.level}
-                onValueChange={(value) =>
-                  setFilters((prev) => ({ ...prev, level: value }))
-                }
-              >
-                <SelectTrigger className="h-6 w-[110px] text-[10px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700">
-                  <SelectValue placeholder="Level" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Levels</SelectItem>
-                  <SelectItem value="Associate">Associate</SelectItem>
-                  <SelectItem value="Senior">Senior</SelectItem>
-                  <SelectItem value="Executive">Executive</SelectItem>
-                  <SelectItem value="Director">Director</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Select
-                value={filters.performance}
-                onValueChange={(value) =>
-                  setFilters((prev) => ({
-                    ...prev,
-                    performance: value as TeamFilters["performance"],
-                  }))
-                }
-              >
-                <SelectTrigger className="h-6 w-[120px] text-[10px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700">
-                  <SelectValue placeholder="Performance" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Performance</SelectItem>
-                  <SelectItem value="above">Above Target</SelectItem>
-                  <SelectItem value="below">Below Target</SelectItem>
                 </SelectContent>
               </Select>
 
