@@ -1,7 +1,8 @@
-# Email Service Consolidation - Completed 2025-12-15
+# Email Service Consolidation - Updated 2025-12-20
 
 ## Summary
 Consolidated all email functionality to use a single Resend-based Edge Function.
+**Refactored 2025-12-20:** Now uses BaseRepository pattern with proper folder organization.
 
 ## Architecture
 
@@ -14,13 +15,22 @@ Consolidated all email functionality to use a single Resend-based Edge Function.
   - Tracks `recruitId` and `senderId` for database linking
   - Falls back to simulation mode if `RESEND_API_KEY` not set
 
-### Frontend Service: `src/services/emailService.ts`
-- Unified service for all email operations
-- Methods:
+### Frontend Service: `src/services/email/`
+- **UserEmailRepository.ts** - Extends BaseRepository for `user_emails` table
+  - Standard CRUD operations inherited from BaseRepository
+  - Custom methods: `findByUser()`, `findByRecruit()`, `findBySender()`, `findByStatus()`
+  - Includes email attachments in queries
+- **UserEmailService.ts** - Service layer using repository
   - `sendEmail(request)` - Send via Edge Function
   - `getEmailsForUser(userId)` - Get all emails for a user
   - `getEmailsForRecruit(recruitId)` - Get emails linked to a recruit
   - `htmlToText(html)` - Convert HTML to plain text
+  - CRUD operations delegated to repository
+- **types.ts** - Type definitions (UserEmailEntity, SendEmailRequest, SendEmailResponse)
+- **index.ts** - Barrel exports + template service re-exports
+
+### Import Path
+All consumers should import from: `@/services/email`
 
 ### Components Updated
 1. **CommunicationPanel** (`src/features/recruiting/components/CommunicationPanel.tsx`)

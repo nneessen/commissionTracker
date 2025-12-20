@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { emailService, type SendEmailRequest } from "@/services/emailService";
+import { emailService, type SendEmailRequest } from "@/services/email";
 import { showToast } from "@/utils/toast";
 import type { UserProfile } from "@/types/hierarchy.types";
 

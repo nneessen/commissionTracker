@@ -541,27 +541,24 @@ export const recruitingService = {
   },
 
   async sendEmail(emailRequest: SendEmailRequest) {
-    // Use unified emailService (Resend API)
+    // Use unified emailService (Resend API via send-email edge function)
+    // Map from email.types.SendEmailRequest to emailService.SendEmailRequest
     const to = Array.isArray(emailRequest.to)
-      ? emailRequest.to[0]
-      : emailRequest.to;
-    const result = await emailService.sendEmail(
-      to,
-      emailRequest.subject,
-      emailRequest.bodyHtml,
-      {
-        cc: emailRequest.cc,
-        metadata: { text: emailRequest.bodyText },
-      },
-    );
+      ? emailRequest.to
+      : [emailRequest.to];
 
-    if (!result.success) {
-      throw new Error(result.error || "Failed to send email");
-    }
+    const result = await emailService.sendEmail({
+      to,
+      subject: emailRequest.subject,
+      html: emailRequest.bodyHtml,
+      text: emailRequest.bodyText,
+      cc: emailRequest.cc,
+      recruitId: emailRequest.recruitId,
+    });
 
     return {
-      success: true,
-      emailId: result.messageId,
+      success: result.success,
+      emailId: result.emailId || result.resendMessageId,
     };
   },
 

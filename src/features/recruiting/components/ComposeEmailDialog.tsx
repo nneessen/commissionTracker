@@ -12,7 +12,7 @@ import { EmailComposer } from "@/features/email";
 import { TemplatePicker } from "@/features/email/components/TemplatePicker";
 import { blocksToHtml } from "@/features/email/components/block-builder";
 import { useSendEmail } from "../hooks/useRecruitEmails";
-import type { SendEmailRequest } from "@/services/emailService";
+import type { SendEmailRequest } from "@/services/email";
 import type { EmailTemplate } from "@/types/email.types";
 
 interface ComposeEmailDialogProps {

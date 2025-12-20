@@ -7,7 +7,7 @@ import { Send, Loader2, X, Paperclip, Trash2, FileText } from "lucide-react";
 import { TipTapEditor } from "./TipTapEditor";
 import { sanitizeForEmail } from "../services/sanitizationService";
 import { convertHtmlToText } from "../services/htmlToTextService";
-import type { SendEmailRequest } from "@/services/emailService";
+import type { SendEmailRequest } from "@/services/email";
 
 interface Attachment {
   id: string;

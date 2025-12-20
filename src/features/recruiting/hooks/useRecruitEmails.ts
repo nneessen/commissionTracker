@@ -2,7 +2,7 @@
 // Uses unified emailService for all email operations
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { emailService, type SendEmailRequest } from "@/services/emailService";
+import { emailService, type SendEmailRequest } from "@/services/email";
 
 export function useRecruitEmails(recruitId: string) {
   return useQuery({

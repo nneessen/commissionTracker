@@ -3,7 +3,7 @@
 
 import { supabase } from "../base/supabase";
 import { logger } from "../base/logger";
-import { emailService } from "../emailService";
+import { emailService } from "../email";
 import type {
   HierarchyInvitation,
   SendInvitationRequest,

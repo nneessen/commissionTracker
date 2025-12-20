@@ -1,18 +1,21 @@
 // src/services/email/index.ts
-// Email Service Exports - Unified Resend-based email service
+// Email Service Exports
 
-export {
-  emailService,
-  type EmailOptions,
-  type EmailAttachment,
-  type EmailResult,
-  type BulkEmailResult,
-  type EmailUsageStats,
-  type QueuedEmail,
-  type EmailHistoryFilters,
-} from "./emailService";
+// Service and Repository classes
+export { emailService, UserEmailService } from "./UserEmailService";
+export { UserEmailRepository } from "./UserEmailRepository";
 
-// Re-export template service from features (will be moved later)
+// Types
+export type {
+  UserEmail,
+  UserEmailEntity,
+  SendEmailRequest,
+  SendEmailResponse,
+  CreateUserEmailData,
+  UpdateUserEmailData,
+} from "./types";
+
+// Re-export template service from features
 export {
   getEmailTemplates,
   getEmailTemplate,
