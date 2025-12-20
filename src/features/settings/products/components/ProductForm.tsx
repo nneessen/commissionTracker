@@ -33,7 +33,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Product } from "../hooks/useProducts";
+import type { Product } from "@/types/product.types";
 import { useCarriers } from "../../carriers/hooks/useCarriers";
 import type { Database } from "@/types/database.types";
 import { Check, ChevronsUpDown } from "lucide-react";

@@ -31,11 +31,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Plus, Search, Edit, Trash2, Upload, Package } from "lucide-react";
-import { useProducts, Product } from "./hooks/useProducts";
+import { useProducts } from "./hooks/useProducts";
 import { useCarriers } from "../carriers/hooks/useCarriers";
 import { ProductForm } from "./components/ProductForm";
 import { ProductBulkImport } from "./components/ProductBulkImport";
-import { ProductFormData } from "../../../types/product.types";
+import type { Product, ProductFormData } from "@/types/product.types";
 
 export function ProductsManagement() {
   const {

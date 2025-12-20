@@ -10,7 +10,7 @@ import {
 import { Carrier } from "../../../types/carrier.types";
 import { Comp, CreateCompData } from "../../../types/commission.types";
 import { Database } from "../../../types/database.types";
-import { carrierService } from "../../../services/settings/carrierService";
+import { carrierService } from "../../../services/settings/carriers";
 import { compGuideService } from "../../../services/settings/compGuideService";
 
 interface CompGuideImporterProps {
@@ -136,14 +136,13 @@ export const CompGuideImporter: React.FC<CompGuideImporterProps> = ({
 
       for (const carrierName of carriersToCreate) {
         try {
-          const { data: newCarrier, error } =
-            await carrierService.createCarrier({
-              name: carrierName,
-              short_name: carrierName,
-              is_active: true,
-              default_commission_rates: {},
-              contact_info: {},
-            });
+          const result = await carrierService.create({
+            name: carrierName,
+            code: carrierName,
+            is_active: true,
+          });
+          const newCarrier = result.data;
+          const error = result.error;
           if (error) throw new Error(error.message);
           if (newCarrier) {
             newCarrierIds[carrierName] = newCarrier.id;

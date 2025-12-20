@@ -121,14 +121,15 @@ class CommissionCalculationService {
 
     try {
       // Get carrier name for comp guide lookup (with retry)
-      const { data: carrier, error: carrierError } = await withRetry(
-        () => carrierService.getCarrierById(data.carrierId),
+      const carrierResult = await withRetry(
+        () => carrierService.getById(data.carrierId),
         { maxAttempts: 2 },
       );
 
-      if (carrierError || !carrier) {
+      if (!carrierResult.success || !carrierResult.data) {
         throw new NotFoundError("Carrier", data.carrierId);
       }
+      const carrier = carrierResult.data;
 
       // Determine contract comp level
       let contractCompLevel = data.contractCompLevel;

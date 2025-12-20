@@ -2,7 +2,7 @@
 import { logger } from "../../services/base/logger";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { carrierService } from "../../services/settings/carrierService";
+import { carrierService } from "../../services/settings/carriers";
 import { NewCarrierForm } from "../../types/carrier.types";
 
 // Query keys for React Query cache management
@@ -83,7 +83,7 @@ export function useActiveCarriers(options?: {
   return useQuery({
     queryKey: carrierQueryKeys.active(),
     queryFn: async () => {
-      const result = await carrierService.getActiveCarriers();
+      const result = await carrierService.getActive();
       if (result.success && result.data) {
         return result.data;
       }
@@ -117,7 +117,7 @@ export function useSearchCarriers(
       if (!searchTerm.trim()) {
         return [];
       }
-      const result = await carrierService.searchCarriers(searchTerm);
+      const result = await carrierService.search(searchTerm);
       if (result.success && result.data) {
         return result.data;
       }

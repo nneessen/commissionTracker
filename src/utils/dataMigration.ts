@@ -339,7 +339,7 @@ class DataMigrationService {
       try {
         await carrierService.create({
           name: carrier.name,
-          is_active: carrier.is_active ?? undefined,
+          is_active: carrier.is_active ?? true,
         });
         result.details.carriers++;
       } catch (error) {

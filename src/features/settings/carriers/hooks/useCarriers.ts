@@ -1,25 +1,22 @@
-import {useQuery, useMutation, useQueryClient} from '@tanstack/react-query';
-import {carrierService} from '@/services/settings/carrierService';
-import {toast} from 'sonner';
+// src/features/settings/carriers/hooks/useCarriers.ts
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { carrierService, type Carrier } from "@/services/settings/carriers";
+import { type NewCarrierForm } from "@/types/carrier.types";
+import { toast } from "sonner";
 
-export interface Carrier {
-  id: string;
-  name: string;
-  short_name?: string;
-  is_active: boolean;
-  created_at?: string;
-  updated_at?: string;
-}
+// Re-export the Carrier type for convenience
+export type { Carrier };
 
+// Local types that match NewCarrierForm
 export interface CreateCarrierData {
   name: string;
-  short_name?: string;
+  code?: string;
   is_active?: boolean;
 }
 
 export interface UpdateCarrierData {
   name?: string;
-  short_name?: string;
+  code?: string;
   is_active?: boolean;
 }
 
@@ -27,28 +24,35 @@ export function useCarriers() {
   const queryClient = useQueryClient();
 
   // Fetch all carriers
-  const { data: carriers = [], isLoading, error } = useQuery({
-    queryKey: ['carriers'],
+  const {
+    data: carriers = [],
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ["carriers"],
     queryFn: async () => {
-      const result = await carrierService.getAllCarriers();
-      return result.data || [];
+      const result = await carrierService.getAll();
+      if (!result.success) throw new Error(result.error?.message);
+      return (result.data || []) as Carrier[];
     },
   });
 
   // Create carrier mutation
   const createCarrier = useMutation({
     mutationFn: async (data: CreateCarrierData) => {
-      const result = await carrierService.createCarrier({
-        ...data,
+      const formData: NewCarrierForm = {
+        name: data.name,
+        code: data.code,
         is_active: data.is_active ?? true,
-      });
-      if (result.error) throw new Error(result.error.message);
+      };
+      const result = await carrierService.create(formData);
+      if (!result.success) throw new Error(result.error?.message);
       return result.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['carriers'] });
-      queryClient.invalidateQueries({ queryKey: ['commission-grid'] });
-      toast.success('Carrier created successfully');
+      queryClient.invalidateQueries({ queryKey: ["carriers"] });
+      queryClient.invalidateQueries({ queryKey: ["commission-grid"] });
+      toast.success("Carrier created successfully");
     },
     onError: (error: Error) => {
       toast.error(`Failed to create carrier: ${error.message}`);
@@ -57,15 +61,26 @@ export function useCarriers() {
 
   // Update carrier mutation
   const updateCarrier = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: UpdateCarrierData }) => {
-      const result = await carrierService.updateCarrier(id, data);
-      if (result.error) throw new Error(result.error.message);
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: UpdateCarrierData;
+    }) => {
+      const formData: Partial<NewCarrierForm> = {
+        name: data.name,
+        code: data.code,
+        is_active: data.is_active,
+      };
+      const result = await carrierService.update(id, formData);
+      if (!result.success) throw new Error(result.error?.message);
       return result.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['carriers'] });
-      queryClient.invalidateQueries({ queryKey: ['commission-grid'] });
-      toast.success('Carrier updated successfully');
+      queryClient.invalidateQueries({ queryKey: ["carriers"] });
+      queryClient.invalidateQueries({ queryKey: ["commission-grid"] });
+      toast.success("Carrier updated successfully");
     },
     onError: (error: Error) => {
       toast.error(`Failed to update carrier: ${error.message}`);
@@ -75,14 +90,13 @@ export function useCarriers() {
   // Delete carrier mutation
   const deleteCarrier = useMutation({
     mutationFn: async (id: string) => {
-      const result = await carrierService.deleteCarrier(id);
-      if (result.error) throw new Error(result.error.message);
-      return result.data;
+      const result = await carrierService.delete(id);
+      if (!result.success) throw new Error(result.error?.message);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['carriers'] });
-      queryClient.invalidateQueries({ queryKey: ['commission-grid'] });
-      toast.success('Carrier deleted successfully');
+      queryClient.invalidateQueries({ queryKey: ["carriers"] });
+      queryClient.invalidateQueries({ queryKey: ["commission-grid"] });
+      toast.success("Carrier deleted successfully");
     },
     onError: (error: Error) => {
       toast.error(`Failed to delete carrier: ${error.message}`);

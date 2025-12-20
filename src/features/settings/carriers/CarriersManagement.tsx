@@ -36,7 +36,7 @@ export function CarriersManagement() {
     filteredCarriers = carriers.filter(
       (carrier) =>
         carrier.name.toLowerCase().includes(search) ||
-        carrier.short_name?.toLowerCase().includes(search),
+        carrier.code?.toLowerCase().includes(search),
     );
   }
 
@@ -175,7 +175,7 @@ export function CarriersManagement() {
                       </TableCell>
                       <TableCell className="py-1.5">
                         <span className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                          {carrier.short_name || "—"}
+                          {carrier.code || "—"}
                         </span>
                       </TableCell>
                       <TableCell className="py-1.5">

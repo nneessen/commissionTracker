@@ -32,11 +32,7 @@ const carrierFormSchema = z.object({
     .string()
     .min(1, "Carrier name is required")
     .max(100, "Name is too long"),
-  short_name: z
-    .string()
-    .max(50, "Short name is too long")
-    .optional()
-    .or(z.literal("")),
+  code: z.string().max(50, "Code is too long").optional().or(z.literal("")),
   is_active: z.boolean(),
 });
 
@@ -61,7 +57,7 @@ export function CarrierForm({
     resolver: zodResolver(carrierFormSchema),
     defaultValues: {
       name: "",
-      short_name: undefined,
+      code: undefined,
       is_active: true,
     },
   });
@@ -71,13 +67,13 @@ export function CarrierForm({
     if (carrier) {
       form.reset({
         name: carrier.name || "",
-        short_name: carrier.short_name || undefined,
+        code: carrier.code || undefined,
         is_active: carrier.is_active ?? true,
       });
     } else {
       form.reset({
         name: "",
-        short_name: undefined,
+        code: undefined,
         is_active: true,
       });
     }
@@ -132,22 +128,22 @@ export function CarrierForm({
 
             <FormField
               control={form.control}
-              name="short_name"
+              name="code"
               render={({ field }) => (
                 <FormItem className="space-y-1">
                   <FormLabel className="text-[10px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
-                    Short Name (Optional)
+                    Code (Optional)
                   </FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="e.g., Foresters"
+                      placeholder="e.g., FRST"
                       {...field}
                       value={field.value || ""}
                       className="h-7 text-[11px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700"
                     />
                   </FormControl>
                   <FormDescription className="text-[10px] text-zinc-400">
-                    A shorter version or acronym for display purposes
+                    A short code or acronym for display purposes
                   </FormDescription>
                   <FormMessage className="text-[10px]" />
                 </FormItem>
