@@ -1,0 +1,217 @@
+// src/services/expenses/expense/ExpenseRepository.ts
+import { BaseRepository, BaseEntity } from "../../base/BaseRepository";
+import type {
+  Expense,
+  CreateExpenseData,
+  UpdateExpenseData,
+  ExpenseFilters,
+} from "@/types/expense.types";
+
+type ExpenseBaseEntity = Expense & BaseEntity;
+
+/**
+ * Repository for expenses data access
+ * Extends BaseRepository for standard CRUD operations
+ */
+export class ExpenseRepository extends BaseRepository<
+  ExpenseBaseEntity,
+  CreateExpenseData,
+  UpdateExpenseData
+> {
+  constructor() {
+    super("expenses");
+  }
+
+  /**
+   * Transform database record to entity
+   */
+  protected transformFromDB(
+    dbRecord: Record<string, unknown>,
+  ): ExpenseBaseEntity {
+    return {
+      id: dbRecord.id as string,
+      user_id: dbRecord.user_id as string,
+      name: dbRecord.name as string,
+      description: dbRecord.description as string | null,
+      amount: dbRecord.amount as number,
+      category: dbRecord.category as string,
+      expense_type: dbRecord.expense_type as "personal" | "business",
+      date: dbRecord.date as string,
+      is_recurring: dbRecord.is_recurring as boolean,
+      recurring_frequency:
+        dbRecord.recurring_frequency as Expense["recurring_frequency"],
+      recurring_group_id: dbRecord.recurring_group_id as string | null,
+      recurring_end_date: dbRecord.recurring_end_date as string | null,
+      is_tax_deductible: dbRecord.is_tax_deductible as boolean,
+      receipt_url: dbRecord.receipt_url as string | null,
+      notes: dbRecord.notes as string | null,
+      created_at: dbRecord.created_at as string,
+      updated_at: dbRecord.updated_at as string,
+    } as ExpenseBaseEntity;
+  }
+
+  /**
+   * Transform entity to database record
+   */
+  protected transformToDB(
+    data: CreateExpenseData | UpdateExpenseData,
+  ): Record<string, unknown> {
+    const result: Record<string, unknown> = {};
+
+    if ("name" in data && data.name !== undefined) result.name = data.name;
+    if ("description" in data) result.description = data.description ?? null;
+    if ("amount" in data && data.amount !== undefined)
+      result.amount = data.amount;
+    if ("category" in data && data.category !== undefined)
+      result.category = data.category;
+    if ("expense_type" in data && data.expense_type !== undefined) {
+      result.expense_type = data.expense_type;
+    }
+    if ("date" in data && data.date !== undefined) result.date = data.date;
+    if ("is_recurring" in data)
+      result.is_recurring = data.is_recurring ?? false;
+    if ("recurring_frequency" in data) {
+      result.recurring_frequency = data.recurring_frequency ?? null;
+    }
+    if ("recurring_group_id" in data) {
+      result.recurring_group_id = data.recurring_group_id ?? null;
+    }
+    if ("recurring_end_date" in data) {
+      result.recurring_end_date = data.recurring_end_date ?? null;
+    }
+    if ("is_tax_deductible" in data) {
+      result.is_tax_deductible = data.is_tax_deductible ?? false;
+    }
+    if ("receipt_url" in data) result.receipt_url = data.receipt_url ?? null;
+    if ("notes" in data) result.notes = data.notes ?? null;
+
+    return result;
+  }
+
+  /**
+   * Find all expenses with filters
+   */
+  async findWithFilters(
+    filters?: ExpenseFilters,
+  ): Promise<ExpenseBaseEntity[]> {
+    let query = this.client
+      .from(this.tableName)
+      .select("*")
+      .order("date", { ascending: false });
+
+    if (filters?.expenseType && filters.expenseType !== "all") {
+      query = query.eq("expense_type", filters.expenseType);
+    }
+
+    if (filters?.category && filters.category !== "all") {
+      query = query.eq("category", filters.category);
+    }
+
+    if (filters?.startDate) {
+      query = query.gte("date", filters.startDate);
+    }
+
+    if (filters?.endDate) {
+      query = query.lte("date", filters.endDate);
+    }
+
+    if (filters?.deductibleOnly) {
+      query = query.eq("is_tax_deductible", true);
+    }
+
+    if (filters?.recurringOnly) {
+      query = query.eq("is_recurring", true);
+    }
+
+    if (filters?.searchTerm) {
+      query = query.or(
+        `name.ilike.%${filters.searchTerm}%,description.ilike.%${filters.searchTerm}%`,
+      );
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      throw this.handleError(error, "findWithFilters");
+    }
+
+    return data?.map((item) => this.transformFromDB(item)) || [];
+  }
+
+  /**
+   * Find expenses by date range
+   */
+  async findByDateRange(
+    startDate: string,
+    endDate: string,
+  ): Promise<ExpenseBaseEntity[]> {
+    const { data, error } = await this.client
+      .from(this.tableName)
+      .select("*")
+      .gte("date", startDate)
+      .lte("date", endDate)
+      .order("date", { ascending: false });
+
+    if (error) {
+      throw this.handleError(error, "findByDateRange");
+    }
+
+    return data?.map((item) => this.transformFromDB(item)) || [];
+  }
+
+  /**
+   * Find expenses by recurring group
+   */
+  async findByRecurringGroup(groupId: string): Promise<ExpenseBaseEntity[]> {
+    const { data, error } = await this.client
+      .from(this.tableName)
+      .select("*")
+      .eq("recurring_group_id", groupId)
+      .order("date", { ascending: true });
+
+    if (error) {
+      throw this.handleError(error, "findByRecurringGroup");
+    }
+
+    return data?.map((item) => this.transformFromDB(item)) || [];
+  }
+
+  /**
+   * Find expenses by category
+   */
+  async findByCategory(category: string): Promise<ExpenseBaseEntity[]> {
+    const { data, error } = await this.client
+      .from(this.tableName)
+      .select("*")
+      .eq("category", category)
+      .order("date", { ascending: false });
+
+    if (error) {
+      throw this.handleError(error, "findByCategory");
+    }
+
+    return data?.map((item) => this.transformFromDB(item)) || [];
+  }
+
+  /**
+   * Get total amount for date range
+   */
+  async getTotalForDateRange(
+    startDate: string,
+    endDate: string,
+  ): Promise<number> {
+    const { data, error } = await this.client
+      .from(this.tableName)
+      .select("amount")
+      .gte("date", startDate)
+      .lte("date", endDate);
+
+    if (error) {
+      throw this.handleError(error, "getTotalForDateRange");
+    }
+
+    return data?.reduce((sum, item) => sum + (item.amount as number), 0) || 0;
+  }
+}
+
+export type { ExpenseBaseEntity };

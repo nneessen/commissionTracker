@@ -1,8 +1,8 @@
 // src/hooks/expenses/useExpense.ts
 
-import {useQuery} from '@tanstack/react-query';
-import {expenseService} from '../../services/expenses/expenseService';
-import type {Expense} from '../../types/expense.types';
+import { useQuery } from "@tanstack/react-query";
+import { expenseService } from "@/services/expenses";
+import type { Expense } from "@/types/expense.types";
 
 export interface UseExpenseOptions {
   enabled?: boolean;
@@ -24,9 +24,13 @@ export interface UseExpenseResult {
  */
 export const useExpense = (id: string, options?: UseExpenseOptions) => {
   return useQuery({
-    queryKey: ['expenses', id],
+    queryKey: ["expenses", id],
     queryFn: async () => {
-      return await expenseService.getById(id);
+      const result = await expenseService.getById(id);
+      if (!result.success) {
+        throw result.error;
+      }
+      return result.data;
     },
     staleTime: options?.staleTime ?? 5 * 60 * 1000, // 5 minutes default
     enabled: options?.enabled ?? true,

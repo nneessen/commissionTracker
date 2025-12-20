@@ -6,6 +6,72 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-12-20 10:30:52
+
+### Changed Files
+- `CHANGELOG.md`
+- `PROJECT_STATS.md`
+- `src/features/dashboard/DashboardHome.tsx`
+- `src/features/policies/PolicyDashboard.tsx`
+- `src/hooks/expenses/useCreateExpense.ts`
+- `src/hooks/expenses/useDeleteExpense.ts`
+- `src/hooks/expenses/useExpense.ts`
+- `src/hooks/expenses/useExpenseMetrics.ts`
+- `src/hooks/expenses/useExpenses.ts`
+- `src/hooks/expenses/useUpdateExpense.ts`
+- `src/services/analytics/breakevenService.ts`
+- `src/services/clients/client/ClientRepository.ts`
+- `src/services/clients/client/ClientService.ts`
+- `src/services/clients/client/index.ts`
+- `src/services/clients/clientService.ts`
+- `src/services/clients/index.ts`
+- `src/services/expenses/expense/ExpenseRepository.ts`
+- `src/services/expenses/expense/ExpenseService.ts`
+- `src/services/expenses/expense/index.ts`
+- `src/services/expenses/expenseService.test.ts`
+- `src/services/expenses/expenseService.ts`
+- `src/services/expenses/index.ts`
+- `src/services/index.ts`
+- `src/utils/dataMigration.ts`
+- `tsconfig.tsbuildinfo`
+
+### Statistics
+```
+ 25 files changed, 1717 insertions(+), 1010 deletions(-)
+```
+
+## [Checkpoint] - 2025-12-20 10:30:23
+
+### Changed Files
+- `src/features/dashboard/DashboardHome.tsx`
+- `src/features/policies/PolicyDashboard.tsx`
+- `src/hooks/expenses/useCreateExpense.ts`
+- `src/hooks/expenses/useDeleteExpense.ts`
+- `src/hooks/expenses/useExpense.ts`
+- `src/hooks/expenses/useExpenseMetrics.ts`
+- `src/hooks/expenses/useExpenses.ts`
+- `src/hooks/expenses/useUpdateExpense.ts`
+- `src/services/analytics/breakevenService.ts`
+- `src/services/clients/client/ClientRepository.ts`
+- `src/services/clients/client/ClientService.ts`
+- `src/services/clients/client/index.ts`
+- `src/services/clients/clientService.ts`
+- `src/services/clients/index.ts`
+- `src/services/expenses/expense/ExpenseRepository.ts`
+- `src/services/expenses/expense/ExpenseService.ts`
+- `src/services/expenses/expense/index.ts`
+- `src/services/expenses/expenseService.test.ts`
+- `src/services/expenses/expenseService.ts`
+- `src/services/expenses/index.ts`
+- `src/services/index.ts`
+- `src/utils/dataMigration.ts`
+- `tsconfig.tsbuildinfo`
+
+### Statistics
+```
+ 23 files changed, 1680 insertions(+), 1005 deletions(-)
+```
+
 ## [Checkpoint] - 2025-12-20 10:10:38
 
 ### Changed Files

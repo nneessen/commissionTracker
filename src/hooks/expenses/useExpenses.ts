@@ -1,8 +1,8 @@
 // src/hooks/expenses/useExpenses.ts
 
-import {useQuery} from '@tanstack/react-query';
-import {expenseService} from '../../services/expenses/expenseService';
-import type {Expense, ExpenseFilters} from '../../types/expense.types';
+import { useQuery } from "@tanstack/react-query";
+import { expenseService } from "@/services/expenses";
+import type { Expense, ExpenseFilters } from "@/types/expense.types";
 
 export interface UseExpensesOptions {
   filters?: ExpenseFilters;
@@ -26,9 +26,13 @@ export interface UseExpensesResult {
  */
 export const useExpenses = (options?: UseExpensesOptions) => {
   return useQuery({
-    queryKey: ['expenses', options?.filters],
+    queryKey: ["expenses", options?.filters],
     queryFn: async () => {
-      return await expenseService.getAll(options?.filters);
+      const result = await expenseService.getAll(options?.filters);
+      if (!result.success) {
+        throw result.error;
+      }
+      return result.data || [];
     },
     staleTime: options?.staleTime ?? 5 * 60 * 1000, // 5 minutes default
     gcTime: options?.gcTime ?? 10 * 60 * 1000, // 10 minutes garbage collection

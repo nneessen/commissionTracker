@@ -1,8 +1,8 @@
 // src/hooks/expenses/useExpenseMetrics.ts
 
-import {useQuery} from '@tanstack/react-query';
-import {expenseService} from '../../services/expenses/expenseService';
-import type {ExpenseTotals, ExpenseFilters} from '../../types/expense.types';
+import { useQuery } from "@tanstack/react-query";
+import { expenseService } from "@/services/expenses";
+import type { ExpenseTotals, ExpenseFilters } from "@/types/expense.types";
 
 export interface UseExpenseMetricsOptions {
   filters?: ExpenseFilters;
@@ -24,12 +24,16 @@ export interface UseExpenseMetricsResult {
  */
 export const useExpenseMetrics = (options?: UseExpenseMetricsOptions) => {
   return useQuery({
-    queryKey: ['expense-metrics', options?.filters],
+    queryKey: ["expense-metrics", options?.filters],
     queryFn: async () => {
-      return await expenseService.getTotals(options?.filters);
+      const result = await expenseService.getTotals(options?.filters);
+      if (!result.success) {
+        throw result.error;
+      }
+      return result.data;
     },
     staleTime: options?.staleTime ?? 5 * 60 * 1000, // 5 minutes default
     enabled: options?.enabled ?? true,
     retry: 3,
   });
-}
+};

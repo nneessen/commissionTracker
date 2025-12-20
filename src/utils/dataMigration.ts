@@ -100,7 +100,7 @@ class DataMigrationService {
 
   async checkDatabaseEmpty(): Promise<boolean> {
     try {
-      const [policies, commissions, expenses, carriersResponse] =
+      const [policies, commissions, expensesResult, carriersResponse] =
         await Promise.all([
           policyService.getAll(),
           commissionService.getAll(),
@@ -109,6 +109,7 @@ class DataMigrationService {
         ]);
 
       const carriers = carriersResponse.data || [];
+      const expenses = expensesResult.success ? expensesResult.data || [] : [];
 
       return (
         policies.length === 0 &&

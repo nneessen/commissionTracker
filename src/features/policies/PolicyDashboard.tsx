@@ -13,7 +13,7 @@ import {
 } from "../../hooks/policies";
 import { useCarriers } from "../../hooks/carriers";
 import { useAuth } from "../../contexts/AuthContext";
-import { clientService } from "../../services/clients/clientService";
+import { clientService } from "@/services/clients";
 import {
   transformFormToCreateData,
   transformFormToUpdateData,
@@ -92,7 +92,7 @@ export const PolicyDashboard: React.FC = () => {
 
           try {
             // Create or find the client
-            const client = await clientService.createOrFind(
+            const clientResult = await clientService.createOrFind(
               {
                 name: formData.clientName,
                 email: formData.clientEmail || undefined,
@@ -104,6 +104,13 @@ export const PolicyDashboard: React.FC = () => {
               },
               user.id,
             );
+
+            if (!clientResult.success || !clientResult.data) {
+              throw (
+                clientResult.error || new Error("Failed to create/find client")
+              );
+            }
+            const client = clientResult.data;
 
             if (editingPolicyId) {
               // Update existing policy

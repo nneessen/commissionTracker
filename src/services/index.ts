@@ -29,7 +29,8 @@ export { breakevenService } from "./analytics/breakevenService";
 // Legacy service exports for backward compatibility
 export { policyService } from "./policies/policyService";
 export { commissionService } from "./commissions/commissionService";
-export { expenseService } from "./expenses/expenseService";
+export { expenseService } from "./expenses";
+export { clientService } from "./clients";
 
 // Type exports
 export type { CreatePolicyData, UpdatePolicyData } from "../types/policy.types";

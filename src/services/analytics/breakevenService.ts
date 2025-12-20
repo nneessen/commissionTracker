@@ -61,9 +61,10 @@ class BreakevenService {
       );
 
     // Get monthly expenses
-    const expenses = await expenseService.getAll();
+    const expenseResult = await expenseService.getAll();
+    const expenses = expenseResult.success ? expenseResult.data || [] : [];
     const monthlyExpenses = expenses.reduce(
-      (total, expense) => total + expense.amount,
+      (total: number, expense: { amount: number }) => total + expense.amount,
       0,
     );
 
@@ -247,9 +248,10 @@ class BreakevenService {
   ): Promise<ProfitTarget> {
     const currentMetrics =
       await commissionService.calculateNetCommissionAfterChargebacks(userId);
-    const expenses = await expenseService.getAll();
-    const monthlyExpenses = expenses.reduce(
-      (total, expense) => total + expense.amount,
+    const expenseResult = await expenseService.getAll();
+    const allExpenses = expenseResult.success ? expenseResult.data || [] : [];
+    const monthlyExpenses = allExpenses.reduce(
+      (total: number, expense: { amount: number }) => total + expense.amount,
       0,
     );
 

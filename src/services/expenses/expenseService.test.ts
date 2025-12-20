@@ -1,48 +1,48 @@
 // src/services/expenses/expenseService.test.ts
 
-import {describe, it, expect, beforeEach, vi} from 'vitest';
-import {expenseService} from './expenseService';
-import {supabase} from '../base/supabase';
-import type {CreateExpenseData, Expense} from '../../types/expense.types';
+import { describe, it, expect, beforeEach, vi } from "vitest";
+import { expenseService } from "./expense";
+import { supabase } from "../base/supabase";
+import type { CreateExpenseData, Expense } from "../../types/expense.types";
 
 // Mock Supabase
-vi.mock('../base/supabase', () => ({
+vi.mock("../base/supabase", () => ({
   supabase: {
     from: vi.fn(),
   },
   TABLES: {
-    EXPENSES: 'expenses',
+    EXPENSES: "expenses",
   },
 }));
 
-describe('ExpenseService', () => {
+describe("ExpenseService", () => {
   const mockExpenseDBRecord = {
-    id: '123',
-    user_id: 'user-1',
-    name: 'Office Supplies',
-    description: 'Pens and paper',
-    amount: '45.99',
-    category: 'office' as const,
-    expense_type: 'business' as const,
-    date: '2025-01-15',
+    id: "123",
+    user_id: "user-1",
+    name: "Office Supplies",
+    description: "Pens and paper",
+    amount: "45.99",
+    category: "office" as const,
+    expense_type: "business" as const,
+    date: "2025-01-15",
     is_recurring: false,
     recurring_frequency: null,
     receipt_url: null,
     is_tax_deductible: true,
     notes: null,
-    created_at: '2025-01-15T10:00:00Z',
-    updated_at: '2025-01-15T10:00:00Z',
+    created_at: "2025-01-15T10:00:00Z",
+    updated_at: "2025-01-15T10:00:00Z",
   };
 
   const mockExpense: Expense = {
-    id: '123',
-    user_id: 'user-1',
-    name: 'Office Supplies',
-    description: 'Pens and paper',
+    id: "123",
+    user_id: "user-1",
+    name: "Office Supplies",
+    description: "Pens and paper",
     amount: 45.99,
-    category: 'office',
-    expense_type: 'business',
-    date: '2025-01-15',
+    category: "office",
+    expense_type: "business",
+    date: "2025-01-15",
     is_recurring: false,
     recurring_frequency: null,
     recurring_group_id: null,
@@ -50,16 +50,16 @@ describe('ExpenseService', () => {
     receipt_url: null,
     is_tax_deductible: true,
     notes: null,
-    created_at: '2025-01-15T10:00:00Z',
-    updated_at: '2025-01-15T10:00:00Z',
+    created_at: "2025-01-15T10:00:00Z",
+    updated_at: "2025-01-15T10:00:00Z",
   };
 
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  describe('getAll', () => {
-    it('should fetch all expenses successfully', async () => {
+  describe("getAll", () => {
+    it("should fetch all expenses successfully", async () => {
       const mockFrom = vi.fn().mockReturnValue({
         select: vi.fn().mockReturnValue({
           order: vi.fn().mockResolvedValue({
@@ -68,16 +68,17 @@ describe('ExpenseService', () => {
           }),
         }),
       });
-      (supabase.from as any) = mockFrom;
+      (supabase.from as ReturnType<typeof vi.fn>) = mockFrom;
 
       const result = await expenseService.getAll();
 
-      expect(result).toHaveLength(1);
-      expect(result[0]).toMatchObject(mockExpense);
-      expect(mockFrom).toHaveBeenCalledWith('expenses');
+      expect(result.success).toBe(true);
+      expect(result.data).toHaveLength(1);
+      expect(result.data?.[0]).toMatchObject(mockExpense);
+      expect(mockFrom).toHaveBeenCalledWith("expenses");
     });
 
-    it('should filter by expense type', async () => {
+    it("should filter by expense type", async () => {
       const mockQuery = {
         eq: vi.fn().mockReturnThis(),
         gte: vi.fn().mockReturnThis(),
@@ -95,39 +96,40 @@ describe('ExpenseService', () => {
         error: null,
       });
 
-      (supabase.from as any) = mockFrom;
+      (supabase.from as ReturnType<typeof vi.fn>) = mockFrom;
 
-      await expenseService.getAll({ expenseType: 'business' });
+      await expenseService.getAll({ expenseType: "business" });
 
-      expect(mockQuery.eq).toHaveBeenCalledWith('expense_type', 'business');
+      expect(mockQuery.eq).toHaveBeenCalledWith("expense_type", "business");
     });
 
-    it('should handle errors', async () => {
+    it("should handle errors", async () => {
       const mockFrom = vi.fn().mockReturnValue({
         select: vi.fn().mockReturnValue({
           order: vi.fn().mockResolvedValue({
             data: null,
-            error: { message: 'Database error' },
+            error: { message: "Database error" },
           }),
         }),
       });
-      (supabase.from as any) = mockFrom;
+      (supabase.from as ReturnType<typeof vi.fn>) = mockFrom;
 
-      await expect(expenseService.getAll()).rejects.toThrow(
-        'Failed to fetch expenses: Database error'
-      );
+      const result = await expenseService.getAll();
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBeDefined();
     });
   });
 
-  describe('create', () => {
-    it('should create expense successfully', async () => {
+  describe("create", () => {
+    it("should create expense successfully", async () => {
       const newExpenseData: CreateExpenseData = {
-        name: 'Office Supplies',
-        description: 'Pens and paper',
+        name: "Office Supplies",
+        description: "Pens and paper",
         amount: 45.99,
-        category: 'office',
-        expense_type: 'business',
-        date: '2025-01-15',
+        category: "office",
+        expense_type: "business",
+        date: "2025-01-15",
         is_tax_deductible: true,
       };
 
@@ -141,21 +143,22 @@ describe('ExpenseService', () => {
           }),
         }),
       });
-      (supabase.from as any) = mockFrom;
+      (supabase.from as ReturnType<typeof vi.fn>) = mockFrom;
 
       const result = await expenseService.create(newExpenseData);
 
-      expect(result).toMatchObject(mockExpense);
+      expect(result.success).toBe(true);
+      expect(result.data).toMatchObject(mockExpense);
     });
 
-    it('should handle creation errors', async () => {
+    it("should handle creation errors", async () => {
       const newExpenseData: CreateExpenseData = {
-        name: 'Office Supplies',
-        description: 'Pens and paper',
+        name: "Office Supplies",
+        description: "Pens and paper",
         amount: 45.99,
-        category: 'office',
-        expense_type: 'business',
-        date: '2025-01-15',
+        category: "office",
+        expense_type: "business",
+        date: "2025-01-15",
       };
 
       const mockFrom = vi.fn().mockReturnValue({
@@ -163,45 +166,47 @@ describe('ExpenseService', () => {
           select: vi.fn().mockReturnValue({
             single: vi.fn().mockResolvedValue({
               data: null,
-              error: { message: 'Insert failed' },
+              error: { message: "Insert failed" },
             }),
           }),
         }),
       });
-      (supabase.from as any) = mockFrom;
+      (supabase.from as ReturnType<typeof vi.fn>) = mockFrom;
 
-      await expect(expenseService.create(newExpenseData)).rejects.toThrow(
-        'Failed to create expense: Insert failed'
-      );
+      const result = await expenseService.create(newExpenseData);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBeDefined();
     });
   });
 
-  describe('update', () => {
-    it('should update expense successfully', async () => {
-      const updates = { amount: 50.00 };
+  describe("update", () => {
+    it("should update expense successfully", async () => {
+      const updates = { amount: 50.0 };
 
       const mockFrom = vi.fn().mockReturnValue({
         update: vi.fn().mockReturnValue({
           eq: vi.fn().mockReturnValue({
             select: vi.fn().mockReturnValue({
               single: vi.fn().mockResolvedValue({
-                data: { ...mockExpenseDBRecord, amount: '50.00' },
+                data: { ...mockExpenseDBRecord, amount: "50.00" },
                 error: null,
               }),
             }),
           }),
         }),
       });
-      (supabase.from as any) = mockFrom;
+      (supabase.from as ReturnType<typeof vi.fn>) = mockFrom;
 
-      const result = await expenseService.update('123', updates);
+      const result = await expenseService.update("123", updates);
 
-      expect(result.amount).toBe(50.00);
+      expect(result.success).toBe(true);
+      expect(result.data?.amount).toBe(50.0);
     });
   });
 
-  describe('delete', () => {
-    it('should delete expense successfully', async () => {
+  describe("delete", () => {
+    it("should delete expense successfully", async () => {
       const mockFrom = vi.fn().mockReturnValue({
         delete: vi.fn().mockReturnValue({
           eq: vi.fn().mockResolvedValue({
@@ -209,33 +214,36 @@ describe('ExpenseService', () => {
           }),
         }),
       });
-      (supabase.from as any) = mockFrom;
+      (supabase.from as ReturnType<typeof vi.fn>) = mockFrom;
 
-      await expect(expenseService.delete('123')).resolves.not.toThrow();
+      const result = await expenseService.delete("123");
+
+      expect(result.success).toBe(true);
     });
 
-    it('should handle deletion errors', async () => {
+    it("should handle deletion errors", async () => {
       const mockFrom = vi.fn().mockReturnValue({
         delete: vi.fn().mockReturnValue({
           eq: vi.fn().mockResolvedValue({
-            error: { message: 'Delete failed' },
+            error: { message: "Delete failed" },
           }),
         }),
       });
-      (supabase.from as any) = mockFrom;
+      (supabase.from as ReturnType<typeof vi.fn>) = mockFrom;
 
-      await expect(expenseService.delete('123')).rejects.toThrow(
-        'Failed to delete expense: Delete failed'
-      );
+      const result = await expenseService.delete("123");
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBeDefined();
     });
   });
 
-  describe('getTotals', () => {
-    it('should calculate totals correctly', async () => {
+  describe("getTotals", () => {
+    it("should calculate totals correctly", async () => {
       const mockExpenses = [
-        { amount: '100.00', expense_type: 'business', is_tax_deductible: true },
-        { amount: '50.00', expense_type: 'personal', is_tax_deductible: false },
-        { amount: '75.00', expense_type: 'business', is_tax_deductible: true },
+        { amount: "100.00", expense_type: "business", is_tax_deductible: true },
+        { amount: "50.00", expense_type: "personal", is_tax_deductible: false },
+        { amount: "75.00", expense_type: "business", is_tax_deductible: true },
       ];
 
       const mockFrom = vi.fn().mockReturnValue({
@@ -244,17 +252,21 @@ describe('ExpenseService', () => {
           error: null,
         }),
       });
-      (supabase.from as any) = mockFrom;
+      (supabase.from as ReturnType<typeof vi.fn>) = mockFrom;
 
-      // Mock getByDateRange for monthly calculation
-      vi.spyOn(expenseService, 'getByDateRange').mockResolvedValue([mockExpense]);
+      // Mock getByDateRange for monthly calculation - now returns ServiceResponse
+      vi.spyOn(expenseService, "getByDateRange").mockResolvedValue({
+        success: true,
+        data: [mockExpense],
+      });
 
       const result = await expenseService.getTotals();
 
-      expect(result.total).toBe(225);
-      expect(result.business).toBe(175);
-      expect(result.personal).toBe(50);
-      expect(result.deductible).toBe(175);
+      expect(result.success).toBe(true);
+      expect(result.data?.total).toBe(225);
+      expect(result.data?.business).toBe(175);
+      expect(result.data?.personal).toBe(50);
+      expect(result.data?.deductible).toBe(175);
     });
   });
 });

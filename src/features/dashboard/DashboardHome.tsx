@@ -49,7 +49,7 @@ import {
   getPoliciesNeededDisplay,
   getPeriodSuffix,
 } from "../../utils/dashboardCalculations";
-import { clientService } from "../../services/clients/clientService";
+import { clientService } from "@/services/clients";
 
 export const DashboardHome: React.FC = () => {
   const navigate = useNavigate();
@@ -222,7 +222,7 @@ export const DashboardHome: React.FC = () => {
         throw new Error("You must be logged in to create a policy");
       }
 
-      const client = await clientService.createOrFind(
+      const clientResult = await clientService.createOrFind(
         {
           name: formData.clientName,
           email: formData.clientEmail || undefined,
@@ -231,6 +231,11 @@ export const DashboardHome: React.FC = () => {
         },
         user.id,
       );
+
+      if (!clientResult.success || !clientResult.data) {
+        throw clientResult.error || new Error("Failed to create/find client");
+      }
+      const client = clientResult.data;
 
       const monthlyPremium =
         formData.paymentFrequency === "annual"

@@ -1,5 +1,10 @@
 // src/services/expenses/index.ts
-export { expenseService } from "./expenseService";
+export {
+  expenseService,
+  ExpenseServiceClass,
+  ExpenseRepository,
+} from "./expense";
+export type { ExpenseBaseEntity } from "./expense";
 export {
   expenseCategoryService,
   ExpenseCategoryServiceClass,
