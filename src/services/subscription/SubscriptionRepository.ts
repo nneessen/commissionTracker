@@ -162,10 +162,9 @@ export class SubscriptionRepository extends BaseRepository<
         `,
         )
         .eq("user_id", userId)
-        .single();
+        .maybeSingle();
 
       if (error) {
-        if (error.code === "PGRST116") return null;
         throw this.handleError(error, "findByUserIdWithPlan");
       }
 
