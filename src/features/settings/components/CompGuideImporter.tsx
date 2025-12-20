@@ -11,7 +11,7 @@ import { Carrier } from "../../../types/carrier.types";
 import { Comp, CreateCompData } from "../../../types/commission.types";
 import { Database } from "../../../types/database.types";
 import { carrierService } from "../../../services/settings/carriers";
-import { compGuideService } from "../../../services/settings/compGuideService";
+import { compGuideService } from "../../../services/settings/comp-guide";
 
 interface CompGuideImporterProps {
   isOpen: boolean;

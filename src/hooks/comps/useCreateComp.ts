@@ -1,6 +1,6 @@
-import {useMutation, useQueryClient} from '@tanstack/react-query';
-import {compGuideService} from '../../services/settings/compGuideService';
-import {CreateCompData} from '../../types/commission.types';
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { compGuideService } from "../../services/settings/comp-guide";
+import { CreateCompData } from "../../types/commission.types";
 
 export const useCreateComp = () => {
   const queryClient = useQueryClient();
@@ -12,7 +12,7 @@ export const useCreateComp = () => {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['comps'] });
-    }
+      queryClient.invalidateQueries({ queryKey: ["comps"] });
+    },
   });
 };

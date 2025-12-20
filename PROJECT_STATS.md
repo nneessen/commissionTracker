@@ -1,15 +1,15 @@
 # Project Statistics
 
-Last Updated: 2025-12-19 16:31:02
+Last Updated: 2025-12-20 10:10:38
 
 ## Metrics
-- Total Files: 28394
-- Total Lines of Code: 124182
-- Total Commits: 393
+- Total Files: 28403
+- Total Lines of Code: 124736
+- Total Commits: 396
 
 ## Recent Activity
+dce3f64 refactor(services): migrate carrierService and productService to BaseRepository pattern
+7e3b088 refactor(email): migrate emailService to BaseRepository pattern
+0b3380c docs: multiple changes in .,src/features/targets,src/features/targets/components
 0ee42e2 docs: multiple changes in .,src/features/admin/components
 dddb13b docs: multiple changes in .,src/features/hierarchy,supabase/migrations
-e25a484 docs: multiple changes in .,src/features/messages/components/compose,src/features/messages/hooks
-769a6a7 docs: CHANGELOG.md,PROJECT_STATS.md,tsconfig.tsbuildinfo
-f99f07f chore: remove debug console.log from useFeatureAccess

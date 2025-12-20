@@ -20,7 +20,7 @@ export {
   userService,
   userApprovalService,
 } from "./users/userService";
-export { compGuideService } from "./settings/compGuideService";
+export { compGuideService } from "./settings/comp-guide";
 export { agentSettingsService } from "./settings/agentSettingsService";
 export { chargebackService } from "./commissions/chargebackService";
 export { commissionRateService } from "./commissions/commissionRateService";

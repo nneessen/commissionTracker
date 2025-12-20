@@ -6,6 +6,42 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-12-20 10:10:38
+
+### Changed Files
+- `docs/ADD_TO_PROMPT.md`
+- `docs/REFACTOR.md`
+- `plans/completed/emailService-refactor-to-base-repository.md`
+- `src/features/comps/CompGuide.tsx`
+- `src/features/settings/commission-rates/components/RateEditDialog.tsx`
+- `src/features/settings/commission-rates/hooks/useCommissionRates.ts`
+- `src/features/settings/components/CompGuideImporter.tsx`
+- `src/hooks/comps/useCompRates.ts`
+- `src/hooks/comps/useComps.ts`
+- `src/hooks/comps/useCreateComp.ts`
+- `src/hooks/comps/useDeleteComp.ts`
+- `src/hooks/comps/useUpdateComp.ts`
+- `src/hooks/expenses/useExpenseCategories.ts`
+- `src/services/expenses/categories/ExpenseCategoryRepository.ts`
+- `src/services/expenses/categories/ExpenseCategoryService.ts`
+- `src/services/expenses/categories/index.ts`
+- `src/services/expenses/expenseCategoryService.ts`
+- `src/services/expenses/index.ts`
+- `src/services/index.ts`
+- `src/services/settings/__tests__/compGuideService.test.ts`
+- `src/services/settings/comp-guide/CompGuideRepository.ts`
+- `src/services/settings/comp-guide/CompGuideService.ts`
+- `src/services/settings/comp-guide/index.ts`
+- `src/services/settings/compGuideService.ts`
+- `src/services/settings/index.ts`
+- `tsconfig.tsbuildinfo`
+- `vitest.config.ts`
+
+### Statistics
+```
+ 27 files changed, 1389 insertions(+), 843 deletions(-)
+```
+
 ## [Checkpoint] - 2025-12-19 16:31:02
 
 ### Changed Files

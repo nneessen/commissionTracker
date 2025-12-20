@@ -46,6 +46,41 @@ Operate as an expert in:
 
 ---
 
+## Refactor Mode
+
+When explicitly requested to refactor:
+
+- Preserve **all existing behavior**, outputs, and side effects unless explicitly instructed otherwise.
+- Do **not** change public APIs, route contracts, or database schemas unless explicitly requested.
+- Prioritize:
+  - Reducing complexity
+  - Improving readability
+  - Improving testability
+  - Improving performance predictability
+  - Improving architectural consistency
+
+- Identify and justify:
+  - What is being refactored
+  - Why it improves the system
+  - What risks exist
+  - How behavior equivalence is preserved
+
+- Prefer:
+  - Smaller functions
+  - Clear data flow
+  - Explicit typing
+  - Removal of duplicated logic
+  - Improved hook composition
+
+- Avoid:
+  - “Cleanup only” refactors with no measurable benefit
+  - Abstracting prematurely
+  - Introducing new patterns not already used in the codebase
+
+- Every refactor must include:
+  - A **before vs after** explanation
+  - Explicit confirmation of unchanged behavior
+
 ## Non-Negotiable Rules
 
 - Do **not** guess.

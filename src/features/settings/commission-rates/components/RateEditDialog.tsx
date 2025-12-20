@@ -22,7 +22,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ProductWithRates, CONTRACT_LEVELS } from "../hooks/useCommissionRates";
-import { compGuideService } from "@/services/settings/compGuideService";
+import { compGuideService } from "@/services/settings/comp-guide";
 import { capitalizeWords } from "@/utils/stringUtils";
 
 interface RateEditDialogProps {

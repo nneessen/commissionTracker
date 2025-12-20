@@ -41,7 +41,13 @@ export function CompGuide() {
 
   // Get unique carrier IDs and product types from data for filter options
   const carrierIds = comps
-    ? Array.from(new Set(comps.map((c) => c.carrier_id)))
+    ? Array.from(
+        new Set(
+          comps
+            .map((c) => c.carrier_id)
+            .filter((id): id is string => id !== null),
+        ),
+      )
     : [];
   const productTypes = comps
     ? Array.from(new Set(comps.map((c) => c.product_type)))

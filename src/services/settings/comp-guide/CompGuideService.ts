@@ -1,0 +1,463 @@
+// src/services/settings/comp-guide/CompGuideService.ts
+import { ServiceResponse } from "../../base/BaseService";
+import {
+  CompGuideRepository,
+  CompGuideEntry,
+  CompGuideFormData,
+} from "./CompGuideRepository";
+import { supabase } from "../../base/supabase";
+import type { Database } from "@/types/database.types";
+
+type CompGuideInsert = Database["public"]["Tables"]["comp_guide"]["Insert"];
+
+/**
+ * Service for comp guide business logic
+ * Uses CompGuideRepository for data access
+ */
+class CompGuideServiceClass {
+  private repository: CompGuideRepository;
+
+  constructor() {
+    this.repository = new CompGuideRepository();
+  }
+
+  /**
+   * Get all entries with carrier details
+   */
+  async getAll(): Promise<ServiceResponse<CompGuideEntry[]>> {
+    try {
+      const entries = await this.repository.findAllWithCarrier();
+      return { success: true, data: entries as CompGuideEntry[] };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error : new Error(String(error)),
+      };
+    }
+  }
+
+  /**
+   * Get entry by ID with carrier details
+   */
+  async getById(id: string): Promise<ServiceResponse<CompGuideEntry>> {
+    try {
+      const entry = await this.repository.findByIdWithCarrier(id);
+      if (!entry) {
+        return { success: false, error: new Error("Entry not found") };
+      }
+      return { success: true, data: entry as CompGuideEntry };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error : new Error(String(error)),
+      };
+    }
+  }
+
+  /**
+   * Create a new entry
+   */
+  async create(
+    data: CompGuideFormData,
+  ): Promise<ServiceResponse<CompGuideEntry>> {
+    try {
+      const entry = await this.repository.create(data);
+      return { success: true, data: entry as CompGuideEntry };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error : new Error(String(error)),
+      };
+    }
+  }
+
+  /**
+   * Update an entry
+   */
+  async update(
+    id: string,
+    data: Partial<CompGuideFormData>,
+  ): Promise<ServiceResponse<CompGuideEntry>> {
+    try {
+      const entry = await this.repository.update(id, data);
+      return { success: true, data: entry as CompGuideEntry };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error : new Error(String(error)),
+      };
+    }
+  }
+
+  /**
+   * Delete an entry
+   */
+  async delete(id: string): Promise<ServiceResponse<void>> {
+    try {
+      await this.repository.delete(id);
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error : new Error(String(error)),
+      };
+    }
+  }
+
+  /**
+   * Get entries by carrier
+   */
+  async getByCarrier(
+    carrierId: string,
+  ): Promise<ServiceResponse<CompGuideEntry[]>> {
+    try {
+      const entries = await this.repository.findByCarrier(carrierId);
+      return { success: true, data: entries as CompGuideEntry[] };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error : new Error(String(error)),
+      };
+    }
+  }
+
+  /**
+   * Get entries by product
+   */
+  async getByProduct(
+    productId: string,
+  ): Promise<ServiceResponse<CompGuideEntry[]>> {
+    try {
+      const entries = await this.repository.findByProduct(productId);
+      return { success: true, data: entries as CompGuideEntry[] };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error : new Error(String(error)),
+      };
+    }
+  }
+
+  /**
+   * Get all active entries
+   */
+  async getActive(): Promise<ServiceResponse<CompGuideEntry[]>> {
+    try {
+      const entries = await this.repository.findActive();
+      return { success: true, data: entries as CompGuideEntry[] };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error : new Error(String(error)),
+      };
+    }
+  }
+
+  /**
+   * Search entries
+   */
+  async search(query: string): Promise<ServiceResponse<CompGuideEntry[]>> {
+    try {
+      const entries = await this.repository.search(query);
+      return { success: true, data: entries as CompGuideEntry[] };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error : new Error(String(error)),
+      };
+    }
+  }
+
+  /**
+   * Bulk import entries
+   */
+  async bulkImport(
+    entries: CompGuideFormData[],
+  ): Promise<ServiceResponse<CompGuideEntry[]>> {
+    try {
+      const insertData: CompGuideInsert[] = entries.map((entry) => ({
+        carrier_id: entry.carrier_id,
+        product_id: entry.product_id,
+        product_type: entry.product_type,
+        contract_level: entry.contract_level,
+        commission_percentage: entry.commission_percentage,
+        bonus_percentage: entry.bonus_percentage,
+        effective_date: entry.effective_date,
+        expiration_date: entry.expiration_date,
+        minimum_premium: entry.minimum_premium,
+        maximum_premium: entry.maximum_premium,
+      }));
+
+      const created = await this.repository.bulkCreate(insertData);
+      return { success: true, data: created as CompGuideEntry[] };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error : new Error(String(error)),
+      };
+    }
+  }
+
+  /**
+   * Get commission rate for specific carrier, product type, and contract level
+   * This is the main lookup function used by commission calculations
+   */
+  async getCommissionRate(
+    carrierName: string,
+    productType: Database["public"]["Enums"]["product_type"],
+    contractLevel: number,
+  ): Promise<{ data: number | null; error: Error | null }> {
+    try {
+      // First get the carrier ID by name
+      const { data: carrier, error: carrierError } = await supabase
+        .from("carriers")
+        .select("id")
+        .eq("name", carrierName)
+        .single();
+
+      if (carrierError || !carrier) {
+        return {
+          data: null,
+          error: carrierError || new Error("Carrier not found"),
+        };
+      }
+
+      const rate = await this.repository.getCommissionRate(
+        carrier.id,
+        productType,
+        contractLevel,
+      );
+
+      return { data: rate, error: null };
+    } catch (error) {
+      return {
+        data: null,
+        error: error instanceof Error ? error : new Error(String(error)),
+      };
+    }
+  }
+
+  /**
+   * Get all commission data in a unified format for the grid
+   * Returns carriers with their products and all commission rates
+   */
+  async getAllCommissionData(): Promise<
+    Array<{
+      carrierId: string;
+      carrierName: string;
+      productId: string | null;
+      productName: string;
+      productType: string | null;
+      isActive: boolean;
+      rates: Record<number, number>;
+    }>
+  > {
+    const { data, error } = await supabase
+      .from("carriers")
+      .select(
+        `
+        id,
+        name,
+        products!products_carrier_id_fkey (
+          id,
+          name,
+          product_type,
+          is_active
+        ),
+        comp_guide!comp_guide_carrier_id_fkey (
+          id,
+          product_id,
+          contract_level,
+          commission_percentage
+        )
+      `,
+      )
+      .eq("is_active", true)
+      .order("name");
+
+    if (error) throw error;
+
+    const gridData: Array<{
+      carrierId: string;
+      carrierName: string;
+      productId: string | null;
+      productName: string;
+      productType: string | null;
+      isActive: boolean;
+      rates: Record<number, number>;
+    }> = [];
+
+    for (const carrier of data || []) {
+      const productsMap = new Map<
+        string,
+        {
+          carrierId: string;
+          carrierName: string;
+          productId: string;
+          productName: string;
+          productType: string;
+          isActive: boolean;
+          rates: Record<number, number>;
+        }
+      >();
+
+      // Add products from products table
+      for (const product of carrier.products || []) {
+        if (!productsMap.has(product.id)) {
+          productsMap.set(product.id, {
+            carrierId: carrier.id,
+            carrierName: carrier.name,
+            productId: product.id,
+            productName: product.name,
+            productType: product.product_type,
+            isActive: product.is_active,
+            rates: {},
+          });
+        }
+      }
+
+      // Add commission rates to products
+      for (const compEntry of carrier.comp_guide || []) {
+        if (compEntry.product_id && productsMap.has(compEntry.product_id)) {
+          const product = productsMap.get(compEntry.product_id)!;
+          product.rates[compEntry.contract_level] =
+            compEntry.commission_percentage;
+        }
+      }
+
+      // Add carrier-level rates
+      const carrierLevelRates = (carrier.comp_guide || [])
+        .filter((entry: { product_id: string | null }) => !entry.product_id)
+        .reduce(
+          (
+            acc: Record<number, number>,
+            entry: { contract_level: number; commission_percentage: number },
+          ) => {
+            acc[entry.contract_level] = entry.commission_percentage;
+            return acc;
+          },
+          {} as Record<number, number>,
+        );
+
+      // If there are carrier-level rates but no products, add a placeholder
+      if (Object.keys(carrierLevelRates).length > 0 && productsMap.size === 0) {
+        gridData.push({
+          carrierId: carrier.id,
+          carrierName: carrier.name,
+          productId: null,
+          productName: "Default Rates",
+          productType: null,
+          isActive: true,
+          rates: carrierLevelRates,
+        });
+      }
+
+      // Add all products to grid data
+      for (const product of productsMap.values()) {
+        if (
+          Object.keys(product.rates).length === 0 &&
+          Object.keys(carrierLevelRates).length > 0
+        ) {
+          product.rates = carrierLevelRates;
+        }
+        gridData.push(product);
+      }
+    }
+
+    return gridData;
+  }
+
+  // ============================================================================
+  // Legacy API for backward compatibility
+  // ============================================================================
+
+  /** @deprecated Use getAll instead */
+  async getAllEntries() {
+    const result = await this.getAll();
+    if (!result.success) {
+      return { data: null, error: result.error };
+    }
+    return { data: result.data, error: null };
+  }
+
+  /** @deprecated Use getById instead */
+  async getEntryById(id: string) {
+    const result = await this.getById(id);
+    if (!result.success) {
+      return { data: null, error: result.error };
+    }
+    return { data: result.data, error: null };
+  }
+
+  /** @deprecated Use create instead */
+  async createEntry(data: CompGuideFormData) {
+    const result = await this.create(data);
+    if (!result.success) {
+      return { data: null, error: result.error };
+    }
+    return { data: result.data, error: null };
+  }
+
+  /** @deprecated Use update instead */
+  async updateEntry(id: string, data: Partial<CompGuideFormData>) {
+    const result = await this.update(id, data);
+    if (!result.success) {
+      return { data: null, error: result.error };
+    }
+    return { data: result.data, error: null };
+  }
+
+  /** @deprecated Use delete instead */
+  async deleteEntry(id: string) {
+    const result = await this.delete(id);
+    if (!result.success) {
+      return { error: result.error };
+    }
+    return { error: null };
+  }
+
+  /** @deprecated Use search instead */
+  async searchEntries(query: string) {
+    const result = await this.search(query);
+    if (!result.success) {
+      return { data: null, error: result.error };
+    }
+    return { data: result.data, error: null };
+  }
+
+  /** @deprecated Use getByCarrier instead */
+  async getEntriesByCarrier(carrierId: string) {
+    const result = await this.getByCarrier(carrierId);
+    if (!result.success) {
+      return { data: null, error: result.error };
+    }
+    return { data: result.data, error: null };
+  }
+
+  /** @deprecated Use getByProduct instead */
+  async getEntriesByProduct(productId: string) {
+    const result = await this.getByProduct(productId);
+    if (!result.success) {
+      return { data: null, error: result.error };
+    }
+    return { data: result.data, error: null };
+  }
+
+  /** @deprecated Use bulkImport instead */
+  async createBulkEntries(entries: CompGuideInsert[]) {
+    const created = await this.repository.bulkCreate(entries);
+    return { data: created, error: null };
+  }
+
+  /** @deprecated Use getActive instead */
+  async getActiveEntries() {
+    const result = await this.getActive();
+    if (!result.success) {
+      return { data: null, error: result.error };
+    }
+    return { data: result.data, error: null };
+  }
+}
+
+export const compGuideService = new CompGuideServiceClass();
+export { CompGuideServiceClass };

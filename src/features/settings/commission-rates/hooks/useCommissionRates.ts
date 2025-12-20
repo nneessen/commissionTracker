@@ -1,8 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   compGuideService,
-  type CompGuideCreateData,
-} from "@/services/settings/compGuideService";
+  type CompGuideFormData,
+} from "@/services/settings/comp-guide";
 import { toast } from "sonner";
 import type { Database } from "@/types/database.types";
 
@@ -123,7 +123,7 @@ export function useCommissionRates() {
   // Update rate mutation
   const updateRate = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: UpdateRateData }) => {
-      const updateData: Partial<CompGuideCreateData> = {
+      const updateData: Partial<CompGuideFormData> = {
         commission_percentage: data.commission_percentage,
         effective_date: data.effective_date,
         expiration_date: data.expiration_date || undefined,
@@ -145,8 +145,10 @@ export function useCommissionRates() {
   const deleteRate = useMutation({
     mutationFn: async (id: string) => {
       const result = await compGuideService.deleteEntry(id);
-      if (result.error) throw new Error(result.error.message);
-      return result.data;
+      if (result.error) {
+        const err = result.error as Error;
+        throw new Error(err.message);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["commission-grid"] });
@@ -171,7 +173,10 @@ export function useCommissionRates() {
           expiration_date: r.expiration_date || undefined,
         })),
       );
-      if (result.error) throw new Error(result.error.message);
+      if ("error" in result && result.error) {
+        const err = result.error as Error;
+        throw new Error(err.message);
+      }
       return result.data;
     },
     onSuccess: (data) => {

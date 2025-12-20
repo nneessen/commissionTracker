@@ -1,8 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   compGuideService,
-  CompGuideCreateData,
-} from "../../services/settings/compGuideService";
+  CompGuideFormData,
+} from "../../services/settings/comp-guide";
 import { Database } from "../../types/database.types";
 
 type CompGuideInsert = Database["public"]["Tables"]["comp_guide"]["Insert"];
@@ -86,7 +86,7 @@ export function useUpdateCompRate() {
       updates,
     }: {
       id: string;
-      updates: Partial<CompGuideCreateData>;
+      updates: Partial<CompGuideFormData>;
     }) => {
       const { data, error } = await compGuideService.updateEntry(id, updates);
       if (error) throw new Error(error.message);
@@ -105,7 +105,7 @@ export function useCreateCompRate() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (entry: CompGuideCreateData) => {
+    mutationFn: async (entry: CompGuideFormData) => {
       const { data, error } = await compGuideService.createEntry(entry);
       if (error) throw new Error(error.message);
       return data;
@@ -141,9 +141,12 @@ export function useBulkCreateCompRates() {
 
   return useMutation({
     mutationFn: async (entries: CompGuideInsert[]) => {
-      const { data, error } = await compGuideService.createBulkEntries(entries);
-      if (error) throw new Error(error.message);
-      return data;
+      const result = await compGuideService.createBulkEntries(entries);
+      if ("error" in result && result.error) {
+        const err = result.error as Error;
+        throw new Error(err.message);
+      }
+      return result.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: compRatesKeys.all });
@@ -159,7 +162,7 @@ export function useBulkUpdateCompRates() {
 
   return useMutation({
     mutationFn: async (
-      updates: Array<{ id: string; updates: Partial<CompGuideCreateData> }>,
+      updates: Array<{ id: string; updates: Partial<CompGuideFormData> }>,
     ) => {
       const promises = updates.map(({ id, updates: data }) =>
         compGuideService.updateEntry(id, data),

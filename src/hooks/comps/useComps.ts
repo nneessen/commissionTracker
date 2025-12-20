@@ -1,6 +1,6 @@
-import {useQuery} from "@tanstack/react-query";
-import {compGuideService} from "../../services/settings/compGuideService";
-import {CompFilters} from "../../types/commission.types";
+import { useQuery } from "@tanstack/react-query";
+import { compGuideService } from "../../services/settings/comp-guide";
+import { CompFilters } from "../../types/commission.types";
 
 export const useComps = (filters?: CompFilters) => {
   return useQuery({

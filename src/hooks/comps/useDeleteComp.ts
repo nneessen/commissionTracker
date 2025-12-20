@@ -1,5 +1,5 @@
-import {useMutation, useQueryClient} from '@tanstack/react-query';
-import {compGuideService} from '../../services/settings/compGuideService';
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { compGuideService } from "../../services/settings/comp-guide";
 
 export const useDeleteComp = () => {
   const queryClient = useQueryClient();
@@ -10,7 +10,7 @@ export const useDeleteComp = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['comps'] });
-    }
+      queryClient.invalidateQueries({ queryKey: ["comps"] });
+    },
   });
 };

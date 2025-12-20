@@ -4,9 +4,9 @@
 
 **Problem Identified:** Two email service files exist, created on the same day (Dec 16, 2025):
 
-| File | Edge Function | Status |
-|------|--------------|--------|
-| `src/services/emailService.ts` (root, 137 lines) | `send-email` | **CORRECT** - per memory file |
+| File                                                     | Edge Function          | Status                             |
+| -------------------------------------------------------- | ---------------------- | ---------------------------------- |
+| `src/services/emailService.ts` (root, 137 lines)         | `send-email`           | **CORRECT** - per memory file      |
 | `src/services/email/emailService.ts` (folder, 381 lines) | `send-automated-email` | **DEPRECATED** - should be deleted |
 
 **Root Cause:** Morning automated checkpoint created the folder version. Evening developer correctly created root version using new edge function. Nobody cleaned up the old file.
@@ -20,12 +20,14 @@
 ### Correct File: `src/services/emailService.ts` (ROOT)
 
 **Consumers (4 files):**
+
 - `src/features/recruiting/hooks/useRecruitEmails.ts` → `sendEmail`, `getEmailsForRecruit`
 - `src/features/recruiting/components/CommunicationPanel.tsx` → `sendEmail`, `getEmailsForUser`
 - `src/features/recruiting/components/ComposeEmailDialog.tsx` → type imports
 - `src/features/email/components/EmailComposer.tsx` → type imports
 
 **Methods:**
+
 - `sendEmail(request)` - Uses correct `send-email` edge function
 - `getEmailsForUser(userId)` - SELECT with joins
 - `getEmailsForRecruit(recruitId)` - SELECT with filter
@@ -35,9 +37,11 @@
 ### Deprecated File: `src/services/email/emailService.ts` (FOLDER)
 
 **Consumers (1 file):**
+
 - `src/services/recruiting/recruitingService.ts` → `sendEmail` (BROKEN!)
 
 **Extra methods (UNUSED DEAD CODE):**
+
 - `sendTemplatedEmail` - Not called anywhere
 - `sendBulkEmail` - Not called anywhere
 - `queueEmail` - Not called anywhere
@@ -80,11 +84,13 @@ export {
 ```
 
 **Step 1.2:** Delete deprecated file
+
 ```
 DELETE: src/services/email/emailService.ts
 ```
 
 **Step 1.3:** Verify build passes
+
 ```bash
 npm run build
 ```
@@ -155,7 +161,11 @@ export interface UpdateUserEmailData {
 
 ```typescript
 import { BaseRepository } from "../base/BaseRepository";
-import type { UserEmail, CreateUserEmailData, UpdateUserEmailData } from "./types";
+import type {
+  UserEmail,
+  CreateUserEmailData,
+  UpdateUserEmailData,
+} from "./types";
 
 export class UserEmailRepository extends BaseRepository<
   UserEmail,
@@ -187,21 +197,33 @@ export class UserEmailRepository extends BaseRepository<
   }
 
   protected transformToDB(
-    data: CreateUserEmailData | UpdateUserEmailData
+    data: CreateUserEmailData | UpdateUserEmailData,
   ): Record<string, unknown> {
     const dbData: Record<string, unknown> = {};
-    if ('userId' in data && data.userId !== undefined) dbData.user_id = data.userId;
-    if ('senderId' in data && data.senderId !== undefined) dbData.sender_id = data.senderId;
-    if ('subject' in data && data.subject !== undefined) dbData.subject = data.subject;
-    if ('bodyHtml' in data && data.bodyHtml !== undefined) dbData.body_html = data.bodyHtml;
-    if ('bodyText' in data && data.bodyText !== undefined) dbData.body_text = data.bodyText;
-    if ('status' in data && data.status !== undefined) dbData.status = data.status;
-    if ('toAddresses' in data && data.toAddresses !== undefined) dbData.to_addresses = data.toAddresses;
-    if ('sentAt' in data && data.sentAt !== undefined) dbData.sent_at = data.sentAt;
-    if ('deliveredAt' in data && data.deliveredAt !== undefined) dbData.delivered_at = data.deliveredAt;
-    if ('openedAt' in data && data.openedAt !== undefined) dbData.opened_at = data.openedAt;
-    if ('failedReason' in data && data.failedReason !== undefined) dbData.failed_reason = data.failedReason;
-    if ('metadata' in data && data.metadata !== undefined) dbData.metadata = data.metadata;
+    if ("userId" in data && data.userId !== undefined)
+      dbData.user_id = data.userId;
+    if ("senderId" in data && data.senderId !== undefined)
+      dbData.sender_id = data.senderId;
+    if ("subject" in data && data.subject !== undefined)
+      dbData.subject = data.subject;
+    if ("bodyHtml" in data && data.bodyHtml !== undefined)
+      dbData.body_html = data.bodyHtml;
+    if ("bodyText" in data && data.bodyText !== undefined)
+      dbData.body_text = data.bodyText;
+    if ("status" in data && data.status !== undefined)
+      dbData.status = data.status;
+    if ("toAddresses" in data && data.toAddresses !== undefined)
+      dbData.to_addresses = data.toAddresses;
+    if ("sentAt" in data && data.sentAt !== undefined)
+      dbData.sent_at = data.sentAt;
+    if ("deliveredAt" in data && data.deliveredAt !== undefined)
+      dbData.delivered_at = data.deliveredAt;
+    if ("openedAt" in data && data.openedAt !== undefined)
+      dbData.opened_at = data.openedAt;
+    if ("failedReason" in data && data.failedReason !== undefined)
+      dbData.failed_reason = data.failedReason;
+    if ("metadata" in data && data.metadata !== undefined)
+      dbData.metadata = data.metadata;
     return dbData;
   }
 
@@ -344,13 +366,13 @@ export {
 
 **Step 3.1:** Update imports in consumer files
 
-| File | Current Import | New Import |
-|------|---------------|------------|
-| `useRecruitEmails.ts` | `@/services/emailService` | `@/services/email` |
+| File                     | Current Import            | New Import         |
+| ------------------------ | ------------------------- | ------------------ |
+| `useRecruitEmails.ts`    | `@/services/emailService` | `@/services/email` |
 | `CommunicationPanel.tsx` | `@/services/emailService` | `@/services/email` |
 | `ComposeEmailDialog.tsx` | `@/services/emailService` | `@/services/email` |
-| `EmailComposer.tsx` | `@/services/emailService` | `@/services/email` |
-| `recruitingService.ts` | `@/services/email` | No change needed |
+| `EmailComposer.tsx`      | `@/services/emailService` | `@/services/email` |
+| `recruitingService.ts`   | `@/services/email`        | No change needed   |
 
 ### Phase 4: Delete Old Root File
 
@@ -369,24 +391,25 @@ npm run test:run  # All tests must pass
 
 ## 4. Files Changed Summary
 
-| Action | File Path |
-|--------|-----------|
-| DELETE | `src/services/email/emailService.ts` (deprecated) |
-| CREATE | `src/services/email/types.ts` |
-| CREATE | `src/services/email/UserEmailRepository.ts` |
-| CREATE | `src/services/email/UserEmailService.ts` |
-| MODIFY | `src/services/email/index.ts` |
-| MODIFY | `src/features/recruiting/hooks/useRecruitEmails.ts` |
+| Action | File Path                                                   |
+| ------ | ----------------------------------------------------------- |
+| DELETE | `src/services/email/emailService.ts` (deprecated)           |
+| CREATE | `src/services/email/types.ts`                               |
+| CREATE | `src/services/email/UserEmailRepository.ts`                 |
+| CREATE | `src/services/email/UserEmailService.ts`                    |
+| MODIFY | `src/services/email/index.ts`                               |
+| MODIFY | `src/features/recruiting/hooks/useRecruitEmails.ts`         |
 | MODIFY | `src/features/recruiting/components/CommunicationPanel.tsx` |
 | MODIFY | `src/features/recruiting/components/ComposeEmailDialog.tsx` |
-| MODIFY | `src/features/email/components/EmailComposer.tsx` |
-| DELETE | `src/services/emailService.ts` (moved to folder) |
+| MODIFY | `src/features/email/components/EmailComposer.tsx`           |
+| DELETE | `src/services/emailService.ts` (moved to folder)            |
 
 ---
 
 ## 5. Test Plan
 
 ### Unit Tests
+
 - [ ] `UserEmailRepository.findById` returns email with attachments
 - [ ] `UserEmailRepository.findByUser` returns emails for user as sender or recipient
 - [ ] `UserEmailRepository.findByRecruit` returns only recruit's emails
@@ -394,11 +417,13 @@ npm run test:run  # All tests must pass
 - [ ] `UserEmailService.htmlToText` strips HTML correctly
 
 ### Integration Tests
+
 - [ ] CommunicationPanel loads and displays emails
 - [ ] ComposeEmailDialog sends email successfully
 - [ ] useRecruitEmails hook returns correct data
 
 ### Build Verification
+
 - [ ] `npm run build` passes with zero TypeScript errors
 - [ ] `npm run test:run` passes
 
@@ -418,11 +443,13 @@ npm run test:run  # All tests must pass
 ## 7. Risk Assessment
 
 **Low Risk:**
+
 - Clear pattern from CommissionRepository to follow
 - Only 5 consumer files to update
 - All changes are in email domain only
 
 **Mitigation:**
+
 - Phase 1 fixes the bug immediately (correct edge function)
 - Phase 2-4 are refactoring with no behavior change
 - Build verification at each phase

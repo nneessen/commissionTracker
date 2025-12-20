@@ -28,7 +28,14 @@ export type {
   ProductOption,
 } from "./products";
 
+// Comp guide service - refactored to BaseRepository pattern
+export {
+  compGuideService,
+  CompGuideServiceClass,
+  CompGuideRepository,
+} from "./comp-guide";
+export type { CompGuideEntry, CompGuideFormData } from "./comp-guide";
+
 // Other settings services
 export { constantsService } from "./constantsService";
-export { compGuideService } from "./compGuideService";
 export { agentSettingsService } from "./agentSettingsService";

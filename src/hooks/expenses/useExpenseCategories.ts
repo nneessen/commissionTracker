@@ -2,15 +2,9 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import {
-  getExpenseCategories,
-  getAllExpenseCategories,
-  createExpenseCategory,
-  updateExpenseCategory,
-  deleteExpenseCategory,
-  reorderExpenseCategories,
-} from "@/services/expenses/expenseCategoryService";
+import { expenseCategoryService } from "@/services/expenses/categories";
 import type {
+  ExpenseCategory,
   CreateExpenseCategoryData,
   UpdateExpenseCategoryData,
 } from "@/types/expense.types";
@@ -27,7 +21,11 @@ export const expenseCategoryKeys = {
 export function useExpenseCategories() {
   return useQuery({
     queryKey: expenseCategoryKeys.all,
-    queryFn: getExpenseCategories,
+    queryFn: async (): Promise<ExpenseCategory[]> => {
+      const result = await expenseCategoryService.getAll();
+      if (!result.success) throw result.error;
+      return result.data || [];
+    },
   });
 }
 
@@ -37,7 +35,11 @@ export function useExpenseCategories() {
 export function useAllExpenseCategories() {
   return useQuery({
     queryKey: expenseCategoryKeys.allIncludingInactive,
-    queryFn: getAllExpenseCategories,
+    queryFn: async (): Promise<ExpenseCategory[]> => {
+      const result = await expenseCategoryService.getAllIncludingInactive();
+      if (!result.success) throw result.error;
+      return result.data || [];
+    },
   });
 }
 
@@ -48,8 +50,11 @@ export function useCreateExpenseCategory() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: CreateExpenseCategoryData) =>
-      createExpenseCategory(data),
+    mutationFn: async (data: CreateExpenseCategoryData) => {
+      const result = await expenseCategoryService.create(data);
+      if (!result.success) throw result.error;
+      return result.data;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: expenseCategoryKeys.all });
       queryClient.invalidateQueries({
@@ -70,13 +75,17 @@ export function useUpdateExpenseCategory() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({
+    mutationFn: async ({
       id,
       updates,
     }: {
       id: string;
       updates: UpdateExpenseCategoryData;
-    }) => updateExpenseCategory(id, updates),
+    }) => {
+      const result = await expenseCategoryService.update(id, updates);
+      if (!result.success) throw result.error;
+      return result.data;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: expenseCategoryKeys.all });
       queryClient.invalidateQueries({
@@ -97,7 +106,10 @@ export function useDeleteExpenseCategory() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: string) => deleteExpenseCategory(id),
+    mutationFn: async (id: string) => {
+      const result = await expenseCategoryService.delete(id);
+      if (!result.success) throw result.error;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: expenseCategoryKeys.all });
       queryClient.invalidateQueries({
@@ -118,8 +130,10 @@ export function useReorderExpenseCategories() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (categoryIds: string[]) =>
-      reorderExpenseCategories(categoryIds),
+    mutationFn: async (categoryIds: string[]) => {
+      const result = await expenseCategoryService.reorder(categoryIds);
+      if (!result.success) throw result.error;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: expenseCategoryKeys.all });
       queryClient.invalidateQueries({
