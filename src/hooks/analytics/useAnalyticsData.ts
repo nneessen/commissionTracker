@@ -1,11 +1,28 @@
 // src/hooks/analytics/useAnalyticsData.ts
 
 // React 19.1 optimizes automatically - useMemo removed
-import {usePolicies} from '../policies';
-import {useCommissions} from '../commissions';
-import {useExpenses} from '../expenses';
-import {useCarriers} from '../carriers';
-import {getCohortRetention, getChargebacksByCohort, getEarningProgressByCohort, getCohortSummary, segmentClientsByValue, calculateCrossSellOpportunities, getClientLifetimeValue, forecastRenewals, calculateChargebackRisk, projectGrowth, detectSeasonality, calculateContribution, getProductMixEvolution, calculateCarrierROI, getTopMovers} from '../../services/analytics';
+import { usePolicies } from "../policies";
+import { useCommissions } from "../commissions";
+import { useExpenses } from "../expenses";
+import { useCarriers } from "../carriers";
+import {
+  getCohortRetention,
+  getChargebacksByCohort,
+  getEarningProgressByCohort,
+  getCohortSummary,
+  segmentClientsByValue,
+  calculateCrossSellOpportunities,
+  getClientLifetimeValue,
+  forecastRenewals,
+  calculateChargebackRisk,
+  projectGrowth,
+  detectSeasonality,
+  calculateContribution,
+  getProductMixEvolution,
+  calculateCarrierROI,
+  getTopMovers,
+} from "../../services/analytics";
+import { parseLocalDate } from "../../lib/date";
 
 export interface UseAnalyticsDataOptions {
   startDate?: Date;
@@ -26,23 +43,31 @@ export function useAnalyticsData(options?: UseAnalyticsDataOptions) {
 
   // Fetch all required data from Supabase
   const { data: allPolicies = [], isLoading: policiesLoading } = usePolicies();
-  const { data: allCommissions = [], isLoading: commissionsLoading } = useCommissions();
+  const { data: allCommissions = [], isLoading: commissionsLoading } =
+    useCommissions();
   const { data: expenses = [], isLoading: expensesLoading } = useExpenses();
   const { data: carriers = [], isLoading: carriersLoading } = useCarriers();
 
   // Filter data by date range if provided (React 19.1 optimizes automatically)
-  const policies = (!startDate || !endDate) ? allPolicies : allPolicies.filter(p => {
-    const date = new Date(p.effectiveDate);
-    return date >= startDate && date <= endDate;
-  });
+  const policies =
+    !startDate || !endDate
+      ? allPolicies
+      : allPolicies.filter((p) => {
+          const date = parseLocalDate(p.effectiveDate);
+          return date >= startDate && date <= endDate;
+        });
 
-  const commissions = (!startDate || !endDate) ? allCommissions : allCommissions.filter(c => {
-    const date = new Date(c.createdAt);
-    return date >= startDate && date <= endDate;
-  });
+  const commissions =
+    !startDate || !endDate
+      ? allCommissions
+      : allCommissions.filter((c) => {
+          const date = new Date(c.createdAt);
+          return date >= startDate && date <= endDate;
+        });
 
   // Calculate loading state
-  const isLoading = policiesLoading || commissionsLoading || expensesLoading || carriersLoading;
+  const isLoading =
+    policiesLoading || commissionsLoading || expensesLoading || carriersLoading;
 
   // Cohort Analysis - all cohort-related metrics (React 19.1 optimizes automatically)
   const cohortData = {
@@ -74,26 +99,41 @@ export function useAnalyticsData(options?: UseAnalyticsDataOptions) {
   const previousMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
 
   // React 19.1 optimizes automatically - no need for useMemo
-  const currentPolicies = policies.filter(p => new Date(p.effectiveDate) >= currentMonth);
+  const currentPolicies = policies.filter(
+    (p) => parseLocalDate(p.effectiveDate) >= currentMonth,
+  );
 
-  const previousPolicies = policies.filter(p => {
-    const date = new Date(p.effectiveDate);
+  const previousPolicies = policies.filter((p) => {
+    const date = parseLocalDate(p.effectiveDate);
     return date >= previousMonth && date < currentMonth;
   });
 
-  const currentCommissions = commissions.filter(c => new Date(c.createdAt) >= currentMonth);
+  const currentCommissions = commissions.filter(
+    (c) => new Date(c.createdAt) >= currentMonth,
+  );
 
-  const previousCommissions = commissions.filter(c => {
+  const previousCommissions = commissions.filter((c) => {
     const date = new Date(c.createdAt);
     return date >= previousMonth && date < currentMonth;
   });
 
   // React 19.1 optimizes automatically - no need for useMemo
   const attributionData = {
-    contribution: calculateContribution(currentPolicies, currentCommissions, previousPolicies, previousCommissions),
+    contribution: calculateContribution(
+      currentPolicies,
+      currentCommissions,
+      previousPolicies,
+      previousCommissions,
+    ),
     productMix: getProductMixEvolution(policies),
     carrierROI: calculateCarrierROI(policies, commissions, carriers),
-    topMovers: getTopMovers(currentPolicies, currentCommissions, previousPolicies, previousCommissions, carriers),
+    topMovers: getTopMovers(
+      currentPolicies,
+      currentCommissions,
+      previousPolicies,
+      previousCommissions,
+      carriers,
+    ),
   };
 
   return {

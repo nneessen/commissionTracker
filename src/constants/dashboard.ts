@@ -30,4 +30,5 @@ export const METRIC_COLORS = {
   RETENTION_WARNING: "text-warning",
   LAPSE_GOOD: "text-success",
   LAPSE_BAD: "text-error",
+  CHARGEBACK: "text-error", // Chargebacks are always negative - use error color
 } as const;

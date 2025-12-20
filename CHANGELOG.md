@@ -6,6 +6,152 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-12-20 13:15:04
+
+### Changed Files
+- `CHANGELOG.md`
+- `PROJECT_STATS.md`
+- `index.html`
+- `plans/active/commissionService-refactor.md`
+- `plans/active/date-standardization.md`
+- `plans/active/service-repository-refactor.md`
+- `plans/completed/fix-hierarchy-repository-mess.md`
+- `plans/completed/recruiting-refactor-continuation.md`
+- `src/constants/dashboard.ts`
+- `src/features/analytics/components/CommissionPipeline.tsx`
+- `src/features/comps/CompTable.tsx`
+- `src/features/dashboard/DashboardHome.tsx`
+- `src/features/dashboard/config/statsConfig.ts`
+- `src/features/policies/utils/policyFormTransformer.ts`
+- `src/features/recruiting/hooks/useRecruitProgress.ts`
+- `src/features/settings/components/CompGuideImporter.tsx`
+- `src/hooks/analytics/useAnalyticsData.ts`
+- `src/hooks/kpi/useMetrics.ts`
+- `src/hooks/targets/useHistoricalAverages.ts`
+- `src/index.css`
+- `src/services/activity/ActivityLogRepository.ts`
+- `src/services/activity/activityLogService.ts`
+- `src/services/activity/index.ts`
+- `src/services/activity/types.ts`
+- `src/services/analytics/attributionService.ts`
+- `src/services/analytics/cohortService.ts`
+- `src/services/analytics/forecastService.ts`
+- `src/services/analytics/gamePlanService.ts`
+- `src/services/analytics/policyStatusService.ts`
+- `src/services/analytics/segmentationService.ts`
+- `src/services/clients/client/ClientService.ts`
+- `src/services/commissions/CommissionCalculationService.ts`
+- `src/services/commissions/CommissionRepository.ts`
+- `src/services/commissions/CommissionStatusService.ts`
+- `src/services/commissions/commissionRateService.ts`
+- `src/services/documents/DocumentRepository.ts`
+- `src/services/documents/documentService.ts`
+- `src/services/documents/documentStorageService.ts`
+- `src/services/documents/index.ts`
+- `src/services/documents/types.ts`
+- `src/services/hierarchy/HierarchyRepository.ts`
+- `src/services/hierarchy/__tests__/hierarchyService.test.ts`
+- `src/services/hierarchy/hierarchyService.ts`
+- `src/services/hierarchy/index.ts`
+- `src/services/overrides/OverrideRepository.ts`
+- `src/services/overrides/index.ts`
+- `src/services/policies/PolicyRepository.ts`
+- `src/services/recruiting/checklistService.ts`
+- `src/services/recruiting/pipelineService.ts`
+- `src/services/recruiting/recruitingService.ts`
+- `src/services/recruiting/repositories/PhaseChecklistItemRepository.ts`
+- `src/services/recruiting/repositories/PipelinePhaseRepository.ts`
+- `src/services/recruiting/repositories/PipelineTemplateRepository.ts`
+- `src/services/recruiting/repositories/RecruitChecklistProgressRepository.ts`
+- `src/services/recruiting/repositories/RecruitPhaseProgressRepository.ts`
+- `src/services/recruiting/repositories/RecruitRepository.ts`
+- `src/services/recruiting/repositories/index.ts`
+- `src/services/reports/drillDownService.ts`
+- `src/services/reports/insightsService.ts`
+- `src/services/users/UserRepository.ts`
+- `src/services/users/__tests__/userService.test.ts`
+- `src/services/users/index.ts`
+- `src/services/users/userService.ts`
+- `tailwind.config.js`
+- `tsconfig.tsbuildinfo`
+
+### Statistics
+```
+ 65 files changed, 6828 insertions(+), 1856 deletions(-)
+```
+
+## [Checkpoint] - 2025-12-20 13:14:02
+
+### Changed Files
+- `index.html`
+- `plans/active/commissionService-refactor.md`
+- `plans/active/date-standardization.md`
+- `plans/active/service-repository-refactor.md`
+- `plans/completed/fix-hierarchy-repository-mess.md`
+- `plans/completed/recruiting-refactor-continuation.md`
+- `src/constants/dashboard.ts`
+- `src/features/analytics/components/CommissionPipeline.tsx`
+- `src/features/comps/CompTable.tsx`
+- `src/features/dashboard/DashboardHome.tsx`
+- `src/features/dashboard/config/statsConfig.ts`
+- `src/features/policies/utils/policyFormTransformer.ts`
+- `src/features/recruiting/hooks/useRecruitProgress.ts`
+- `src/features/settings/components/CompGuideImporter.tsx`
+- `src/hooks/analytics/useAnalyticsData.ts`
+- `src/hooks/kpi/useMetrics.ts`
+- `src/hooks/targets/useHistoricalAverages.ts`
+- `src/index.css`
+- `src/services/activity/ActivityLogRepository.ts`
+- `src/services/activity/activityLogService.ts`
+- `src/services/activity/index.ts`
+- `src/services/activity/types.ts`
+- `src/services/analytics/attributionService.ts`
+- `src/services/analytics/cohortService.ts`
+- `src/services/analytics/forecastService.ts`
+- `src/services/analytics/gamePlanService.ts`
+- `src/services/analytics/policyStatusService.ts`
+- `src/services/analytics/segmentationService.ts`
+- `src/services/clients/client/ClientService.ts`
+- `src/services/commissions/CommissionCalculationService.ts`
+- `src/services/commissions/CommissionRepository.ts`
+- `src/services/commissions/CommissionStatusService.ts`
+- `src/services/commissions/commissionRateService.ts`
+- `src/services/documents/DocumentRepository.ts`
+- `src/services/documents/documentService.ts`
+- `src/services/documents/documentStorageService.ts`
+- `src/services/documents/index.ts`
+- `src/services/documents/types.ts`
+- `src/services/hierarchy/HierarchyRepository.ts`
+- `src/services/hierarchy/__tests__/hierarchyService.test.ts`
+- `src/services/hierarchy/hierarchyService.ts`
+- `src/services/hierarchy/index.ts`
+- `src/services/overrides/OverrideRepository.ts`
+- `src/services/overrides/index.ts`
+- `src/services/policies/PolicyRepository.ts`
+- `src/services/recruiting/checklistService.ts`
+- `src/services/recruiting/pipelineService.ts`
+- `src/services/recruiting/recruitingService.ts`
+- `src/services/recruiting/repositories/PhaseChecklistItemRepository.ts`
+- `src/services/recruiting/repositories/PipelinePhaseRepository.ts`
+- `src/services/recruiting/repositories/PipelineTemplateRepository.ts`
+- `src/services/recruiting/repositories/RecruitChecklistProgressRepository.ts`
+- `src/services/recruiting/repositories/RecruitPhaseProgressRepository.ts`
+- `src/services/recruiting/repositories/RecruitRepository.ts`
+- `src/services/recruiting/repositories/index.ts`
+- `src/services/reports/drillDownService.ts`
+- `src/services/reports/insightsService.ts`
+- `src/services/users/UserRepository.ts`
+- `src/services/users/__tests__/userService.test.ts`
+- `src/services/users/index.ts`
+- `src/services/users/userService.ts`
+- `tailwind.config.js`
+- `tsconfig.tsbuildinfo`
+
+### Statistics
+```
+ 63 files changed, 6754 insertions(+), 1850 deletions(-)
+```
+
 ## [Checkpoint] - 2025-12-20 10:46:48
 
 ### Changed Files

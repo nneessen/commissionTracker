@@ -6,7 +6,31 @@ import {
   CreatePolicyData,
   UpdatePolicyData,
 } from "../../types/policy.types";
-import { formatDateForDB } from "../../lib/date";
+import { formatDateForDB, parseLocalDate } from "../../lib/date";
+
+// ---------------------------------------------------------------------------
+// Type definitions for lightweight metric queries
+// ---------------------------------------------------------------------------
+
+export interface PolicyMetricRow {
+  user_id: string;
+  status: string | null;
+  annual_premium: number | string | null;
+}
+
+export interface PolicyWithRelations {
+  id: string;
+  policy_number: string | null;
+  user_id: string;
+  status: string | null;
+  annual_premium: number | string | null;
+  product: string | null;
+  carrier_id: string | null;
+  effective_date: string | null;
+  created_at: string | null;
+  client: { name: string } | null;
+  carrier: { name: string } | null;
+}
 
 export class PolicyRepository extends BaseRepository<
   Policy,
@@ -252,6 +276,121 @@ export class PolicyRepository extends BaseRepository<
       return data?.map(this.transformFromDB) || [];
     } catch (error) {
       throw this.wrapError(error, "findByAgent");
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // BATCH METHODS (for hierarchy/team queries)
+  // -------------------------------------------------------------------------
+
+  /**
+   * Find policies for multiple agents (batch)
+   */
+  async findByAgents(userIds: string[]): Promise<Policy[]> {
+    if (userIds.length === 0) return [];
+
+    try {
+      const { data, error } = await this.client
+        .from(this.tableName)
+        .select(
+          `
+          *,
+          clients!policies_client_id_fkey (
+            id,
+            name,
+            email,
+            phone,
+            address
+          )
+        `,
+        )
+        .in("user_id", userIds)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        throw this.handleError(error, "findByAgents");
+      }
+
+      return data?.map(this.transformFromDB) || [];
+    } catch (error) {
+      throw this.wrapError(error, "findByAgents");
+    }
+  }
+
+  /**
+   * Find policy metrics for multiple users (lightweight query)
+   * Used by hierarchy service for calculating team metrics
+   */
+  async findMetricsByUserIds(userIds: string[]): Promise<PolicyMetricRow[]> {
+    if (userIds.length === 0) return [];
+
+    try {
+      const { data, error } = await this.client
+        .from(this.tableName)
+        .select("user_id, status, annual_premium")
+        .in("user_id", userIds);
+
+      if (error) {
+        throw this.handleError(error, "findMetricsByUserIds");
+      }
+
+      return (data as PolicyMetricRow[]) || [];
+    } catch (error) {
+      throw this.wrapError(error, "findMetricsByUserIds");
+    }
+  }
+
+  /**
+   * Find policies with client/carrier relations for a user
+   */
+  async findWithRelationsByUserId(
+    userId: string,
+  ): Promise<PolicyWithRelations[]> {
+    try {
+      const { data, error } = await this.client
+        .from(this.tableName)
+        .select(
+          `
+          *,
+          client:clients(name),
+          carrier:carriers(name)
+        `,
+        )
+        .eq("user_id", userId)
+        .order("effective_date", { ascending: false });
+
+      if (error) {
+        throw this.handleError(error, "findWithRelationsByUserId");
+      }
+
+      return (data as PolicyWithRelations[]) || [];
+    } catch (error) {
+      throw this.wrapError(error, "findWithRelationsByUserId");
+    }
+  }
+
+  /**
+   * Find recent policies for a user
+   */
+  async findRecentByUserId(
+    userId: string,
+    limit: number = 5,
+  ): Promise<Policy[]> {
+    try {
+      const { data, error } = await this.client
+        .from(this.tableName)
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(limit);
+
+      if (error) {
+        throw this.handleError(error, "findRecentByUserId");
+      }
+
+      return data?.map(this.transformFromDB) || [];
+    } catch (error) {
+      throw this.wrapError(error, "findRecentByUserId");
     }
   }
 
@@ -631,13 +770,13 @@ export class PolicyRepository extends BaseRepository<
       const ytdPolicies = policies.filter(
         (p) =>
           p.effective_date &&
-          new Date(p.effective_date).getFullYear() === currentYear,
+          parseLocalDate(p.effective_date).getFullYear() === currentYear,
       ).length;
       const ytdPremium = policies
         .filter(
           (p) =>
             p.effective_date &&
-            new Date(p.effective_date).getFullYear() === currentYear,
+            parseLocalDate(p.effective_date).getFullYear() === currentYear,
         )
         .reduce((sum, p) => sum + (parseFloat(p.annual_premium) || 0), 0);
 

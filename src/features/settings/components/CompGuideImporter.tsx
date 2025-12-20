@@ -12,6 +12,7 @@ import { Comp, CreateCompData } from "../../../types/commission.types";
 import { Database } from "../../../types/database.types";
 import { carrierService } from "../../../services/settings/carriers";
 import { compGuideService } from "../../../services/settings/comp-guide";
+import { parseLocalDate } from "@/lib/date";
 
 interface CompGuideImporterProps {
   isOpen: boolean;
@@ -197,7 +198,7 @@ export const CompGuideImporter: React.FC<CompGuideImporterProps> = ({
                 contract_level: item.contractLevel, // Use contract level directly as number
                 commission_percentage: item.commissionRate,
                 bonus_percentage: 0,
-                effective_date: new Date(item.effectiveDate)
+                effective_date: parseLocalDate(item.effectiveDate)
                   .toISOString()
                   .split("T")[0],
                 minimum_premium: 0,

@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { useAnalyticsData } from "../../../hooks";
 import { useAnalyticsDateRange } from "../context/AnalyticsDateContext";
 import { AlertTriangle, Clock } from "lucide-react";
+import { parseLocalDate } from "@/lib/date";
 
 /**
  * CommissionPipeline - Shows pending commissions and cash flow forecast
@@ -58,7 +59,7 @@ export function CommissionPipeline() {
 
       // Estimate payment date based on policy date + typical payment cycle (30 days)
       if (policy?.effectiveDate) {
-        const policyDate = new Date(policy.effectiveDate);
+        const policyDate = parseLocalDate(policy.effectiveDate);
         const estimatedPaymentDate = new Date(
           policyDate.getTime() + 30 * 24 * 60 * 60 * 1000,
         );
@@ -77,7 +78,7 @@ export function CommissionPipeline() {
 
       // Check if policy is at risk (within first 6 months - contestability period)
       if (policy?.effectiveDate) {
-        const policyDate = new Date(policy.effectiveDate);
+        const policyDate = parseLocalDate(policy.effectiveDate);
         const sixMonthsAgo = new Date(
           now.getTime() - 180 * 24 * 60 * 60 * 1000,
         );

@@ -1,6 +1,7 @@
 // src/services/analytics/segmentationService.ts
 
 import { Policy } from "../../types";
+import { parseLocalDate } from "../../lib/date";
 
 /**
  * Client Segmentation Service
@@ -99,7 +100,9 @@ export function segmentClientsByValue(
     const products = [...new Set(clientPolicies.map((p) => p.product))];
 
     // Calculate client tenure
-    const policyDates = clientPolicies.map((p) => new Date(p.effectiveDate));
+    const policyDates = clientPolicies.map((p) =>
+      parseLocalDate(p.effectiveDate),
+    );
     const firstPolicyDate = new Date(
       Math.min(...policyDates.map((d) => d.getTime())),
     );
@@ -220,7 +223,7 @@ export function calculateCrossSellOpportunities(
 
   clientMap.forEach((clientPolicies, clientId) => {
     const currentProducts = [...new Set(clientPolicies.map((p) => p.product))];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- product type comparison
+
     const missingProducts = allProducts.filter(
       (p) => !currentProducts.includes(p as any),
     );
@@ -242,7 +245,7 @@ export function calculateCrossSellOpportunities(
       const productScore = (missingProducts.length / allProducts.length) * 40; // Max 40 points
       const tenureMonths = Math.floor(
         (new Date().getTime() -
-          new Date(clientPolicies[0].effectiveDate).getTime()) /
+          parseLocalDate(clientPolicies[0].effectiveDate).getTime()) /
           (1000 * 60 * 60 * 24 * 30),
       );
       const tenureScore = Math.min(20, (tenureMonths / 12) * 20); // Max 20 points for 1+ year

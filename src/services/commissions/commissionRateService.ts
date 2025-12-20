@@ -7,6 +7,7 @@ import {
   ProductCommissionBreakdown,
   CommissionDataQuality,
 } from "../../types/product.types";
+import { parseLocalDate } from "../../lib/date";
 
 export interface CreateCommissionRateData {
   carrierId: string;
@@ -304,7 +305,7 @@ class CommissionRateService {
           premiumWeight: parseFloat(item.premiumWeight),
           totalPremium: parseFloat(item.totalPremium),
           policyCount: parseInt(item.policyCount, 10),
-          effectiveDate: new Date(item.effectiveDate),
+          effectiveDate: parseLocalDate(item.effectiveDate),
         }));
 
       // Determine recommended rate based on data quality

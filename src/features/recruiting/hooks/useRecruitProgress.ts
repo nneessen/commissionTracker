@@ -205,20 +205,20 @@ export function useApproveDocument() {
     onSuccess: (data) => {
       // Invalidate document queries
       queryClient.invalidateQueries({
-        queryKey: ["recruit-documents", data.user_id],
+        queryKey: ["recruit-documents", data.userId],
       });
 
       // Invalidate checklist progress (linked item might have been approved)
       queryClient.invalidateQueries({
-        queryKey: ["recruit-checklist-progress", data.user_id],
+        queryKey: ["recruit-checklist-progress", data.userId],
       });
 
       // Invalidate phase progress (auto-advancement might have occurred)
       queryClient.invalidateQueries({
-        queryKey: ["recruit-phase-progress", data.user_id],
+        queryKey: ["recruit-phase-progress", data.userId],
       });
       queryClient.invalidateQueries({
-        queryKey: ["recruit-current-phase", data.user_id],
+        queryKey: ["recruit-current-phase", data.userId],
       });
     },
   });
@@ -240,12 +240,12 @@ export function useRejectDocument() {
     onSuccess: (data) => {
       // Invalidate document queries
       queryClient.invalidateQueries({
-        queryKey: ["recruit-documents", data.user_id],
+        queryKey: ["recruit-documents", data.userId],
       });
 
       // Invalidate checklist progress (linked item status changed)
       queryClient.invalidateQueries({
-        queryKey: ["recruit-checklist-progress", data.user_id],
+        queryKey: ["recruit-checklist-progress", data.userId],
       });
     },
   });

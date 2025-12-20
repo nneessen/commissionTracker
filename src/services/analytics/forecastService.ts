@@ -1,7 +1,8 @@
 // src/services/analytics/forecastService.ts
 
-import {Policy, Commission} from '../../types';
-import {format, addMonths, differenceInMonths} from 'date-fns';
+import { Policy, Commission } from "../../types";
+import { format, addMonths, differenceInMonths } from "date-fns";
+import { parseLocalDate } from "../../lib/date";
 
 /**
  * Forecast Service
@@ -19,7 +20,7 @@ export interface RenewalForecast {
   expectedRenewals: number;
   expectedRevenue: number;
   policies: Policy[];
-  confidence: 'high' | 'medium' | 'low';
+  confidence: "high" | "medium" | "low";
 }
 
 export interface ChargebackRiskScore {
@@ -27,7 +28,7 @@ export interface ChargebackRiskScore {
   policyNumber: string;
   clientName: string;
   riskScore: number; // 0-100 (higher = more risk)
-  riskLevel: 'low' | 'medium' | 'high' | 'critical';
+  riskLevel: "low" | "medium" | "high" | "critical";
   factors: string[]; // Contributing risk factors
   monthsPaid: number;
   unearnedAmount: number;
@@ -40,7 +41,7 @@ export interface GrowthProjection {
   projectedPolicies: number;
   projectedRevenue: number;
   projectedCommission: number;
-  confidence: 'high' | 'medium' | 'low';
+  confidence: "high" | "medium" | "low";
   growthRate: number; // % vs previous period
 }
 
@@ -50,7 +51,7 @@ export interface SeasonalityPattern {
   avgPolicies: number;
   avgRevenue: number;
   seasonalIndex: number; // 1.0 = average, >1.0 = above average, <1.0 = below
-  trend: 'peak' | 'above_average' | 'average' | 'below_average' | 'trough';
+  trend: "peak" | "above_average" | "average" | "below_average" | "trough";
 }
 
 /**
@@ -63,17 +64,17 @@ export function forecastRenewals(policies: Policy[]): RenewalForecast[] {
   // For each of next 12 months
   for (let i = 1; i <= 12; i++) {
     const forecastMonth = addMonths(now, i);
-    const forecastMonthStr = format(forecastMonth, 'yyyy-MM');
-    const forecastMonthLabel = format(forecastMonth, 'MMM yyyy');
+    const forecastMonthStr = format(forecastMonth, "yyyy-MM");
+    const forecastMonthLabel = format(forecastMonth, "MMM yyyy");
 
     // Find policies that will be up for renewal this month
-    const renewalPolicies = policies.filter(policy => {
-      if (policy.status !== 'active' || !policy.termLength) return false;
+    const renewalPolicies = policies.filter((policy) => {
+      if (policy.status !== "active" || !policy.termLength) return false;
 
       // Calculate renewal date
-      const effectiveDate = new Date(policy.effectiveDate);
+      const effectiveDate = parseLocalDate(policy.effectiveDate);
       const renewalDate = addMonths(effectiveDate, policy.termLength * 12);
-      const renewalMonth = format(renewalDate, 'yyyy-MM');
+      const renewalMonth = format(renewalDate, "yyyy-MM");
 
       return renewalMonth === forecastMonthStr;
     });
@@ -86,13 +87,16 @@ export function forecastRenewals(policies: Policy[]): RenewalForecast[] {
     const ESTIMATED_RENEWAL_RATE_MULTIPLIER = 0.25; // 25% of first year commission (more realistic)
     const expectedRevenue = renewalPolicies.reduce((sum, p) => {
       // Note: This is an ESTIMATE - actual renewal rates vary by carrier and product
-      const estimatedRenewalCommission = (p.annualPremium || 0) * (p.commissionPercentage || 0) * ESTIMATED_RENEWAL_RATE_MULTIPLIER;
+      const estimatedRenewalCommission =
+        (p.annualPremium || 0) *
+        (p.commissionPercentage || 0) *
+        ESTIMATED_RENEWAL_RATE_MULTIPLIER;
       return sum + estimatedRenewalCommission;
     }, 0);
 
     // Confidence based on time horizon
-    const confidence: 'high' | 'medium' | 'low' =
-      i <= 3 ? 'high' : i <= 6 ? 'medium' : 'low';
+    const confidence: "high" | "medium" | "low" =
+      i <= 3 ? "high" : i <= 6 ? "medium" : "low";
 
     forecasts.push({
       month: forecastMonthStr,
@@ -112,12 +116,12 @@ export function forecastRenewals(policies: Policy[]): RenewalForecast[] {
  */
 export function calculateChargebackRisk(
   policies: Policy[],
-  commissions: Commission[]
+  commissions: Commission[],
 ): ChargebackRiskScore[] {
-  const commissionMap = new Map(commissions.map(c => [c.policyId, c]));
+  const commissionMap = new Map(commissions.map((c) => [c.policyId, c]));
   const riskScores: ChargebackRiskScore[] = [];
 
-  policies.forEach(policy => {
+  policies.forEach((policy) => {
     const commission = commissionMap.get(policy.id);
     if (!commission) return;
 
@@ -127,7 +131,8 @@ export function calculateChargebackRisk(
     // Factor 1: Months paid vs advance months (most important)
     const monthsPaid = commission.monthsPaid || 0;
     const advanceMonths = commission.advanceMonths || 9;
-    const paymentProgress = advanceMonths > 0 ? (monthsPaid / advanceMonths) * 100 : 0;
+    const paymentProgress =
+      advanceMonths > 0 ? (monthsPaid / advanceMonths) * 100 : 0;
 
     if (paymentProgress < 50) {
       riskScore += 40;
@@ -138,15 +143,15 @@ export function calculateChargebackRisk(
     }
 
     // Factor 2: Policy status
-    if (policy.status === 'pending') {
+    if (policy.status === "pending") {
       riskScore += 30;
-      factors.push('Policy still pending');
-    } else if (policy.status === 'lapsed') {
+      factors.push("Policy still pending");
+    } else if (policy.status === "lapsed") {
       riskScore += 60;
-      factors.push('Policy has lapsed');
-    } else if (policy.status === 'cancelled') {
+      factors.push("Policy has lapsed");
+    } else if (policy.status === "cancelled") {
       riskScore += 80;
-      factors.push('Policy cancelled');
+      factors.push("Policy cancelled");
     }
 
     // Factor 3: Unearned amount (higher unearned = higher risk)
@@ -163,7 +168,7 @@ export function calculateChargebackRisk(
     if (commission.lastPaymentDate) {
       const monthsSincePayment = differenceInMonths(
         new Date(),
-        new Date(commission.lastPaymentDate)
+        new Date(commission.lastPaymentDate),
       );
 
       if (monthsSincePayment > 2) {
@@ -173,26 +178,26 @@ export function calculateChargebackRisk(
     }
 
     // Determine risk level
-    let riskLevel: ChargebackRiskScore['riskLevel'];
-    if (riskScore >= 75) riskLevel = 'critical';
-    else if (riskScore >= 50) riskLevel = 'high';
-    else if (riskScore >= 25) riskLevel = 'medium';
-    else riskLevel = 'low';
+    let riskLevel: ChargebackRiskScore["riskLevel"];
+    if (riskScore >= 75) riskLevel = "critical";
+    else if (riskScore >= 50) riskLevel = "high";
+    else if (riskScore >= 25) riskLevel = "medium";
+    else riskLevel = "low";
 
     // Recommended action
-    let recommendedAction = 'Monitor normally';
-    if (riskLevel === 'critical') {
-      recommendedAction = 'Urgent: Contact client immediately to prevent lapse';
-    } else if (riskLevel === 'high') {
-      recommendedAction = 'High priority: Reach out to client this week';
-    } else if (riskLevel === 'medium') {
-      recommendedAction = 'Follow up with client within 2 weeks';
+    let recommendedAction = "Monitor normally";
+    if (riskLevel === "critical") {
+      recommendedAction = "Urgent: Contact client immediately to prevent lapse";
+    } else if (riskLevel === "high") {
+      recommendedAction = "High priority: Reach out to client this week";
+    } else if (riskLevel === "medium") {
+      recommendedAction = "Follow up with client within 2 weeks";
     }
 
     riskScores.push({
       policyId: policy.id,
       policyNumber: policy.policyNumber,
-      clientName: policy.client?.name || 'Unknown',
+      clientName: policy.client?.name || "Unknown",
       riskScore: Math.min(100, riskScore),
       riskLevel,
       factors,
@@ -209,39 +214,53 @@ export function calculateChargebackRisk(
 /**
  * Project growth for next 12 months based on historical trends
  */
-export function projectGrowth(policies: Policy[], commissions: Commission[]): GrowthProjection[] {
+export function projectGrowth(
+  policies: Policy[],
+  commissions: Commission[],
+): GrowthProjection[] {
   const now = new Date();
   const projections: GrowthProjection[] = [];
 
   // Calculate historical monthly averages (last 12 months)
-  const historicalData: { [month: string]: { policies: number; revenue: number; commission: number } } = {};
+  const historicalData: {
+    [month: string]: { policies: number; revenue: number; commission: number };
+  } = {};
 
   for (let i = 12; i >= 1; i--) {
     const monthDate = addMonths(now, -i);
-    const monthStr = format(monthDate, 'yyyy-MM');
+    const monthStr = format(monthDate, "yyyy-MM");
 
-    const monthPolicies = policies.filter(p => {
-      const effectiveMonth = format(new Date(p.effectiveDate), 'yyyy-MM');
+    const monthPolicies = policies.filter((p) => {
+      const effectiveMonth = format(parseLocalDate(p.effectiveDate), "yyyy-MM");
       return effectiveMonth === monthStr;
     });
 
-    const monthCommissions = commissions.filter(c => {
-      const commissionMonth = format(new Date(c.createdAt), 'yyyy-MM');
+    const monthCommissions = commissions.filter((c) => {
+      const commissionMonth = format(new Date(c.createdAt), "yyyy-MM");
       return commissionMonth === monthStr;
     });
 
     historicalData[monthStr] = {
       policies: monthPolicies.length,
-      revenue: monthPolicies.reduce((sum, p) => sum + (p.annualPremium || 0), 0),
+      revenue: monthPolicies.reduce(
+        (sum, p) => sum + (p.annualPremium || 0),
+        0,
+      ),
       commission: monthCommissions.reduce((sum, c) => sum + (c.amount || 0), 0),
     };
   }
 
   // Calculate average growth rate
   const historicalMonths = Object.values(historicalData);
-  const avgPolicies = historicalMonths.reduce((sum, m) => sum + m.policies, 0) / historicalMonths.length;
-  const avgRevenue = historicalMonths.reduce((sum, m) => sum + m.revenue, 0) / historicalMonths.length;
-  const avgCommission = historicalMonths.reduce((sum, m) => sum + m.commission, 0) / historicalMonths.length;
+  const avgPolicies =
+    historicalMonths.reduce((sum, m) => sum + m.policies, 0) /
+    historicalMonths.length;
+  const avgRevenue =
+    historicalMonths.reduce((sum, m) => sum + m.revenue, 0) /
+    historicalMonths.length;
+  const avgCommission =
+    historicalMonths.reduce((sum, m) => sum + m.commission, 0) /
+    historicalMonths.length;
 
   // Calculate month-over-month growth rates
   const growthRates: number[] = [];
@@ -252,23 +271,25 @@ export function projectGrowth(policies: Policy[], commissions: Commission[]): Gr
     const currMonth = historicalData[months[i]];
 
     if (prevMonth.policies > 0) {
-      const growthRate = ((currMonth.policies - prevMonth.policies) / prevMonth.policies) * 100;
+      const growthRate =
+        ((currMonth.policies - prevMonth.policies) / prevMonth.policies) * 100;
       growthRates.push(growthRate);
     }
   }
 
-  const avgGrowthRate = growthRates.length > 0
-    ? growthRates.reduce((sum, rate) => sum + rate, 0) / growthRates.length
-    : 5; // Default to 5% if no historical data
+  const avgGrowthRate =
+    growthRates.length > 0
+      ? growthRates.reduce((sum, rate) => sum + rate, 0) / growthRates.length
+      : 5; // Default to 5% if no historical data
 
   // Project next 12 months
   for (let i = 1; i <= 12; i++) {
     const projectionMonth = addMonths(now, i);
-    const projectionMonthStr = format(projectionMonth, 'yyyy-MM');
-    const projectionMonthLabel = format(projectionMonth, 'MMM yyyy');
+    const projectionMonthStr = format(projectionMonth, "yyyy-MM");
+    const projectionMonthLabel = format(projectionMonth, "MMM yyyy");
 
     // Apply growth rate with some variance
-    const growthMultiplier = 1 + (avgGrowthRate / 100);
+    const growthMultiplier = 1 + avgGrowthRate / 100;
     const compoundGrowth = Math.pow(growthMultiplier, i);
 
     const projectedPolicies = Math.round(avgPolicies * compoundGrowth);
@@ -276,8 +297,8 @@ export function projectGrowth(policies: Policy[], commissions: Commission[]): Gr
     const projectedCommission = Math.round(avgCommission * compoundGrowth);
 
     // Confidence decreases with time
-    const confidence: 'high' | 'medium' | 'low' =
-      i <= 3 ? 'high' : i <= 6 ? 'medium' : 'low';
+    const confidence: "high" | "medium" | "low" =
+      i <= 3 ? "high" : i <= 6 ? "medium" : "low";
 
     projections.push({
       period: projectionMonthStr,
@@ -298,14 +319,16 @@ export function projectGrowth(policies: Policy[], commissions: Commission[]): Gr
  */
 export function detectSeasonality(policies: Policy[]): SeasonalityPattern[] {
   // Group policies by month of year (1-12)
-  const monthlyData: { [month: number]: { policies: number[]; revenue: number[] } } = {};
+  const monthlyData: {
+    [month: number]: { policies: number[]; revenue: number[] };
+  } = {};
 
   for (let month = 1; month <= 12; month++) {
     monthlyData[month] = { policies: [], revenue: [] };
   }
 
-  policies.forEach(policy => {
-    const effectiveDate = new Date(policy.effectiveDate);
+  policies.forEach((policy) => {
+    const effectiveDate = parseLocalDate(policy.effectiveDate);
     const month = effectiveDate.getMonth() + 1; // 1-12
 
     monthlyData[month].policies.push(1);
@@ -315,7 +338,8 @@ export function detectSeasonality(policies: Policy[]): SeasonalityPattern[] {
   // Calculate averages for each month
   const seasonalPatterns: SeasonalityPattern[] = [];
   const overallAvgPolicies = policies.length / 12;
-  const _overallAvgRevenue = policies.reduce((sum, p) => sum + (p.annualPremium || 0), 0) / 12;
+  const _overallAvgRevenue =
+    policies.reduce((sum, p) => sum + (p.annualPremium || 0), 0) / 12;
 
   for (let month = 1; month <= 12; month++) {
     const data = monthlyData[month];
@@ -323,21 +347,30 @@ export function detectSeasonality(policies: Policy[]): SeasonalityPattern[] {
     const avgRevenue = data.revenue.reduce((sum, r) => sum + r, 0);
 
     // Calculate seasonal index (1.0 = average)
-    const seasonalIndex = overallAvgPolicies > 0
-      ? avgPolicies / overallAvgPolicies
-      : 1.0;
+    const seasonalIndex =
+      overallAvgPolicies > 0 ? avgPolicies / overallAvgPolicies : 1.0;
 
     // Determine trend
-    let trend: SeasonalityPattern['trend'];
-    if (seasonalIndex >= 1.3) trend = 'peak';
-    else if (seasonalIndex >= 1.1) trend = 'above_average';
-    else if (seasonalIndex >= 0.9) trend = 'average';
-    else if (seasonalIndex >= 0.7) trend = 'below_average';
-    else trend = 'trough';
+    let trend: SeasonalityPattern["trend"];
+    if (seasonalIndex >= 1.3) trend = "peak";
+    else if (seasonalIndex >= 1.1) trend = "above_average";
+    else if (seasonalIndex >= 0.9) trend = "average";
+    else if (seasonalIndex >= 0.7) trend = "below_average";
+    else trend = "trough";
 
     const monthNames = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
     ];
 
     seasonalPatterns.push({
@@ -358,7 +391,7 @@ export function detectSeasonality(policies: Policy[]): SeasonalityPattern[] {
  */
 export function getForecastSummary(
   policies: Policy[],
-  commissions: Commission[]
+  commissions: Commission[],
 ) {
   const renewals = forecastRenewals(policies);
   const risks = calculateChargebackRisk(policies, commissions);
@@ -366,21 +399,29 @@ export function getForecastSummary(
   const seasonality = detectSeasonality(policies);
 
   // Next 3 months renewal summary
-  const next3MonthsRenewals = renewals.slice(0, 3).reduce((sum, r) => sum + r.expectedRenewals, 0);
-  const next3MonthsRevenue = renewals.slice(0, 3).reduce((sum, r) => sum + r.expectedRevenue, 0);
+  const next3MonthsRenewals = renewals
+    .slice(0, 3)
+    .reduce((sum, r) => sum + r.expectedRenewals, 0);
+  const next3MonthsRevenue = renewals
+    .slice(0, 3)
+    .reduce((sum, r) => sum + r.expectedRevenue, 0);
 
   // High risk policies count
-  const highRiskPolicies = risks.filter(r => r.riskLevel === 'high' || r.riskLevel === 'critical').length;
+  const highRiskPolicies = risks.filter(
+    (r) => r.riskLevel === "high" || r.riskLevel === "critical",
+  ).length;
   const totalUnearned = risks.reduce((sum, r) => sum + r.unearnedAmount, 0);
 
   // Peak season
   const peakMonth = seasonality.reduce((peak, month) =>
-    month.seasonalIndex > peak.seasonalIndex ? month : peak
+    month.seasonalIndex > peak.seasonalIndex ? month : peak,
   );
 
   // Growth outlook
   const next3MonthsGrowth = growth.slice(0, 3);
-  const avgGrowthRate = next3MonthsGrowth.reduce((sum, g) => sum + g.growthRate, 0) / next3MonthsGrowth.length;
+  const avgGrowthRate =
+    next3MonthsGrowth.reduce((sum, g) => sum + g.growthRate, 0) /
+    next3MonthsGrowth.length;
 
   return {
     renewals: {
@@ -391,11 +432,14 @@ export function getForecastSummary(
     risk: {
       highRiskPolicies,
       totalUnearned,
-      criticalPolicies: risks.filter(r => r.riskLevel === 'critical').length,
+      criticalPolicies: risks.filter((r) => r.riskLevel === "critical").length,
     },
     growth: {
       avgGrowthRate,
-      next3MonthsProjection: next3MonthsGrowth.reduce((sum, g) => sum + g.projectedCommission, 0),
+      next3MonthsProjection: next3MonthsGrowth.reduce(
+        (sum, g) => sum + g.projectedCommission,
+        0,
+      ),
     },
     seasonality: {
       peakMonth: peakMonth.monthName,

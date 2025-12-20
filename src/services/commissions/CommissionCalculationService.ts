@@ -7,7 +7,6 @@ import type { CreateCommissionData } from "./CommissionCRUDService";
 import { commissionCRUDService } from "./CommissionCRUDService";
 import {
   CalculationError,
-  ExternalServiceError,
   NotFoundError,
   ValidationError,
   getErrorMessage,
@@ -139,7 +138,8 @@ class CommissionCalculationService {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Supabase response type
           const user = await (agentService as any).getAgentById(userId);
           if (user) {
-            contractCompLevel = user.contractCompLevel;
+            // Database returns snake_case: contract_level (not contractCompLevel)
+            contractCompLevel = user.contract_level;
           }
         } catch (error) {
           logger.warn(
@@ -175,11 +175,18 @@ class CommissionCalculationService {
       );
 
       if (rateResult.error || !rateResult.data) {
-        throw new ExternalServiceError(
-          "CompGuideService",
-          "getCommissionRate",
-          new Error(rateResult.error?.message || "No rate data returned"),
+        // No comp_guide entry found - return null to allow fallback to manual calculation
+        // This is a data configuration issue, not a code error
+        logger.warn(
+          "No comp_guide rate found for carrier/product/level combination",
+          {
+            carrierName: carrier.name,
+            product: data.product,
+            contractCompLevel,
+          },
+          "CommissionCalculationService",
         );
+        return null;
       }
 
       // Calculate commission ADVANCE amount

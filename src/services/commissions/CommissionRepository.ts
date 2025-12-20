@@ -9,6 +9,32 @@ import {
 import { queryPerformance } from "../../utils/performance";
 import { formatDateForDB } from "../../lib/date";
 
+// ---------------------------------------------------------------------------
+// Type definitions for lightweight metric queries
+// ---------------------------------------------------------------------------
+
+export interface CommissionMetricRow {
+  user_id: string;
+  amount: number | string | null;
+  status: string | null;
+  earned_amount: number | string | null;
+}
+
+export interface CommissionWithPolicy {
+  id: string;
+  user_id: string;
+  amount: number | string | null;
+  earned_amount: number | string | null;
+  unearned_amount: number | string | null;
+  chargeback_amount: number | string | null;
+  advance_months: number | null;
+  months_paid: number | null;
+  status: string | null;
+  type: string | null;
+  created_at: string | null;
+  policy: { policy_number: string } | null;
+}
+
 export class CommissionRepository extends BaseRepository<
   Commission,
   CreateCommissionData,
@@ -129,6 +155,86 @@ export class CommissionRepository extends BaseRepository<
       return data?.map((item) => this.transformFromDB(item)) || [];
     } catch (error) {
       throw this.wrapError(error, "findByAgent");
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // BATCH METHODS (for hierarchy/team queries)
+  // -------------------------------------------------------------------------
+
+  /**
+   * Find commissions for multiple agents (batch)
+   */
+  async findByAgents(userIds: string[]): Promise<Commission[]> {
+    if (userIds.length === 0) return [];
+
+    try {
+      const { data, error } = await this.client
+        .from(this.tableName)
+        .select("*")
+        .in("user_id", userIds)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        throw this.handleError(error, "findByAgents");
+      }
+
+      return data?.map((item) => this.transformFromDB(item)) || [];
+    } catch (error) {
+      throw this.wrapError(error, "findByAgents");
+    }
+  }
+
+  /**
+   * Find commission metrics for multiple users (lightweight query)
+   * Used by hierarchy service for calculating team metrics
+   */
+  async findMetricsByUserIds(
+    userIds: string[],
+  ): Promise<CommissionMetricRow[]> {
+    if (userIds.length === 0) return [];
+
+    try {
+      const { data, error } = await this.client
+        .from(this.tableName)
+        .select("user_id, amount, status, earned_amount")
+        .in("user_id", userIds);
+
+      if (error) {
+        throw this.handleError(error, "findMetricsByUserIds");
+      }
+
+      return (data as CommissionMetricRow[]) || [];
+    } catch (error) {
+      throw this.wrapError(error, "findMetricsByUserIds");
+    }
+  }
+
+  /**
+   * Find commissions with policy relation for a user
+   */
+  async findWithPolicyByUserId(
+    userId: string,
+  ): Promise<CommissionWithPolicy[]> {
+    try {
+      const { data, error } = await this.client
+        .from(this.tableName)
+        .select(
+          `
+          *,
+          policy:policies(policy_number)
+        `,
+        )
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        throw this.handleError(error, "findWithPolicyByUserId");
+      }
+
+      return (data as CommissionWithPolicy[]) || [];
+    } catch (error) {
+      throw this.wrapError(error, "findWithPolicyByUserId");
     }
   }
 
@@ -362,7 +468,6 @@ export class CommissionRepository extends BaseRepository<
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DB data transformation requires flexible typing
   protected transformToDB(
     data: Partial<CreateCommissionData>,
     _isUpdate = false,

@@ -2,6 +2,7 @@
 
 import { Policy, Commission, ProductType } from "../../types";
 import { format } from "date-fns";
+import { parseLocalDate } from "../../lib/date";
 
 /**
  * Attribution Service
@@ -168,7 +169,7 @@ export function getProductMixEvolution(
 
     // Get policies from this month
     const monthPolicies = policies.filter((p) => {
-      const policyMonth = format(new Date(p.effectiveDate), "yyyy-MM");
+      const policyMonth = format(parseLocalDate(p.effectiveDate), "yyyy-MM");
       return policyMonth === monthStr;
     });
 

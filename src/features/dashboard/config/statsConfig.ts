@@ -167,5 +167,24 @@ export function generateStatsConfig(
       gated: !canViewExpenses,
       gatedTooltip: "Upgrade to Starter to see policies needed",
     },
+    // Chargeback metric - shows total chargebacks for visibility
+    ...(params.chargebackSummary &&
+    params.chargebackSummary.totalChargebackAmount > 0
+      ? [
+          {
+            label: "Chargebacks",
+            value: formatCurrency(
+              params.chargebackSummary.totalChargebackAmount,
+            ),
+            color: METRIC_COLORS.CHARGEBACK || "#ef4444", // Red for chargebacks
+            trend: "down" as const,
+            tooltip: {
+              title: "Total Chargebacks",
+              description: `Total amount lost to chargebacks (${params.chargebackSummary.totalChargebacks} policies).`,
+              formula: `Sum of chargeback amounts where status='charged_back'`,
+            },
+          },
+        ]
+      : []),
   ];
 }

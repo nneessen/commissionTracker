@@ -1,8 +1,10 @@
 // src/services/users/userService.ts
 // User profile management service using database-first types
+// Refactored to use UserRepository for data access
 
 import { supabase } from "../base/supabase";
 import { logger } from "../base/logger";
+import { UserRepository, UserFilters } from "./UserRepository";
 import type {
   UserProfile,
   UserProfileRow,
@@ -19,17 +21,17 @@ export { VALID_CONTRACT_LEVELS };
 
 type RoleName = string;
 
-interface UserServiceFilter {
-  roles?: RoleName[];
-  approvalStatus?: ApprovalStatus;
-  agentStatus?: AgentStatus;
-}
-
 // =============================================================================
 // USER SERVICE CLASS
 // =============================================================================
 
 class UserService {
+  private repository: UserRepository;
+
+  constructor() {
+    this.repository = new UserRepository();
+  }
+
   // -------------------------------------------------------------------------
   // READ OPERATIONS
   // -------------------------------------------------------------------------
@@ -53,22 +55,7 @@ class UserService {
         return null;
       }
 
-      const { data, error } = await supabase
-        .from("user_profiles")
-        .select("*")
-        .eq("id", user.id)
-        .single();
-
-      if (error) {
-        logger.error(
-          "Failed to fetch user profile",
-          error as Error,
-          "UserService",
-        );
-        return null;
-      }
-
-      return data as UserProfile;
+      return this.repository.findById(user.id);
     } catch (error) {
       logger.error(
         "Error in getCurrentUserProfile",
@@ -84,30 +71,14 @@ class UserService {
    */
   async getUserProfile(userId: string): Promise<UserProfile | null> {
     try {
-      const { data, error } = await supabase
-        .from("user_profiles")
-        .select("*")
-        .eq("id", userId)
-        .single();
-
-      if (error) {
-        // Try admin RPC as fallback (for viewing other users)
-        const { data: rpcData, error: rpcError } = await supabase.rpc(
-          "admin_getuser_profile",
-          { target_user_id: userId },
-        );
-
-        if (rpcError) {
-          logger.error("Failed to fetch user profile", rpcError, "UserService");
-          return null;
-        }
-
-        const profile =
-          Array.isArray(rpcData) && rpcData.length > 0 ? rpcData[0] : null;
-        return profile as UserProfile;
+      // Try direct access first (respects RLS)
+      const profile = await this.repository.findById(userId);
+      if (profile) {
+        return profile;
       }
 
-      return data as UserProfile;
+      // Fallback to admin RPC for viewing other users (if caller has admin permissions)
+      return this.repository.adminGetUserProfile(userId);
     } catch (error) {
       logger.error("Error in getUserProfile", error as Error, "UserService");
       return null;
@@ -118,56 +89,35 @@ class UserService {
    * Get a user profile by email
    */
   async getByEmail(email: string): Promise<UserProfile | null> {
-    const { data, error } = await supabase
-      .from("user_profiles")
-      .select("*")
-      .eq("email", email.toLowerCase())
-      .single();
-
-    if (error) {
-      if (error.code === "PGRST116") {
-        return null; // Not found
-      }
-      throw new Error(`Failed to fetch user by email: ${error.message}`);
+    try {
+      return this.repository.findByEmail(email);
+    } catch (error) {
+      throw new Error(
+        `Failed to fetch user by email: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
-
-    return data as UserProfile;
   }
 
   /**
    * Get all users with optional filtering
    */
-  async getAll(filter?: UserServiceFilter): Promise<UserProfile[]> {
-    let query = supabase.from("user_profiles").select("*");
+  async getAll(filter?: UserFilters): Promise<UserProfile[]> {
+    try {
+      const users = await this.repository.findWithFilters(filter, {
+        orderBy: "created_at",
+        orderDirection: "desc",
+      });
 
-    if (filter?.roles && filter.roles.length > 0) {
-      query = query.contains("roles", filter.roles);
-    }
-    if (filter?.approvalStatus) {
-      query = query.eq("approval_status", filter.approvalStatus);
-    }
-    if (filter?.agentStatus) {
-      query = query.eq("agent_status", filter.agentStatus);
-    }
-
-    const { data, error } = await query.order("created_at", {
-      ascending: false,
-    });
-
-    if (error) {
-      // Fallback to admin RPC
-      const { data: rpcData, error: rpcError } =
-        await supabase.rpc("admin_get_allusers");
-
-      if (rpcError) {
-        logger.error("Failed to fetch users", rpcError, "UserService");
-        return [];
+      if (users.length > 0) {
+        return users;
       }
 
-      return (rpcData as UserProfile[]) || [];
+      // Fallback to admin RPC if direct query returned empty (may be RLS restriction)
+      return this.repository.adminGetAllUsers();
+    } catch (error) {
+      logger.error("Failed to fetch users", error as Error, "UserService");
+      return [];
     }
-
-    return (data as UserProfile[]) || [];
   }
 
   /**
@@ -181,17 +131,13 @@ class UserService {
    * Get all agents (users with 'agent' or 'active_agent' role)
    */
   async getAllAgents(): Promise<UserProfile[]> {
-    const { data, error } = await supabase
-      .from("user_profiles")
-      .select("*")
-      .or(`roles.cs.{agent},roles.cs.{active_agent}`)
-      .order("created_at", { ascending: false });
-
-    if (error) {
-      throw new Error(`Failed to fetch agents: ${error.message}`);
+    try {
+      return this.repository.findAllAgents();
+    } catch (error) {
+      throw new Error(
+        `Failed to fetch agents: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
-
-    return (data as UserProfile[]) || [];
   }
 
   /**
@@ -223,19 +169,16 @@ class UserService {
    * Get users by contract level
    */
   async getByContractLevel(contractLevel: number): Promise<UserProfile[]> {
-    const { data, error } = await supabase
-      .from("user_profiles")
-      .select("*")
-      .eq("contract_level", contractLevel)
-      .order("first_name", { ascending: true });
-
-    if (error) {
+    try {
+      return this.repository.findWithFilters(
+        { contractLevel },
+        { orderBy: "first_name", orderDirection: "asc" },
+      );
+    } catch (error) {
       throw new Error(
-        `Failed to fetch users by contract level: ${error.message}`,
+        `Failed to fetch users by contract level: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
-
-    return (data as UserProfile[]) || [];
   }
 
   /**
@@ -243,18 +186,7 @@ class UserService {
    */
   async getPendingUsers(): Promise<UserProfile[]> {
     try {
-      const { data, error } = await supabase.rpc("admin_get_pendingusers");
-
-      if (error) {
-        logger.error(
-          "Failed to fetch pending users",
-          error as Error,
-          "UserService",
-        );
-        return [];
-      }
-
-      return (data as UserProfile[]) || [];
+      return this.repository.adminGetPendingUsers();
     } catch (error) {
       logger.error("Error in getPendingUsers", error as Error, "UserService");
       return [];
@@ -267,6 +199,8 @@ class UserService {
 
   /**
    * Create a new user with auth account and profile
+   * Note: This uses an Edge Function to create the auth user,
+   * then updates the profile created by the database trigger.
    */
   async create(
     userData: CreateUserProfileData & {
@@ -289,53 +223,18 @@ class UserService {
     try {
       const email = userData.email.toLowerCase().trim();
 
-      // Check if user already exists
-      const { data: existingProfile } = await supabase
-        .from("user_profiles")
-        .select("id, email")
-        .eq("email", email)
-        .maybeSingle();
-
-      if (existingProfile) {
+      // Check if user already exists using repository
+      const existingUser = await this.repository.emailExists(email);
+      if (existingUser) {
         return {
           success: false,
           error: `A user with email ${email} already exists`,
         };
       }
 
-      // Determine roles and status
-      let assignedRoles = userData.roles || [];
-      let agentStatus: AgentStatus = userData.agent_status || "not_applicable";
-      let approvalStatus: ApprovalStatus =
-        userData.approval_status || "approved";
-
-      if (assignedRoles.length === 0) {
-        const contractLevel =
-          userData.contractCompLevel || userData.contract_level;
-        if (contractLevel && contractLevel >= 50) {
-          assignedRoles = ["active_agent"];
-          agentStatus = "licensed";
-        } else if (contractLevel && contractLevel < 50) {
-          assignedRoles = ["agent"];
-          agentStatus = "licensed";
-        } else {
-          assignedRoles = ["recruit"];
-          agentStatus = "unlicensed";
-          approvalStatus = "pending";
-        }
-      } else {
-        if (
-          assignedRoles.includes("active_agent") ||
-          assignedRoles.includes("agent")
-        ) {
-          agentStatus = "licensed";
-        } else if (assignedRoles.includes("recruit")) {
-          agentStatus = "unlicensed";
-          approvalStatus = "pending";
-        } else if (assignedRoles.includes("admin")) {
-          agentStatus = "licensed";
-        }
-      }
+      // Determine roles and status based on business rules
+      const { assignedRoles, agentStatus, approvalStatus } =
+        this.determineUserRolesAndStatus(userData);
 
       // Create auth user via Edge Function
       if (userData.sendInvite === false) {
@@ -394,7 +293,7 @@ class UserService {
         lastName = parts.slice(1).join(" ") || "";
       }
 
-      // Update the profile created by trigger
+      // Update the profile created by trigger using repository
       const profileData: Partial<UserProfileRow> = {
         first_name: firstName,
         last_name: lastName,
@@ -419,38 +318,88 @@ class UserService {
         npn: userData.npn || null,
       };
 
-      const { data, error } = await supabase
-        .from("user_profiles")
-        .update(profileData)
-        .eq("id", authUserId)
-        .select()
-        .single();
+      try {
+        const updatedProfile = await this.repository.update(
+          authUserId,
+          profileData,
+        );
 
-      if (error) {
+        logger.info(
+          `User created: ${email} (ID: ${authUserId})`,
+          "UserService",
+        );
+        return {
+          success: true,
+          userId: authUserId,
+          user: updatedProfile as UserProfile,
+          inviteSent,
+        };
+      } catch (updateError) {
         logger.error(
           "Failed to update user profile after auth creation",
-          error as Error,
+          updateError as Error,
           "UserService",
         );
         return {
           success: true,
           userId: authUserId,
           inviteSent,
-          error: `Auth user created but profile update failed: ${error.message}`,
+          error: `Auth user created but profile update failed: ${updateError instanceof Error ? updateError.message : String(updateError)}`,
         };
       }
-
-      logger.info(`User created: ${email} (ID: ${authUserId})`, "UserService");
-      return {
-        success: true,
-        userId: authUserId,
-        user: data as UserProfile,
-        inviteSent,
-      };
     } catch (error) {
       logger.error("Error in create", error as Error, "UserService");
       return { success: false, error: "Failed to create user" };
     }
+  }
+
+  /**
+   * Determine user roles and status based on business rules
+   */
+  private determineUserRolesAndStatus(userData: {
+    roles?: RoleName[];
+    agent_status?: AgentStatus;
+    approval_status?: ApprovalStatus;
+    contractCompLevel?: number;
+    contract_level?: number | null;
+  }): {
+    assignedRoles: RoleName[];
+    agentStatus: AgentStatus;
+    approvalStatus: ApprovalStatus;
+  } {
+    let assignedRoles = userData.roles || [];
+    let agentStatus: AgentStatus = userData.agent_status || "not_applicable";
+    let approvalStatus: ApprovalStatus = userData.approval_status || "approved";
+
+    if (assignedRoles.length === 0) {
+      const contractLevel =
+        userData.contractCompLevel || userData.contract_level;
+      if (contractLevel && contractLevel >= 50) {
+        assignedRoles = ["active_agent"];
+        agentStatus = "licensed";
+      } else if (contractLevel && contractLevel < 50) {
+        assignedRoles = ["agent"];
+        agentStatus = "licensed";
+      } else {
+        assignedRoles = ["recruit"];
+        agentStatus = "unlicensed";
+        approvalStatus = "pending";
+      }
+    } else {
+      if (
+        assignedRoles.includes("active_agent") ||
+        assignedRoles.includes("agent")
+      ) {
+        agentStatus = "licensed";
+      } else if (assignedRoles.includes("recruit")) {
+        agentStatus = "unlicensed";
+        approvalStatus = "pending";
+      } else if (assignedRoles.includes("admin")) {
+        agentStatus = "licensed";
+      }
+    }
+
+    return { assignedRoles, agentStatus, approvalStatus };
   }
 
   // -------------------------------------------------------------------------
@@ -479,43 +428,35 @@ class UserService {
 
     // Auto-set agent_status based on roles
     if (updates.roles) {
-      if (
-        updates.roles.includes("active_agent") ||
-        updates.roles.includes("agent")
-      ) {
-        dbData.agent_status = "licensed";
-      } else if (updates.roles.includes("recruit")) {
-        dbData.agent_status = "unlicensed";
-      } else if (updates.roles.includes("admin")) {
-        dbData.agent_status = "licensed";
-      } else {
-        dbData.agent_status = "not_applicable";
-      }
+      dbData.agent_status = this.determineAgentStatusFromRoles(updates.roles);
     }
 
-    const { data, error } = await supabase
-      .from("user_profiles")
-      .update(dbData)
-      .eq("id", id)
-      .select()
-      .single();
-
-    if (error) {
-      // Try to fetch to verify update worked
-      const { data: fetchedData, error: fetchError } = await supabase
-        .from("user_profiles")
-        .select("*")
-        .eq("id", id)
-        .single();
-
-      if (!fetchError && fetchedData) {
-        return fetchedData as UserProfile;
+    try {
+      return await this.repository.update(id, dbData);
+    } catch (error) {
+      // Fallback: try to fetch to verify update worked
+      const fetchedProfile = await this.repository.findById(id);
+      if (fetchedProfile) {
+        return fetchedProfile;
       }
-
-      throw new Error(`Failed to update user: ${error.message}`);
+      throw new Error(
+        `Failed to update user: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
+  }
 
-    return data as UserProfile;
+  /**
+   * Determine agent status based on roles
+   */
+  private determineAgentStatusFromRoles(roles: RoleName[]): AgentStatus {
+    if (roles.includes("active_agent") || roles.includes("agent")) {
+      return "licensed";
+    } else if (roles.includes("recruit")) {
+      return "unlicensed";
+    } else if (roles.includes("admin")) {
+      return "licensed";
+    }
+    return "not_applicable";
   }
 
   /**
@@ -546,19 +487,7 @@ class UserService {
         };
       }
 
-      const { error } = await supabase
-        .from("user_profiles")
-        .update({ contract_level: contractLevel })
-        .eq("id", userId);
-
-      if (error) {
-        logger.error(
-          "Failed to update contract level",
-          error as Error,
-          "UserService",
-        );
-        return { success: false, error: error.message };
-      }
+      await this.repository.update(userId, { contract_level: contractLevel });
 
       // Auto-upgrade agent role if contract level is high enough
       if (contractLevel && contractLevel >= 50) {
@@ -619,15 +548,7 @@ class UserService {
         return { success: false, error: "Not authenticated" };
       }
 
-      const { error } = await supabase.rpc("admin_approveuser", {
-        target_user_id: userId,
-        approver_id: user.id,
-      });
-
-      if (error) {
-        logger.error("Failed to approve user", error as Error, "UserService");
-        return { success: false, error: error.message };
-      }
+      await this.repository.adminApproveUser(userId, user.id);
 
       // Update role if specified
       if (role && role !== "agent") {
@@ -637,7 +558,11 @@ class UserService {
       return { success: true };
     } catch (error) {
       logger.error("Error in approve", error as Error, "UserService");
-      return { success: false, error: "Failed to approve user" };
+      return {
+        success: false,
+        error:
+          error instanceof Error ? error.message : "Failed to approve user",
+      };
     }
   }
 
@@ -658,22 +583,20 @@ class UserService {
         return { success: false, error: "Not authenticated" };
       }
 
-      const { error } = await supabase.rpc("admin_denyuser", {
-        target_user_id: userId,
-        approver_id: user.id,
-        reason: reason || "No reason provided",
-      });
-
-      if (error) {
-        logger.error("Failed to deny user", error as Error, "UserService");
-        return { success: false, error: error.message };
-      }
+      await this.repository.adminDenyUser(
+        userId,
+        user.id,
+        reason || "No reason provided",
+      );
 
       logger.info(`User ${userId} denied by ${user.id}`, "UserService");
       return { success: true };
     } catch (error) {
       logger.error("Error in deny", error as Error, "UserService");
-      return { success: false, error: "Failed to deny user" };
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Failed to deny user",
+      };
     }
   }
 
@@ -684,23 +607,17 @@ class UserService {
     userId: string,
   ): Promise<{ success: boolean; error?: string }> {
     try {
-      const { error } = await supabase.rpc("admin_set_pendinguser", {
-        target_user_id: userId,
-      });
-
-      if (error) {
-        logger.error(
-          "Failed to set user to pending",
-          error as Error,
-          "UserService",
-        );
-        return { success: false, error: error.message };
-      }
-
+      await this.repository.adminSetPendingUser(userId);
       return { success: true };
     } catch (error) {
       logger.error("Error in setPending", error as Error, "UserService");
-      return { success: false, error: "Failed to set user to pending" };
+      return {
+        success: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to set user to pending",
+      };
     }
   }
 
@@ -712,15 +629,7 @@ class UserService {
     isAdmin: boolean,
   ): Promise<{ success: boolean; error?: string }> {
     try {
-      const { error } = await supabase.rpc("admin_set_admin_role", {
-        target_user_id: userId,
-        new_is_admin: isAdmin,
-      });
-
-      if (error) {
-        logger.error("Failed to set admin role", error as Error, "UserService");
-        return { success: false, error: error.message };
-      }
+      await this.repository.adminSetAdminRole(userId, isAdmin);
 
       // Update roles array
       const profile = await this.getUserProfile(userId);
@@ -737,7 +646,11 @@ class UserService {
       return { success: true };
     } catch (error) {
       logger.error("Error in setAdminRole", error as Error, "UserService");
-      return { success: false, error: "Failed to set admin role" };
+      return {
+        success: false,
+        error:
+          error instanceof Error ? error.message : "Failed to set admin role",
+      };
     }
   }
 
@@ -750,33 +663,21 @@ class UserService {
    */
   async delete(userId: string): Promise<{ success: boolean; error?: string }> {
     try {
-      const { data, error } = await supabase.rpc("admin_deleteuser", {
-        target_user_id: userId,
-      });
+      const result = await this.repository.adminDeleteUser(userId);
 
-      if (error) {
-        logger.error("Failed to delete user", error as Error, "UserService");
-        return { success: false, error: error.message };
-      }
-
-      if (
-        data &&
-        typeof data === "object" &&
-        (data as { success?: boolean }).success === false
-      ) {
-        const errorData = data as { error?: string };
-        logger.error("Delete user denied", errorData.error, "UserService");
-        return {
-          success: false,
-          error: errorData.error || "Failed to delete user",
-        };
+      if (!result.success) {
+        logger.error("Delete user denied", result.error, "UserService");
+        return result;
       }
 
       logger.info(`User ${userId} deleted`, "UserService");
       return { success: true };
     } catch (error) {
       logger.error("Error in delete", error as Error, "UserService");
-      return { success: false, error: "Failed to delete user" };
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Failed to delete user",
+      };
     }
   }
 
@@ -846,25 +747,7 @@ class UserService {
    */
   async getApprovalStats(): Promise<ApprovalStats> {
     try {
-      const { data, error } = await supabase
-        .from("user_profiles")
-        .select("approval_status");
-
-      if (error) {
-        logger.error(
-          "Failed to fetch approval stats",
-          error as Error,
-          "UserService",
-        );
-        return { total: 0, pending: 0, approved: 0, denied: 0 };
-      }
-
-      return {
-        total: data.length,
-        pending: data.filter((u) => u.approval_status === "pending").length,
-        approved: data.filter((u) => u.approval_status === "approved").length,
-        denied: data.filter((u) => u.approval_status === "denied").length,
-      };
+      return this.repository.getApprovalStats();
     } catch (error) {
       logger.error("Error in getApprovalStats", error as Error, "UserService");
       return { total: 0, pending: 0, approved: 0, denied: 0 };
@@ -960,6 +843,11 @@ class UserService {
 
   /** @deprecated Use getUserProfile instead */
   async getById(userId: string): Promise<UserProfile | null> {
+    return this.getUserProfile(userId);
+  }
+
+  /** @deprecated Use getUserProfile instead - alias for backward compatibility */
+  async getAgentById(userId: string): Promise<UserProfile | null> {
     return this.getUserProfile(userId);
   }
 

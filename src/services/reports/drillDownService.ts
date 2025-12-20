@@ -6,6 +6,7 @@ import {
   DrillDownData,
   DrillDownRecord,
 } from "@/types/reports.types";
+import { parseLocalDate } from "@/lib/date";
 
 /**
  * Service for fetching drill-down data when users click on report elements
@@ -241,7 +242,7 @@ export class DrillDownService {
       return {
         id: p.id,
         type: "policy" as const,
-        date: new Date(p.effective_date).toLocaleDateString(),
+        date: parseLocalDate(p.effective_date).toLocaleDateString(),
         amount: totalCommission,
         status: p.status,
         policyNumber: p.policy_number,
@@ -323,7 +324,7 @@ export class DrillDownService {
     const records: DrillDownRecord[] = (data || []).map((p: any) => ({
       id: p.id,
       type: "policy" as const,
-      date: new Date(p.effective_date).toLocaleDateString(),
+      date: parseLocalDate(p.effective_date).toLocaleDateString(),
       amount: p.annual_premium || 0,
       status: p.status,
       policyNumber: p.policy_number,

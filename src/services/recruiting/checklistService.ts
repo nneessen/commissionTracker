@@ -1,12 +1,29 @@
 // src/services/recruiting/checklistService.ts
 
 import { supabase } from "@/services/base/supabase";
+import {
+  RecruitPhaseProgressRepository,
+  type PhaseProgressStatus,
+} from "./repositories/RecruitPhaseProgressRepository";
+import {
+  RecruitChecklistProgressRepository,
+  type ChecklistProgressStatus,
+} from "./repositories/RecruitChecklistProgressRepository";
+import { PipelinePhaseRepository } from "./repositories/PipelinePhaseRepository";
+import { PhaseChecklistItemRepository } from "./repositories/PhaseChecklistItemRepository";
+import { documentService } from "@/services/documents";
 import type {
   RecruitPhaseProgress,
   RecruitChecklistProgress,
   UpdateChecklistItemStatusInput,
   OnboardingStatus,
 } from "@/types/recruiting.types";
+
+// Repository instances
+const phaseProgressRepository = new RecruitPhaseProgressRepository();
+const checklistProgressRepository = new RecruitChecklistProgressRepository();
+const pipelinePhaseRepository = new PipelinePhaseRepository();
+const checklistItemRepository = new PhaseChecklistItemRepository();
 
 // Convert phase name to onboarding status key
 const phaseNameToStatus = (phaseName: string): OnboardingStatus => {
@@ -29,17 +46,7 @@ export const checklistService = {
   // ========================================
 
   async getRecruitPhaseProgress(userId: string) {
-    const { data, error } = await supabase
-      .from("recruit_phase_progress")
-      .select(
-        `
-        *,
-        phase:phase_id(*)
-      `,
-      )
-      .eq("user_id", userId);
-
-    if (error) throw error;
+    const data = await phaseProgressRepository.findByUserIdWithPhase(userId);
 
     // Sort by phase_order in JavaScript (Supabase doesn't support ordering by related fields)
     const sorted = (data ?? []).sort((a, b) => {
@@ -54,94 +61,48 @@ export const checklistService = {
   },
 
   async getCurrentPhase(userId: string) {
-    // First try to find an in_progress phase
-    const { data: initialData, error } = await supabase
-      .from("recruit_phase_progress")
-      .select(
-        `
-        *,
-        phase:phase_id(
-          *,
-          checklist_items:phase_checklist_items(*)
-        )
-      `,
-      )
-      .eq("user_id", userId)
-      .eq("status", "in_progress")
-      .maybeSingle();
-
-    if (error) throw error;
-
-    // If no in_progress phase, look for a blocked phase (so we can show unblock button)
-    let data = initialData;
-    if (!data) {
-      const { data: blockedData, error: blockedError } = await supabase
-        .from("recruit_phase_progress")
-        .select(
-          `
-          *,
-          phase:phase_id(
-            *,
-            checklist_items:phase_checklist_items(*)
-          )
-        `,
-        )
-        .eq("user_id", userId)
-        .eq("status", "blocked")
-        .maybeSingle();
-
-      if (blockedError) throw blockedError;
-      data = blockedData;
-    }
-
+    const data =
+      await phaseProgressRepository.findCurrentPhaseWithDetails(userId);
     return data as RecruitPhaseProgress | null;
   },
 
   async initializeRecruitProgress(userId: string, templateId: string) {
     // Get all phases for the template
-    const { data: phases, error: phasesError } = await supabase
-      .from("pipeline_phases")
-      .select("*")
-      .eq("template_id", templateId)
-      .eq("is_active", true)
-      .order("phase_order", { ascending: true });
+    const phases = await pipelinePhaseRepository.findByTemplateId(templateId);
 
-    if (phasesError) throw phasesError;
-    if (!phases || phases.length === 0)
+    if (!phases || phases.length === 0) {
       throw new Error("No phases found for template");
+    }
 
     // Create progress records for all phases
     const progressRecords = phases.map((phase, index) => ({
-      user_id: userId,
-      phase_id: phase.id,
-      template_id: templateId,
-      status: index === 0 ? ("in_progress" as const) : ("not_started" as const),
-      started_at: index === 0 ? new Date().toISOString() : null,
+      userId,
+      phaseId: phase.id,
+      templateId,
+      status: (index === 0
+        ? "in_progress"
+        : "not_started") as PhaseProgressStatus,
+      startedAt: index === 0 ? new Date().toISOString() : null,
     }));
 
-    const { data, error } = await supabase
-      .from("recruit_phase_progress")
-      .insert(progressRecords)
-      .select();
-
-    if (error) throw error;
+    const data = await phaseProgressRepository.createMany(progressRecords);
 
     // Initialize checklist progress for first phase and update user status
     if (phases[0]) {
       await this.initializeChecklistProgress(userId, phases[0].id);
 
       // Update user's onboarding status to match first phase
-      const firstPhaseStatus = phaseNameToStatus(phases[0].phase_name);
+      const firstPhaseStatus = phaseNameToStatus(phases[0].phaseName);
       await supabase
         .from("user_profiles")
         .update({
           onboarding_status: firstPhaseStatus,
-          current_onboarding_phase: phases[0].phase_name,
+          current_onboarding_phase: phases[0].phaseName,
         })
         .eq("id", userId);
     }
 
-    return data as RecruitPhaseProgress[];
+    return data as unknown as RecruitPhaseProgress[];
   },
 
   async updatePhaseStatus(
@@ -151,31 +112,14 @@ export const checklistService = {
     notes?: string,
     blockedReason?: string,
   ) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic update object
-    const updates: any = {
-      status,
-      notes: notes || null,
-      blocked_reason: blockedReason || null,
-    };
+    const data = await phaseProgressRepository.updateStatus(
+      userId,
+      phaseId,
+      status as PhaseProgressStatus,
+      { notes, blockedReason },
+    );
 
-    if (status === "in_progress" && !updates.started_at) {
-      updates.started_at = new Date().toISOString();
-    }
-
-    if (status === "completed") {
-      updates.completed_at = new Date().toISOString();
-    }
-
-    const { data, error } = await supabase
-      .from("recruit_phase_progress")
-      .update(updates)
-      .eq("user_id", userId)
-      .eq("phase_id", phaseId)
-      .select()
-      .single();
-
-    if (error) throw error;
-    return data as RecruitPhaseProgress;
+    return data as unknown as RecruitPhaseProgress;
   },
 
   async advanceToNextPhase(userId: string, currentPhaseId: string) {
@@ -193,20 +137,15 @@ export const checklistService = {
     await this.updatePhaseStatus(userId, currentPhaseId, "completed");
 
     // Get next phase
-    const { data: nextPhase, error: nextPhaseError } = await supabase
-      .from("pipeline_phases")
-      .select("*")
-      .eq("template_id", currentProgress.template_id)
-      .eq("is_active", true)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- phase relation type
-      .gt("phase_order", (currentProgress.phase as any).phase_order)
-      .order("phase_order", { ascending: true })
-      .limit(1)
-      .single();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- phase relation type
+    const currentOrder = (currentProgress.phase as any).phase_order;
+    const nextPhase = await pipelinePhaseRepository.findNextPhase(
+      currentProgress.template_id,
+      currentOrder,
+    );
 
-    if (nextPhaseError) {
+    if (!nextPhase) {
       // No next phase found - recruiting is complete!
-      // Update user status to 'completed'
       await supabase
         .from("user_profiles")
         .update({
@@ -228,12 +167,12 @@ export const checklistService = {
     await this.initializeChecklistProgress(userId, nextPhase.id);
 
     // Update user_profiles with new phase and status
-    const nextPhaseStatus = phaseNameToStatus(nextPhase.phase_name);
+    const nextPhaseStatus = phaseNameToStatus(nextPhase.phaseName);
     await supabase
       .from("user_profiles")
       .update({
         onboarding_status: nextPhaseStatus,
-        current_onboarding_phase: nextPhase.phase_name,
+        current_onboarding_phase: nextPhase.phaseName,
       })
       .eq("id", userId);
 
@@ -256,58 +195,26 @@ export const checklistService = {
 
   async initializeChecklistProgress(userId: string, phaseId: string) {
     // Get all checklist items for the phase
-    const { data: items, error: itemsError } = await supabase
-      .from("phase_checklist_items")
-      .select("*")
-      .eq("phase_id", phaseId)
-      .order("item_order", { ascending: true });
+    const items = await checklistItemRepository.findByPhaseId(phaseId);
 
-    if (itemsError) throw itemsError;
     if (!items || items.length === 0) return [];
 
     // Create progress records for all items
     const progressRecords = items.map((item) => ({
-      user_id: userId,
-      checklist_item_id: item.id,
-      status: "not_started" as const,
+      userId,
+      checklistItemId: item.id,
+      status: "not_started" as ChecklistProgressStatus,
     }));
 
-    const { data, error } = await supabase
-      .from("recruit_checklist_progress")
-      .upsert(progressRecords, {
-        onConflict: "user_id,checklist_item_id",
-        ignoreDuplicates: true, // Don't update if already exists
-      })
-      .select();
-
-    if (error) throw error;
-    return data as RecruitChecklistProgress[];
+    const data = await checklistProgressRepository.upsertMany(progressRecords);
+    return data as unknown as RecruitChecklistProgress[];
   },
 
   async getChecklistProgress(userId: string, phaseId: string) {
-    // First get all checklist items for the phase
-    const { data: phaseChecklistItems, error: itemsError } = await supabase
-      .from("phase_checklist_items")
-      .select("id")
-      .eq("phase_id", phaseId);
-
-    if (itemsError) throw itemsError;
-    if (!phaseChecklistItems || phaseChecklistItems.length === 0) return [];
-
-    // Get progress for these items
-    const checklistItemIds = phaseChecklistItems.map((item) => item.id);
-    const { data, error } = await supabase
-      .from("recruit_checklist_progress")
-      .select(
-        `
-        *,
-        checklist_item:checklist_item_id(*)
-      `,
-      )
-      .eq("user_id", userId)
-      .in("checklist_item_id", checklistItemIds);
-
-    if (error) throw error;
+    const data = await checklistProgressRepository.findByUserAndPhase(
+      userId,
+      phaseId,
+    );
     return data as RecruitChecklistProgress[];
   },
 
@@ -316,47 +223,24 @@ export const checklistService = {
     itemId: string,
     statusData: UpdateChecklistItemStatusInput,
   ) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic update object
-    const updates: any = {
-      status: statusData.status,
-      notes: statusData.notes || null,
-      metadata: statusData.metadata || null,
-    };
-
-    if (statusData.status === "completed") {
-      updates.completed_at = new Date().toISOString();
-      updates.completed_by = statusData.completed_by;
-    }
-
-    if (statusData.status === "approved") {
-      updates.verified_at = new Date().toISOString();
-      updates.verified_by = statusData.verified_by;
-    }
-
-    if (statusData.status === "rejected") {
-      updates.rejection_reason = statusData.rejection_reason;
-      updates.verified_at = new Date().toISOString();
-      updates.verified_by = statusData.verified_by;
-    }
-
-    if (statusData.document_id) {
-      updates.document_id = statusData.document_id;
-    }
-
-    const { data, error } = await supabase
-      .from("recruit_checklist_progress")
-      .update(updates)
-      .eq("user_id", userId)
-      .eq("checklist_item_id", itemId)
-      .select()
-      .single();
-
-    if (error) throw error;
+    const data = await checklistProgressRepository.updateStatus(
+      userId,
+      itemId,
+      statusData.status as ChecklistProgressStatus,
+      {
+        completedBy: statusData.completed_by,
+        verifiedBy: statusData.verified_by,
+        documentId: statusData.document_id,
+        notes: statusData.notes,
+        rejectionReason: statusData.rejection_reason,
+        metadata: statusData.metadata,
+      },
+    );
 
     // Check if all required items in this phase are approved
     await this.checkPhaseAutoAdvancement(userId, itemId);
 
-    return data as RecruitChecklistProgress;
+    return data as unknown as RecruitChecklistProgress;
   },
 
   async checkPhaseAutoAdvancement(userId: string, checklistItemId: string) {
@@ -375,24 +259,18 @@ export const checklistService = {
     // Only auto-advance if phase allows it
     if (!phase.auto_advance) return;
 
-    // First get all checklist items for this phase
-    const { data: phaseChecklistItems, error: itemsError } = await supabase
-      .from("phase_checklist_items")
-      .select("*")
-      .eq("phase_id", phase.id);
+    // Get all checklist items for this phase
+    const phaseChecklistItems = await checklistItemRepository.findByPhaseId(
+      phase.id,
+    );
 
-    if (itemsError) throw itemsError;
     if (!phaseChecklistItems || phaseChecklistItems.length === 0) return;
 
     // Get all checklist progress for these items
-    const checklistItemIds = phaseChecklistItems.map((item) => item.id);
-    const { data: allProgress, error: progressError } = await supabase
-      .from("recruit_checklist_progress")
-      .select("*")
-      .eq("user_id", userId)
-      .in("checklist_item_id", checklistItemIds);
-
-    if (progressError) throw progressError;
+    const allProgress = await checklistProgressRepository.findByUserAndPhase(
+      userId,
+      phase.id,
+    );
 
     // Create a map of item_id to progress for quick lookup
     const progressMap = new Map(
@@ -402,16 +280,14 @@ export const checklistService = {
     // Determine which items to check:
     // - If there are required items, only those must be completed
     // - If NO required items exist, ALL items must be completed
-    const requiredItems = phaseChecklistItems.filter(
-      (item) => item.is_required,
-    );
+    const requiredItems = phaseChecklistItems.filter((item) => item.isRequired);
     const itemsToCheck =
       requiredItems.length > 0 ? requiredItems : phaseChecklistItems;
 
     // Check if all relevant items are approved/completed
     const allItemsCompleted = itemsToCheck.every((item) => {
       const progress = progressMap.get(item.id);
-      if (!progress) return false; // No progress means not completed
+      if (!progress) return false;
 
       return progress.status === "approved" || progress.status === "completed";
     });
@@ -423,80 +299,56 @@ export const checklistService = {
   },
 
   // ========================================
-  // DOCUMENT APPROVAL
+  // DOCUMENT APPROVAL (delegates to documentService)
   // ========================================
 
   async approveDocument(documentId: string, approverId: string) {
-    // Update document status
-    const { data: document, error: docError } = await supabase
-      .from("user_documents")
-      .update({ status: "approved" })
-      .eq("id", documentId)
-      .select()
-      .single();
-
-    if (docError) throw docError;
+    // Update document status via documentService
+    const document = await documentService.approve(documentId, approverId);
 
     // Find linked checklist item and mark as approved
-    const { data: checklistProgress, error: progressError } = await supabase
-      .from("recruit_checklist_progress")
-      .select("*")
-      .eq("document_id", documentId)
-      .single();
+    const checklistProgress =
+      await checklistProgressRepository.findByDocumentId(documentId);
 
-    if (progressError) {
-      // If no linked checklist item, just return the document
-      if (progressError.code === "PGRST116") return document;
-      throw progressError;
+    if (checklistProgress) {
+      // Update checklist item status to approved
+      await this.updateChecklistItemStatus(
+        checklistProgress.userId,
+        checklistProgress.checklistItemId,
+        {
+          status: "approved",
+          verified_by: approverId,
+        },
+      );
     }
-
-    // Update checklist item status to approved
-    await this.updateChecklistItemStatus(
-      document.user_id,
-      checklistProgress.checklist_item_id,
-      {
-        status: "approved",
-        verified_by: approverId,
-      },
-    );
 
     return document;
   },
 
   async rejectDocument(documentId: string, approverId: string, reason: string) {
-    // Update document status
-    const { data: document, error: docError } = await supabase
-      .from("user_documents")
-      .update({ status: "rejected", notes: reason })
-      .eq("id", documentId)
-      .select()
-      .single();
-
-    if (docError) throw docError;
+    // Update document status via documentService
+    const document = await documentService.reject(
+      documentId,
+      approverId,
+      reason,
+    );
 
     // Find linked checklist item and mark as needs_resubmission
-    const { data: checklistProgress, error: progressError } = await supabase
-      .from("recruit_checklist_progress")
-      .select("*")
-      .eq("document_id", documentId)
-      .single();
+    const checklistProgress =
+      await checklistProgressRepository.findByDocumentId(documentId);
 
-    if (progressError) {
-      // If no linked checklist item, just return the document
-      if (progressError.code === "PGRST116") return document;
-      throw progressError;
+    if (checklistProgress) {
+      // Update checklist item status to needs_resubmission
+      await this.updateChecklistItemStatus(
+        checklistProgress.userId,
+        checklistProgress.checklistItemId,
+        {
+          status: "needs_resubmission",
+          verified_by: approverId,
+          rejection_reason: reason,
+        },
+      );
     }
-
-    // Update checklist item status to needs_resubmission
-    await this.updateChecklistItemStatus(
-      document.user_id,
-      checklistProgress.checklist_item_id,
-      {
-        status: "needs_resubmission",
-        verified_by: approverId,
-        rejection_reason: reason,
-      },
-    );
 
     return document;
   },

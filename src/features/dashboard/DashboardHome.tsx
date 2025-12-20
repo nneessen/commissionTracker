@@ -20,6 +20,7 @@ import { TimePeriod } from "../../utils/dateRange";
 import showToast from "../../utils/toast";
 import type { CreateExpenseData } from "../../types/expense.types";
 import type { NewPolicyForm, CreatePolicyData } from "../../types/policy.types";
+import { parseLocalDate } from "@/lib/date";
 
 // Components
 import { TimePeriodSwitcher } from "./components/TimePeriodSwitcher";
@@ -259,10 +260,10 @@ export const DashboardHome: React.FC = () => {
         userId: user.id,
         carrierId: formData.carrierId,
         product: formData.product,
-        effectiveDate: new Date(formData.effectiveDate),
+        effectiveDate: parseLocalDate(formData.effectiveDate),
         termLength: formData.termLength,
         expirationDate: formData.expirationDate
-          ? new Date(formData.expirationDate)
+          ? parseLocalDate(formData.expirationDate)
           : undefined,
         annualPremium: formData.annualPremium || 0,
         monthlyPremium,

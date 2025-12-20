@@ -1,23 +1,28 @@
 // src/features/policies/utils/policyFormTransformer.ts
 // Utilities for transforming policy form data to service data
 
-import type {NewPolicyForm, CreatePolicyData, PaymentFrequency} from '@/types/policy.types';
+import type {
+  NewPolicyForm,
+  CreatePolicyData,
+  PaymentFrequency,
+} from "@/types/policy.types";
+import { parseLocalDate } from "@/lib/date";
 
 /**
  * Calculate monthly premium from annual premium based on payment frequency
  */
 export function calculateMonthlyPremium(
   annualPremium: number,
-  paymentFrequency: PaymentFrequency
+  paymentFrequency: PaymentFrequency,
 ): number {
   switch (paymentFrequency) {
-    case 'annual':
+    case "annual":
       return annualPremium / 12;
-    case 'semi-annual':
+    case "semi-annual":
       return annualPremium / 6;
-    case 'quarterly':
+    case "quarterly":
       return annualPremium / 3;
-    case 'monthly':
+    case "monthly":
     default:
       return annualPremium / 12;
   }
@@ -32,7 +37,7 @@ export function calculateMonthlyPremium(
  */
 export function validateCommissionPercentage(percent: number): void {
   if (percent < 0 || percent > 999.99) {
-    throw new Error('Commission percentage must be between 0 and 999.99');
+    throw new Error("Commission percentage must be between 0 and 999.99");
   }
 }
 
@@ -47,7 +52,7 @@ export function validateCommissionPercentage(percent: number): void {
 export function transformFormToCreateData(
   form: NewPolicyForm,
   clientId: string,
-  userId: string
+  userId: string,
 ): CreatePolicyData {
   // Validate commission percentage
   const commissionPercent = form.commissionPercentage || 0;
@@ -56,7 +61,7 @@ export function transformFormToCreateData(
   // Calculate monthly premium
   const monthlyPremium = calculateMonthlyPremium(
     form.annualPremium || 0,
-    form.paymentFrequency
+    form.paymentFrequency,
   );
 
   return {
@@ -66,9 +71,11 @@ export function transformFormToCreateData(
     userId,
     carrierId: form.carrierId,
     product: form.product,
-    effectiveDate: new Date(form.effectiveDate),
+    effectiveDate: parseLocalDate(form.effectiveDate),
     termLength: form.termLength,
-    expirationDate: form.expirationDate ? new Date(form.expirationDate) : undefined,
+    expirationDate: form.expirationDate
+      ? parseLocalDate(form.expirationDate)
+      : undefined,
     annualPremium: form.annualPremium || 0,
     monthlyPremium,
     paymentFrequency: form.paymentFrequency,
@@ -86,11 +93,12 @@ export function transformFormToCreateData(
  */
 export function transformFormToUpdateData(
   updates: Partial<NewPolicyForm>,
-  clientId?: string
+  clientId?: string,
 ): Partial<CreatePolicyData> {
   const result: Partial<CreatePolicyData> = {};
 
-  if (updates.policyNumber !== undefined) result.policyNumber = updates.policyNumber;
+  if (updates.policyNumber !== undefined)
+    result.policyNumber = updates.policyNumber;
   if (updates.status !== undefined) result.status = updates.status;
   if (clientId) result.clientId = clientId;
   if (updates.carrierId !== undefined) result.carrierId = updates.carrierId;
@@ -100,19 +108,27 @@ export function transformFormToUpdateData(
 
   // Handle dates
   if (updates.effectiveDate !== undefined) {
-    result.effectiveDate = new Date(updates.effectiveDate);
+    result.effectiveDate = parseLocalDate(updates.effectiveDate);
   }
   if (updates.expirationDate !== undefined) {
-    result.expirationDate = updates.expirationDate ? new Date(updates.expirationDate) : undefined;
+    result.expirationDate = updates.expirationDate
+      ? parseLocalDate(updates.expirationDate)
+      : undefined;
   }
 
   // Handle financial fields with recalculation
-  if (updates.annualPremium !== undefined || updates.paymentFrequency !== undefined) {
+  if (
+    updates.annualPremium !== undefined ||
+    updates.paymentFrequency !== undefined
+  ) {
     const annualPremium = updates.annualPremium ?? 0;
-    const paymentFrequency = updates.paymentFrequency ?? 'monthly';
+    const paymentFrequency = updates.paymentFrequency ?? "monthly";
 
     result.annualPremium = annualPremium;
-    result.monthlyPremium = calculateMonthlyPremium(annualPremium, paymentFrequency);
+    result.monthlyPremium = calculateMonthlyPremium(
+      annualPremium,
+      paymentFrequency,
+    );
     result.paymentFrequency = paymentFrequency;
   }
 

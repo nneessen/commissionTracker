@@ -5,151 +5,38 @@ import {
   WORKFLOW_EVENTS,
 } from "../events/workflowEventEmitter";
 import { createAuthUserWithProfile } from "./authUserService";
+import { RecruitRepository } from "./repositories/RecruitRepository";
+import { documentService, documentStorageService } from "@/services/documents";
+import { activityLogService } from "@/services/activity";
 import type { UserProfile } from "@/types/hierarchy.types";
 import type {
   OnboardingPhase,
   UserDocument,
-  UserEmail,
   UserActivityLog,
   RecruitFilters,
   UpdateRecruitInput,
   UpdatePhaseInput,
 } from "@/types/recruiting.types";
 import type { CreateRecruitInput } from "@/types/recruiting.types";
-import type { SendEmailRequest } from "@/types/email.types";
-import { emailService } from "@/services/email";
+
+// Repository instance
+const recruitRepository = new RecruitRepository();
 
 export const recruitingService = {
   // ========================================
-  // RECRUIT CRUD (now using user_profiles table)
+  // RECRUIT CRUD (using RecruitRepository)
   // ========================================
 
   async getRecruits(filters?: RecruitFilters, page = 1, limit = 50) {
-    // FIXED: Only show users who are ACTUALLY recruits in the pipeline
-    // Exclude active agents and admins even if they have onboarding_status
-    let query = supabase.from("user_profiles").select(
-      `
-        *,
-        recruiter:recruiter_id(id, email, first_name, last_name),
-        upline:upline_id(id, email, first_name, last_name),
-        pipeline_template:pipeline_template_id(id, name, description)
-      `,
-      { count: "exact" },
-    );
-
-    // Build the filter to get ONLY recruits
-    // Include users with 'recruit' role OR onboarding_status
-    // BUT exclude if they have 'active_agent', 'agent' (with high contract), or 'admin' roles
-    const { data: initialData, error: initialError } = await supabase
-      .from("user_profiles")
-      .select("*")
-      .or("roles.cs.{recruit},onboarding_status.not.is.null");
-
-    if (initialError) throw initialError;
-
-    // Filter out active agents and admins client-side for proper exclusion
-    const recruitIds = (initialData || [])
-      .filter((u) => {
-        const hasActiveAgentRole = u.roles?.includes("active_agent");
-        const hasAgentRole = u.roles?.includes("agent");
-        const hasAdminRole = u.roles?.includes("admin");
-        const isAdmin = u.is_admin === true;
-
-        // Exclude if they're an active agent, agent, or admin
-        if (hasActiveAgentRole || hasAgentRole || hasAdminRole || isAdmin) {
-          return false;
-        }
-
-        // Include if they have recruit role OR onboarding_status
-        return u.roles?.includes("recruit") || u.onboarding_status !== null;
-      })
-      .map((u) => u.id);
-
-    // Now build the main query with just the recruit IDs
-    if (recruitIds.length === 0) {
-      // No recruits found, return empty result
-      return {
-        data: [],
-        count: 0,
-        page,
-        limit,
-        totalPages: 0,
-      };
-    }
-
-    query = supabase
-      .from("user_profiles")
-      .select(
-        `
-        *,
-        recruiter:recruiter_id(id, email, first_name, last_name),
-        upline:upline_id(id, email, first_name, last_name),
-        pipeline_template:pipeline_template_id(id, name, description)
-      `,
-        { count: "exact" },
-      )
-      .in("id", recruitIds);
-
-    // Apply filters
-    if (filters?.onboarding_status && filters.onboarding_status.length > 0) {
-      query = query.in("onboarding_status", filters.onboarding_status);
-    }
-    if (filters?.current_phase && filters.current_phase.length > 0) {
-      query = query.in("current_onboarding_phase", filters.current_phase);
-    }
-    if (filters?.recruiter_id) {
-      query = query.eq("recruiter_id", filters.recruiter_id);
-    }
-    if (filters?.assigned_upline_id) {
-      query = query.eq("upline_id", filters.assigned_upline_id);
-    }
-    if (filters?.search) {
-      query = query.or(
-        `first_name.ilike.%${filters.search}%,last_name.ilike.%${filters.search}%,email.ilike.%${filters.search}%`,
-      );
-    }
-    if (filters?.date_range) {
-      query = query
-        .gte("created_at", filters.date_range.start)
-        .lte("created_at", filters.date_range.end);
-    }
-
-    // Pagination
-    const from = (page - 1) * limit;
-    const to = from + limit - 1;
-    query = query.range(from, to);
-
-    // Sort by updated_at desc
-    query = query.order("updated_at", { ascending: false });
-
-    const { data, error, count } = await query;
-
-    if (error) throw error;
-
-    return {
-      data: data as UserProfile[],
-      count: count || 0,
-      page,
-      limit,
-      totalPages: Math.ceil((count || 0) / limit),
-    };
+    return recruitRepository.findRecruits(filters, page, limit);
   },
 
   async getRecruitById(id: string) {
-    const { data, error } = await supabase
-      .from("user_profiles")
-      .select(
-        `
-        *,
-        recruiter:recruiter_id(id, email, first_name, last_name),
-        upline:upline_id(id, email, first_name, last_name)
-      `,
-      )
-      .eq("id", id)
-      .single();
-
-    if (error) throw error;
-    return data as UserProfile;
+    const recruit = await recruitRepository.findByIdWithRelations(id);
+    if (!recruit) {
+      throw new Error("Recruit not found");
+    }
+    return recruit;
   },
 
   async createRecruit(recruit: CreateRecruitInput) {
@@ -370,18 +257,7 @@ export const recruitingService = {
 
   // Hard delete recruit - permanently removes user and all related data
   async deleteRecruit(id: string) {
-    const { data, error } = await supabase.rpc("admin_deleteuser", {
-      target_user_id: id,
-    });
-
-    if (error) {
-      throw new Error(`Failed to delete recruit: ${error.message}`);
-    }
-
-    // Check if the RPC returned an error
-    if (data && typeof data === "object" && data.success === false) {
-      throw new Error(data.error || "Failed to delete recruit");
-    }
+    return recruitRepository.deleteRecruit(id);
   },
 
   // ========================================
@@ -412,18 +288,30 @@ export const recruitingService = {
   },
 
   // ========================================
-  // DOCUMENTS
+  // DOCUMENTS (delegates to documentService)
   // ========================================
 
   async getRecruitDocuments(userId: string) {
-    const { data, error } = await supabase
-      .from("user_documents")
-      .select("*")
-      .eq("user_id", userId)
-      .order("uploaded_at", { ascending: false });
-
-    if (error) throw error;
-    return data as UserDocument[];
+    const documents = await documentService.getDocumentsForUser(userId);
+    // Transform to expected format (snake_case for backward compatibility)
+    return documents.map((doc) => ({
+      id: doc.id,
+      user_id: doc.userId,
+      document_type: doc.documentType,
+      document_name: doc.documentName,
+      file_name: doc.fileName,
+      file_size: doc.fileSize,
+      file_type: doc.fileType,
+      storage_path: doc.storagePath,
+      status: doc.status,
+      uploaded_by: doc.uploadedBy,
+      uploaded_at: doc.uploadedAt,
+      notes: doc.notes,
+      required: doc.required,
+      expires_at: doc.expiresAt,
+      created_at: doc.createdAt,
+      updated_at: doc.updatedAt,
+    })) as UserDocument[];
   },
 
   async uploadDocument(
@@ -435,70 +323,48 @@ export const recruitingService = {
     required = false,
     expiresAt?: string,
   ) {
-    // Upload file to Supabase Storage
-    const fileName = `${Date.now()}_${file.name}`;
-    const storagePath = `${userId}/${documentType}/${fileName}`;
+    const document = await documentService.uploadDocument({
+      userId,
+      file,
+      documentType,
+      documentName,
+      uploadedBy,
+      required,
+      expiresAt,
+    });
 
-    const { error: uploadError } = await supabase.storage
-      .from("user-documents")
-      .upload(storagePath, file);
-
-    if (uploadError) throw uploadError;
-
-    // Create document record
-    const { data, error } = await supabase
-      .from("user_documents")
-      .insert({
-        user_id: userId,
-        document_type: documentType,
-        document_name: documentName,
-        file_name: file.name,
-        file_size: file.size,
-        file_type: file.type,
-        storage_path: storagePath,
-        uploaded_by: uploadedBy,
-        required,
-        expires_at: expiresAt || null,
-      })
-      .select()
-      .single();
-
-    if (error) throw error;
-    return data as UserDocument;
+    // Transform to expected format
+    return {
+      id: document.id,
+      user_id: document.userId,
+      document_type: document.documentType,
+      document_name: document.documentName,
+      file_name: document.fileName,
+      file_size: document.fileSize,
+      file_type: document.fileType,
+      storage_path: document.storagePath,
+      status: document.status,
+      uploaded_by: document.uploadedBy,
+      uploaded_at: document.uploadedAt,
+      notes: document.notes,
+      required: document.required,
+      expires_at: document.expiresAt,
+      created_at: document.createdAt,
+      updated_at: document.updatedAt,
+    } as UserDocument;
   },
 
   async downloadDocument(storagePath: string) {
-    const { data, error } = await supabase.storage
-      .from("user-documents")
-      .download(storagePath);
-
-    if (error) throw error;
-    return data;
+    return documentStorageService.download(storagePath);
   },
 
   async getDocumentUrl(storagePath: string) {
-    const { data } = await supabase.storage
-      .from("user-documents")
-      .createSignedUrl(storagePath, 3600); // 1 hour expiry
-
-    return data?.signedUrl || null;
+    return documentStorageService.getSignedUrl(storagePath);
   },
 
-  async deleteDocument(id: string, storagePath: string) {
-    // Delete from storage
-    const { error: storageError } = await supabase.storage
-      .from("user-documents")
-      .remove([storagePath]);
-
-    if (storageError) throw storageError;
-
-    // Delete record
-    const { error } = await supabase
-      .from("user_documents")
-      .delete()
-      .eq("id", id);
-
-    if (error) throw error;
+  async deleteDocument(id: string, _storagePath?: string) {
+    // Note: storagePath is ignored - documentService fetches it internally
+    return documentService.deleteDocument(id);
   },
 
   async updateDocumentStatus(
@@ -506,76 +372,45 @@ export const recruitingService = {
     status: "pending" | "received" | "approved" | "rejected" | "expired",
     notes?: string,
   ) {
-    const { data, error } = await supabase
-      .from("user_documents")
-      .update({
-        status,
-        notes: notes || null,
-      })
-      .eq("id", id)
-      .select()
-      .single();
+    const document = await documentService.updateStatus(id, status, notes);
 
-    if (error) throw error;
-    return data as UserDocument;
-  },
-
-  // ========================================
-  // EMAILS
-  // ========================================
-
-  async getRecruitEmails(userId: string) {
-    const { data, error } = await supabase
-      .from("user_emails")
-      .select(
-        `
-        *,
-        attachments:user_email_attachments(*)
-      `,
-      )
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false });
-
-    if (error) throw error;
-    return data as UserEmail[];
-  },
-
-  async sendEmail(emailRequest: SendEmailRequest) {
-    // Use unified emailService (Resend API via send-email edge function)
-    // Map from email.types.SendEmailRequest to emailService.SendEmailRequest
-    const to = Array.isArray(emailRequest.to)
-      ? emailRequest.to
-      : [emailRequest.to];
-
-    const result = await emailService.sendEmail({
-      to,
-      subject: emailRequest.subject,
-      html: emailRequest.bodyHtml,
-      text: emailRequest.bodyText,
-      cc: emailRequest.cc,
-      recruitId: emailRequest.recruitId,
-    });
-
+    // Transform to expected format
     return {
-      success: result.success,
-      emailId: result.emailId || result.resendMessageId,
-    };
+      id: document.id,
+      user_id: document.userId,
+      document_type: document.documentType,
+      document_name: document.documentName,
+      file_name: document.fileName,
+      file_size: document.fileSize,
+      file_type: document.fileType,
+      storage_path: document.storagePath,
+      status: document.status,
+      uploaded_by: document.uploadedBy,
+      uploaded_at: document.uploadedAt,
+      notes: document.notes,
+      required: document.required,
+      expires_at: document.expiresAt,
+      created_at: document.createdAt,
+      updated_at: document.updatedAt,
+    } as UserDocument;
   },
 
   // ========================================
-  // ACTIVITY LOG
+  // ACTIVITY LOG (delegates to activityLogService)
   // ========================================
 
   async getRecruitActivityLog(userId: string, limit = 50) {
-    const { data, error } = await supabase
-      .from("user_activity_log")
-      .select("*")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false })
-      .limit(limit);
+    const logs = await activityLogService.getForUser(userId, limit);
 
-    if (error) throw error;
-    return data as UserActivityLog[];
+    // Transform to expected format (snake_case for backward compatibility)
+    return logs.map((log) => ({
+      id: log.id,
+      user_id: log.userId,
+      action_type: log.actionType,
+      details: log.details as Record<string, unknown> | null,
+      performed_by: log.performedBy,
+      created_at: log.createdAt ?? new Date().toISOString(),
+    })) as UserActivityLog[];
   },
 
   // ========================================
@@ -609,108 +444,18 @@ export const recruitingService = {
   },
 
   // ========================================
-  // STATS & ANALYTICS
+  // STATS & ANALYTICS (using RecruitRepository)
   // ========================================
 
   async getRecruitingStats(recruiterId?: string) {
-    // FIXED: Only count users who are ACTUALLY recruits
-    let query = supabase
-      .from("user_profiles")
-      .select("*", { count: "exact", head: false })
-      .or("roles.cs.{recruit},onboarding_status.not.is.null");
-
-    if (recruiterId) {
-      query = query.eq("recruiter_id", recruiterId);
-    }
-
-    const { data, error } = await query;
-
-    if (error) throw error;
-
-    // Filter out active agents and admins
-    const recruits = ((data as UserProfile[]) || []).filter((u) => {
-      const hasActiveAgentRole = u.roles?.includes("active_agent");
-      const hasAgentRole = u.roles?.includes("agent");
-      const hasAdminRole = u.roles?.includes("admin");
-      const isAdmin = u.is_admin === true;
-
-      // Exclude if they're an active agent, agent, or admin
-      if (hasActiveAgentRole || hasAgentRole || hasAdminRole || isAdmin) {
-        return false;
-      }
-
-      // Include if they have recruit role OR onboarding_status
-      return u.roles?.includes("recruit") || u.onboarding_status !== null;
-    });
-
-    // Count active recruits (all phases except completed/dropped)
-    const activePhases = [
-      "interview_1",
-      "zoom_interview",
-      "pre_licensing",
-      "exam",
-      "npn_received",
-      "contracting",
-      "bootcamp",
-    ];
-    const activeCount = recruits.filter(
-      (r) => r.onboarding_status && activePhases.includes(r.onboarding_status),
-    ).length;
-
-    return {
-      total: recruits.length,
-      active: activeCount,
-      completed: recruits.filter((r) => r.onboarding_status === "completed")
-        .length,
-      dropped: recruits.filter((r) => r.onboarding_status === "dropped").length,
-      byPhase: recruits.reduce(
-        (acc, recruit) => {
-          const status = recruit.onboarding_status || "interview_1";
-          acc[status] = (acc[status] || 0) + 1;
-          return acc;
-        },
-        {} as Record<string, number>,
-      ),
-    };
+    return recruitRepository.getStats(recruiterId);
   },
 
   // ========================================
-  // SEARCH & FILTERS
+  // SEARCH & FILTERS (using RecruitRepository)
   // ========================================
 
   async searchRecruits(searchTerm: string, limit = 10) {
-    // FIXED: Only search users who are ACTUALLY recruits
-    const { data, error } = await supabase
-      .from("user_profiles")
-      .select(
-        "id, first_name, last_name, email, profile_photo_url, onboarding_status, agent_status, roles, is_admin",
-      )
-      .or("roles.cs.{recruit},onboarding_status.not.is.null")
-      .or(
-        `first_name.ilike.%${searchTerm}%,last_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`,
-      )
-      .limit(limit * 2); // Get more results to filter
-
-    if (error) throw error;
-
-    // Filter out active agents and admins
-    const recruits = (data || [])
-      .filter((u) => {
-        const hasActiveAgentRole = u.roles?.includes("active_agent");
-        const hasAgentRole = u.roles?.includes("agent");
-        const hasAdminRole = u.roles?.includes("admin");
-        const isAdmin = u.is_admin === true;
-
-        // Exclude if they're an active agent, agent, or admin
-        if (hasActiveAgentRole || hasAgentRole || hasAdminRole || isAdmin) {
-          return false;
-        }
-
-        // Include if they have recruit role OR onboarding_status
-        return u.roles?.includes("recruit") || u.onboarding_status !== null;
-      })
-      .slice(0, limit); // Limit after filtering
-
-    return recruits as Partial<UserProfile>[];
+    return recruitRepository.searchRecruits(searchTerm, limit);
   },
 };

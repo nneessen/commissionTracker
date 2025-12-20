@@ -13,6 +13,7 @@ import type {
   ClientSelectOption,
 } from "@/types/client.types";
 import type { Policy } from "@/types/policy.types";
+import { parseLocalDate } from "@/lib/date";
 
 /**
  * Service for client business logic
@@ -468,7 +469,7 @@ class ClientServiceClass {
     const totalMonths = policies
       .filter((p) => p.effectiveDate)
       .reduce((sum, p) => {
-        const effectiveDate = new Date(p.effectiveDate);
+        const effectiveDate = parseLocalDate(p.effectiveDate);
         const monthsDiff =
           (now.getFullYear() - effectiveDate.getFullYear()) * 12 +
           (now.getMonth() - effectiveDate.getMonth());

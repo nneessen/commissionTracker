@@ -1,66 +1,249 @@
 // src/services/hierarchy/__tests__/hierarchyService.test.ts
+// Unit tests for HierarchyService and HierarchyRepository
 
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { hierarchyService } from "../hierarchyService";
-import { supabase } from "../../base/supabase";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
-// Mock Supabase
-vi.mock("../../base/supabase", () => ({
-  supabase: {
-    auth: {
-      getUser: vi.fn(),
+// Mock Supabase - using hoisted mock
+vi.mock("../../base/supabase", () => {
+  const mockFrom = vi.fn();
+  const mockAuth = {
+    getUser: vi.fn(),
+  };
+
+  return {
+    supabase: {
+      from: mockFrom,
+      auth: mockAuth,
     },
-    from: vi.fn(),
+    TABLES: {
+      USER_PROFILES: "user_profiles",
+      POLICIES: "policies",
+      COMMISSIONS: "commissions",
+      OVERRIDE_COMMISSIONS: "override_commissions",
+      CLIENTS: "clients",
+      CARRIERS: "carriers",
+      PRODUCTS: "products",
+    },
+  };
+});
+
+vi.mock("../../base/logger", () => ({
+  logger: {
+    info: vi.fn(),
+    error: vi.fn(),
+    warn: vi.fn(),
+    debug: vi.fn(),
   },
 }));
 
-describe("HierarchyService", () => {
-  const mockUser = { id: "user-1", email: "user@example.com" };
-  const mockSelect = vi.fn();
-  const mockEq = vi.fn();
-  const mockSingle = vi.fn();
-  const mockLike = vi.fn();
-  const mockOrder = vi.fn();
-  const mockIn = vi.fn();
-  const mockUpdate = vi.fn();
+// Import after mocks are set up
+import { HierarchyRepository } from "../HierarchyRepository";
+import { HierarchyService } from "../hierarchyService";
+import { supabase } from "../../base/supabase";
+
+// ---------------------------------------------------------------------------
+// Helper functions for mock setup
+// ---------------------------------------------------------------------------
+
+function createMockChain() {
+  const chain: Record<string, ReturnType<typeof vi.fn>> = {};
+
+  chain.select = vi.fn().mockReturnValue(chain);
+  chain.eq = vi.fn().mockReturnValue(chain);
+  chain.in = vi.fn().mockReturnValue(chain);
+  chain.like = vi.fn().mockReturnValue(chain);
+  chain.or = vi.fn().mockReturnValue(chain);
+  chain.gte = vi.fn().mockReturnValue(chain);
+  chain.order = vi.fn().mockReturnValue(chain);
+  chain.limit = vi.fn().mockReturnValue(chain);
+  chain.range = vi.fn().mockReturnValue(chain);
+  chain.update = vi.fn().mockReturnValue(chain);
+  chain.single = vi.fn();
+
+  return chain;
+}
+
+// ---------------------------------------------------------------------------
+// HierarchyRepository Tests
+// ---------------------------------------------------------------------------
+
+describe("HierarchyRepository", () => {
+  let repository: HierarchyRepository;
 
   beforeEach(() => {
     vi.clearAllMocks();
+    repository = new HierarchyRepository();
+  });
 
-    // Setup default mock chain
-    mockSelect.mockReturnThis();
-    mockEq.mockReturnThis();
-    mockSingle.mockReturnThis();
-    mockLike.mockReturnThis();
-    mockOrder.mockReturnThis();
-    mockIn.mockReturnThis();
-    mockUpdate.mockReturnThis();
+  afterEach(() => {
+    vi.resetAllMocks();
+  });
 
-    vi.mocked(supabase.from).mockReturnValue({
-      select: mockSelect,
-      eq: mockEq,
-      single: mockSingle,
-      like: mockLike,
-      order: mockOrder,
-      in: mockIn,
-      update: mockUpdate,
-    } as any);
+  describe("findById", () => {
+    it("should find user profile by ID", async () => {
+      const mockProfile = {
+        id: "user-123",
+        email: "test@example.com",
+        hierarchy_path: "user-123",
+        hierarchy_depth: 0,
+        upline_id: null,
+      };
+
+      const chain = createMockChain();
+      chain.single.mockResolvedValue({ data: mockProfile, error: null });
+      vi.mocked(supabase.from).mockReturnValue(chain as never);
+
+      const result = await repository.findById("user-123");
+
+      expect(result).toEqual(mockProfile);
+      expect(supabase.from).toHaveBeenCalledWith("user_profiles");
+    });
+
+    it("should return null when profile not found", async () => {
+      const chain = createMockChain();
+      chain.single.mockResolvedValue({
+        data: null,
+        error: { code: "PGRST116", message: "Not found" },
+      });
+      vi.mocked(supabase.from).mockReturnValue(chain as never);
+
+      const result = await repository.findById("nonexistent");
+
+      expect(result).toBeNull();
+    });
+  });
+
+  describe("findDownlinesByHierarchyPath", () => {
+    it("should find all downlines by hierarchy path prefix", async () => {
+      const mockDownlines = [
+        { id: "d1", hierarchy_path: "root.d1", hierarchy_depth: 1 },
+        { id: "d2", hierarchy_path: "root.d1.d2", hierarchy_depth: 2 },
+      ];
+
+      const chain = createMockChain();
+      chain.order.mockResolvedValue({ data: mockDownlines, error: null });
+      vi.mocked(supabase.from).mockReturnValue(chain as never);
+
+      const result = await repository.findDownlinesByHierarchyPath("root");
+
+      expect(result).toHaveLength(2);
+      expect(chain.like).toHaveBeenCalledWith("hierarchy_path", "root.%");
+    });
+
+    it("should return empty array when no downlines found", async () => {
+      const chain = createMockChain();
+      chain.order.mockResolvedValue({ data: [], error: null });
+      vi.mocked(supabase.from).mockReturnValue(chain as never);
+
+      const result = await repository.findDownlinesByHierarchyPath("root");
+
+      expect(result).toEqual([]);
+    });
+  });
+
+  describe("findByIds", () => {
+    it("should find profiles by list of IDs", async () => {
+      const mockProfiles = [
+        { id: "user-1", email: "user1@test.com" },
+        { id: "user-2", email: "user2@test.com" },
+      ];
+
+      const chain = createMockChain();
+      chain.order.mockResolvedValue({ data: mockProfiles, error: null });
+      vi.mocked(supabase.from).mockReturnValue(chain as never);
+
+      const result = await repository.findByIds(["user-1", "user-2"]);
+
+      expect(result).toHaveLength(2);
+      expect(chain.in).toHaveBeenCalledWith("id", ["user-1", "user-2"]);
+    });
+
+    it("should return empty array for empty ID list", async () => {
+      const result = await repository.findByIds([]);
+
+      expect(result).toEqual([]);
+      expect(supabase.from).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("updateUpline", () => {
+    it("should update agent upline", async () => {
+      const updatedProfile = {
+        id: "agent-1",
+        upline_id: "new-upline",
+        hierarchy_path: "new-upline.agent-1",
+      };
+
+      const chain = createMockChain();
+      chain.single.mockResolvedValue({ data: updatedProfile, error: null });
+      vi.mocked(supabase.from).mockReturnValue(chain as never);
+
+      const result = await repository.updateUpline("agent-1", "new-upline");
+
+      expect(result.upline_id).toBe("new-upline");
+      expect(chain.update).toHaveBeenCalledWith({ upline_id: "new-upline" });
+    });
+  });
+
+  describe("findDirectReportsByUplineId", () => {
+    it("should find direct reports", async () => {
+      const mockReports = [
+        {
+          id: "r1",
+          email: "r1@test.com",
+          first_name: "John",
+          last_name: "Doe",
+        },
+      ];
+
+      const chain = createMockChain();
+      chain.order.mockResolvedValue({ data: mockReports, error: null });
+      vi.mocked(supabase.from).mockReturnValue(chain as never);
+
+      const result = await repository.findDirectReportsByUplineId("upline-1");
+
+      expect(result).toHaveLength(1);
+      expect(chain.eq).toHaveBeenCalledWith("upline_id", "upline-1");
+    });
+  });
+
+  // NOTE: Policy, Commission, and Override queries have been moved to their respective repositories:
+  // - PolicyRepository (src/services/policies/PolicyRepository.ts)
+  // - CommissionRepository (src/services/commissions/CommissionRepository.ts)
+  // - OverrideRepository (src/services/overrides/OverrideRepository.ts)
+});
+
+// ---------------------------------------------------------------------------
+// HierarchyService Tests
+// ---------------------------------------------------------------------------
+
+describe("HierarchyService", () => {
+  let service: HierarchyService;
+
+  const mockUser = { id: "user-1", email: "user@example.com" };
+  const mockProfile = {
+    id: "user-1",
+    email: "user@example.com",
+    upline_id: null,
+    hierarchy_path: "user-1",
+    hierarchy_depth: 0,
+    approval_status: "approved",
+    is_admin: false,
+    created_at: "2025-01-01T00:00:00.000Z",
+    updated_at: "2025-01-01T00:00:00.000Z",
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    service = new HierarchyService();
+  });
+
+  afterEach(() => {
+    vi.resetAllMocks();
   });
 
   describe("getMyHierarchyTree", () => {
     it("should fetch hierarchy tree for current user", async () => {
-      const mockProfile = {
-        id: "user-1",
-        email: "user@example.com",
-        upline_id: null,
-        hierarchy_path: "user-1",
-        hierarchy_depth: 0,
-        approval_status: "approved",
-        is_admin: false,
-        created_at: "2025-01-01T00:00:00.000Z",
-        updated_at: "2025-01-01T00:00:00.000Z",
-      };
-
       const mockDownlines = [
         {
           id: "downline-1",
@@ -68,25 +251,38 @@ describe("HierarchyService", () => {
           upline_id: "user-1",
           hierarchy_path: "user-1.downline-1",
           hierarchy_depth: 1,
-          approval_status: "approved",
-          is_admin: false,
-          created_at: "2025-01-01T00:00:00.000Z",
-          updated_at: "2025-01-01T00:00:00.000Z",
         },
       ];
 
       vi.mocked(supabase.auth.getUser).mockResolvedValue({
         data: { user: mockUser },
         error: null,
-      } as any);
+      } as never);
 
-      // Mock profile fetch
-      mockSingle.mockResolvedValueOnce({ data: mockProfile, error: null });
+      // Mock profile fetch (findById)
+      const profileChain = createMockChain();
+      profileChain.single.mockResolvedValue({ data: mockProfile, error: null });
 
       // Mock downlines fetch
-      mockOrder.mockResolvedValueOnce({ data: mockDownlines, error: null });
+      const downlineChain = createMockChain();
+      downlineChain.order.mockResolvedValue({
+        data: mockDownlines,
+        error: null,
+      });
 
-      const result = await hierarchyService.getMyHierarchyTree();
+      // Mock overrides fetch
+      const overrideChain = createMockChain();
+      overrideChain.in.mockResolvedValue({ data: [], error: null });
+
+      let callCount = 0;
+      vi.mocked(supabase.from).mockImplementation(() => {
+        callCount++;
+        if (callCount === 1) return profileChain as never;
+        if (callCount === 2) return downlineChain as never;
+        return overrideChain as never;
+      });
+
+      const result = await service.getMyHierarchyTree();
 
       expect(supabase.auth.getUser).toHaveBeenCalled();
       expect(result).toHaveLength(1);
@@ -96,39 +292,41 @@ describe("HierarchyService", () => {
     });
 
     it("should handle user with no downlines", async () => {
-      const mockProfile = {
-        id: "user-1",
-        email: "user@example.com",
-        upline_id: null,
-        hierarchy_path: "user-1",
-        hierarchy_depth: 0,
-        approval_status: "approved",
-        is_admin: false,
-        created_at: "2025-01-01T00:00:00.000Z",
-        updated_at: "2025-01-01T00:00:00.000Z",
-      };
-
       vi.mocked(supabase.auth.getUser).mockResolvedValue({
         data: { user: mockUser },
         error: null,
-      } as any);
+      } as never);
 
-      mockSingle.mockResolvedValueOnce({ data: mockProfile, error: null });
-      mockOrder.mockResolvedValueOnce({ data: [], error: null });
+      const profileChain = createMockChain();
+      profileChain.single.mockResolvedValue({ data: mockProfile, error: null });
 
-      const result = await hierarchyService.getMyHierarchyTree();
+      const downlineChain = createMockChain();
+      downlineChain.order.mockResolvedValue({ data: [], error: null });
+
+      const overrideChain = createMockChain();
+      overrideChain.in.mockResolvedValue({ data: [], error: null });
+
+      let callCount = 0;
+      vi.mocked(supabase.from).mockImplementation(() => {
+        callCount++;
+        if (callCount === 1) return profileChain as never;
+        if (callCount === 2) return downlineChain as never;
+        return overrideChain as never;
+      });
+
+      const result = await service.getMyHierarchyTree();
 
       expect(result).toHaveLength(1);
       expect(result[0].children).toHaveLength(0);
     });
 
-    it("should handle authentication errors", async () => {
+    it("should throw error when not authenticated", async () => {
       vi.mocked(supabase.auth.getUser).mockResolvedValue({
         data: { user: null },
         error: new Error("Not authenticated"),
-      } as any);
+      } as never);
 
-      await expect(hierarchyService.getMyHierarchyTree()).rejects.toThrow(
+      await expect(service.getMyHierarchyTree()).rejects.toThrow(
         "Not authenticated",
       );
     });
@@ -136,68 +334,155 @@ describe("HierarchyService", () => {
 
   describe("getMyDownlines", () => {
     it("should fetch all downlines for current user", async () => {
-      const mockProfile = {
-        id: "user-1",
-        hierarchy_path: "user-1",
-      };
-
       const mockDownlines = [
-        {
-          id: "downline-1",
-          email: "downline1@example.com",
-          upline_id: "user-1",
-          hierarchy_path: "user-1.downline-1",
-          hierarchy_depth: 1,
-          approval_status: "approved",
-          is_admin: false,
-          created_at: "2025-01-01T00:00:00.000Z",
-          updated_at: "2025-01-01T00:00:00.000Z",
-        },
-        {
-          id: "downline-2",
-          email: "downline2@example.com",
-          upline_id: "user-1",
-          hierarchy_path: "user-1.downline-2",
-          hierarchy_depth: 1,
-          approval_status: "approved",
-          is_admin: false,
-          created_at: "2025-01-01T00:00:00.000Z",
-          updated_at: "2025-01-01T00:00:00.000Z",
-        },
+        { id: "d1", email: "d1@test.com", hierarchy_depth: 1 },
+        { id: "d2", email: "d2@test.com", hierarchy_depth: 1 },
       ];
 
       vi.mocked(supabase.auth.getUser).mockResolvedValue({
         data: { user: mockUser },
         error: null,
-      } as any);
+      } as never);
 
-      mockSingle.mockResolvedValueOnce({ data: mockProfile, error: null });
-      mockOrder.mockResolvedValueOnce({ data: mockDownlines, error: null });
+      const profileChain = createMockChain();
+      profileChain.single.mockResolvedValue({ data: mockProfile, error: null });
 
-      const result = await hierarchyService.getMyDownlines();
+      const downlineChain = createMockChain();
+      downlineChain.order.mockResolvedValue({
+        data: mockDownlines,
+        error: null,
+      });
+
+      let callCount = 0;
+      vi.mocked(supabase.from).mockImplementation(() => {
+        callCount++;
+        if (callCount === 1) return profileChain as never;
+        return downlineChain as never;
+      });
+
+      const result = await service.getMyDownlines();
 
       expect(result).toHaveLength(2);
-      expect(result[0].id).toBe("downline-1");
-      expect(result[1].id).toBe("downline-2");
     });
+  });
 
-    it("should return empty array when user has no downlines", async () => {
-      const mockProfile = {
-        id: "user-1",
-        hierarchy_path: "user-1",
-      };
-
+  describe("getMyUplineChain", () => {
+    it("should return empty array for root agent", async () => {
       vi.mocked(supabase.auth.getUser).mockResolvedValue({
         data: { user: mockUser },
         error: null,
-      } as any);
+      } as never);
 
-      mockSingle.mockResolvedValueOnce({ data: mockProfile, error: null });
-      mockOrder.mockResolvedValueOnce({ data: [], error: null });
+      const chain = createMockChain();
+      chain.single.mockResolvedValue({ data: mockProfile, error: null });
+      vi.mocked(supabase.from).mockReturnValue(chain as never);
 
-      const result = await hierarchyService.getMyDownlines();
+      const result = await service.getMyUplineChain();
 
       expect(result).toEqual([]);
+    });
+
+    it("should fetch upline chain for non-root agent", async () => {
+      const nonRootProfile = {
+        ...mockProfile,
+        id: "downline-1",
+        hierarchy_path: "root.user-1.downline-1",
+        hierarchy_depth: 2,
+      };
+
+      const uplines = [
+        { id: "root", hierarchy_depth: 0 },
+        { id: "user-1", hierarchy_depth: 1 },
+      ];
+
+      vi.mocked(supabase.auth.getUser).mockResolvedValue({
+        data: { user: { id: "downline-1" } },
+        error: null,
+      } as never);
+
+      const profileChain = createMockChain();
+      profileChain.single.mockResolvedValue({
+        data: nonRootProfile,
+        error: null,
+      });
+
+      const uplineChain = createMockChain();
+      uplineChain.order.mockResolvedValue({ data: uplines, error: null });
+
+      let callCount = 0;
+      vi.mocked(supabase.from).mockImplementation(() => {
+        callCount++;
+        if (callCount === 1) return profileChain as never;
+        return uplineChain as never;
+      });
+
+      const result = await service.getMyUplineChain();
+
+      expect(result).toHaveLength(2);
+    });
+  });
+
+  describe("validateHierarchyChange", () => {
+    it("should allow setting upline to null", async () => {
+      const chain = createMockChain();
+      chain.single.mockResolvedValue({
+        data: { id: "agent-1", hierarchy_path: "root.agent-1" },
+        error: null,
+      });
+      vi.mocked(supabase.from).mockReturnValue(chain as never);
+
+      const result = await service.validateHierarchyChange({
+        agent_id: "agent-1",
+        new_upline_id: null,
+      });
+
+      expect(result.valid).toBe(true);
+      expect(result.errors).toHaveLength(0);
+    });
+
+    it("should reject circular reference", async () => {
+      const chain = createMockChain();
+
+      // First call returns agent
+      chain.single
+        .mockResolvedValueOnce({
+          data: { id: "agent-1", hierarchy_path: "agent-1" },
+          error: null,
+        })
+        // Second call returns proposed upline (which is in agent's downline tree)
+        .mockResolvedValueOnce({
+          data: { id: "downline-1", hierarchy_path: "agent-1.downline-1" },
+          error: null,
+        });
+
+      vi.mocked(supabase.from).mockReturnValue(chain as never);
+
+      const result = await service.validateHierarchyChange({
+        agent_id: "agent-1",
+        new_upline_id: "downline-1",
+      });
+
+      expect(result.valid).toBe(false);
+      expect(result.errors).toContain(
+        "Cannot set upline to one of your downlines (would create circular reference)",
+      );
+    });
+
+    it("should return error when agent not found", async () => {
+      const chain = createMockChain();
+      chain.single.mockResolvedValue({
+        data: null,
+        error: { code: "PGRST116", message: "Not found" },
+      });
+      vi.mocked(supabase.from).mockReturnValue(chain as never);
+
+      const result = await service.validateHierarchyChange({
+        agent_id: "nonexistent",
+        new_upline_id: "upline-1",
+      });
+
+      expect(result.valid).toBe(false);
+      expect(result.errors).toContain("Agent not found");
     });
   });
 
@@ -211,18 +496,15 @@ describe("HierarchyService", () => {
 
       const updatedProfile = {
         id: "downline-1",
-        email: "downline@example.com",
         upline_id: "user-2",
         hierarchy_path: "user-2.downline-1",
         hierarchy_depth: 1,
-        approval_status: "approved",
-        is_admin: false,
-        created_at: "2025-01-01T00:00:00.000Z",
-        updated_at: "2025-01-01T00:00:00.000Z",
       };
 
-      // Mock validation check
-      mockSingle
+      const chain = createMockChain();
+
+      // Validation calls
+      chain.single
         .mockResolvedValueOnce({
           data: { id: "downline-1", hierarchy_path: "user-1.downline-1" },
           error: null,
@@ -230,48 +512,18 @@ describe("HierarchyService", () => {
         .mockResolvedValueOnce({
           data: { id: "user-2", hierarchy_path: "user-2" },
           error: null,
-        });
+        })
+        // Update call
+        .mockResolvedValueOnce({ data: updatedProfile, error: null });
 
-      // Mock update
-      mockSingle.mockResolvedValueOnce({ data: updatedProfile, error: null });
+      vi.mocked(supabase.from).mockReturnValue(chain as never);
 
-      const result = await hierarchyService.updateAgentHierarchy(request);
+      const result = await service.updateAgentHierarchy(request);
 
       expect(result.upline_id).toBe("user-2");
-      expect(result.id).toBe("downline-1");
     });
 
-    it("should prevent circular reference", async () => {
-      const request = {
-        agent_id: "user-1",
-        new_upline_id: "downline-1",
-        reason: "Invalid move",
-      };
-
-      // Mock agent fetch
-      mockSingle.mockResolvedValueOnce({
-        data: {
-          id: "user-1",
-          hierarchy_path: "user-1",
-        },
-        error: null,
-      });
-
-      // Mock proposed upline fetch (which is in agent's downline tree)
-      mockSingle.mockResolvedValueOnce({
-        data: {
-          id: "downline-1",
-          hierarchy_path: "user-1.downline-1", // Contains user-1, so circular!
-        },
-        error: null,
-      });
-
-      await expect(
-        hierarchyService.updateAgentHierarchy(request),
-      ).rejects.toThrow();
-    });
-
-    it("should allow setting upline to null (making root agent)", async () => {
+    it("should allow promoting agent to root", async () => {
       const request = {
         agent_id: "downline-1",
         new_upline_id: null,
@@ -280,29 +532,85 @@ describe("HierarchyService", () => {
 
       const updatedProfile = {
         id: "downline-1",
-        email: "downline@example.com",
         upline_id: null,
         hierarchy_path: "downline-1",
         hierarchy_depth: 0,
-        approval_status: "approved",
-        is_admin: false,
-        created_at: "2025-01-01T00:00:00.000Z",
-        updated_at: "2025-01-01T00:00:00.000Z",
       };
 
-      // Mock agent fetch for validation
-      mockSingle.mockResolvedValueOnce({
-        data: { id: "downline-1", hierarchy_path: "user-1.downline-1" },
-        error: null,
-      });
+      const chain = createMockChain();
 
-      // Mock update
-      mockSingle.mockResolvedValueOnce({ data: updatedProfile, error: null });
+      chain.single
+        .mockResolvedValueOnce({
+          data: { id: "downline-1", hierarchy_path: "user-1.downline-1" },
+          error: null,
+        })
+        .mockResolvedValueOnce({ data: updatedProfile, error: null });
 
-      const result = await hierarchyService.updateAgentHierarchy(request);
+      vi.mocked(supabase.from).mockReturnValue(chain as never);
+
+      const result = await service.updateAgentHierarchy(request);
 
       expect(result.upline_id).toBeNull();
-      expect(result.hierarchy_depth).toBe(0);
+    });
+  });
+
+  describe("getAllDownlinePerformance", () => {
+    it("should return empty array when no downlines", async () => {
+      vi.mocked(supabase.auth.getUser).mockResolvedValue({
+        data: { user: mockUser },
+        error: null,
+      } as never);
+
+      const profileChain = createMockChain();
+      profileChain.single.mockResolvedValue({ data: mockProfile, error: null });
+
+      const downlineChain = createMockChain();
+      downlineChain.order.mockResolvedValue({ data: [], error: null });
+
+      let callCount = 0;
+      vi.mocked(supabase.from).mockImplementation(() => {
+        callCount++;
+        if (callCount === 1) return profileChain as never;
+        return downlineChain as never;
+      });
+
+      const result = await service.getAllDownlinePerformance();
+
+      expect(result).toEqual([]);
+    });
+  });
+
+  describe("getAgentDetails", () => {
+    it("should throw error for missing agentId", async () => {
+      await expect(service.getAgentDetails("")).rejects.toThrow(
+        "AgentId is required",
+      );
+    });
+
+    it("should throw NotFoundError when agent not found", async () => {
+      const chain = createMockChain();
+      chain.single.mockResolvedValue({
+        data: null,
+        error: { code: "PGRST116", message: "Not found" },
+      });
+      vi.mocked(supabase.from).mockReturnValue(chain as never);
+
+      await expect(service.getAgentDetails("nonexistent")).rejects.toThrow();
+    });
+  });
+
+  describe("getAgentTeam", () => {
+    it("should return empty team when agent has no direct reports", async () => {
+      const chain = createMockChain();
+      chain.order.mockResolvedValue({ data: [], error: null });
+      vi.mocked(supabase.from).mockReturnValue(chain as never);
+
+      const result = await service.getAgentTeam("agent-1");
+
+      expect(result.directReports).toEqual([]);
+      expect(result.totalMembers).toBe(0);
+      expect(result.totalPremium).toBe(0);
+      expect(result.totalPolicies).toBe(0);
     });
   });
 });

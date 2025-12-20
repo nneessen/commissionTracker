@@ -6,6 +6,7 @@ import { useExpenses } from "../expenses/useExpenses";
 import { useUserCommissionProfile } from "../commissions/useUserCommissionProfile";
 import { HistoricalAverages } from "../../services/targets/targetsCalculationService";
 import { currentMonthMetricsService } from "../../services/targets/currentMonthMetricsService";
+import { parseLocalDate } from "../../lib/date";
 
 /**
  * Hook to calculate historical averages from user's actual data
@@ -182,7 +183,9 @@ export function useHistoricalAverages(): {
     thirteenMonthsAgo.setMonth(now.getMonth() - 13);
 
     const policiesFrom13MonthsAgo = policies.filter((p) => {
-      const policyDate = new Date(p.effectiveDate || p.createdAt);
+      const policyDate = p.effectiveDate
+        ? parseLocalDate(p.effectiveDate)
+        : new Date(p.createdAt);
       return policyDate <= thirteenMonthsAgo;
     });
 
@@ -199,7 +202,9 @@ export function useHistoricalAverages(): {
     twentyFiveMonthsAgo.setMonth(now.getMonth() - 25);
 
     const policiesFrom25MonthsAgo = policies.filter((p) => {
-      const policyDate = new Date(p.effectiveDate || p.createdAt);
+      const policyDate = p.effectiveDate
+        ? parseLocalDate(p.effectiveDate)
+        : new Date(p.createdAt);
       return policyDate <= twentyFiveMonthsAgo;
     });
 

@@ -2,6 +2,7 @@
 
 import { ActionableInsight } from "../../types/reports.types";
 import { supabase } from "../base/supabase";
+import { parseLocalDate } from "../../lib/date";
 
 interface InsightContext {
   startDate: Date;
@@ -74,7 +75,6 @@ export class InsightsService {
 
     if (!chargebacks || chargebacks.length === 0) return [];
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- report data has dynamic shape
     const totalChargedBack = chargebacks.reduce(
       (sum: number, c: any) =>
         sum + Math.abs(c.chargeback_amount || c.amount || 0),
@@ -124,7 +124,7 @@ export class InsightsService {
     if (!lapsedPolicies || lapsedPolicies.length < 3) return [];
 
     // Analyze lapse patterns by carrier and product
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- report data has dynamic shape
+
     const lapseByCarrier = lapsedPolicies.reduce(
       (
         acc: Record<
@@ -213,14 +213,13 @@ export class InsightsService {
         .is("cancellation_date", null);
 
       if (policies && policies.length > 10) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- report data has dynamic shape
         const avgPremium =
           policies.reduce(
             (sum: number, p: any) => sum + (p.annual_premium || 0),
             0,
           ) / policies.length;
         const topQuartilePolicies = policies
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- report data has dynamic shape
+
           .sort(
             (a: any, b: any) =>
               (b.annual_premium || 0) - (a.annual_premium || 0),
@@ -287,7 +286,6 @@ export class InsightsService {
 
     if (!currentExpenses || currentExpenses.length === 0) return insights;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- report data has dynamic shape
     const totalExpenses = currentExpenses.reduce(
       (sum: number, e: any) => sum + (e.amount || 0),
       0,
@@ -302,7 +300,6 @@ export class InsightsService {
       .gte("payment_date", context.startDate.toISOString())
       .lte("payment_date", context.endDate.toISOString());
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- report data has dynamic shape
     const totalCommission =
       commissions?.reduce((sum: number, c: any) => sum + (c.amount || 0), 0) ||
       0;
@@ -312,7 +309,7 @@ export class InsightsService {
     // Alert if expense ratio is high - but only show data-driven insights
     if (expenseRatio > 40) {
       // Analyze actual expense categories to provide specific recommendations
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- report data has dynamic shape
+
       const categoryTotals = currentExpenses.reduce(
         (acc: Record<string, number>, e: any) => {
           const category = e.category || "Uncategorized";
@@ -385,7 +382,7 @@ export class InsightsService {
     if (!activePolicies || activePolicies.length === 0) return insights;
 
     // Group by client_id and track products
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- report data has dynamic shape
+
     const clientData = activePolicies.reduce(
       (
         acc: Record<
@@ -482,7 +479,7 @@ export class InsightsService {
     thirteenMonthsAgo.setMonth(thirteenMonthsAgo.getMonth() - 13);
 
     const cohortPolicies = cohorts.filter(
-      (p) => new Date(p.effective_date) <= thirteenMonthsAgo,
+      (p) => parseLocalDate(p.effective_date) <= thirteenMonthsAgo,
     );
     // Consider policies without cancellation date as still active
     const stillActive = cohortPolicies.filter((p) => !p.cancellation_date);

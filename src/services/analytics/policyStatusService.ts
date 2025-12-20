@@ -1,7 +1,8 @@
 // src/services/analytics/policyStatusService.ts
 
-import type {Policy} from '@/types';
-import {startOfMonth, format, subMonths} from 'date-fns';
+import type { Policy } from "@/types";
+import { startOfMonth, format, subMonths } from "date-fns";
+import { parseLocalDate } from "@/lib/date";
 
 export interface PolicyStatusSummary {
   active: {
@@ -36,7 +37,9 @@ export interface ProductRetentionRate {
 /**
  * Calculate summary of policy statuses
  */
-export function getPolicyStatusSummary(policies: Policy[]): PolicyStatusSummary {
+export function getPolicyStatusSummary(
+  policies: Policy[],
+): PolicyStatusSummary {
   const total = policies.length;
 
   if (total === 0) {
@@ -48,9 +51,11 @@ export function getPolicyStatusSummary(policies: Policy[]): PolicyStatusSummary 
     };
   }
 
-  const activeCount = policies.filter(p => p.status === 'active').length;
-  const lapsedCount = policies.filter(p => p.status === 'lapsed').length;
-  const cancelledCount = policies.filter(p => p.status === 'cancelled').length;
+  const activeCount = policies.filter((p) => p.status === "active").length;
+  const lapsedCount = policies.filter((p) => p.status === "lapsed").length;
+  const cancelledCount = policies.filter(
+    (p) => p.status === "cancelled",
+  ).length;
 
   return {
     active: {
@@ -81,23 +86,23 @@ export function getMonthlyTrendData(policies: Policy[]): MonthlyTrendData[] {
   for (let i = 11; i >= 0; i--) {
     const monthDate = subMonths(now, i);
     const monthStart = startOfMonth(monthDate);
-    const monthLabel = format(monthDate, 'MMM yyyy');
+    const monthLabel = format(monthDate, "MMM yyyy");
 
     // Count policies that were active in this month
-    const activePolicies = policies.filter(p => {
-      const effectiveDate = new Date(p.effectiveDate);
-      return effectiveDate <= monthStart && p.status === 'active';
+    const activePolicies = policies.filter((p) => {
+      const effectiveDate = parseLocalDate(p.effectiveDate);
+      return effectiveDate <= monthStart && p.status === "active";
     });
 
     // Count policies that lapsed in this month (approximation)
-    const lapsedPolicies = policies.filter(p => {
-      const effectiveDate = new Date(p.effectiveDate);
-      return effectiveDate <= monthStart && p.status === 'lapsed';
+    const lapsedPolicies = policies.filter((p) => {
+      const effectiveDate = parseLocalDate(p.effectiveDate);
+      return effectiveDate <= monthStart && p.status === "lapsed";
     });
 
     // Net change (rough calculation - policies added vs lost)
-    const newPolicies = policies.filter(p => {
-      const effectiveDate = new Date(p.effectiveDate);
+    const newPolicies = policies.filter((p) => {
+      const effectiveDate = parseLocalDate(p.effectiveDate);
       return (
         effectiveDate.getMonth() === monthStart.getMonth() &&
         effectiveDate.getFullYear() === monthStart.getFullYear()
@@ -126,13 +131,13 @@ export function getProductRetentionRates(policies: Policy[]): {
   // Group by product
   const productMap = new Map<string, { total: number; active: number }>();
 
-  policies.forEach(policy => {
-    const productName = policy.product || 'Unknown';
+  policies.forEach((policy) => {
+    const productName = policy.product || "Unknown";
     const existing = productMap.get(productName) || { total: 0, active: 0 };
 
     productMap.set(productName, {
       total: existing.total + 1,
-      active: existing.active + (policy.status === 'active' ? 1 : 0),
+      active: existing.active + (policy.status === "active" ? 1 : 0),
     });
   });
 
@@ -142,9 +147,10 @@ export function getProductRetentionRates(policies: Policy[]): {
       productName,
       totalPolicies: data.total,
       activePolicies: data.active,
-      retentionRate: data.total > 0 ? Math.round((data.active / data.total) * 100) : 0,
+      retentionRate:
+        data.total > 0 ? Math.round((data.active / data.total) * 100) : 0,
     }))
-    .filter(p => p.totalPolicies >= 3); // Only include products with 3+ policies
+    .filter((p) => p.totalPolicies >= 3); // Only include products with 3+ policies
 
   // Sort by retention rate
   const sorted = productRates.sort((a, b) => b.retentionRate - a.retentionRate);

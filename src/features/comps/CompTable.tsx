@@ -13,6 +13,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { Comp } from "../../types/commission.types";
+import { parseLocalDate } from "@/lib/date";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -368,11 +369,13 @@ export function CompTable({ data, isLoading, error }: CompTableProps) {
                       )}
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
-                      {new Date(record.effective_date).toLocaleDateString()}
+                      {parseLocalDate(
+                        record.effective_date,
+                      ).toLocaleDateString()}
                       {record.expiration_date && (
                         <div className="text-xs text-muted-foreground/70">
                           Expires:{" "}
-                          {new Date(
+                          {parseLocalDate(
                             record.expiration_date,
                           ).toLocaleDateString()}
                         </div>

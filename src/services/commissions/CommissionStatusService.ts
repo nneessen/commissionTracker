@@ -17,7 +17,7 @@ import {
   NotFoundError,
   ValidationError,
 } from "../../errors/ServiceErrors";
-import { formatDateForDB } from "../../lib/date";
+import { formatDateForDB, parseLocalDate } from "../../lib/date";
 
 export interface UpdateMonthsPaidParams {
   commissionId: string;
@@ -368,10 +368,11 @@ class CommissionStatusService {
   }
 
   /**
-   * Reverse a chargeback (for policy reinstatement)
+   * Reverse a chargeback or restore a cancelled commission (for policy reinstatement)
    *
    * When a policy is reinstated after being cancelled/lapsed,
    * reverse the chargeback and restore the commission status.
+   * Handles both "charged_back" and "cancelled" commission statuses.
    *
    * @param commissionId - Commission ID to reverse chargeback for
    * @returns Success indicator
@@ -396,24 +397,22 @@ class CommissionStatusService {
         throw new NotFoundError("Commission", commissionId);
       }
 
-      // Validate commission was charged back
-      if (
-        commission.status !== "charged_back" &&
-        !commission.chargeback_amount
-      ) {
+      // Validate commission is in a restorable state (charged_back, cancelled, or lapsed)
+      const restorableStatuses = ["charged_back", "cancelled", "lapsed"];
+      if (!restorableStatuses.includes(commission.status)) {
         throw new ValidationError(
-          "Cannot reverse chargeback - commission was not charged back",
+          "Cannot restore commission - must be charged_back, cancelled, or lapsed",
           [
             {
               field: "status",
-              message: "Commission status must be charged_back",
+              message: `Commission status must be one of: ${restorableStatuses.join(", ")}`,
               value: commission.status,
             },
           ],
         );
       }
 
-      // Reverse the chargeback
+      // Restore the commission to earned status
       const { error: updateError } = await supabase
         .from("commissions")
         .update({
@@ -430,9 +429,10 @@ class CommissionStatusService {
       }
 
       logger.info(
-        "Chargeback reversed",
+        "Commission restored to earned status",
         {
           commissionId,
+          previousStatus: commission.status,
           originalChargebackAmount: commission.chargeback_amount,
         },
         "CommissionStatusService",
@@ -440,7 +440,7 @@ class CommissionStatusService {
 
       return {
         success: true,
-        message: "Chargeback successfully reversed",
+        message: "Commission successfully restored to earned status",
       };
     } catch (error) {
       logger.error(
@@ -539,7 +539,7 @@ class CommissionStatusService {
         earnedAmount: parseFloat(item.earned_amount || "0"),
         unearnedAmount: parseFloat(item.unearned_amount || "0"),
         riskLevel: item.risk_level as "CRITICAL" | "HIGH" | "MEDIUM" | "LOW",
-        effectiveDate: new Date(item.effective_date),
+        effectiveDate: parseLocalDate(item.effective_date),
         policyStatus: item.policy_status,
       }));
     } catch (error) {
