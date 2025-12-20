@@ -1,7 +1,11 @@
 // src/hooks/targets/useUserTargets.ts
 
 import {useQuery, useMutation, useQueryClient} from '@tanstack/react-query';
-import {userTargetsService, UpdateUserTargetsInput, UserTargets} from '@/services/userTargets/userTargetsService';
+import {
+  userTargetsService,
+  type UpdateUserTargetsInput,
+  type UserTargets,
+} from "@/services/targets/userTargetsService";
 
 export interface UseUserTargetsOptions {
   enabled?: boolean;

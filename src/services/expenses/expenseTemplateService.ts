@@ -1,47 +1,39 @@
 // src/services/expenses/expenseTemplateService.ts
 
-import {supabase} from '../base/supabase';
-import type {ExpenseTemplate, CreateExpenseTemplateData, UpdateExpenseTemplateData, CreateExpenseData} from '../../types/expense.types';
+import { supabase } from "../base/supabase";
+import { expenseTemplateRepository } from "./ExpenseTemplateRepository";
+import type {
+  ExpenseTemplate,
+  CreateExpenseTemplateData,
+  UpdateExpenseTemplateData,
+  CreateExpenseData,
+} from "../../types/expense.types";
 
+/**
+ * Expense Template Service
+ *
+ * Manages expense templates for quick one-click expense entry.
+ * Delegates database operations to ExpenseTemplateRepository.
+ */
 class ExpenseTemplateService {
-  private readonly TABLE = 'expense_templates';
-
   /**
    * Get all templates for the current user
    */
   async getAll(): Promise<ExpenseTemplate[]> {
-    const { data, error } = await supabase
-      .from(this.TABLE)
-      .select('*')
-      .order('recurring_frequency', { ascending: true })
-      .order('template_name', { ascending: true });
-
-    if (error) {
-      throw new Error(`Failed to fetch expense templates: ${error.message}`);
-    }
-
-    return (data || []) as ExpenseTemplate[];
+    return expenseTemplateRepository.findAllRaw();
   }
 
   /**
    * Get a single template by ID
    */
   async getById(id: string): Promise<ExpenseTemplate> {
-    const { data, error} = await supabase
-      .from(this.TABLE)
-      .select('*')
-      .eq('id', id)
-      .single();
+    const template = await expenseTemplateRepository.findByIdRaw(id);
 
-    if (error) {
-      throw new Error(`Failed to fetch expense template: ${error.message}`);
+    if (!template) {
+      throw new Error("Expense template not found");
     }
 
-    if (!data) {
-      throw new Error('Expense template not found');
-    }
-
-    return data as ExpenseTemplate;
+    return template;
   }
 
   /**
@@ -49,66 +41,43 @@ class ExpenseTemplateService {
    */
   async create(templateData: CreateExpenseTemplateData): Promise<ExpenseTemplate> {
     // Get current user
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
     if (!user) {
-      throw new Error('User not authenticated');
+      throw new Error("User not authenticated");
     }
 
-    const { data, error } = await supabase
-      .from(this.TABLE)
-      .insert({
-        ...templateData,
-        user_id: user.id,
-        is_tax_deductible: templateData.is_tax_deductible || false,
-      })
-      .select()
-      .single();
-
-    if (error) {
-      throw new Error(`Failed to create expense template: ${error.message}`);
-    }
-
-    return data as ExpenseTemplate;
+    return expenseTemplateRepository.createRaw({
+      ...templateData,
+      user_id: user.id,
+      is_tax_deductible: templateData.is_tax_deductible || false,
+    });
   }
 
   /**
    * Update an existing expense template
    */
-  async update(id: string, updates: UpdateExpenseTemplateData): Promise<ExpenseTemplate> {
-    const { data, error } = await supabase
-      .from(this.TABLE)
-      .update(updates)
-      .eq('id', id)
-      .select()
-      .single();
-
-    if (error) {
-      throw new Error(`Failed to update expense template: ${error.message}`);
-    }
-
-    return data as ExpenseTemplate;
+  async update(
+    id: string,
+    updates: UpdateExpenseTemplateData,
+  ): Promise<ExpenseTemplate> {
+    return expenseTemplateRepository.updateRaw(id, updates);
   }
 
   /**
    * Delete an expense template
    */
   async delete(id: string): Promise<void> {
-    const { error } = await supabase
-      .from(this.TABLE)
-      .delete()
-      .eq('id', id);
-
-    if (error) {
-      throw new Error(`Failed to delete expense template: ${error.message}`);
-    }
+    await expenseTemplateRepository.delete(id);
   }
 
   /**
    * Convert template to CreateExpenseData (for pre-filling form)
    * User will provide the date
    */
-  templateToExpenseData(template: ExpenseTemplate): Omit<CreateExpenseData, 'date'> {
+  templateToExpenseData(template: ExpenseTemplate): Omit<CreateExpenseData, "date"> {
     return {
       name: template.template_name,
       description: template.description,
@@ -129,22 +98,23 @@ class ExpenseTemplateService {
     const templates = await this.getAll();
 
     const grouped: Record<string, ExpenseTemplate[]> = {
-      'No Frequency': [],
-      'Daily': [],
-      'Weekly': [],
-      'Bi-Weekly': [],
-      'Monthly': [],
-      'Quarterly': [],
-      'Semi-Annually': [],
-      'Annually': [],
+      "No Frequency": [],
+      Daily: [],
+      Weekly: [],
+      "Bi-Weekly": [],
+      Monthly: [],
+      Quarterly: [],
+      "Semi-Annually": [],
+      Annually: [],
     };
 
-    templates.forEach(template => {
+    templates.forEach((template) => {
       if (!template.recurring_frequency) {
-        grouped['No Frequency'].push(template);
+        grouped["No Frequency"].push(template);
       } else {
-        const key = template.recurring_frequency.charAt(0).toUpperCase() +
-                    template.recurring_frequency.slice(1).replace('_', '-');
+        const key =
+          template.recurring_frequency.charAt(0).toUpperCase() +
+          template.recurring_frequency.slice(1).replace("_", "-");
         if (grouped[key]) {
           grouped[key].push(template);
         }
@@ -152,7 +122,7 @@ class ExpenseTemplateService {
     });
 
     // Remove empty groups
-    Object.keys(grouped).forEach(key => {
+    Object.keys(grouped).forEach((key) => {
       if (grouped[key].length === 0) {
         delete grouped[key];
       }

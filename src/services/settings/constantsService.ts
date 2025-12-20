@@ -1,13 +1,11 @@
 // src/services/settings/constantsService.ts
-import {logger} from '../base/logger';
-import {supabase} from '../base/supabase';
 
-interface ConstantRow {
-  key: string;
-  value: number;
-  description?: string;
-}
+import { logger } from "../base/logger";
+import { constantsRepository } from "./ConstantsRepository";
 
+/**
+ * Constants interface - aggregated view of key constants
+ */
 export interface Constants {
   avgAP: number;
   target1: number;
@@ -20,106 +18,99 @@ const DEFAULT_CONSTANTS: Constants = {
   target2: 0,
 };
 
+/**
+ * Constants Service
+ *
+ * Provides access to system-wide configuration constants.
+ * Delegates database operations to ConstantsRepository.
+ */
 export const constantsService = {
+  /**
+   * Get all constants as a typed object
+   */
   async getAll(): Promise<Constants> {
     try {
-      const { data, error } = await supabase.from('constants').select('key, value');
+      const keyValues = await constantsRepository.getAllAsKeyValue();
 
-      if (error) {
-        throw new Error(`Failed to fetch constants: ${error.message}`);
-      }
-
-      // Transform key-value rows into object format
-      if (data && data.length > 0) {
-        const constantsObj: Partial<Constants> = {};
-
-        data.forEach((row: ConstantRow) => {
-          if (row.key === 'avgAP' || row.key === 'target1' || row.key === 'target2') {
-            constantsObj[row.key] = Number(row.value);
-          }
-        });
-
-        // Merge with defaults for any missing values
-        return {
-          avgAP: constantsObj.avgAP ?? DEFAULT_CONSTANTS.avgAP,
-          target1: constantsObj.target1 ?? DEFAULT_CONSTANTS.target1,
-          target2: constantsObj.target2 ?? DEFAULT_CONSTANTS.target2,
-        };
-      }
-
-      // Return defaults if no data
-      return DEFAULT_CONSTANTS;
+      return {
+        avgAP: keyValues["avgAP"] ?? DEFAULT_CONSTANTS.avgAP,
+        target1: keyValues["target1"] ?? DEFAULT_CONSTANTS.target1,
+        target2: keyValues["target2"] ?? DEFAULT_CONSTANTS.target2,
+      };
     } catch (error) {
-      logger.error('Error fetching constants', error instanceof Error ? error : String(error), 'ConstantsService');
+      logger.error(
+        "Error fetching constants",
+        error instanceof Error ? error : String(error),
+        "ConstantsService",
+      );
       throw error;
     }
   },
 
+  /**
+   * Alias for getAll
+   */
   async getConstants(): Promise<Constants> {
     return this.getAll();
   },
 
+  /**
+   * Update all constants at once
+   */
   async updateConstants(data: Constants): Promise<Constants> {
     try {
-      // Update each constant as a separate row
-      const updates = Object.entries(data).map(([key, value]) =>
-        supabase
-          .from('constants')
-          .update({ value })
-          .eq('key', key)
-      );
+      const updates = Object.entries(data).map(([key, value]) => ({
+        key,
+        value,
+      }));
 
-      const results = await Promise.all(updates);
-
-      const errors = results.filter(r => r.error);
-      if (errors.length > 0) {
-        throw new Error(`Failed to update constants: ${errors.map(e => e.error?.message).join(', ')}`);
-      }
+      await constantsRepository.updateMultiple(updates);
 
       return data;
     } catch (error) {
-      logger.error('Error updating constants', error instanceof Error ? error : String(error), 'ConstantsService');
+      logger.error(
+        "Error updating constants",
+        error instanceof Error ? error : String(error),
+        "ConstantsService",
+      );
       throw error;
     }
   },
 
-  async updateMultiple(updates: { key: string; value: number }[]): Promise<Constants> {
+  /**
+   * Update multiple constants by key-value pairs
+   */
+  async updateMultiple(
+    updates: Array<{ key: string; value: number }>,
+  ): Promise<Constants> {
     try {
-      const promises = updates.map(({ key, value }) =>
-        supabase
-          .from('constants')
-          .update({ value })
-          .eq('key', key)
-      );
-
-      const results = await Promise.all(promises);
-
-      const errors = results.filter(r => r.error);
-      if (errors.length > 0) {
-        throw new Error(`Failed to update constants: ${errors.map(e => e.error?.message).join(', ')}`);
-      }
+      await constantsRepository.updateMultiple(updates);
 
       // Return updated constants
       return this.getAll();
     } catch (error) {
-      logger.error('Error updating multiple constants', error instanceof Error ? error : String(error), 'ConstantsService');
+      logger.error(
+        "Error updating multiple constants",
+        error instanceof Error ? error : String(error),
+        "ConstantsService",
+      );
       throw error;
     }
   },
 
+  /**
+   * Set a single constant value by key
+   */
   async setValue(field: string, value: number): Promise<void> {
     try {
-      const { error } = await supabase
-        .from('constants')
-        .update({ value })
-        .eq('key', field);
-
-      if (error) {
-        throw new Error(`Failed to update constant ${field}: ${error.message}`);
-      }
+      await constantsRepository.updateByKey(field, value);
     } catch (error) {
-      logger.error(`Error updating constant ${field}`, error instanceof Error ? error : String(error), 'ConstantsService');
+      logger.error(
+        `Error updating constant ${field}`,
+        error instanceof Error ? error : String(error),
+        "ConstantsService",
+      );
       throw error;
     }
-  }
+  },
 };

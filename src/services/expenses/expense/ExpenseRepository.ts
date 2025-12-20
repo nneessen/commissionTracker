@@ -212,6 +212,124 @@ export class ExpenseRepository extends BaseRepository<
 
     return data?.reduce((sum, item) => sum + (item.amount as number), 0) || 0;
   }
+
+  // ---------------------------------------------------------------------------
+  // RECURRING EXPENSE OPERATIONS
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Find the last expense in a recurring group (by date)
+   */
+  async findLastInRecurringGroup(
+    groupId: string,
+  ): Promise<ExpenseBaseEntity | null> {
+    const { data, error } = await this.client
+      .from(this.tableName)
+      .select("*")
+      .eq("recurring_group_id", groupId)
+      .order("date", { ascending: false })
+      .limit(1)
+      .single();
+
+    if (error) {
+      if (error.code === "PGRST116") {
+        return null;
+      }
+      throw this.handleError(error, "findLastInRecurringGroup");
+    }
+
+    return data ? this.transformFromDB(data) : null;
+  }
+
+  /**
+   * Update all future expenses in a recurring group (date >= given date)
+   */
+  async updateFutureInGroup(
+    groupId: string,
+    fromDate: string,
+    updates: Partial<CreateExpenseData>,
+  ): Promise<number> {
+    const { data, error } = await this.client
+      .from(this.tableName)
+      .update(updates)
+      .eq("recurring_group_id", groupId)
+      .gte("date", fromDate)
+      .select("id");
+
+    if (error) {
+      throw this.handleError(error, "updateFutureInGroup");
+    }
+
+    return data?.length || 0;
+  }
+
+  /**
+   * Delete all future expenses in a recurring group (date > given date)
+   */
+  async deleteFutureInGroup(groupId: string, afterDate: string): Promise<number> {
+    const { data, error } = await this.client
+      .from(this.tableName)
+      .delete()
+      .eq("recurring_group_id", groupId)
+      .gt("date", afterDate)
+      .select("id");
+
+    if (error) {
+      throw this.handleError(error, "deleteFutureInGroup");
+    }
+
+    return data?.length || 0;
+  }
+
+  /**
+   * Create an expense with user_id
+   * Used for recurring expense generation
+   */
+  async createWithUserId(
+    userId: string,
+    data: CreateExpenseData,
+  ): Promise<ExpenseBaseEntity> {
+    const dbData = this.transformToDB(data);
+    dbData.user_id = userId;
+
+    const { data: result, error } = await this.client
+      .from(this.tableName)
+      .insert(dbData)
+      .select()
+      .single();
+
+    if (error) {
+      throw this.handleError(error, "createWithUserId");
+    }
+
+    return this.transformFromDB(result);
+  }
+
+  /**
+   * Create expense and return just the ID
+   * Used for batch creation where full entity is not needed
+   */
+  async createAndReturnId(
+    userId: string,
+    data: CreateExpenseData,
+  ): Promise<string | null> {
+    const dbData = this.transformToDB(data);
+    dbData.user_id = userId;
+
+    const { data: result, error } = await this.client
+      .from(this.tableName)
+      .insert(dbData)
+      .select("id")
+      .single();
+
+    if (error) {
+      // Log but don't throw - used in batch operations
+      console.error("Failed to create expense:", error);
+      return null;
+    }
+
+    return result?.id || null;
+  }
 }
 
 export type { ExpenseBaseEntity };

@@ -1,9 +1,24 @@
 // src/services/expenses/recurringExpenseService.ts
 
-import {supabase} from '../base/supabase';
-import type {Expense, CreateExpenseData, RecurringFrequency} from '../../types/expense.types';
-import {parseLocalDate, formatDateForDB} from '../../lib/date';
-import {v4 as uuidv4} from 'uuid';
+import { expenseRepository } from "./expense";
+import type {
+  Expense,
+  CreateExpenseData,
+  RecurringFrequency,
+} from "../../types/expense.types";
+import { parseLocalDate, formatDateForDB } from "../../lib/date";
+import { v4 as uuidv4 } from "uuid";
+import { logger } from "../base/logger";
+
+/**
+ * Result of batch expense generation
+ */
+export interface BatchGenerationResult {
+  generatedIds: string[];
+  successCount: number;
+  failureCount: number;
+  errors: string[];
+}
 
 /**
  * RecurringExpenseService - Auto-generate recurring expenses
@@ -16,40 +31,44 @@ import {v4 as uuidv4} from 'uuid';
  * - All linked by recurring_group_id for bulk operations
  * - Respects recurring_end_date if set
  * - Generates forward from the expense date, not from today
+ *
+ * Delegates database operations to ExpenseRepository.
  */
 class RecurringExpenseService {
-  private readonly TABLES = {
-    EXPENSES: 'expenses',
-  };
-
   /**
    * Generate future recurring expenses when creating a new expense
    * This is called AUTOMATICALLY when is_recurring=true
    *
    * @param baseExpense - The original expense data
    * @param userId - Current user ID
-   * @returns Array of generated expense IDs
+   * @returns BatchGenerationResult with success/failure tracking
    */
   async generateRecurringExpenses(
     baseExpense: CreateExpenseData,
-    userId: string
-  ): Promise<string[]> {
+    userId: string,
+  ): Promise<BatchGenerationResult> {
+    const result: BatchGenerationResult = {
+      generatedIds: [],
+      successCount: 0,
+      failureCount: 0,
+      errors: [],
+    };
+
     if (!baseExpense.is_recurring || !baseExpense.recurring_frequency) {
-      return []; // Not a recurring expense
+      return result; // Not a recurring expense
     }
 
     const recurringGroupId = baseExpense.recurring_group_id || uuidv4();
-    const generatedIds: string[] = [];
 
     // Generate next 12 occurrences
     const occurrences = this.calculateOccurrences(
       baseExpense.date,
       baseExpense.recurring_frequency,
       baseExpense.recurring_end_date || null,
-      12
+      12,
     );
 
-    // Create all future expenses in batch
+    // Create all future expenses
     for (const occurrenceDate of occurrences) {
       const expenseData: CreateExpenseData = {
         ...baseExpense,
@@ -57,26 +76,31 @@ class RecurringExpenseService {
         recurring_group_id: recurringGroupId,
       };
 
-      const { data, error } = await supabase
-        .from(this.TABLES.EXPENSES)
-        .insert({
-          ...expenseData,
-          user_id: userId,
-        })
-        .select('id')
-        .single();
-
-      if (error) {
-        console.error('Failed to create recurring expense:', error);
-        continue; // Skip this one, continue with others
-      }
-
-      if (data) {
-        generatedIds.push(data.id);
+      try {
+        const id = await expenseRepository.createAndReturnId(userId, expenseData);
+        if (id) {
+          result.generatedIds.push(id);
+          result.successCount++;
+        } else {
+          result.failureCount++;
+          result.errors.push(`Failed to create expense for date ${occurrenceDate}`);
+        }
+      } catch (error) {
+        result.failureCount++;
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        result.errors.push(`Error creating expense for ${occurrenceDate}: ${errorMessage}`);
       }
     }
 
-    return generatedIds;
+    // Log if there were partial failures
+    if (result.failureCount > 0) {
+      logger.warn(
+        `Partial batch failure in recurring expenses: ${result.successCount} succeeded, ${result.failureCount} failed`,
+        "RecurringExpenseService",
+      );
+    }
+
+    return result;
   }
 
   /**
@@ -92,7 +116,7 @@ class RecurringExpenseService {
     startDate: string,
     frequency: RecurringFrequency,
     endDate: string | null,
-    maxOccurrences: number = 12
+    maxOccurrences: number = 12,
   ): string[] {
     const occurrences: string[] = [];
     const start = parseLocalDate(startDate);
@@ -121,61 +145,76 @@ class RecurringExpenseService {
   private getNextOccurrence(
     startDate: Date,
     frequency: RecurringFrequency,
-    nth: number
+    nth: number,
   ): Date {
     const date = new Date(startDate);
     const originalDay = date.getDate();
 
     switch (frequency) {
-      case 'daily':
+      case "daily":
         date.setDate(date.getDate() + nth);
         break;
 
-      case 'weekly':
-        date.setDate(date.getDate() + (nth * 7));
+      case "weekly":
+        date.setDate(date.getDate() + nth * 7);
         break;
 
-      case 'biweekly':
-        date.setDate(date.getDate() + (nth * 14));
+      case "biweekly":
+        date.setDate(date.getDate() + nth * 14);
         break;
 
-      case 'monthly': {
+      case "monthly": {
         // Add months first
         date.setMonth(date.getMonth() + nth);
         // Fix day overflow: if original was 31st and target month has 30 days, use 30th
-        const lastDayOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+        const lastDayOfMonth = new Date(
+          date.getFullYear(),
+          date.getMonth() + 1,
+          0,
+        ).getDate();
         date.setDate(Math.min(originalDay, lastDayOfMonth));
-      }
         break;
+      }
 
-      case 'quarterly': {
-        date.setMonth(date.getMonth() + (nth * 3));
+      case "quarterly": {
+        date.setMonth(date.getMonth() + nth * 3);
         // Fix day overflow for quarterly
-        const lastDayOfQuarter = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+        const lastDayOfQuarter = new Date(
+          date.getFullYear(),
+          date.getMonth() + 1,
+          0,
+        ).getDate();
         date.setDate(Math.min(originalDay, lastDayOfQuarter));
-      }
         break;
+      }
 
-      case 'semiannually': {
-        date.setMonth(date.getMonth() + (nth * 6));
+      case "semiannually": {
+        date.setMonth(date.getMonth() + nth * 6);
         // Fix day overflow for semiannual
-        const lastDayOfSemi = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+        const lastDayOfSemi = new Date(
+          date.getFullYear(),
+          date.getMonth() + 1,
+          0,
+        ).getDate();
         date.setDate(Math.min(originalDay, lastDayOfSemi));
-      }
         break;
+      }
 
-      case 'annually':
+      case "annually":
         date.setFullYear(date.getFullYear() + nth);
         break;
 
       default: {
         // Unknown frequency, default to monthly
         date.setMonth(date.getMonth() + nth);
-        const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+        const lastDay = new Date(
+          date.getFullYear(),
+          date.getMonth() + 1,
+          0,
+        ).getDate();
         date.setDate(Math.min(originalDay, lastDay));
-    }
-
       }
+    }
     return date;
   }
 
@@ -190,20 +229,13 @@ class RecurringExpenseService {
   async updateFutureExpenses(
     recurringGroupId: string,
     currentExpenseDate: string,
-    updates: Partial<CreateExpenseData>
+    updates: Partial<CreateExpenseData>,
   ): Promise<number> {
-    const { data, error } = await supabase
-      .from(this.TABLES.EXPENSES)
-      .update(updates)
-      .eq('recurring_group_id', recurringGroupId)
-      .gte('date', currentExpenseDate)
-      .select('id');
-
-    if (error) {
-      throw new Error(`Failed to update future expenses: ${error.message}`);
-    }
-
-    return data?.length || 0;
+    return expenseRepository.updateFutureInGroup(
+      recurringGroupId,
+      currentExpenseDate,
+      updates,
+    );
   }
 
   /**
@@ -215,59 +247,60 @@ class RecurringExpenseService {
    */
   async deleteFutureExpenses(
     recurringGroupId: string,
-    currentExpenseDate: string
+    currentExpenseDate: string,
   ): Promise<number> {
-    const { data, error } = await supabase
-      .from(this.TABLES.EXPENSES)
-      .delete()
-      .eq('recurring_group_id', recurringGroupId)
-      .gt('date', currentExpenseDate) // Greater than (not including current)
-      .select('id');
-
-    if (error) {
-      throw new Error(`Failed to delete future expenses: ${error.message}`);
-    }
-
-    return data?.length || 0;
+    return expenseRepository.deleteFutureInGroup(
+      recurringGroupId,
+      currentExpenseDate,
+    );
   }
 
   /**
    * Get all expenses in a recurring group
    */
   async getRecurringGroup(recurringGroupId: string): Promise<Expense[]> {
-    const { data, error } = await supabase
-      .from(this.TABLES.EXPENSES)
-      .select('*')
-      .eq('recurring_group_id', recurringGroupId)
-      .order('date', { ascending: true });
-
-    if (error) {
-      console.error('Failed to fetch recurring group:', error);
-      return [];
-    }
-
-    return data as Expense[];
+    const entities =
+      await expenseRepository.findByRecurringGroup(recurringGroupId);
+    return entities as Expense[];
   }
 
   /**
    * Extend recurring expenses if user navigates beyond generated dates
    * Generates additional 12 months if needed
+   *
+   * @param recurringGroupId - The recurring group to extend
+   * @param targetDate - The target date to extend to
+   * @param userId - Current authenticated user ID (required for security)
+   * @returns BatchGenerationResult with success/failure tracking
    */
   async extendRecurringExpenses(
     recurringGroupId: string,
-    targetDate: string
-  ): Promise<number> {
-    // Get the last expense in the group
-    const { data: lastExpense, error } = await supabase
-      .from(this.TABLES.EXPENSES)
-      .select('*')
-      .eq('recurring_group_id', recurringGroupId)
-      .order('date', { ascending: false })
-      .limit(1)
-      .single();
+    targetDate: string,
+    userId: string,
+  ): Promise<BatchGenerationResult> {
+    const result: BatchGenerationResult = {
+      generatedIds: [],
+      successCount: 0,
+      failureCount: 0,
+      errors: [],
+    };
 
-    if (error || !lastExpense) {
-      return 0;
+    // Get the last expense in the group
+    const lastExpense =
+      await expenseRepository.findLastInRecurringGroup(recurringGroupId);
+
+    if (!lastExpense) {
+      return result;
+    }
+
+    // Security check: Verify the expense belongs to the current user
+    if (lastExpense.user_id !== userId) {
+      logger.warn(
+        `Security: User ${userId} attempted to extend recurring group owned by ${lastExpense.user_id}`,
+        "RecurringExpenseService",
+      );
+      result.errors.push("Cannot extend recurring expenses for another user");
+      return result;
     }
 
     const lastDate = parseLocalDate(lastExpense.date);
@@ -275,7 +308,7 @@ class RecurringExpenseService {
 
     // If target is within existing range, no need to extend
     if (target <= lastDate) {
-      return 0;
+      return result;
     }
 
     // Generate more occurrences
@@ -283,12 +316,11 @@ class RecurringExpenseService {
       lastExpense.date,
       lastExpense.recurring_frequency as RecurringFrequency,
       lastExpense.recurring_end_date,
-      12
+      12,
     );
 
-    let created = 0;
     for (const occurrenceDate of newOccurrences) {
-      const expenseData = {
+      const expenseData: CreateExpenseData = {
         name: lastExpense.name,
         description: lastExpense.description,
         amount: lastExpense.amount,
@@ -302,19 +334,34 @@ class RecurringExpenseService {
         is_tax_deductible: lastExpense.is_tax_deductible,
         receipt_url: lastExpense.receipt_url,
         notes: lastExpense.notes,
-        user_id: lastExpense.user_id,
       };
 
-      const { error: insertError } = await supabase
-        .from(this.TABLES.EXPENSES)
-        .insert(expenseData);
-
-      if (!insertError) {
-        created++;
+      try {
+        // Use the passed userId, not the database value
+        const id = await expenseRepository.createAndReturnId(userId, expenseData);
+        if (id) {
+          result.generatedIds.push(id);
+          result.successCount++;
+        } else {
+          result.failureCount++;
+          result.errors.push(`Failed to create expense for date ${occurrenceDate}`);
+        }
+      } catch (error) {
+        result.failureCount++;
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        result.errors.push(`Error creating expense for ${occurrenceDate}: ${errorMessage}`);
       }
     }
 
-    return created;
+    // Log if there were partial failures
+    if (result.failureCount > 0) {
+      logger.warn(
+        `Partial batch failure extending recurring expenses: ${result.successCount} succeeded, ${result.failureCount} failed`,
+        "RecurringExpenseService",
+      );
+    }
+
+    return result;
   }
 }
 

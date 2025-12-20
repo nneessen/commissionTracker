@@ -16,3 +16,5 @@ export type {
   UpdateExpenseCategoryData,
 } from "./categories";
 export { expenseAnalyticsService } from "./expenseAnalyticsService";
+export { expenseTemplateService } from "./expenseTemplateService";
+export { expenseTemplateRepository } from "./ExpenseTemplateRepository";

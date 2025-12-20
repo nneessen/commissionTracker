@@ -1,6 +1,6 @@
 // src/services/targets/targetsService.ts
 
-import { supabase, TABLES } from "../base/supabase";
+import { userTargetsRepository } from "./UserTargetsRepository";
 import type {
   UserTargets,
   UpdateUserTargetsData,
@@ -12,22 +12,14 @@ import type {
   Achievement,
   MilestoneCheck,
 } from "../../types/targets.types";
-import type {
-  Tables,
-  TablesInsert,
-  TablesUpdate,
-} from "../../types/database.types";
-
-// Database row type for user_targets
-type UserTargetsRow = Tables<"user_targets">;
-type UserTargetsInsert = TablesInsert<"user_targets">;
-type UserTargetsUpdate = TablesUpdate<"user_targets">;
 
 /**
  * Targets Service
  *
  * Manages user targets for income, policies, persistency, and expenses.
  * Calculates progress, pace metrics, and milestone achievements.
+ *
+ * Delegates all database operations to UserTargetsRepository.
  */
 class TargetsService {
   /**
@@ -35,56 +27,15 @@ class TargetsService {
    * Creates default targets if none exist
    */
   async getUserTargets(userId: string): Promise<UserTargets> {
-    const { data, error } = await supabase
-      .from(TABLES.USER_TARGETS)
-      .select("*")
-      .eq("user_id", userId)
-      .single();
+    const entity = await userTargetsRepository.findByUserId(userId);
 
     // If no targets exist, create default ones
-    if (error?.code === "PGRST116" || !data) {
-      return this.createDefaultTargets(userId);
+    if (!entity) {
+      const created = await userTargetsRepository.createDefaults(userId);
+      return this.mapEntityToUserTargets(created);
     }
 
-    if (error) {
-      throw new Error(`Failed to fetch user targets: ${error.message}`);
-    }
-
-    return this.mapRowToUserTargets(data);
-  }
-
-  /**
-   * Create default targets for a new user
-   */
-  private async createDefaultTargets(userId: string): Promise<UserTargets> {
-    // CRITICAL: NO hardcoded values - all zeros until user sets their target
-    const defaultData: UserTargetsInsert = {
-      user_id: userId,
-      annual_income_target: 0,
-      monthly_income_target: 0,
-      quarterly_income_target: 0,
-      annual_policies_target: 0,
-      monthly_policies_target: 0,
-      // REMOVED: avg_premium_target - always calculated from actual policies
-      persistency_13_month_target: 0,
-      persistency_25_month_target: 0,
-      monthly_expense_target: 0,
-      expense_ratio_target: 0,
-      achievements: [],
-      last_milestone_date: null,
-    };
-
-    const { data, error } = await supabase
-      .from(TABLES.USER_TARGETS)
-      .insert(defaultData)
-      .select()
-      .single();
-
-    if (error) {
-      throw new Error(`Failed to create default targets: ${error.message}`);
-    }
-
-    return this.mapRowToUserTargets(data);
+    return this.mapEntityToUserTargets(entity);
   }
 
   /**
@@ -94,50 +45,8 @@ class TargetsService {
     userId: string,
     updates: UpdateUserTargetsData,
   ): Promise<UserTargets> {
-    // Convert camelCase to snake_case for database
-    const dbUpdates: Partial<UserTargetsUpdate> = {};
-
-    if (updates.annualIncomeTarget !== undefined) {
-      dbUpdates.annual_income_target = updates.annualIncomeTarget;
-    }
-    if (updates.monthlyIncomeTarget !== undefined) {
-      dbUpdates.monthly_income_target = updates.monthlyIncomeTarget;
-    }
-    if (updates.quarterlyIncomeTarget !== undefined) {
-      dbUpdates.quarterly_income_target = updates.quarterlyIncomeTarget;
-    }
-    if (updates.annualPoliciesTarget !== undefined) {
-      dbUpdates.annual_policies_target = updates.annualPoliciesTarget;
-    }
-    if (updates.monthlyPoliciesTarget !== undefined) {
-      dbUpdates.monthly_policies_target = updates.monthlyPoliciesTarget;
-    }
-    // REMOVED: avgPremiumTarget - always calculated from actual policies, never stored
-    if (updates.persistency13MonthTarget !== undefined) {
-      dbUpdates.persistency_13_month_target = updates.persistency13MonthTarget;
-    }
-    if (updates.persistency25MonthTarget !== undefined) {
-      dbUpdates.persistency_25_month_target = updates.persistency25MonthTarget;
-    }
-    if (updates.monthlyExpenseTarget !== undefined) {
-      dbUpdates.monthly_expense_target = updates.monthlyExpenseTarget;
-    }
-    if (updates.expenseRatioTarget !== undefined) {
-      dbUpdates.expense_ratio_target = updates.expenseRatioTarget;
-    }
-
-    const { data, error } = await supabase
-      .from(TABLES.USER_TARGETS)
-      .update(dbUpdates)
-      .eq("user_id", userId)
-      .select()
-      .single();
-
-    if (error) {
-      throw new Error(`Failed to update user targets: ${error.message}`);
-    }
-
-    return this.mapRowToUserTargets(data);
+    const entity = await userTargetsRepository.updateByUserId(userId, updates);
+    return this.mapEntityToUserTargets(entity);
   }
 
   /**
@@ -149,7 +58,7 @@ class TargetsService {
     daysRemaining: number,
     daysTotal: number,
   ): TargetProgress {
-    const percentage = (actual / target) * 100;
+    const percentage = target > 0 ? (actual / target) * 100 : 0;
     const remaining = Math.max(0, target - actual);
 
     // Calculate pace (how much needed per time period to hit target)
@@ -445,11 +354,10 @@ class TargetsService {
     // If there are new achievements, update the database
     if (newAchievements.length > 0) {
       const allAchievements = [...existingAchievements, ...newAchievements];
-      await this.updateUserTargets(userId, {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- JSON type for achievements
-        achievements: allAchievements as any, // JSON type
-        last_milestone_date: new Date().toISOString(),
-      } as UpdateUserTargetsData);
+      await userTargetsRepository.updateByUserId(userId, {
+        achievements: allAchievements,
+        lastMilestoneDate: new Date().toISOString(),
+      });
     }
 
     return {
@@ -478,29 +386,45 @@ class TargetsService {
   }
 
   /**
-   * Map database row to UserTargets interface
+   * Map repository entity to UserTargets interface
    */
-  private mapRowToUserTargets(row: UserTargetsRow): UserTargets {
+  private mapEntityToUserTargets(entity: {
+    id: string;
+    userId: string;
+    annualIncomeTarget: number;
+    monthlyIncomeTarget: number;
+    quarterlyIncomeTarget: number;
+    annualPoliciesTarget: number;
+    monthlyPoliciesTarget: number;
+    avgPremiumTarget: number;
+    persistency13MonthTarget: number;
+    persistency25MonthTarget: number;
+    monthlyExpenseTarget: number;
+    expenseRatioTarget: number;
+    achievements: Achievement[];
+    lastMilestoneDate: string | null;
+    createdAt: string;
+    updatedAt: string;
+  }): UserTargets {
     return {
-      id: row.id,
-      userId: row.user_id || "",
-      annualIncomeTarget: row.annual_income_target || 0,
-      monthlyIncomeTarget: row.monthly_income_target || 0,
-      quarterlyIncomeTarget: row.quarterly_income_target || 0,
-      annualPoliciesTarget: row.annual_policies_target || 0,
-      monthlyPoliciesTarget: row.monthly_policies_target || 0,
-      // REMOVED: avgPremiumTarget - always calculated dynamically from current month's policies
-      avgPremiumTarget: 0, // Deprecated field, kept for type compatibility but not used
-      persistency13MonthTarget: row.persistency_13_month_target || 0,
-      persistency25MonthTarget: row.persistency_25_month_target || 0,
-      monthlyExpenseTarget: row.monthly_expense_target || 0,
-      expenseRatioTarget: row.expense_ratio_target || 0,
-      achievements: (row.achievements as unknown as Achievement[]) || [],
-      lastMilestoneDate: row.last_milestone_date
-        ? new Date(row.last_milestone_date)
+      id: entity.id,
+      userId: entity.userId,
+      annualIncomeTarget: entity.annualIncomeTarget,
+      monthlyIncomeTarget: entity.monthlyIncomeTarget,
+      quarterlyIncomeTarget: entity.quarterlyIncomeTarget,
+      annualPoliciesTarget: entity.annualPoliciesTarget,
+      monthlyPoliciesTarget: entity.monthlyPoliciesTarget,
+      avgPremiumTarget: entity.avgPremiumTarget,
+      persistency13MonthTarget: entity.persistency13MonthTarget,
+      persistency25MonthTarget: entity.persistency25MonthTarget,
+      monthlyExpenseTarget: entity.monthlyExpenseTarget,
+      expenseRatioTarget: entity.expenseRatioTarget,
+      achievements: entity.achievements,
+      lastMilestoneDate: entity.lastMilestoneDate
+        ? new Date(entity.lastMilestoneDate)
         : null,
-      createdAt: new Date(row.created_at || ""),
-      updatedAt: new Date(row.updated_at || ""),
+      createdAt: new Date(entity.createdAt),
+      updatedAt: new Date(entity.updatedAt),
     };
   }
 }

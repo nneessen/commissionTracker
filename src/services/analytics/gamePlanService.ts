@@ -1,7 +1,7 @@
 // src/services/analytics/gamePlanService.ts
 
 import type { Policy, Commission } from "../../types";
-import type { UserTargets } from "../userTargets/userTargetsService";
+import type { UserTargets } from "../targets/userTargetsService";
 import { parseLocalDate } from "../../lib/date";
 
 export interface GamePlanData {

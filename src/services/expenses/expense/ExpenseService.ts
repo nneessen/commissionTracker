@@ -102,10 +102,18 @@ class ExpenseServiceClass {
         try {
           const { recurringExpenseService } =
             await import("../recurringExpenseService");
-          await recurringExpenseService.generateRecurringExpenses(
+          const batchResult = await recurringExpenseService.generateRecurringExpenses(
             { ...data, recurring_group_id: recurringGroupId },
             user.id,
           );
+
+          // Log partial failures if any occurred
+          if (batchResult.failureCount > 0) {
+            console.warn(
+              `Recurring expense generation: ${batchResult.successCount} created, ${batchResult.failureCount} failed`,
+              batchResult.errors,
+            );
+          }
         } catch (recurringError) {
           console.error(
             "Failed to generate recurring expenses:",

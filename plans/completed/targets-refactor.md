@@ -1,7 +1,8 @@
 # Service Repository Refactoring - Remaining Services
 
 **Created**: 2024-12-20
-**Status**: Ready for implementation
+**Completed**: 2024-12-20
+**Status**: ✅ COMPLETED
 **Previous Work**: userService, hierarchyService, invitationService, subscriptionService, workflowService, recruiting services all completed
 
 ---
@@ -15,14 +16,18 @@ Refactor 5 remaining services to use the BaseRepository pattern. Each service wi
 ## Service 1: UserTargets + Targets (Shared Repository)
 
 ### Problem
+
 Two services access the same `user_targets` table with duplicated queries:
+
 - `userTargetsService` (116 lines) - snake_case responses, internal auth
 - `targetsService` (508 lines) - camelCase responses, external userId param
 
 ### Solution
+
 Create one shared repository; keep both services for different use cases.
 
 ### Target Structure
+
 ```
 src/services/targets/
 ├── UserTargetsRepository.ts    # NEW - Single data access layer
@@ -36,6 +41,7 @@ src/services/targets/
 ```
 
 ### Steps
+
 1. Create `UserTargetsRepository` extending BaseRepository
    - Methods: `findByUserId`, `create`, `update`, `upsert`
    - Handle snake_case ↔ camelCase mapping in repository
@@ -56,6 +62,7 @@ src/services/targets/
 6. Update import in `src/hooks/targets/useUserTargets.ts`
 
 ### Consumers (must verify unchanged behavior)
+
 - `useUserTargets` → userTargetsService
 - `useTargets` → targetsService
 - `useUpdateTargets` → targetsService
@@ -67,11 +74,13 @@ src/services/targets/
 ## Service 2: constantsService
 
 ### Current State
+
 - Location: `src/services/settings/constantsService.ts`
 - Table: `constants`
 - Pattern: Direct supabase queries
 
 ### Steps
+
 1. Create `ConstantsRepository` (`src/services/settings/ConstantsRepository.ts`)
    - Methods: `findAll`, `findByKey`, `upsert`
 
@@ -84,11 +93,13 @@ src/services/targets/
 ## Service 3: expenseTemplateService
 
 ### Current State
+
 - Location: `src/services/expenses/expenseTemplateService.ts`
 - Table: `expense_templates`
 - Pattern: Direct supabase queries
 
 ### Steps
+
 1. Create `ExpenseTemplateRepository` (`src/services/expenses/ExpenseTemplateRepository.ts`)
    - Methods: `findByUserId`, `create`, `update`, `delete`
 
@@ -101,11 +112,13 @@ src/services/targets/
 ## Service 4: recurringExpenseService
 
 ### Current State
+
 - Location: `src/services/expenses/recurringExpenseService.ts`
 - Table: `expenses`
 - Pattern: Direct supabase queries
 
 ### Steps
+
 1. Check existing `ExpenseRepository` for needed methods
    - Add methods if missing (e.g., `findRecurring`, `createFromTemplate`)
 
@@ -119,11 +132,13 @@ src/services/targets/
 ## Service 5: permissionService
 
 ### Current State
+
 - Location: `src/services/permissions/permissionService.ts`
 - Tables: `roles`, `permissions`, `role_permissions`
 - Pattern: Uses RPC functions (`get_user_permissions`, `has_permission`)
 
 ### Steps
+
 1. Create `PermissionRepository` (`src/services/permissions/PermissionRepository.ts`)
    - Wrap RPC: `getUserPermissions(userId)`, `hasPermission(userId, permission)`
    - Add direct table access if needed
@@ -136,25 +151,27 @@ src/services/targets/
 
 ## Implementation Order
 
-| # | Service | Complexity | Notes |
-|---|---------|------------|-------|
-| 1 | UserTargets + Targets | Medium | Shared repo, file move, 5 hook consumers |
-| 2 | constantsService | Low | Simple CRUD |
-| 3 | expenseTemplateService | Low | Simple CRUD |
-| 4 | recurringExpenseService | Low | May reuse existing ExpenseRepository |
-| 5 | permissionService | Medium | RPC function wrapping |
+| #   | Service                 | Complexity | Notes                                    |
+| --- | ----------------------- | ---------- | ---------------------------------------- |
+| 1   | UserTargets + Targets   | Medium     | Shared repo, file move, 5 hook consumers |
+| 2   | constantsService        | Low        | Simple CRUD                              |
+| 3   | expenseTemplateService  | Low        | Simple CRUD                              |
+| 4   | recurringExpenseService | Low        | May reuse existing ExpenseRepository     |
+| 5   | permissionService       | Medium     | RPC function wrapping                    |
 
 ---
 
 ## Files Summary
 
 ### Creates
+
 - `src/services/targets/UserTargetsRepository.ts`
 - `src/services/settings/ConstantsRepository.ts`
 - `src/services/expenses/ExpenseTemplateRepository.ts`
 - `src/services/permissions/PermissionRepository.ts`
 
 ### Modifies
+
 - `src/services/targets/targetsService.ts`
 - `src/services/targets/index.ts`
 - `src/services/settings/constantsService.ts`
@@ -164,26 +181,29 @@ src/services/targets/
 - `src/hooks/targets/useUserTargets.ts` (import path)
 
 ### Moves
+
 - `src/services/userTargets/userTargetsService.ts` → `src/services/targets/userTargetsService.ts`
 
 ### Deletes
+
 - `src/services/userTargets/` folder
 
 ---
 
 ## Verification (After Each Service)
 
-- [ ] Repository extends BaseRepository
-- [ ] Service has no direct supabase imports/queries
-- [ ] `npm run typecheck` passes
-- [ ] `npm run build` passes
-- [ ] All existing hooks/consumers work unchanged
+- [x] Repository extends BaseRepository (where applicable - PermissionRepository uses custom base due to type differences)
+- [x] Service has no direct supabase imports/queries (services delegate to repositories)
+- [x] `npm run typecheck` passes
+- [x] `npm run build` passes
+- [x] All existing hooks/consumers work unchanged
 
 ---
 
 ## Reference Pattern
 
 Use existing refactored services as reference:
+
 - `src/services/users/UserRepository.ts`
 - `src/services/hierarchy/HierarchyRepository.ts`
 - `src/services/workflows/WorkflowRepository.ts`

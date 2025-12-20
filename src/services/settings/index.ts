@@ -38,4 +38,6 @@ export type { CompGuideEntry, CompGuideFormData } from "./comp-guide";
 
 // Other settings services
 export { constantsService } from "./constantsService";
+export { constantsRepository } from "./ConstantsRepository";
+export type { Constants } from "./constantsService";
 export { agentSettingsService } from "./agentSettingsService";
