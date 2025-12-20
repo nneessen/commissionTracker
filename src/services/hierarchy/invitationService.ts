@@ -4,8 +4,8 @@
 import { supabase } from "../base/supabase";
 import { logger } from "../base/logger";
 import { emailService } from "../email";
+import { InvitationRepository, InviterProfile } from "./InvitationRepository";
 import type {
-  HierarchyInvitation,
   SendInvitationRequest,
   SendInvitationResponse,
   AcceptInvitationRequest,
@@ -13,17 +13,22 @@ import type {
   DenyInvitationRequest,
   CancelInvitationRequest,
   ResendInvitationRequest,
-  InvitationValidationResult,
   InvitationWithDetails,
   InvitationStats,
 } from "../../types/invitation.types";
-import { DatabaseError, NotFoundError } from "../../errors/ServiceErrors";
+import { NotFoundError } from "../../errors/ServiceErrors";
 
 /**
  * Service layer for hierarchy invitation operations
  * Handles all invitation business logic with comprehensive validation
  */
 class InvitationService {
+  private repository: InvitationRepository;
+
+  constructor() {
+    this.repository = new InvitationRepository();
+  }
+
   /**
    * Send an invitation to add someone to your downline
    * Validates all business rules before creating invitation
@@ -41,8 +46,8 @@ class InvitationService {
         throw new Error("Not authenticated");
       }
 
-      // Validate invitation
-      const validation = await this.validateSendInvitation(
+      // Validate invitation via repository RPC
+      const validation = await this.repository.validateEligibility(
         user.id,
         request.invitee_email,
       );
@@ -55,34 +60,17 @@ class InvitationService {
         };
       }
 
-      // Create invitation
-      const { data: invitation, error: insertError } = await supabase
-        .from("hierarchy_invitations")
-        .insert({
-          inviter_id: user.id,
-          invitee_email: request.invitee_email.toLowerCase().trim(),
-          message: request.message || null,
-          status: "pending",
-        })
-        .select()
-        .single();
-
-      if (insertError) {
-        throw new DatabaseError("sendInvitation", insertError);
-      }
+      // Create invitation via repository
+      const invitation = await this.repository.create({
+        inviter_id: user.id,
+        invitee_email: request.invitee_email.toLowerCase().trim(),
+        message: request.message || null,
+        status: "pending",
+      });
 
       // Get inviter's profile for email
-      const { data: inviterProfile } = await supabase
-        .from("user_profiles")
-        .select("first_name, last_name, email")
-        .eq("id", user.id)
-        .single();
-
-      const inviterName = inviterProfile
-        ? `${inviterProfile.first_name || ""} ${inviterProfile.last_name || ""}`.trim() ||
-          inviterProfile.email ||
-          "A team member"
-        : "A team member";
+      const inviterProfile = await this.repository.getUserProfile(user.id);
+      const inviterName = this.formatInviterName(inviterProfile);
 
       // Send invitation email via Mailgun
       try {
@@ -169,21 +157,17 @@ class InvitationService {
         throw new Error("Not authenticated");
       }
 
-      // Get invitation
-      const { data: invitation, error: fetchError } = await supabase
-        .from("hierarchy_invitations")
-        .select("*")
-        .eq("id", request.invitation_id)
-        .single();
+      // Get invitation via repository
+      const invitation = await this.repository.findById(request.invitation_id);
 
-      if (fetchError || !invitation) {
+      if (!invitation) {
         throw new NotFoundError("Invitation", request.invitation_id);
       }
 
-      // Validate acceptance
-      const validation = await this.validateAcceptInvitation(
+      // Validate acceptance via repository RPC
+      const validation = await this.repository.validateAcceptance(
         user.id,
-        invitation,
+        invitation.id,
       );
 
       if (!validation.valid) {
@@ -194,18 +178,10 @@ class InvitationService {
       }
 
       // Update status to 'accepted' (trigger will handle upline_id update)
-      const { data: updatedInvitation, error: updateError } = await supabase
-        .from("hierarchy_invitations")
-        .update({
-          status: "accepted",
-        })
-        .eq("id", request.invitation_id)
-        .select()
-        .single();
-
-      if (updateError) {
-        throw new DatabaseError("acceptInvitation", updateError);
-      }
+      const updatedInvitation = await this.repository.updateStatus(
+        request.invitation_id,
+        "accepted",
+      );
 
       logger.info(
         "Invitation accepted",
@@ -247,15 +223,12 @@ class InvitationService {
       }
 
       // Verify invitation belongs to user and is pending
-      const { data: invitation, error: fetchError } = await supabase
-        .from("hierarchy_invitations")
-        .select("*")
-        .eq("id", request.invitation_id)
-        .eq("invitee_id", user.id)
-        .eq("status", "pending")
-        .single();
+      const invitation = await this.repository.findPendingByInviteeId(
+        request.invitation_id,
+        user.id,
+      );
 
-      if (fetchError || !invitation) {
+      if (!invitation) {
         return {
           success: false,
           error: "Invitation not found or already processed",
@@ -263,16 +236,7 @@ class InvitationService {
       }
 
       // Update status to 'denied'
-      const { error: updateError } = await supabase
-        .from("hierarchy_invitations")
-        .update({
-          status: "denied",
-        })
-        .eq("id", request.invitation_id);
-
-      if (updateError) {
-        throw new DatabaseError("denyInvitation", updateError);
-      }
+      await this.repository.updateStatus(request.invitation_id, "denied");
 
       logger.info(
         "Invitation denied",
@@ -310,15 +274,12 @@ class InvitationService {
       }
 
       // Verify invitation belongs to user and is pending
-      const { data: invitation, error: fetchError } = await supabase
-        .from("hierarchy_invitations")
-        .select("*")
-        .eq("id", request.invitation_id)
-        .eq("inviter_id", user.id)
-        .eq("status", "pending")
-        .single();
+      const invitation = await this.repository.findPendingByInviterId(
+        request.invitation_id,
+        user.id,
+      );
 
-      if (fetchError || !invitation) {
+      if (!invitation) {
         return {
           success: false,
           error: "Invitation not found or already processed",
@@ -326,16 +287,7 @@ class InvitationService {
       }
 
       // Update status to 'cancelled'
-      const { error: updateError } = await supabase
-        .from("hierarchy_invitations")
-        .update({
-          status: "cancelled",
-        })
-        .eq("id", request.invitation_id);
-
-      if (updateError) {
-        throw new DatabaseError("cancelInvitation", updateError);
-      }
+      await this.repository.updateStatus(request.invitation_id, "cancelled");
 
       logger.info(
         "Invitation cancelled",
@@ -373,15 +325,12 @@ class InvitationService {
       }
 
       // Verify invitation belongs to user and is pending
-      const { data: invitation, error: fetchError } = await supabase
-        .from("hierarchy_invitations")
-        .select("*")
-        .eq("id", request.invitation_id)
-        .eq("inviter_id", user.id)
-        .eq("status", "pending")
-        .single();
+      const invitation = await this.repository.findPendingByInviterId(
+        request.invitation_id,
+        user.id,
+      );
 
-      if (fetchError || !invitation) {
+      if (!invitation) {
         return {
           success: false,
           error: "Invitation not found or already processed",
@@ -397,30 +346,14 @@ class InvitationService {
       const newExpiresAt = new Date();
       newExpiresAt.setDate(newExpiresAt.getDate() + 7);
 
-      const { error: updateError } = await supabase
-        .from("hierarchy_invitations")
-        .update({
-          expires_at: newExpiresAt.toISOString(),
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", request.invitation_id);
-
-      if (updateError) {
-        throw new DatabaseError("resendInvitation", updateError);
-      }
+      await this.repository.extendExpiration(
+        request.invitation_id,
+        newExpiresAt,
+      );
 
       // Get inviter's profile for email
-      const { data: inviterProfile } = await supabase
-        .from("user_profiles")
-        .select("first_name, last_name, email")
-        .eq("id", user.id)
-        .single();
-
-      const inviterName = inviterProfile
-        ? `${inviterProfile.first_name || ""} ${inviterProfile.last_name || ""}`.trim() ||
-          inviterProfile.email ||
-          "A team member"
-        : "A team member";
+      const inviterProfile = await this.repository.getUserProfile(user.id);
+      const inviterName = this.formatInviterName(inviterProfile);
 
       // Send invitation email via Mailgun
       try {
@@ -499,45 +432,19 @@ class InvitationService {
         throw new Error("Not authenticated");
       }
 
-      // Query by invitee_id OR by invitee_email (for invitations sent before user existed)
-      // We need to make two separate queries since Supabase doesn't support OR easily
-      const [byIdResult, byEmailResult] = await Promise.all([
-        supabase
-          .from("hierarchy_invitations")
-          .select("*")
-          .eq("invitee_id", user.id)
-          .order("created_at", { ascending: false }),
-        supabase
-          .from("hierarchy_invitations")
-          .select("*")
-          .eq("invitee_email", user.email?.toLowerCase() || "")
-          .is("invitee_id", null) // Only get ones without invitee_id (created before user existed)
-          .order("created_at", { ascending: false }),
-      ]);
-
-      // Merge results, removing duplicates by id
-      const allInvitations = [
-        ...(byIdResult.data || []),
-        ...(byEmailResult.data || []),
-      ];
-      const uniqueInvitations = allInvitations.filter(
-        (inv, index, self) => index === self.findIndex((i) => i.id === inv.id),
+      // Get all invitations for this user via repository
+      const invitations = await this.repository.findPendingForInvitee(
+        user.id,
+        user.email?.toLowerCase() || "",
       );
 
       // Apply status filter if provided
-      let invitations = uniqueInvitations;
-      if (status) {
-        invitations = uniqueInvitations.filter((inv) => inv.status === status);
-      }
+      const filtered = status
+        ? invitations.filter((inv) => inv.status === status)
+        : invitations;
 
-      const error = byIdResult.error || byEmailResult.error;
-
-      if (error) {
-        throw new DatabaseError("getReceivedInvitations", error);
-      }
-
-      // Enrich with details
-      return await this.enrichInvitationsWithDetails(invitations || []);
+      // Enrich with details via repository
+      return await this.repository.enrichWithDetails(filtered);
     } catch (error) {
       logger.error(
         "InvitationService.getReceivedInvitations",
@@ -560,23 +467,14 @@ class InvitationService {
         throw new Error("Not authenticated");
       }
 
-      let query = supabase
-        .from("hierarchy_invitations")
-        .select("*")
-        .eq("inviter_id", user.id)
-        .order("created_at", { ascending: false });
+      // Get sent invitations via repository
+      const invitations = await this.repository.findByInviterId(
+        user.id,
+        status,
+      );
 
-      if (status) {
-        query = query.eq("status", status);
-      }
-
-      const { data: invitations, error } = await query;
-
-      if (error) {
-        throw new DatabaseError("getSentInvitations", error);
-      }
-
-      return await this.enrichInvitationsWithDetails(invitations || []);
+      // Enrich with details via repository
+      return await this.repository.enrichWithDetails(invitations);
     } catch (error) {
       logger.error(
         "InvitationService.getSentInvitations",
@@ -599,35 +497,8 @@ class InvitationService {
         throw new Error("Not authenticated");
       }
 
-      // Get sent invitations
-      const { data: sent } = await supabase
-        .from("hierarchy_invitations")
-        .select("status")
-        .eq("inviter_id", user.id);
-
-      // Get received invitations
-      const { data: received } = await supabase
-        .from("hierarchy_invitations")
-        .select("status, expires_at")
-        .eq("invitee_id", user.id);
-
-      const now = new Date();
-
-      return {
-        sent_pending: (sent || []).filter((i) => i.status === "pending").length,
-        sent_accepted: (sent || []).filter((i) => i.status === "accepted")
-          .length,
-        sent_denied: (sent || []).filter((i) => i.status === "denied").length,
-        sent_cancelled: (sent || []).filter((i) => i.status === "cancelled")
-          .length,
-        received_pending: (received || []).filter((i) => i.status === "pending")
-          .length,
-        received_expired: (received || []).filter(
-          (i) =>
-            i.status === "expired" ||
-            (i.status === "pending" && new Date(i.expires_at) < now),
-        ).length,
-      };
+      // Get stats via repository
+      return await this.repository.getStatsByUserId(user.id);
     } catch (error) {
       logger.error(
         "InvitationService.getInvitationStats",
@@ -637,139 +508,21 @@ class InvitationService {
     }
   }
 
+  // ============================================
+  // Private Helper Methods
+  // ============================================
+
   /**
-   * Validate sending an invitation
-   * Uses database function for server-side validation
+   * Format inviter name for display
    */
-  private async validateSendInvitation(
-    inviterId: string,
-    inviteeEmail: string,
-  ): Promise<InvitationValidationResult> {
-    // Type for RPC response
-    interface ValidationRpcResponse {
-      valid: boolean;
-      error_message?: string;
-      warning_message?: string;
-      inviteeuser_id?: string;
-    }
+  private formatInviterName(profile: InviterProfile | null): string {
+    if (!profile) return "A team member";
 
-    try {
-      // Call database function to validate
-      const { data, error } = await supabase
-        .rpc("validate_invitation_eligibility", {
-          p_inviter_id: inviterId,
-          p_invitee_email: inviteeEmail.toLowerCase().trim(),
-        })
-        .single();
-
-      if (error) {
-        logger.error("InvitationService.validateSendInvitation", error);
-        return {
-          valid: false,
-          errors: ["Validation failed: " + error.message],
-          warnings: [],
-        };
-      }
-
-      const result = data as ValidationRpcResponse;
-
-      if (!result.valid) {
-        return {
-          valid: false,
-          errors: [result.error_message || "Validation failed"],
-          warnings: result.warning_message ? [result.warning_message] : [],
-          inviteeuser_id: result.inviteeuser_id,
-        };
-      }
-
-      return {
-        valid: true,
-        errors: [],
-        warnings: result.warning_message ? [result.warning_message] : [],
-        inviteeuser_id: result.inviteeuser_id,
-      };
-    } catch (error) {
-      logger.error(
-        "InvitationService.validateSendInvitation",
-        error instanceof Error ? error : new Error(String(error)),
-      );
-      return {
-        valid: false,
-        errors: [
-          "Validation failed: " +
-            (error instanceof Error ? error.message : String(error)),
-        ],
-        warnings: [],
-      };
-    }
+    const fullName =
+      `${profile.first_name || ""} ${profile.last_name || ""}`.trim();
+    return fullName || profile.email || "A team member";
   }
 
-  /**
-   * Validate accepting an invitation
-   * Uses database function for server-side validation
-   */
-  private async validateAcceptInvitation(
-    userId: string,
-    invitation: HierarchyInvitation,
-  ): Promise<InvitationValidationResult> {
-    // Type for RPC response
-    interface AcceptValidationRpcResponse {
-      valid: boolean;
-      error_message?: string;
-    }
-
-    try {
-      // Call database function to validate
-      const { data, error } = await supabase
-        .rpc("validate_invitation_acceptance", {
-          p_invitee_id: userId,
-          p_invitation_id: invitation.id,
-        })
-        .single();
-
-      if (error) {
-        logger.error("InvitationService.validateAcceptInvitation", error);
-        return {
-          valid: false,
-          errors: ["Validation failed: " + error.message],
-          warnings: [],
-        };
-      }
-
-      const result = data as AcceptValidationRpcResponse;
-
-      if (!result.valid) {
-        return {
-          valid: false,
-          errors: [result.error_message || "Validation failed"],
-          warnings: [],
-        };
-      }
-
-      return {
-        valid: true,
-        errors: [],
-        warnings: [],
-      };
-    } catch (error) {
-      logger.error(
-        "InvitationService.validateAcceptInvitation",
-        error instanceof Error ? error : new Error(String(error)),
-      );
-      return {
-        valid: false,
-        errors: [
-          "Validation failed: " +
-            (error instanceof Error ? error.message : String(error)),
-        ],
-        warnings: [],
-      };
-    }
-  }
-
-  /**
-   * Enrich invitations with additional details for display
-   */
   /**
    * Get the sender email address for invitation emails
    * Returns the inviter's personal email if they're the owner, otherwise noreply
@@ -871,94 +624,6 @@ class InvitationService {
 </body>
 </html>
     `.trim();
-  }
-
-  private async enrichInvitationsWithDetails(
-    invitations: HierarchyInvitation[],
-  ): Promise<InvitationWithDetails[]> {
-    if (invitations.length === 0) return [];
-
-    try {
-      // Get all unique inviter and invitee IDs
-      const inviterIds = [...new Set(invitations.map((i) => i.inviter_id))];
-      const inviteeIds = [
-        ...new Set(invitations.map((i) => i.invitee_id).filter(Boolean)),
-      ];
-
-      // Fetch inviter profiles
-      const { data: inviterProfiles } = await supabase
-        .from("user_profiles")
-        .select("id, email, hierarchy_depth")
-        .in("id", inviterIds);
-
-      // Fetch invitee profiles
-      const { data: inviteeProfiles } = await supabase
-        .from("user_profiles")
-        .select("id, email, upline_id")
-        .in(
-          "id",
-          inviteeIds.filter((id): id is string => id !== null),
-        );
-
-      // Check for downlines
-      const { data: downlines } = await supabase
-        .from("user_profiles")
-        .select("upline_id")
-        .in(
-          "upline_id",
-          inviteeIds.filter((id): id is string => id !== null),
-        );
-
-      const inviterMap = new Map(inviterProfiles?.map((p) => [p.id, p]));
-      const inviteeMap = new Map(inviteeProfiles?.map((p) => [p.id, p]));
-      const downlineMap = new Map<string, number>();
-
-      // Count downlines per user
-      (downlines || []).forEach((d) => {
-        if (d.upline_id) {
-          downlineMap.set(d.upline_id, (downlineMap.get(d.upline_id) || 0) + 1);
-        }
-      });
-
-      const now = new Date();
-
-      // Enrich invitations
-      return invitations.map((inv) => {
-        const inviter = inviterMap.get(inv.inviter_id);
-        const invitee = inv.invitee_id ? inviteeMap.get(inv.invitee_id) : null;
-        const expiresAt = new Date(inv.expires_at);
-        const isExpired = expiresAt < now;
-        const hasDownlines = inv.invitee_id
-          ? (downlineMap.get(inv.invitee_id) || 0) > 0
-          : false;
-        const hasUpline =
-          invitee?.upline_id !== null && invitee?.upline_id !== undefined;
-
-        return {
-          ...inv,
-          inviter_email: inviter?.email,
-          inviter_hierarchy_depth: inviter?.hierarchy_depth,
-          invitee_has_downlines: hasDownlines,
-          invitee_has_upline: hasUpline,
-          is_expired: isExpired,
-          can_accept:
-            inv.status === "pending" &&
-            !isExpired &&
-            !hasUpline &&
-            !hasDownlines,
-        };
-      });
-    } catch (error) {
-      logger.error(
-        "InvitationService.enrichInvitationsWithDetails",
-        error instanceof Error ? error : new Error(String(error)),
-      );
-      // Return basic invitations if enrichment fails
-      return invitations.map((inv) => ({
-        ...inv,
-        is_expired: new Date(inv.expires_at) < new Date(),
-      }));
-    }
   }
 }
 

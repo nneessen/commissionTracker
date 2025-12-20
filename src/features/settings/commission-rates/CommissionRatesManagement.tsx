@@ -35,10 +35,15 @@ import type { Database } from "@/types/database.types";
 
 type ProductType = Database["public"]["Enums"]["product_type"];
 
+// NOTE: should PRODUCT_TYPES not already be a type thats stored in src/types/?
+// why are creating types within files like this? this type literally is used throughout the app, and
+// this is a concern for future bugs bc you're coding this in multiple places
 const PRODUCT_TYPES: ProductType[] = [
   "term_life",
   "whole_life",
+  "participating_whole_life",
   "universal_life",
+  "indexed_universal_life",
   "variable_life",
   "health",
   "disability",

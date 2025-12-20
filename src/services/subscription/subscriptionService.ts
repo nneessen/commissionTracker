@@ -1,52 +1,24 @@
 // src/services/subscription/subscriptionService.ts
 // Service for managing subscription data
 
-import { supabase } from "@/services/base/supabase";
-import type { Database } from "@/types/database.types";
+import {
+  SubscriptionRepository,
+  SubscriptionPlan,
+  UserSubscription,
+  UsageTracking,
+  SubscriptionPayment,
+  SubscriptionEvent,
+} from "./SubscriptionRepository";
 
-type SubscriptionPlanRow =
-  Database["public"]["Tables"]["subscription_plans"]["Row"];
-type UserSubscriptionRow =
-  Database["public"]["Tables"]["user_subscriptions"]["Row"];
-type UsageTrackingRow = Database["public"]["Tables"]["usage_tracking"]["Row"];
-type SubscriptionPaymentRow =
-  Database["public"]["Tables"]["subscription_payments"]["Row"];
-type SubscriptionEventRow =
-  Database["public"]["Tables"]["subscription_events"]["Row"];
+export type {
+  SubscriptionPlan,
+  UserSubscription,
+  UsageTracking,
+  SubscriptionPayment,
+  SubscriptionEvent,
+};
 
-export interface SubscriptionPlan extends Omit<
-  SubscriptionPlanRow,
-  "features"
-> {
-  features: SubscriptionFeatures;
-}
-
-export interface SubscriptionFeatures {
-  dashboard: boolean;
-  policies: boolean;
-  comp_guide: boolean;
-  settings: boolean;
-  connect_upline: boolean;
-  expenses: boolean;
-  targets_basic: boolean;
-  targets_full: boolean;
-  reports_view: boolean;
-  reports_export: boolean;
-  email: boolean;
-  sms: boolean;
-  hierarchy: boolean;
-  recruiting: boolean;
-  overrides: boolean;
-  downline_reports: boolean;
-}
-
-export interface UserSubscription extends UserSubscriptionRow {
-  plan: SubscriptionPlan;
-}
-
-export type UsageTracking = UsageTrackingRow;
-export type SubscriptionPayment = SubscriptionPaymentRow;
-export type SubscriptionEvent = SubscriptionEventRow;
+export type { SubscriptionFeatures } from "./SubscriptionRepository";
 
 export interface UsageStatus {
   metric: "emails_sent" | "sms_sent";
@@ -70,133 +42,52 @@ export const PRICING = {
 } as const;
 
 class SubscriptionService {
+  private repository: SubscriptionRepository;
+
+  constructor() {
+    this.repository = new SubscriptionRepository();
+  }
+
   /**
    * Get all active subscription plans
    */
   async getPlans(): Promise<SubscriptionPlan[]> {
-    const { data, error } = await supabase
-      .from("subscription_plans")
-      .select("*")
-      .eq("is_active", true)
-      .order("sort_order", { ascending: true });
-
-    if (error) {
-      console.error("Error fetching subscription plans:", error);
-      throw new Error(`Failed to fetch subscription plans: ${error.message}`);
-    }
-
-    return (data || []).map(
-      (plan): SubscriptionPlan => ({
-        ...plan,
-        features: plan.features as unknown as SubscriptionFeatures,
-      }),
-    );
+    return this.repository.findActivePlans();
   }
 
   /**
    * Get a specific plan by name
    */
   async getPlanByName(name: string): Promise<SubscriptionPlan | null> {
-    const { data, error } = await supabase
-      .from("subscription_plans")
-      .select("*")
-      .eq("name", name)
-      .single();
-
-    if (error) {
-      if (error.code === "PGRST116") return null; // Not found
-      console.error("Error fetching plan:", error);
-      throw new Error(`Failed to fetch plan: ${error.message}`);
-    }
-
-    return data
-      ? { ...data, features: data.features as unknown as SubscriptionFeatures }
-      : null;
+    return this.repository.findPlanByName(name);
   }
 
   /**
    * Get current user's subscription with plan details
    */
   async getUserSubscription(userId: string): Promise<UserSubscription | null> {
-    const { data, error } = await supabase
-      .from("user_subscriptions")
-      .select(
-        `
-        *,
-        plan:subscription_plans(*)
-      `,
-      )
-      .eq("user_id", userId)
-      .single();
-
-    if (error) {
-      if (error.code === "PGRST116") return null; // Not found
-      console.error("Error fetching user subscription:", error);
-      throw new Error(`Failed to fetch user subscription: ${error.message}`);
-    }
-
-    if (!data || !data.plan) return null;
-
-    // Handle the case where plan might be an array (shouldn't happen with single())
-    const planData = Array.isArray(data.plan) ? data.plan[0] : data.plan;
-
-    return {
-      ...data,
-      plan: {
-        ...planData,
-        features: planData.features as SubscriptionFeatures,
-      },
-    };
+    return this.repository.findByUserIdWithPlan(userId);
   }
 
   /**
    * Get user's subscription tier (quick lookup)
    */
   async getUserTier(userId: string): Promise<string> {
-    const { data, error } = await supabase.rpc("get_user_subscription_tier", {
-      p_user_id: userId,
-    });
-
-    if (error) {
-      console.error("Error fetching user tier:", error);
-      return "free"; // Default to free on error
-    }
-
-    return data || "free";
+    return this.repository.getUserTier(userId);
   }
 
   /**
    * Check if user has access to a feature
    */
   async hasFeature(userId: string, feature: string): Promise<boolean> {
-    const { data, error } = await supabase.rpc("user_has_feature", {
-      p_user_id: userId,
-      p_feature: feature,
-    });
-
-    if (error) {
-      console.error("Error checking feature access:", error);
-      return false;
-    }
-
-    return data || false;
+    return this.repository.userHasFeature(userId, feature);
   }
 
   /**
    * Check if user has access to an analytics section
    */
   async hasAnalyticsSection(userId: string, section: string): Promise<boolean> {
-    const { data, error } = await supabase.rpc("user_has_analytics_section", {
-      p_user_id: userId,
-      p_section: section,
-    });
-
-    if (error) {
-      console.error("Error checking analytics section access:", error);
-      return false;
-    }
-
-    return data || false;
+    return this.repository.userHasAnalyticsSection(userId, section);
   }
 
   /**
@@ -206,26 +97,7 @@ class SubscriptionService {
     userId: string,
     metric: "emails_sent" | "sms_sent",
   ): Promise<UsageTracking | null> {
-    // Use UTC to match database storage
-    const now = new Date();
-    const periodStart = new Date(
-      Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1),
-    );
-
-    const { data, error } = await supabase
-      .from("usage_tracking")
-      .select("*")
-      .eq("user_id", userId)
-      .eq("metric", metric)
-      .eq("period_start", periodStart.toISOString().split("T")[0])
-      .maybeSingle();
-
-    if (error) {
-      console.error("Error fetching usage:", error);
-      return null; // Return null instead of throwing for usage queries
-    }
-
-    return data;
+    return this.repository.getUsage(userId, metric);
   }
 
   /**
@@ -242,7 +114,7 @@ class SubscriptionService {
 
     const used = usage?.count || 0;
     const limit =
-      metric === "emails_sent" ? subscription?.plan.email_limit || 0 : 0; // SMS has no limit, just usage-based
+      metric === "emails_sent" ? subscription?.plan.email_limit || 0 : 0;
 
     const remaining = Math.max(0, limit - used);
     const percentUsed = limit > 0 ? (used / limit) * 100 : 0;
@@ -276,18 +148,7 @@ class SubscriptionService {
     metric: "emails_sent" | "sms_sent",
     count: number = 1,
   ): Promise<number> {
-    const { data, error } = await supabase.rpc("increment_usage", {
-      p_user_id: userId,
-      p_metric: metric,
-      p_increment: count,
-    });
-
-    if (error) {
-      console.error("Error incrementing usage:", error);
-      throw new Error(`Failed to increment usage: ${error.message}`);
-    }
-
-    return data || 0;
+    return this.repository.incrementUsage(userId, metric, count);
   }
 
   /**
@@ -301,11 +162,10 @@ class SubscriptionService {
 
     const now = new Date();
 
-    // Check if grandfathered period is still valid (only for active/trialing status)
+    // Check if grandfathered period is still valid
     if (subscription.grandfathered_until) {
       const grandfatherEnd = new Date(subscription.grandfathered_until);
       if (grandfatherEnd > now) return true;
-      // Grandfathered period expired - falls through to period check
     }
 
     // Check if current period is still valid
@@ -349,18 +209,7 @@ class SubscriptionService {
    * Get payment history for a user
    */
   async getPaymentHistory(userId: string): Promise<SubscriptionPayment[]> {
-    const { data, error } = await supabase
-      .from("subscription_payments")
-      .select("*")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false });
-
-    if (error) {
-      console.error("Error fetching payment history:", error);
-      return [];
-    }
-
-    return data || [];
+    return this.repository.getPaymentHistory(userId);
   }
 
   /**
@@ -370,29 +219,11 @@ class SubscriptionService {
     userId: string,
     limit: number = 50,
   ): Promise<SubscriptionEvent[]> {
-    const { data, error } = await supabase
-      .from("subscription_events")
-      .select("*")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false })
-      .limit(limit);
-
-    if (error) {
-      console.error("Error fetching subscription events:", error);
-      return [];
-    }
-
-    return data || [];
+    return this.repository.getSubscriptionEvents(userId, limit);
   }
 
   /**
    * Generate Lemon Squeezy checkout URL for a plan
-   * @param plan - The subscription plan to checkout
-   * @param userId - The user's ID (passed as custom data to webhook)
-   * @param userEmail - Pre-fill the checkout email
-   * @param billingInterval - 'monthly' or 'annual'
-   * @param discountCode - Optional discount/promo code to apply
-   * @returns The checkout URL to redirect the user to
    */
   generateCheckoutUrl(
     plan: SubscriptionPlan,
@@ -401,7 +232,6 @@ class SubscriptionService {
     billingInterval: "monthly" | "annual" = "monthly",
     discountCode?: string,
   ): string | null {
-    // Get the appropriate variant ID based on billing interval
     const variantId =
       billingInterval === "annual"
         ? plan.lemon_variant_id_annual
@@ -414,8 +244,6 @@ class SubscriptionService {
       return null;
     }
 
-    // Lemon Squeezy checkout URL format
-    // You need to replace STORE_ID with your actual Lemon Squeezy store ID
     const LEMON_STORE_ID = import.meta.env.VITE_LEMON_SQUEEZY_STORE_ID || "";
 
     if (!LEMON_STORE_ID) {
@@ -423,23 +251,16 @@ class SubscriptionService {
       return null;
     }
 
-    // Build checkout URL with pre-filled data
-    // Lemon Squeezy uses /buy/ format with UUID identifiers
     const checkoutUrl = new URL(
       `https://${LEMON_STORE_ID}.lemonsqueezy.com/buy/${variantId}`,
     );
 
-    // Pre-fill email
     checkoutUrl.searchParams.set("checkout[email]", userEmail);
-
-    // Pass user_id as custom data (will be sent to webhook)
     checkoutUrl.searchParams.set("checkout[custom][user_id]", userId);
 
-    // Redirect back to billing page after successful checkout
     const redirectUrl = `${window.location.origin}/settings?tab=billing&checkout=success`;
     checkoutUrl.searchParams.set("checkout[redirect_url]", redirectUrl);
 
-    // Add discount code if provided
     if (discountCode && discountCode.trim()) {
       checkoutUrl.searchParams.set("discount", discountCode.trim());
     }
@@ -449,23 +270,14 @@ class SubscriptionService {
 
   /**
    * Get Lemon Squeezy customer portal URL
-   * This URL allows users to manage their subscription, update payment method, etc.
-   * Note: This URL is returned in webhook events and stored in user_subscriptions
    */
   async getCustomerPortalUrl(userId: string): Promise<string | null> {
-    const { data, error } = await supabase
-      .from("user_subscriptions")
-      .select("lemon_customer_id")
-      .eq("user_id", userId)
-      .single();
+    const data = await this.repository.getCustomerPortalInfo(userId);
 
-    if (error || !data?.lemon_customer_id) {
+    if (!data?.lemon_customer_id) {
       return null;
     }
 
-    // Lemon Squeezy customer portal URL format
-    // The actual URL is provided by Lemon Squeezy webhooks
-    // For now, we return a generic portal URL that Lemon Squeezy will handle
     const LEMON_STORE_ID = import.meta.env.VITE_LEMON_SQUEEZY_STORE_ID || "";
 
     if (!LEMON_STORE_ID) {

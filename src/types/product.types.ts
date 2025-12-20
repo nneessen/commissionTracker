@@ -6,6 +6,8 @@ import { Database } from "./database.types";
 export type ProductType = Database["public"]["Enums"]["product_type"];
 
 // Compensation levels matching database enum
+// NOTE: what is this for? this is not relevant to my project. there aren't named comp levels. comp levels are numbers only, so
+// where is this type being used? they need to be removed if they are being used
 export type CompLevel =
   | "street"
   | "bronze"
@@ -94,6 +96,7 @@ export interface ProductOption {
 // ============================================================================
 
 // Data quality levels for commission rate calculations
+// NOTE: this is probably not really useful
 export type CommissionDataQuality = "HIGH" | "MEDIUM" | "LOW" | "INSUFFICIENT";
 
 // Individual product's contribution to weighted average

@@ -72,6 +72,7 @@ export interface CarrierStats {
 // DEFAULT DATA
 // =============================================================================
 
+// NOTE: is this normal to hardcode these carriers in this const? should this not be coming from the actual database table from carriers?
 export const DEFAULT_CARRIERS: Array<
   Omit<Carrier, "id" | "created_at" | "updated_at">
 > = [

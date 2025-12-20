@@ -8,6 +8,15 @@ export type {
   DirectReportProfile,
 } from "./HierarchyRepository";
 
+// Invitation exports
+export { invitationService, InvitationService } from "./invitationService";
+export { InvitationRepository } from "./InvitationRepository";
+export type {
+  InvitationBaseEntity,
+  InvitationFilters,
+  InviterProfile,
+} from "./InvitationRepository";
+
 // NOTE: Policy, Commission, and Override types have been moved to their respective repositories:
 // - PolicyMetricRow, PolicyWithRelations -> src/services/policies/PolicyRepository.ts
 // - CommissionMetricRow, CommissionWithPolicy -> src/services/commissions/CommissionRepository.ts

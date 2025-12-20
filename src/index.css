@@ -85,8 +85,6 @@
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-
-    zoom: 1.1;
   }
 }
 

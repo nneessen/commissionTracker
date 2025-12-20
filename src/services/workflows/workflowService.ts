@@ -1,0 +1,453 @@
+// src/services/workflows/workflowService.ts
+// Service for managing workflow business logic
+
+import { supabase } from "@/services/base/supabase";
+import {
+  WorkflowRepository,
+  type EventTypeInsertData,
+  type WorkflowInsertData,
+  type WorkflowUpdateData,
+} from "./WorkflowRepository";
+import type {
+  Workflow,
+  WorkflowRun,
+  WorkflowTemplate,
+  TriggerEventType,
+  WorkflowFormData,
+  WorkflowStats,
+  WorkflowStatus,
+} from "@/types/workflow.types";
+
+class WorkflowService {
+  private repository: WorkflowRepository;
+
+  constructor() {
+    this.repository = new WorkflowRepository();
+  }
+
+  // =====================================================
+  // WORKFLOWS CRUD
+  // =====================================================
+
+  async getWorkflows(status?: WorkflowStatus): Promise<Workflow[]> {
+    return this.repository.findWorkflows(status);
+  }
+
+  async getWorkflow(id: string): Promise<Workflow> {
+    const workflow = await this.repository.findByIdWithRelations(id);
+    if (!workflow) {
+      throw new Error("Workflow not found");
+    }
+    return workflow;
+  }
+
+  async createWorkflow(formData: WorkflowFormData): Promise<Workflow> {
+    const { data: user } = await supabase.auth.getUser();
+    if (!user.user) throw new Error("User not authenticated");
+
+    const insertData: WorkflowInsertData = {
+      name: formData.name.trim(),
+      description: formData.description?.trim() ?? null,
+      category: formData.category,
+      trigger_type: formData.triggerType,
+      status: formData.status || "draft",
+      config: {
+        trigger: formData.trigger,
+        continueOnError: formData.settings?.continueOnError,
+      },
+      conditions: formData.conditions || [],
+      actions: formData.actions.map((a) => ({
+        type: a.type,
+        order: a.order,
+        config: a.config,
+        delayMinutes: a.delayMinutes || 0,
+        conditions: a.conditions || [],
+        retryOnFailure: a.retryOnFailure ?? true,
+        maxRetries: a.maxRetries || 3,
+      })),
+      max_runs_per_day: formData.settings?.maxRunsPerDay || 50,
+      max_runs_per_recipient: formData.settings?.maxRunsPerRecipient ?? null,
+      cooldown_minutes: formData.settings?.cooldownMinutes ?? null,
+      priority: Number(formData.settings?.priority) || 50,
+      created_by: user.user.id,
+    };
+
+    return this.repository.createWorkflow(insertData);
+  }
+
+  async updateWorkflow(
+    id: string,
+    updates: Partial<WorkflowFormData>,
+  ): Promise<Workflow> {
+    const { data: user } = await supabase.auth.getUser();
+    if (!user.user) throw new Error("User not authenticated");
+
+    // Debug: Log incoming updates
+    console.log("[WorkflowService] updateWorkflow called with:", {
+      id,
+      triggerType: updates.triggerType,
+      trigger: updates.trigger,
+      hasActions: !!updates.actions,
+      fullUpdates: updates,
+    });
+
+    // Fetch existing config for merging
+    const existingConfig = await this.repository.getWorkflowConfig(id);
+
+    // Build update object
+    const updateData: WorkflowUpdateData = {
+      last_modified_by: user.user.id,
+      updated_at: new Date().toISOString(),
+    };
+
+    if (updates.name !== undefined) updateData.name = updates.name.trim();
+    if (updates.description !== undefined)
+      updateData.description = updates.description?.trim() ?? null;
+    if (updates.category !== undefined) updateData.category = updates.category;
+    if (updates.triggerType !== undefined)
+      updateData.trigger_type = updates.triggerType;
+    if (updates.conditions !== undefined)
+      updateData.conditions = updates.conditions;
+
+    if (updates.actions !== undefined) {
+      updateData.actions = updates.actions.map((a) => ({
+        type: a.type,
+        order: a.order,
+        config: a.config,
+        delayMinutes: a.delayMinutes || 0,
+        conditions: a.conditions || [],
+        retryOnFailure: a.retryOnFailure ?? true,
+        maxRetries: a.maxRetries || 3,
+      }));
+    }
+
+    if (updates.settings?.maxRunsPerDay !== undefined) {
+      updateData.max_runs_per_day = updates.settings.maxRunsPerDay;
+    }
+    if (updates.settings?.maxRunsPerRecipient !== undefined) {
+      updateData.max_runs_per_recipient = updates.settings.maxRunsPerRecipient;
+    }
+    if (updates.settings?.cooldownMinutes !== undefined) {
+      updateData.cooldown_minutes = updates.settings.cooldownMinutes;
+    }
+    if (updates.settings?.priority !== undefined) {
+      updateData.priority = Number(updates.settings.priority);
+    }
+    if (updates.status !== undefined) {
+      updateData.status = updates.status;
+    }
+
+    // Handle config updates
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const configUpdate: Record<string, any> = { ...existingConfig };
+
+    if (updates.trigger !== undefined) {
+      configUpdate.trigger = updates.trigger;
+      console.log("[WorkflowService] Replacing trigger with:", updates.trigger);
+    } else if (updates.triggerType !== undefined && !updates.trigger) {
+      configUpdate.trigger = { type: updates.triggerType };
+      console.log(
+        "[WorkflowService] Creating minimal trigger for type:",
+        updates.triggerType,
+      );
+    }
+
+    if (updates.settings?.continueOnError !== undefined) {
+      configUpdate.continueOnError = updates.settings.continueOnError;
+    }
+
+    updateData.config = configUpdate;
+
+    console.log("[WorkflowService] Final update data being sent:", {
+      id,
+      trigger_type: updateData.trigger_type,
+      "config.trigger": updateData.config?.trigger,
+      fullConfig: updateData.config,
+    });
+
+    const workflow = await this.repository.updateWorkflow(id, updateData);
+
+    console.log("[WorkflowService] Updated workflow result:", {
+      id: workflow.id,
+      triggerType: workflow.triggerType,
+      "config.trigger": workflow.config?.trigger,
+    });
+
+    return workflow;
+  }
+
+  async deleteWorkflow(id: string): Promise<void> {
+    return this.repository.deleteWorkflow(id);
+  }
+
+  async updateWorkflowStatus(
+    id: string,
+    status: WorkflowStatus,
+  ): Promise<Workflow> {
+    return this.repository.updateStatus(id, status);
+  }
+
+  // =====================================================
+  // WORKFLOW RUNS
+  // =====================================================
+
+  async getWorkflowRuns(
+    workflowId?: string,
+    limit = 50,
+  ): Promise<WorkflowRun[]> {
+    return this.repository.findRuns(workflowId, limit);
+  }
+
+  async getWorkflowRun(id: string): Promise<WorkflowRun> {
+    const run = await this.repository.findRunById(id);
+    if (!run) {
+      throw new Error("Workflow run not found");
+    }
+    return run;
+  }
+
+  async triggerWorkflow(
+    workflowId: string,
+    context: Record<string, unknown> = {},
+  ): Promise<WorkflowRun> {
+    const { data: user } = await supabase.auth.getUser();
+    if (!user.user) throw new Error("User not authenticated");
+
+    // Get the workflow
+    const workflow = await this.repository.findByIdWithRelations(workflowId);
+    if (!workflow) throw new Error("Workflow not found");
+
+    // Build enriched context
+    const enrichedContext: Record<string, unknown> = {
+      ...context,
+      triggeredBy: user.user.id,
+      triggeredByEmail: user.user.email,
+      triggeredAt: new Date().toISOString(),
+      workflowName: workflow.name,
+    };
+
+    // Default recipient to current user if not provided
+    if (!enrichedContext.recipientId) {
+      enrichedContext.recipientId = user.user.id;
+      enrichedContext.recipientEmail = user.user.email;
+      enrichedContext.recipientName =
+        user.user.user_metadata?.name || user.user.email;
+    }
+
+    // Check if workflow can run
+    const canRun = await this.repository.canWorkflowRun(
+      workflowId,
+      enrichedContext.recipientId as string,
+    );
+
+    if (!canRun) {
+      throw new Error("Workflow cannot run due to execution limits");
+    }
+
+    // Create workflow run
+    const run = await this.repository.createRun({
+      workflow_id: workflowId,
+      trigger_source: "manual",
+      status: "running",
+      context: enrichedContext,
+    });
+
+    // Trigger edge function asynchronously
+    this.invokeWorkflowProcessor(run.id, workflowId, false);
+
+    return run;
+  }
+
+  async cancelWorkflowRun(runId: string): Promise<WorkflowRun> {
+    return this.repository.cancelRun(runId);
+  }
+
+  // =====================================================
+  // WORKFLOW TEMPLATES
+  // =====================================================
+
+  async getWorkflowTemplates(category?: string): Promise<WorkflowTemplate[]> {
+    return this.repository.findTemplates(category);
+  }
+
+  async createWorkflowFromTemplate(
+    templateId: string,
+    name: string,
+  ): Promise<Workflow> {
+    const template = await this.repository.findTemplateById(templateId);
+    if (!template) {
+      throw new Error("Template not found");
+    }
+
+    // Increment usage count
+    await this.repository.incrementTemplateUsage(
+      templateId,
+      template.usageCount || 0,
+    );
+
+    // Create workflow from template
+    const workflowConfig = template.workflowConfig;
+    const formData: WorkflowFormData = {
+      name,
+      description: workflowConfig.description,
+      category: workflowConfig.category || "general",
+      triggerType: workflowConfig.triggerType || "manual",
+      trigger: {
+        type: workflowConfig.triggerType || "manual",
+        eventName: undefined,
+        schedule: undefined,
+        webhookConfig: undefined,
+      },
+      conditions: workflowConfig.conditions || [],
+      actions: workflowConfig.actions || [],
+      settings: {
+        maxRunsPerDay: workflowConfig.maxRunsPerDay || 10,
+        maxRunsPerRecipient: workflowConfig.maxRunsPerRecipient,
+        cooldownMinutes: workflowConfig.cooldownMinutes,
+        continueOnError: false,
+        priority: workflowConfig.priority || 50,
+      },
+    };
+
+    return this.createWorkflow(formData);
+  }
+
+  // =====================================================
+  // TRIGGER EVENT TYPES
+  // =====================================================
+
+  async getTriggerEventTypes(): Promise<TriggerEventType[]> {
+    return this.repository.findActiveTriggerEventTypes();
+  }
+
+  async getEventTypes(): Promise<TriggerEventType[]> {
+    return this.repository.findAllEventTypes();
+  }
+
+  async createEventType(
+    eventData: Omit<TriggerEventType, "id" | "createdAt">,
+  ): Promise<TriggerEventType> {
+    const insertData: EventTypeInsertData = {
+      eventName: eventData.eventName,
+      category: eventData.category,
+      description: eventData.description,
+      availableVariables: eventData.availableVariables,
+      isActive: eventData.isActive,
+    };
+    return this.repository.createEventType(insertData);
+  }
+
+  async updateEventType(
+    id: string,
+    updates: Partial<TriggerEventType>,
+  ): Promise<TriggerEventType> {
+    const updateData: Partial<EventTypeInsertData> = {};
+    if (updates.eventName !== undefined)
+      updateData.eventName = updates.eventName;
+    if (updates.category !== undefined) updateData.category = updates.category;
+    if (updates.description !== undefined)
+      updateData.description = updates.description;
+    if (updates.availableVariables !== undefined)
+      updateData.availableVariables = updates.availableVariables;
+    if (updates.isActive !== undefined) updateData.isActive = updates.isActive;
+
+    return this.repository.updateEventType(id, updateData);
+  }
+
+  async deleteEventType(id: string): Promise<void> {
+    return this.repository.deleteEventType(id);
+  }
+
+  // =====================================================
+  // STATISTICS
+  // =====================================================
+
+  async getWorkflowStats(workflowId: string): Promise<WorkflowStats> {
+    const { runs } = await this.repository.getRunStats(workflowId);
+
+    const totalRuns = runs.length;
+    const successfulRuns = runs.filter((r) => r.status === "completed").length;
+    const failedRuns = runs.filter((r) => r.status === "failed").length;
+
+    const durations = runs
+      .filter((r) => r.duration_ms !== null)
+      .map((r) => r.duration_ms as number);
+
+    const averageDuration =
+      durations.length > 0
+        ? durations.reduce((a, b) => a + b, 0) / durations.length
+        : 0;
+
+    const lastRun =
+      runs.length > 0
+        ? runs.sort(
+            (a, b) =>
+              new Date(b.started_at).getTime() -
+              new Date(a.started_at).getTime(),
+          )[0]
+        : null;
+
+    return {
+      totalRuns,
+      successfulRuns,
+      failedRuns,
+      averageDuration,
+      lastRunAt: lastRun?.started_at,
+    };
+  }
+
+  // =====================================================
+  // TEST WORKFLOW
+  // =====================================================
+
+  async testWorkflow(
+    workflowId: string,
+    testContext: Record<string, unknown>,
+  ): Promise<WorkflowRun> {
+    const run = await this.repository.createRun({
+      workflow_id: workflowId,
+      trigger_source: "test",
+      status: "running",
+      context: { ...testContext, isTest: true },
+    });
+
+    // Trigger edge function for test workflow
+    this.invokeWorkflowProcessor(run.id, workflowId, true);
+
+    return run;
+  }
+
+  // =====================================================
+  // PRIVATE HELPERS
+  // =====================================================
+
+  /**
+   * Invoke the workflow processor edge function asynchronously
+   */
+  private invokeWorkflowProcessor(
+    runId: string,
+    workflowId: string,
+    isTest: boolean,
+  ): void {
+    supabase.functions
+      .invoke("process-workflow", {
+        body: { runId, workflowId, isTest },
+      })
+      .then((response) => {
+        if (response.error) {
+          console.error("Workflow processor returned error:", response.error);
+        } else {
+          console.log(
+            "Workflow processor invoked successfully:",
+            response.data,
+          );
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to invoke workflow processor:", err);
+      });
+  }
+}
+
+export const workflowService = new WorkflowService();
+export { WorkflowService };

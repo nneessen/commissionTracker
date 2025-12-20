@@ -6,6 +6,9 @@
 |---------|----------|--------|
 | userService | `src/services/users/` | ✅ Done (UserRepository created, 15 tests passing) |
 | hierarchyService | `src/services/hierarchy/` | ✅ Done (uses HierarchyRepository, PolicyRepository, CommissionRepository, OverrideRepository) |
+| invitationService | `src/services/hierarchy/` | ✅ Done (InvitationRepository created, 33 tests passing) |
+| subscriptionService | `src/services/subscription/` | ✅ Done (SubscriptionRepository created, 38 tests passing) |
+| workflowService | `src/services/workflows/` | ✅ Done (WorkflowRepository created, 25 tests passing) |
 
 **Repository Architecture Fix (Completed 2025-12-20):**
 - ✅ PolicyRepository extended with batch methods (findByAgents, findMetricsByUserIds, findWithRelationsByUserId, findRecentByUserId)
@@ -15,37 +18,50 @@
 - ✅ HierarchyService updated to use domain-specific repositories
 - ✅ All 23 tests passing, typecheck passing, build passing
 
+**InvitationService Refactor (Completed 2025-12-20):**
+- ✅ InvitationRepository created extending BaseRepository
+- ✅ All database operations moved to repository (CRUD, RPC validation, profile enrichment)
+- ✅ Service retains auth checks and email sending logic
+- ✅ 33 tests passing, typecheck passing, build passing
+
 ---
 
-## Next Service: invitationService
+## Next Service: recruitingService
 
-**Location:** `src/services/hierarchy/invitationService.ts`
-
-**Why this is next:**
-- Related to hierarchy (in same folder)
-- Team invitations functionality
-- Used by recruiting module
+**Location:** `src/services/recruiting/recruitingService.ts`
 
 **Steps:**
-1. Read `src/services/hierarchy/invitationService.ts` to understand structure
-2. Create `src/services/hierarchy/InvitationRepository.ts` extending BaseRepository
-3. Refactor `invitationService.ts` to use InvitationRepository
-4. Update `src/services/hierarchy/index.ts` barrel exports
-5. Create tests in `src/services/hierarchy/__tests__/invitationService.test.ts`
+1. Read `src/services/recruiting/recruitingService.ts` to understand structure
+2. Create `src/services/recruiting/RecruitingRepository.ts` extending BaseRepository
+3. Refactor `recruitingService.ts` to use RecruitingRepository
+4. Update barrel exports
+5. Create tests
 6. Run `npm run typecheck` and `npm run build`
 7. Run tests to verify
 
 ---
 
-## Remaining Services (Priority Order)
+## Recently Completed
 
-### High Priority (Core business logic)
-| Service | Location | Notes |
-|---------|----------|-------|
-| invitationService | `src/services/hierarchy/` | Team invitations |
-| overrideService | `src/services/overrides/` | Commission overrides (OverrideRepository now exists) |
-| subscriptionService | `src/services/subscription/` | Subscription management |
-| workflowService | `src/services/` | Workflow automation |
+**WorkflowService Refactor (Completed 2025-12-20):**
+- ✅ Moved to `src/services/workflows/` folder structure
+- ✅ WorkflowRepository created extending BaseRepository
+- ✅ Handles workflows, workflow_runs, workflow_templates, trigger_event_types tables
+- ✅ RPC function wrapped in repository (can_workflow_run)
+- ✅ Service retains auth checks and edge function invocation (process-workflow)
+- ✅ Proper snake_case to camelCase transformations for all entities
+- ✅ 25 unit tests passing, typecheck passing, build passing
+
+**SubscriptionService Refactor (Completed 2025-12-20):**
+- ✅ SubscriptionRepository created extending BaseRepository
+- ✅ Handles subscription_plans, user_subscriptions, usage_tracking, subscription_payments, subscription_events tables
+- ✅ All RPC functions wrapped in repository (getUserTier, userHasFeature, userHasAnalyticsSection, incrementUsage)
+- ✅ Service retains business logic (isSubscriptionActive, isGrandfathered, formatPrice, generateCheckoutUrl, etc.)
+- ✅ 38 unit tests passing, typecheck passing, build passing
+
+---
+
+## Remaining Services (Priority Order)
 
 ### Medium Priority (Recruiting module)
 | Service | Location | Notes |
@@ -68,15 +84,18 @@
 
 ## Reference Implementation
 
-Use `src/services/users/` as the reference pattern:
+Use `src/services/users/` or `src/services/hierarchy/` as the reference pattern:
 
 ```
-src/services/users/
-├── UserRepository.ts      # Data access layer (extends BaseRepository)
-├── userService.ts         # Business logic layer (uses repository)
-├── index.ts               # Barrel exports
+src/services/hierarchy/
+├── HierarchyRepository.ts    # Data access layer (extends BaseRepository)
+├── hierarchyService.ts       # Business logic layer (uses repository)
+├── InvitationRepository.ts   # Data access layer (extends BaseRepository)
+├── invitationService.ts      # Business logic layer (uses repository)
+├── index.ts                  # Barrel exports
 └── __tests__/
-    └── userService.test.ts
+    ├── hierarchyService.test.ts
+    └── invitationService.test.ts
 ```
 
 **Key patterns to follow:**
@@ -92,11 +111,11 @@ src/services/users/
 ## Start Command
 
 ```
-Continue with the service repository refactoring. Next service: invitationService.
+Continue with the service repository refactoring. Next service: subscriptionService.
 
-1. Read src/services/hierarchy/invitationService.ts
-2. Create InvitationRepository extending BaseRepository
-3. Refactor invitationService to use repository
+1. Read src/services/subscription/subscriptionService.ts
+2. Create SubscriptionRepository extending BaseRepository
+3. Refactor subscriptionService to use repository
 4. Add tests
 5. Verify build passes
 ```

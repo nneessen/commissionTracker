@@ -6,6 +6,70 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-12-20 15:04:41
+
+### Changed Files
+- `CHANGELOG.md`
+- `PROJECT_STATS.md`
+- `index.html`
+- `plans/active/fix-sidebar-footer.md`
+- `plans/active/service-repository-refactor.md`
+- `src/features/settings/commission-rates/CommissionRatesManagement.tsx`
+- `src/index.css`
+- `src/services/hierarchy/InvitationRepository.ts`
+- `src/services/hierarchy/__tests__/invitationService.test.ts`
+- `src/services/hierarchy/index.ts`
+- `src/services/hierarchy/invitationService.ts`
+- `src/services/subscription/SubscriptionRepository.ts`
+- `src/services/subscription/__tests__/subscriptionService.test.ts`
+- `src/services/subscription/index.ts`
+- `src/services/subscription/subscriptionService.ts`
+- `src/services/workflowService.ts`
+- `src/services/workflows/WorkflowRepository.ts`
+- `src/services/workflows/__tests__/workflowService.test.ts`
+- `src/services/workflows/index.ts`
+- `src/services/workflows/workflowService.ts`
+- `src/types/carrier.types.ts`
+- `src/types/database.types.ts`
+- `src/types/product.types.ts`
+- `tsconfig.tsbuildinfo`
+
+### Statistics
+```
+ 24 files changed, 9843 insertions(+), 6469 deletions(-)
+```
+
+## [Checkpoint] - 2025-12-20 15:04:02
+
+### Changed Files
+- `index.html`
+- `plans/active/fix-sidebar-footer.md`
+- `plans/active/service-repository-refactor.md`
+- `src/features/settings/commission-rates/CommissionRatesManagement.tsx`
+- `src/index.css`
+- `src/services/hierarchy/InvitationRepository.ts`
+- `src/services/hierarchy/__tests__/invitationService.test.ts`
+- `src/services/hierarchy/index.ts`
+- `src/services/hierarchy/invitationService.ts`
+- `src/services/subscription/SubscriptionRepository.ts`
+- `src/services/subscription/__tests__/subscriptionService.test.ts`
+- `src/services/subscription/index.ts`
+- `src/services/subscription/subscriptionService.ts`
+- `src/services/workflowService.ts`
+- `src/services/workflows/WorkflowRepository.ts`
+- `src/services/workflows/__tests__/workflowService.test.ts`
+- `src/services/workflows/index.ts`
+- `src/services/workflows/workflowService.ts`
+- `src/types/carrier.types.ts`
+- `src/types/database.types.ts`
+- `src/types/product.types.ts`
+- `tsconfig.tsbuildinfo`
+
+### Statistics
+```
+ 22 files changed, 9823 insertions(+), 6463 deletions(-)
+```
+
 ## [Checkpoint] - 2025-12-20 13:15:04
 
 ### Changed Files
