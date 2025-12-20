@@ -4,21 +4,27 @@
  * TanStack Query hooks for notification functionality.
  */
 
-import {useQuery, useMutation, useQueryClient} from '@tanstack/react-query';
-import {useEffect, useMemo} from 'react';
-import {notificationService} from '@/services/notifications/notificationService';
-import {subscribeToNotifications} from '@/services/notifications/realtimeNotifications';
-import type {CreateNotificationRequest} from '@/types/notification.types';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useMemo } from "react";
+import { notificationService } from "@/services/notifications";
+import { subscribeToNotifications } from "@/services/notifications/realtimeNotifications";
+import type { CreateNotificationRequest } from "@/types/notification.types";
 
 /**
  * Get all notifications for current user
  */
 export const useNotifications = () => {
   return useQuery({
-    queryKey: ['notifications'],
-    queryFn: notificationService.getNotifications,
+    queryKey: ["notifications"],
+    queryFn: async () => {
+      const result = await notificationService.getAll();
+      if (!result.success) {
+        throw result.error;
+      }
+      return result.data || [];
+    },
     refetchInterval: 30000, // Refetch every 30 seconds
-    staleTime: 10000 // Consider data stale after 10 seconds
+    staleTime: 10000, // Consider data stale after 10 seconds
   });
 };
 
@@ -29,7 +35,7 @@ export const useUnreadNotificationCount = () => {
   const { data: notifications } = useNotifications();
 
   return useMemo(() => {
-    return notifications?.filter(n => !n.read).length ?? 0;
+    return notifications?.filter((n) => !n.read).length ?? 0;
   }, [notifications]);
 };
 
@@ -40,10 +46,15 @@ export const useMarkNotificationAsRead = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (notificationId: string) => notificationService.markAsRead(notificationId),
+    mutationFn: async (notificationId: string) => {
+      const result = await notificationService.markAsRead(notificationId);
+      if (!result.success) {
+        throw result.error;
+      }
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notifications'] });
-    }
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    },
   });
 };
 
@@ -54,10 +65,15 @@ export const useMarkAllNotificationsAsRead = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: () => notificationService.markAllAsRead(),
+    mutationFn: async () => {
+      const result = await notificationService.markAllAsRead();
+      if (!result.success) {
+        throw result.error;
+      }
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notifications'] });
-    }
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    },
   });
 };
 
@@ -68,10 +84,16 @@ export const useCreateNotification = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (request: CreateNotificationRequest) => notificationService.createNotification(request),
+    mutationFn: async (request: CreateNotificationRequest) => {
+      const result = await notificationService.create(request);
+      if (!result.success) {
+        throw result.error;
+      }
+      return result.data;
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notifications'] });
-    }
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    },
   });
 };
 
@@ -82,10 +104,15 @@ export const useDeleteNotification = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (notificationId: string) => notificationService.deleteNotification(notificationId),
+    mutationFn: async (notificationId: string) => {
+      const result = await notificationService.delete(notificationId);
+      if (!result.success) {
+        throw result.error;
+      }
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notifications'] });
-    }
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    },
   });
 };
 
@@ -96,10 +123,15 @@ export const useDeleteAllReadNotifications = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: () => notificationService.deleteAllRead(),
+    mutationFn: async () => {
+      const result = await notificationService.deleteAllRead();
+      if (!result.success) {
+        throw result.error;
+      }
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notifications'] });
-    }
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    },
   });
 };
 
@@ -109,7 +141,7 @@ export const useDeleteAllReadNotifications = () => {
 export const useNotificationsRealtime = (
   profileId: string | undefined,
   onNewNotification?: () => void,
-  enabled = true
+  enabled = true,
 ) => {
   const queryClient = useQueryClient();
 
@@ -118,7 +150,7 @@ export const useNotificationsRealtime = (
 
     const unsubscribe = subscribeToNotifications(profileId, () => {
       // Invalidate queries to refetch latest data
-      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
 
       // Call callback if provided (for showing toast, playing sound, etc.)
       if (onNewNotification) {

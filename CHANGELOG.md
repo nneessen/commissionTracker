@@ -6,6 +6,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-12-20 10:46:48
+
+### Changed Files
+- `src/components/notifications/useNotifications.ts`
+- `src/hooks/messaging/useMessages.ts`
+- `src/hooks/notifications/useNotifications.ts`
+- `src/services/messaging/index.ts`
+- `src/services/messaging/message/MessagingRepository.ts`
+- `src/services/messaging/message/MessagingService.ts`
+- `src/services/messaging/message/index.ts`
+- `src/services/messaging/messagingService.ts`
+- `src/services/notifications/index.ts`
+- `src/services/notifications/notification/NotificationRepository.ts`
+- `src/services/notifications/notification/NotificationService.ts`
+- `src/services/notifications/notification/index.ts`
+- `src/services/notifications/notificationService.ts`
+- `tsconfig.tsbuildinfo`
+
+### Statistics
+```
+ 14 files changed, 1014 insertions(+), 482 deletions(-)
+```
+
 ## [Checkpoint] - 2025-12-20 10:30:52
 
 ### Changed Files
