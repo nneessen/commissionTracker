@@ -13,6 +13,7 @@ export * from "./analytics";
 export * from "./users";
 export * from "./imo";
 export * from "./agency";
+export * from "./agency-request";
 
 // Individual service exports for backward compatibility
 export { carrierService } from "./settings/carriers";

@@ -28,6 +28,7 @@ export type Database = {
           logo_url: string | null
           name: string
           owner_id: string | null
+          parent_agency_id: string | null
           settings: Json | null
           state: string | null
           street_address: string | null
@@ -48,6 +49,7 @@ export type Database = {
           logo_url?: string | null
           name: string
           owner_id?: string | null
+          parent_agency_id?: string | null
           settings?: Json | null
           state?: string | null
           street_address?: string | null
@@ -68,6 +70,7 @@ export type Database = {
           logo_url?: string | null
           name?: string
           owner_id?: string | null
+          parent_agency_id?: string | null
           settings?: Json | null
           state?: string | null
           street_address?: string | null
@@ -100,6 +103,131 @@ export type Database = {
           {
             foreignKeyName: "agencies_owner_id_fkey"
             columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agencies_parent_agency_id_fkey"
+            columns: ["parent_agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agency_requests: {
+        Row: {
+          approver_id: string
+          created_agency_id: string | null
+          created_at: string
+          current_agency_id: string
+          id: string
+          imo_id: string
+          proposed_code: string
+          proposed_description: string | null
+          proposed_name: string
+          rejection_reason: string | null
+          requested_at: string
+          requester_id: string
+          reviewed_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          approver_id: string
+          created_agency_id?: string | null
+          created_at?: string
+          current_agency_id: string
+          id?: string
+          imo_id: string
+          proposed_code: string
+          proposed_description?: string | null
+          proposed_name: string
+          rejection_reason?: string | null
+          requested_at?: string
+          requester_id: string
+          reviewed_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          approver_id?: string
+          created_agency_id?: string | null
+          created_at?: string
+          current_agency_id?: string
+          id?: string
+          imo_id?: string
+          proposed_code?: string
+          proposed_description?: string | null
+          proposed_name?: string
+          rejection_reason?: string | null
+          requested_at?: string
+          requester_id?: string
+          reviewed_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agency_requests_approver_id_fkey"
+            columns: ["approver_id"]
+            isOneToOne: false
+            referencedRelation: "active_user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agency_requests_approver_id_fkey"
+            columns: ["approver_id"]
+            isOneToOne: false
+            referencedRelation: "user_management_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agency_requests_approver_id_fkey"
+            columns: ["approver_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agency_requests_created_agency_id_fkey"
+            columns: ["created_agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agency_requests_current_agency_id_fkey"
+            columns: ["current_agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agency_requests_imo_id_fkey"
+            columns: ["imo_id"]
+            isOneToOne: false
+            referencedRelation: "imos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agency_requests_requester_id_fkey"
+            columns: ["requester_id"]
+            isOneToOne: false
+            referencedRelation: "active_user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agency_requests_requester_id_fkey"
+            columns: ["requester_id"]
+            isOneToOne: false
+            referencedRelation: "user_management_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agency_requests_requester_id_fkey"
+            columns: ["requester_id"]
             isOneToOne: false
             referencedRelation: "user_profiles"
             referencedColumns: ["id"]
@@ -5679,6 +5807,10 @@ export type Database = {
         Args: { p_updates: Json; p_user_id: string }
         Returns: Json
       }
+      approve_agency_request: {
+        Args: { p_request_id: string }
+        Returns: string
+      }
       assign_user_role: {
         Args: {
           p_contract_level?: number
@@ -5737,6 +5869,7 @@ export type Database = {
         Args: { user_id_param: string }
         Returns: boolean
       }
+      can_request_agency: { Args: never; Returns: boolean }
       can_workflow_run: {
         Args: { p_recipient_id?: string; p_workflow_id: string }
         Returns: boolean
@@ -5795,6 +5928,7 @@ export type Database = {
           expired_count: number
         }[]
       }
+      get_agency_metrics: { Args: { p_agency_id: string }; Returns: Json }
       get_at_risk_commissions: {
         Args: { p_risk_threshold?: number; p_user_id: string }
         Returns: {
@@ -5845,6 +5979,7 @@ export type Database = {
           id: string
         }[]
       }
+      get_imo_metrics: { Args: { p_imo_id: string }; Returns: Json }
       get_message_stats: { Args: { p_user_id: string }; Returns: Json }
       get_my_agency_id: { Args: never; Returns: string }
       get_my_imo_id: { Args: never; Returns: string }
@@ -5869,6 +6004,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      get_pending_agency_request_count: { Args: never; Returns: number }
       get_pipeline_template_for_user: {
         Args: {
           p_agent_status: Database["public"]["Enums"]["agent_status"]
@@ -6045,6 +6181,7 @@ export type Database = {
             Args: { role_name: string; target_user_id: string }
             Returns: boolean
           }
+      hierarchy_path_array: { Args: { path: string }; Returns: string[] }
       increment_email_quota: {
         Args: { p_provider: string; p_user_id: string }
         Returns: number
@@ -6078,6 +6215,7 @@ export type Database = {
       is_imo_admin: { Args: never; Returns: boolean }
       is_same_agency: { Args: { target_user_id: string }; Returns: boolean }
       is_same_imo: { Args: { target_user_id: string }; Returns: boolean }
+      is_super_admin: { Args: never; Returns: boolean }
       is_upline_of: { Args: { target_user_id: string }; Returns: boolean }
       is_user_approved: { Args: never; Returns: boolean }
       lookup_user_by_email: {
@@ -6198,6 +6336,11 @@ export type Database = {
         Args: { p_policy_id: string }
         Returns: number
       }
+      reject_agency_request: {
+        Args: { p_reason?: string; p_request_id: string }
+        Returns: undefined
+      }
+      safe_uuid_from_text: { Args: { input: string }; Returns: string }
       test_rls_for_user: {
         Args: { test_user_id: string }
         Returns: {
