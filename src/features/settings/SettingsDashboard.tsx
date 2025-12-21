@@ -11,6 +11,7 @@ import {
   Building,
   Crown,
   ClipboardCheck,
+  UserPlus,
 } from "lucide-react";
 import { UserProfile } from "./components/UserProfile";
 import { CarriersManagement } from "./carriers/CarriersManagement";
@@ -21,16 +22,19 @@ import { BillingTab } from "./billing";
 import { ImoManagement } from "./imo";
 import { AgencyManagement } from "./agency";
 import { AgencyRequestPage } from "./agency-request";
+import { JoinRequestPage } from "./join-request";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { usePermissionCheck } from "@/hooks/permissions/usePermissions";
 import { useImo } from "@/hooks/imo";
 import { usePendingAgencyRequestCount } from "@/hooks/agency-request";
+import { usePendingJoinApprovalCount } from "@/hooks/join-request";
 
 export function SettingsDashboard() {
   const { can } = usePermissionCheck();
   const { isSuperAdmin, isImoAdmin, loading: imoLoading } = useImo();
-  const { data: pendingRequestCount = 0 } = usePendingAgencyRequestCount();
+  const { data: pendingAgencyRequestCount = 0 } = usePendingAgencyRequestCount();
+  const { data: pendingJoinRequestCount = 0 } = usePendingJoinApprovalCount();
 
   // Check if user has admin permission to manage carriers
   const canManageCarriers = can("carriers.manage");
@@ -138,9 +142,21 @@ export function SettingsDashboard() {
             >
               <ClipboardCheck className="h-3.5 w-3.5" />
               Agency
-              {pendingRequestCount > 0 && (
+              {pendingAgencyRequestCount > 0 && (
                 <Badge variant="destructive" className="ml-1 h-4 px-1 text-[10px]">
-                  {pendingRequestCount}
+                  {pendingAgencyRequestCount}
+                </Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger
+              value="join-request"
+              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-[11px] font-medium rounded transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:shadow-sm data-[state=active]:text-zinc-900 dark:data-[state=active]:text-zinc-100 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
+            >
+              <UserPlus className="h-3.5 w-3.5" />
+              Join
+              {pendingJoinRequestCount > 0 && (
+                <Badge variant="destructive" className="ml-1 h-4 px-1 text-[10px]">
+                  {pendingJoinRequestCount}
                 </Badge>
               )}
             </TabsTrigger>
@@ -195,6 +211,10 @@ export function SettingsDashboard() {
 
             <TabsContent value="agency-request" className="mt-0">
               <AgencyRequestPage />
+            </TabsContent>
+
+            <TabsContent value="join-request" className="mt-0">
+              <JoinRequestPage />
             </TabsContent>
 
             <TabsContent value="billing" className="mt-0">

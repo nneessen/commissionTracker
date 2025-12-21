@@ -1825,6 +1825,132 @@ export type Database = {
         }
         Relationships: []
       }
+      join_requests: {
+        Row: {
+          agency_id: string | null
+          approver_id: string
+          created_at: string
+          id: string
+          imo_id: string
+          message: string | null
+          rejection_reason: string | null
+          requested_at: string
+          requested_upline_id: string | null
+          requester_id: string
+          reviewed_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          agency_id?: string | null
+          approver_id: string
+          created_at?: string
+          id?: string
+          imo_id: string
+          message?: string | null
+          rejection_reason?: string | null
+          requested_at?: string
+          requested_upline_id?: string | null
+          requester_id: string
+          reviewed_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          agency_id?: string | null
+          approver_id?: string
+          created_at?: string
+          id?: string
+          imo_id?: string
+          message?: string | null
+          rejection_reason?: string | null
+          requested_at?: string
+          requested_upline_id?: string | null
+          requester_id?: string
+          reviewed_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "join_requests_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "join_requests_approver_id_fkey"
+            columns: ["approver_id"]
+            isOneToOne: false
+            referencedRelation: "active_user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "join_requests_approver_id_fkey"
+            columns: ["approver_id"]
+            isOneToOne: false
+            referencedRelation: "user_management_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "join_requests_approver_id_fkey"
+            columns: ["approver_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "join_requests_imo_id_fkey"
+            columns: ["imo_id"]
+            isOneToOne: false
+            referencedRelation: "imos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "join_requests_requested_upline_id_fkey"
+            columns: ["requested_upline_id"]
+            isOneToOne: false
+            referencedRelation: "active_user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "join_requests_requested_upline_id_fkey"
+            columns: ["requested_upline_id"]
+            isOneToOne: false
+            referencedRelation: "user_management_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "join_requests_requested_upline_id_fkey"
+            columns: ["requested_upline_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "join_requests_requester_id_fkey"
+            columns: ["requester_id"]
+            isOneToOne: false
+            referencedRelation: "active_user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "join_requests_requester_id_fkey"
+            columns: ["requester_id"]
+            isOneToOne: false
+            referencedRelation: "user_management_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "join_requests_requester_id_fkey"
+            columns: ["requester_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       message_threads: {
         Row: {
           created_at: string | null
@@ -5811,6 +5937,14 @@ export type Database = {
         Args: { p_request_id: string }
         Returns: string
       }
+      approve_join_request: {
+        Args: {
+          p_agency_id?: string
+          p_request_id: string
+          p_upline_id?: string
+        }
+        Returns: undefined
+      }
       assign_user_role: {
         Args: {
           p_contract_level?: number
@@ -5870,6 +6004,7 @@ export type Database = {
         Returns: boolean
       }
       can_request_agency: { Args: never; Returns: boolean }
+      can_submit_join_request: { Args: never; Returns: boolean }
       can_workflow_run: {
         Args: { p_recipient_id?: string; p_workflow_id: string }
         Returns: boolean
@@ -5928,6 +6063,15 @@ export type Database = {
           expired_count: number
         }[]
       }
+      get_agencies_for_join: {
+        Args: { p_imo_id: string }
+        Returns: {
+          code: string
+          description: string
+          id: string
+          name: string
+        }[]
+      }
       get_agency_metrics: { Args: { p_agency_id: string }; Returns: Json }
       get_at_risk_commissions: {
         Args: { p_risk_threshold?: number; p_user_id: string }
@@ -5941,6 +6085,15 @@ export type Database = {
           policy_status: string
           risk_level: string
           unearned_amount: number
+        }[]
+      }
+      get_available_imos_for_join: {
+        Args: never
+        Returns: {
+          code: string
+          description: string
+          id: string
+          name: string
         }[]
       }
       get_clients_with_stats: {
@@ -5979,6 +6132,7 @@ export type Database = {
           id: string
         }[]
       }
+      get_imo_admin: { Args: { p_imo_id: string }; Returns: string }
       get_imo_metrics: { Args: { p_imo_id: string }; Returns: Json }
       get_message_stats: { Args: { p_user_id: string }; Returns: Json }
       get_my_agency_id: { Args: never; Returns: string }
@@ -6005,6 +6159,7 @@ export type Database = {
         }
       }
       get_pending_agency_request_count: { Args: never; Returns: number }
+      get_pending_join_request_count: { Args: never; Returns: number }
       get_pipeline_template_for_user: {
         Args: {
           p_agent_status: Database["public"]["Enums"]["agent_status"]
@@ -6339,6 +6494,14 @@ export type Database = {
       reject_agency_request: {
         Args: { p_reason?: string; p_request_id: string }
         Returns: undefined
+      }
+      reject_join_request: {
+        Args: { p_reason?: string; p_request_id: string }
+        Returns: undefined
+      }
+      resolve_join_request_approver: {
+        Args: { p_agency_id?: string; p_imo_id: string; p_upline_id?: string }
+        Returns: string
       }
       safe_uuid_from_text: { Args: { input: string }; Returns: string }
       test_rls_for_user: {
