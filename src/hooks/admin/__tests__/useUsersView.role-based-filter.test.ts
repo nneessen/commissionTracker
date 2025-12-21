@@ -66,6 +66,8 @@ describe("useUsersView role-based filtering logic", () => {
     updated_at: null,
     upline_id: null,
     zip: null,
+    agency_id: null,
+    imo_id: null,
 
     // Apply overrides
     ...overrides,

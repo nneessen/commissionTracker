@@ -8,6 +8,8 @@ import {
   Package,
   Percent,
   CreditCard,
+  Building,
+  Crown,
 } from "lucide-react";
 import { UserProfile } from "./components/UserProfile";
 import { CarriersManagement } from "./carriers/CarriersManagement";
@@ -15,17 +17,31 @@ import { ProductsManagement } from "./products/ProductsManagement";
 import { CommissionRatesManagement } from "./commission-rates/CommissionRatesManagement";
 import { ConstantsManagement } from "./ConstantsManagement";
 import { BillingTab } from "./billing";
+import { ImoManagement } from "./imo";
+import { AgencyManagement } from "./agency";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { usePermissionCheck } from "@/hooks/permissions/usePermissions";
+import { useImo } from "@/hooks/imo";
 
 export function SettingsDashboard() {
   const { can } = usePermissionCheck();
+  const { isSuperAdmin, isImoAdmin, loading: imoLoading } = useImo();
 
   // Check if user has admin permission to manage carriers
   const canManageCarriers = can("carriers.manage");
 
-  // Default tab: if admin, show carriers; if regular user, show agents (profile)
-  const defaultTab = canManageCarriers ? "carriers" : "agents";
+  // Check organization management permissions
+  const canManageImos = isSuperAdmin;
+  const canManageAgencies = isImoAdmin || isSuperAdmin;
+
+  // Default tab: prioritize IMO management for super admins
+  const defaultTab = canManageImos
+    ? "imos"
+    : canManageAgencies
+    ? "agencies"
+    : canManageCarriers
+    ? "carriers"
+    : "agents";
 
   return (
     <div className="h-[calc(100vh-4rem)] flex flex-col p-3 space-y-2.5 bg-zinc-50 dark:bg-zinc-950">
@@ -51,7 +67,27 @@ export function SettingsDashboard() {
           className="flex flex-col flex-1 min-h-0"
         >
           {/* Compact tabs */}
-          <TabsList className="flex items-center gap-0.5 bg-zinc-200/50 dark:bg-zinc-800/50 rounded-md p-0.5 h-auto w-full">
+          <TabsList className="flex items-center gap-0.5 bg-zinc-200/50 dark:bg-zinc-800/50 rounded-md p-0.5 h-auto w-full flex-wrap">
+            {/* Organization Management tabs - Super Admin / IMO Admin */}
+            {canManageImos && (
+              <TabsTrigger
+                value="imos"
+                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-[11px] font-medium rounded transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:shadow-sm data-[state=active]:text-zinc-900 dark:data-[state=active]:text-zinc-100 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
+              >
+                <Crown className="h-3.5 w-3.5" />
+                IMOs
+              </TabsTrigger>
+            )}
+            {canManageAgencies && (
+              <TabsTrigger
+                value="agencies"
+                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-[11px] font-medium rounded transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:shadow-sm data-[state=active]:text-zinc-900 dark:data-[state=active]:text-zinc-100 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
+              >
+                <Building className="h-3.5 w-3.5" />
+                Agencies
+              </TabsTrigger>
+            )}
+            {/* Admin tabs */}
             {canManageCarriers && (
               <>
                 <TabsTrigger
@@ -102,6 +138,20 @@ export function SettingsDashboard() {
 
           {/* Tab content */}
           <div className="flex-1 overflow-y-auto mt-2">
+            {/* Organization Management content */}
+            {canManageImos && (
+              <TabsContent value="imos" className="mt-0">
+                <ImoManagement />
+              </TabsContent>
+            )}
+
+            {canManageAgencies && (
+              <TabsContent value="agencies" className="mt-0">
+                <AgencyManagement />
+              </TabsContent>
+            )}
+
+            {/* Admin content */}
             {canManageCarriers && (
               <>
                 <TabsContent value="carriers" className="mt-0">

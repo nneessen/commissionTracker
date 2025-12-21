@@ -4,6 +4,7 @@ import {Outlet, useNavigate, useLocation} from "@tanstack/react-router";
 import {Toaster} from "react-hot-toast";
 import {Sidebar} from "./components/layout";
 import {useAuth} from "./contexts/AuthContext";
+import {ImoProvider} from "./contexts/ImoContext";
 import {logger} from "./services/base/logger";
 import {ApprovalGuard} from "./components/auth/ApprovalGuard";
 
@@ -84,23 +85,25 @@ function App() {
   return (
     <>
       <Toaster />
-      <div className="flex min-h-screen">
-        <Sidebar
-          isCollapsed={isSidebarCollapsed}
-          onToggleCollapse={toggleSidebar}
-          userName={user.name || user.email?.split("@")[0] || "User"}
-          userEmail={user.email || ""}
-          onLogout={handleLogout}
-        />
+      <ImoProvider>
+        <div className="flex min-h-screen">
+          <Sidebar
+            isCollapsed={isSidebarCollapsed}
+            onToggleCollapse={toggleSidebar}
+            userName={user.name || user.email?.split("@")[0] || "User"}
+            userEmail={user.email || ""}
+            onLogout={handleLogout}
+          />
 
-        <div className="main-content flex-1 min-w-0">
-          <div className="p-6 w-full min-h-screen">
-            <ApprovalGuard>
-              <Outlet />
-            </ApprovalGuard>
+          <div className="main-content flex-1 min-w-0">
+            <div className="p-6 w-full min-h-screen">
+              <ApprovalGuard>
+                <Outlet />
+              </ApprovalGuard>
+            </div>
           </div>
         </div>
-      </div>
+      </ImoProvider>
     </>
   );
 }

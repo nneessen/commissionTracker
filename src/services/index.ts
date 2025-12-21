@@ -11,6 +11,8 @@ export * from "./expenses";
 export * from "./settings";
 export * from "./analytics";
 export * from "./users";
+export * from "./imo";
+export * from "./agency";
 
 // Individual service exports for backward compatibility
 export { carrierService } from "./settings/carriers";

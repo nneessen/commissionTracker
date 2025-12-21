@@ -12,3 +12,4 @@ export * from './policy.types';
 export * from './commission.types';
 export * from './metrics.types';
 export * from './targets.types';
+export * from './imo.types';

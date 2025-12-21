@@ -18,6 +18,7 @@ export interface CompGuideEntry {
   expiration_date: string | null;
   minimum_premium: number | null;
   maximum_premium: number | null;
+  imo_id: string | null;
   created_at: string | null;
   updated_at: string | null;
   // Joined data from carrier relation (optional)

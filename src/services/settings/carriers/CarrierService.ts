@@ -59,6 +59,7 @@ class CarrierServiceClass {
         is_active: data.is_active ?? true,
         contact_info: (data.contact_info || null) as Json,
         commission_structure: null,
+        imo_id: null, // TODO: Get from current user's IMO context
       });
       return { success: true, data: carrier as Carrier };
     } catch (error) {

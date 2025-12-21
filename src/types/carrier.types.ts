@@ -82,6 +82,7 @@ export const DEFAULT_CARRIERS: Array<
     is_active: true,
     commission_structure: null,
     contact_info: null,
+    imo_id: null,
   },
   {
     name: "Legal & General America",
@@ -89,6 +90,7 @@ export const DEFAULT_CARRIERS: Array<
     is_active: true,
     commission_structure: null,
     contact_info: null,
+    imo_id: null,
   },
   {
     name: "American Home Life",
@@ -96,6 +98,7 @@ export const DEFAULT_CARRIERS: Array<
     is_active: true,
     commission_structure: null,
     contact_info: null,
+    imo_id: null,
   },
   {
     name: "SBLI",
@@ -103,6 +106,7 @@ export const DEFAULT_CARRIERS: Array<
     is_active: true,
     commission_structure: null,
     contact_info: null,
+    imo_id: null,
   },
   {
     name: "Baltimore Life",
@@ -110,6 +114,7 @@ export const DEFAULT_CARRIERS: Array<
     is_active: true,
     commission_structure: null,
     contact_info: null,
+    imo_id: null,
   },
   {
     name: "John Hancock",
@@ -117,6 +122,7 @@ export const DEFAULT_CARRIERS: Array<
     is_active: true,
     commission_structure: null,
     contact_info: null,
+    imo_id: null,
   },
   {
     name: "American-Amicable Group",
@@ -124,6 +130,7 @@ export const DEFAULT_CARRIERS: Array<
     is_active: true,
     commission_structure: null,
     contact_info: null,
+    imo_id: null,
   },
   {
     name: "Corebridge Financial",
@@ -131,6 +138,7 @@ export const DEFAULT_CARRIERS: Array<
     is_active: true,
     commission_structure: null,
     contact_info: null,
+    imo_id: null,
   },
   {
     name: "Transamerica",
@@ -138,6 +146,7 @@ export const DEFAULT_CARRIERS: Array<
     is_active: true,
     commission_structure: null,
     contact_info: null,
+    imo_id: null,
   },
   {
     name: "ELCO Mutual",
@@ -145,6 +154,7 @@ export const DEFAULT_CARRIERS: Array<
     is_active: true,
     commission_structure: null,
     contact_info: null,
+    imo_id: null,
   },
   {
     name: "Kansas City Life",
@@ -152,5 +162,6 @@ export const DEFAULT_CARRIERS: Array<
     is_active: true,
     commission_structure: null,
     contact_info: null,
+    imo_id: null,
   },
 ];
