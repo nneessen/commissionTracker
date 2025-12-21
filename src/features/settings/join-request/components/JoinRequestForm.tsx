@@ -35,7 +35,11 @@ export function JoinRequestForm({ onSuccess }: JoinRequestFormProps) {
 
   const handleImoChange = (value: string) => {
     setSelectedImoId(value);
-    setSelectedAgencyId(''); // Reset agency when IMO changes
+    setSelectedAgencyId('__none__'); // Reset agency when IMO changes
+  };
+
+  const handleAgencyChange = (value: string) => {
+    setSelectedAgencyId(value);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -49,7 +53,7 @@ export function JoinRequestForm({ onSuccess }: JoinRequestFormProps) {
     try {
       await createRequest.mutateAsync({
         imo_id: selectedImoId,
-        agency_id: selectedAgencyId || null,
+        agency_id: selectedAgencyId === '__none__' ? null : selectedAgencyId || null,
         message: message.trim() || null,
       });
 
@@ -110,7 +114,7 @@ export function JoinRequestForm({ onSuccess }: JoinRequestFormProps) {
                 <Users className="h-3 w-3 inline mr-1" />
                 Select Agency (Optional)
               </Label>
-              <Select value={selectedAgencyId} onValueChange={setSelectedAgencyId}>
+              <Select value={selectedAgencyId} onValueChange={handleAgencyChange}>
                 <SelectTrigger id="agency" className="h-8 text-sm">
                   <SelectValue
                     placeholder={
@@ -123,7 +127,7 @@ export function JoinRequestForm({ onSuccess }: JoinRequestFormProps) {
                   />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="" className="text-sm text-muted-foreground">
+                  <SelectItem value="__none__" className="text-sm text-muted-foreground">
                     No specific agency
                   </SelectItem>
                   {agencies?.map((agency) => (
