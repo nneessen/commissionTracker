@@ -283,6 +283,7 @@ export default function EditUserDialog({
     try {
       const updates: Record<string, unknown> = {};
       let agencyChanged = false;
+      let uplineChanged = false;
 
       if (formData.first_name !== (user.first_name || ""))
         updates.first_name = formData.first_name || null;
@@ -290,8 +291,10 @@ export default function EditUserDialog({
         updates.last_name = formData.last_name || null;
       if (formData.phone !== (user.phone || ""))
         updates.phone = formData.phone || null;
-      if (formData.upline_id !== user.upline_id)
+      if (formData.upline_id !== user.upline_id) {
         updates.upline_id = formData.upline_id;
+        uplineChanged = true;
+      }
       if (JSON.stringify(formData.roles) !== JSON.stringify(user.roles || []))
         updates.roles = formData.roles;
       if (formData.approval_status !== user.approval_status)
@@ -394,6 +397,12 @@ export default function EditUserDialog({
       if (imoChanged || agencyChanged) {
         queryClient.invalidateQueries({ queryKey: imoKeys.all });
         queryClient.invalidateQueries({ queryKey: agencyKeys.all });
+      }
+      // Invalidate hierarchy queries so Team page updates when upline changes
+      if (uplineChanged) {
+        queryClient.invalidateQueries({ queryKey: ["hierarchy"] });
+        queryClient.invalidateQueries({ queryKey: ["downlines"] });
+        queryClient.invalidateQueries({ queryKey: ["team-comparison"] });
       }
       onOpenChange(false);
     } catch (error) {
