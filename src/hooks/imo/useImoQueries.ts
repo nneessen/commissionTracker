@@ -74,12 +74,14 @@ export function useImoWithAgencies(imoId: string | undefined) {
 
 /**
  * Get all active IMOs (super admin only)
+ * @param options.enabled - Set to false to disable the query (LOW-1 fix)
  */
-export function useAllActiveImos() {
+export function useAllActiveImos(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: imoKeys.lists(),
     queryFn: () => imoService.getAllActiveImos(),
     staleTime: 5 * 60 * 1000,
+    enabled: options?.enabled ?? true,
   });
 }
 
@@ -186,6 +188,17 @@ export function useMyImoAgencies() {
   return useQuery({
     queryKey: agencyKeys.myImoAgencies(),
     queryFn: () => agencyService.getAgenciesInMyImo(),
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+/**
+ * Get all active agencies across all IMOs (super admin only)
+ */
+export function useAllActiveAgencies() {
+  return useQuery({
+    queryKey: [...agencyKeys.lists(), 'allActive'],
+    queryFn: () => agencyService.getAllActiveAgencies(),
     staleTime: 5 * 60 * 1000,
   });
 }

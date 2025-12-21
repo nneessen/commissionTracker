@@ -11,6 +11,7 @@ import type {
   AgencyUpdate,
   AgencyMetrics,
 } from '../../types/imo.types';
+import { IMO_ROLES } from '../../types/imo.types';
 
 /**
  * Service layer for Agency operations
@@ -117,6 +118,13 @@ class AgencyService {
    */
   async getAgenciesByImo(imoId: string): Promise<Agency[]> {
     return this.repo.findByImo(imoId);
+  }
+
+  /**
+   * Get all active agencies across all IMOs (super admin only)
+   */
+  async getAllActiveAgencies(): Promise<Agency[]> {
+    return this.repo.findAllActive();
   }
 
   /**
@@ -277,16 +285,58 @@ class AgencyService {
 
   /**
    * Assign a user to an agency
+   * Authorization: Caller must be super admin, IMO admin of the target agency's IMO, or agency owner
    */
   async assignAgentToAgency(agentId: string, agencyId: string): Promise<void> {
     try {
+      // Get current user for authorization check
+      const {
+        data: { user: currentUser },
+        error: authError,
+      } = await supabase.auth.getUser();
+
+      if (authError || !currentUser) {
+        throw new Error('Authentication required');
+      }
+
       // Verify agency exists
       const agency = await this.repo.findById(agencyId);
       if (!agency) {
         throw new Error('Agency not found');
       }
 
-      // Update user's agency_id
+      // Get current user's profile for authorization
+      const { data: callerProfile, error: profileError } = await supabase
+        .from('user_profiles')
+        .select('imo_id, roles, is_super_admin')
+        .eq('id', currentUser.id)
+        .single();
+
+      if (profileError || !callerProfile) {
+        throw new Error('Failed to verify authorization');
+      }
+
+      // Authorization check:
+      // 1. Super admin can assign anyone to any agency
+      // 2. IMO admin can assign users to agencies within their IMO
+      // 3. Agency owner can assign users to their own agency
+      const isSuperAdmin = callerProfile.is_super_admin === true;
+      const isImoAdmin =
+        callerProfile.imo_id === agency.imo_id &&
+        (callerProfile.roles?.includes(IMO_ROLES.IMO_OWNER) ||
+          callerProfile.roles?.includes(IMO_ROLES.IMO_ADMIN));
+      const isAgencyOwner = agency.owner_id === currentUser.id;
+
+      if (!isSuperAdmin && !isImoAdmin && !isAgencyOwner) {
+        logger.warn(
+          'Unauthorized agency assignment attempt',
+          { callerId: currentUser.id, agentId, agencyId },
+          'AgencyService'
+        );
+        throw new Error('Not authorized to assign users to this agency');
+      }
+
+      // Update user's agency_id and imo_id
       const { error } = await supabase
         .from('user_profiles')
         .update({ agency_id: agencyId, imo_id: agency.imo_id })
@@ -298,7 +348,7 @@ class AgencyService {
 
       logger.info(
         'Agent assigned to agency',
-        { agentId, agencyId },
+        { agentId, agencyId, authorizedBy: currentUser.id },
         'AgencyService'
       );
     } catch (error) {

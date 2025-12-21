@@ -15,6 +15,7 @@ import { agencyService } from '../services/agency';
 import { supabase } from '../services/base/supabase';
 import { logger } from '../services/base/logger';
 import type { Imo, Agency, ImoContextType } from '../types/imo.types';
+import { hasImoAdminRole, hasImoOwnerRole } from '../types/imo.types';
 
 // User role info from database
 interface UserRoleInfo {
@@ -153,10 +154,10 @@ export const ImoProvider: React.FC<ImoProviderProps> = ({ children }) => {
     fetchImoData();
   }, [fetchImoData]);
 
-  // Derive role flags from fetched user roles
+  // Derive role flags from fetched user roles (MEDIUM-1: using centralized role helpers)
   const roles = userRoles.roles ?? [];
-  const isImoOwner = roles.includes('imo_owner');
-  const isImoAdmin = isImoOwner || roles.includes('imo_admin');
+  const isImoOwner = hasImoOwnerRole(roles);
+  const isImoAdmin = hasImoAdminRole(roles);
   const isAgencyOwner = agency?.owner_id === user?.id;
   const isSuperAdmin = userRoles.is_super_admin === true;
 

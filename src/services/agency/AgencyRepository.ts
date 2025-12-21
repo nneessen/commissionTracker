@@ -186,4 +186,29 @@ export class AgencyRepository extends BaseRepository<AgencyRow, AgencyInsert, Ag
 
     return data;
   }
+
+  /**
+   * Find all active agencies across all IMOs (super admin only)
+   */
+  async findAllActive(): Promise<Agency[]> {
+    const { data, error } = await this.client
+      .from(this.tableName)
+      .select(`
+        *,
+        owner:user_profiles!agencies_owner_id_fkey(
+          id,
+          email,
+          first_name,
+          last_name
+        )
+      `)
+      .eq('is_active', true)
+      .order('name', { ascending: true });
+
+    if (error) {
+      throw this.handleError(error, 'findAllActive');
+    }
+
+    return (data ?? []) as Agency[];
+  }
 }

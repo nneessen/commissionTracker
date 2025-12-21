@@ -4,6 +4,36 @@
 import type { Database, Json } from './database.types';
 
 // =============================================================================
+// IMO ROLE CONSTANTS - MEDIUM-1 fix: Centralize role names to avoid magic strings
+// =============================================================================
+
+/**
+ * IMO-related role names - use these constants instead of hardcoded strings
+ */
+export const IMO_ROLES = {
+  IMO_OWNER: 'imo_owner',
+  IMO_ADMIN: 'imo_admin',
+} as const;
+
+export type ImoRoleName = (typeof IMO_ROLES)[keyof typeof IMO_ROLES];
+
+/**
+ * Check if a roles array includes IMO admin privileges
+ */
+export function hasImoAdminRole(roles: string[] | null | undefined): boolean {
+  if (!roles) return false;
+  return roles.includes(IMO_ROLES.IMO_OWNER) || roles.includes(IMO_ROLES.IMO_ADMIN);
+}
+
+/**
+ * Check if a roles array includes IMO owner role
+ */
+export function hasImoOwnerRole(roles: string[] | null | undefined): boolean {
+  if (!roles) return false;
+  return roles.includes(IMO_ROLES.IMO_OWNER);
+}
+
+// =============================================================================
 // DATABASE ROW TYPES - Imported from generated database.types.ts
 // =============================================================================
 

@@ -17,6 +17,23 @@ export type RoleName =
   | 'view_only';
 
 /**
+ * LOW-2 fix: Role name constants to avoid magic strings
+ * Use these instead of hardcoded string literals
+ */
+export const ROLES = {
+  ADMIN: 'admin',
+  AGENT: 'agent',
+  ACTIVE_AGENT: 'active_agent',
+  RECRUIT: 'recruit',
+  UPLINE_MANAGER: 'upline_manager',
+  TRAINER: 'trainer',
+  RECRUITER: 'recruiter',
+  CONTRACTING_MANAGER: 'contracting_manager',
+  OFFICE_STAFF: 'office_staff',
+  VIEW_ONLY: 'view_only',
+} as const satisfies Record<string, RoleName>;
+
+/**
  * Permission scopes that determine the boundary of data access
  */
 export type PermissionScope = 'own' | 'downline' | 'all' | 'self';

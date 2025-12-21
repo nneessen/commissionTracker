@@ -64,3 +64,8 @@ Key function: `is_super_admin()` - returns true if user has `is_super_admin = tr
 - `src/contexts/ImoContext.tsx`
 - `src/hooks/imo/useImo.ts`
 - `src/hooks/imo/useImoQueries.ts`
+
+## UI Components (Added 2025-12-21)
+- `src/features/admin/components/EditUserDialog.tsx` - Organization tab for IMO/Agency assignment
+- `src/features/admin/components/AdminControlCenter.tsx` - IMO/Agency columns in user table
+- `src/components/layout/Sidebar.tsx` - IMO/Agency display with branding color

@@ -54,10 +54,20 @@ import {
   Globe,
   AlertTriangle,
   Loader2,
+  Building2,
 } from "lucide-react";
 import type { RoleName } from "@/types/permissions.types";
 import type { UserProfile } from "@/services/users/userService";
 import { getDisplayName } from "@/types/user.types";
+import { useImo } from "@/contexts/ImoContext";
+import {
+  useAllActiveImos,
+  useAgenciesByImo,
+  useAssignAgentToAgency,
+  useAgencyById,
+  imoKeys,
+  agencyKeys,
+} from "@/hooks/imo/useImoQueries";
 
 interface EditUserDialogProps {
   user: UserProfile | null;
@@ -86,6 +96,8 @@ interface EditableUserData {
   license_expiration: string;
   linkedin_url: string;
   instagram_url: string;
+  imo_id: string | null;
+  agency_id: string | null;
 }
 
 export default function EditUserDialog({
@@ -98,6 +110,17 @@ export default function EditUserDialog({
   const { data: roles } = useAllRolesWithPermissions();
   const { data: allUsers } = useAllUsers();
   const deleteUserMutation = useDeleteUser();
+
+  // IMO/Agency hooks
+  const { isSuperAdmin, isImoAdmin, imo: currentUserImo } = useImo();
+  const { data: allImos, isLoading: isLoadingImos } = useAllActiveImos();
+  const [selectedImoId, setSelectedImoId] = useState<string | null>(null);
+  const { data: agenciesForImo, isLoading: isLoadingAgencies } = useAgenciesByImo(selectedImoId ?? "");
+  const assignAgentMutation = useAssignAgentToAgency();
+  // Fetch user's original agency separately (HIGH-2 fix: don't rely on agenciesForImo)
+  const { data: userOriginalAgency } = useAgencyById(user?.agency_id ?? undefined);
+  // LOW-3: Combined loading state for organization tab
+  const isOrgDataLoading = isLoadingImos || (selectedImoId && isLoadingAgencies);
 
   const [formData, setFormData] = useState<EditableUserData>({
     first_name: "",
@@ -119,9 +142,12 @@ export default function EditUserDialog({
     license_expiration: "",
     linkedin_url: "",
     instagram_url: "",
+    imo_id: null,
+    agency_id: null,
   });
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showOrgChangeConfirm, setShowOrgChangeConfirm] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isSendingInvite, setIsSendingInvite] = useState(false);
@@ -211,7 +237,11 @@ export default function EditUserDialog({
         license_expiration: user.license_expiration || "",
         linkedin_url: user.linkedin_url || "",
         instagram_url: user.instagram_url || "",
+        imo_id: user.imo_id || null,
+        agency_id: user.agency_id || null,
       });
+      // Set selected IMO for agency dropdown
+      setSelectedImoId(user.imo_id || null);
     }
   }, [user, open]);
 
@@ -224,12 +254,35 @@ export default function EditUserDialog({
     }));
   };
 
+  // Check if organization (IMO/Agency) is changing
+  const hasOrgChanges = () => {
+    const agencyChanged = formData.agency_id !== user?.agency_id;
+    const imoChanged = formData.imo_id !== user?.imo_id;
+    return agencyChanged || imoChanged;
+  };
+
+  // Pre-save check: show confirmation if org changes
+  const handleSaveClick = () => {
+    if (!user) return;
+
+    // MEDIUM-3 fix: Show confirmation dialog for organization changes
+    if (hasOrgChanges()) {
+      setShowOrgChangeConfirm(true);
+      return;
+    }
+
+    // No org changes, proceed directly
+    handleSave();
+  };
+
   const handleSave = async () => {
     if (!user) return;
     setIsSaving(true);
+    setShowOrgChangeConfirm(false);
 
     try {
       const updates: Record<string, unknown> = {};
+      let agencyChanged = false;
 
       if (formData.first_name !== (user.first_name || ""))
         updates.first_name = formData.first_name || null;
@@ -269,21 +322,80 @@ export default function EditUserDialog({
       if (formData.instagram_url !== (user.instagram_url || ""))
         updates.instagram_url = formData.instagram_url || null;
 
-      if (Object.keys(updates).length === 0) {
+      // Check if agency assignment changed
+      if (formData.agency_id !== user.agency_id) {
+        agencyChanged = true;
+      }
+
+      // Check if IMO changed (for super admin IMO-only assignment)
+      const imoChanged = formData.imo_id !== user.imo_id;
+
+      const hasProfileUpdates = Object.keys(updates).length > 0;
+
+      if (!hasProfileUpdates && !agencyChanged && !imoChanged) {
         showToast.success("No changes to save");
         setIsSaving(false);
         return;
       }
 
-      const result = await userApprovalService.updateUser(user.id, updates);
-
-      if (result.success) {
-        showToast.success("User updated successfully");
-        queryClient.invalidateQueries({ queryKey: ["userApproval"] });
-        onOpenChange(false);
-      } else {
-        showToast.error(result.error || "Failed to update user");
+      // HIGH-4 fix: Validate IMO is still active before assignment
+      if (imoChanged && formData.imo_id) {
+        const selectedImo = allImos?.find((i) => i.id === formData.imo_id);
+        if (!selectedImo) {
+          showToast.error("Selected IMO no longer exists. Please refresh and try again.");
+          setIsSaving(false);
+          return;
+        }
+        if (!selectedImo.is_active) {
+          showToast.error("Selected IMO is no longer active. Please select a different IMO.");
+          setIsSaving(false);
+          return;
+        }
       }
+
+      // Handle agency assignment if changed (this also sets imo_id via the service)
+      if (agencyChanged && formData.agency_id) {
+        await assignAgentMutation.mutateAsync({
+          agentId: user.id,
+          agencyId: formData.agency_id,
+        });
+      } else if (imoChanged) {
+        // IMO changed but no agency selected - update imo_id directly
+        // Also clear agency_id if IMO changed (user should be reassigned to new agency)
+        const { error: imoError } = await supabase
+          .from("user_profiles")
+          .update({
+            imo_id: formData.imo_id,
+            agency_id: formData.agency_id, // Will be null if no agency selected
+          })
+          .eq("id", user.id);
+
+        if (imoError) {
+          showToast.error("Failed to update organization assignment");
+          setIsSaving(false);
+          return;
+        }
+      }
+
+      // Handle other profile updates if any
+      if (hasProfileUpdates) {
+        const result = await userApprovalService.updateUser(user.id, updates);
+        if (!result.success) {
+          showToast.error(result.error || "Failed to update user");
+          setIsSaving(false);
+          return;
+        }
+      }
+
+      showToast.success("User updated successfully");
+      queryClient.invalidateQueries({ queryKey: ["userApproval"] });
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      // HIGH-3 fix: Invalidate IMO/Agency queries so Sidebar updates for affected user
+      if (imoChanged || agencyChanged) {
+        queryClient.invalidateQueries({ queryKey: imoKeys.all });
+        queryClient.invalidateQueries({ queryKey: agencyKeys.all });
+      }
+      onOpenChange(false);
     } catch (error) {
       showToast.error("An error occurred while saving");
       console.error("Save error:", error);
@@ -408,18 +520,24 @@ export default function EditUserDialog({
           </DialogHeader>
 
           <Tabs defaultValue="basic" className="w-full">
-            <TabsList className="mx-4 mt-3 grid w-[calc(100%-2rem)] grid-cols-4 h-7 bg-zinc-100 dark:bg-zinc-800 p-0.5 rounded">
+            <TabsList className="mx-4 mt-3 grid w-[calc(100%-2rem)] grid-cols-5 h-7 bg-zinc-100 dark:bg-zinc-800 p-0.5 rounded">
               <TabsTrigger
                 value="basic"
                 className="text-[10px] h-6 rounded data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:shadow-sm"
               >
-                Basic Info
+                Basic
               </TabsTrigger>
               <TabsTrigger
                 value="roles"
                 className="text-[10px] h-6 rounded data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:shadow-sm"
               >
-                Roles & Status
+                Roles
+              </TabsTrigger>
+              <TabsTrigger
+                value="org"
+                className="text-[10px] h-6 rounded data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:shadow-sm"
+              >
+                Organization
               </TabsTrigger>
               <TabsTrigger
                 value="details"
@@ -690,6 +808,146 @@ export default function EditUserDialog({
                 </div>
               </TabsContent>
 
+              <TabsContent value="org" className="space-y-3 mt-0">
+                <div className="p-2.5 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg border border-zinc-200 dark:border-zinc-700 relative">
+                  {/* LOW-3 fix: Loading overlay for organization data */}
+                  {isOrgDataLoading && (
+                    <div className="absolute inset-0 bg-zinc-50/80 dark:bg-zinc-800/80 rounded-lg flex items-center justify-center z-10">
+                      <div className="flex items-center gap-2 text-zinc-500">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span className="text-[10px]">Loading...</span>
+                      </div>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-2 mb-2">
+                    <Building2 className="h-3.5 w-3.5 text-zinc-500" />
+                    <Label className="text-[11px] font-medium text-zinc-700 dark:text-zinc-300">
+                      Organization Assignment
+                    </Label>
+                  </div>
+                  <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mb-3">
+                    {isSuperAdmin
+                      ? "As Super Admin, you can assign this user to any IMO and agency."
+                      : isImoAdmin
+                        ? "You can assign this user to agencies within your IMO."
+                        : "Contact an admin to change organization assignment."}
+                  </p>
+
+                  {(isSuperAdmin || isImoAdmin) && (
+                    <div className="space-y-2">
+                      {/* IMO Selection - Only for super admins */}
+                      {isSuperAdmin && (
+                        <div>
+                          <Label className="text-[10px] text-zinc-500 dark:text-zinc-400">
+                            IMO
+                          </Label>
+                          <Select
+                            value={selectedImoId || "none"}
+                            onValueChange={(value) => {
+                              const newImoId = value === "none" ? null : value;
+                              setSelectedImoId(newImoId);
+                              setFormData((prev) => ({
+                                ...prev,
+                                imo_id: newImoId,
+                                agency_id: null, // Reset agency when IMO changes
+                              }));
+                            }}
+                          >
+                            <SelectTrigger className="h-7 text-[11px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700">
+                              <SelectValue placeholder="Select IMO" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none" className="text-[11px]">
+                                No IMO
+                              </SelectItem>
+                              {allImos?.map((imo) => (
+                                <SelectItem
+                                  key={imo.id}
+                                  value={imo.id}
+                                  className="text-[11px]"
+                                >
+                                  {imo.name} ({imo.code})
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
+
+                      {/* Agency Selection */}
+                      <div>
+                        <Label className="text-[10px] text-zinc-500 dark:text-zinc-400">
+                          Agency
+                        </Label>
+                        <Select
+                          value={formData.agency_id || "none"}
+                          onValueChange={(value) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              agency_id: value === "none" ? null : value,
+                            }))
+                          }
+                          disabled={isSuperAdmin && !selectedImoId}
+                        >
+                          <SelectTrigger
+                            className={`h-7 text-[11px] border-zinc-200 dark:border-zinc-700 ${
+                              isSuperAdmin && !selectedImoId
+                                ? "bg-zinc-100 dark:bg-zinc-800 opacity-60 cursor-not-allowed"
+                                : "bg-white dark:bg-zinc-900"
+                            }`}
+                          >
+                            <SelectValue
+                              placeholder={
+                                isSuperAdmin && !selectedImoId
+                                  ? "Select an IMO first"
+                                  : "Select Agency"
+                              }
+                            />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none" className="text-[11px]">
+                              No Agency
+                            </SelectItem>
+                            {agenciesForImo?.map((agency) => (
+                              <SelectItem
+                                key={agency.id}
+                                value={agency.id}
+                                className="text-[11px]"
+                              >
+                                {agency.name} ({agency.code})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {/* MEDIUM-2 fix: Helper text explaining why dropdown is disabled */}
+                        {isSuperAdmin && !selectedImoId && (
+                          <p className="text-[9px] text-amber-600 dark:text-amber-400 mt-0.5">
+                            Choose an IMO above to see available agencies
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Current assignment info */}
+                      <div className="pt-2 mt-2 border-t border-zinc-200 dark:border-zinc-700">
+                        <p className="text-[10px] text-zinc-500 dark:text-zinc-400">
+                          Current Assignment:
+                        </p>
+                        <p className="text-[11px] text-zinc-700 dark:text-zinc-300 mt-0.5">
+                          {user?.imo_id
+                            ? allImos?.find((i) => i.id === user.imo_id)?.name ||
+                              "Unknown IMO"
+                            : "No IMO"}{" "}
+                          →{" "}
+                          {user?.agency_id
+                            ? userOriginalAgency?.name || "Loading..."
+                            : "No Agency"}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </TabsContent>
+
               <TabsContent value="details" className="space-y-3 mt-0">
                 <div>
                   <Label className="text-[10px] text-zinc-500 dark:text-zinc-400 flex items-center gap-1 mb-1">
@@ -953,7 +1211,7 @@ export default function EditUserDialog({
               Cancel
             </Button>
             <Button
-              onClick={handleSave}
+              onClick={handleSaveClick}
               size="sm"
               className="h-6 text-[10px] px-2"
               disabled={isSaving}
@@ -1066,6 +1324,58 @@ export default function EditUserDialog({
               ) : (
                 "Delete Permanently"
               )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* MEDIUM-3: Organization Change Confirmation Dialog */}
+      <AlertDialog
+        open={showOrgChangeConfirm}
+        onOpenChange={setShowOrgChangeConfirm}
+      >
+        <AlertDialogContent className="max-w-md bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-sm text-amber-600 dark:text-amber-400">
+              <Building2 className="h-4 w-4" />
+              Confirm Organization Change
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2">
+                <p className="text-[11px] text-zinc-600 dark:text-zinc-400">
+                  You are about to change the organization assignment for{" "}
+                  <strong className="text-zinc-900 dark:text-zinc-100">
+                    {user?.first_name} {user?.last_name || user?.email}
+                  </strong>
+                </p>
+
+                <div className="p-2 border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 rounded text-[11px]">
+                  <p className="font-medium text-amber-700 dark:text-amber-400 mb-1">
+                    This may affect:
+                  </p>
+                  <ul className="list-disc list-inside text-amber-600 dark:text-amber-500 space-y-0.5">
+                    <li>Hierarchy/upline relationships</li>
+                    <li>Access to IMO-specific products & carriers</li>
+                    <li>Commission calculations and overrides</li>
+                    <li>Visibility in agency reports</li>
+                  </ul>
+                </div>
+
+                <p className="text-[10px] text-zinc-500 dark:text-zinc-400">
+                  The user may need to re-establish their upline relationship in the new organization.
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-1.5">
+            <AlertDialogCancel className="h-7 text-[11px] px-3">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleSave}
+              className="h-7 text-[11px] px-3 bg-amber-600 hover:bg-amber-700 text-white"
+            >
+              Confirm Change
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -54,6 +54,8 @@ import {
 import type { RoleName } from "@/types/permissions.types";
 import type { UserProfile } from "@/services/users/userService";
 import { getFullName, getDisplayName } from "@/types/user.types";
+import { useImo } from "@/contexts/ImoContext";
+import { useAllActiveImos, useMyImoAgencies, useAllActiveAgencies } from "@/hooks/imo/useImoQueries";
 
 export default function AdminControlCenter() {
   const [activeView, setActiveView] = useState<
@@ -76,6 +78,27 @@ export default function AdminControlCenter() {
   const { mutate: _updateUserRoles } = useUpdateUserRoles();
   const deleteUserMutation = useDeleteUser();
   const queryClient = useQueryClient();
+
+  // IMO/Agency data for displaying organization info
+  const { isSuperAdmin } = useImo();
+  // LOW-1 fix: Only fetch all IMOs for super admins
+  const { data: allImos } = useAllActiveImos({ enabled: isSuperAdmin });
+  const { data: myAgencies } = useMyImoAgencies();
+  // MEDIUM-4 fix: Super admins need all agencies to display cross-IMO users
+  const { data: allAgencies } = useAllActiveAgencies();
+
+  // Helper to get IMO name by ID
+  const getImoName = (imoId: string | null) => {
+    if (!imoId) return "-";
+    return allImos?.find((imo) => imo.id === imoId)?.code || "-";
+  };
+
+  // Helper to get Agency name by ID (MEDIUM-4 fix: use allAgencies for super admins)
+  const getAgencyName = (agencyId: string | null) => {
+    if (!agencyId) return "-";
+    const agencies = isSuperAdmin ? allAgencies : myAgencies;
+    return agencies?.find((a) => a.id === agencyId)?.code || "-";
+  };
 
   // Check if current user can graduate recruits (Admin, Trainer, or Contracting Manager)
   const currentUserProfile = allUsers?.find((u) => u.id === currentUser?.id);
@@ -386,20 +409,25 @@ export default function AdminControlCenter() {
                 <Table>
                   <TableHeader className="sticky top-0 bg-zinc-50 dark:bg-zinc-800/50 z-10">
                     <TableRow className="border-b border-zinc-200 dark:border-zinc-800 hover:bg-transparent">
-                      <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300 w-[200px]">
+                      <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300 w-[180px]">
                         User
                       </TableHead>
-                      <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300 w-[140px]">
+                      <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300 w-[120px]">
                         Roles
                       </TableHead>
+                      {isSuperAdmin && (
+                        <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300 w-[70px]">
+                          IMO
+                        </TableHead>
+                      )}
                       <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300 w-[80px]">
+                        Agency
+                      </TableHead>
+                      <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300 w-[65px]">
                         Status
                       </TableHead>
-                      <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300 w-[70px]">
+                      <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300 w-[55px]">
                         Level
-                      </TableHead>
-                      <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300 w-[90px]">
-                        Created
                       </TableHead>
                       <TableHead className="h-8 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300 w-[60px] text-right">
                         Actions
@@ -449,33 +477,38 @@ export default function AdminControlCenter() {
                             )}
                           </div>
                         </TableCell>
+                        {isSuperAdmin && (
+                          <TableCell className="py-1.5">
+                            <span className="text-[10px] text-zinc-600 dark:text-zinc-400 font-mono">
+                              {getImoName(user.imo_id)}
+                            </span>
+                          </TableCell>
+                        )}
+                        <TableCell className="py-1.5">
+                          <span className="text-[10px] text-zinc-600 dark:text-zinc-400 font-mono">
+                            {getAgencyName(user.agency_id)}
+                          </span>
+                        </TableCell>
                         <TableCell className="py-1.5">
                           {user.approval_status === "approved" ? (
                             <Badge
                               variant="outline"
                               className="text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800 text-[10px] h-4 px-1"
                             >
-                              Approved
+                              OK
                             </Badge>
                           ) : (
                             <Badge
                               variant="outline"
                               className="text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800 text-[10px] h-4 px-1"
                             >
-                              Pending
+                              Pend
                             </Badge>
                           )}
                         </TableCell>
                         <TableCell className="py-1.5">
                           <span className="text-[11px] text-zinc-700 dark:text-zinc-300">
                             {user.contract_level || "-"}%
-                          </span>
-                        </TableCell>
-                        <TableCell className="py-1.5">
-                          <span className="text-[10px] text-zinc-500 dark:text-zinc-400">
-                            {user.created_at
-                              ? new Date(user.created_at).toLocaleDateString()
-                              : "-"}
                           </span>
                         </TableCell>
                         <TableCell className="py-1.5 text-right">
@@ -508,7 +541,7 @@ export default function AdminControlCenter() {
                     {paginatedUsers?.length === 0 && (
                       <TableRow>
                         <TableCell
-                          colSpan={6}
+                          colSpan={isSuperAdmin ? 7 : 6}
                           className="text-center text-[11px] text-zinc-500 dark:text-zinc-400 py-6"
                         >
                           No users found

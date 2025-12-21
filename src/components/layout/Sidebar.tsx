@@ -40,6 +40,7 @@ import type { PermissionCode } from "@/types/permissions.types";
 import type { RoleName } from "@/types/permissions.types";
 import { NotificationDropdown } from "@/components/notifications";
 import { toast } from "sonner";
+import { useImo } from "@/contexts/ImoContext";
 
 interface NavigationItem {
   icon: React.ElementType;
@@ -170,6 +171,10 @@ export default function Sidebar({
   const { subscription, isLoading: subLoading } = useSubscription();
   const { isDirectDownlineOfOwner, isLoading: downlineLoading } =
     useOwnerDownlineAccess();
+
+  // IMO/Agency context for branding display
+  // LOW-4 fix: Also get loading/error states for graceful handling
+  const { imo, agency, loading: imoLoading, error: imoError } = useImo();
 
   // Admin email bypass - matches ADMIN_EMAILS in RouteGuard
   const ADMIN_EMAILS = [
@@ -342,6 +347,31 @@ export default function Sidebar({
                 <div className="text-[11px] text-muted-foreground truncate">
                   {userEmail}
                 </div>
+                {/* LOW-4 fix: Handle loading/error states for IMO display */}
+                {imoLoading ? (
+                  <div className="text-[10px] text-muted-foreground/50 truncate mt-0.5">
+                    Loading...
+                  </div>
+                ) : imoError ? (
+                  <div className="text-[10px] text-red-400/70 truncate mt-0.5">
+                    Organization unavailable
+                  </div>
+                ) : (imo || agency) ? (
+                  <div className="text-[10px] text-muted-foreground/70 truncate mt-0.5 flex items-center gap-1">
+                    {imo && (
+                      <span
+                        className="font-medium"
+                        style={{
+                          color: imo.primary_color || undefined,
+                        }}
+                      >
+                        {imo.code}
+                      </span>
+                    )}
+                    {imo && agency && <span className="opacity-50">•</span>}
+                    {agency && <span>{agency.code}</span>}
+                  </div>
+                ) : null}
               </div>
             </div>
           )}
