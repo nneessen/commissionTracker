@@ -1650,6 +1650,7 @@ export type Database = {
       }
       expenses: {
         Row: {
+          agency_id: string | null
           amount: number
           category: string
           created_at: string | null
@@ -1657,6 +1658,7 @@ export type Database = {
           description: string
           expense_type: Database["public"]["Enums"]["expense_type"]
           id: string
+          imo_id: string | null
           is_recurring: boolean | null
           is_tax_deductible: boolean
           name: string
@@ -1669,6 +1671,7 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          agency_id?: string | null
           amount: number
           category: string
           created_at?: string | null
@@ -1676,6 +1679,7 @@ export type Database = {
           description: string
           expense_type?: Database["public"]["Enums"]["expense_type"]
           id?: string
+          imo_id?: string | null
           is_recurring?: boolean | null
           is_tax_deductible?: boolean
           name: string
@@ -1688,6 +1692,7 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          agency_id?: string | null
           amount?: number
           category?: string
           created_at?: string | null
@@ -1695,6 +1700,7 @@ export type Database = {
           description?: string
           expense_type?: Database["public"]["Enums"]["expense_type"]
           id?: string
+          imo_id?: string | null
           is_recurring?: boolean | null
           is_tax_deductible?: boolean
           name?: string
@@ -1706,7 +1712,22 @@ export type Database = {
           updated_at?: string | null
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "expenses_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expenses_imo_id_fkey"
+            columns: ["imo_id"]
+            isOneToOne: false
+            referencedRelation: "imos"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       hierarchy_invitations: {
         Row: {
@@ -4867,6 +4888,8 @@ export type Database = {
           created_by: string | null
           description: string | null
           id: string
+          imo_id: string | null
+          is_org_template: boolean
           last_modified_by: string | null
           max_runs_per_day: number | null
           max_runs_per_recipient: number | null
@@ -4886,6 +4909,8 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           id?: string
+          imo_id?: string | null
+          is_org_template?: boolean
           last_modified_by?: string | null
           max_runs_per_day?: number | null
           max_runs_per_recipient?: number | null
@@ -4905,6 +4930,8 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           id?: string
+          imo_id?: string | null
+          is_org_template?: boolean
           last_modified_by?: string | null
           max_runs_per_day?: number | null
           max_runs_per_recipient?: number | null
@@ -4934,6 +4961,13 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workflows_imo_id_fkey"
+            columns: ["imo_id"]
+            isOneToOne: false
+            referencedRelation: "imos"
             referencedColumns: ["id"]
           },
           {
@@ -6031,6 +6065,7 @@ export type Database = {
         Args: { p_limit?: number; p_provider: string; p_user_id: string }
         Returns: boolean
       }
+      check_is_imo_admin: { Args: never; Returns: boolean }
       check_team_size_limit: { Args: { p_user_id: string }; Returns: Json }
       check_user_template_limit: {
         Args: { user_uuid: string }
@@ -6049,6 +6084,26 @@ export type Database = {
       cleanup_old_reports: {
         Args: { max_reports_per_user?: number }
         Returns: number
+      }
+      clone_org_template: {
+        Args: { p_new_name: string; p_template_id: string }
+        Returns: string
+      }
+      create_org_workflow_template: {
+        Args: {
+          p_actions: Json
+          p_category: string
+          p_conditions: Json
+          p_config: Json
+          p_cooldown_minutes?: number
+          p_description: string
+          p_max_runs_per_day?: number
+          p_max_runs_per_recipient?: number
+          p_name: string
+          p_priority?: number
+          p_trigger_type: string
+        }
+        Returns: string
       }
       create_workflow_run: {
         Args: { context_param?: Json; workflow_id_param: string }
@@ -6119,10 +6174,81 @@ export type Database = {
       }
       get_current_user_hierarchy_path: { Args: never; Returns: string }
       get_current_user_profile_id: { Args: never; Returns: string }
+      get_downline_clients_with_stats: {
+        Args: never
+        Returns: {
+          active_policy_count: number
+          address: string
+          avg_premium: number
+          created_at: string
+          date_of_birth: string
+          email: string
+          id: string
+          last_policy_date: string
+          name: string
+          notes: string
+          owner_name: string
+          phone: string
+          policy_count: number
+          status: string
+          total_premium: number
+          updated_at: string
+          user_id: string
+        }[]
+      }
+      get_downline_expense_summary: {
+        Args: { p_end_date?: string; p_start_date?: string }
+        Returns: {
+          business_amount: number
+          expense_count: number
+          owner_name: string
+          personal_amount: number
+          tax_deductible_amount: number
+          total_amount: number
+          user_id: string
+        }[]
+      }
+      get_downline_expenses: {
+        Args: { p_end_date?: string; p_start_date?: string }
+        Returns: {
+          amount: number
+          category: string
+          created_at: string
+          date: string
+          description: string
+          expense_type: Database["public"]["Enums"]["expense_type"]
+          id: string
+          is_recurring: boolean
+          is_tax_deductible: boolean
+          name: string
+          owner_name: string
+          user_id: string
+        }[]
+      }
       get_downline_ids: {
         Args: { target_user_id: string }
         Returns: {
           downline_id: string
+        }[]
+      }
+      get_downline_targets: {
+        Args: never
+        Returns: {
+          annual_income_target: number
+          annual_policies_target: number
+          avg_premium_target: number
+          created_at: string
+          expense_ratio_target: number
+          id: string
+          monthly_expense_target: number
+          monthly_income_target: number
+          monthly_policies_target: number
+          owner_name: string
+          persistency_13_month_target: number
+          persistency_25_month_target: number
+          quarterly_income_target: number
+          updated_at: string
+          user_id: string
         }[]
       }
       get_downline_with_emails: {
@@ -6133,7 +6259,94 @@ export type Database = {
         }[]
       }
       get_imo_admin: { Args: { p_imo_id: string }; Returns: string }
+      get_imo_clients_with_stats: {
+        Args: never
+        Returns: {
+          active_policy_count: number
+          address: string
+          avg_premium: number
+          created_at: string
+          date_of_birth: string
+          email: string
+          id: string
+          last_policy_date: string
+          name: string
+          notes: string
+          owner_name: string
+          phone: string
+          policy_count: number
+          status: string
+          total_premium: number
+          updated_at: string
+          user_id: string
+        }[]
+      }
+      get_imo_expense_by_category: {
+        Args: { p_end_date?: string; p_start_date?: string }
+        Returns: {
+          avg_amount: number
+          category: string
+          expense_count: number
+          total_amount: number
+        }[]
+      }
+      get_imo_expense_summary: {
+        Args: { p_end_date?: string; p_start_date?: string }
+        Returns: {
+          agency_name: string
+          business_amount: number
+          expense_count: number
+          owner_name: string
+          personal_amount: number
+          tax_deductible_amount: number
+          total_amount: number
+          user_id: string
+        }[]
+      }
       get_imo_metrics: { Args: { p_imo_id: string }; Returns: Json }
+      get_imo_targets: {
+        Args: never
+        Returns: {
+          agency_name: string
+          annual_income_target: number
+          annual_policies_target: number
+          avg_premium_target: number
+          created_at: string
+          expense_ratio_target: number
+          id: string
+          monthly_expense_target: number
+          monthly_income_target: number
+          monthly_policies_target: number
+          owner_name: string
+          persistency_13_month_target: number
+          persistency_25_month_target: number
+          quarterly_income_target: number
+          updated_at: string
+          user_id: string
+        }[]
+      }
+      get_imo_workflow_templates: {
+        Args: never
+        Returns: {
+          actions: Json
+          category: string
+          conditions: Json
+          config: Json
+          cooldown_minutes: number
+          created_at: string
+          created_by: string
+          created_by_name: string
+          description: string
+          id: string
+          max_runs_per_day: number
+          max_runs_per_recipient: number
+          name: string
+          priority: number
+          status: string
+          trigger_type: string
+          updated_at: string
+        }[]
+      }
       get_message_stats: { Args: { p_user_id: string }; Returns: Json }
       get_my_agency_id: { Args: never; Returns: string }
       get_my_imo_id: { Args: never; Returns: string }
@@ -6326,6 +6539,7 @@ export type Database = {
         }
         Returns: Json
       }
+      has_downlines: { Args: never; Returns: boolean }
       has_permission: {
         Args: { permission_code: string; target_user_id: string }
         Returns: boolean
@@ -6504,6 +6718,12 @@ export type Database = {
         Returns: string
       }
       safe_uuid_from_text: { Args: { input: string }; Returns: string }
+      save_workflow_as_org_template: {
+        Args: { p_workflow_id: string }
+        Returns: string
+      }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
       test_rls_for_user: {
         Args: { test_user_id: string }
         Returns: {

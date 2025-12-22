@@ -20,6 +20,7 @@ const QUERY_KEYS = {
   workflowRun: (id: string) => ["workflow-run", id] as const,
   workflowTemplates: (category?: string) =>
     ["workflow-templates", category] as const,
+  imoWorkflowTemplates: ["imo-workflow-templates"] as const,
   triggerEventTypes: ["trigger-event-types"] as const,
   eventTypes: ["event-types"] as const,
   workflowStats: (workflowId: string) =>
@@ -339,6 +340,71 @@ export function useWorkflowStats(workflowId: string) {
     staleTime: 30000, // 30 seconds
     retry: 1,
     retryDelay: 1000,
+  });
+}
+
+// =====================================================
+// IMO ORG TEMPLATES
+// =====================================================
+
+/**
+ * Fetch IMO org workflow templates
+ * @param options.enabled - Whether to fetch (typically based on isImoAdmin)
+ */
+export function useImoWorkflowTemplates(options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: QUERY_KEYS.imoWorkflowTemplates,
+    queryFn: () => workflowService.getImoWorkflowTemplates(),
+    enabled: options?.enabled ?? true,
+    staleTime: 60000, // 1 minute
+    retry: 1,
+    retryDelay: 1000,
+  });
+}
+
+/**
+ * Save a workflow as an org template (IMO admin only)
+ */
+export function useSaveAsOrgTemplate() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (workflowId: string) =>
+      workflowService.saveAsOrgTemplate(workflowId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["workflows"] });
+      queryClient.invalidateQueries({
+        queryKey: QUERY_KEYS.imoWorkflowTemplates,
+      });
+      toast.success("Workflow saved as org template");
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to save as org template: ${error.message}`);
+    },
+  });
+}
+
+/**
+ * Clone an org template to create a personal workflow
+ */
+export function useCloneOrgTemplate() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      templateId,
+      newName,
+    }: {
+      templateId: string;
+      newName: string;
+    }) => workflowService.cloneOrgTemplate(templateId, newName),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["workflows"] });
+      toast.success("Workflow created from org template");
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to clone org template: ${error.message}`);
+    },
   });
 }
 

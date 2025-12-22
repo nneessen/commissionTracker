@@ -642,6 +642,68 @@ export class WorkflowRepository extends BaseRepository<
   }
 
   // ============================================
+  // Org Template Methods
+  // ============================================
+
+  /**
+   * Get all org workflow templates in the user's IMO
+   */
+  async findImoTemplates(): Promise<Workflow[]> {
+    try {
+      const { data, error } = await this.client.rpc("get_imo_workflow_templates");
+
+      if (error) {
+        throw this.handleError(error, "findImoTemplates");
+      }
+
+      return (data || []).map((row: Record<string, unknown>) =>
+        this.transformWorkflowFromDB(row)
+      );
+    } catch (error) {
+      throw this.wrapError(error, "findImoTemplates");
+    }
+  }
+
+  /**
+   * Save an existing workflow as an org template
+   */
+  async saveAsOrgTemplate(workflowId: string): Promise<string> {
+    try {
+      const { data, error } = await this.client.rpc("save_workflow_as_org_template", {
+        p_workflow_id: workflowId,
+      });
+
+      if (error) {
+        throw this.handleError(error, "saveAsOrgTemplate");
+      }
+
+      return data as string;
+    } catch (error) {
+      throw this.wrapError(error, "saveAsOrgTemplate");
+    }
+  }
+
+  /**
+   * Clone an org template to create a personal workflow
+   */
+  async cloneOrgTemplate(templateId: string, newName: string): Promise<string> {
+    try {
+      const { data, error } = await this.client.rpc("clone_org_template", {
+        p_template_id: templateId,
+        p_new_name: newName,
+      });
+
+      if (error) {
+        throw this.handleError(error, "cloneOrgTemplate");
+      }
+
+      return data as string;
+    } catch (error) {
+      throw this.wrapError(error, "cloneOrgTemplate");
+    }
+  }
+
+  // ============================================
   // Private Transform Methods
   // ============================================
 
@@ -664,7 +726,10 @@ export class WorkflowRepository extends BaseRepository<
       maxRunsPerRecipient: row.max_runs_per_recipient ?? undefined,
       cooldownMinutes: row.cooldown_minutes ?? undefined,
       priority: row.priority,
+      imoId: row.imo_id ?? undefined,
+      isOrgTemplate: row.is_org_template ?? false,
       createdBy: row.created_by,
+      createdByName: row.created_by_name ?? undefined,
       lastModifiedBy: row.last_modified_by ?? undefined,
       createdAt: row.created_at,
       updatedAt: row.updated_at,

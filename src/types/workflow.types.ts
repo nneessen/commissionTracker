@@ -148,8 +148,13 @@ export interface Workflow {
   cooldownMinutes?: number;
   priority?: number;
 
+  // Organization template fields
+  imoId?: string;
+  isOrgTemplate?: boolean;
+
   // Metadata
   createdBy?: string;
+  createdByName?: string;
   lastModifiedBy?: string;
   createdAt?: string;
   updatedAt?: string;

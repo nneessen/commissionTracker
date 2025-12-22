@@ -418,6 +418,31 @@ class WorkflowService {
   }
 
   // =====================================================
+  // ORG TEMPLATES
+  // =====================================================
+
+  /**
+   * Get all org workflow templates in the user's IMO
+   */
+  async getImoWorkflowTemplates(): Promise<Workflow[]> {
+    return this.repository.findImoTemplates();
+  }
+
+  /**
+   * Save an existing workflow as an org template (IMO admin only)
+   */
+  async saveAsOrgTemplate(workflowId: string): Promise<string> {
+    return this.repository.saveAsOrgTemplate(workflowId);
+  }
+
+  /**
+   * Clone an org template to create a personal workflow
+   */
+  async cloneOrgTemplate(templateId: string, newName: string): Promise<string> {
+    return this.repository.cloneOrgTemplate(templateId, newName);
+  }
+
+  // =====================================================
   // PRIVATE HELPERS
   // =====================================================
 
