@@ -1,7 +1,7 @@
 // src/features/reports/ReportsDashboard.tsx
 
 import { useState, useMemo } from "react";
-import { Package, Loader2, ChevronDown } from "lucide-react";
+import { Package, Loader2, ChevronDown, Calendar, ChevronUp } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import {
   DropdownMenu,
@@ -43,6 +43,12 @@ import {
   ImoPerformanceReport,
   AgencyPerformanceReport,
 } from "./components";
+import { ScheduledReportsManager } from "./components/ScheduledReportsManager";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "../../components/ui/collapsible";
 
 // Services
 import { ReportExportService } from "../../services/reports/reportExportService";
@@ -69,6 +75,7 @@ export function ReportsDashboard() {
   const [bundleDialogOpen, setBundleDialogOpen] = useState(false);
   const [drillDownContext, setDrillDownContext] =
     useState<DrillDownContext | null>(null);
+  const [showScheduledReports, setShowScheduledReports] = useState(false);
 
   // Memoized date range
   const dateRange = useMemo(
@@ -209,9 +216,27 @@ export function ReportsDashboard() {
                 <Package className="w-3 h-3 mr-1" />
                 Bundle
               </Button>
+              <Button
+                onClick={() => setShowScheduledReports(!showScheduledReports)}
+                size="sm"
+                variant="ghost"
+                className={`h-7 px-2 text-xs ${showScheduledReports ? "bg-green-500/10 hover:bg-green-500/20 text-green-600 dark:text-green-400" : ""}`}
+              >
+                <Calendar className="w-3 h-3 mr-1" />
+                Schedule
+              </Button>
             </div>
           </div>
         </div>
+
+        {/* Scheduled Reports Panel */}
+        <Collapsible open={showScheduledReports} onOpenChange={setShowScheduledReports}>
+          <CollapsibleContent>
+            <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-4">
+              <ScheduledReportsManager />
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
 
         {/* Main Content */}
         <div className="flex-1 overflow-auto space-y-2">

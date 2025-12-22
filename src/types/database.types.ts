@@ -2889,12 +2889,14 @@ export type Database = {
       }
       recruit_checklist_progress: {
         Row: {
+          agency_id: string | null
           checklist_item_id: string
           completed_at: string | null
           completed_by: string | null
           created_at: string | null
           document_id: string | null
           id: string
+          imo_id: string | null
           metadata: Json | null
           notes: string | null
           rejection_reason: string | null
@@ -2905,12 +2907,14 @@ export type Database = {
           verified_by: string | null
         }
         Insert: {
+          agency_id?: string | null
           checklist_item_id: string
           completed_at?: string | null
           completed_by?: string | null
           created_at?: string | null
           document_id?: string | null
           id?: string
+          imo_id?: string | null
           metadata?: Json | null
           notes?: string | null
           rejection_reason?: string | null
@@ -2921,12 +2925,14 @@ export type Database = {
           verified_by?: string | null
         }
         Update: {
+          agency_id?: string | null
           checklist_item_id?: string
           completed_at?: string | null
           completed_by?: string | null
           created_at?: string | null
           document_id?: string | null
           id?: string
+          imo_id?: string | null
           metadata?: Json | null
           notes?: string | null
           rejection_reason?: string | null
@@ -2937,6 +2943,13 @@ export type Database = {
           verified_by?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "recruit_checklist_progress_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "recruit_checklist_progress_checklist_item_id_fkey"
             columns: ["checklist_item_id"]
@@ -2970,6 +2983,13 @@ export type Database = {
             columns: ["document_id"]
             isOneToOne: false
             referencedRelation: "user_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recruit_checklist_progress_imo_id_fkey"
+            columns: ["imo_id"]
+            isOneToOne: false
+            referencedRelation: "imos"
             referencedColumns: ["id"]
           },
           {
@@ -3018,10 +3038,12 @@ export type Database = {
       }
       recruit_phase_progress: {
         Row: {
+          agency_id: string | null
           blocked_reason: string | null
           completed_at: string | null
           created_at: string | null
           id: string
+          imo_id: string | null
           notes: string | null
           phase_id: string
           started_at: string | null
@@ -3031,10 +3053,12 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          agency_id?: string | null
           blocked_reason?: string | null
           completed_at?: string | null
           created_at?: string | null
           id?: string
+          imo_id?: string | null
           notes?: string | null
           phase_id: string
           started_at?: string | null
@@ -3044,10 +3068,12 @@ export type Database = {
           user_id: string
         }
         Update: {
+          agency_id?: string | null
           blocked_reason?: string | null
           completed_at?: string | null
           created_at?: string | null
           id?: string
+          imo_id?: string | null
           notes?: string | null
           phase_id?: string
           started_at?: string | null
@@ -3057,6 +3083,20 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "recruit_phase_progress_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recruit_phase_progress_imo_id_fkey"
+            columns: ["imo_id"]
+            isOneToOne: false
+            referencedRelation: "imos"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "recruit_phase_progress_phase_id_fkey"
             columns: ["phase_id"]
@@ -3167,6 +3207,150 @@ export type Database = {
             columns: ["parent_role_id"]
             isOneToOne: false
             referencedRelation: "roles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scheduled_report_deliveries: {
+        Row: {
+          created_at: string
+          delivered_at: string | null
+          error_message: string | null
+          id: string
+          mailgun_message_id: string | null
+          recipients_sent: Json
+          report_period_end: string
+          report_period_start: string
+          schedule_id: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          delivered_at?: string | null
+          error_message?: string | null
+          id?: string
+          mailgun_message_id?: string | null
+          recipients_sent?: Json
+          report_period_end: string
+          report_period_start: string
+          schedule_id: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          delivered_at?: string | null
+          error_message?: string | null
+          id?: string
+          mailgun_message_id?: string | null
+          recipients_sent?: Json
+          report_period_end?: string
+          report_period_start?: string
+          schedule_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scheduled_report_deliveries_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "scheduled_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scheduled_reports: {
+        Row: {
+          agency_id: string | null
+          consecutive_failures: number
+          created_at: string
+          day_of_month: number | null
+          day_of_week: number | null
+          export_format: string
+          frequency: Database["public"]["Enums"]["report_frequency"]
+          id: string
+          imo_id: string | null
+          include_charts: boolean
+          include_insights: boolean
+          include_summary: boolean
+          is_active: boolean
+          last_delivery: string | null
+          next_delivery: string
+          owner_id: string
+          preferred_time: string
+          recipients: Json
+          report_config: Json
+          report_type: string
+          schedule_name: string
+          updated_at: string
+        }
+        Insert: {
+          agency_id?: string | null
+          consecutive_failures?: number
+          created_at?: string
+          day_of_month?: number | null
+          day_of_week?: number | null
+          export_format?: string
+          frequency: Database["public"]["Enums"]["report_frequency"]
+          id?: string
+          imo_id?: string | null
+          include_charts?: boolean
+          include_insights?: boolean
+          include_summary?: boolean
+          is_active?: boolean
+          last_delivery?: string | null
+          next_delivery: string
+          owner_id: string
+          preferred_time?: string
+          recipients?: Json
+          report_config?: Json
+          report_type: string
+          schedule_name: string
+          updated_at?: string
+        }
+        Update: {
+          agency_id?: string | null
+          consecutive_failures?: number
+          created_at?: string
+          day_of_month?: number | null
+          day_of_week?: number | null
+          export_format?: string
+          frequency?: Database["public"]["Enums"]["report_frequency"]
+          id?: string
+          imo_id?: string | null
+          include_charts?: boolean
+          include_insights?: boolean
+          include_summary?: boolean
+          is_active?: boolean
+          last_delivery?: string | null
+          next_delivery?: string
+          owner_id?: string
+          preferred_time?: string
+          recipients?: Json
+          report_config?: Json
+          report_type?: string
+          schedule_name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scheduled_reports_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scheduled_reports_imo_id_fkey"
+            columns: ["imo_id"]
+            isOneToOne: false
+            referencedRelation: "imos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scheduled_reports_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
@@ -6034,6 +6218,16 @@ export type Database = {
         Args: { p_effective_date: string; p_end_date?: string }
         Returns: number
       }
+      calculate_next_delivery: {
+        Args: {
+          p_day_of_month: number
+          p_day_of_week: number
+          p_frequency: Database["public"]["Enums"]["report_frequency"]
+          p_from_date?: string
+          p_preferred_time: string
+        }
+        Returns: string
+      }
       calculate_next_run_time: {
         Args: {
           p_day_of_month?: number
@@ -6109,6 +6303,16 @@ export type Database = {
         Args: { p_new_name: string; p_template_id: string }
         Returns: string
       }
+      complete_scheduled_delivery: {
+        Args: {
+          p_delivery_id: string
+          p_error_message?: string
+          p_mailgun_message_id?: string
+          p_schedule_id: string
+          p_success: boolean
+        }
+        Returns: boolean
+      }
       create_org_workflow_template: {
         Args: {
           p_actions: Json
@@ -6122,6 +6326,23 @@ export type Database = {
           p_name: string
           p_priority?: number
           p_trigger_type: string
+        }
+        Returns: string
+      }
+      create_scheduled_report: {
+        Args: {
+          p_day_of_month?: number
+          p_day_of_week?: number
+          p_export_format?: string
+          p_frequency: Database["public"]["Enums"]["report_frequency"]
+          p_include_charts?: boolean
+          p_include_insights?: boolean
+          p_include_summary?: boolean
+          p_preferred_time?: string
+          p_recipients?: Json
+          p_report_config?: Json
+          p_report_type: string
+          p_schedule_name: string
         }
         Returns: string
       }
@@ -6200,6 +6421,10 @@ export type Database = {
           total_annual_premium: number
           unearned_amount: number
         }[]
+      }
+      get_agency_recruiting_summary: {
+        Args: { p_agency_id: string }
+        Returns: Json
       }
       get_at_risk_commissions: {
         Args: { p_risk_threshold?: number; p_user_id: string }
@@ -6331,6 +6556,37 @@ export type Database = {
           id: string
         }[]
       }
+      get_due_scheduled_reports: {
+        Args: never
+        Returns: {
+          agency_id: string
+          day_of_month: number
+          day_of_week: number
+          export_format: string
+          frequency: Database["public"]["Enums"]["report_frequency"]
+          id: string
+          imo_id: string
+          include_charts: boolean
+          include_insights: boolean
+          include_summary: boolean
+          owner_id: string
+          preferred_time: string
+          recipients: Json
+          report_config: Json
+          report_type: string
+          schedule_name: string
+        }[]
+      }
+      get_eligible_recipients: {
+        Args: { p_agency_id?: string; p_imo_id?: string }
+        Returns: {
+          agency_name: string
+          email: string
+          full_name: string
+          role: string
+          user_id: string
+        }[]
+      }
       get_imo_admin: { Args: { p_imo_id: string }; Returns: string }
       get_imo_clients_with_stats: {
         Args: never
@@ -6423,6 +6679,7 @@ export type Database = {
           total_annual_premium: number
         }[]
       }
+      get_imo_recruiting_summary: { Args: { p_imo_id: string }; Returns: Json }
       get_imo_targets: {
         Args: never
         Returns: {
@@ -6469,6 +6726,32 @@ export type Database = {
       get_message_stats: { Args: { p_user_id: string }; Returns: Json }
       get_my_agency_id: { Args: never; Returns: string }
       get_my_imo_id: { Args: never; Returns: string }
+      get_my_scheduled_reports: {
+        Args: never
+        Returns: {
+          consecutive_failures: number
+          created_at: string
+          day_of_month: number
+          day_of_week: number
+          export_format: string
+          failed_deliveries: number
+          frequency: Database["public"]["Enums"]["report_frequency"]
+          id: string
+          include_charts: boolean
+          include_insights: boolean
+          include_summary: boolean
+          is_active: boolean
+          last_delivery: string
+          next_delivery: string
+          preferred_time: string
+          recipients: Json
+          report_config: Json
+          report_type: string
+          schedule_name: string
+          successful_deliveries: number
+          total_deliveries: number
+        }[]
+      }
       get_or_create_usage_tracking: {
         Args: { p_metric: string; p_user_id: string }
         Returns: {
@@ -6601,6 +6884,11 @@ export type Database = {
         }
         Returns: number
       }
+      get_recruiting_by_agency: { Args: { p_imo_id: string }; Returns: Json }
+      get_recruiting_by_recruiter: {
+        Args: { p_agency_id: string }
+        Returns: Json
+      }
       get_role_permissions_with_inheritance: {
         Args: { p_role_id: string }
         Returns: {
@@ -6612,6 +6900,19 @@ export type Database = {
           permission_resource: string
           permission_scope: string
           permission_type: string
+        }[]
+      }
+      get_schedule_delivery_history: {
+        Args: { p_limit?: number; p_schedule_id: string }
+        Returns: {
+          created_at: string
+          delivered_at: string
+          error_message: string
+          id: string
+          recipients_sent: Json
+          report_period_end: string
+          report_period_start: string
+          status: string
         }[]
       }
       get_upline_chain: {
@@ -6716,10 +7017,6 @@ export type Database = {
         | { Args: { p_agency_id?: string }; Returns: boolean }
       is_agency_owner_of: {
         Args: { target_agency_id: string }
-        Returns: boolean
-      }
-      is_agent_in_my_agency: {
-        Args: { target_agent_id: string }
         Returns: boolean
       }
       is_caller_admin: { Args: never; Returns: boolean }
@@ -6894,6 +7191,24 @@ export type Database = {
         Args: { p_months_paid: number; p_policy_id: string }
         Returns: undefined
       }
+      update_scheduled_report: {
+        Args: {
+          p_day_of_month?: number
+          p_day_of_week?: number
+          p_export_format?: string
+          p_frequency?: Database["public"]["Enums"]["report_frequency"]
+          p_include_charts?: boolean
+          p_include_insights?: boolean
+          p_include_summary?: boolean
+          p_is_active?: boolean
+          p_preferred_time?: string
+          p_recipients?: Json
+          p_report_config?: Json
+          p_schedule_id: string
+          p_schedule_name?: string
+        }
+        Returns: boolean
+      }
       update_user_metadata: {
         Args: { metadata: Json; user_id: string }
         Returns: undefined
@@ -6916,6 +7231,10 @@ export type Database = {
       validate_invitation_eligibility: {
         Args: { p_invitee_email: string; p_inviter_id: string }
         Returns: Json
+      }
+      validate_schedule_recipients: {
+        Args: { p_agency_id: string; p_imo_id: string; p_recipients: Json }
+        Returns: boolean
       }
     }
     Enums: {
@@ -6950,6 +7269,7 @@ export type Database = {
         | "annuity"
         | "indexed_universal_life"
         | "participating_whole_life"
+      report_frequency: "weekly" | "monthly" | "quarterly"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -7111,6 +7431,7 @@ export const Constants = {
         "indexed_universal_life",
         "participating_whole_life",
       ],
+      report_frequency: ["weekly", "monthly", "quarterly"],
     },
   },
 } as const
