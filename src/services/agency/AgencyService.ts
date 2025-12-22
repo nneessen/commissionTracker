@@ -1,9 +1,9 @@
 // src/services/agency/AgencyService.ts
 // Business logic for Agency operations
 
-import { supabase } from '../base/supabase';
-import { logger } from '../base/logger';
-import { AgencyRepository } from './AgencyRepository';
+import { supabase } from "../base/supabase";
+import { logger } from "../base/logger";
+import { AgencyRepository } from "./AgencyRepository";
 import type {
   Agency,
   AgencyRow,
@@ -16,8 +16,8 @@ import type {
   OverrideByAgent,
   AgencyRecruitingSummary,
   RecruitingByRecruiter,
-} from '../../types/imo.types';
-import { IMO_ROLES } from '../../types/imo.types';
+} from "../../types/imo.types";
+import { IMO_ROLES } from "../../types/imo.types";
 import {
   parseAgencyDashboardMetrics,
   parseAgencyProductionByAgent,
@@ -28,14 +28,14 @@ import {
   isAccessDeniedError,
   isInvalidParameterError,
   isNotFoundError,
-} from '../../types/dashboard-metrics.schemas';
+} from "../../types/dashboard-metrics.schemas";
 import {
   parseAgencyPerformanceReport,
   formatDateForQuery,
   validateReportDateRange,
   type AgencyPerformanceReport,
   type ReportDateRange,
-} from '../../types/team-reports.schemas';
+} from "../../types/team-reports.schemas";
 
 /**
  * Service layer for Agency operations
@@ -59,19 +59,19 @@ class AgencyService {
       } = await supabase.auth.getUser();
 
       if (userError || !user) {
-        logger.warn('No authenticated user', {}, 'AgencyService');
+        logger.warn("No authenticated user", {}, "AgencyService");
         return null;
       }
 
       // Get user's agency_id
       const { data: profile, error: profileError } = await supabase
-        .from('user_profiles')
-        .select('agency_id')
-        .eq('id', user.id)
+        .from("user_profiles")
+        .select("agency_id")
+        .eq("id", user.id)
         .single();
 
       if (profileError || !profile?.agency_id) {
-        logger.warn('User has no agency', { userId: user.id }, 'AgencyService');
+        logger.warn("User has no agency", { userId: user.id }, "AgencyService");
         return null;
       }
 
@@ -79,9 +79,9 @@ class AgencyService {
       return this.repo.findWithOwner(profile.agency_id);
     } catch (error) {
       logger.error(
-        'Failed to get user agency',
+        "Failed to get user agency",
         error instanceof Error ? error : new Error(String(error)),
-        'AgencyService'
+        "AgencyService",
       );
       throw error;
     }
@@ -117,9 +117,9 @@ class AgencyService {
 
       // Get user's imo_id
       const { data: profile, error: profileError } = await supabase
-        .from('user_profiles')
-        .select('imo_id')
-        .eq('id', user.id)
+        .from("user_profiles")
+        .select("imo_id")
+        .eq("id", user.id)
         .single();
 
       if (profileError || !profile?.imo_id) {
@@ -129,9 +129,9 @@ class AgencyService {
       return this.repo.findByImo(profile.imo_id);
     } catch (error) {
       logger.error(
-        'Failed to get agencies in IMO',
+        "Failed to get agencies in IMO",
         error instanceof Error ? error : new Error(String(error)),
-        'AgencyService'
+        "AgencyService",
       );
       throw error;
     }
@@ -168,9 +168,9 @@ class AgencyService {
       return this.repo.findByOwner(user.id);
     } catch (error) {
       logger.error(
-        'Failed to get owned agencies',
+        "Failed to get owned agencies",
         error instanceof Error ? error : new Error(String(error)),
-        'AgencyService'
+        "AgencyService",
       );
       throw error;
     }
@@ -182,15 +182,20 @@ class AgencyService {
   async createAgency(data: CreateAgencyData): Promise<AgencyRow> {
     try {
       // Check if code is available in the IMO
-      const isAvailable = await this.repo.isCodeAvailable(data.imo_id, data.code);
+      const isAvailable = await this.repo.isCodeAvailable(
+        data.imo_id,
+        data.code,
+      );
       if (!isAvailable) {
-        throw new Error(`Agency code "${data.code}" is already in use in this IMO`);
+        throw new Error(
+          `Agency code "${data.code}" is already in use in this IMO`,
+        );
       }
 
       logger.info(
-        'Creating new agency',
+        "Creating new agency",
         { imoId: data.imo_id, code: data.code },
-        'AgencyService'
+        "AgencyService",
       );
 
       const agency = await this.repo.create({
@@ -199,17 +204,17 @@ class AgencyService {
       });
 
       logger.info(
-        'Agency created successfully',
+        "Agency created successfully",
         { id: agency.id, code: agency.code },
-        'AgencyService'
+        "AgencyService",
       );
 
       return agency;
     } catch (error) {
       logger.error(
-        'Failed to create agency',
+        "Failed to create agency",
         error instanceof Error ? error : new Error(String(error)),
-        'AgencyService'
+        "AgencyService",
       );
       throw error;
     }
@@ -223,7 +228,7 @@ class AgencyService {
       // Get existing agency for imo_id
       const existing = await this.repo.findById(agencyId);
       if (!existing) {
-        throw new Error('Agency not found');
+        throw new Error("Agency not found");
       }
 
       // If updating code, check availability
@@ -231,25 +236,31 @@ class AgencyService {
         const isAvailable = await this.repo.isCodeAvailable(
           existing.imo_id,
           data.code,
-          agencyId
+          agencyId,
         );
         if (!isAvailable) {
-          throw new Error(`Agency code "${data.code}" is already in use in this IMO`);
+          throw new Error(
+            `Agency code "${data.code}" is already in use in this IMO`,
+          );
         }
       }
 
-      logger.info('Updating agency', { id: agencyId }, 'AgencyService');
+      logger.info("Updating agency", { id: agencyId }, "AgencyService");
 
       const agency = await this.repo.update(agencyId, data);
 
-      logger.info('Agency updated successfully', { id: agency.id }, 'AgencyService');
+      logger.info(
+        "Agency updated successfully",
+        { id: agency.id },
+        "AgencyService",
+      );
 
       return agency;
     } catch (error) {
       logger.error(
-        'Failed to update agency',
+        "Failed to update agency",
         error instanceof Error ? error : new Error(String(error)),
-        'AgencyService'
+        "AgencyService",
       );
       throw error;
     }
@@ -262,24 +273,26 @@ class AgencyService {
     try {
       // Check if agency has any agents
       const { count: agentCount } = await supabase
-        .from('user_profiles')
-        .select('*', { count: 'exact', head: true })
-        .eq('agency_id', agencyId);
+        .from("user_profiles")
+        .select("*", { count: "exact", head: true })
+        .eq("agency_id", agencyId);
 
       if (agentCount && agentCount > 0) {
-        throw new Error(`Cannot delete agency with ${agentCount} agent(s). Reassign or remove agents first.`);
+        throw new Error(
+          `Cannot delete agency with ${agentCount} agent(s). Reassign or remove agents first.`,
+        );
       }
 
-      logger.info('Deleting agency', { agencyId }, 'AgencyService');
+      logger.info("Deleting agency", { agencyId }, "AgencyService");
 
       await this.repo.delete(agencyId);
 
-      logger.info('Agency deleted successfully', { agencyId }, 'AgencyService');
+      logger.info("Agency deleted successfully", { agencyId }, "AgencyService");
     } catch (error) {
       logger.error(
-        'Failed to delete agency',
+        "Failed to delete agency",
         error instanceof Error ? error : new Error(String(error)),
-        'AgencyService'
+        "AgencyService",
       );
       throw error;
     }
@@ -290,18 +303,18 @@ class AgencyService {
    */
   async deactivateAgency(agencyId: string): Promise<AgencyRow> {
     try {
-      logger.info('Deactivating agency', { id: agencyId }, 'AgencyService');
+      logger.info("Deactivating agency", { id: agencyId }, "AgencyService");
 
       const agency = await this.repo.update(agencyId, { is_active: false });
 
-      logger.info('Agency deactivated', { id: agency.id }, 'AgencyService');
+      logger.info("Agency deactivated", { id: agency.id }, "AgencyService");
 
       return agency;
     } catch (error) {
       logger.error(
-        'Failed to deactivate agency',
+        "Failed to deactivate agency",
         error instanceof Error ? error : new Error(String(error)),
-        'AgencyService'
+        "AgencyService",
       );
       throw error;
     }
@@ -320,24 +333,24 @@ class AgencyService {
       } = await supabase.auth.getUser();
 
       if (authError || !currentUser) {
-        throw new Error('Authentication required');
+        throw new Error("Authentication required");
       }
 
       // Verify agency exists
       const agency = await this.repo.findById(agencyId);
       if (!agency) {
-        throw new Error('Agency not found');
+        throw new Error("Agency not found");
       }
 
       // Get current user's profile for authorization
       const { data: callerProfile, error: profileError } = await supabase
-        .from('user_profiles')
-        .select('imo_id, roles, is_super_admin')
-        .eq('id', currentUser.id)
+        .from("user_profiles")
+        .select("imo_id, roles, is_super_admin")
+        .eq("id", currentUser.id)
         .single();
 
       if (profileError || !callerProfile) {
-        throw new Error('Failed to verify authorization');
+        throw new Error("Failed to verify authorization");
       }
 
       // Authorization check:
@@ -353,33 +366,33 @@ class AgencyService {
 
       if (!isSuperAdmin && !isImoAdmin && !isAgencyOwner) {
         logger.warn(
-          'Unauthorized agency assignment attempt',
+          "Unauthorized agency assignment attempt",
           { callerId: currentUser.id, agentId, agencyId },
-          'AgencyService'
+          "AgencyService",
         );
-        throw new Error('Not authorized to assign users to this agency');
+        throw new Error("Not authorized to assign users to this agency");
       }
 
       // Update user's agency_id and imo_id
       const { error } = await supabase
-        .from('user_profiles')
+        .from("user_profiles")
         .update({ agency_id: agencyId, imo_id: agency.imo_id })
-        .eq('id', agentId);
+        .eq("id", agentId);
 
       if (error) {
         throw error;
       }
 
       logger.info(
-        'Agent assigned to agency',
+        "Agent assigned to agency",
         { agentId, agencyId, authorizedBy: currentUser.id },
-        'AgencyService'
+        "AgencyService",
       );
     } catch (error) {
       logger.error(
-        'Failed to assign agent to agency',
+        "Failed to assign agent to agency",
         error instanceof Error ? error : new Error(String(error)),
-        'AgencyService'
+        "AgencyService",
       );
       throw error;
     }
@@ -388,48 +401,51 @@ class AgencyService {
   /**
    * Transfer agency ownership
    */
-  async transferOwnership(agencyId: string, newOwnerId: string): Promise<AgencyRow> {
+  async transferOwnership(
+    agencyId: string,
+    newOwnerId: string,
+  ): Promise<AgencyRow> {
     try {
       // Verify new owner exists and is in the same IMO
       const agency = await this.repo.findById(agencyId);
       if (!agency) {
-        throw new Error('Agency not found');
+        throw new Error("Agency not found");
       }
 
       const { data: newOwner, error: ownerError } = await supabase
-        .from('user_profiles')
-        .select('id, imo_id')
-        .eq('id', newOwnerId)
+        .from("user_profiles")
+        .select("id, imo_id")
+        .eq("id", newOwnerId)
         .single();
 
       if (ownerError || !newOwner) {
-        throw new Error('New owner not found');
+        throw new Error("New owner not found");
       }
 
       if (newOwner.imo_id !== agency.imo_id) {
-        throw new Error('New owner must be in the same IMO');
+        throw new Error("New owner must be in the same IMO");
       }
 
       logger.info(
-        'Transferring agency ownership',
+        "Transferring agency ownership",
         { agencyId, newOwnerId },
-        'AgencyService'
+        "AgencyService",
       );
 
       const updatedAgency = await this.repo.updateOwner(agencyId, newOwnerId);
 
       logger.info(
-        'Agency ownership transferred',
+        "Agency ownership transferred",
         { agencyId, newOwnerId },
-        'AgencyService'
+        "AgencyService",
       );
 
       return updatedAgency;
     } catch (error) {
       logger.error(
-        'Failed to transfer agency ownership',
+        "Failed to transfer agency ownership",
         error instanceof Error ? error : new Error(String(error)),
-        'AgencyService'
+        "AgencyService",
       );
       throw error;
     }
@@ -441,7 +457,7 @@ class AgencyService {
    */
   async getAgencyMetrics(agencyId: string): Promise<AgencyMetrics> {
     try {
-      const { data, error } = await supabase.rpc('get_agency_metrics', {
+      const { data, error } = await supabase.rpc("get_agency_metrics", {
         p_agency_id: agencyId,
       });
 
@@ -461,15 +477,16 @@ class AgencyService {
         total_agents: metrics.total_agents ?? 0,
         active_agents: metrics.active_agents ?? 0,
         total_policies: metrics.total_policies ?? 0,
-        total_premium: Number(metrics.total_premium) ?? 0,
-        total_commissions: Number(metrics.total_commissions) ?? 0,
-        total_override_commissions: Number(metrics.total_override_commissions) ?? 0,
+        total_premium: Number(metrics.total_premium) || 0,
+        total_commissions: Number(metrics.total_commissions) || 0,
+        total_override_commissions:
+          Number(metrics.total_override_commissions) || 0,
       };
     } catch (error) {
       logger.error(
-        'Failed to get agency metrics',
+        "Failed to get agency metrics",
         error instanceof Error ? error : new Error(String(error)),
-        'AgencyService'
+        "AgencyService",
       );
       throw error;
     }
@@ -501,17 +518,29 @@ class AgencyService {
    * Uses RPC function for efficient single-query execution
    * @param agencyId - Optional agency ID. Defaults to user's own agency.
    */
-  async getDashboardMetrics(agencyId?: string): Promise<AgencyDashboardMetrics | null> {
+  async getDashboardMetrics(
+    agencyId?: string,
+  ): Promise<AgencyDashboardMetrics | null> {
     try {
-      const { data, error } = await supabase.rpc('get_agency_dashboard_metrics', {
-        p_agency_id: agencyId || null,
-      });
+      const { data, error } = await supabase.rpc(
+        "get_agency_dashboard_metrics",
+        {
+          p_agency_id: agencyId || null,
+        },
+      );
 
       if (error) {
         // Handle access denied and not found gracefully using error codes
-        if (isAccessDeniedError(error) || isInvalidParameterError(error) || isNotFoundError(error)) {
-          logger.warn('Access denied or invalid params for agency dashboard metrics',
-            { agencyId, code: error.code }, 'AgencyService');
+        if (
+          isAccessDeniedError(error) ||
+          isInvalidParameterError(error) ||
+          isNotFoundError(error)
+        ) {
+          logger.warn(
+            "Access denied or invalid params for agency dashboard metrics",
+            { agencyId, code: error.code },
+            "AgencyService",
+          );
           return null;
         }
         throw error;
@@ -542,9 +571,9 @@ class AgencyService {
       };
     } catch (error) {
       logger.error(
-        'Failed to get agency dashboard metrics',
+        "Failed to get agency dashboard metrics",
         error instanceof Error ? error : new Error(String(error)),
-        'AgencyService'
+        "AgencyService",
       );
       throw error;
     }
@@ -555,17 +584,29 @@ class AgencyService {
    * Uses RPC function for efficient single-query execution
    * @param agencyId - Optional agency ID. Defaults to user's own agency.
    */
-  async getProductionByAgent(agencyId?: string): Promise<AgencyProductionByAgent[]> {
+  async getProductionByAgent(
+    agencyId?: string,
+  ): Promise<AgencyProductionByAgent[]> {
     try {
-      const { data, error } = await supabase.rpc('get_agency_production_by_agent', {
-        p_agency_id: agencyId || null,
-      });
+      const { data, error } = await supabase.rpc(
+        "get_agency_production_by_agent",
+        {
+          p_agency_id: agencyId || null,
+        },
+      );
 
       if (error) {
         // Handle access denied and not found gracefully using error codes
-        if (isAccessDeniedError(error) || isInvalidParameterError(error) || isNotFoundError(error)) {
-          logger.warn('Access denied or invalid params for agency production by agent',
-            { agencyId, code: error.code }, 'AgencyService');
+        if (
+          isAccessDeniedError(error) ||
+          isInvalidParameterError(error) ||
+          isNotFoundError(error)
+        ) {
+          logger.warn(
+            "Access denied or invalid params for agency production by agent",
+            { agencyId, code: error.code },
+            "AgencyService",
+          );
           return [];
         }
         throw error;
@@ -593,9 +634,9 @@ class AgencyService {
       }));
     } catch (error) {
       logger.error(
-        'Failed to get agency production by agent',
+        "Failed to get agency production by agent",
         error instanceof Error ? error : new Error(String(error)),
-        'AgencyService'
+        "AgencyService",
       );
       throw error;
     }
@@ -609,13 +650,17 @@ class AgencyService {
    */
   async getPerformanceReport(
     agencyId?: string,
-    dateRange?: ReportDateRange
+    dateRange?: ReportDateRange,
   ): Promise<AgencyPerformanceReport | null> {
     try {
       // Validate date range to prevent abuse (max 24 months)
       validateReportDateRange(dateRange);
 
-      const params: { p_agency_id: string | null; p_start_date?: string; p_end_date?: string } = {
+      const params: {
+        p_agency_id: string | null;
+        p_start_date?: string;
+        p_end_date?: string;
+      } = {
         p_agency_id: agencyId ?? null,
       };
       if (dateRange) {
@@ -623,12 +668,22 @@ class AgencyService {
         params.p_end_date = formatDateForQuery(dateRange.endDate);
       }
 
-      const { data, error } = await supabase.rpc('get_agency_performance_report', params);
+      const { data, error } = await supabase.rpc(
+        "get_agency_performance_report",
+        params,
+      );
 
       if (error) {
-        if (isAccessDeniedError(error) || isInvalidParameterError(error) || isNotFoundError(error)) {
-          logger.warn('Access denied or invalid params for agency performance report',
-            { agencyId, code: error.code }, 'AgencyService');
+        if (
+          isAccessDeniedError(error) ||
+          isInvalidParameterError(error) ||
+          isNotFoundError(error)
+        ) {
+          logger.warn(
+            "Access denied or invalid params for agency performance report",
+            { agencyId, code: error.code },
+            "AgencyService",
+          );
           return null;
         }
         throw error;
@@ -636,7 +691,7 @@ class AgencyService {
 
       if (!data || data.length === 0) {
         return {
-          agency_id: agencyId || '',
+          agency_id: agencyId || "",
           months: [],
           summary: {
             total_new_policies: 0,
@@ -668,19 +723,19 @@ class AgencyService {
           total_new_agents: 0,
           total_lapsed: 0,
           net_growth: 0,
-        }
+        },
       );
 
       return {
-        agency_id: agencyId || '',
+        agency_id: agencyId || "",
         months: validated,
         summary,
       };
     } catch (error) {
       logger.error(
-        'Failed to get agency performance report',
+        "Failed to get agency performance report",
         error instanceof Error ? error : new Error(String(error)),
-        'AgencyService'
+        "AgencyService",
       );
       throw error;
     }
@@ -691,16 +746,28 @@ class AgencyService {
    * Uses RPC function for efficient single-query execution
    * @param agencyId - Optional agency ID. Defaults to user's own agency.
    */
-  async getOverrideSummary(agencyId?: string): Promise<AgencyOverrideSummary | null> {
+  async getOverrideSummary(
+    agencyId?: string,
+  ): Promise<AgencyOverrideSummary | null> {
     try {
-      const { data, error } = await supabase.rpc('get_agency_override_summary', {
-        p_agency_id: agencyId || null,
-      });
+      const { data, error } = await supabase.rpc(
+        "get_agency_override_summary",
+        {
+          p_agency_id: agencyId || null,
+        },
+      );
 
       if (error) {
-        if (isAccessDeniedError(error) || isInvalidParameterError(error) || isNotFoundError(error)) {
-          logger.warn('Access denied or invalid params for agency override summary',
-            { agencyId, code: error.code }, 'AgencyService');
+        if (
+          isAccessDeniedError(error) ||
+          isInvalidParameterError(error) ||
+          isNotFoundError(error)
+        ) {
+          logger.warn(
+            "Access denied or invalid params for agency override summary",
+            { agencyId, code: error.code },
+            "AgencyService",
+          );
           return null;
         }
         throw error;
@@ -709,8 +776,8 @@ class AgencyService {
       // No data case: return empty summary (distinguishes "no overrides" from "no access")
       if (!data || data.length === 0) {
         return {
-          agency_id: '',
-          agency_name: '',
+          agency_id: "",
+          agency_name: "",
           total_override_count: 0,
           total_override_amount: 0,
           pending_amount: 0,
@@ -748,9 +815,9 @@ class AgencyService {
       };
     } catch (error) {
       logger.error(
-        'Failed to get agency override summary',
+        "Failed to get agency override summary",
         error instanceof Error ? error : new Error(String(error)),
-        'AgencyService'
+        "AgencyService",
       );
       throw error;
     }
@@ -763,14 +830,21 @@ class AgencyService {
    */
   async getOverridesByAgent(agencyId?: string): Promise<OverrideByAgent[]> {
     try {
-      const { data, error } = await supabase.rpc('get_overrides_by_agent', {
+      const { data, error } = await supabase.rpc("get_overrides_by_agent", {
         p_agency_id: agencyId || null,
       });
 
       if (error) {
-        if (isAccessDeniedError(error) || isInvalidParameterError(error) || isNotFoundError(error)) {
-          logger.warn('Access denied or invalid params for overrides by agent',
-            { agencyId, code: error.code }, 'AgencyService');
+        if (
+          isAccessDeniedError(error) ||
+          isInvalidParameterError(error) ||
+          isNotFoundError(error)
+        ) {
+          logger.warn(
+            "Access denied or invalid params for overrides by agent",
+            { agencyId, code: error.code },
+            "AgencyService",
+          );
           return [];
         }
         throw error;
@@ -797,9 +871,9 @@ class AgencyService {
       }));
     } catch (error) {
       logger.error(
-        'Failed to get overrides by agent',
+        "Failed to get overrides by agent",
         error instanceof Error ? error : new Error(String(error)),
-        'AgencyService'
+        "AgencyService",
       );
       throw error;
     }
@@ -810,7 +884,9 @@ class AgencyService {
    * Uses RPC function for efficient single-query execution
    * @param agencyId - Optional agency ID. Defaults to user's own agency.
    */
-  async getRecruitingSummary(agencyId?: string): Promise<AgencyRecruitingSummary | null> {
+  async getRecruitingSummary(
+    agencyId?: string,
+  ): Promise<AgencyRecruitingSummary | null> {
     try {
       // If no agencyId provided, get user's agency
       let targetAgencyId = agencyId;
@@ -822,14 +898,24 @@ class AgencyService {
         targetAgencyId = myAgency.id;
       }
 
-      const { data, error } = await supabase.rpc('get_agency_recruiting_summary', {
-        p_agency_id: targetAgencyId,
-      });
+      const { data, error } = await supabase.rpc(
+        "get_agency_recruiting_summary",
+        {
+          p_agency_id: targetAgencyId,
+        },
+      );
 
       if (error) {
-        if (isAccessDeniedError(error) || isInvalidParameterError(error) || isNotFoundError(error)) {
-          logger.warn('Access denied or invalid params for agency recruiting summary',
-            { agencyId: targetAgencyId, code: error.code }, 'AgencyService');
+        if (
+          isAccessDeniedError(error) ||
+          isInvalidParameterError(error) ||
+          isNotFoundError(error)
+        ) {
+          logger.warn(
+            "Access denied or invalid params for agency recruiting summary",
+            { agencyId: targetAgencyId, code: error.code },
+            "AgencyService",
+          );
           return null;
         }
         throw error;
@@ -855,9 +941,9 @@ class AgencyService {
       };
     } catch (error) {
       logger.error(
-        'Failed to get agency recruiting summary',
+        "Failed to get agency recruiting summary",
         error instanceof Error ? error : new Error(String(error)),
-        'AgencyService'
+        "AgencyService",
       );
       throw error;
     }
@@ -868,7 +954,9 @@ class AgencyService {
    * Uses RPC function for efficient single-query execution
    * @param agencyId - Optional agency ID. Defaults to user's own agency.
    */
-  async getRecruitingByRecruiter(agencyId?: string): Promise<RecruitingByRecruiter[]> {
+  async getRecruitingByRecruiter(
+    agencyId?: string,
+  ): Promise<RecruitingByRecruiter[]> {
     try {
       // If no agencyId provided, get user's agency
       let targetAgencyId = agencyId;
@@ -880,14 +968,24 @@ class AgencyService {
         targetAgencyId = myAgency.id;
       }
 
-      const { data, error } = await supabase.rpc('get_recruiting_by_recruiter', {
-        p_agency_id: targetAgencyId,
-      });
+      const { data, error } = await supabase.rpc(
+        "get_recruiting_by_recruiter",
+        {
+          p_agency_id: targetAgencyId,
+        },
+      );
 
       if (error) {
-        if (isAccessDeniedError(error) || isInvalidParameterError(error) || isNotFoundError(error)) {
-          logger.warn('Access denied or invalid params for recruiting by recruiter',
-            { agencyId: targetAgencyId, code: error.code }, 'AgencyService');
+        if (
+          isAccessDeniedError(error) ||
+          isInvalidParameterError(error) ||
+          isNotFoundError(error)
+        ) {
+          logger.warn(
+            "Access denied or invalid params for recruiting by recruiter",
+            { agencyId: targetAgencyId, code: error.code },
+            "AgencyService",
+          );
           return [];
         }
         throw error;
@@ -913,9 +1011,9 @@ class AgencyService {
       }));
     } catch (error) {
       logger.error(
-        'Failed to get recruiting by recruiter',
+        "Failed to get recruiting by recruiter",
         error instanceof Error ? error : new Error(String(error)),
-        'AgencyService'
+        "AgencyService",
       );
       throw error;
     }

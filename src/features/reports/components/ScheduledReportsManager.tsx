@@ -2,17 +2,17 @@
 // Panel for viewing and managing scheduled report deliveries
 // Phase 9: Report Export Enhancement
 
-import React, { useState } from 'react';
-import { format, formatDistanceToNow } from 'date-fns';
-import { Button } from '../../../components/ui/button';
-import { Badge } from '../../../components/ui/badge';
+import React, { useState } from "react";
+import { format, formatDistanceToNow } from "date-fns";
+import { Button } from "../../../components/ui/button";
+import { Badge } from "../../../components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '../../../components/ui/dropdown-menu';
+} from "../../../components/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,13 +22,13 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '../../../components/ui/alert-dialog';
+} from "../../../components/ui/alert-dialog";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from '../../../components/ui/collapsible';
-import { cn } from '../../../lib/utils';
+} from "../../../components/ui/collapsible";
+import { cn } from "../../../lib/utils";
 import {
   Calendar,
   Clock,
@@ -43,34 +43,36 @@ import {
   Mail,
   CheckCircle,
   XCircle,
-  AlertCircle,
   Loader2,
   RefreshCw,
-} from 'lucide-react';
+} from "lucide-react";
 import {
   useMyScheduledReports,
   useToggleScheduleActive,
   useDeleteScheduledReport,
   useScheduleDeliveryHistory,
-} from '../../../hooks/reports/scheduled';
+} from "../../../hooks/reports/scheduled";
 import {
   ScheduledReportWithStats,
   ScheduleDelivery,
   SCHEDULABLE_REPORT_TYPES,
   getScheduleDescription,
-  getDeliveryStatusColor,
-} from '../../../types/scheduled-reports.types';
-import { ReportScheduleDialog } from './ReportScheduleDialog';
+} from "../../../types/scheduled-reports.types";
+import { ReportScheduleDialog } from "./ReportScheduleDialog";
 
 interface ScheduledReportsManagerProps {
   className?: string;
 }
 
-export function ScheduledReportsManager({ className }: ScheduledReportsManagerProps) {
+export function ScheduledReportsManager({
+  className,
+}: ScheduledReportsManagerProps) {
   const { data: schedules = [], isLoading, refetch } = useMyScheduledReports();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const [editSchedule, setEditSchedule] = useState<ScheduledReportWithStats | null>(null);
-  const [deleteSchedule, setDeleteSchedule] = useState<ScheduledReportWithStats | null>(null);
+  const [editSchedule, setEditSchedule] =
+    useState<ScheduledReportWithStats | null>(null);
+  const [deleteSchedule, setDeleteSchedule] =
+    useState<ScheduledReportWithStats | null>(null);
   const [expandedSchedule, setExpandedSchedule] = useState<string | null>(null);
 
   const toggleActive = useToggleScheduleActive();
@@ -85,14 +87,14 @@ export function ScheduledReportsManager({ className }: ScheduledReportsManagerPr
 
   if (isLoading) {
     return (
-      <div className={cn('flex items-center justify-center p-8', className)}>
+      <div className={cn("flex items-center justify-center p-8", className)}>
         <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
       </div>
     );
   }
 
   return (
-    <div className={cn('space-y-4', className)}>
+    <div className={cn("space-y-4", className)}>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -116,11 +118,17 @@ export function ScheduledReportsManager({ className }: ScheduledReportsManagerPr
       {schedules.length === 0 ? (
         <div className="border border-dashed rounded-lg p-8 text-center">
           <Calendar className="w-10 h-10 mx-auto text-muted-foreground/50 mb-3" />
-          <p className="text-sm font-medium text-muted-foreground">No scheduled reports</p>
+          <p className="text-sm font-medium text-muted-foreground">
+            No scheduled reports
+          </p>
           <p className="text-xs text-muted-foreground mt-1">
             Create a schedule to automatically deliver reports to your team
           </p>
-          <Button size="sm" className="mt-4" onClick={() => setCreateDialogOpen(true)}>
+          <Button
+            size="sm"
+            className="mt-4"
+            onClick={() => setCreateDialogOpen(true)}
+          >
             <Plus className="w-4 h-4 mr-1" />
             Create First Schedule
           </Button>
@@ -133,12 +141,17 @@ export function ScheduledReportsManager({ className }: ScheduledReportsManagerPr
               schedule={schedule}
               isExpanded={expandedSchedule === schedule.id}
               onToggleExpand={() =>
-                setExpandedSchedule(expandedSchedule === schedule.id ? null : schedule.id)
+                setExpandedSchedule(
+                  expandedSchedule === schedule.id ? null : schedule.id,
+                )
               }
               onEdit={() => setEditSchedule(schedule)}
               onDelete={() => setDeleteSchedule(schedule)}
               onToggleActive={(active) =>
-                toggleActive.mutate({ scheduleId: schedule.id, isActive: active })
+                toggleActive.mutate({
+                  scheduleId: schedule.id,
+                  isActive: active,
+                })
               }
             />
           ))}
@@ -158,13 +171,17 @@ export function ScheduledReportsManager({ className }: ScheduledReportsManagerPr
       />
 
       {/* Delete Confirmation */}
-      <AlertDialog open={!!deleteSchedule} onOpenChange={() => setDeleteSchedule(null)}>
+      <AlertDialog
+        open={!!deleteSchedule}
+        onOpenChange={() => setDeleteSchedule(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Schedule</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete &quot;{deleteSchedule?.schedule_name}&quot;? This will stop all
-              future deliveries. This action cannot be undone.
+              Are you sure you want to delete &quot;
+              {deleteSchedule?.schedule_name}&quot;? This will stop all future
+              deliveries. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -205,14 +222,16 @@ function ScheduleCard({
   onDelete,
   onToggleActive,
 }: ScheduleCardProps) {
-  const reportType = SCHEDULABLE_REPORT_TYPES.find((rt) => rt.type === schedule.report_type);
+  const reportType = SCHEDULABLE_REPORT_TYPES.find(
+    (rt) => rt.type === schedule.report_type,
+  );
 
   return (
     <Collapsible open={isExpanded} onOpenChange={onToggleExpand}>
       <div
         className={cn(
-          'border rounded-lg transition-colors',
-          schedule.is_active ? 'bg-card' : 'bg-muted/30'
+          "border rounded-lg transition-colors",
+          schedule.is_active ? "bg-card" : "bg-muted/30",
         )}
       >
         {/* Main Row */}
@@ -229,8 +248,10 @@ function ScheduleCard({
 
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <span className="text-lg">{reportType?.icon || '📊'}</span>
-              <span className="font-medium text-sm truncate">{schedule.schedule_name}</span>
+              <span className="text-lg">{reportType?.icon || "📊"}</span>
+              <span className="font-medium text-sm truncate">
+                {schedule.schedule_name}
+              </span>
               {!schedule.is_active && (
                 <Badge variant="secondary" className="text-[10px]">
                   Paused
@@ -256,7 +277,9 @@ function ScheduleCard({
               <div className="text-right text-xs">
                 <div className="text-muted-foreground">Next delivery</div>
                 <div className="font-medium">
-                  {formatDistanceToNow(new Date(schedule.next_delivery), { addSuffix: true })}
+                  {formatDistanceToNow(new Date(schedule.next_delivery), {
+                    addSuffix: true,
+                  })}
                 </div>
               </div>
             )}
@@ -272,7 +295,9 @@ function ScheduleCard({
                   <Pencil className="w-4 h-4 mr-2" />
                   Edit
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onToggleActive(!schedule.is_active)}>
+                <DropdownMenuItem
+                  onClick={() => onToggleActive(!schedule.is_active)}
+                >
                   {schedule.is_active ? (
                     <>
                       <Pause className="w-4 h-4 mr-2" />
@@ -286,7 +311,10 @@ function ScheduleCard({
                   )}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={onDelete} className="text-destructive">
+                <DropdownMenuItem
+                  onClick={onDelete}
+                  className="text-destructive"
+                >
                   <Trash2 className="w-4 h-4 mr-2" />
                   Delete
                 </DropdownMenuItem>
@@ -301,7 +329,9 @@ function ScheduleCard({
             {/* Stats */}
             <div className="grid grid-cols-3 gap-4 mb-4">
               <div className="text-center">
-                <div className="text-lg font-semibold">{schedule.total_deliveries}</div>
+                <div className="text-lg font-semibold">
+                  {schedule.total_deliveries}
+                </div>
                 <div className="text-xs text-muted-foreground">Total Sent</div>
               </div>
               <div className="text-center">
@@ -347,7 +377,10 @@ function ScheduleCard({
 
 // Delivery History Component
 function DeliveryHistory({ scheduleId }: { scheduleId: string }) {
-  const { data: deliveries = [], isLoading } = useScheduleDeliveryHistory(scheduleId, 5);
+  const { data: deliveries = [], isLoading } = useScheduleDeliveryHistory(
+    scheduleId,
+    5,
+  );
 
   if (isLoading) {
     return (
@@ -387,15 +420,19 @@ function DeliveryRow({ delivery }: { delivery: ScheduleDelivery }) {
     pending: <Clock className="w-4 h-4 text-gray-400" />,
   }[delivery.status];
 
-  const statusColor = getDeliveryStatusColor(delivery.status);
-
   return (
     <div className="flex items-center gap-2 p-2 bg-muted/50 rounded text-xs">
       {statusIcon}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <Badge
-            variant={delivery.status === 'sent' ? 'default' : delivery.status === 'failed' ? 'destructive' : 'secondary'}
+            variant={
+              delivery.status === "sent"
+                ? "default"
+                : delivery.status === "failed"
+                  ? "destructive"
+                  : "secondary"
+            }
             className="text-[10px] capitalize"
           >
             {delivery.status}
@@ -405,13 +442,15 @@ function DeliveryRow({ delivery }: { delivery: ScheduleDelivery }) {
           </span>
         </div>
         {delivery.error_message && (
-          <div className="text-red-600 mt-0.5 truncate">{delivery.error_message}</div>
+          <div className="text-red-600 mt-0.5 truncate">
+            {delivery.error_message}
+          </div>
         )}
       </div>
       <div className="text-muted-foreground">
         {delivery.delivered_at
-          ? format(new Date(delivery.delivered_at), 'MMM d, h:mm a')
-          : format(new Date(delivery.created_at), 'MMM d, h:mm a')}
+          ? format(new Date(delivery.delivered_at), "MMM d, h:mm a")
+          : format(new Date(delivery.created_at), "MMM d, h:mm a")}
       </div>
     </div>
   );

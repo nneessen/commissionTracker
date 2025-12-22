@@ -1,9 +1,9 @@
 // src/services/imo/ImoService.ts
 // Business logic for IMO operations
 
-import { supabase } from '../base/supabase';
-import { logger } from '../base/logger';
-import { ImoRepository } from './ImoRepository';
+import { supabase } from "../base/supabase";
+import { logger } from "../base/logger";
+import { ImoRepository } from "./ImoRepository";
 import type {
   Imo,
   ImoRow,
@@ -16,7 +16,7 @@ import type {
   OverrideByAgency,
   ImoRecruitingSummary,
   RecruitingByAgency,
-} from '../../types/imo.types';
+} from "../../types/imo.types";
 import {
   parseImoDashboardMetrics,
   parseImoProductionByAgency,
@@ -26,7 +26,7 @@ import {
   parseRecruitingByAgency,
   isAccessDeniedError,
   isInvalidParameterError,
-} from '../../types/dashboard-metrics.schemas';
+} from "../../types/dashboard-metrics.schemas";
 import {
   parseImoPerformanceReport,
   parseTeamComparisonReport,
@@ -37,7 +37,7 @@ import {
   type TeamComparisonReport,
   type TopPerformersReport,
   type ReportDateRange,
-} from '../../types/team-reports.schemas';
+} from "../../types/team-reports.schemas";
 
 /**
  * Service layer for IMO operations
@@ -61,19 +61,19 @@ class ImoService {
       } = await supabase.auth.getUser();
 
       if (userError || !user) {
-        logger.warn('No authenticated user', {}, 'ImoService');
+        logger.warn("No authenticated user", {}, "ImoService");
         return null;
       }
 
       // Get user's imo_id
       const { data: profile, error: profileError } = await supabase
-        .from('user_profiles')
-        .select('imo_id')
-        .eq('id', user.id)
+        .from("user_profiles")
+        .select("imo_id")
+        .eq("id", user.id)
         .single();
 
       if (profileError || !profile?.imo_id) {
-        logger.warn('User has no IMO', { userId: user.id }, 'ImoService');
+        logger.warn("User has no IMO", { userId: user.id }, "ImoService");
         return null;
       }
 
@@ -81,9 +81,9 @@ class ImoService {
       return this.repo.findWithAgencies(profile.imo_id);
     } catch (error) {
       logger.error(
-        'Failed to get user IMO',
+        "Failed to get user IMO",
         error instanceof Error ? error : new Error(String(error)),
-        'ImoService'
+        "ImoService",
       );
       throw error;
     }
@@ -128,21 +128,25 @@ class ImoService {
         throw new Error(`IMO code "${data.code}" is already in use`);
       }
 
-      logger.info('Creating new IMO', { code: data.code }, 'ImoService');
+      logger.info("Creating new IMO", { code: data.code }, "ImoService");
 
       const imo = await this.repo.create({
         ...data,
         is_active: true,
       });
 
-      logger.info('IMO created successfully', { id: imo.id, code: imo.code }, 'ImoService');
+      logger.info(
+        "IMO created successfully",
+        { id: imo.id, code: imo.code },
+        "ImoService",
+      );
 
       return imo;
     } catch (error) {
       logger.error(
-        'Failed to create IMO',
+        "Failed to create IMO",
         error instanceof Error ? error : new Error(String(error)),
-        'ImoService'
+        "ImoService",
       );
       throw error;
     }
@@ -161,18 +165,18 @@ class ImoService {
         }
       }
 
-      logger.info('Updating IMO', { id: imoId }, 'ImoService');
+      logger.info("Updating IMO", { id: imoId }, "ImoService");
 
       const imo = await this.repo.update(imoId, data);
 
-      logger.info('IMO updated successfully', { id: imo.id }, 'ImoService');
+      logger.info("IMO updated successfully", { id: imo.id }, "ImoService");
 
       return imo;
     } catch (error) {
       logger.error(
-        'Failed to update IMO',
+        "Failed to update IMO",
         error instanceof Error ? error : new Error(String(error)),
-        'ImoService'
+        "ImoService",
       );
       throw error;
     }
@@ -183,18 +187,18 @@ class ImoService {
    */
   async deactivateImo(imoId: string): Promise<ImoRow> {
     try {
-      logger.info('Deactivating IMO', { id: imoId }, 'ImoService');
+      logger.info("Deactivating IMO", { id: imoId }, "ImoService");
 
       const imo = await this.repo.update(imoId, { is_active: false });
 
-      logger.info('IMO deactivated', { id: imo.id }, 'ImoService');
+      logger.info("IMO deactivated", { id: imo.id }, "ImoService");
 
       return imo;
     } catch (error) {
       logger.error(
-        'Failed to deactivate IMO',
+        "Failed to deactivate IMO",
         error instanceof Error ? error : new Error(String(error)),
-        'ImoService'
+        "ImoService",
       );
       throw error;
     }
@@ -205,7 +209,7 @@ class ImoService {
    */
   async getImoMetrics(imoId: string): Promise<ImoMetrics> {
     try {
-      const { data, error } = await supabase.rpc('get_imo_metrics', {
+      const { data, error } = await supabase.rpc("get_imo_metrics", {
         p_imo_id: imoId,
       });
 
@@ -226,14 +230,14 @@ class ImoService {
         total_agents: metrics.total_agents ?? 0,
         active_agents: metrics.active_agents ?? 0,
         total_policies: metrics.total_policies ?? 0,
-        total_premium: Number(metrics.total_premium) ?? 0,
-        total_commissions: Number(metrics.total_commissions) ?? 0,
+        total_premium: Number(metrics.total_premium) || 0,
+        total_commissions: Number(metrics.total_commissions) || 0,
       };
     } catch (error) {
       logger.error(
-        'Failed to get IMO metrics',
+        "Failed to get IMO metrics",
         error instanceof Error ? error : new Error(String(error)),
-        'ImoService'
+        "ImoService",
       );
       throw error;
     }
@@ -254,9 +258,9 @@ class ImoService {
       }
 
       const { data: profile, error: profileError } = await supabase
-        .from('user_profiles')
-        .select('roles, is_super_admin')
-        .eq('id', user.id)
+        .from("user_profiles")
+        .select("roles, is_super_admin")
+        .eq("id", user.id)
         .single();
 
       if (profileError || !profile) {
@@ -270,7 +274,7 @@ class ImoService {
 
       // Check for IMO admin roles
       const roles = profile.roles ?? [];
-      return roles.includes('imo_owner') || roles.includes('imo_admin');
+      return roles.includes("imo_owner") || roles.includes("imo_admin");
     } catch {
       return false;
     }
@@ -282,13 +286,16 @@ class ImoService {
    */
   async getDashboardMetrics(): Promise<ImoDashboardMetrics | null> {
     try {
-      const { data, error } = await supabase.rpc('get_imo_dashboard_metrics');
+      const { data, error } = await supabase.rpc("get_imo_dashboard_metrics");
 
       if (error) {
         // Handle access denied gracefully using error codes
         if (isAccessDeniedError(error) || isInvalidParameterError(error)) {
-          logger.warn('Access denied or invalid params for IMO dashboard metrics',
-            { code: error.code }, 'ImoService');
+          logger.warn(
+            "Access denied or invalid params for IMO dashboard metrics",
+            { code: error.code },
+            "ImoService",
+          );
           return null;
         }
         throw error;
@@ -316,9 +323,9 @@ class ImoService {
       };
     } catch (error) {
       logger.error(
-        'Failed to get IMO dashboard metrics',
+        "Failed to get IMO dashboard metrics",
         error instanceof Error ? error : new Error(String(error)),
-        'ImoService'
+        "ImoService",
       );
       throw error;
     }
@@ -330,13 +337,18 @@ class ImoService {
    */
   async getProductionByAgency(): Promise<ImoProductionByAgency[]> {
     try {
-      const { data, error } = await supabase.rpc('get_imo_production_by_agency');
+      const { data, error } = await supabase.rpc(
+        "get_imo_production_by_agency",
+      );
 
       if (error) {
         // Handle access denied gracefully using error codes
         if (isAccessDeniedError(error) || isInvalidParameterError(error)) {
-          logger.warn('Access denied or invalid params for IMO production by agency',
-            { code: error.code }, 'ImoService');
+          logger.warn(
+            "Access denied or invalid params for IMO production by agency",
+            { code: error.code },
+            "ImoService",
+          );
           return [];
         }
         throw error;
@@ -363,9 +375,9 @@ class ImoService {
       }));
     } catch (error) {
       logger.error(
-        'Failed to get IMO production by agency',
+        "Failed to get IMO production by agency",
         error instanceof Error ? error : new Error(String(error)),
-        'ImoService'
+        "ImoService",
       );
       throw error;
     }
@@ -376,7 +388,9 @@ class ImoService {
    * Uses RPC function for efficient single-query execution
    * @throws DateRangeValidationError if date range exceeds 24 months
    */
-  async getPerformanceReport(dateRange?: ReportDateRange): Promise<ImoPerformanceReport | null> {
+  async getPerformanceReport(
+    dateRange?: ReportDateRange,
+  ): Promise<ImoPerformanceReport | null> {
     try {
       // Validate date range to prevent abuse (max 24 months)
       validateReportDateRange(dateRange);
@@ -387,12 +401,18 @@ class ImoService {
         params.p_end_date = formatDateForQuery(dateRange.endDate);
       }
 
-      const { data, error } = await supabase.rpc('get_imo_performance_report', params);
+      const { data, error } = await supabase.rpc(
+        "get_imo_performance_report",
+        params,
+      );
 
       if (error) {
         if (isAccessDeniedError(error) || isInvalidParameterError(error)) {
-          logger.warn('Access denied or invalid params for IMO performance report',
-            { code: error.code }, 'ImoService');
+          logger.warn(
+            "Access denied or invalid params for IMO performance report",
+            { code: error.code },
+            "ImoService",
+          );
           return null;
         }
         throw error;
@@ -431,7 +451,7 @@ class ImoService {
           total_new_agents: 0,
           total_lapsed: 0,
           net_growth: 0,
-        }
+        },
       );
 
       return {
@@ -440,9 +460,9 @@ class ImoService {
       };
     } catch (error) {
       logger.error(
-        'Failed to get IMO performance report',
+        "Failed to get IMO performance report",
         error instanceof Error ? error : new Error(String(error)),
-        'ImoService'
+        "ImoService",
       );
       throw error;
     }
@@ -453,7 +473,9 @@ class ImoService {
    * Uses RPC function for efficient single-query execution
    * @throws DateRangeValidationError if date range exceeds 24 months
    */
-  async getTeamComparisonReport(dateRange?: ReportDateRange): Promise<TeamComparisonReport | null> {
+  async getTeamComparisonReport(
+    dateRange?: ReportDateRange,
+  ): Promise<TeamComparisonReport | null> {
     try {
       // Validate date range to prevent abuse (max 24 months)
       validateReportDateRange(dateRange);
@@ -464,12 +486,18 @@ class ImoService {
         params.p_end_date = formatDateForQuery(dateRange.endDate);
       }
 
-      const { data, error } = await supabase.rpc('get_team_comparison_report', params);
+      const { data, error } = await supabase.rpc(
+        "get_team_comparison_report",
+        params,
+      );
 
       if (error) {
         if (isAccessDeniedError(error) || isInvalidParameterError(error)) {
-          logger.warn('Access denied or invalid params for team comparison report',
-            { code: error.code }, 'ImoService');
+          logger.warn(
+            "Access denied or invalid params for team comparison report",
+            { code: error.code },
+            "ImoService",
+          );
           return null;
         }
         throw error;
@@ -490,11 +518,19 @@ class ImoService {
       const validated = parseTeamComparisonReport(data);
 
       // Calculate summary
-      const totalAgents = validated.reduce((acc, row) => acc + row.agent_count, 0);
-      const totalPremium = validated.reduce((acc, row) => acc + row.new_premium, 0);
-      const avgRetention = validated.length > 0
-        ? validated.reduce((acc, row) => acc + row.retention_rate, 0) / validated.length
-        : 0;
+      const totalAgents = validated.reduce(
+        (acc, row) => acc + row.agent_count,
+        0,
+      );
+      const totalPremium = validated.reduce(
+        (acc, row) => acc + row.new_premium,
+        0,
+      );
+      const avgRetention =
+        validated.length > 0
+          ? validated.reduce((acc, row) => acc + row.retention_rate, 0) /
+            validated.length
+          : 0;
 
       return {
         agencies: validated,
@@ -507,9 +543,9 @@ class ImoService {
       };
     } catch (error) {
       logger.error(
-        'Failed to get team comparison report',
+        "Failed to get team comparison report",
         error instanceof Error ? error : new Error(String(error)),
-        'ImoService'
+        "ImoService",
       );
       throw error;
     }
@@ -522,7 +558,7 @@ class ImoService {
    */
   async getTopPerformersReport(
     limit: number = 20,
-    dateRange?: ReportDateRange
+    dateRange?: ReportDateRange,
   ): Promise<TopPerformersReport | null> {
     try {
       // Validate date range to prevent abuse (max 24 months)
@@ -531,7 +567,11 @@ class ImoService {
       // Limit the number of results to prevent abuse
       const safeLimit = Math.min(Math.max(1, limit), 100);
 
-      const params: { p_limit: number; p_start_date?: string; p_end_date?: string } = {
+      const params: {
+        p_limit: number;
+        p_start_date?: string;
+        p_end_date?: string;
+      } = {
         p_limit: safeLimit,
       };
       if (dateRange) {
@@ -539,12 +579,18 @@ class ImoService {
         params.p_end_date = formatDateForQuery(dateRange.endDate);
       }
 
-      const { data, error } = await supabase.rpc('get_top_performers_report', params);
+      const { data, error } = await supabase.rpc(
+        "get_top_performers_report",
+        params,
+      );
 
       if (error) {
         if (isAccessDeniedError(error) || isInvalidParameterError(error)) {
-          logger.warn('Access denied or invalid params for top performers report',
-            { code: error.code }, 'ImoService');
+          logger.warn(
+            "Access denied or invalid params for top performers report",
+            { code: error.code },
+            "ImoService",
+          );
           return null;
         }
         throw error;
@@ -560,15 +606,17 @@ class ImoService {
               end_date: formatDateForQuery(dateRange.endDate),
             }
           : {
-              start_date: formatDateForQuery(new Date(new Date().getFullYear(), 0, 1)),
+              start_date: formatDateForQuery(
+                new Date(new Date().getFullYear(), 0, 1),
+              ),
               end_date: formatDateForQuery(new Date()),
             },
       };
     } catch (error) {
       logger.error(
-        'Failed to get top performers report',
+        "Failed to get top performers report",
         error instanceof Error ? error : new Error(String(error)),
-        'ImoService'
+        "ImoService",
       );
       throw error;
     }
@@ -580,12 +628,15 @@ class ImoService {
    */
   async getOverrideSummary(): Promise<ImoOverrideSummary | null> {
     try {
-      const { data, error } = await supabase.rpc('get_imo_override_summary');
+      const { data, error } = await supabase.rpc("get_imo_override_summary");
 
       if (error) {
         if (isAccessDeniedError(error) || isInvalidParameterError(error)) {
-          logger.warn('Access denied or invalid params for IMO override summary',
-            { code: error.code }, 'ImoService');
+          logger.warn(
+            "Access denied or invalid params for IMO override summary",
+            { code: error.code },
+            "ImoService",
+          );
           return null;
         }
         throw error;
@@ -594,8 +645,8 @@ class ImoService {
       // No data case: return empty summary (distinguishes "no overrides" from "no access")
       if (!data || data.length === 0) {
         return {
-          imo_id: '',
-          imo_name: '',
+          imo_id: "",
+          imo_name: "",
           total_override_count: 0,
           total_override_amount: 0,
           pending_amount: 0,
@@ -627,9 +678,9 @@ class ImoService {
       };
     } catch (error) {
       logger.error(
-        'Failed to get IMO override summary',
+        "Failed to get IMO override summary",
         error instanceof Error ? error : new Error(String(error)),
-        'ImoService'
+        "ImoService",
       );
       throw error;
     }
@@ -641,12 +692,15 @@ class ImoService {
    */
   async getOverridesByAgency(): Promise<OverrideByAgency[]> {
     try {
-      const { data, error } = await supabase.rpc('get_overrides_by_agency');
+      const { data, error } = await supabase.rpc("get_overrides_by_agency");
 
       if (error) {
         if (isAccessDeniedError(error) || isInvalidParameterError(error)) {
-          logger.warn('Access denied or invalid params for overrides by agency',
-            { code: error.code }, 'ImoService');
+          logger.warn(
+            "Access denied or invalid params for overrides by agency",
+            { code: error.code },
+            "ImoService",
+          );
           return [];
         }
         throw error;
@@ -672,9 +726,9 @@ class ImoService {
       }));
     } catch (error) {
       logger.error(
-        'Failed to get overrides by agency',
+        "Failed to get overrides by agency",
         error instanceof Error ? error : new Error(String(error)),
-        'ImoService'
+        "ImoService",
       );
       throw error;
     }
@@ -692,14 +746,17 @@ class ImoService {
         return null;
       }
 
-      const { data, error } = await supabase.rpc('get_imo_recruiting_summary', {
+      const { data, error } = await supabase.rpc("get_imo_recruiting_summary", {
         p_imo_id: imo.id,
       });
 
       if (error) {
         if (isAccessDeniedError(error) || isInvalidParameterError(error)) {
-          logger.warn('Access denied or invalid params for IMO recruiting summary',
-            { code: error.code }, 'ImoService');
+          logger.warn(
+            "Access denied or invalid params for IMO recruiting summary",
+            { code: error.code },
+            "ImoService",
+          );
           return null;
         }
         throw error;
@@ -725,9 +782,9 @@ class ImoService {
       };
     } catch (error) {
       logger.error(
-        'Failed to get IMO recruiting summary',
+        "Failed to get IMO recruiting summary",
         error instanceof Error ? error : new Error(String(error)),
-        'ImoService'
+        "ImoService",
       );
       throw error;
     }
@@ -745,14 +802,17 @@ class ImoService {
         return [];
       }
 
-      const { data, error } = await supabase.rpc('get_recruiting_by_agency', {
+      const { data, error } = await supabase.rpc("get_recruiting_by_agency", {
         p_imo_id: imo.id,
       });
 
       if (error) {
         if (isAccessDeniedError(error) || isInvalidParameterError(error)) {
-          logger.warn('Access denied or invalid params for recruiting by agency',
-            { code: error.code }, 'ImoService');
+          logger.warn(
+            "Access denied or invalid params for recruiting by agency",
+            { code: error.code },
+            "ImoService",
+          );
           return [];
         }
         throw error;
@@ -777,9 +837,9 @@ class ImoService {
       }));
     } catch (error) {
       logger.error(
-        'Failed to get recruiting by agency',
+        "Failed to get recruiting by agency",
         error instanceof Error ? error : new Error(String(error)),
-        'ImoService'
+        "ImoService",
       );
       throw error;
     }

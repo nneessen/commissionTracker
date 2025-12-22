@@ -6,7 +6,11 @@ import type {
   TablesInsert,
   TablesUpdate,
 } from "../../types/database.types";
-import type { UserTargets, Achievement, DownlineTarget, ImoTarget } from "../../types/targets.types";
+import type {
+  Achievement,
+  DownlineTarget,
+  ImoTarget,
+} from "../../types/targets.types";
 
 // Database types
 type UserTargetsRow = Tables<"user_targets">;
@@ -82,7 +86,9 @@ export class UserTargetsRepository extends BaseRepository<
   /**
    * Transform database record (snake_case) to entity (camelCase)
    */
-  protected transformFromDB(dbRecord: Record<string, unknown>): UserTargetsEntity {
+  protected transformFromDB(
+    dbRecord: Record<string, unknown>,
+  ): UserTargetsEntity {
     const row = dbRecord as unknown as UserTargetsRow;
     return {
       id: row.id,

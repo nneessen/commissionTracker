@@ -1,7 +1,7 @@
 // src/features/reports/ReportsDashboard.tsx
 
 import { useState, useMemo } from "react";
-import { Package, Loader2, ChevronDown, Calendar, ChevronUp } from "lucide-react";
+import { Package, Loader2, ChevronDown, Calendar } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import {
   DropdownMenu,
@@ -47,7 +47,6 @@ import { ScheduledReportsManager } from "./components/ScheduledReportsManager";
 import {
   Collapsible,
   CollapsibleContent,
-  CollapsibleTrigger,
 } from "../../components/ui/collapsible";
 
 // Services
@@ -230,7 +229,10 @@ export function ReportsDashboard() {
         </div>
 
         {/* Scheduled Reports Panel */}
-        <Collapsible open={showScheduledReports} onOpenChange={setShowScheduledReports}>
+        <Collapsible
+          open={showScheduledReports}
+          onOpenChange={setShowScheduledReports}
+        >
           <CollapsibleContent>
             <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-4">
               <ScheduledReportsManager />

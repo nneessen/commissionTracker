@@ -34,8 +34,9 @@ import { usePendingJoinApprovalCount } from "@/hooks/join-request";
 
 export function SettingsDashboard() {
   const { can } = usePermissionCheck();
-  const { isSuperAdmin, isImoAdmin, loading: imoLoading } = useImo();
-  const { data: pendingAgencyRequestCount = 0 } = usePendingAgencyRequestCount();
+  const { isSuperAdmin, isImoAdmin, loading: _imoLoading } = useImo();
+  const { data: pendingAgencyRequestCount = 0 } =
+    usePendingAgencyRequestCount();
   const { data: pendingJoinRequestCount = 0 } = usePendingJoinApprovalCount();
 
   // Check if user has admin permission to manage carriers
@@ -49,10 +50,10 @@ export function SettingsDashboard() {
   const defaultTab = canManageImos
     ? "imos"
     : canManageAgencies
-    ? "agencies"
-    : canManageCarriers
-    ? "carriers"
-    : "agents";
+      ? "agencies"
+      : canManageCarriers
+        ? "carriers"
+        : "agents";
 
   return (
     <div className="h-[calc(100vh-4rem)] flex flex-col p-3 space-y-2.5 bg-zinc-50 dark:bg-zinc-950">
@@ -145,7 +146,10 @@ export function SettingsDashboard() {
               <ClipboardCheck className="h-3.5 w-3.5" />
               Agency
               {pendingAgencyRequestCount > 0 && (
-                <Badge variant="destructive" className="ml-1 h-4 px-1 text-[10px]">
+                <Badge
+                  variant="destructive"
+                  className="ml-1 h-4 px-1 text-[10px]"
+                >
                   {pendingAgencyRequestCount}
                 </Badge>
               )}
@@ -157,7 +161,10 @@ export function SettingsDashboard() {
               <UserPlus className="h-3.5 w-3.5" />
               Join
               {pendingJoinRequestCount > 0 && (
-                <Badge variant="destructive" className="ml-1 h-4 px-1 text-[10px]">
+                <Badge
+                  variant="destructive"
+                  className="ml-1 h-4 px-1 text-[10px]"
+                >
                   {pendingJoinRequestCount}
                 </Badge>
               )}
