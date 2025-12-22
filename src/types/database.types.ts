@@ -2640,6 +2640,7 @@ export type Database = {
       }
       policies: {
         Row: {
+          agency_id: string | null
           annual_premium: number | null
           cancellation_date: string | null
           cancellation_reason: string | null
@@ -2666,6 +2667,7 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          agency_id?: string | null
           annual_premium?: number | null
           cancellation_date?: string | null
           cancellation_reason?: string | null
@@ -2692,6 +2694,7 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          agency_id?: string | null
           annual_premium?: number | null
           cancellation_date?: string | null
           cancellation_reason?: string | null
@@ -2718,6 +2721,13 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "policies_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "policies_carrier_id_fkey"
             columns: ["carrier_id"]
@@ -6127,7 +6137,41 @@ export type Database = {
           name: string
         }[]
       }
+      get_agency_dashboard_metrics: {
+        Args: { p_agency_id?: string }
+        Returns: {
+          active_policies: number
+          agency_id: string
+          agency_name: string
+          agent_count: number
+          avg_production_per_agent: number
+          imo_id: string
+          top_producer_id: string
+          top_producer_name: string
+          top_producer_premium: number
+          total_annual_premium: number
+          total_commissions_ytd: number
+          total_earned_ytd: number
+          total_unearned: number
+        }[]
+      }
       get_agency_metrics: { Args: { p_agency_id: string }; Returns: Json }
+      get_agency_production_by_agent: {
+        Args: { p_agency_id?: string }
+        Returns: {
+          active_policies: number
+          agent_email: string
+          agent_id: string
+          agent_name: string
+          commissions_ytd: number
+          contract_level: number
+          earned_ytd: number
+          joined_date: string
+          pct_of_agency_production: number
+          total_annual_premium: number
+          unearned_amount: number
+        }[]
+      }
       get_at_risk_commissions: {
         Args: { p_risk_threshold?: number; p_user_id: string }
         Returns: {
@@ -6281,6 +6325,21 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_imo_dashboard_metrics: {
+        Args: never
+        Returns: {
+          agency_count: number
+          agent_count: number
+          avg_production_per_agent: number
+          imo_id: string
+          imo_name: string
+          total_active_policies: number
+          total_annual_premium: number
+          total_commissions_ytd: number
+          total_earned_ytd: number
+          total_unearned: number
+        }[]
+      }
       get_imo_expense_by_category: {
         Args: { p_end_date?: string; p_start_date?: string }
         Returns: {
@@ -6304,6 +6363,21 @@ export type Database = {
         }[]
       }
       get_imo_metrics: { Args: { p_imo_id: string }; Returns: Json }
+      get_imo_production_by_agency: {
+        Args: never
+        Returns: {
+          active_policies: number
+          agency_code: string
+          agency_id: string
+          agency_name: string
+          agent_count: number
+          avg_production: number
+          commissions_ytd: number
+          owner_name: string
+          pct_of_imo_production: number
+          total_annual_premium: number
+        }[]
+      }
       get_imo_targets: {
         Args: never
         Returns: {
@@ -6563,7 +6637,9 @@ export type Database = {
       is_admin_user:
         | { Args: never; Returns: boolean }
         | { Args: { target_user_id?: string }; Returns: boolean }
-      is_agency_owner: { Args: never; Returns: boolean }
+      is_agency_owner:
+        | { Args: never; Returns: boolean }
+        | { Args: { p_agency_id?: string }; Returns: boolean }
       is_agency_owner_of: {
         Args: { target_agency_id: string }
         Returns: boolean

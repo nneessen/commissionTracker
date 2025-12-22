@@ -20,6 +20,9 @@ export const imoKeys = {
   detail: (id: string) => [...imoKeys.details(), id] as const,
   myImo: () => [...imoKeys.all, 'my'] as const,
   metrics: (id: string) => [...imoKeys.detail(id), 'metrics'] as const,
+  // Dashboard metrics keys (Phase 5)
+  dashboardMetrics: () => [...imoKeys.all, 'dashboardMetrics'] as const,
+  productionByAgency: () => [...imoKeys.all, 'productionByAgency'] as const,
 };
 
 export const agencyKeys = {
@@ -31,6 +34,9 @@ export const agencyKeys = {
   myAgency: () => [...agencyKeys.all, 'my'] as const,
   myImoAgencies: () => [...agencyKeys.all, 'myImo'] as const,
   metrics: (id: string) => [...agencyKeys.detail(id), 'metrics'] as const,
+  // Dashboard metrics keys (Phase 5)
+  dashboardMetrics: (id?: string) => [...agencyKeys.all, 'dashboardMetrics', id] as const,
+  productionByAgent: (id?: string) => [...agencyKeys.all, 'productionByAgent', id] as const,
 };
 
 // =============================================================================
@@ -314,5 +320,69 @@ export function useTransferAgencyOwnership(agencyId: string) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: agencyKeys.detail(agencyId) });
     },
+  });
+}
+
+// =============================================================================
+// DASHBOARD METRICS HOOKS (Phase 5)
+// =============================================================================
+
+/**
+ * Get IMO dashboard metrics (aggregated for IMO admins)
+ * Only returns data if user is IMO admin, IMO owner, or super admin
+ */
+export function useImoDashboardMetrics(options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: imoKeys.dashboardMetrics(),
+    queryFn: () => imoService.getDashboardMetrics(),
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    enabled: options?.enabled ?? true,
+  });
+}
+
+/**
+ * Get IMO production breakdown by agency
+ * Only returns data if user is IMO admin, IMO owner, or super admin
+ */
+export function useImoProductionByAgency(options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: imoKeys.productionByAgency(),
+    queryFn: () => imoService.getProductionByAgency(),
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    enabled: options?.enabled ?? true,
+  });
+}
+
+/**
+ * Get agency dashboard metrics (aggregated for agency owners)
+ * @param agencyId - Optional agency ID. Defaults to user's own agency.
+ * Only returns data if user is agency owner, IMO admin, or super admin
+ */
+export function useAgencyDashboardMetrics(
+  agencyId?: string,
+  options?: { enabled?: boolean }
+) {
+  return useQuery({
+    queryKey: agencyKeys.dashboardMetrics(agencyId),
+    queryFn: () => agencyService.getDashboardMetrics(agencyId),
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    enabled: options?.enabled ?? true,
+  });
+}
+
+/**
+ * Get agency production breakdown by agent
+ * @param agencyId - Optional agency ID. Defaults to user's own agency.
+ * Only returns data if user is agency owner, IMO admin, or super admin
+ */
+export function useAgencyProductionByAgent(
+  agencyId?: string,
+  options?: { enabled?: boolean }
+) {
+  return useQuery({
+    queryKey: agencyKeys.productionByAgent(agencyId),
+    queryFn: () => agencyService.getProductionByAgent(agencyId),
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    enabled: options?.enabled ?? true,
   });
 }

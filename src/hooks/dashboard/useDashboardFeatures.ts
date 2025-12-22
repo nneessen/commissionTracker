@@ -8,6 +8,7 @@ import {
   isOwnerDownlineGrantedFeature,
 } from "@/hooks/subscription";
 import { useAuth } from "@/contexts/AuthContext";
+import { useImo } from "@/contexts/ImoContext";
 
 // Admin emails that bypass all gating
 const ADMIN_EMAILS = ["nick@nickneessen.com", "nickneessen@thestandardhq.com"];
@@ -29,6 +30,10 @@ export interface DashboardFeatures {
   tier: "free" | "starter" | "pro" | "team";
   isLoading: boolean;
   isAdmin: boolean;
+
+  // Organization roles (Phase 5)
+  isImoAdmin: boolean;
+  isAgencyOwner: boolean;
 }
 
 /**
@@ -47,11 +52,16 @@ export function useDashboardFeatures(): DashboardFeatures {
   const { supabaseUser } = useAuth();
   const { isDirectDownlineOfOwner, isLoading: downlineLoading } =
     useOwnerDownlineAccess();
+  const { isImoAdmin: imoAdminFlag, isAgencyOwner: agencyOwnerFlag, isSuperAdmin } = useImo();
 
   return useMemo(() => {
     // Check if user is admin (bypass all gating)
     const userEmail = supabaseUser?.email;
     const isAdmin = userEmail ? ADMIN_EMAILS.includes(userEmail) : false;
+
+    // Organization roles from ImoContext
+    const isImoAdmin = isSuperAdmin || imoAdminFlag;
+    const isAgencyOwner = agencyOwnerFlag;
 
     // If admin, grant full access
     if (isAdmin) {
@@ -65,6 +75,8 @@ export function useDashboardFeatures(): DashboardFeatures {
         tier: "team" as const,
         isLoading: false,
         isAdmin: true,
+        isImoAdmin: true,
+        isAgencyOwner: false,
       };
     }
 
@@ -80,6 +92,8 @@ export function useDashboardFeatures(): DashboardFeatures {
         tier: "free" as const,
         isLoading: true,
         isAdmin: false,
+        isImoAdmin: false,
+        isAgencyOwner: false,
       };
     }
 
@@ -125,6 +139,10 @@ export function useDashboardFeatures(): DashboardFeatures {
       tier,
       isLoading: false,
       isAdmin: false,
+
+      // Organization roles
+      isImoAdmin,
+      isAgencyOwner,
     };
   }, [
     subscription,
@@ -132,5 +150,8 @@ export function useDashboardFeatures(): DashboardFeatures {
     downlineLoading,
     isDirectDownlineOfOwner,
     supabaseUser?.email,
+    imoAdminFlag,
+    agencyOwnerFlag,
+    isSuperAdmin,
   ]);
 }

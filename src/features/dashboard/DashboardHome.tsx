@@ -33,6 +33,7 @@ import { QuickActionsPanel } from "./components/QuickActionsPanel";
 import { KPIGridHeatmap } from "./components/KPIGridHeatmap";
 import { ExpenseDialog } from "../expenses/components/ExpenseDialog";
 import { PolicyDialog } from "../policies/components/PolicyDialog";
+import { OrgMetricsSection } from "./components/OrgMetricsSection";
 
 // Configuration
 import { generateStatsConfig } from "./config/statsConfig";
@@ -343,6 +344,12 @@ export const DashboardHome: React.FC = () => {
 
             {/* KPI Breakdown */}
             <KPIGridHeatmap sections={kpiConfig} />
+
+            {/* Organization Metrics (IMO Admin / Agency Owner) */}
+            <OrgMetricsSection
+              isImoAdmin={dashboardFeatures.isAdmin || dashboardFeatures.isImoAdmin}
+              isAgencyOwner={dashboardFeatures.isAgencyOwner}
+            />
 
             {/* Team & Recruiting Section (Premium - Team tier) */}
             <TeamRecruitingSection

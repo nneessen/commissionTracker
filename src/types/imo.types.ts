@@ -231,3 +231,75 @@ export interface AgencyMetrics {
   total_commissions: number;
   total_override_commissions: number;
 }
+
+// =============================================================================
+// DASHBOARD METRICS TYPES (Phase 5)
+// =============================================================================
+
+/**
+ * IMO Dashboard Metrics - aggregated metrics for IMO admins
+ */
+export interface ImoDashboardMetrics {
+  imo_id: string;
+  imo_name: string;
+  total_active_policies: number;
+  total_annual_premium: number;
+  total_commissions_ytd: number;
+  total_earned_ytd: number;
+  total_unearned: number;
+  agent_count: number;
+  agency_count: number;
+  avg_production_per_agent: number;
+}
+
+/**
+ * Agency Dashboard Metrics - aggregated metrics for agency owners
+ */
+export interface AgencyDashboardMetrics {
+  agency_id: string;
+  agency_name: string;
+  imo_id: string;
+  active_policies: number;
+  total_annual_premium: number;
+  total_commissions_ytd: number;
+  total_earned_ytd: number;
+  total_unearned: number;
+  agent_count: number;
+  avg_production_per_agent: number;
+  top_producer_id: string | null;
+  top_producer_name: string | null;
+  top_producer_premium: number;
+}
+
+/**
+ * IMO Production by Agency - breakdown for IMO admins
+ */
+export interface ImoProductionByAgency {
+  agency_id: string;
+  agency_name: string;
+  agency_code: string;
+  owner_name: string;
+  active_policies: number;
+  total_annual_premium: number;
+  commissions_ytd: number;
+  agent_count: number;
+  avg_production: number;
+  pct_of_imo_production: number;
+}
+
+/**
+ * Agency Production by Agent - breakdown for agency owners
+ */
+export interface AgencyProductionByAgent {
+  agent_id: string;
+  agent_name: string;
+  agent_email: string;
+  contract_level: number;
+  active_policies: number;
+  total_annual_premium: number;
+  commissions_ytd: number;
+  earned_ytd: number;
+  unearned_amount: number;
+  pct_of_agency_production: number;
+  joined_date: string;
+}

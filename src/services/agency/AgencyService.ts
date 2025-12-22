@@ -10,8 +10,17 @@ import type {
   CreateAgencyData,
   AgencyUpdate,
   AgencyMetrics,
+  AgencyDashboardMetrics,
+  AgencyProductionByAgent,
 } from '../../types/imo.types';
 import { IMO_ROLES } from '../../types/imo.types';
+import {
+  parseAgencyDashboardMetrics,
+  parseAgencyProductionByAgent,
+  isAccessDeniedError,
+  isInvalidParameterError,
+  isNotFoundError,
+} from '../../types/dashboard-metrics.schemas';
 
 /**
  * Service layer for Agency operations
@@ -469,6 +478,111 @@ class AgencyService {
       return agencies.length > 0;
     } catch {
       return false;
+    }
+  }
+
+  /**
+   * Get agency dashboard metrics (aggregated for agency owners)
+   * Uses RPC function for efficient single-query execution
+   * @param agencyId - Optional agency ID. Defaults to user's own agency.
+   */
+  async getDashboardMetrics(agencyId?: string): Promise<AgencyDashboardMetrics | null> {
+    try {
+      const { data, error } = await supabase.rpc('get_agency_dashboard_metrics', {
+        p_agency_id: agencyId || null,
+      });
+
+      if (error) {
+        // Handle access denied and not found gracefully using error codes
+        if (isAccessDeniedError(error) || isInvalidParameterError(error) || isNotFoundError(error)) {
+          logger.warn('Access denied or invalid params for agency dashboard metrics',
+            { agencyId, code: error.code }, 'AgencyService');
+          return null;
+        }
+        throw error;
+      }
+
+      if (!data || data.length === 0) {
+        return null;
+      }
+
+      // Validate response with Zod schema
+      const validated = parseAgencyDashboardMetrics(data);
+      const row = validated[0];
+
+      return {
+        agency_id: row.agency_id,
+        agency_name: row.agency_name,
+        imo_id: row.imo_id,
+        active_policies: row.active_policies,
+        total_annual_premium: row.total_annual_premium,
+        total_commissions_ytd: row.total_commissions_ytd,
+        total_earned_ytd: row.total_earned_ytd,
+        total_unearned: row.total_unearned,
+        agent_count: row.agent_count,
+        avg_production_per_agent: row.avg_production_per_agent,
+        top_producer_id: row.top_producer_id,
+        top_producer_name: row.top_producer_name,
+        top_producer_premium: row.top_producer_premium,
+      };
+    } catch (error) {
+      logger.error(
+        'Failed to get agency dashboard metrics',
+        error instanceof Error ? error : new Error(String(error)),
+        'AgencyService'
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Get production breakdown by agent for agency owners
+   * Uses RPC function for efficient single-query execution
+   * @param agencyId - Optional agency ID. Defaults to user's own agency.
+   */
+  async getProductionByAgent(agencyId?: string): Promise<AgencyProductionByAgent[]> {
+    try {
+      const { data, error } = await supabase.rpc('get_agency_production_by_agent', {
+        p_agency_id: agencyId || null,
+      });
+
+      if (error) {
+        // Handle access denied and not found gracefully using error codes
+        if (isAccessDeniedError(error) || isInvalidParameterError(error) || isNotFoundError(error)) {
+          logger.warn('Access denied or invalid params for agency production by agent',
+            { agencyId, code: error.code }, 'AgencyService');
+          return [];
+        }
+        throw error;
+      }
+
+      if (!data) {
+        return [];
+      }
+
+      // Validate response with Zod schema
+      const validated = parseAgencyProductionByAgent(data);
+
+      return validated.map((row) => ({
+        agent_id: row.agent_id,
+        agent_name: row.agent_name,
+        agent_email: row.agent_email,
+        contract_level: row.contract_level,
+        active_policies: row.active_policies,
+        total_annual_premium: row.total_annual_premium,
+        commissions_ytd: row.commissions_ytd,
+        earned_ytd: row.earned_ytd,
+        unearned_amount: row.unearned_amount,
+        pct_of_agency_production: row.pct_of_agency_production,
+        joined_date: row.joined_date,
+      }));
+    } catch (error) {
+      logger.error(
+        'Failed to get agency production by agent',
+        error instanceof Error ? error : new Error(String(error)),
+        'AgencyService'
+      );
+      throw error;
     }
   }
 }

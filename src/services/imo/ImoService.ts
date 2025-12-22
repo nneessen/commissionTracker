@@ -10,7 +10,15 @@ import type {
   CreateImoData,
   ImoUpdate,
   ImoMetrics,
+  ImoDashboardMetrics,
+  ImoProductionByAgency,
 } from '../../types/imo.types';
+import {
+  parseImoDashboardMetrics,
+  parseImoProductionByAgency,
+  isAccessDeniedError,
+  isInvalidParameterError,
+} from '../../types/dashboard-metrics.schemas';
 
 /**
  * Service layer for IMO operations
@@ -246,6 +254,101 @@ class ImoService {
       return roles.includes('imo_owner') || roles.includes('imo_admin');
     } catch {
       return false;
+    }
+  }
+
+  /**
+   * Get IMO dashboard metrics (aggregated for IMO admins)
+   * Uses RPC function for efficient single-query execution
+   */
+  async getDashboardMetrics(): Promise<ImoDashboardMetrics | null> {
+    try {
+      const { data, error } = await supabase.rpc('get_imo_dashboard_metrics');
+
+      if (error) {
+        // Handle access denied gracefully using error codes
+        if (isAccessDeniedError(error) || isInvalidParameterError(error)) {
+          logger.warn('Access denied or invalid params for IMO dashboard metrics',
+            { code: error.code }, 'ImoService');
+          return null;
+        }
+        throw error;
+      }
+
+      if (!data || data.length === 0) {
+        return null;
+      }
+
+      // Validate response with Zod schema
+      const validated = parseImoDashboardMetrics(data);
+      const row = validated[0];
+
+      return {
+        imo_id: row.imo_id,
+        imo_name: row.imo_name,
+        total_active_policies: row.total_active_policies,
+        total_annual_premium: row.total_annual_premium,
+        total_commissions_ytd: row.total_commissions_ytd,
+        total_earned_ytd: row.total_earned_ytd,
+        total_unearned: row.total_unearned,
+        agent_count: row.agent_count,
+        agency_count: row.agency_count,
+        avg_production_per_agent: row.avg_production_per_agent,
+      };
+    } catch (error) {
+      logger.error(
+        'Failed to get IMO dashboard metrics',
+        error instanceof Error ? error : new Error(String(error)),
+        'ImoService'
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Get production breakdown by agency for IMO admins
+   * Uses RPC function for efficient single-query execution
+   */
+  async getProductionByAgency(): Promise<ImoProductionByAgency[]> {
+    try {
+      const { data, error } = await supabase.rpc('get_imo_production_by_agency');
+
+      if (error) {
+        // Handle access denied gracefully using error codes
+        if (isAccessDeniedError(error) || isInvalidParameterError(error)) {
+          logger.warn('Access denied or invalid params for IMO production by agency',
+            { code: error.code }, 'ImoService');
+          return [];
+        }
+        throw error;
+      }
+
+      if (!data) {
+        return [];
+      }
+
+      // Validate response with Zod schema
+      const validated = parseImoProductionByAgency(data);
+
+      return validated.map((row) => ({
+        agency_id: row.agency_id,
+        agency_name: row.agency_name,
+        agency_code: row.agency_code,
+        owner_name: row.owner_name,
+        active_policies: row.active_policies,
+        total_annual_premium: row.total_annual_premium,
+        commissions_ytd: row.commissions_ytd,
+        agent_count: row.agent_count,
+        avg_production: row.avg_production,
+        pct_of_imo_production: row.pct_of_imo_production,
+      }));
+    } catch (error) {
+      logger.error(
+        'Failed to get IMO production by agency',
+        error instanceof Error ? error : new Error(String(error)),
+        'ImoService'
+      );
+      throw error;
     }
   }
 }

@@ -27,4 +27,10 @@ export {
   useDeactivateAgency,
   useAssignAgentToAgency,
   useTransferAgencyOwnership,
+  useAllActiveAgencies,
+  // Dashboard metrics hooks (Phase 5)
+  useImoDashboardMetrics,
+  useImoProductionByAgency,
+  useAgencyDashboardMetrics,
+  useAgencyProductionByAgent,
 } from './useImoQueries';
