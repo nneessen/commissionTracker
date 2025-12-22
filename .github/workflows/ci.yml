@@ -21,16 +21,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Install Supabase CLI
-        run: |
-          curl -fsSL https://cli.supabase.com/install/linux | sh
-          echo "$HOME/.supabase/bin" >> $GITHUB_PATH
-
       - name: Generate DB Types and Verify
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         run: |
-          supabase gen types typescript --project-id ${{ secrets.SUPABASE_PROJECT_ID }} > generated.types.ts
+          npx supabase@latest gen types typescript --project-id ${{ secrets.SUPABASE_PROJECT_ID }} > generated.types.ts
           diff -q generated.types.ts src/types/database.types.ts
         shell: bash
 
