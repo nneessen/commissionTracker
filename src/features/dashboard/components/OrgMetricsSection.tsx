@@ -3,16 +3,21 @@
 
 import React from "react";
 import { cn } from "@/lib/utils";
-import { Building2, Users, Trophy, TrendingUp, BarChart3, AlertCircle, ArrowUpRight, UserPlus } from "lucide-react";
-import { formatCurrency, formatNumber, formatPercent } from "@/lib/format";
+import {
+  Building2,
+  Users,
+  Trophy,
+  BarChart3,
+  AlertCircle,
+  ArrowUpRight,
+} from "lucide-react";
+import { formatCurrency, formatNumber } from "@/lib/format";
 import {
   useImoDashboardMetrics,
   useAgencyDashboardMetrics,
   useImoProductionByAgency,
   useImoOverrideSummary,
   useAgencyOverrideSummary,
-  useImoRecruitingSummary,
-  useAgencyRecruitingSummary,
 } from "@/hooks/imo";
 
 // Maximum agencies to display in production breakdown
@@ -39,7 +44,7 @@ const MetricItem: React.FC<MetricItemProps> = ({
           "font-mono font-semibold",
           highlight
             ? "text-emerald-600 dark:text-emerald-400"
-            : "text-zinc-900 dark:text-zinc-100"
+            : "text-zinc-900 dark:text-zinc-100",
         )}
       >
         {value}
@@ -82,10 +87,7 @@ const ImoMetricsPanel: React.FC = () => {
         <div className="h-4 w-24 bg-zinc-200 dark:bg-zinc-700 rounded mb-3" />
         <div className="space-y-2">
           {[...Array(6)].map((_, i) => (
-            <div
-              key={i}
-              className="h-3 bg-zinc-100 dark:bg-zinc-800 rounded"
-            />
+            <div key={i} className="h-3 bg-zinc-100 dark:bg-zinc-800 rounded" />
           ))}
         </div>
       </div>
@@ -93,7 +95,11 @@ const ImoMetricsPanel: React.FC = () => {
   }
 
   if (error) {
-    return <ErrorState message={error instanceof Error ? error.message : undefined} />;
+    return (
+      <ErrorState
+        message={error instanceof Error ? error.message : undefined}
+      />
+    );
   }
 
   if (!metrics) {
@@ -174,10 +180,7 @@ const AgencyMetricsPanel: React.FC = () => {
         <div className="h-4 w-24 bg-zinc-200 dark:bg-zinc-700 rounded mb-3" />
         <div className="space-y-2">
           {[...Array(6)].map((_, i) => (
-            <div
-              key={i}
-              className="h-3 bg-zinc-100 dark:bg-zinc-800 rounded"
-            />
+            <div key={i} className="h-3 bg-zinc-100 dark:bg-zinc-800 rounded" />
           ))}
         </div>
       </div>
@@ -185,7 +188,11 @@ const AgencyMetricsPanel: React.FC = () => {
   }
 
   if (error) {
-    return <ErrorState message={error instanceof Error ? error.message : undefined} />;
+    return (
+      <ErrorState
+        message={error instanceof Error ? error.message : undefined}
+      />
+    );
   }
 
   if (!metrics) {
@@ -279,10 +286,7 @@ const ImoOverrideSummaryPanel: React.FC = () => {
         <div className="h-4 w-24 bg-zinc-200 dark:bg-zinc-700 rounded mb-3" />
         <div className="space-y-2">
           {[...Array(4)].map((_, i) => (
-            <div
-              key={i}
-              className="h-3 bg-zinc-100 dark:bg-zinc-800 rounded"
-            />
+            <div key={i} className="h-3 bg-zinc-100 dark:bg-zinc-800 rounded" />
           ))}
         </div>
       </div>
@@ -290,7 +294,11 @@ const ImoOverrideSummaryPanel: React.FC = () => {
   }
 
   if (error) {
-    return <ErrorState message={error instanceof Error ? error.message : undefined} />;
+    return (
+      <ErrorState
+        message={error instanceof Error ? error.message : undefined}
+      />
+    );
   }
 
   if (!summary) {
@@ -331,10 +339,7 @@ const ImoOverrideSummaryPanel: React.FC = () => {
           value={formatCurrency(summary.earned_amount)}
           highlight={summary.earned_amount > 0}
         />
-        <MetricItem
-          label="Paid"
-          value={formatCurrency(summary.paid_amount)}
-        />
+        <MetricItem label="Paid" value={formatCurrency(summary.paid_amount)} />
         {summary.chargeback_amount > 0 && (
           <MetricItem
             label="Chargebacks"
@@ -373,10 +378,7 @@ const AgencyOverrideSummaryPanel: React.FC = () => {
         <div className="h-4 w-24 bg-zinc-200 dark:bg-zinc-700 rounded mb-3" />
         <div className="space-y-2">
           {[...Array(4)].map((_, i) => (
-            <div
-              key={i}
-              className="h-3 bg-zinc-100 dark:bg-zinc-800 rounded"
-            />
+            <div key={i} className="h-3 bg-zinc-100 dark:bg-zinc-800 rounded" />
           ))}
         </div>
       </div>
@@ -384,7 +386,11 @@ const AgencyOverrideSummaryPanel: React.FC = () => {
   }
 
   if (error) {
-    return <ErrorState message={error instanceof Error ? error.message : undefined} />;
+    return (
+      <ErrorState
+        message={error instanceof Error ? error.message : undefined}
+      />
+    );
   }
 
   if (!summary) {
@@ -425,10 +431,7 @@ const AgencyOverrideSummaryPanel: React.FC = () => {
           value={formatCurrency(summary.earned_amount)}
           highlight={summary.earned_amount > 0}
         />
-        <MetricItem
-          label="Paid"
-          value={formatCurrency(summary.paid_amount)}
-        />
+        <MetricItem label="Paid" value={formatCurrency(summary.paid_amount)} />
         <MetricItem
           label="Avg/Policy"
           value={formatCurrency(summary.avg_override_per_policy)}
@@ -468,10 +471,7 @@ const ProductionBreakdownPanel: React.FC = () => {
         <div className="h-4 w-32 bg-zinc-200 dark:bg-zinc-700 rounded mb-3" />
         <div className="space-y-2">
           {[...Array(4)].map((_, i) => (
-            <div
-              key={i}
-              className="h-8 bg-zinc-100 dark:bg-zinc-800 rounded"
-            />
+            <div key={i} className="h-8 bg-zinc-100 dark:bg-zinc-800 rounded" />
           ))}
         </div>
       </div>
@@ -479,7 +479,11 @@ const ProductionBreakdownPanel: React.FC = () => {
   }
 
   if (error) {
-    return <ErrorState message={error instanceof Error ? error.message : undefined} />;
+    return (
+      <ErrorState
+        message={error instanceof Error ? error.message : undefined}
+      />
+    );
   }
 
   if (!agencies || agencies.length === 0) {
@@ -514,7 +518,7 @@ const ProductionBreakdownPanel: React.FC = () => {
                     ? "bg-zinc-200 text-zinc-600 dark:bg-zinc-700 dark:text-zinc-300"
                     : index === 2
                       ? "bg-orange-100 text-orange-700 dark:bg-orange-900/50 dark:text-orange-400"
-                      : "bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400"
+                      : "bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400",
               )}
             >
               {index + 1}
@@ -550,174 +554,6 @@ const ProductionBreakdownPanel: React.FC = () => {
   );
 };
 
-/**
- * IMO Recruiting Summary Panel - For IMO admins
- */
-const ImoRecruitingSummaryPanel: React.FC = () => {
-  const { data: summary, isLoading, error } = useImoRecruitingSummary();
-
-  if (isLoading) {
-    return (
-      <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-3 h-full animate-pulse">
-        <div className="h-4 w-24 bg-zinc-200 dark:bg-zinc-700 rounded mb-3" />
-        <div className="space-y-2">
-          {[...Array(4)].map((_, i) => (
-            <div
-              key={i}
-              className="h-3 bg-zinc-100 dark:bg-zinc-800 rounded"
-            />
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return <ErrorState message={error instanceof Error ? error.message : undefined} />;
-  }
-
-  if (!summary) {
-    return null;
-  }
-
-  return (
-    <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-3 h-full">
-      <div className="flex items-center gap-1.5 mb-2">
-        <UserPlus className="h-3 w-3 text-teal-500" />
-        <span className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-          Recruiting Pipeline
-        </span>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3 mb-3">
-        <div className="text-center p-2 bg-teal-50 dark:bg-teal-900/20 rounded">
-          <div className="text-lg font-bold text-teal-600 dark:text-teal-400">
-            {formatNumber(summary.total_recruits)}
-          </div>
-          <div className="text-[9px] text-zinc-500 uppercase">Total Recruits</div>
-        </div>
-        <div className="text-center p-2 bg-emerald-50 dark:bg-emerald-900/20 rounded">
-          <div className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
-            {formatPercent(summary.conversion_rate)}
-          </div>
-          <div className="text-[9px] text-zinc-500 uppercase">Conversion</div>
-        </div>
-      </div>
-
-      <div className="space-y-0.5">
-        <MetricItem
-          label="In Pipeline"
-          value={formatNumber(summary.active_in_pipeline)}
-          highlight={summary.active_in_pipeline > 0}
-        />
-        <MetricItem
-          label="Completed"
-          value={formatNumber(summary.completed_count)}
-          highlight={summary.completed_count > 0}
-        />
-        <MetricItem
-          label="Dropped"
-          value={formatNumber(summary.dropped_count)}
-        />
-        {summary.avg_days_to_complete !== null && (
-          <>
-            <div className="border-t border-zinc-100 dark:border-zinc-800 my-1.5" />
-            <MetricItem
-              label="Avg Days"
-              value={summary.avg_days_to_complete.toFixed(0)}
-              subtext="to complete"
-            />
-          </>
-        )}
-      </div>
-    </div>
-  );
-};
-
-/**
- * Agency Recruiting Summary Panel - For agency owners
- */
-const AgencyRecruitingSummaryPanel: React.FC = () => {
-  const { data: summary, isLoading, error } = useAgencyRecruitingSummary();
-
-  if (isLoading) {
-    return (
-      <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-3 h-full animate-pulse">
-        <div className="h-4 w-24 bg-zinc-200 dark:bg-zinc-700 rounded mb-3" />
-        <div className="space-y-2">
-          {[...Array(4)].map((_, i) => (
-            <div
-              key={i}
-              className="h-3 bg-zinc-100 dark:bg-zinc-800 rounded"
-            />
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return <ErrorState message={error instanceof Error ? error.message : undefined} />;
-  }
-
-  if (!summary) {
-    return null;
-  }
-
-  return (
-    <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-3 h-full">
-      <div className="flex items-center gap-1.5 mb-2">
-        <UserPlus className="h-3 w-3 text-teal-500" />
-        <span className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-          Recruiting Pipeline
-        </span>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3 mb-3">
-        <div className="text-center p-2 bg-teal-50 dark:bg-teal-900/20 rounded">
-          <div className="text-lg font-bold text-teal-600 dark:text-teal-400">
-            {formatNumber(summary.total_recruits)}
-          </div>
-          <div className="text-[9px] text-zinc-500 uppercase">Total Recruits</div>
-        </div>
-        <div className="text-center p-2 bg-emerald-50 dark:bg-emerald-900/20 rounded">
-          <div className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
-            {formatPercent(summary.conversion_rate)}
-          </div>
-          <div className="text-[9px] text-zinc-500 uppercase">Conversion</div>
-        </div>
-      </div>
-
-      <div className="space-y-0.5">
-        <MetricItem
-          label="In Pipeline"
-          value={formatNumber(summary.active_in_pipeline)}
-          highlight={summary.active_in_pipeline > 0}
-        />
-        <MetricItem
-          label="Completed"
-          value={formatNumber(summary.completed_count)}
-          highlight={summary.completed_count > 0}
-        />
-        <MetricItem
-          label="Dropped"
-          value={formatNumber(summary.dropped_count)}
-        />
-        {summary.avg_days_to_complete !== null && (
-          <>
-            <div className="border-t border-zinc-100 dark:border-zinc-800 my-1.5" />
-            <MetricItem
-              label="Avg Days"
-              value={summary.avg_days_to_complete.toFixed(0)}
-              subtext="to complete"
-            />
-          </>
-        )}
-      </div>
-    </div>
-  );
-};
-
 interface OrgMetricsSectionProps {
   isImoAdmin: boolean;
   isAgencyOwner: boolean;
@@ -735,27 +571,27 @@ export const OrgMetricsSection: React.FC<OrgMetricsSectionProps> = ({
     return null;
   }
 
-  // IMO admin view: Show IMO metrics + Override Summary + Recruiting + Production breakdown
+  // IMO admin view: Show IMO metrics + Override Summary + Production breakdown
+  // (Recruiting pipeline is shown in TeamRecruitingSection to avoid duplication)
   if (isImoAdmin) {
     return (
       <div className="space-y-2">
-        <div className="grid gap-2 grid-cols-1 md:grid-cols-2 lg:grid-cols-[300px_300px_300px_1fr]">
+        <div className="grid gap-2 grid-cols-1 md:grid-cols-2 lg:grid-cols-[300px_300px_1fr]">
           <ImoMetricsPanel />
           <ImoOverrideSummaryPanel />
-          <ImoRecruitingSummaryPanel />
           <ProductionBreakdownPanel />
         </div>
       </div>
     );
   }
 
-  // Agency owner view: Show Agency metrics + Override Summary + Recruiting
+  // Agency owner view: Show Agency metrics + Override Summary
+  // (Recruiting pipeline is shown in TeamRecruitingSection to avoid duplication)
   if (isAgencyOwner) {
     return (
-      <div className="grid gap-2 grid-cols-1 md:grid-cols-2 lg:grid-cols-[300px_300px_300px]">
+      <div className="grid gap-2 grid-cols-1 md:grid-cols-[300px_300px]">
         <AgencyMetricsPanel />
         <AgencyOverrideSummaryPanel />
-        <AgencyRecruitingSummaryPanel />
       </div>
     );
   }
