@@ -11,6 +11,7 @@ import type {
   ClientWithStats,
   ClientWithPolicies,
   ClientSelectOption,
+  DownlineClientWithStats,
 } from "@/types/client.types";
 import type { Policy } from "@/types/policy.types";
 import { parseLocalDate } from "@/lib/date";
@@ -477,6 +478,123 @@ class ClientServiceClass {
       }, 0);
 
     return policies.length > 0 ? Math.round(totalMonths / policies.length) : 0;
+  }
+
+  // ============================================================================
+  // Hierarchy/Team Methods
+  // ============================================================================
+
+  /**
+   * Get clients from downlines with stats
+   * Returns clients belonging to agents in the current user's downline
+   */
+  async getDownlineClientsWithStats(
+    filters?: ClientFilters
+  ): Promise<ServiceResponse<DownlineClientWithStats[]>> {
+    try {
+      let results = await this.repository.findDownlineWithStats();
+
+      // Apply client-side filters
+      if (filters) {
+        if (filters.status && filters.status !== "all") {
+          results = results.filter((c) => c.status === filters.status);
+        }
+
+        if (filters.searchTerm) {
+          const search = filters.searchTerm.toLowerCase();
+          results = results.filter(
+            (c) =>
+              c.name.toLowerCase().includes(search) ||
+              c.email?.toLowerCase().includes(search) ||
+              c.phone?.includes(search) ||
+              c.owner_name.toLowerCase().includes(search)
+          );
+        }
+
+        if (filters.hasPolicies === true) {
+          results = results.filter((c) => c.policy_count > 0);
+        } else if (filters.hasPolicies === false) {
+          results = results.filter((c) => c.policy_count === 0);
+        }
+
+        if (filters.hasActivePolicies === true) {
+          results = results.filter((c) => c.active_policy_count > 0);
+        } else if (filters.hasActivePolicies === false) {
+          results = results.filter((c) => c.active_policy_count === 0);
+        }
+      }
+
+      return { success: true, data: results };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error : new Error(String(error)),
+      };
+    }
+  }
+
+  /**
+   * Get all clients in the user's IMO with stats
+   * Only accessible by IMO admins
+   */
+  async getImoClientsWithStats(
+    filters?: ClientFilters
+  ): Promise<ServiceResponse<DownlineClientWithStats[]>> {
+    try {
+      let results = await this.repository.findImoWithStats();
+
+      // Apply client-side filters
+      if (filters) {
+        if (filters.status && filters.status !== "all") {
+          results = results.filter((c) => c.status === filters.status);
+        }
+
+        if (filters.searchTerm) {
+          const search = filters.searchTerm.toLowerCase();
+          results = results.filter(
+            (c) =>
+              c.name.toLowerCase().includes(search) ||
+              c.email?.toLowerCase().includes(search) ||
+              c.phone?.includes(search) ||
+              c.owner_name.toLowerCase().includes(search)
+          );
+        }
+
+        if (filters.hasPolicies === true) {
+          results = results.filter((c) => c.policy_count > 0);
+        } else if (filters.hasPolicies === false) {
+          results = results.filter((c) => c.policy_count === 0);
+        }
+
+        if (filters.hasActivePolicies === true) {
+          results = results.filter((c) => c.active_policy_count > 0);
+        } else if (filters.hasActivePolicies === false) {
+          results = results.filter((c) => c.active_policy_count === 0);
+        }
+      }
+
+      return { success: true, data: results };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error : new Error(String(error)),
+      };
+    }
+  }
+
+  /**
+   * Check if current user has downlines
+   */
+  async hasDownlines(): Promise<ServiceResponse<boolean>> {
+    try {
+      const hasDownlines = await this.repository.hasDownlines();
+      return { success: true, data: hasDownlines };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error : new Error(String(error)),
+      };
+    }
   }
 
   // ============================================================================

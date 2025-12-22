@@ -50,6 +50,14 @@ export interface ClientWithStats extends Client {
   last_policy_date: string | null;
 }
 
+// Downline/Team client with owner info (from hierarchy functions)
+export interface DownlineClientWithStats extends ClientWithStats {
+  owner_name: string; // Name of the agent who owns this client
+}
+
+// View mode for client list
+export type ClientViewMode = "own" | "team" | "imo";
+
 // Client with full policy details for detail view
 export interface ClientWithPolicies extends Client {
   policies: Policy[];

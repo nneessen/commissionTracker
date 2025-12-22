@@ -7,6 +7,7 @@ import type {
   ClientFilters,
   ClientSortConfig,
   ClientWithStats,
+  DownlineClientWithStats,
 } from "@/types/client.types";
 
 type ClientBaseEntity = Client & BaseEntity;
@@ -209,6 +210,49 @@ export class ClientRepository extends BaseRepository<
     }
 
     return data !== null && data.length > 0;
+  }
+
+  /**
+   * Get downline clients with stats using database function
+   * Returns clients belonging to agents in the current user's downline
+   */
+  async findDownlineWithStats(): Promise<DownlineClientWithStats[]> {
+    const { data, error } = await this.client.rpc(
+      "get_downline_clients_with_stats"
+    );
+
+    if (error) {
+      throw this.handleError(error, "findDownlineWithStats");
+    }
+
+    return (data || []) as DownlineClientWithStats[];
+  }
+
+  /**
+   * Get all IMO clients with stats using database function
+   * Only accessible by IMO admins
+   */
+  async findImoWithStats(): Promise<DownlineClientWithStats[]> {
+    const { data, error } = await this.client.rpc("get_imo_clients_with_stats");
+
+    if (error) {
+      throw this.handleError(error, "findImoWithStats");
+    }
+
+    return (data || []) as DownlineClientWithStats[];
+  }
+
+  /**
+   * Check if current user has downlines
+   */
+  async hasDownlines(): Promise<boolean> {
+    const { data, error } = await this.client.rpc("has_downlines");
+
+    if (error) {
+      throw this.handleError(error, "hasDownlines");
+    }
+
+    return data === true;
   }
 }
 
