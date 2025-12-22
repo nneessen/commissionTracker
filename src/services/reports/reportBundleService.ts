@@ -54,6 +54,8 @@ const _REPORT_TYPE_NAMES: Record<ReportType, string> = {
   'client-relationship': 'Client Relationship',
   'financial-health': 'Financial Health',
   'predictive-analytics': 'Predictive Analytics',
+  'imo-performance': 'IMO Performance',
+  'agency-performance': 'Agency Performance',
 };
 
 // ============================================================================
@@ -904,6 +906,8 @@ export class ReportBundleService {
       'client-relationship': 'Clients',
       'financial-health': 'Financial',
       'predictive-analytics': 'Predictions',
+      'imo-performance': 'IMO Performance',
+      'agency-performance': 'Agency Performance',
     };
     return names[type] || type;
   }

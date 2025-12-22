@@ -20,3 +20,14 @@ export { DrillDownDrawer } from "./drill-down";
 // Filters
 export { ReportFiltersBar } from "./filters/ReportFiltersBar";
 export { MultiSelectFilter } from "./filters/MultiSelectFilter";
+
+// Team Reports (Phase 6)
+export { ImoPerformanceReport } from "./ImoPerformanceReport";
+export { AgencyPerformanceReport } from "./AgencyPerformanceReport";
+
+// Error Handling
+export {
+  ReportErrorBoundary,
+  QueryErrorAlert,
+  ReportQueryError,
+} from "./ReportErrorBoundary";

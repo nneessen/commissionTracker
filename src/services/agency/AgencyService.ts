@@ -21,6 +21,13 @@ import {
   isInvalidParameterError,
   isNotFoundError,
 } from '../../types/dashboard-metrics.schemas';
+import {
+  parseAgencyPerformanceReport,
+  formatDateForQuery,
+  validateReportDateRange,
+  type AgencyPerformanceReport,
+  type ReportDateRange,
+} from '../../types/team-reports.schemas';
 
 /**
  * Service layer for Agency operations
@@ -579,6 +586,91 @@ class AgencyService {
     } catch (error) {
       logger.error(
         'Failed to get agency production by agent',
+        error instanceof Error ? error : new Error(String(error)),
+        'AgencyService'
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Get agency performance report with monthly trends
+   * Uses RPC function for efficient single-query execution
+   * @param agencyId - Optional agency ID. Defaults to user's own agency.
+   * @throws DateRangeValidationError if date range exceeds 24 months
+   */
+  async getPerformanceReport(
+    agencyId?: string,
+    dateRange?: ReportDateRange
+  ): Promise<AgencyPerformanceReport | null> {
+    try {
+      // Validate date range to prevent abuse (max 24 months)
+      validateReportDateRange(dateRange);
+
+      const params: { p_agency_id: string | null; p_start_date?: string; p_end_date?: string } = {
+        p_agency_id: agencyId ?? null,
+      };
+      if (dateRange) {
+        params.p_start_date = formatDateForQuery(dateRange.startDate);
+        params.p_end_date = formatDateForQuery(dateRange.endDate);
+      }
+
+      const { data, error } = await supabase.rpc('get_agency_performance_report', params);
+
+      if (error) {
+        if (isAccessDeniedError(error) || isInvalidParameterError(error) || isNotFoundError(error)) {
+          logger.warn('Access denied or invalid params for agency performance report',
+            { agencyId, code: error.code }, 'AgencyService');
+          return null;
+        }
+        throw error;
+      }
+
+      if (!data || data.length === 0) {
+        return {
+          agency_id: agencyId || '',
+          months: [],
+          summary: {
+            total_new_policies: 0,
+            total_new_premium: 0,
+            total_commissions: 0,
+            total_new_agents: 0,
+            total_lapsed: 0,
+            net_growth: 0,
+          },
+        };
+      }
+
+      const validated = parseAgencyPerformanceReport(data);
+
+      // Calculate summary from monthly data
+      const summary = validated.reduce(
+        (acc, row) => ({
+          total_new_policies: acc.total_new_policies + row.new_policies,
+          total_new_premium: acc.total_new_premium + row.new_premium,
+          total_commissions: acc.total_commissions + row.commissions_earned,
+          total_new_agents: acc.total_new_agents + row.new_agents,
+          total_lapsed: acc.total_lapsed + row.policies_lapsed,
+          net_growth: acc.net_growth + row.net_premium_change,
+        }),
+        {
+          total_new_policies: 0,
+          total_new_premium: 0,
+          total_commissions: 0,
+          total_new_agents: 0,
+          total_lapsed: 0,
+          net_growth: 0,
+        }
+      );
+
+      return {
+        agency_id: agencyId || '',
+        months: validated,
+        summary,
+      };
+    } catch (error) {
+      logger.error(
+        'Failed to get agency performance report',
         error instanceof Error ? error : new Error(String(error)),
         'AgencyService'
       );

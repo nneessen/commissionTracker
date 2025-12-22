@@ -54,6 +54,21 @@ export const REPORT_CATEGORIES: Record<string, ReportCategory> = {
       },
     ],
   },
+  team: {
+    name: "Team Reports",
+    reports: [
+      {
+        type: "imo-performance",
+        name: "IMO Performance",
+        icon: "🏢",
+      },
+      {
+        type: "agency-performance",
+        name: "Agency Performance",
+        icon: "🏬",
+      },
+    ],
+  },
 };
 
 // Helper to get all report types as flat array

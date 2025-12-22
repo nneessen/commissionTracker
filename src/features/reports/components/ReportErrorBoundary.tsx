@@ -1,0 +1,164 @@
+// src/features/reports/components/ReportErrorBoundary.tsx
+
+import { Component, type ReactNode } from 'react';
+import { AlertTriangle, RefreshCw } from 'lucide-react';
+import { Button } from '../../../components/ui/button';
+
+interface Props {
+  children: ReactNode;
+  fallback?: ReactNode;
+  /** Called when user clicks retry - use to invalidate queries before re-render */
+  onRetry?: () => void;
+}
+
+interface State {
+  hasError: boolean;
+  error: Error | null;
+}
+
+/**
+ * Error boundary for report components.
+ * Catches render errors and displays a user-friendly error state.
+ *
+ * When a render error occurs (e.g., due to malformed data), the onRetry callback
+ * allows invalidating cached queries before re-rendering, ensuring fresh data is fetched.
+ */
+export class ReportErrorBoundary extends Component<Props, State> {
+  constructor(props: Props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error): State {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error('Report render error:', error, errorInfo);
+  }
+
+  handleRetry = () => {
+    // Invalidate queries first to ensure fresh data on re-render
+    this.props.onRetry?.();
+    this.setState({ hasError: false, error: null });
+  };
+
+  render() {
+    if (this.state.hasError) {
+      if (this.props.fallback) {
+        return this.props.fallback;
+      }
+
+      return (
+        <div className="p-6 bg-white dark:bg-zinc-900 rounded-lg border border-red-200 dark:border-red-800">
+          <div className="flex flex-col items-center text-center">
+            <AlertTriangle className="w-8 h-8 text-red-500 mb-3" />
+            <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 mb-1">
+              Report Error
+            </h3>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-4 max-w-md">
+              An error occurred while rendering this report. This may be due to unexpected data format.
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={this.handleRetry}
+              className="gap-2"
+            >
+              <RefreshCw className="w-3 h-3" />
+              Try Again
+            </Button>
+          </div>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
+/**
+ * Props for QueryErrorAlert component
+ */
+interface QueryErrorAlertProps {
+  title: string;
+  errors: Array<{ name: string; error: Error | null }>;
+  onRetry?: () => void;
+}
+
+/**
+ * Displays query-level errors for report components.
+ * Use this when one or more queries fail but the component doesn't crash.
+ */
+export function QueryErrorAlert({ title, errors, onRetry }: QueryErrorAlertProps) {
+  const failedQueries = errors.filter((e) => e.error !== null);
+
+  if (failedQueries.length === 0) return null;
+
+  return (
+    <div className="p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800 mb-4">
+      <div className="flex items-start gap-3">
+        <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+        <div className="flex-1 min-w-0">
+          <h4 className="text-sm font-medium text-amber-800 dark:text-amber-200">
+            {title}
+          </h4>
+          <ul className="mt-1 text-xs text-amber-700 dark:text-amber-300 space-y-0.5">
+            {failedQueries.map(({ name, error }) => (
+              <li key={name}>
+                <span className="font-medium">{name}:</span>{' '}
+                {error?.message || 'Unknown error'}
+              </li>
+            ))}
+          </ul>
+          {onRetry && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onRetry}
+              className="mt-2 h-7 text-xs text-amber-700 hover:text-amber-800 hover:bg-amber-100 dark:text-amber-300"
+            >
+              <RefreshCw className="w-3 h-3 mr-1" />
+              Retry
+            </Button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Props for full-page error state
+ */
+interface ReportQueryErrorProps {
+  message?: string;
+  onRetry?: () => void;
+}
+
+/**
+ * Full error state when primary report data fails to load.
+ */
+export function ReportQueryError({ message, onRetry }: ReportQueryErrorProps) {
+  return (
+    <div className="p-8 bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800">
+      <div className="flex flex-col items-center text-center">
+        <div className="p-3 bg-red-100 dark:bg-red-900/30 rounded-full mb-4">
+          <AlertTriangle className="w-6 h-6 text-red-600 dark:text-red-400" />
+        </div>
+        <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 mb-1">
+          Failed to Load Report
+        </h3>
+        <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-4 max-w-md">
+          {message || 'An error occurred while loading the report data. Please try again.'}
+        </p>
+        {onRetry && (
+          <Button variant="outline" size="sm" onClick={onRetry} className="gap-2">
+            <RefreshCw className="w-3 h-3" />
+            Retry
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+}

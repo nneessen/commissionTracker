@@ -40,6 +40,8 @@ import {
   ReportSectionCard,
   BundleExportDialog,
   DrillDownDrawer,
+  ImoPerformanceReport,
+  AgencyPerformanceReport,
 } from "./components";
 
 // Services
@@ -235,31 +237,54 @@ export function ReportsDashboard() {
             </div>
           )}
 
-          {/* Report Document */}
-          {!isLoading && !error && report && (
-            <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800">
-              <ReportDocumentHeader title={report.title} filters={filters} />
-              <ExecutiveSummary summary={report.summary} />
-
-              {/* Report Sections */}
-              {report.sections.map((section) => (
-                <ReportSectionCard
-                  key={section.id}
-                  section={section}
-                  onAgingBucketClick={handleAgingBucketClick}
-                  onClientTierClick={handleClientTierClick}
-                />
-              ))}
-
-              {/* Report Footer */}
-              <div className="p-2 bg-zinc-50 dark:bg-zinc-800/50 text-center border-t border-zinc-200 dark:border-zinc-700 rounded-b-lg">
-                <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                  Report ID: {report.id} | Generated:{" "}
-                  {report.generatedAt.toLocaleString()}
-                </p>
-              </div>
-            </div>
+          {/* Team Performance Reports (Phase 6) */}
+          {selectedType === "imo-performance" && (
+            <ImoPerformanceReport
+              dateRange={{
+                startDate: dateRange.startDate,
+                endDate: dateRange.endDate,
+              }}
+            />
           )}
+
+          {selectedType === "agency-performance" && (
+            <AgencyPerformanceReport
+              dateRange={{
+                startDate: dateRange.startDate,
+                endDate: dateRange.endDate,
+              }}
+            />
+          )}
+
+          {/* Standard Report Document */}
+          {!isLoading &&
+            !error &&
+            report &&
+            selectedType !== "imo-performance" &&
+            selectedType !== "agency-performance" && (
+              <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800">
+                <ReportDocumentHeader title={report.title} filters={filters} />
+                <ExecutiveSummary summary={report.summary} />
+
+                {/* Report Sections */}
+                {report.sections.map((section) => (
+                  <ReportSectionCard
+                    key={section.id}
+                    section={section}
+                    onAgingBucketClick={handleAgingBucketClick}
+                    onClientTierClick={handleClientTierClick}
+                  />
+                ))}
+
+                {/* Report Footer */}
+                <div className="p-2 bg-zinc-50 dark:bg-zinc-800/50 text-center border-t border-zinc-200 dark:border-zinc-700 rounded-b-lg">
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                    Report ID: {report.id} | Generated:{" "}
+                    {report.generatedAt.toLocaleString()}
+                  </p>
+                </div>
+              </div>
+            )}
         </div>
       </div>
 

@@ -6,7 +6,10 @@ export type ReportType =
   | 'policy-performance'
   | 'client-relationship'
   | 'financial-health'
-  | 'predictive-analytics';
+  | 'predictive-analytics'
+  // Team Reports (Phase 6)
+  | 'imo-performance'
+  | 'agency-performance';
 
 export type InsightSeverity = 'critical' | 'high' | 'medium' | 'low' | 'info';
 export type InsightCategory =

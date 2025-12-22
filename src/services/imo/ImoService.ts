@@ -19,6 +19,17 @@ import {
   isAccessDeniedError,
   isInvalidParameterError,
 } from '../../types/dashboard-metrics.schemas';
+import {
+  parseImoPerformanceReport,
+  parseTeamComparisonReport,
+  parseTopPerformersReport,
+  formatDateForQuery,
+  validateReportDateRange,
+  type ImoPerformanceReport,
+  type TeamComparisonReport,
+  type TopPerformersReport,
+  type ReportDateRange,
+} from '../../types/team-reports.schemas';
 
 /**
  * Service layer for IMO operations
@@ -345,6 +356,209 @@ class ImoService {
     } catch (error) {
       logger.error(
         'Failed to get IMO production by agency',
+        error instanceof Error ? error : new Error(String(error)),
+        'ImoService'
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Get IMO performance report with monthly trends
+   * Uses RPC function for efficient single-query execution
+   * @throws DateRangeValidationError if date range exceeds 24 months
+   */
+  async getPerformanceReport(dateRange?: ReportDateRange): Promise<ImoPerformanceReport | null> {
+    try {
+      // Validate date range to prevent abuse (max 24 months)
+      validateReportDateRange(dateRange);
+
+      const params: { p_start_date?: string; p_end_date?: string } = {};
+      if (dateRange) {
+        params.p_start_date = formatDateForQuery(dateRange.startDate);
+        params.p_end_date = formatDateForQuery(dateRange.endDate);
+      }
+
+      const { data, error } = await supabase.rpc('get_imo_performance_report', params);
+
+      if (error) {
+        if (isAccessDeniedError(error) || isInvalidParameterError(error)) {
+          logger.warn('Access denied or invalid params for IMO performance report',
+            { code: error.code }, 'ImoService');
+          return null;
+        }
+        throw error;
+      }
+
+      if (!data || data.length === 0) {
+        return {
+          months: [],
+          summary: {
+            total_new_policies: 0,
+            total_new_premium: 0,
+            total_commissions: 0,
+            total_new_agents: 0,
+            total_lapsed: 0,
+            net_growth: 0,
+          },
+        };
+      }
+
+      const validated = parseImoPerformanceReport(data);
+
+      // Calculate summary from monthly data
+      const summary = validated.reduce(
+        (acc, row) => ({
+          total_new_policies: acc.total_new_policies + row.new_policies,
+          total_new_premium: acc.total_new_premium + row.new_premium,
+          total_commissions: acc.total_commissions + row.commissions_earned,
+          total_new_agents: acc.total_new_agents + row.new_agents,
+          total_lapsed: acc.total_lapsed + row.policies_lapsed,
+          net_growth: acc.net_growth + row.net_premium_change,
+        }),
+        {
+          total_new_policies: 0,
+          total_new_premium: 0,
+          total_commissions: 0,
+          total_new_agents: 0,
+          total_lapsed: 0,
+          net_growth: 0,
+        }
+      );
+
+      return {
+        months: validated,
+        summary,
+      };
+    } catch (error) {
+      logger.error(
+        'Failed to get IMO performance report',
+        error instanceof Error ? error : new Error(String(error)),
+        'ImoService'
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Get team comparison report (agency rankings)
+   * Uses RPC function for efficient single-query execution
+   * @throws DateRangeValidationError if date range exceeds 24 months
+   */
+  async getTeamComparisonReport(dateRange?: ReportDateRange): Promise<TeamComparisonReport | null> {
+    try {
+      // Validate date range to prevent abuse (max 24 months)
+      validateReportDateRange(dateRange);
+
+      const params: { p_start_date?: string; p_end_date?: string } = {};
+      if (dateRange) {
+        params.p_start_date = formatDateForQuery(dateRange.startDate);
+        params.p_end_date = formatDateForQuery(dateRange.endDate);
+      }
+
+      const { data, error } = await supabase.rpc('get_team_comparison_report', params);
+
+      if (error) {
+        if (isAccessDeniedError(error) || isInvalidParameterError(error)) {
+          logger.warn('Access denied or invalid params for team comparison report',
+            { code: error.code }, 'ImoService');
+          return null;
+        }
+        throw error;
+      }
+
+      if (!data || data.length === 0) {
+        return {
+          agencies: [],
+          summary: {
+            total_agencies: 0,
+            total_agents: 0,
+            total_new_premium: 0,
+            avg_retention_rate: 0,
+          },
+        };
+      }
+
+      const validated = parseTeamComparisonReport(data);
+
+      // Calculate summary
+      const totalAgents = validated.reduce((acc, row) => acc + row.agent_count, 0);
+      const totalPremium = validated.reduce((acc, row) => acc + row.new_premium, 0);
+      const avgRetention = validated.length > 0
+        ? validated.reduce((acc, row) => acc + row.retention_rate, 0) / validated.length
+        : 0;
+
+      return {
+        agencies: validated,
+        summary: {
+          total_agencies: validated.length,
+          total_agents: totalAgents,
+          total_new_premium: totalPremium,
+          avg_retention_rate: Math.round(avgRetention * 10) / 10,
+        },
+      };
+    } catch (error) {
+      logger.error(
+        'Failed to get team comparison report',
+        error instanceof Error ? error : new Error(String(error)),
+        'ImoService'
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Get top performers report (agent rankings)
+   * Uses RPC function for efficient single-query execution
+   * @throws DateRangeValidationError if date range exceeds 24 months
+   */
+  async getTopPerformersReport(
+    limit: number = 20,
+    dateRange?: ReportDateRange
+  ): Promise<TopPerformersReport | null> {
+    try {
+      // Validate date range to prevent abuse (max 24 months)
+      validateReportDateRange(dateRange);
+
+      // Limit the number of results to prevent abuse
+      const safeLimit = Math.min(Math.max(1, limit), 100);
+
+      const params: { p_limit: number; p_start_date?: string; p_end_date?: string } = {
+        p_limit: safeLimit,
+      };
+      if (dateRange) {
+        params.p_start_date = formatDateForQuery(dateRange.startDate);
+        params.p_end_date = formatDateForQuery(dateRange.endDate);
+      }
+
+      const { data, error } = await supabase.rpc('get_top_performers_report', params);
+
+      if (error) {
+        if (isAccessDeniedError(error) || isInvalidParameterError(error)) {
+          logger.warn('Access denied or invalid params for top performers report',
+            { code: error.code }, 'ImoService');
+          return null;
+        }
+        throw error;
+      }
+
+      const validated = data ? parseTopPerformersReport(data) : [];
+
+      return {
+        performers: validated,
+        date_range: dateRange
+          ? {
+              start_date: formatDateForQuery(dateRange.startDate),
+              end_date: formatDateForQuery(dateRange.endDate),
+            }
+          : {
+              start_date: formatDateForQuery(new Date(new Date().getFullYear(), 0, 1)),
+              end_date: formatDateForQuery(new Date()),
+            },
+      };
+    } catch (error) {
+      logger.error(
+        'Failed to get top performers report',
         error instanceof Error ? error : new Error(String(error)),
         'ImoService'
       );

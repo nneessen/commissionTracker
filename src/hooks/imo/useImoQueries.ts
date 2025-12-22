@@ -10,6 +10,18 @@ import type {
   ImoUpdate,
   AgencyUpdate,
 } from '../../types/imo.types';
+import type { ReportDateRange } from '../../types/team-reports.schemas';
+
+/**
+ * Serialize a date range to a stable string for use in query keys.
+ * Date objects have reference equality issues - identical dates with different
+ * object references would create separate cache entries. This serializes to
+ * ISO date strings for stable, value-based comparison.
+ */
+function serializeDateRange(dateRange?: ReportDateRange): string | undefined {
+  if (!dateRange) return undefined;
+  return `${dateRange.startDate.toISOString().split('T')[0]}_${dateRange.endDate.toISOString().split('T')[0]}`;
+}
 
 // Query keys
 export const imoKeys = {
@@ -23,6 +35,10 @@ export const imoKeys = {
   // Dashboard metrics keys (Phase 5)
   dashboardMetrics: () => [...imoKeys.all, 'dashboardMetrics'] as const,
   productionByAgency: () => [...imoKeys.all, 'productionByAgency'] as const,
+  // Team report keys (Phase 6) - dateRange serialized to prevent cache thrashing
+  performanceReport: (dateRange?: ReportDateRange) => [...imoKeys.all, 'performanceReport', serializeDateRange(dateRange)] as const,
+  teamComparison: (dateRange?: ReportDateRange) => [...imoKeys.all, 'teamComparison', serializeDateRange(dateRange)] as const,
+  topPerformers: (limit: number, dateRange?: ReportDateRange) => [...imoKeys.all, 'topPerformers', limit, serializeDateRange(dateRange)] as const,
 };
 
 export const agencyKeys = {
@@ -37,6 +53,8 @@ export const agencyKeys = {
   // Dashboard metrics keys (Phase 5)
   dashboardMetrics: (id?: string) => [...agencyKeys.all, 'dashboardMetrics', id] as const,
   productionByAgent: (id?: string) => [...agencyKeys.all, 'productionByAgent', id] as const,
+  // Team report keys (Phase 6) - dateRange serialized to prevent cache thrashing
+  performanceReport: (id?: string, dateRange?: ReportDateRange) => [...agencyKeys.all, 'performanceReport', id, serializeDateRange(dateRange)] as const,
 };
 
 // =============================================================================
@@ -383,6 +401,77 @@ export function useAgencyProductionByAgent(
     queryKey: agencyKeys.productionByAgent(agencyId),
     queryFn: () => agencyService.getProductionByAgent(agencyId),
     staleTime: 2 * 60 * 1000, // 2 minutes
+    enabled: options?.enabled ?? true,
+  });
+}
+
+// =============================================================================
+// TEAM PERFORMANCE REPORT HOOKS (Phase 6)
+// =============================================================================
+
+/**
+ * Get IMO performance report with monthly trends
+ * Only returns data if user is IMO admin, IMO owner, or super admin
+ */
+export function useImoPerformanceReport(
+  dateRange?: ReportDateRange,
+  options?: { enabled?: boolean }
+) {
+  return useQuery({
+    queryKey: imoKeys.performanceReport(dateRange),
+    queryFn: () => imoService.getPerformanceReport(dateRange),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    enabled: options?.enabled ?? true,
+  });
+}
+
+/**
+ * Get team comparison report (agency rankings)
+ * Only returns data if user is IMO admin, IMO owner, or super admin
+ */
+export function useTeamComparisonReport(
+  dateRange?: ReportDateRange,
+  options?: { enabled?: boolean }
+) {
+  return useQuery({
+    queryKey: imoKeys.teamComparison(dateRange),
+    queryFn: () => imoService.getTeamComparisonReport(dateRange),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    enabled: options?.enabled ?? true,
+  });
+}
+
+/**
+ * Get top performers report (agent rankings)
+ * Only returns data if user is IMO admin, IMO owner, or super admin
+ */
+export function useTopPerformersReport(
+  limit: number = 20,
+  dateRange?: ReportDateRange,
+  options?: { enabled?: boolean }
+) {
+  return useQuery({
+    queryKey: imoKeys.topPerformers(limit, dateRange),
+    queryFn: () => imoService.getTopPerformersReport(limit, dateRange),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    enabled: options?.enabled ?? true,
+  });
+}
+
+/**
+ * Get agency performance report with monthly trends
+ * @param agencyId - Optional agency ID. Defaults to user's own agency.
+ * Only returns data if user is agency owner, IMO admin, or super admin
+ */
+export function useAgencyPerformanceReport(
+  agencyId?: string,
+  dateRange?: ReportDateRange,
+  options?: { enabled?: boolean }
+) {
+  return useQuery({
+    queryKey: agencyKeys.performanceReport(agencyId, dateRange),
+    queryFn: () => agencyService.getPerformanceReport(agencyId, dateRange),
+    staleTime: 5 * 60 * 1000, // 5 minutes
     enabled: options?.enabled ?? true,
   });
 }
