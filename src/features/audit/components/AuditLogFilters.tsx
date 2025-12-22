@@ -4,33 +4,37 @@
  * Collapsible filter panel for audit logs
  */
 
-import { useState } from 'react';
-import { Filter, X, Calendar, Search } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { useState } from "react";
+import { Filter, X, Search } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from '@/components/ui/collapsible';
-import { Badge } from '@/components/ui/badge';
-import { DateRangePicker } from '@/components/ui/date-range-picker';
+} from "@/components/ui/collapsible";
+import { Badge } from "@/components/ui/badge";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
 import type {
   AuditFilters,
   AuditActionTypeOption,
   AuditTableOption,
   AuditPerformer,
   AuditAction,
-} from '@/services/audit';
-import { formatActionType, formatTableName, formatPerformer } from '../utils/auditFormatters';
+} from "@/services/audit";
+import {
+  formatActionType,
+  formatTableName,
+  formatPerformer,
+} from "../utils/auditFormatters";
 
 interface AuditLogFiltersProps {
   filters: AuditFilters;
@@ -79,7 +83,10 @@ export function AuditLogFilters({
             <Filter className="h-3.5 w-3.5" />
             Filters
             {activeFilterCount > 0 && (
-              <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-[10px]">
+              <Badge
+                variant="secondary"
+                className="ml-1 h-5 px-1.5 text-[10px]"
+              >
                 {activeFilterCount}
               </Badge>
             )}
@@ -103,14 +110,19 @@ export function AuditLogFilters({
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
           {/* Search */}
           <div className="space-y-1.5 col-span-2 lg:col-span-1">
-            <Label className="text-[11px] text-zinc-500 dark:text-zinc-400">Search</Label>
+            <Label className="text-[11px] text-zinc-500 dark:text-zinc-400">
+              Search
+            </Label>
             <div className="relative">
               <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400" />
               <Input
                 placeholder="Search..."
-                value={filters.search || ''}
+                value={filters.search || ""}
                 onChange={(e) =>
-                  onFiltersChange({ ...filters, search: e.target.value || undefined })
+                  onFiltersChange({
+                    ...filters,
+                    search: e.target.value || undefined,
+                  })
                 }
                 className="h-8 pl-7 text-xs"
               />
@@ -119,13 +131,15 @@ export function AuditLogFilters({
 
           {/* Table */}
           <div className="space-y-1.5">
-            <Label className="text-[11px] text-zinc-500 dark:text-zinc-400">Table</Label>
+            <Label className="text-[11px] text-zinc-500 dark:text-zinc-400">
+              Table
+            </Label>
             <Select
-              value={filters.tableName || 'all'}
+              value={filters.tableName || "all"}
               onValueChange={(value) =>
                 onFiltersChange({
                   ...filters,
-                  tableName: value === 'all' ? undefined : value,
+                  tableName: value === "all" ? undefined : value,
                 })
               }
             >
@@ -137,7 +151,11 @@ export function AuditLogFilters({
                   All tables
                 </SelectItem>
                 {tables.map((t) => (
-                  <SelectItem key={t.tableName} value={t.tableName} className="text-xs">
+                  <SelectItem
+                    key={t.tableName}
+                    value={t.tableName}
+                    className="text-xs"
+                  >
                     {formatTableName(t.tableName)} ({t.count})
                   </SelectItem>
                 ))}
@@ -147,13 +165,15 @@ export function AuditLogFilters({
 
           {/* Action */}
           <div className="space-y-1.5">
-            <Label className="text-[11px] text-zinc-500 dark:text-zinc-400">Action</Label>
+            <Label className="text-[11px] text-zinc-500 dark:text-zinc-400">
+              Action
+            </Label>
             <Select
-              value={filters.action || 'all'}
+              value={filters.action || "all"}
               onValueChange={(value) =>
                 onFiltersChange({
                   ...filters,
-                  action: value === 'all' ? undefined : (value as AuditAction),
+                  action: value === "all" ? undefined : (value as AuditAction),
                 })
               }
             >
@@ -179,13 +199,15 @@ export function AuditLogFilters({
 
           {/* Action Type */}
           <div className="space-y-1.5">
-            <Label className="text-[11px] text-zinc-500 dark:text-zinc-400">Action Type</Label>
+            <Label className="text-[11px] text-zinc-500 dark:text-zinc-400">
+              Action Type
+            </Label>
             <Select
-              value={filters.actionType || 'all'}
+              value={filters.actionType || "all"}
               onValueChange={(value) =>
                 onFiltersChange({
                   ...filters,
-                  actionType: value === 'all' ? undefined : value,
+                  actionType: value === "all" ? undefined : value,
                 })
               }
             >
@@ -197,7 +219,11 @@ export function AuditLogFilters({
                   All types
                 </SelectItem>
                 {actionTypes.map((at) => (
-                  <SelectItem key={at.actionType} value={at.actionType} className="text-xs">
+                  <SelectItem
+                    key={at.actionType}
+                    value={at.actionType}
+                    className="text-xs"
+                  >
                     {formatActionType(at.actionType)} ({at.count})
                   </SelectItem>
                 ))}
@@ -207,13 +233,15 @@ export function AuditLogFilters({
 
           {/* Performed By */}
           <div className="space-y-1.5">
-            <Label className="text-[11px] text-zinc-500 dark:text-zinc-400">Performed By</Label>
+            <Label className="text-[11px] text-zinc-500 dark:text-zinc-400">
+              Performed By
+            </Label>
             <Select
-              value={filters.performedBy || 'all'}
+              value={filters.performedBy || "all"}
               onValueChange={(value) =>
                 onFiltersChange({
                   ...filters,
-                  performedBy: value === 'all' ? undefined : value,
+                  performedBy: value === "all" ? undefined : value,
                 })
               }
             >
@@ -225,7 +253,11 @@ export function AuditLogFilters({
                   All users
                 </SelectItem>
                 {performers.map((p) => (
-                  <SelectItem key={p.userId} value={p.userId} className="text-xs">
+                  <SelectItem
+                    key={p.userId}
+                    value={p.userId}
+                    className="text-xs"
+                  >
                     {formatPerformer(p.userName, p.userEmail)} ({p.actionCount})
                   </SelectItem>
                 ))}
@@ -235,7 +267,9 @@ export function AuditLogFilters({
 
           {/* Date Range */}
           <div className="space-y-1.5 col-span-2 lg:col-span-1">
-            <Label className="text-[11px] text-zinc-500 dark:text-zinc-400">Date Range</Label>
+            <Label className="text-[11px] text-zinc-500 dark:text-zinc-400">
+              Date Range
+            </Label>
             <DateRangePicker
               value={{
                 from: filters.startDate,

@@ -1,7 +1,7 @@
 // src/features/hierarchy/components/OrgChartVisualization.tsx
 // Phase 12A: Interactive org chart visualization with performance metrics
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback } from "react";
 import {
   Building2,
   Users,
@@ -14,20 +14,20 @@ import {
   Maximize2,
   Home,
   TrendingUp,
-} from 'lucide-react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
+} from "lucide-react";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@/components/ui/tooltip';
-import { cn } from '@/lib/utils';
-import { formatCurrency, formatNumber } from '@/lib/format';
-import type { OrgChartNode, OrgChartNodeType } from '@/types/hierarchy.types';
+} from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
+import { formatCurrency, formatNumber } from "@/lib/format";
+import type { OrgChartNode, OrgChartNodeType } from "@/types/hierarchy.types";
 
 interface OrgChartVisualizationProps {
   data: OrgChartNode | null;
@@ -62,24 +62,24 @@ const nodeTypeConfig: Record<
 > = {
   imo: {
     icon: Building2,
-    bgColor: 'bg-muted',
-    borderColor: 'border-border',
-    iconColor: 'text-foreground',
-    label: 'IMO',
+    bgColor: "bg-muted",
+    borderColor: "border-border",
+    iconColor: "text-foreground",
+    label: "IMO",
   },
   agency: {
     icon: Users,
-    bgColor: 'bg-muted',
-    borderColor: 'border-border',
-    iconColor: 'text-foreground',
-    label: 'Agency',
+    bgColor: "bg-muted",
+    borderColor: "border-border",
+    iconColor: "text-foreground",
+    label: "Agency",
   },
   agent: {
     icon: User,
-    bgColor: 'bg-card',
-    borderColor: 'border-border',
-    iconColor: 'text-muted-foreground',
-    label: 'Agent',
+    bgColor: "bg-card",
+    borderColor: "border-border",
+    iconColor: "text-muted-foreground",
+    label: "Agent",
   },
 };
 
@@ -88,7 +88,7 @@ const nodeTypeConfig: Record<
  */
 const NodeCard: React.FC<NodeCardProps> = ({
   node,
-  depth,
+  depth: _depth,
   isExpanded,
   isSelected,
   showMetrics,
@@ -103,7 +103,7 @@ const NodeCard: React.FC<NodeCardProps> = ({
 
   // Check if node matches search
   const matchesSearch =
-    searchTerm === '' ||
+    searchTerm === "" ||
     node.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     node.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     node.code?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -111,12 +111,12 @@ const NodeCard: React.FC<NodeCardProps> = ({
   return (
     <div
       className={cn(
-        'relative rounded-lg border p-2.5 transition-all cursor-pointer min-w-[200px] max-w-[280px]',
-        'bg-card border-border shadow-sm',
-        'hover:bg-accent hover:shadow-md',
-        'active:bg-accent/80 active:shadow-none',
-        isSelected && 'ring-2 ring-ring ring-offset-1',
-        matchesSearch && searchTerm && 'ring-2 ring-ring/50'
+        "relative rounded-lg border p-2.5 transition-all cursor-pointer min-w-[200px] max-w-[280px]",
+        "bg-card border-border shadow-sm",
+        "hover:bg-accent hover:shadow-md",
+        "active:bg-accent/80 active:shadow-none",
+        isSelected && "ring-2 ring-ring ring-offset-1",
+        matchesSearch && searchTerm && "ring-2 ring-ring/50",
       )}
       onClick={onClick}
     >
@@ -125,7 +125,7 @@ const NodeCard: React.FC<NodeCardProps> = ({
         <div className="flex items-center gap-1.5 min-w-0">
           {node.profilePhotoUrl || node.logoUrl ? (
             <img
-              src={node.profilePhotoUrl || node.logoUrl || ''}
+              src={node.profilePhotoUrl || node.logoUrl || ""}
               alt={node.name}
               className="h-6 w-6 rounded-full object-cover"
             />
@@ -140,7 +140,7 @@ const NodeCard: React.FC<NodeCardProps> = ({
         </div>
 
         <div className="flex items-center gap-1">
-          {node.type !== 'agent' && (
+          {node.type !== "agent" && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -186,7 +186,9 @@ const NodeCard: React.FC<NodeCardProps> = ({
           {node.name}
         </div>
         {node.email && (
-          <div className="text-[10px] text-muted-foreground truncate">{node.email}</div>
+          <div className="text-[10px] text-muted-foreground truncate">
+            {node.email}
+          </div>
         )}
         {node.code && (
           <div className="text-[10px] text-muted-foreground/70 truncate">
@@ -235,7 +237,8 @@ const NodeCard: React.FC<NodeCardProps> = ({
       {/* Children count indicator */}
       {hasChildren && !isExpanded && (
         <div className="mt-1.5 text-[9px] text-muted-foreground text-center">
-          +{node.children.length} {node.children.length === 1 ? 'child' : 'children'}
+          +{node.children.length}{" "}
+          {node.children.length === 1 ? "child" : "children"}
         </div>
       )}
     </div>
@@ -271,7 +274,7 @@ const TreeNode: React.FC<{
 
   // Check if node or any descendants match search
   const nodeMatchesSearch =
-    searchTerm === '' ||
+    searchTerm === "" ||
     node.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     node.email?.toLowerCase().includes(searchTerm.toLowerCase());
 
@@ -321,8 +324,8 @@ const TreeNode: React.FC<{
             <div
               className="absolute top-0 h-px bg-border"
               style={{
-                left: 'calc(50% / ' + node.children.length + ')',
-                right: 'calc(50% / ' + node.children.length + ')',
+                left: "calc(50% / " + node.children.length + ")",
+                right: "calc(50% / " + node.children.length + ")",
               }}
             />
           )}
@@ -363,7 +366,7 @@ export const OrgChartVisualization: React.FC<OrgChartVisualizationProps> = ({
   className,
   showMetrics = true,
 }) => {
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(() => {
     // Start with first two levels expanded
@@ -400,7 +403,7 @@ export const OrgChartVisualization: React.FC<OrgChartVisualizationProps> = ({
       setSelectedNodeId(node.id);
       onNodeClick?.(node);
     },
-    [onNodeClick]
+    [onNodeClick],
   );
 
   // Handle drill-down
@@ -411,7 +414,7 @@ export const OrgChartVisualization: React.FC<OrgChartVisualizationProps> = ({
       setExpandedNodes(new Set([node.id]));
       onDrillDown?.(node);
     },
-    [focusedNode, data, onDrillDown]
+    [focusedNode, data, onDrillDown],
   );
 
   // Reset to root
@@ -435,7 +438,7 @@ export const OrgChartVisualization: React.FC<OrgChartVisualizationProps> = ({
         setExpandedNodes(new Set([targetNode.id]));
       }
     },
-    [breadcrumbs, handleResetToRoot]
+    [breadcrumbs, handleResetToRoot],
   );
 
   // Expand/collapse all
@@ -470,9 +473,11 @@ export const OrgChartVisualization: React.FC<OrgChartVisualizationProps> = ({
     const rootNode = focusedNode || data;
     if (!rootNode) return null;
 
-    const countAll = (node: OrgChartNode): { nodes: number; agents: number } => {
+    const countAll = (
+      node: OrgChartNode,
+    ): { nodes: number; agents: number } => {
       let nodes = 1;
-      let agents = node.type === 'agent' ? 1 : 0;
+      let agents = node.type === "agent" ? 1 : 0;
       node.children?.forEach((child) => {
         const childCounts = countAll(child);
         nodes += childCounts.nodes;
@@ -529,8 +534,8 @@ export const OrgChartVisualization: React.FC<OrgChartVisualizationProps> = ({
                 size="sm"
                 onClick={() => setShowMetricsOverlay(!showMetricsOverlay)}
                 className={cn(
-                  'text-xs gap-1',
-                  showMetricsOverlay && 'bg-primary/10'
+                  "text-xs gap-1",
+                  showMetricsOverlay && "bg-primary/10",
                 )}
               >
                 <TrendingUp className="h-3 w-3" />
@@ -581,7 +586,9 @@ export const OrgChartVisualization: React.FC<OrgChartVisualizationProps> = ({
                 </React.Fragment>
               ))}
               <span className="text-muted-foreground">/</span>
-              <span className="text-xs font-medium text-foreground">{displayData.name}</span>
+              <span className="text-xs font-medium text-foreground">
+                {displayData.name}
+              </span>
             </div>
           )}
 
@@ -625,15 +632,15 @@ export const OrgChartVisualization: React.FC<OrgChartVisualizationProps> = ({
         <div
           className="overflow-auto"
           style={{
-            maxHeight: 'calc(100vh - 350px)',
-            minHeight: '400px',
+            maxHeight: "calc(100vh - 350px)",
+            minHeight: "400px",
           }}
         >
           <div
             className="flex justify-center p-4 min-w-fit"
             style={{
               transform: `scale(${zoomLevel / 100})`,
-              transformOrigin: 'top center',
+              transformOrigin: "top center",
             }}
           >
             <TreeNode
