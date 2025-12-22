@@ -11,61 +11,27 @@ Multi-IMO/Agency architecture implementation. Phases 1-7 complete.
 - Phase 4: Workflow Org Templates (`4c5d3ab`, `6bc0247`)
 - Phase 5: IMO/Agency Dashboard Metrics (`98ba0df`)
 - Phase 6: Team Performance Reports (`23bb27a`)
-- Phase 7: Override Commissions Org Awareness (pending commit)
+- Phase 7: Override Commissions Org Awareness (`7bed02d`, `8d359c9`)
 
 ---
 
-## Phase 7 Deliverables
+## Phase 7 Summary (Complete)
 
-### Features
-- **agency_id column** on override_commissions table
-- **RLS policies** for agency owners (SELECT, INSERT, UPDATE, DELETE)
-- **RLS policies** for IMO admins (INSERT, UPDATE, DELETE - completing their access)
-- **4 RPC functions** for override commission summaries:
-  - `get_imo_override_summary()` - IMO-wide override totals
-  - `get_agency_override_summary()` - Agency override totals
-  - `get_overrides_by_agency()` - Breakdown by agency for IMO admins
-  - `get_overrides_by_agent()` - Breakdown by agent for agency owners
-- **Dashboard integration** - Override summary panels in OrgMetricsSection
+### Features Delivered
+- `agency_id` column on override_commissions table
+- Auto-populate trigger for agency_id and imo_id from base_agent
+- RLS policies for agency owners (SELECT/INSERT/UPDATE/DELETE) with IMO boundary check
+- RLS policies for IMO admins (INSERT/UPDATE/DELETE)
+- 4 RPC functions for override commission summaries
+- Dashboard integration with override summary panels
+- Zod schemas with email validation
+- Empty object returns for "no data" vs "no access" distinction
 
-### Technical Implementation
-- Trigger to auto-populate agency_id from base_agent's profile
-- Zod schemas for runtime response validation
-- TanStack Query hooks with proper cache keys
-- Error boundary integration with existing pattern
-
-### Files Changed
-| File | Changes |
-|------|---------|
-| `supabase/migrations/20251222_013_override_commissions_org_awareness.sql` | New migration |
-| `src/types/database.types.ts` | Regenerated |
-| `src/types/dashboard-metrics.schemas.ts` | Added override summary schemas |
-| `src/types/imo.types.ts` | Added override summary types |
-| `src/services/imo/ImoService.ts` | Added `getOverrideSummary()`, `getOverridesByAgency()` |
-| `src/services/agency/AgencyService.ts` | Added `getOverrideSummary()`, `getOverridesByAgent()` |
-| `src/hooks/imo/useImoQueries.ts` | Added override summary hooks |
-| `src/hooks/imo/index.ts` | Exported new hooks |
-| `src/features/dashboard/components/OrgMetricsSection.tsx` | Added override panels |
-
----
-
-## Current Migration State
-
+### Migrations Applied
 ```
-20251222_009_team_performance_reports.sql
-20251222_010_fix_team_performance_running_totals.sql
-20251222_011_add_date_range_validation.sql
-20251222_012_drop_unused_domain.sql
 20251222_013_override_commissions_org_awareness.sql
-20251222_014_fix_override_commissions_rls_critical.sql  # Code review fix
+20251222_014_fix_override_commissions_rls_critical.sql
 ```
-
-### Code Review Fix (Migration 014)
-| Issue | Fix |
-|-------|-----|
-| CRITICAL-2: Cross-tenant vulnerability | Added `imo_id = get_my_imo_id()` to all agency owner RLS policies |
-| CRITICAL-3: Orphan records | Trigger now sets both `agency_id` AND `imo_id`, raises error if imo_id is NULL |
-| CRITICAL-1: Dead code | Removed unused `is_agent_in_my_agency` function |
 
 ---
 
@@ -126,6 +92,7 @@ From Phase 6-7 code reviews:
 - Summary calculation duplicated between ImoService and AgencyService
 - Magic numbers for limits/slices in report components (10, 5, etc.)
 - No feature flags for gradual rollout
+- Query key namespacing could be improved
 
 ---
 
@@ -134,15 +101,19 @@ From Phase 6-7 code reviews:
 ```
 Continue from plans/active/org-awareness-phase8-continuation.md
 
-Context: Phases 1-7 complete. Phase 7 added override commissions org awareness.
+Context: Phases 1-7 complete. All code review fixes applied.
 
 Build status: ✅ Passing
 
+Recent commits:
+- 8d359c9 fix(overrides): address HIGH priority code review issues
+- 7bed02d feat(overrides): add override commissions org awareness (Phase 7)
+
 Phase 7 delivered:
-- agency_id column on override_commissions
-- Full RLS for agency owners and IMO admins
-- Override summary RPC functions
-- Dashboard integration with override panels
+- Override commissions full org awareness
+- agency_id + imo_id auto-population
+- RLS with IMO boundary enforcement
+- Dashboard override summary panels
 
 Select Phase 8 scope:
 A) Report Export Enhancement - CSV/PDF export, scheduled delivery
@@ -150,7 +121,7 @@ B) Recruiting Pipeline Org Awareness - Team recruiting metrics
 C) Agent Hierarchy Visualization - Org chart with metrics
 D) Document Management Org Sharing - Shared docs/templates
 
-Recommendation: Option A provides highest immediate value.
+Recommendation: Option A provides highest immediate value for executives.
 
 Which phase should be implemented?
 ```
