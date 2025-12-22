@@ -5,6 +5,8 @@ import {
   userTargetsRepository,
   type UserTargetsRow,
 } from "./UserTargetsRepository";
+import type { DownlineTarget, ImoTarget } from "../../types/targets.types";
+import type { ServiceResponse } from "../base/BaseService";
 
 /**
  * User Targets interface (snake_case for backward compatibility)
@@ -127,6 +129,58 @@ class UserTargetsService {
       created_at: row.created_at || "",
       updated_at: row.updated_at || "",
     };
+  }
+
+  // ---------------------------------------------------------------------------
+  // HIERARCHY/TEAM OPERATIONS
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Get targets from downline agents
+   * Returns targets for all agents below the current user in the hierarchy
+   */
+  async getDownlineTargets(): Promise<ServiceResponse<DownlineTarget[]>> {
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        return { success: false, error: new Error("User not authenticated") };
+      }
+
+      const data = await userTargetsRepository.findDownlineWithOwner();
+      return { success: true, data };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error : new Error(String(error)),
+      };
+    }
+  }
+
+  /**
+   * Get all targets in IMO (admin only)
+   * Returns targets for all agents in the current user's IMO
+   */
+  async getImoTargets(): Promise<ServiceResponse<ImoTarget[]>> {
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        return { success: false, error: new Error("User not authenticated") };
+      }
+
+      const data = await userTargetsRepository.findImoWithOwner();
+      return { success: true, data };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error : new Error(String(error)),
+      };
+    }
   }
 }
 

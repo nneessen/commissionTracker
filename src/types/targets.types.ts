@@ -158,3 +158,50 @@ export interface TimePeriodRange {
   end: Date;
   label: string;
 }
+
+// ============================================================================
+// Team Target Types (for hierarchy/IMO visibility)
+// ============================================================================
+
+/**
+ * View mode for targets - own, team (downline), or IMO-wide
+ */
+export type TargetViewMode = 'own' | 'team' | 'imo';
+
+/**
+ * Target data with owner information for downline view
+ */
+export interface DownlineTarget {
+  id: string;
+  userId: string;
+  ownerName: string;
+
+  // Income targets
+  annualIncomeTarget: number;
+  monthlyIncomeTarget: number;
+  quarterlyIncomeTarget: number;
+
+  // Policy targets
+  annualPoliciesTarget: number;
+  monthlyPoliciesTarget: number;
+  avgPremiumTarget: number;
+
+  // Persistency targets
+  persistency13MonthTarget: number;
+  persistency25MonthTarget: number;
+
+  // Expense targets
+  monthlyExpenseTarget: number;
+  expenseRatioTarget: number;
+
+  // Metadata
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Target data with owner and agency info for IMO-wide view
+ */
+export interface ImoTarget extends DownlineTarget {
+  agencyName: string;
+}

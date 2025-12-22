@@ -6,7 +6,7 @@ import type {
   TablesInsert,
   TablesUpdate,
 } from "../../types/database.types";
-import type { UserTargets, Achievement } from "../../types/targets.types";
+import type { UserTargets, Achievement, DownlineTarget, ImoTarget } from "../../types/targets.types";
 
 // Database types
 type UserTargetsRow = Tables<"user_targets">;
@@ -338,6 +338,75 @@ export class UserTargetsRepository extends BaseRepository<
     }
 
     return result;
+  }
+
+  // ---------------------------------------------------------------------------
+  // HIERARCHY/TEAM OPERATIONS
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Get targets from downline agents with owner info
+   * Calls get_downline_targets() database function
+   */
+  async findDownlineWithOwner(): Promise<DownlineTarget[]> {
+    const { data, error } = await this.client.rpc("get_downline_targets");
+
+    if (error) {
+      throw this.handleError(error, "findDownlineWithOwner");
+    }
+
+    if (!data) return [];
+
+    return data.map((row: Record<string, unknown>) => ({
+      id: row.id as string,
+      userId: row.user_id as string,
+      ownerName: row.owner_name as string,
+      annualIncomeTarget: Number(row.annual_income_target) || 0,
+      monthlyIncomeTarget: Number(row.monthly_income_target) || 0,
+      quarterlyIncomeTarget: Number(row.quarterly_income_target) || 0,
+      annualPoliciesTarget: Number(row.annual_policies_target) || 0,
+      monthlyPoliciesTarget: Number(row.monthly_policies_target) || 0,
+      avgPremiumTarget: Number(row.avg_premium_target) || 0,
+      persistency13MonthTarget: Number(row.persistency_13_month_target) || 0,
+      persistency25MonthTarget: Number(row.persistency_25_month_target) || 0,
+      monthlyExpenseTarget: Number(row.monthly_expense_target) || 0,
+      expenseRatioTarget: Number(row.expense_ratio_target) || 0,
+      createdAt: row.created_at as string,
+      updatedAt: row.updated_at as string,
+    }));
+  }
+
+  /**
+   * Get all targets in IMO with owner and agency info (admin only)
+   * Calls get_imo_targets() database function
+   */
+  async findImoWithOwner(): Promise<ImoTarget[]> {
+    const { data, error } = await this.client.rpc("get_imo_targets");
+
+    if (error) {
+      throw this.handleError(error, "findImoWithOwner");
+    }
+
+    if (!data) return [];
+
+    return data.map((row: Record<string, unknown>) => ({
+      id: row.id as string,
+      userId: row.user_id as string,
+      ownerName: row.owner_name as string,
+      agencyName: row.agency_name as string,
+      annualIncomeTarget: Number(row.annual_income_target) || 0,
+      monthlyIncomeTarget: Number(row.monthly_income_target) || 0,
+      quarterlyIncomeTarget: Number(row.quarterly_income_target) || 0,
+      annualPoliciesTarget: Number(row.annual_policies_target) || 0,
+      monthlyPoliciesTarget: Number(row.monthly_policies_target) || 0,
+      avgPremiumTarget: Number(row.avg_premium_target) || 0,
+      persistency13MonthTarget: Number(row.persistency_13_month_target) || 0,
+      persistency25MonthTarget: Number(row.persistency_25_month_target) || 0,
+      monthlyExpenseTarget: Number(row.monthly_expense_target) || 0,
+      expenseRatioTarget: Number(row.expense_ratio_target) || 0,
+      createdAt: row.created_at as string,
+      updatedAt: row.updated_at as string,
+    }));
   }
 }
 
