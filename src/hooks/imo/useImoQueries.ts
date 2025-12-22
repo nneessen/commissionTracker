@@ -42,6 +42,9 @@ export const imoKeys = {
   // Override summary keys (Phase 7)
   overrideSummary: () => [...imoKeys.all, 'overrideSummary'] as const,
   overridesByAgency: () => [...imoKeys.all, 'overridesByAgency'] as const,
+  // Recruiting summary keys (Phase 8)
+  recruitingSummary: () => [...imoKeys.all, 'recruitingSummary'] as const,
+  recruitingByAgency: () => [...imoKeys.all, 'recruitingByAgency'] as const,
 };
 
 export const agencyKeys = {
@@ -61,6 +64,9 @@ export const agencyKeys = {
   // Override summary keys (Phase 7)
   overrideSummary: (id?: string) => [...agencyKeys.all, 'overrideSummary', id] as const,
   overridesByAgent: (id?: string) => [...agencyKeys.all, 'overridesByAgent', id] as const,
+  // Recruiting summary keys (Phase 8)
+  recruitingSummary: (id?: string) => [...agencyKeys.all, 'recruitingSummary', id] as const,
+  recruitingByRecruiter: (id?: string) => [...agencyKeys.all, 'recruitingByRecruiter', id] as const,
 };
 
 // =============================================================================
@@ -541,6 +547,70 @@ export function useAgencyOverridesByAgent(
   return useQuery({
     queryKey: agencyKeys.overridesByAgent(agencyId),
     queryFn: () => agencyService.getOverridesByAgent(agencyId),
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    enabled: options?.enabled ?? true,
+  });
+}
+
+// =============================================================================
+// RECRUITING SUMMARY HOOKS (Phase 8)
+// =============================================================================
+
+/**
+ * Get IMO recruiting summary (funnel metrics across entire IMO)
+ * Only returns data if user is IMO admin, IMO owner, or super admin
+ */
+export function useImoRecruitingSummary(options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: imoKeys.recruitingSummary(),
+    queryFn: () => imoService.getRecruitingSummary(),
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    enabled: options?.enabled ?? true,
+  });
+}
+
+/**
+ * Get recruiting breakdown by agency for IMO admins
+ * Only returns data if user is IMO admin, IMO owner, or super admin
+ */
+export function useImoRecruitingByAgency(options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: imoKeys.recruitingByAgency(),
+    queryFn: () => imoService.getRecruitingByAgency(),
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    enabled: options?.enabled ?? true,
+  });
+}
+
+/**
+ * Get agency recruiting summary (funnel metrics for one agency)
+ * @param agencyId - Optional agency ID. Defaults to user's own agency.
+ * Only returns data if user is agency owner, IMO admin, or super admin
+ */
+export function useAgencyRecruitingSummary(
+  agencyId?: string,
+  options?: { enabled?: boolean }
+) {
+  return useQuery({
+    queryKey: agencyKeys.recruitingSummary(agencyId),
+    queryFn: () => agencyService.getRecruitingSummary(agencyId),
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    enabled: options?.enabled ?? true,
+  });
+}
+
+/**
+ * Get recruiting breakdown by recruiter for agency owners
+ * @param agencyId - Optional agency ID. Defaults to user's own agency.
+ * Only returns data if user is agency owner, IMO admin, or super admin
+ */
+export function useAgencyRecruitingByRecruiter(
+  agencyId?: string,
+  options?: { enabled?: boolean }
+) {
+  return useQuery({
+    queryKey: agencyKeys.recruitingByRecruiter(agencyId),
+    queryFn: () => agencyService.getRecruitingByRecruiter(agencyId),
     staleTime: 2 * 60 * 1000, // 2 minutes
     enabled: options?.enabled ?? true,
   });

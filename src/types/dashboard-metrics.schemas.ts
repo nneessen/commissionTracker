@@ -249,3 +249,111 @@ export function parseOverrideByAgency(data: unknown[]): OverrideByAgencyRow[] {
 export function parseOverrideByAgent(data: unknown[]): OverrideByAgentRow[] {
   return z.array(OverrideByAgentRowSchema).parse(data);
 }
+
+// =============================================================================
+// RECRUITING SUMMARY SCHEMAS (Phase 8)
+// =============================================================================
+
+/**
+ * Schema for status counts (flexible object with string keys and number values)
+ */
+export const RecruitingStatusCountsSchema = z.record(z.string(), z.coerce.number().int().nonnegative());
+
+/**
+ * Schema for IMO Recruiting Summary RPC response (JSONB)
+ */
+export const ImoRecruitingSummarySchema = z.object({
+  total_recruits: z.coerce.number().int().nonnegative(),
+  by_status: RecruitingStatusCountsSchema,
+  by_agent_status: RecruitingStatusCountsSchema,
+  conversion_rate: z.coerce.number().nonnegative(),
+  avg_days_to_complete: z.coerce.number().nullable(),
+  active_in_pipeline: z.coerce.number().int().nonnegative(),
+  completed_count: z.coerce.number().int().nonnegative(),
+  dropped_count: z.coerce.number().int().nonnegative(),
+});
+
+export type ImoRecruitingSummaryRow = z.infer<typeof ImoRecruitingSummarySchema>;
+
+/**
+ * Schema for Agency Recruiting Summary RPC response (JSONB)
+ */
+export const AgencyRecruitingSummarySchema = z.object({
+  total_recruits: z.coerce.number().int().nonnegative(),
+  by_status: RecruitingStatusCountsSchema,
+  by_agent_status: RecruitingStatusCountsSchema,
+  conversion_rate: z.coerce.number().nonnegative(),
+  avg_days_to_complete: z.coerce.number().nullable(),
+  active_in_pipeline: z.coerce.number().int().nonnegative(),
+  completed_count: z.coerce.number().int().nonnegative(),
+  dropped_count: z.coerce.number().int().nonnegative(),
+});
+
+export type AgencyRecruitingSummaryRow = z.infer<typeof AgencyRecruitingSummarySchema>;
+
+/**
+ * Schema for Recruiting by Agency RPC response row
+ */
+export const RecruitingByAgencyRowSchema = z.object({
+  agency_id: z.string().uuid(),
+  agency_name: z.string(),
+  total_recruits: z.coerce.number().int().nonnegative(),
+  active_in_pipeline: z.coerce.number().int().nonnegative(),
+  completed_count: z.coerce.number().int().nonnegative(),
+  dropped_count: z.coerce.number().int().nonnegative(),
+  conversion_rate: z.coerce.number().nonnegative(),
+  licensed_count: z.coerce.number().int().nonnegative(),
+});
+
+export type RecruitingByAgencyRow = z.infer<typeof RecruitingByAgencyRowSchema>;
+
+/**
+ * Schema for Recruiting by Recruiter RPC response row
+ */
+export const RecruitingByRecruiterRowSchema = z.object({
+  recruiter_id: z.string().uuid(),
+  recruiter_name: z.string(),
+  // Note: Not validated as .email() because RPC uses COALESCE fallback that may return
+  // constructed name string when email is missing (e.g., "John Smith" instead of email)
+  recruiter_email: z.string(),
+  total_recruits: z.coerce.number().int().nonnegative(),
+  active_in_pipeline: z.coerce.number().int().nonnegative(),
+  completed_count: z.coerce.number().int().nonnegative(),
+  dropped_count: z.coerce.number().int().nonnegative(),
+  conversion_rate: z.coerce.number().nonnegative(),
+  licensed_count: z.coerce.number().int().nonnegative(),
+});
+
+export type RecruitingByRecruiterRow = z.infer<typeof RecruitingByRecruiterRowSchema>;
+
+/**
+ * Parse and validate IMO recruiting summary response (JSONB)
+ * @throws ZodError if validation fails
+ */
+export function parseImoRecruitingSummary(data: unknown): ImoRecruitingSummaryRow {
+  return ImoRecruitingSummarySchema.parse(data);
+}
+
+/**
+ * Parse and validate Agency recruiting summary response (JSONB)
+ * @throws ZodError if validation fails
+ */
+export function parseAgencyRecruitingSummary(data: unknown): AgencyRecruitingSummaryRow {
+  return AgencyRecruitingSummarySchema.parse(data);
+}
+
+/**
+ * Parse and validate Recruiting by Agency response (JSONB array)
+ * @throws ZodError if validation fails
+ */
+export function parseRecruitingByAgency(data: unknown): RecruitingByAgencyRow[] {
+  return z.array(RecruitingByAgencyRowSchema).parse(data);
+}
+
+/**
+ * Parse and validate Recruiting by Recruiter response (JSONB array)
+ * @throws ZodError if validation fails
+ */
+export function parseRecruitingByRecruiter(data: unknown): RecruitingByRecruiterRow[] {
+  return z.array(RecruitingByRecruiterRowSchema).parse(data);
+}

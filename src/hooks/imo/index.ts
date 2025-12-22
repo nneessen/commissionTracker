@@ -33,9 +33,19 @@ export {
   useImoProductionByAgency,
   useAgencyDashboardMetrics,
   useAgencyProductionByAgent,
+  // Team performance report hooks (Phase 6)
+  useImoPerformanceReport,
+  useTeamComparisonReport,
+  useTopPerformersReport,
+  useAgencyPerformanceReport,
   // Override summary hooks (Phase 7)
   useImoOverrideSummary,
   useImoOverridesByAgency,
   useAgencyOverrideSummary,
   useAgencyOverridesByAgent,
+  // Recruiting summary hooks (Phase 8)
+  useImoRecruitingSummary,
+  useImoRecruitingByAgency,
+  useAgencyRecruitingSummary,
+  useAgencyRecruitingByRecruiter,
 } from './useImoQueries';

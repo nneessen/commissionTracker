@@ -14,12 +14,16 @@ import type {
   ImoProductionByAgency,
   ImoOverrideSummary,
   OverrideByAgency,
+  ImoRecruitingSummary,
+  RecruitingByAgency,
 } from '../../types/imo.types';
 import {
   parseImoDashboardMetrics,
   parseImoProductionByAgency,
   parseImoOverrideSummary,
   parseOverrideByAgency,
+  parseImoRecruitingSummary,
+  parseRecruitingByAgency,
   isAccessDeniedError,
   isInvalidParameterError,
 } from '../../types/dashboard-metrics.schemas';
@@ -669,6 +673,111 @@ class ImoService {
     } catch (error) {
       logger.error(
         'Failed to get overrides by agency',
+        error instanceof Error ? error : new Error(String(error)),
+        'ImoService'
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Get IMO recruiting summary (funnel metrics across entire IMO)
+   * Uses RPC function for efficient single-query execution
+   */
+  async getRecruitingSummary(): Promise<ImoRecruitingSummary | null> {
+    try {
+      // Get current user's IMO
+      const imo = await this.getMyImo();
+      if (!imo) {
+        return null;
+      }
+
+      const { data, error } = await supabase.rpc('get_imo_recruiting_summary', {
+        p_imo_id: imo.id,
+      });
+
+      if (error) {
+        if (isAccessDeniedError(error) || isInvalidParameterError(error)) {
+          logger.warn('Access denied or invalid params for IMO recruiting summary',
+            { code: error.code }, 'ImoService');
+          return null;
+        }
+        throw error;
+      }
+
+      // Empty object indicates no access
+      if (!data || Object.keys(data).length === 0) {
+        return null;
+      }
+
+      // Validate response with Zod schema
+      const validated = parseImoRecruitingSummary(data);
+
+      return {
+        total_recruits: validated.total_recruits,
+        by_status: validated.by_status,
+        by_agent_status: validated.by_agent_status,
+        conversion_rate: validated.conversion_rate,
+        avg_days_to_complete: validated.avg_days_to_complete,
+        active_in_pipeline: validated.active_in_pipeline,
+        completed_count: validated.completed_count,
+        dropped_count: validated.dropped_count,
+      };
+    } catch (error) {
+      logger.error(
+        'Failed to get IMO recruiting summary',
+        error instanceof Error ? error : new Error(String(error)),
+        'ImoService'
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Get recruiting breakdown by agency for IMO admins
+   * Uses RPC function for efficient single-query execution
+   */
+  async getRecruitingByAgency(): Promise<RecruitingByAgency[]> {
+    try {
+      // Get current user's IMO
+      const imo = await this.getMyImo();
+      if (!imo) {
+        return [];
+      }
+
+      const { data, error } = await supabase.rpc('get_recruiting_by_agency', {
+        p_imo_id: imo.id,
+      });
+
+      if (error) {
+        if (isAccessDeniedError(error) || isInvalidParameterError(error)) {
+          logger.warn('Access denied or invalid params for recruiting by agency',
+            { code: error.code }, 'ImoService');
+          return [];
+        }
+        throw error;
+      }
+
+      if (!data) {
+        return [];
+      }
+
+      // Validate response with Zod schema (JSONB array)
+      const validated = parseRecruitingByAgency(data);
+
+      return validated.map((row) => ({
+        agency_id: row.agency_id,
+        agency_name: row.agency_name,
+        total_recruits: row.total_recruits,
+        active_in_pipeline: row.active_in_pipeline,
+        completed_count: row.completed_count,
+        dropped_count: row.dropped_count,
+        conversion_rate: row.conversion_rate,
+        licensed_count: row.licensed_count,
+      }));
+    } catch (error) {
+      logger.error(
+        'Failed to get recruiting by agency',
         error instanceof Error ? error : new Error(String(error)),
         'ImoService'
       );

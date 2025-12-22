@@ -14,6 +14,8 @@ import type {
   AgencyProductionByAgent,
   AgencyOverrideSummary,
   OverrideByAgent,
+  AgencyRecruitingSummary,
+  RecruitingByRecruiter,
 } from '../../types/imo.types';
 import { IMO_ROLES } from '../../types/imo.types';
 import {
@@ -21,6 +23,8 @@ import {
   parseAgencyProductionByAgent,
   parseAgencyOverrideSummary,
   parseOverrideByAgent,
+  parseAgencyRecruitingSummary,
+  parseRecruitingByRecruiter,
   isAccessDeniedError,
   isInvalidParameterError,
   isNotFoundError,
@@ -794,6 +798,122 @@ class AgencyService {
     } catch (error) {
       logger.error(
         'Failed to get overrides by agent',
+        error instanceof Error ? error : new Error(String(error)),
+        'AgencyService'
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Get agency recruiting summary (funnel metrics for one agency)
+   * Uses RPC function for efficient single-query execution
+   * @param agencyId - Optional agency ID. Defaults to user's own agency.
+   */
+  async getRecruitingSummary(agencyId?: string): Promise<AgencyRecruitingSummary | null> {
+    try {
+      // If no agencyId provided, get user's agency
+      let targetAgencyId = agencyId;
+      if (!targetAgencyId) {
+        const myAgency = await this.getMyAgency();
+        if (!myAgency) {
+          return null;
+        }
+        targetAgencyId = myAgency.id;
+      }
+
+      const { data, error } = await supabase.rpc('get_agency_recruiting_summary', {
+        p_agency_id: targetAgencyId,
+      });
+
+      if (error) {
+        if (isAccessDeniedError(error) || isInvalidParameterError(error) || isNotFoundError(error)) {
+          logger.warn('Access denied or invalid params for agency recruiting summary',
+            { agencyId: targetAgencyId, code: error.code }, 'AgencyService');
+          return null;
+        }
+        throw error;
+      }
+
+      // Empty object indicates no access
+      if (!data || Object.keys(data).length === 0) {
+        return null;
+      }
+
+      // Validate response with Zod schema
+      const validated = parseAgencyRecruitingSummary(data);
+
+      return {
+        total_recruits: validated.total_recruits,
+        by_status: validated.by_status,
+        by_agent_status: validated.by_agent_status,
+        conversion_rate: validated.conversion_rate,
+        avg_days_to_complete: validated.avg_days_to_complete,
+        active_in_pipeline: validated.active_in_pipeline,
+        completed_count: validated.completed_count,
+        dropped_count: validated.dropped_count,
+      };
+    } catch (error) {
+      logger.error(
+        'Failed to get agency recruiting summary',
+        error instanceof Error ? error : new Error(String(error)),
+        'AgencyService'
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Get recruiting breakdown by recruiter for agency owners
+   * Uses RPC function for efficient single-query execution
+   * @param agencyId - Optional agency ID. Defaults to user's own agency.
+   */
+  async getRecruitingByRecruiter(agencyId?: string): Promise<RecruitingByRecruiter[]> {
+    try {
+      // If no agencyId provided, get user's agency
+      let targetAgencyId = agencyId;
+      if (!targetAgencyId) {
+        const myAgency = await this.getMyAgency();
+        if (!myAgency) {
+          return [];
+        }
+        targetAgencyId = myAgency.id;
+      }
+
+      const { data, error } = await supabase.rpc('get_recruiting_by_recruiter', {
+        p_agency_id: targetAgencyId,
+      });
+
+      if (error) {
+        if (isAccessDeniedError(error) || isInvalidParameterError(error) || isNotFoundError(error)) {
+          logger.warn('Access denied or invalid params for recruiting by recruiter',
+            { agencyId: targetAgencyId, code: error.code }, 'AgencyService');
+          return [];
+        }
+        throw error;
+      }
+
+      if (!data) {
+        return [];
+      }
+
+      // Validate response with Zod schema (JSONB array)
+      const validated = parseRecruitingByRecruiter(data);
+
+      return validated.map((row) => ({
+        recruiter_id: row.recruiter_id,
+        recruiter_name: row.recruiter_name,
+        recruiter_email: row.recruiter_email,
+        total_recruits: row.total_recruits,
+        active_in_pipeline: row.active_in_pipeline,
+        completed_count: row.completed_count,
+        dropped_count: row.dropped_count,
+        conversion_rate: row.conversion_rate,
+        licensed_count: row.licensed_count,
+      }));
+    } catch (error) {
+      logger.error(
+        'Failed to get recruiting by recruiter',
         error instanceof Error ? error : new Error(String(error)),
         'AgencyService'
       );

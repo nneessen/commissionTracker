@@ -375,3 +375,71 @@ export interface OverrideByAgent {
   avg_per_override: number;
   pct_of_agency_overrides: number;
 }
+
+// =============================================================================
+// RECRUITING SUMMARY TYPES (Phase 8)
+// =============================================================================
+
+/**
+ * Recruiting status counts by onboarding status
+ */
+export interface RecruitingStatusCounts {
+  [status: string]: number;
+}
+
+/**
+ * IMO Recruiting Summary - aggregate recruiting metrics for IMO admins
+ */
+export interface ImoRecruitingSummary {
+  total_recruits: number;
+  by_status: RecruitingStatusCounts;
+  by_agent_status: RecruitingStatusCounts;
+  conversion_rate: number;
+  avg_days_to_complete: number | null;
+  active_in_pipeline: number;
+  completed_count: number;
+  dropped_count: number;
+}
+
+/**
+ * Agency Recruiting Summary - aggregate recruiting metrics for agency owners
+ */
+export interface AgencyRecruitingSummary {
+  total_recruits: number;
+  by_status: RecruitingStatusCounts;
+  by_agent_status: RecruitingStatusCounts;
+  conversion_rate: number;
+  avg_days_to_complete: number | null;
+  active_in_pipeline: number;
+  completed_count: number;
+  dropped_count: number;
+}
+
+/**
+ * Recruiting by Agency - breakdown for IMO admins
+ */
+export interface RecruitingByAgency {
+  agency_id: string;
+  agency_name: string;
+  total_recruits: number;
+  active_in_pipeline: number;
+  completed_count: number;
+  dropped_count: number;
+  conversion_rate: number;
+  licensed_count: number;
+}
+
+/**
+ * Recruiting by Recruiter - breakdown for agency owners
+ */
+export interface RecruitingByRecruiter {
+  recruiter_id: string;
+  recruiter_name: string;
+  recruiter_email: string;
+  total_recruits: number;
+  active_in_pipeline: number;
+  completed_count: number;
+  dropped_count: number;
+  conversion_rate: number;
+  licensed_count: number;
+}
