@@ -1,91 +1,74 @@
-# Continuation: IMO/Agency Service Alignment
+# Continuation: IMO/Agency Service Alignment - Phase 4
 
 ## Session Context
 
-Multi-IMO/Agency architecture implementation across all services. Phases 1-3 complete, Phase 4 remaining.
+Multi-IMO/Agency architecture implementation across all services. Phases 1-3 complete and deployed, Phase 4 remaining.
 
-**Last Commits (not yet committed):**
-- Phase 1: Clients hierarchy visibility
-- Phase 1 Fixes: Code review fixes (NULL safety, indexes, guards)
-- Phase 2: Expenses org awareness
-- Phase 3: User Targets team visibility
-
----
-
-## Completed Work
-
-### Phase 1: Clients Hierarchy Visibility ✅
-
-**Migration:** `20251222_001_clients_hierarchy_visibility.sql`
-**Fix Migration:** `20251222_002_fix_clients_hierarchy_issues.sql`
-
-- Added RLS policies: uplines view downline clients, IMO admins view all, super admins view all
-- DB functions: `get_downline_clients_with_stats()`, `get_imo_clients_with_stats()`, `has_downlines()`, `check_is_imo_admin()`
-- Added `pg_trgm` GIN index on `hierarchy_path` for LIKE query performance
-- Types: `DownlineClientWithStats`, `ClientViewMode`
-- Repository: `findDownlineWithStats()`, `findImoWithStats()`, `hasDownlines()`
-- Service: `getDownlineClientsWithStats()`, `getImoClientsWithStats()`, `hasDownlines()`
-- Hooks: `useDownlineClients`, `useImoClients`, `useHasDownlines`, `useIsImoAdmin`, `useInvalidateClientHierarchy`
-
-### Phase 2: Expenses Org Awareness ✅
-
-**Migration:** `20251222_003_expenses_org_awareness.sql`
-
-- Added columns: `expenses.imo_id`, `expenses.agency_id` with FK constraints
-- Backfilled existing expenses from user_profiles
-- Trigger: `trigger_set_expense_org_ids` auto-populates on insert
-- Added RLS policies for hierarchy/IMO visibility
-- DB functions: `get_downline_expenses()`, `get_downline_expense_summary()`, `get_imo_expense_summary()`, `get_imo_expense_by_category()`
-- Types: `DownlineExpense`, `AgentExpenseSummary`, `CategoryExpenseSummary`, `ExpenseDateRange`, `ExpenseViewMode`
-- Repository: 4 new hierarchy methods
-- Service: 4 new hierarchy methods
-- Hooks: `useDownlineExpenses`, `useDownlineExpenseSummary`, `useImoExpenseSummary`, `useImoExpenseByCategory`, `useInvalidateTeamExpenses`
-
-### Phase 3: User Targets Team Visibility ✅
-
-**Migration:** `20251222_004_user_targets_team_visibility.sql`
-
-- Added RLS policies: uplines view downline targets, IMO admins view all, super admins view all
-- DB functions: `get_downline_targets()`, `get_imo_targets()`
-- Types: `DownlineTarget`, `ImoTarget`, `TargetViewMode`
-- Repository: `findDownlineWithOwner()`, `findImoWithOwner()`
-- Service: `getDownlineTargets()`, `getImoTargets()`
-- Hooks: `useDownlineTargets`, `useImoTargets`, `useInvalidateTeamTargets`
+**Completed Commits:**
+- `03d2ccf` Phase 1: Clients hierarchy visibility
+- `8a0de4c` Phase 2: Expenses org awareness
+- `fb98084` Phase 3: User Targets team visibility
+- `149ab39` Chore: Export client hooks, invalidate hierarchy cache
 
 ---
 
-## Remaining Work
+## Phase 4: Workflow Org Templates
 
-### Phase 4: Workflow Org Templates (Lower Priority)
+**Goal:** Allow IMO-level workflow templates to be shared across the organization.
 
-**Scope:**
-- Add `imo_id` and `is_org_template` columns to `workflows` table
-- Allow IMO-level workflow templates to be shared
-- Update WorkflowService for org template CRUD
-- UI for "Save as Org Template" option
+### Scope
+
+1. **Migration:** Add org columns to workflows table
+   - Add `imo_id uuid REFERENCES imos(id)` column
+   - Add `is_org_template boolean DEFAULT false` column
+   - Add RLS policies for IMO template visibility
+   - Create `get_imo_workflow_templates()` function
+
+2. **Repository:** Add template query methods
+   - `findImoTemplates()` - get all templates in user's IMO
+   - `createAsOrgTemplate()` - create workflow as org template
+   - `cloneFromTemplate()` - clone org template to personal workflow
+
+3. **Service:** Add template operations
+   - `getImoWorkflowTemplates()`
+   - `saveAsOrgTemplate(workflowId)`
+   - `cloneOrgTemplate(templateId)`
+
+4. **Hooks:** Create org template hooks
+   - `useImoWorkflowTemplates`
+   - `useSaveAsOrgTemplate`
+   - `useCloneOrgTemplate`
+
+5. **UI:** Add template management
+   - "Save as Org Template" option in workflow editor
+   - "Org Templates" tab in workflow list
+   - Clone template action
 
 ---
 
-## Key Patterns Established
+## Key Patterns (from Phases 1-3)
 
 ### RLS Policy Pattern
 ```sql
--- Upline visibility
-CREATE POLICY "Uplines can view downline X" ON table FOR SELECT
-USING (is_upline_of(user_id));
+-- IMO admin can manage org templates
+CREATE POLICY "IMO admins can manage org templates" ON workflows
+FOR ALL USING (
+  is_org_template = true
+  AND is_imo_admin()
+  AND imo_id = get_my_imo_id()
+);
 
--- IMO admin visibility
-CREATE POLICY "IMO admins can view all X in own IMO" ON table FOR SELECT
-USING (is_imo_admin() AND imo_id = get_my_imo_id());
-
--- Super admin visibility
-CREATE POLICY "Super admins can view all X" ON table FOR SELECT
-USING (is_super_admin());
+-- All IMO members can view org templates
+CREATE POLICY "IMO members can view org templates" ON workflows
+FOR SELECT USING (
+  is_org_template = true
+  AND imo_id IN (SELECT imo_id FROM user_profiles WHERE id = auth.uid())
+);
 ```
 
 ### Hook Pattern with IMO Admin Guard
 ```typescript
-export function useImoData(options?: { isImoAdmin?: boolean }) {
+export function useImoWorkflowTemplates(options?: { isImoAdmin?: boolean }) {
   const shouldFetch = options?.isImoAdmin === true;
   return useQuery({
     enabled: shouldFetch,
@@ -94,14 +77,19 @@ export function useImoData(options?: { isImoAdmin?: boolean }) {
 }
 ```
 
-### NULL-Safe Owner Name Pattern
-```sql
-COALESCE(
-  NULLIF(TRIM(COALESCE(up.first_name, '') || ' ' || COALESCE(up.last_name, '')), ''),
-  up.email,
-  'Unknown'
-) as owner_name
-```
+---
+
+## Files to Reference
+
+**Existing Workflow Files:**
+- `src/services/workflowService.ts` - Current workflow service
+- `src/hooks/workflows/useWorkflows.ts` - Current workflow hooks
+- `src/types/workflow.types.ts` - Workflow types
+
+**Pattern References:**
+- `supabase/migrations/20251222_003_expenses_org_awareness.sql` - Migration pattern
+- `src/hooks/targets/useTeamTargets.ts` - Hook pattern
+- `src/services/targets/userTargetsService.ts` - Service pattern
 
 ---
 
@@ -109,39 +97,31 @@ COALESCE(
 
 | Function | Purpose |
 |----------|---------|
-| `is_upline_of(uuid)` | Check if current user is upline of target |
 | `is_imo_admin()` | Check if current user is IMO admin/owner |
 | `is_super_admin()` | Check if current user is super admin |
 | `get_my_imo_id()` | Get current user's IMO ID |
-| `get_my_agency_id()` | Get current user's agency ID |
-| `has_downlines()` | Check if current user has any downlines |
 | `check_is_imo_admin()` | Public wrapper for UI permission checks |
 
 ---
 
-## Files to Reference
-
-**Types:**
-- `src/types/client.types.ts` - DownlineClientWithStats, ClientViewMode
-- `src/types/expense.types.ts` - DownlineExpense, AgentExpenseSummary, etc.
-- `src/types/targets.types.ts` - DownlineTarget, ImoTarget, TargetViewMode
-
-**Hooks:**
-- `src/hooks/clients/useDownlineClients.ts` - Client hierarchy hooks
-- `src/hooks/expenses/useTeamExpenses.ts` - Expense hierarchy hooks
-- `src/hooks/targets/useTeamTargets.ts` - Target hierarchy hooks
-
-**Services:**
-- `src/services/clients/client/ClientRepository.ts` - Hierarchy methods
-- `src/services/expenses/expense/ExpenseRepository.ts` - Hierarchy methods
-- `src/services/targets/UserTargetsRepository.ts` - Hierarchy methods
-
----
-
-## Start Command (for Phase 4)
+## Start Command
 
 ```
 Continue from plans/active/org-awareness-continuation.md - implement Phase 4: Workflow Org Templates
+
+Context: Phases 1-3 (Clients, Expenses, Targets) are complete with:
+- RLS policies for hierarchy/IMO visibility
+- DB functions for downline/IMO queries
+- Repository/Service/Hook layers
+
+Phase 4 needs:
+1. Migration: Add imo_id, is_org_template to workflows + RLS policies
+2. DB function: get_imo_workflow_templates()
+3. Repository: Add template query/create/clone methods
+4. Service: Add template operations
+5. Hooks: useImoWorkflowTemplates, useSaveAsOrgTemplate, useCloneOrgTemplate
+6. UI: Template management in workflow editor
+7. Build verification
 ```
 
 ---
