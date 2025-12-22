@@ -1,12 +1,12 @@
-import { supabase } from '../base/supabase';
-import { logger } from '../base/logger';
-import { AgencyRequestRepository } from './AgencyRequestRepository';
+import { supabase } from "../base/supabase";
+import { logger } from "../base/logger";
+import { AgencyRequestRepository } from "./AgencyRequestRepository";
 import type {
   AgencyRequest,
   AgencyRequestRow,
   CreateAgencyRequestData,
-} from '../../types/agency-request.types';
-import type { Agency } from '../../types/imo.types';
+} from "../../types/agency-request.types";
+import type { Agency } from "../../types/imo.types";
 
 class AgencyRequestService {
   private repo: AgencyRequestRepository;
@@ -29,57 +29,84 @@ class AgencyRequestService {
       } = await supabase.auth.getUser();
 
       if (userError || !user) {
-        return { canRequest: false, reason: 'Authentication required' };
+        return { canRequest: false, reason: "Authentication required" };
       }
 
       // Get user profile
       const { data: profile, error: profileError } = await supabase
-        .from('user_profiles')
-        .select('upline_id, agency_id, imo_id')
-        .eq('id', user.id)
+        .from("user_profiles")
+        .select("upline_id, agency_id, imo_id")
+        .eq("id", user.id)
         .single();
 
       if (profileError || !profile) {
-        return { canRequest: false, reason: 'User profile not found' };
+        return { canRequest: false, reason: "User profile not found" };
       }
 
       // Check if user has an upline
       if (!profile.upline_id) {
-        return { canRequest: false, reason: 'You need an upline to request agency status' };
+        return {
+          canRequest: false,
+          reason: "You need an upline to request agency status",
+        };
+      }
+
+      // Check if user belongs to an IMO
+      if (!profile.imo_id) {
+        return {
+          canRequest: false,
+          reason: "You must belong to an IMO to request agency status",
+        };
+      }
+
+      // Check if user belongs to an agency
+      if (!profile.agency_id) {
+        return {
+          canRequest: false,
+          reason: "You must belong to an agency to request agency status",
+        };
       }
 
       // Check if user already has a pending request
       const hasPending = await this.repo.hasPendingRequest(user.id);
       if (hasPending) {
-        return { canRequest: false, reason: 'You already have a pending agency request' };
+        return {
+          canRequest: false,
+          reason: "You already have a pending agency request",
+        };
       }
 
       // Check if user already owns an agency
       const { count } = await supabase
-        .from('agencies')
-        .select('*', { count: 'exact', head: true })
-        .eq('owner_id', user.id)
-        .eq('is_active', true);
+        .from("agencies")
+        .select("*", { count: "exact", head: true })
+        .eq("owner_id", user.id)
+        .eq("is_active", true);
 
       if (count && count > 0) {
-        return { canRequest: false, reason: 'You already own an agency' };
+        return { canRequest: false, reason: "You already own an agency" };
       }
 
       return { canRequest: true };
     } catch (error) {
       logger.error(
-        'Failed to check agency request eligibility',
+        "Failed to check agency request eligibility",
         error instanceof Error ? error : new Error(String(error)),
-        'AgencyRequestService'
+        "AgencyRequestService",
       );
-      return { canRequest: false, reason: 'An error occurred checking eligibility' };
+      return {
+        canRequest: false,
+        reason: "An error occurred checking eligibility",
+      };
     }
   }
 
   /**
    * Create a new agency request
    */
-  async createRequest(data: CreateAgencyRequestData): Promise<AgencyRequestRow> {
+  async createRequest(
+    data: CreateAgencyRequestData,
+  ): Promise<AgencyRequestRow> {
     try {
       const {
         data: { user },
@@ -87,48 +114,55 @@ class AgencyRequestService {
       } = await supabase.auth.getUser();
 
       if (userError || !user) {
-        throw new Error('Authentication required');
+        throw new Error("Authentication required");
       }
 
       // Get user profile for upline and agency info
       const { data: profile, error: profileError } = await supabase
-        .from('user_profiles')
-        .select('upline_id, agency_id, imo_id')
-        .eq('id', user.id)
+        .from("user_profiles")
+        .select("upline_id, agency_id, imo_id")
+        .eq("id", user.id)
         .single();
 
       if (profileError || !profile) {
-        throw new Error('User profile not found');
+        throw new Error("User profile not found");
       }
 
       if (!profile.upline_id) {
-        throw new Error('You need an upline to request agency status');
+        throw new Error("You need an upline to request agency status");
       }
 
       if (!profile.agency_id) {
-        throw new Error('You must belong to an agency to request agency status');
+        throw new Error(
+          "You must belong to an agency to request agency status",
+        );
       }
 
       if (!profile.imo_id) {
-        throw new Error('You must belong to an IMO to request agency status');
+        throw new Error("You must belong to an IMO to request agency status");
       }
 
       // Check for existing pending request
       const hasPending = await this.repo.hasPendingRequest(user.id);
       if (hasPending) {
-        throw new Error('You already have a pending agency request');
+        throw new Error("You already have a pending agency request");
       }
 
       // Check if agency code is available
-      const isCodeAvailable = await this.repo.isCodeAvailable(profile.imo_id, data.proposed_code);
+      const isCodeAvailable = await this.repo.isCodeAvailable(
+        profile.imo_id,
+        data.proposed_code,
+      );
       if (!isCodeAvailable) {
-        throw new Error(`Agency code "${data.proposed_code}" is already in use`);
+        throw new Error(
+          `Agency code "${data.proposed_code}" is already in use`,
+        );
       }
 
       logger.info(
-        'Creating agency request',
+        "Creating agency request",
         { userId: user.id, proposedCode: data.proposed_code },
-        'AgencyRequestService'
+        "AgencyRequestService",
       );
 
       const request = await this.repo.create({
@@ -139,21 +173,21 @@ class AgencyRequestService {
         proposed_name: data.proposed_name,
         proposed_code: data.proposed_code,
         proposed_description: data.proposed_description ?? null,
-        status: 'pending',
+        status: "pending",
       });
 
       logger.info(
-        'Agency request created',
+        "Agency request created",
         { requestId: request.id },
-        'AgencyRequestService'
+        "AgencyRequestService",
       );
 
       return request;
     } catch (error) {
       logger.error(
-        'Failed to create agency request',
+        "Failed to create agency request",
         error instanceof Error ? error : new Error(String(error)),
-        'AgencyRequestService'
+        "AgencyRequestService",
       );
       throw error;
     }
@@ -176,9 +210,9 @@ class AgencyRequestService {
       return this.repo.findByRequester(user.id);
     } catch (error) {
       logger.error(
-        'Failed to get my agency requests',
+        "Failed to get my agency requests",
         error instanceof Error ? error : new Error(String(error)),
-        'AgencyRequestService'
+        "AgencyRequestService",
       );
       throw error;
     }
@@ -208,9 +242,9 @@ class AgencyRequestService {
       return this.repo.findPendingForApprover(user.id);
     } catch (error) {
       logger.error(
-        'Failed to get pending agency requests',
+        "Failed to get pending agency requests",
         error instanceof Error ? error : new Error(String(error)),
-        'AgencyRequestService'
+        "AgencyRequestService",
       );
       throw error;
     }
@@ -233,9 +267,9 @@ class AgencyRequestService {
       return this.repo.getPendingCount(user.id);
     } catch (error) {
       logger.error(
-        'Failed to get pending approval count',
+        "Failed to get pending approval count",
         error instanceof Error ? error : new Error(String(error)),
-        'AgencyRequestService'
+        "AgencyRequestService",
       );
       return 0;
     }
@@ -252,41 +286,41 @@ class AgencyRequestService {
       } = await supabase.auth.getUser();
 
       if (userError || !user) {
-        throw new Error('Authentication required');
+        throw new Error("Authentication required");
       }
 
       // Verify request belongs to current user
       const request = await this.repo.findById(requestId);
       if (!request) {
-        throw new Error('Request not found');
+        throw new Error("Request not found");
       }
 
       if (request.requester_id !== user.id) {
-        throw new Error('Not authorized to cancel this request');
+        throw new Error("Not authorized to cancel this request");
       }
 
-      if (request.status !== 'pending') {
-        throw new Error('Only pending requests can be cancelled');
+      if (request.status !== "pending") {
+        throw new Error("Only pending requests can be cancelled");
       }
 
       logger.info(
-        'Cancelling agency request',
+        "Cancelling agency request",
         { requestId },
-        'AgencyRequestService'
+        "AgencyRequestService",
       );
 
       await this.repo.cancel(requestId);
 
       logger.info(
-        'Agency request cancelled',
+        "Agency request cancelled",
         { requestId },
-        'AgencyRequestService'
+        "AgencyRequestService",
       );
     } catch (error) {
       logger.error(
-        'Failed to cancel agency request',
+        "Failed to cancel agency request",
         error instanceof Error ? error : new Error(String(error)),
-        'AgencyRequestService'
+        "AgencyRequestService",
       );
       throw error;
     }
@@ -299,9 +333,9 @@ class AgencyRequestService {
   async approveRequest(requestId: string): Promise<Agency> {
     try {
       logger.info(
-        'Approving agency request',
+        "Approving agency request",
         { requestId },
-        'AgencyRequestService'
+        "AgencyRequestService",
       );
 
       // The RPC function handles all authorization checks
@@ -309,8 +343,9 @@ class AgencyRequestService {
 
       // Fetch the created agency
       const { data: agency, error } = await supabase
-        .from('agencies')
-        .select(`
+        .from("agencies")
+        .select(
+          `
           *,
           owner:user_profiles!agencies_owner_id_fkey (
             id,
@@ -318,26 +353,27 @@ class AgencyRequestService {
             first_name,
             last_name
           )
-        `)
-        .eq('id', newAgencyId)
+        `,
+        )
+        .eq("id", newAgencyId)
         .single();
 
       if (error || !agency) {
-        throw new Error('Agency created but failed to fetch details');
+        throw new Error("Agency created but failed to fetch details");
       }
 
       logger.info(
-        'Agency request approved',
+        "Agency request approved",
         { requestId, newAgencyId },
-        'AgencyRequestService'
+        "AgencyRequestService",
       );
 
       return agency as Agency;
     } catch (error) {
       logger.error(
-        'Failed to approve agency request',
+        "Failed to approve agency request",
         error instanceof Error ? error : new Error(String(error)),
-        'AgencyRequestService'
+        "AgencyRequestService",
       );
       throw error;
     }
@@ -349,24 +385,24 @@ class AgencyRequestService {
   async rejectRequest(requestId: string, reason?: string): Promise<void> {
     try {
       logger.info(
-        'Rejecting agency request',
+        "Rejecting agency request",
         { requestId, reason },
-        'AgencyRequestService'
+        "AgencyRequestService",
       );
 
       // The RPC function handles authorization checks
       await this.repo.reject(requestId, reason ?? null);
 
       logger.info(
-        'Agency request rejected',
+        "Agency request rejected",
         { requestId },
-        'AgencyRequestService'
+        "AgencyRequestService",
       );
     } catch (error) {
       logger.error(
-        'Failed to reject agency request',
+        "Failed to reject agency request",
         error instanceof Error ? error : new Error(String(error)),
-        'AgencyRequestService'
+        "AgencyRequestService",
       );
       throw error;
     }
@@ -383,25 +419,26 @@ class AgencyRequestService {
       } = await supabase.auth.getUser();
 
       if (userError || !user) {
-        throw new Error('Authentication required');
+        throw new Error("Authentication required");
       }
 
       const { data: profile } = await supabase
-        .from('user_profiles')
-        .select('imo_id')
-        .eq('id', user.id)
+        .from("user_profiles")
+        .select("imo_id")
+        .eq("id", user.id)
         .single();
 
       if (!profile?.imo_id) {
-        throw new Error('User not in an IMO');
+        // User not in an IMO - return false instead of throwing to prevent UI errors
+        return false;
       }
 
       return this.repo.isCodeAvailable(profile.imo_id, code);
     } catch (error) {
       logger.error(
-        'Failed to check code availability',
+        "Failed to check code availability",
         error instanceof Error ? error : new Error(String(error)),
-        'AgencyRequestService'
+        "AgencyRequestService",
       );
       throw error;
     }

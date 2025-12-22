@@ -1,12 +1,10 @@
 // src/features/settings/agency-request/components/PendingApprovalsList.tsx
-// List of pending agency requests awaiting approval
+// List of pending agency requests awaiting approval - compact zinc styling
 
-import React, { useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog,
   DialogContent,
@@ -39,8 +37,12 @@ export function PendingApprovalsList() {
   const approveRequest = useApproveAgencyRequest();
   const rejectRequest = useRejectAgencyRequest();
 
-  const [selectedRequest, setSelectedRequest] = useState<AgencyRequest | null>(null);
-  const [actionType, setActionType] = useState<"approve" | "reject" | null>(null);
+  const [selectedRequest, setSelectedRequest] = useState<AgencyRequest | null>(
+    null,
+  );
+  const [actionType, setActionType] = useState<"approve" | "reject" | null>(
+    null,
+  );
   const [rejectionReason, setRejectionReason] = useState("");
 
   const handleApprove = (request: AgencyRequest) => {
@@ -72,7 +74,10 @@ export function PendingApprovalsList() {
       setActionType(null);
       setRejectionReason("");
     } catch (error) {
-      const message = error instanceof Error ? error.message : `Failed to ${actionType} request`;
+      const message =
+        error instanceof Error
+          ? error.message
+          : `Failed to ${actionType} request`;
       toast.error(message);
     }
   };
@@ -85,87 +90,82 @@ export function PendingApprovalsList() {
 
   if (isLoading) {
     return (
-      <Card>
-        <CardHeader>
-          <Skeleton className="h-6 w-48" />
-          <Skeleton className="h-4 w-64" />
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <Skeleton className="h-24 w-full" />
-            <Skeleton className="h-24 w-full" />
-          </div>
-        </CardContent>
-      </Card>
+      <div className="border border-zinc-200 dark:border-zinc-700 rounded-lg p-4">
+        <div className="flex items-center justify-center text-[11px] text-zinc-500 dark:text-zinc-400">
+          <Loader2 className="h-3.5 w-3.5 animate-spin mr-2" />
+          Loading pending requests...
+        </div>
+      </div>
     );
   }
 
   if (!pendingRequests || pendingRequests.length === 0) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Inbox className="h-5 w-5" />
+      <div className="border border-zinc-200 dark:border-zinc-700 rounded-lg p-3">
+        <div className="flex items-center gap-2 mb-2">
+          <Inbox className="h-3.5 w-3.5 text-zinc-400" />
+          <h4 className="text-[11px] font-semibold text-zinc-900 dark:text-zinc-100">
             Pending Approvals
-          </CardTitle>
-          <CardDescription>
-            Agency requests from your downline awaiting your approval
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-8 text-muted-foreground">
-            <Inbox className="h-12 w-12 mx-auto mb-3 opacity-50" />
-            <p>No pending requests</p>
-            <p className="text-sm">
-              When agents in your downline request agency status, they will appear here.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+          </h4>
+        </div>
+        <div className="text-center py-4">
+          <Inbox className="h-6 w-6 mx-auto mb-2 text-zinc-300 dark:text-zinc-600" />
+          <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+            No pending requests
+          </p>
+          <p className="text-[10px] text-zinc-400 dark:text-zinc-500">
+            When agents in your downline request agency status, they will appear
+            here.
+          </p>
+        </div>
+      </div>
     );
   }
 
   return (
     <>
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Clock className="h-5 w-5" />
+      <div className="border border-zinc-200 dark:border-zinc-700 rounded-lg p-3">
+        <div className="flex items-center gap-2 mb-3">
+          <Clock className="h-3.5 w-3.5 text-amber-500" />
+          <h4 className="text-[11px] font-semibold text-zinc-900 dark:text-zinc-100">
             Pending Approvals
-            <Badge variant="destructive" className="ml-2">
-              {pendingRequests.length}
-            </Badge>
-          </CardTitle>
-          <CardDescription>
-            Review and approve or reject agency requests from your downline
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {pendingRequests.map((request) => (
-              <PendingRequestCard
-                key={request.id}
-                request={request}
-                onApprove={() => handleApprove(request)}
-                onReject={() => handleReject(request)}
-                isProcessing={
-                  (approveRequest.isPending || rejectRequest.isPending) &&
-                  selectedRequest?.id === request.id
-                }
-              />
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+          </h4>
+          <Badge variant="destructive" className="text-[10px] h-4 px-1">
+            {pendingRequests.length}
+          </Badge>
+        </div>
+        <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mb-3">
+          Review and approve or reject agency requests from your downline
+        </p>
+        <div className="space-y-2">
+          {pendingRequests.map((request) => (
+            <PendingRequestCard
+              key={request.id}
+              request={request}
+              onApprove={() => handleApprove(request)}
+              onReject={() => handleReject(request)}
+              isProcessing={
+                (approveRequest.isPending || rejectRequest.isPending) &&
+                selectedRequest?.id === request.id
+              }
+            />
+          ))}
+        </div>
+      </div>
 
       {/* Confirmation Dialog */}
-      <Dialog open={!!selectedRequest && !!actionType} onOpenChange={closeDialog}>
-        <DialogContent>
+      <Dialog
+        open={!!selectedRequest && !!actionType}
+        onOpenChange={closeDialog}
+      >
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>
-              {actionType === "approve" ? "Approve Agency Request" : "Reject Agency Request"}
+            <DialogTitle className="text-sm">
+              {actionType === "approve"
+                ? "Approve Agency Request"
+                : "Reject Agency Request"}
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-[11px]">
               {actionType === "approve" ? (
                 <>
                   This will create a new agency for{" "}
@@ -174,7 +174,7 @@ export function PendingApprovalsList() {
                       ? formatAgencyRequestDisplayName(
                           selectedRequest.requester.first_name,
                           selectedRequest.requester.last_name,
-                          selectedRequest.requester.email
+                          selectedRequest.requester.email,
                         )
                       : "the requester"}
                   </strong>{" "}
@@ -187,14 +187,21 @@ export function PendingApprovalsList() {
           </DialogHeader>
 
           {actionType === "approve" && selectedRequest && (
-            <div className="space-y-3 py-2">
+            <div className="space-y-2 py-2">
               <div className="flex items-center gap-2">
-                <Building2 className="h-4 w-4 text-muted-foreground" />
-                <span className="font-medium">{selectedRequest.proposed_name}</span>
-                <Badge variant="outline">{selectedRequest.proposed_code}</Badge>
+                <Building2 className="h-3 w-3 text-zinc-400" />
+                <span className="text-[11px] font-medium text-zinc-900 dark:text-zinc-100">
+                  {selectedRequest.proposed_name}
+                </span>
+                <Badge
+                  variant="outline"
+                  className="text-[10px] h-4 px-1 font-mono"
+                >
+                  {selectedRequest.proposed_code}
+                </Badge>
               </div>
               {selectedRequest.proposed_description && (
-                <p className="text-sm text-muted-foreground">
+                <p className="text-[10px] text-zinc-500 dark:text-zinc-400">
                   {selectedRequest.proposed_description}
                 </p>
               )}
@@ -202,40 +209,53 @@ export function PendingApprovalsList() {
           )}
 
           {actionType === "reject" && (
-            <div className="space-y-2">
-              <Label htmlFor="rejection-reason">Rejection Reason (Optional)</Label>
+            <div className="space-y-1.5">
+              <Label
+                htmlFor="rejection-reason"
+                className="text-[11px] text-zinc-500 dark:text-zinc-400"
+              >
+                Rejection Reason (Optional)
+              </Label>
               <Textarea
                 id="rejection-reason"
                 placeholder="Explain why this request is being rejected..."
                 value={rejectionReason}
                 onChange={(e) => setRejectionReason(e.target.value)}
                 rows={3}
+                className="text-[11px] resize-none"
               />
             </div>
           )}
 
-          <DialogFooter>
-            <Button variant="outline" onClick={closeDialog}>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={closeDialog}
+              size="sm"
+              className="h-7 text-[11px]"
+            >
               Cancel
             </Button>
             <Button
               variant={actionType === "approve" ? "default" : "destructive"}
               onClick={handleConfirmAction}
               disabled={approveRequest.isPending || rejectRequest.isPending}
+              size="sm"
+              className="h-7 text-[11px]"
             >
-              {(approveRequest.isPending || rejectRequest.isPending) ? (
+              {approveRequest.isPending || rejectRequest.isPending ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="mr-1 h-3 w-3 animate-spin" />
                   Processing...
                 </>
               ) : actionType === "approve" ? (
                 <>
-                  <CheckCircle className="mr-2 h-4 w-4" />
+                  <CheckCircle className="mr-1 h-3 w-3" />
                   Approve
                 </>
               ) : (
                 <>
-                  <XCircle className="mr-2 h-4 w-4" />
+                  <XCircle className="mr-1 h-3 w-3" />
                   Reject
                 </>
               )}
@@ -264,51 +284,55 @@ function PendingRequestCard({
     ? formatAgencyRequestDisplayName(
         request.requester.first_name,
         request.requester.last_name,
-        request.requester.email
+        request.requester.email,
       )
     : "Unknown";
 
   return (
-    <div className="border rounded-lg p-4 space-y-3">
+    <div className="border border-zinc-200 dark:border-zinc-700 rounded-lg p-2.5 space-y-2">
       <div className="flex items-start justify-between">
         <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <Users className="h-4 w-4 text-muted-foreground" />
-            <span className="font-medium">{requesterName}</span>
+          <div className="flex items-center gap-1.5">
+            <Users className="h-3 w-3 text-zinc-400" />
+            <span className="text-[11px] font-medium text-zinc-900 dark:text-zinc-100">
+              {requesterName}
+            </span>
           </div>
-          <div className="flex items-center gap-2">
-            <Building2 className="h-4 w-4 text-muted-foreground" />
-            <span>{request.proposed_name}</span>
-            <Badge variant="outline" className="text-xs">
+          <div className="flex items-center gap-1.5">
+            <Building2 className="h-3 w-3 text-zinc-400" />
+            <span className="text-[11px] text-zinc-700 dark:text-zinc-300">
+              {request.proposed_name}
+            </span>
+            <Badge variant="outline" className="text-[10px] h-4 px-1 font-mono">
               {request.proposed_code}
             </Badge>
           </div>
         </div>
-        <span className="text-xs text-muted-foreground">
+        <span className="text-[10px] text-zinc-400 dark:text-zinc-500">
           {new Date(request.requested_at).toLocaleDateString()}
         </span>
       </div>
 
       {request.proposed_description && (
-        <p className="text-sm text-muted-foreground line-clamp-2">
+        <p className="text-[10px] text-zinc-500 dark:text-zinc-400 line-clamp-2">
           {request.proposed_description}
         </p>
       )}
 
       {request.current_agency && (
-        <p className="text-xs text-muted-foreground">
+        <p className="text-[10px] text-zinc-400 dark:text-zinc-500">
           Currently in: {request.current_agency.name}
         </p>
       )}
 
-      <div className="flex gap-2 pt-2">
+      <div className="flex gap-2 pt-1">
         <Button
           size="sm"
           onClick={onApprove}
           disabled={isProcessing}
-          className="flex-1"
+          className="flex-1 h-6 text-[10px]"
         >
-          <CheckCircle className="mr-2 h-4 w-4" />
+          <CheckCircle className="mr-1 h-3 w-3" />
           Approve
         </Button>
         <Button
@@ -316,9 +340,9 @@ function PendingRequestCard({
           variant="outline"
           onClick={onReject}
           disabled={isProcessing}
-          className="flex-1 text-red-600 hover:text-red-700 hover:bg-red-50"
+          className="flex-1 h-6 text-[10px] text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
         >
-          <XCircle className="mr-2 h-4 w-4" />
+          <XCircle className="mr-1 h-3 w-3" />
           Reject
         </Button>
       </div>

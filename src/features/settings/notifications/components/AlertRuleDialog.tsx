@@ -2,12 +2,13 @@
  * Alert Rule Dialog
  *
  * Dialog for creating and editing alert rules.
+ * Compact zinc styling.
  */
 
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2 } from "lucide-react";
+import { Bell, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -21,13 +22,12 @@ import {
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
-  FormLabel,
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -38,7 +38,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
 
 import {
   useAlertableMetrics,
@@ -59,7 +58,11 @@ interface AlertRuleDialogProps {
   editRule?: AlertRule | null;
 }
 
-export function AlertRuleDialog({ open, onOpenChange, editRule }: AlertRuleDialogProps) {
+export function AlertRuleDialog({
+  open,
+  onOpenChange,
+  editRule,
+}: AlertRuleDialogProps) {
   const { data: metrics } = useAlertableMetrics();
   const createRule = useCreateAlertRule();
   const updateRule = useUpdateAlertRule();
@@ -127,7 +130,10 @@ export function AlertRuleDialog({ open, onOpenChange, editRule }: AlertRuleDialo
       if (metricConfig) {
         form.setValue("threshold_value", metricConfig.default_threshold);
         form.setValue("threshold_unit", metricConfig.default_unit);
-        form.setValue("comparison", metricConfig.default_comparison as AlertComparison);
+        form.setValue(
+          "comparison",
+          metricConfig.default_comparison as AlertComparison,
+        );
       }
     }
   }, [selectedMetric, metrics, form, isEditing]);
@@ -146,7 +152,11 @@ export function AlertRuleDialog({ open, onOpenChange, editRule }: AlertRuleDialo
       }
       onOpenChange(false);
     } catch (error) {
-      toast.error(isEditing ? "Failed to update alert rule" : "Failed to create alert rule");
+      toast.error(
+        isEditing
+          ? "Failed to update alert rule"
+          : "Failed to create alert rule",
+      );
       console.error("Failed to save alert rule:", error);
     }
   };
@@ -155,29 +165,45 @@ export function AlertRuleDialog({ open, onOpenChange, editRule }: AlertRuleDialo
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{isEditing ? "Edit Alert Rule" : "Create Alert Rule"}</DialogTitle>
-          <DialogDescription>
-            {isEditing
-              ? "Update the settings for this alert rule"
-              : "Set up a new alert to monitor business metrics"}
-          </DialogDescription>
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto p-0">
+        <DialogHeader className="px-3 py-2 border-b border-zinc-100 dark:border-zinc-800">
+          <div className="flex items-center gap-2">
+            <Bell className="h-3.5 w-3.5 text-zinc-400" />
+            <div>
+              <DialogTitle className="text-[11px] font-semibold text-zinc-900 dark:text-zinc-100 uppercase tracking-wide">
+                {isEditing ? "Edit Alert Rule" : "Create Alert Rule"}
+              </DialogTitle>
+              <DialogDescription className="text-[10px] text-zinc-500 dark:text-zinc-400">
+                {isEditing
+                  ? "Update the settings for this alert rule"
+                  : "Set up a new alert to monitor business metrics"}
+              </DialogDescription>
+            </div>
+          </div>
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="p-3 space-y-3"
+          >
             {/* Basic Info */}
             <FormField
               control={form.control}
               name="name"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Rule Name</FormLabel>
+                <FormItem className="space-y-1">
+                  <Label className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                    Rule Name *
+                  </Label>
                   <FormControl>
-                    <Input placeholder="e.g., Policy Lapse Warning" {...field} />
+                    <Input
+                      placeholder="e.g., Policy Lapse Warning"
+                      className="h-7 text-[11px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700"
+                      {...field}
+                    />
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className="text-[10px]" />
                 </FormItem>
               )}
             />
@@ -186,78 +212,105 @@ export function AlertRuleDialog({ open, onOpenChange, editRule }: AlertRuleDialo
               control={form.control}
               name="description"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description (optional)</FormLabel>
+                <FormItem className="space-y-1">
+                  <Label className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                    Description (optional)
+                  </Label>
                   <FormControl>
                     <Textarea
                       placeholder="Describe what this rule monitors..."
-                      className="resize-none h-16"
+                      className="resize-none text-[11px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700"
+                      rows={2}
                       {...field}
                     />
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className="text-[10px]" />
                 </FormItem>
               )}
             />
 
-            <Separator />
-
             {/* Metric Configuration */}
-            <div className="space-y-3">
-              <h4 className="text-sm font-medium">Alert Condition</h4>
+            <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800 space-y-2">
+              <h4 className="text-[11px] font-semibold text-zinc-900 dark:text-zinc-100 uppercase tracking-wide">
+                Alert Condition
+              </h4>
 
               <FormField
                 control={form.control}
                 name="metric"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Metric</FormLabel>
-                    <Select value={field.value} onValueChange={field.onChange} disabled={isEditing}>
+                  <FormItem className="space-y-1">
+                    <Label className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                      Metric
+                    </Label>
+                    <Select
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      disabled={isEditing}
+                    >
                       <FormControl>
-                        <SelectTrigger>
+                        <SelectTrigger className="h-7 text-[11px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700">
                           <SelectValue />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
                         {metrics?.map((m) => (
-                          <SelectItem key={m.metric} value={m.metric}>
+                          <SelectItem
+                            key={m.metric}
+                            value={m.metric}
+                            className="text-[11px]"
+                          >
                             <div>
                               <div className="font-medium">{m.label}</div>
-                              <div className="text-xs text-muted-foreground">{m.description}</div>
+                              <div className="text-[10px] text-zinc-500 dark:text-zinc-400">
+                                {m.description}
+                              </div>
                             </div>
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
-                    <FormMessage />
+                    <FormMessage className="text-[10px]" />
                   </FormItem>
                 )}
               />
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-2">
                 <FormField
                   control={form.control}
                   name="comparison"
                   render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Condition</FormLabel>
-                      <Select value={field.value} onValueChange={field.onChange}>
+                    <FormItem className="space-y-1">
+                      <Label className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                        Condition
+                      </Label>
+                      <Select
+                        value={field.value}
+                        onValueChange={field.onChange}
+                      >
                         <FormControl>
-                          <SelectTrigger>
+                          <SelectTrigger className="h-7 text-[11px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700">
                             <SelectValue />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {(Object.entries(COMPARISON_LABELS) as [AlertComparison, string][]).map(
-                            ([value, label]) => (
-                              <SelectItem key={value} value={value}>
-                                {label}
-                              </SelectItem>
-                            )
-                          )}
+                          {(
+                            Object.entries(COMPARISON_LABELS) as [
+                              AlertComparison,
+                              string,
+                            ][]
+                          ).map(([value, label]) => (
+                            <SelectItem
+                              key={value}
+                              value={value}
+                              className="text-[11px]"
+                            >
+                              {label}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
-                      <FormMessage />
+                      <FormMessage className="text-[10px]" />
                     </FormItem>
                   )}
                 />
@@ -266,48 +319,58 @@ export function AlertRuleDialog({ open, onOpenChange, editRule }: AlertRuleDialo
                   control={form.control}
                   name="threshold_value"
                   render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>
+                    <FormItem className="space-y-1">
+                      <Label className="text-[11px] text-zinc-500 dark:text-zinc-400">
                         Threshold ({form.watch("threshold_unit") || "value"})
-                      </FormLabel>
+                      </Label>
                       <FormControl>
                         <Input
                           type="number"
                           min={0}
+                          className="h-7 text-[11px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700"
                           {...field}
-                          onChange={(e) => field.onChange(Number(e.target.value))}
+                          onChange={(e) =>
+                            field.onChange(Number(e.target.value))
+                          }
                         />
                       </FormControl>
-                      <FormMessage />
+                      <FormMessage className="text-[10px]" />
                     </FormItem>
                   )}
                 />
               </div>
             </div>
 
-            <Separator />
-
             {/* Scope */}
-            <div className="space-y-3">
-              <h4 className="text-sm font-medium">Alert Scope</h4>
-              <p className="text-xs text-muted-foreground">
-                Who should this alert monitor?
-              </p>
+            <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800 space-y-2">
+              <div>
+                <h4 className="text-[11px] font-semibold text-zinc-900 dark:text-zinc-100 uppercase tracking-wide">
+                  Alert Scope
+                </h4>
+                <p className="text-[10px] text-zinc-500 dark:text-zinc-400">
+                  Who should this alert monitor?
+                </p>
+              </div>
 
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <FormField
                   control={form.control}
                   name="applies_to_self"
                   render={({ field }) => (
-                    <FormItem className="flex items-center justify-between rounded-lg border p-3">
+                    <FormItem className="flex items-center justify-between rounded border border-zinc-200 dark:border-zinc-700 p-2">
                       <div>
-                        <FormLabel className="text-sm">My own data</FormLabel>
-                        <FormDescription className="text-xs">
+                        <Label className="text-[11px] text-zinc-700 dark:text-zinc-300">
+                          My own data
+                        </Label>
+                        <p className="text-[10px] text-zinc-500 dark:text-zinc-400">
                           Monitor your personal metrics
-                        </FormDescription>
+                        </p>
                       </div>
                       <FormControl>
-                        <Switch checked={field.value} onCheckedChange={field.onChange} />
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
                       </FormControl>
                     </FormItem>
                   )}
@@ -317,15 +380,20 @@ export function AlertRuleDialog({ open, onOpenChange, editRule }: AlertRuleDialo
                   control={form.control}
                   name="applies_to_downlines"
                   render={({ field }) => (
-                    <FormItem className="flex items-center justify-between rounded-lg border p-3">
+                    <FormItem className="flex items-center justify-between rounded border border-zinc-200 dark:border-zinc-700 p-2">
                       <div>
-                        <FormLabel className="text-sm">My downlines</FormLabel>
-                        <FormDescription className="text-xs">
+                        <Label className="text-[11px] text-zinc-700 dark:text-zinc-300">
+                          My downlines
+                        </Label>
+                        <p className="text-[10px] text-zinc-500 dark:text-zinc-400">
                           Monitor agents in your hierarchy
-                        </FormDescription>
+                        </p>
                       </div>
                       <FormControl>
-                        <Switch checked={field.value} onCheckedChange={field.onChange} />
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
                       </FormControl>
                     </FormItem>
                   )}
@@ -335,15 +403,20 @@ export function AlertRuleDialog({ open, onOpenChange, editRule }: AlertRuleDialo
                   control={form.control}
                   name="applies_to_team"
                   render={({ field }) => (
-                    <FormItem className="flex items-center justify-between rounded-lg border p-3">
+                    <FormItem className="flex items-center justify-between rounded border border-zinc-200 dark:border-zinc-700 p-2">
                       <div>
-                        <FormLabel className="text-sm">Entire team</FormLabel>
-                        <FormDescription className="text-xs">
+                        <Label className="text-[11px] text-zinc-700 dark:text-zinc-300">
+                          Entire team
+                        </Label>
+                        <p className="text-[10px] text-zinc-500 dark:text-zinc-400">
                           Monitor all agents in your organization
-                        </FormDescription>
+                        </p>
                       </div>
                       <FormControl>
-                        <Switch checked={field.value} onCheckedChange={field.onChange} />
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
                       </FormControl>
                     </FormItem>
                   )}
@@ -351,21 +424,26 @@ export function AlertRuleDialog({ open, onOpenChange, editRule }: AlertRuleDialo
               </div>
             </div>
 
-            <Separator />
-
             {/* Notification Settings */}
-            <div className="space-y-3">
-              <h4 className="text-sm font-medium">Notification Settings</h4>
+            <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800 space-y-2">
+              <h4 className="text-[11px] font-semibold text-zinc-900 dark:text-zinc-100 uppercase tracking-wide">
+                Notification Settings
+              </h4>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-2">
                 <FormField
                   control={form.control}
                   name="notify_in_app"
                   render={({ field }) => (
-                    <FormItem className="flex items-center justify-between rounded-lg border p-3">
-                      <FormLabel className="text-sm">In-app</FormLabel>
+                    <FormItem className="flex items-center justify-between rounded border border-zinc-200 dark:border-zinc-700 p-2">
+                      <Label className="text-[11px] text-zinc-700 dark:text-zinc-300">
+                        In-app
+                      </Label>
                       <FormControl>
-                        <Switch checked={field.value} onCheckedChange={field.onChange} />
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
                       </FormControl>
                     </FormItem>
                   )}
@@ -375,10 +453,15 @@ export function AlertRuleDialog({ open, onOpenChange, editRule }: AlertRuleDialo
                   control={form.control}
                   name="notify_email"
                   render={({ field }) => (
-                    <FormItem className="flex items-center justify-between rounded-lg border p-3">
-                      <FormLabel className="text-sm">Email</FormLabel>
+                    <FormItem className="flex items-center justify-between rounded border border-zinc-200 dark:border-zinc-700 p-2">
+                      <Label className="text-[11px] text-zinc-700 dark:text-zinc-300">
+                        Email
+                      </Label>
                       <FormControl>
-                        <Switch checked={field.value} onCheckedChange={field.onChange} />
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
                       </FormControl>
                     </FormItem>
                   )}
@@ -389,32 +472,46 @@ export function AlertRuleDialog({ open, onOpenChange, editRule }: AlertRuleDialo
                 control={form.control}
                 name="cooldown_hours"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Cooldown Period (hours)</FormLabel>
+                  <FormItem className="space-y-1">
+                    <Label className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                      Cooldown Period (hours)
+                    </Label>
                     <FormControl>
                       <Input
                         type="number"
                         min={1}
                         max={168}
+                        className="h-7 text-[11px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700"
                         {...field}
                         onChange={(e) => field.onChange(Number(e.target.value))}
                       />
                     </FormControl>
-                    <FormDescription className="text-xs">
+                    <p className="text-[10px] text-zinc-400 dark:text-zinc-500">
                       Minimum time between repeat alerts for the same condition
-                    </FormDescription>
-                    <FormMessage />
+                    </p>
+                    <FormMessage className="text-[10px]" />
                   </FormItem>
                 )}
               />
             </div>
 
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <DialogFooter className="pt-2 border-t border-zinc-100 dark:border-zinc-800 gap-2 sm:gap-0">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                size="sm"
+                className="h-7 text-[11px]"
+              >
                 Cancel
               </Button>
-              <Button type="submit" disabled={isPending}>
-                {isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              <Button
+                type="submit"
+                disabled={isPending}
+                size="sm"
+                className="h-7 text-[11px]"
+              >
+                {isPending && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}
                 {isEditing ? "Save Changes" : "Create Rule"}
               </Button>
             </DialogFooter>

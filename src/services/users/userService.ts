@@ -434,11 +434,7 @@ class UserService {
     try {
       return await this.repository.update(id, dbData);
     } catch (error) {
-      // Fallback: try to fetch to verify update worked
-      const fetchedProfile = await this.repository.findById(id);
-      if (fetchedProfile) {
-        return fetchedProfile;
-      }
+      // Don't mask the error with a fallback fetch - propagate the actual failure
       throw new Error(
         `Failed to update user: ${error instanceof Error ? error.message : String(error)}`,
       );

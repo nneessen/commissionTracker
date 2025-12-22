@@ -81,25 +81,25 @@ export function SettingsDashboard() {
           defaultValue={defaultTab}
           className="flex flex-col flex-1 min-h-0"
         >
-          {/* Compact tabs */}
-          <TabsList className="flex items-center gap-0.5 bg-zinc-200/50 dark:bg-zinc-800/50 rounded-md p-0.5 h-auto w-full flex-wrap">
+          {/* Compact tabs - single row */}
+          <TabsList className="flex items-center gap-0 bg-zinc-200/50 dark:bg-zinc-800/50 rounded-md p-0.5 h-auto w-full">
             {/* Organization Management tabs - Super Admin / IMO Admin */}
             {canManageImos && (
               <TabsTrigger
                 value="imos"
-                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-[11px] font-medium rounded transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:shadow-sm data-[state=active]:text-zinc-900 dark:data-[state=active]:text-zinc-100 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
+                className="flex-1 flex items-center justify-center gap-1 px-1.5 py-1 text-[10px] font-medium rounded transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:shadow-sm data-[state=active]:text-zinc-900 dark:data-[state=active]:text-zinc-100 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
               >
-                <Crown className="h-3.5 w-3.5" />
-                IMOs
+                <Crown className="h-3 w-3 shrink-0" />
+                <span className="truncate">IMOs</span>
               </TabsTrigger>
             )}
             {canManageAgencies && (
               <TabsTrigger
                 value="agencies"
-                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-[11px] font-medium rounded transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:shadow-sm data-[state=active]:text-zinc-900 dark:data-[state=active]:text-zinc-100 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
+                className="flex-1 flex items-center justify-center gap-1 px-1.5 py-1 text-[10px] font-medium rounded transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:shadow-sm data-[state=active]:text-zinc-900 dark:data-[state=active]:text-zinc-100 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
               >
-                <Building className="h-3.5 w-3.5" />
-                Agencies
+                <Building className="h-3 w-3 shrink-0" />
+                <span className="truncate">Agencies</span>
               </TabsTrigger>
             )}
             {/* Admin tabs */}
@@ -107,51 +107,51 @@ export function SettingsDashboard() {
               <>
                 <TabsTrigger
                   value="carriers"
-                  className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-[11px] font-medium rounded transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:shadow-sm data-[state=active]:text-zinc-900 dark:data-[state=active]:text-zinc-100 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
+                  className="flex-1 flex items-center justify-center gap-1 px-1.5 py-1 text-[10px] font-medium rounded transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:shadow-sm data-[state=active]:text-zinc-900 dark:data-[state=active]:text-zinc-100 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
                 >
-                  <Building2 className="h-3.5 w-3.5" />
-                  Carriers
+                  <Building2 className="h-3 w-3 shrink-0" />
+                  <span className="truncate">Carriers</span>
                 </TabsTrigger>
                 <TabsTrigger
                   value="products"
-                  className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-[11px] font-medium rounded transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:shadow-sm data-[state=active]:text-zinc-900 dark:data-[state=active]:text-zinc-100 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
+                  className="flex-1 flex items-center justify-center gap-1 px-1.5 py-1 text-[10px] font-medium rounded transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:shadow-sm data-[state=active]:text-zinc-900 dark:data-[state=active]:text-zinc-100 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
                 >
-                  <Package className="h-3.5 w-3.5" />
-                  Products
+                  <Package className="h-3 w-3 shrink-0" />
+                  <span className="truncate">Products</span>
                 </TabsTrigger>
                 <TabsTrigger
                   value="rates"
-                  className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-[11px] font-medium rounded transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:shadow-sm data-[state=active]:text-zinc-900 dark:data-[state=active]:text-zinc-100 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
+                  className="flex-1 flex items-center justify-center gap-1 px-1.5 py-1 text-[10px] font-medium rounded transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:shadow-sm data-[state=active]:text-zinc-900 dark:data-[state=active]:text-zinc-100 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
                 >
-                  <Percent className="h-3.5 w-3.5" />
-                  Commission Rates
+                  <Percent className="h-3 w-3 shrink-0" />
+                  <span className="truncate">Rates</span>
                 </TabsTrigger>
                 <TabsTrigger
                   value="constants"
-                  className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-[11px] font-medium rounded transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:shadow-sm data-[state=active]:text-zinc-900 dark:data-[state=active]:text-zinc-100 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
+                  className="flex-1 flex items-center justify-center gap-1 px-1.5 py-1 text-[10px] font-medium rounded transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:shadow-sm data-[state=active]:text-zinc-900 dark:data-[state=active]:text-zinc-100 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
                 >
-                  <Settings className="h-3.5 w-3.5" />
-                  Constants
+                  <Settings className="h-3 w-3 shrink-0" />
+                  <span className="truncate">Constants</span>
                 </TabsTrigger>
               </>
             )}
             <TabsTrigger
               value="agents"
-              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-[11px] font-medium rounded transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:shadow-sm data-[state=active]:text-zinc-900 dark:data-[state=active]:text-zinc-100 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
+              className="flex-1 flex items-center justify-center gap-1 px-1.5 py-1 text-[10px] font-medium rounded transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:shadow-sm data-[state=active]:text-zinc-900 dark:data-[state=active]:text-zinc-100 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
             >
-              <User className="h-3.5 w-3.5" />
-              {canManageCarriers ? "Agents" : "Profile"}
+              <User className="h-3 w-3 shrink-0" />
+              <span className="truncate">Profile</span>
             </TabsTrigger>
             <TabsTrigger
               value="agency-request"
-              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-[11px] font-medium rounded transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:shadow-sm data-[state=active]:text-zinc-900 dark:data-[state=active]:text-zinc-100 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
+              className="flex-1 flex items-center justify-center gap-1 px-1.5 py-1 text-[10px] font-medium rounded transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:shadow-sm data-[state=active]:text-zinc-900 dark:data-[state=active]:text-zinc-100 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
             >
-              <ClipboardCheck className="h-3.5 w-3.5" />
-              Agency
+              <ClipboardCheck className="h-3 w-3 shrink-0" />
+              <span className="truncate">Agency</span>
               {pendingAgencyRequestCount > 0 && (
                 <Badge
                   variant="destructive"
-                  className="ml-1 h-4 px-1 text-[10px]"
+                  className="h-3.5 px-1 text-[9px] min-w-0"
                 >
                   {pendingAgencyRequestCount}
                 </Badge>
@@ -159,14 +159,14 @@ export function SettingsDashboard() {
             </TabsTrigger>
             <TabsTrigger
               value="join-request"
-              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-[11px] font-medium rounded transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:shadow-sm data-[state=active]:text-zinc-900 dark:data-[state=active]:text-zinc-100 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
+              className="flex-1 flex items-center justify-center gap-1 px-1.5 py-1 text-[10px] font-medium rounded transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:shadow-sm data-[state=active]:text-zinc-900 dark:data-[state=active]:text-zinc-100 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
             >
-              <UserPlus className="h-3.5 w-3.5" />
-              Join
+              <UserPlus className="h-3 w-3 shrink-0" />
+              <span className="truncate">Join</span>
               {pendingJoinRequestCount > 0 && (
                 <Badge
                   variant="destructive"
-                  className="ml-1 h-4 px-1 text-[10px]"
+                  className="h-3.5 px-1 text-[9px] min-w-0"
                 >
                   {pendingJoinRequestCount}
                 </Badge>
@@ -174,26 +174,26 @@ export function SettingsDashboard() {
             </TabsTrigger>
             <TabsTrigger
               value="notifications"
-              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-[11px] font-medium rounded transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:shadow-sm data-[state=active]:text-zinc-900 dark:data-[state=active]:text-zinc-100 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
+              className="flex-1 flex items-center justify-center gap-1 px-1.5 py-1 text-[10px] font-medium rounded transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:shadow-sm data-[state=active]:text-zinc-900 dark:data-[state=active]:text-zinc-100 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
             >
-              <Bell className="h-3.5 w-3.5" />
-              Notifications
+              <Bell className="h-3 w-3 shrink-0" />
+              <span className="truncate">Alerts</span>
             </TabsTrigger>
             {canViewAuditTrail && (
               <TabsTrigger
                 value="audit-trail"
-                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-[11px] font-medium rounded transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:shadow-sm data-[state=active]:text-zinc-900 dark:data-[state=active]:text-zinc-100 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
+                className="flex-1 flex items-center justify-center gap-1 px-1.5 py-1 text-[10px] font-medium rounded transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:shadow-sm data-[state=active]:text-zinc-900 dark:data-[state=active]:text-zinc-100 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
               >
-                <History className="h-3.5 w-3.5" />
-                Audit Trail
+                <History className="h-3 w-3 shrink-0" />
+                <span className="truncate">Audit</span>
               </TabsTrigger>
             )}
             <TabsTrigger
               value="billing"
-              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-[11px] font-medium rounded transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:shadow-sm data-[state=active]:text-zinc-900 dark:data-[state=active]:text-zinc-100 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
+              className="flex-1 flex items-center justify-center gap-1 px-1.5 py-1 text-[10px] font-medium rounded transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:shadow-sm data-[state=active]:text-zinc-900 dark:data-[state=active]:text-zinc-100 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
             >
-              <CreditCard className="h-3.5 w-3.5" />
-              Billing
+              <CreditCard className="h-3 w-3 shrink-0" />
+              <span className="truncate">Billing</span>
             </TabsTrigger>
           </TabsList>
 

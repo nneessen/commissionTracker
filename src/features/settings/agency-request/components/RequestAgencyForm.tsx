@@ -1,14 +1,13 @@
 // src/features/settings/agency-request/components/RequestAgencyForm.tsx
-// Form for agents to request agency status
+// Form for agents to request agency status - compact zinc styling
 
-import React, { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { CheckCircle, Loader2, XCircle } from "lucide-react";
+import { CheckCircle, Info, Loader2, Send, XCircle } from "lucide-react";
 import {
   useCreateAgencyRequest,
   useIsAgencyCodeAvailable,
@@ -23,17 +22,15 @@ export function RequestAgencyForm() {
 
   // Debounced code availability check
   const [debouncedCode, setDebouncedCode] = useState("");
-  React.useEffect(() => {
+  useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedCode(code.toUpperCase().trim());
     }, 500);
     return () => clearTimeout(timer);
   }, [code]);
 
-  const { data: isCodeAvailable, isLoading: isCheckingCode } = useIsAgencyCodeAvailable(
-    debouncedCode,
-    debouncedCode.length >= 2
-  );
+  const { data: isCodeAvailable, isLoading: isCheckingCode } =
+    useIsAgencyCodeAvailable(debouncedCode, debouncedCode.length >= 2);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,7 +57,8 @@ export function RequestAgencyForm() {
       setCode("");
       setDescription("");
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to submit request";
+      const message =
+        error instanceof Error ? error.message : "Failed to submit request";
       toast.error(message);
     }
   };
@@ -68,9 +66,15 @@ export function RequestAgencyForm() {
   const isSubmitting = createRequest.isPending;
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="agency-name">Agency Name *</Label>
+    <form onSubmit={handleSubmit} className="space-y-3">
+      {/* Agency Name */}
+      <div className="space-y-1.5">
+        <Label
+          htmlFor="agency-name"
+          className="text-[11px] text-zinc-500 dark:text-zinc-400"
+        >
+          Agency Name *
+        </Label>
         <Input
           id="agency-name"
           placeholder="e.g., Johnson Insurance Group"
@@ -78,11 +82,18 @@ export function RequestAgencyForm() {
           onChange={(e) => setName(e.target.value)}
           disabled={isSubmitting}
           maxLength={100}
+          className="h-7 text-[11px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700"
         />
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="agency-code">Agency Code *</Label>
+      {/* Agency Code */}
+      <div className="space-y-1.5">
+        <Label
+          htmlFor="agency-code"
+          className="text-[11px] text-zinc-500 dark:text-zinc-400"
+        >
+          Agency Code *
+        </Label>
         <div className="relative">
           <Input
             id="agency-code"
@@ -91,62 +102,81 @@ export function RequestAgencyForm() {
             onChange={(e) => setCode(e.target.value.toUpperCase())}
             disabled={isSubmitting}
             maxLength={20}
-            className="uppercase pr-10"
+            className="h-7 text-[11px] uppercase pr-8 bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700"
           />
           {debouncedCode.length >= 2 && (
-            <div className="absolute right-3 top-1/2 -translate-y-1/2">
+            <div className="absolute right-2 top-1/2 -translate-y-1/2">
               {isCheckingCode ? (
-                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                <Loader2 className="h-3 w-3 animate-spin text-zinc-400" />
               ) : isCodeAvailable ? (
-                <CheckCircle className="h-4 w-4 text-green-500" />
+                <CheckCircle className="h-3 w-3 text-green-500" />
               ) : (
-                <XCircle className="h-4 w-4 text-red-500" />
+                <XCircle className="h-3 w-3 text-red-500" />
               )}
             </div>
           )}
         </div>
         {debouncedCode.length >= 2 && !isCheckingCode && (
-          <p className={`text-xs ${isCodeAvailable ? "text-green-600" : "text-red-600"}`}>
+          <p
+            className={`text-[10px] ${isCodeAvailable ? "text-green-600" : "text-red-600"}`}
+          >
             {isCodeAvailable ? "Code is available" : "Code is already in use"}
           </p>
         )}
-        <p className="text-xs text-muted-foreground">
-          A unique code to identify your agency (2-20 characters)
+        <p className="text-[10px] text-zinc-400 dark:text-zinc-500">
+          Unique code to identify your agency (2-20 characters)
         </p>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="agency-description">Description (Optional)</Label>
+      {/* Description */}
+      <div className="space-y-1.5">
+        <Label
+          htmlFor="agency-description"
+          className="text-[11px] text-zinc-500 dark:text-zinc-400"
+        >
+          Description (Optional)
+        </Label>
         <Textarea
           id="agency-description"
           placeholder="Brief description of your agency..."
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           disabled={isSubmitting}
-          rows={3}
+          rows={2}
           maxLength={500}
+          className="text-[11px] resize-none bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700"
         />
       </div>
 
-      <Alert className="bg-muted/50">
-        <AlertDescription className="text-sm">
-          Your request will be sent to your direct upline for approval. Once approved,
-          your agency will be created and your downline agents will be moved to your new agency.
-        </AlertDescription>
-      </Alert>
+      {/* Info notice */}
+      <div className="flex items-start gap-2 p-2 bg-zinc-50 dark:bg-zinc-800/50 rounded text-[10px] text-zinc-600 dark:text-zinc-400">
+        <Info className="h-3 w-3 mt-0.5 shrink-0 text-zinc-400" />
+        <p>
+          Your request will be sent to your direct upline for approval. Once
+          approved, your agency will be created and your downline agents will be
+          moved to your new agency.
+        </p>
+      </div>
 
+      {/* Submit */}
       <Button
         type="submit"
-        disabled={isSubmitting || !name.trim() || !code.trim() || !isCodeAvailable}
-        className="w-full"
+        disabled={
+          isSubmitting || !name.trim() || !code.trim() || !isCodeAvailable
+        }
+        size="sm"
+        className="w-full h-7 text-[10px]"
       >
         {isSubmitting ? (
           <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            <Loader2 className="h-3 w-3 animate-spin mr-1" />
             Submitting...
           </>
         ) : (
-          "Submit Request"
+          <>
+            <Send className="h-3 w-3 mr-1" />
+            Submit Request
+          </>
         )}
       </Button>
     </form>
