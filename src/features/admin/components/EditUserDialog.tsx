@@ -403,6 +403,12 @@ export default function EditUserDialog({
         queryClient.invalidateQueries({ queryKey: ["hierarchy"] });
         queryClient.invalidateQueries({ queryKey: ["downlines"] });
         queryClient.invalidateQueries({ queryKey: ["team-comparison"] });
+        // Also invalidate client hierarchy queries
+        queryClient.invalidateQueries({ queryKey: ["clients", "hierarchy"] });
+      }
+      // Invalidate client hierarchy when agency changes (affects who can see which clients)
+      if (agencyChanged) {
+        queryClient.invalidateQueries({ queryKey: ["clients", "hierarchy"] });
       }
       onOpenChange(false);
     } catch (error) {

@@ -29,3 +29,6 @@ export * from "./kpi";
 export * from "./imo";
 export * from "./agency-request";
 export * from "./join-request";
+
+// Client hooks
+export * from "./clients";
