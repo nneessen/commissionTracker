@@ -234,6 +234,184 @@ export type Database = {
           },
         ]
       }
+      alert_rule_evaluations: {
+        Row: {
+          affected_entity_id: string | null
+          affected_entity_type: string | null
+          affected_user_id: string | null
+          comparison: Database["public"]["Enums"]["alert_comparison"]
+          current_value: number | null
+          evaluated_at: string
+          evaluation_context: Json | null
+          id: string
+          notification_id: string | null
+          rule_id: string
+          threshold_value: number
+          triggered: boolean
+        }
+        Insert: {
+          affected_entity_id?: string | null
+          affected_entity_type?: string | null
+          affected_user_id?: string | null
+          comparison: Database["public"]["Enums"]["alert_comparison"]
+          current_value?: number | null
+          evaluated_at?: string
+          evaluation_context?: Json | null
+          id?: string
+          notification_id?: string | null
+          rule_id: string
+          threshold_value: number
+          triggered: boolean
+        }
+        Update: {
+          affected_entity_id?: string | null
+          affected_entity_type?: string | null
+          affected_user_id?: string | null
+          comparison?: Database["public"]["Enums"]["alert_comparison"]
+          current_value?: number | null
+          evaluated_at?: string
+          evaluation_context?: Json | null
+          id?: string
+          notification_id?: string | null
+          rule_id?: string
+          threshold_value?: number
+          triggered?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "alert_rule_evaluations_affected_user_id_fkey"
+            columns: ["affected_user_id"]
+            isOneToOne: false
+            referencedRelation: "active_user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "alert_rule_evaluations_affected_user_id_fkey"
+            columns: ["affected_user_id"]
+            isOneToOne: false
+            referencedRelation: "user_management_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "alert_rule_evaluations_affected_user_id_fkey"
+            columns: ["affected_user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "alert_rule_evaluations_notification_id_fkey"
+            columns: ["notification_id"]
+            isOneToOne: false
+            referencedRelation: "notifications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "alert_rule_evaluations_rule_id_fkey"
+            columns: ["rule_id"]
+            isOneToOne: false
+            referencedRelation: "alert_rules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      alert_rules: {
+        Row: {
+          agency_id: string | null
+          applies_to_downlines: boolean
+          applies_to_self: boolean
+          applies_to_team: boolean
+          comparison: Database["public"]["Enums"]["alert_comparison"]
+          consecutive_triggers: number
+          cooldown_hours: number
+          created_at: string
+          description: string | null
+          id: string
+          imo_id: string | null
+          is_active: boolean
+          last_triggered_at: string | null
+          metric: Database["public"]["Enums"]["alert_metric"]
+          name: string
+          notify_email: boolean
+          notify_in_app: boolean
+          owner_id: string
+          threshold_unit: string | null
+          threshold_value: number
+          trigger_count: number
+          updated_at: string
+        }
+        Insert: {
+          agency_id?: string | null
+          applies_to_downlines?: boolean
+          applies_to_self?: boolean
+          applies_to_team?: boolean
+          comparison: Database["public"]["Enums"]["alert_comparison"]
+          consecutive_triggers?: number
+          cooldown_hours?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          imo_id?: string | null
+          is_active?: boolean
+          last_triggered_at?: string | null
+          metric: Database["public"]["Enums"]["alert_metric"]
+          name: string
+          notify_email?: boolean
+          notify_in_app?: boolean
+          owner_id: string
+          threshold_unit?: string | null
+          threshold_value: number
+          trigger_count?: number
+          updated_at?: string
+        }
+        Update: {
+          agency_id?: string | null
+          applies_to_downlines?: boolean
+          applies_to_self?: boolean
+          applies_to_team?: boolean
+          comparison?: Database["public"]["Enums"]["alert_comparison"]
+          consecutive_triggers?: number
+          cooldown_hours?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          imo_id?: string | null
+          is_active?: boolean
+          last_triggered_at?: string | null
+          metric?: Database["public"]["Enums"]["alert_metric"]
+          name?: string
+          notify_email?: boolean
+          notify_in_app?: boolean
+          owner_id?: string
+          threshold_unit?: string | null
+          threshold_value?: number
+          trigger_count?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "alert_rules_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "alert_rules_imo_id_fkey"
+            columns: ["imo_id"]
+            isOneToOne: false
+            referencedRelation: "imos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "alert_rules_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bulk_email_campaigns: {
         Row: {
           bounced_count: number
@@ -2083,6 +2261,64 @@ export type Database = {
           },
         ]
       }
+      notification_digest_log: {
+        Row: {
+          email_message_id: string | null
+          email_sent_to: string
+          error_message: string | null
+          id: string
+          notification_count: number
+          notification_ids: string[]
+          sent_at: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          email_message_id?: string | null
+          email_sent_to: string
+          error_message?: string | null
+          id?: string
+          notification_count: number
+          notification_ids: string[]
+          sent_at?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          email_message_id?: string | null
+          email_sent_to?: string
+          error_message?: string | null
+          id?: string
+          notification_count?: number
+          notification_ids?: string[]
+          sent_at?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_digest_log_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "active_user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notification_digest_log_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_management_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notification_digest_log_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notification_preferences: {
         Row: {
           browser_push_enabled: boolean | null
@@ -2094,6 +2330,7 @@ export type Database = {
           email_digest_timezone: string | null
           id: string
           in_app_enabled: boolean | null
+          last_digest_sent_at: string | null
           notify_on_click: boolean | null
           notify_on_open: boolean | null
           notify_on_reply: boolean | null
@@ -2113,6 +2350,7 @@ export type Database = {
           email_digest_timezone?: string | null
           id?: string
           in_app_enabled?: boolean | null
+          last_digest_sent_at?: string | null
           notify_on_click?: boolean | null
           notify_on_open?: boolean | null
           notify_on_reply?: boolean | null
@@ -2132,6 +2370,7 @@ export type Database = {
           email_digest_timezone?: string | null
           id?: string
           in_app_enabled?: boolean | null
+          last_digest_sent_at?: string | null
           notify_on_click?: boolean | null
           notify_on_open?: boolean | null
           notify_on_reply?: boolean | null
@@ -6313,6 +6552,52 @@ export type Database = {
         }
         Returns: boolean
       }
+      create_alert_rule: {
+        Args: {
+          p_applies_to_downlines?: boolean
+          p_applies_to_self?: boolean
+          p_applies_to_team?: boolean
+          p_comparison?: Database["public"]["Enums"]["alert_comparison"]
+          p_cooldown_hours?: number
+          p_description?: string
+          p_metric?: Database["public"]["Enums"]["alert_metric"]
+          p_name: string
+          p_notify_email?: boolean
+          p_notify_in_app?: boolean
+          p_threshold_unit?: string
+          p_threshold_value?: number
+        }
+        Returns: {
+          agency_id: string | null
+          applies_to_downlines: boolean
+          applies_to_self: boolean
+          applies_to_team: boolean
+          comparison: Database["public"]["Enums"]["alert_comparison"]
+          consecutive_triggers: number
+          cooldown_hours: number
+          created_at: string
+          description: string | null
+          id: string
+          imo_id: string | null
+          is_active: boolean
+          last_triggered_at: string | null
+          metric: Database["public"]["Enums"]["alert_metric"]
+          name: string
+          notify_email: boolean
+          notify_in_app: boolean
+          owner_id: string
+          threshold_unit: string | null
+          threshold_value: number
+          trigger_count: number
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "alert_rules"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       create_org_workflow_template: {
         Args: {
           p_actions: Json
@@ -6350,6 +6635,7 @@ export type Database = {
         Args: { context_param?: Json; workflow_id_param: string }
         Returns: string
       }
+      delete_alert_rule: { Args: { p_rule_id: string }; Returns: boolean }
       delete_orphan_identity: { Args: { del_email: string }; Returns: Json }
       email_subject_hash: { Args: { subject: string }; Returns: string }
       ensure_system_labels: { Args: { p_user_id: string }; Returns: undefined }
@@ -6425,6 +6711,36 @@ export type Database = {
       get_agency_recruiting_summary: {
         Args: { p_agency_id: string }
         Returns: Json
+      }
+      get_alert_rule_history: {
+        Args: { p_limit?: number; p_rule_id: string }
+        Returns: {
+          affected_entity_id: string
+          affected_entity_type: string
+          affected_user_id: string
+          affected_user_name: string
+          comparison: Database["public"]["Enums"]["alert_comparison"]
+          current_value: number
+          evaluated_at: string
+          id: string
+          notification_id: string
+          threshold_value: number
+          triggered: boolean
+        }[]
+      }
+      get_alertable_metrics: {
+        Args: never
+        Returns: {
+          available_for_downlines: boolean
+          available_for_self: boolean
+          available_for_team: boolean
+          default_comparison: string
+          default_threshold: number
+          default_unit: string
+          description: string
+          label: string
+          metric: string
+        }[]
       }
       get_at_risk_commissions: {
         Args: { p_risk_threshold?: number; p_user_id: string }
@@ -6554,6 +6870,26 @@ export type Database = {
         Returns: {
           email: string
           id: string
+        }[]
+      }
+      get_due_alert_rules: {
+        Args: never
+        Returns: {
+          agency_id: string
+          applies_to_downlines: boolean
+          applies_to_self: boolean
+          applies_to_team: boolean
+          comparison: Database["public"]["Enums"]["alert_comparison"]
+          cooldown_hours: number
+          id: string
+          imo_id: string
+          last_triggered_at: string
+          metric: Database["public"]["Enums"]["alert_metric"]
+          notify_email: boolean
+          notify_in_app: boolean
+          owner_id: string
+          threshold_unit: string
+          threshold_value: number
         }[]
       }
       get_due_scheduled_reports: {
@@ -6725,7 +7061,63 @@ export type Database = {
       }
       get_message_stats: { Args: { p_user_id: string }; Returns: Json }
       get_my_agency_id: { Args: never; Returns: string }
+      get_my_alert_rules: {
+        Args: never
+        Returns: {
+          agency_id: string
+          applies_to_downlines: boolean
+          applies_to_self: boolean
+          applies_to_team: boolean
+          comparison: Database["public"]["Enums"]["alert_comparison"]
+          cooldown_hours: number
+          created_at: string
+          description: string
+          id: string
+          imo_id: string
+          is_active: boolean
+          last_triggered_at: string
+          metric: Database["public"]["Enums"]["alert_metric"]
+          name: string
+          notify_email: boolean
+          notify_in_app: boolean
+          owner_id: string
+          owner_name: string
+          threshold_unit: string
+          threshold_value: number
+          trigger_count: number
+          updated_at: string
+        }[]
+      }
       get_my_imo_id: { Args: never; Returns: string }
+      get_my_notification_preferences: {
+        Args: never
+        Returns: {
+          browser_push_enabled: boolean | null
+          browser_push_subscription: Json | null
+          created_at: string | null
+          email_digest_enabled: boolean | null
+          email_digest_frequency: string | null
+          email_digest_time: string | null
+          email_digest_timezone: string | null
+          id: string
+          in_app_enabled: boolean | null
+          last_digest_sent_at: string | null
+          notify_on_click: boolean | null
+          notify_on_open: boolean | null
+          notify_on_reply: boolean | null
+          quiet_hours_enabled: boolean | null
+          quiet_hours_end: string | null
+          quiet_hours_start: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "notification_preferences"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       get_my_scheduled_reports: {
         Args: never
         Returns: {
@@ -7098,6 +7490,38 @@ export type Database = {
         Args: { p_context: Json; p_event_name: string }
         Returns: undefined
       }
+      record_alert_evaluation: {
+        Args: {
+          p_affected_entity_id?: string
+          p_affected_entity_type?: string
+          p_affected_user_id?: string
+          p_current_value: number
+          p_evaluation_context?: Json
+          p_notification_id?: string
+          p_rule_id: string
+          p_triggered: boolean
+        }
+        Returns: {
+          affected_entity_id: string | null
+          affected_entity_type: string | null
+          affected_user_id: string | null
+          comparison: Database["public"]["Enums"]["alert_comparison"]
+          current_value: number | null
+          evaluated_at: string
+          evaluation_context: Json | null
+          id: string
+          notification_id: string | null
+          rule_id: string
+          threshold_value: number
+          triggered: boolean
+        }
+        SetofOptions: {
+          from: "*"
+          to: "alert_rule_evaluations"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       record_email_click: {
         Args: {
           p_city?: string
@@ -7183,9 +7607,127 @@ export type Database = {
           would_pass: boolean
         }[]
       }
+      toggle_alert_rule_active: {
+        Args: { p_is_active: boolean; p_rule_id: string }
+        Returns: {
+          agency_id: string | null
+          applies_to_downlines: boolean
+          applies_to_self: boolean
+          applies_to_team: boolean
+          comparison: Database["public"]["Enums"]["alert_comparison"]
+          consecutive_triggers: number
+          cooldown_hours: number
+          created_at: string
+          description: string | null
+          id: string
+          imo_id: string | null
+          is_active: boolean
+          last_triggered_at: string | null
+          metric: Database["public"]["Enums"]["alert_metric"]
+          name: string
+          notify_email: boolean
+          notify_in_app: boolean
+          owner_id: string
+          threshold_unit: string | null
+          threshold_value: number
+          trigger_count: number
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "alert_rules"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       trigger_workflows_for_event: {
         Args: { context_data: Json; event_name_param: string }
         Returns: undefined
+      }
+      update_alert_rule: {
+        Args: {
+          p_applies_to_downlines?: boolean
+          p_applies_to_self?: boolean
+          p_applies_to_team?: boolean
+          p_cooldown_hours?: number
+          p_description?: string
+          p_is_active?: boolean
+          p_name?: string
+          p_notify_email?: boolean
+          p_notify_in_app?: boolean
+          p_rule_id: string
+          p_threshold_unit?: string
+          p_threshold_value?: number
+        }
+        Returns: {
+          agency_id: string | null
+          applies_to_downlines: boolean
+          applies_to_self: boolean
+          applies_to_team: boolean
+          comparison: Database["public"]["Enums"]["alert_comparison"]
+          consecutive_triggers: number
+          cooldown_hours: number
+          created_at: string
+          description: string | null
+          id: string
+          imo_id: string | null
+          is_active: boolean
+          last_triggered_at: string | null
+          metric: Database["public"]["Enums"]["alert_metric"]
+          name: string
+          notify_email: boolean
+          notify_in_app: boolean
+          owner_id: string
+          threshold_unit: string | null
+          threshold_value: number
+          trigger_count: number
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "alert_rules"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      update_my_notification_preferences: {
+        Args: {
+          p_browser_push_enabled?: boolean
+          p_email_digest_enabled?: boolean
+          p_email_digest_frequency?: string
+          p_email_digest_time?: string
+          p_email_digest_timezone?: string
+          p_in_app_enabled?: boolean
+          p_quiet_hours_enabled?: boolean
+          p_quiet_hours_end?: string
+          p_quiet_hours_start?: string
+        }
+        Returns: {
+          browser_push_enabled: boolean | null
+          browser_push_subscription: Json | null
+          created_at: string | null
+          email_digest_enabled: boolean | null
+          email_digest_frequency: string | null
+          email_digest_time: string | null
+          email_digest_timezone: string | null
+          id: string
+          in_app_enabled: boolean | null
+          last_digest_sent_at: string | null
+          notify_on_click: boolean | null
+          notify_on_open: boolean | null
+          notify_on_reply: boolean | null
+          quiet_hours_enabled: boolean | null
+          quiet_hours_end: string | null
+          quiet_hours_start: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "notification_preferences"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       update_override_earned_amount: {
         Args: { p_months_paid: number; p_policy_id: string }
@@ -7239,6 +7781,17 @@ export type Database = {
     }
     Enums: {
       agent_status: "unlicensed" | "licensed" | "not_applicable"
+      alert_comparison: "lt" | "lte" | "gt" | "gte" | "eq"
+      alert_metric:
+        | "policy_lapse_warning"
+        | "target_miss_risk"
+        | "commission_threshold"
+        | "new_policy_count"
+        | "recruit_stall"
+        | "override_change"
+        | "team_production_drop"
+        | "persistency_warning"
+        | "license_expiration"
       chargeback_status: "pending" | "resolved" | "disputed"
       commission_status:
         | "pending"
@@ -7398,6 +7951,18 @@ export const Constants = {
   public: {
     Enums: {
       agent_status: ["unlicensed", "licensed", "not_applicable"],
+      alert_comparison: ["lt", "lte", "gt", "gte", "eq"],
+      alert_metric: [
+        "policy_lapse_warning",
+        "target_miss_risk",
+        "commission_threshold",
+        "new_policy_count",
+        "recruit_stall",
+        "override_change",
+        "team_production_drop",
+        "persistency_warning",
+        "license_expiration",
+      ],
       chargeback_status: ["pending", "resolved", "disputed"],
       commission_status: [
         "pending",
