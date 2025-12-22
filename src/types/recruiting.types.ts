@@ -1,6 +1,32 @@
 // src/types/recruiting.types.ts
 
 import type { Database } from "./database.types";
+import type { DocumentStatus as DocStatus } from "./documents.types";
+
+// Re-export document types from dedicated module
+export type {
+  DocumentCategory,
+  InsuranceDocumentType,
+  DocumentStatus,
+} from "./documents.types";
+
+// Local alias for use within this file
+type DocumentStatus = DocStatus;
+export {
+  DOCUMENT_CATEGORIES,
+  DOCUMENT_TYPE_LABELS,
+  DOCUMENT_EXPIRATION_DEFAULTS,
+  DOCUMENT_CATEGORY_ORDER,
+  getCategoryForDocumentType,
+  getAllDocumentTypes,
+  getDocumentTypesForCategory,
+  getSuggestedExpirationDate,
+  isValidDocumentType,
+  isValidDocumentCategory,
+} from "./documents.types";
+
+// Legacy alias for backward compatibility
+export type { InsuranceDocumentType as DocumentType } from "./documents.types";
 
 export type AgentStatus = Database["public"]["Enums"]["agent_status"];
 
@@ -215,22 +241,8 @@ export type ChecklistItemType =
 export type CompletedBy = "recruit" | "upline" | "system";
 export type RequiredApproverRole = "upline" | "admin" | "system";
 
-export type DocumentType =
-  | "application"
-  | "background_check"
-  | "license"
-  | "contract"
-  | "resume"
-  | "identification"
-  | "certification"
-  | "other";
-
-export type DocumentStatus =
-  | "pending"
-  | "received"
-  | "approved"
-  | "rejected"
-  | "expired";
+// DocumentType and DocumentStatus are now imported from documents.types.ts
+// and re-exported at the top of this file for backward compatibility
 export type EmailStatus =
   | "draft"
   | "sending"
@@ -270,7 +282,7 @@ export interface OnboardingPhase {
 export interface UserDocument {
   id: string;
   user_id: string;
-  document_type: DocumentType;
+  document_type: string; // Uses InsuranceDocumentType values but stored as string in DB
   document_name: string;
   file_name: string;
   file_size: number | null;

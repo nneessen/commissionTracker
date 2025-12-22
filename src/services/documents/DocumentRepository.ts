@@ -91,7 +91,7 @@ export class DocumentRepository extends BaseRepository<
   }
 
   /**
-   * Find expired documents
+   * Find expired documents (expires_at < now and not already marked expired)
    */
   async findExpired(): Promise<UserDocumentEntity[]> {
     const now = new Date().toISOString();
@@ -107,6 +107,129 @@ export class DocumentRepository extends BaseRepository<
     }
 
     return (data || []).map((row) => this.transformFromDB(row));
+  }
+
+  /**
+   * Find documents expiring within N days
+   * Returns documents where: now < expires_at <= (now + daysAhead days)
+   */
+  async findExpiring(daysAhead: number): Promise<UserDocumentEntity[]> {
+    const now = new Date();
+    const futureDate = new Date(now);
+    futureDate.setDate(futureDate.getDate() + daysAhead);
+
+    const { data, error } = await this.client
+      .from(this.tableName)
+      .select("*")
+      .gt("expires_at", now.toISOString())
+      .lte("expires_at", futureDate.toISOString())
+      .neq("status", "expired")
+      .order("expires_at", { ascending: true });
+
+    if (error) {
+      throw this.handleError(error, "findExpiring");
+    }
+
+    return (data || []).map((row) => this.transformFromDB(row));
+  }
+
+  /**
+   * Find documents expiring within N days for a specific user
+   */
+  async findExpiringForUser(
+    userId: string,
+    daysAhead: number,
+  ): Promise<UserDocumentEntity[]> {
+    const now = new Date();
+    const futureDate = new Date(now);
+    futureDate.setDate(futureDate.getDate() + daysAhead);
+
+    const { data, error } = await this.client
+      .from(this.tableName)
+      .select("*")
+      .eq("user_id", userId)
+      .gt("expires_at", now.toISOString())
+      .lte("expires_at", futureDate.toISOString())
+      .neq("status", "expired")
+      .order("expires_at", { ascending: true });
+
+    if (error) {
+      throw this.handleError(error, "findExpiringForUser");
+    }
+
+    return (data || []).map((row) => this.transformFromDB(row));
+  }
+
+  /**
+   * Mark all expired documents as 'expired' status
+   * Returns the count of documents updated
+   */
+  async markExpired(): Promise<number> {
+    const now = new Date().toISOString();
+    const { data, error } = await this.client
+      .from(this.tableName)
+      .update({
+        status: "expired",
+        updated_at: now,
+      })
+      .lt("expires_at", now)
+      .neq("status", "expired")
+      .select("id");
+
+    if (error) {
+      throw this.handleError(error, "markExpired");
+    }
+
+    return data?.length ?? 0;
+  }
+
+  /**
+   * Count documents expiring within specified day ranges for a user
+   * Useful for dashboard badges
+   */
+  async countExpiringByRanges(userId: string): Promise<{
+    critical: number; // 0-30 days
+    warning: number; // 31-60 days
+    upcoming: number; // 61-90 days
+  }> {
+    const now = new Date();
+    const thirtyDays = new Date(now);
+    thirtyDays.setDate(thirtyDays.getDate() + 30);
+    const sixtyDays = new Date(now);
+    sixtyDays.setDate(sixtyDays.getDate() + 60);
+    const ninetyDays = new Date(now);
+    ninetyDays.setDate(ninetyDays.getDate() + 90);
+
+    // Get all expiring within 90 days
+    const { data, error } = await this.client
+      .from(this.tableName)
+      .select("expires_at")
+      .eq("user_id", userId)
+      .gt("expires_at", now.toISOString())
+      .lte("expires_at", ninetyDays.toISOString())
+      .neq("status", "expired");
+
+    if (error) {
+      throw this.handleError(error, "countExpiringByRanges");
+    }
+
+    // Categorize by ranges
+    let critical = 0;
+    let warning = 0;
+    let upcoming = 0;
+
+    for (const row of data || []) {
+      const expiresAt = new Date(row.expires_at as string);
+      if (expiresAt <= thirtyDays) {
+        critical++;
+      } else if (expiresAt <= sixtyDays) {
+        warning++;
+      } else {
+        upcoming++;
+      }
+    }
+
+    return { critical, warning, upcoming };
   }
 
   /**

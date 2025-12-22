@@ -1,14 +1,22 @@
 // src/features/recruiting/components/UploadDocumentDialog.tsx
-// Compact styled upload document dialog
+// Compact styled upload document dialog with insurance document type categories
 
-import React, { useState } from 'react';
-import {Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter} from '@/components/ui/dialog';
-import {Button} from '@/components/ui/button';
-import {Input} from '@/components/ui/input';
-import {Label} from '@/components/ui/label';
-import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '@/components/ui/select';
-import {Upload, Loader2, FileText, X} from 'lucide-react';
-import {useUploadDocument} from '../hooks/useRecruitDocuments';
+import React, { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Upload, Loader2, FileText, X, Calendar } from "lucide-react";
+import { useUploadDocument } from "../hooks/useRecruitDocuments";
+import { DocumentTypeCategorySelector } from "@/features/documents/components/DocumentTypeCategorySelector";
+import type { InsuranceDocumentType } from "@/types/documents.types";
 
 interface UploadDocumentDialogProps {
   open: boolean;
@@ -17,21 +25,18 @@ interface UploadDocumentDialogProps {
   uploadedBy: string;
 }
 
-const DOCUMENT_TYPES = [
-  { value: 'application', label: 'Application Form' },
-  { value: 'background_check', label: 'Background Check' },
-  { value: 'license', label: 'State License' },
-  { value: 'contract', label: 'Carrier Contract' },
-  { value: 'resume', label: 'Resume' },
-  { value: 'identification', label: 'ID/Driver\'s License' },
-  { value: 'certification', label: 'Certification' },
-  { value: 'other', label: 'Other Document' },
-];
-
-export function UploadDocumentDialog({ open, onOpenChange, userId, uploadedBy }: UploadDocumentDialogProps) {
-  const [documentName, setDocumentName] = useState('');
-  const [documentType, setDocumentType] = useState('');
+export function UploadDocumentDialog({
+  open,
+  onOpenChange,
+  userId,
+  uploadedBy,
+}: UploadDocumentDialogProps) {
+  const [documentName, setDocumentName] = useState("");
+  const [documentType, setDocumentType] = useState<InsuranceDocumentType | "">(
+    "",
+  );
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [expirationDate, setExpirationDate] = useState<string>("");
   const [uploadProgress, setUploadProgress] = useState(0);
 
   const uploadDocument = useUploadDocument();
@@ -42,7 +47,7 @@ export function UploadDocumentDialog({ open, onOpenChange, userId, uploadedBy }:
       setSelectedFile(file);
       // Auto-fill document name from filename if empty
       if (!documentName) {
-        setDocumentName(file.name.replace(/\.[^/.]+$/, '')); // Remove extension
+        setDocumentName(file.name.replace(/\.[^/.]+$/, "")); // Remove extension
       }
     }
   };
@@ -50,13 +55,26 @@ export function UploadDocumentDialog({ open, onOpenChange, userId, uploadedBy }:
   const handleRemoveFile = () => {
     setSelectedFile(null);
     // Reset file input
-    const fileInput = document.getElementById('file-upload') as HTMLInputElement;
-    if (fileInput) fileInput.value = '';
+    const fileInput = document.getElementById(
+      "file-upload",
+    ) as HTMLInputElement;
+    if (fileInput) fileInput.value = "";
+  };
+
+  const handleDocumentTypeChange = (type: InsuranceDocumentType) => {
+    setDocumentType(type);
+  };
+
+  const handleExpirationSuggested = (date: Date | null) => {
+    if (date && !expirationDate) {
+      // Only auto-fill if no date is already set
+      setExpirationDate(date.toISOString().split("T")[0]);
+    }
   };
 
   const handleUpload = async () => {
     if (!selectedFile || !documentName || !documentType) {
-      alert('Please fill in all required fields');
+      alert("Please fill in all required fields");
       return;
     }
 
@@ -69,21 +87,23 @@ export function UploadDocumentDialog({ open, onOpenChange, userId, uploadedBy }:
         documentType,
         documentName,
         uploadedBy,
+        expiresAt: expirationDate || undefined,
       });
 
       setUploadProgress(100);
 
       // Reset form and close
       setTimeout(() => {
-        setDocumentName('');
-        setDocumentType('');
+        setDocumentName("");
+        setDocumentType("");
         setSelectedFile(null);
+        setExpirationDate("");
         setUploadProgress(0);
         onOpenChange(false);
       }, 500);
     } catch (error) {
-      console.error('Upload failed:', error);
-      alert('Failed to upload document');
+      console.error("Upload failed:", error);
+      alert("Failed to upload document");
       setUploadProgress(0);
     }
   };
@@ -97,9 +117,10 @@ export function UploadDocumentDialog({ open, onOpenChange, userId, uploadedBy }:
   const handleOpenChange = (newOpen: boolean) => {
     if (!newOpen) {
       // Reset form on close
-      setDocumentName('');
-      setDocumentType('');
+      setDocumentName("");
+      setDocumentType("");
       setSelectedFile(null);
+      setExpirationDate("");
       setUploadProgress(0);
     }
     onOpenChange(newOpen);
@@ -109,7 +130,9 @@ export function UploadDocumentDialog({ open, onOpenChange, userId, uploadedBy }:
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-sm p-3">
         <DialogHeader className="space-y-1">
-          <DialogTitle className="text-sm font-semibold">Upload Document</DialogTitle>
+          <DialogTitle className="text-sm font-semibold">
+            Upload Document
+          </DialogTitle>
           <DialogDescription className="text-[10px]">
             Select a file and provide details
           </DialogDescription>
@@ -118,7 +141,9 @@ export function UploadDocumentDialog({ open, onOpenChange, userId, uploadedBy }:
         <div className="space-y-3 py-2">
           {/* File Selection */}
           <div className="space-y-1.5">
-            <Label htmlFor="file-upload" className="text-[11px] font-medium">File *</Label>
+            <Label htmlFor="file-upload" className="text-[11px] font-medium">
+              File *
+            </Label>
             {!selectedFile ? (
               <label
                 htmlFor="file-upload"
@@ -162,7 +187,9 @@ export function UploadDocumentDialog({ open, onOpenChange, userId, uploadedBy }:
 
           {/* Document Name */}
           <div className="space-y-1.5">
-            <Label htmlFor="document-name" className="text-[11px] font-medium">Document Name *</Label>
+            <Label htmlFor="document-name" className="text-[11px] font-medium">
+              Document Name *
+            </Label>
             <Input
               id="document-name"
               value={documentName}
@@ -173,25 +200,47 @@ export function UploadDocumentDialog({ open, onOpenChange, userId, uploadedBy }:
             />
           </div>
 
-          {/* Document Type */}
+          {/* Document Type - Using Category Selector */}
           <div className="space-y-1.5">
-            <Label htmlFor="document-type" className="text-[11px] font-medium">Document Type *</Label>
-            <Select
-              value={documentType}
-              onValueChange={setDocumentType}
+            <Label htmlFor="document-type" className="text-[11px] font-medium">
+              Document Type *
+            </Label>
+            <DocumentTypeCategorySelector
+              value={documentType || undefined}
+              onValueChange={handleDocumentTypeChange}
+              onExpirationSuggested={handleExpirationSuggested}
+              placeholder="Select type"
               disabled={uploadDocument.isPending}
+              className="h-7 text-[11px]"
+            />
+          </div>
+
+          {/* Expiration Date */}
+          <div className="space-y-1.5">
+            <Label
+              htmlFor="expiration-date"
+              className="text-[11px] font-medium flex items-center gap-1"
             >
-              <SelectTrigger id="document-type" className="h-7 text-[11px]">
-                <SelectValue placeholder="Select type" />
-              </SelectTrigger>
-              <SelectContent>
-                {DOCUMENT_TYPES.map((type) => (
-                  <SelectItem key={type.value} value={type.value} className="text-[11px]">
-                    {type.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              <Calendar className="h-3 w-3" />
+              Expiration Date
+              <span className="text-[10px] text-muted-foreground font-normal">
+                (optional)
+              </span>
+            </Label>
+            <Input
+              id="expiration-date"
+              type="date"
+              value={expirationDate}
+              onChange={(e) => setExpirationDate(e.target.value)}
+              className="h-7 text-[11px]"
+              disabled={uploadDocument.isPending}
+              min={new Date().toISOString().split("T")[0]}
+            />
+            {expirationDate && (
+              <p className="text-[10px] text-muted-foreground">
+                You&apos;ll be notified before this document expires
+              </p>
+            )}
           </div>
 
           {/* Upload Progress */}
@@ -222,7 +271,12 @@ export function UploadDocumentDialog({ open, onOpenChange, userId, uploadedBy }:
             size="sm"
             className="h-7 text-[11px]"
             onClick={handleUpload}
-            disabled={!selectedFile || !documentName || !documentType || uploadDocument.isPending}
+            disabled={
+              !selectedFile ||
+              !documentName ||
+              !documentType ||
+              uploadDocument.isPending
+            }
           >
             {uploadDocument.isPending ? (
               <>

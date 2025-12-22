@@ -6,6 +6,30 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-12-22 18:39:44
+
+### Changed Files
+- `src/features/documents/components/DocumentTypeCategorySelector.tsx`
+- `src/features/documents/components/ExpiringDocumentsWidget.tsx`
+- `src/features/documents/components/index.ts`
+- `src/features/documents/index.ts`
+- `src/features/recruiting/components/UploadDocumentDialog.tsx`
+- `src/hooks/documents/index.ts`
+- `src/hooks/documents/useDocumentExpiration.ts`
+- `src/services/documents/DocumentExpirationService.ts`
+- `src/services/documents/DocumentRepository.ts`
+- `src/services/documents/documentStorageService.ts`
+- `src/types/documents.types.ts`
+- `src/types/notification.types.ts`
+- `src/types/recruiting.types.ts`
+- `supabase/.temp/cli-latest`
+- `supabase/migrations/20251222_035_user_documents_storage_bucket.sql`
+
+### Statistics
+```
+ 15 files changed, 1455 insertions(+), 74 deletions(-)
+```
+
 ## [Checkpoint] - 2025-12-22 17:08:10
 
 ### Changed Files

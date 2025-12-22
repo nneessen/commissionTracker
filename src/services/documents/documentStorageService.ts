@@ -1,17 +1,97 @@
 // src/services/documents/documentStorageService.ts
 import { supabase } from "../base/supabase";
+import type {
+  DocumentCategory,
+  InsuranceDocumentType,
+} from "../../types/documents.types";
+import { getCategoryForDocumentType } from "../../types/documents.types";
 
 const STORAGE_BUCKET = "user-documents";
 const SIGNED_URL_EXPIRY = 3600; // 1 hour
 
 /**
  * Service for handling document file storage operations
+ *
+ * Storage path structure: {userId}/{category}/{documentType}/{timestamp}_{sanitizedFilename}
+ * Example: abc-123/licensing/resident_license/1703123456_state_license.pdf
  */
 class DocumentStorageService {
   /**
-   * Upload a file to storage
+   * Sanitize a filename for safe storage
+   * Removes special characters, preserves extension
+   */
+  private sanitizeFileName(name: string): string {
+    // Get the extension
+    const lastDot = name.lastIndexOf(".");
+    const extension = lastDot > 0 ? name.slice(lastDot) : "";
+    const baseName = lastDot > 0 ? name.slice(0, lastDot) : name;
+
+    // Sanitize the base name: replace non-alphanumeric with underscores, lowercase
+    const sanitizedBase = baseName
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, "_")
+      .replace(/_+/g, "_") // Collapse multiple underscores
+      .replace(/^_|_$/g, ""); // Trim leading/trailing underscores
+
+    return `${sanitizedBase}${extension.toLowerCase()}`;
+  }
+
+  /**
+   * Build the storage path for a document
+   */
+  buildStoragePath(
+    userId: string,
+    category: DocumentCategory,
+    documentType: InsuranceDocumentType,
+    fileName: string,
+  ): string {
+    const timestamp = Date.now();
+    const sanitizedName = this.sanitizeFileName(fileName);
+    return `${userId}/${category}/${documentType}/${timestamp}_${sanitizedName}`;
+  }
+
+  /**
+   * Upload a file to storage with category organization
+   *
+   * @param userId - The user's ID (first path segment for RLS)
+   * @param documentType - The specific document type
+   * @param file - The file to upload
+   * @param category - Optional category override (auto-detected from documentType if not provided)
    */
   async upload(
+    userId: string,
+    documentType: InsuranceDocumentType | string,
+    file: File,
+    category?: DocumentCategory,
+  ): Promise<{ storagePath: string }> {
+    // Auto-detect category if not provided
+    const resolvedCategory =
+      category ||
+      getCategoryForDocumentType(documentType as InsuranceDocumentType);
+
+    const storagePath = this.buildStoragePath(
+      userId,
+      resolvedCategory,
+      documentType as InsuranceDocumentType,
+      file.name,
+    );
+
+    const { error } = await supabase.storage
+      .from(STORAGE_BUCKET)
+      .upload(storagePath, file);
+
+    if (error) {
+      throw new Error(`Failed to upload document: ${error.message}`);
+    }
+
+    return { storagePath };
+  }
+
+  /**
+   * Upload with legacy signature for backward compatibility
+   * @deprecated Use upload(userId, documentType, file, category) instead
+   */
+  async uploadLegacy(
     userId: string,
     documentType: string,
     file: File,
@@ -113,6 +193,33 @@ class DocumentStorageService {
     if (error) {
       throw new Error(`Failed to copy document: ${error.message}`);
     }
+  }
+
+  /**
+   * List files in a user's folder
+   */
+  async listUserFiles(
+    userId: string,
+    category?: DocumentCategory,
+    documentType?: InsuranceDocumentType,
+  ): Promise<{ name: string; id: string }[]> {
+    let path = userId;
+    if (category) {
+      path += `/${category}`;
+      if (documentType) {
+        path += `/${documentType}`;
+      }
+    }
+
+    const { data, error } = await supabase.storage
+      .from(STORAGE_BUCKET)
+      .list(path);
+
+    if (error) {
+      throw new Error(`Failed to list files: ${error.message}`);
+    }
+
+    return data || [];
   }
 }
 

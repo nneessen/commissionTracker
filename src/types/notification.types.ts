@@ -9,6 +9,7 @@ export type NotificationType =
   | "document_approved"
   | "document_rejected"
   | "document_uploaded"
+  | "document_expiring"
   | "new_message"
   | "phase_completed"
   | "phase_advanced"
@@ -52,6 +53,11 @@ export interface NotificationMetadata {
   document_name?: string;
   rejection_reason?: string;
 
+  // For document_expiring notifications
+  expires_at?: string;
+  days_until_expiry?: number;
+  urgency?: "critical" | "warning" | "upcoming";
+
   // For message notifications
   thread_id?: string;
   message_id?: string;
@@ -93,6 +99,7 @@ export type NotificationIcon =
   | "document-approved"
   | "document-rejected"
   | "document-uploaded"
+  | "document-expiring"
   | "message"
   | "phase-completed"
   | "phase-advanced"

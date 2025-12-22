@@ -1,15 +1,15 @@
 # Project Statistics
 
-Last Updated: 2025-12-22 17:08:10
+Last Updated: 2025-12-22 18:39:44
 
 ## Metrics
-- Total Files: 28536
-- Total Lines of Code: 156382
-- Total Commits: 441
+- Total Files: 28544
+- Total Lines of Code: 157924
+- Total Commits: 454
 
 ## Recent Activity
-aa04220 fix(ui): standardize settings tabs styling to match CarriersManagement pattern
-743618b feat(audit): add audit trail & activity logs (Phase 11)
-5bd6c9c chore: fix lint errors (unused imports and variables)
-38a4f7d refactor(dashboard): remove duplicate recruiting pipeline from OrgMetricsSection
-5f0c572 feat(notifications): add notifications & alerts system (Phase 10)
+1f516b4 fix(ci): make tests non-blocking (pre-existing failures to fix separately)
+d25f652 fix(ci): remove coverage flag from tests (missing dependency)
+ffcfd25 fix(ci): remove prettier check step (too many existing formatting issues)
+2ace70e fix(ci): run prettier on generated types before comparing
+ec4e558 fix(ci): redirect stderr to /dev/null to avoid including upgrade messages in types
