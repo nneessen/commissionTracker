@@ -2279,6 +2279,7 @@ export type Database = {
       override_commissions: {
         Row: {
           advance_months: number | null
+          agency_id: string | null
           base_agent_id: string
           base_commission_amount: number
           base_comp_level: number
@@ -2305,6 +2306,7 @@ export type Database = {
         }
         Insert: {
           advance_months?: number | null
+          agency_id?: string | null
           base_agent_id: string
           base_commission_amount: number
           base_comp_level: number
@@ -2331,6 +2333,7 @@ export type Database = {
         }
         Update: {
           advance_months?: number | null
+          agency_id?: string | null
           base_agent_id?: string
           base_commission_amount?: number
           base_comp_level?: number
@@ -2356,6 +2359,13 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "override_commissions_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "override_commissions_base_agent_id_fkey"
             columns: ["base_agent_id"]
@@ -6156,6 +6166,25 @@ export type Database = {
         }[]
       }
       get_agency_metrics: { Args: { p_agency_id: string }; Returns: Json }
+      get_agency_override_summary: {
+        Args: { p_agency_id?: string }
+        Returns: {
+          agency_id: string
+          agency_name: string
+          avg_override_per_policy: number
+          chargeback_amount: number
+          earned_amount: number
+          paid_amount: number
+          pending_amount: number
+          top_earner_amount: number
+          top_earner_id: string
+          top_earner_name: string
+          total_override_amount: number
+          total_override_count: number
+          unique_downlines: number
+          unique_uplines: number
+        }[]
+      }
       get_agency_production_by_agent: {
         Args: { p_agency_id?: string }
         Returns: {
@@ -6363,6 +6392,22 @@ export type Database = {
         }[]
       }
       get_imo_metrics: { Args: { p_imo_id: string }; Returns: Json }
+      get_imo_override_summary: {
+        Args: never
+        Returns: {
+          avg_override_per_policy: number
+          chargeback_amount: number
+          earned_amount: number
+          imo_id: string
+          imo_name: string
+          paid_amount: number
+          pending_amount: number
+          total_override_amount: number
+          total_override_count: number
+          unique_downlines: number
+          unique_uplines: number
+        }[]
+      }
       get_imo_production_by_agency: {
         Args: never
         Returns: {
@@ -6444,6 +6489,35 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      get_overrides_by_agency: {
+        Args: never
+        Returns: {
+          agency_code: string
+          agency_id: string
+          agency_name: string
+          earned_amount: number
+          override_count: number
+          paid_amount: number
+          pct_of_imo_overrides: number
+          pending_amount: number
+          total_amount: number
+        }[]
+      }
+      get_overrides_by_agent: {
+        Args: { p_agency_id?: string }
+        Returns: {
+          agent_email: string
+          agent_id: string
+          agent_name: string
+          avg_per_override: number
+          earned_amount: number
+          override_count: number
+          paid_amount: number
+          pct_of_agency_overrides: number
+          pending_amount: number
+          total_amount: number
+        }[]
       }
       get_pending_agency_request_count: { Args: never; Returns: number }
       get_pending_join_request_count: { Args: never; Returns: number }
@@ -6642,6 +6716,10 @@ export type Database = {
         | { Args: { p_agency_id?: string }; Returns: boolean }
       is_agency_owner_of: {
         Args: { target_agency_id: string }
+        Returns: boolean
+      }
+      is_agent_in_my_agency: {
+        Args: { target_agent_id: string }
         Returns: boolean
       }
       is_caller_admin: { Args: never; Returns: boolean }

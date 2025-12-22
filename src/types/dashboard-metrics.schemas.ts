@@ -81,6 +81,82 @@ export const AgencyProductionByAgentRowSchema = z.object({
 export type AgencyProductionByAgentRow = z.infer<typeof AgencyProductionByAgentRowSchema>;
 
 /**
+ * Schema for IMO Override Summary RPC response row
+ */
+export const ImoOverrideSummaryRowSchema = z.object({
+  imo_id: z.string().uuid(),
+  imo_name: z.string(),
+  total_override_count: z.coerce.number().int().nonnegative(),
+  total_override_amount: z.coerce.number().nonnegative(),
+  pending_amount: z.coerce.number().nonnegative(),
+  earned_amount: z.coerce.number().nonnegative(),
+  paid_amount: z.coerce.number().nonnegative(),
+  chargeback_amount: z.coerce.number().nonnegative(),
+  unique_uplines: z.coerce.number().int().nonnegative(),
+  unique_downlines: z.coerce.number().int().nonnegative(),
+  avg_override_per_policy: z.coerce.number().nonnegative(),
+});
+
+export type ImoOverrideSummaryRow = z.infer<typeof ImoOverrideSummaryRowSchema>;
+
+/**
+ * Schema for Agency Override Summary RPC response row
+ */
+export const AgencyOverrideSummaryRowSchema = z.object({
+  agency_id: z.string().uuid(),
+  agency_name: z.string(),
+  total_override_count: z.coerce.number().int().nonnegative(),
+  total_override_amount: z.coerce.number().nonnegative(),
+  pending_amount: z.coerce.number().nonnegative(),
+  earned_amount: z.coerce.number().nonnegative(),
+  paid_amount: z.coerce.number().nonnegative(),
+  chargeback_amount: z.coerce.number().nonnegative(),
+  unique_uplines: z.coerce.number().int().nonnegative(),
+  unique_downlines: z.coerce.number().int().nonnegative(),
+  avg_override_per_policy: z.coerce.number().nonnegative(),
+  top_earner_id: z.string().uuid().nullable(),
+  top_earner_name: z.string().nullable(),
+  top_earner_amount: z.coerce.number().nonnegative(),
+});
+
+export type AgencyOverrideSummaryRow = z.infer<typeof AgencyOverrideSummaryRowSchema>;
+
+/**
+ * Schema for Override by Agency RPC response row
+ */
+export const OverrideByAgencyRowSchema = z.object({
+  agency_id: z.string().uuid(),
+  agency_name: z.string(),
+  agency_code: z.string(),
+  override_count: z.coerce.number().int().nonnegative(),
+  total_amount: z.coerce.number().nonnegative(),
+  pending_amount: z.coerce.number().nonnegative(),
+  earned_amount: z.coerce.number().nonnegative(),
+  paid_amount: z.coerce.number().nonnegative(),
+  pct_of_imo_overrides: z.coerce.number().nonnegative(),
+});
+
+export type OverrideByAgencyRow = z.infer<typeof OverrideByAgencyRowSchema>;
+
+/**
+ * Schema for Override by Agent RPC response row
+ */
+export const OverrideByAgentRowSchema = z.object({
+  agent_id: z.string().uuid(),
+  agent_name: z.string(),
+  agent_email: z.string(),
+  override_count: z.coerce.number().int().nonnegative(),
+  total_amount: z.coerce.number().nonnegative(),
+  pending_amount: z.coerce.number().nonnegative(),
+  earned_amount: z.coerce.number().nonnegative(),
+  paid_amount: z.coerce.number().nonnegative(),
+  avg_per_override: z.coerce.number().nonnegative(),
+  pct_of_agency_overrides: z.coerce.number().nonnegative(),
+});
+
+export type OverrideByAgentRow = z.infer<typeof OverrideByAgentRowSchema>;
+
+/**
  * Parse and validate IMO dashboard metrics response
  * @throws ZodError if validation fails
  */
@@ -140,4 +216,36 @@ export function isNotFoundError(error: { code?: string; message?: string }): boo
  */
 export function isInvalidParameterError(error: { code?: string; message?: string }): boolean {
   return error.code === RPC_ERROR_CODES.INVALID_PARAMETER_VALUE;
+}
+
+/**
+ * Parse and validate IMO override summary response
+ * @throws ZodError if validation fails
+ */
+export function parseImoOverrideSummary(data: unknown[]): ImoOverrideSummaryRow[] {
+  return z.array(ImoOverrideSummaryRowSchema).parse(data);
+}
+
+/**
+ * Parse and validate Agency override summary response
+ * @throws ZodError if validation fails
+ */
+export function parseAgencyOverrideSummary(data: unknown[]): AgencyOverrideSummaryRow[] {
+  return z.array(AgencyOverrideSummaryRowSchema).parse(data);
+}
+
+/**
+ * Parse and validate Override by Agency response
+ * @throws ZodError if validation fails
+ */
+export function parseOverrideByAgency(data: unknown[]): OverrideByAgencyRow[] {
+  return z.array(OverrideByAgencyRowSchema).parse(data);
+}
+
+/**
+ * Parse and validate Override by Agent response
+ * @throws ZodError if validation fails
+ */
+export function parseOverrideByAgent(data: unknown[]): OverrideByAgentRow[] {
+  return z.array(OverrideByAgentRowSchema).parse(data);
 }

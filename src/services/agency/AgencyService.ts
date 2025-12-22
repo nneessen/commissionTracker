@@ -12,11 +12,15 @@ import type {
   AgencyMetrics,
   AgencyDashboardMetrics,
   AgencyProductionByAgent,
+  AgencyOverrideSummary,
+  OverrideByAgent,
 } from '../../types/imo.types';
 import { IMO_ROLES } from '../../types/imo.types';
 import {
   parseAgencyDashboardMetrics,
   parseAgencyProductionByAgent,
+  parseAgencyOverrideSummary,
+  parseOverrideByAgent,
   isAccessDeniedError,
   isInvalidParameterError,
   isNotFoundError,
@@ -671,6 +675,109 @@ class AgencyService {
     } catch (error) {
       logger.error(
         'Failed to get agency performance report',
+        error instanceof Error ? error : new Error(String(error)),
+        'AgencyService'
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Get agency override commission summary
+   * Uses RPC function for efficient single-query execution
+   * @param agencyId - Optional agency ID. Defaults to user's own agency.
+   */
+  async getOverrideSummary(agencyId?: string): Promise<AgencyOverrideSummary | null> {
+    try {
+      const { data, error } = await supabase.rpc('get_agency_override_summary', {
+        p_agency_id: agencyId || null,
+      });
+
+      if (error) {
+        if (isAccessDeniedError(error) || isInvalidParameterError(error) || isNotFoundError(error)) {
+          logger.warn('Access denied or invalid params for agency override summary',
+            { agencyId, code: error.code }, 'AgencyService');
+          return null;
+        }
+        throw error;
+      }
+
+      if (!data || data.length === 0) {
+        return null;
+      }
+
+      // Validate response with Zod schema
+      const validated = parseAgencyOverrideSummary(data);
+      const row = validated[0];
+
+      return {
+        agency_id: row.agency_id,
+        agency_name: row.agency_name,
+        total_override_count: row.total_override_count,
+        total_override_amount: row.total_override_amount,
+        pending_amount: row.pending_amount,
+        earned_amount: row.earned_amount,
+        paid_amount: row.paid_amount,
+        chargeback_amount: row.chargeback_amount,
+        unique_uplines: row.unique_uplines,
+        unique_downlines: row.unique_downlines,
+        avg_override_per_policy: row.avg_override_per_policy,
+        top_earner_id: row.top_earner_id,
+        top_earner_name: row.top_earner_name,
+        top_earner_amount: row.top_earner_amount,
+      };
+    } catch (error) {
+      logger.error(
+        'Failed to get agency override summary',
+        error instanceof Error ? error : new Error(String(error)),
+        'AgencyService'
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Get override commission breakdown by agent for agency owners
+   * Uses RPC function for efficient single-query execution
+   * @param agencyId - Optional agency ID. Defaults to user's own agency.
+   */
+  async getOverridesByAgent(agencyId?: string): Promise<OverrideByAgent[]> {
+    try {
+      const { data, error } = await supabase.rpc('get_overrides_by_agent', {
+        p_agency_id: agencyId || null,
+      });
+
+      if (error) {
+        if (isAccessDeniedError(error) || isInvalidParameterError(error) || isNotFoundError(error)) {
+          logger.warn('Access denied or invalid params for overrides by agent',
+            { agencyId, code: error.code }, 'AgencyService');
+          return [];
+        }
+        throw error;
+      }
+
+      if (!data) {
+        return [];
+      }
+
+      // Validate response with Zod schema
+      const validated = parseOverrideByAgent(data);
+
+      return validated.map((row) => ({
+        agent_id: row.agent_id,
+        agent_name: row.agent_name,
+        agent_email: row.agent_email,
+        override_count: row.override_count,
+        total_amount: row.total_amount,
+        pending_amount: row.pending_amount,
+        earned_amount: row.earned_amount,
+        paid_amount: row.paid_amount,
+        avg_per_override: row.avg_per_override,
+        pct_of_agency_overrides: row.pct_of_agency_overrides,
+      }));
+    } catch (error) {
+      logger.error(
+        'Failed to get overrides by agent',
         error instanceof Error ? error : new Error(String(error)),
         'AgencyService'
       );

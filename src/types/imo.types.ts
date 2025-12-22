@@ -303,3 +303,75 @@ export interface AgencyProductionByAgent {
   pct_of_agency_production: number;
   joined_date: string;
 }
+
+// =============================================================================
+// OVERRIDE COMMISSION SUMMARY TYPES (Phase 7)
+// =============================================================================
+
+/**
+ * IMO Override Summary - aggregate override metrics for IMO admins
+ */
+export interface ImoOverrideSummary {
+  imo_id: string;
+  imo_name: string;
+  total_override_count: number;
+  total_override_amount: number;
+  pending_amount: number;
+  earned_amount: number;
+  paid_amount: number;
+  chargeback_amount: number;
+  unique_uplines: number;
+  unique_downlines: number;
+  avg_override_per_policy: number;
+}
+
+/**
+ * Agency Override Summary - aggregate override metrics for agency owners
+ */
+export interface AgencyOverrideSummary {
+  agency_id: string;
+  agency_name: string;
+  total_override_count: number;
+  total_override_amount: number;
+  pending_amount: number;
+  earned_amount: number;
+  paid_amount: number;
+  chargeback_amount: number;
+  unique_uplines: number;
+  unique_downlines: number;
+  avg_override_per_policy: number;
+  top_earner_id: string | null;
+  top_earner_name: string | null;
+  top_earner_amount: number;
+}
+
+/**
+ * Override by Agency - breakdown for IMO admins
+ */
+export interface OverrideByAgency {
+  agency_id: string;
+  agency_name: string;
+  agency_code: string;
+  override_count: number;
+  total_amount: number;
+  pending_amount: number;
+  earned_amount: number;
+  paid_amount: number;
+  pct_of_imo_overrides: number;
+}
+
+/**
+ * Override by Agent - breakdown for agency owners
+ */
+export interface OverrideByAgent {
+  agent_id: string;
+  agent_name: string;
+  agent_email: string;
+  override_count: number;
+  total_amount: number;
+  pending_amount: number;
+  earned_amount: number;
+  paid_amount: number;
+  avg_per_override: number;
+  pct_of_agency_overrides: number;
+}

@@ -39,6 +39,9 @@ export const imoKeys = {
   performanceReport: (dateRange?: ReportDateRange) => [...imoKeys.all, 'performanceReport', serializeDateRange(dateRange)] as const,
   teamComparison: (dateRange?: ReportDateRange) => [...imoKeys.all, 'teamComparison', serializeDateRange(dateRange)] as const,
   topPerformers: (limit: number, dateRange?: ReportDateRange) => [...imoKeys.all, 'topPerformers', limit, serializeDateRange(dateRange)] as const,
+  // Override summary keys (Phase 7)
+  overrideSummary: () => [...imoKeys.all, 'overrideSummary'] as const,
+  overridesByAgency: () => [...imoKeys.all, 'overridesByAgency'] as const,
 };
 
 export const agencyKeys = {
@@ -55,6 +58,9 @@ export const agencyKeys = {
   productionByAgent: (id?: string) => [...agencyKeys.all, 'productionByAgent', id] as const,
   // Team report keys (Phase 6) - dateRange serialized to prevent cache thrashing
   performanceReport: (id?: string, dateRange?: ReportDateRange) => [...agencyKeys.all, 'performanceReport', id, serializeDateRange(dateRange)] as const,
+  // Override summary keys (Phase 7)
+  overrideSummary: (id?: string) => [...agencyKeys.all, 'overrideSummary', id] as const,
+  overridesByAgent: (id?: string) => [...agencyKeys.all, 'overridesByAgent', id] as const,
 };
 
 // =============================================================================
@@ -472,6 +478,70 @@ export function useAgencyPerformanceReport(
     queryKey: agencyKeys.performanceReport(agencyId, dateRange),
     queryFn: () => agencyService.getPerformanceReport(agencyId, dateRange),
     staleTime: 5 * 60 * 1000, // 5 minutes
+    enabled: options?.enabled ?? true,
+  });
+}
+
+// =============================================================================
+// OVERRIDE COMMISSION SUMMARY HOOKS (Phase 7)
+// =============================================================================
+
+/**
+ * Get IMO override commission summary
+ * Only returns data if user is IMO admin, IMO owner, or super admin
+ */
+export function useImoOverrideSummary(options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: imoKeys.overrideSummary(),
+    queryFn: () => imoService.getOverrideSummary(),
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    enabled: options?.enabled ?? true,
+  });
+}
+
+/**
+ * Get override commission breakdown by agency for IMO admins
+ * Only returns data if user is IMO admin, IMO owner, or super admin
+ */
+export function useImoOverridesByAgency(options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: imoKeys.overridesByAgency(),
+    queryFn: () => imoService.getOverridesByAgency(),
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    enabled: options?.enabled ?? true,
+  });
+}
+
+/**
+ * Get agency override commission summary
+ * @param agencyId - Optional agency ID. Defaults to user's own agency.
+ * Only returns data if user is agency owner, IMO admin, or super admin
+ */
+export function useAgencyOverrideSummary(
+  agencyId?: string,
+  options?: { enabled?: boolean }
+) {
+  return useQuery({
+    queryKey: agencyKeys.overrideSummary(agencyId),
+    queryFn: () => agencyService.getOverrideSummary(agencyId),
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    enabled: options?.enabled ?? true,
+  });
+}
+
+/**
+ * Get override commission breakdown by agent for agency owners
+ * @param agencyId - Optional agency ID. Defaults to user's own agency.
+ * Only returns data if user is agency owner, IMO admin, or super admin
+ */
+export function useAgencyOverridesByAgent(
+  agencyId?: string,
+  options?: { enabled?: boolean }
+) {
+  return useQuery({
+    queryKey: agencyKeys.overridesByAgent(agencyId),
+    queryFn: () => agencyService.getOverridesByAgent(agencyId),
+    staleTime: 2 * 60 * 1000, // 2 minutes
     enabled: options?.enabled ?? true,
   });
 }

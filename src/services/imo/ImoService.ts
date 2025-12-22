@@ -12,10 +12,14 @@ import type {
   ImoMetrics,
   ImoDashboardMetrics,
   ImoProductionByAgency,
+  ImoOverrideSummary,
+  OverrideByAgency,
 } from '../../types/imo.types';
 import {
   parseImoDashboardMetrics,
   parseImoProductionByAgency,
+  parseImoOverrideSummary,
+  parseOverrideByAgency,
   isAccessDeniedError,
   isInvalidParameterError,
 } from '../../types/dashboard-metrics.schemas';
@@ -559,6 +563,99 @@ class ImoService {
     } catch (error) {
       logger.error(
         'Failed to get top performers report',
+        error instanceof Error ? error : new Error(String(error)),
+        'ImoService'
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Get IMO override commission summary
+   * Uses RPC function for efficient single-query execution
+   */
+  async getOverrideSummary(): Promise<ImoOverrideSummary | null> {
+    try {
+      const { data, error } = await supabase.rpc('get_imo_override_summary');
+
+      if (error) {
+        if (isAccessDeniedError(error) || isInvalidParameterError(error)) {
+          logger.warn('Access denied or invalid params for IMO override summary',
+            { code: error.code }, 'ImoService');
+          return null;
+        }
+        throw error;
+      }
+
+      if (!data || data.length === 0) {
+        return null;
+      }
+
+      // Validate response with Zod schema
+      const validated = parseImoOverrideSummary(data);
+      const row = validated[0];
+
+      return {
+        imo_id: row.imo_id,
+        imo_name: row.imo_name,
+        total_override_count: row.total_override_count,
+        total_override_amount: row.total_override_amount,
+        pending_amount: row.pending_amount,
+        earned_amount: row.earned_amount,
+        paid_amount: row.paid_amount,
+        chargeback_amount: row.chargeback_amount,
+        unique_uplines: row.unique_uplines,
+        unique_downlines: row.unique_downlines,
+        avg_override_per_policy: row.avg_override_per_policy,
+      };
+    } catch (error) {
+      logger.error(
+        'Failed to get IMO override summary',
+        error instanceof Error ? error : new Error(String(error)),
+        'ImoService'
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Get override commission breakdown by agency for IMO admins
+   * Uses RPC function for efficient single-query execution
+   */
+  async getOverridesByAgency(): Promise<OverrideByAgency[]> {
+    try {
+      const { data, error } = await supabase.rpc('get_overrides_by_agency');
+
+      if (error) {
+        if (isAccessDeniedError(error) || isInvalidParameterError(error)) {
+          logger.warn('Access denied or invalid params for overrides by agency',
+            { code: error.code }, 'ImoService');
+          return [];
+        }
+        throw error;
+      }
+
+      if (!data) {
+        return [];
+      }
+
+      // Validate response with Zod schema
+      const validated = parseOverrideByAgency(data);
+
+      return validated.map((row) => ({
+        agency_id: row.agency_id,
+        agency_name: row.agency_name,
+        agency_code: row.agency_code,
+        override_count: row.override_count,
+        total_amount: row.total_amount,
+        pending_amount: row.pending_amount,
+        earned_amount: row.earned_amount,
+        paid_amount: row.paid_amount,
+        pct_of_imo_overrides: row.pct_of_imo_overrides,
+      }));
+    } catch (error) {
+      logger.error(
+        'Failed to get overrides by agency',
         error instanceof Error ? error : new Error(String(error)),
         'ImoService'
       );
