@@ -13,6 +13,7 @@ import {
   ClipboardCheck,
   UserPlus,
   Bell,
+  History,
 } from "lucide-react";
 import { UserProfile } from "./components/UserProfile";
 import { CarriersManagement } from "./carriers/CarriersManagement";
@@ -25,6 +26,7 @@ import { AgencyManagement } from "./agency";
 import { AgencyRequestPage } from "./agency-request";
 import { JoinRequestPage } from "./join-request";
 import { NotificationsSettingsPage } from "./notifications";
+import { AuditTrailPage } from "@/features/audit";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { usePermissionCheck } from "@/hooks/permissions/usePermissions";
@@ -45,6 +47,7 @@ export function SettingsDashboard() {
   // Check organization management permissions
   const canManageImos = isSuperAdmin;
   const canManageAgencies = isImoAdmin || isSuperAdmin;
+  const canViewAuditTrail = isImoAdmin || isSuperAdmin;
 
   // Default tab: prioritize IMO management for super admins
   const defaultTab = canManageImos
@@ -176,6 +179,15 @@ export function SettingsDashboard() {
               <Bell className="h-3.5 w-3.5" />
               Notifications
             </TabsTrigger>
+            {canViewAuditTrail && (
+              <TabsTrigger
+                value="audit-trail"
+                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-[11px] font-medium rounded transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:shadow-sm data-[state=active]:text-zinc-900 dark:data-[state=active]:text-zinc-100 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
+              >
+                <History className="h-3.5 w-3.5" />
+                Audit Trail
+              </TabsTrigger>
+            )}
             <TabsTrigger
               value="billing"
               className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-[11px] font-medium rounded transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:shadow-sm data-[state=active]:text-zinc-900 dark:data-[state=active]:text-zinc-100 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
@@ -236,6 +248,12 @@ export function SettingsDashboard() {
             <TabsContent value="notifications" className="mt-0">
               <NotificationsSettingsPage />
             </TabsContent>
+
+            {canViewAuditTrail && (
+              <TabsContent value="audit-trail" className="mt-0">
+                <AuditTrailPage />
+              </TabsContent>
+            )}
 
             <TabsContent value="billing" className="mt-0">
               <BillingTab />

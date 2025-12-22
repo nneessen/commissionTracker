@@ -315,6 +315,32 @@ export type Database = {
           },
         ]
       }
+      alert_rule_processing: {
+        Row: {
+          rule_id: string
+          started_at: string
+          worker_id: string | null
+        }
+        Insert: {
+          rule_id: string
+          started_at?: string
+          worker_id?: string | null
+        }
+        Update: {
+          rule_id?: string
+          started_at?: string
+          worker_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "alert_rule_processing_rule_id_fkey"
+            columns: ["rule_id"]
+            isOneToOne: true
+            referencedRelation: "alert_rules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       alert_rules: {
         Row: {
           agency_id: string | null
@@ -408,6 +434,102 @@ export type Database = {
             columns: ["owner_id"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      audit_log: {
+        Row: {
+          action: Database["public"]["Enums"]["audit_action"]
+          action_type: string | null
+          agency_id: string | null
+          changed_fields: string[] | null
+          created_at: string
+          description: string | null
+          id: string
+          imo_id: string | null
+          metadata: Json | null
+          new_data: Json | null
+          old_data: Json | null
+          performed_by: string | null
+          performed_by_email: string | null
+          performed_by_name: string | null
+          record_id: string
+          source: Database["public"]["Enums"]["audit_source"]
+          table_name: string
+        }
+        Insert: {
+          action: Database["public"]["Enums"]["audit_action"]
+          action_type?: string | null
+          agency_id?: string | null
+          changed_fields?: string[] | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          imo_id?: string | null
+          metadata?: Json | null
+          new_data?: Json | null
+          old_data?: Json | null
+          performed_by?: string | null
+          performed_by_email?: string | null
+          performed_by_name?: string | null
+          record_id: string
+          source?: Database["public"]["Enums"]["audit_source"]
+          table_name: string
+        }
+        Update: {
+          action?: Database["public"]["Enums"]["audit_action"]
+          action_type?: string | null
+          agency_id?: string | null
+          changed_fields?: string[] | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          imo_id?: string | null
+          metadata?: Json | null
+          new_data?: Json | null
+          old_data?: Json | null
+          performed_by?: string | null
+          performed_by_email?: string | null
+          performed_by_name?: string | null
+          record_id?: string
+          source?: Database["public"]["Enums"]["audit_source"]
+          table_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_log_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "audit_log_imo_id_fkey"
+            columns: ["imo_id"]
+            isOneToOne: false
+            referencedRelation: "imos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "audit_log_performed_by_fkey"
+            columns: ["performed_by"]
+            isOneToOne: false
+            referencedRelation: "active_user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "audit_log_performed_by_fkey"
+            columns: ["performed_by"]
+            isOneToOne: false
+            referencedRelation: "user_management_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "audit_log_performed_by_fkey"
+            columns: ["performed_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -6534,6 +6656,14 @@ export type Database = {
         Returns: Json
       }
       cleanup_expired_invitations: { Args: never; Returns: number }
+      cleanup_old_audit_logs: {
+        Args: never
+        Returns: {
+          deleted_financial: number
+          deleted_non_financial: number
+          total_deleted: number
+        }[]
+      }
       cleanup_old_reports: {
         Args: { max_reports_per_user?: number }
         Returns: number
@@ -6551,6 +6681,22 @@ export type Database = {
           p_success: boolean
         }
         Returns: boolean
+      }
+      create_alert_notification_safe: {
+        Args: {
+          p_comparison: string
+          p_current_value: number
+          p_entity_id?: string
+          p_entity_type?: string
+          p_message: string
+          p_metric: string
+          p_rule_id: string
+          p_threshold_value: number
+          p_title: string
+          p_type: string
+          p_user_id: string
+        }
+        Returns: string
       }
       create_alert_rule: {
         Args: {
@@ -6756,6 +6902,82 @@ export type Database = {
           unearned_amount: number
         }[]
       }
+      get_audit_action_types: {
+        Args: never
+        Returns: {
+          action_type: string
+          count: number
+        }[]
+      }
+      get_audit_log_detail: {
+        Args: { p_audit_id: string }
+        Returns: {
+          action: Database["public"]["Enums"]["audit_action"]
+          action_type: string
+          agency_id: string
+          changed_fields: string[]
+          created_at: string
+          description: string
+          id: string
+          imo_id: string
+          metadata: Json
+          new_data: Json
+          old_data: Json
+          performed_by: string
+          performed_by_email: string
+          performed_by_name: string
+          record_id: string
+          source: Database["public"]["Enums"]["audit_source"]
+          table_name: string
+        }[]
+      }
+      get_audit_logs: {
+        Args: {
+          p_action?: string
+          p_action_type?: string
+          p_end_date?: string
+          p_page?: number
+          p_page_size?: number
+          p_performed_by?: string
+          p_record_id?: string
+          p_search?: string
+          p_start_date?: string
+          p_table_name?: string
+        }
+        Returns: {
+          action: Database["public"]["Enums"]["audit_action"]
+          action_type: string
+          agency_id: string
+          changed_fields: string[]
+          created_at: string
+          description: string
+          id: string
+          imo_id: string
+          performed_by: string
+          performed_by_email: string
+          performed_by_name: string
+          record_id: string
+          source: Database["public"]["Enums"]["audit_source"]
+          table_name: string
+          total_count: number
+        }[]
+      }
+      get_audit_performers: {
+        Args: never
+        Returns: {
+          action_count: number
+          user_email: string
+          user_id: string
+          user_name: string
+        }[]
+      }
+      get_audit_tables: {
+        Args: never
+        Returns: {
+          count: number
+          table_name: string
+        }[]
+      }
       get_available_imos_for_join: {
         Args: never
         Returns: {
@@ -6784,6 +7006,18 @@ export type Database = {
           total_premium: number
           updated_at: string
           user_id: string
+        }[]
+      }
+      get_commissions_for_threshold_check: {
+        Args: {
+          p_end_date: string
+          p_rule_id: string
+          p_start_date: string
+          p_user_ids: string[]
+        }
+        Returns: {
+          agent_id: string
+          total_commission: number
         }[]
       }
       get_current_user_hierarchy_path: { Args: never; Returns: string }
@@ -6873,7 +7107,7 @@ export type Database = {
         }[]
       }
       get_due_alert_rules: {
-        Args: never
+        Args: { p_batch_size?: number; p_worker_id?: string }
         Returns: {
           agency_id: string
           applies_to_downlines: boolean
@@ -7059,6 +7293,19 @@ export type Database = {
           updated_at: string
         }[]
       }
+      get_license_expirations_for_check: {
+        Args: {
+          p_rule_id: string
+          p_user_ids: string[]
+          p_warning_days: number
+        }
+        Returns: {
+          days_until_expiration: number
+          license_expiration: string
+          user_id: string
+          user_name: string
+        }[]
+      }
       get_message_stats: { Args: { p_user_id: string }; Returns: Json }
       get_my_agency_id: { Args: never; Returns: string }
       get_my_alert_rules: {
@@ -7232,6 +7479,20 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      get_policies_for_lapse_check: {
+        Args: {
+          p_rule_id: string
+          p_user_ids: string[]
+          p_warning_days: number
+        }
+        Returns: {
+          agent_id: string
+          days_until_lapse: number
+          lapse_date: string
+          policy_id: string
+          policy_number: string
+        }[]
+      }
       get_policies_paginated: {
         Args: {
           p_carrier_id?: string
@@ -7267,6 +7528,18 @@ export type Database = {
           p_user_id?: string
         }
         Returns: number
+      }
+      get_policy_counts_for_check: {
+        Args: {
+          p_end_date: string
+          p_rule_id: string
+          p_start_date: string
+          p_user_ids: string[]
+        }
+        Returns: {
+          agent_id: string
+          policy_count: number
+        }[]
       }
       get_product_commission_rate: {
         Args: {
@@ -7360,6 +7633,10 @@ export type Database = {
           upline_id: string
         }[]
       }
+      get_valid_users_for_rule: {
+        Args: { p_rule_id: string; p_user_ids: string[] }
+        Returns: string[]
+      }
       get_workflow_email_usage: { Args: { p_user_id: string }; Returns: Json }
       getuser_commission_profile: {
         Args: { p_lookback_months?: number; puser_id: string }
@@ -7430,6 +7707,20 @@ export type Database = {
       is_super_admin: { Args: never; Returns: boolean }
       is_upline_of: { Args: { target_user_id: string }; Returns: boolean }
       is_user_approved: { Args: never; Returns: boolean }
+      log_audit_event: {
+        Args: {
+          p_action: Database["public"]["Enums"]["audit_action"]
+          p_action_type: string
+          p_changed_fields?: string[]
+          p_description?: string
+          p_metadata?: Json
+          p_new_data?: Json
+          p_old_data?: Json
+          p_record_id: string
+          p_table_name: string
+        }
+        Returns: string
+      }
       lookup_user_by_email: {
         Args: { p_email: string }
         Returns: {
@@ -7588,6 +7879,7 @@ export type Database = {
         Args: { p_reason?: string; p_request_id: string }
         Returns: undefined
       }
+      release_alert_rules: { Args: { p_rule_ids: string[] }; Returns: number }
       resolve_join_request_approver: {
         Args: { p_agency_id?: string; p_imo_id: string; p_upline_id?: string }
         Returns: string
@@ -7792,6 +8084,8 @@ export type Database = {
         | "team_production_drop"
         | "persistency_warning"
         | "license_expiration"
+      audit_action: "INSERT" | "UPDATE" | "DELETE"
+      audit_source: "trigger" | "application"
       chargeback_status: "pending" | "resolved" | "disputed"
       commission_status:
         | "pending"
@@ -7963,6 +8257,8 @@ export const Constants = {
         "persistency_warning",
         "license_expiration",
       ],
+      audit_action: ["INSERT", "UPDATE", "DELETE"],
+      audit_source: ["trigger", "application"],
       chargeback_status: ["pending", "resolved", "disputed"],
       commission_status: [
         "pending",

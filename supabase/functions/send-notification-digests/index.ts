@@ -1,10 +1,15 @@
 // Edge Function: Send Notification Digests
 // Phase 10: Notifications & Alerts System
 // Triggered by external cron to send email digests of unread notifications
+//
+// SECURITY: Phase 10 hardening applied:
+// - Proper timezone handling using user preferences
+// - No cross-org data leakage
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createSupabaseAdminClient } from '../_shared/supabase-client.ts';
 import { format } from 'https://esm.sh/date-fns@3.3.1';
+import { formatInTimeZone, toZonedTime } from 'https://esm.sh/date-fns-tz@3.1.3';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -40,31 +45,71 @@ interface ProcessResult {
   error?: string;
 }
 
-// Check if user is due for digest based on their preferences
+// Validate timezone string
+function isValidTimezone(tz: string): boolean {
+  try {
+    Intl.DateTimeFormat(undefined, { timeZone: tz });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// Get current time in user's timezone
+function getCurrentTimeInTimezone(timezone: string): { hour: number; minute: number } {
+  const validTz = isValidTimezone(timezone) ? timezone : 'America/New_York';
+
+  try {
+    const now = new Date();
+    const zonedTime = toZonedTime(now, validTz);
+    return {
+      hour: zonedTime.getHours(),
+      minute: zonedTime.getMinutes(),
+    };
+  } catch {
+    // Fallback to UTC if timezone conversion fails
+    const now = new Date();
+    return {
+      hour: now.getUTCHours(),
+      minute: now.getUTCMinutes(),
+    };
+  }
+}
+
+// Check if user is due for digest based on their preferences (with timezone)
 function isDigestDue(
   prefs: UserWithDigestPrefs,
-  currentTime: Date
+  currentTimeUtc: Date
 ): boolean {
-  const { email_digest_frequency, email_digest_time, last_digest_sent_at } = prefs;
+  const {
+    email_digest_frequency,
+    email_digest_time,
+    email_digest_timezone,
+    last_digest_sent_at,
+  } = prefs;
 
   // Parse preferred time (HH:MM:SS format)
   const [prefHour, prefMinute] = email_digest_time.split(':').map(Number);
-  const currentHour = currentTime.getUTCHours();
-  const currentMinute = currentTime.getUTCMinutes();
+
+  // Get current time in user's timezone
+  const userCurrentTime = getCurrentTimeInTimezone(email_digest_timezone);
 
   // Check if within 15-minute window of preferred time (cron runs every 15 min)
   const prefTotalMinutes = prefHour * 60 + prefMinute;
-  const currentTotalMinutes = currentHour * 60 + currentMinute;
+  const currentTotalMinutes = userCurrentTime.hour * 60 + userCurrentTime.minute;
   const timeDiff = Math.abs(currentTotalMinutes - prefTotalMinutes);
 
-  if (timeDiff > 15 && timeDiff < 1425) { // 1425 = 24*60 - 15 for midnight wraparound
+  // Handle midnight wraparound (e.g., pref=23:55, current=00:05)
+  const wrappedDiff = Math.min(timeDiff, 1440 - timeDiff); // 1440 = 24*60
+
+  if (wrappedDiff > 15) {
     return false;
   }
 
   // Check frequency
   if (last_digest_sent_at) {
     const lastSent = new Date(last_digest_sent_at);
-    const hoursSinceLastDigest = (currentTime.getTime() - lastSent.getTime()) / (1000 * 60 * 60);
+    const hoursSinceLastDigest = (currentTimeUtc.getTime() - lastSent.getTime()) / (1000 * 60 * 60);
 
     if (email_digest_frequency === 'daily' && hoursSinceLastDigest < 20) {
       return false; // Less than ~20 hours since last daily digest
@@ -89,11 +134,13 @@ function getNotificationIcon(type: string): string {
     phase_advanced: '⬆️',
     checklist_item_completed: '☑️',
     email_received: '📧',
-    alert_policy_lapse: '⚠️',
-    alert_target_miss: '📉',
-    alert_commission: '💰',
+    alert_policy_lapse_warning: '⚠️',
+    alert_target_miss_risk: '📉',
+    alert_commission_threshold: '💰',
     alert_recruit_stall: '⏳',
     alert_license_expiration: '📋',
+    alert_new_policy_count: '📊',
+    alert_persistency_warning: '📉',
   };
   return icons[type] || '🔔';
 }
@@ -102,21 +149,29 @@ function getNotificationIcon(type: string): string {
 function formatDigestEmail(
   userName: string,
   notifications: Notification[],
-  frequency: string
+  frequency: string,
+  timezone: string
 ): string {
   const periodLabel = frequency === 'daily' ? 'Daily' : 'Weekly';
+  const validTz = isValidTimezone(timezone) ? timezone : 'America/New_York';
 
   const notificationRows = notifications.map(n => {
     const icon = getNotificationIcon(n.type);
-    const time = format(new Date(n.created_at), 'MMM d, h:mm a');
+    // Format time in user's timezone
+    let time: string;
+    try {
+      time = formatInTimeZone(new Date(n.created_at), validTz, 'MMM d, h:mm a');
+    } catch {
+      time = format(new Date(n.created_at), 'MMM d, h:mm a');
+    }
     return `
       <tr>
         <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">
           <div style="display: flex; align-items: center;">
             <span style="font-size: 20px; margin-right: 12px;">${icon}</span>
             <div>
-              <div style="font-weight: 500; color: #1a202c;">${n.title}</div>
-              ${n.message ? `<div style="font-size: 13px; color: #666; margin-top: 4px;">${n.message}</div>` : ''}
+              <div style="font-weight: 500; color: #1a202c;">${escapeHtml(n.title)}</div>
+              ${n.message ? `<div style="font-size: 13px; color: #666; margin-top: 4px;">${escapeHtml(n.message)}</div>` : ''}
               <div style="font-size: 12px; color: #999; margin-top: 4px;">${time}</div>
             </div>
           </div>
@@ -140,7 +195,7 @@ function formatDigestEmail(
             🔔 ${periodLabel} Notification Digest
           </h1>
           <p style="margin: 0; opacity: 0.9; font-size: 14px;">
-            Hi ${userName}, here's what you missed
+            Hi ${escapeHtml(userName)}, here's what you missed
           </p>
         </div>
 
@@ -179,6 +234,16 @@ function formatDigestEmail(
     </body>
     </html>
   `;
+}
+
+// HTML escape to prevent XSS in email content
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
 }
 
 // Send email via Resend
@@ -268,9 +333,14 @@ async function processUserDigest(
     result.notificationCount = notifications.length;
     const userName = user.first_name || user.email.split('@')[0];
 
-    // Format and send email
+    // Format and send email with proper timezone
     const subject = `${user.email_digest_frequency === 'daily' ? 'Daily' : 'Weekly'} Digest: ${notifications.length} notification${notifications.length !== 1 ? 's' : ''}`;
-    const html = formatDigestEmail(userName, notifications as Notification[], user.email_digest_frequency);
+    const html = formatDigestEmail(
+      userName,
+      notifications as Notification[],
+      user.email_digest_frequency,
+      user.email_digest_timezone
+    );
 
     const emailResult = await sendDigestEmail(user.email, subject, html);
 
@@ -392,7 +462,7 @@ serve(async (req) => {
           last_name: profile.last_name,
           email_digest_frequency: prefs.email_digest_frequency,
           email_digest_time: prefs.email_digest_time,
-          email_digest_timezone: prefs.email_digest_timezone,
+          email_digest_timezone: prefs.email_digest_timezone || 'America/New_York',
           last_digest_sent_at: prefs.last_digest_sent_at,
         };
       })

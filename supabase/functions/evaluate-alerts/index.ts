@@ -1,10 +1,16 @@
 // Edge Function: Evaluate Alert Rules
 // Phase 10: Notifications & Alerts System
 // Triggered by external cron to evaluate alert rules and create notifications
+//
+// SECURITY: Phase 10 hardening applied:
+// - Org scoping via RPC batch queries
+// - Sanitized notification metadata
+// - Race condition prevention via FOR UPDATE SKIP LOCKED
+// - N+1 patterns replaced with batch queries
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createSupabaseAdminClient } from '../_shared/supabase-client.ts';
-import { addDays, differenceInDays, format, subMonths, startOfMonth, endOfMonth } from 'https://esm.sh/date-fns@3.3.1';
+import { format, subMonths, startOfMonth, endOfMonth } from 'https://esm.sh/date-fns@3.3.1';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -56,7 +62,8 @@ interface AlertMatch {
   currentValue: number;
   entityType?: string;
   entityId?: string;
-  context: Record<string, unknown>;
+  title: string;
+  message: string;
 }
 
 // Compare values based on comparison operator
@@ -71,120 +78,99 @@ function compareValues(current: number, threshold: number, comparison: AlertComp
   }
 }
 
-// Get users to evaluate based on rule scope
+// Generate unique worker ID for this invocation
+function generateWorkerId(): string {
+  return `worker-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+}
+
+// Get users to evaluate based on rule scope (with org validation)
 async function getUsersToEvaluate(
   supabase: ReturnType<typeof createSupabaseAdminClient>,
   rule: AlertRule
 ): Promise<string[]> {
   const userIds: Set<string> = new Set();
 
+  // Build base query with org scoping
+  const orgFilter = rule.imo_id
+    ? { column: 'imo_id', value: rule.imo_id }
+    : rule.agency_id
+      ? { column: 'agency_id', value: rule.agency_id }
+      : null;
+
+  if (!orgFilter) {
+    console.log(`[EvaluateAlerts] Rule ${rule.id} has no org scope - skipping`);
+    return [];
+  }
+
   if (rule.applies_to_self) {
-    userIds.add(rule.owner_id);
+    // Verify owner belongs to the org
+    const { data: owner } = await supabase
+      .from('user_profiles')
+      .select('id')
+      .eq('id', rule.owner_id)
+      .eq(orgFilter.column, orgFilter.value)
+      .single();
+
+    if (owner) {
+      userIds.add(rule.owner_id);
+    }
   }
 
   if (rule.applies_to_downlines) {
-    // Get owner's downlines
+    // Get owner's downlines within the same org
     const { data: downlines } = await supabase
       .from('user_profiles')
       .select('id')
       .like('hierarchy_path', `%${rule.owner_id}%`)
+      .eq(orgFilter.column, orgFilter.value)
       .neq('id', rule.owner_id);
 
     downlines?.forEach(d => userIds.add(d.id));
   }
 
   if (rule.applies_to_team) {
-    // Get all users in the IMO/Agency
-    let query = supabase.from('user_profiles').select('id');
+    // Get all users in the org
+    const { data: teamMembers } = await supabase
+      .from('user_profiles')
+      .select('id')
+      .eq(orgFilter.column, orgFilter.value);
 
-    if (rule.imo_id) {
-      query = query.eq('imo_id', rule.imo_id);
-    } else if (rule.agency_id) {
-      query = query.eq('agency_id', rule.agency_id);
-    }
-
-    const { data: teamMembers } = await query;
     teamMembers?.forEach(m => userIds.add(m.id));
   }
 
   return Array.from(userIds);
 }
 
-// Evaluate policy_lapse_warning metric
+// Evaluate policy_lapse_warning metric using batch RPC
 async function evaluatePolicyLapseWarning(
   supabase: ReturnType<typeof createSupabaseAdminClient>,
   rule: AlertRule,
   userIds: string[]
 ): Promise<AlertMatch[]> {
   const matches: AlertMatch[] = [];
-  const today = new Date();
-  const warningDate = addDays(today, rule.threshold_value);
 
-  for (const userId of userIds) {
-    const { data: policies } = await supabase
-      .from('policies')
-      .select('id, policy_number, client_id, lapse_date')
-      .eq('agent_id', userId)
-      .eq('status', 'active')
-      .not('lapse_date', 'is', null)
-      .lte('lapse_date', format(warningDate, 'yyyy-MM-dd'))
-      .gte('lapse_date', format(today, 'yyyy-MM-dd'));
+  // Use batched RPC with org scoping
+  const { data: policies, error } = await supabase.rpc('get_policies_for_lapse_check', {
+    p_rule_id: rule.id,
+    p_user_ids: userIds,
+    p_warning_days: Math.ceil(rule.threshold_value),
+  });
 
-    if (policies && policies.length > 0) {
-      for (const policy of policies) {
-        const daysUntilLapse = differenceInDays(new Date(policy.lapse_date!), today);
-        if (compareValues(daysUntilLapse, rule.threshold_value, rule.comparison)) {
-          matches.push({
-            userId,
-            currentValue: daysUntilLapse,
-            entityType: 'policy',
-            entityId: policy.id,
-            context: {
-              policyNumber: policy.policy_number,
-              lapseDate: policy.lapse_date,
-              daysUntilLapse,
-            },
-          });
-        }
-      }
-    }
+  if (error) {
+    console.error('[EvaluateAlerts] get_policies_for_lapse_check error:', error);
+    return matches;
   }
 
-  return matches;
-}
-
-// Evaluate license_expiration metric
-async function evaluateLicenseExpiration(
-  supabase: ReturnType<typeof createSupabaseAdminClient>,
-  rule: AlertRule,
-  userIds: string[]
-): Promise<AlertMatch[]> {
-  const matches: AlertMatch[] = [];
-  const today = new Date();
-  const warningDate = addDays(today, rule.threshold_value);
-
-  const { data: users } = await supabase
-    .from('user_profiles')
-    .select('id, first_name, last_name, license_expiration')
-    .in('id', userIds)
-    .not('license_expiration', 'is', null)
-    .lte('license_expiration', format(warningDate, 'yyyy-MM-dd'))
-    .gte('license_expiration', format(today, 'yyyy-MM-dd'));
-
-  if (users) {
-    for (const user of users) {
-      const daysUntilExpiration = differenceInDays(new Date(user.license_expiration!), today);
-      if (compareValues(daysUntilExpiration, rule.threshold_value, rule.comparison)) {
+  if (policies) {
+    for (const policy of policies) {
+      if (compareValues(policy.days_until_lapse, rule.threshold_value, rule.comparison)) {
         matches.push({
-          userId: user.id,
-          currentValue: daysUntilExpiration,
-          entityType: 'license',
-          entityId: user.id,
-          context: {
-            userName: `${user.first_name} ${user.last_name}`.trim(),
-            expirationDate: user.license_expiration,
-            daysUntilExpiration,
-          },
+          userId: policy.agent_id,
+          currentValue: policy.days_until_lapse,
+          entityType: 'policy',
+          entityId: policy.policy_id,
+          title: 'Policy Lapse Warning',
+          message: `Policy ${policy.policy_number} will lapse in ${policy.days_until_lapse} days`,
         });
       }
     }
@@ -193,48 +179,100 @@ async function evaluateLicenseExpiration(
   return matches;
 }
 
-// Evaluate recruit_stall metric
+// Evaluate license_expiration metric using batch RPC
+async function evaluateLicenseExpiration(
+  supabase: ReturnType<typeof createSupabaseAdminClient>,
+  rule: AlertRule,
+  userIds: string[]
+): Promise<AlertMatch[]> {
+  const matches: AlertMatch[] = [];
+
+  // Use batched RPC with org scoping
+  const { data: licenses, error } = await supabase.rpc('get_license_expirations_for_check', {
+    p_rule_id: rule.id,
+    p_user_ids: userIds,
+    p_warning_days: Math.ceil(rule.threshold_value),
+  });
+
+  if (error) {
+    console.error('[EvaluateAlerts] get_license_expirations_for_check error:', error);
+    return matches;
+  }
+
+  if (licenses) {
+    for (const license of licenses) {
+      if (compareValues(license.days_until_expiration, rule.threshold_value, rule.comparison)) {
+        matches.push({
+          userId: license.user_id,
+          currentValue: license.days_until_expiration,
+          entityType: 'license',
+          entityId: license.user_id,
+          title: 'License Expiration Warning',
+          message: `License expires in ${license.days_until_expiration} days`,
+        });
+      }
+    }
+  }
+
+  return matches;
+}
+
+// Evaluate recruit_stall metric (unchanged - already org-scoped through user lookup)
 async function evaluateRecruitStall(
   supabase: ReturnType<typeof createSupabaseAdminClient>,
   rule: AlertRule,
   userIds: string[]
 ): Promise<AlertMatch[]> {
   const matches: AlertMatch[] = [];
+
+  // First validate userIds through org scoping RPC
+  const { data: validUserIds } = await supabase.rpc('get_valid_users_for_rule', {
+    p_rule_id: rule.id,
+    p_user_ids: userIds,
+  });
+
+  if (!validUserIds || validUserIds.length === 0) {
+    return matches;
+  }
+
   const today = new Date();
 
-  // Find recruits whose recruiter is in userIds and who are stalled
+  // Find recruits whose recruiter is in validUserIds
   const { data: recruits } = await supabase
     .from('user_profiles')
     .select(`
-      id, first_name, last_name, recruiter_id,
+      id, first_name, last_name, recruiter_id, imo_id, agency_id,
       current_onboarding_phase, onboarding_status,
       recruit_phase_progress!inner(phase_id, started_at)
     `)
-    .in('recruiter_id', userIds)
+    .in('recruiter_id', validUserIds)
     .in('onboarding_status', ['lead', 'active'])
     .not('current_onboarding_phase', 'is', null);
 
   if (recruits) {
     for (const recruit of recruits) {
-      // Get the current phase progress
+      // Verify recruit is in same org as rule
+      if (rule.imo_id && recruit.imo_id !== rule.imo_id) continue;
+      if (rule.agency_id && recruit.agency_id !== rule.agency_id) continue;
+
       const currentPhaseProgress = (recruit.recruit_phase_progress as unknown[])?.find(
         (p: { phase_id: string }) => p.phase_id === recruit.current_onboarding_phase
       ) as { started_at: string } | undefined;
 
       if (currentPhaseProgress?.started_at) {
-        const daysInPhase = differenceInDays(today, new Date(currentPhaseProgress.started_at));
+        const daysInPhase = Math.floor(
+          (today.getTime() - new Date(currentPhaseProgress.started_at).getTime()) / (1000 * 60 * 60 * 24)
+        );
 
         if (compareValues(daysInPhase, rule.threshold_value, rule.comparison)) {
+          const recruitName = `${recruit.first_name || ''} ${recruit.last_name || ''}`.trim() || 'Recruit';
           matches.push({
             userId: recruit.recruiter_id!,
             currentValue: daysInPhase,
             entityType: 'recruit',
             entityId: recruit.id,
-            context: {
-              recruitName: `${recruit.first_name} ${recruit.last_name}`.trim(),
-              phaseName: recruit.current_onboarding_phase,
-              daysInPhase,
-            },
+            title: 'Recruit Stalled',
+            message: `${recruitName} has been in phase for ${daysInPhase} days`,
           });
         }
       }
@@ -244,7 +282,7 @@ async function evaluateRecruitStall(
   return matches;
 }
 
-// Evaluate new_policy_count metric
+// Evaluate new_policy_count metric using batch RPC
 async function evaluateNewPolicyCount(
   supabase: ReturnType<typeof createSupabaseAdminClient>,
   rule: AlertRule,
@@ -255,34 +293,51 @@ async function evaluateNewPolicyCount(
   const startDate = startOfMonth(subMonths(endDate, 1));
   const endOfPeriod = endOfMonth(subMonths(endDate, 1));
 
-  for (const userId of userIds) {
-    const { count } = await supabase
-      .from('policies')
-      .select('id', { count: 'exact', head: true })
-      .eq('agent_id', userId)
-      .gte('effective_date', format(startDate, 'yyyy-MM-dd'))
-      .lte('effective_date', format(endOfPeriod, 'yyyy-MM-dd'));
+  // Use batched RPC with org scoping
+  const { data: policyCounts, error } = await supabase.rpc('get_policy_counts_for_check', {
+    p_rule_id: rule.id,
+    p_user_ids: userIds,
+    p_start_date: format(startDate, 'yyyy-MM-dd'),
+    p_end_date: format(endOfPeriod, 'yyyy-MM-dd'),
+  });
 
-    const policyCount = count ?? 0;
+  if (error) {
+    console.error('[EvaluateAlerts] get_policy_counts_for_check error:', error);
+    return matches;
+  }
 
-    if (compareValues(policyCount, rule.threshold_value, rule.comparison)) {
-      matches.push({
-        userId,
-        currentValue: policyCount,
-        entityType: 'production',
-        context: {
-          periodStart: format(startDate, 'MMM d, yyyy'),
-          periodEnd: format(endOfPeriod, 'MMM d, yyyy'),
-          policyCount,
-        },
-      });
+  // Build a map for quick lookup
+  const countMap = new Map<string, number>();
+  policyCounts?.forEach((pc: { agent_id: string; policy_count: number }) => {
+    countMap.set(pc.agent_id, Number(pc.policy_count));
+  });
+
+  // Check each user (including those with 0 policies)
+  const { data: validUserIds } = await supabase.rpc('get_valid_users_for_rule', {
+    p_rule_id: rule.id,
+    p_user_ids: userIds,
+  });
+
+  if (validUserIds) {
+    for (const userId of validUserIds) {
+      const policyCount = countMap.get(userId) ?? 0;
+
+      if (compareValues(policyCount, rule.threshold_value, rule.comparison)) {
+        matches.push({
+          userId,
+          currentValue: policyCount,
+          entityType: 'production',
+          title: 'Low Policy Production',
+          message: `Only ${policyCount} new policies last month (threshold: ${rule.threshold_value})`,
+        });
+      }
     }
   }
 
   return matches;
 }
 
-// Evaluate commission_threshold metric
+// Evaluate commission_threshold metric using batch RPC
 async function evaluateCommissionThreshold(
   supabase: ReturnType<typeof createSupabaseAdminClient>,
   rule: AlertRule,
@@ -293,27 +348,44 @@ async function evaluateCommissionThreshold(
   const startDate = startOfMonth(subMonths(endDate, 1));
   const endOfPeriod = endOfMonth(subMonths(endDate, 1));
 
-  for (const userId of userIds) {
-    const { data: commissions } = await supabase
-      .from('commissions')
-      .select('earned_amount')
-      .eq('agent_id', userId)
-      .gte('effective_date', format(startDate, 'yyyy-MM-dd'))
-      .lte('effective_date', format(endOfPeriod, 'yyyy-MM-dd'));
+  // Use batched RPC with org scoping
+  const { data: commissions, error } = await supabase.rpc('get_commissions_for_threshold_check', {
+    p_rule_id: rule.id,
+    p_user_ids: userIds,
+    p_start_date: format(startDate, 'yyyy-MM-dd'),
+    p_end_date: format(endOfPeriod, 'yyyy-MM-dd'),
+  });
 
-    const totalCommission = commissions?.reduce((sum, c) => sum + (c.earned_amount ?? 0), 0) ?? 0;
+  if (error) {
+    console.error('[EvaluateAlerts] get_commissions_for_threshold_check error:', error);
+    return matches;
+  }
 
-    if (compareValues(totalCommission, rule.threshold_value, rule.comparison)) {
-      matches.push({
-        userId,
-        currentValue: totalCommission,
-        entityType: 'commission',
-        context: {
-          periodStart: format(startDate, 'MMM d, yyyy'),
-          periodEnd: format(endOfPeriod, 'MMM d, yyyy'),
-          totalCommission,
-        },
-      });
+  // Build a map for quick lookup
+  const commissionMap = new Map<string, number>();
+  commissions?.forEach((c: { agent_id: string; total_commission: number }) => {
+    commissionMap.set(c.agent_id, Number(c.total_commission));
+  });
+
+  // Check each user (including those with 0 commission)
+  const { data: validUserIds } = await supabase.rpc('get_valid_users_for_rule', {
+    p_rule_id: rule.id,
+    p_user_ids: userIds,
+  });
+
+  if (validUserIds) {
+    for (const userId of validUserIds) {
+      const totalCommission = commissionMap.get(userId) ?? 0;
+
+      if (compareValues(totalCommission, rule.threshold_value, rule.comparison)) {
+        matches.push({
+          userId,
+          currentValue: totalCommission,
+          entityType: 'commission',
+          title: 'Commission Below Threshold',
+          message: `Commission of $${totalCommission.toLocaleString()} is below threshold of $${rule.threshold_value.toLocaleString()}`,
+        });
+      }
     }
   }
 
@@ -356,75 +428,34 @@ async function evaluateMetric(
   }
 }
 
-// Create notification for alert match
+// Create notification using sanitized RPC
 async function createAlertNotification(
   supabase: ReturnType<typeof createSupabaseAdminClient>,
   rule: AlertRule,
   match: AlertMatch
 ): Promise<string | null> {
-  // Generate notification title and message based on metric
-  let title = '';
-  let message = '';
-
-  switch (rule.metric) {
-    case 'policy_lapse_warning':
-      title = 'Policy Lapse Warning';
-      message = `Policy ${match.context.policyNumber} will lapse in ${match.currentValue} days`;
-      break;
-
-    case 'license_expiration':
-      title = 'License Expiration Warning';
-      message = `License expires in ${match.currentValue} days`;
-      break;
-
-    case 'recruit_stall':
-      title = 'Recruit Stalled';
-      message = `${match.context.recruitName} has been in ${match.context.phaseName} for ${match.currentValue} days`;
-      break;
-
-    case 'new_policy_count':
-      title = 'Low Policy Production';
-      message = `Only ${match.currentValue} new policies last month (threshold: ${rule.threshold_value})`;
-      break;
-
-    case 'commission_threshold':
-      title = 'Commission Below Threshold';
-      message = `Commission of $${match.currentValue.toLocaleString()} is below threshold of $${rule.threshold_value.toLocaleString()}`;
-      break;
-
-    default:
-      title = 'Alert Triggered';
-      message = `Alert rule "${rule.metric}" triggered with value ${match.currentValue}`;
-  }
-
   try {
-    const { data: notification, error } = await supabase
-      .from('notifications')
-      .insert({
-        user_id: match.userId,
-        type: `alert_${rule.metric}`,
-        title,
-        message,
-        metadata: {
-          rule_id: rule.id,
-          metric: rule.metric,
-          current_value: match.currentValue,
-          threshold_value: rule.threshold_value,
-          comparison: rule.comparison,
-          entity_type: match.entityType,
-          entity_id: match.entityId,
-          ...match.context,
-        },
-      })
-      .select('id')
-      .single();
+    // Use sanitized RPC that validates org scope
+    const { data: notificationId, error } = await supabase.rpc('create_alert_notification_safe', {
+      p_user_id: match.userId,
+      p_type: `alert_${rule.metric}`,
+      p_title: match.title,
+      p_message: match.message,
+      p_rule_id: rule.id,
+      p_metric: rule.metric,
+      p_current_value: match.currentValue,
+      p_threshold_value: rule.threshold_value,
+      p_comparison: rule.comparison,
+      p_entity_type: match.entityType || null,
+      p_entity_id: match.entityId || null,
+    });
 
     if (error) {
       console.error('[EvaluateAlerts] Failed to create notification:', error);
       return null;
     }
 
-    return notification.id;
+    return notificationId;
   } catch (err) {
     console.error('[EvaluateAlerts] Error creating notification:', err);
     return null;
@@ -446,7 +477,13 @@ async function processRule(
   try {
     console.log(`[EvaluateAlerts] Processing rule: ${rule.id} (${rule.metric})`);
 
-    // Get users to evaluate
+    // Validate rule has org scope
+    if (!rule.imo_id && !rule.agency_id) {
+      console.log(`[EvaluateAlerts] Rule ${rule.id} has no org scope - skipping`);
+      return result;
+    }
+
+    // Get users to evaluate (with org scoping)
     const userIds = await getUsersToEvaluate(supabase, rule);
     result.evaluations = userIds.length;
 
@@ -488,7 +525,7 @@ async function processRule(
             p_affected_entity_type: match.entityType,
             p_affected_entity_id: match.entityId,
             p_notification_id: notificationId,
-            p_evaluation_context: match.context,
+            p_evaluation_context: {},
           });
         }
       }
@@ -512,6 +549,9 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders });
   }
 
+  const workerId = generateWorkerId();
+  const claimedRuleIds: string[] = [];
+
   try {
     // Validate request
     const authHeader = req.headers.get('Authorization');
@@ -527,8 +567,11 @@ serve(async (req) => {
 
     const supabase = createSupabaseAdminClient();
 
-    // Get due alert rules
-    const { data: dueRules, error: fetchError } = await supabase.rpc('get_due_alert_rules');
+    // Get due alert rules with locking
+    const { data: dueRules, error: fetchError } = await supabase.rpc('get_due_alert_rules', {
+      p_worker_id: workerId,
+      p_batch_size: 50,
+    });
 
     if (fetchError) {
       console.error('[EvaluateAlerts] Failed to fetch due rules:', fetchError);
@@ -543,13 +586,21 @@ serve(async (req) => {
       );
     }
 
-    console.log(`[EvaluateAlerts] Processing ${dueRules.length} due rule(s)`);
+    // Track claimed rule IDs for cleanup
+    dueRules.forEach((r: AlertRule) => claimedRuleIds.push(r.id));
+
+    console.log(`[EvaluateAlerts] Processing ${dueRules.length} due rule(s) [worker: ${workerId}]`);
 
     // Process each rule
     const results: EvaluationResult[] = [];
     for (const rule of dueRules) {
       const result = await processRule(supabase, rule as AlertRule);
       results.push(result);
+    }
+
+    // Release the claimed rules
+    if (claimedRuleIds.length > 0) {
+      await supabase.rpc('release_alert_rules', { p_rule_ids: claimedRuleIds });
     }
 
     const triggered = results.filter(r => r.triggered).length;
@@ -565,6 +616,7 @@ serve(async (req) => {
         triggered,
         totalNotifications,
         failed,
+        workerId,
         results,
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -574,8 +626,18 @@ serve(async (req) => {
     const error = err instanceof Error ? err.message : 'Unknown error';
     console.error('[EvaluateAlerts] Error:', error);
 
+    // Attempt to release claimed rules on error
+    if (claimedRuleIds.length > 0) {
+      try {
+        const supabase = createSupabaseAdminClient();
+        await supabase.rpc('release_alert_rules', { p_rule_ids: claimedRuleIds });
+      } catch {
+        // Ignore cleanup errors
+      }
+    }
+
     return new Response(
-      JSON.stringify({ error }),
+      JSON.stringify({ error, workerId }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

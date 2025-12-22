@@ -1,8 +1,8 @@
-# Continuation: IMO/Agency Org Awareness - Phase 11
+# Continuation: IMO/Agency Org Awareness - Phase 12
 
 ## Session Context
 
-Multi-IMO/Agency architecture implementation. Phases 1-10 complete and deployed.
+Multi-IMO/Agency architecture implementation. Phases 1-11 complete and deployed.
 
 **Completed Phases:**
 - Phase 1: Clients hierarchy visibility (`03d2ccf`)
@@ -14,33 +14,55 @@ Multi-IMO/Agency architecture implementation. Phases 1-10 complete and deployed.
 - Phase 7: Override Commissions Org Awareness (`7bed02d`, `8d359c9`)
 - Phase 8: Recruiting Pipeline Org Awareness (`c7ae63f`)
 - Phase 9: Scheduled Reports (`77250e1`, `a64cbbf`)
-- Phase 10: Notifications & Alerts System (pending commit)
+- Phase 10: Notifications & Alerts System (`5f0c572`) + Security Hardening
+- Phase 11: Audit Trail & Activity Logs (pending commit)
 
 ---
 
-## Phase 10 Summary (Complete & Deployed)
+## Phase 11 Summary (Complete)
 
 ### Features Delivered
-- `alert_rules` table for configurable alert thresholds
-- `alert_rule_evaluations` table for audit log
-- `notification_digest_log` table for email digest tracking
-- `alert_metric` enum with 9 metric types
-- RLS policies with org scoping
-- 11 RPCs for alert/preference management
-- Edge function `evaluate-alerts` deployed (runs every 15 min)
-- Edge function `send-notification-digests` deployed
-- GitHub Actions workflows for both cron jobs
-- TypeScript types with Zod validation
-- React Query hooks for CRUD operations
-- Notification preferences UI (in-app, email digest, quiet hours)
-- Alert rules management UI (create, edit, toggle, delete, history)
-- Integration into Settings Dashboard as "Notifications" tab
+- `audit_log` table with org scoping (imo_id, agency_id)
+- Automatic database triggers for: policies, commissions, clients, user_profiles, override_commissions
+- Captures INSERT/UPDATE/DELETE with old/new data and changed fields
+- RLS policies for org-scoped access (IMO admins, agency owners)
+- Paginated query RPCs with filters (table, action, action_type, performer, date range, search)
+- Detail view RPC with full old/new data
+- Retention cleanup function (90 days non-financial, 365 days financial)
+- TypeScript service layer with AuditRepository and AuditService
+- React Query hooks for data fetching
+- UI components: AuditTrailPage, AuditLogTable, AuditLogFilters, AuditLogDetailDialog
+- Export to CSV functionality
+- Integrated into Settings as "Audit Trail" tab for IMO admins
 
-### Deployment Status
-- ✅ Migrations applied to database
-- ✅ Edge functions deployed
-- ✅ GitHub Actions workflows created
-- ⏳ Requires `SUPABASE_SERVICE_ROLE_KEY` secret in GitHub (if not already set)
+### Files Created
+**Migrations:**
+- `supabase/migrations/20251222_030_audit_log_schema.sql`
+- `supabase/migrations/20251222_031_audit_log_rls.sql`
+- `supabase/migrations/20251222_032_audit_triggers.sql`
+- `supabase/migrations/20251222_033_audit_rpcs.sql`
+
+**Service Layer:**
+- `src/services/audit/audit.types.ts`
+- `src/services/audit/AuditRepository.ts`
+- `src/services/audit/AuditService.ts`
+- `src/services/audit/index.ts`
+
+**Hooks:**
+- `src/hooks/audit/useAuditLogs.ts`
+- `src/hooks/audit/index.ts`
+
+**UI Components:**
+- `src/features/audit/components/AuditTrailPage.tsx`
+- `src/features/audit/components/AuditLogTable.tsx`
+- `src/features/audit/components/AuditLogFilters.tsx`
+- `src/features/audit/components/AuditLogDetailDialog.tsx`
+- `src/features/audit/components/index.ts`
+- `src/features/audit/utils/auditFormatters.ts`
+- `src/features/audit/index.ts`
+
+**Modified:**
+- `src/features/settings/SettingsDashboard.tsx`
 
 ---
 
@@ -48,10 +70,11 @@ Multi-IMO/Agency architecture implementation. Phases 1-10 complete and deployed.
 
 ✅ `npm run build` passes with zero TypeScript errors
 ✅ All migrations applied to production database
+✅ Database types regenerated
 
 ---
 
-## Phase 11 Options
+## Phase 12 Options
 
 ### Option A: Agent Hierarchy Visualization
 **Scope:**
@@ -73,27 +96,18 @@ Multi-IMO/Agency architecture implementation. Phases 1-10 complete and deployed.
 **Complexity:** High
 **Value:** Medium
 
-### Option C: Audit Trail & Activity Logs
-**Scope:**
-- Track all data changes with timestamps/users
-- Activity feed for IMO admins and agency owners
-- Filter by user, date range, action type
-- Export audit logs
-
-**Complexity:** Medium
-**Value:** Medium-High
-
 ---
 
 ## Technical Debt (Lower Priority)
 
-From Phase 6-10 code reviews:
+From Phase 6-11 code reviews:
 - Team comparison LATERAL joins could be N+1 for large IMOs (monitor)
 - Summary calculation duplicated between ImoService and AgencyService
 - Magic numbers for limits/slices in report components (10, 5, etc.)
 - No feature flags for gradual rollout
 - Query key namespacing could be improved
 - Some alert metrics not yet implemented (target_miss_risk, override_change, etc.)
+- Consider adding audit log cleanup cron job (currently manual via RPC)
 
 ---
 
@@ -102,17 +116,16 @@ From Phase 6-10 code reviews:
 ```
 Continue from plans/active/org-awareness-phase11-continuation.md
 
-Context: Phases 1-10 complete and deployed. Build passing.
+Context: Phases 1-11 complete and deployed.
 
 Build status: ✅ Passing
 Database: ✅ All migrations applied
-Edge Functions: ✅ evaluate-alerts, send-notification-digests deployed
+Edge Functions: ✅ evaluate-alerts, send-notification-digests deployed (secured)
 CI/CD: ✅ GitHub Actions workflows for scheduled tasks
 
 Recent commits:
-- [pending] feat(notifications): add notifications & alerts system (Phase 10)
-- a64cbbf ci: add GitHub Actions workflow for scheduled reports
-- 77250e1 feat(reports): add scheduled report delivery system (Phase 9)
+- [pending] feat(audit): add audit trail & activity logs (Phase 11)
+- 5f0c572 feat(notifications): add notifications & alerts system (Phase 10)
 
 Org Awareness Complete:
 ✅ Phase 1: Clients hierarchy visibility
@@ -124,12 +137,12 @@ Org Awareness Complete:
 ✅ Phase 7: Override Commissions Org Awareness
 ✅ Phase 8: Recruiting Pipeline Org Awareness
 ✅ Phase 9: Scheduled Reports (fully deployed)
-✅ Phase 10: Notifications & Alerts System (fully deployed)
+✅ Phase 10: Notifications & Alerts System (secured)
+✅ Phase 11: Audit Trail & Activity Logs
 
-Select Phase 11 scope:
+Select Phase 12 scope:
 A) Agent Hierarchy Visualization - Org chart with metrics
 B) Document Management Org Sharing - Shared docs/templates
-C) Audit Trail & Activity Logs - Track data changes
 
 Which phase should be implemented?
 ```
