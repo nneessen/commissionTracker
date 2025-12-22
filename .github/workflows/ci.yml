@@ -25,7 +25,7 @@ jobs:
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         run: |
-          npx supabase@latest gen types typescript --project-id ${{ secrets.SUPABASE_PROJECT_ID }} > generated.types.ts
+          npx -y supabase@2.40.7 gen types typescript --project-id ${{ secrets.SUPABASE_PROJECT_ID }} > generated.types.ts
           diff -q generated.types.ts src/types/database.types.ts
         shell: bash
 
