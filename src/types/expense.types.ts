@@ -250,6 +250,65 @@ export interface UpdateExpenseTemplateData {
   notes?: string | null;
 }
 
+// ============================================================================
+// Hierarchy/Team Expense Types
+// ============================================================================
+
+/**
+ * Expense with owner info (from downline/team queries)
+ */
+export interface DownlineExpense {
+  id: string;
+  user_id: string;
+  owner_name: string;
+  name: string;
+  description: string | null;
+  amount: number;
+  category: string;
+  date: string;
+  expense_type: ExpenseType;
+  is_tax_deductible: boolean;
+  is_recurring: boolean;
+  created_at: string;
+}
+
+/**
+ * Expense summary by agent (aggregated view)
+ */
+export interface AgentExpenseSummary {
+  user_id: string;
+  owner_name: string;
+  agency_name?: string;
+  total_amount: number;
+  expense_count: number;
+  business_amount: number;
+  personal_amount: number;
+  tax_deductible_amount: number;
+}
+
+/**
+ * Expense totals by category (IMO-level aggregation)
+ */
+export interface CategoryExpenseSummary {
+  category: string;
+  total_amount: number;
+  expense_count: number;
+  avg_amount: number;
+}
+
+/**
+ * Date range filter for expense queries
+ */
+export interface ExpenseDateRange {
+  startDate?: string;
+  endDate?: string;
+}
+
+/**
+ * View mode for expense list
+ */
+export type ExpenseViewMode = "own" | "team" | "imo";
+
 /**
  * Default expense categories
  */

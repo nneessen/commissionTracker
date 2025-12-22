@@ -11,6 +11,10 @@ import type {
   ExpenseTotals,
   MonthlyExpenseBreakdown,
   YearlyExpenseSummary,
+  DownlineExpense,
+  AgentExpenseSummary,
+  CategoryExpenseSummary,
+  ExpenseDateRange,
 } from "@/types/expense.types";
 
 /**
@@ -415,6 +419,90 @@ class ExpenseServiceClass {
       }
 
       return { success: true, data: { imported, errors } };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error : new Error(String(error)),
+      };
+    }
+  }
+
+  // ============================================================================
+  // Hierarchy/Team Methods
+  // ============================================================================
+
+  /**
+   * Get expenses from downline agents
+   */
+  async getDownlineExpenses(
+    dateRange?: ExpenseDateRange
+  ): Promise<ServiceResponse<DownlineExpense[]>> {
+    try {
+      const expenses = await this.repository.findDownlineExpenses(
+        dateRange?.startDate,
+        dateRange?.endDate
+      );
+      return { success: true, data: expenses };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error : new Error(String(error)),
+      };
+    }
+  }
+
+  /**
+   * Get expense summary by downline agent
+   */
+  async getDownlineExpenseSummary(
+    dateRange?: ExpenseDateRange
+  ): Promise<ServiceResponse<AgentExpenseSummary[]>> {
+    try {
+      const summary = await this.repository.getDownlineExpenseSummary(
+        dateRange?.startDate,
+        dateRange?.endDate
+      );
+      return { success: true, data: summary };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error : new Error(String(error)),
+      };
+    }
+  }
+
+  /**
+   * Get expense summary for entire IMO (admin only)
+   */
+  async getImoExpenseSummary(
+    dateRange?: ExpenseDateRange
+  ): Promise<ServiceResponse<AgentExpenseSummary[]>> {
+    try {
+      const summary = await this.repository.getImoExpenseSummary(
+        dateRange?.startDate,
+        dateRange?.endDate
+      );
+      return { success: true, data: summary };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error : new Error(String(error)),
+      };
+    }
+  }
+
+  /**
+   * Get expense totals by category for IMO (admin only)
+   */
+  async getImoExpenseByCategory(
+    dateRange?: ExpenseDateRange
+  ): Promise<ServiceResponse<CategoryExpenseSummary[]>> {
+    try {
+      const summary = await this.repository.getImoExpenseByCategory(
+        dateRange?.startDate,
+        dateRange?.endDate
+      );
+      return { success: true, data: summary };
     } catch (error) {
       return {
         success: false,

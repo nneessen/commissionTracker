@@ -5,6 +5,9 @@ import type {
   CreateExpenseData,
   UpdateExpenseData,
   ExpenseFilters,
+  DownlineExpense,
+  AgentExpenseSummary,
+  CategoryExpenseSummary,
 } from "@/types/expense.types";
 
 type ExpenseBaseEntity = Expense & BaseEntity;
@@ -329,6 +332,92 @@ export class ExpenseRepository extends BaseRepository<
     }
 
     return result?.id || null;
+  }
+
+  // ---------------------------------------------------------------------------
+  // HIERARCHY/TEAM EXPENSE OPERATIONS
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Get expenses from downline agents with owner info
+   */
+  async findDownlineExpenses(
+    startDate?: string,
+    endDate?: string
+  ): Promise<DownlineExpense[]> {
+    const { data, error } = await this.client.rpc("get_downline_expenses", {
+      p_start_date: startDate || null,
+      p_end_date: endDate || null,
+    });
+
+    if (error) {
+      throw this.handleError(error, "findDownlineExpenses");
+    }
+
+    return (data || []) as DownlineExpense[];
+  }
+
+  /**
+   * Get expense summary aggregated by downline agent
+   */
+  async getDownlineExpenseSummary(
+    startDate?: string,
+    endDate?: string
+  ): Promise<AgentExpenseSummary[]> {
+    const { data, error } = await this.client.rpc(
+      "get_downline_expense_summary",
+      {
+        p_start_date: startDate || null,
+        p_end_date: endDate || null,
+      }
+    );
+
+    if (error) {
+      throw this.handleError(error, "getDownlineExpenseSummary");
+    }
+
+    return (data || []) as AgentExpenseSummary[];
+  }
+
+  /**
+   * Get expense summary for entire IMO (admin only)
+   */
+  async getImoExpenseSummary(
+    startDate?: string,
+    endDate?: string
+  ): Promise<AgentExpenseSummary[]> {
+    const { data, error } = await this.client.rpc("get_imo_expense_summary", {
+      p_start_date: startDate || null,
+      p_end_date: endDate || null,
+    });
+
+    if (error) {
+      throw this.handleError(error, "getImoExpenseSummary");
+    }
+
+    return (data || []) as AgentExpenseSummary[];
+  }
+
+  /**
+   * Get expense totals by category for IMO (admin only)
+   */
+  async getImoExpenseByCategory(
+    startDate?: string,
+    endDate?: string
+  ): Promise<CategoryExpenseSummary[]> {
+    const { data, error } = await this.client.rpc(
+      "get_imo_expense_by_category",
+      {
+        p_start_date: startDate || null,
+        p_end_date: endDate || null,
+      }
+    );
+
+    if (error) {
+      throw this.handleError(error, "getImoExpenseByCategory");
+    }
+
+    return (data || []) as CategoryExpenseSummary[];
   }
 }
 

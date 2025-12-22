@@ -10,3 +10,13 @@ export { useConstants } from './useConstants';
 export { useCreateExpense } from './useCreateExpense';
 export { useUpdateExpense } from './useUpdateExpense';
 export { useDeleteExpense } from './useDeleteExpense';
+
+// Team/Hierarchy expense hooks
+export {
+  useDownlineExpenses,
+  useDownlineExpenseSummary,
+  useImoExpenseSummary,
+  useImoExpenseByCategory,
+  useInvalidateTeamExpenses,
+  teamExpenseKeys,
+} from './useTeamExpenses';
