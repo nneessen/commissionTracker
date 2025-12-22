@@ -112,15 +112,19 @@ export default function EditUserDialog({
   const deleteUserMutation = useDeleteUser();
 
   // IMO/Agency hooks
-  const { isSuperAdmin, isImoAdmin, imo: currentUserImo } = useImo();
+  const { isSuperAdmin, isImoAdmin } = useImo();
   const { data: allImos, isLoading: isLoadingImos } = useAllActiveImos();
   const [selectedImoId, setSelectedImoId] = useState<string | null>(null);
-  const { data: agenciesForImo, isLoading: isLoadingAgencies } = useAgenciesByImo(selectedImoId ?? "");
+  const { data: agenciesForImo, isLoading: isLoadingAgencies } =
+    useAgenciesByImo(selectedImoId ?? "");
   const assignAgentMutation = useAssignAgentToAgency();
   // Fetch user's original agency separately (HIGH-2 fix: don't rely on agenciesForImo)
-  const { data: userOriginalAgency } = useAgencyById(user?.agency_id ?? undefined);
+  const { data: userOriginalAgency } = useAgencyById(
+    user?.agency_id ?? undefined,
+  );
   // LOW-3: Combined loading state for organization tab
-  const isOrgDataLoading = isLoadingImos || (selectedImoId && isLoadingAgencies);
+  const isOrgDataLoading =
+    isLoadingImos || (selectedImoId && isLoadingAgencies);
 
   const [formData, setFormData] = useState<EditableUserData>({
     first_name: "",
@@ -278,7 +282,7 @@ export default function EditUserDialog({
   const handleSave = async () => {
     if (!user) return;
     setIsSaving(true);
-    setShowOrgChangeConfirm(false);
+    // Don't close org confirm dialog yet - wait for save to complete
 
     try {
       const updates: Record<string, unknown> = {};
@@ -345,12 +349,16 @@ export default function EditUserDialog({
       if (imoChanged && formData.imo_id) {
         const selectedImo = allImos?.find((i) => i.id === formData.imo_id);
         if (!selectedImo) {
-          showToast.error("Selected IMO no longer exists. Please refresh and try again.");
+          showToast.error(
+            "Selected IMO no longer exists. Please refresh and try again.",
+          );
           setIsSaving(false);
           return;
         }
         if (!selectedImo.is_active) {
-          showToast.error("Selected IMO is no longer active. Please select a different IMO.");
+          showToast.error(
+            "Selected IMO is no longer active. Please select a different IMO.",
+          );
           setIsSaving(false);
           return;
         }
@@ -410,10 +418,13 @@ export default function EditUserDialog({
       if (agencyChanged) {
         queryClient.invalidateQueries({ queryKey: ["clients", "hierarchy"] });
       }
+      // Close dialogs on success
+      setShowOrgChangeConfirm(false);
       onOpenChange(false);
     } catch (error) {
       showToast.error("An error occurred while saving");
       console.error("Save error:", error);
+      // Keep org confirm dialog open on error so user can retry
     } finally {
       setIsSaving(false);
     }
@@ -515,7 +526,8 @@ export default function EditUserDialog({
 
   if (!user) return null;
 
-  const dialogOpen = open && !showDeleteConfirm;
+  // Close main dialog when showing confirmation dialogs to prevent dual overlays
+  const dialogOpen = open && !showDeleteConfirm && !showOrgChangeConfirm;
 
   return (
     <>
@@ -949,8 +961,8 @@ export default function EditUserDialog({
                         </p>
                         <p className="text-[11px] text-zinc-700 dark:text-zinc-300 mt-0.5">
                           {user?.imo_id
-                            ? allImos?.find((i) => i.id === user.imo_id)?.name ||
-                              "Unknown IMO"
+                            ? allImos?.find((i) => i.id === user.imo_id)
+                                ?.name || "Unknown IMO"
                             : "No IMO"}{" "}
                           →{" "}
                           {user?.agency_id
@@ -1377,20 +1389,35 @@ export default function EditUserDialog({
                 </div>
 
                 <p className="text-[10px] text-zinc-500 dark:text-zinc-400">
-                  The user may need to re-establish their upline relationship in the new organization.
+                  The user may need to re-establish their upline relationship in
+                  the new organization.
                 </p>
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="gap-1.5">
-            <AlertDialogCancel className="h-7 text-[11px] px-3">
+            <AlertDialogCancel
+              disabled={isSaving}
+              className="h-7 text-[11px] px-3"
+            >
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleSave}
+              onClick={(e) => {
+                e.preventDefault(); // Prevent auto-close - let handleSave control dialog state
+                handleSave();
+              }}
+              disabled={isSaving}
               className="h-7 text-[11px] px-3 bg-amber-600 hover:bg-amber-700 text-white"
             >
-              Confirm Change
+              {isSaving ? (
+                <>
+                  <Loader2 className="mr-1.5 h-3 w-3 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                "Confirm Change"
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
