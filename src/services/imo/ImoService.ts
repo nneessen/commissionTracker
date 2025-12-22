@@ -587,8 +587,21 @@ class ImoService {
         throw error;
       }
 
+      // No data case: return empty summary (distinguishes "no overrides" from "no access")
       if (!data || data.length === 0) {
-        return null;
+        return {
+          imo_id: '',
+          imo_name: '',
+          total_override_count: 0,
+          total_override_amount: 0,
+          pending_amount: 0,
+          earned_amount: 0,
+          paid_amount: 0,
+          chargeback_amount: 0,
+          unique_uplines: 0,
+          unique_downlines: 0,
+          avg_override_per_policy: 0,
+        };
       }
 
       // Validate response with Zod schema

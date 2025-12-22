@@ -144,7 +144,7 @@ export type OverrideByAgencyRow = z.infer<typeof OverrideByAgencyRowSchema>;
 export const OverrideByAgentRowSchema = z.object({
   agent_id: z.string().uuid(),
   agent_name: z.string(),
-  agent_email: z.string(),
+  agent_email: z.string().email(),
   override_count: z.coerce.number().int().nonnegative(),
   total_amount: z.coerce.number().nonnegative(),
   pending_amount: z.coerce.number().nonnegative(),
