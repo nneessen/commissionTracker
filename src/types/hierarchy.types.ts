@@ -200,3 +200,73 @@ export interface OverrideCommissionSummaryView {
   total_earned: number;
   total_unearned: number;
 }
+
+// ============================================================================
+// Phase 12A: Org Chart Visualization Types
+// ============================================================================
+
+/**
+ * Scope for org chart view
+ */
+export type OrgChartScope = 'imo' | 'agency' | 'agent' | 'auto';
+
+/**
+ * Node type in org chart
+ */
+export type OrgChartNodeType = 'imo' | 'agency' | 'agent';
+
+/**
+ * Performance metrics for org chart nodes
+ */
+export interface OrgChartMetrics {
+  agentCount?: number;
+  activePolicyCount: number;
+  totalAnnualPremium: number;
+  totalCommissionsYtd: number;
+  avgContractLevel?: number;
+}
+
+/**
+ * Org chart node representing an IMO, Agency, or Agent
+ */
+export interface OrgChartNode {
+  id: string;
+  type: OrgChartNodeType;
+  name: string;
+  code?: string;
+  logoUrl?: string | null;
+  // IMO/Agency specific
+  ownerId?: string;
+  ownerName?: string;
+  ownerEmail?: string;
+  // Agent specific
+  email?: string;
+  contractLevel?: number;
+  agentStatus?: string;
+  profilePhotoUrl?: string | null;
+  hierarchyDepth?: number;
+  // Metrics and children
+  metrics?: OrgChartMetrics;
+  children: OrgChartNode[];
+}
+
+/**
+ * Request parameters for org chart data
+ */
+export interface OrgChartRequest {
+  scope?: OrgChartScope;
+  scopeId?: string;
+  includeMetrics?: boolean;
+  maxDepth?: number;
+}
+
+/**
+ * Flattened node for list/table views
+ */
+export interface FlatOrgChartNode extends Omit<OrgChartNode, 'children'> {
+  parentId?: string;
+  depth: number;
+  path: string[];
+  hasChildren: boolean;
+  childCount: number;
+}

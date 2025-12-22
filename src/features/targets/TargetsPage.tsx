@@ -276,7 +276,7 @@ export function TargetsPage() {
 
         {/* Main Content */}
         <div className="flex-1 overflow-auto">
-          <div className="max-w-7xl mx-auto space-y-2">
+          <div className="space-y-2">
             {/* NET vs GROSS Breakdown - New Section */}
             <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-3">
               <div className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-2">

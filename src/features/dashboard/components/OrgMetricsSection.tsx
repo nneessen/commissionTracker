@@ -37,20 +37,20 @@ const MetricItem: React.FC<MetricItemProps> = ({
   subtext,
 }) => (
   <div className="flex justify-between items-center text-[11px] py-0.5">
-    <span className="text-zinc-500 dark:text-zinc-400">{label}</span>
+    <span className="text-muted-foreground">{label}</span>
     <div className="text-right">
       <span
         className={cn(
           "font-mono font-semibold",
           highlight
-            ? "text-emerald-600 dark:text-emerald-400"
-            : "text-zinc-900 dark:text-zinc-100",
+            ? "text-[hsl(var(--success))]"
+            : "text-foreground",
         )}
       >
         {value}
       </span>
       {subtext && (
-        <span className="text-[9px] text-zinc-400 ml-1">{subtext}</span>
+        <span className="text-[9px] text-muted-foreground/70 ml-1">{subtext}</span>
       )}
     </div>
   </div>
@@ -60,14 +60,14 @@ const MetricItem: React.FC<MetricItemProps> = ({
  * Error state component for dashboard panels
  */
 const ErrorState: React.FC<{ message?: string }> = ({ message }) => (
-  <div className="bg-white dark:bg-zinc-900 rounded-lg border border-red-200 dark:border-red-800 p-3 h-full">
+  <div className="bg-card rounded-lg border border-destructive/30 p-3 h-full">
     <div className="flex flex-col items-center justify-center h-full text-center py-4">
-      <AlertCircle className="h-6 w-6 text-red-400 mb-2" />
-      <div className="text-[11px] text-red-600 dark:text-red-400 font-medium">
+      <AlertCircle className="h-6 w-6 text-destructive/70 mb-2" />
+      <div className="text-[11px] text-destructive font-medium">
         Failed to load metrics
       </div>
       {message && (
-        <div className="text-[10px] text-zinc-500 mt-1 max-w-[200px] truncate">
+        <div className="text-[10px] text-muted-foreground mt-1 max-w-[200px] truncate">
           {message}
         </div>
       )}
@@ -83,11 +83,11 @@ const ImoMetricsPanel: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-3 h-full animate-pulse">
-        <div className="h-4 w-24 bg-zinc-200 dark:bg-zinc-700 rounded mb-3" />
+      <div className="bg-card rounded-lg border border-border p-3 h-full animate-pulse">
+        <div className="h-4 w-24 bg-muted rounded mb-3" />
         <div className="space-y-2">
           {[...Array(6)].map((_, i) => (
-            <div key={i} className="h-3 bg-zinc-100 dark:bg-zinc-800 rounded" />
+            <div key={i} className="h-3 bg-muted/50 rounded" />
           ))}
         </div>
       </div>
@@ -107,29 +107,29 @@ const ImoMetricsPanel: React.FC = () => {
   }
 
   return (
-    <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-3 h-full">
+    <div className="bg-card rounded-lg border border-border p-3 h-full">
       <div className="flex items-center gap-1.5 mb-2">
-        <Building2 className="h-3 w-3 text-violet-500" />
-        <span className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+        <Building2 className="h-3 w-3 text-primary" />
+        <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
           IMO Overview
         </span>
-        <span className="text-[9px] text-zinc-400 ml-auto truncate max-w-[100px]">
+        <span className="text-[9px] text-muted-foreground/70 ml-auto truncate max-w-[100px]">
           {metrics.imo_name}
         </span>
       </div>
 
       <div className="grid grid-cols-2 gap-3 mb-3">
-        <div className="text-center p-2 bg-violet-50 dark:bg-violet-900/20 rounded">
-          <div className="text-lg font-bold text-violet-600 dark:text-violet-400">
+        <div className="text-center p-2 bg-muted rounded">
+          <div className="text-lg font-bold text-foreground">
             {formatNumber(metrics.agency_count)}
           </div>
-          <div className="text-[9px] text-zinc-500 uppercase">Agencies</div>
+          <div className="text-[9px] text-muted-foreground uppercase">Agencies</div>
         </div>
-        <div className="text-center p-2 bg-blue-50 dark:bg-blue-900/20 rounded">
-          <div className="text-lg font-bold text-blue-600 dark:text-blue-400">
+        <div className="text-center p-2 bg-muted rounded">
+          <div className="text-lg font-bold text-foreground">
             {formatNumber(metrics.agent_count)}
           </div>
-          <div className="text-[9px] text-zinc-500 uppercase">Agents</div>
+          <div className="text-[9px] text-muted-foreground uppercase">Agents</div>
         </div>
       </div>
 
@@ -143,7 +143,7 @@ const ImoMetricsPanel: React.FC = () => {
           value={formatCurrency(metrics.total_annual_premium)}
           highlight={metrics.total_annual_premium > 0}
         />
-        <div className="border-t border-zinc-100 dark:border-zinc-800 my-1.5" />
+        <div className="border-t border-border my-1.5" />
         <MetricItem
           label="Commissions YTD"
           value={formatCurrency(metrics.total_commissions_ytd)}
@@ -157,7 +157,7 @@ const ImoMetricsPanel: React.FC = () => {
           label="Unearned"
           value={formatCurrency(metrics.total_unearned)}
         />
-        <div className="border-t border-zinc-100 dark:border-zinc-800 my-1.5" />
+        <div className="border-t border-border my-1.5" />
         <MetricItem
           label="Avg/Agent"
           value={formatCurrency(metrics.avg_production_per_agent)}
@@ -176,11 +176,11 @@ const AgencyMetricsPanel: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-3 h-full animate-pulse">
-        <div className="h-4 w-24 bg-zinc-200 dark:bg-zinc-700 rounded mb-3" />
+      <div className="bg-card rounded-lg border border-border p-3 h-full animate-pulse">
+        <div className="h-4 w-24 bg-muted rounded mb-3" />
         <div className="space-y-2">
           {[...Array(6)].map((_, i) => (
-            <div key={i} className="h-3 bg-zinc-100 dark:bg-zinc-800 rounded" />
+            <div key={i} className="h-3 bg-muted/50 rounded" />
           ))}
         </div>
       </div>
@@ -200,29 +200,29 @@ const AgencyMetricsPanel: React.FC = () => {
   }
 
   return (
-    <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-3 h-full">
+    <div className="bg-card rounded-lg border border-border p-3 h-full">
       <div className="flex items-center gap-1.5 mb-2">
-        <Users className="h-3 w-3 text-blue-500" />
-        <span className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+        <Users className="h-3 w-3 text-primary" />
+        <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
           Agency Overview
         </span>
-        <span className="text-[9px] text-zinc-400 ml-auto truncate max-w-[100px]">
+        <span className="text-[9px] text-muted-foreground/70 ml-auto truncate max-w-[100px]">
           {metrics.agency_name}
         </span>
       </div>
 
       <div className="grid grid-cols-2 gap-3 mb-3">
-        <div className="text-center p-2 bg-blue-50 dark:bg-blue-900/20 rounded">
-          <div className="text-lg font-bold text-blue-600 dark:text-blue-400">
+        <div className="text-center p-2 bg-muted rounded">
+          <div className="text-lg font-bold text-foreground">
             {formatNumber(metrics.agent_count)}
           </div>
-          <div className="text-[9px] text-zinc-500 uppercase">Agents</div>
+          <div className="text-[9px] text-muted-foreground uppercase">Agents</div>
         </div>
-        <div className="text-center p-2 bg-emerald-50 dark:bg-emerald-900/20 rounded">
-          <div className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
+        <div className="text-center p-2 bg-[hsl(var(--success))]/10 rounded">
+          <div className="text-lg font-bold text-[hsl(var(--success))]">
             {formatNumber(metrics.active_policies)}
           </div>
-          <div className="text-[9px] text-zinc-500 uppercase">Policies</div>
+          <div className="text-[9px] text-muted-foreground uppercase">Policies</div>
         </div>
       </div>
 
@@ -245,7 +245,7 @@ const AgencyMetricsPanel: React.FC = () => {
           label="Unearned"
           value={formatCurrency(metrics.total_unearned)}
         />
-        <div className="border-t border-zinc-100 dark:border-zinc-800 my-1.5" />
+        <div className="border-t border-border my-1.5" />
         <MetricItem
           label="Avg/Agent"
           value={formatCurrency(metrics.avg_production_per_agent)}
@@ -255,17 +255,17 @@ const AgencyMetricsPanel: React.FC = () => {
 
       {/* Top Producer */}
       {metrics.top_producer_name && (
-        <div className="mt-3 p-2 bg-amber-50 dark:bg-amber-900/20 rounded border border-amber-200 dark:border-amber-800">
+        <div className="mt-3 p-2 bg-[hsl(var(--warning))]/10 rounded border border-[hsl(var(--warning))]/30">
           <div className="flex items-center gap-1 mb-1">
-            <Trophy className="h-3 w-3 text-amber-500" />
-            <span className="text-[9px] text-amber-700 dark:text-amber-400 uppercase font-semibold">
+            <Trophy className="h-3 w-3 text-[hsl(var(--warning))]" />
+            <span className="text-[9px] text-[hsl(var(--warning))] uppercase font-semibold">
               Top Producer
             </span>
           </div>
-          <div className="text-[11px] font-medium text-zinc-800 dark:text-zinc-200 truncate">
+          <div className="text-[11px] font-medium text-foreground truncate">
             {metrics.top_producer_name}
           </div>
-          <div className="text-[10px] text-amber-600 dark:text-amber-400 font-mono">
+          <div className="text-[10px] text-[hsl(var(--warning))] font-mono">
             {formatCurrency(metrics.top_producer_premium)}
           </div>
         </div>
@@ -282,11 +282,11 @@ const ImoOverrideSummaryPanel: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-3 h-full animate-pulse">
-        <div className="h-4 w-24 bg-zinc-200 dark:bg-zinc-700 rounded mb-3" />
+      <div className="bg-card rounded-lg border border-border p-3 h-full animate-pulse">
+        <div className="h-4 w-24 bg-muted rounded mb-3" />
         <div className="space-y-2">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-3 bg-zinc-100 dark:bg-zinc-800 rounded" />
+            <div key={i} className="h-3 bg-muted/50 rounded" />
           ))}
         </div>
       </div>
@@ -306,26 +306,26 @@ const ImoOverrideSummaryPanel: React.FC = () => {
   }
 
   return (
-    <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-3 h-full">
+    <div className="bg-card rounded-lg border border-border p-3 h-full">
       <div className="flex items-center gap-1.5 mb-2">
-        <ArrowUpRight className="h-3 w-3 text-orange-500" />
-        <span className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+        <ArrowUpRight className="h-3 w-3 text-[hsl(var(--warning))]" />
+        <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
           Override Commissions
         </span>
       </div>
 
       <div className="grid grid-cols-2 gap-3 mb-3">
-        <div className="text-center p-2 bg-orange-50 dark:bg-orange-900/20 rounded">
-          <div className="text-lg font-bold text-orange-600 dark:text-orange-400">
+        <div className="text-center p-2 bg-muted rounded">
+          <div className="text-lg font-bold text-foreground">
             {formatNumber(summary.total_override_count)}
           </div>
-          <div className="text-[9px] text-zinc-500 uppercase">Overrides</div>
+          <div className="text-[9px] text-muted-foreground uppercase">Overrides</div>
         </div>
-        <div className="text-center p-2 bg-emerald-50 dark:bg-emerald-900/20 rounded">
-          <div className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
+        <div className="text-center p-2 bg-[hsl(var(--success))]/10 rounded">
+          <div className="text-lg font-bold text-[hsl(var(--success))]">
             {formatCurrency(summary.total_override_amount)}
           </div>
-          <div className="text-[9px] text-zinc-500 uppercase">Total</div>
+          <div className="text-[9px] text-muted-foreground uppercase">Total</div>
         </div>
       </div>
 
@@ -346,7 +346,7 @@ const ImoOverrideSummaryPanel: React.FC = () => {
             value={formatCurrency(summary.chargeback_amount)}
           />
         )}
-        <div className="border-t border-zinc-100 dark:border-zinc-800 my-1.5" />
+        <div className="border-t border-border my-1.5" />
         <MetricItem
           label="Uplines"
           value={formatNumber(summary.unique_uplines)}
@@ -374,11 +374,11 @@ const AgencyOverrideSummaryPanel: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-3 h-full animate-pulse">
-        <div className="h-4 w-24 bg-zinc-200 dark:bg-zinc-700 rounded mb-3" />
+      <div className="bg-card rounded-lg border border-border p-3 h-full animate-pulse">
+        <div className="h-4 w-24 bg-muted rounded mb-3" />
         <div className="space-y-2">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-3 bg-zinc-100 dark:bg-zinc-800 rounded" />
+            <div key={i} className="h-3 bg-muted/50 rounded" />
           ))}
         </div>
       </div>
@@ -398,26 +398,26 @@ const AgencyOverrideSummaryPanel: React.FC = () => {
   }
 
   return (
-    <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-3 h-full">
+    <div className="bg-card rounded-lg border border-border p-3 h-full">
       <div className="flex items-center gap-1.5 mb-2">
-        <ArrowUpRight className="h-3 w-3 text-orange-500" />
-        <span className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+        <ArrowUpRight className="h-3 w-3 text-[hsl(var(--warning))]" />
+        <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
           Override Commissions
         </span>
       </div>
 
       <div className="grid grid-cols-2 gap-3 mb-3">
-        <div className="text-center p-2 bg-orange-50 dark:bg-orange-900/20 rounded">
-          <div className="text-lg font-bold text-orange-600 dark:text-orange-400">
+        <div className="text-center p-2 bg-muted rounded">
+          <div className="text-lg font-bold text-foreground">
             {formatNumber(summary.total_override_count)}
           </div>
-          <div className="text-[9px] text-zinc-500 uppercase">Overrides</div>
+          <div className="text-[9px] text-muted-foreground uppercase">Overrides</div>
         </div>
-        <div className="text-center p-2 bg-emerald-50 dark:bg-emerald-900/20 rounded">
-          <div className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
+        <div className="text-center p-2 bg-[hsl(var(--success))]/10 rounded">
+          <div className="text-lg font-bold text-[hsl(var(--success))]">
             {formatCurrency(summary.total_override_amount)}
           </div>
-          <div className="text-[9px] text-zinc-500 uppercase">Total</div>
+          <div className="text-[9px] text-muted-foreground uppercase">Total</div>
         </div>
       </div>
 
@@ -440,17 +440,17 @@ const AgencyOverrideSummaryPanel: React.FC = () => {
 
       {/* Top Earner */}
       {summary.top_earner_name && (
-        <div className="mt-3 p-2 bg-amber-50 dark:bg-amber-900/20 rounded border border-amber-200 dark:border-amber-800">
+        <div className="mt-3 p-2 bg-[hsl(var(--warning))]/10 rounded border border-[hsl(var(--warning))]/30">
           <div className="flex items-center gap-1 mb-1">
-            <Trophy className="h-3 w-3 text-amber-500" />
-            <span className="text-[9px] text-amber-700 dark:text-amber-400 uppercase font-semibold">
+            <Trophy className="h-3 w-3 text-[hsl(var(--warning))]" />
+            <span className="text-[9px] text-[hsl(var(--warning))] uppercase font-semibold">
               Top Override Earner
             </span>
           </div>
-          <div className="text-[11px] font-medium text-zinc-800 dark:text-zinc-200 truncate">
+          <div className="text-[11px] font-medium text-foreground truncate">
             {summary.top_earner_name}
           </div>
-          <div className="text-[10px] text-amber-600 dark:text-amber-400 font-mono">
+          <div className="text-[10px] text-[hsl(var(--warning))] font-mono">
             {formatCurrency(summary.top_earner_amount)}
           </div>
         </div>
@@ -467,11 +467,11 @@ const ProductionBreakdownPanel: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-3 h-full animate-pulse">
-        <div className="h-4 w-32 bg-zinc-200 dark:bg-zinc-700 rounded mb-3" />
+      <div className="bg-card rounded-lg border border-border p-3 h-full animate-pulse">
+        <div className="h-4 w-32 bg-muted rounded mb-3" />
         <div className="space-y-2">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-8 bg-zinc-100 dark:bg-zinc-800 rounded" />
+            <div key={i} className="h-8 bg-muted/50 rounded" />
           ))}
         </div>
       </div>
@@ -494,48 +494,48 @@ const ProductionBreakdownPanel: React.FC = () => {
   const topAgencies = agencies.slice(0, MAX_AGENCIES_DISPLAYED);
 
   return (
-    <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-3 h-full">
+    <div className="bg-card rounded-lg border border-border p-3 h-full">
       <div className="flex items-center gap-1.5 mb-3">
-        <BarChart3 className="h-3 w-3 text-violet-500" />
-        <span className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+        <BarChart3 className="h-3 w-3 text-primary" />
+        <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
           Production by Agency
         </span>
-        <span className="text-[9px] text-zinc-400 ml-auto">Top 5</span>
+        <span className="text-[9px] text-muted-foreground/70 ml-auto">Top 5</span>
       </div>
 
       <div className="space-y-2">
         {topAgencies.map((agency, index) => (
           <div
             key={agency.agency_id}
-            className="flex items-center gap-2 p-1.5 bg-zinc-50 dark:bg-zinc-800/50 rounded"
+            className="flex items-center gap-2 p-1.5 bg-muted/50 rounded"
           >
             <div
               className={cn(
                 "w-5 h-5 rounded flex items-center justify-center text-[10px] font-bold",
                 index === 0
-                  ? "bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-400"
+                  ? "bg-[hsl(var(--warning))]/20 text-[hsl(var(--warning))]"
                   : index === 1
-                    ? "bg-zinc-200 text-zinc-600 dark:bg-zinc-700 dark:text-zinc-300"
+                    ? "bg-muted text-muted-foreground"
                     : index === 2
-                      ? "bg-orange-100 text-orange-700 dark:bg-orange-900/50 dark:text-orange-400"
-                      : "bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400",
+                      ? "bg-[hsl(var(--warning))]/10 text-[hsl(var(--warning))]/80"
+                      : "bg-muted/50 text-muted-foreground/70",
               )}
             >
               {index + 1}
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-[11px] font-medium text-zinc-800 dark:text-zinc-200 truncate">
+              <div className="text-[11px] font-medium text-foreground truncate">
                 {agency.agency_name}
               </div>
-              <div className="text-[9px] text-zinc-500 truncate">
+              <div className="text-[9px] text-muted-foreground truncate">
                 {agency.owner_name} &bull; {agency.agent_count} agents
               </div>
             </div>
             <div className="text-right">
-              <div className="text-[11px] font-mono font-semibold text-zinc-900 dark:text-zinc-100">
+              <div className="text-[11px] font-mono font-semibold text-foreground">
                 {formatCurrency(agency.total_annual_premium)}
               </div>
-              <div className="text-[9px] text-zinc-400">
+              <div className="text-[9px] text-muted-foreground/70">
                 {agency.pct_of_imo_production.toFixed(1)}%
               </div>
             </div>
@@ -545,7 +545,7 @@ const ProductionBreakdownPanel: React.FC = () => {
 
       {agencies.length > MAX_AGENCIES_DISPLAYED && (
         <div className="mt-2 text-center">
-          <span className="text-[9px] text-zinc-400">
+          <span className="text-[9px] text-muted-foreground/70">
             +{agencies.length - MAX_AGENCIES_DISPLAYED} more agencies
           </span>
         </div>

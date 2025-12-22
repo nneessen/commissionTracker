@@ -11,7 +11,6 @@ import { z } from "zod";
 import { Loader2, Save, Bell, Mail, Clock } from "lucide-react";
 import { toast } from "sonner";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel } from "@/components/ui/form";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -103,257 +102,260 @@ export function NotificationPreferencesSection() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      <div className="flex items-center justify-center py-8">
+        <Loader2 className="h-4 w-4 animate-spin text-zinc-400" />
       </div>
     );
   }
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
         {/* In-App Notifications */}
-        <Card>
-          <CardHeader className="pb-3">
-            <div className="flex items-center gap-2">
-              <Bell className="h-4 w-4 text-primary" />
-              <CardTitle className="text-base">In-App Notifications</CardTitle>
+        <div className="border border-zinc-200 dark:border-zinc-700 rounded-lg p-3">
+          <div className="flex items-center gap-2 mb-3">
+            <Bell className="h-3.5 w-3.5 text-zinc-400" />
+            <div>
+              <h4 className="text-[11px] font-semibold text-zinc-900 dark:text-zinc-100">
+                In-App Notifications
+              </h4>
+              <p className="text-[10px] text-zinc-500 dark:text-zinc-400">
+                Notifications shown in the app
+              </p>
             </div>
-            <CardDescription className="text-xs">
-              Notifications shown in the app
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <FormField
-              control={form.control}
-              name="in_app_enabled"
-              render={({ field }) => (
-                <FormItem className="flex items-center justify-between rounded-lg border p-3">
-                  <div className="space-y-0.5">
-                    <FormLabel className="text-sm">Enable in-app notifications</FormLabel>
-                    <FormDescription className="text-xs">
-                      Show notification bell and dropdown
-                    </FormDescription>
-                  </div>
-                  <FormControl>
-                    <Switch checked={field.value} onCheckedChange={field.onChange} />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-          </CardContent>
-        </Card>
+          </div>
+
+          <FormField
+            control={form.control}
+            name="in_app_enabled"
+            render={({ field }) => (
+              <FormItem className="flex items-center justify-between rounded-lg border border-zinc-200 dark:border-zinc-700 p-2.5">
+                <div className="space-y-0.5">
+                  <FormLabel className="text-[11px] text-zinc-900 dark:text-zinc-100">Enable in-app notifications</FormLabel>
+                  <FormDescription className="text-[10px] text-zinc-500 dark:text-zinc-400">
+                    Show notification bell and dropdown
+                  </FormDescription>
+                </div>
+                <FormControl>
+                  <Switch checked={field.value} onCheckedChange={field.onChange} />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+        </div>
 
         {/* Email Digest */}
-        <Card>
-          <CardHeader className="pb-3">
-            <div className="flex items-center gap-2">
-              <Mail className="h-4 w-4 text-primary" />
-              <CardTitle className="text-base">Email Digest</CardTitle>
+        <div className="border border-zinc-200 dark:border-zinc-700 rounded-lg p-3">
+          <div className="flex items-center gap-2 mb-3">
+            <Mail className="h-3.5 w-3.5 text-zinc-400" />
+            <div>
+              <h4 className="text-[11px] font-semibold text-zinc-900 dark:text-zinc-100">
+                Email Digest
+              </h4>
+              <p className="text-[10px] text-zinc-500 dark:text-zinc-400">
+                Receive a summary of notifications via email
+              </p>
             </div>
-            <CardDescription className="text-xs">
-              Receive a summary of notifications via email
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <FormField
-              control={form.control}
-              name="email_digest_enabled"
-              render={({ field }) => (
-                <FormItem className="flex items-center justify-between rounded-lg border p-3">
-                  <div className="space-y-0.5">
-                    <FormLabel className="text-sm">Enable email digest</FormLabel>
-                    <FormDescription className="text-xs">
-                      Get unread notifications sent to your email
-                    </FormDescription>
-                  </div>
-                  <FormControl>
-                    <Switch checked={field.value} onCheckedChange={field.onChange} />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
+          </div>
 
-            {form.watch("email_digest_enabled") && (
-              <>
-                <Separator />
-                <div className="grid gap-3 sm:grid-cols-3">
-                  <FormField
-                    control={form.control}
-                    name="email_digest_frequency"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-xs">Frequency</FormLabel>
-                        <Select value={field.value} onValueChange={field.onChange}>
-                          <FormControl>
-                            <SelectTrigger className="h-8 text-xs">
-                              <SelectValue />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {DIGEST_FREQUENCY_OPTIONS.map((opt) => (
-                              <SelectItem key={opt.value} value={opt.value} className="text-xs">
-                                {opt.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="email_digest_time"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-xs">Delivery Time</FormLabel>
-                        <Select value={field.value} onValueChange={field.onChange}>
-                          <FormControl>
-                            <SelectTrigger className="h-8 text-xs">
-                              <SelectValue />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {TIME_OPTIONS.map((opt) => (
-                              <SelectItem key={opt.value} value={opt.value} className="text-xs">
-                                {opt.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="email_digest_timezone"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-xs">Timezone</FormLabel>
-                        <Select value={field.value} onValueChange={field.onChange}>
-                          <FormControl>
-                            <SelectTrigger className="h-8 text-xs">
-                              <SelectValue />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {TIMEZONE_OPTIONS.map((opt) => (
-                              <SelectItem key={opt.value} value={opt.value} className="text-xs">
-                                {opt.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </FormItem>
-                    )}
-                  />
+          <FormField
+            control={form.control}
+            name="email_digest_enabled"
+            render={({ field }) => (
+              <FormItem className="flex items-center justify-between rounded-lg border border-zinc-200 dark:border-zinc-700 p-2.5">
+                <div className="space-y-0.5">
+                  <FormLabel className="text-[11px] text-zinc-900 dark:text-zinc-100">Enable email digest</FormLabel>
+                  <FormDescription className="text-[10px] text-zinc-500 dark:text-zinc-400">
+                    Get unread notifications sent to your email
+                  </FormDescription>
                 </div>
-              </>
+                <FormControl>
+                  <Switch checked={field.value} onCheckedChange={field.onChange} />
+                </FormControl>
+              </FormItem>
             )}
-          </CardContent>
-        </Card>
+          />
+
+          {form.watch("email_digest_enabled") && (
+            <>
+              <Separator className="my-3" />
+              <div className="grid gap-3 sm:grid-cols-3">
+                <FormField
+                  control={form.control}
+                  name="email_digest_frequency"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-[10px] text-zinc-500 dark:text-zinc-400">Frequency</FormLabel>
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <FormControl>
+                          <SelectTrigger className="h-7 text-[11px]">
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {DIGEST_FREQUENCY_OPTIONS.map((opt) => (
+                            <SelectItem key={opt.value} value={opt.value} className="text-[11px]">
+                              {opt.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="email_digest_time"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-[10px] text-zinc-500 dark:text-zinc-400">Delivery Time</FormLabel>
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <FormControl>
+                          <SelectTrigger className="h-7 text-[11px]">
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {TIME_OPTIONS.map((opt) => (
+                            <SelectItem key={opt.value} value={opt.value} className="text-[11px]">
+                              {opt.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="email_digest_timezone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-[10px] text-zinc-500 dark:text-zinc-400">Timezone</FormLabel>
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <FormControl>
+                          <SelectTrigger className="h-7 text-[11px]">
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {TIMEZONE_OPTIONS.map((opt) => (
+                            <SelectItem key={opt.value} value={opt.value} className="text-[11px]">
+                              {opt.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </>
+          )}
+        </div>
 
         {/* Quiet Hours */}
-        <Card>
-          <CardHeader className="pb-3">
-            <div className="flex items-center gap-2">
-              <Clock className="h-4 w-4 text-primary" />
-              <CardTitle className="text-base">Quiet Hours</CardTitle>
+        <div className="border border-zinc-200 dark:border-zinc-700 rounded-lg p-3">
+          <div className="flex items-center gap-2 mb-3">
+            <Clock className="h-3.5 w-3.5 text-zinc-400" />
+            <div>
+              <h4 className="text-[11px] font-semibold text-zinc-900 dark:text-zinc-100">
+                Quiet Hours
+              </h4>
+              <p className="text-[10px] text-zinc-500 dark:text-zinc-400">
+                Pause notifications during specified hours
+              </p>
             </div>
-            <CardDescription className="text-xs">
-              Pause notifications during specified hours
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <FormField
-              control={form.control}
-              name="quiet_hours_enabled"
-              render={({ field }) => (
-                <FormItem className="flex items-center justify-between rounded-lg border p-3">
-                  <div className="space-y-0.5">
-                    <FormLabel className="text-sm">Enable quiet hours</FormLabel>
-                    <FormDescription className="text-xs">
-                      Suppress notifications during these hours
-                    </FormDescription>
-                  </div>
-                  <FormControl>
-                    <Switch checked={field.value} onCheckedChange={field.onChange} />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
+          </div>
 
-            {form.watch("quiet_hours_enabled") && (
-              <>
-                <Separator />
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <FormField
-                    control={form.control}
-                    name="quiet_hours_start"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-xs">Start Time</FormLabel>
-                        <Select value={field.value} onValueChange={field.onChange}>
-                          <FormControl>
-                            <SelectTrigger className="h-8 text-xs">
-                              <SelectValue />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {TIME_OPTIONS.map((opt) => (
-                              <SelectItem key={opt.value} value={opt.value} className="text-xs">
-                                {opt.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="quiet_hours_end"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-xs">End Time</FormLabel>
-                        <Select value={field.value} onValueChange={field.onChange}>
-                          <FormControl>
-                            <SelectTrigger className="h-8 text-xs">
-                              <SelectValue />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {TIME_OPTIONS.map((opt) => (
-                              <SelectItem key={opt.value} value={opt.value} className="text-xs">
-                                {opt.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </FormItem>
-                    )}
-                  />
+          <FormField
+            control={form.control}
+            name="quiet_hours_enabled"
+            render={({ field }) => (
+              <FormItem className="flex items-center justify-between rounded-lg border border-zinc-200 dark:border-zinc-700 p-2.5">
+                <div className="space-y-0.5">
+                  <FormLabel className="text-[11px] text-zinc-900 dark:text-zinc-100">Enable quiet hours</FormLabel>
+                  <FormDescription className="text-[10px] text-zinc-500 dark:text-zinc-400">
+                    Suppress notifications during these hours
+                  </FormDescription>
                 </div>
-              </>
+                <FormControl>
+                  <Switch checked={field.value} onCheckedChange={field.onChange} />
+                </FormControl>
+              </FormItem>
             )}
-          </CardContent>
-        </Card>
+          />
+
+          {form.watch("quiet_hours_enabled") && (
+            <>
+              <Separator className="my-3" />
+              <div className="grid gap-3 sm:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="quiet_hours_start"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-[10px] text-zinc-500 dark:text-zinc-400">Start Time</FormLabel>
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <FormControl>
+                          <SelectTrigger className="h-7 text-[11px]">
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {TIME_OPTIONS.map((opt) => (
+                            <SelectItem key={opt.value} value={opt.value} className="text-[11px]">
+                              {opt.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="quiet_hours_end"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-[10px] text-zinc-500 dark:text-zinc-400">End Time</FormLabel>
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <FormControl>
+                          <SelectTrigger className="h-7 text-[11px]">
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {TIME_OPTIONS.map((opt) => (
+                            <SelectItem key={opt.value} value={opt.value} className="text-[11px]">
+                              {opt.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </>
+          )}
+        </div>
 
         {/* Save Button */}
-        <div className="flex justify-end">
+        <div className="flex justify-end pt-2">
           <Button
             type="submit"
             size="sm"
             disabled={updatePreferences.isPending || !form.formState.isDirty}
-            className="gap-2"
+            className="h-7 text-[10px] gap-1"
           >
             {updatePreferences.isPending ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <Loader2 className="h-3 w-3 animate-spin" />
             ) : (
-              <Save className="h-4 w-4" />
+              <Save className="h-3 w-3" />
             )}
             Save Preferences
           </Button>

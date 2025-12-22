@@ -1,7 +1,8 @@
 // src/features/hierarchy/HierarchyDashboardCompact.tsx
 
 import { useState, useEffect, useMemo } from "react";
-import { Download, UserPlus, Search, Filter, AlertCircle } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
+import { Download, UserPlus, Search, Filter, AlertCircle, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -39,6 +40,7 @@ interface TeamFilters {
 
 export function HierarchyDashboardCompact() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { data: downlinesRaw = [], isLoading: downlinesLoading } =
     useMyDownlines();
   const { data: stats, isLoading: statsLoading } = useMyHierarchyStats();
@@ -158,6 +160,15 @@ export function HierarchyDashboardCompact() {
             </div>
           </div>
           <div className="flex items-center gap-1">
+            <Button
+              onClick={() => navigate({ to: '/hierarchy/org-chart' })}
+              variant="ghost"
+              size="sm"
+              className="h-6 px-2 text-[10px] text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
+            >
+              <Building2 className="h-3 w-3 mr-1" />
+              Org Chart
+            </Button>
             <Button
               onClick={handleExportCSV}
               variant="ghost"

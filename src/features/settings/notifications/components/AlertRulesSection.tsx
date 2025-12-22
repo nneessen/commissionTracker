@@ -19,7 +19,6 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
@@ -109,61 +108,64 @@ export function AlertRulesSection() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      <div className="flex items-center justify-center py-8">
+        <Loader2 className="h-4 w-4 animate-spin text-zinc-400" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-sm font-medium">Custom Alert Rules</h3>
-          <p className="text-xs text-muted-foreground">
+          <h4 className="text-[11px] font-semibold text-zinc-900 dark:text-zinc-100">Custom Alert Rules</h4>
+          <p className="text-[10px] text-zinc-500 dark:text-zinc-400">
             Set up alerts for business metrics that matter to you
           </p>
         </div>
-        <Button size="sm" className="gap-2" onClick={() => setCreateDialogOpen(true)}>
-          <Plus className="h-4 w-4" />
+        <Button size="sm" className="h-7 text-[10px] gap-1" onClick={() => setCreateDialogOpen(true)}>
+          <Plus className="h-3 w-3" />
           New Alert Rule
         </Button>
       </div>
 
       {/* Rules List */}
       {!rules || rules.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <AlertTriangle className="h-10 w-10 text-muted-foreground mb-3" />
-            <p className="text-sm font-medium">No alert rules configured</p>
-            <p className="text-xs text-muted-foreground mb-4">
+        <div className="border border-zinc-200 dark:border-zinc-700 rounded-lg p-6">
+          <div className="flex flex-col items-center justify-center">
+            <AlertTriangle className="h-8 w-8 text-zinc-300 dark:text-zinc-600 mb-2" />
+            <p className="text-[11px] font-medium text-zinc-900 dark:text-zinc-100">No alert rules configured</p>
+            <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mb-3">
               Create rules to get notified about important changes
             </p>
-            <Button size="sm" variant="outline" onClick={() => setCreateDialogOpen(true)}>
+            <Button size="sm" variant="outline" className="h-6 text-[10px]" onClick={() => setCreateDialogOpen(true)}>
               Create your first rule
             </Button>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       ) : (
         <div className="space-y-2">
           {rules.map((rule) => (
-            <Card key={rule.id} className={!rule.is_active ? "opacity-60" : ""}>
-              <CardHeader className="py-3 px-4">
-                <div className="flex items-start justify-between gap-4">
+            <div
+              key={rule.id}
+              className={`border border-zinc-200 dark:border-zinc-700 rounded-lg ${!rule.is_active ? "opacity-60" : ""}`}
+            >
+              <div className="p-3">
+                <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <CardTitle className="text-sm truncate">{rule.name}</CardTitle>
+                      <span className="text-[11px] font-semibold text-zinc-900 dark:text-zinc-100 truncate">{rule.name}</span>
                       <Badge
                         variant={rule.is_active ? "default" : "secondary"}
-                        className="text-[10px] h-5"
+                        className="text-[9px] h-4 px-1"
                       >
                         {rule.is_active ? "Active" : "Disabled"}
                       </Badge>
                     </div>
-                    <CardDescription className="text-xs mt-1">
+                    <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-0.5">
                       {METRIC_LABELS[rule.metric]} {formatThreshold(rule)}
-                    </CardDescription>
+                    </p>
                   </div>
 
                   <div className="flex items-center gap-2">
@@ -174,47 +176,48 @@ export function AlertRulesSection() {
                     />
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <MoreHorizontal className="h-4 w-4" />
+                        <Button variant="ghost" size="icon" className="h-6 w-6">
+                          <MoreHorizontal className="h-3.5 w-3.5" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => setEditingRule(rule)}>
-                          <Pencil className="h-4 w-4 mr-2" />
+                        <DropdownMenuItem onClick={() => setEditingRule(rule)} className="text-xs">
+                          <Pencil className="h-3.5 w-3.5 mr-2" />
                           Edit
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setHistoryRule(rule)}>
-                          <History className="h-4 w-4 mr-2" />
+                        <DropdownMenuItem onClick={() => setHistoryRule(rule)} className="text-xs">
+                          <History className="h-3.5 w-3.5 mr-2" />
                           View History
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleToggleActive(rule)}>
+                        <DropdownMenuItem onClick={() => handleToggleActive(rule)} className="text-xs">
                           {rule.is_active ? (
                             <>
-                              <PowerOff className="h-4 w-4 mr-2" />
+                              <PowerOff className="h-3.5 w-3.5 mr-2" />
                               Disable
                             </>
                           ) : (
                             <>
-                              <Power className="h-4 w-4 mr-2" />
+                              <Power className="h-3.5 w-3.5 mr-2" />
                               Enable
                             </>
                           )}
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
-                          className="text-destructive"
+                          className="text-xs text-red-600 dark:text-red-400"
                           onClick={() => setDeleteConfirmRule(rule)}
                         >
-                          <Trash2 className="h-4 w-4 mr-2" />
+                          <Trash2 className="h-3.5 w-3.5 mr-2" />
                           Delete
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
                 </div>
-              </CardHeader>
-              <CardContent className="py-2 px-4 border-t bg-muted/30">
-                <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+              </div>
+
+              <div className="px-3 py-2 border-t border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/50 rounded-b-lg">
+                <div className="flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-zinc-500 dark:text-zinc-400">
                   <span>Scope: {getScopeLabel(rule)}</span>
                   <span>
                     Notify: {[rule.notify_in_app && "In-app", rule.notify_email && "Email"]
@@ -231,8 +234,8 @@ export function AlertRulesSection() {
                     </span>
                   )}
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           ))}
         </div>
       )}

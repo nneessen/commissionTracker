@@ -36,6 +36,7 @@ import {
 } from "./features/hierarchy";
 import { HierarchyDashboardCompact } from "./features/hierarchy/HierarchyDashboardCompact";
 import { AgentDetailPage } from "./features/hierarchy/AgentDetailPage";
+import { OrgChartPage } from "./features/hierarchy/OrgChartPage";
 import { RecruitingDashboard } from "./features/recruiting/RecruitingDashboard";
 import { PipelineAdminPage } from "./features/recruiting/admin/PipelineAdminPage";
 import { MyRecruitingPipeline } from "./features/recruiting/pages/MyRecruitingPipeline";
@@ -340,6 +341,21 @@ const agentDetailRoute = createRoute({
   ),
 });
 
+// Phase 12A: Org Chart route - Interactive organization visualization
+const orgChartRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "hierarchy/org-chart",
+  component: () => (
+    <RouteGuard
+      permission="nav.team_dashboard"
+      noRecruits
+      subscriptionFeature="hierarchy"
+    >
+      <OrgChartPage />
+    </RouteGuard>
+  ),
+});
+
 // Recruiting route - requires approval, blocks recruits (admin/recruiter view), requires recruiting subscription feature
 const recruitingRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -429,6 +445,7 @@ const routeTree = rootRoute.addChildren([
   hierarchyDownlinesRoute,
   hierarchyManageRoute,
   agentDetailRoute,
+  orgChartRoute,
   recruitingRoute,
   recruitingAdminRoute,
   myPipelineRoute,

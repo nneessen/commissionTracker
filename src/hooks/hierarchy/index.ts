@@ -7,6 +7,15 @@ export { useDownlinePerformance } from './useDownlinePerformance';
 export { useAllDownlinePerformance } from './useAllDownlinePerformance';
 export { useMyHierarchyStats } from './useMyHierarchyStats';
 
+// Phase 12A: Org chart visualization
+export {
+  useOrgChart,
+  useFlatOrgChart,
+  flattenOrgChart,
+  findNodeById,
+  getPathToNode,
+} from './useOrgChart';
+
 // Agent detail hooks
 export { useAgentDetails } from './useAgentDetails';
 export { useAgentPolicies } from './useAgentPolicies';
@@ -40,3 +49,4 @@ export type { UseAgentPoliciesOptions } from './useAgentPolicies';
 export type { UseAgentCommissionsOptions } from './useAgentCommissions';
 export type { UseAgentOverridesOptions } from './useAgentOverrides';
 export type { UseTeamComparisonOptions } from './useTeamComparison';
+export type { UseOrgChartOptions } from './useOrgChart';

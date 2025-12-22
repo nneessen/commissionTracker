@@ -1,6 +1,5 @@
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
   Clock,
@@ -24,25 +23,25 @@ const statusConfig = {
     icon: Clock,
     label: 'Pending',
     variant: 'outline' as const,
-    color: 'text-yellow-600',
+    color: 'text-amber-600 dark:text-amber-400',
   },
   approved: {
     icon: CheckCircle2,
     label: 'Approved',
     variant: 'default' as const,
-    color: 'text-green-600',
+    color: 'text-green-600 dark:text-green-400',
   },
   rejected: {
     icon: XCircle,
     label: 'Rejected',
     variant: 'destructive' as const,
-    color: 'text-red-600',
+    color: 'text-red-600 dark:text-red-400',
   },
   cancelled: {
     icon: Ban,
     label: 'Cancelled',
     variant: 'secondary' as const,
-    color: 'text-muted-foreground',
+    color: 'text-zinc-500 dark:text-zinc-400',
   },
 };
 
@@ -69,58 +68,60 @@ function RequestCard({ request }: { request: JoinRequest }) {
   };
 
   return (
-    <Card>
-      <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-sm font-medium flex items-center gap-2">
-            <StatusIcon className={`h-4 w-4 ${config.color}`} />
+    <div className="border border-zinc-200 dark:border-zinc-700 rounded-lg p-3">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <StatusIcon className={`h-3.5 w-3.5 ${config.color}`} />
+          <span className="text-[11px] font-semibold text-zinc-900 dark:text-zinc-100">
             Join Request
-          </CardTitle>
-          <Badge variant={config.variant} className="text-xs">
-            {config.label}
-          </Badge>
+          </span>
         </div>
-      </CardHeader>
-      <CardContent className="space-y-3">
+        <Badge variant={config.variant} className="text-[10px] h-5 px-1.5">
+          {config.label}
+        </Badge>
+      </div>
+
+      <div className="space-y-2">
         {/* IMO */}
-        <div className="flex items-center gap-2 text-sm">
-          <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
-          <span className="text-muted-foreground">IMO:</span>
-          <span className="font-medium">{request.imo?.name || 'Unknown'}</span>
+        <div className="flex items-center gap-2 text-[11px]">
+          <Building2 className="h-3 w-3 text-zinc-400" />
+          <span className="text-zinc-500 dark:text-zinc-400">IMO:</span>
+          <span className="font-medium text-zinc-900 dark:text-zinc-100">{request.imo?.name || 'Unknown'}</span>
         </div>
 
         {/* Agency */}
         {request.agency && (
-          <div className="flex items-center gap-2 text-sm">
-            <Users className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="text-muted-foreground">Agency:</span>
-            <span className="font-medium">{request.agency.name}</span>
+          <div className="flex items-center gap-2 text-[11px]">
+            <Users className="h-3 w-3 text-zinc-400" />
+            <span className="text-zinc-500 dark:text-zinc-400">Agency:</span>
+            <span className="font-medium text-zinc-900 dark:text-zinc-100">{request.agency.name}</span>
           </div>
         )}
 
         {/* Approver */}
-        <div className="flex items-center gap-2 text-sm">
-          <User className="h-3.5 w-3.5 text-muted-foreground" />
-          <span className="text-muted-foreground">Reviewed by:</span>
-          <span className="font-medium">{formatUserName(request.approver)}</span>
+        <div className="flex items-center gap-2 text-[11px]">
+          <User className="h-3 w-3 text-zinc-400" />
+          <span className="text-zinc-500 dark:text-zinc-400">Reviewed by:</span>
+          <span className="font-medium text-zinc-900 dark:text-zinc-100">{formatUserName(request.approver)}</span>
         </div>
 
         {/* Message */}
         {request.message && (
-          <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded">
+          <div className="text-[10px] text-zinc-500 dark:text-zinc-400 bg-zinc-50 dark:bg-zinc-800/50 p-2 rounded">
             "{request.message}"
           </div>
         )}
 
         {/* Rejection Reason */}
         {request.status === 'rejected' && request.rejection_reason && (
-          <div className="text-xs text-red-600 bg-red-50 p-2 rounded border border-red-200">
+          <div className="text-[10px] text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30 p-2 rounded border border-red-200 dark:border-red-800">
             <span className="font-medium">Reason:</span> {request.rejection_reason}
           </div>
         )}
 
         {/* Timestamps */}
-        <div className="text-xs text-muted-foreground">
+        <div className="text-[10px] text-zinc-400 dark:text-zinc-500">
           Requested: {new Date(request.requested_at).toLocaleDateString()}
           {request.reviewed_at && (
             <> · Reviewed: {new Date(request.reviewed_at).toLocaleDateString()}</>
@@ -134,7 +135,7 @@ function RequestCard({ request }: { request: JoinRequest }) {
             size="sm"
             onClick={handleCancel}
             disabled={cancelRequest.isPending}
-            className="w-full h-7 text-xs"
+            className="w-full h-6 text-[10px] mt-2"
           >
             {cancelRequest.isPending ? (
               <Loader2 className="h-3 w-3 animate-spin mr-1" />
@@ -144,8 +145,8 @@ function RequestCard({ request }: { request: JoinRequest }) {
             Cancel Request
           </Button>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
 
@@ -155,12 +156,12 @@ export function MyJoinRequestStatus() {
 
   if (pendingLoading || allLoading) {
     return (
-      <Card>
-        <CardContent className="py-8 text-center text-sm text-muted-foreground">
-          <Loader2 className="h-4 w-4 animate-spin mx-auto mb-2" />
+      <div className="border border-zinc-200 dark:border-zinc-700 rounded-lg p-4">
+        <div className="flex items-center justify-center text-[11px] text-zinc-500 dark:text-zinc-400">
+          <Loader2 className="h-3.5 w-3.5 animate-spin mr-2" />
           Loading...
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     );
   }
 

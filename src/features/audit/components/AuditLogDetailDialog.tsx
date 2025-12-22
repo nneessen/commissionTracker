@@ -49,8 +49,8 @@ function JsonDataView({
   if (!data || typeof data !== 'object' || Array.isArray(data)) {
     return (
       <div className="space-y-2">
-        <h4 className="text-[11px] font-medium text-zinc-500">{title}</h4>
-        <p className="text-xs text-zinc-400 italic">No data</p>
+        <h4 className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400">{title}</h4>
+        <p className="text-xs text-zinc-400 dark:text-zinc-500 italic">No data</p>
       </div>
     );
   }
@@ -64,15 +64,15 @@ function JsonDataView({
   if (entries.length === 0) {
     return (
       <div className="space-y-2">
-        <h4 className="text-[11px] font-medium text-zinc-500">{title}</h4>
-        <p className="text-xs text-zinc-400 italic">No data</p>
+        <h4 className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400">{title}</h4>
+        <p className="text-xs text-zinc-400 dark:text-zinc-500 italic">No data</p>
       </div>
     );
   }
 
   return (
     <div className="space-y-2">
-      <h4 className="text-[11px] font-medium text-zinc-500">{title}</h4>
+      <h4 className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400">{title}</h4>
       <div className="space-y-1">
         {entries.map(([key, value]) => {
           const isChanged = changedFields?.includes(key);
@@ -87,7 +87,7 @@ function JsonDataView({
               key={key}
               className={`flex items-start gap-2 px-2 py-1 rounded ${highlightClass}`}
             >
-              <span className="text-[10px] text-zinc-500 font-medium min-w-[120px]">
+              <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-medium min-w-[120px]">
                 {formatSnakeCase(key)}:
               </span>
               <span className="text-[11px] text-zinc-700 dark:text-zinc-300 break-all">
@@ -166,7 +166,7 @@ export function AuditLogDetailDialog({
           </div>
         ) : !log ? (
           <div className="py-8 text-center">
-            <p className="text-sm text-zinc-500">Audit log not found</p>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400">Audit log not found</p>
           </div>
         ) : (
           <ScrollArea className="max-h-[60vh] pr-4">
@@ -174,15 +174,15 @@ export function AuditLogDetailDialog({
               {/* Header Info */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <p className="text-[10px] text-zinc-500 uppercase tracking-wider">
+                  <p className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
                     Table
                   </p>
-                  <p className="text-sm font-medium">
+                  <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
                     {formatTableName(log.tableName)}
                   </p>
                 </div>
                 <div className="space-y-1">
-                  <p className="text-[10px] text-zinc-500 uppercase tracking-wider">
+                  <p className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
                     Action
                   </p>
                   <Badge
@@ -193,30 +193,30 @@ export function AuditLogDetailDialog({
                   </Badge>
                 </div>
                 <div className="space-y-1">
-                  <p className="text-[10px] text-zinc-500 uppercase tracking-wider">
+                  <p className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
                     Action Type
                   </p>
-                  <p className="text-sm">{formatActionType(log.actionType)}</p>
+                  <p className="text-sm text-zinc-900 dark:text-zinc-100">{formatActionType(log.actionType)}</p>
                 </div>
                 <div className="space-y-1">
-                  <p className="text-[10px] text-zinc-500 uppercase tracking-wider">
+                  <p className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
                     Performed By
                   </p>
-                  <p className="text-sm">
+                  <p className="text-sm text-zinc-900 dark:text-zinc-100">
                     {formatPerformer(log.performedByName, log.performedByEmail)}
                   </p>
                 </div>
                 <div className="space-y-1">
-                  <p className="text-[10px] text-zinc-500 uppercase tracking-wider">
+                  <p className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
                     Date & Time
                   </p>
-                  <p className="text-sm">{formatDateTime(log.createdAt)}</p>
+                  <p className="text-sm text-zinc-900 dark:text-zinc-100">{formatDateTime(log.createdAt)}</p>
                 </div>
                 <div className="space-y-1">
-                  <p className="text-[10px] text-zinc-500 uppercase tracking-wider">
+                  <p className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
                     Record ID
                   </p>
-                  <p className="text-xs font-mono text-zinc-500 truncate">
+                  <p className="text-xs font-mono text-zinc-500 dark:text-zinc-400 truncate">
                     {log.recordId}
                   </p>
                 </div>
@@ -227,7 +227,7 @@ export function AuditLogDetailDialog({
                 <>
                   <Separator />
                   <div className="space-y-2">
-                    <p className="text-[10px] text-zinc-500 uppercase tracking-wider">
+                    <p className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
                       Changed Fields
                     </p>
                     <div className="flex flex-wrap gap-1">
@@ -278,17 +278,17 @@ export function AuditLogDetailDialog({
                 <>
                   <Separator />
                   <div className="space-y-2">
-                    <p className="text-[10px] text-zinc-500 uppercase tracking-wider">
+                    <p className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
                       Description
                     </p>
-                    <p className="text-sm">{log.description}</p>
+                    <p className="text-sm text-zinc-900 dark:text-zinc-100">{log.description}</p>
                   </div>
                 </>
               )}
 
               {/* Source */}
               <Separator />
-              <div className="flex items-center justify-between text-xs text-zinc-500">
+              <div className="flex items-center justify-between text-xs text-zinc-500 dark:text-zinc-400">
                 <span>
                   Source: {log.source === 'trigger' ? 'Database Trigger' : 'Application'}
                 </span>

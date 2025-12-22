@@ -317,7 +317,7 @@ export const DashboardHome: React.FC = () => {
 
         {/* Main Content */}
         <div className="flex-1 overflow-auto">
-          <div className="max-w-7xl mx-auto space-y-2">
+          <div className="space-y-2">
             {/* Main 3-column layout - stacks on mobile, 2-col on md, 3-col on lg */}
             <div className="grid gap-2 grid-cols-1 md:grid-cols-2 lg:grid-cols-[260px_1fr_280px]">
               <QuickStatsPanel stats={statsConfig} timePeriod={timePeriod} />

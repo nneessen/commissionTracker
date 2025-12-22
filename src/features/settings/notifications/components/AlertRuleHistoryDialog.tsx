@@ -85,7 +85,7 @@ export function AlertRuleHistoryDialog({
                       {evaluation.triggered ? (
                         <XCircle className="h-4 w-4 text-destructive shrink-0" />
                       ) : (
-                        <CheckCircle2 className="h-4 w-4 text-green-600 shrink-0" />
+                        <CheckCircle2 className="h-4 w-4 text-[hsl(var(--success))] shrink-0" />
                       )}
                       <div>
                         <div className="text-sm font-medium">

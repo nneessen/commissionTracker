@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import {
@@ -51,23 +50,23 @@ interface RequestRowProps {
 
 function RequestRow({ request, onApprove, onReject }: RequestRowProps) {
   return (
-    <div className="border rounded-lg p-3 space-y-2">
+    <div className="border border-zinc-200 dark:border-zinc-700 rounded-lg p-2.5 space-y-2 hover:bg-zinc-50 dark:hover:bg-zinc-800/50">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <User className="h-4 w-4 text-muted-foreground" />
-          <span className="font-medium text-sm">
+          <User className="h-3.5 w-3.5 text-zinc-400" />
+          <span className="font-medium text-[11px] text-zinc-900 dark:text-zinc-100">
             {formatUserName(request.requester)}
           </span>
         </div>
-        <Badge variant="outline" className="text-xs">
-          <Clock className="h-3 w-3 mr-1" />
+        <Badge variant="outline" className="text-[10px] h-5 px-1.5">
+          <Clock className="h-2.5 w-2.5 mr-1" />
           {formatDate(request.requested_at)}
         </Badge>
       </div>
 
       {/* Details */}
-      <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+      <div className="grid grid-cols-2 gap-2 text-[10px] text-zinc-500 dark:text-zinc-400">
         <div className="flex items-center gap-1">
           <Building2 className="h-3 w-3" />
           <span>{request.imo?.name || 'Unknown IMO'}</span>
@@ -82,9 +81,9 @@ function RequestRow({ request, onApprove, onReject }: RequestRowProps) {
 
       {/* Message */}
       {request.message && (
-        <div className="flex items-start gap-1 text-xs bg-muted/50 p-2 rounded">
-          <MessageSquare className="h-3 w-3 mt-0.5 shrink-0" />
-          <span className="italic">"{request.message}"</span>
+        <div className="flex items-start gap-1 text-[10px] bg-zinc-50 dark:bg-zinc-800/50 p-2 rounded">
+          <MessageSquare className="h-3 w-3 mt-0.5 shrink-0 text-zinc-400" />
+          <span className="italic text-zinc-600 dark:text-zinc-300">"{request.message}"</span>
         </div>
       )}
 
@@ -93,7 +92,7 @@ function RequestRow({ request, onApprove, onReject }: RequestRowProps) {
         <Button
           size="sm"
           variant="default"
-          className="flex-1 h-7 text-xs"
+          className="flex-1 h-6 text-[10px]"
           onClick={() => onApprove(request)}
         >
           <CheckCircle2 className="h-3 w-3 mr-1" />
@@ -102,7 +101,7 @@ function RequestRow({ request, onApprove, onReject }: RequestRowProps) {
         <Button
           size="sm"
           variant="outline"
-          className="flex-1 h-7 text-xs"
+          className="flex-1 h-6 text-[10px]"
           onClick={() => onReject(request)}
         >
           <XCircle className="h-3 w-3 mr-1" />
@@ -159,47 +158,50 @@ export function PendingJoinApprovalsList() {
 
   if (isLoading) {
     return (
-      <Card>
-        <CardContent className="py-8 text-center text-sm text-muted-foreground">
-          <Loader2 className="h-4 w-4 animate-spin mx-auto mb-2" />
+      <div className="border border-zinc-200 dark:border-zinc-700 rounded-lg p-4">
+        <div className="flex items-center justify-center text-[11px] text-zinc-500 dark:text-zinc-400">
+          <Loader2 className="h-3.5 w-3.5 animate-spin mr-2" />
           Loading pending approvals...
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     );
   }
 
   if (!requests?.length) {
     return (
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base flex items-center gap-2">
-            <Users className="h-4 w-4" />
+      <div className="border border-zinc-200 dark:border-zinc-700 rounded-lg p-3">
+        <div className="flex items-center gap-2 mb-2">
+          <Users className="h-3.5 w-3.5 text-zinc-400" />
+          <span className="text-[11px] font-semibold text-zinc-900 dark:text-zinc-100">
             Pending Join Requests
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="py-4 text-center text-sm text-muted-foreground">
+          </span>
+        </div>
+        <p className="text-center text-[11px] text-zinc-500 dark:text-zinc-400 py-2">
           No pending requests to review
-        </CardContent>
-      </Card>
+        </p>
+      </div>
     );
   }
 
   return (
     <>
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base flex items-center gap-2">
-            <Users className="h-4 w-4" />
-            Pending Join Requests
-            <Badge variant="secondary" className="text-xs ml-auto">
-              {requests.length}
-            </Badge>
-          </CardTitle>
-          <CardDescription className="text-xs">
-            Review and approve new user requests to join your organization
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
+      <div className="border border-zinc-200 dark:border-zinc-700 rounded-lg p-3">
+        <div className="flex items-center gap-2 mb-3">
+          <Users className="h-3.5 w-3.5 text-zinc-400" />
+          <div className="flex-1">
+            <span className="text-[11px] font-semibold text-zinc-900 dark:text-zinc-100">
+              Pending Join Requests
+            </span>
+            <p className="text-[10px] text-zinc-500 dark:text-zinc-400">
+              Review and approve new user requests
+            </p>
+          </div>
+          <Badge variant="secondary" className="text-[10px] h-5 px-1.5">
+            {requests.length}
+          </Badge>
+        </div>
+
+        <div className="space-y-2">
           {requests.map((request) => (
             <RequestRow
               key={request.id}
@@ -208,8 +210,8 @@ export function PendingJoinApprovalsList() {
               onReject={handleRejectClick}
             />
           ))}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Reject Dialog */}
       <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>

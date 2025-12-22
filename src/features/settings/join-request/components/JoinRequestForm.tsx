@@ -10,7 +10,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Loader2, Send, Building2, Users } from 'lucide-react';
 import {
   useAvailableImos,
@@ -69,113 +68,115 @@ export function JoinRequestForm({ onSuccess }: JoinRequestFormProps) {
   const selectedImo = imos?.find((i) => i.id === selectedImoId);
 
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base flex items-center gap-2">
-          <Send className="h-4 w-4" />
-          Request to Join
-        </CardTitle>
-        <CardDescription className="text-xs">
-          Select an organization to join. Your request will be reviewed by an administrator.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* IMO Selection */}
+    <div className="border border-zinc-200 dark:border-zinc-700 rounded-lg p-3">
+      <div className="flex items-center gap-2 mb-3">
+        <Send className="h-3.5 w-3.5 text-zinc-400" />
+        <div>
+          <h4 className="text-[11px] font-semibold text-zinc-900 dark:text-zinc-100">
+            Request to Join
+          </h4>
+          <p className="text-[10px] text-zinc-500 dark:text-zinc-400">
+            Select an organization to join
+          </p>
+        </div>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-3">
+        {/* IMO Selection */}
+        <div className="space-y-1.5">
+          <Label htmlFor="imo" className="text-[11px] text-zinc-500 dark:text-zinc-400">
+            <Building2 className="h-3 w-3 inline mr-1" />
+            Select IMO *
+          </Label>
+          <Select value={selectedImoId} onValueChange={handleImoChange}>
+            <SelectTrigger id="imo" className="h-7 text-[11px]">
+              <SelectValue placeholder={imosLoading ? 'Loading...' : 'Select an IMO'} />
+            </SelectTrigger>
+            <SelectContent>
+              {imos?.map((imo) => (
+                <SelectItem key={imo.id} value={imo.id} className="text-[11px]">
+                  <span className="font-medium">{imo.name}</span>
+                  <span className="text-zinc-500 dark:text-zinc-400 ml-2">({imo.code})</span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {selectedImo?.description && (
+            <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-1">
+              {selectedImo.description}
+            </p>
+          )}
+        </div>
+
+        {/* Agency Selection (Optional) */}
+        {selectedImoId && (
           <div className="space-y-1.5">
-            <Label htmlFor="imo" className="text-xs font-medium">
-              <Building2 className="h-3 w-3 inline mr-1" />
-              Select IMO *
+            <Label htmlFor="agency" className="text-[11px] text-zinc-500 dark:text-zinc-400">
+              <Users className="h-3 w-3 inline mr-1" />
+              Select Agency (Optional)
             </Label>
-            <Select value={selectedImoId} onValueChange={handleImoChange}>
-              <SelectTrigger id="imo" className="h-8 text-sm">
-                <SelectValue placeholder={imosLoading ? 'Loading...' : 'Select an IMO'} />
+            <Select value={selectedAgencyId} onValueChange={handleAgencyChange}>
+              <SelectTrigger id="agency" className="h-7 text-[11px]">
+                <SelectValue
+                  placeholder={
+                    agenciesLoading
+                      ? 'Loading...'
+                      : agencies?.length
+                      ? 'Select an agency'
+                      : 'No agencies available'
+                  }
+                />
               </SelectTrigger>
               <SelectContent>
-                {imos?.map((imo) => (
-                  <SelectItem key={imo.id} value={imo.id} className="text-sm">
-                    <span className="font-medium">{imo.name}</span>
-                    <span className="text-muted-foreground ml-2">({imo.code})</span>
+                <SelectItem value="__none__" className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                  No specific agency
+                </SelectItem>
+                {agencies?.map((agency) => (
+                  <SelectItem key={agency.id} value={agency.id} className="text-[11px]">
+                    <span className="font-medium">{agency.name}</span>
+                    <span className="text-zinc-500 dark:text-zinc-400 ml-2">({agency.code})</span>
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            {selectedImo?.description && (
-              <p className="text-xs text-muted-foreground mt-1">
-                {selectedImo.description}
-              </p>
-            )}
           </div>
+        )}
 
-          {/* Agency Selection (Optional) */}
-          {selectedImoId && (
-            <div className="space-y-1.5">
-              <Label htmlFor="agency" className="text-xs font-medium">
-                <Users className="h-3 w-3 inline mr-1" />
-                Select Agency (Optional)
-              </Label>
-              <Select value={selectedAgencyId} onValueChange={handleAgencyChange}>
-                <SelectTrigger id="agency" className="h-8 text-sm">
-                  <SelectValue
-                    placeholder={
-                      agenciesLoading
-                        ? 'Loading...'
-                        : agencies?.length
-                        ? 'Select an agency'
-                        : 'No agencies available'
-                    }
-                  />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__none__" className="text-sm text-muted-foreground">
-                    No specific agency
-                  </SelectItem>
-                  {agencies?.map((agency) => (
-                    <SelectItem key={agency.id} value={agency.id} className="text-sm">
-                      <span className="font-medium">{agency.name}</span>
-                      <span className="text-muted-foreground ml-2">({agency.code})</span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+        {/* Message */}
+        <div className="space-y-1.5">
+          <Label htmlFor="message" className="text-[11px] text-zinc-500 dark:text-zinc-400">
+            Message (Optional)
+          </Label>
+          <Textarea
+            id="message"
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            placeholder="Tell them a bit about yourself..."
+            className="text-[11px] resize-none"
+            rows={3}
+          />
+        </div>
+
+        {/* Submit */}
+        <Button
+          type="submit"
+          disabled={!selectedImoId || createRequest.isPending}
+          size="sm"
+          className="w-full h-7 text-[10px]"
+        >
+          {createRequest.isPending ? (
+            <>
+              <Loader2 className="h-3 w-3 animate-spin mr-1" />
+              Submitting...
+            </>
+          ) : (
+            <>
+              <Send className="h-3 w-3 mr-1" />
+              Submit Request
+            </>
           )}
-
-          {/* Message */}
-          <div className="space-y-1.5">
-            <Label htmlFor="message" className="text-xs font-medium">
-              Message (Optional)
-            </Label>
-            <Textarea
-              id="message"
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              placeholder="Tell them a bit about yourself..."
-              className="text-sm resize-none"
-              rows={3}
-            />
-          </div>
-
-          {/* Submit */}
-          <Button
-            type="submit"
-            disabled={!selectedImoId || createRequest.isPending}
-            className="w-full h-8 text-sm"
-          >
-            {createRequest.isPending ? (
-              <>
-                <Loader2 className="h-3 w-3 animate-spin mr-1" />
-                Submitting...
-              </>
-            ) : (
-              <>
-                <Send className="h-3 w-3 mr-1" />
-                Submit Request
-              </>
-            )}
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
+        </Button>
+      </form>
+    </div>
   );
 }

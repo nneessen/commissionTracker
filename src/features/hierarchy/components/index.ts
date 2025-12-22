@@ -5,3 +5,6 @@ export { OverrideDashboard } from './OverrideDashboard';
 export { DownlinePerformance } from './DownlinePerformance';
 export { HierarchyManagement } from './HierarchyManagement';
 export { InviteDownline } from './InviteDownline';
+
+// Phase 12A: Org Chart Visualization
+export { OrgChartVisualization } from './OrgChartVisualization';

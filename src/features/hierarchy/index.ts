@@ -2,3 +2,4 @@
 
 export * from './components';
 export { HierarchyDashboard } from './HierarchyDashboard';
+export { OrgChartPage } from './OrgChartPage';
