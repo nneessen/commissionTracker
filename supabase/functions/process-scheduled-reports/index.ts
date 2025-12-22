@@ -2,13 +2,21 @@
 // Phase 9: Report Export Enhancement
 // Triggered by external cron (Vercel/GitHub Actions) to process due scheduled reports
 
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
-import { createSupabaseAdminClient } from '../_shared/supabase-client.ts';
-import { format, subMonths, startOfMonth, endOfMonth, startOfQuarter, subQuarters } from 'https://esm.sh/date-fns@3.3.1';
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createSupabaseAdminClient } from "../_shared/supabase-client.ts";
+import {
+  format,
+  subMonths,
+  startOfMonth,
+  endOfMonth,
+  startOfQuarter,
+  subQuarters,
+} from "https://esm.sh/date-fns@3.3.1";
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
 };
 
 // Types for scheduled reports
@@ -20,17 +28,17 @@ interface ScheduledReport {
   schedule_name: string;
   report_type: string;
   report_config: {
-    dateRangeMode?: 'trailing' | 'fixed';
+    dateRangeMode?: "trailing" | "fixed";
     trailingMonths?: number;
     startDate?: string;
     endDate?: string;
   };
-  frequency: 'weekly' | 'monthly' | 'quarterly';
+  frequency: "weekly" | "monthly" | "quarterly";
   day_of_week: number | null;
   day_of_month: number | null;
   preferred_time: string;
   recipients: Array<{ user_id: string; email: string; name: string }>;
-  export_format: 'pdf' | 'csv';
+  export_format: "pdf" | "csv";
   include_charts: boolean;
   include_insights: boolean;
   include_summary: boolean;
@@ -46,12 +54,12 @@ interface ProcessResult {
 
 // Calculate report date range based on config and frequency
 function calculateReportPeriod(
-  config: ScheduledReport['report_config'],
-  frequency: ScheduledReport['frequency']
+  config: ScheduledReport["report_config"],
+  frequency: ScheduledReport["frequency"],
 ): { startDate: Date; endDate: Date } {
   const now = new Date();
 
-  if (config.dateRangeMode === 'fixed' && config.startDate && config.endDate) {
+  if (config.dateRangeMode === "fixed" && config.startDate && config.endDate) {
     return {
       startDate: new Date(config.startDate),
       endDate: new Date(config.endDate),
@@ -66,19 +74,19 @@ function calculateReportPeriod(
   let startDate: Date;
 
   switch (frequency) {
-    case 'weekly':
+    case "weekly":
       // Weekly: last 4 weeks
       endDate = endOfMonth(subMonths(now, 1));
       startDate = startOfMonth(subMonths(now, 1));
       break;
 
-    case 'monthly':
+    case "monthly":
       // Monthly: trailing months ending last complete month
       endDate = endOfMonth(subMonths(now, 1));
       startDate = startOfMonth(subMonths(now, trailingMonths));
       break;
 
-    case 'quarterly':
+    case "quarterly":
       // Quarterly: last complete quarter + trailing
       endDate = endOfMonth(subMonths(startOfQuarter(now), 1));
       startDate = startOfMonth(subQuarters(now, 4));
@@ -96,127 +104,175 @@ function calculateReportPeriod(
 async function generateReportData(
   supabase: ReturnType<typeof createSupabaseAdminClient>,
   schedule: ScheduledReport,
-  period: { startDate: Date; endDate: Date }
-): Promise<{ title: string; data: Record<string, unknown>[] | Record<string, unknown>; headers?: string[] }> {
-  const startDateStr = format(period.startDate, 'yyyy-MM-dd');
-  const endDateStr = format(period.endDate, 'yyyy-MM-dd');
+  period: { startDate: Date; endDate: Date },
+): Promise<{
+  title: string;
+  data: Record<string, unknown>[] | Record<string, unknown>;
+  headers?: string[];
+}> {
+  const startDateStr = format(period.startDate, "yyyy-MM-dd");
+  const endDateStr = format(period.endDate, "yyyy-MM-dd");
 
   switch (schedule.report_type) {
-    case 'imo-performance': {
-      const { data, error } = await supabase.rpc('get_imo_performance_report', {
+    case "imo-performance": {
+      const { data, error } = await supabase.rpc("get_imo_performance_report", {
         p_start_date: startDateStr,
         p_end_date: endDateStr,
       });
       if (error) throw error;
       return {
-        title: 'IMO Performance Report',
+        title: "IMO Performance Report",
         data: data || [],
-        headers: ['Month', 'New Policies', 'New Premium', 'Commissions', 'New Agents', 'Lapsed', 'Net Growth'],
+        headers: [
+          "Month",
+          "New Policies",
+          "New Premium",
+          "Commissions",
+          "New Agents",
+          "Lapsed",
+          "Net Growth",
+        ],
       };
     }
 
-    case 'agency-performance': {
-      if (!schedule.agency_id) throw new Error('Agency ID required for agency performance report');
-      const { data, error } = await supabase.rpc('get_agency_performance_report', {
-        p_agency_id: schedule.agency_id,
+    case "agency-performance": {
+      if (!schedule.agency_id)
+        throw new Error("Agency ID required for agency performance report");
+      const { data, error } = await supabase.rpc(
+        "get_agency_performance_report",
+        {
+          p_agency_id: schedule.agency_id,
+          p_start_date: startDateStr,
+          p_end_date: endDateStr,
+        },
+      );
+      if (error) throw error;
+      return {
+        title: "Agency Performance Report",
+        data: data || [],
+        headers: [
+          "Month",
+          "New Policies",
+          "New Premium",
+          "Commissions",
+          "New Agents",
+          "Lapsed",
+          "Net Growth",
+        ],
+      };
+    }
+
+    case "team-comparison": {
+      const { data, error } = await supabase.rpc("get_team_comparison_report", {
         p_start_date: startDateStr,
         p_end_date: endDateStr,
       });
       if (error) throw error;
       return {
-        title: 'Agency Performance Report',
+        title: "Team Comparison Report",
         data: data || [],
-        headers: ['Month', 'New Policies', 'New Premium', 'Commissions', 'New Agents', 'Lapsed', 'Net Growth'],
+        headers: [
+          "Agency",
+          "Owner",
+          "Agents",
+          "Policies",
+          "Premium",
+          "Commissions",
+          "Retention",
+        ],
       };
     }
 
-    case 'team-comparison': {
-      const { data, error } = await supabase.rpc('get_team_comparison_report', {
-        p_start_date: startDateStr,
-        p_end_date: endDateStr,
-      });
-      if (error) throw error;
-      return {
-        title: 'Team Comparison Report',
-        data: data || [],
-        headers: ['Agency', 'Owner', 'Agents', 'Policies', 'Premium', 'Commissions', 'Retention'],
-      };
-    }
-
-    case 'top-performers': {
-      const { data, error } = await supabase.rpc('get_top_performers_report', {
+    case "top-performers": {
+      const { data, error } = await supabase.rpc("get_top_performers_report", {
         p_start_date: startDateStr,
         p_end_date: endDateStr,
         p_limit: 20,
       });
       if (error) throw error;
       return {
-        title: 'Top Performers Report',
+        title: "Top Performers Report",
         data: data || [],
-        headers: ['Rank', 'Agent', 'Agency', 'Policies', 'Premium', 'Commissions'],
+        headers: [
+          "Rank",
+          "Agent",
+          "Agency",
+          "Policies",
+          "Premium",
+          "Commissions",
+        ],
       };
     }
 
-    case 'recruiting-summary': {
+    case "recruiting-summary": {
       if (schedule.imo_id) {
-        const { data, error } = await supabase.rpc('get_imo_recruiting_summary', {
-          p_imo_id: schedule.imo_id,
-        });
+        const { data, error } = await supabase.rpc(
+          "get_imo_recruiting_summary",
+          {
+            p_imo_id: schedule.imo_id,
+          },
+        );
         if (error) throw error;
         return {
-          title: 'IMO Recruiting Summary',
+          title: "IMO Recruiting Summary",
           data: data || {},
         };
       } else if (schedule.agency_id) {
-        const { data, error } = await supabase.rpc('get_agency_recruiting_summary', {
-          p_agency_id: schedule.agency_id,
-        });
+        const { data, error } = await supabase.rpc(
+          "get_agency_recruiting_summary",
+          {
+            p_agency_id: schedule.agency_id,
+          },
+        );
         if (error) throw error;
         return {
-          title: 'Agency Recruiting Summary',
+          title: "Agency Recruiting Summary",
           data: data || {},
         };
       }
-      throw new Error('IMO or Agency ID required for recruiting summary');
+      throw new Error("IMO or Agency ID required for recruiting summary");
     }
 
-    case 'override-summary': {
+    case "override-summary": {
       if (schedule.imo_id) {
-        const { data, error } = await supabase.rpc('get_imo_override_summary');
+        const { data, error } = await supabase.rpc("get_imo_override_summary");
         if (error) throw error;
         return {
-          title: 'IMO Override Commission Summary',
+          title: "IMO Override Commission Summary",
           data: data || [],
         };
       } else if (schedule.agency_id) {
-        const { data, error } = await supabase.rpc('get_agency_override_summary', {
-          p_agency_id: schedule.agency_id,
-        });
+        const { data, error } = await supabase.rpc(
+          "get_agency_override_summary",
+          {
+            p_agency_id: schedule.agency_id,
+          },
+        );
         if (error) throw error;
         return {
-          title: 'Agency Override Commission Summary',
+          title: "Agency Override Commission Summary",
           data: data || [],
         };
       }
-      throw new Error('IMO or Agency ID required for override summary');
+      throw new Error("IMO or Agency ID required for override summary");
     }
 
-    case 'executive-dashboard': {
+    case "executive-dashboard": {
       // Combine multiple metrics for executive view
       const metrics: Record<string, unknown> = {};
 
       if (schedule.imo_id) {
-        const { data } = await supabase.rpc('get_imo_dashboard_metrics');
+        const { data } = await supabase.rpc("get_imo_dashboard_metrics");
         if (data?.[0]) metrics.dashboard = data[0];
       } else if (schedule.agency_id) {
-        const { data } = await supabase.rpc('get_agency_dashboard_metrics', {
+        const { data } = await supabase.rpc("get_agency_dashboard_metrics", {
           p_agency_id: schedule.agency_id,
         });
         if (data?.[0]) metrics.dashboard = data[0];
       }
 
       return {
-        title: 'Executive Dashboard Summary',
+        title: "Executive Dashboard Summary",
         data: metrics,
       };
     }
@@ -227,36 +283,48 @@ async function generateReportData(
 }
 
 // Format data as CSV
-function formatAsCSV(data: Record<string, unknown>[] | Record<string, unknown>, headers?: string[]): string {
+function formatAsCSV(
+  data: Record<string, unknown>[] | Record<string, unknown>,
+  headers?: string[],
+): string {
   // Handle array of records
   if (Array.isArray(data)) {
-    if (data.length === 0) return 'No data available';
+    if (data.length === 0) return "No data available";
 
     const keys = headers || Object.keys(data[0]);
-    const headerRow = keys.join(',');
-    const dataRows = data.map(row => {
-      return keys.map(key => {
-        const value = (row as Record<string, unknown>)[key];
-        if (value === null || value === undefined) return '';
-        if (typeof value === 'string' && value.includes(',')) {
-          return `"${value.replace(/"/g, '""')}"`;
-        }
-        if (typeof value === 'number') {
-          return value.toLocaleString('en-US', { maximumFractionDigits: 2 });
-        }
-        return String(value);
-      }).join(',');
+    const headerRow = keys.join(",");
+    const dataRows = data.map((row) => {
+      return keys
+        .map((key) => {
+          const value = (row as Record<string, unknown>)[key];
+          if (value === null || value === undefined) return "";
+          if (typeof value === "string" && value.includes(",")) {
+            return `"${value.replace(/"/g, '""')}"`;
+          }
+          if (typeof value === "number") {
+            return value.toLocaleString("en-US", { maximumFractionDigits: 2 });
+          }
+          return String(value);
+        })
+        .join(",");
     });
 
-    return [headerRow, ...dataRows].join('\n');
+    return [headerRow, ...dataRows].join("\n");
   }
 
   // Handle single object (metrics summary)
-  const flattenObject = (obj: Record<string, unknown>, prefix = ''): string[] => {
+  const flattenObject = (
+    obj: Record<string, unknown>,
+    prefix = "",
+  ): string[] => {
     const lines: string[] = [];
     for (const [key, value] of Object.entries(obj)) {
       const fullKey = prefix ? `${prefix}.${key}` : key;
-      if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+      if (
+        typeof value === "object" &&
+        value !== null &&
+        !Array.isArray(value)
+      ) {
         lines.push(...flattenObject(value as Record<string, unknown>, fullKey));
       } else {
         lines.push(`${fullKey},${value}`);
@@ -265,7 +333,7 @@ function formatAsCSV(data: Record<string, unknown>[] | Record<string, unknown>, 
     return lines;
   };
 
-  return ['Metric,Value', ...flattenObject(data)].join('\n');
+  return ["Metric,Value", ...flattenObject(data)].join("\n");
 }
 
 // Format data as HTML email
@@ -274,36 +342,46 @@ function formatAsHTML(
   data: Record<string, unknown>[] | Record<string, unknown>,
   period: { startDate: Date; endDate: Date },
   scheduleName: string,
-  _headers?: string[]
+  _headers?: string[],
 ): string {
-  const periodStr = `${format(period.startDate, 'MMM d, yyyy')} - ${format(period.endDate, 'MMM d, yyyy')}`;
+  const periodStr = `${format(period.startDate, "MMM d, yyyy")} - ${format(period.endDate, "MMM d, yyyy")}`;
 
-  let tableContent = '';
+  let tableContent = "";
 
   if (Array.isArray(data)) {
     if (data.length === 0) {
-      tableContent = '<p style="color: #666;">No data available for this period.</p>';
+      tableContent =
+        '<p style="color: #666;">No data available for this period.</p>';
     } else {
       const keys = Object.keys(data[0]);
       tableContent = `
         <table style="width: 100%; border-collapse: collapse; margin: 20px 0; font-family: Arial, sans-serif; font-size: 14px;">
           <thead>
             <tr style="background-color: #1e3a5f; color: white;">
-              ${keys.map(k => `<th style="padding: 12px; text-align: left; border: 1px solid #ddd;">${k.replace(/_/g, ' ').toUpperCase()}</th>`).join('')}
+              ${keys.map((k) => `<th style="padding: 12px; text-align: left; border: 1px solid #ddd;">${k.replace(/_/g, " ").toUpperCase()}</th>`).join("")}
             </tr>
           </thead>
           <tbody>
-            ${data.map((row, i) => `
-              <tr style="background-color: ${i % 2 === 0 ? '#f8f9fa' : 'white'};">
-                ${keys.map(k => {
-                  const val = (row as Record<string, unknown>)[k];
-                  const formatted = typeof val === 'number'
-                    ? val.toLocaleString('en-US', { maximumFractionDigits: 2 })
-                    : String(val ?? '');
-                  return `<td style="padding: 10px; border: 1px solid #ddd;">${formatted}</td>`;
-                }).join('')}
+            ${data
+              .map(
+                (row, i) => `
+              <tr style="background-color: ${i % 2 === 0 ? "#f8f9fa" : "white"};">
+                ${keys
+                  .map((k) => {
+                    const val = (row as Record<string, unknown>)[k];
+                    const formatted =
+                      typeof val === "number"
+                        ? val.toLocaleString("en-US", {
+                            maximumFractionDigits: 2,
+                          })
+                        : String(val ?? "");
+                    return `<td style="padding: 10px; border: 1px solid #ddd;">${formatted}</td>`;
+                  })
+                  .join("")}
               </tr>
-            `).join('')}
+            `,
+              )
+              .join("")}
           </tbody>
         </table>
       `;
@@ -312,25 +390,32 @@ function formatAsHTML(
     // Render object as key-value pairs
     const renderObject = (obj: Record<string, unknown>, depth = 0): string => {
       const indent = depth * 20;
-      return Object.entries(obj).map(([key, value]) => {
-        if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-          return `
+      return Object.entries(obj)
+        .map(([key, value]) => {
+          if (
+            typeof value === "object" &&
+            value !== null &&
+            !Array.isArray(value)
+          ) {
+            return `
             <div style="margin-left: ${indent}px; margin-top: 10px;">
-              <strong style="color: #1e3a5f;">${key.replace(/_/g, ' ')}:</strong>
+              <strong style="color: #1e3a5f;">${key.replace(/_/g, " ")}:</strong>
               ${renderObject(value as Record<string, unknown>, depth + 1)}
             </div>
           `;
-        }
-        const formatted = typeof value === 'number'
-          ? value.toLocaleString('en-US', { maximumFractionDigits: 2 })
-          : String(value ?? 'N/A');
-        return `
+          }
+          const formatted =
+            typeof value === "number"
+              ? value.toLocaleString("en-US", { maximumFractionDigits: 2 })
+              : String(value ?? "N/A");
+          return `
           <div style="margin-left: ${indent}px; padding: 5px 0;">
-            <span style="color: #666;">${key.replace(/_/g, ' ')}:</span>
+            <span style="color: #666;">${key.replace(/_/g, " ")}:</span>
             <strong style="color: #1a202c;">${formatted}</strong>
           </div>
         `;
-      }).join('');
+        })
+        .join("");
     };
     tableContent = `<div style="padding: 10px;">${renderObject(data)}</div>`;
   }
@@ -361,7 +446,7 @@ function formatAsHTML(
           <p style="margin: 0; color: #666; font-size: 12px;">
             This is an automated report from The Standard HQ.
             <br>
-            Generated on ${format(new Date(), 'MMMM d, yyyy \'at\' h:mm a')}
+            Generated on ${format(new Date(), "MMMM d, yyyy 'at' h:mm a")}
           </p>
           <p style="margin: 10px 0 0 0; color: #999; font-size: 11px;">
             To manage your report schedules, visit the Reports section in your dashboard.
@@ -375,56 +460,59 @@ function formatAsHTML(
 
 // Send email via Mailgun
 async function sendReportEmail(
-  recipients: ScheduledReport['recipients'],
+  recipients: ScheduledReport["recipients"],
   subject: string,
   html: string,
-  csvAttachment?: { filename: string; content: string }
+  csvAttachment?: { filename: string; content: string },
 ): Promise<{ success: boolean; messageId?: string; error?: string }> {
-  const MAILGUN_API_KEY = Deno.env.get('MAILGUN_API_KEY');
-  const MAILGUN_DOMAIN = Deno.env.get('MAILGUN_DOMAIN');
+  const MAILGUN_API_KEY = Deno.env.get("MAILGUN_API_KEY");
+  const MAILGUN_DOMAIN = Deno.env.get("MAILGUN_DOMAIN");
 
   if (!MAILGUN_API_KEY || !MAILGUN_DOMAIN) {
-    console.log('[ScheduledReports] Mailgun not configured, simulating send');
+    console.log("[ScheduledReports] Mailgun not configured, simulating send");
     return { success: true, messageId: `simulated-${Date.now()}` };
   }
 
-  const toAddresses = recipients.map(r => r.email).join(', ');
+  const toAddresses = recipients.map((r) => r.email).join(", ");
   const form = new FormData();
-  form.append('from', `The Standard HQ Reports <reports@${MAILGUN_DOMAIN}>`);
-  form.append('to', toAddresses);
-  form.append('subject', subject);
-  form.append('html', html);
+  form.append("from", `The Standard HQ Reports <reports@${MAILGUN_DOMAIN}>`);
+  form.append("to", toAddresses);
+  form.append("subject", subject);
+  form.append("html", html);
 
   // Add CSV attachment if provided
   if (csvAttachment) {
-    const blob = new Blob([csvAttachment.content], { type: 'text/csv' });
-    form.append('attachment', blob, csvAttachment.filename);
+    const blob = new Blob([csvAttachment.content], { type: "text/csv" });
+    form.append("attachment", blob, csvAttachment.filename);
   }
 
   // Tags for analytics
-  form.append('o:tag', 'scheduled-report');
-  form.append('o:tracking', 'yes');
+  form.append("o:tag", "scheduled-report");
+  form.append("o:tracking", "yes");
 
   try {
-    const response = await fetch(`https://api.mailgun.net/v3/${MAILGUN_DOMAIN}/messages`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Basic ${btoa(`api:${MAILGUN_API_KEY}`)}`,
+    const response = await fetch(
+      `https://api.mailgun.net/v3/${MAILGUN_DOMAIN}/messages`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Basic ${btoa(`api:${MAILGUN_API_KEY}`)}`,
+        },
+        body: form,
       },
-      body: form,
-    });
+    );
 
     const data = await response.json();
 
     if (!response.ok) {
-      console.error('[ScheduledReports] Mailgun error:', data);
-      return { success: false, error: data.message || 'Failed to send email' };
+      console.error("[ScheduledReports] Mailgun error:", data);
+      return { success: false, error: data.message || "Failed to send email" };
     }
 
     return { success: true, messageId: data.id };
   } catch (err) {
-    const error = err instanceof Error ? err.message : 'Unknown error';
-    console.error('[ScheduledReports] Email send error:', error);
+    const error = err instanceof Error ? err.message : "Unknown error";
+    console.error("[ScheduledReports] Email send error:", error);
     return { success: false, error };
   }
 }
@@ -432,7 +520,7 @@ async function sendReportEmail(
 // Process a single schedule
 async function processSchedule(
   supabase: ReturnType<typeof createSupabaseAdminClient>,
-  schedule: ScheduledReport
+  schedule: ScheduledReport,
 ): Promise<ProcessResult> {
   const result: ProcessResult = {
     scheduleId: schedule.id,
@@ -442,27 +530,36 @@ async function processSchedule(
   };
 
   try {
-    console.log(`[ScheduledReports] Processing schedule: ${schedule.schedule_name} (${schedule.id})`);
+    console.log(
+      `[ScheduledReports] Processing schedule: ${schedule.schedule_name} (${schedule.id})`,
+    );
 
     // Calculate report period
-    const period = calculateReportPeriod(schedule.report_config, schedule.frequency);
-    console.log(`[ScheduledReports] Report period: ${format(period.startDate, 'yyyy-MM-dd')} to ${format(period.endDate, 'yyyy-MM-dd')}`);
+    const period = calculateReportPeriod(
+      schedule.report_config,
+      schedule.frequency,
+    );
+    console.log(
+      `[ScheduledReports] Report period: ${format(period.startDate, "yyyy-MM-dd")} to ${format(period.endDate, "yyyy-MM-dd")}`,
+    );
 
     // Create delivery record
     const { data: delivery, error: deliveryError } = await supabase
-      .from('scheduled_report_deliveries')
+      .from("scheduled_report_deliveries")
       .insert({
         schedule_id: schedule.id,
-        status: 'processing',
+        status: "processing",
         recipients_sent: schedule.recipients,
-        report_period_start: format(period.startDate, 'yyyy-MM-dd'),
-        report_period_end: format(period.endDate, 'yyyy-MM-dd'),
+        report_period_start: format(period.startDate, "yyyy-MM-dd"),
+        report_period_end: format(period.endDate, "yyyy-MM-dd"),
       })
-      .select('id')
+      .select("id")
       .single();
 
     if (deliveryError) {
-      throw new Error(`Failed to create delivery record: ${deliveryError.message}`);
+      throw new Error(
+        `Failed to create delivery record: ${deliveryError.message}`,
+      );
     }
 
     // Generate report data
@@ -476,7 +573,7 @@ async function processSchedule(
       reportData.data,
       period,
       schedule.schedule_name,
-      reportData.headers
+      reportData.headers,
     );
 
     // Send email
@@ -485,18 +582,20 @@ async function processSchedule(
       schedule.recipients,
       subject,
       html,
-      schedule.export_format === 'csv' ? {
-        filename: `${schedule.report_type}_${format(new Date(), 'yyyy-MM-dd')}.csv`,
-        content: csv,
-      } : undefined
+      schedule.export_format === "csv"
+        ? {
+            filename: `${schedule.report_type}_${format(new Date(), "yyyy-MM-dd")}.csv`,
+            content: csv,
+          }
+        : undefined,
     );
 
     if (!emailResult.success) {
-      throw new Error(emailResult.error || 'Failed to send email');
+      throw new Error(emailResult.error || "Failed to send email");
     }
 
     // Mark delivery complete
-    await supabase.rpc('complete_scheduled_delivery', {
+    await supabase.rpc("complete_scheduled_delivery", {
       p_schedule_id: schedule.id,
       p_delivery_id: delivery.id,
       p_success: true,
@@ -504,26 +603,30 @@ async function processSchedule(
     });
 
     result.success = true;
-    console.log(`[ScheduledReports] Successfully processed schedule: ${schedule.schedule_name}`);
-
+    console.log(
+      `[ScheduledReports] Successfully processed schedule: ${schedule.schedule_name}`,
+    );
   } catch (err) {
-    const error = err instanceof Error ? err.message : 'Unknown error';
+    const error = err instanceof Error ? err.message : "Unknown error";
     result.error = error;
-    console.error(`[ScheduledReports] Failed to process schedule ${schedule.schedule_name}:`, error);
+    console.error(
+      `[ScheduledReports] Failed to process schedule ${schedule.schedule_name}:`,
+      error,
+    );
 
     // Try to mark delivery as failed
     try {
       const { data: delivery } = await supabase
-        .from('scheduled_report_deliveries')
-        .select('id')
-        .eq('schedule_id', schedule.id)
-        .eq('status', 'processing')
-        .order('created_at', { ascending: false })
+        .from("scheduled_report_deliveries")
+        .select("id")
+        .eq("schedule_id", schedule.id)
+        .eq("status", "processing")
+        .order("created_at", { ascending: false })
         .limit(1)
         .single();
 
       if (delivery) {
-        await supabase.rpc('complete_scheduled_delivery', {
+        await supabase.rpc("complete_scheduled_delivery", {
           p_schedule_id: schedule.id,
           p_delivery_id: delivery.id,
           p_success: false,
@@ -531,7 +634,10 @@ async function processSchedule(
         });
       }
     } catch (updateErr) {
-      console.error('[ScheduledReports] Failed to update delivery status:', updateErr);
+      console.error(
+        "[ScheduledReports] Failed to update delivery status:",
+        updateErr,
+      );
     }
   }
 
@@ -541,74 +647,95 @@ async function processSchedule(
 // Main handler
 serve(async (req) => {
   // Handle CORS preflight
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
   }
 
   try {
-    // Validate request (require authorization for cron calls)
-    const authHeader = req.headers.get('Authorization');
-    const cronSecret = Deno.env.get('CRON_SECRET');
+    // Validate request - check for service role key or cron secret
+    const authHeader = req.headers.get("Authorization");
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    const cronSecret = Deno.env.get("CRON_SECRET");
+    const token = authHeader?.replace("Bearer ", "");
 
-    // Allow service role or cron secret
-    if (!authHeader?.includes('service_role') && authHeader !== `Bearer ${cronSecret}`) {
-      console.log('[ScheduledReports] Unauthorized request');
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    const isServiceRole = token === serviceRoleKey;
+    const isCronSecret = cronSecret && token === cronSecret;
+
+    if (!isServiceRole && !isCronSecret) {
+      console.log("[ScheduledReports] Unauthorized request");
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const supabase = createSupabaseAdminClient();
 
     // Get due schedules
-    const { data: dueSchedules, error: fetchError } = await supabase.rpc('get_due_scheduled_reports');
+    const { data: dueSchedules, error: fetchError } = await supabase.rpc(
+      "get_due_scheduled_reports",
+    );
 
     if (fetchError) {
-      console.error('[ScheduledReports] Failed to fetch due schedules:', fetchError);
+      console.error(
+        "[ScheduledReports] Failed to fetch due schedules:",
+        fetchError,
+      );
       throw fetchError;
     }
 
     if (!dueSchedules || dueSchedules.length === 0) {
-      console.log('[ScheduledReports] No schedules due for processing');
+      console.log("[ScheduledReports] No schedules due for processing");
       return new Response(
-        JSON.stringify({ message: 'No schedules due', processed: 0 }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ message: "No schedules due", processed: 0 }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
       );
     }
 
-    console.log(`[ScheduledReports] Processing ${dueSchedules.length} due schedule(s)`);
+    console.log(
+      `[ScheduledReports] Processing ${dueSchedules.length} due schedule(s)`,
+    );
 
     // Process each schedule
     const results: ProcessResult[] = [];
     for (const schedule of dueSchedules) {
-      const result = await processSchedule(supabase, schedule as ScheduledReport);
+      const result = await processSchedule(
+        supabase,
+        schedule as ScheduledReport,
+      );
       results.push(result);
     }
 
-    const successful = results.filter(r => r.success).length;
-    const failed = results.filter(r => !r.success).length;
+    const successful = results.filter((r) => r.success).length;
+    const failed = results.filter((r) => !r.success).length;
 
-    console.log(`[ScheduledReports] Completed: ${successful} successful, ${failed} failed`);
+    console.log(
+      `[ScheduledReports] Completed: ${successful} successful, ${failed} failed`,
+    );
 
     return new Response(
       JSON.stringify({
-        message: 'Processing complete',
+        message: "Processing complete",
         processed: results.length,
         successful,
         failed,
         results,
       }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      },
     );
-
   } catch (err) {
-    const error = err instanceof Error ? err.message : 'Unknown error';
-    console.error('[ScheduledReports] Error:', error);
+    const error = err instanceof Error ? err.message : "Unknown error";
+    console.error("[ScheduledReports] Error:", error);
 
-    return new Response(
-      JSON.stringify({ error }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return new Response(JSON.stringify({ error }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 });
