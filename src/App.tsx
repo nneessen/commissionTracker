@@ -27,14 +27,6 @@ function App() {
     location.pathname.startsWith(path),
   );
 
-  // Debug logging - remove after fix
-  console.log("[App.tsx]", {
-    loading,
-    hasUser: !!user,
-    pathname: location.pathname,
-    isPublicPath,
-  });
-
   const handleLogout = async () => {
     if (window.confirm("Are you sure you want to logout?")) {
       try {

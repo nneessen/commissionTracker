@@ -20,18 +20,17 @@ export const userApprovalKeys = {
 
 /**
  * Hook to get current user's profile and approval status
- * CRITICAL: Waits for auth to be ready before fetching to prevent caching null
+ * CRITICAL: Query key MUST include user.id to prevent cache collisions
  */
 export function useCurrentUserProfile() {
   const { user, loading: authLoading } = useAuth();
 
   return useQuery({
-    queryKey: userApprovalKeys.currentProfile(),
+    // Include user.id in key - when it changes, TanStack Query fetches fresh data
+    queryKey: [...userApprovalKeys.currentProfile(), user?.id],
     queryFn: () => userApprovalService.getCurrentUserProfile(),
-    // Only fetch when auth is ready AND user is authenticated
     enabled: !authLoading && !!user?.id,
-    staleTime: 1000 * 60 * 5, // 5 minutes
-    // Don't cache failures or null results
+    staleTime: 1000 * 60 * 5,
     retry: 3,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000),
   });
@@ -199,20 +198,8 @@ export function useAuthorizationStatus() {
   const { user, loading: authLoading } = useAuth();
   const { data: profile, isLoading: profileLoading, isFetching, isPending } = useCurrentUserProfile();
 
-  // Simple logic: we're loading until we have BOTH auth complete AND profile data
-  // The key insight: if user is authenticated but profile is null, we're still loading
+  // Loading if: auth loading, profile loading, fetching, no cached data, OR user exists but profile missing
   const isLoading = authLoading || profileLoading || isFetching || isPending || (!!user && !profile);
-
-  // Debug logging - remove after fix is confirmed
-  console.log("[useAuthorizationStatus]", {
-    authLoading,
-    profileLoading,
-    isFetching,
-    isPending,
-    hasUser: !!user,
-    hasProfile: !!profile,
-    computedIsLoading: isLoading,
-  });
 
   return {
     isAdmin: profile?.is_admin === true,

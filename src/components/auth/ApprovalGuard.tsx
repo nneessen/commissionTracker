@@ -26,15 +26,6 @@ export const ApprovalGuard: React.FC<ApprovalGuardProps> = ({ children }) => {
 
   const { is, isLoading: permissionsLoading } = usePermissionCheck();
 
-  // Debug logging - remove after fix
-  console.log("[ApprovalGuard]", {
-    isLoading,
-    permissionsLoading,
-    isApproved,
-    isPending,
-    isDenied,
-    hasProfile: !!profile,
-  });
   const isRecruit = is("recruit");
   const isActiveAgent = is("active_agent");
   const isAgent = is("agent");
