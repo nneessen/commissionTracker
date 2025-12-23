@@ -1,7 +1,7 @@
 // /home/nneessen/projects/commissionTracker/src/components/auth/ApprovalGuard.tsx
 
 import React, { useEffect, useState } from "react";
-import { Navigate } from "@tanstack/react-router";
+import { Navigate, useLocation } from "@tanstack/react-router";
 import { useAuthorizationStatus } from "../../hooks/admin/useUserApproval";
 import { PendingApproval } from "../../features/auth/PendingApproval";
 import { DeniedAccess } from "../../features/auth/DeniedAccess";
@@ -21,20 +21,22 @@ interface ApprovalGuardProps {
  * - Allows access if user is approved or is admin
  */
 export const ApprovalGuard: React.FC<ApprovalGuardProps> = ({ children }) => {
+  const location = useLocation();
   const { isApproved, isPending, isDenied, denialReason, isLoading, profile } =
     useAuthorizationStatus();
 
   const { is, isLoading: permissionsLoading } = usePermissionCheck();
+
+  const [currentUserEmail, setCurrentUserEmail] = useState<string | undefined>(
+    undefined,
+  );
+  const [authCheckLoading, setAuthCheckLoading] = useState(true);
 
   const isRecruit = is("recruit");
   const isActiveAgent = is("active_agent");
   const isAgent = is("agent");
   const isAdmin = is("admin");
 
-  const [currentUserEmail, setCurrentUserEmail] = useState<string | undefined>(
-    undefined,
-  );
-  const [authCheckLoading, setAuthCheckLoading] = useState(true);
 
   // Admin email - hardcoded for security
   const ADMIN_EMAIL = "nick@nickneessen.com";
@@ -70,7 +72,8 @@ export const ApprovalGuard: React.FC<ApprovalGuardProps> = ({ children }) => {
 
   // NEW: Recruit handling - recruits should only see their onboarding pipeline
   // Check if we're already on the pipeline page to avoid infinite redirect
-  const currentPath = window.location.pathname;
+  // CRITICAL: Use TanStack Router's location, not window.location, to stay in sync with router state
+  const currentPath = location.pathname;
   const isOnPipelinePage = currentPath === "/recruiting/my-pipeline";
 
   // Only redirect if user is ONLY a recruit and not an agent or active_agent

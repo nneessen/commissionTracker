@@ -66,7 +66,6 @@ export function MyRecruitingPipeline() {
   } = useQuery<UserProfile | null>({
     queryKey: ["recruit-pipeline-profile", user?.id],
     queryFn: async () => {
-      console.log("[MyRecruitingPipeline] queryFn EXECUTING, user.id:", user?.id);
       if (!user?.id) return null;
 
       const { data, error } = await supabase
@@ -75,11 +74,7 @@ export function MyRecruitingPipeline() {
         .eq("id", user.id)
         .single();
 
-      if (error) {
-        console.error("[MyRecruitingPipeline] Profile fetch error:", error);
-        throw error;
-      }
-      console.log("[MyRecruitingPipeline] Profile fetched:", data?.id);
+      if (error) throw error;
       return data as UserProfile;
     },
     enabled: !authLoading && !!user?.id,
@@ -91,18 +86,6 @@ export function MyRecruitingPipeline() {
     refetchOnWindowFocus: false,
   });
 
-  // DEBUG: Log every render
-  console.log("[MyRecruitingPipeline] RENDER", {
-    authLoading,
-    hasUser: !!user,
-    userId: user?.id,
-    profileLoading,
-    isFetching,
-    isPending,
-    hasProfile: !!profile,
-    profileId: profile?.id,
-    hasError: !!profileError,
-  });
 
   const isReady =
     !authLoading && !profileLoading && !!user?.id && !!profile?.id;

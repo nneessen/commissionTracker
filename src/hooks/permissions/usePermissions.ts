@@ -155,9 +155,14 @@ export function useIsAdmin() {
 /**
  * Hook to check multiple permissions and roles
  * Returns helper functions for permission checks
+ * CRITICAL: Uses React Query's isPending/isFetching for accurate loading state
  */
 export function usePermissionCheck() {
-  const { data: permissionsContext } = useUserPermissions();
+  const { user, loading: authLoading } = useAuth();
+  const { data: permissionsContext, isPending, isFetching } = useUserPermissions();
+
+  // Loading if: auth loading, query pending, query fetching, or user exists but no data yet
+  const isLoading = authLoading || isPending || isFetching || (!!user?.id && !permissionsContext);
 
   const can = (permissionCode: PermissionCode): boolean => {
     if (!permissionsContext) return false;
@@ -202,7 +207,7 @@ export function usePermissionCheck() {
     isAdmin,
     permissions: permissionsContext?.permissions || [],
     roles: permissionsContext?.roles || [],
-    isLoading: !permissionsContext,
+    isLoading,
   };
 }
 

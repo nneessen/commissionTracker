@@ -87,6 +87,7 @@ export const RouteGuard: React.FC<RouteGuardProps> = ({
     isLoading: permLoading,
   } = usePermissionCheck();
 
+
   // Feature access check (only if subscriptionFeature is specified)
   const featureAccess = useFeatureAccess(subscriptionFeature || "dashboard");
   const checkingFeature = subscriptionFeature && featureAccess.isLoading;
