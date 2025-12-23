@@ -29,6 +29,7 @@ import {
   Users,
   Briefcase,
   GraduationCap,
+  Lock,
 } from "lucide-react";
 import { format } from "date-fns";
 import {
@@ -59,10 +60,10 @@ export function MyRecruitingPipeline() {
   const {
     data: profile,
     isLoading: profileLoading,
-    isFetching,
-    isPending,
+    isFetching: _isFetching,
+    isPending: _isPending,
     error: profileError,
-    refetch,
+    refetch: _refetch,
   } = useQuery<UserProfile | null>({
     queryKey: ["recruit-pipeline-profile", user?.id],
     queryFn: async () => {
@@ -86,7 +87,6 @@ export function MyRecruitingPipeline() {
     refetchOnWindowFocus: false,
   });
 
-
   const isReady =
     !authLoading && !profileLoading && !!user?.id && !!profile?.id;
 
@@ -98,7 +98,9 @@ export function MyRecruitingPipeline() {
 
       const { data, error } = await supabase
         .from("user_profiles")
-        .select("id, first_name, last_name, email, phone, profile_photo_url, roles")
+        .select(
+          "id, first_name, last_name, email, phone, profile_photo_url, roles",
+        )
         .eq("id", profile.upline_id)
         .single();
 
@@ -115,7 +117,9 @@ export function MyRecruitingPipeline() {
       // Get users with trainer or contracting_manager roles
       const { data, error } = await supabase
         .from("user_profiles")
-        .select("id, first_name, last_name, email, phone, profile_photo_url, roles")
+        .select(
+          "id, first_name, last_name, email, phone, profile_photo_url, roles",
+        )
         .or("roles.cs.{trainer},roles.cs.{contracting_manager}");
 
       if (error) throw error;
@@ -123,7 +127,7 @@ export function MyRecruitingPipeline() {
       const contacts: KeyContact[] = [];
 
       for (const user of data || []) {
-        const roles = user.roles as string[] || [];
+        const roles = (user.roles as string[]) || [];
         if (roles.includes("trainer")) {
           contacts.push({
             id: user.id,
@@ -294,7 +298,17 @@ export function MyRecruitingPipeline() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- phase template type
     (p: any) => p.id === currentPhase?.phase_id,
   );
-  const currentChecklistItems = currentPhaseData?.checklist_items || [];
+
+  // Check if current phase is hidden from recruit
+  const isCurrentPhaseHidden = currentPhaseData?.visible_to_recruit === false;
+
+  // Filter hidden checklist items for recruit view
+  const allChecklistItemsForPhase = currentPhaseData?.checklist_items || [];
+
+  const currentChecklistItems = allChecklistItemsForPhase.filter(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- checklist item type
+    (item: any) => item.visible_to_recruit !== false,
+  );
 
   const getRoleIcon = (role: string) => {
     switch (role) {
@@ -348,7 +362,8 @@ export function MyRecruitingPipeline() {
               <div className="flex items-center gap-1">
                 <CheckCircle2 className="h-3 w-3 text-emerald-500" />
                 <span className="font-medium text-zinc-900 dark:text-zinc-100">
-                  {phaseProgress.filter((p) => p.status === "completed").length}/{phaseProgress.length}
+                  {phaseProgress.filter((p) => p.status === "completed").length}
+                  /{phaseProgress.length}
                 </span>
                 <span className="text-zinc-500 dark:text-zinc-400">phases</span>
               </div>
@@ -405,20 +420,35 @@ export function MyRecruitingPipeline() {
                     Current Phase
                   </p>
                   <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-                    {currentPhaseData?.phase_name || "Unknown"}
+                    {isCurrentPhaseHidden
+                      ? "Waiting for Admin Action"
+                      : currentPhaseData?.phase_name || "Unknown"}
                   </h2>
                 </div>
-                <Badge
-                  variant="secondary"
-                  className="text-[10px] h-5 px-1.5 bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
-                >
-                  {currentChecklistItems.length > 0
-                    ? `${currentChecklistProgress?.filter((p) => p.status === "completed").length || 0}/${currentChecklistItems.length} completed`
-                    : "No items"}
-                </Badge>
+                {!isCurrentPhaseHidden && (
+                  <Badge
+                    variant="secondary"
+                    className="text-[10px] h-5 px-1.5 bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
+                  >
+                    {currentChecklistItems.length > 0
+                      ? `${currentChecklistProgress?.filter((p) => p.status === "completed").length || 0}/${currentChecklistItems.length} completed`
+                      : "No items"}
+                  </Badge>
+                )}
               </div>
 
-              {currentChecklistItems.length > 0 ? (
+              {isCurrentPhaseHidden ? (
+                <div className="py-6 text-center">
+                  <Clock className="h-10 w-10 text-amber-400 dark:text-amber-500 mx-auto mb-3" />
+                  <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                    In Progress
+                  </p>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                    This phase is being handled by your recruiter or admin.
+                    You&apos;ll be notified when action is needed.
+                  </p>
+                </div>
+              ) : currentChecklistItems.length > 0 ? (
                 <PhaseChecklist
                   userId={profile.id}
                   checklistItems={currentChecklistItems}
@@ -449,7 +479,7 @@ export function MyRecruitingPipeline() {
                 </div>
               )}
 
-              {currentPhase.notes && (
+              {!isCurrentPhaseHidden && currentPhase.notes && (
                 <div className="mt-3 p-2 bg-zinc-50 dark:bg-zinc-800/50 rounded-md border border-zinc-200 dark:border-zinc-700">
                   <p className="text-[11px] text-zinc-600 dark:text-zinc-400">
                     {currentPhase.notes}
@@ -496,34 +526,51 @@ export function MyRecruitingPipeline() {
                   (p: any) => p.id === phase.phase_id,
                 );
                 const phaseName = phaseData?.phase_name || "Unknown Phase";
-                const phaseChecklistItems = phaseData?.checklist_items || [];
+                const isPhaseHidden = phaseData?.visible_to_recruit === false;
+                // Filter hidden checklist items for recruit view
+
+                const phaseChecklistItems = (
+                  phaseData?.checklist_items || []
+                ).filter(
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- checklist item type
+                  (item: any) => item.visible_to_recruit !== false,
+                );
 
                 return (
                   <Collapsible
                     key={phase.id}
-                    open={isExpanded}
+                    open={isExpanded && !isPhaseHidden}
                     onOpenChange={(open) =>
-                      setExpandedPhase(open ? phase.id : null)
+                      !isPhaseHidden && setExpandedPhase(open ? phase.id : null)
                     }
                   >
-                    <CollapsibleTrigger className="w-full">
+                    <CollapsibleTrigger
+                      className="w-full"
+                      disabled={isPhaseHidden}
+                    >
                       <div
-                        className={`flex items-center gap-2 p-2 rounded-md transition-all cursor-pointer ${
-                          isCompleted
-                            ? "bg-emerald-50 dark:bg-emerald-950/30 hover:bg-emerald-100 dark:hover:bg-emerald-950/50"
-                            : isInProgress
-                              ? "bg-amber-50 dark:bg-amber-950/30 hover:bg-amber-100 dark:hover:bg-amber-950/50"
-                              : isBlocked
-                                ? "bg-red-50 dark:bg-red-950/30 hover:bg-red-100 dark:hover:bg-red-950/50"
-                                : "bg-zinc-50 dark:bg-zinc-800/30 hover:bg-zinc-100 dark:hover:bg-zinc-800/50"
+                        className={`flex items-center gap-2 p-2 rounded-md transition-all ${
+                          isPhaseHidden
+                            ? "bg-zinc-100 dark:bg-zinc-800/50 opacity-60 cursor-default"
+                            : isCompleted
+                              ? "bg-emerald-50 dark:bg-emerald-950/30 hover:bg-emerald-100 dark:hover:bg-emerald-950/50 cursor-pointer"
+                              : isInProgress
+                                ? "bg-amber-50 dark:bg-amber-950/30 hover:bg-amber-100 dark:hover:bg-amber-950/50 cursor-pointer"
+                                : isBlocked
+                                  ? "bg-red-50 dark:bg-red-950/30 hover:bg-red-100 dark:hover:bg-red-950/50 cursor-pointer"
+                                  : "bg-zinc-50 dark:bg-zinc-800/30 hover:bg-zinc-100 dark:hover:bg-zinc-800/50 cursor-pointer"
                         }`}
                       >
-                        {isExpanded ? (
+                        {isPhaseHidden ? (
+                          <Lock className="h-3 w-3 text-zinc-400 dark:text-zinc-500" />
+                        ) : isExpanded ? (
                           <ChevronDown className="h-3 w-3 text-zinc-500 dark:text-zinc-400" />
                         ) : (
                           <ChevronRight className="h-3 w-3 text-zinc-500 dark:text-zinc-400" />
                         )}
-                        {isCompleted ? (
+                        {isPhaseHidden ? (
+                          <Clock className="h-4 w-4 text-zinc-400 dark:text-zinc-500 flex-shrink-0" />
+                        ) : isCompleted ? (
                           <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-500 flex-shrink-0" />
                         ) : isInProgress ? (
                           <Clock className="h-4 w-4 text-amber-600 dark:text-amber-500 flex-shrink-0" />
@@ -533,10 +580,16 @@ export function MyRecruitingPipeline() {
                           <Circle className="h-4 w-4 text-zinc-400 dark:text-zinc-500 flex-shrink-0" />
                         )}
                         <div className="flex-1 min-w-0 text-left">
-                          <p className="text-[11px] font-medium text-zinc-900 dark:text-zinc-100 truncate">
-                            {phaseName}
+                          <p
+                            className={`text-[11px] font-medium truncate ${
+                              isPhaseHidden
+                                ? "text-zinc-500 dark:text-zinc-400"
+                                : "text-zinc-900 dark:text-zinc-100"
+                            }`}
+                          >
+                            {isPhaseHidden ? "Waiting" : phaseName}
                           </p>
-                          {phase.started_at && (
+                          {!isPhaseHidden && phase.started_at && (
                             <p className="text-[10px] text-zinc-500 dark:text-zinc-400">
                               Started{" "}
                               {format(
@@ -545,26 +598,37 @@ export function MyRecruitingPipeline() {
                               )}
                             </p>
                           )}
+                          {isPhaseHidden && (
+                            <p className="text-[10px] text-zinc-400 dark:text-zinc-500">
+                              Admin action pending
+                            </p>
+                          )}
                         </div>
                         <Badge
                           variant={
-                            isCompleted
-                              ? "default"
-                              : isInProgress
-                                ? "secondary"
-                                : "outline"
+                            isPhaseHidden
+                              ? "outline"
+                              : isCompleted
+                                ? "default"
+                                : isInProgress
+                                  ? "secondary"
+                                  : "outline"
                           }
                           className={`text-[10px] h-4 px-1.5 capitalize ${
-                            isCompleted
-                              ? "bg-emerald-600 text-white"
-                              : isInProgress
-                                ? "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200"
-                                : isBlocked
-                                  ? "border-red-300 text-red-700 dark:border-red-700 dark:text-red-400"
-                                  : "border-zinc-300 text-zinc-600 dark:border-zinc-600 dark:text-zinc-400"
+                            isPhaseHidden
+                              ? "border-zinc-300 text-zinc-500 dark:border-zinc-600 dark:text-zinc-400"
+                              : isCompleted
+                                ? "bg-emerald-600 text-white"
+                                : isInProgress
+                                  ? "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200"
+                                  : isBlocked
+                                    ? "border-red-300 text-red-700 dark:border-red-700 dark:text-red-400"
+                                    : "border-zinc-300 text-zinc-600 dark:border-zinc-600 dark:text-zinc-400"
                           }`}
                         >
-                          {phase.status.replace("_", " ")}
+                          {isPhaseHidden
+                            ? "In Progress"
+                            : phase.status.replace("_", " ")}
                         </Badge>
                       </div>
                     </CollapsibleTrigger>
@@ -656,7 +720,8 @@ export function MyRecruitingPipeline() {
                   <Avatar className="h-7 w-7">
                     <AvatarImage src={upline.profile_photo_url || undefined} />
                     <AvatarFallback className="text-[10px] bg-zinc-200 text-zinc-700 dark:bg-zinc-700 dark:text-zinc-300">
-                      {upline.first_name?.[0]}{upline.last_name?.[0]}
+                      {upline.first_name?.[0]}
+                      {upline.last_name?.[0]}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0">
@@ -664,17 +729,26 @@ export function MyRecruitingPipeline() {
                       <p className="text-[11px] font-medium text-zinc-900 dark:text-zinc-100 truncate">
                         {upline.first_name} {upline.last_name}
                       </p>
-                      <Badge variant="secondary" className="text-[9px] h-3.5 px-1 bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300">
+                      <Badge
+                        variant="secondary"
+                        className="text-[9px] h-3.5 px-1 bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300"
+                      >
                         Recruiter
                       </Badge>
                     </div>
                     <div className="flex items-center gap-2 mt-0.5">
-                      <a href={`mailto:${upline.email}`} className="flex items-center gap-0.5 text-[10px] text-blue-600 dark:text-blue-400 hover:underline">
+                      <a
+                        href={`mailto:${upline.email}`}
+                        className="flex items-center gap-0.5 text-[10px] text-blue-600 dark:text-blue-400 hover:underline"
+                      >
                         <Mail className="h-2.5 w-2.5" />
                         Email
                       </a>
                       {upline.phone && (
-                        <a href={`tel:${upline.phone}`} className="flex items-center gap-0.5 text-[10px] text-blue-600 dark:text-blue-400 hover:underline">
+                        <a
+                          href={`tel:${upline.phone}`}
+                          className="flex items-center gap-0.5 text-[10px] text-blue-600 dark:text-blue-400 hover:underline"
+                        >
                           <Phone className="h-2.5 w-2.5" />
                           Call
                         </a>
@@ -690,30 +764,46 @@ export function MyRecruitingPipeline() {
                 const Icon = getRoleIcon(contact.role);
 
                 return (
-                  <div key={contact.id} className="flex items-center gap-2 p-2 bg-zinc-50 dark:bg-zinc-800/50 rounded-md">
+                  <div
+                    key={contact.id}
+                    className="flex items-center gap-2 p-2 bg-zinc-50 dark:bg-zinc-800/50 rounded-md"
+                  >
                     <Avatar className="h-7 w-7">
-                      <AvatarImage src={contact.profile.profile_photo_url || undefined} />
+                      <AvatarImage
+                        src={contact.profile.profile_photo_url || undefined}
+                      />
                       <AvatarFallback className="text-[10px] bg-zinc-200 text-zinc-700 dark:bg-zinc-700 dark:text-zinc-300">
-                        {contact.profile.first_name?.[0]}{contact.profile.last_name?.[0]}
+                        {contact.profile.first_name?.[0]}
+                        {contact.profile.last_name?.[0]}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5">
                         <p className="text-[11px] font-medium text-zinc-900 dark:text-zinc-100 truncate">
-                          {contact.profile.first_name} {contact.profile.last_name}
+                          {contact.profile.first_name}{" "}
+                          {contact.profile.last_name}
                         </p>
-                        <Badge variant="secondary" className="text-[9px] h-3.5 px-1 bg-zinc-100 text-zinc-600 dark:bg-zinc-700 dark:text-zinc-300">
+                        <Badge
+                          variant="secondary"
+                          className="text-[9px] h-3.5 px-1 bg-zinc-100 text-zinc-600 dark:bg-zinc-700 dark:text-zinc-300"
+                        >
                           <Icon className="h-2 w-2 mr-0.5" />
                           {contact.label}
                         </Badge>
                       </div>
                       <div className="flex items-center gap-2 mt-0.5">
-                        <a href={`mailto:${contact.profile.email}`} className="flex items-center gap-0.5 text-[10px] text-blue-600 dark:text-blue-400 hover:underline">
+                        <a
+                          href={`mailto:${contact.profile.email}`}
+                          className="flex items-center gap-0.5 text-[10px] text-blue-600 dark:text-blue-400 hover:underline"
+                        >
                           <Mail className="h-2.5 w-2.5" />
                           Email
                         </a>
                         {contact.profile.phone && (
-                          <a href={`tel:${contact.profile.phone}`} className="flex items-center gap-0.5 text-[10px] text-blue-600 dark:text-blue-400 hover:underline">
+                          <a
+                            href={`tel:${contact.profile.phone}`}
+                            className="flex items-center gap-0.5 text-[10px] text-blue-600 dark:text-blue-400 hover:underline"
+                          >
                             <Phone className="h-2.5 w-2.5" />
                             Call
                           </a>

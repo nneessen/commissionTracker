@@ -86,6 +86,7 @@ export interface PipelinePhase {
   auto_advance: boolean;
   required_approver_role: string | null;
   is_active: boolean;
+  visible_to_recruit: boolean;
 }
 
 export interface PhaseChecklistItem {
@@ -104,6 +105,7 @@ export interface PhaseChecklistItem {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic metadata shape
   metadata?: Record<string, any> | null;
   is_active: boolean;
+  visible_to_recruit: boolean;
 }
 
 export interface RecruitPhaseProgress {
@@ -379,6 +381,7 @@ export interface UpdatePhaseInput {
   auto_advance?: boolean;
   required_approver_role?: RequiredApproverRole;
   is_active?: boolean;
+  visible_to_recruit?: boolean;
 }
 
 // Pipeline CRUD types
@@ -404,6 +407,7 @@ export interface CreatePhaseInput {
   auto_advance?: boolean;
   required_approver_role?: RequiredApproverRole;
   is_active?: boolean;
+  visible_to_recruit?: boolean;
 }
 
 export interface CreateChecklistItemInput {
@@ -412,6 +416,8 @@ export interface CreateChecklistItemInput {
   item_description?: string;
   item_order?: number;
   is_required?: boolean;
+  is_active?: boolean;
+  visible_to_recruit?: boolean;
   can_be_completed_by?: CompletedBy;
   requires_verification?: boolean;
   verification_by?: "upline" | "system";
@@ -427,6 +433,8 @@ export interface UpdateChecklistItemInput {
   item_description?: string;
   item_order?: number;
   is_required?: boolean;
+  is_active?: boolean;
+  visible_to_recruit?: boolean;
   can_be_completed_by?: CompletedBy;
   requires_verification?: boolean;
   verification_by?: "upline" | "system";

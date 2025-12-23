@@ -2847,6 +2847,7 @@ export type Database = {
           requires_verification: boolean | null;
           updated_at: string | null;
           verification_by: string | null;
+          visible_to_recruit: boolean;
         };
         Insert: {
           can_be_completed_by: string;
@@ -2865,6 +2866,7 @@ export type Database = {
           requires_verification?: boolean | null;
           updated_at?: string | null;
           verification_by?: string | null;
+          visible_to_recruit?: boolean;
         };
         Update: {
           can_be_completed_by?: string;
@@ -2883,6 +2885,7 @@ export type Database = {
           requires_verification?: boolean | null;
           updated_at?: string | null;
           verification_by?: string | null;
+          visible_to_recruit?: boolean;
         };
         Relationships: [
           {
@@ -3054,6 +3057,7 @@ export type Database = {
           required_approver_role: string | null;
           template_id: string;
           updated_at: string | null;
+          visible_to_recruit: boolean;
         };
         Insert: {
           auto_advance?: boolean | null;
@@ -3067,6 +3071,7 @@ export type Database = {
           required_approver_role?: string | null;
           template_id: string;
           updated_at?: string | null;
+          visible_to_recruit?: boolean;
         };
         Update: {
           auto_advance?: boolean | null;
@@ -3080,6 +3085,7 @@ export type Database = {
           required_approver_role?: string | null;
           template_id?: string;
           updated_at?: string | null;
+          visible_to_recruit?: boolean;
         };
         Relationships: [
           {
@@ -7067,6 +7073,15 @@ export type Database = {
           metric: string;
         }[];
       };
+      get_approaching_deadline_items: {
+        Args: never;
+        Returns: {
+          automation_delay_days: number;
+          checklist_item_id: string;
+          days_until_deadline: number;
+          recruit_id: string;
+        }[];
+      };
       get_at_risk_commissions: {
         Args: { p_risk_threshold?: number; p_user_id: string };
         Returns: {
@@ -7768,6 +7783,15 @@ export type Database = {
           status: string;
         }[];
       };
+      get_stale_phase_recruits: {
+        Args: never;
+        Returns: {
+          automation_delay_days: number;
+          days_in_phase: number;
+          phase_id: string;
+          recruit_id: string;
+        }[];
+      };
       get_upline_chain: {
         Args: { p_max_depth?: number; p_user_id: string };
         Returns: {
@@ -8126,6 +8150,10 @@ export type Database = {
       trigger_workflows_for_event: {
         Args: { context_data: Json; event_name_param: string };
         Returns: undefined;
+      };
+      unenroll_from_pipeline: {
+        Args: { target_user_id: string };
+        Returns: Json;
       };
       update_alert_rule: {
         Args: {

@@ -16,6 +16,7 @@ export interface PhaseChecklistItemEntity {
   itemOrder: number;
   isRequired: boolean;
   isActive: boolean;
+  visibleToRecruit: boolean;
   documentType: string | null;
   externalLink: string | null;
   canBeCompletedBy: string;
@@ -35,6 +36,7 @@ export interface CreatePhaseChecklistItemData {
   itemOrder?: number;
   isRequired?: boolean;
   isActive?: boolean;
+  visibleToRecruit?: boolean;
   documentType?: string | null;
   externalLink?: string | null;
   canBeCompletedBy: string;
@@ -50,6 +52,7 @@ export interface UpdatePhaseChecklistItemData {
   itemOrder?: number;
   isRequired?: boolean;
   isActive?: boolean;
+  visibleToRecruit?: boolean;
   documentType?: string | null;
   externalLink?: string | null;
   canBeCompletedBy?: string;
@@ -126,6 +129,27 @@ export class PhaseChecklistItemRepository extends BaseRepository<
   }
 
   /**
+   * Find checklist items visible to recruits by phase ID
+   */
+  async findVisibleByPhaseId(
+    phaseId: string,
+  ): Promise<PhaseChecklistItemEntity[]> {
+    const { data, error } = await this.client
+      .from(this.tableName)
+      .select("*")
+      .eq("phase_id", phaseId)
+      .eq("is_active", true)
+      .eq("visible_to_recruit", true)
+      .order("item_order", { ascending: true });
+
+    if (error) {
+      throw this.handleError(error, "findVisibleByPhaseId");
+    }
+
+    return (data || []).map((row) => this.transformFromDB(row));
+  }
+
+  /**
    * Get next item order for a phase
    */
   async getNextItemOrder(phaseId: string): Promise<number> {
@@ -175,6 +199,7 @@ export class PhaseChecklistItemRepository extends BaseRepository<
       itemOrder: row.item_order,
       isRequired: row.is_required ?? false,
       isActive: row.is_active ?? true,
+      visibleToRecruit: row.visible_to_recruit ?? true,
       documentType: row.document_type,
       externalLink: row.external_link,
       canBeCompletedBy: row.can_be_completed_by,
@@ -209,6 +234,8 @@ export class PhaseChecklistItemRepository extends BaseRepository<
         dbData.is_required = updateData.isRequired;
       if (updateData.isActive !== undefined)
         dbData.is_active = updateData.isActive;
+      if (updateData.visibleToRecruit !== undefined)
+        dbData.visible_to_recruit = updateData.visibleToRecruit;
       if (updateData.documentType !== undefined)
         dbData.document_type = updateData.documentType;
       if (updateData.externalLink !== undefined)
@@ -235,6 +262,7 @@ export class PhaseChecklistItemRepository extends BaseRepository<
       item_order: createData.itemOrder ?? 1,
       is_required: createData.isRequired ?? false,
       is_active: createData.isActive ?? true,
+      visible_to_recruit: createData.visibleToRecruit ?? true,
       document_type: createData.documentType ?? null,
       external_link: createData.externalLink ?? null,
       can_be_completed_by: createData.canBeCompletedBy,

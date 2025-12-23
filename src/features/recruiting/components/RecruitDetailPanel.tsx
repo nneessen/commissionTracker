@@ -32,6 +32,7 @@ import {
   Ban,
   RotateCcw,
   AlertTriangle,
+  EyeOff,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -408,6 +409,7 @@ export function RecruitDetailPanel({
                 const status = progress?.status || "not_started";
                 const isActive = phase.id === viewingPhaseId;
                 const isCurrent = phase.id === currentPhase?.phase_id;
+                const isHidden = phase.visible_to_recruit === false;
 
                 return (
                   <Tooltip key={phase.id}>
@@ -426,6 +428,9 @@ export function RecruitDetailPanel({
                             "bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600",
                           isActive &&
                             "ring-2 ring-zinc-900 dark:ring-zinc-100 ring-offset-1",
+                          // Hidden phase styling - dashed ring indicator
+                          isHidden &&
+                            "ring-1 ring-dashed ring-amber-400 dark:ring-amber-600",
                         )}
                       >
                         {status === "completed" ? (
@@ -444,6 +449,12 @@ export function RecruitDetailPanel({
                         {isCurrent && status !== "completed" && (
                           <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-amber-500" />
                         )}
+                        {/* Hidden phase indicator */}
+                        {isHidden && (
+                          <span className="absolute -top-1 -right-1">
+                            <EyeOff className="h-2.5 w-2.5 text-amber-500 dark:text-amber-400" />
+                          </span>
+                        )}
                       </button>
                     </TooltipTrigger>
                     <TooltipContent side="bottom" className="text-xs">
@@ -451,6 +462,11 @@ export function RecruitDetailPanel({
                       <p className="text-zinc-400 capitalize">
                         {status.replace("_", " ")}
                       </p>
+                      {isHidden && (
+                        <p className="text-amber-400 text-[10px] mt-0.5">
+                          Hidden from recruit
+                        </p>
+                      )}
                     </TooltipContent>
                   </Tooltip>
                 );

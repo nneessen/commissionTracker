@@ -141,6 +141,7 @@ export const pipelineService = {
       requiredApproverRole: phaseData.required_approver_role,
       autoAdvance: phaseData.auto_advance,
       isActive: phaseData.is_active,
+      visibleToRecruit: phaseData.visible_to_recruit,
     };
 
     const entity = await phaseRepository.create(createData);
@@ -159,6 +160,7 @@ export const pipelineService = {
       requiredApproverRole: updates.required_approver_role,
       autoAdvance: updates.auto_advance,
       isActive: updates.is_active,
+      visibleToRecruit: updates.visible_to_recruit,
     };
 
     const entity = await phaseRepository.update(phaseId, updateData);
@@ -205,6 +207,7 @@ export const pipelineService = {
       itemOrder,
       isRequired: itemData.is_required,
       isActive: itemData.is_active,
+      visibleToRecruit: itemData.visible_to_recruit,
       documentType: itemData.document_type,
       externalLink: itemData.external_link,
       canBeCompletedBy: itemData.can_be_completed_by ?? "recruit", // Default if not provided
@@ -231,6 +234,7 @@ export const pipelineService = {
       itemOrder: updates.item_order,
       isRequired: updates.is_required,
       isActive: updates.is_active,
+      visibleToRecruit: updates.visible_to_recruit,
       documentType: updates.document_type,
       externalLink: updates.external_link,
       canBeCompletedBy: updates.can_be_completed_by,
@@ -284,6 +288,7 @@ interface CreatePhaseInput {
   required_approver_role?: string | null;
   auto_advance?: boolean;
   is_active?: boolean;
+  visible_to_recruit?: boolean;
 }
 
 interface UpdatePhaseInput {
@@ -294,6 +299,7 @@ interface UpdatePhaseInput {
   required_approver_role?: string | null;
   auto_advance?: boolean;
   is_active?: boolean;
+  visible_to_recruit?: boolean;
 }
 
 interface CreateChecklistItemInput {
@@ -303,6 +309,7 @@ interface CreateChecklistItemInput {
   item_order?: number;
   is_required?: boolean;
   is_active?: boolean;
+  visible_to_recruit?: boolean;
   document_type?: string | null;
   external_link?: string | null;
   can_be_completed_by?: string; // Optional to match recruiting.types
@@ -318,6 +325,7 @@ interface UpdateChecklistItemInput {
   item_order?: number;
   is_required?: boolean;
   is_active?: boolean;
+  visible_to_recruit?: boolean;
   document_type?: string | null;
   external_link?: string | null;
   can_be_completed_by?: string;
@@ -356,6 +364,7 @@ function mapPhaseEntityToType(entity: PipelinePhaseEntity): PipelinePhase {
     required_approver_role: entity.requiredApproverRole,
     auto_advance: entity.autoAdvance,
     is_active: entity.isActive,
+    visible_to_recruit: entity.visibleToRecruit,
   };
 }
 
@@ -371,6 +380,7 @@ function mapChecklistItemEntityToType(
     item_order: entity.itemOrder,
     is_required: entity.isRequired,
     is_active: entity.isActive,
+    visible_to_recruit: entity.visibleToRecruit,
     document_type: entity.documentType,
     external_link: entity.externalLink,
     can_be_completed_by: entity.canBeCompletedBy,

@@ -33,6 +33,7 @@ import {
   UserCheck,
   Zap,
   PenTool,
+  EyeOff,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -84,6 +85,7 @@ export function ChecklistItemEditor({ phaseId }: ChecklistItemEditorProps) {
     item_description: undefined,
     item_type: "task_completion",
     is_required: true,
+    visible_to_recruit: true,
     can_be_completed_by: "recruit" as const,
     requires_verification: false,
     external_link: undefined,
@@ -111,6 +113,7 @@ export function ChecklistItemEditor({ phaseId }: ChecklistItemEditorProps) {
         item_description: undefined,
         item_type: "task_completion",
         is_required: true,
+        visible_to_recruit: true,
         can_be_completed_by: "recruit" as const,
         requires_verification: false,
         external_link: undefined,
@@ -131,6 +134,7 @@ export function ChecklistItemEditor({ phaseId }: ChecklistItemEditorProps) {
           item_description: editingItem.item_description ?? undefined,
           item_type: editingItem.item_type as ChecklistItemType,
           is_required: editingItem.is_required,
+          visible_to_recruit: editingItem.visible_to_recruit,
           can_be_completed_by: editingItem.can_be_completed_by as CompletedBy,
           requires_verification: editingItem.requires_verification,
           external_link: editingItem.external_link ?? undefined,
@@ -210,6 +214,14 @@ export function ChecklistItemEditor({ phaseId }: ChecklistItemEditorProps) {
                     className="text-[9px] px-1 py-0 border-zinc-200 dark:border-zinc-700"
                   >
                     Required
+                  </Badge>
+                )}
+                {!item.visible_to_recruit && (
+                  <Badge
+                    variant="outline"
+                    className="text-[9px] px-1 py-0 border-amber-300 text-amber-600 dark:border-amber-700 dark:text-amber-400"
+                  >
+                    <EyeOff className="h-2 w-2" />
                   </Badge>
                 )}
                 <Button
@@ -371,6 +383,26 @@ export function ChecklistItemEditor({ phaseId }: ChecklistItemEditorProps) {
                 </label>
               </div>
             </div>
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="item_visible_to_recruit"
+                checked={itemForm.visible_to_recruit !== false}
+                onCheckedChange={(checked) =>
+                  setItemForm({ ...itemForm, visible_to_recruit: !!checked })
+                }
+              />
+              <label
+                htmlFor="item_visible_to_recruit"
+                className="text-[11px] text-zinc-700 dark:text-zinc-300 cursor-pointer"
+              >
+                Visible to recruits
+              </label>
+            </div>
+            {itemForm.visible_to_recruit === false && (
+              <p className="text-[10px] text-amber-600 dark:text-amber-400 ml-5">
+                This item will be hidden from recruits.
+              </p>
+            )}
           </div>
           <DialogFooter>
             <Button
@@ -543,6 +575,29 @@ export function ChecklistItemEditor({ phaseId }: ChecklistItemEditorProps) {
                   </label>
                 </div>
               </div>
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="edit_item_visible_to_recruit"
+                  checked={editingItem.visible_to_recruit}
+                  onCheckedChange={(checked) =>
+                    setEditingItem({
+                      ...editingItem,
+                      visible_to_recruit: !!checked,
+                    })
+                  }
+                />
+                <label
+                  htmlFor="edit_item_visible_to_recruit"
+                  className="text-[11px] text-zinc-700 dark:text-zinc-300 cursor-pointer"
+                >
+                  Visible to recruits
+                </label>
+              </div>
+              {!editingItem.visible_to_recruit && (
+                <p className="text-[10px] text-amber-600 dark:text-amber-400 ml-5">
+                  This item will be hidden from recruits.
+                </p>
+              )}
             </div>
           )}
           <DialogFooter>

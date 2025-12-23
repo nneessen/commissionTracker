@@ -16,6 +16,7 @@ export interface PipelinePhaseEntity {
   requiredApproverRole: string | null;
   autoAdvance: boolean;
   isActive: boolean;
+  visibleToRecruit: boolean;
   createdAt: string | null;
   updatedAt: string | null;
 }
@@ -30,6 +31,7 @@ export interface CreatePipelinePhaseData {
   requiredApproverRole?: string | null;
   autoAdvance?: boolean;
   isActive?: boolean;
+  visibleToRecruit?: boolean;
 }
 
 export interface UpdatePipelinePhaseData {
@@ -40,6 +42,7 @@ export interface UpdatePipelinePhaseData {
   requiredApproverRole?: string | null;
   autoAdvance?: boolean;
   isActive?: boolean;
+  visibleToRecruit?: boolean;
 }
 
 export class PipelinePhaseRepository extends BaseRepository<
@@ -64,6 +67,27 @@ export class PipelinePhaseRepository extends BaseRepository<
 
     if (error) {
       throw this.handleError(error, "findByTemplateId");
+    }
+
+    return (data || []).map((row) => this.transformFromDB(row));
+  }
+
+  /**
+   * Find phases visible to recruits by template ID
+   */
+  async findVisibleByTemplateId(
+    templateId: string,
+  ): Promise<PipelinePhaseEntity[]> {
+    const { data, error } = await this.client
+      .from(this.tableName)
+      .select("*")
+      .eq("template_id", templateId)
+      .eq("is_active", true)
+      .eq("visible_to_recruit", true)
+      .order("phase_order", { ascending: true });
+
+    if (error) {
+      throw this.handleError(error, "findVisibleByTemplateId");
     }
 
     return (data || []).map((row) => this.transformFromDB(row));
@@ -196,6 +220,7 @@ export class PipelinePhaseRepository extends BaseRepository<
       requiredApproverRole: row.required_approver_role,
       autoAdvance: row.auto_advance ?? false,
       isActive: row.is_active ?? true,
+      visibleToRecruit: row.visible_to_recruit ?? true,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
     };
@@ -226,6 +251,8 @@ export class PipelinePhaseRepository extends BaseRepository<
         dbData.auto_advance = updateData.autoAdvance;
       if (updateData.isActive !== undefined)
         dbData.is_active = updateData.isActive;
+      if (updateData.visibleToRecruit !== undefined)
+        dbData.visible_to_recruit = updateData.visibleToRecruit;
 
       dbData.updated_at = new Date().toISOString();
       return dbData;
@@ -241,6 +268,7 @@ export class PipelinePhaseRepository extends BaseRepository<
       required_approver_role: createData.requiredApproverRole ?? null,
       auto_advance: createData.autoAdvance ?? false,
       is_active: createData.isActive ?? true,
+      visible_to_recruit: createData.visibleToRecruit ?? true,
     };
   }
 }

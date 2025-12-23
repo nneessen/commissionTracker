@@ -22,6 +22,7 @@ import {
   ChevronRight,
   GripVertical,
   Loader2,
+  EyeOff,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -53,6 +54,7 @@ export function PhaseEditor({ templateId }: PhaseEditorProps) {
     phase_description: "",
     estimated_days: 7,
     auto_advance: false,
+    visible_to_recruit: true,
   });
 
   const sortedPhases = [...(phases || [])].sort(
@@ -77,6 +79,7 @@ export function PhaseEditor({ templateId }: PhaseEditorProps) {
         phase_description: "",
         estimated_days: 7,
         auto_advance: false,
+        visible_to_recruit: true,
       });
     } catch (_error) {
       toast.error("Failed to create phase");
@@ -94,6 +97,7 @@ export function PhaseEditor({ templateId }: PhaseEditorProps) {
           phase_description: editingPhase.phase_description ?? undefined,
           estimated_days: editingPhase.estimated_days ?? undefined,
           auto_advance: editingPhase.auto_advance,
+          visible_to_recruit: editingPhase.visible_to_recruit,
         },
       });
       toast.success("Phase updated");
@@ -187,6 +191,15 @@ export function PhaseEditor({ templateId }: PhaseEditorProps) {
                     className="text-[9px] h-4 px-1.5 bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
                   >
                     Auto
+                  </Badge>
+                )}
+                {!phase.visible_to_recruit && (
+                  <Badge
+                    variant="outline"
+                    className="text-[9px] h-4 px-1.5 border-amber-300 text-amber-600 dark:border-amber-700 dark:text-amber-400"
+                  >
+                    <EyeOff className="h-2.5 w-2.5 mr-0.5" />
+                    Hidden
                   </Badge>
                 )}
                 <Button
@@ -294,6 +307,27 @@ export function PhaseEditor({ templateId }: PhaseEditorProps) {
                 Auto-advance when all items complete
               </label>
             </div>
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="visible_to_recruit"
+                checked={phaseForm.visible_to_recruit !== false}
+                onCheckedChange={(checked) =>
+                  setPhaseForm({ ...phaseForm, visible_to_recruit: !!checked })
+                }
+              />
+              <label
+                htmlFor="visible_to_recruit"
+                className="text-[11px] text-zinc-700 dark:text-zinc-300 cursor-pointer"
+              >
+                Visible to recruits
+              </label>
+            </div>
+            {phaseForm.visible_to_recruit === false && (
+              <p className="text-[10px] text-amber-600 dark:text-amber-400 ml-5">
+                This phase will be hidden from recruits. They will see a
+                &quot;waiting&quot; state instead.
+              </p>
+            )}
           </div>
           <DialogFooter>
             <Button
@@ -391,6 +425,30 @@ export function PhaseEditor({ templateId }: PhaseEditorProps) {
                   Auto-advance when all items complete
                 </label>
               </div>
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="edit_visible_to_recruit"
+                  checked={editingPhase.visible_to_recruit}
+                  onCheckedChange={(checked) =>
+                    setEditingPhase({
+                      ...editingPhase,
+                      visible_to_recruit: !!checked,
+                    })
+                  }
+                />
+                <label
+                  htmlFor="edit_visible_to_recruit"
+                  className="text-[11px] text-zinc-700 dark:text-zinc-300 cursor-pointer"
+                >
+                  Visible to recruits
+                </label>
+              </div>
+              {!editingPhase.visible_to_recruit && (
+                <p className="text-[10px] text-amber-600 dark:text-amber-400 ml-5">
+                  This phase will be hidden from recruits. They will see a
+                  &quot;waiting&quot; state instead.
+                </p>
+              )}
             </div>
           )}
           <DialogFooter>

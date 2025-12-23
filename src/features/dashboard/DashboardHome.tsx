@@ -8,7 +8,7 @@ import {
   useRecruitingStats,
 } from "../../hooks";
 import { useMetricsWithDateRange } from "@/hooks";
-import { useUnreadNotificationCount } from "../../hooks/notifications/useNotifications";
+import { useUnreadCount } from "@/components/notifications/useNotifications";
 import { useUnreadMessageCount } from "../../hooks/messaging/useMessages";
 import { useFeatureAccess } from "../../hooks/subscription/useFeatureAccess";
 import { useCreateExpense } from "../../hooks/expenses/useCreateExpense";
@@ -102,7 +102,7 @@ export const DashboardHome: React.FC = () => {
   });
 
   // Notification & messaging counts
-  const unreadNotifications = useUnreadNotificationCount();
+  const { data: unreadNotifications } = useUnreadCount();
   const { data: unreadMessages } = useUnreadMessageCount();
 
   // Calculate derived metrics
@@ -357,7 +357,7 @@ export const DashboardHome: React.FC = () => {
             <TeamRecruitingSection
               hierarchyStats={hierarchyStats}
               recruitingStats={recruitingStats}
-              unreadNotifications={unreadNotifications}
+              unreadNotifications={unreadNotifications ?? 0}
               unreadMessages={unreadMessages ?? 0}
               hasAccess={hasTeamAccess || dashboardFeatures.isAdmin}
             />

@@ -48,12 +48,29 @@ const phaseNameToStatus = (phaseName: string): OnboardingStatus => {
   return mapping[normalized] || "interview_1";
 };
 
+// Sync cache to prevent redundant sync checks (TTL: 30 seconds)
+const SYNC_CACHE_TTL_MS = 30000;
+const syncCache = new Map<string, number>();
+
+const isSyncCacheValid = (cacheKey: string): boolean => {
+  const lastSync = syncCache.get(cacheKey);
+  if (!lastSync) return false;
+  return Date.now() - lastSync < SYNC_CACHE_TTL_MS;
+};
+
+const markSyncComplete = (cacheKey: string): void => {
+  syncCache.set(cacheKey, Date.now());
+};
+
 export const checklistService = {
   // ========================================
   // RECRUIT PHASE PROGRESS
   // ========================================
 
   async getRecruitPhaseProgress(userId: string) {
+    // First, sync progress records with template to handle new phases
+    await this.syncPhaseProgressWithTemplate(userId);
+
     const data = await phaseProgressRepository.findByUserIdWithPhase(userId);
 
     // Sort by phase_order in JavaScript (Supabase doesn't support ordering by related fields)
@@ -68,7 +85,78 @@ export const checklistService = {
     return sorted as RecruitPhaseProgress[];
   },
 
+  /**
+   * Sync phase progress records with template.
+   * Creates missing progress records for phases added after enrollment.
+   * Uses caching to prevent redundant sync checks.
+   */
+  async syncPhaseProgressWithTemplate(userId: string) {
+    const cacheKey = `phase:${userId}`;
+
+    // Skip if recently synced
+    if (isSyncCacheValid(cacheKey)) {
+      return;
+    }
+
+    try {
+      // Get user's existing progress to find their template
+      const existingProgress =
+        await phaseProgressRepository.findByUserId(userId);
+      if (!existingProgress || existingProgress.length === 0) {
+        // User not enrolled in any pipeline
+        markSyncComplete(cacheKey);
+        return;
+      }
+
+      const templateId = existingProgress[0].templateId;
+      const existingPhaseIds = new Set(existingProgress.map((p) => p.phaseId));
+
+      // Get all phases from template
+      const templatePhases =
+        await pipelinePhaseRepository.findByTemplateId(templateId);
+      if (!templatePhases || templatePhases.length === 0) {
+        markSyncComplete(cacheKey);
+        return;
+      }
+
+      // Find phases that exist in template but not in progress
+      const missingPhases = templatePhases.filter(
+        (phase) => !existingPhaseIds.has(phase.id),
+      );
+
+      if (missingPhases.length === 0) {
+        markSyncComplete(cacheKey);
+        return;
+      }
+
+      console.log(
+        `[checklistService] Syncing ${missingPhases.length} new phases for user ${userId}`,
+      );
+
+      // Create progress records for missing phases
+      const newProgressRecords = missingPhases.map((phase) => ({
+        userId,
+        phaseId: phase.id,
+        templateId,
+        status: "not_started" as PhaseProgressStatus,
+        startedAt: null,
+      }));
+
+      await phaseProgressRepository.createMany(newProgressRecords);
+      markSyncComplete(cacheKey);
+    } catch (error) {
+      console.error(
+        `[checklistService] Phase sync failed for user ${userId}:`,
+        error,
+      );
+      // Don't throw - allow main query to proceed with potentially stale data
+    }
+  },
+
   async getCurrentPhase(userId: string) {
+    // Sync phase progress first to handle new phases
+    await this.syncPhaseProgressWithTemplate(userId);
+
     const data =
       await phaseProgressRepository.findCurrentPhaseWithDetails(userId);
     return data as RecruitPhaseProgress | null;
@@ -142,6 +230,36 @@ export const checklistService = {
     notes?: string,
     blockedReason?: string,
   ) {
+    // Ensure phase progress record exists before updating
+    // This handles cases where a phase was added after enrollment
+    const existingProgress = await phaseProgressRepository.findByUserAndPhase(
+      userId,
+      phaseId,
+    );
+
+    if (!existingProgress) {
+      console.log(
+        `[checklistService] Creating missing phase progress record for phase ${phaseId} user ${userId}`,
+      );
+      // Get template ID from user's other phases
+      const userProgress = await phaseProgressRepository.findByUserId(userId);
+      if (!userProgress || userProgress.length === 0) {
+        throw new Error("User has no pipeline enrollment to update phase for");
+      }
+      const templateId = userProgress[0].templateId;
+
+      // Create the phase progress record first
+      await phaseProgressRepository.createMany([
+        {
+          userId,
+          phaseId,
+          templateId,
+          status: "not_started" as PhaseProgressStatus,
+          startedAt: null,
+        },
+      ]);
+    }
+
     const data = await phaseProgressRepository.updateStatus(
       userId,
       phaseId,
@@ -259,6 +377,9 @@ export const checklistService = {
   },
 
   async getChecklistProgress(userId: string, phaseId: string) {
+    // First, sync checklist progress with phase items to handle new items
+    await this.syncChecklistProgressWithPhase(userId, phaseId);
+
     const data = await checklistProgressRepository.findByUserAndPhase(
       userId,
       phaseId,
@@ -266,11 +387,81 @@ export const checklistService = {
     return data as RecruitChecklistProgress[];
   },
 
+  /**
+   * Sync checklist progress records with phase items.
+   * Creates missing progress records for items added after enrollment.
+   * Uses caching and upsert for safe idempotent operation.
+   */
+  async syncChecklistProgressWithPhase(userId: string, phaseId: string) {
+    const cacheKey = `checklist:${userId}:${phaseId}`;
+
+    // Skip if recently synced
+    if (isSyncCacheValid(cacheKey)) {
+      return;
+    }
+
+    try {
+      // Get all checklist items for the phase
+      const items = await checklistItemRepository.findByPhaseId(phaseId);
+      if (!items || items.length === 0) {
+        markSyncComplete(cacheKey);
+        return;
+      }
+
+      // Get existing progress records
+      const existingProgress =
+        await checklistProgressRepository.findByUserAndPhase(userId, phaseId);
+      const existingItemIds = new Set(
+        existingProgress?.map((p) => p.checklist_item_id) || [],
+      );
+
+      // Find items that exist in phase but not in progress
+      const missingItems = items.filter(
+        (item) => !existingItemIds.has(item.id),
+      );
+
+      if (missingItems.length === 0) {
+        markSyncComplete(cacheKey);
+        return;
+      }
+
+      console.log(
+        `[checklistService] Syncing ${missingItems.length} new checklist items for user ${userId} in phase ${phaseId}`,
+      );
+
+      // Create progress records for missing items using upsert
+      const progressRecords = missingItems.map((item) => ({
+        userId,
+        checklistItemId: item.id,
+        status: "not_started" as ChecklistProgressStatus,
+      }));
+
+      await checklistProgressRepository.upsertMany(progressRecords);
+      markSyncComplete(cacheKey);
+    } catch (error) {
+      console.error(
+        `[checklistService] Checklist sync failed for user ${userId} phase ${phaseId}:`,
+        error,
+      );
+      // Don't throw - allow main query to proceed with potentially stale data
+    }
+  },
+
   async updateChecklistItemStatus(
     userId: string,
     itemId: string,
     statusData: UpdateChecklistItemStatusInput,
   ) {
+    // Ensure progress record exists using upsert (race-condition safe)
+    // This handles cases where an item was added after enrollment
+    await checklistProgressRepository.upsertMany([
+      {
+        userId,
+        checklistItemId: itemId,
+        status: "not_started" as ChecklistProgressStatus,
+      },
+    ]);
+
     const data = await checklistProgressRepository.updateStatus(
       userId,
       itemId,

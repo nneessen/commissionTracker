@@ -19,9 +19,16 @@ import {
   Lock,
   AlertCircle,
   Loader2,
+  EyeOff,
+  Clock,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useUpdateChecklistItemStatus } from "../hooks/useRecruitProgress";
+import {
+  isRecruitViewer as checkIsRecruitViewer,
+  isHiddenFromRecruit,
+  filterItemsForViewer,
+} from "@/lib/recruiting/visibility";
 
 interface PhaseChecklistProps {
   userId: string;
@@ -52,9 +59,25 @@ export function PhaseChecklist({
   const progressMap = new Map(
     checklistProgress.map((p) => [p.checklist_item_id, p]),
   );
-  const sortedItems = [...checklistItems].sort(
+
+  // Determine if viewer is a recruit (not admin and not upline)
+  const isRecruitViewer = checkIsRecruitViewer(isAdmin, isUpline);
+
+  // Filter items based on visibility for recruits
+  const visibleItems = filterItemsForViewer(checklistItems, isAdmin, isUpline);
+
+  const sortedItems = [...visibleItems].sort(
     (a, b) => a.item_order - b.item_order,
   );
+
+  // Check if there are hidden required items blocking progress
+  const hasHiddenBlockingItems = checklistItems.some((item) => {
+    if (!isHiddenFromRecruit(item)) return false;
+    if (!item.is_required) return false;
+    const progress = progressMap.get(item.id);
+    const status = progress?.status || "not_started";
+    return status !== "completed" && status !== "approved";
+  });
 
   const getCheckboxState = (
     item: PhaseChecklistItem,
@@ -329,6 +352,20 @@ export function PhaseChecklist({
   };
 
   if (sortedItems.length === 0) {
+    // If recruit has no visible items but there are hidden blocking items
+    if (isRecruitViewer && hasHiddenBlockingItems) {
+      return (
+        <div className="py-8 text-center">
+          <Clock className="h-10 w-10 text-amber-400 dark:text-amber-500 mx-auto mb-3" />
+          <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+            Waiting for Admin Action
+          </p>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400">
+            Some required items must be completed by your recruiter or admin.
+          </p>
+        </div>
+      );
+    }
     return (
       <div className="py-8 text-center">
         <FileText className="h-10 w-10 text-zinc-300 dark:text-zinc-600 mx-auto mb-3" />
@@ -341,6 +378,16 @@ export function PhaseChecklist({
 
   return (
     <div className="space-y-3">
+      {/* Show waiting message for recruits when hidden items block progress */}
+      {isRecruitViewer && hasHiddenBlockingItems && (
+        <div className="p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg flex items-center gap-2">
+          <Clock className="h-4 w-4 text-amber-500 flex-shrink-0" />
+          <p className="text-xs text-amber-700 dark:text-amber-400">
+            Some required items are pending admin action. Continue with
+            available tasks.
+          </p>
+        </div>
+      )}
       {sortedItems.map((item) => {
         const progress = progressMap.get(item.id);
         const status = progress?.status || "not_started";
@@ -400,6 +447,16 @@ export function PhaseChecklist({
                         className="text-xs border-zinc-300 text-zinc-600 dark:border-zinc-600 dark:text-zinc-400"
                       >
                         Required
+                      </Badge>
+                    )}
+                    {/* Show hidden badge for admins/uplines viewing hidden items */}
+                    {!isRecruitViewer && isHiddenFromRecruit(item) && (
+                      <Badge
+                        variant="outline"
+                        className="text-xs border-amber-300 text-amber-600 dark:border-amber-700 dark:text-amber-400"
+                      >
+                        <EyeOff className="h-3 w-3 mr-1" />
+                        Hidden
                       </Badge>
                     )}
                     <Badge

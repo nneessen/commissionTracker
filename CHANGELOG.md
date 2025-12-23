@@ -6,6 +6,78 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-12-23 15:09:19
+
+### Changed Files
+- `.github/workflows/ci.yml`
+- `CHANGELOG.md`
+- `PROJECT_STATS.md`
+- `plans/active/fix-notifications-bell-in-sidebar.md`
+- `src/components/notifications/NotificationDropdown.tsx`
+- `src/components/notifications/index.ts`
+- `src/components/notifications/useNotifications.ts`
+- `src/components/ui/popover.tsx`
+- `src/contexts/NotificationContext.tsx`
+- `src/features/dashboard/DashboardHome.tsx`
+- `src/features/recruiting/admin/ChecklistItemEditor.tsx`
+- `src/features/recruiting/admin/PhaseEditor.tsx`
+- `src/features/recruiting/components/PhaseChecklist.tsx`
+- `src/features/recruiting/components/RecruitDetailPanel.tsx`
+- `src/features/recruiting/pages/MyRecruitingPipeline.tsx`
+- `src/hooks/notifications/useNotifications.ts`
+- `src/index.tsx`
+- `src/lib/recruiting/visibility.ts`
+- `src/services/notifications/index.ts`
+- `src/services/notifications/realtimeNotifications.ts`
+- `src/services/recruiting/checklistService.ts`
+- `src/services/recruiting/pipelineService.ts`
+- `src/services/recruiting/repositories/PhaseChecklistItemRepository.ts`
+- `src/services/recruiting/repositories/PipelinePhaseRepository.ts`
+- `src/types/database.types.ts`
+- `src/types/recruiting.types.ts`
+- `supabase/migrations/20251223_047_phase_visibility_controls.sql`
+- `supabase/migrations/20251223_048_fix_notifications_rls_insert_policy.sql`
+
+### Statistics
+```
+ 28 files changed, 8145 insertions(+), 7435 deletions(-)
+```
+
+## [Checkpoint] - 2025-12-23 15:08:50
+
+### Changed Files
+- `.github/workflows/ci.yml`
+- `plans/active/fix-notifications-bell-in-sidebar.md`
+- `src/components/notifications/NotificationDropdown.tsx`
+- `src/components/notifications/index.ts`
+- `src/components/notifications/useNotifications.ts`
+- `src/components/ui/popover.tsx`
+- `src/contexts/NotificationContext.tsx`
+- `src/features/dashboard/DashboardHome.tsx`
+- `src/features/recruiting/admin/ChecklistItemEditor.tsx`
+- `src/features/recruiting/admin/PhaseEditor.tsx`
+- `src/features/recruiting/components/PhaseChecklist.tsx`
+- `src/features/recruiting/components/RecruitDetailPanel.tsx`
+- `src/features/recruiting/pages/MyRecruitingPipeline.tsx`
+- `src/hooks/notifications/useNotifications.ts`
+- `src/index.tsx`
+- `src/lib/recruiting/visibility.ts`
+- `src/services/notifications/index.ts`
+- `src/services/notifications/realtimeNotifications.ts`
+- `src/services/recruiting/checklistService.ts`
+- `src/services/recruiting/pipelineService.ts`
+- `src/services/recruiting/repositories/PhaseChecklistItemRepository.ts`
+- `src/services/recruiting/repositories/PipelinePhaseRepository.ts`
+- `src/types/database.types.ts`
+- `src/types/recruiting.types.ts`
+- `supabase/migrations/20251223_047_phase_visibility_controls.sql`
+- `supabase/migrations/20251223_048_fix_notifications_rls_insert_policy.sql`
+
+### Statistics
+```
+ 26 files changed, 8103 insertions(+), 7426 deletions(-)
+```
+
 ## [Checkpoint] - 2025-12-23 13:27:29
 
 ### Changed Files
