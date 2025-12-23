@@ -142,7 +142,7 @@ export const checklistService = {
         startedAt: null,
       }));
 
-      await phaseProgressRepository.createMany(newProgressRecords);
+      await phaseProgressRepository.upsertMany(newProgressRecords);
       markSyncComplete(cacheKey);
     } catch (error) {
       console.error(

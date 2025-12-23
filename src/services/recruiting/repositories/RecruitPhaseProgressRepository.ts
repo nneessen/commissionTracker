@@ -258,6 +258,29 @@ export class RecruitPhaseProgressRepository extends BaseRepository<
   }
 
   /**
+   * Create or update progress records (upsert) - handles race conditions safely
+   */
+  async upsertMany(
+    items: CreateRecruitPhaseProgressData[],
+  ): Promise<RecruitPhaseProgressEntity[]> {
+    const dbData = items.map((item) => this.transformToDB(item));
+
+    const { data, error } = await this.client
+      .from(this.tableName)
+      .upsert(dbData, {
+        onConflict: "user_id,phase_id",
+        ignoreDuplicates: true,
+      })
+      .select();
+
+    if (error) {
+      throw this.handleError(error, "upsertMany");
+    }
+
+    return (data || []).map((row) => this.transformFromDB(row));
+  }
+
+  /**
    * Transform database row to entity
    */
   protected transformFromDB(
