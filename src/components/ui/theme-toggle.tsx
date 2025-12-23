@@ -1,51 +1,40 @@
-import React from "react";
-import {Moon, Sun, Monitor} from "lucide-react";
-import {useTheme} from "next-themes";
-import {Button} from "@/components/ui/button";
+// src/components/ui/theme-toggle.tsx
+import React, { useEffect, useState } from "react";
+import { Moon, Sun } from "lucide-react";
+import { useTheme } from "next-themes";
+import { Button } from "@/components/ui/button";
 
 export function ThemeToggle() {
-  const { theme, setTheme } = useTheme();
+  const { resolvedTheme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
 
-  const cycleTheme = () => {
-    const themes = ["light", "dark", "system"];
-    const currentIndex = themes.indexOf(theme || "system");
-    const nextIndex = (currentIndex + 1) % themes.length;
-    setTheme(themes[nextIndex]);
+  // Prevent hydration mismatch
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const toggleTheme = () => {
+    setTheme(resolvedTheme === "dark" ? "light" : "dark");
   };
 
-  const getThemeIcon = () => {
-    switch (theme) {
-      case "light":
-        return <Sun size={16} />;
-      case "dark":
-        return <Moon size={16} />;
-      case "system":
-      default:
-        return <Monitor size={16} />;
-    }
-  };
-
-  const getThemeLabel = () => {
-    switch (theme) {
-      case "light":
-        return "Light";
-      case "dark":
-        return "Dark";
-      case "system":
-      default:
-        return "System";
-    }
-  };
+  // Avoid hydration mismatch by rendering nothing until mounted
+  if (!mounted) {
+    return (
+      <Button variant="ghost" size="icon" className="h-9 w-9" disabled>
+        <span className="sr-only">Loading theme</span>
+      </Button>
+    );
+  }
 
   return (
     <Button
       variant="ghost"
       size="icon"
-      onClick={cycleTheme}
+      onClick={toggleTheme}
       className="h-9 w-9"
-      title={`Current theme: ${getThemeLabel()}. Click to cycle.`}
+      title={`Switch to ${resolvedTheme === "dark" ? "light" : "dark"} mode`}
     >
-      {getThemeIcon()}
+      {resolvedTheme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
       <span className="sr-only">Toggle theme</span>
     </Button>
   );

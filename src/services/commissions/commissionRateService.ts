@@ -315,14 +315,6 @@ class CommissionRateService {
         ? parseFloat(result.weighted_avg_rate)
         : parseFloat(result.simple_avg_rate);
 
-      logger.info("User commission profile calculated", {
-        userId,
-        contractLevel: result.contract_level,
-        dataQuality,
-        recommendedRate,
-        lookbackMonths,
-      });
-
       return {
         userId,
         contractLevel: result.contract_level,
