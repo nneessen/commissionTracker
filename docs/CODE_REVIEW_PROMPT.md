@@ -1,5 +1,3 @@
-# 🔍 Universal Senior Software Engineer Code Review Prompt
-
 > **Use this after any code is written or modified.**  
 > This prompt is framework-agnostic and suitable for ongoing, repeated code reviews across the codebase.
 
