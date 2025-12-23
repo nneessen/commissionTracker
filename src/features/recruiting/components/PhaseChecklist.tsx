@@ -1,7 +1,7 @@
 // src/features/recruiting/components/PhaseChecklist.tsx
 // Checklist component with modern zinc palette styling
 
-import React from "react";
+import React, { useState } from "react";
 import {
   RecruitChecklistProgress,
   PhaseChecklistItem,
@@ -18,6 +18,7 @@ import {
   FileText,
   Lock,
   AlertCircle,
+  Loader2,
 } from "lucide-react";
 import { useUpdateChecklistItemStatus } from "../hooks/useRecruitProgress";
 import { showToast } from "@/utils/toast";
@@ -46,6 +47,7 @@ export function PhaseChecklist({
   onPhaseComplete: _onPhaseComplete,
 }: PhaseChecklistProps) {
   const updateItemStatus = useUpdateChecklistItemStatus();
+  const [loadingItemIds, setLoadingItemIds] = useState<Set<string>>(new Set());
 
   const progressMap = new Map(
     checklistProgress.map((p) => [p.checklist_item_id, p]),
@@ -137,6 +139,8 @@ export function PhaseChecklist({
     const newStatus =
       currentStatus === "completed" ? "not_started" : "completed";
 
+    setLoadingItemIds((prev) => new Set(prev).add(itemId));
+
     try {
       await updateItemStatus.mutateAsync({
         userId,
@@ -156,6 +160,12 @@ export function PhaseChecklist({
       showToast.error(
         error?.message || "Failed to update task. Please try again.",
       );
+    } finally {
+      setLoadingItemIds((prev) => {
+        const next = new Set(prev);
+        next.delete(itemId);
+        return next;
+      });
     }
   };
 
@@ -347,17 +357,22 @@ export function PhaseChecklist({
           >
             <div className="flex items-start gap-3">
               <div className="relative mt-0.5">
-                <Checkbox
-                  checked={isCompleted}
-                  disabled={!checkboxState.isEnabled}
-                  onCheckedChange={() => {
-                    if (checkboxState.isEnabled) {
-                      handleToggleComplete(item.id, status);
-                    }
-                  }}
-                  className="h-5 w-5"
-                />
+                {loadingItemIds.has(item.id) ? (
+                  <Loader2 className="h-5 w-5 animate-spin text-zinc-400" />
+                ) : (
+                  <Checkbox
+                    checked={isCompleted}
+                    disabled={!checkboxState.isEnabled}
+                    onCheckedChange={() => {
+                      if (checkboxState.isEnabled) {
+                        handleToggleComplete(item.id, status);
+                      }
+                    }}
+                    className="h-5 w-5"
+                  />
+                )}
                 {!checkboxState.isEnabled &&
+                  !loadingItemIds.has(item.id) &&
                   checkboxState.disabledReason !== "Use upload button" && (
                     <div className="absolute -top-1 -right-1">
                       <Lock className="h-3 w-3 text-zinc-400 dark:text-zinc-500" />

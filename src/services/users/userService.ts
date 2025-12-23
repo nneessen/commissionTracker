@@ -268,9 +268,16 @@ class UserService {
       const result = await response.json();
 
       if (!response.ok) {
+        console.error("[userService.create] Edge function failed:", {
+          status: response.status,
+          statusText: response.statusText,
+          error: result.error,
+          details: result.details,
+          fullResult: result,
+        });
         return {
           success: false,
-          error: `Auth user creation failed: ${result.error || "Unknown error"}`,
+          error: `Auth user creation failed: ${result.error || "Unknown error"} (Details: ${result.details || "none"})`,
         };
       }
 

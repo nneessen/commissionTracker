@@ -1,7 +1,7 @@
 // supabase/functions/create-auth-user/index.ts
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.47.10";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -172,6 +172,25 @@ serve(async (req) => {
       });
 
     if (authError) {
+      // Provide clearer error message for common cases
+      const errorMsg = authError.message?.toLowerCase() || "";
+      if (
+        errorMsg.includes("already registered") ||
+        errorMsg.includes("already exists") ||
+        errorMsg.includes("duplicate")
+      ) {
+        // Log detailed info for debugging (visible in Supabase edge function logs)
+        console.error("[create-auth-user] Duplicate user detected:", {
+          email: normalizedEmail,
+          suggestion: `DELETE FROM auth.users WHERE email = '${normalizedEmail}';`,
+        });
+        // Return user-friendly message without exposing SQL
+        throw new Error(
+          `User with email ${normalizedEmail} already exists. ` +
+          `This may be an orphaned auth user without a profile. ` +
+          `Please check Supabase Dashboard > Authentication > Users to resolve.`
+        );
+      }
       throw authError;
     }
 

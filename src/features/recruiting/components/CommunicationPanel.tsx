@@ -51,7 +51,10 @@ export function CommunicationPanel({
         throw new Error("No recruiter email available");
       }
 
-      const senderName = `${currentUserProfile?.first_name || "Recruit"} ${currentUserProfile?.last_name || ""}`.trim();
+      // Sanitize name to prevent email header injection (remove angle brackets)
+      const senderName = `${currentUserProfile?.first_name || "Recruit"} ${currentUserProfile?.last_name || ""}`
+        .trim()
+        .replace(/[<>]/g, '');
       const request: SendEmailRequest = {
         to: [upline.email],
         from: `${senderName} <recruiting@thestandardhq.com>`,
