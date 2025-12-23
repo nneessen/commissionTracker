@@ -31,6 +31,7 @@ import {
   useDeletePhase,
 } from "../hooks/usePipeline";
 import { ChecklistItemEditor } from "./ChecklistItemEditor";
+import { PhaseAutomationConfig } from "./PhaseAutomationConfig";
 import type { PipelinePhase, CreatePhaseInput } from "@/types/recruiting.types";
 
 interface PhaseEditorProps {
@@ -122,77 +123,87 @@ export function PhaseEditor({ templateId }: PhaseEditorProps) {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-4">
-        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        <Loader2 className="h-5 w-5 animate-spin text-zinc-400" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2.5">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold">
+        <h3 className="text-[10px] font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
           Pipeline Phases ({sortedPhases.length})
         </h3>
         <Button
           size="sm"
           variant="outline"
+          className="h-7 px-3 text-[11px]"
           onClick={() => setCreateDialogOpen(true)}
         >
-          <Plus className="h-4 w-4 mr-2" />
+          <Plus className="h-3 w-3 mr-1.5" />
           Add Phase
         </Button>
       </div>
 
       {sortedPhases.length === 0 ? (
-        <div className="text-center py-8 text-muted-foreground text-sm">
+        <div className="text-center py-6 text-[11px] text-zinc-500 dark:text-zinc-400">
           No phases yet. Add your first phase to get started.
         </div>
       ) : (
         <div className="space-y-1">
           {sortedPhases.map((phase) => (
-            <div key={phase.id} className="bg-muted/10 rounded-sm">
+            <div
+              key={phase.id}
+              className="bg-zinc-50 dark:bg-zinc-800/50 rounded-md border border-zinc-100 dark:border-zinc-800"
+            >
               {/* Phase Row */}
               <div
-                className="flex items-center gap-2 p-2 hover:bg-muted/20 cursor-pointer"
+                className="flex items-center gap-2 p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer rounded-t-md"
                 onClick={() => toggleExpand(phase.id)}
               >
-                <GripVertical className="h-4 w-4 text-muted-foreground/50 cursor-grab" />
-                <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                <GripVertical className="h-3.5 w-3.5 text-zinc-400 dark:text-zinc-500 cursor-grab" />
+                <Button variant="ghost" size="sm" className="h-5 w-5 p-0">
                   {expandedPhase === phase.id ? (
-                    <ChevronDown className="h-4 w-4" />
+                    <ChevronDown className="h-3.5 w-3.5 text-zinc-500 dark:text-zinc-400" />
                   ) : (
-                    <ChevronRight className="h-4 w-4" />
+                    <ChevronRight className="h-3.5 w-3.5 text-zinc-500 dark:text-zinc-400" />
                   )}
                 </Button>
-                <span className="text-xs text-muted-foreground font-mono w-6">
+                <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-mono w-5">
                   {phase.phase_order}
                 </span>
-                <span className="text-sm font-medium flex-1">
+                <span className="text-[11px] font-medium text-zinc-900 dark:text-zinc-100 flex-1">
                   {phase.phase_name}
                 </span>
-                <Badge variant="outline" className="text-xs">
+                <Badge
+                  variant="outline"
+                  className="text-[9px] h-4 px-1.5 border-zinc-200 dark:border-zinc-700"
+                >
                   {phase.estimated_days || 0} days
                 </Badge>
                 {phase.auto_advance && (
-                  <Badge variant="secondary" className="text-xs">
+                  <Badge
+                    variant="secondary"
+                    className="text-[9px] h-4 px-1.5 bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
+                  >
                     Auto
                   </Badge>
                 )}
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-6 px-2"
+                  className="h-5 w-5 p-0"
                   onClick={(e) => {
                     e.stopPropagation();
                     setEditingPhase(phase);
                   }}
                 >
-                  <Edit2 className="h-3 w-3" />
+                  <Edit2 className="h-3 w-3 text-zinc-500 dark:text-zinc-400" />
                 </Button>
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-6 px-2 text-destructive"
+                  className="h-5 w-5 p-0 text-red-500 hover:text-red-600 dark:text-red-400"
                   onClick={(e) => {
                     e.stopPropagation();
                     setDeleteConfirmId(phase.id);
@@ -202,10 +213,13 @@ export function PhaseEditor({ templateId }: PhaseEditorProps) {
                 </Button>
               </div>
 
-              {/* Expanded: Checklist Items */}
+              {/* Expanded: Checklist Items & Automations */}
               {expandedPhase === phase.id && (
-                <div className="ml-10 mr-2 mb-2 pb-2">
+                <div className="ml-8 mr-2 mb-2 pb-2 border-t border-zinc-100 dark:border-zinc-800 pt-2 space-y-3">
                   <ChecklistItemEditor phaseId={phase.id} />
+                  <div className="border-t border-zinc-100 dark:border-zinc-800 pt-2">
+                    <PhaseAutomationConfig phaseId={phase.id} />
+                  </div>
                 </div>
               )}
             </div>
@@ -217,22 +231,26 @@ export function PhaseEditor({ templateId }: PhaseEditorProps) {
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Add Phase</DialogTitle>
+            <DialogTitle className="text-sm">Add Phase</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label className="text-sm">Phase Name</Label>
+          <div className="space-y-3 py-3">
+            <div className="space-y-1.5">
+              <Label className="text-[10px] text-zinc-600 dark:text-zinc-400">
+                Phase Name
+              </Label>
               <Input
                 value={phaseForm.phase_name}
                 onChange={(e) =>
                   setPhaseForm({ ...phaseForm, phase_name: e.target.value })
                 }
                 placeholder="e.g., Background Check"
-                className="h-8 text-sm"
+                className="h-7 text-[11px] bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
               />
             </div>
-            <div className="space-y-2">
-              <Label className="text-sm">Description</Label>
+            <div className="space-y-1.5">
+              <Label className="text-[10px] text-zinc-600 dark:text-zinc-400">
+                Description
+              </Label>
               <Textarea
                 value={phaseForm.phase_description || ""}
                 onChange={(e) =>
@@ -242,11 +260,13 @@ export function PhaseEditor({ templateId }: PhaseEditorProps) {
                   })
                 }
                 placeholder="Optional description..."
-                className="text-sm min-h-16"
+                className="text-[11px] min-h-14 bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
               />
             </div>
-            <div className="space-y-2">
-              <Label className="text-sm">Estimated Days</Label>
+            <div className="space-y-1.5">
+              <Label className="text-[10px] text-zinc-600 dark:text-zinc-400">
+                Estimated Days
+              </Label>
               <Input
                 type="number"
                 value={phaseForm.estimated_days || 7}
@@ -256,7 +276,7 @@ export function PhaseEditor({ templateId }: PhaseEditorProps) {
                     estimated_days: parseInt(e.target.value) || 7,
                   })
                 }
-                className="h-8 text-sm w-24"
+                className="h-7 text-[11px] w-20 bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
               />
             </div>
             <div className="flex items-center gap-2">
@@ -267,7 +287,10 @@ export function PhaseEditor({ templateId }: PhaseEditorProps) {
                   setPhaseForm({ ...phaseForm, auto_advance: !!checked })
                 }
               />
-              <label htmlFor="auto_advance" className="text-sm cursor-pointer">
+              <label
+                htmlFor="auto_advance"
+                className="text-[11px] text-zinc-700 dark:text-zinc-300 cursor-pointer"
+              >
                 Auto-advance when all items complete
               </label>
             </div>
@@ -275,16 +298,20 @@ export function PhaseEditor({ templateId }: PhaseEditorProps) {
           <DialogFooter>
             <Button
               variant="outline"
+              size="sm"
+              className="h-7 text-[11px]"
               onClick={() => setCreateDialogOpen(false)}
             >
               Cancel
             </Button>
             <Button
+              size="sm"
+              className="h-7 text-[11px]"
               onClick={handleCreatePhase}
               disabled={createPhase.isPending}
             >
               {createPhase.isPending && (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />
               )}
               Add Phase
             </Button>
@@ -296,12 +323,14 @@ export function PhaseEditor({ templateId }: PhaseEditorProps) {
       <Dialog open={!!editingPhase} onOpenChange={() => setEditingPhase(null)}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Edit Phase</DialogTitle>
+            <DialogTitle className="text-sm">Edit Phase</DialogTitle>
           </DialogHeader>
           {editingPhase && (
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label className="text-sm">Phase Name</Label>
+            <div className="space-y-3 py-3">
+              <div className="space-y-1.5">
+                <Label className="text-[10px] text-zinc-600 dark:text-zinc-400">
+                  Phase Name
+                </Label>
                 <Input
                   value={editingPhase.phase_name}
                   onChange={(e) =>
@@ -310,11 +339,13 @@ export function PhaseEditor({ templateId }: PhaseEditorProps) {
                       phase_name: e.target.value,
                     })
                   }
-                  className="h-8 text-sm"
+                  className="h-7 text-[11px] bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
                 />
               </div>
-              <div className="space-y-2">
-                <Label className="text-sm">Description</Label>
+              <div className="space-y-1.5">
+                <Label className="text-[10px] text-zinc-600 dark:text-zinc-400">
+                  Description
+                </Label>
                 <Textarea
                   value={editingPhase.phase_description || ""}
                   onChange={(e) =>
@@ -323,11 +354,13 @@ export function PhaseEditor({ templateId }: PhaseEditorProps) {
                       phase_description: e.target.value,
                     })
                   }
-                  className="text-sm min-h-16"
+                  className="text-[11px] min-h-14 bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
                 />
               </div>
-              <div className="space-y-2">
-                <Label className="text-sm">Estimated Days</Label>
+              <div className="space-y-1.5">
+                <Label className="text-[10px] text-zinc-600 dark:text-zinc-400">
+                  Estimated Days
+                </Label>
                 <Input
                   type="number"
                   value={editingPhase.estimated_days || 7}
@@ -337,7 +370,7 @@ export function PhaseEditor({ templateId }: PhaseEditorProps) {
                       estimated_days: parseInt(e.target.value) || 7,
                     })
                   }
-                  className="h-8 text-sm w-24"
+                  className="h-7 text-[11px] w-20 bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
                 />
               </div>
               <div className="flex items-center gap-2">
@@ -353,7 +386,7 @@ export function PhaseEditor({ templateId }: PhaseEditorProps) {
                 />
                 <label
                   htmlFor="edit_auto_advance"
-                  className="text-sm cursor-pointer"
+                  className="text-[11px] text-zinc-700 dark:text-zinc-300 cursor-pointer"
                 >
                   Auto-advance when all items complete
                 </label>
@@ -361,15 +394,22 @@ export function PhaseEditor({ templateId }: PhaseEditorProps) {
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditingPhase(null)}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 text-[11px]"
+              onClick={() => setEditingPhase(null)}
+            >
               Cancel
             </Button>
             <Button
+              size="sm"
+              className="h-7 text-[11px]"
               onClick={handleUpdatePhase}
               disabled={updatePhase.isPending}
             >
               {updatePhase.isPending && (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />
               )}
               Save Changes
             </Button>
@@ -384,24 +424,31 @@ export function PhaseEditor({ templateId }: PhaseEditorProps) {
       >
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>Delete Phase?</DialogTitle>
+            <DialogTitle className="text-sm">Delete Phase?</DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
             This will permanently delete this phase and all its checklist items.
           </p>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteConfirmId(null)}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 text-[11px]"
+              onClick={() => setDeleteConfirmId(null)}
+            >
               Cancel
             </Button>
             <Button
               variant="destructive"
+              size="sm"
+              className="h-7 text-[11px]"
               onClick={() =>
                 deleteConfirmId && handleDeletePhase(deleteConfirmId)
               }
               disabled={deletePhase.isPending}
             >
               {deletePhase.isPending && (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />
               )}
               Delete
             </Button>

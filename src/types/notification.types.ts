@@ -14,7 +14,8 @@ export type NotificationType =
   | "phase_completed"
   | "phase_advanced"
   | "checklist_item_completed"
-  | "email_received";
+  | "email_received"
+  | "pipeline_automation";
 
 export interface Notification {
   id: string;

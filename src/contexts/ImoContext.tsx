@@ -8,14 +8,14 @@ import React, {
   useState,
   useCallback,
   useRef,
-} from 'react';
-import { useAuth } from './AuthContext';
-import { imoService } from '../services/imo';
-import { agencyService } from '../services/agency';
-import { supabase } from '../services/base/supabase';
-import { logger } from '../services/base/logger';
-import type { Imo, Agency, ImoContextType } from '../types/imo.types';
-import { hasImoAdminRole, hasImoOwnerRole } from '../types/imo.types';
+} from "react";
+import { useAuth } from "./AuthContext";
+import { imoService } from "../services/imo";
+import { agencyService } from "../services/agency";
+import { supabase } from "../services/base/supabase";
+import { logger } from "../services/base/logger";
+import type { Imo, Agency, ImoContextType } from "../types/imo.types";
+import { hasImoAdminRole, hasImoOwnerRole } from "../types/imo.types";
 
 // User role info from database
 interface UserRoleInfo {
@@ -33,7 +33,7 @@ const ImoContext = createContext<ImoContextType | undefined>(undefined);
 export const useImo = (): ImoContextType => {
   const context = useContext(ImoContext);
   if (!context) {
-    throw new Error('useImo must be used within an ImoProvider');
+    throw new Error("useImo must be used within an ImoProvider");
   }
   return context;
 };
@@ -58,7 +58,10 @@ export const ImoProvider: React.FC<ImoProviderProps> = ({ children }) => {
   // State
   const [imo, setImo] = useState<Imo | null>(null);
   const [agency, setAgency] = useState<Agency | null>(null);
-  const [userRoles, setUserRoles] = useState<UserRoleInfo>({ roles: [], is_super_admin: false });
+  const [userRoles, setUserRoles] = useState<UserRoleInfo>({
+    roles: [],
+    is_super_admin: false,
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
@@ -86,9 +89,9 @@ export const ImoProvider: React.FC<ImoProviderProps> = ({ children }) => {
         imoService.getMyImo(),
         agencyService.getMyAgency(),
         supabase
-          .from('user_profiles')
-          .select('roles, is_super_admin')
-          .eq('id', user.id)
+          .from("user_profiles")
+          .select("roles, is_super_admin")
+          .eq("id", user.id)
           .single()
           .then(({ data }) => data as UserRoleInfo | null),
       ]);
@@ -99,47 +102,47 @@ export const ImoProvider: React.FC<ImoProviderProps> = ({ children }) => {
       }
 
       // Extract results, handling partial failures
-      const imoData = results[0].status === 'fulfilled' ? results[0].value : null;
-      const agencyData = results[1].status === 'fulfilled' ? results[1].value : null;
-      const roleData = results[2].status === 'fulfilled' ? results[2].value : null;
+      const imoData =
+        results[0].status === "fulfilled" ? results[0].value : null;
+      const agencyData =
+        results[1].status === "fulfilled" ? results[1].value : null;
+      const roleData =
+        results[2].status === "fulfilled" ? results[2].value : null;
 
       // Log any failures but don't throw
-      if (results[0].status === 'rejected') {
-        logger.warn('Failed to fetch IMO data', { error: results[0].reason }, 'ImoContext');
+      if (results[0].status === "rejected") {
+        logger.warn(
+          "Failed to fetch IMO data",
+          { error: results[0].reason },
+          "ImoContext",
+        );
       }
-      if (results[1].status === 'rejected') {
-        logger.warn('Failed to fetch agency data', { error: results[1].reason }, 'ImoContext');
+      if (results[1].status === "rejected") {
+        logger.warn(
+          "Failed to fetch agency data",
+          { error: results[1].reason },
+          "ImoContext",
+        );
       }
-      if (results[2].status === 'rejected') {
-        logger.warn('Failed to fetch user roles', { error: results[2].reason }, 'ImoContext');
+      if (results[2].status === "rejected") {
+        logger.warn(
+          "Failed to fetch user roles",
+          { error: results[2].reason },
+          "ImoContext",
+        );
       }
 
       setImo(imoData);
       setAgency(agencyData);
       setUserRoles(roleData ?? { roles: [], is_super_admin: false });
-
-      if (imoData) {
-        logger.info(
-          'IMO context loaded',
-          { imoId: imoData.id, imoCode: imoData.code },
-          'ImoContext'
-        );
-      }
-
-      if (agencyData) {
-        logger.info(
-          'Agency context loaded',
-          { agencyId: agencyData.id, agencyCode: agencyData.code },
-          'ImoContext'
-        );
-      }
     } catch (err) {
       // Guard against stale error using ref
       if (userRef.current?.id !== currentUserId) {
         return;
       }
-      const error = err instanceof Error ? err : new Error('Failed to fetch IMO data');
-      logger.error('Failed to fetch IMO data', error, 'ImoContext');
+      const error =
+        err instanceof Error ? err : new Error("Failed to fetch IMO data");
+      logger.error("Failed to fetch IMO data", error, "ImoContext");
       setError(error);
     } finally {
       // Only update loading if this is still the current user's request
@@ -181,7 +184,7 @@ export const ImoProvider: React.FC<ImoProviderProps> = ({ children }) => {
  * Higher-order component to inject IMO context
  */
 export function withImo<P extends object>(
-  Component: React.ComponentType<P & ImoContextType>
+  Component: React.ComponentType<P & ImoContextType>,
 ): React.FC<P> {
   return function WithImoComponent(props: P) {
     const imoContext = useImo();

@@ -144,14 +144,6 @@ function AgentRow({
   const uplineLevel = uplineContractLevel || 100;
 
   // Debug: Log what we're getting
-  console.log("Debug Override Calculation:", {
-    agentEmail: agent.email,
-    agentContractLevel,
-    uplineLevel,
-    agentData: agent,
-    hasContractLevel: "contract_level" in agent,
-    uplineContractLevel,
-  });
 
   const overrideSpread =
     uplineLevel > agentContractLevel ? uplineLevel - agentContractLevel : 0;
@@ -373,7 +365,6 @@ export function AgentTable({ agents, isLoading, onRefresh }: AgentTableProps) {
         .eq("id", user.id)
         .single();
 
-      console.log("Current User Profile:", profile);
       return profile;
     },
   });
@@ -383,12 +374,6 @@ export function AgentTable({ agents, isLoading, onRefresh }: AgentTableProps) {
     queryKey: ["agents-with-uplines", agents, currentUser],
     queryFn: async () => {
       if (!currentUser) return agents;
-
-      console.log("Processing agents with uplines:", {
-        agents,
-        currentUserId: currentUser.id,
-        currentUserContractLevel: currentUser.contract_level,
-      });
 
       // For each agent, determine their upline's contract level
       return agents.map((agent) => {

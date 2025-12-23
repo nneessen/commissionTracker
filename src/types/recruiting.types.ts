@@ -488,3 +488,148 @@ export const PHASE_PROGRESS_COLORS: Record<PhaseProgressStatus, string> = {
   blocked: "text-red-700 bg-red-100 dark:text-red-400 dark:bg-red-950",
   skipped: "text-gray-700 bg-gray-100 dark:text-gray-400 dark:bg-gray-950",
 };
+
+// =============================================================================
+// Pipeline Automation Types
+// =============================================================================
+
+export type AutomationTriggerType =
+  | "phase_enter"
+  | "phase_complete"
+  | "phase_stall"
+  | "item_complete"
+  | "item_approval_needed"
+  | "item_deadline_approaching";
+
+export type AutomationRecipientType =
+  | "recruit"
+  | "upline"
+  | "trainer"
+  | "contracting_manager"
+  | "custom_email";
+
+export type AutomationCommunicationType =
+  | "email"
+  | "notification"
+  | "sms"
+  | "both"
+  | "all";
+
+export interface RecipientConfig {
+  type: AutomationRecipientType;
+  emails?: string[]; // Only for custom_email type
+}
+
+export interface PipelineAutomation {
+  id: string;
+  phase_id: string | null;
+  checklist_item_id: string | null;
+  trigger_type: AutomationTriggerType;
+  communication_type: AutomationCommunicationType;
+  delay_days: number | null;
+  recipients: RecipientConfig[];
+  email_template_id: string | null;
+  email_subject: string | null;
+  email_body_html: string | null;
+  notification_title: string | null;
+  notification_message: string | null;
+  sms_message: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PipelineAutomationLog {
+  id: string;
+  automation_id: string;
+  recruit_id: string;
+  triggered_at: string;
+  status: "pending" | "sent" | "failed" | "skipped";
+  error_message: string | null;
+  metadata: Record<string, unknown> | null;
+}
+
+export interface CreateAutomationInput {
+  phase_id?: string;
+  checklist_item_id?: string;
+  trigger_type: AutomationTriggerType;
+  communication_type?: AutomationCommunicationType;
+  delay_days?: number;
+  recipients: RecipientConfig[];
+  email_template_id?: string;
+  email_subject?: string;
+  email_body_html?: string;
+  notification_title?: string;
+  notification_message?: string;
+  sms_message?: string;
+}
+
+export interface UpdateAutomationInput extends Partial<CreateAutomationInput> {
+  is_active?: boolean;
+}
+
+// Display labels for automation triggers
+export const AUTOMATION_TRIGGER_LABELS: Record<AutomationTriggerType, string> =
+  {
+    phase_enter: "On Phase Enter",
+    phase_complete: "On Phase Complete",
+    phase_stall: "Phase Stall Reminder",
+    item_complete: "On Item Complete",
+    item_approval_needed: "Approval Request",
+    item_deadline_approaching: "Deadline Reminder",
+  };
+
+export const AUTOMATION_RECIPIENT_LABELS: Record<
+  AutomationRecipientType,
+  string
+> = {
+  recruit: "Recruit",
+  upline: "Upline/Recruiter",
+  trainer: "Trainer",
+  contracting_manager: "Contracting Manager",
+  custom_email: "Custom Email",
+};
+
+export const AUTOMATION_COMMUNICATION_LABELS: Record<
+  AutomationCommunicationType,
+  string
+> = {
+  email: "Email Only",
+  notification: "In-App Notification",
+  sms: "SMS Only",
+  both: "Email + Notification",
+  all: "Email + SMS + Notification",
+};
+
+// Helper to check if trigger is phase-level
+export function isPhaseAutomation(trigger: AutomationTriggerType): boolean {
+  return ["phase_enter", "phase_complete", "phase_stall"].includes(trigger);
+}
+
+// Helper to check if trigger is item-level
+export function isItemAutomation(trigger: AutomationTriggerType): boolean {
+  return [
+    "item_complete",
+    "item_approval_needed",
+    "item_deadline_approaching",
+  ].includes(trigger);
+}
+
+// Short trigger labels for compact UI display
+export const PHASE_TRIGGER_SHORT_LABELS: Record<string, string> = {
+  phase_enter: "On Enter",
+  phase_complete: "On Complete",
+  phase_stall: "Stall Reminder",
+};
+
+export const ITEM_TRIGGER_SHORT_LABELS: Record<string, string> = {
+  item_complete: "On Complete",
+  item_approval_needed: "Approval Request",
+  item_deadline_approaching: "Deadline Reminder",
+};
+
+// Combined short labels for all triggers
+export const TRIGGER_SHORT_LABELS: Record<string, string> = {
+  ...PHASE_TRIGGER_SHORT_LABELS,
+  ...ITEM_TRIGGER_SHORT_LABELS,
+};

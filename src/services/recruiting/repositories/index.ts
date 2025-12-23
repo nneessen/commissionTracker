@@ -7,6 +7,8 @@ export { PipelinePhaseRepository } from "./PipelinePhaseRepository";
 export { PhaseChecklistItemRepository } from "./PhaseChecklistItemRepository";
 export { RecruitPhaseProgressRepository } from "./RecruitPhaseProgressRepository";
 export { RecruitChecklistProgressRepository } from "./RecruitChecklistProgressRepository";
+export { PipelineAutomationRepository } from "./PipelineAutomationRepository";
+export { PipelineAutomationLogRepository } from "./PipelineAutomationLogRepository";
 
 // Types from RecruitRepository
 export type {
@@ -51,3 +53,18 @@ export type {
   UpdateRecruitChecklistProgressData,
   ChecklistProgressStatus,
 } from "./RecruitChecklistProgressRepository";
+
+// Types from PipelineAutomationRepository
+export type {
+  PipelineAutomationEntity,
+  CreatePipelineAutomationData,
+  UpdatePipelineAutomationData,
+} from "./PipelineAutomationRepository";
+
+// Types from PipelineAutomationLogRepository
+export type {
+  PipelineAutomationLogEntity,
+  CreatePipelineAutomationLogData,
+  UpdatePipelineAutomationLogData,
+  AutomationLogStatus,
+} from "./PipelineAutomationLogRepository";

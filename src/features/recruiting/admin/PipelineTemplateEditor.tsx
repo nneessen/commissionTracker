@@ -1,14 +1,13 @@
 // src/features/recruiting/admin/PipelineTemplateEditor.tsx
 
-import React, { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowLeft, Save, Loader2 } from "lucide-react";
+import { ArrowLeft, Save, Loader2, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { useTemplate, useUpdateTemplate } from "../hooks/usePipeline";
 import { PhaseEditor } from "./PhaseEditor";
@@ -31,7 +30,7 @@ export function PipelineTemplateEditor({
   const [hasChanges, setHasChanges] = useState(false);
 
   // Initialize form when template loads
-  React.useEffect(() => {
+  useEffect(() => {
     if (template) {
       setName(template.name);
       setDescription(template.description || "");
@@ -80,93 +79,115 @@ export function PipelineTemplateEditor({
 
   if (isLoading) {
     return (
-      <Card className="p-8 flex items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-      </Card>
+      <div className="p-8 flex items-center justify-center border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-lg">
+        <Loader2 className="h-5 w-5 animate-spin text-zinc-400" />
+      </div>
     );
   }
 
   if (!template) {
     return (
-      <Card className="p-8 text-center text-muted-foreground">
-        Template not found
-      </Card>
+      <div className="p-8 text-center border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-lg">
+        <AlertCircle className="h-6 w-6 text-zinc-400 mx-auto mb-2" />
+        <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+          Template not found
+        </p>
+      </div>
     );
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2.5">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={onClose}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
+      <div className="flex items-center justify-between bg-white dark:bg-zinc-900 rounded-lg px-3 py-2 border border-zinc-200 dark:border-zinc-800">
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 px-2 text-[11px]"
+            onClick={onClose}
+          >
+            <ArrowLeft className="h-3 w-3 mr-1.5" />
             Back to Templates
           </Button>
-          <span className="text-muted-foreground">/</span>
-          <span className="font-medium">{template.name}</span>
+          <div className="h-4 w-px bg-zinc-200 dark:bg-zinc-700" />
+          <span className="text-[11px] font-medium text-zinc-900 dark:text-zinc-100">
+            {template.name}
+          </span>
           {template.is_default && (
-            <Badge variant="secondary" className="text-xs">
+            <Badge
+              variant="secondary"
+              className="text-[9px] h-4 px-1.5 bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300"
+            >
               Default
             </Badge>
           )}
         </div>
         <Button
           size="sm"
+          className="h-7 px-3 text-[11px]"
           onClick={handleSave}
           disabled={!hasChanges || updateTemplate.isPending}
         >
           {updateTemplate.isPending ? (
-            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />
           ) : (
-            <Save className="h-4 w-4 mr-2" />
+            <Save className="h-3 w-3 mr-1.5" />
           )}
           Save Changes
         </Button>
       </div>
 
       {/* Template Details */}
-      <Card className="p-4">
-        <h3 className="text-sm font-semibold mb-3">Template Details</h3>
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label className="text-xs">Name</Label>
+      <div className="p-3 border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-lg">
+        <h3 className="text-[10px] font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400 mb-3">
+          Template Details
+        </h3>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <Label className="text-[10px] text-zinc-600 dark:text-zinc-400">
+              Name
+            </Label>
             <Input
               value={name}
               onChange={(e) => handleFieldChange("name", e.target.value)}
-              className="h-8 text-sm"
+              className="h-7 text-[11px] bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
             />
           </div>
-          <div className="space-y-2">
-            <Label className="text-xs">Status</Label>
-            <div className="flex items-center gap-2 h-8">
+          <div className="space-y-1.5">
+            <Label className="text-[10px] text-zinc-600 dark:text-zinc-400">
+              Status
+            </Label>
+            <div className="flex items-center gap-2 h-7">
               <Checkbox
                 checked={isActive}
                 onCheckedChange={(checked: boolean) =>
                   handleFieldChange("is_active", checked)
                 }
               />
-              <span className="text-sm">
+              <span className="text-[11px] text-zinc-700 dark:text-zinc-300">
                 {isActive ? "Active" : "Inactive"}
               </span>
             </div>
           </div>
-          <div className="col-span-2 space-y-2">
-            <Label className="text-xs">Description</Label>
+          <div className="col-span-2 space-y-1.5">
+            <Label className="text-[10px] text-zinc-600 dark:text-zinc-400">
+              Description
+            </Label>
             <Textarea
               value={description}
               onChange={(e) => handleFieldChange("description", e.target.value)}
               placeholder="Optional description..."
-              className="text-sm min-h-16"
+              className="text-[11px] min-h-14 bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
             />
           </div>
         </div>
-      </Card>
+      </div>
 
       {/* Phases Editor */}
-      <Card className="p-4">
+      <div className="p-3 border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-lg">
         <PhaseEditor templateId={templateId} />
-      </Card>
+      </div>
     </div>
   );
 }

@@ -12,12 +12,20 @@ import {
 import { PipelinePhaseRepository } from "./repositories/PipelinePhaseRepository";
 import { PhaseChecklistItemRepository } from "./repositories/PhaseChecklistItemRepository";
 import { documentService } from "@/services/documents";
+import { pipelineAutomationService } from "./pipelineAutomationService";
 import type {
   RecruitPhaseProgress,
   RecruitChecklistProgress,
   UpdateChecklistItemStatusInput,
   OnboardingStatus,
 } from "@/types/recruiting.types";
+
+// Fire-and-forget helper for automation triggers (don't block main flow)
+const triggerAutomationAsync = (fn: () => Promise<void>) => {
+  fn().catch((error) => {
+    console.error("[checklistService] Automation trigger failed:", error);
+  });
+};
 
 // Repository instances
 const phaseProgressRepository = new RecruitPhaseProgressRepository();
@@ -100,6 +108,15 @@ export const checklistService = {
           current_onboarding_phase: phases[0].phaseName,
         })
         .eq("id", userId);
+
+      // Trigger phase_enter automation for first phase (fire-and-forget)
+      triggerAutomationAsync(() =>
+        pipelineAutomationService.triggerPhaseAutomations(
+          phases[0].id,
+          "phase_enter",
+          userId,
+        ),
+      );
     }
 
     return data as unknown as RecruitPhaseProgress[];
@@ -136,6 +153,15 @@ export const checklistService = {
     // Mark current phase as completed
     await this.updatePhaseStatus(userId, currentPhaseId, "completed");
 
+    // Trigger phase_complete automation for current phase (fire-and-forget)
+    triggerAutomationAsync(() =>
+      pipelineAutomationService.triggerPhaseAutomations(
+        currentPhaseId,
+        "phase_complete",
+        userId,
+      ),
+    );
+
     // Get next phase
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- phase relation type
     const currentOrder = (currentProgress.phase as any).phase_order;
@@ -165,6 +191,15 @@ export const checklistService = {
 
     // Initialize checklist progress for next phase
     await this.initializeChecklistProgress(userId, nextPhase.id);
+
+    // Trigger phase_enter automation for next phase (fire-and-forget)
+    triggerAutomationAsync(() =>
+      pipelineAutomationService.triggerPhaseAutomations(
+        nextPhase.id,
+        "phase_enter",
+        userId,
+      ),
+    );
 
     // Update user_profiles with new phase and status
     const nextPhaseStatus = phaseNameToStatus(nextPhase.phaseName);
@@ -236,6 +271,30 @@ export const checklistService = {
         metadata: statusData.metadata,
       },
     );
+
+    // Trigger item automations based on status change (fire-and-forget)
+    const status = statusData.status;
+    if (status === "completed" || status === "approved") {
+      triggerAutomationAsync(() =>
+        pipelineAutomationService.triggerItemAutomations(
+          itemId,
+          "item_complete",
+          userId,
+        ),
+      );
+    } else if (status === "in_progress") {
+      // "in_progress" with document upload means item is awaiting approval/verification
+      // Only trigger if a document was attached (indicating submission for review)
+      if (statusData.document_id) {
+        triggerAutomationAsync(() =>
+          pipelineAutomationService.triggerItemAutomations(
+            itemId,
+            "item_approval_needed",
+            userId,
+          ),
+        );
+      }
+    }
 
     // Check if all required items in this phase are approved
     await this.checkPhaseAutoAdvancement(userId, itemId);

@@ -259,16 +259,6 @@ class HierarchyService {
         request.new_upline_id,
       );
 
-      logger.info(
-        "Hierarchy updated",
-        {
-          agentId: request.agent_id,
-          newUplineId: request.new_upline_id,
-          reason: request.reason,
-        },
-        "HierarchyService",
-      );
-
       return data;
     } catch (error) {
       logger.error(
@@ -436,12 +426,6 @@ class HierarchyService {
         throw new Error("Not authenticated");
       }
 
-      logger.info(
-        "Fetching hierarchy stats",
-        { userId: user.id },
-        "HierarchyService",
-      );
-
       // Get current user's profile to verify they exist
       const myProfile = await this.hierarchyRepo.findById(user.id);
       if (!myProfile) {
@@ -452,22 +436,7 @@ class HierarchyService {
         throw new NotFoundError("User profile", user.id);
       }
 
-      logger.info(
-        "User profile found",
-        {
-          profileId: myProfile.id,
-          email: myProfile.email,
-          hierarchyPath: myProfile.hierarchy_path,
-        },
-        "HierarchyService",
-      );
-
       const downlines = await this.getMyDownlines();
-      logger.info(
-        "Downlines fetched",
-        { count: downlines.length },
-        "HierarchyService",
-      );
 
       // Get override income MTD
       const now = new Date();
@@ -481,15 +450,6 @@ class HierarchyService {
       const mtdOverrides = await this.overrideRepo.findForAgentInRange(
         myProfile.id,
         mtdStart,
-      );
-
-      logger.info(
-        "MTD overrides fetched",
-        {
-          count: mtdOverrides.length,
-          raw: mtdOverrides.slice(0, 3),
-        },
-        "HierarchyService",
       );
 
       // Calculate MTD income (only where user is the override_agent receiving the income)
@@ -515,17 +475,6 @@ class HierarchyService {
         0,
       );
 
-      logger.info(
-        "YTD overrides calculated",
-        {
-          mtdIncome,
-          ytdIncome,
-          mtdCount: mtdOverrides.length,
-          ytdCount: ytdOverrides.length,
-        },
-        "HierarchyService",
-      );
-
       // Calculate direct downlines correctly - checking upline_id directly
       const directDownlines = downlines.filter(
         (d) => d.upline_id === myProfile.id,
@@ -543,8 +492,6 @@ class HierarchyService {
         total_override_income_ytd: ytdIncome,
       };
 
-      logger.info("Hierarchy stats calculated", result, "HierarchyService");
-
       return result;
     } catch (error) {
       logger.error(
@@ -561,8 +508,6 @@ class HierarchyService {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- hierarchy node can have various shapes
   async getAgentDetails(agentId: string): Promise<any> {
     try {
-      logger.info("Fetching agent details", { agentId }, "HierarchyService");
-
       // Validate agentId
       if (!agentId) {
         logger.error(
@@ -581,28 +526,9 @@ class HierarchyService {
         throw new NotFoundError("Agent", agentId);
       }
 
-      logger.info(
-        "Agent profile fetched",
-        {
-          agentId: agent.id,
-          email: agent.email,
-          userId: agent.id,
-        },
-        "HierarchyService",
-      );
-
       // Get performance metrics
       const policies = await this.policyRepo.findWithRelationsByUserId(
         agent.id,
-      );
-
-      logger.info(
-        "Policies fetched",
-        {
-          count: policies.length,
-          agentUserId: agent.id,
-        },
-        "HierarchyService",
       );
 
       const policyMetrics = policies.reduce(

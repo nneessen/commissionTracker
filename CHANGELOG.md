@@ -6,6 +6,96 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-12-23 11:59:27
+
+### Changed Files
+- `.github/workflows/automation-reminders.yml`
+- `CHANGELOG.md`
+- `PROJECT_STATS.md`
+- `package-lock.json`
+- `package.json`
+- `src/components/ui/radio-group.tsx`
+- `src/contexts/ImoContext.tsx`
+- `src/features/hierarchy/components/AgentTable.tsx`
+- `src/features/recruiting/admin/AutomationDialog.tsx`
+- `src/features/recruiting/admin/ChecklistItemAutomationConfig.tsx`
+- `src/features/recruiting/admin/ChecklistItemEditor.tsx`
+- `src/features/recruiting/admin/PhaseAutomationConfig.tsx`
+- `src/features/recruiting/admin/PhaseEditor.tsx`
+- `src/features/recruiting/admin/PipelineAdminPage.tsx`
+- `src/features/recruiting/admin/PipelineTemplateEditor.tsx`
+- `src/features/recruiting/admin/PipelineTemplatesList.tsx`
+- `src/features/recruiting/components/InitializePipelineDialog.tsx`
+- `src/features/recruiting/components/RecruitDetailPanel.tsx`
+- `src/features/recruiting/hooks/usePipelineAutomations.ts`
+- `src/services/hierarchy/hierarchyService.ts`
+- `src/services/recruiting/checklistService.ts`
+- `src/services/recruiting/pipelineAutomationService.ts`
+- `src/services/recruiting/repositories/PipelineAutomationLogRepository.ts`
+- `src/services/recruiting/repositories/PipelineAutomationRepository.ts`
+- `src/services/recruiting/repositories/index.ts`
+- `src/services/sms/index.ts`
+- `src/services/sms/smsService.ts`
+- `src/types/database.types.ts`
+- `src/types/notification.types.ts`
+- `src/types/recruiting.types.ts`
+- `supabase/.temp/cli-latest`
+- `supabase/functions/process-automation-reminders/index.ts`
+- `supabase/functions/send-sms/index.ts`
+- `supabase/migrations/20251223_039_pipeline_automations.sql`
+- `supabase/migrations/20251223_040_pipeline_automations_rls.sql`
+- `supabase/migrations/20251223_041_add_sms_to_automations.sql`
+- `supabase/migrations/20251223_042_automation_scheduled_functions.sql`
+
+### Statistics
+```
+ 37 files changed, 12135 insertions(+), 7393 deletions(-)
+```
+
+## [Checkpoint] - 2025-12-23 11:58:07
+
+### Changed Files
+- `.github/workflows/automation-reminders.yml`
+- `package-lock.json`
+- `package.json`
+- `src/components/ui/radio-group.tsx`
+- `src/contexts/ImoContext.tsx`
+- `src/features/hierarchy/components/AgentTable.tsx`
+- `src/features/recruiting/admin/AutomationDialog.tsx`
+- `src/features/recruiting/admin/ChecklistItemAutomationConfig.tsx`
+- `src/features/recruiting/admin/ChecklistItemEditor.tsx`
+- `src/features/recruiting/admin/PhaseAutomationConfig.tsx`
+- `src/features/recruiting/admin/PhaseEditor.tsx`
+- `src/features/recruiting/admin/PipelineAdminPage.tsx`
+- `src/features/recruiting/admin/PipelineTemplateEditor.tsx`
+- `src/features/recruiting/admin/PipelineTemplatesList.tsx`
+- `src/features/recruiting/components/InitializePipelineDialog.tsx`
+- `src/features/recruiting/components/RecruitDetailPanel.tsx`
+- `src/features/recruiting/hooks/usePipelineAutomations.ts`
+- `src/services/hierarchy/hierarchyService.ts`
+- `src/services/recruiting/checklistService.ts`
+- `src/services/recruiting/pipelineAutomationService.ts`
+- `src/services/recruiting/repositories/PipelineAutomationLogRepository.ts`
+- `src/services/recruiting/repositories/PipelineAutomationRepository.ts`
+- `src/services/recruiting/repositories/index.ts`
+- `src/services/sms/index.ts`
+- `src/services/sms/smsService.ts`
+- `src/types/database.types.ts`
+- `src/types/notification.types.ts`
+- `src/types/recruiting.types.ts`
+- `supabase/.temp/cli-latest`
+- `supabase/functions/process-automation-reminders/index.ts`
+- `supabase/functions/send-sms/index.ts`
+- `supabase/migrations/20251223_039_pipeline_automations.sql`
+- `supabase/migrations/20251223_040_pipeline_automations_rls.sql`
+- `supabase/migrations/20251223_041_add_sms_to_automations.sql`
+- `supabase/migrations/20251223_042_automation_scheduled_functions.sql`
+
+### Statistics
+```
+ 35 files changed, 12104 insertions(+), 7388 deletions(-)
+```
+
 ## [Checkpoint] - 2025-12-23 09:36:22
 
 ### Changed Files

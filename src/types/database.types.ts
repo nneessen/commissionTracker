@@ -2894,6 +2894,153 @@ export type Database = {
           },
         ];
       };
+      pipeline_automation_logs: {
+        Row: {
+          automation_id: string;
+          error_message: string | null;
+          id: string;
+          metadata: Json | null;
+          recruit_id: string;
+          status: string;
+          triggered_at: string | null;
+          triggered_date: string | null;
+        };
+        Insert: {
+          automation_id: string;
+          error_message?: string | null;
+          id?: string;
+          metadata?: Json | null;
+          recruit_id: string;
+          status: string;
+          triggered_at?: string | null;
+          triggered_date?: string | null;
+        };
+        Update: {
+          automation_id?: string;
+          error_message?: string | null;
+          id?: string;
+          metadata?: Json | null;
+          recruit_id?: string;
+          status?: string;
+          triggered_at?: string | null;
+          triggered_date?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "pipeline_automation_logs_automation_id_fkey";
+            columns: ["automation_id"];
+            isOneToOne: false;
+            referencedRelation: "pipeline_automations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "pipeline_automation_logs_recruit_id_fkey";
+            columns: ["recruit_id"];
+            isOneToOne: false;
+            referencedRelation: "active_user_profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "pipeline_automation_logs_recruit_id_fkey";
+            columns: ["recruit_id"];
+            isOneToOne: false;
+            referencedRelation: "user_management_view";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "pipeline_automation_logs_recruit_id_fkey";
+            columns: ["recruit_id"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      pipeline_automations: {
+        Row: {
+          checklist_item_id: string | null;
+          communication_type:
+            | Database["public"]["Enums"]["automation_communication_type"]
+            | null;
+          created_at: string | null;
+          delay_days: number | null;
+          email_body_html: string | null;
+          email_subject: string | null;
+          email_template_id: string | null;
+          id: string;
+          is_active: boolean | null;
+          notification_message: string | null;
+          notification_title: string | null;
+          phase_id: string | null;
+          recipients: Json;
+          sms_message: string | null;
+          trigger_type: Database["public"]["Enums"]["pipeline_automation_trigger"];
+          updated_at: string | null;
+        };
+        Insert: {
+          checklist_item_id?: string | null;
+          communication_type?:
+            | Database["public"]["Enums"]["automation_communication_type"]
+            | null;
+          created_at?: string | null;
+          delay_days?: number | null;
+          email_body_html?: string | null;
+          email_subject?: string | null;
+          email_template_id?: string | null;
+          id?: string;
+          is_active?: boolean | null;
+          notification_message?: string | null;
+          notification_title?: string | null;
+          phase_id?: string | null;
+          recipients?: Json;
+          sms_message?: string | null;
+          trigger_type: Database["public"]["Enums"]["pipeline_automation_trigger"];
+          updated_at?: string | null;
+        };
+        Update: {
+          checklist_item_id?: string | null;
+          communication_type?:
+            | Database["public"]["Enums"]["automation_communication_type"]
+            | null;
+          created_at?: string | null;
+          delay_days?: number | null;
+          email_body_html?: string | null;
+          email_subject?: string | null;
+          email_template_id?: string | null;
+          id?: string;
+          is_active?: boolean | null;
+          notification_message?: string | null;
+          notification_title?: string | null;
+          phase_id?: string | null;
+          recipients?: Json;
+          sms_message?: string | null;
+          trigger_type?: Database["public"]["Enums"]["pipeline_automation_trigger"];
+          updated_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "pipeline_automations_checklist_item_id_fkey";
+            columns: ["checklist_item_id"];
+            isOneToOne: false;
+            referencedRelation: "phase_checklist_items";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "pipeline_automations_email_template_id_fkey";
+            columns: ["email_template_id"];
+            isOneToOne: false;
+            referencedRelation: "email_templates";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "pipeline_automations_phase_id_fkey";
+            columns: ["phase_id"];
+            isOneToOne: false;
+            referencedRelation: "pipeline_phases";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       pipeline_phases: {
         Row: {
           auto_advance: boolean | null;
@@ -8130,6 +8277,13 @@ export type Database = {
         | "license_expiration";
       audit_action: "INSERT" | "UPDATE" | "DELETE";
       audit_source: "trigger" | "application";
+      automation_communication_type: "email" | "notification" | "both" | "sms";
+      automation_recipient_type:
+        | "recruit"
+        | "upline"
+        | "trainer"
+        | "contracting_manager"
+        | "custom_email";
       chargeback_status: "pending" | "resolved" | "disputed";
       commission_status:
         | "pending"
@@ -8149,6 +8303,13 @@ export type Database = {
       expense_type: "personal" | "business";
       file_type: "csv" | "pdf" | "xlsx";
       payment_frequency: "monthly" | "quarterly" | "semi_annual" | "annual";
+      pipeline_automation_trigger:
+        | "phase_enter"
+        | "phase_complete"
+        | "phase_stall"
+        | "item_complete"
+        | "item_approval_needed"
+        | "item_deadline_approaching";
       policy_status: "active" | "pending" | "lapsed" | "cancelled" | "expired";
       product_type:
         | "term_life"
@@ -8322,6 +8483,14 @@ export const Constants = {
       ],
       audit_action: ["INSERT", "UPDATE", "DELETE"],
       audit_source: ["trigger", "application"],
+      automation_communication_type: ["email", "notification", "both", "sms"],
+      automation_recipient_type: [
+        "recruit",
+        "upline",
+        "trainer",
+        "contracting_manager",
+        "custom_email",
+      ],
       chargeback_status: ["pending", "resolved", "disputed"],
       commission_status: [
         "pending",
@@ -8343,6 +8512,14 @@ export const Constants = {
       expense_type: ["personal", "business"],
       file_type: ["csv", "pdf", "xlsx"],
       payment_frequency: ["monthly", "quarterly", "semi_annual", "annual"],
+      pipeline_automation_trigger: [
+        "phase_enter",
+        "phase_complete",
+        "phase_stall",
+        "item_complete",
+        "item_approval_needed",
+        "item_deadline_approaching",
+      ],
       policy_status: ["active", "pending", "lapsed", "cancelled", "expired"],
       product_type: [
         "term_life",

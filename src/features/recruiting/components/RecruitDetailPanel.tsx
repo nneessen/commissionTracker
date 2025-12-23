@@ -32,6 +32,7 @@ import {
   Ban,
 } from "lucide-react";
 import { DeleteRecruitDialogOptimized } from "./DeleteRecruitDialog.optimized";
+import { InitializePipelineDialog } from "./InitializePipelineDialog";
 import { useRouter } from "@tanstack/react-router";
 import { PhaseChecklist } from "./PhaseChecklist";
 import { DocumentManager } from "./DocumentManager";
@@ -55,8 +56,6 @@ import { supabase } from "@/services/base/supabase";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
-const DEFAULT_TEMPLATE_ID = "00000000-0000-0000-0000-000000000001";
-
 interface RecruitDetailPanelProps {
   recruit: UserProfile;
   currentUserId?: string;
@@ -73,6 +72,7 @@ export function RecruitDetailPanel({
   const [activeTab, setActiveTab] = useState("checklist");
   const [selectedPhaseId, setSelectedPhaseId] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [initializeDialogOpen, setInitializeDialogOpen] = useState(false);
   const [resendingInvite, setResendingInvite] = useState(false);
   const _router = useRouter();
 
@@ -151,11 +151,16 @@ export function RecruitDetailPanel({
     }
   };
 
-  const handleInitializeProgress = async () => {
+  const handleInitializeProgress = () => {
+    setInitializeDialogOpen(true);
+  };
+
+  const handleConfirmInitialize = async (templateId: string) => {
     await initializeProgress.mutateAsync({
       userId: recruit.id,
-      templateId: DEFAULT_TEMPLATE_ID,
+      templateId,
     });
+    setInitializeDialogOpen(false);
   };
 
   if (progressLoading || currentPhaseLoading || templateLoading) {
@@ -558,6 +563,13 @@ export function RecruitDetailPanel({
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
         onSuccess={() => onRecruitDeleted?.()}
+      />
+
+      <InitializePipelineDialog
+        open={initializeDialogOpen}
+        onOpenChange={setInitializeDialogOpen}
+        onConfirm={handleConfirmInitialize}
+        isLoading={initializeProgress.isPending}
       />
     </div>
   );

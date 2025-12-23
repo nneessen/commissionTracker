@@ -161,7 +161,7 @@ export function ChecklistItemEditor({ phaseId }: ChecklistItemEditorProps) {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-2">
-        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+        <Loader2 className="h-4 w-4 animate-spin text-zinc-400" />
       </div>
     );
   }
@@ -169,13 +169,13 @@ export function ChecklistItemEditor({ phaseId }: ChecklistItemEditorProps) {
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <span className="text-xs text-muted-foreground">
+        <span className="text-[10px] text-zinc-500 dark:text-zinc-400">
           Checklist Items ({sortedItems.length})
         </span>
         <Button
           size="sm"
           variant="ghost"
-          className="h-6 text-xs"
+          className="h-6 text-[10px]"
           onClick={() => setCreateDialogOpen(true)}
         >
           <Plus className="h-3 w-3 mr-1" />
@@ -184,7 +184,7 @@ export function ChecklistItemEditor({ phaseId }: ChecklistItemEditorProps) {
       </div>
 
       {sortedItems.length === 0 ? (
-        <div className="text-xs text-muted-foreground text-center py-2">
+        <div className="text-[10px] text-zinc-500 dark:text-zinc-400 text-center py-2">
           No checklist items
         </div>
       ) : (
@@ -194,18 +194,21 @@ export function ChecklistItemEditor({ phaseId }: ChecklistItemEditorProps) {
             return (
               <div
                 key={item.id}
-                className="flex items-center gap-2 p-1 bg-background rounded-sm hover:bg-muted/20"
+                className="flex items-center gap-2 p-1 bg-zinc-50 dark:bg-zinc-800/50 rounded-sm hover:bg-zinc-100 dark:hover:bg-zinc-800"
               >
-                <GripVertical className="h-3 w-3 text-muted-foreground/50 cursor-grab" />
-                <span className="text-xs text-muted-foreground font-mono w-4">
+                <GripVertical className="h-3 w-3 text-zinc-400 dark:text-zinc-500 cursor-grab" />
+                <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-mono w-4">
                   {item.item_order}
                 </span>
-                <Icon className="h-3 w-3 text-muted-foreground" />
-                <span className="text-xs flex-1 truncate">
+                <Icon className="h-3 w-3 text-zinc-500 dark:text-zinc-400" />
+                <span className="text-[11px] text-zinc-700 dark:text-zinc-300 flex-1 truncate">
                   {item.item_name}
                 </span>
                 {item.is_required && (
-                  <Badge variant="outline" className="text-[10px] px-1 py-0">
+                  <Badge
+                    variant="outline"
+                    className="text-[9px] px-1 py-0 border-zinc-200 dark:border-zinc-700"
+                  >
                     Required
                   </Badge>
                 )}
@@ -215,12 +218,12 @@ export function ChecklistItemEditor({ phaseId }: ChecklistItemEditorProps) {
                   className="h-5 w-5 p-0"
                   onClick={() => setEditingItem(item)}
                 >
-                  <Edit2 className="h-3 w-3" />
+                  <Edit2 className="h-3 w-3 text-zinc-500 dark:text-zinc-400" />
                 </Button>
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-5 w-5 p-0 text-destructive"
+                  className="h-5 w-5 p-0 text-red-500 hover:text-red-600 dark:text-red-400"
                   onClick={() => setDeleteConfirmId(item.id)}
                 >
                   <Trash2 className="h-3 w-3" />
@@ -235,66 +238,82 @@ export function ChecklistItemEditor({ phaseId }: ChecklistItemEditorProps) {
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Add Checklist Item</DialogTitle>
+            <DialogTitle className="text-sm">Add Checklist Item</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label className="text-sm">Item Name</Label>
+          <div className="space-y-3 py-3">
+            <div className="space-y-1.5">
+              <Label className="text-[10px] text-zinc-600 dark:text-zinc-400">
+                Item Name
+              </Label>
               <Input
                 value={itemForm.item_name}
                 onChange={(e) =>
                   setItemForm({ ...itemForm, item_name: e.target.value })
                 }
                 placeholder="e.g., Upload Resume"
-                className="h-8 text-sm"
+                className="h-7 text-[11px] bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
               />
             </div>
-            <div className="space-y-2">
-              <Label className="text-sm">Description</Label>
+            <div className="space-y-1.5">
+              <Label className="text-[10px] text-zinc-600 dark:text-zinc-400">
+                Description
+              </Label>
               <Textarea
                 value={itemForm.item_description || ""}
                 onChange={(e) =>
                   setItemForm({ ...itemForm, item_description: e.target.value })
                 }
                 placeholder="Optional instructions..."
-                className="text-sm min-h-16"
+                className="text-[11px] min-h-14 bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-sm">Type</Label>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-[10px] text-zinc-600 dark:text-zinc-400">
+                  Type
+                </Label>
                 <Select
                   value={itemForm.item_type}
                   onValueChange={(value: ChecklistItemType) =>
                     setItemForm({ ...itemForm, item_type: value })
                   }
                 >
-                  <SelectTrigger className="h-8 text-sm">
+                  <SelectTrigger className="h-7 text-[11px] bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     {ITEM_TYPES.map(({ value, label }) => (
-                      <SelectItem key={value} value={value}>
+                      <SelectItem
+                        key={value}
+                        value={value}
+                        className="text-[11px]"
+                      >
                         {label}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2">
-                <Label className="text-sm">Completed By</Label>
+              <div className="space-y-1.5">
+                <Label className="text-[10px] text-zinc-600 dark:text-zinc-400">
+                  Completed By
+                </Label>
                 <Select
                   value={itemForm.can_be_completed_by}
                   onValueChange={(value: CompletedBy) =>
                     setItemForm({ ...itemForm, can_be_completed_by: value })
                   }
                 >
-                  <SelectTrigger className="h-8 text-sm">
+                  <SelectTrigger className="h-7 text-[11px] bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     {CAN_BE_COMPLETED_BY.map(({ value, label }) => (
-                      <SelectItem key={value} value={value}>
+                      <SelectItem
+                        key={value}
+                        value={value}
+                        className="text-[11px]"
+                      >
                         {label}
                       </SelectItem>
                     ))}
@@ -303,15 +322,17 @@ export function ChecklistItemEditor({ phaseId }: ChecklistItemEditorProps) {
               </div>
             </div>
             {itemForm.item_type === "training_module" && (
-              <div className="space-y-2">
-                <Label className="text-sm">External Link</Label>
+              <div className="space-y-1.5">
+                <Label className="text-[10px] text-zinc-600 dark:text-zinc-400">
+                  External Link
+                </Label>
                 <Input
                   value={itemForm.external_link || ""}
                   onChange={(e) =>
                     setItemForm({ ...itemForm, external_link: e.target.value })
                   }
                   placeholder="https://..."
-                  className="h-8 text-sm"
+                  className="h-7 text-[11px] bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
                 />
               </div>
             )}
@@ -324,7 +345,10 @@ export function ChecklistItemEditor({ phaseId }: ChecklistItemEditorProps) {
                     setItemForm({ ...itemForm, is_required: !!checked })
                   }
                 />
-                <label htmlFor="is_required" className="text-sm cursor-pointer">
+                <label
+                  htmlFor="is_required"
+                  className="text-[11px] text-zinc-700 dark:text-zinc-300 cursor-pointer"
+                >
                   Required
                 </label>
               </div>
@@ -341,7 +365,7 @@ export function ChecklistItemEditor({ phaseId }: ChecklistItemEditorProps) {
                 />
                 <label
                   htmlFor="requires_verification"
-                  className="text-sm cursor-pointer"
+                  className="text-[11px] text-zinc-700 dark:text-zinc-300 cursor-pointer"
                 >
                   Requires Verification
                 </label>
@@ -351,13 +375,20 @@ export function ChecklistItemEditor({ phaseId }: ChecklistItemEditorProps) {
           <DialogFooter>
             <Button
               variant="outline"
+              size="sm"
+              className="h-7 text-[11px]"
               onClick={() => setCreateDialogOpen(false)}
             >
               Cancel
             </Button>
-            <Button onClick={handleCreate} disabled={createItem.isPending}>
+            <Button
+              size="sm"
+              className="h-7 text-[11px]"
+              onClick={handleCreate}
+              disabled={createItem.isPending}
+            >
               {createItem.isPending && (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />
               )}
               Add Item
             </Button>
@@ -369,12 +400,14 @@ export function ChecklistItemEditor({ phaseId }: ChecklistItemEditorProps) {
       <Dialog open={!!editingItem} onOpenChange={() => setEditingItem(null)}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Edit Checklist Item</DialogTitle>
+            <DialogTitle className="text-sm">Edit Checklist Item</DialogTitle>
           </DialogHeader>
           {editingItem && (
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label className="text-sm">Item Name</Label>
+            <div className="space-y-3 py-3">
+              <div className="space-y-1.5">
+                <Label className="text-[10px] text-zinc-600 dark:text-zinc-400">
+                  Item Name
+                </Label>
                 <Input
                   value={editingItem.item_name}
                   onChange={(e) =>
@@ -383,11 +416,13 @@ export function ChecklistItemEditor({ phaseId }: ChecklistItemEditorProps) {
                       item_name: e.target.value,
                     })
                   }
-                  className="h-8 text-sm"
+                  className="h-7 text-[11px] bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
                 />
               </div>
-              <div className="space-y-2">
-                <Label className="text-sm">Description</Label>
+              <div className="space-y-1.5">
+                <Label className="text-[10px] text-zinc-600 dark:text-zinc-400">
+                  Description
+                </Label>
                 <Textarea
                   value={editingItem.item_description || ""}
                   onChange={(e) =>
@@ -396,32 +431,40 @@ export function ChecklistItemEditor({ phaseId }: ChecklistItemEditorProps) {
                       item_description: e.target.value,
                     })
                   }
-                  className="text-sm min-h-16"
+                  className="text-[11px] min-h-14 bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-sm">Type</Label>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] text-zinc-600 dark:text-zinc-400">
+                    Type
+                  </Label>
                   <Select
                     value={editingItem.item_type}
                     onValueChange={(value: ChecklistItemType) =>
                       setEditingItem({ ...editingItem, item_type: value })
                     }
                   >
-                    <SelectTrigger className="h-8 text-sm">
+                    <SelectTrigger className="h-7 text-[11px] bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       {ITEM_TYPES.map(({ value, label }) => (
-                        <SelectItem key={value} value={value}>
+                        <SelectItem
+                          key={value}
+                          value={value}
+                          className="text-[11px]"
+                        >
                           {label}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2">
-                  <Label className="text-sm">Completed By</Label>
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] text-zinc-600 dark:text-zinc-400">
+                    Completed By
+                  </Label>
                   <Select
                     value={editingItem.can_be_completed_by}
                     onValueChange={(value: CompletedBy) =>
@@ -431,12 +474,16 @@ export function ChecklistItemEditor({ phaseId }: ChecklistItemEditorProps) {
                       })
                     }
                   >
-                    <SelectTrigger className="h-8 text-sm">
+                    <SelectTrigger className="h-7 text-[11px] bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       {CAN_BE_COMPLETED_BY.map(({ value, label }) => (
-                        <SelectItem key={value} value={value}>
+                        <SelectItem
+                          key={value}
+                          value={value}
+                          className="text-[11px]"
+                        >
                           {label}
                         </SelectItem>
                       ))}
@@ -445,8 +492,10 @@ export function ChecklistItemEditor({ phaseId }: ChecklistItemEditorProps) {
                 </div>
               </div>
               {editingItem.item_type === "training_module" && (
-                <div className="space-y-2">
-                  <Label className="text-sm">External Link</Label>
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] text-zinc-600 dark:text-zinc-400">
+                    External Link
+                  </Label>
                   <Input
                     value={editingItem.external_link || ""}
                     onChange={(e) =>
@@ -455,7 +504,7 @@ export function ChecklistItemEditor({ phaseId }: ChecklistItemEditorProps) {
                         external_link: e.target.value,
                       })
                     }
-                    className="h-8 text-sm"
+                    className="h-7 text-[11px] bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
                   />
                 </div>
               )}
@@ -470,7 +519,7 @@ export function ChecklistItemEditor({ phaseId }: ChecklistItemEditorProps) {
                   />
                   <label
                     htmlFor="edit_is_required"
-                    className="text-sm cursor-pointer"
+                    className="text-[11px] text-zinc-700 dark:text-zinc-300 cursor-pointer"
                   >
                     Required
                   </label>
@@ -488,7 +537,7 @@ export function ChecklistItemEditor({ phaseId }: ChecklistItemEditorProps) {
                   />
                   <label
                     htmlFor="edit_requires_verification"
-                    className="text-sm cursor-pointer"
+                    className="text-[11px] text-zinc-700 dark:text-zinc-300 cursor-pointer"
                   >
                     Requires Verification
                   </label>
@@ -497,12 +546,22 @@ export function ChecklistItemEditor({ phaseId }: ChecklistItemEditorProps) {
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditingItem(null)}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 text-[11px]"
+              onClick={() => setEditingItem(null)}
+            >
               Cancel
             </Button>
-            <Button onClick={handleUpdate} disabled={updateItem.isPending}>
+            <Button
+              size="sm"
+              className="h-7 text-[11px]"
+              onClick={handleUpdate}
+              disabled={updateItem.isPending}
+            >
               {updateItem.isPending && (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />
               )}
               Save Changes
             </Button>
@@ -517,22 +576,29 @@ export function ChecklistItemEditor({ phaseId }: ChecklistItemEditorProps) {
       >
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>Delete Item?</DialogTitle>
+            <DialogTitle className="text-sm">Delete Item?</DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
             This will permanently delete this checklist item.
           </p>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteConfirmId(null)}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 text-[11px]"
+              onClick={() => setDeleteConfirmId(null)}
+            >
               Cancel
             </Button>
             <Button
               variant="destructive"
+              size="sm"
+              className="h-7 text-[11px]"
               onClick={() => deleteConfirmId && handleDelete(deleteConfirmId)}
               disabled={deleteItem.isPending}
             >
               {deleteItem.isPending && (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />
               )}
               Delete
             </Button>
