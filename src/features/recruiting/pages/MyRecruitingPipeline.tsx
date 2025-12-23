@@ -1,7 +1,7 @@
 // src/features/recruiting/pages/MyRecruitingPipeline.tsx
 // Recruit's personal onboarding pipeline view - compact styling
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/services/base/supabase";
@@ -60,7 +60,6 @@ export function MyRecruitingPipeline() {
     data: profile,
     isLoading: profileLoading,
     error: profileError,
-    refetch: refetchProfile,
   } = useQuery<UserProfile | null>({
     queryKey: ["recruit-pipeline-profile", user?.id],
     queryFn: async () => {
@@ -81,19 +80,10 @@ export function MyRecruitingPipeline() {
     enabled: !authLoading && !!user?.id,
     retry: 3,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000),
-    staleTime: 0, // Always consider data stale to force refetch
-    gcTime: 0, // Don't cache null results
+    staleTime: 1000 * 60 * 5, // 5 minutes
     refetchOnMount: "always",
     refetchOnWindowFocus: false,
   });
-
-  // Force refetch when user becomes available (fixes initial load race condition)
-  useEffect(() => {
-    if (!authLoading && user?.id && !profile && !profileLoading) {
-      console.log("[MyRecruitingPipeline] User ready, triggering profile refetch");
-      refetchProfile();
-    }
-  }, [authLoading, user?.id, profile, profileLoading, refetchProfile]);
 
   const isReady =
     !authLoading && !profileLoading && !!user?.id && !!profile?.id;

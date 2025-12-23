@@ -2,6 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { userApprovalService } from "@/services/users/userService";
+import { useAuth } from "@/contexts/AuthContext";
 
 /**
  * Query keys for user approval
@@ -19,12 +20,20 @@ export const userApprovalKeys = {
 
 /**
  * Hook to get current user's profile and approval status
+ * CRITICAL: Waits for auth to be ready before fetching to prevent caching null
  */
 export function useCurrentUserProfile() {
+  const { user, loading: authLoading } = useAuth();
+
   return useQuery({
     queryKey: userApprovalKeys.currentProfile(),
     queryFn: () => userApprovalService.getCurrentUserProfile(),
+    // Only fetch when auth is ready AND user is authenticated
+    enabled: !authLoading && !!user?.id,
     staleTime: 1000 * 60 * 5, // 5 minutes
+    // Don't cache failures or null results
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000),
   });
 }
 
