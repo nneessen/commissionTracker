@@ -3,7 +3,12 @@
 
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { UserPlus, Mail, Download, Settings2, Users } from "lucide-react";
 import { useRecruits } from "./hooks/useRecruits";
 import { RecruitListTable } from "./components/RecruitListTable";
@@ -207,6 +212,11 @@ function RecruitingDashboardContent() {
           side="right"
           className="w-[500px] sm:max-w-[500px] p-0 overflow-hidden"
         >
+          <SheetTitle className="sr-only">Recruit Details</SheetTitle>
+          <SheetDescription className="sr-only">
+            View and manage recruit information, pipeline progress, and
+            documents
+          </SheetDescription>
           {selectedRecruit && (
             <RecruitDetailPanel
               recruit={selectedRecruit}

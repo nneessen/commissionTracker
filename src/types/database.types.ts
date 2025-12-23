@@ -6929,6 +6929,34 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      create_notification: {
+        Args: {
+          p_expires_at?: string;
+          p_message?: string;
+          p_metadata?: Json;
+          p_title: string;
+          p_type: string;
+          p_user_id: string;
+        };
+        Returns: {
+          created_at: string;
+          expires_at: string | null;
+          id: string;
+          message: string | null;
+          metadata: Json | null;
+          read: boolean;
+          title: string;
+          type: string;
+          updated_at: string;
+          user_id: string;
+        }[];
+        SetofOptions: {
+          from: "*";
+          to: "notifications";
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
       create_org_workflow_template: {
         Args: {
           p_actions: Json;
