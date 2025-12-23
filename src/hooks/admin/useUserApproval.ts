@@ -193,9 +193,17 @@ export function useSetAdminRole() {
 
 /**
  * Combined hook for auth guard - gets both admin status and approval status
+ * CRITICAL: Must include auth loading state, not just query loading state
  */
 export function useAuthorizationStatus() {
-  const { data: profile, isLoading: profileLoading } = useCurrentUserProfile();
+  const { user, loading: authLoading } = useAuth();
+  const { data: profile, isLoading: profileLoading, isFetching } = useCurrentUserProfile();
+
+  // Consider loading if:
+  // 1. Auth is still loading, OR
+  // 2. Profile query is loading/fetching, OR
+  // 3. Auth is ready but profile query hasn't started yet (no user, no profile)
+  const isLoading = authLoading || profileLoading || isFetching || (!user && !profile);
 
   return {
     isAdmin: profile?.is_admin === true,
@@ -204,7 +212,7 @@ export function useAuthorizationStatus() {
     isPending: profile?.approval_status === "pending",
     isDenied: profile?.approval_status === "denied",
     denialReason: profile?.denial_reason,
-    isLoading: profileLoading,
+    isLoading,
     profile,
   };
 }
