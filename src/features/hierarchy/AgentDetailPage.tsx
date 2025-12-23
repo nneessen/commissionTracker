@@ -29,7 +29,7 @@ import {
 import { hierarchyService } from "@/services/hierarchy/hierarchyService";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import showToast from "@/utils/toast";
+import { toast } from "sonner";
 import { EditAgentModal } from "./components/EditAgentModal";
 
 export function AgentDetailPage() {
@@ -121,7 +121,7 @@ export function AgentDetailPage() {
 
   const mtdMetrics = {
     policies: mtdPolicies.length,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     premium: mtdPolicies.reduce(
       (sum: number, p: any) => sum + (p.annualPremium || 0),
       0,
@@ -130,7 +130,7 @@ export function AgentDetailPage() {
 
   const ytdMetrics = {
     policies: ytdPolicies.length,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     premium: ytdPolicies.reduce(
       (sum: number, p: any) => sum + (p.annualPremium || 0),
       0,
@@ -258,7 +258,7 @@ export function AgentDetailPage() {
             variant="ghost"
             className="h-6 px-2 text-[10px] text-zinc-600 dark:text-zinc-400"
             onClick={() =>
-              showToast.success(
+              toast.success(
                 `Message feature coming soon for ${agentData.email}`,
               )
             }

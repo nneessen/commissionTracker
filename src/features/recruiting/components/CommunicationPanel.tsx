@@ -19,8 +19,8 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { emailService, type SendEmailRequest } from "@/services/email";
-import { showToast } from "@/utils/toast";
 import type { UserProfile } from "@/types/hierarchy.types";
 
 interface CommunicationPanelProps {
@@ -52,9 +52,10 @@ export function CommunicationPanel({
       }
 
       // Sanitize name to prevent email header injection (remove angle brackets)
-      const senderName = `${currentUserProfile?.first_name || "Recruit"} ${currentUserProfile?.last_name || ""}`
-        .trim()
-        .replace(/[<>]/g, '');
+      const senderName =
+        `${currentUserProfile?.first_name || "Recruit"} ${currentUserProfile?.last_name || ""}`
+          .trim()
+          .replace(/[<>]/g, "");
       const request: SendEmailRequest = {
         to: [upline.email],
         from: `${senderName} <recruiting@thestandardhq.com>`,
@@ -76,11 +77,11 @@ export function CommunicationPanel({
       queryClient.invalidateQueries({ queryKey: ["user-messages", userId] });
       setSubject("");
       setMessageBody("");
-      showToast.success("Email sent successfully!");
+      toast.success("Email sent successfully!");
     },
     onError: (error) => {
       console.error("Failed to send message:", error);
-      showToast.error(
+      toast.error(
         error instanceof Error ? error.message : "Failed to send email",
       );
     },
@@ -88,12 +89,12 @@ export function CommunicationPanel({
 
   const handleSendMessage = () => {
     if (!messageBody.trim()) {
-      showToast.error("Please enter a message");
+      toast.error("Please enter a message");
       return;
     }
 
     if (!upline?.email) {
-      showToast.error("No recruiter assigned. Please contact support.");
+      toast.error("No recruiter assigned. Please contact support.");
       return;
     }
 
@@ -238,7 +239,10 @@ export function CommunicationPanel({
           <Inbox className="h-3 w-3 mr-1" />
           Inbox
           {inboxCount > 0 && (
-            <Badge variant="secondary" className="ml-1 h-4 px-1 text-[9px] bg-zinc-100 text-zinc-600 dark:bg-zinc-700 dark:text-zinc-300">
+            <Badge
+              variant="secondary"
+              className="ml-1 h-4 px-1 text-[9px] bg-zinc-100 text-zinc-600 dark:bg-zinc-700 dark:text-zinc-300"
+            >
               {inboxCount}
             </Badge>
           )}
@@ -301,9 +305,7 @@ export function CommunicationPanel({
       <Button
         onClick={handleSendMessage}
         disabled={
-          !upline?.email ||
-          !messageBody.trim() ||
-          sendMessageMutation.isPending
+          !upline?.email || !messageBody.trim() || sendMessageMutation.isPending
         }
         className="h-7 text-[11px] shrink-0"
         size="sm"

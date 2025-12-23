@@ -52,7 +52,7 @@ import { useRecruitEmails } from "../hooks/useRecruitEmails";
 import { useRecruitActivityLog } from "../hooks/useRecruitActivity";
 import { ONBOARDING_STATUS_COLORS } from "@/types/recruiting.types";
 import { supabase } from "@/services/base/supabase";
-import { showToast } from "@/utils/toast";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 const DEFAULT_TEMPLATE_ID = "00000000-0000-0000-0000-000000000001";
@@ -141,11 +141,11 @@ export function RecruitDetailPanel({
             email: recruit.email,
             redirectTo: `${window.location.origin}/auth/reset-password`,
           },
-        }
+        },
       );
-      if (fnError) showToast.error(fnError.message);
-      else if (data?.success === false) showToast.error(data.error);
-      else showToast.success("Invite sent!");
+      if (fnError) toast.error(fnError.message);
+      else if (data?.success === false) toast.error(data.error);
+      else toast.success("Invite sent!");
     } finally {
       setResendingInvite(false);
     }

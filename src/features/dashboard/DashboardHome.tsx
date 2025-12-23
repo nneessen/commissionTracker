@@ -17,7 +17,7 @@ import { useChargebackSummary } from "../../hooks/commissions/useChargebackSumma
 import { useAuth } from "../../contexts/AuthContext";
 import { useDashboardFeatures } from "../../hooks/dashboard";
 import { TimePeriod } from "../../utils/dateRange";
-import showToast from "../../utils/toast";
+import { toast } from "sonner";
 import type { CreateExpenseData } from "../../types/expense.types";
 import type { NewPolicyForm, CreatePolicyData } from "../../types/policy.types";
 import { parseLocalDate } from "@/lib/date";
@@ -210,10 +210,10 @@ export const DashboardHome: React.FC = () => {
   const handleSaveExpense = async (data: CreateExpenseData) => {
     try {
       await createExpense.mutateAsync(data);
-      showToast.success("Expense created successfully!");
+      toast.success("Expense created successfully!");
       setActiveDialog(null);
     } catch (error) {
-      showToast.error("Failed to create expense. Please try again.");
+      toast.error("Failed to create expense. Please try again.");
       console.error("Error creating expense:", error);
     }
   };
@@ -250,7 +250,7 @@ export const DashboardHome: React.FC = () => {
 
       const commissionPercent = formData.commissionPercentage || 0;
       if (commissionPercent < 0 || commissionPercent > 999.99) {
-        showToast.error("Commission percentage must be between 0 and 999.99");
+        toast.error("Commission percentage must be between 0 and 999.99");
         throw new Error("Commission percentage must be between 0 and 999.99");
       }
 
@@ -274,14 +274,14 @@ export const DashboardHome: React.FC = () => {
       };
 
       const result = await createPolicy.mutateAsync(policyData);
-      showToast.success(`Policy ${result.policyNumber} created successfully!`);
+      toast.success(`Policy ${result.policyNumber} created successfully!`);
       setActiveDialog(null);
       return result;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any -- error object type
     } catch (error: any) {
       const errorMessage =
         error?.message || "Failed to create policy. Please try again.";
-      showToast.error(errorMessage);
+      toast.error(errorMessage);
       console.error("Error creating policy:", error);
       throw error;
     }
@@ -347,7 +347,9 @@ export const DashboardHome: React.FC = () => {
 
             {/* Organization Metrics (IMO Admin / Agency Owner) */}
             <OrgMetricsSection
-              isImoAdmin={dashboardFeatures.isAdmin || dashboardFeatures.isImoAdmin}
+              isImoAdmin={
+                dashboardFeatures.isAdmin || dashboardFeatures.isImoAdmin
+              }
               isAgencyOwner={dashboardFeatures.isAgencyOwner}
             />
 

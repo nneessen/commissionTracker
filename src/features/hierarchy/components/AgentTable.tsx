@@ -41,7 +41,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { formatCurrency } from "@/lib/format";
-import showToast from "@/utils/toast";
+import { toast } from "sonner";
 import type { UserProfile } from "@/types/hierarchy.types";
 import { useQuery } from "@tanstack/react-query";
 import { hierarchyService } from "@/services/hierarchy/hierarchyService";
@@ -197,12 +197,12 @@ function AgentRow({
 
   const handleEditAgent = () => {
     // Will implement edit modal
-    showToast.success("Edit functionality coming soon");
+    toast.success("Edit functionality coming soon");
   };
 
   const handleSendMessage = () => {
     // Navigate to email composer or open message modal
-    showToast.success("Message functionality coming soon");
+    toast.success("Message functionality coming soon");
   };
 
   const statusDisplay = getStatusDisplay();
@@ -448,12 +448,12 @@ export function AgentTable({ agents, isLoading, onRefresh }: AgentTableProps) {
         reason: "Removed from team by upline",
       });
 
-      showToast.success(`${agentToRemove.email} removed from team`);
+      toast.success(`${agentToRemove.email} removed from team`);
       setAgentToRemove(null);
       onRefresh?.();
     } catch (error) {
       console.error("Error removing agent:", error);
-      showToast.error("Failed to remove agent from team");
+      toast.error("Failed to remove agent from team");
     }
   };
 

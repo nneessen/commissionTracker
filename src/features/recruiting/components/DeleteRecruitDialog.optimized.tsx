@@ -21,13 +21,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { AlertTriangle, Loader2, Trash2, RefreshCw, Users } from "lucide-react";
+import { toast } from "sonner";
 import {
   enhancedRecruitingService,
   type DeleteDependencies,
 } from "@/services/recruiting/recruitingService.enhanced";
 import { supabase } from "@/services/base/supabase";
 import type { UserProfile } from "@/types/hierarchy.types";
-import { showToast } from "@/utils/toast";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 interface DeleteRecruitDialogProps {
@@ -127,12 +127,12 @@ export function DeleteRecruitDialogOptimized({
         throw new Error(reassignResult.error || "Failed to reassign downlines");
       }
 
-      showToast.success(`Reassigned ${reassignResult.count} downline(s)`);
+      toast.success(`Reassigned ${reassignResult.count} downline(s)`);
       await handleDelete();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any -- error object type
     } catch (error: any) {
       console.error("Failed to reassign and delete:", error);
-      showToast.error(error.message || "Failed to reassign downlines");
+      toast.error(error.message || "Failed to reassign downlines");
       setDeleting(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- handleDelete is defined below but stable
@@ -159,7 +159,7 @@ export function DeleteRecruitDialogOptimized({
         throw new Error(data.error || "Failed to delete recruit");
       }
 
-      showToast.success(`Permanently deleted ${recruitName}`);
+      toast.success(`Permanently deleted ${recruitName}`);
 
       await queryClient.invalidateQueries({ queryKey: ["recruits"] });
       await queryClient.invalidateQueries({ queryKey: ["user-profiles"] });
@@ -169,7 +169,7 @@ export function DeleteRecruitDialogOptimized({
       // eslint-disable-next-line @typescript-eslint/no-explicit-any -- error object type
     } catch (error: any) {
       console.error("Failed to delete recruit:", error);
-      showToast.error(
+      toast.error(
         error.message || `Failed to delete ${recruitName}. Please try again.`,
       );
     } finally {

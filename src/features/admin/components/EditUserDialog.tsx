@@ -41,7 +41,7 @@ import {
   VALID_CONTRACT_LEVELS,
 } from "@/services/users/userService";
 import { supabase } from "@/services/base/supabase";
-import showToast from "@/utils/toast";
+import { toast } from "sonner";
 import {
   Mail,
   User,
@@ -340,7 +340,7 @@ export default function EditUserDialog({
       const hasProfileUpdates = Object.keys(updates).length > 0;
 
       if (!hasProfileUpdates && !agencyChanged && !imoChanged) {
-        showToast.success("No changes to save");
+        toast.success("No changes to save");
         setIsSaving(false);
         return;
       }
@@ -349,14 +349,14 @@ export default function EditUserDialog({
       if (imoChanged && formData.imo_id) {
         const selectedImo = allImos?.find((i) => i.id === formData.imo_id);
         if (!selectedImo) {
-          showToast.error(
+          toast.error(
             "Selected IMO no longer exists. Please refresh and try again.",
           );
           setIsSaving(false);
           return;
         }
         if (!selectedImo.is_active) {
-          showToast.error(
+          toast.error(
             "Selected IMO is no longer active. Please select a different IMO.",
           );
           setIsSaving(false);
@@ -382,7 +382,7 @@ export default function EditUserDialog({
           .eq("id", user.id);
 
         if (imoError) {
-          showToast.error("Failed to update organization assignment");
+          toast.error("Failed to update organization assignment");
           setIsSaving(false);
           return;
         }
@@ -392,13 +392,13 @@ export default function EditUserDialog({
       if (hasProfileUpdates) {
         const result = await userApprovalService.updateUser(user.id, updates);
         if (!result.success) {
-          showToast.error(result.error || "Failed to update user");
+          toast.error(result.error || "Failed to update user");
           setIsSaving(false);
           return;
         }
       }
 
-      showToast.success("User updated successfully");
+      toast.success("User updated successfully");
       queryClient.invalidateQueries({ queryKey: ["userApproval"] });
       queryClient.invalidateQueries({ queryKey: ["users"] });
       // HIGH-3 fix: Invalidate IMO/Agency queries so Sidebar updates for affected user
@@ -422,7 +422,7 @@ export default function EditUserDialog({
       setShowOrgChangeConfirm(false);
       onOpenChange(false);
     } catch (error) {
-      showToast.error("An error occurred while saving");
+      toast.error("An error occurred while saving");
       console.error("Save error:", error);
       // Keep org confirm dialog open on error so user can retry
     } finally {
@@ -446,25 +446,25 @@ export default function EditUserDialog({
         if (error) {
           throw new Error(error.message || "Failed to reassign downlines");
         }
-        showToast.success(`Reassigned ${data?.length || 0} downline(s)`);
+        toast.success(`Reassigned ${data?.length || 0} downline(s)`);
       }
 
       // Step 2: Delete user using mutation hook for proper cache invalidation
       deleteUserMutation.mutate(user.id, {
         onSuccess: (result) => {
           if (result.success) {
-            showToast.success("User permanently deleted");
+            toast.success("User permanently deleted");
             // Query invalidation is handled by the mutation hook
             setShowDeleteConfirm(false);
             onOpenChange(false);
             onDeleted?.();
           } else {
-            showToast.error(result.error || "Failed to delete user");
+            toast.error(result.error || "Failed to delete user");
           }
           setIsDeleting(false);
         },
         onError: (error) => {
-          showToast.error(
+          toast.error(
             error instanceof Error
               ? error.message
               : "An error occurred while deleting",
@@ -474,7 +474,7 @@ export default function EditUserDialog({
         },
       });
     } catch (error) {
-      showToast.error(
+      toast.error(
         error instanceof Error
           ? error.message
           : "An error occurred while deleting",
@@ -501,18 +501,16 @@ export default function EditUserDialog({
       );
 
       if (fnError) {
-        showToast.error(
-          `Failed to send confirmation email: ${fnError.message}`,
-        );
+        toast.error(`Failed to send confirmation email: ${fnError.message}`);
       } else if (data?.success === false) {
-        showToast.error(`Failed to send confirmation email: ${data.error}`);
+        toast.error(`Failed to send confirmation email: ${data.error}`);
       } else {
-        showToast.success(
+        toast.success(
           `Confirmation email sent to ${user.email} to set password`,
         );
       }
     } catch (error) {
-      showToast.error("An error occurred while sending confirmation email");
+      toast.error("An error occurred while sending confirmation email");
       console.error("Resend confirmation email error:", error);
     } finally {
       setIsSendingInvite(false);

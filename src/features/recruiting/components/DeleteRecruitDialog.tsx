@@ -13,10 +13,10 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle, Loader2, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import { useRecruitMutations } from "../hooks/useRecruitMutations";
 import { supabase } from "@/services/base/supabase";
 import type { UserProfile } from "@/types/hierarchy.types";
-import { showToast } from "@/utils/toast";
 
 interface DeleteRecruitDialogProps {
   recruit: UserProfile | null;
@@ -118,13 +118,13 @@ export function DeleteRecruitDialog({
     setLoading(true);
     try {
       await deleteRecruit.mutateAsync(recruit.id);
-      showToast.success(`Successfully deleted ${recruitName}`);
+      toast.success(`Successfully deleted ${recruitName}`);
       onOpenChange(false);
       onSuccess?.();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any -- error object type
     } catch (error: any) {
       console.error("Failed to delete recruit:", error);
-      showToast.error(
+      toast.error(
         error?.message || `Failed to delete ${recruitName}. Please try again.`,
       );
     } finally {

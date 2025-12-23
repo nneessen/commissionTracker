@@ -51,7 +51,7 @@ import type {
 } from "../../types/expense.types";
 import { isSameMonth } from "../../lib/date";
 import { formatCurrency, formatPercent } from "../../lib/format";
-import showToast from "../../utils/toast";
+import { toast } from "sonner";
 import { DEFAULT_EXPENSE_CATEGORIES } from "../../types/expense.types";
 import { ExpenseDialogCompact } from "./components/ExpenseDialogCompact";
 import { ExpenseDeleteDialog } from "./components/ExpenseDeleteDialog";
@@ -195,16 +195,16 @@ export function ExpenseDashboardCompact() {
           id: selectedExpense.id,
           updates: data,
         });
-        showToast.success("Expense updated successfully!");
+        toast.success("Expense updated successfully!");
         setIsEditDialogOpen(false);
       } else {
         await createExpense.mutateAsync(data);
-        showToast.success("Expense created successfully!");
+        toast.success("Expense created successfully!");
         setIsAddDialogOpen(false);
       }
       setSelectedExpense(null);
     } catch (_error) {
-      showToast.error("Failed to save expense. Please try again.");
+      toast.error("Failed to save expense. Please try again.");
     }
   };
 
@@ -215,7 +215,7 @@ export function ExpenseDashboardCompact() {
     try {
       if (deleteOption === "single" || !selectedExpense.recurring_group_id) {
         await deleteExpense.mutateAsync(selectedExpense.id);
-        showToast.success("Expense deleted successfully!");
+        toast.success("Expense deleted successfully!");
       } else if (deleteOption === "future") {
         const { recurringExpenseService } =
           await import("./../../services/expenses/recurringExpenseService");
@@ -224,7 +224,7 @@ export function ExpenseDashboardCompact() {
           selectedExpense.date,
         );
         await deleteExpense.mutateAsync(selectedExpense.id);
-        showToast.success(
+        toast.success(
           `Deleted current expense and ${count} future occurrences!`,
         );
       } else if (deleteOption === "all") {
@@ -232,12 +232,12 @@ export function ExpenseDashboardCompact() {
           .from("expenses")
           .delete()
           .eq("recurring_group_id", selectedExpense.recurring_group_id);
-        showToast.success("Deleted all recurring expenses!");
+        toast.success("Deleted all recurring expenses!");
       }
       setIsDeleteDialogOpen(false);
       setSelectedExpense(null);
     } catch (_error) {
-      showToast.error("Failed to delete expense. Please try again.");
+      toast.error("Failed to delete expense. Please try again.");
     }
   };
 
@@ -257,9 +257,9 @@ export function ExpenseDashboardCompact() {
       }));
 
       downloadCSV(exportData, "expenses");
-      showToast.success("Expenses exported to CSV!");
+      toast.success("Expenses exported to CSV!");
     } catch (_error) {
-      showToast.error("Failed to export CSV. Please try again.");
+      toast.error("Failed to export CSV. Please try again.");
     }
   };
 
@@ -268,9 +268,9 @@ export function ExpenseDashboardCompact() {
     const today = new Date().toISOString().split("T")[0];
     try {
       await createExpense.mutateAsync({ ...expenseData, date: today });
-      showToast.success(`✓ Added: ${template.template_name}`);
+      toast.success(`✓ Added: ${template.template_name}`);
     } catch (_error) {
-      showToast.error("Failed to create expense. Please try again.");
+      toast.error("Failed to create expense. Please try again.");
     }
   };
 
@@ -278,9 +278,9 @@ export function ExpenseDashboardCompact() {
     if (confirm(`Delete template "${template.template_name}"?`)) {
       try {
         await deleteTemplate.mutateAsync(template.id);
-        showToast.success("Template deleted successfully!");
+        toast.success("Template deleted successfully!");
       } catch (_error) {
-        showToast.error("Failed to delete template. Please try again.");
+        toast.error("Failed to delete template. Please try again.");
       }
     }
   };

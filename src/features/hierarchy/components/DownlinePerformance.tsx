@@ -1,20 +1,47 @@
 // src/features/hierarchy/components/DownlinePerformance.tsx
 
-import React, { useState } from 'react';
-import {Edit, Shield} from 'lucide-react';
-import {Card, CardHeader, CardTitle, CardContent} from '@/components/ui/card';
-import {Input} from '@/components/ui/input';
-import {Button} from '@/components/ui/button';
-import {Badge} from '@/components/ui/badge';
-import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from '@/components/ui/table';
-import {Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle} from '@/components/ui/dialog';
-import {Label} from '@/components/ui/label';
-import {Alert, AlertDescription} from '@/components/ui/alert';
-import {Empty, EmptyHeader, EmptyTitle, EmptyDescription} from '@/components/ui/empty';
-import {formatCurrency} from '@/lib/format';
-import {useAllDownlinePerformance, useMyDownlines, useUpdateAgentHierarchy, useCurrentUserProfile} from '@/hooks';
-import showToast from '@/utils/toast';
-import type {UserProfile, HierarchyChangeRequest} from '@/types/hierarchy.types';
+import React, { useState } from "react";
+import { Edit, Shield } from "lucide-react";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  Empty,
+  EmptyHeader,
+  EmptyTitle,
+  EmptyDescription,
+} from "@/components/ui/empty";
+import { formatCurrency } from "@/lib/format";
+import {
+  useAllDownlinePerformance,
+  useMyDownlines,
+  useUpdateAgentHierarchy,
+  useCurrentUserProfile,
+} from "@/hooks";
+import { toast } from "sonner";
+import type {
+  UserProfile,
+  HierarchyChangeRequest,
+} from "@/types/hierarchy.types";
 
 interface DownlinePerformanceProps {
   className?: string;
@@ -37,9 +64,9 @@ function EditHierarchyDialog({
   onSave: (request: HierarchyChangeRequest) => Promise<void>;
 }) {
   const [selectedUplineId, setSelectedUplineId] = useState<string | null>(
-    agent?.upline_id || null
+    agent?.upline_id || null,
   );
-  const [reason, setReason] = useState('');
+  const [reason, setReason] = useState("");
   const [isSaving, setIsSaving] = useState(false);
 
   const handleSave = async () => {
@@ -50,13 +77,13 @@ function EditHierarchyDialog({
       await onSave({
         agent_id: agent.id,
         new_upline_id: selectedUplineId,
-        reason: reason || 'Hierarchy adjustment',
+        reason: reason || "Hierarchy adjustment",
       });
-      showToast.success('Hierarchy updated successfully');
+      toast.success("Hierarchy updated successfully");
       onOpenChange(false);
     } catch (error) {
-      showToast.error('Failed to update hierarchy');
-      console.error('Error updating hierarchy:', error);
+      toast.error("Failed to update hierarchy");
+      console.error("Error updating hierarchy:", error);
     } finally {
       setIsSaving(false);
     }
@@ -64,7 +91,8 @@ function EditHierarchyDialog({
 
   // Filter out the agent itself and its downlines to prevent circular references
   const availableUplines = allAgents.filter(
-    (a) => a.id !== agent?.id && !(a.hierarchy_path || '').includes(agent?.id || '')
+    (a) =>
+      a.id !== agent?.id && !(a.hierarchy_path || "").includes(agent?.id || ""),
   );
 
   return (
@@ -83,7 +111,7 @@ function EditHierarchyDialog({
             <select
               id="upline"
               className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-              value={selectedUplineId || ''}
+              value={selectedUplineId || ""}
               onChange={(e) => setSelectedUplineId(e.target.value || null)}
             >
               <option value="">No Upline (Root Agent)</option>
@@ -109,18 +137,23 @@ function EditHierarchyDialog({
           <Alert>
             <Shield className="h-4 w-4" />
             <AlertDescription>
-              Changing hierarchy will affect override calculations for all policies going forward.
-              Existing overrides will not be recalculated.
+              Changing hierarchy will affect override calculations for all
+              policies going forward. Existing overrides will not be
+              recalculated.
             </AlertDescription>
           </Alert>
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSaving}>
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={isSaving}
+          >
             Cancel
           </Button>
           <Button onClick={handleSave} disabled={isSaving}>
-            {isSaving ? 'Saving...' : 'Save Changes'}
+            {isSaving ? "Saving..." : "Save Changes"}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -137,7 +170,7 @@ export function DownlinePerformance({ className }: DownlinePerformanceProps) {
   const { data: downlines } = useMyDownlines();
   const updateHierarchy = useUpdateAgentHierarchy();
   const { data: profile } = useCurrentUserProfile();
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedAgent, setSelectedAgent] = useState<UserProfile | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -147,9 +180,10 @@ export function DownlinePerformance({ className }: DownlinePerformanceProps) {
   const isAdmin = profile?.is_admin === true;
 
   // Filter by search term
-  const filteredData = performanceData?.filter((d) =>
-    d.agent_email.toLowerCase().includes(searchTerm.toLowerCase())
-  ) || [];
+  const filteredData =
+    performanceData?.filter((d) =>
+      d.agent_email.toLowerCase().includes(searchTerm.toLowerCase()),
+    ) || [];
 
   // Paginate
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);
@@ -158,7 +192,7 @@ export function DownlinePerformance({ className }: DownlinePerformanceProps) {
   const paginatedData = filteredData.slice(startIndex, endIndex);
 
   const handleEditAgent = (agentEmail: string) => {
-    const agent = downlines?.find(d => d.email === agentEmail);
+    const agent = downlines?.find((d) => d.email === agentEmail);
     if (agent) {
       setSelectedAgent(agent);
       setDialogOpen(true);
@@ -197,7 +231,8 @@ export function DownlinePerformance({ className }: DownlinePerformanceProps) {
             <EmptyHeader>
               <EmptyTitle>No downline agents yet</EmptyTitle>
               <EmptyDescription>
-                When agents are assigned to your downline, their performance metrics will appear here
+                When agents are assigned to your downline, their performance
+                metrics will appear here
               </EmptyDescription>
             </EmptyHeader>
           </Empty>
@@ -217,9 +252,7 @@ export function DownlinePerformance({ className }: DownlinePerformanceProps) {
                 Performance metrics and hierarchy management
               </p>
             </div>
-            {isAdmin && (
-              <Badge variant="outline">Admin Mode</Badge>
-            )}
+            {isAdmin && <Badge variant="outline">Admin Mode</Badge>}
           </div>
           <div className="flex items-center gap-4 mt-4">
             <Input
@@ -232,7 +265,8 @@ export function DownlinePerformance({ className }: DownlinePerformanceProps) {
               className="max-w-sm"
             />
             <div className="text-sm text-muted-foreground">
-              Showing {startIndex + 1}-{Math.min(endIndex, filteredData.length)} of {filteredData.length}
+              Showing {startIndex + 1}-{Math.min(endIndex, filteredData.length)}{" "}
+              of {filteredData.length}
             </div>
           </div>
         </CardHeader>
@@ -249,25 +283,38 @@ export function DownlinePerformance({ className }: DownlinePerformanceProps) {
                   <TableHead className="text-right">Avg Premium</TableHead>
                   <TableHead className="text-right">Persistency</TableHead>
                   <TableHead className="text-right">Override Gen.</TableHead>
-                  {isAdmin && <TableHead className="text-right">Actions</TableHead>}
+                  {isAdmin && (
+                    <TableHead className="text-right">Actions</TableHead>
+                  )}
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {paginatedData.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={isAdmin ? 9 : 8} className="text-center text-muted-foreground">
+                    <TableCell
+                      colSpan={isAdmin ? 9 : 8}
+                      className="text-center text-muted-foreground"
+                    >
                       No agents found
                     </TableCell>
                   </TableRow>
                 ) : (
                   paginatedData.map((agent) => (
                     <TableRow key={agent.agent_id}>
-                      <TableCell className="font-medium">{agent.agent_email}</TableCell>
-                      <TableCell>
-                        <span className="text-xs">L{agent.hierarchy_depth}</span>
+                      <TableCell className="font-medium">
+                        {agent.agent_email}
                       </TableCell>
-                      <TableCell className="text-right">{agent.policies_written}</TableCell>
-                      <TableCell className="text-right">{agent.policies_active}</TableCell>
+                      <TableCell>
+                        <span className="text-xs">
+                          L{agent.hierarchy_depth}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {agent.policies_written}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {agent.policies_active}
+                      </TableCell>
                       <TableCell className="text-right">
                         {formatCurrency(agent.total_premium)}
                       </TableCell>
@@ -311,7 +358,9 @@ export function DownlinePerformance({ className }: DownlinePerformanceProps) {
                 Page {currentPage} of {totalPages}
               </div>
               <button
-                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                onClick={() =>
+                  setCurrentPage((p) => Math.min(totalPages, p + 1))
+                }
                 disabled={currentPage === totalPages}
                 className="px-4 py-2 text-sm rounded-lg shadow-sm hover:shadow-md transition-shadow disabled:opacity-50 bg-card"
               >

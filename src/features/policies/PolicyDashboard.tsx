@@ -19,7 +19,7 @@ import {
   transformFormToUpdateData,
 } from "./utils/policyFormTransformer";
 import type { NewPolicyForm } from "../../types/policy.types";
-import showToast from "../../utils/toast";
+import { toast } from "sonner";
 
 export const PolicyDashboard: React.FC = () => {
   const [isPolicyFormOpen, setIsPolicyFormOpen] = useState(false);
@@ -86,7 +86,7 @@ export const PolicyDashboard: React.FC = () => {
         }}
         onSave={async (formData: NewPolicyForm) => {
           if (!user?.id) {
-            showToast.error("You must be logged in");
+            toast.error("You must be logged in");
             return null;
           }
 
@@ -119,7 +119,7 @@ export const PolicyDashboard: React.FC = () => {
                 id: editingPolicyId,
                 updates: updateData,
               });
-              showToast.success("Policy updated successfully");
+              toast.success("Policy updated successfully");
               return null;
             } else {
               // Create new policy
@@ -129,7 +129,7 @@ export const PolicyDashboard: React.FC = () => {
                 user.id,
               );
               const result = await createPolicyMutation.mutateAsync(createData);
-              showToast.success(
+              toast.success(
                 `Policy ${result.policyNumber} created successfully!`,
               );
               return result;
@@ -137,7 +137,7 @@ export const PolicyDashboard: React.FC = () => {
           } catch (error) {
             const message =
               error instanceof Error ? error.message : "Operation failed";
-            showToast.error(message);
+            toast.error(message);
             throw error;
           }
         }}

@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ArrowLeft, Save, Loader2 } from "lucide-react";
-import { showToast } from "@/utils/toast";
+import { toast } from "sonner";
 import { useTemplate, useUpdateTemplate } from "../hooks/usePipeline";
 import { PhaseEditor } from "./PhaseEditor";
 
@@ -58,7 +58,7 @@ export function PipelineTemplateEditor({
 
   const handleSave = async () => {
     if (!name.trim()) {
-      showToast.error("Template name is required");
+      toast.error("Template name is required");
       return;
     }
 
@@ -71,10 +71,10 @@ export function PipelineTemplateEditor({
           is_active: isActive,
         },
       });
-      showToast.success("Template saved");
+      toast.success("Template saved");
       setHasChanges(false);
     } catch (_error) {
-      showToast.error("Failed to save template");
+      toast.error("Failed to save template");
     }
   };
 

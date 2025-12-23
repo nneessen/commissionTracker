@@ -1,9 +1,9 @@
 // src/features/recruiting/hooks/useRecruitMutations.ts
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { recruitingService } from "@/services/recruiting";
 import type { UpdateRecruitInput } from "@/types/recruiting.types";
 import type { CreateRecruitInput } from "@/types/recruiting.types";
-import { showToast } from "@/utils/toast";
 
 export function useCreateRecruit() {
   const queryClient = useQueryClient();
@@ -17,12 +17,12 @@ export function useCreateRecruit() {
       const emailSent = (data as any)._emailSent;
 
       if (emailSent) {
-        showToast.success(
+        toast.success(
           `Successfully added ${name}. A password reset email has been sent to ${data.email}. They should check their inbox (and spam folder) for login instructions.`,
           { duration: 8000 },
         );
       } else {
-        showToast.warning(
+        toast.warning(
           `Added ${name} but the invite email could not be sent. Use the "Resend Invite" button in their profile to send login instructions.`,
           { duration: 8000 },
         );
@@ -34,9 +34,7 @@ export function useCreateRecruit() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- error object type
     onError: (error: any) => {
       console.error("Failed to create recruit:", error);
-      showToast.error(
-        error?.message || "Failed to add recruit. Please try again.",
-      );
+      toast.error(error?.message || "Failed to add recruit. Please try again.");
     },
   });
 }
@@ -54,7 +52,7 @@ export function useUpdateRecruit() {
     }) => recruitingService.updateRecruit(id, updates),
     onSuccess: (data, variables) => {
       const name = `${data.first_name} ${data.last_name}`.trim() || data.email;
-      showToast.success(`Successfully updated ${name}`);
+      toast.success(`Successfully updated ${name}`);
       queryClient.invalidateQueries({ queryKey: ["recruits"] });
       queryClient.invalidateQueries({ queryKey: ["recruits", variables.id] });
       queryClient.invalidateQueries({ queryKey: ["recruiting-stats"] });
@@ -62,7 +60,7 @@ export function useUpdateRecruit() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- error object type
     onError: (error: any) => {
       console.error("Failed to update recruit:", error);
-      showToast.error(
+      toast.error(
         error?.message || "Failed to update recruit. Please try again.",
       );
     },

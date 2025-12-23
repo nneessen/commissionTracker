@@ -20,8 +20,8 @@ import {
   AlertCircle,
   Loader2,
 } from "lucide-react";
+import { toast } from "sonner";
 import { useUpdateChecklistItemStatus } from "../hooks/useRecruitProgress";
-import { showToast } from "@/utils/toast";
 
 interface PhaseChecklistProps {
   userId: string;
@@ -153,21 +153,21 @@ export function PhaseChecklist({
           completed_by: newStatus === "completed" ? currentUserId : undefined,
         },
       });
-      showToast.success(
+      toast.success(
         newStatus === "completed" ? "Task marked as complete" : "Task unmarked",
       );
       // eslint-disable-next-line @typescript-eslint/no-explicit-any -- error object type
     } catch (error: any) {
       console.error("Failed to update checklist item:", error);
-      showToast.error(
-        error?.message || "Failed to update task. Please try again.",
-      );
+      toast.error(error?.message || "Failed to update task. Please try again.");
     } finally {
       // Ensure spinner shows for at least 400ms for visual feedback
       const elapsed = Date.now() - startTime;
       const minDisplayTime = 400;
       if (elapsed < minDisplayTime) {
-        await new Promise((resolve) => setTimeout(resolve, minDisplayTime - elapsed));
+        await new Promise((resolve) =>
+          setTimeout(resolve, minDisplayTime - elapsed),
+        );
       }
       setLoadingItemIds((prev) => {
         const next = new Set(prev);
@@ -189,11 +189,11 @@ export function PhaseChecklist({
           verified_by: currentUserId,
         },
       });
-      showToast.success("Item approved successfully");
+      toast.success("Item approved successfully");
       // eslint-disable-next-line @typescript-eslint/no-explicit-any -- error object type
     } catch (error: any) {
       console.error("Failed to approve item:", error);
-      showToast.error(
+      toast.error(
         error?.message || "Failed to approve item. Please try again.",
       );
     }
@@ -212,13 +212,11 @@ export function PhaseChecklist({
           rejection_reason: reason,
         },
       });
-      showToast.success("Item rejected");
+      toast.success("Item rejected");
       // eslint-disable-next-line @typescript-eslint/no-explicit-any -- error object type
     } catch (error: any) {
       console.error("Failed to reject item:", error);
-      showToast.error(
-        error?.message || "Failed to reject item. Please try again.",
-      );
+      toast.error(error?.message || "Failed to reject item. Please try again.");
     }
   };
 

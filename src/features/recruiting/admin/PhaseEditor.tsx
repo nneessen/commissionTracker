@@ -23,7 +23,7 @@ import {
   GripVertical,
   Loader2,
 } from "lucide-react";
-import { showToast } from "@/utils/toast";
+import { toast } from "sonner";
 import {
   usePhases,
   useCreatePhase,
@@ -60,7 +60,7 @@ export function PhaseEditor({ templateId }: PhaseEditorProps) {
 
   const handleCreatePhase = async () => {
     if (!phaseForm.phase_name.trim()) {
-      showToast.error("Phase name is required");
+      toast.error("Phase name is required");
       return;
     }
 
@@ -69,7 +69,7 @@ export function PhaseEditor({ templateId }: PhaseEditorProps) {
         templateId,
         data: phaseForm,
       });
-      showToast.success("Phase created");
+      toast.success("Phase created");
       setCreateDialogOpen(false);
       setPhaseForm({
         phase_name: "",
@@ -78,7 +78,7 @@ export function PhaseEditor({ templateId }: PhaseEditorProps) {
         auto_advance: false,
       });
     } catch (_error) {
-      showToast.error("Failed to create phase");
+      toast.error("Failed to create phase");
     }
   };
 
@@ -95,23 +95,23 @@ export function PhaseEditor({ templateId }: PhaseEditorProps) {
           auto_advance: editingPhase.auto_advance,
         },
       });
-      showToast.success("Phase updated");
+      toast.success("Phase updated");
       setEditingPhase(null);
     } catch (_error) {
-      showToast.error("Failed to update phase");
+      toast.error("Failed to update phase");
     }
   };
 
   const handleDeletePhase = async (id: string) => {
     try {
       await deletePhase.mutateAsync({ phaseId: id, templateId });
-      showToast.success("Phase deleted");
+      toast.success("Phase deleted");
       setDeleteConfirmId(null);
       if (expandedPhase === id) {
         setExpandedPhase(null);
       }
     } catch (_error) {
-      showToast.error("Failed to delete phase");
+      toast.error("Failed to delete phase");
     }
   };
 

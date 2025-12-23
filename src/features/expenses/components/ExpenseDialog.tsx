@@ -1,19 +1,39 @@
 // src/features/expenses/components/ExpenseDialog.tsx
 
-import {useEffect, useState} from "react";
-import {Button} from "@/components/ui/button";
-import {Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle} from "@/components/ui/dialog";
-import {Input} from "@/components/ui/input";
-import {Label} from "@/components/ui/label";
-import {Textarea} from "@/components/ui/textarea";
-import {Checkbox} from "@/components/ui/checkbox";
-import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
-import type {Expense, CreateExpenseData, RecurringFrequency} from "@/types/expense.types";
-import {DEFAULT_EXPENSE_CATEGORIES} from "@/types/expense.types";
-import {RECURRING_FREQUENCY_OPTIONS, TAX_DEDUCTIBLE_TOOLTIP} from "../config/recurringConfig";
-import {useCreateExpenseTemplate} from "../../../hooks/expenses/useExpenseTemplates";
-import {getTodayString} from "../../../lib/date";
-import showToast from "../../../utils/toast";
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import type {
+  Expense,
+  CreateExpenseData,
+  RecurringFrequency,
+} from "@/types/expense.types";
+import { DEFAULT_EXPENSE_CATEGORIES } from "@/types/expense.types";
+import {
+  RECURRING_FREQUENCY_OPTIONS,
+  TAX_DEDUCTIBLE_TOOLTIP,
+} from "../config/recurringConfig";
+import { useCreateExpenseTemplate } from "../../../hooks/expenses/useExpenseTemplates";
+import { getTodayString } from "../../../lib/date";
+import { toast } from "sonner";
 
 interface ExpenseDialogProps {
   open: boolean;
@@ -99,10 +119,10 @@ export function ExpenseDialog({
           notes: formData.notes,
           description: formData.description,
         });
-        showToast.success("Template saved!");
+        toast.success("Template saved!");
       } catch (error) {
         console.error("Failed to save template:", error);
-        showToast.error("Failed to save template");
+        toast.error("Failed to save template");
       }
     }
 
@@ -424,4 +444,3 @@ export function ExpenseDialog({
     </Dialog>
   );
 }
-

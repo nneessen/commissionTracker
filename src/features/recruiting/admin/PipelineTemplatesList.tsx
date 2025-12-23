@@ -24,7 +24,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Loader2 } from "lucide-react";
-import { showToast } from "@/utils/toast";
+import { toast } from "sonner";
 import {
   useTemplates,
   useCreateTemplate,
@@ -55,7 +55,7 @@ export function PipelineTemplatesList({
 
   const handleCreate = async () => {
     if (!newTemplate.name.trim()) {
-      showToast.error("Template name is required");
+      toast.error("Template name is required");
       return;
     }
 
@@ -65,31 +65,31 @@ export function PipelineTemplatesList({
         description: newTemplate.description || undefined,
         is_active: newTemplate.is_active,
       });
-      showToast.success("Template created");
+      toast.success("Template created");
       setCreateDialogOpen(false);
       setNewTemplate({ name: "", description: "", is_active: true });
       onSelectTemplate(created.id);
     } catch (_error) {
-      showToast.error("Failed to create template");
+      toast.error("Failed to create template");
     }
   };
 
   const handleDelete = async (id: string) => {
     try {
       await deleteTemplate.mutateAsync(id);
-      showToast.success("Template deleted");
+      toast.success("Template deleted");
       setDeleteConfirmId(null);
     } catch (_error) {
-      showToast.error("Failed to delete template");
+      toast.error("Failed to delete template");
     }
   };
 
   const handleSetDefault = async (id: string) => {
     try {
       await setDefaultTemplate.mutateAsync(id);
-      showToast.success("Default template updated");
+      toast.success("Default template updated");
     } catch (_error) {
-      showToast.error("Failed to set default template");
+      toast.error("Failed to set default template");
     }
   };
 

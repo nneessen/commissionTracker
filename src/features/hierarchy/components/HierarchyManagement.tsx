@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import showToast from "@/utils/toast";
+import { toast } from "sonner";
 import {
   useMyDownlines,
   useUpdateAgentHierarchy,
@@ -69,10 +69,10 @@ function EditHierarchyDialog({
         new_upline_id: selectedUplineId,
         reason: reason || "Hierarchy adjustment",
       });
-      showToast.success("Hierarchy updated successfully");
+      toast.success("Hierarchy updated successfully");
       onOpenChange(false);
     } catch (error) {
-      showToast.error("Failed to update hierarchy");
+      toast.error("Failed to update hierarchy");
       console.error("Error updating hierarchy:", error);
     } finally {
       setIsSaving(false);

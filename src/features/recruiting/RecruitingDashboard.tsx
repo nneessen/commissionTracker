@@ -12,7 +12,7 @@ import { AddRecruitDialog } from "./components/AddRecruitDialog";
 import { RecruitingErrorBoundary } from "./components/RecruitingErrorBoundary";
 import type { UserProfile } from "@/types/hierarchy.types";
 import { useAuth } from "@/contexts/AuthContext";
-import { showToast } from "@/utils/toast";
+import { toast } from "sonner";
 import { Link } from "@tanstack/react-router";
 import { downloadCSV } from "@/utils/exportHelpers";
 
@@ -90,11 +90,11 @@ function RecruitingDashboardContent() {
     }));
 
     downloadCSV(exportData, "recruits");
-    showToast.success(`Exported ${recruits.length} recruits to CSV`);
+    toast.success(`Exported ${recruits.length} recruits to CSV`);
   };
 
   const handleBulkEmail = () => {
-    showToast.success("Bulk email feature coming soon!");
+    toast.success("Bulk email feature coming soon!");
   };
 
   const _handleCloseSheet = () => {

@@ -28,7 +28,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { userApprovalService } from "@/services/users/userService";
 import { useQueryClient } from "@tanstack/react-query";
-import showToast from "@/utils/toast";
+import { toast } from "sonner";
 import AddUserDialog, { type NewUserData } from "./AddUserDialog";
 import EditUserDialog from "./EditUserDialog";
 import { GraduateToAgentDialog } from "./GraduateToAgentDialog";
@@ -55,7 +55,11 @@ import type { RoleName } from "@/types/permissions.types";
 import type { UserProfile } from "@/services/users/userService";
 import { getFullName, getDisplayName } from "@/types/user.types";
 import { useImo } from "@/contexts/ImoContext";
-import { useAllActiveImos, useMyImoAgencies, useAllActiveAgencies } from "@/hooks/imo/useImoQueries";
+import {
+  useAllActiveImos,
+  useMyImoAgencies,
+  useAllActiveAgencies,
+} from "@/hooks/imo/useImoQueries";
 
 export default function AdminControlCenter() {
   const [activeView, setActiveView] = useState<
@@ -197,18 +201,18 @@ export default function AdminControlCenter() {
       setIsAddUserDialogOpen(false);
 
       if (result.inviteSent) {
-        showToast.success(
+        toast.success(
           `User created! Confirmation email sent to ${userData.email}`,
         );
       } else if (result.error) {
-        showToast.error(result.error);
+        toast.error(result.error);
       } else {
-        showToast.success(
+        toast.success(
           `User "${userData.first_name} ${userData.last_name}" created`,
         );
       }
     } else {
-      showToast.error(result.error || "Failed to create user");
+      toast.error(result.error || "Failed to create user");
     }
   };
 
@@ -225,14 +229,14 @@ export default function AdminControlCenter() {
     deleteUserMutation.mutate(userId, {
       onSuccess: (result) => {
         if (result.success) {
-          showToast.success(`${userName} deleted`);
+          toast.success(`${userName} deleted`);
           // Query invalidation is handled by the mutation hook
         } else {
-          showToast.error(result.error || "Failed to delete user");
+          toast.error(result.error || "Failed to delete user");
         }
       },
       onError: (error) => {
-        showToast.error(
+        toast.error(
           error instanceof Error ? error.message : "Failed to delete user",
         );
       },

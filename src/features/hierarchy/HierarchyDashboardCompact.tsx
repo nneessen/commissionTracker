@@ -2,7 +2,14 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { Download, UserPlus, Search, Filter, AlertCircle, Building2 } from "lucide-react";
+import {
+  Download,
+  UserPlus,
+  Search,
+  Filter,
+  AlertCircle,
+  Building2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -21,7 +28,7 @@ import { AgentTable } from "./components/AgentTable";
 import { InvitationsList } from "./components/InvitationsList";
 import { PendingInvitationBanner } from "./components/PendingInvitationBanner";
 import { TeamActivityFeed } from "./components/TeamActivityFeed";
-import showToast from "@/utils/toast";
+import { toast } from "sonner";
 import { downloadCSV } from "@/utils/exportHelpers";
 import type { UserProfile } from "@/types/hierarchy.types";
 
@@ -135,9 +142,9 @@ export function HierarchyDashboardCompact() {
       }));
 
       downloadCSV(exportData, "team-hierarchy");
-      showToast.success("Team data exported to CSV!");
+      toast.success("Team data exported to CSV!");
     } catch (_error) {
-      showToast.error("Failed to export CSV");
+      toast.error("Failed to export CSV");
     }
   };
 
@@ -161,7 +168,7 @@ export function HierarchyDashboardCompact() {
           </div>
           <div className="flex items-center gap-1">
             <Button
-              onClick={() => navigate({ to: '/hierarchy/org-chart' })}
+              onClick={() => navigate({ to: "/hierarchy/org-chart" })}
               variant="ghost"
               size="sm"
               className="h-6 px-2 text-[10px] text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"

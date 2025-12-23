@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Edit2, Target, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatCurrency, formatPercent } from "../../lib/format";
-import showToast from "../../utils/toast";
+import { toast } from "sonner";
 import {
   targetsCalculationService,
   CalculatedTargets,
@@ -83,9 +83,9 @@ export function TargetsPage() {
 
       setCalculatedTargets(calculated);
       setAnnualTarget(newAnnualTarget);
-      showToast.success("Target updated successfully");
+      toast.success("Target updated successfully");
     } catch (err) {
-      showToast.error("Failed to update target");
+      toast.error("Failed to update target");
       throw err;
     }
   };
@@ -99,7 +99,7 @@ export function TargetsPage() {
     const value = parseFloat(inlineEditValue.replace(/,/g, ""));
 
     if (isNaN(value) || value <= 0) {
-      showToast.error("Please enter a valid target amount");
+      toast.error("Please enter a valid target amount");
       return;
     }
 

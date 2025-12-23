@@ -1,21 +1,40 @@
 // src/features/expenses/components/ExpenseDialogCompact.tsx - Ultra-compact expense modal
 
-import {useEffect, useState} from "react";
-import {Button} from "@/components/ui/button";
-import {Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle} from "@/components/ui/dialog";
-import {Input} from "@/components/ui/input";
-import {Label} from "@/components/ui/label";
-import {Textarea} from "@/components/ui/textarea";
-import {Checkbox} from "@/components/ui/checkbox";
-import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
-import {Alert, AlertDescription} from "@/components/ui/alert";
-import {DollarSign, Calendar, Info} from "lucide-react";
-import type {Expense, CreateExpenseData, RecurringFrequency} from "@/types/expense.types";
-import {DEFAULT_EXPENSE_CATEGORIES} from "@/types/expense.types";
-import {RECURRING_FREQUENCY_OPTIONS, TAX_DEDUCTIBLE_TOOLTIP} from "../config/recurringConfig";
-import {useCreateExpenseTemplate} from "../../../hooks/expenses/useExpenseTemplates";
-import {getTodayString} from "../../../lib/date";
-import showToast from "../../../utils/toast";
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { DollarSign, Calendar, Info } from "lucide-react";
+import type {
+  Expense,
+  CreateExpenseData,
+  RecurringFrequency,
+} from "@/types/expense.types";
+import { DEFAULT_EXPENSE_CATEGORIES } from "@/types/expense.types";
+import {
+  RECURRING_FREQUENCY_OPTIONS,
+  TAX_DEDUCTIBLE_TOOLTIP,
+} from "../config/recurringConfig";
+import { useCreateExpenseTemplate } from "../../../hooks/expenses/useExpenseTemplates";
+import { getTodayString } from "../../../lib/date";
+import { toast } from "sonner";
 
 interface ExpenseDialogProps {
   open: boolean;
@@ -87,12 +106,12 @@ export function ExpenseDialogCompact({
 
     // Validation
     if (!formData.name || formData.amount <= 0 || !formData.category) {
-      showToast.error("Please fill in all required fields");
+      toast.error("Please fill in all required fields");
       return;
     }
 
     if (formData.is_recurring && !formData.recurring_frequency) {
-      showToast.error("Please select a frequency for recurring expense");
+      toast.error("Please select a frequency for recurring expense");
       return;
     }
 
@@ -112,10 +131,10 @@ export function ExpenseDialogCompact({
           notes: formData.notes,
           description: formData.description,
         });
-        showToast.success("Template saved!");
+        toast.success("Template saved!");
       } catch (error) {
         console.error("Failed to save template:", error);
-        showToast.error("Failed to save template");
+        toast.error("Failed to save template");
       }
     }
 
@@ -213,19 +232,31 @@ export function ExpenseDialogCompact({
                 <div className="grid grid-cols-2 gap-1">
                   <Button
                     type="button"
-                    variant={formData.expense_type === "business" ? "default" : "outline"}
+                    variant={
+                      formData.expense_type === "business"
+                        ? "default"
+                        : "outline"
+                    }
                     size="sm"
                     className="h-7 text-[10px]"
-                    onClick={() => setFormData({ ...formData, expense_type: "business" })}
+                    onClick={() =>
+                      setFormData({ ...formData, expense_type: "business" })
+                    }
                   >
                     Business
                   </Button>
                   <Button
                     type="button"
-                    variant={formData.expense_type === "personal" ? "default" : "outline"}
+                    variant={
+                      formData.expense_type === "personal"
+                        ? "default"
+                        : "outline"
+                    }
                     size="sm"
                     className="h-7 text-[10px]"
-                    onClick={() => setFormData({ ...formData, expense_type: "personal" })}
+                    onClick={() =>
+                      setFormData({ ...formData, expense_type: "personal" })
+                    }
                   >
                     Personal
                   </Button>
@@ -245,16 +276,20 @@ export function ExpenseDialogCompact({
                   <Button
                     key={cat.name}
                     type="button"
-                    variant={formData.category === cat.name ? "default" : "ghost"}
+                    variant={
+                      formData.category === cat.name ? "default" : "ghost"
+                    }
                     size="sm"
                     className="h-6 px-2 text-[10px]"
-                    onClick={() => setFormData({
-                      ...formData,
-                      category: cat.name,
-                      expense_type: cat.type as "business" | "personal"
-                    })}
+                    onClick={() =>
+                      setFormData({
+                        ...formData,
+                        category: cat.name,
+                        expense_type: cat.type as "business" | "personal",
+                      })
+                    }
                   >
-                    {cat.name.split(' ')[0]}
+                    {cat.name.split(" ")[0]}
                   </Button>
                 ))}
               </div>
@@ -269,30 +304,48 @@ export function ExpenseDialogCompact({
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
-                  <div className="text-[10px] font-semibold text-muted-foreground px-2 py-1">Business</div>
-                  {DEFAULT_EXPENSE_CATEGORIES
-                    .filter(cat => cat.type === 'business')
-                    .map((cat) => (
-                      <SelectItem key={cat.name} value={cat.name} className="text-xs">
-                        {cat.name}
-                      </SelectItem>
-                    ))}
-                  <div className="text-[10px] font-semibold text-muted-foreground px-2 py-1 mt-1">Personal</div>
-                  {DEFAULT_EXPENSE_CATEGORIES
-                    .filter(cat => cat.type === 'personal')
-                    .map((cat) => (
-                      <SelectItem key={cat.name} value={cat.name} className="text-xs">
-                        {cat.name}
-                      </SelectItem>
-                    ))}
-                  <div className="text-[10px] font-semibold text-muted-foreground px-2 py-1 mt-1">Other</div>
-                  {DEFAULT_EXPENSE_CATEGORIES
-                    .filter(cat => cat.type === 'general')
-                    .map((cat) => (
-                      <SelectItem key={cat.name} value={cat.name} className="text-xs">
-                        {cat.name}
-                      </SelectItem>
-                    ))}
+                  <div className="text-[10px] font-semibold text-muted-foreground px-2 py-1">
+                    Business
+                  </div>
+                  {DEFAULT_EXPENSE_CATEGORIES.filter(
+                    (cat) => cat.type === "business",
+                  ).map((cat) => (
+                    <SelectItem
+                      key={cat.name}
+                      value={cat.name}
+                      className="text-xs"
+                    >
+                      {cat.name}
+                    </SelectItem>
+                  ))}
+                  <div className="text-[10px] font-semibold text-muted-foreground px-2 py-1 mt-1">
+                    Personal
+                  </div>
+                  {DEFAULT_EXPENSE_CATEGORIES.filter(
+                    (cat) => cat.type === "personal",
+                  ).map((cat) => (
+                    <SelectItem
+                      key={cat.name}
+                      value={cat.name}
+                      className="text-xs"
+                    >
+                      {cat.name}
+                    </SelectItem>
+                  ))}
+                  <div className="text-[10px] font-semibold text-muted-foreground px-2 py-1 mt-1">
+                    Other
+                  </div>
+                  {DEFAULT_EXPENSE_CATEGORIES.filter(
+                    (cat) => cat.type === "general",
+                  ).map((cat) => (
+                    <SelectItem
+                      key={cat.name}
+                      value={cat.name}
+                      className="text-xs"
+                    >
+                      {cat.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -400,7 +453,11 @@ export function ExpenseDialogCompact({
                       </SelectTrigger>
                       <SelectContent>
                         {RECURRING_FREQUENCY_OPTIONS.map((option) => (
-                          <SelectItem key={option.value} value={option.value} className="text-xs">
+                          <SelectItem
+                            key={option.value}
+                            value={option.value}
+                            className="text-xs"
+                          >
                             {option.label}
                           </SelectItem>
                         ))}

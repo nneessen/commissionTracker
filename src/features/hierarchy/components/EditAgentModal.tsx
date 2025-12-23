@@ -22,7 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { supabase } from "@/services/base/supabase";
-import showToast from "@/utils/toast";
+import { toast } from "sonner";
 import type { UserProfile } from "@/types/hierarchy.types";
 
 interface EditAgentModalProps {
@@ -72,7 +72,7 @@ export function EditAgentModal({
 
         if (error) throw error;
 
-        showToast.success("Agent profile updated successfully");
+        toast.success("Agent profile updated successfully");
         queryClient.invalidateQueries({
           queryKey: ["agent-details", agent.id],
         });
@@ -80,7 +80,7 @@ export function EditAgentModal({
         onClose();
       } catch (error) {
         console.error("Error updating agent:", error);
-        showToast.error("Failed to update agent profile");
+        toast.error("Failed to update agent profile");
       }
     },
   });

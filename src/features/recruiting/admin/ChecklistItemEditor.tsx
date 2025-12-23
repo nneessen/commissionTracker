@@ -34,7 +34,7 @@ import {
   Zap,
   PenTool,
 } from "lucide-react";
-import { showToast } from "@/utils/toast";
+import { toast } from "sonner";
 import {
   useChecklistItems,
   useCreateChecklistItem,
@@ -95,7 +95,7 @@ export function ChecklistItemEditor({ phaseId }: ChecklistItemEditorProps) {
 
   const handleCreate = async () => {
     if (!itemForm.item_name.trim()) {
-      showToast.error("Item name is required");
+      toast.error("Item name is required");
       return;
     }
 
@@ -104,7 +104,7 @@ export function ChecklistItemEditor({ phaseId }: ChecklistItemEditorProps) {
         phaseId,
         data: itemForm,
       });
-      showToast.success("Item created");
+      toast.success("Item created");
       setCreateDialogOpen(false);
       setItemForm({
         item_name: "",
@@ -116,7 +116,7 @@ export function ChecklistItemEditor({ phaseId }: ChecklistItemEditorProps) {
         external_link: undefined,
       });
     } catch (_error) {
-      showToast.error("Failed to create item");
+      toast.error("Failed to create item");
     }
   };
 
@@ -136,20 +136,20 @@ export function ChecklistItemEditor({ phaseId }: ChecklistItemEditorProps) {
           external_link: editingItem.external_link ?? undefined,
         },
       });
-      showToast.success("Item updated");
+      toast.success("Item updated");
       setEditingItem(null);
     } catch (_error) {
-      showToast.error("Failed to update item");
+      toast.error("Failed to update item");
     }
   };
 
   const handleDelete = async (id: string) => {
     try {
       await deleteItem.mutateAsync({ itemId: id, phaseId });
-      showToast.success("Item deleted");
+      toast.success("Item deleted");
       setDeleteConfirmId(null);
     } catch (_error) {
-      showToast.error("Failed to delete item");
+      toast.error("Failed to delete item");
     }
   };
 

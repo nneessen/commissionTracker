@@ -6,6 +6,43 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-12-23 08:48:30
+
+### Changed Files
+- `src/features/admin/components/AdminControlCenter.tsx`
+- `src/features/admin/components/EditUserDialog.tsx`
+- `src/features/dashboard/DashboardHome.tsx`
+- `src/features/email/hooks/useEmailTemplates.ts`
+- `src/features/expenses/ExpenseDashboardCompact.tsx`
+- `src/features/expenses/components/ExpenseDialog.tsx`
+- `src/features/expenses/components/ExpenseDialogCompact.tsx`
+- `src/features/hierarchy/AgentDetailPage.tsx`
+- `src/features/hierarchy/HierarchyDashboardCompact.tsx`
+- `src/features/hierarchy/components/AgentTable.tsx`
+- `src/features/hierarchy/components/DownlinePerformance.tsx`
+- `src/features/hierarchy/components/EditAgentModal.tsx`
+- `src/features/hierarchy/components/HierarchyManagement.tsx`
+- `src/features/policies/PolicyDashboard.tsx`
+- `src/features/recruiting/RecruitingDashboard.tsx`
+- `src/features/recruiting/admin/ChecklistItemEditor.tsx`
+- `src/features/recruiting/admin/PhaseEditor.tsx`
+- `src/features/recruiting/admin/PipelineTemplateEditor.tsx`
+- `src/features/recruiting/admin/PipelineTemplatesList.tsx`
+- `src/features/recruiting/components/CommunicationPanel.tsx`
+- `src/features/recruiting/components/DeleteRecruitDialog.optimized.tsx`
+- `src/features/recruiting/components/DeleteRecruitDialog.tsx`
+- `src/features/recruiting/components/PhaseChecklist.tsx`
+- `src/features/recruiting/components/RecruitDetailPanel.tsx`
+- `src/features/recruiting/hooks/useRecruitMutations.ts`
+- `src/features/targets/TargetsPage.tsx`
+- `src/hooks/commissions/useMarkCommissionPaid.ts`
+- `src/hooks/reports/scheduled/useScheduledReports.ts`
+
+### Statistics
+```
+ 28 files changed, 165 insertions(+), 165 deletions(-)
+```
+
 ## [Checkpoint] - 2025-12-22 18:39:44
 
 ### Changed Files

@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
-import showToast from "@/utils/toast";
+import { toast } from "sonner";
 import {
   getEmailTemplates,
   getEmailTemplate,
@@ -46,11 +46,11 @@ export function useCreateEmailTemplate() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
-      showToast.success("Template created successfully");
+      toast.success("Template created successfully");
     },
     onError: (error: Error) => {
       console.error("Failed to create template:", error);
-      showToast.error(error.message || "Failed to create template");
+      toast.error(error.message || "Failed to create template");
     },
   });
 }
@@ -69,11 +69,11 @@ export function useUpdateEmailTemplate() {
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY, id] });
-      showToast.success("Template saved successfully");
+      toast.success("Template saved successfully");
     },
     onError: (error: Error) => {
       console.error("Failed to update template:", error);
-      showToast.error(error.message || "Failed to save template");
+      toast.error(error.message || "Failed to save template");
     },
   });
 }
@@ -85,11 +85,11 @@ export function useDeleteEmailTemplate() {
     mutationFn: (id: string) => deleteEmailTemplate(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
-      showToast.success("Template deleted");
+      toast.success("Template deleted");
     },
     onError: (error: Error) => {
       console.error("Failed to delete template:", error);
-      showToast.error(error.message || "Failed to delete template");
+      toast.error(error.message || "Failed to delete template");
     },
   });
 }
@@ -107,11 +107,11 @@ export function useDuplicateEmailTemplate() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
-      showToast.success("Template duplicated");
+      toast.success("Template duplicated");
     },
     onError: (error: Error) => {
       console.error("Failed to duplicate template:", error);
-      showToast.error(error.message || "Failed to duplicate template");
+      toast.error(error.message || "Failed to duplicate template");
     },
   });
 }
@@ -124,13 +124,11 @@ export function useToggleTemplateActive() {
       toggleTemplateActive(id, isActive),
     onSuccess: (_, { isActive }) => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
-      showToast.success(
-        isActive ? "Template activated" : "Template deactivated",
-      );
+      toast.success(isActive ? "Template activated" : "Template deactivated");
     },
     onError: (error: Error) => {
       console.error("Failed to toggle template:", error);
-      showToast.error(error.message || "Failed to update template status");
+      toast.error(error.message || "Failed to update template status");
     },
   });
 }
