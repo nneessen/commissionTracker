@@ -280,7 +280,7 @@ export const pipelineAutomationService = {
             to: recipients.emails,
             subject: emailSubject,
             html: emailBody,
-            from: "noreply@commissiontracker.app",
+            from: "The Standard HQ <noreply@updates.thestandardhq.com>",
             recruitId,
             metadata: {
               automationId: automation.id,
@@ -565,6 +565,14 @@ export const pipelineAutomationService = {
         case "recruit":
           if (recruit.email && this.isValidEmail(recruit.email)) {
             emails.push(recruit.email);
+          } else if (!recruit.email) {
+            console.warn(
+              `[pipelineAutomation] Recruit ${recruitId} has no email address, skipping email send`,
+            );
+          } else {
+            console.warn(
+              `[pipelineAutomation] Recruit ${recruitId} email invalid: ${recruit.email}`,
+            );
           }
           if (recruit.phone && isValidPhoneNumber(recruit.phone)) {
             phoneNumbers.push(recruit.phone);
@@ -578,12 +586,28 @@ export const pipelineAutomationService = {
             if (upline) {
               if (upline.email && this.isValidEmail(upline.email)) {
                 emails.push(upline.email);
+              } else if (!upline.email) {
+                console.warn(
+                  `[pipelineAutomation] Upline ${recruit.upline_id} has no email address, skipping email send`,
+                );
+              } else {
+                console.warn(
+                  `[pipelineAutomation] Upline ${recruit.upline_id} email invalid: ${upline.email}`,
+                );
               }
               if (upline.phone && isValidPhoneNumber(upline.phone)) {
                 phoneNumbers.push(upline.phone);
               }
               userIds.push(upline.id);
+            } else {
+              console.warn(
+                `[pipelineAutomation] Upline ${recruit.upline_id} not found in database`,
+              );
             }
+          } else {
+            console.warn(
+              `[pipelineAutomation] Recruit ${recruitId} has no upline_id, skipping upline recipient`,
+            );
           }
           break;
 

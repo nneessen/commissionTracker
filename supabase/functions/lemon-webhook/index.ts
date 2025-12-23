@@ -199,7 +199,7 @@ async function sendBillingEmail(
 
     // Send email via Mailgun
     const form = new FormData();
-    form.append("from", `Commission Tracker <noreply@${MAILGUN_DOMAIN}>`);
+    form.append("from", `The Standard HQ <noreply@${MAILGUN_DOMAIN}>`);
     form.append("to", `${userName} <${userEmail}>`);
     form.append("subject", subject);
     form.append("html", bodyHtml);

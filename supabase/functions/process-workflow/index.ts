@@ -432,7 +432,7 @@ async function executeSendEmail(
       subject: replaceTemplateVariables(template.subject, templateVariables),
       recipientType,
       wouldSendTo: recipientEmails,
-      sender: "noreply@commissiontracker.com",
+      sender: "noreply@updates.thestandardhq.com",
       isTest: true,
     };
   }
@@ -475,7 +475,7 @@ async function executeSendEmail(
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          from: "Commission Tracker <noreply@commissiontracker.com>",
+          from: "The Standard HQ <noreply@updates.thestandardhq.com>",
           to: [recipientEmail],
           subject: processedSubject,
           html: processedBodyHtml,
@@ -504,7 +504,7 @@ async function executeSendEmail(
         provider: "resend",
         provider_message_id: data.id,
         is_incoming: false,
-        from_address: "noreply@commissiontracker.com",
+        from_address: "noreply@updates.thestandardhq.com",
         to_addresses: [recipientEmail],
       });
 

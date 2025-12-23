@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-12-23 16:49:24
+
+### Changed Files
+- `src/services/recruiting/pipelineAutomationService.ts`
+- `src/types/database.types.ts`
+- `supabase/functions/lemon-webhook/index.ts`
+- `supabase/functions/process-workflow/index.ts`
+- `supabase/migrations/20251223_042_add_all_to_automation_communication_type.sql`
+
+### Statistics
+```
+ 5 files changed, 7134 insertions(+), 7099 deletions(-)
+```
+
 ## [Checkpoint] - 2025-12-23 16:09:52
 
 ### Changed Files

@@ -8333,7 +8333,12 @@ export type Database = {
         | "license_expiration";
       audit_action: "INSERT" | "UPDATE" | "DELETE";
       audit_source: "trigger" | "application";
-      automation_communication_type: "email" | "notification" | "both" | "sms";
+      automation_communication_type:
+        | "email"
+        | "notification"
+        | "both"
+        | "sms"
+        | "all";
       automation_recipient_type:
         | "recruit"
         | "upline"
@@ -8539,7 +8544,13 @@ export const Constants = {
       ],
       audit_action: ["INSERT", "UPDATE", "DELETE"],
       audit_source: ["trigger", "application"],
-      automation_communication_type: ["email", "notification", "both", "sms"],
+      automation_communication_type: [
+        "email",
+        "notification",
+        "both",
+        "sms",
+        "all",
+      ],
       automation_recipient_type: [
         "recruit",
         "upline",
