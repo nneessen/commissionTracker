@@ -1,20 +1,6 @@
 // src/services/recruiting/authUserService.ts
 
-import { createClient } from "@supabase/supabase-js";
-import type { Database } from "@/types/database.types";
-
-// Use anon key - service role key is not available client-side
-// This service will create Edge Function calls instead
-const supabaseClient = createClient<Database>(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY,
-  {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
-  },
-);
+import { supabase } from "@/services/base/supabase";
 
 export interface CreateAuthUserParams {
   email: string;
@@ -49,7 +35,7 @@ export async function createAuthUserWithProfile({
 }: CreateAuthUserParams): Promise<CreateAuthUserResult> {
   try {
     // Call Edge Function to create user with proper password reset email
-    const { data, error } = await supabaseClient.functions.invoke(
+    const { data, error } = await supabase.functions.invoke(
       "create-auth-user",
       {
         body: {
@@ -86,7 +72,7 @@ export async function createAuthUserWithProfile({
  * Checks if a user with the given email already exists
  */
 export async function checkUserExists(email: string): Promise<boolean> {
-  const { data, error } = await supabaseClient
+  const { data, error } = await supabase
     .from("user_profiles")
     .select("id")
     .eq("email", email)
