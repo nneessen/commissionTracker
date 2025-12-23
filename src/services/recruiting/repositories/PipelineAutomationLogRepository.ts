@@ -149,6 +149,48 @@ export class PipelineAutomationLogRepository extends BaseRepository<
   }
 
   /**
+   * Override update to use maybeSingle instead of single
+   * This prevents 406 errors when the row might not exist (e.g., due to RLS or race conditions)
+   */
+  async update(
+    id: string,
+    updates: UpdatePipelineAutomationLogData,
+  ): Promise<PipelineAutomationLogEntity> {
+    const dbData = this.transformToDB(updates, true);
+
+    const { data, error } = await this.client
+      .from(this.tableName)
+      .update(dbData)
+      .eq("id", id)
+      .select()
+      .maybeSingle();
+
+    if (error) {
+      throw this.handleError(error, "update");
+    }
+
+    if (!data) {
+      // Row wasn't found - log warning but don't throw (might be RLS or deleted)
+      console.warn(
+        `[PipelineAutomationLogRepository] Update found no row with id ${id}`,
+      );
+      // Return a placeholder entity to prevent cascading errors
+      return {
+        id,
+        automationId: "",
+        recruitId: "",
+        triggeredAt: new Date().toISOString(),
+        triggeredDate: new Date().toISOString().split("T")[0],
+        status: updates.status || "pending",
+        errorMessage: updates.errorMessage || null,
+        metadata: updates.metadata || null,
+      };
+    }
+
+    return this.transformFromDB(data);
+  }
+
+  /**
    * Transform database row to entity
    */
   protected transformFromDB(

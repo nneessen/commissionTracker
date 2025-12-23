@@ -75,6 +75,18 @@ export const checklistService = {
   },
 
   async initializeRecruitProgress(userId: string, templateId: string) {
+    // CRITICAL: Check if user already has pipeline progress to prevent duplicate initialization
+    const existingProgress = await phaseProgressRepository.findByUserId(userId);
+    if (existingProgress && existingProgress.length > 0) {
+      console.warn(
+        `[checklistService] User ${userId} already has pipeline progress (${existingProgress.length} phases). Skipping initialization.`,
+      );
+      // Return existing progress instead of creating duplicates
+      const fullProgress =
+        await phaseProgressRepository.findByUserIdWithPhase(userId);
+      return fullProgress as unknown as RecruitPhaseProgress[];
+    }
+
     // Get all phases for the template
     const phases = await pipelinePhaseRepository.findByTemplateId(templateId);
 

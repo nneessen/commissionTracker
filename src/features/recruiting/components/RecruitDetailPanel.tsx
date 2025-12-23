@@ -46,7 +46,7 @@ import {
   useUpdatePhaseStatus,
   useInitializeRecruitProgress,
 } from "../hooks/useRecruitProgress";
-import { useActiveTemplate } from "../hooks/usePipeline";
+import { useTemplate, useActiveTemplate } from "../hooks/usePipeline";
 import { useCurrentUserProfile } from "@/hooks/admin/useUserApproval";
 import { useRecruitDocuments } from "../hooks/useRecruitDocuments";
 import { useRecruitEmails } from "../hooks/useRecruitEmails";
@@ -81,7 +81,24 @@ export function RecruitDetailPanel({
     useRecruitPhaseProgress(recruit.id);
   const { data: currentPhase, isLoading: currentPhaseLoading } =
     useCurrentPhase(recruit.id);
-  const { data: template, isLoading: templateLoading } = useActiveTemplate();
+
+  // CRITICAL: Use the recruit's actual template, not the global default
+  // Get template ID from progress records (most reliable) or from recruit profile
+  const recruitTemplateId =
+    phaseProgress?.[0]?.template_id || recruit.pipeline_template_id || null;
+
+  // Use the recruit's specific template if they have one, otherwise fall back to default for new recruits
+  const { data: recruitTemplate, isLoading: recruitTemplateLoading } =
+    useTemplate(recruitTemplateId ?? undefined);
+  const { data: defaultTemplate, isLoading: defaultTemplateLoading } =
+    useActiveTemplate();
+
+  // Use recruit's template if available, otherwise default (for new recruits without progress)
+  const template = recruitTemplateId ? recruitTemplate : defaultTemplate;
+  const templateLoading = recruitTemplateId
+    ? recruitTemplateLoading
+    : defaultTemplateLoading;
+
   const { data: checklistProgress } = useChecklistProgress(
     recruit.id,
     selectedPhaseId || currentPhase?.phase_id,

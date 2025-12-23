@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-12-23 12:26:50
+
+### Changed Files
+- `src/features/recruiting/components/InitializePipelineDialog.tsx`
+- `src/features/recruiting/components/RecruitDetailPanel.tsx`
+- `src/services/recruiting/checklistService.ts`
+- `src/services/recruiting/pipelineAutomationService.ts`
+- `src/services/recruiting/repositories/PipelineAutomationLogRepository.ts`
+
+### Statistics
+```
+ 5 files changed, 107 insertions(+), 63 deletions(-)
+```
+
 ## [Checkpoint] - 2025-12-23 11:59:27
 
 ### Changed Files

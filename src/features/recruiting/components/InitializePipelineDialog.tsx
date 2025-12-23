@@ -69,7 +69,7 @@ export function InitializePipelineDialog({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <FileStack className="h-5 w-5 text-blue-600" />
+            <FileStack className="h-5 w-5 text-foreground" />
             Select Pipeline Template
           </DialogTitle>
           <DialogDescription>
@@ -79,7 +79,7 @@ export function InitializePipelineDialog({
 
         {templatesLoading ? (
           <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-6 w-6 animate-spin text-zinc-400" />
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
         ) : templates && templates.length > 0 ? (
           <RadioGroup
@@ -92,8 +92,8 @@ export function InitializePipelineDialog({
                 key={template.id}
                 className={`flex items-center space-x-3 p-3 rounded-lg border transition-colors cursor-pointer ${
                   selectedTemplateId === template.id
-                    ? "border-blue-500 bg-blue-50 dark:bg-blue-950"
-                    : "border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600"
+                    ? "border-foreground bg-accent"
+                    : "border-border hover:border-foreground/30 hover:bg-accent/50"
                 }`}
                 onClick={() => setSelectedTemplateId(template.id)}
               >
@@ -103,7 +103,9 @@ export function InitializePipelineDialog({
                   className="flex-1 cursor-pointer space-y-0.5"
                 >
                   <div className="flex items-center gap-2">
-                    <span className="font-medium text-sm">{template.name}</span>
+                    <span className="font-medium text-sm text-foreground">
+                      {template.name}
+                    </span>
                     {template.is_default && (
                       <Badge
                         variant="secondary"
@@ -114,7 +116,7 @@ export function InitializePipelineDialog({
                     )}
                   </div>
                   {template.description && (
-                    <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                    <p className="text-xs text-muted-foreground">
                       {template.description}
                     </p>
                   )}
@@ -124,9 +126,11 @@ export function InitializePipelineDialog({
           </RadioGroup>
         ) : (
           <div className="py-8 text-center">
-            <FileStack className="h-8 w-8 text-zinc-300 mx-auto mb-2" />
-            <p className="text-sm text-zinc-500">No pipeline templates found</p>
-            <p className="text-xs text-zinc-400 mt-1">
+            <FileStack className="h-8 w-8 text-muted-foreground/50 mx-auto mb-2" />
+            <p className="text-sm text-muted-foreground">
+              No pipeline templates found
+            </p>
+            <p className="text-xs text-muted-foreground/70 mt-1">
               Create a template in Pipeline Admin first.
             </p>
           </div>

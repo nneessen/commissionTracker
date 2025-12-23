@@ -439,9 +439,9 @@ export const pipelineAutomationService = {
         supabase
           .from("recruit_phase_progress")
           .select("started_at")
-          .eq("recruit_id", recruitId)
+          .eq("user_id", recruitId)
           .eq("phase_id", phaseId)
-          .single(),
+          .maybeSingle(),
       ]);
 
       phaseName = phaseResult.data?.phase_name;
@@ -503,15 +503,18 @@ export const pipelineAutomationService = {
     // Determine which user IDs we need to fetch
     const recipientTypes = new Set(recipients.map((r) => r.type));
 
-    // Get recruit info with all potentially needed relations in one query
-    const { data: recruit } = await supabase
+    // Get recruit info (note: key_contacts column doesn't exist yet, trainer/contracting_manager not supported)
+    const { data: recruit, error: recruitError } = await supabase
       .from("user_profiles")
-      .select("id, email, phone, upline_id, key_contacts")
+      .select("id, email, phone, upline_id")
       .eq("id", recruitId)
       .single();
 
-    if (!recruit) {
-      console.warn(`Recruit ${recruitId} not found for automation`);
+    if (recruitError || !recruit) {
+      console.warn(
+        `Recruit ${recruitId} not found for automation:`,
+        recruitError?.message,
+      );
       return { emails: [], phoneNumbers: [], userIds: [] };
     }
 
@@ -522,17 +525,17 @@ export const pipelineAutomationService = {
       userIdsToFetch.push(recruit.upline_id);
     }
 
-    if (recruit.key_contacts && typeof recruit.key_contacts === "object") {
-      const contacts = recruit.key_contacts as Record<string, unknown>;
-      if (recipientTypes.has("trainer") && contacts.trainer_id) {
-        userIdsToFetch.push(contacts.trainer_id as string);
-      }
-      if (
-        recipientTypes.has("contracting_manager") &&
-        contacts.contracting_manager_id
-      ) {
-        userIdsToFetch.push(contacts.contracting_manager_id as string);
-      }
+    // Note: trainer and contracting_manager recipients are not yet supported
+    // The key_contacts column doesn't exist in user_profiles
+    if (recipientTypes.has("trainer")) {
+      console.warn(
+        "[pipelineAutomation] trainer recipient type not yet supported (key_contacts column missing)",
+      );
+    }
+    if (recipientTypes.has("contracting_manager")) {
+      console.warn(
+        "[pipelineAutomation] contracting_manager recipient type not yet supported (key_contacts column missing)",
+      );
     }
 
     // Batch fetch all needed users in single query (include phone for SMS)
@@ -585,43 +588,13 @@ export const pipelineAutomationService = {
           break;
 
         case "trainer":
-          if (recruit.key_contacts) {
-            const contacts = recruit.key_contacts as Record<string, unknown>;
-            const trainerId = contacts.trainer_id as string | undefined;
-            if (trainerId) {
-              const trainer = userMap.get(trainerId);
-              if (trainer) {
-                if (trainer.email && this.isValidEmail(trainer.email)) {
-                  emails.push(trainer.email);
-                }
-                if (trainer.phone && isValidPhoneNumber(trainer.phone)) {
-                  phoneNumbers.push(trainer.phone);
-                }
-                userIds.push(trainer.id);
-              }
-            }
-          }
+          // Not yet supported - key_contacts column doesn't exist
+          // Warning logged above
           break;
 
         case "contracting_manager":
-          if (recruit.key_contacts) {
-            const contacts = recruit.key_contacts as Record<string, unknown>;
-            const managerId = contacts.contracting_manager_id as
-              | string
-              | undefined;
-            if (managerId) {
-              const manager = userMap.get(managerId);
-              if (manager) {
-                if (manager.email && this.isValidEmail(manager.email)) {
-                  emails.push(manager.email);
-                }
-                if (manager.phone && isValidPhoneNumber(manager.phone)) {
-                  phoneNumbers.push(manager.phone);
-                }
-                userIds.push(manager.id);
-              }
-            }
-          }
+          // Not yet supported - key_contacts column doesn't exist
+          // Warning logged above
           break;
 
         case "custom_email":
