@@ -42,6 +42,7 @@ import { PipelineAdminPage } from "./features/recruiting/admin/PipelineAdminPage
 import { MyRecruitingPipeline } from "./features/recruiting/pages/MyRecruitingPipeline";
 import { TrainingHubPage } from "./features/training-hub";
 import { MessagesPage } from "./features/messages";
+import { TermsPage, PrivacyPage } from "./features/legal";
 
 // Create root route with App layout
 const rootRoute = createRootRoute({
@@ -419,6 +420,19 @@ const messagesRoute = createRoute({
   ),
 });
 
+// Legal routes - public, no auth required
+const termsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "terms",
+  component: TermsPage,
+});
+
+const privacyRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "privacy",
+  component: PrivacyPage,
+});
+
 // Create the route tree - all routes are already linked via getParentRoute
 const routeTree = rootRoute.addChildren([
   indexRoute,
@@ -451,6 +465,8 @@ const routeTree = rootRoute.addChildren([
   myPipelineRoute,
   trainingHubRoute,
   messagesRoute,
+  termsRoute,
+  privacyRoute,
 ]);
 
 // Create and export the router

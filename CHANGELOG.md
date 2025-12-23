@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-12-23 09:36:22
+
+### Changed Files
+- `src/App.tsx`
+- `src/features/auth/Login.tsx`
+- `src/features/legal/components/CookieConsentBanner.tsx`
+- `src/features/legal/components/LegalPageLayout.tsx`
+- `src/features/legal/hooks/useCookieConsent.ts`
+- `src/features/legal/index.ts`
+- `src/features/legal/pages/PrivacyPage.tsx`
+- `src/features/legal/pages/TermsPage.tsx`
+- `src/router.tsx`
+
+### Statistics
+```
+ 9 files changed, 617 insertions(+), 2 deletions(-)
+```
+
 ## [Checkpoint] - 2025-12-23 09:13:05
 
 ### Changed Files

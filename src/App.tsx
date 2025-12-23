@@ -1,12 +1,13 @@
 // src/App.tsx
 import React, { useState, useEffect } from "react";
-import {Outlet, useNavigate, useLocation} from "@tanstack/react-router";
-import {Toaster} from "react-hot-toast";
-import {Sidebar} from "./components/layout";
-import {useAuth} from "./contexts/AuthContext";
-import {ImoProvider} from "./contexts/ImoContext";
-import {logger} from "./services/base/logger";
-import {ApprovalGuard} from "./components/auth/ApprovalGuard";
+import { Outlet, useNavigate, useLocation } from "@tanstack/react-router";
+import { Toaster } from "react-hot-toast";
+import { Sidebar } from "./components/layout";
+import { useAuth } from "./contexts/AuthContext";
+import { ImoProvider } from "./contexts/ImoContext";
+import { logger } from "./services/base/logger";
+import { ApprovalGuard } from "./components/auth/ApprovalGuard";
+import { CookieConsentBanner } from "./features/legal";
 
 function App() {
   const { user, loading, signOut } = useAuth();
@@ -22,6 +23,8 @@ function App() {
     "/auth/reset-password",
     "/auth/pending",
     "/auth/denied",
+    "/terms",
+    "/privacy",
   ];
   const isPublicPath = publicPaths.some((path) =>
     location.pathname.startsWith(path),
@@ -64,6 +67,7 @@ function App() {
     return (
       <>
         <Toaster />
+        <CookieConsentBanner />
         <Outlet />
       </>
     );
@@ -85,6 +89,7 @@ function App() {
   return (
     <>
       <Toaster />
+      <CookieConsentBanner />
       <ImoProvider>
         <div className="flex min-h-screen">
           <Sidebar
