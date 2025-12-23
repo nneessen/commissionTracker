@@ -3869,6 +3869,66 @@ export type Database = {
           },
         ];
       };
+      scheduling_integrations: {
+        Row: {
+          id: string;
+          user_id: string;
+          imo_id: string | null;
+          integration_type: string;
+          display_name: string | null;
+          booking_url: string;
+          meeting_id: string | null;
+          passcode: string | null;
+          instructions: string | null;
+          is_active: boolean;
+          created_at: string | null;
+          updated_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          imo_id?: string | null;
+          integration_type: string;
+          display_name?: string | null;
+          booking_url: string;
+          meeting_id?: string | null;
+          passcode?: string | null;
+          instructions?: string | null;
+          is_active?: boolean;
+          created_at?: string | null;
+          updated_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          imo_id?: string | null;
+          integration_type?: string;
+          display_name?: string | null;
+          booking_url?: string;
+          meeting_id?: string | null;
+          passcode?: string | null;
+          instructions?: string | null;
+          is_active?: boolean;
+          created_at?: string | null;
+          updated_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "scheduling_integrations_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "scheduling_integrations_imo_id_fkey";
+            columns: ["imo_id"];
+            isOneToOne: false;
+            referencedRelation: "imos";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       settings: {
         Row: {
           created_at: string | null;

@@ -34,6 +34,7 @@ import {
   Zap,
   PenTool,
   EyeOff,
+  Calendar,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -48,6 +49,8 @@ import type {
   ChecklistItemType,
   CompletedBy,
 } from "@/types/recruiting.types";
+import type { SchedulingChecklistMetadata } from "@/types/integration.types";
+import { SchedulingItemConfig } from "./SchedulingItemConfig";
 
 interface ChecklistItemEditorProps {
   phaseId: string;
@@ -61,6 +64,7 @@ const ITEM_TYPES: { value: ChecklistItemType; label: string; icon: any }[] = [
   { value: "manual_approval", label: "Manual Approval", icon: UserCheck },
   { value: "automated_check", label: "Automated Check", icon: Zap },
   { value: "signature_required", label: "Signature Required", icon: PenTool },
+  { value: "scheduling_booking", label: "Schedule Booking", icon: Calendar },
 ];
 
 const CAN_BE_COMPLETED_BY: { value: CompletedBy; label: string }[] = [
@@ -89,7 +93,10 @@ export function ChecklistItemEditor({ phaseId }: ChecklistItemEditorProps) {
     can_be_completed_by: "recruit" as const,
     requires_verification: false,
     external_link: undefined,
+    metadata: undefined,
   });
+  const [schedulingMetadata, setSchedulingMetadata] =
+    useState<SchedulingChecklistMetadata | null>(null);
 
   const sortedItems = [...(items || [])].sort(
     (a, b) => a.item_order - b.item_order,
@@ -101,10 +108,19 @@ export function ChecklistItemEditor({ phaseId }: ChecklistItemEditorProps) {
       return;
     }
 
+    // Include scheduling metadata if this is a scheduling_booking item
+    const dataToSubmit: CreateChecklistItemInput = {
+      ...itemForm,
+      metadata:
+        itemForm.item_type === "scheduling_booking" && schedulingMetadata
+          ? schedulingMetadata
+          : itemForm.metadata,
+    };
+
     try {
       await createItem.mutateAsync({
         phaseId,
-        data: itemForm,
+        data: dataToSubmit,
       });
       toast.success("Item created");
       setCreateDialogOpen(false);
@@ -117,7 +133,9 @@ export function ChecklistItemEditor({ phaseId }: ChecklistItemEditorProps) {
         can_be_completed_by: "recruit" as const,
         requires_verification: false,
         external_link: undefined,
+        metadata: undefined,
       });
+      setSchedulingMetadata(null);
     } catch (_error) {
       toast.error("Failed to create item");
     }
@@ -125,6 +143,12 @@ export function ChecklistItemEditor({ phaseId }: ChecklistItemEditorProps) {
 
   const handleUpdate = async () => {
     if (!editingItem) return;
+
+    // Prepare metadata - use scheduling metadata if it's a scheduling_booking item
+    const metadata =
+      editingItem.item_type === "scheduling_booking" && schedulingMetadata
+        ? schedulingMetadata
+        : (editingItem.metadata ?? undefined);
 
     try {
       await updateItem.mutateAsync({
@@ -138,10 +162,12 @@ export function ChecklistItemEditor({ phaseId }: ChecklistItemEditorProps) {
           can_be_completed_by: editingItem.can_be_completed_by as CompletedBy,
           requires_verification: editingItem.requires_verification,
           external_link: editingItem.external_link ?? undefined,
+          metadata,
         },
       });
       toast.success("Item updated");
       setEditingItem(null);
+      setSchedulingMetadata(null);
     } catch (_error) {
       toast.error("Failed to update item");
     }
@@ -228,7 +254,20 @@ export function ChecklistItemEditor({ phaseId }: ChecklistItemEditorProps) {
                   variant="ghost"
                   size="sm"
                   className="h-5 w-5 p-0"
-                  onClick={() => setEditingItem(item)}
+                  onClick={() => {
+                    setEditingItem(item);
+                    // Initialize scheduling metadata from item's metadata if it's a scheduling_booking type
+                    if (
+                      item.item_type === "scheduling_booking" &&
+                      item.metadata
+                    ) {
+                      setSchedulingMetadata(
+                        item.metadata as SchedulingChecklistMetadata,
+                      );
+                    } else {
+                      setSchedulingMetadata(null);
+                    }
+                  }}
                 >
                   <Edit2 className="h-3 w-3 text-zinc-500 dark:text-zinc-400" />
                 </Button>
@@ -347,6 +386,12 @@ export function ChecklistItemEditor({ phaseId }: ChecklistItemEditorProps) {
                   className="h-7 text-[11px] bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
                 />
               </div>
+            )}
+            {itemForm.item_type === "scheduling_booking" && (
+              <SchedulingItemConfig
+                metadata={schedulingMetadata}
+                onChange={setSchedulingMetadata}
+              />
             )}
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
@@ -539,6 +584,12 @@ export function ChecklistItemEditor({ phaseId }: ChecklistItemEditorProps) {
                     className="h-7 text-[11px] bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
                   />
                 </div>
+              )}
+              {editingItem.item_type === "scheduling_booking" && (
+                <SchedulingItemConfig
+                  metadata={schedulingMetadata}
+                  onChange={setSchedulingMetadata}
+                />
               )}
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2">

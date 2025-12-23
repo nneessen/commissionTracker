@@ -239,7 +239,8 @@ export type ChecklistItemType =
   | "training_module"
   | "manual_approval"
   | "automated_check"
-  | "signature_required";
+  | "signature_required"
+  | "scheduling_booking";
 export type CompletedBy = "recruit" | "upline" | "system";
 export type RequiredApproverRole = "upline" | "admin" | "system";
 
@@ -476,6 +477,7 @@ export const CHECKLIST_ITEM_TYPE_DISPLAY_NAMES: Record<
   manual_approval: "Manual Approval",
   automated_check: "Automated Check",
   signature_required: "Signature Required",
+  scheduling_booking: "Schedule Booking",
 };
 
 // Status icons

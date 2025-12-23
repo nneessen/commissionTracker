@@ -6,6 +6,32 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-12-23 18:04:27
+
+### Changed Files
+- `plans/active/scheduling-integration.md`
+- `src/features/recruiting/admin/ChecklistItemEditor.tsx`
+- `src/features/recruiting/admin/SchedulingItemConfig.tsx`
+- `src/features/recruiting/components/PhaseChecklist.tsx`
+- `src/features/settings/SettingsDashboard.tsx`
+- `src/features/settings/integrations/IntegrationsTab.tsx`
+- `src/features/settings/integrations/components/IntegrationDialog.tsx`
+- `src/features/settings/integrations/components/index.ts`
+- `src/features/settings/integrations/index.ts`
+- `src/hooks/integrations/index.ts`
+- `src/hooks/integrations/useSchedulingIntegrations.ts`
+- `src/services/integrations/index.ts`
+- `src/services/integrations/schedulingIntegrationService.ts`
+- `src/types/database.types.ts`
+- `src/types/integration.types.ts`
+- `src/types/recruiting.types.ts`
+- `supabase/migrations/20251223_051_scheduling_integrations.sql`
+
+### Statistics
+```
+ 17 files changed, 2060 insertions(+), 3 deletions(-)
+```
+
 ## [Checkpoint] - 2025-12-23 16:49:24
 
 ### Changed Files

@@ -21,6 +21,9 @@ import {
   Loader2,
   EyeOff,
   Clock,
+  Calendar,
+  CalendarDays,
+  Video,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useUpdateChecklistItemStatus } from "../hooks/useRecruitProgress";
@@ -29,6 +32,11 @@ import {
   isHiddenFromRecruit,
   filterItemsForViewer,
 } from "@/lib/recruiting/visibility";
+import type {
+  SchedulingChecklistMetadata,
+  SchedulingIntegrationType,
+} from "@/types/integration.types";
+import { useActiveSchedulingIntegrations } from "@/hooks/integrations";
 
 interface PhaseChecklistProps {
   userId: string;
@@ -56,9 +64,41 @@ export function PhaseChecklist({
   const updateItemStatus = useUpdateChecklistItemStatus();
   const [loadingItemIds, setLoadingItemIds] = useState<Set<string>>(new Set());
 
+  // Fetch active scheduling integrations for building booking URLs
+  const { data: schedulingIntegrations } = useActiveSchedulingIntegrations();
+
   const progressMap = new Map(
     checklistProgress.map((p) => [p.checklist_item_id, p]),
   );
+
+  // Helper to get the icon for a scheduling type
+  const getSchedulingIcon = (type: SchedulingIntegrationType) => {
+    switch (type) {
+      case "calendly":
+        return Calendar;
+      case "google_calendar":
+        return CalendarDays;
+      case "zoom":
+        return Video;
+      default:
+        return Calendar;
+    }
+  };
+
+  // Helper to get the booking URL for a scheduling item
+  const getBookingUrl = (
+    metadata: SchedulingChecklistMetadata,
+  ): string | null => {
+    // If custom URL is set, use it
+    if (metadata.custom_booking_url) {
+      return metadata.custom_booking_url;
+    }
+    // Otherwise, find the integration for this type
+    const integration = schedulingIntegrations?.find(
+      (i) => i.integration_type === metadata.scheduling_type,
+    );
+    return integration?.booking_url || null;
+  };
 
   // Determine if viewer is a recruit (not admin and not upline)
   const isRecruitViewer = checkIsRecruitViewer(isAdmin, isUpline);
@@ -348,6 +388,62 @@ export function PhaseChecklist({
       }
     }
 
+    // Handle scheduling_booking items
+    if (item.item_type === "scheduling_booking") {
+      const metadata = item.metadata as SchedulingChecklistMetadata | null;
+
+      if (!metadata) {
+        return (
+          <Badge
+            variant="outline"
+            className="text-sm text-amber-700 bg-amber-50 border-amber-200 dark:text-amber-400 dark:bg-amber-950/30 dark:border-amber-800"
+          >
+            <AlertCircle className="h-3.5 w-3.5 mr-1" />
+            Not Configured
+          </Badge>
+        );
+      }
+
+      const bookingUrl = getBookingUrl(metadata);
+      const SchedulingIcon = getSchedulingIcon(metadata.scheduling_type);
+
+      // If already completed or approved, show completed badge
+      if (status === "completed" || status === "approved") {
+        return (
+          <Badge
+            variant="outline"
+            className="text-sm text-emerald-700 bg-emerald-50 border-emerald-200 dark:text-emerald-400 dark:bg-emerald-950/30 dark:border-emerald-800"
+          >
+            <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
+            Booked
+          </Badge>
+        );
+      }
+
+      // If no booking URL available
+      if (!bookingUrl) {
+        return (
+          <Badge
+            variant="outline"
+            className="text-sm text-amber-700 bg-amber-50 border-amber-200 dark:text-amber-400 dark:bg-amber-950/30 dark:border-amber-800"
+          >
+            <AlertCircle className="h-3.5 w-3.5 mr-1" />
+            No Link Available
+          </Badge>
+        );
+      }
+
+      // Show Book Now button
+      return (
+        <Button size="sm" variant="outline" asChild className="h-8">
+          <a href={bookingUrl} target="_blank" rel="noopener noreferrer">
+            <SchedulingIcon className="h-4 w-4 mr-1.5" />
+            Book Now
+          </a>
+        </Button>
+      );
+    }
+
     return null;
   };
 
@@ -477,6 +573,20 @@ export function PhaseChecklist({
                     {item.item_description}
                   </p>
                 )}
+
+                {/* Show scheduling instructions if this is a scheduling_booking item with instructions */}
+                {item.item_type === "scheduling_booking" &&
+                  (item.metadata as SchedulingChecklistMetadata | null)
+                    ?.instructions && (
+                    <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-950/30 rounded border border-blue-200 dark:border-blue-800">
+                      <p className="text-xs text-blue-700 dark:text-blue-400">
+                        {
+                          (item.metadata as SchedulingChecklistMetadata)
+                            .instructions
+                        }
+                      </p>
+                    </div>
+                  )}
 
                 {!checkboxState.isEnabled &&
                   checkboxState.disabledReason &&
