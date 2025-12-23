@@ -139,7 +139,9 @@ export function PhaseChecklist({
     const newStatus =
       currentStatus === "completed" ? "not_started" : "completed";
 
+    // Show loading state immediately
     setLoadingItemIds((prev) => new Set(prev).add(itemId));
+    const startTime = Date.now();
 
     try {
       await updateItemStatus.mutateAsync({
@@ -161,6 +163,12 @@ export function PhaseChecklist({
         error?.message || "Failed to update task. Please try again.",
       );
     } finally {
+      // Ensure spinner shows for at least 400ms for visual feedback
+      const elapsed = Date.now() - startTime;
+      const minDisplayTime = 400;
+      if (elapsed < minDisplayTime) {
+        await new Promise((resolve) => setTimeout(resolve, minDisplayTime - elapsed));
+      }
       setLoadingItemIds((prev) => {
         const next = new Set(prev);
         next.delete(itemId);
