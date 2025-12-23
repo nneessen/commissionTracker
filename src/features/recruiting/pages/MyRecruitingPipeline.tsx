@@ -81,6 +81,8 @@ export function MyRecruitingPipeline() {
     retry: 3,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000),
     staleTime: 1000 * 60 * 5,
+    refetchOnMount: "always", // Force refetch on mount to fix initial render race condition
+    refetchOnWindowFocus: false,
   });
 
   const isReady =

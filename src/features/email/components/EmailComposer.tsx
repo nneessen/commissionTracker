@@ -30,6 +30,7 @@ export interface EmailComposerProps {
   cc?: string[];
   subject?: string;
   bodyHtml?: string;
+  from?: string;
   recruitId?: string;
   phaseId?: string;
   onSend?: (email: SendEmailRequest) => void | Promise<void>;
@@ -42,6 +43,7 @@ export function EmailComposer({
   cc: initialCc = [],
   subject: initialSubject = "",
   bodyHtml: initialBodyHtml = "",
+  from = "The Standard HQ <recruiting@thestandardhq.com>",
   recruitId,
   onSend,
   onCancel,
@@ -125,6 +127,7 @@ export function EmailComposer({
       subject,
       html: sanitizedHtml,
       text: bodyText,
+      from,
       recruitId,
     };
 

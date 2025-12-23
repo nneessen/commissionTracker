@@ -51,8 +51,10 @@ export function CommunicationPanel({
         throw new Error("No recruiter email available");
       }
 
+      const senderName = `${currentUserProfile?.first_name || "Recruit"} ${currentUserProfile?.last_name || ""}`.trim();
       const request: SendEmailRequest = {
         to: [upline.email],
+        from: `${senderName} <recruiting@thestandardhq.com>`,
         subject: messageData.subject || "Message from Recruiting Pipeline",
         html: messageData.body.replace(/\n/g, "<br>"),
         text: messageData.body,

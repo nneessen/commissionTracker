@@ -33,7 +33,7 @@ export interface SendEmailRequest {
   subject: string;
   html: string;
   text?: string;
-  from?: string;
+  from: string; // Required - must be from authorized Mailgun domain
   replyTo?: string;
   recruitId?: string;
   senderId?: string;
