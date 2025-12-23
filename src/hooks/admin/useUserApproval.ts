@@ -197,13 +197,22 @@ export function useSetAdminRole() {
  */
 export function useAuthorizationStatus() {
   const { user, loading: authLoading } = useAuth();
-  const { data: profile, isLoading: profileLoading, isFetching } = useCurrentUserProfile();
+  const { data: profile, isLoading: profileLoading, isFetching, isPending } = useCurrentUserProfile();
 
-  // Consider loading if:
-  // 1. Auth is still loading, OR
-  // 2. Profile query is loading/fetching, OR
-  // 3. Auth is ready but profile query hasn't started yet (no user, no profile)
-  const isLoading = authLoading || profileLoading || isFetching || (!user && !profile);
+  // Simple logic: we're loading until we have BOTH auth complete AND profile data
+  // The key insight: if user is authenticated but profile is null, we're still loading
+  const isLoading = authLoading || profileLoading || isFetching || isPending || (!!user && !profile);
+
+  // Debug logging - remove after fix is confirmed
+  console.log("[useAuthorizationStatus]", {
+    authLoading,
+    profileLoading,
+    isFetching,
+    isPending,
+    hasUser: !!user,
+    hasProfile: !!profile,
+    computedIsLoading: isLoading,
+  });
 
   return {
     isAdmin: profile?.is_admin === true,
