@@ -6,6 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-12-23 13:27:29
+
+### Changed Files
+- `src/features/recruiting/components/InitializePipelineDialog.tsx`
+- `src/features/recruiting/components/RecruitDetailPanel.tsx`
+- `src/features/recruiting/hooks/useRecruitProgress.ts`
+- `src/services/recruiting/checklistService.ts`
+- `supabase/migrations/20251223_043_automation_logs_delete_policy.sql`
+- `supabase/migrations/20251223_044_unenroll_from_pipeline_rpc.sql`
+- `supabase/migrations/20251223_045_automation_logs_update_policy.sql`
+- `supabase/migrations/20251223_046_fix_recruiting_progress_policies.sql`
+
+### Statistics
+```
+ 8 files changed, 628 insertions(+), 51 deletions(-)
+```
+
 ## [Checkpoint] - 2025-12-23 12:26:50
 
 ### Changed Files

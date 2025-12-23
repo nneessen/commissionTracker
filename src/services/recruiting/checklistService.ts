@@ -111,11 +111,12 @@ export const checklistService = {
     if (phases[0]) {
       await this.initializeChecklistProgress(userId, phases[0].id);
 
-      // Update user's onboarding status to match first phase
+      // Update user's onboarding status and template to match first phase
       const firstPhaseStatus = phaseNameToStatus(phases[0].phaseName);
       await supabase
         .from("user_profiles")
         .update({
+          pipeline_template_id: templateId,
           onboarding_status: firstPhaseStatus,
           current_onboarding_phase: phases[0].phaseName,
         })
@@ -422,5 +423,33 @@ export const checklistService = {
     }
 
     return document;
+  },
+
+  // ========================================
+  // PIPELINE UNENROLLMENT
+  // ========================================
+
+  async unenrollFromPipeline(userId: string) {
+    // Use RPC with SECURITY DEFINER to bypass RLS for deletion operations
+    const { data, error } = await supabase.rpc("unenroll_from_pipeline", {
+      target_user_id: userId,
+    });
+
+    if (error) {
+      console.error("[checklistService] Unenroll RPC failed:", error);
+      throw error;
+    }
+
+    if (data && !data.success) {
+      console.error("[checklistService] Unenroll failed:", data.error);
+      throw new Error(data.error || "Failed to unenroll from pipeline");
+    }
+
+    console.log(
+      `[checklistService] Successfully unenrolled user ${userId} from pipeline:`,
+      data,
+    );
+
+    return { success: true };
   },
 };

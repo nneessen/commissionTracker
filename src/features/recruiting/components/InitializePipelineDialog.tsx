@@ -14,9 +14,10 @@ import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, FileStack } from "lucide-react";
+import { Loader2, FileStack, Check } from "lucide-react";
 import { useTemplates } from "../hooks/usePipeline";
 import type { PipelineTemplate } from "@/types/recruiting.types";
+import { cn } from "@/lib/utils";
 
 interface InitializePipelineDialogProps {
   open: boolean;
@@ -66,95 +67,115 @@ export function InitializePipelineDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="max-w-sm">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <FileStack className="h-5 w-5 text-foreground" />
-            Select Pipeline Template
+          <DialogTitle className="flex items-center gap-1.5 text-sm">
+            <FileStack className="h-4 w-4" />
+            Select Pipeline
           </DialogTitle>
-          <DialogDescription>
-            Choose which pipeline template to use for this recruit.
+          <DialogDescription className="text-xs">
+            Choose which pipeline to use for this recruit.
           </DialogDescription>
         </DialogHeader>
 
         {templatesLoading ? (
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          <div className="flex items-center justify-center py-6">
+            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
           </div>
         ) : templates && templates.length > 0 ? (
           <RadioGroup
             value={selectedTemplateId || ""}
             onValueChange={setSelectedTemplateId}
-            className="space-y-2"
+            className="space-y-1.5"
           >
-            {templates.map((template: PipelineTemplate) => (
-              <div
-                key={template.id}
-                className={`flex items-center space-x-3 p-3 rounded-lg border transition-colors cursor-pointer ${
-                  selectedTemplateId === template.id
-                    ? "border-foreground bg-accent"
-                    : "border-border hover:border-foreground/30 hover:bg-accent/50"
-                }`}
-                onClick={() => setSelectedTemplateId(template.id)}
-              >
-                <RadioGroupItem value={template.id} id={template.id} />
-                <Label
-                  htmlFor={template.id}
-                  className="flex-1 cursor-pointer space-y-0.5"
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium text-sm text-foreground">
-                      {template.name}
-                    </span>
-                    {template.is_default && (
-                      <Badge
-                        variant="secondary"
-                        className="text-[10px] h-4 px-1.5"
-                      >
-                        Default
-                      </Badge>
-                    )}
-                  </div>
-                  {template.description && (
-                    <p className="text-xs text-muted-foreground">
-                      {template.description}
-                    </p>
+            {templates.map((template: PipelineTemplate) => {
+              const isSelected = selectedTemplateId === template.id;
+              return (
+                <div
+                  key={template.id}
+                  className={cn(
+                    "flex items-center gap-2 py-2 px-2.5 rounded-md border cursor-pointer transition-colors",
+                    isSelected
+                      ? "border-foreground bg-accent"
+                      : "border-border hover:border-foreground/30 hover:bg-accent/50",
                   )}
-                </Label>
-              </div>
-            ))}
+                  onClick={() => setSelectedTemplateId(template.id)}
+                >
+                  <div
+                    className={cn(
+                      "flex h-4 w-4 shrink-0 items-center justify-center rounded-full border",
+                      isSelected
+                        ? "border-foreground bg-foreground text-background"
+                        : "border-muted-foreground/50",
+                    )}
+                  >
+                    {isSelected && <Check className="h-2.5 w-2.5" />}
+                  </div>
+                  <RadioGroupItem
+                    value={template.id}
+                    id={template.id}
+                    className="sr-only"
+                  />
+                  <Label
+                    htmlFor={template.id}
+                    className="flex-1 cursor-pointer"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs font-medium text-foreground">
+                        {template.name}
+                      </span>
+                      {template.is_default && (
+                        <Badge
+                          variant="secondary"
+                          className="text-[9px] h-3.5 px-1"
+                        >
+                          Default
+                        </Badge>
+                      )}
+                    </div>
+                    {template.description && (
+                      <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-1">
+                        {template.description}
+                      </p>
+                    )}
+                  </Label>
+                </div>
+              );
+            })}
           </RadioGroup>
         ) : (
-          <div className="py-8 text-center">
-            <FileStack className="h-8 w-8 text-muted-foreground/50 mx-auto mb-2" />
-            <p className="text-sm text-muted-foreground">
+          <div className="py-6 text-center">
+            <FileStack className="h-6 w-6 text-muted-foreground/50 mx-auto mb-1.5" />
+            <p className="text-xs text-muted-foreground">
               No pipeline templates found
             </p>
-            <p className="text-xs text-muted-foreground/70 mt-1">
+            <p className="text-[10px] text-muted-foreground/70 mt-0.5">
               Create a template in Pipeline Admin first.
             </p>
           </div>
         )}
 
-        <DialogFooter>
+        <DialogFooter className="gap-1">
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
             disabled={isLoading}
+            className="h-7 text-xs"
           >
             Cancel
           </Button>
           <Button
             onClick={handleConfirm}
             disabled={!selectedTemplateId || isLoading || templatesLoading}
+            className="h-7 text-xs"
           >
             {isLoading ? (
               <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
                 Initializing...
               </>
             ) : (
-              "Initialize Pipeline"
+              "Initialize"
             )}
           </Button>
         </DialogFooter>

@@ -30,7 +30,19 @@ import {
   Check,
   Circle,
   Ban,
+  RotateCcw,
+  AlertTriangle,
 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { DeleteRecruitDialogOptimized } from "./DeleteRecruitDialog.optimized";
 import { InitializePipelineDialog } from "./InitializePipelineDialog";
 import { useRouter } from "@tanstack/react-router";
@@ -45,6 +57,7 @@ import {
   useBlockPhase,
   useUpdatePhaseStatus,
   useInitializeRecruitProgress,
+  useUnenrollFromPipeline,
 } from "../hooks/useRecruitProgress";
 import { useTemplate, useActiveTemplate } from "../hooks/usePipeline";
 import { useCurrentUserProfile } from "@/hooks/admin/useUserApproval";
@@ -73,6 +86,7 @@ export function RecruitDetailPanel({
   const [selectedPhaseId, setSelectedPhaseId] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [initializeDialogOpen, setInitializeDialogOpen] = useState(false);
+  const [unenrollDialogOpen, setUnenrollDialogOpen] = useState(false);
   const [resendingInvite, setResendingInvite] = useState(false);
   const _router = useRouter();
 
@@ -111,6 +125,7 @@ export function RecruitDetailPanel({
   const blockPhase = useBlockPhase();
   const updatePhaseStatus = useUpdatePhaseStatus();
   const initializeProgress = useInitializeRecruitProgress();
+  const unenrollPipeline = useUnenrollFromPipeline();
 
   const handleAdvancePhase = async () => {
     if (!currentPhase || !confirm("Advance to next phase?")) return;
@@ -178,6 +193,18 @@ export function RecruitDetailPanel({
       templateId,
     });
     setInitializeDialogOpen(false);
+  };
+
+  const handleUnenroll = async () => {
+    try {
+      await unenrollPipeline.mutateAsync({ userId: recruit.id });
+      toast.success("Recruit unenrolled from pipeline");
+      setUnenrollDialogOpen(false);
+      setSelectedPhaseId(null);
+    } catch (error) {
+      toast.error("Failed to unenroll recruit");
+      console.error("[RecruitDetailPanel] Unenroll failed:", error);
+    }
   };
 
   if (progressLoading || currentPhaseLoading || templateLoading) {
@@ -305,6 +332,17 @@ export function RecruitDetailPanel({
                     Block
                   </Button>
                 )}
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setUnenrollDialogOpen(true)}
+                  disabled={unenrollPipeline.isPending}
+                  className="h-6 text-[10px] px-2 text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                  title="Remove from pipeline to re-enroll in a different one"
+                >
+                  <RotateCcw className="h-3 w-3 mr-0.5" />
+                  Unenroll
+                </Button>
               </>
             ) : (
               <Button
@@ -588,6 +626,51 @@ export function RecruitDetailPanel({
         onConfirm={handleConfirmInitialize}
         isLoading={initializeProgress.isPending}
       />
+
+      {/* Unenroll Confirmation Dialog */}
+      <AlertDialog
+        open={unenrollDialogOpen}
+        onOpenChange={setUnenrollDialogOpen}
+      >
+        <AlertDialogContent className="max-w-sm">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-1 text-sm">
+              <AlertTriangle className="h-3 w-3 text-orange-500" />
+              Unenroll from Pipeline
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-xs">
+              This will remove all pipeline progress for{" "}
+              <span className="font-medium">{displayName}</span>. They can be
+              re-enrolled in a different pipeline afterward.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-1">
+            <AlertDialogCancel
+              disabled={unenrollPipeline.isPending}
+              className="h-7 text-xs"
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleUnenroll}
+              disabled={unenrollPipeline.isPending}
+              className="bg-orange-600 hover:bg-orange-700 h-7 text-xs"
+            >
+              {unenrollPipeline.isPending ? (
+                <>
+                  <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                  Unenrolling...
+                </>
+              ) : (
+                <>
+                  <RotateCcw className="mr-1 h-3 w-3" />
+                  Unenroll
+                </>
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

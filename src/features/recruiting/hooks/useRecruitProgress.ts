@@ -250,3 +250,34 @@ export function useRejectDocument() {
     },
   });
 }
+
+// ========================================
+// PIPELINE UNENROLLMENT
+// ========================================
+
+export function useUnenrollFromPipeline() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ userId }: { userId: string }) =>
+      checklistService.unenrollFromPipeline(userId),
+    onSuccess: (_, variables) => {
+      // Invalidate all progress queries for this user
+      queryClient.invalidateQueries({
+        queryKey: ["recruit-phase-progress", variables.userId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["recruit-current-phase", variables.userId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["recruit-checklist-progress", variables.userId],
+      });
+
+      // Invalidate recruits list (status changed)
+      queryClient.invalidateQueries({
+        predicate: (query) => query.queryKey[0] === "recruits",
+      });
+      queryClient.invalidateQueries({ queryKey: ["recruiting-stats"] });
+    },
+  });
+}
