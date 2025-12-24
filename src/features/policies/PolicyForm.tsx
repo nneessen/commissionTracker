@@ -351,15 +351,15 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
       <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6 p-4 overflow-y-auto">
         {/* Left Column - Client Information */}
         <div className="flex flex-col gap-3">
-          <h3 className="text-[11px] font-semibold text-zinc-900 dark:text-zinc-100 uppercase tracking-wider m-0">
+          <h3 className="text-[11px] font-semibold text-foreground uppercase tracking-wider m-0">
             Client Information
           </h3>
-          <div className="h-px bg-zinc-200 dark:bg-zinc-700 mb-1"></div>
+          <div className="h-px bg-border mb-1"></div>
 
           <div className="flex flex-col gap-1">
             <Label
               htmlFor="clientName"
-              className="text-[11px] text-zinc-700 dark:text-zinc-300"
+              className="text-[11px] text-muted-foreground"
             >
               Client Name *
             </Label>
@@ -369,11 +369,11 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
               name="clientName"
               value={formData.clientName}
               onChange={handleInputChange}
-              className={`h-8 text-[11px] ${errors.clientName ? "border-red-500 dark:border-red-500" : "border-zinc-200 dark:border-zinc-700"}`}
+              className={`h-8 text-[11px] ${errors.clientName ? "border-destructive" : "border-input"}`}
               placeholder="John Smith"
             />
             {errors.clientName && (
-              <span className="text-[10px] text-red-600 dark:text-red-400">
+              <span className="text-[10px] text-destructive">
                 {errors.clientName}
               </span>
             )}
@@ -383,7 +383,7 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
             <div className="flex flex-col gap-1">
               <Label
                 htmlFor="clientState"
-                className="text-[11px] text-zinc-700 dark:text-zinc-300"
+                className="text-[11px] text-muted-foreground"
               >
                 State *
               </Label>
@@ -395,7 +395,7 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
               >
                 <SelectTrigger
                   id="clientState"
-                  className={`h-8 text-[11px] ${errors.clientState ? "border-red-500 dark:border-red-500" : "border-zinc-200 dark:border-zinc-700"}`}
+                  className={`h-8 text-[11px] ${errors.clientState ? "border-destructive" : "border-input"}`}
                 >
                   <SelectValue placeholder="Select" />
                 </SelectTrigger>
@@ -408,7 +408,7 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
                 </SelectContent>
               </Select>
               {errors.clientState && (
-                <span className="text-[10px] text-red-600 dark:text-red-400">
+                <span className="text-[10px] text-destructive">
                   {errors.clientState}
                 </span>
               )}
@@ -416,7 +416,7 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
             <div className="flex flex-col gap-1">
               <Label
                 htmlFor="clientAge"
-                className="text-[11px] text-zinc-700 dark:text-zinc-300"
+                className="text-[11px] text-muted-foreground"
               >
                 Age *
               </Label>
@@ -426,13 +426,13 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
                 name="clientAge"
                 value={formData.clientAge || ""}
                 onChange={handleInputChange}
-                className={`h-8 text-[11px] ${errors.clientAge ? "border-red-500 dark:border-red-500" : "border-zinc-200 dark:border-zinc-700"}`}
+                className={`h-8 text-[11px] ${errors.clientAge ? "border-destructive" : "border-input"}`}
                 placeholder="45"
                 min="1"
                 max="120"
               />
               {errors.clientAge && (
-                <span className="text-[10px] text-red-600 dark:text-red-400">
+                <span className="text-[10px] text-destructive">
                   {errors.clientAge}
                 </span>
               )}
@@ -442,7 +442,7 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
           <div className="flex flex-col gap-1">
             <Label
               htmlFor="carrierId"
-              className="text-[11px] text-zinc-700 dark:text-zinc-300"
+              className="text-[11px] text-muted-foreground"
             >
               Carrier *
             </Label>
@@ -452,7 +452,7 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
             >
               <SelectTrigger
                 id="carrierId"
-                className={`h-8 text-[11px] ${errors.carrierId ? "border-red-500 dark:border-red-500" : "border-zinc-200 dark:border-zinc-700"}`}
+                className={`h-8 text-[11px] ${errors.carrierId ? "border-destructive" : "border-input"}`}
               >
                 <SelectValue placeholder="Select Carrier" />
               </SelectTrigger>
@@ -465,7 +465,7 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
               </SelectContent>
             </Select>
             {errors.carrierId && (
-              <span className="text-[10px] text-red-600 dark:text-red-400">
+              <span className="text-[10px] text-destructive">
                 {errors.carrierId}
               </span>
             )}
@@ -474,7 +474,7 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
           <div className="flex flex-col gap-1">
             <Label
               htmlFor="productId"
-              className="text-[11px] text-zinc-700 dark:text-zinc-300"
+              className="text-[11px] text-muted-foreground"
             >
               Product *
             </Label>
@@ -485,7 +485,7 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
             >
               <SelectTrigger
                 id="productId"
-                className={`h-8 text-[11px] ${errors.productId ? "border-red-500 dark:border-red-500" : "border-zinc-200 dark:border-zinc-700"}`}
+                className={`h-8 text-[11px] ${errors.productId ? "border-destructive" : "border-input"}`}
               >
                 <SelectValue
                   placeholder={
@@ -510,14 +510,14 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
               </SelectContent>
             </Select>
             {errors.productId && (
-              <span className="text-[10px] text-red-600 dark:text-red-400">
+              <span className="text-[10px] text-destructive">
                 {errors.productId}
               </span>
             )}
             {formData.carrierId &&
               !productsLoading &&
               products.length === 0 && (
-                <span className="text-[10px] text-red-600 dark:text-red-400">
+                <span className="text-[10px] text-destructive">
                   This carrier has no products configured. Please contact admin
                   or select a different carrier.
                 </span>
@@ -527,7 +527,7 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
           <div className="flex flex-col gap-1">
             <Label
               htmlFor="notes"
-              className="text-[11px] text-zinc-700 dark:text-zinc-300"
+              className="text-[11px] text-muted-foreground"
             >
               Notes
             </Label>
@@ -538,22 +538,22 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
               onChange={handleInputChange}
               rows={2}
               placeholder="Optional notes..."
-              className="text-[11px] resize-vertical min-h-[50px] border-zinc-200 dark:border-zinc-700"
+              className="text-[11px] resize-vertical min-h-[50px] border-input"
             />
           </div>
         </div>
 
         {/* Right Column - Policy Details */}
         <div className="flex flex-col gap-3">
-          <h3 className="text-[11px] font-semibold text-zinc-900 dark:text-zinc-100 uppercase tracking-wider m-0">
+          <h3 className="text-[11px] font-semibold text-foreground uppercase tracking-wider m-0">
             Policy Details
           </h3>
-          <div className="h-px bg-zinc-200 dark:bg-zinc-700 mb-1"></div>
+          <div className="h-px bg-border mb-1"></div>
 
           <div className="flex flex-col gap-1">
             <Label
               htmlFor="policyNumber"
-              className="text-[11px] text-zinc-700 dark:text-zinc-300"
+              className="text-[11px] text-muted-foreground"
             >
               Policy Number *
             </Label>
@@ -563,11 +563,11 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
               name="policyNumber"
               value={formData.policyNumber}
               onChange={handleInputChange}
-              className={`h-8 text-[11px] ${errors.policyNumber ? "border-red-500 dark:border-red-500" : "border-zinc-200 dark:border-zinc-700"}`}
+              className={`h-8 text-[11px] ${errors.policyNumber ? "border-destructive" : "border-input"}`}
               placeholder="POL-123456"
             />
             {errors.policyNumber && (
-              <span className="text-[10px] text-red-600 dark:text-red-400">
+              <span className="text-[10px] text-destructive">
                 {errors.policyNumber}
               </span>
             )}
@@ -577,7 +577,7 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
             <div className="flex flex-col gap-1">
               <Label
                 htmlFor="submitDate"
-                className="text-[11px] text-zinc-700 dark:text-zinc-300"
+                className="text-[11px] text-muted-foreground"
               >
                 Submit Date *
               </Label>
@@ -587,10 +587,10 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
                 name="submitDate"
                 value={formData.submitDate}
                 onChange={handleInputChange}
-                className={`h-8 text-[11px] ${errors.submitDate ? "border-red-500 dark:border-red-500" : "border-zinc-200 dark:border-zinc-700"}`}
+                className={`h-8 text-[11px] ${errors.submitDate ? "border-destructive" : "border-input"}`}
               />
               {errors.submitDate && (
-                <span className="text-[10px] text-red-600 dark:text-red-400">
+                <span className="text-[10px] text-destructive">
                   {errors.submitDate}
                 </span>
               )}
@@ -599,7 +599,7 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
             <div className="flex flex-col gap-1">
               <Label
                 htmlFor="effectiveDate"
-                className="text-[11px] text-zinc-700 dark:text-zinc-300"
+                className="text-[11px] text-muted-foreground"
               >
                 Effective Date *
               </Label>
@@ -609,10 +609,10 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
                 name="effectiveDate"
                 value={formData.effectiveDate}
                 onChange={handleInputChange}
-                className={`h-8 text-[11px] ${errors.effectiveDate ? "border-red-500 dark:border-red-500" : "border-zinc-200 dark:border-zinc-700"}`}
+                className={`h-8 text-[11px] ${errors.effectiveDate ? "border-destructive" : "border-input"}`}
               />
               {errors.effectiveDate && (
-                <span className="text-[10px] text-red-600 dark:text-red-400">
+                <span className="text-[10px] text-destructive">
                   {errors.effectiveDate}
                 </span>
               )}
@@ -623,7 +623,7 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
             <div className="flex flex-col gap-1">
               <Label
                 htmlFor="premium"
-                className="text-[11px] text-zinc-700 dark:text-zinc-300"
+                className="text-[11px] text-muted-foreground"
               >
                 Premium Amount *
               </Label>
@@ -633,13 +633,13 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
                 name="premium"
                 value={formData.premium || ""}
                 onChange={handleInputChange}
-                className={`h-8 text-[11px] ${errors.premium ? "border-red-500 dark:border-red-500" : "border-zinc-200 dark:border-zinc-700"}`}
+                className={`h-8 text-[11px] ${errors.premium ? "border-destructive" : "border-input"}`}
                 placeholder="250.00"
                 step="0.01"
                 min="0"
               />
               {errors.premium && (
-                <span className="text-[10px] text-red-600 dark:text-red-400">
+                <span className="text-[10px] text-destructive">
                   {errors.premium}
                 </span>
               )}
@@ -647,7 +647,7 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
             <div className="flex flex-col gap-1">
               <Label
                 htmlFor="paymentFrequency"
-                className="text-[11px] text-zinc-700 dark:text-zinc-300"
+                className="text-[11px] text-muted-foreground"
               >
                 Payment Frequency *
               </Label>
@@ -662,7 +662,7 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
               >
                 <SelectTrigger
                   id="paymentFrequency"
-                  className="h-8 text-[11px] border-zinc-200 dark:border-zinc-700"
+                  className="h-8 text-[11px] border-input"
                 >
                   <SelectValue />
                 </SelectTrigger>
@@ -679,7 +679,7 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
           <div className="flex flex-col gap-1">
             <Label
               htmlFor="status"
-              className="text-[11px] text-zinc-700 dark:text-zinc-300"
+              className="text-[11px] text-muted-foreground"
             >
               Status
             </Label>
@@ -691,42 +691,42 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
             >
               <SelectTrigger
                 id="status"
-                className="h-8 text-[11px] border-zinc-200 dark:border-zinc-700"
+                className="h-8 text-[11px] border-input"
               >
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="pending">Pending</SelectItem>
                 <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="lapsed">Lapsed</SelectItem>
-                <SelectItem value="cancelled">Cancelled</SelectItem>
+                {policyId && (
+                  <>
+                    <SelectItem value="lapsed">Lapsed</SelectItem>
+                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                  </>
+                )}
               </SelectContent>
             </Select>
           </div>
 
           {/* Calculated Values */}
-          <div className="flex flex-col gap-1.5 p-2.5 bg-zinc-50 dark:bg-zinc-800/50 rounded border border-zinc-200 dark:border-zinc-700">
+          <div className="flex flex-col gap-1.5 p-2.5 bg-muted rounded border border-border">
             <div className="flex justify-between items-center text-[11px]">
-              <span className="text-zinc-500 dark:text-zinc-400">
-                Annual Premium:
-              </span>
-              <strong className="text-blue-600 dark:text-blue-400 font-semibold font-mono">
+              <span className="text-muted-foreground">Annual Premium:</span>
+              <strong className="text-[hsl(var(--info))] font-semibold font-mono">
                 ${annualPremium.toFixed(2)}
               </strong>
             </div>
             <div className="flex justify-between items-center text-[11px]">
-              <span className="text-zinc-500 dark:text-zinc-400">
-                Commission Rate:
-              </span>
-              <strong className="text-zinc-900 dark:text-zinc-100 font-semibold">
+              <span className="text-muted-foreground">Commission Rate:</span>
+              <strong className="text-foreground font-semibold">
                 {formData.commissionPercentage.toFixed(2)}%
               </strong>
             </div>
             <div className="flex justify-between items-center text-[11px]">
-              <span className="text-zinc-500 dark:text-zinc-400">
+              <span className="text-muted-foreground">
                 Expected Advance (9 mo):
               </span>
-              <strong className="text-emerald-600 dark:text-emerald-400 font-semibold font-mono">
+              <strong className="text-[hsl(var(--success))] font-semibold font-mono">
                 ${expectedCommission.toFixed(2)}
               </strong>
             </div>
@@ -734,13 +734,13 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
         </div>
       </div>
 
-      <div className="flex justify-end gap-2 p-3 border-t border-zinc-200 dark:border-zinc-800">
+      <div className="flex justify-end gap-2 p-3 border-t border-border">
         <Button
           type="button"
           onClick={onClose}
           variant="ghost"
           size="sm"
-          className="h-7 text-[11px] px-3 text-zinc-600 dark:text-zinc-400"
+          className="h-7 text-[11px] px-3"
         >
           Cancel
         </Button>
