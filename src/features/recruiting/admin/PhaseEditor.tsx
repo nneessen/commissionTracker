@@ -242,7 +242,7 @@ export function PhaseEditor({ templateId }: PhaseEditorProps) {
 
       {/* Create Phase Dialog */}
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md p-3 bg-white dark:bg-zinc-900">
           <DialogHeader>
             <DialogTitle className="text-sm">Add Phase</DialogTitle>
           </DialogHeader>
@@ -355,7 +355,7 @@ export function PhaseEditor({ templateId }: PhaseEditorProps) {
 
       {/* Edit Phase Dialog */}
       <Dialog open={!!editingPhase} onOpenChange={() => setEditingPhase(null)}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md p-3 bg-white dark:bg-zinc-900">
           <DialogHeader>
             <DialogTitle className="text-sm">Edit Phase</DialogTitle>
           </DialogHeader>
@@ -480,7 +480,7 @@ export function PhaseEditor({ templateId }: PhaseEditorProps) {
         open={!!deleteConfirmId}
         onOpenChange={() => setDeleteConfirmId(null)}
       >
-        <DialogContent className="max-w-sm">
+        <DialogContent className="max-w-sm p-3 bg-white dark:bg-zinc-900">
           <DialogHeader>
             <DialogTitle className="text-sm">Delete Phase?</DialogTitle>
           </DialogHeader>

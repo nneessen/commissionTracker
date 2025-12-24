@@ -1,6 +1,6 @@
 // src/features/recruiting/admin/SchedulingItemConfig.tsx
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
   Calendar,
   CalendarDays,
@@ -66,23 +66,37 @@ export function SchedulingItemConfig({
     (i) => i.integration_type === schedulingType,
   );
 
-  // Update parent when values change
-  useEffect(() => {
+  // Track previous metadata to prevent infinite loops
+  const prevMetadataRef = useRef<string>("");
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
+
+  // Stable callback that builds and sends metadata
+  const notifyChange = useCallback(() => {
     const newMetadata: SchedulingChecklistMetadata = {
       scheduling_type: schedulingType,
       custom_booking_url: useCustomUrl && customUrl ? customUrl : undefined,
       instructions: instructions || undefined,
       integration_id: selectedIntegration?.id,
     };
-    onChange(newMetadata);
+
+    const metadataString = JSON.stringify(newMetadata);
+    if (metadataString !== prevMetadataRef.current) {
+      prevMetadataRef.current = metadataString;
+      onChangeRef.current(newMetadata);
+    }
   }, [
     schedulingType,
     useCustomUrl,
     customUrl,
     instructions,
-    selectedIntegration,
-    onChange,
+    selectedIntegration?.id,
   ]);
+
+  // Update parent when values change
+  useEffect(() => {
+    notifyChange();
+  }, [notifyChange]);
 
   const validateCustomUrl = (url: string) => {
     if (!url) {
@@ -104,7 +118,7 @@ export function SchedulingItemConfig({
   const Icon = INTEGRATION_ICONS[schedulingType];
 
   return (
-    <div className="space-y-3 p-2.5 bg-zinc-50 dark:bg-zinc-800/50 rounded-md border border-zinc-200 dark:border-zinc-700">
+    <div className="space-y-3 p-2.5 bg-zinc-50 dark:bg-zinc-800/50 rounded-md shadow-sm">
       <div className="flex items-center gap-2">
         <Icon className="h-3.5 w-3.5 text-zinc-500 dark:text-zinc-400" />
         <span className="text-[10px] font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
@@ -158,7 +172,7 @@ export function SchedulingItemConfig({
       {!isLoading && (
         <div className="space-y-1">
           {selectedIntegration ? (
-            <div className="flex items-center gap-2 p-1.5 bg-green-50 dark:bg-green-900/20 rounded border border-green-200 dark:border-green-800">
+            <div className="flex items-center gap-2 p-1.5 bg-green-50 dark:bg-green-900/20 rounded shadow-sm">
               <Badge
                 variant="outline"
                 className="text-[9px] h-4 px-1.5 border-green-300 text-green-700 dark:border-green-700 dark:text-green-400"
@@ -179,7 +193,7 @@ export function SchedulingItemConfig({
               </a>
             </div>
           ) : (
-            <div className="flex items-center gap-2 p-1.5 bg-amber-50 dark:bg-amber-900/20 rounded border border-amber-200 dark:border-amber-800">
+            <div className="flex items-center gap-2 p-1.5 bg-amber-50 dark:bg-amber-900/20 rounded shadow-sm">
               <AlertCircle className="h-3 w-3 text-amber-600 dark:text-amber-400" />
               <span className="text-[10px] text-amber-700 dark:text-amber-400">
                 No {INTEGRATION_TYPE_LABELS[schedulingType]} integration

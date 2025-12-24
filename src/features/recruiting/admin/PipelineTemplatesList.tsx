@@ -214,7 +214,7 @@ export function PipelineTemplatesList({
 
       {/* Create Dialog */}
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md p-3 bg-white dark:bg-zinc-900">
           <DialogHeader>
             <DialogTitle className="text-sm">
               Create Pipeline Template
@@ -295,7 +295,7 @@ export function PipelineTemplatesList({
         open={!!deleteConfirmId}
         onOpenChange={() => setDeleteConfirmId(null)}
       >
-        <DialogContent className="max-w-sm">
+        <DialogContent className="max-w-sm p-3 bg-white dark:bg-zinc-900">
           <DialogHeader>
             <DialogTitle className="text-sm">Delete Template?</DialogTitle>
           </DialogHeader>

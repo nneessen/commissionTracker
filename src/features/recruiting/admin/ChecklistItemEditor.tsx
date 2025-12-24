@@ -287,7 +287,7 @@ export function ChecklistItemEditor({ phaseId }: ChecklistItemEditorProps) {
 
       {/* Create Dialog */}
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md p-3 bg-white dark:bg-zinc-900">
           <DialogHeader>
             <DialogTitle className="text-sm">Add Checklist Item</DialogTitle>
           </DialogHeader>
@@ -475,7 +475,7 @@ export function ChecklistItemEditor({ phaseId }: ChecklistItemEditorProps) {
 
       {/* Edit Dialog */}
       <Dialog open={!!editingItem} onOpenChange={() => setEditingItem(null)}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md p-3 bg-white dark:bg-zinc-900">
           <DialogHeader>
             <DialogTitle className="text-sm">Edit Checklist Item</DialogTitle>
           </DialogHeader>
@@ -680,7 +680,7 @@ export function ChecklistItemEditor({ phaseId }: ChecklistItemEditorProps) {
         open={!!deleteConfirmId}
         onOpenChange={() => setDeleteConfirmId(null)}
       >
-        <DialogContent className="max-w-sm">
+        <DialogContent className="max-w-sm p-3 bg-white dark:bg-zinc-900">
           <DialogHeader>
             <DialogTitle className="text-sm">Delete Item?</DialogTitle>
           </DialogHeader>

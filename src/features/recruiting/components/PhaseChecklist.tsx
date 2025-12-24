@@ -35,8 +35,10 @@ import {
 import type {
   SchedulingChecklistMetadata,
   SchedulingIntegrationType,
+  SchedulingIntegration,
 } from "@/types/integration.types";
 import { useActiveSchedulingIntegrations } from "@/hooks/integrations";
+import { SchedulingBookingModal } from "./SchedulingBookingModal";
 
 interface PhaseChecklistProps {
   userId: string;
@@ -63,6 +65,18 @@ export function PhaseChecklist({
 }: PhaseChecklistProps) {
   const updateItemStatus = useUpdateChecklistItemStatus();
   const [loadingItemIds, setLoadingItemIds] = useState<Set<string>>(new Set());
+
+  // Scheduling modal state
+  const [schedulingModalData, setSchedulingModalData] = useState<{
+    open: boolean;
+    itemId: string;
+    itemName: string;
+    integrationType: SchedulingIntegrationType;
+    bookingUrl: string;
+    instructions?: string;
+    meetingId?: string;
+    passcode?: string;
+  } | null>(null);
 
   // Fetch active scheduling integrations for building booking URLs
   const { data: schedulingIntegrations } = useActiveSchedulingIntegrations();
@@ -396,7 +410,7 @@ export function PhaseChecklist({
         return (
           <Badge
             variant="outline"
-            className="text-sm text-amber-700 bg-amber-50 border-amber-200 dark:text-amber-400 dark:bg-amber-950/30 dark:border-amber-800"
+            className="text-sm text-amber-700 bg-amber-50 dark:text-amber-400 dark:bg-amber-950/30"
           >
             <AlertCircle className="h-3.5 w-3.5 mr-1" />
             Not Configured
@@ -407,12 +421,18 @@ export function PhaseChecklist({
       const bookingUrl = getBookingUrl(metadata);
       const SchedulingIcon = getSchedulingIcon(metadata.scheduling_type);
 
+      // Get integration for additional details (meetingId, passcode)
+      const integration = schedulingIntegrations?.find(
+        (i: SchedulingIntegration) =>
+          i.integration_type === metadata.scheduling_type,
+      );
+
       // If already completed or approved, show completed badge
       if (status === "completed" || status === "approved") {
         return (
           <Badge
             variant="outline"
-            className="text-sm text-emerald-700 bg-emerald-50 border-emerald-200 dark:text-emerald-400 dark:bg-emerald-950/30 dark:border-emerald-800"
+            className="text-sm text-emerald-700 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-950/30"
           >
             <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
             Booked
@@ -425,7 +445,7 @@ export function PhaseChecklist({
         return (
           <Badge
             variant="outline"
-            className="text-sm text-amber-700 bg-amber-50 border-amber-200 dark:text-amber-400 dark:bg-amber-950/30 dark:border-amber-800"
+            className="text-sm text-amber-700 bg-amber-50 dark:text-amber-400 dark:bg-amber-950/30"
           >
             <AlertCircle className="h-3.5 w-3.5 mr-1" />
             No Link Available
@@ -433,13 +453,28 @@ export function PhaseChecklist({
         );
       }
 
-      // Show Book Now button
+      // Show Book Now button that opens modal
       return (
-        <Button size="sm" variant="outline" asChild className="h-8">
-          <a href={bookingUrl} target="_blank" rel="noopener noreferrer">
-            <SchedulingIcon className="h-4 w-4 mr-1.5" />
-            Book Now
-          </a>
+        <Button
+          size="sm"
+          variant="outline"
+          className="h-8"
+          onClick={() =>
+            setSchedulingModalData({
+              open: true,
+              itemId: item.id,
+              itemName: item.item_name,
+              integrationType: metadata.scheduling_type,
+              bookingUrl,
+              instructions:
+                metadata.instructions || integration?.instructions || undefined,
+              meetingId: integration?.meeting_id || undefined,
+              passcode: integration?.passcode || undefined,
+            })
+          }
+        >
+          <SchedulingIcon className="h-4 w-4 mr-1.5" />
+          Book Now
         </Button>
       );
     }
@@ -633,6 +668,24 @@ export function PhaseChecklist({
           </div>
         );
       })}
+
+      {/* Scheduling Booking Modal */}
+      {schedulingModalData && (
+        <SchedulingBookingModal
+          open={schedulingModalData.open}
+          onClose={() => setSchedulingModalData(null)}
+          integrationType={schedulingModalData.integrationType}
+          bookingUrl={schedulingModalData.bookingUrl}
+          itemName={schedulingModalData.itemName}
+          instructions={schedulingModalData.instructions}
+          meetingId={schedulingModalData.meetingId}
+          passcode={schedulingModalData.passcode}
+          onBookingComplete={() => {
+            // Optionally mark the item as complete
+            // For now, just close the modal - user can manually mark complete
+          }}
+        />
+      )}
     </div>
   );
 }

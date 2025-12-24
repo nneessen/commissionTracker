@@ -156,7 +156,7 @@ export function IntegrationDialog({
 
   return (
     <Dialog open={open} onOpenChange={() => !isPending && onClose()}>
-      <DialogContent className="max-w-md p-3">
+      <DialogContent className="max-w-md p-3 bg-white dark:bg-zinc-900">
         <DialogHeader className="space-y-1">
           <DialogTitle className="text-sm font-semibold">
             {isEditing ? "Edit" : "Connect"} {INTEGRATION_TYPE_LABELS[type]}

@@ -10,14 +10,14 @@ This document outlines the complete implementation plan for embedded scheduling 
 
 ### What Exists (Partially Working)
 
-| Component | File | Status | Notes |
-|-----------|------|--------|-------|
-| Settings > Integrations Tab | `src/features/settings/integrations/IntegrationsTab.tsx` | ✅ Works | Admin can add/edit/delete scheduling URLs |
-| IntegrationDialog | `src/features/settings/integrations/components/IntegrationDialog.tsx` | ✅ Works | Form for adding integration details |
-| SchedulingItemConfig | `src/features/recruiting/admin/SchedulingItemConfig.tsx` | ⚠️ Partial | Config component exists but not fully wired |
-| ChecklistItemEditor | `src/features/recruiting/admin/ChecklistItemEditor.tsx` | ⚠️ Partial | Has scheduling_booking type but incomplete |
-| PhaseChecklist | `src/features/recruiting/components/PhaseChecklist.tsx` | ❌ Wrong | Opens new tab instead of embedding |
-| Embedded Booking Widget | N/A | ❌ Missing | Does not exist |
+| Component                   | File                                                                  | Status     | Notes                                       |
+| --------------------------- | --------------------------------------------------------------------- | ---------- | ------------------------------------------- |
+| Settings > Integrations Tab | `src/features/settings/integrations/IntegrationsTab.tsx`              | ✅ Works   | Admin can add/edit/delete scheduling URLs   |
+| IntegrationDialog           | `src/features/settings/integrations/components/IntegrationDialog.tsx` | ✅ Works   | Form for adding integration details         |
+| SchedulingItemConfig        | `src/features/recruiting/admin/SchedulingItemConfig.tsx`              | ⚠️ Partial | Config component exists but not fully wired |
+| ChecklistItemEditor         | `src/features/recruiting/admin/ChecklistItemEditor.tsx`               | ⚠️ Partial | Has scheduling_booking type but incomplete  |
+| PhaseChecklist              | `src/features/recruiting/components/PhaseChecklist.tsx`               | ❌ Wrong   | Opens new tab instead of embedding          |
+| Embedded Booking Widget     | N/A                                                                   | ❌ Missing | Does not exist                              |
 
 ### What's Broken
 
@@ -69,6 +69,7 @@ This document outlines the complete implementation plan for embedded scheduling 
 ### 1. New Components Required
 
 #### `SchedulingBookingModal.tsx`
+
 Location: `src/features/recruiting/components/SchedulingBookingModal.tsx`
 
 Purpose: Modal that embeds the actual scheduling widget based on integration type.
@@ -87,23 +88,26 @@ interface SchedulingBookingModalProps {
 
 **Embed Strategies by Provider:**
 
-| Provider | Embed Method | Script Required |
-|----------|--------------|-----------------|
-| Calendly | `<div class="calendly-inline-widget" data-url="...">` | `https://assets.calendly.com/assets/external/widget.js` |
-| Google Calendar | `<iframe src="..." sandbox="allow-scripts allow-same-origin">` | None |
-| Zoom | Display meeting info + join button OR iframe if scheduler URL | None |
+| Provider        | Embed Method                                                   | Script Required                                         |
+| --------------- | -------------------------------------------------------------- | ------------------------------------------------------- |
+| Calendly        | `<div class="calendly-inline-widget" data-url="...">`          | `https://assets.calendly.com/assets/external/widget.js` |
+| Google Calendar | `<iframe src="..." sandbox="allow-scripts allow-same-origin">` | None                                                    |
+| Zoom            | Display meeting info + join button OR iframe if scheduler URL  | None                                                    |
 
 #### `CalendlyEmbed.tsx`
+
 Location: `src/features/recruiting/components/embeds/CalendlyEmbed.tsx`
 
 Purpose: Wrapper component for Calendly inline widget with proper script loading.
 
 #### `GoogleCalendarEmbed.tsx`
+
 Location: `src/features/recruiting/components/embeds/GoogleCalendarEmbed.tsx`
 
 Purpose: Wrapper component for Google Calendar appointment iframe.
 
 #### `ZoomEmbed.tsx`
+
 Location: `src/features/recruiting/components/embeds/ZoomEmbed.tsx`
 
 Purpose: Display Zoom meeting details or scheduler embed.
@@ -111,16 +115,19 @@ Purpose: Display Zoom meeting details or scheduler embed.
 ### 2. Component Updates Required
 
 #### `PhaseChecklist.tsx`
+
 - Replace "Book Now" link button with button that opens `SchedulingBookingModal`
 - Add state management for modal open/close
 - Pass booking URL and metadata to modal
 
 #### `SchedulingItemConfig.tsx`
+
 - Show which configured integration will be used
 - Add validation that integration exists
 - Improve UX to show integration status
 
 #### `ChecklistItemEditor.tsx`
+
 - Ensure SchedulingItemConfig is properly integrated
 - Clear scheduling metadata when item type changes
 
@@ -129,22 +136,24 @@ Purpose: Display Zoom meeting details or scheduler embed.
 The following dialogs need updated `DialogContent` className to match app standards:
 
 **Standard Pattern:**
+
 ```tsx
 <DialogContent className="max-w-md p-3 bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800">
 ```
 
-| File | Lines | Current | Fix Required |
-|------|-------|---------|--------------|
-| `PhaseEditor.tsx` | 245, 358, 483 | `max-w-md` | Add `p-3 bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800` |
-| `ChecklistItemEditor.tsx` | 282, 470, 675 | `max-w-md` | Add standard styles |
-| `PipelineTemplatesList.tsx` | 217, 298 | `max-w-md` | Add standard styles |
-| `IntegrationDialog.tsx` | 148 | `max-w-md p-3` | Add `bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800` |
+| File                        | Lines         | Current        | Fix Required                                                             |
+| --------------------------- | ------------- | -------------- | ------------------------------------------------------------------------ |
+| `PhaseEditor.tsx`           | 245, 358, 483 | `max-w-md`     | Add `p-3 bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800` |
+| `ChecklistItemEditor.tsx`   | 282, 470, 675 | `max-w-md`     | Add standard styles                                                      |
+| `PipelineTemplatesList.tsx` | 217, 298      | `max-w-md`     | Add standard styles                                                      |
+| `IntegrationDialog.tsx`     | 148           | `max-w-md p-3` | Add `bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800`     |
 
 ---
 
 ## Implementation Steps
 
 ### Phase 1: Dialog Style Fixes (30 min)
+
 1. Update `PhaseEditor.tsx` - 3 dialogs
 2. Update `ChecklistItemEditor.tsx` - 3 dialogs
 3. Update `PipelineTemplatesList.tsx` - 2 dialogs
@@ -152,6 +161,7 @@ The following dialogs need updated `DialogContent` className to match app standa
 5. Run typecheck to verify
 
 ### Phase 2: Embed Components (2-3 hours)
+
 1. Create `src/features/recruiting/components/embeds/` directory
 2. Implement `CalendlyEmbed.tsx`
    - Dynamic script loading
@@ -165,6 +175,7 @@ The following dialogs need updated `DialogContent` className to match app standa
    - Join button with proper link handling
 
 ### Phase 3: Booking Modal (1-2 hours)
+
 1. Create `SchedulingBookingModal.tsx`
    - Modal structure with proper sizing for embeds
    - Integration type switch to render correct embed
@@ -174,6 +185,7 @@ The following dialogs need updated `DialogContent` className to match app standa
    - Close/cancel handling
 
 ### Phase 4: PhaseChecklist Integration (1 hour)
+
 1. Import `SchedulingBookingModal`
 2. Add modal state management
 3. Replace link button with modal trigger button
@@ -181,11 +193,13 @@ The following dialogs need updated `DialogContent` className to match app standa
 5. Handle booking completion callback
 
 ### Phase 5: Admin Config Improvements (1 hour)
+
 1. Update `SchedulingItemConfig.tsx` to show integration status
 2. Add validation warnings if no integration configured
 3. Improve UX for selecting integration
 
 ### Phase 6: Testing & Cleanup (1 hour)
+
 1. Run typecheck
 2. Run build
 3. Manual testing of each provider embed
@@ -197,6 +211,7 @@ The following dialogs need updated `DialogContent` className to match app standa
 ## File Changes Summary
 
 ### New Files
+
 - `src/features/recruiting/components/SchedulingBookingModal.tsx`
 - `src/features/recruiting/components/embeds/CalendlyEmbed.tsx`
 - `src/features/recruiting/components/embeds/GoogleCalendarEmbed.tsx`
@@ -204,6 +219,7 @@ The following dialogs need updated `DialogContent` className to match app standa
 - `src/features/recruiting/components/embeds/index.ts`
 
 ### Modified Files
+
 - `src/features/recruiting/components/PhaseChecklist.tsx`
 - `src/features/recruiting/admin/SchedulingItemConfig.tsx`
 - `src/features/recruiting/admin/ChecklistItemEditor.tsx`
@@ -216,8 +232,12 @@ The following dialogs need updated `DialogContent` className to match app standa
 ## Security Considerations
 
 1. **Iframe Sandboxing** - Google Calendar/Zoom iframes should use `sandbox` attribute:
+
    ```html
-   <iframe sandbox="allow-scripts allow-same-origin allow-popups allow-forms" ...>
+   <iframe
+     sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
+     ...
+   ></iframe>
    ```
 
 2. **URL Validation** - Validate booking URLs before rendering in iframes:
@@ -276,6 +296,16 @@ The following dialogs need updated `DialogContent` className to match app standa
 
 ## Status
 
-**Current Phase:** Not Started
-**Last Updated:** 2024-12-23
-**Assigned To:** TBD
+**Current Phase:** Completed
+**Last Updated:** 2025-12-23
+**Implemented By:** Claude Code
+
+### Implementation Summary
+
+All phases completed:
+- [x] Phase 1: Dialog style fixes (9 dialogs updated)
+- [x] Phase 2: Embed components created (Calendly, Google Calendar, Zoom)
+- [x] Phase 3: SchedulingBookingModal created
+- [x] Phase 4: PhaseChecklist updated to use modal
+- [x] Phase 5: SchedulingItemConfig improved (fixed infinite loop risk, border violations)
+- [x] Phase 6: Build verification passed
