@@ -9,6 +9,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { schedulingIntegrationService } from "@/services/integrations";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/services/base/supabase";
 import type {
   SchedulingIntegration,
   SchedulingIntegrationType,
@@ -27,6 +28,8 @@ export const schedulingIntegrationKeys = {
     [...schedulingIntegrationKeys.all, "type", userId, type] as const,
   detail: (id: string) =>
     [...schedulingIntegrationKeys.all, "detail", id] as const,
+  forRecruit: (recruitId: string) =>
+    [...schedulingIntegrationKeys.all, "for-recruit", recruitId] as const,
 };
 
 /**
@@ -261,5 +264,53 @@ export function useToggleSchedulingIntegration() {
         });
       }
     },
+  });
+}
+
+/**
+ * Get the recruiter's active scheduling integrations for a given user (recruit)
+ *
+ * This hook looks up the user's recruiter_id and fetches their active integrations.
+ * Used when a recruit views their pipeline to see their recruiter's scheduling links.
+ *
+ * @param userId - The ID of the user (recruit) whose recruiter's integrations to fetch
+ */
+export function useRecruiterSchedulingIntegrations(userId: string | null) {
+  return useQuery({
+    queryKey: schedulingIntegrationKeys.forRecruit(userId ?? ""),
+    queryFn: async (): Promise<SchedulingIntegration[]> => {
+      if (!userId) {
+        return [];
+      }
+
+      // First, get the user's recruiter_id
+      const { data: userProfile, error: profileError } = await supabase
+        .from("user_profiles")
+        .select("recruiter_id")
+        .eq("id", userId)
+        .maybeSingle();
+
+      if (profileError) {
+        console.error(
+          "[useRecruiterSchedulingIntegrations] Error fetching user profile:",
+          profileError,
+        );
+        return [];
+      }
+
+      if (!userProfile?.recruiter_id) {
+        // User has no recruiter - return empty (they might be the admin)
+        return [];
+      }
+
+      // Fetch the recruiter's active integrations
+      // RLS policy "scheduling_integrations_select_for_recruit" allows this
+      const integrations = await schedulingIntegrationService.getActiveByUserId(
+        userProfile.recruiter_id,
+      );
+      return integrations;
+    },
+    enabled: !!userId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }

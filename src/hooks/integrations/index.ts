@@ -11,4 +11,5 @@ export {
   useUpsertSchedulingIntegration,
   useDeleteSchedulingIntegration,
   useToggleSchedulingIntegration,
+  useRecruiterSchedulingIntegrations,
 } from "./useSchedulingIntegrations";

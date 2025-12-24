@@ -25,6 +25,8 @@ declare global {
 
 const CALENDLY_SCRIPT_URL =
   "https://assets.calendly.com/assets/external/widget.js";
+const CALENDLY_CSS_URL =
+  "https://assets.calendly.com/assets/external/widget.css";
 
 export function CalendlyEmbed({
   url,
@@ -34,22 +36,32 @@ export function CalendlyEmbed({
   const containerRef = useRef<HTMLDivElement>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const scriptLoadedRef = useRef(false);
+  const initAttemptedRef = useRef(false);
 
   const initializeWidget = useCallback(() => {
-    if (!containerRef.current || !window.Calendly) return;
+    if (!containerRef.current || !window.Calendly || initAttemptedRef.current)
+      return;
+    initAttemptedRef.current = true;
 
     try {
       // Clear any existing content
       containerRef.current.innerHTML = "";
 
+      // Add URL parameters to hide event description and make calendar more compact
+      const embedUrl = new URL(url);
+      embedUrl.searchParams.set("hide_event_type_details", "1");
+      embedUrl.searchParams.set("hide_gdpr_banner", "1");
+
       window.Calendly.initInlineWidget({
-        url,
+        url: embedUrl.toString(),
         parentElement: containerRef.current,
       });
 
-      setIsLoading(false);
-      setError(null);
+      // Give it a moment to render then hide loading
+      setTimeout(() => {
+        setIsLoading(false);
+        setError(null);
+      }, 500);
     } catch (err) {
       console.error("Failed to initialize Calendly widget:", err);
       setError("Failed to load calendar. Please try again.");
@@ -80,24 +92,29 @@ export function CalendlyEmbed({
   }, [onEventScheduled]);
 
   useEffect(() => {
+    // Load CSS if not already loaded
+    if (!document.querySelector(`link[href="${CALENDLY_CSS_URL}"]`)) {
+      const link = document.createElement("link");
+      link.rel = "stylesheet";
+      link.href = CALENDLY_CSS_URL;
+      document.head.appendChild(link);
+    }
+
     // Check if script is already loaded
     const existingScript = document.querySelector(
       `script[src="${CALENDLY_SCRIPT_URL}"]`,
     );
 
     if (existingScript && window.Calendly) {
-      scriptLoadedRef.current = true;
       initializeWidget();
       return;
     }
 
     if (existingScript) {
       // Script exists but not yet loaded
-      existingScript.addEventListener("load", () => {
-        scriptLoadedRef.current = true;
-        initializeWidget();
-      });
-      return;
+      const handleLoad = () => initializeWidget();
+      existingScript.addEventListener("load", handleLoad);
+      return () => existingScript.removeEventListener("load", handleLoad);
     }
 
     // Load script
@@ -106,7 +123,6 @@ export function CalendlyEmbed({
     script.async = true;
 
     script.onload = () => {
-      scriptLoadedRef.current = true;
       initializeWidget();
     };
 
@@ -118,7 +134,8 @@ export function CalendlyEmbed({
     document.head.appendChild(script);
 
     return () => {
-      // Don't remove script as other components might use it
+      // Reset init flag on unmount so it can reinit if reopened
+      initAttemptedRef.current = false;
     };
   }, [initializeWidget]);
 
@@ -142,7 +159,7 @@ export function CalendlyEmbed({
   }
 
   return (
-    <div className={`relative ${className}`}>
+    <div className={`relative ${className}`} style={{ minHeight: 500 }}>
       {isLoading && (
         <div className="absolute inset-0 flex items-center justify-center bg-zinc-50 dark:bg-zinc-800/50 rounded-lg z-10">
           <div className="flex flex-col items-center gap-2">
@@ -155,8 +172,8 @@ export function CalendlyEmbed({
       )}
       <div
         ref={containerRef}
-        className="calendly-inline-widget min-h-[500px] w-full"
-        data-url={url}
+        className="w-full h-full"
+        style={{ minWidth: 320, minHeight: 500 }}
       />
     </div>
   );

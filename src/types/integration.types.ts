@@ -53,15 +53,24 @@ export interface UpdateSchedulingIntegrationInput {
 
 /**
  * Metadata stored in phase_checklist_items.metadata for scheduling_booking items
+ *
+ * IMPORTANT: The booking_url is captured at configuration time so that recruits
+ * can access it without needing to look up the admin's integrations.
  */
 export interface SchedulingChecklistMetadata {
   scheduling_type: SchedulingIntegrationType;
-  // If set, use this specific URL instead of owner's integration
+  // The booking URL - captured from integration or custom URL at config time
+  // This is the primary source of truth for the booking link
+  booking_url: string;
+  // Legacy field - if set, overrides booking_url (kept for backwards compatibility)
   custom_booking_url?: string;
   // Additional instructions shown to recruit
   instructions?: string;
-  // Reference to a specific integration ID (optional)
+  // Reference to a specific integration ID (for audit purposes)
   integration_id?: string;
+  // Zoom-specific fields (captured at config time)
+  meeting_id?: string;
+  passcode?: string;
 }
 
 // ============================================================================

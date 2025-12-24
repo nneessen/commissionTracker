@@ -35,9 +35,11 @@ import {
 import type {
   SchedulingChecklistMetadata,
   SchedulingIntegrationType,
-  SchedulingIntegration,
 } from "@/types/integration.types";
-import { useActiveSchedulingIntegrations } from "@/hooks/integrations";
+import {
+  useActiveSchedulingIntegrations,
+  useRecruiterSchedulingIntegrations,
+} from "@/hooks/integrations";
 import { SchedulingBookingModal } from "./SchedulingBookingModal";
 
 interface PhaseChecklistProps {
@@ -78,8 +80,17 @@ export function PhaseChecklist({
     passcode?: string;
   } | null>(null);
 
-  // Fetch active scheduling integrations for building booking URLs
-  const { data: schedulingIntegrations } = useActiveSchedulingIntegrations();
+  // Fetch scheduling integrations for building booking URLs
+  // For the current user (admin), use their own integrations
+  const { data: ownIntegrations } = useActiveSchedulingIntegrations();
+  // For the recruit (userId), fetch their recruiter's integrations
+  const { data: recruiterIntegrations } =
+    useRecruiterSchedulingIntegrations(userId);
+
+  // Use recruiter's integrations for recruits, own integrations as fallback for admins
+  const schedulingIntegrations = recruiterIntegrations?.length
+    ? recruiterIntegrations
+    : ownIntegrations;
 
   const progressMap = new Map(
     checklistProgress.map((p) => [p.checklist_item_id, p]),
@@ -100,14 +111,19 @@ export function PhaseChecklist({
   };
 
   // Helper to get the booking URL for a scheduling item
+  // Priority: 1) custom_booking_url, 2) booking_url from metadata, 3) integration lookup (legacy fallback)
   const getBookingUrl = (
     metadata: SchedulingChecklistMetadata,
   ): string | null => {
-    // If custom URL is set, use it
+    // 1. Custom URL takes highest priority
     if (metadata.custom_booking_url) {
       return metadata.custom_booking_url;
     }
-    // Otherwise, find the integration for this type
+    // 2. Use booking_url captured in metadata (the correct approach)
+    if (metadata.booking_url) {
+      return metadata.booking_url;
+    }
+    // 3. Legacy fallback: look up integration (only works for admin, not recruits)
     const integration = schedulingIntegrations?.find(
       (i) => i.integration_type === metadata.scheduling_type,
     );
@@ -421,12 +437,6 @@ export function PhaseChecklist({
       const bookingUrl = getBookingUrl(metadata);
       const SchedulingIcon = getSchedulingIcon(metadata.scheduling_type);
 
-      // Get integration for additional details (meetingId, passcode)
-      const integration = schedulingIntegrations?.find(
-        (i: SchedulingIntegration) =>
-          i.integration_type === metadata.scheduling_type,
-      );
-
       // If already completed or approved, show completed badge
       if (status === "completed" || status === "approved") {
         return (
@@ -454,6 +464,7 @@ export function PhaseChecklist({
       }
 
       // Show Book Now button that opens modal
+      // All data comes from metadata (captured at config time), not from integration lookup
       return (
         <Button
           size="sm"
@@ -466,10 +477,9 @@ export function PhaseChecklist({
               itemName: item.item_name,
               integrationType: metadata.scheduling_type,
               bookingUrl,
-              instructions:
-                metadata.instructions || integration?.instructions || undefined,
-              meetingId: integration?.meeting_id || undefined,
-              passcode: integration?.passcode || undefined,
+              instructions: metadata.instructions,
+              meetingId: metadata.meeting_id,
+              passcode: metadata.passcode,
             })
           }
         >

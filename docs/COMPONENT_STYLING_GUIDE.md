@@ -15,17 +15,17 @@ Use this guide when customizing shadcn/ui components to maintain consistency acr
 
 Use these variant names consistently across Button, Badge, Card, Alert, and other components:
 
-| Variant | Purpose | Resting State | Hover | Active/Click |
-|---------|---------|---------------|-------|--------------|
-| `default` | Primary action | `bg-foreground text-background` | Slight opacity reduction | Darker + shadow removed |
-| `secondary` | Secondary action | `bg-secondary text-secondary-foreground` | Slight opacity reduction | Darker |
-| `destructive` | Dangerous action | `bg-destructive text-destructive-foreground` | Slight opacity reduction | Darker |
-| `success` | Positive/confirm | `bg-[hsl(var(--success))]` | Slight opacity reduction | Darker |
-| `warning` | Caution | `bg-[hsl(var(--warning))]` | Slight opacity reduction | Darker |
-| `outline` | Bordered, transparent | `border border-input bg-background` | `bg-accent` | Darker accent |
-| `ghost` | Minimal/toolbar | `text-muted-foreground` | `bg-accent text-foreground` | Darker accent |
-| `muted` | Subtle background | `bg-muted text-muted-foreground` | Lighter + text-foreground | Darker |
-| `link` | Text link | `text-foreground underline-offset-4` | Underline | — |
+| Variant       | Purpose               | Resting State                                | Hover                       | Active/Click            |
+| ------------- | --------------------- | -------------------------------------------- | --------------------------- | ----------------------- |
+| `default`     | Primary action        | `bg-foreground text-background`              | Slight opacity reduction    | Darker + shadow removed |
+| `secondary`   | Secondary action      | `bg-secondary text-secondary-foreground`     | Slight opacity reduction    | Darker                  |
+| `destructive` | Dangerous action      | `bg-destructive text-destructive-foreground` | Slight opacity reduction    | Darker                  |
+| `success`     | Positive/confirm      | `bg-[hsl(var(--success))]`                   | Slight opacity reduction    | Darker                  |
+| `warning`     | Caution               | `bg-[hsl(var(--warning))]`                   | Slight opacity reduction    | Darker                  |
+| `outline`     | Bordered, transparent | `border border-input bg-background`          | `bg-accent`                 | Darker accent           |
+| `ghost`       | Minimal/toolbar       | `text-muted-foreground`                      | `bg-accent text-foreground` | Darker accent           |
+| `muted`       | Subtle background     | `bg-muted text-muted-foreground`             | Lighter + text-foreground   | Darker                  |
+| `link`        | Text link             | `text-foreground underline-offset-4`         | Underline                   | —                       |
 
 ---
 
@@ -34,6 +34,7 @@ Use these variant names consistently across Button, Badge, Card, Alert, and othe
 Every interactive element needs three states:
 
 ### Hover Effects
+
 ```css
 /* Solid backgrounds - reduce opacity */
 hover:bg-foreground/90
@@ -48,6 +49,7 @@ hover:shadow-md
 ```
 
 ### Active/Click Effects
+
 ```css
 /* Solid backgrounds - darken more, remove shadow */
 active:bg-foreground/80
@@ -58,6 +60,7 @@ active:bg-accent/80
 ```
 
 ### Focus Effects
+
 ```css
 /* Always use ring for focus */
 focus-visible:outline-none
@@ -104,13 +107,13 @@ From `index.css` - always use these:
 
 Consistent sizing across components:
 
-| Size | Height | Padding | Text | Icon |
-|------|--------|---------|------|------|
-| `xs` | `h-6` | `px-2` | `text-xs` | `h-3 w-3` |
-| `sm` | `h-8` | `px-3` | `text-xs` | `h-3.5 w-3.5` |
-| `default` | `h-9` | `px-4` | `text-sm` | `h-4 w-4` |
-| `lg` | `h-10` | `px-8` | `text-sm` | `h-4 w-4` |
-| `icon` | `h-9 w-9` | — | — | `h-4 w-4` |
+| Size      | Height    | Padding | Text      | Icon          |
+| --------- | --------- | ------- | --------- | ------------- |
+| `xs`      | `h-6`     | `px-2`  | `text-xs` | `h-3 w-3`     |
+| `sm`      | `h-8`     | `px-3`  | `text-xs` | `h-3.5 w-3.5` |
+| `default` | `h-9`     | `px-4`  | `text-sm` | `h-4 w-4`     |
+| `lg`      | `h-10`    | `px-8`  | `text-sm` | `h-4 w-4`     |
+| `icon`    | `h-9 w-9` | —       | —         | `h-4 w-4`     |
 
 ---
 

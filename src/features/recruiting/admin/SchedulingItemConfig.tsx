@@ -73,11 +73,24 @@ export function SchedulingItemConfig({
 
   // Stable callback that builds and sends metadata
   const notifyChange = useCallback(() => {
+    // Determine the booking URL - custom URL takes precedence, then integration URL
+    const resolvedBookingUrl =
+      useCustomUrl && customUrl
+        ? customUrl
+        : selectedIntegration?.booking_url || "";
+
     const newMetadata: SchedulingChecklistMetadata = {
       scheduling_type: schedulingType,
+      // CRITICAL: booking_url must be captured at config time so recruits can access it
+      booking_url: resolvedBookingUrl,
+      // Keep custom_booking_url for backwards compatibility
       custom_booking_url: useCustomUrl && customUrl ? customUrl : undefined,
-      instructions: instructions || undefined,
+      instructions:
+        instructions || selectedIntegration?.instructions || undefined,
       integration_id: selectedIntegration?.id,
+      // Capture Zoom-specific fields
+      meeting_id: selectedIntegration?.meeting_id || undefined,
+      passcode: selectedIntegration?.passcode || undefined,
     };
 
     const metadataString = JSON.stringify(newMetadata);
@@ -91,6 +104,10 @@ export function SchedulingItemConfig({
     customUrl,
     instructions,
     selectedIntegration?.id,
+    selectedIntegration?.booking_url,
+    selectedIntegration?.instructions,
+    selectedIntegration?.meeting_id,
+    selectedIntegration?.passcode,
   ]);
 
   // Update parent when values change
