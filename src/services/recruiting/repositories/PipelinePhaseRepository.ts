@@ -162,8 +162,26 @@ export class PipelinePhaseRepository extends BaseRepository<
 
   /**
    * Reorder phases
+   * Uses a two-phase approach to avoid unique constraint violations:
+   * 1. Set all orders to temporary high values (offset by 10000)
+   * 2. Set them to the final values
    */
   async reorder(phaseIds: string[]): Promise<void> {
+    const TEMP_OFFSET = 10000;
+
+    // Phase 1: Set all to temporary high values to avoid conflicts
+    for (let i = 0; i < phaseIds.length; i++) {
+      const { error } = await this.client
+        .from(this.tableName)
+        .update({ phase_order: TEMP_OFFSET + i + 1 })
+        .eq("id", phaseIds[i]);
+
+      if (error) {
+        throw this.handleError(error, "reorder");
+      }
+    }
+
+    // Phase 2: Set to final values
     for (let i = 0; i < phaseIds.length; i++) {
       const { error } = await this.client
         .from(this.tableName)

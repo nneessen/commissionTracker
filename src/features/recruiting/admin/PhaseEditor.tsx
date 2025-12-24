@@ -1,6 +1,23 @@
 // src/features/recruiting/admin/PhaseEditor.tsx
 
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
+import {
+  DndContext,
+  useSensor,
+  useSensors,
+  PointerSensor,
+  KeyboardSensor,
+  closestCenter,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -20,6 +37,7 @@ import {
   Trash2,
   ChevronDown,
   ChevronRight,
+  ChevronUp,
   GripVertical,
   Loader2,
   EyeOff,
@@ -30,6 +48,7 @@ import {
   useCreatePhase,
   useUpdatePipelinePhase,
   useDeletePhase,
+  useReorderPhases,
 } from "../hooks/usePipeline";
 import { ChecklistItemEditor } from "./ChecklistItemEditor";
 import { PhaseAutomationConfig } from "./PhaseAutomationConfig";
@@ -39,11 +58,169 @@ interface PhaseEditorProps {
   templateId: string;
 }
 
+// Sortable Phase Item Component
+interface SortablePhaseItemProps {
+  phase: PipelinePhase;
+  index: number;
+  isExpanded: boolean;
+  isFirst: boolean;
+  isLast: boolean;
+  onToggleExpand: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
+}
+
+function SortablePhaseItem({
+  phase,
+  index,
+  isExpanded,
+  isFirst,
+  isLast,
+  onToggleExpand,
+  onEdit,
+  onDelete,
+  onMoveUp,
+  onMoveDown,
+}: SortablePhaseItemProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: phase.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="bg-zinc-50 dark:bg-zinc-800/50 rounded-md border border-zinc-100 dark:border-zinc-800"
+    >
+      {/* Phase Row */}
+      <div
+        className="flex items-center gap-2 p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer rounded-t-md"
+        onClick={onToggleExpand}
+      >
+        <div
+          {...attributes}
+          {...listeners}
+          className="cursor-grab active:cursor-grabbing"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <GripVertical className="h-3.5 w-3.5 text-zinc-400 dark:text-zinc-500" />
+        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-5 w-5 p-0"
+          disabled={isFirst}
+          onClick={(e) => {
+            e.stopPropagation();
+            onMoveUp();
+          }}
+        >
+          <ChevronUp className="h-3 w-3 text-zinc-500 dark:text-zinc-400" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-5 w-5 p-0"
+          disabled={isLast}
+          onClick={(e) => {
+            e.stopPropagation();
+            onMoveDown();
+          }}
+        >
+          <ChevronDown className="h-3 w-3 text-zinc-500 dark:text-zinc-400" />
+        </Button>
+        <Button variant="ghost" size="sm" className="h-5 w-5 p-0">
+          {isExpanded ? (
+            <ChevronDown className="h-3.5 w-3.5 text-zinc-500 dark:text-zinc-400" />
+          ) : (
+            <ChevronRight className="h-3.5 w-3.5 text-zinc-500 dark:text-zinc-400" />
+          )}
+        </Button>
+        <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-mono w-5">
+          {index + 1}
+        </span>
+        <span className="text-[11px] font-medium text-zinc-900 dark:text-zinc-100 flex-1">
+          {phase.phase_name}
+        </span>
+        <Badge
+          variant="outline"
+          className="text-[9px] h-4 px-1.5 border-zinc-200 dark:border-zinc-700"
+        >
+          {phase.estimated_days || 0} days
+        </Badge>
+        {phase.auto_advance && (
+          <Badge
+            variant="secondary"
+            className="text-[9px] h-4 px-1.5 bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
+          >
+            Auto
+          </Badge>
+        )}
+        {!phase.visible_to_recruit && (
+          <Badge
+            variant="outline"
+            className="text-[9px] h-4 px-1.5 border-amber-300 text-amber-600 dark:border-amber-700 dark:text-amber-400"
+          >
+            <EyeOff className="h-2.5 w-2.5 mr-0.5" />
+            Hidden
+          </Badge>
+        )}
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-5 w-5 p-0"
+          onClick={(e) => {
+            e.stopPropagation();
+            onEdit();
+          }}
+        >
+          <Edit2 className="h-3 w-3 text-zinc-500 dark:text-zinc-400" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-5 w-5 p-0 text-red-500 hover:text-red-600 dark:text-red-400"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete();
+          }}
+        >
+          <Trash2 className="h-3 w-3" />
+        </Button>
+      </div>
+
+      {/* Expanded: Checklist Items & Automations */}
+      {isExpanded && (
+        <div className="ml-8 mr-2 mb-2 pb-2 border-t border-zinc-100 dark:border-zinc-800 pt-2 space-y-3">
+          <ChecklistItemEditor phaseId={phase.id} />
+          <div className="border-t border-zinc-100 dark:border-zinc-800 pt-2">
+            <PhaseAutomationConfig phaseId={phase.id} />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function PhaseEditor({ templateId }: PhaseEditorProps) {
   const { data: phases, isLoading } = usePhases(templateId);
   const createPhase = useCreatePhase();
   const updatePhase = useUpdatePipelinePhase();
   const deletePhase = useDeletePhase();
+  const reorderPhases = useReorderPhases();
 
   const [expandedPhase, setExpandedPhase] = useState<string | null>(null);
   const [editingPhase, setEditingPhase] = useState<PipelinePhase | null>(null);
@@ -59,6 +236,74 @@ export function PhaseEditor({ templateId }: PhaseEditorProps) {
 
   const sortedPhases = [...(phases || [])].sort(
     (a, b) => a.phase_order - b.phase_order,
+  );
+
+  // dnd-kit sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 5 },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  );
+
+  // Handle drag end for reordering
+  const handleDragEnd = useCallback(
+    async (event: DragEndEvent) => {
+      const { active, over } = event;
+      if (!over || active.id === over.id) return;
+
+      const oldIndex = sortedPhases.findIndex((p) => p.id === active.id);
+      const newIndex = sortedPhases.findIndex((p) => p.id === over.id);
+
+      if (oldIndex !== -1 && newIndex !== -1) {
+        const newOrder = arrayMove(sortedPhases, oldIndex, newIndex);
+        try {
+          await reorderPhases.mutateAsync({
+            templateId,
+            phaseIds: newOrder.map((p) => p.id),
+          });
+        } catch (_error) {
+          toast.error("Failed to reorder phases");
+        }
+      }
+    },
+    [sortedPhases, templateId, reorderPhases],
+  );
+
+  // Handle move up button
+  const handleMoveUp = useCallback(
+    async (index: number) => {
+      if (index === 0) return;
+      const newOrder = arrayMove(sortedPhases, index, index - 1);
+      try {
+        await reorderPhases.mutateAsync({
+          templateId,
+          phaseIds: newOrder.map((p) => p.id),
+        });
+      } catch (_error) {
+        toast.error("Failed to reorder phases");
+      }
+    },
+    [sortedPhases, templateId, reorderPhases],
+  );
+
+  // Handle move down button
+  const handleMoveDown = useCallback(
+    async (index: number) => {
+      if (index === sortedPhases.length - 1) return;
+      const newOrder = arrayMove(sortedPhases, index, index + 1);
+      try {
+        await reorderPhases.mutateAsync({
+          templateId,
+          phaseIds: newOrder.map((p) => p.id),
+        });
+      } catch (_error) {
+        toast.error("Failed to reorder phases");
+      }
+    },
+    [sortedPhases, templateId, reorderPhases],
   );
 
   const handleCreatePhase = async () => {
@@ -154,90 +399,34 @@ export function PhaseEditor({ templateId }: PhaseEditorProps) {
           No phases yet. Add your first phase to get started.
         </div>
       ) : (
-        <div className="space-y-1">
-          {sortedPhases.map((phase) => (
-            <div
-              key={phase.id}
-              className="bg-zinc-50 dark:bg-zinc-800/50 rounded-md border border-zinc-100 dark:border-zinc-800"
-            >
-              {/* Phase Row */}
-              <div
-                className="flex items-center gap-2 p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer rounded-t-md"
-                onClick={() => toggleExpand(phase.id)}
-              >
-                <GripVertical className="h-3.5 w-3.5 text-zinc-400 dark:text-zinc-500 cursor-grab" />
-                <Button variant="ghost" size="sm" className="h-5 w-5 p-0">
-                  {expandedPhase === phase.id ? (
-                    <ChevronDown className="h-3.5 w-3.5 text-zinc-500 dark:text-zinc-400" />
-                  ) : (
-                    <ChevronRight className="h-3.5 w-3.5 text-zinc-500 dark:text-zinc-400" />
-                  )}
-                </Button>
-                <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-mono w-5">
-                  {phase.phase_order}
-                </span>
-                <span className="text-[11px] font-medium text-zinc-900 dark:text-zinc-100 flex-1">
-                  {phase.phase_name}
-                </span>
-                <Badge
-                  variant="outline"
-                  className="text-[9px] h-4 px-1.5 border-zinc-200 dark:border-zinc-700"
-                >
-                  {phase.estimated_days || 0} days
-                </Badge>
-                {phase.auto_advance && (
-                  <Badge
-                    variant="secondary"
-                    className="text-[9px] h-4 px-1.5 bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
-                  >
-                    Auto
-                  </Badge>
-                )}
-                {!phase.visible_to_recruit && (
-                  <Badge
-                    variant="outline"
-                    className="text-[9px] h-4 px-1.5 border-amber-300 text-amber-600 dark:border-amber-700 dark:text-amber-400"
-                  >
-                    <EyeOff className="h-2.5 w-2.5 mr-0.5" />
-                    Hidden
-                  </Badge>
-                )}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-5 w-5 p-0"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setEditingPhase(phase);
-                  }}
-                >
-                  <Edit2 className="h-3 w-3 text-zinc-500 dark:text-zinc-400" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-5 w-5 p-0 text-red-500 hover:text-red-600 dark:text-red-400"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setDeleteConfirmId(phase.id);
-                  }}
-                >
-                  <Trash2 className="h-3 w-3" />
-                </Button>
-              </div>
-
-              {/* Expanded: Checklist Items & Automations */}
-              {expandedPhase === phase.id && (
-                <div className="ml-8 mr-2 mb-2 pb-2 border-t border-zinc-100 dark:border-zinc-800 pt-2 space-y-3">
-                  <ChecklistItemEditor phaseId={phase.id} />
-                  <div className="border-t border-zinc-100 dark:border-zinc-800 pt-2">
-                    <PhaseAutomationConfig phaseId={phase.id} />
-                  </div>
-                </div>
-              )}
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext
+            items={sortedPhases.map((p) => p.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            <div className="space-y-1">
+              {sortedPhases.map((phase, index) => (
+                <SortablePhaseItem
+                  key={phase.id}
+                  phase={phase}
+                  index={index}
+                  isExpanded={expandedPhase === phase.id}
+                  isFirst={index === 0}
+                  isLast={index === sortedPhases.length - 1}
+                  onToggleExpand={() => toggleExpand(phase.id)}
+                  onEdit={() => setEditingPhase(phase)}
+                  onDelete={() => setDeleteConfirmId(phase.id)}
+                  onMoveUp={() => handleMoveUp(index)}
+                  onMoveDown={() => handleMoveDown(index)}
+                />
+              ))}
             </div>
-          ))}
-        </div>
+          </SortableContext>
+        </DndContext>
       )}
 
       {/* Create Phase Dialog */}

@@ -39,6 +39,7 @@ import type {
   AutomationTriggerType,
   AutomationCommunicationType,
   AutomationRecipientType,
+  AutomationSenderType,
   RecipientConfig,
   CreateAutomationInput,
 } from "@/types/recruiting.types";
@@ -147,6 +148,39 @@ const COMMUNICATION_OPTIONS: {
   { value: "all", label: "All Channels", icon: null },
 ];
 
+// Sender type options - who the communication comes FROM
+const SENDER_OPTIONS: {
+  value: AutomationSenderType;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: "system",
+    label: "System",
+    description: "Default system email/sender",
+  },
+  {
+    value: "upline",
+    label: "Upline/Recruiter",
+    description: "Recruit's assigned upline",
+  },
+  {
+    value: "trainer",
+    label: "Trainer",
+    description: "Assigned trainer (if any)",
+  },
+  {
+    value: "contracting_manager",
+    label: "Contracting Mgr",
+    description: "Contracting manager",
+  },
+  {
+    value: "custom",
+    label: "Custom Sender",
+    description: "Specify custom email/name",
+  },
+];
+
 // Template variables with descriptions
 const TEMPLATE_VARIABLES = [
   {
@@ -242,6 +276,9 @@ export function AutomationDialog({
   const [notificationMessage, setNotificationMessage] = useState<string>("");
   const [smsMessage, setSmsMessage] = useState<string>("");
   const [activeTab, setActiveTab] = useState<string>("email");
+  const [senderType, setSenderType] = useState<AutomationSenderType>("system");
+  const [senderEmail, setSenderEmail] = useState<string>("");
+  const [senderName, setSenderName] = useState<string>("");
 
   // Determine which content sections to show
   const showEmail = ["email", "both", "all"].includes(communicationType);
@@ -263,6 +300,9 @@ export function AutomationDialog({
         setNotificationTitle(editingAutomation.notification_title || "");
         setNotificationMessage(editingAutomation.notification_message || "");
         setSmsMessage(editingAutomation.sms_message || "");
+        setSenderType(editingAutomation.sender_type || "system");
+        setSenderEmail(editingAutomation.sender_email || "");
+        setSenderName(editingAutomation.sender_name || "");
 
         const customRecipient = editingAutomation.recipients.find(
           (r) => r.type === "custom_email",
@@ -294,6 +334,9 @@ export function AutomationDialog({
         setNotificationMessage("");
         setSmsMessage("");
         setActiveTab("email");
+        setSenderType("system");
+        setSenderEmail("");
+        setSenderName("");
       }
     }
   }, [open, editingAutomation, triggers]);
@@ -373,6 +416,20 @@ export function AutomationDialog({
       return;
     }
 
+    // Validate custom sender email
+    if (senderType === "custom" && !senderEmail.trim()) {
+      toast.error("Custom sender email is required");
+      return;
+    }
+    if (
+      senderType === "custom" &&
+      senderEmail.trim() &&
+      !isValidEmail(senderEmail.trim())
+    ) {
+      toast.error("Invalid custom sender email");
+      return;
+    }
+
     // Build recipients array with custom emails if present
     const finalRecipients: RecipientConfig[] = recipients.map((r) => {
       if (r.type === "custom_email") {
@@ -405,6 +462,12 @@ export function AutomationDialog({
               ? notificationMessage || undefined
               : undefined,
             sms_message: showSms ? smsMessage || undefined : undefined,
+            sender_type: senderType,
+            sender_email:
+              senderType === "custom"
+                ? senderEmail.trim() || undefined
+                : undefined,
+            sender_name: senderName.trim() || undefined,
           },
         });
         toast.success("Automation updated");
@@ -425,6 +488,12 @@ export function AutomationDialog({
             ? notificationMessage || undefined
             : undefined,
           sms_message: showSms ? smsMessage || undefined : undefined,
+          sender_type: senderType,
+          sender_email:
+            senderType === "custom"
+              ? senderEmail.trim() || undefined
+              : undefined,
+          sender_name: senderName.trim() || undefined,
         };
         await createAutomation.mutateAsync(data);
         toast.success("Automation created");
@@ -597,6 +666,77 @@ export function AutomationDialog({
               ))}
             </div>
           </div>
+
+          {/* Sender Configuration */}
+          <div className="space-y-1">
+            <Label className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
+              Send From
+            </Label>
+            <Select
+              value={senderType}
+              onValueChange={(v: AutomationSenderType) => setSenderType(v)}
+            >
+              <SelectTrigger className="h-7 text-[11px] bg-zinc-50 dark:bg-zinc-800/50 border-zinc-200 dark:border-zinc-700">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {SENDER_OPTIONS.map(({ value, label, description }) => (
+                  <SelectItem key={value} value={value} className="text-[11px]">
+                    <div className="flex flex-col">
+                      <span>{label}</span>
+                      <span className="text-[9px] text-zinc-500">
+                        {description}
+                      </span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Custom Sender Fields */}
+          {senderType === "custom" && (
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1">
+                <Label className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
+                  Sender Email *
+                </Label>
+                <Input
+                  type="email"
+                  value={senderEmail}
+                  onChange={(e) => setSenderEmail(e.target.value)}
+                  placeholder="sender@example.com"
+                  className="h-7 text-[11px] bg-zinc-50 dark:bg-zinc-800/50 border-zinc-200 dark:border-zinc-700"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
+                  Sender Name
+                </Label>
+                <Input
+                  value={senderName}
+                  onChange={(e) => setSenderName(e.target.value)}
+                  placeholder="John Smith"
+                  className="h-7 text-[11px] bg-zinc-50 dark:bg-zinc-800/50 border-zinc-200 dark:border-zinc-700"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Optional Sender Name for non-custom types */}
+          {senderType !== "custom" && senderType !== "system" && (
+            <div className="space-y-1">
+              <Label className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
+                Display Name Override (optional)
+              </Label>
+              <Input
+                value={senderName}
+                onChange={(e) => setSenderName(e.target.value)}
+                placeholder="Leave blank to use default name"
+                className="h-7 text-[11px] bg-zinc-50 dark:bg-zinc-800/50 border-zinc-200 dark:border-zinc-700"
+              />
+            </div>
+          )}
 
           {/* Content Tabs */}
           {availableTabs.length > 0 && (

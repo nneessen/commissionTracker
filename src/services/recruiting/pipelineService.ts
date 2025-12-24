@@ -1,4 +1,5 @@
 // src/services/recruiting/pipelineService.ts
+import { supabase } from "@/services/base/supabase";
 import {
   PipelineTemplateRepository,
   PipelinePhaseRepository,
@@ -99,6 +100,22 @@ export const pipelineService = {
   async setDefaultTemplate(id: string): Promise<PipelineTemplate> {
     const entity = await templateRepository.setDefault(id);
     return mapTemplateEntityToType(entity);
+  },
+
+  async duplicateTemplate(
+    templateId: string,
+    newName: string,
+  ): Promise<string> {
+    const { data, error } = await supabase.rpc("clone_pipeline_template", {
+      p_template_id: templateId,
+      p_new_name: newName,
+    });
+
+    if (error) {
+      throw error;
+    }
+
+    return data as string;
   },
 
   // ========================================

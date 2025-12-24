@@ -1,6 +1,23 @@
 // src/features/recruiting/admin/ChecklistItemEditor.tsx
 
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
+import {
+  DndContext,
+  useSensor,
+  useSensors,
+  PointerSensor,
+  KeyboardSensor,
+  closestCenter,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -35,6 +52,9 @@ import {
   PenTool,
   EyeOff,
   Calendar,
+  ChevronDown,
+  ChevronRight,
+  ChevronUp,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -42,6 +62,7 @@ import {
   useCreateChecklistItem,
   useUpdateChecklistItem,
   useDeleteChecklistItem,
+  useReorderChecklistItems,
 } from "../hooks/usePipeline";
 import type {
   PhaseChecklistItem,
@@ -51,6 +72,7 @@ import type {
 } from "@/types/recruiting.types";
 import type { SchedulingChecklistMetadata } from "@/types/integration.types";
 import { SchedulingItemConfig } from "./SchedulingItemConfig";
+import { ChecklistItemAutomationConfig } from "./ChecklistItemAutomationConfig";
 
 interface ChecklistItemEditorProps {
   phaseId: string;
@@ -73,17 +95,175 @@ const CAN_BE_COMPLETED_BY: { value: CompletedBy; label: string }[] = [
   { value: "system", label: "System" },
 ];
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- icon component type
+function getTypeIcon(type: ChecklistItemType): any {
+  const found = ITEM_TYPES.find((t) => t.value === type);
+  return found ? found.icon : CheckSquare;
+}
+
+// Sortable Checklist Item Component
+interface SortableChecklistItemProps {
+  item: PhaseChecklistItem;
+  index: number;
+  isExpanded: boolean;
+  isFirst: boolean;
+  isLast: boolean;
+  onToggleExpand: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
+}
+
+function SortableChecklistItem({
+  item,
+  index,
+  isExpanded,
+  isFirst,
+  isLast,
+  onToggleExpand,
+  onEdit,
+  onDelete,
+  onMoveUp,
+  onMoveDown,
+}: SortableChecklistItemProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: item.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  const Icon = getTypeIcon(item.item_type as ChecklistItemType);
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="bg-zinc-50 dark:bg-zinc-800/50 rounded-sm border border-zinc-100 dark:border-zinc-800"
+    >
+      {/* Item Row */}
+      <div
+        className="flex items-center gap-2 p-1 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer rounded-t-sm"
+        onClick={onToggleExpand}
+      >
+        <div
+          {...attributes}
+          {...listeners}
+          className="cursor-grab active:cursor-grabbing"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <GripVertical className="h-3 w-3 text-zinc-400 dark:text-zinc-500" />
+        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-4 w-4 p-0"
+          disabled={isFirst}
+          onClick={(e) => {
+            e.stopPropagation();
+            onMoveUp();
+          }}
+        >
+          <ChevronUp className="h-2.5 w-2.5 text-zinc-500 dark:text-zinc-400" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-4 w-4 p-0"
+          disabled={isLast}
+          onClick={(e) => {
+            e.stopPropagation();
+            onMoveDown();
+          }}
+        >
+          <ChevronDown className="h-2.5 w-2.5 text-zinc-500 dark:text-zinc-400" />
+        </Button>
+        <Button variant="ghost" size="sm" className="h-4 w-4 p-0">
+          {isExpanded ? (
+            <ChevronDown className="h-3 w-3 text-zinc-500 dark:text-zinc-400" />
+          ) : (
+            <ChevronRight className="h-3 w-3 text-zinc-500 dark:text-zinc-400" />
+          )}
+        </Button>
+        <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-mono w-4">
+          {index + 1}
+        </span>
+        <Icon className="h-3 w-3 text-zinc-500 dark:text-zinc-400" />
+        <span className="text-[11px] text-zinc-700 dark:text-zinc-300 flex-1 truncate">
+          {item.item_name}
+        </span>
+        {item.is_required && (
+          <Badge
+            variant="outline"
+            className="text-[9px] px-1 py-0 border-zinc-200 dark:border-zinc-700"
+          >
+            Required
+          </Badge>
+        )}
+        {!item.visible_to_recruit && (
+          <Badge
+            variant="outline"
+            className="text-[9px] px-1 py-0 border-amber-300 text-amber-600 dark:border-amber-700 dark:text-amber-400"
+          >
+            <EyeOff className="h-2 w-2" />
+          </Badge>
+        )}
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-5 w-5 p-0"
+          onClick={(e) => {
+            e.stopPropagation();
+            onEdit();
+          }}
+        >
+          <Edit2 className="h-3 w-3 text-zinc-500 dark:text-zinc-400" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-5 w-5 p-0 text-red-500 hover:text-red-600 dark:text-red-400"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete();
+          }}
+        >
+          <Trash2 className="h-3 w-3" />
+        </Button>
+      </div>
+
+      {/* Expanded: Automations */}
+      {isExpanded && (
+        <div className="ml-6 mr-2 mb-2 pb-2">
+          <ChecklistItemAutomationConfig checklistItemId={item.id} />
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function ChecklistItemEditor({ phaseId }: ChecklistItemEditorProps) {
   const { data: items, isLoading } = useChecklistItems(phaseId);
   const createItem = useCreateChecklistItem();
   const updateItem = useUpdateChecklistItem();
   const deleteItem = useDeleteChecklistItem();
+  const reorderItems = useReorderChecklistItems();
 
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<PhaseChecklistItem | null>(
     null,
   );
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
   const [itemForm, setItemForm] = useState<CreateChecklistItemInput>({
     item_name: "",
     item_description: undefined,
@@ -101,6 +281,84 @@ export function ChecklistItemEditor({ phaseId }: ChecklistItemEditorProps) {
   const sortedItems = [...(items || [])].sort(
     (a, b) => a.item_order - b.item_order,
   );
+
+  // dnd-kit sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 5 },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  );
+
+  // Handle drag end for reordering
+  const handleDragEnd = useCallback(
+    async (event: DragEndEvent) => {
+      const { active, over } = event;
+      if (!over || active.id === over.id) return;
+
+      const oldIndex = sortedItems.findIndex((i) => i.id === active.id);
+      const newIndex = sortedItems.findIndex((i) => i.id === over.id);
+
+      if (oldIndex !== -1 && newIndex !== -1) {
+        const newOrder = arrayMove(sortedItems, oldIndex, newIndex);
+        try {
+          await reorderItems.mutateAsync({
+            phaseId,
+            itemIds: newOrder.map((i) => i.id),
+          });
+        } catch (_error) {
+          toast.error("Failed to reorder items");
+        }
+      }
+    },
+    [sortedItems, phaseId, reorderItems],
+  );
+
+  // Handle move up button
+  const handleMoveUp = useCallback(
+    async (index: number) => {
+      if (index === 0) return;
+      const newOrder = arrayMove(sortedItems, index, index - 1);
+      try {
+        await reorderItems.mutateAsync({
+          phaseId,
+          itemIds: newOrder.map((i) => i.id),
+        });
+      } catch (_error) {
+        toast.error("Failed to reorder items");
+      }
+    },
+    [sortedItems, phaseId, reorderItems],
+  );
+
+  // Handle move down button
+  const handleMoveDown = useCallback(
+    async (index: number) => {
+      if (index === sortedItems.length - 1) return;
+      const newOrder = arrayMove(sortedItems, index, index + 1);
+      try {
+        await reorderItems.mutateAsync({
+          phaseId,
+          itemIds: newOrder.map((i) => i.id),
+        });
+      } catch (_error) {
+        toast.error("Failed to reorder items");
+      }
+    },
+    [sortedItems, phaseId, reorderItems],
+  );
+
+  // Handle editing an item
+  const handleEditItem = useCallback((item: PhaseChecklistItem) => {
+    setEditingItem(item);
+    if (item.item_type === "scheduling_booking" && item.metadata) {
+      setSchedulingMetadata(item.metadata as SchedulingChecklistMetadata);
+    } else {
+      setSchedulingMetadata(null);
+    }
+  }, []);
 
   const handleCreate = async () => {
     if (!itemForm.item_name.trim()) {
@@ -183,11 +441,6 @@ export function ChecklistItemEditor({ phaseId }: ChecklistItemEditorProps) {
     }
   };
 
-  const getTypeIcon = (type: ChecklistItemType) => {
-    const found = ITEM_TYPES.find((t) => t.value === type);
-    return found ? found.icon : CheckSquare;
-  };
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-2">
@@ -218,71 +471,38 @@ export function ChecklistItemEditor({ phaseId }: ChecklistItemEditorProps) {
           No checklist items
         </div>
       ) : (
-        <div className="space-y-1">
-          {sortedItems.map((item) => {
-            const Icon = getTypeIcon(item.item_type as ChecklistItemType);
-            return (
-              <div
-                key={item.id}
-                className="flex items-center gap-2 p-1 bg-zinc-50 dark:bg-zinc-800/50 rounded-sm hover:bg-zinc-100 dark:hover:bg-zinc-800"
-              >
-                <GripVertical className="h-3 w-3 text-zinc-400 dark:text-zinc-500 cursor-grab" />
-                <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-mono w-4">
-                  {item.item_order}
-                </span>
-                <Icon className="h-3 w-3 text-zinc-500 dark:text-zinc-400" />
-                <span className="text-[11px] text-zinc-700 dark:text-zinc-300 flex-1 truncate">
-                  {item.item_name}
-                </span>
-                {item.is_required && (
-                  <Badge
-                    variant="outline"
-                    className="text-[9px] px-1 py-0 border-zinc-200 dark:border-zinc-700"
-                  >
-                    Required
-                  </Badge>
-                )}
-                {!item.visible_to_recruit && (
-                  <Badge
-                    variant="outline"
-                    className="text-[9px] px-1 py-0 border-amber-300 text-amber-600 dark:border-amber-700 dark:text-amber-400"
-                  >
-                    <EyeOff className="h-2 w-2" />
-                  </Badge>
-                )}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-5 w-5 p-0"
-                  onClick={() => {
-                    setEditingItem(item);
-                    // Initialize scheduling metadata from item's metadata if it's a scheduling_booking type
-                    if (
-                      item.item_type === "scheduling_booking" &&
-                      item.metadata
-                    ) {
-                      setSchedulingMetadata(
-                        item.metadata as SchedulingChecklistMetadata,
-                      );
-                    } else {
-                      setSchedulingMetadata(null);
-                    }
-                  }}
-                >
-                  <Edit2 className="h-3 w-3 text-zinc-500 dark:text-zinc-400" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-5 w-5 p-0 text-red-500 hover:text-red-600 dark:text-red-400"
-                  onClick={() => setDeleteConfirmId(item.id)}
-                >
-                  <Trash2 className="h-3 w-3" />
-                </Button>
-              </div>
-            );
-          })}
-        </div>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext
+            items={sortedItems.map((i) => i.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            <div className="space-y-1">
+              {sortedItems.map((item, index) => (
+                <SortableChecklistItem
+                  key={item.id}
+                  item={item}
+                  index={index}
+                  isExpanded={expandedItemId === item.id}
+                  isFirst={index === 0}
+                  isLast={index === sortedItems.length - 1}
+                  onToggleExpand={() =>
+                    setExpandedItemId(
+                      expandedItemId === item.id ? null : item.id,
+                    )
+                  }
+                  onEdit={() => handleEditItem(item)}
+                  onDelete={() => setDeleteConfirmId(item.id)}
+                  onMoveUp={() => handleMoveUp(index)}
+                  onMoveDown={() => handleMoveDown(index)}
+                />
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
       )}
 
       {/* Create Dialog */}

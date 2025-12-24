@@ -2976,6 +2976,9 @@ export type Database = {
           notification_title: string | null;
           phase_id: string | null;
           recipients: Json;
+          sender_email: string | null;
+          sender_name: string | null;
+          sender_type: string | null;
           sms_message: string | null;
           trigger_type: Database["public"]["Enums"]["pipeline_automation_trigger"];
           updated_at: string | null;
@@ -2996,6 +2999,9 @@ export type Database = {
           notification_title?: string | null;
           phase_id?: string | null;
           recipients?: Json;
+          sender_email?: string | null;
+          sender_name?: string | null;
+          sender_type?: string | null;
           sms_message?: string | null;
           trigger_type: Database["public"]["Enums"]["pipeline_automation_trigger"];
           updated_at?: string | null;
@@ -3016,6 +3022,9 @@ export type Database = {
           notification_title?: string | null;
           phase_id?: string | null;
           recipients?: Json;
+          sender_email?: string | null;
+          sender_name?: string | null;
+          sender_type?: string | null;
           sms_message?: string | null;
           trigger_type?: Database["public"]["Enums"]["pipeline_automation_trigger"];
           updated_at?: string | null;
@@ -3871,60 +3880,60 @@ export type Database = {
       };
       scheduling_integrations: {
         Row: {
-          id: string;
-          user_id: string;
-          imo_id: string | null;
-          integration_type: string;
-          display_name: string | null;
           booking_url: string;
+          created_at: string | null;
+          display_name: string | null;
+          id: string;
+          imo_id: string | null;
+          instructions: string | null;
+          integration_type: string;
+          is_active: boolean;
           meeting_id: string | null;
           passcode: string | null;
-          instructions: string | null;
-          is_active: boolean;
-          created_at: string | null;
           updated_at: string | null;
+          user_id: string;
         };
         Insert: {
-          id?: string;
-          user_id: string;
-          imo_id?: string | null;
-          integration_type: string;
-          display_name?: string | null;
           booking_url: string;
+          created_at?: string | null;
+          display_name?: string | null;
+          id?: string;
+          imo_id?: string | null;
+          instructions?: string | null;
+          integration_type: string;
+          is_active?: boolean;
           meeting_id?: string | null;
           passcode?: string | null;
-          instructions?: string | null;
-          is_active?: boolean;
-          created_at?: string | null;
           updated_at?: string | null;
+          user_id: string;
         };
         Update: {
-          id?: string;
-          user_id?: string;
-          imo_id?: string | null;
-          integration_type?: string;
-          display_name?: string | null;
           booking_url?: string;
+          created_at?: string | null;
+          display_name?: string | null;
+          id?: string;
+          imo_id?: string | null;
+          instructions?: string | null;
+          integration_type?: string;
+          is_active?: boolean;
           meeting_id?: string | null;
           passcode?: string | null;
-          instructions?: string | null;
-          is_active?: boolean;
-          created_at?: string | null;
           updated_at?: string | null;
+          user_id?: string;
         };
         Relationships: [
-          {
-            foreignKeyName: "scheduling_integrations_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "users";
-            referencedColumns: ["id"];
-          },
           {
             foreignKeyName: "scheduling_integrations_imo_id_fkey";
             columns: ["imo_id"];
             isOneToOne: false;
             referencedRelation: "imos";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "scheduling_integrations_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
             referencedColumns: ["id"];
           },
         ];
@@ -6914,6 +6923,10 @@ export type Database = {
         Returns: number;
       };
       clone_org_template: {
+        Args: { p_new_name: string; p_template_id: string };
+        Returns: string;
+      };
+      clone_pipeline_template: {
         Args: { p_new_name: string; p_template_id: string };
         Returns: string;
       };

@@ -525,6 +525,13 @@ export type AutomationCommunicationType =
   | "both"
   | "all";
 
+export type AutomationSenderType =
+  | "system"
+  | "upline"
+  | "trainer"
+  | "contracting_manager"
+  | "custom";
+
 export interface RecipientConfig {
   type: AutomationRecipientType;
   emails?: string[]; // Only for custom_email type
@@ -544,6 +551,9 @@ export interface PipelineAutomation {
   notification_title: string | null;
   notification_message: string | null;
   sms_message: string | null;
+  sender_type: AutomationSenderType | null;
+  sender_email: string | null;
+  sender_name: string | null;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -572,6 +582,9 @@ export interface CreateAutomationInput {
   notification_title?: string;
   notification_message?: string;
   sms_message?: string;
+  sender_type?: AutomationSenderType;
+  sender_email?: string;
+  sender_name?: string;
 }
 
 export interface UpdateAutomationInput extends Partial<CreateAutomationInput> {

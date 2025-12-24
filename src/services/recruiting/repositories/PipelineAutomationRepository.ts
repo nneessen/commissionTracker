@@ -4,6 +4,7 @@ import type { Json } from "@/types/database.types";
 import type {
   AutomationTriggerType,
   AutomationCommunicationType,
+  AutomationSenderType,
   RecipientConfig,
 } from "@/types/recruiting.types";
 
@@ -22,6 +23,9 @@ export interface PipelineAutomationEntity {
   notificationTitle: string | null;
   notificationMessage: string | null;
   smsMessage: string | null;
+  senderType: AutomationSenderType | null;
+  senderEmail: string | null;
+  senderName: string | null;
   isActive: boolean;
   createdAt: string | null;
   updatedAt: string | null;
@@ -41,6 +45,9 @@ export interface CreatePipelineAutomationData {
   notificationTitle?: string;
   notificationMessage?: string;
   smsMessage?: string;
+  senderType?: AutomationSenderType;
+  senderEmail?: string;
+  senderName?: string;
 }
 
 // Update type
@@ -55,6 +62,9 @@ export interface UpdatePipelineAutomationData {
   notificationTitle?: string | null;
   notificationMessage?: string | null;
   smsMessage?: string | null;
+  senderType?: AutomationSenderType | null;
+  senderEmail?: string | null;
+  senderName?: string | null;
   isActive?: boolean;
 }
 
@@ -206,6 +216,10 @@ export class PipelineAutomationRepository extends BaseRepository<
       notificationTitle: dbRecord.notification_title as string | null,
       notificationMessage: dbRecord.notification_message as string | null,
       smsMessage: dbRecord.sms_message as string | null,
+      senderType:
+        (dbRecord.sender_type as AutomationSenderType | null) || "system",
+      senderEmail: dbRecord.sender_email as string | null,
+      senderName: dbRecord.sender_name as string | null,
       isActive: (dbRecord.is_active as boolean) ?? true,
       createdAt: dbRecord.created_at as string | null,
       updatedAt: dbRecord.updated_at as string | null,
@@ -243,6 +257,12 @@ export class PipelineAutomationRepository extends BaseRepository<
         dbData.notification_message = updateData.notificationMessage;
       if (updateData.smsMessage !== undefined)
         dbData.sms_message = updateData.smsMessage;
+      if (updateData.senderType !== undefined)
+        dbData.sender_type = updateData.senderType;
+      if (updateData.senderEmail !== undefined)
+        dbData.sender_email = updateData.senderEmail;
+      if (updateData.senderName !== undefined)
+        dbData.sender_name = updateData.senderName;
       if (updateData.isActive !== undefined)
         dbData.is_active = updateData.isActive;
 
@@ -264,6 +284,9 @@ export class PipelineAutomationRepository extends BaseRepository<
       notification_title: createData.notificationTitle ?? null,
       notification_message: createData.notificationMessage ?? null,
       sms_message: createData.smsMessage ?? null,
+      sender_type: createData.senderType ?? "system",
+      sender_email: createData.senderEmail ?? null,
+      sender_name: createData.senderName ?? null,
     };
   }
 }

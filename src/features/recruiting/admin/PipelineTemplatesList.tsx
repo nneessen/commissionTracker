@@ -22,13 +22,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Loader2, Plus, Star, Edit2, Trash2, Inbox } from "lucide-react";
+import { Loader2, Plus, Star, Edit2, Trash2, Inbox, Copy } from "lucide-react";
 import { toast } from "sonner";
 import {
   useTemplates,
   useCreateTemplate,
   useDeleteTemplate,
   useSetDefaultTemplate,
+  useDuplicateTemplate,
 } from "../hooks/usePipeline";
 
 interface PipelineTemplatesListProps {
@@ -42,9 +43,14 @@ export function PipelineTemplatesList({
   const createTemplate = useCreateTemplate();
   const deleteTemplate = useDeleteTemplate();
   const setDefaultTemplate = useSetDefaultTemplate();
+  const duplicateTemplate = useDuplicateTemplate();
 
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [duplicateTemplateId, setDuplicateTemplateId] = useState<string | null>(
+    null,
+  );
+  const [duplicateName, setDuplicateName] = useState("");
   const [newTemplate, setNewTemplate] = useState({
     name: "",
     description: "",
@@ -88,6 +94,29 @@ export function PipelineTemplatesList({
       toast.success("Default template updated");
     } catch (_error) {
       toast.error("Failed to set default template");
+    }
+  };
+
+  const handleDuplicate = async () => {
+    if (!duplicateTemplateId || !duplicateName.trim()) {
+      toast.error("Template name is required");
+      return;
+    }
+    try {
+      const newId = await duplicateTemplate.mutateAsync({
+        templateId: duplicateTemplateId,
+        newName: duplicateName.trim(),
+      });
+      toast.success("Template duplicated successfully");
+      setDuplicateTemplateId(null);
+      setDuplicateName("");
+      onSelectTemplate(newId); // Open the new template for editing
+    } catch (error) {
+      if (error instanceof Error && error.message.includes("already exists")) {
+        toast.error("A template with this name already exists");
+      } else {
+        toast.error("Failed to duplicate template");
+      }
     }
   };
 
@@ -194,6 +223,17 @@ export function PipelineTemplatesList({
                       onClick={() => onSelectTemplate(template.id)}
                     >
                       <Edit2 className="h-3 w-3 text-zinc-600 dark:text-zinc-400" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 w-6 p-0"
+                      onClick={() => {
+                        setDuplicateName(`${template.name} (Copy)`);
+                        setDuplicateTemplateId(template.id);
+                      }}
+                    >
+                      <Copy className="h-3 w-3 text-zinc-600 dark:text-zinc-400" />
                     </Button>
                     <Button
                       variant="ghost"
@@ -323,6 +363,56 @@ export function PipelineTemplatesList({
                 <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />
               )}
               Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Duplicate Template Dialog */}
+      <Dialog
+        open={!!duplicateTemplateId}
+        onOpenChange={() => setDuplicateTemplateId(null)}
+      >
+        <DialogContent className="max-w-md p-3 bg-white dark:bg-zinc-900">
+          <DialogHeader>
+            <DialogTitle className="text-sm">Duplicate Template</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-3">
+            <div className="space-y-1.5">
+              <Label className="text-[10px] text-zinc-600 dark:text-zinc-400">
+                New Template Name
+              </Label>
+              <Input
+                value={duplicateName}
+                onChange={(e) => setDuplicateName(e.target.value)}
+                placeholder="Enter unique name"
+                className="h-7 text-[11px] bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
+              />
+            </div>
+            <p className="text-[10px] text-zinc-500 dark:text-zinc-400">
+              This will create a copy of the template with all phases, checklist
+              items, and automations.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 text-[11px]"
+              onClick={() => setDuplicateTemplateId(null)}
+            >
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              className="h-7 text-[11px]"
+              onClick={handleDuplicate}
+              disabled={duplicateTemplate.isPending || !duplicateName.trim()}
+            >
+              {duplicateTemplate.isPending && (
+                <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />
+              )}
+              Duplicate
             </Button>
           </DialogFooter>
         </DialogContent>
