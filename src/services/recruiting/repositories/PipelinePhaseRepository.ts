@@ -191,12 +191,9 @@ export class PipelinePhaseRepository extends BaseRepository<
       .gt("phase_order", currentOrder)
       .order("phase_order", { ascending: true })
       .limit(1)
-      .single();
+      .maybeSingle();
 
     if (error) {
-      if (error.code === "PGRST116") {
-        return null;
-      }
       throw this.handleError(error, "findNextPhase");
     }
 
