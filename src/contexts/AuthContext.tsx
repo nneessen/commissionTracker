@@ -1,6 +1,12 @@
 // /home/nneessen/projects/commissionTracker/src/contexts/AuthContext.tsx
 
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useRef,
+} from "react";
 import { supabase } from "../services/base/supabase";
 import {
   User as SupabaseUser,
@@ -56,35 +62,60 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [error, setError] = useState<Error | null>(null);
   const queryClient = useQueryClient();
 
+  // Track previous user ID to prevent unnecessary state updates on tab focus
+  const previousUserIdRef = useRef<string | null>(null);
+
   useEffect(() => {
     checkSession();
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(
-      async (event: AuthChangeEvent, session: Session | null) => {
-        setSession(session);
-        setSupabaseUser(session?.user ?? null);
+      async (event: AuthChangeEvent, newSession: Session | null) => {
+        const newUserId = newSession?.user?.id ?? null;
+        const previousUserId = previousUserIdRef.current;
+        const isUserChange = previousUserId !== newUserId;
 
-        if (session?.user) {
-          const fullUser = userService.mapAuthUserToUser(session.user);
-          setUser(fullUser);
-        } else {
-          setUser(null);
+        // Always update session (for token refresh)
+        setSession(newSession);
+
+        // Only update user state if user ID actually changed
+        // This prevents re-renders during token refresh when tab regains focus
+        if (isUserChange) {
+          setSupabaseUser(newSession?.user ?? null);
+
+          if (newSession?.user) {
+            const fullUser = userService.mapAuthUserToUser(newSession.user);
+            setUser(fullUser);
+          } else {
+            setUser(null);
+          }
+
+          // Update ref after processing
+          previousUserIdRef.current = newUserId;
         }
 
         switch (event) {
           case "SIGNED_IN":
-            // Clear cache on sign in to ensure fresh data for new user
-            queryClient.clear();
-            logger.auth("User signed in");
+            // Only clear cache if user actually changed (not session restore/token refresh)
+            if (isUserChange && previousUserId !== null) {
+              queryClient.clear();
+              logger.auth("User signed in (new user)");
+            } else if (isUserChange) {
+              // First sign in (previousUserId was null) - clear for fresh start
+              queryClient.clear();
+              logger.auth("User signed in (initial)");
+            } else {
+              logger.auth("User session restored");
+            }
             break;
           case "SIGNED_OUT":
-            // Clear cache on sign out to prevent data leakage
+            // Always clear cache on sign out to prevent data leakage
             queryClient.clear();
             logger.auth("User signed out");
             break;
           case "TOKEN_REFRESHED":
+            // Never clear cache on token refresh - same user, just new token
             logger.auth("Token refreshed");
             break;
           case "USER_UPDATED":
@@ -121,8 +152,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (session?.user) {
         const fullUser = userService.mapAuthUserToUser(session.user);
         setUser(fullUser);
+        // Initialize the ref with current user ID
+        previousUserIdRef.current = session.user.id;
       } else {
         setUser(null);
+        previousUserIdRef.current = null;
       }
 
       if (session) {
@@ -303,7 +337,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             email,
             redirectTo: `${window.location.origin}/auth/reset-password`,
           },
-        }
+        },
       );
 
       if (fnError) throw fnError;

@@ -1,5 +1,5 @@
 // src/App.tsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Outlet, useNavigate, useLocation } from "@tanstack/react-router";
 import { Toaster } from "react-hot-toast";
 import { Sidebar } from "./components/layout";
@@ -49,8 +49,31 @@ function App() {
     setIsSidebarCollapsed((prev) => !prev);
   };
 
+  // Track if user was ever authenticated to prevent redirect during initial load
+  const wasAuthenticatedRef = useRef(false);
+
+  // Update ref when user becomes authenticated
   useEffect(() => {
-    if (!user && !loading && !isPublicPath && location.pathname !== "/login") {
+    if (user?.id) {
+      wasAuthenticatedRef.current = true;
+    }
+  }, [user?.id]);
+
+  // Only redirect to login if user was previously authenticated and is now null
+  // This prevents unwanted redirects during token refresh or tab focus
+  useEffect(() => {
+    // Skip if still loading
+    if (loading) return;
+
+    // Skip public paths
+    if (isPublicPath) return;
+
+    // Skip if already on login
+    if (location.pathname === "/login") return;
+
+    // Only redirect if user was previously authenticated and is now null
+    // This prevents redirect during initial load or token refresh
+    if (!user && wasAuthenticatedRef.current) {
       navigate({ to: "/login" });
     }
   }, [user, loading, isPublicPath, location.pathname, navigate]);

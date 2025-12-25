@@ -71,7 +71,7 @@ export function useTeamSizeLimit(): UseTeamSizeLimitResult {
     },
     enabled: !!user?.id,
     staleTime: 30000, // Cache for 30 seconds
-    refetchOnWindowFocus: true,
+    // Inherits global refetchOnWindowFocus: false from QueryClient config
   });
 
   return {

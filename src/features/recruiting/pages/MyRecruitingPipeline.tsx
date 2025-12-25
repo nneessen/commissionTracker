@@ -81,10 +81,10 @@ export function MyRecruitingPipeline() {
     enabled: !authLoading && !!user?.id,
     retry: 3,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000),
-    staleTime: 0, // Always refetch
-    gcTime: 0, // Don't cache
-    refetchOnMount: "always",
-    refetchOnWindowFocus: false,
+    staleTime: 30000, // 30 seconds - reasonable for profile data
+    gcTime: 300000, // 5 minutes cache
+    refetchOnMount: true, // Only refetch if stale
+    // Inherits global refetchOnWindowFocus: false from QueryClient config
   });
 
   const isReady =
