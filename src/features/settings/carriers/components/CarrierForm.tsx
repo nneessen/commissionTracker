@@ -22,10 +22,19 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Carrier } from "../hooks/useCarriers";
+import { useImo } from "@/contexts/ImoContext";
+import { useAllActiveImos } from "@/hooks/imo";
 
 const carrierFormSchema = z.object({
   name: z
@@ -34,6 +43,7 @@ const carrierFormSchema = z.object({
     .max(100, "Name is too long"),
   code: z.string().max(50, "Code is too long").optional().or(z.literal("")),
   is_active: z.boolean(),
+  imo_id: z.string().optional(),
 });
 
 type CarrierFormValues = z.infer<typeof carrierFormSchema>;
@@ -53,12 +63,16 @@ export function CarrierForm({
   onSubmit,
   isSubmitting = false,
 }: CarrierFormProps) {
+  const { isSuperAdmin, imo } = useImo();
+  const { data: allImos = [] } = useAllActiveImos({ enabled: isSuperAdmin });
+
   const form = useForm<CarrierFormValues>({
     resolver: zodResolver(carrierFormSchema),
     defaultValues: {
       name: "",
       code: undefined,
       is_active: true,
+      imo_id: undefined,
     },
   });
 
@@ -69,15 +83,18 @@ export function CarrierForm({
         name: carrier.name || "",
         code: carrier.code || undefined,
         is_active: carrier.is_active ?? true,
+        imo_id: carrier.imo_id || undefined,
       });
     } else {
       form.reset({
         name: "",
         code: undefined,
         is_active: true,
+        // Default to user's IMO for new carriers
+        imo_id: imo?.id || undefined,
       });
     }
-  }, [carrier, open, form]);
+  }, [carrier, open, form, imo?.id]);
 
   const handleSubmit = (data: CarrierFormValues) => {
     onSubmit(data);
@@ -149,6 +166,46 @@ export function CarrierForm({
                 </FormItem>
               )}
             />
+
+            {/* IMO Selector - Only shown for super admins */}
+            {isSuperAdmin && allImos.length > 0 && (
+              <FormField
+                control={form.control}
+                name="imo_id"
+                render={({ field }) => (
+                  <FormItem className="space-y-1">
+                    <FormLabel className="text-[10px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
+                      IMO *
+                    </FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value || ""}
+                    >
+                      <FormControl>
+                        <SelectTrigger className="h-7 text-[11px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700">
+                          <SelectValue placeholder="Select IMO" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {allImos.map((imoOption) => (
+                          <SelectItem
+                            key={imoOption.id}
+                            value={imoOption.id}
+                            className="text-[11px]"
+                          >
+                            {imoOption.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormDescription className="text-[10px] text-zinc-400">
+                      Which IMO this carrier belongs to
+                    </FormDescription>
+                    <FormMessage className="text-[10px]" />
+                  </FormItem>
+                )}
+              />
+            )}
 
             <FormField
               control={form.control}

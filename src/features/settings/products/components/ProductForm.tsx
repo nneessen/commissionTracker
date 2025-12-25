@@ -29,6 +29,13 @@ import {
   CommandInput,
   CommandItem,
 } from "@/components/ui/command";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -37,6 +44,8 @@ import type { Product } from "@/types/product.types";
 import { useCarriers } from "../../carriers/hooks/useCarriers";
 import type { Database } from "@/types/database.types";
 import { Check, ChevronsUpDown } from "lucide-react";
+import { useImo } from "@/contexts/ImoContext";
+import { useAllActiveImos } from "@/hooks/imo";
 
 type ProductType = Database["public"]["Enums"]["product_type"];
 
@@ -70,6 +79,7 @@ const productFormSchema = z.object({
     "annuity",
   ]),
   is_active: z.boolean(),
+  imo_id: z.string().optional(),
 });
 
 type ProductFormValues = z.infer<typeof productFormSchema>;
@@ -90,6 +100,8 @@ export function ProductForm({
   isSubmitting = false,
 }: ProductFormProps) {
   const { carriers } = useCarriers();
+  const { isSuperAdmin, imo } = useImo();
+  const { data: allImos = [] } = useAllActiveImos({ enabled: isSuperAdmin });
   const [carrierSearchOpen, setCarrierSearchOpen] = useState(false);
 
   const form = useForm<ProductFormValues>({
@@ -99,6 +111,7 @@ export function ProductForm({
       name: "",
       product_type: "term_life",
       is_active: true,
+      imo_id: undefined,
     },
   });
 
@@ -110,6 +123,7 @@ export function ProductForm({
         name: product.name || "",
         product_type: product.product_type || "term_life",
         is_active: product.is_active ?? true,
+        imo_id: product.imo_id || undefined,
       });
     } else {
       form.reset({
@@ -117,9 +131,11 @@ export function ProductForm({
         name: "",
         product_type: "term_life",
         is_active: true,
+        // Default to user's IMO for new products
+        imo_id: imo?.id || undefined,
       });
     }
-  }, [product, open, form]);
+  }, [product, open, form, imo?.id]);
 
   const handleSubmit = (data: ProductFormValues) => {
     onSubmit(data);
@@ -267,6 +283,46 @@ export function ProductForm({
                 </FormItem>
               )}
             />
+
+            {/* IMO Selector - Only shown for super admins */}
+            {isSuperAdmin && allImos.length > 0 && (
+              <FormField
+                control={form.control}
+                name="imo_id"
+                render={({ field }) => (
+                  <FormItem className="space-y-1">
+                    <FormLabel className="text-[10px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
+                      IMO *
+                    </FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value || ""}
+                    >
+                      <FormControl>
+                        <SelectTrigger className="h-7 text-[11px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700">
+                          <SelectValue placeholder="Select IMO" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {allImos.map((imoOption) => (
+                          <SelectItem
+                            key={imoOption.id}
+                            value={imoOption.id}
+                            className="text-[11px]"
+                          >
+                            {imoOption.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormDescription className="text-[10px] text-zinc-400">
+                      Which IMO this product belongs to
+                    </FormDescription>
+                    <FormMessage className="text-[10px]" />
+                  </FormItem>
+                )}
+              />
+            )}
 
             <FormField
               control={form.control}

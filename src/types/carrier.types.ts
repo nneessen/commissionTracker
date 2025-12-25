@@ -48,6 +48,7 @@ export interface NewCarrierForm {
   code?: string;
   is_active?: boolean;
   contact_info?: CarrierContactInfo;
+  imo_id?: string;
 }
 
 export interface UpdateCarrierForm extends Partial<NewCarrierForm> {

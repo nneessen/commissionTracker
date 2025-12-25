@@ -50,6 +50,7 @@ class CarrierServiceClass {
 
   /**
    * Create a new carrier
+   * If imo_id is not provided, the database trigger will auto-set it from user context
    */
   async create(data: NewCarrierForm): Promise<ServiceResponse<Carrier>> {
     try {
@@ -59,7 +60,7 @@ class CarrierServiceClass {
         is_active: data.is_active ?? true,
         contact_info: (data.contact_info || null) as Json,
         commission_structure: null,
-        imo_id: null, // TODO: Get from current user's IMO context
+        imo_id: data.imo_id || null, // If not provided, trigger will set from user context
       });
       return { success: true, data: carrier as Carrier };
     } catch (error) {

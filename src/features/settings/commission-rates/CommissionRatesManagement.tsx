@@ -1,7 +1,7 @@
 // src/features/settings/commission-rates/CommissionRatesManagement.tsx
 // Redesigned with zinc palette and compact design patterns
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -32,6 +32,8 @@ import { useProducts } from "../products/hooks/useProducts";
 import { RateEditDialog } from "./components/RateEditDialog";
 import { RateBulkImport } from "./components/RateBulkImport";
 import type { Database } from "@/types/database.types";
+import { useImo } from "@/contexts/ImoContext";
+import { useAllActiveImos } from "@/hooks/imo";
 
 type ProductType = Database["public"]["Enums"]["product_type"];
 
@@ -50,7 +52,26 @@ const PRODUCT_TYPES: ProductType[] = [
   "annuity",
 ];
 
+// FFG IMO ID constant
+const FFG_IMO_ID = "ffffffff-ffff-ffff-ffff-ffffffffffff";
+
 export function CommissionRatesManagement() {
+  const { isSuperAdmin, imo } = useImo();
+  const { data: allImos = [] } = useAllActiveImos({ enabled: isSuperAdmin });
+
+  // Default to FFG for super admins, otherwise use user's IMO
+  const [filterImoId, setFilterImoId] = useState<string>("");
+
+  // Set default IMO on mount
+  useEffect(() => {
+    if (isSuperAdmin) {
+      // Default to FFG for super admins
+      setFilterImoId(FFG_IMO_ID);
+    } else if (imo?.id) {
+      setFilterImoId(imo.id);
+    }
+  }, [isSuperAdmin, imo?.id]);
+
   const {
     productsWithRates,
     isLoading,
@@ -58,7 +79,7 @@ export function CommissionRatesManagement() {
     updateRate,
     deleteRate,
     getProductRates,
-  } = useCommissionRates();
+  } = useCommissionRates({ imoId: filterImoId || undefined });
 
   const { carriers } = useCarriers();
   const { products } = useProducts();
@@ -303,6 +324,25 @@ export function CommissionRatesManagement() {
         <div className="p-3 space-y-2">
           {/* Filters */}
           <div className="flex gap-2 flex-wrap">
+            {/* IMO Filter - Only for super admins */}
+            {isSuperAdmin && allImos.length > 0 && (
+              <Select
+                value={filterImoId || "all"}
+                onValueChange={(v) => setFilterImoId(v === "all" ? "" : v)}
+              >
+                <SelectTrigger className="w-48 h-7 text-[11px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700">
+                  <SelectValue placeholder="All IMOs" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All IMOs</SelectItem>
+                  {allImos.map((imoOption) => (
+                    <SelectItem key={imoOption.id} value={imoOption.id}>
+                      {imoOption.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
             <div className="relative flex-1 min-w-[180px] max-w-xs">
               <Search className="absolute left-2 top-1/2 h-3 w-3 -translate-y-1/2 text-zinc-400" />
               <Input

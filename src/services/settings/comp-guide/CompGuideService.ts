@@ -240,8 +240,9 @@ class CompGuideServiceClass {
   /**
    * Get all commission data in a unified format for the grid
    * Returns carriers with their products and all commission rates
+   * @param imoId Optional IMO ID to filter by (for super admins viewing specific IMO data)
    */
-  async getAllCommissionData(): Promise<
+  async getAllCommissionData(imoId?: string): Promise<
     Array<{
       carrierId: string;
       carrierName: string;
@@ -252,28 +253,38 @@ class CompGuideServiceClass {
       rates: Record<number, number>;
     }>
   > {
-    const { data, error } = await supabase
+    let query = supabase
       .from("carriers")
       .select(
         `
         id,
         name,
+        imo_id,
         products!products_carrier_id_fkey (
           id,
           name,
           product_type,
-          is_active
+          is_active,
+          imo_id
         ),
         comp_guide!comp_guide_carrier_id_fkey (
           id,
           product_id,
           contract_level,
-          commission_percentage
+          commission_percentage,
+          imo_id
         )
       `,
       )
       .eq("is_active", true)
       .order("name");
+
+    // Filter by IMO if provided
+    if (imoId) {
+      query = query.eq("imo_id", imoId);
+    }
+
+    const { data, error } = await query;
 
     if (error) throw error;
 

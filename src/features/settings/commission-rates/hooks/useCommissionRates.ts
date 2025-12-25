@@ -50,8 +50,13 @@ export interface UpdateRateData {
 // Contract levels from 80 to 145 in 5% increments
 export const CONTRACT_LEVELS = Array.from({ length: 14 }, (_, i) => 80 + i * 5);
 
-export function useCommissionRates() {
+interface UseCommissionRatesOptions {
+  imoId?: string;
+}
+
+export function useCommissionRates(options: UseCommissionRatesOptions = {}) {
   const queryClient = useQueryClient();
+  const { imoId } = options;
 
   // Fetch all commission data in grid format
   const {
@@ -59,9 +64,9 @@ export function useCommissionRates() {
     isLoading,
     error,
   } = useQuery({
-    queryKey: ["commission-grid"],
+    queryKey: ["commission-grid", imoId],
     queryFn: async () => {
-      const data = await compGuideService.getAllCommissionData();
+      const data = await compGuideService.getAllCommissionData(imoId);
       return data || [];
     },
   });

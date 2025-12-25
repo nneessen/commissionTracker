@@ -30,6 +30,7 @@ export interface Product {
   max_age?: number;
   commission_percentage?: number; // Default commission rate if not in comp_guide
   is_active: boolean;
+  imo_id?: string | null; // IMO this product belongs to
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- JSONB field for extra data
   metadata?: Record<string, any>;
   created_at: Date;
@@ -58,6 +59,7 @@ export interface ProductFormData {
   max_age?: number;
   commission_percentage?: number;
   is_active: boolean;
+  imo_id?: string;
 }
 
 // Commission override for specific products

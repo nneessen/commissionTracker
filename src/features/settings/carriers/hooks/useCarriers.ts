@@ -12,6 +12,7 @@ export interface CreateCarrierData {
   name: string;
   code?: string;
   is_active?: boolean;
+  imo_id?: string;
 }
 
 export interface UpdateCarrierData {
@@ -44,6 +45,7 @@ export function useCarriers() {
         name: data.name,
         code: data.code,
         is_active: data.is_active ?? true,
+        imo_id: data.imo_id,
       };
       const result = await carrierService.create(formData);
       if (!result.success) throw new Error(result.error?.message);

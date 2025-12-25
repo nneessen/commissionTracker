@@ -41,6 +41,7 @@ export class ProductRepository extends BaseRepository<
       max_age: row.max_age ?? undefined,
       commission_percentage: row.commission_percentage ?? undefined,
       is_active: row.is_active ?? true,
+      imo_id: row.imo_id ?? undefined,
       metadata: row.metadata as Record<string, unknown> | undefined,
       created_at: row.created_at ? new Date(row.created_at) : new Date(),
       updated_at: row.updated_at ? new Date(row.updated_at) : new Date(),
@@ -70,6 +71,7 @@ export class ProductRepository extends BaseRepository<
       result.commission_percentage = data.commission_percentage;
     }
     if (data.is_active !== undefined) result.is_active = data.is_active;
+    if (data.imo_id !== undefined) result.imo_id = data.imo_id || null;
 
     return result;
   }
