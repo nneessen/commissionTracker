@@ -59,8 +59,7 @@ function App() {
     }
   }, [user?.id]);
 
-  // Only redirect to login if user was previously authenticated and is now null
-  // This prevents unwanted redirects during token refresh or tab focus
+  // Redirect to login when no authenticated user
   useEffect(() => {
     // Skip if still loading
     if (loading) return;
@@ -71,9 +70,11 @@ function App() {
     // Skip if already on login
     if (location.pathname === "/login") return;
 
-    // Only redirect if user was previously authenticated and is now null
-    // This prevents redirect during initial load or token refresh
-    if (!user && wasAuthenticatedRef.current) {
+    // Redirect to login if no user
+    // - On initial load with no session: redirect
+    // - After logout (wasAuthenticatedRef was true): redirect
+    // - During token refresh: user stays non-null, so no redirect
+    if (!user) {
       navigate({ to: "/login" });
     }
   }, [user, loading, isPublicPath, location.pathname, navigate]);
