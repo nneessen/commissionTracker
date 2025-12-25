@@ -26,7 +26,8 @@ import {
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { SlackTabContent } from "./components/slack";
+import { SlackTabContent, SlackSidebar } from "./components/slack";
+import type { SlackChannel } from "@/types/slack.types";
 
 type TabType =
   | "email"
@@ -43,6 +44,8 @@ export function MessagesPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<TabType>("email");
   const [activeFolder, setActiveFolder] = useState<FolderType>("all");
+  const [selectedSlackChannel, setSelectedSlackChannel] =
+    useState<SlackChannel | null>(null);
 
   // Get email quota
   const { remainingDaily, percentUsed, quota } = useEmailQuota();
@@ -189,66 +192,72 @@ export function MessagesPage() {
 
         {/* Content area */}
         <div className="flex-1 flex gap-2 overflow-hidden">
-          {/* Left Sidebar - Folders */}
+          {/* Left Sidebar - Context-aware based on active tab */}
           <div className="w-36 flex-shrink-0 flex flex-col overflow-hidden bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800">
-            <div className="p-2 flex-1 flex flex-col min-h-0 overflow-auto">
-              {/* Folders */}
-              <div className="text-[10px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide px-2 mb-1.5">
-                Folders
-              </div>
-              <div className="space-y-0.5">
-                {folders.map((folder) => {
-                  const Icon = folder.icon;
-                  const isActive = activeFolder === folder.id;
-                  return (
-                    <button
-                      key={folder.id}
-                      onClick={() => setActiveFolder(folder.id)}
-                      className={cn(
-                        "w-full flex items-center gap-1.5 px-2 py-1.5 rounded text-[11px] transition-colors",
-                        isActive
-                          ? "bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-medium"
-                          : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-800/50",
-                      )}
-                    >
-                      <Icon className="h-3.5 w-3.5" />
-                      <span className="flex-1 text-left">{folder.label}</span>
-                      {folder.count !== undefined && folder.count > 0 && (
-                        <span className="text-[10px] font-medium text-zinc-500 dark:text-zinc-400">
-                          {folder.count}
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
+            {activeTab === "slack" ? (
+              /* Slack channels sidebar */
+              <SlackSidebar
+                selectedChannelId={selectedSlackChannel?.id || null}
+                onChannelSelect={setSelectedSlackChannel}
+              />
+            ) : (
+              /* Email folders sidebar */
+              <div className="p-2 flex-1 flex flex-col min-h-0 overflow-auto">
+                <div className="text-[10px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide px-2 mb-1.5">
+                  Folders
+                </div>
+                <div className="space-y-0.5">
+                  {folders.map((folder) => {
+                    const Icon = folder.icon;
+                    const isActive = activeFolder === folder.id;
+                    return (
+                      <button
+                        key={folder.id}
+                        onClick={() => setActiveFolder(folder.id)}
+                        className={cn(
+                          "w-full flex items-center gap-1.5 px-2 py-1.5 rounded text-[11px] transition-colors",
+                          isActive
+                            ? "bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-medium"
+                            : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-800/50",
+                        )}
+                      >
+                        <Icon className="h-3.5 w-3.5" />
+                        <span className="flex-1 text-left">{folder.label}</span>
+                        {folder.count !== undefined && folder.count > 0 && (
+                          <span className="text-[10px] font-medium text-zinc-500 dark:text-zinc-400">
+                            {folder.count}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
 
-              {/* Spacer */}
-              <div className="flex-1" />
+                <div className="flex-1" />
 
-              {/* Quota section */}
-              <div className="border-t border-zinc-200 dark:border-zinc-800 pt-2 mt-2">
-                <div className="text-[10px] text-zinc-500 dark:text-zinc-400 space-y-1 px-1">
-                  <div className="flex justify-between">
-                    <span>Daily quota</span>
-                    <span className="font-medium text-zinc-700 dark:text-zinc-300">
-                      {quota
-                        ? `${quota.dailyUsed}/${quota.dailyLimit}`
-                        : "0/50"}
-                    </span>
+                <div className="border-t border-zinc-200 dark:border-zinc-800 pt-2 mt-2">
+                  <div className="text-[10px] text-zinc-500 dark:text-zinc-400 space-y-1 px-1">
+                    <div className="flex justify-between">
+                      <span>Daily quota</span>
+                      <span className="font-medium text-zinc-700 dark:text-zinc-300">
+                        {quota
+                          ? `${quota.dailyUsed}/${quota.dailyLimit}`
+                          : "0/50"}
+                      </span>
+                    </div>
+                    <div className="h-1.5 bg-zinc-200 dark:bg-zinc-700 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-blue-500 rounded-full transition-all"
+                        style={{ width: `${percentUsed}%` }}
+                      />
+                    </div>
+                    <p className="text-[9px] text-zinc-400 dark:text-zinc-500">
+                      {remainingDaily} remaining
+                    </p>
                   </div>
-                  <div className="h-1.5 bg-zinc-200 dark:bg-zinc-700 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-blue-500 rounded-full transition-all"
-                      style={{ width: `${percentUsed}%` }}
-                    />
-                  </div>
-                  <p className="text-[9px] text-zinc-400 dark:text-zinc-500">
-                    {remainingDaily} remaining
-                  </p>
                 </div>
               </div>
-            </div>
+            )}
           </div>
 
           {/* Main Content Area */}
@@ -276,7 +285,9 @@ export function MessagesPage() {
               />
             )}
 
-            {activeTab === "slack" && <SlackTabContent />}
+            {activeTab === "slack" && (
+              <SlackTabContent selectedChannel={selectedSlackChannel} />
+            )}
 
             {activeTab === "instagram" && (
               <div className="h-full flex items-center justify-center bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800">

@@ -1,0 +1,181 @@
+// src/features/messages/components/slack/SlackSidebar.tsx
+// Slack channel list sidebar - mirrors real Slack workspace structure
+
+import { useState } from "react";
+import {
+  Hash,
+  Lock,
+  ChevronDown,
+  ChevronRight,
+  Loader2,
+  RefreshCw,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useSlackChannels, useSlackIntegration } from "@/hooks/slack";
+import { Button } from "@/components/ui/button";
+import type { SlackChannel } from "@/types/slack.types";
+
+interface SlackSidebarProps {
+  selectedChannelId: string | null;
+  onChannelSelect: (channel: SlackChannel) => void;
+}
+
+export function SlackSidebar({
+  selectedChannelId,
+  onChannelSelect,
+}: SlackSidebarProps) {
+  const { data: integration } = useSlackIntegration();
+  const { data: channels, isLoading, refetch } = useSlackChannels();
+  const [channelsExpanded, setChannelsExpanded] = useState(true);
+
+  // Separate public and private channels
+  const publicChannels =
+    channels?.filter((c) => !c.is_private && c.is_member) || [];
+  const privateChannels =
+    channels?.filter((c) => c.is_private && c.is_member) || [];
+  const otherChannels = channels?.filter((c) => !c.is_member) || [];
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-32">
+        <Loader2 className="h-4 w-4 animate-spin text-zinc-400" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col h-full">
+      {/* Workspace name */}
+      <div className="px-2 py-2 border-b border-zinc-200 dark:border-zinc-800">
+        <div className="flex items-center justify-between">
+          <span className="text-[11px] font-semibold text-zinc-900 dark:text-zinc-100 truncate">
+            {integration?.team_name || "Slack"}
+          </span>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-5 w-5"
+            onClick={() => refetch()}
+          >
+            <RefreshCw className="h-3 w-3" />
+          </Button>
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-auto p-1.5 space-y-2">
+        {/* Channels section */}
+        <div>
+          <button
+            onClick={() => setChannelsExpanded(!channelsExpanded)}
+            className="w-full flex items-center gap-1 px-1.5 py-1 text-[10px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide hover:text-zinc-700 dark:hover:text-zinc-300"
+          >
+            {channelsExpanded ? (
+              <ChevronDown className="h-3 w-3" />
+            ) : (
+              <ChevronRight className="h-3 w-3" />
+            )}
+            Channels
+            <span className="ml-auto text-[9px] font-normal">
+              {publicChannels.length + privateChannels.length}
+            </span>
+          </button>
+
+          {channelsExpanded && (
+            <div className="space-y-0.5 mt-0.5">
+              {/* Public channels */}
+              {publicChannels.map((channel) => (
+                <ChannelItem
+                  key={channel.id}
+                  channel={channel}
+                  isSelected={selectedChannelId === channel.id}
+                  onClick={() => onChannelSelect(channel)}
+                />
+              ))}
+
+              {/* Private channels */}
+              {privateChannels.map((channel) => (
+                <ChannelItem
+                  key={channel.id}
+                  channel={channel}
+                  isSelected={selectedChannelId === channel.id}
+                  onClick={() => onChannelSelect(channel)}
+                  isPrivate
+                />
+              ))}
+
+              {publicChannels.length === 0 && privateChannels.length === 0 && (
+                <div className="px-2 py-3 text-center">
+                  <p className="text-[10px] text-zinc-400">
+                    No channels joined
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Other channels (not joined) */}
+        {otherChannels.length > 0 && (
+          <div>
+            <div className="px-1.5 py-1 text-[10px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
+              Browse Channels
+            </div>
+            <div className="space-y-0.5 mt-0.5 max-h-32 overflow-auto">
+              {otherChannels.slice(0, 10).map((channel) => (
+                <ChannelItem
+                  key={channel.id}
+                  channel={channel}
+                  isSelected={false}
+                  onClick={() => onChannelSelect(channel)}
+                  dimmed
+                />
+              ))}
+              {otherChannels.length > 10 && (
+                <p className="px-2 py-1 text-[9px] text-zinc-400">
+                  +{otherChannels.length - 10} more
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+interface ChannelItemProps {
+  channel: SlackChannel;
+  isSelected: boolean;
+  onClick: () => void;
+  isPrivate?: boolean;
+  dimmed?: boolean;
+}
+
+function ChannelItem({
+  channel,
+  isSelected,
+  onClick,
+  isPrivate,
+  dimmed,
+}: ChannelItemProps) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        "w-full flex items-center gap-1.5 px-2 py-1 rounded text-[11px] transition-colors",
+        isSelected
+          ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-medium"
+          : dimmed
+            ? "text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
+            : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-800/50",
+      )}
+    >
+      {isPrivate ? (
+        <Lock className="h-3 w-3 flex-shrink-0" />
+      ) : (
+        <Hash className="h-3 w-3 flex-shrink-0" />
+      )}
+      <span className="truncate">{channel.name}</span>
+    </button>
+  );
+}

@@ -1,0 +1,286 @@
+// src/features/messages/components/slack/SlackChannelView.tsx
+// Displays Slack channel messages and message composer
+
+import { useState, useEffect, useRef } from "react";
+import { Hash, Lock, Loader2, Send, AlertCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/services/base/supabase";
+import { useCurrentUserProfile } from "@/hooks/admin/useUserApproval";
+import { toast } from "sonner";
+import { formatDistanceToNow } from "date-fns";
+import type { SlackChannel } from "@/types/slack.types";
+
+interface SlackMessage {
+  id: string;
+  text: string;
+  timestamp: string;
+  threadTs?: string;
+  replyCount?: number;
+  user: {
+    id: string;
+    name: string;
+    real_name?: string;
+    profile?: {
+      image_48?: string;
+      display_name?: string;
+    };
+  } | null;
+  reactions?: Array<{ name: string; count: number }>;
+}
+
+interface SlackChannelViewProps {
+  channel: SlackChannel;
+}
+
+export function SlackChannelView({ channel }: SlackChannelViewProps) {
+  const { data: profile } = useCurrentUserProfile();
+  const queryClient = useQueryClient();
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [messageText, setMessageText] = useState("");
+
+  // Fetch messages
+  const {
+    data: messagesData,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: ["slack-messages", channel.id],
+    queryFn: async () => {
+      if (!profile?.imo_id) return { messages: [], hasMore: false };
+
+      const { data, error } = await supabase.functions.invoke(
+        "slack-get-messages",
+        {
+          body: { imoId: profile.imo_id, channelId: channel.id, limit: 50 },
+        },
+      );
+
+      if (error) throw error;
+      if (!data?.ok) throw new Error(data?.error || "Failed to fetch messages");
+
+      return data as {
+        messages: SlackMessage[];
+        hasMore: boolean;
+        nextCursor?: string;
+      };
+    },
+    enabled: !!profile?.imo_id && !!channel.id,
+    refetchInterval: 30000, // Poll every 30 seconds
+  });
+
+  // Send message mutation
+  const sendMessage = useMutation({
+    mutationFn: async (text: string) => {
+      if (!profile?.imo_id) throw new Error("No IMO");
+
+      const { data, error } = await supabase.functions.invoke(
+        "slack-send-message",
+        {
+          body: {
+            imoId: profile.imo_id,
+            channelId: channel.id,
+            text,
+          },
+        },
+      );
+
+      if (error) throw error;
+      if (!data?.ok) throw new Error(data?.error || "Failed to send message");
+
+      return data;
+    },
+    onSuccess: () => {
+      setMessageText("");
+      // Refetch messages after sending
+      queryClient.invalidateQueries({
+        queryKey: ["slack-messages", channel.id],
+      });
+    },
+    onError: (err) => {
+      toast.error(
+        `Failed to send: ${err instanceof Error ? err.message : "Unknown error"}`,
+      );
+    },
+  });
+
+  // Scroll to bottom when messages load
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messagesData?.messages]);
+
+  const handleSend = () => {
+    if (!messageText.trim()) return;
+    sendMessage.mutate(messageText.trim());
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
+  // Messages are returned newest first, reverse for display
+  const messages = [...(messagesData?.messages || [])].reverse();
+
+  return (
+    <div className="h-full flex flex-col bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 overflow-hidden">
+      {/* Channel header */}
+      <div className="flex items-center gap-2 px-3 py-2 border-b border-zinc-200 dark:border-zinc-800">
+        {channel.is_private ? (
+          <Lock className="h-4 w-4 text-zinc-500" />
+        ) : (
+          <Hash className="h-4 w-4 text-zinc-500" />
+        )}
+        <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+          {channel.name}
+        </span>
+        {channel.purpose?.value && (
+          <span className="text-[10px] text-zinc-500 dark:text-zinc-400 truncate ml-2">
+            {channel.purpose.value}
+          </span>
+        )}
+        <Button
+          variant="ghost"
+          size="sm"
+          className="ml-auto h-6 text-[10px]"
+          onClick={() => refetch()}
+        >
+          Refresh
+        </Button>
+      </div>
+
+      {/* Messages area */}
+      <div className="flex-1 overflow-auto p-3 space-y-3">
+        {isLoading ? (
+          <div className="flex items-center justify-center h-full">
+            <Loader2 className="h-5 w-5 animate-spin text-zinc-400" />
+          </div>
+        ) : error ? (
+          <div className="flex flex-col items-center justify-center h-full text-center">
+            <AlertCircle className="h-8 w-8 text-red-400 mb-2" />
+            <p className="text-[11px] text-red-500">
+              {error instanceof Error
+                ? error.message
+                : "Failed to load messages"}
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              className="mt-2 h-6 text-[10px]"
+              onClick={() => refetch()}
+            >
+              Retry
+            </Button>
+          </div>
+        ) : messages.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full text-center">
+            <Hash className="h-8 w-8 text-zinc-300 dark:text-zinc-600 mb-2" />
+            <p className="text-[11px] text-zinc-500">No messages yet</p>
+            <p className="text-[10px] text-zinc-400 mt-1">
+              Be the first to send a message!
+            </p>
+          </div>
+        ) : (
+          <>
+            {messages.map((msg) => (
+              <MessageItem key={msg.id} message={msg} />
+            ))}
+            <div ref={messagesEndRef} />
+          </>
+        )}
+      </div>
+
+      {/* Message composer */}
+      <div className="p-2 border-t border-zinc-200 dark:border-zinc-800">
+        <div className="flex items-end gap-2">
+          <Textarea
+            value={messageText}
+            onChange={(e) => setMessageText(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder={`Message #${channel.name}`}
+            className="min-h-[36px] max-h-24 text-[11px] resize-none"
+            rows={1}
+          />
+          <Button
+            size="sm"
+            className="h-9 px-3"
+            onClick={handleSend}
+            disabled={!messageText.trim() || sendMessage.isPending}
+          >
+            {sendMessage.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Send className="h-4 w-4" />
+            )}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MessageItem({ message }: { message: SlackMessage }) {
+  const userName =
+    message.user?.profile?.display_name ||
+    message.user?.real_name ||
+    message.user?.name ||
+    "Unknown";
+
+  const timestamp = message.timestamp
+    ? new Date(parseFloat(message.timestamp) * 1000)
+    : null;
+
+  return (
+    <div className="flex gap-2 group hover:bg-zinc-50 dark:hover:bg-zinc-800/50 -mx-2 px-2 py-1 rounded">
+      <Avatar className="h-8 w-8 flex-shrink-0">
+        <AvatarImage src={message.user?.profile?.image_48} />
+        <AvatarFallback className="text-[10px] bg-zinc-200 dark:bg-zinc-700">
+          {userName.slice(0, 2).toUpperCase()}
+        </AvatarFallback>
+      </Avatar>
+
+      <div className="flex-1 min-w-0">
+        <div className="flex items-baseline gap-2">
+          <span className="text-[11px] font-semibold text-zinc-900 dark:text-zinc-100">
+            {userName}
+          </span>
+          {timestamp && (
+            <span className="text-[9px] text-zinc-400">
+              {formatDistanceToNow(timestamp, { addSuffix: true })}
+            </span>
+          )}
+        </div>
+        <p className="text-[11px] text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap break-words">
+          {message.text}
+        </p>
+
+        {/* Reactions */}
+        {message.reactions && message.reactions.length > 0 && (
+          <div className="flex flex-wrap gap-1 mt-1">
+            {message.reactions.map((r) => (
+              <span
+                key={r.name}
+                className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-zinc-100 dark:bg-zinc-800 rounded text-[9px]"
+              >
+                :{r.name}: {r.count}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Thread indicator */}
+        {message.replyCount && message.replyCount > 0 && (
+          <button className="mt-1 text-[10px] text-blue-500 hover:underline">
+            {message.replyCount}{" "}
+            {message.replyCount === 1 ? "reply" : "replies"}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}

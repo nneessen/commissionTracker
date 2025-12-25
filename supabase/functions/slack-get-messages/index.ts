@@ -1,0 +1,208 @@
+// supabase/functions/slack-get-messages/index.ts
+// Fetches message history from a Slack channel
+
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.0";
+import { decrypt } from "../_shared/encryption.ts";
+import { getCorsHeaders, corsResponse } from "../_shared/cors.ts";
+
+interface SlackMessage {
+  type: string;
+  user?: string;
+  text: string;
+  ts: string;
+  thread_ts?: string;
+  reply_count?: number;
+  reactions?: Array<{
+    name: string;
+    count: number;
+  }>;
+  files?: Array<{
+    id: string;
+    name: string;
+    mimetype: string;
+    url_private: string;
+  }>;
+}
+
+interface SlackUser {
+  id: string;
+  name: string;
+  real_name?: string;
+  profile?: {
+    image_48?: string;
+    display_name?: string;
+  };
+}
+
+interface SlackMessagesResponse {
+  ok: boolean;
+  messages?: SlackMessage[];
+  has_more?: boolean;
+  response_metadata?: {
+    next_cursor?: string;
+  };
+  error?: string;
+}
+
+serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return corsResponse(req);
+  }
+
+  const corsHeaders = getCorsHeaders(req.headers.get("origin"));
+
+  try {
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+      return new Response(
+        JSON.stringify({ ok: false, error: "Server configuration error" }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
+
+    const body = await req.json();
+    const { imoId, channelId, limit = 50, cursor } = body;
+
+    if (!imoId || !channelId) {
+      return new Response(
+        JSON.stringify({ ok: false, error: "Missing imoId or channelId" }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+    // Get integration
+    const { data: integration, error: fetchError } = await supabase
+      .from("slack_integrations")
+      .select("id, bot_token_encrypted")
+      .eq("imo_id", imoId)
+      .eq("is_active", true)
+      .eq("connection_status", "connected")
+      .maybeSingle();
+
+    if (fetchError || !integration) {
+      return new Response(
+        JSON.stringify({ ok: false, error: "No active Slack integration" }),
+        {
+          status: 404,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
+
+    const botToken = await decrypt(integration.bot_token_encrypted);
+
+    // Fetch messages from Slack
+    const params = new URLSearchParams({
+      channel: channelId,
+      limit: String(limit),
+    });
+    if (cursor) {
+      params.set("cursor", cursor);
+    }
+
+    const messagesRes = await fetch(
+      `https://slack.com/api/conversations.history?${params}`,
+      {
+        headers: {
+          Authorization: `Bearer ${botToken}`,
+          "Content-Type": "application/json",
+        },
+      },
+    );
+
+    const messagesData: SlackMessagesResponse = await messagesRes.json();
+
+    if (!messagesData.ok) {
+      return new Response(
+        JSON.stringify({ ok: false, error: messagesData.error }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
+
+    // Get unique user IDs to fetch user info
+    const userIds = new Set<string>();
+    messagesData.messages?.forEach((msg) => {
+      if (msg.user) userIds.add(msg.user);
+    });
+
+    // Fetch user info for all users
+    const userMap: Record<string, SlackUser> = {};
+    for (const userId of userIds) {
+      const userRes = await fetch(
+        `https://slack.com/api/users.info?user=${userId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${botToken}`,
+          },
+        },
+      );
+      const userData = await userRes.json();
+      if (userData.ok && userData.user) {
+        userMap[userId] = {
+          id: userData.user.id,
+          name: userData.user.name,
+          real_name: userData.user.real_name,
+          profile: {
+            image_48: userData.user.profile?.image_48,
+            display_name: userData.user.profile?.display_name,
+          },
+        };
+      }
+    }
+
+    // Format messages with user info
+    const messages = (messagesData.messages || []).map((msg) => ({
+      id: msg.ts,
+      text: msg.text,
+      timestamp: msg.ts,
+      threadTs: msg.thread_ts,
+      replyCount: msg.reply_count,
+      user: msg.user ? userMap[msg.user] : null,
+      reactions: msg.reactions,
+      files: msg.files?.map((f) => ({
+        id: f.id,
+        name: f.name,
+        type: f.mimetype,
+      })),
+    }));
+
+    return new Response(
+      JSON.stringify({
+        ok: true,
+        messages,
+        hasMore: messagesData.has_more || false,
+        nextCursor: messagesData.response_metadata?.next_cursor,
+      }),
+      {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      },
+    );
+  } catch (err) {
+    console.error("[slack-get-messages] Error:", err);
+    return new Response(
+      JSON.stringify({
+        ok: false,
+        error: err instanceof Error ? err.message : "Unknown error",
+      }),
+      {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      },
+    );
+  }
+});
