@@ -3977,6 +3977,270 @@ export type Database = {
         };
         Relationships: [];
       };
+      slack_channel_configs: {
+        Row: {
+          agency_id: string | null;
+          channel_id: string;
+          channel_name: string;
+          channel_type: string | null;
+          created_at: string | null;
+          created_by: string | null;
+          filter_config: Json | null;
+          id: string;
+          imo_id: string;
+          include_agent_photo: boolean | null;
+          include_client_info: boolean | null;
+          include_leaderboard: boolean | null;
+          is_active: boolean;
+          message_template: Json | null;
+          notification_type: Database["public"]["Enums"]["slack_notification_type"];
+          slack_integration_id: string;
+          updated_at: string | null;
+        };
+        Insert: {
+          agency_id?: string | null;
+          channel_id: string;
+          channel_name: string;
+          channel_type?: string | null;
+          created_at?: string | null;
+          created_by?: string | null;
+          filter_config?: Json | null;
+          id?: string;
+          imo_id: string;
+          include_agent_photo?: boolean | null;
+          include_client_info?: boolean | null;
+          include_leaderboard?: boolean | null;
+          is_active?: boolean;
+          message_template?: Json | null;
+          notification_type: Database["public"]["Enums"]["slack_notification_type"];
+          slack_integration_id: string;
+          updated_at?: string | null;
+        };
+        Update: {
+          agency_id?: string | null;
+          channel_id?: string;
+          channel_name?: string;
+          channel_type?: string | null;
+          created_at?: string | null;
+          created_by?: string | null;
+          filter_config?: Json | null;
+          id?: string;
+          imo_id?: string;
+          include_agent_photo?: boolean | null;
+          include_client_info?: boolean | null;
+          include_leaderboard?: boolean | null;
+          is_active?: boolean;
+          message_template?: Json | null;
+          notification_type?: Database["public"]["Enums"]["slack_notification_type"];
+          slack_integration_id?: string;
+          updated_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "slack_channel_configs_agency_id_fkey";
+            columns: ["agency_id"];
+            isOneToOne: false;
+            referencedRelation: "agencies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "slack_channel_configs_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "slack_channel_configs_imo_id_fkey";
+            columns: ["imo_id"];
+            isOneToOne: false;
+            referencedRelation: "imos";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "slack_channel_configs_slack_integration_id_fkey";
+            columns: ["slack_integration_id"];
+            isOneToOne: false;
+            referencedRelation: "slack_integrations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      slack_integrations: {
+        Row: {
+          access_token_encrypted: string;
+          authed_user_email: string | null;
+          authed_user_id: string | null;
+          bot_name: string | null;
+          bot_token_encrypted: string;
+          bot_user_id: string;
+          connection_status: Database["public"]["Enums"]["slack_connection_status"];
+          created_at: string | null;
+          created_by: string | null;
+          expires_at: string | null;
+          id: string;
+          imo_id: string;
+          is_active: boolean;
+          last_connected_at: string | null;
+          last_error: string | null;
+          last_refresh_at: string | null;
+          refresh_token_encrypted: string | null;
+          scope: string;
+          team_id: string;
+          team_name: string;
+          token_type: string | null;
+          updated_at: string | null;
+        };
+        Insert: {
+          access_token_encrypted: string;
+          authed_user_email?: string | null;
+          authed_user_id?: string | null;
+          bot_name?: string | null;
+          bot_token_encrypted: string;
+          bot_user_id: string;
+          connection_status?: Database["public"]["Enums"]["slack_connection_status"];
+          created_at?: string | null;
+          created_by?: string | null;
+          expires_at?: string | null;
+          id?: string;
+          imo_id: string;
+          is_active?: boolean;
+          last_connected_at?: string | null;
+          last_error?: string | null;
+          last_refresh_at?: string | null;
+          refresh_token_encrypted?: string | null;
+          scope: string;
+          team_id: string;
+          team_name: string;
+          token_type?: string | null;
+          updated_at?: string | null;
+        };
+        Update: {
+          access_token_encrypted?: string;
+          authed_user_email?: string | null;
+          authed_user_id?: string | null;
+          bot_name?: string | null;
+          bot_token_encrypted?: string;
+          bot_user_id?: string;
+          connection_status?: Database["public"]["Enums"]["slack_connection_status"];
+          created_at?: string | null;
+          created_by?: string | null;
+          expires_at?: string | null;
+          id?: string;
+          imo_id?: string;
+          is_active?: boolean;
+          last_connected_at?: string | null;
+          last_error?: string | null;
+          last_refresh_at?: string | null;
+          refresh_token_encrypted?: string | null;
+          scope?: string;
+          team_id?: string;
+          team_name?: string;
+          token_type?: string | null;
+          updated_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "slack_integrations_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "slack_integrations_imo_id_fkey";
+            columns: ["imo_id"];
+            isOneToOne: true;
+            referencedRelation: "imos";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      slack_messages: {
+        Row: {
+          channel_config_id: string | null;
+          channel_id: string;
+          created_at: string | null;
+          delivered_at: string | null;
+          error_message: string | null;
+          id: string;
+          imo_id: string;
+          message_blocks: Json | null;
+          message_text: string | null;
+          message_ts: string | null;
+          notification_type: Database["public"]["Enums"]["slack_notification_type"];
+          related_entity_id: string | null;
+          related_entity_type: string | null;
+          retry_count: number | null;
+          sent_at: string | null;
+          slack_integration_id: string;
+          status: Database["public"]["Enums"]["slack_message_status"];
+          thread_ts: string | null;
+        };
+        Insert: {
+          channel_config_id?: string | null;
+          channel_id: string;
+          created_at?: string | null;
+          delivered_at?: string | null;
+          error_message?: string | null;
+          id?: string;
+          imo_id: string;
+          message_blocks?: Json | null;
+          message_text?: string | null;
+          message_ts?: string | null;
+          notification_type: Database["public"]["Enums"]["slack_notification_type"];
+          related_entity_id?: string | null;
+          related_entity_type?: string | null;
+          retry_count?: number | null;
+          sent_at?: string | null;
+          slack_integration_id: string;
+          status?: Database["public"]["Enums"]["slack_message_status"];
+          thread_ts?: string | null;
+        };
+        Update: {
+          channel_config_id?: string | null;
+          channel_id?: string;
+          created_at?: string | null;
+          delivered_at?: string | null;
+          error_message?: string | null;
+          id?: string;
+          imo_id?: string;
+          message_blocks?: Json | null;
+          message_text?: string | null;
+          message_ts?: string | null;
+          notification_type?: Database["public"]["Enums"]["slack_notification_type"];
+          related_entity_id?: string | null;
+          related_entity_type?: string | null;
+          retry_count?: number | null;
+          sent_at?: string | null;
+          slack_integration_id?: string;
+          status?: Database["public"]["Enums"]["slack_message_status"];
+          thread_ts?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "slack_messages_channel_config_id_fkey";
+            columns: ["channel_config_id"];
+            isOneToOne: false;
+            referencedRelation: "slack_channel_configs";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "slack_messages_imo_id_fkey";
+            columns: ["imo_id"];
+            isOneToOne: false;
+            referencedRelation: "imos";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "slack_messages_slack_integration_id_fkey";
+            columns: ["slack_integration_id"];
+            isOneToOne: false;
+            referencedRelation: "slack_integrations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       subscription_events: {
         Row: {
           created_at: string;
@@ -8015,6 +8279,7 @@ export type Database = {
         Returns: boolean;
       };
       is_imo_admin: { Args: never; Returns: boolean };
+      is_imo_admin_for: { Args: { p_imo_id: string }; Returns: boolean };
       is_same_agency: { Args: { target_user_id: string }; Returns: boolean };
       is_same_imo: { Args: { target_user_id: string }; Returns: boolean };
       is_super_admin: { Args: never; Returns: boolean };
@@ -8456,6 +8721,25 @@ export type Database = {
         | "indexed_universal_life"
         | "participating_whole_life";
       report_frequency: "weekly" | "monthly" | "quarterly";
+      slack_connection_status:
+        | "connected"
+        | "disconnected"
+        | "error"
+        | "pending";
+      slack_message_status:
+        | "pending"
+        | "sent"
+        | "delivered"
+        | "failed"
+        | "retrying";
+      slack_notification_type:
+        | "policy_created"
+        | "policy_cancelled"
+        | "policy_renewed"
+        | "daily_leaderboard"
+        | "weekly_summary"
+        | "commission_milestone"
+        | "agent_achievement";
     };
     CompositeTypes: {
       org_chart_node: {
@@ -8673,6 +8957,28 @@ export const Constants = {
         "participating_whole_life",
       ],
       report_frequency: ["weekly", "monthly", "quarterly"],
+      slack_connection_status: [
+        "connected",
+        "disconnected",
+        "error",
+        "pending",
+      ],
+      slack_message_status: [
+        "pending",
+        "sent",
+        "delivered",
+        "failed",
+        "retrying",
+      ],
+      slack_notification_type: [
+        "policy_created",
+        "policy_cancelled",
+        "policy_renewed",
+        "daily_leaderboard",
+        "weekly_summary",
+        "commission_milestone",
+        "agent_achievement",
+      ],
     },
   },
 } as const;

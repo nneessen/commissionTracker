@@ -26,6 +26,7 @@ import {
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { SlackTabContent } from "./components/slack";
 
 type TabType =
   | "email"
@@ -275,19 +276,7 @@ export function MessagesPage() {
               />
             )}
 
-            {activeTab === "slack" && (
-              <div className="h-full flex items-center justify-center bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800">
-                <div className="text-center">
-                  <MessageSquare className="h-8 w-8 mx-auto mb-2 text-zinc-300 dark:text-zinc-600" />
-                  <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                    Slack integration coming soon
-                  </p>
-                  <p className="text-[10px] text-zinc-400 dark:text-zinc-500 mt-1">
-                    Access channels, DMs, and team conversations
-                  </p>
-                </div>
-              </div>
-            )}
+            {activeTab === "slack" && <SlackTabContent />}
 
             {activeTab === "instagram" && (
               <div className="h-full flex items-center justify-center bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800">

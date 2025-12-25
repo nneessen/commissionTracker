@@ -1,0 +1,3 @@
+# OAuth callback must allow unauthenticated access
+# Slack redirects browsers directly - no way to add auth headers
+verify_jwt = false
