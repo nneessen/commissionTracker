@@ -285,7 +285,7 @@ serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // Get Slack integration
+    // Get Slack integration with channel settings
     const { data: integration, error: integrationError } = await supabase
       .from("slack_integrations")
       .select("*")
@@ -312,46 +312,17 @@ serve(async (req) => {
       );
     }
 
-    // Get channel configs for policy_created
-    const { data: channelConfigs, error: configError } = await supabase
-      .from("slack_channel_configs")
-      .select("*")
-      .eq("imo_id", imoId)
-      .eq("notification_type", "policy_created")
-      .eq("is_active", true);
-
-    if (configError || !channelConfigs || channelConfigs.length === 0) {
+    // Check if policy channel is configured
+    if (!integration.policy_channel_id) {
       console.log(
-        "[slack-policy-notification] No channel configs for policy notifications",
+        "[slack-policy-notification] No policy channel configured for IMO:",
+        imoId,
       );
       return new Response(
         JSON.stringify({
           ok: true,
           skipped: true,
-          reason: "No channel configs",
-        }),
-        {
-          status: 200,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        },
-      );
-    }
-
-    // Filter configs for this agency (or global configs)
-    const relevantConfigs = channelConfigs.filter(
-      (config) => config.agency_id === agencyId || config.agency_id === null,
-    );
-
-    if (relevantConfigs.length === 0) {
-      console.log(
-        "[slack-policy-notification] No relevant channel configs for agency:",
-        agencyId,
-      );
-      return new Response(
-        JSON.stringify({
-          ok: true,
-          skipped: true,
-          reason: "No configs for agency",
+          reason: "No policy channel configured",
         }),
         {
           status: 200,
@@ -394,154 +365,136 @@ serve(async (req) => {
     // Decrypt bot token
     const botToken = await decrypt(integration.bot_token_encrypted);
 
-    // Send notifications to each configured channel
-    const results = [];
+    // Build policy notification blocks using integration settings
+    const policyBlocks = buildPolicyNotificationBlocks(
+      agentName,
+      annualPremium,
+      carrierName,
+      productName,
+      effectiveDate || new Date().toISOString(),
+      policyNumber || "N/A",
+      integration.include_client_info || false,
+      clientName,
+    );
 
-    for (const config of relevantConfigs) {
-      // Check filter config (e.g., min premium)
-      const filterConfig = config.filter_config || {};
-      if (
-        filterConfig.min_premium &&
-        annualPremium < filterConfig.min_premium
-      ) {
-        console.log(
-          `[slack-policy-notification] Skipping channel ${config.channel_name}: premium ${annualPremium} < min ${filterConfig.min_premium}`,
-        );
-        continue;
-      }
+    // Send policy notification to the configured channel
+    const policyResponse = await fetch(
+      "https://slack.com/api/chat.postMessage",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${botToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          channel: integration.policy_channel_id,
+          text: `New Policy Sold! ${agentName} - ${formatCurrency(annualPremium)}`,
+          blocks: policyBlocks,
+        }),
+      },
+    );
 
-      // Build policy notification blocks
-      const policyBlocks = buildPolicyNotificationBlocks(
-        agentName,
-        annualPremium,
-        carrierName,
-        productName,
-        effectiveDate || new Date().toISOString(),
-        policyNumber || "N/A",
-        config.include_client_info || false,
-        clientName,
-      );
+    const policyData = await policyResponse.json();
 
-      // Send policy notification
-      const policyResponse = await fetch(
-        "https://slack.com/api/chat.postMessage",
+    // Record message
+    await supabase.from("slack_messages").insert({
+      imo_id: imoId,
+      slack_integration_id: integration.id,
+      channel_id: integration.policy_channel_id,
+      notification_type: "policy_created",
+      message_blocks: policyBlocks,
+      message_text: `New Policy Sold! ${agentName} - ${formatCurrency(annualPremium)}`,
+      related_entity_type: "policy",
+      related_entity_id: policyId,
+      status: policyData.ok ? "sent" : "failed",
+      message_ts: policyData.ts || null,
+      error_message: policyData.error || null,
+      sent_at: policyData.ok ? new Date().toISOString() : null,
+    });
+
+    const result = {
+      channel: integration.policy_channel_name,
+      policyNotification: policyData.ok,
+      error: policyData.error,
+      leaderboard: false,
+    };
+
+    // Post leaderboard if configured
+    if (integration.include_leaderboard_with_policy !== false) {
+      // Get agency production data
+      const { data: production, error: prodError } = await supabase.rpc(
+        "get_agency_production_by_agent",
         {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${botToken}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            channel: config.channel_id,
-            text: `New Policy Sold! ${agentName} - ${formatCurrency(annualPremium)}`,
-            blocks: policyBlocks,
-          }),
+          p_agency_id: agencyId || null,
         },
       );
 
-      const policyData = await policyResponse.json();
+      if (!prodError && production && production.length > 0) {
+        // Sort by total premium
+        const sortedProduction = production
+          .sort(
+            (a: LeaderboardEntry, b: LeaderboardEntry) =>
+              b.total_annual_premium - a.total_annual_premium,
+          )
+          .slice(0, 10);
 
-      // Record message
-      await supabase.from("slack_messages").insert({
-        imo_id: imoId,
-        slack_integration_id: integration.id,
-        channel_config_id: config.id,
-        channel_id: config.channel_id,
-        notification_type: "policy_created",
-        message_blocks: policyBlocks,
-        message_text: `New Policy Sold! ${agentName} - ${formatCurrency(annualPremium)}`,
-        related_entity_type: "policy",
-        related_entity_id: policyId,
-        status: policyData.ok ? "sent" : "failed",
-        message_ts: policyData.ts || null,
-        error_message: policyData.error || null,
-        sent_at: policyData.ok ? new Date().toISOString() : null,
-      });
+        const agencyTotal = production.reduce(
+          (sum: number, entry: LeaderboardEntry) =>
+            sum + (entry.total_annual_premium || 0),
+          0,
+        );
 
-      results.push({
-        channel: config.channel_name,
-        policyNotification: policyData.ok,
-        error: policyData.error,
-      });
+        const leaderboardBlocks = buildLeaderboardBlocks(
+          sortedProduction,
+          agencyTotal,
+        );
 
-      // Post leaderboard if configured
-      if (config.include_leaderboard) {
-        // Get agency production data
-        const { data: production, error: prodError } = await supabase.rpc(
-          "get_agency_production_by_agent",
+        // Send leaderboard in thread under policy notification
+        const leaderboardResponse = await fetch(
+          "https://slack.com/api/chat.postMessage",
           {
-            p_agency_id: agencyId || null,
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${botToken}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              channel: integration.policy_channel_id,
+              text: "Daily Sales Leaderboard",
+              blocks: leaderboardBlocks,
+              thread_ts: policyData.ts, // Post in thread under policy notification
+            }),
           },
         );
 
-        if (!prodError && production && production.length > 0) {
-          // Sort by total premium
-          const sortedProduction = production
-            .sort(
-              (a: LeaderboardEntry, b: LeaderboardEntry) =>
-                b.total_annual_premium - a.total_annual_premium,
-            )
-            .slice(0, 10);
+        const leaderboardData = await leaderboardResponse.json();
 
-          const agencyTotal = production.reduce(
-            (sum: number, entry: LeaderboardEntry) =>
-              sum + (entry.total_annual_premium || 0),
-            0,
-          );
+        // Record leaderboard message
+        await supabase.from("slack_messages").insert({
+          imo_id: imoId,
+          slack_integration_id: integration.id,
+          channel_id: integration.policy_channel_id,
+          notification_type: "daily_leaderboard",
+          message_blocks: leaderboardBlocks,
+          message_text: "Daily Sales Leaderboard",
+          related_entity_type: "leaderboard",
+          related_entity_id: null,
+          status: leaderboardData.ok ? "sent" : "failed",
+          message_ts: leaderboardData.ts || null,
+          thread_ts: policyData.ts || null,
+          error_message: leaderboardData.error || null,
+          sent_at: leaderboardData.ok ? new Date().toISOString() : null,
+        });
 
-          const leaderboardBlocks = buildLeaderboardBlocks(
-            sortedProduction,
-            agencyTotal,
-          );
-
-          // Send leaderboard in thread or as separate message
-          const leaderboardResponse = await fetch(
-            "https://slack.com/api/chat.postMessage",
-            {
-              method: "POST",
-              headers: {
-                Authorization: `Bearer ${botToken}`,
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                channel: config.channel_id,
-                text: "Daily Sales Leaderboard",
-                blocks: leaderboardBlocks,
-                thread_ts: policyData.ts, // Post in thread under policy notification
-              }),
-            },
-          );
-
-          const leaderboardData = await leaderboardResponse.json();
-
-          // Record leaderboard message
-          await supabase.from("slack_messages").insert({
-            imo_id: imoId,
-            slack_integration_id: integration.id,
-            channel_config_id: config.id,
-            channel_id: config.channel_id,
-            notification_type: "daily_leaderboard",
-            message_blocks: leaderboardBlocks,
-            message_text: "Daily Sales Leaderboard",
-            related_entity_type: "leaderboard",
-            related_entity_id: null,
-            status: leaderboardData.ok ? "sent" : "failed",
-            message_ts: leaderboardData.ts || null,
-            thread_ts: policyData.ts || null,
-            error_message: leaderboardData.error || null,
-            sent_at: leaderboardData.ok ? new Date().toISOString() : null,
-          });
-
-          results[results.length - 1].leaderboard = leaderboardData.ok;
-        }
+        result.leaderboard = leaderboardData.ok;
       }
     }
 
     console.log(
-      `[slack-policy-notification] Sent notifications to ${results.length} channels`,
+      `[slack-policy-notification] Sent notification to #${integration.policy_channel_name}`,
     );
 
-    return new Response(JSON.stringify({ ok: true, results }), {
+    return new Response(JSON.stringify({ ok: true, results: [result] }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

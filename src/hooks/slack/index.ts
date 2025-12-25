@@ -6,18 +6,10 @@ export {
   useConnectSlack,
   useDisconnectSlack,
   useTestSlackConnection,
+  useUpdateSlackChannelSettings,
   // Channels
   useSlackChannels,
   useJoinSlackChannel,
-  // Channel Configs
-  useSlackChannelConfigs,
-  useSlackChannelConfigsForAgency,
-  useSlackChannelConfigsByType,
-  useSlackChannelConfig,
-  useCreateSlackChannelConfig,
-  useUpdateSlackChannelConfig,
-  useToggleSlackChannelConfig,
-  useDeleteSlackChannelConfig,
   // Messages
   useSlackMessages,
   useSlackMessageStats,

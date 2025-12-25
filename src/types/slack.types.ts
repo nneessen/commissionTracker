@@ -101,24 +101,6 @@ export interface SlackOAuthState {
   returnUrl?: string;
 }
 
-// Filter configuration for channel configs
-export interface SlackChannelFilterConfig {
-  min_premium?: number;
-  max_premium?: number;
-  carriers?: string[]; // carrier UUIDs
-  products?: string[]; // product UUIDs
-  agent_ids?: string[]; // specific agent UUIDs
-}
-
-// Message template customization
-export interface SlackMessageTemplate {
-  header_emoji?: string;
-  header_text?: string;
-  include_fields?: string[]; // which fields to include
-  custom_footer?: string;
-  color?: string; // attachment color
-}
-
 // Block Kit types (simplified)
 export interface SlackBlock {
   type: "header" | "section" | "divider" | "context" | "actions" | "image";
@@ -199,21 +181,6 @@ export interface SlackListChannelsResponse {
   };
   error?: string;
 }
-
-// Form types for UI
-export interface CreateChannelConfigForm {
-  channelId: string;
-  channelName: string;
-  channelType: "public" | "private";
-  agencyId: string | null;
-  notificationType: SlackNotificationType;
-  filterConfig?: SlackChannelFilterConfig;
-  includeClientInfo: boolean;
-  includeAgentPhoto: boolean;
-  includeLeaderboard: boolean;
-}
-
-export type UpdateChannelConfigForm = Partial<CreateChannelConfigForm>;
 
 // Query key factory
 export const slackKeys = {

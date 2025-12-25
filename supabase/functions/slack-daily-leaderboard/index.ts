@@ -159,7 +159,7 @@ serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // Get Slack integration
+    // Get Slack integration with channel settings
     const { data: integration, error: integrationError } = await supabase
       .from("slack_integrations")
       .select("*")
@@ -181,42 +181,16 @@ serve(async (req) => {
       );
     }
 
-    // Get channel configs for daily_leaderboard notifications
-    const { data: channelConfigs, error: configError } = await supabase
-      .from("slack_channel_configs")
-      .select("*")
-      .eq("imo_id", imoId)
-      .eq("notification_type", "daily_leaderboard")
-      .eq("is_active", true);
-
-    if (configError || !channelConfigs || channelConfigs.length === 0) {
+    // Check if leaderboard channel is configured
+    if (!integration.leaderboard_channel_id) {
       console.log(
-        "[slack-daily-leaderboard] No channel configs for leaderboard",
+        "[slack-daily-leaderboard] No leaderboard channel configured",
       );
       return new Response(
         JSON.stringify({
           ok: true,
           skipped: true,
-          reason: "No channel configs for daily_leaderboard",
-        }),
-        {
-          status: 200,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        },
-      );
-    }
-
-    // Filter configs for this agency (or global configs)
-    const relevantConfigs = channelConfigs.filter(
-      (config) => config.agency_id === agencyId || config.agency_id === null,
-    );
-
-    if (relevantConfigs.length === 0) {
-      return new Response(
-        JSON.stringify({
-          ok: true,
-          skipped: true,
-          reason: "No relevant configs for agency",
+          reason: "No leaderboard channel configured",
         }),
         {
           status: 200,
@@ -284,66 +258,60 @@ serve(async (req) => {
     // Decrypt bot token
     const botToken = await decrypt(integration.bot_token_encrypted);
 
-    // Send to each configured channel
-    const results = [];
+    // Send to configured leaderboard channel
+    const response = await fetch("https://slack.com/api/chat.postMessage", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${botToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        channel: integration.leaderboard_channel_id,
+        text: leaderboardText,
+        blocks: leaderboardBlocks,
+      }),
+    });
 
-    for (const config of relevantConfigs) {
-      const response = await fetch("https://slack.com/api/chat.postMessage", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${botToken}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          channel: config.channel_id,
-          text: leaderboardText,
-          blocks: leaderboardBlocks,
-        }),
-      });
+    const data = await response.json();
 
-      const data = await response.json();
+    // Record message
+    await supabase.from("slack_messages").insert({
+      imo_id: imoId,
+      slack_integration_id: integration.id,
+      channel_id: integration.leaderboard_channel_id,
+      notification_type: "daily_leaderboard",
+      message_blocks: leaderboardBlocks,
+      message_text: leaderboardText,
+      related_entity_type: "leaderboard",
+      related_entity_id: null,
+      status: data.ok ? "sent" : "failed",
+      message_ts: data.ts || null,
+      error_message: data.error || null,
+      sent_at: data.ok ? new Date().toISOString() : null,
+    });
 
-      // Record message
-      await supabase.from("slack_messages").insert({
-        imo_id: imoId,
-        slack_integration_id: integration.id,
-        channel_config_id: config.id,
-        channel_id: config.channel_id,
-        notification_type: "daily_leaderboard",
-        message_blocks: leaderboardBlocks,
-        message_text: leaderboardText,
-        related_entity_type: "leaderboard",
-        related_entity_id: null,
-        status: data.ok ? "sent" : "failed",
-        message_ts: data.ts || null,
-        error_message: data.error || null,
-        sent_at: data.ok ? new Date().toISOString() : null,
-      });
-
-      results.push({
-        channel: config.channel_name,
-        ok: data.ok,
-        error: data.error,
-      });
-
-      // Update integration status if token is invalid
-      if (data.error === "token_revoked" || data.error === "invalid_auth") {
-        await supabase
-          .from("slack_integrations")
-          .update({
-            connection_status: "error",
-            last_error: data.error,
-          })
-          .eq("id", integration.id);
-        break; // Stop sending to other channels
-      }
+    // Update integration status if token is invalid
+    if (data.error === "token_revoked" || data.error === "invalid_auth") {
+      await supabase
+        .from("slack_integrations")
+        .update({
+          connection_status: "error",
+          last_error: data.error,
+        })
+        .eq("id", integration.id);
     }
 
+    const result = {
+      channel: integration.leaderboard_channel_name,
+      ok: data.ok,
+      error: data.error,
+    };
+
     console.log(
-      `[slack-daily-leaderboard] Posted leaderboard to ${results.length} channels`,
+      `[slack-daily-leaderboard] Posted leaderboard to #${integration.leaderboard_channel_name}`,
     );
 
-    return new Response(JSON.stringify({ ok: true, results }), {
+    return new Response(JSON.stringify({ ok: true, results: [result] }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

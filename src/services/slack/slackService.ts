@@ -2,20 +2,13 @@
 // Slack integration service for managing workspace connections and channel configurations
 
 import { supabase } from "@/services/base/supabase";
-import type { Json } from "@/types/database.types";
 import type {
   SlackIntegration,
   SlackIntegrationRow,
-  SlackChannelConfig,
-  SlackChannelConfigRow,
-  SlackChannelConfigInsert,
-  SlackChannelConfigUpdate,
   SlackMessage,
   SlackMessageRow,
   SlackChannel,
   SlackNotificationType,
-  CreateChannelConfigForm,
-  UpdateChannelConfigForm,
 } from "@/types/slack.types";
 
 // No client-side environment variables needed - OAuth init is handled server-side
@@ -27,17 +20,6 @@ function transformIntegrationRow(row: SlackIntegrationRow): SlackIntegration {
   return {
     ...row,
     isConnected: row.is_active && row.connection_status === "connected",
-  };
-}
-
-/**
- * Transform database row to SlackChannelConfig
- */
-function transformChannelConfigRow(
-  row: SlackChannelConfigRow,
-): SlackChannelConfig {
-  return {
-    ...row,
   };
 }
 
@@ -147,6 +129,35 @@ export const slackService = {
   },
 
   /**
+   * Update channel settings on the integration
+   */
+  async updateChannelSettings(
+    imoId: string,
+    settings: {
+      policy_channel_id?: string | null;
+      policy_channel_name?: string | null;
+      leaderboard_channel_id?: string | null;
+      leaderboard_channel_name?: string | null;
+      include_client_info?: boolean;
+      include_leaderboard_with_policy?: boolean;
+    },
+  ): Promise<SlackIntegration> {
+    const { data, error } = await supabase
+      .from("slack_integrations")
+      .update(settings)
+      .eq("imo_id", imoId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("[slackService] Error updating channel settings:", error);
+      throw error;
+    }
+
+    return transformIntegrationRow(data);
+  },
+
+  /**
    * Test Slack connection by calling edge function
    */
   async testConnection(
@@ -208,244 +219,6 @@ export const slackService = {
     }
 
     return data;
-  },
-
-  // ============================================================================
-  // Channel Configuration
-  // ============================================================================
-
-  /**
-   * Get all channel configs for an IMO
-   */
-  async getChannelConfigs(imoId: string): Promise<SlackChannelConfig[]> {
-    const { data, error } = await supabase
-      .from("slack_channel_configs")
-      .select(
-        `
-        *,
-        agencies:agency_id (name)
-      `,
-      )
-      .eq("imo_id", imoId)
-      .order("channel_name", { ascending: true });
-
-    if (error) {
-      console.error("[slackService] Error fetching channel configs:", error);
-      throw error;
-    }
-
-    return (data || []).map((row) => ({
-      ...transformChannelConfigRow(row),
-      agencyName: row.agencies?.name,
-    }));
-  },
-
-  /**
-   * Get channel configs for a specific agency
-   */
-  async getChannelConfigsForAgency(
-    imoId: string,
-    agencyId: string | null,
-  ): Promise<SlackChannelConfig[]> {
-    let query = supabase
-      .from("slack_channel_configs")
-      .select("*")
-      .eq("imo_id", imoId)
-      .eq("is_active", true);
-
-    // Get configs that match this agency OR are for all agencies (null)
-    if (agencyId) {
-      query = query.or(`agency_id.eq.${agencyId},agency_id.is.null`);
-    } else {
-      query = query.is("agency_id", null);
-    }
-
-    const { data, error } = await query.order("notification_type");
-
-    if (error) {
-      console.error(
-        "[slackService] Error fetching agency channel configs:",
-        error,
-      );
-      throw error;
-    }
-
-    return (data || []).map(transformChannelConfigRow);
-  },
-
-  /**
-   * Get channel configs for a specific notification type
-   */
-  async getChannelConfigsByType(
-    imoId: string,
-    notificationType: SlackNotificationType,
-    agencyId?: string,
-  ): Promise<SlackChannelConfig[]> {
-    let query = supabase
-      .from("slack_channel_configs")
-      .select("*")
-      .eq("imo_id", imoId)
-      .eq("notification_type", notificationType)
-      .eq("is_active", true);
-
-    // If agency specified, get configs for that agency or global configs
-    if (agencyId) {
-      query = query.or(`agency_id.eq.${agencyId},agency_id.is.null`);
-    }
-
-    const { data, error } = await query;
-
-    if (error) {
-      console.error("[slackService] Error fetching configs by type:", error);
-      throw error;
-    }
-
-    return (data || []).map(transformChannelConfigRow);
-  },
-
-  /**
-   * Get a specific channel config by ID
-   */
-  async getChannelConfig(id: string): Promise<SlackChannelConfig | null> {
-    const { data, error } = await supabase
-      .from("slack_channel_configs")
-      .select(
-        `
-        *,
-        agencies:agency_id (name)
-      `,
-      )
-      .eq("id", id)
-      .maybeSingle();
-
-    if (error) {
-      console.error("[slackService] Error fetching channel config:", error);
-      throw error;
-    }
-
-    if (!data) return null;
-
-    return {
-      ...transformChannelConfigRow(data),
-      agencyName: data.agencies?.name,
-    };
-  },
-
-  /**
-   * Create a new channel configuration
-   */
-  async createChannelConfig(
-    imoId: string,
-    integrationId: string,
-    form: CreateChannelConfigForm,
-    createdBy: string,
-  ): Promise<SlackChannelConfig> {
-    const insertData: SlackChannelConfigInsert = {
-      imo_id: imoId,
-      slack_integration_id: integrationId,
-      channel_id: form.channelId,
-      channel_name: form.channelName,
-      channel_type: form.channelType,
-      agency_id: form.agencyId,
-      notification_type: form.notificationType,
-      filter_config: (form.filterConfig ?? {}) as Json,
-      include_client_info: form.includeClientInfo,
-      include_agent_photo: form.includeAgentPhoto,
-      include_leaderboard: form.includeLeaderboard,
-      is_active: true,
-      created_by: createdBy,
-    };
-
-    const { data, error } = await supabase
-      .from("slack_channel_configs")
-      .insert(insertData)
-      .select()
-      .single();
-
-    if (error) {
-      console.error("[slackService] Error creating channel config:", error);
-      throw error;
-    }
-
-    return transformChannelConfigRow(data);
-  },
-
-  /**
-   * Update a channel configuration
-   */
-  async updateChannelConfig(
-    id: string,
-    form: UpdateChannelConfigForm,
-  ): Promise<SlackChannelConfig> {
-    const updateData: SlackChannelConfigUpdate = {};
-
-    if (form.channelId !== undefined) updateData.channel_id = form.channelId;
-    if (form.channelName !== undefined)
-      updateData.channel_name = form.channelName;
-    if (form.channelType !== undefined)
-      updateData.channel_type = form.channelType;
-    if (form.agencyId !== undefined) updateData.agency_id = form.agencyId;
-    if (form.notificationType !== undefined)
-      updateData.notification_type = form.notificationType;
-    if (form.filterConfig !== undefined)
-      updateData.filter_config = form.filterConfig as Json;
-    if (form.includeClientInfo !== undefined)
-      updateData.include_client_info = form.includeClientInfo;
-    if (form.includeAgentPhoto !== undefined)
-      updateData.include_agent_photo = form.includeAgentPhoto;
-    if (form.includeLeaderboard !== undefined)
-      updateData.include_leaderboard = form.includeLeaderboard;
-
-    const { data, error } = await supabase
-      .from("slack_channel_configs")
-      .update(updateData)
-      .eq("id", id)
-      .select()
-      .single();
-
-    if (error) {
-      console.error("[slackService] Error updating channel config:", error);
-      throw error;
-    }
-
-    return transformChannelConfigRow(data);
-  },
-
-  /**
-   * Toggle channel config active status
-   */
-  async toggleChannelConfig(
-    id: string,
-    isActive: boolean,
-  ): Promise<SlackChannelConfig> {
-    const { data, error } = await supabase
-      .from("slack_channel_configs")
-      .update({ is_active: isActive })
-      .eq("id", id)
-      .select()
-      .single();
-
-    if (error) {
-      console.error("[slackService] Error toggling channel config:", error);
-      throw error;
-    }
-
-    return transformChannelConfigRow(data);
-  },
-
-  /**
-   * Delete a channel configuration
-   */
-  async deleteChannelConfig(id: string): Promise<void> {
-    const { error } = await supabase
-      .from("slack_channel_configs")
-      .delete()
-      .eq("id", id);
-
-    if (error) {
-      console.error("[slackService] Error deleting channel config:", error);
-      throw error;
-    }
   },
 
   // ============================================================================

@@ -1,32 +1,54 @@
 // src/features/settings/integrations/components/slack/SlackIntegrationCard.tsx
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   MessageSquare,
   CheckCircle2,
   XCircle,
   Loader2,
-  Settings,
   RefreshCw,
+  ChevronDown,
+  Hash,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   useSlackIntegration,
   useConnectSlack,
   useDisconnectSlack,
   useTestSlackConnection,
+  useSlackChannels,
+  useUpdateSlackChannelSettings,
+  useJoinSlackChannel,
 } from "@/hooks/slack";
-import { SlackChannelConfigList } from "./SlackChannelConfigList";
 import { toast } from "sonner";
+import type { SlackChannel } from "@/types/slack.types";
 
 export function SlackIntegrationCard() {
   const { data: integration, isLoading } = useSlackIntegration();
+  const { data: channels = [], isLoading: channelsLoading } =
+    useSlackChannels();
   const connectSlack = useConnectSlack();
   const disconnectSlack = useDisconnectSlack();
   const testConnection = useTestSlackConnection();
+  const updateSettings = useUpdateSlackChannelSettings();
+  const joinChannel = useJoinSlackChannel();
 
-  const [showConfig, setShowConfig] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+
+  // Filter to only show channels the bot is a member of
+  const availableChannels = useMemo(() => {
+    return channels.filter((c: SlackChannel) => c.is_member && !c.is_archived);
+  }, [channels]);
 
   const handleConnect = async () => {
     try {
@@ -39,7 +61,7 @@ export function SlackIntegrationCard() {
   const handleDisconnect = async () => {
     if (
       !confirm(
-        "Are you sure you want to disconnect Slack? This will remove all channel configurations.",
+        "Are you sure you want to disconnect Slack? This will stop all Slack notifications.",
       )
     ) {
       return;
@@ -62,6 +84,57 @@ export function SlackIntegrationCard() {
       }
     } catch {
       toast.error("Failed to test connection");
+    }
+  };
+
+  const handleChannelSelect = async (
+    type: "policy" | "leaderboard",
+    channelId: string,
+  ) => {
+    const channel = channels.find((c: SlackChannel) => c.id === channelId);
+    if (!channel) return;
+
+    // If bot is not a member, try to join first
+    if (!channel.is_member) {
+      try {
+        const result = await joinChannel.mutateAsync(channelId);
+        if (!result.ok) {
+          toast.error(`Cannot join channel: ${result.error}`);
+          return;
+        }
+      } catch {
+        toast.error("Failed to join channel");
+        return;
+      }
+    }
+
+    try {
+      if (type === "policy") {
+        await updateSettings.mutateAsync({
+          policy_channel_id: channelId,
+          policy_channel_name: channel.name,
+        });
+        toast.success(`Policy notifications will go to #${channel.name}`);
+      } else {
+        await updateSettings.mutateAsync({
+          leaderboard_channel_id: channelId,
+          leaderboard_channel_name: channel.name,
+        });
+        toast.success(`Leaderboard will go to #${channel.name}`);
+      }
+    } catch {
+      toast.error("Failed to update channel setting");
+    }
+  };
+
+  const handleToggleSetting = async (
+    setting: "include_client_info" | "include_leaderboard_with_policy",
+    value: boolean,
+  ) => {
+    try {
+      await updateSettings.mutateAsync({ [setting]: value });
+    } catch {
+      toast.error("Failed to update setting");
     }
   };
 
@@ -128,10 +201,12 @@ export function SlackIntegrationCard() {
                   variant="ghost"
                   size="sm"
                   className="h-7 px-2 text-[10px]"
-                  onClick={() => setShowConfig(!showConfig)}
+                  onClick={() => setShowSettings(!showSettings)}
                 >
-                  <Settings className="h-3 w-3 mr-1" />
-                  {showConfig ? "Hide" : "Configure"}
+                  <ChevronDown
+                    className={`h-3 w-3 mr-1 transition-transform ${showSettings ? "rotate-180" : ""}`}
+                  />
+                  {showSettings ? "Hide" : "Settings"}
                 </Button>
                 <Button
                   variant="ghost"
@@ -183,8 +258,160 @@ export function SlackIntegrationCard() {
           )}
       </div>
 
-      {/* Channel Configuration (expandable) */}
-      {isConnected && showConfig && <SlackChannelConfigList />}
+      {/* Channel Settings (expandable) */}
+      {isConnected && showSettings && (
+        <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-3 space-y-3">
+          <h4 className="text-[11px] font-semibold text-zinc-900 dark:text-zinc-100">
+            Channel Settings
+          </h4>
+
+          {channelsLoading ? (
+            <div className="flex items-center gap-2 py-2">
+              <Loader2 className="h-3 w-3 animate-spin text-zinc-400" />
+              <span className="text-[10px] text-zinc-500">
+                Loading channels...
+              </span>
+            </div>
+          ) : availableChannels.length === 0 ? (
+            <div className="text-[10px] text-zinc-500 py-2">
+              No channels available. Make sure the bot is invited to at least
+              one channel.
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {/* Policy Sales Channel */}
+              <div className="space-y-1">
+                <Label className="text-[10px] text-zinc-600 dark:text-zinc-400">
+                  Policy Sales Notifications
+                </Label>
+                <Select
+                  value={integration?.policy_channel_id || ""}
+                  onValueChange={(value) =>
+                    handleChannelSelect("policy", value)
+                  }
+                >
+                  <SelectTrigger className="h-8 text-[11px]">
+                    <SelectValue placeholder="Select a channel...">
+                      {integration?.policy_channel_name ? (
+                        <span className="flex items-center gap-1">
+                          <Hash className="h-3 w-3" />
+                          {integration.policy_channel_name}
+                        </span>
+                      ) : (
+                        "Select a channel..."
+                      )}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableChannels.map((channel: SlackChannel) => (
+                      <SelectItem
+                        key={channel.id}
+                        value={channel.id}
+                        className="text-[11px]"
+                      >
+                        <span className="flex items-center gap-1">
+                          <Hash className="h-3 w-3" />
+                          {channel.name}
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-[9px] text-zinc-400">
+                  New policy sales will be posted here
+                </p>
+              </div>
+
+              {/* Leaderboard Channel */}
+              <div className="space-y-1">
+                <Label className="text-[10px] text-zinc-600 dark:text-zinc-400">
+                  Daily Leaderboard
+                </Label>
+                <Select
+                  value={integration?.leaderboard_channel_id || ""}
+                  onValueChange={(value) =>
+                    handleChannelSelect("leaderboard", value)
+                  }
+                >
+                  <SelectTrigger className="h-8 text-[11px]">
+                    <SelectValue placeholder="Select a channel...">
+                      {integration?.leaderboard_channel_name ? (
+                        <span className="flex items-center gap-1">
+                          <Hash className="h-3 w-3" />
+                          {integration.leaderboard_channel_name}
+                        </span>
+                      ) : (
+                        "Select a channel..."
+                      )}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableChannels.map((channel: SlackChannel) => (
+                      <SelectItem
+                        key={channel.id}
+                        value={channel.id}
+                        className="text-[11px]"
+                      >
+                        <span className="flex items-center gap-1">
+                          <Hash className="h-3 w-3" />
+                          {channel.name}
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-[9px] text-zinc-400">
+                  Daily leaderboard will be posted here
+                </p>
+              </div>
+
+              {/* Toggle Options */}
+              <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-[10px] text-zinc-600 dark:text-zinc-400">
+                      Include client name
+                    </Label>
+                    <p className="text-[9px] text-zinc-400">
+                      Show client name in policy notifications
+                    </p>
+                  </div>
+                  <Switch
+                    checked={integration?.include_client_info || false}
+                    onCheckedChange={(checked) =>
+                      handleToggleSetting("include_client_info", checked)
+                    }
+                    disabled={updateSettings.isPending}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-[10px] text-zinc-600 dark:text-zinc-400">
+                      Include leaderboard with each sale
+                    </Label>
+                    <p className="text-[9px] text-zinc-400">
+                      Post leaderboard as reply to each policy notification
+                    </p>
+                  </div>
+                  <Switch
+                    checked={
+                      integration?.include_leaderboard_with_policy ?? true
+                    }
+                    onCheckedChange={(checked) =>
+                      handleToggleSetting(
+                        "include_leaderboard_with_policy",
+                        checked,
+                      )
+                    }
+                    disabled={updateSettings.isPending}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
