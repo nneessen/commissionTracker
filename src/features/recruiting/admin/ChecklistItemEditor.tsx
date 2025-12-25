@@ -148,11 +148,11 @@ function SortableChecklistItem({
     <div
       ref={setNodeRef}
       style={style}
-      className="bg-zinc-50 dark:bg-zinc-800/50 rounded-sm border border-zinc-100 dark:border-zinc-800"
+      className="bg-card rounded-md border border-border shadow-sm"
     >
       {/* Item Row */}
       <div
-        className="flex items-center gap-2 p-1 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer rounded-t-sm"
+        className="flex items-center gap-2 p-2 hover:bg-accent/50 cursor-pointer rounded-t-md"
         onClick={onToggleExpand}
       >
         <div
@@ -161,7 +161,7 @@ function SortableChecklistItem({
           className="cursor-grab active:cursor-grabbing"
           onClick={(e) => e.stopPropagation()}
         >
-          <GripVertical className="h-3 w-3 text-zinc-400 dark:text-zinc-500" />
+          <GripVertical className="h-3 w-3 text-muted-foreground/50" />
         </div>
         <Button
           variant="ghost"
@@ -173,7 +173,7 @@ function SortableChecklistItem({
             onMoveUp();
           }}
         >
-          <ChevronUp className="h-2.5 w-2.5 text-zinc-500 dark:text-zinc-400" />
+          <ChevronUp className="h-2.5 w-2.5 text-muted-foreground" />
         </Button>
         <Button
           variant="ghost"
@@ -185,26 +185,26 @@ function SortableChecklistItem({
             onMoveDown();
           }}
         >
-          <ChevronDown className="h-2.5 w-2.5 text-zinc-500 dark:text-zinc-400" />
+          <ChevronDown className="h-2.5 w-2.5 text-muted-foreground" />
         </Button>
         <Button variant="ghost" size="sm" className="h-4 w-4 p-0">
           {isExpanded ? (
-            <ChevronDown className="h-3 w-3 text-zinc-500 dark:text-zinc-400" />
+            <ChevronDown className="h-3 w-3 text-muted-foreground" />
           ) : (
-            <ChevronRight className="h-3 w-3 text-zinc-500 dark:text-zinc-400" />
+            <ChevronRight className="h-3 w-3 text-muted-foreground" />
           )}
         </Button>
-        <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-mono w-4">
+        <span className="text-[10px] text-muted-foreground font-mono w-4">
           {index + 1}
         </span>
-        <Icon className="h-3 w-3 text-zinc-500 dark:text-zinc-400" />
-        <span className="text-[11px] text-zinc-700 dark:text-zinc-300 flex-1 truncate">
+        <Icon className="h-3 w-3 text-muted-foreground" />
+        <span className="text-[11px] text-foreground flex-1 truncate">
           {item.item_name}
         </span>
         {item.is_required && (
           <Badge
             variant="outline"
-            className="text-[9px] px-1 py-0 border-zinc-200 dark:border-zinc-700"
+            className="text-[9px] px-1 py-0 h-4 border-border"
           >
             Required
           </Badge>
@@ -212,7 +212,7 @@ function SortableChecklistItem({
         {!item.visible_to_recruit && (
           <Badge
             variant="outline"
-            className="text-[9px] px-1 py-0 border-amber-300 text-amber-600 dark:border-amber-700 dark:text-amber-400"
+            className="text-[9px] px-1 py-0 h-4 border-[hsl(var(--warning))]/50 text-[hsl(var(--warning))]"
           >
             <EyeOff className="h-2 w-2" />
           </Badge>
@@ -226,12 +226,12 @@ function SortableChecklistItem({
             onEdit();
           }}
         >
-          <Edit2 className="h-3 w-3 text-zinc-500 dark:text-zinc-400" />
+          <Edit2 className="h-3 w-3 text-muted-foreground" />
         </Button>
         <Button
           variant="ghost"
           size="sm"
-          className="h-5 w-5 p-0 text-red-500 hover:text-red-600 dark:text-red-400"
+          className="h-5 w-5 p-0 text-destructive hover:text-destructive/80"
           onClick={(e) => {
             e.stopPropagation();
             onDelete();
@@ -243,7 +243,7 @@ function SortableChecklistItem({
 
       {/* Expanded: Automations */}
       {isExpanded && (
-        <div className="ml-6 mr-2 mb-2 pb-2">
+        <div className="m-2 p-2 rounded bg-muted/30 border-t border-border/30">
           <ChecklistItemAutomationConfig checklistItemId={item.id} />
         </div>
       )}
