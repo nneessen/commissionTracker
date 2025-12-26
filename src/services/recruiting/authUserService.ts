@@ -50,10 +50,17 @@ export async function createAuthUserWithProfile({
 
     if (error) {
       console.error("Auth user creation error:", error);
-      throw new Error(`Failed to create auth user: ${error.message || error}`);
+      // Check if the response body contains the actual error message
+      const errorMessage =
+        data?.error || data?.details || error.message || String(error);
+      throw new Error(`Failed to create auth user: ${errorMessage}`);
     }
 
     if (!data?.user) {
+      // Edge function returned 200 but no user - check for error in data
+      if (data?.error) {
+        throw new Error(data.error);
+      }
       throw new Error("No user returned from auth creation");
     }
 

@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-12-26 16:56:13
+
+### Changed Files
+- `src/services/recruiting/authUserService.ts`
+- `src/services/recruiting/recruitingService.ts`
+
+### Statistics
+```
+ 2 files changed, 11 insertions(+), 5 deletions(-)
+```
+
 ## [Checkpoint] - 2025-12-26 16:32:37
 
 ### Changed Files

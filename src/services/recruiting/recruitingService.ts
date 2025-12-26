@@ -55,26 +55,26 @@ export const recruitingService = {
       // Licensed agent - gets agent role and fast-track pipeline
       roles = ["agent"];
 
-      // Get the fast-track template
+      // Get the fast-track template (use maybeSingle to avoid 406 on no match)
       const { data: template } = await supabase
         .from("pipeline_templates")
         .select("id")
         .eq("name", "Licensed Agent Fast-Track")
         .eq("is_active", true)
-        .single();
+        .maybeSingle();
 
       pipelineTemplateId = template?.id || null;
     } else {
       // Unlicensed recruit - gets standard pipeline
       roles = ["recruit"];
 
-      // Get the standard template
+      // Get the standard template (use maybeSingle to avoid 406 on no match)
       const { data: template } = await supabase
         .from("pipeline_templates")
         .select("id")
         .eq("name", "Standard Recruiting Pipeline")
         .eq("is_active", true)
-        .single();
+        .maybeSingle();
 
       pipelineTemplateId = template?.id || null;
     }
