@@ -2,13 +2,14 @@
 // Displays Slack channel messages and message composer
 
 import { useState, useEffect, useRef } from "react";
-import { Hash, Lock, Loader2, Send, AlertCircle } from "lucide-react";
+import { Hash, Lock, Loader2, Send, AlertCircle, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/services/base/supabase";
 import { useCurrentUserProfile } from "@/hooks/admin/useUserApproval";
+import { useJoinSlackChannel } from "@/hooks/slack";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import type { SlackChannel } from "@/types/slack.types";
@@ -40,6 +41,46 @@ export function SlackChannelView({ channel }: SlackChannelViewProps) {
   const queryClient = useQueryClient();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [messageText, setMessageText] = useState("");
+  const [isJoining, setIsJoining] = useState(false);
+  const [needsJoin, setNeedsJoin] = useState(false);
+  const joinChannel = useJoinSlackChannel();
+
+  // Auto-join channel if bot is not a member
+  useEffect(() => {
+    if (!channel.is_member && !isJoining) {
+      handleAutoJoin();
+    } else {
+      setNeedsJoin(false);
+    }
+  }, [channel.id, channel.is_member]);
+
+  const handleAutoJoin = async () => {
+    if (!profile?.imo_id || channel.is_private) {
+      // Can't auto-join private channels
+      if (channel.is_private) {
+        setNeedsJoin(true);
+      }
+      return;
+    }
+
+    setIsJoining(true);
+    try {
+      const result = await joinChannel.mutateAsync(channel.id);
+      if (result.ok) {
+        // Successfully joined, refetch messages
+        queryClient.invalidateQueries({ queryKey: ["slack-channels"] });
+        setNeedsJoin(false);
+      } else {
+        console.error("Failed to join channel:", result.error);
+        setNeedsJoin(true);
+      }
+    } catch (err) {
+      console.error("Error joining channel:", err);
+      setNeedsJoin(true);
+    } finally {
+      setIsJoining(false);
+    }
+  };
 
   // Fetch messages
   const {
@@ -60,16 +101,26 @@ export function SlackChannelView({ channel }: SlackChannelViewProps) {
       );
 
       if (error) throw error;
-      if (!data?.ok) throw new Error(data?.error || "Failed to fetch messages");
 
+      // Check if we got a Slack API error
+      if (!data?.ok) {
+        // If not in channel, mark that we need to join
+        if (data?.slackError === "not_in_channel") {
+          setNeedsJoin(true);
+        }
+        throw new Error(data?.error || "Failed to fetch messages");
+      }
+
+      setNeedsJoin(false);
       return data as {
         messages: SlackMessage[];
         hasMore: boolean;
         nextCursor?: string;
       };
     },
-    enabled: !!profile?.imo_id && !!channel.id,
-    refetchInterval: 30000, // Poll every 30 seconds
+    enabled: !!profile?.imo_id && !!channel.id && !isJoining,
+    refetchInterval: needsJoin ? false : 30000, // Don't poll if we need to join
+    retry: false, // Don't retry on failure
   });
 
   // Send message mutation
@@ -156,7 +207,47 @@ export function SlackChannelView({ channel }: SlackChannelViewProps) {
 
       {/* Messages area */}
       <div className="flex-1 overflow-auto p-3 space-y-3">
-        {isLoading ? (
+        {isJoining ? (
+          <div className="flex flex-col items-center justify-center h-full">
+            <Loader2 className="h-5 w-5 animate-spin text-zinc-400 mb-2" />
+            <p className="text-[11px] text-zinc-500">Joining channel...</p>
+          </div>
+        ) : needsJoin && channel.is_private ? (
+          <div className="flex flex-col items-center justify-center h-full text-center px-4">
+            <Lock className="h-8 w-8 text-zinc-300 dark:text-zinc-600 mb-2" />
+            <p className="text-[11px] text-zinc-600 dark:text-zinc-400 font-medium mb-1">
+              Private Channel
+            </p>
+            <p className="text-[10px] text-zinc-500 dark:text-zinc-500 max-w-xs">
+              The bot needs to be invited to this private channel by a Slack
+              admin. Ask someone in Slack to invite the app to #{channel.name}.
+            </p>
+          </div>
+        ) : needsJoin ? (
+          <div className="flex flex-col items-center justify-center h-full text-center px-4">
+            <UserPlus className="h-8 w-8 text-zinc-300 dark:text-zinc-600 mb-2" />
+            <p className="text-[11px] text-zinc-600 dark:text-zinc-400 font-medium mb-1">
+              Unable to join channel
+            </p>
+            <p className="text-[10px] text-zinc-500 dark:text-zinc-500 max-w-xs mb-3">
+              The bot couldn't automatically join this channel.
+            </p>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-7 text-[10px]"
+              onClick={handleAutoJoin}
+              disabled={isJoining}
+            >
+              {isJoining ? (
+                <Loader2 className="h-3 w-3 animate-spin mr-1" />
+              ) : (
+                <UserPlus className="h-3 w-3 mr-1" />
+              )}
+              Try Again
+            </Button>
+          </div>
+        ) : isLoading ? (
           <div className="flex items-center justify-center h-full">
             <Loader2 className="h-5 w-5 animate-spin text-zinc-400" />
           </div>
