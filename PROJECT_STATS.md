@@ -1,15 +1,15 @@
 # Project Statistics
 
-Last Updated: 2025-12-23 18:04:27
+Last Updated: 2025-12-26 10:08:33
 
 ## Metrics
-- Total Files: 28576
-- Total Lines of Code: 166369
-- Total Commits: 477
+- Total Files: 28622
+- Total Lines of Code: 177886
+- Total Commits: 497
 
 ## Recent Activity
-5750d8b docs: multiple changes in .,src/services/recruiting,src/types
-aab15f8 docs: CHANGELOG.md,PROJECT_STATS.md,authUserService.ts
-7682231 docs: CHANGELOG.md,PROJECT_STATS.md,InitializePipelineDialog.tsx
-8f224c1 docs: multiple changes in .,src/services/recruiting,src/services/recruiting/repositories
-3619740 docs: multiple changes in .,src/features/recruiting,src/services/notifications/notification
+c6d962d feat: add Slack webhooks for multi-workspace notifications
+2edc3cf docs: add continuation prompt for Slack UI fixes
+98f758a fix: format Slack message text and display system messages properly
+ba83d13 fix: auto-join Slack channels when viewing messages
+cac5a23 fix: resolve email quota 406 error and improve Slack error handling

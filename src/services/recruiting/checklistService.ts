@@ -355,6 +355,96 @@ export const checklistService = {
     );
   },
 
+  async revertPhase(userId: string, phaseId: string) {
+    // Get current phase progress to validate it's completed
+    const currentProgress = await phaseProgressRepository.findByUserAndPhase(
+      userId,
+      phaseId,
+    );
+
+    if (!currentProgress) {
+      throw new Error("Phase progress not found");
+    }
+
+    if (currentProgress.status !== "completed") {
+      throw new Error("Can only revert completed phases");
+    }
+
+    // Get phase details for updating user profile
+    const phase = await pipelinePhaseRepository.findById(phaseId);
+    if (!phase) {
+      throw new Error("Phase not found");
+    }
+
+    // Get all phases for this template to find subsequent ones
+    const allPhases = await pipelinePhaseRepository.findByTemplateId(
+      phase.templateId,
+    );
+
+    // Find phases that come AFTER this one (higher phase_order)
+    const subsequentPhases = allPhases.filter(
+      (p) => p.phaseOrder > phase.phaseOrder,
+    );
+
+    // Reset all subsequent phases to "not_started"
+    for (const subsequentPhase of subsequentPhases) {
+      await this.updatePhaseStatus(
+        userId,
+        subsequentPhase.id,
+        "not_started",
+        "Reset due to phase revert",
+      );
+
+      // Also reset the started_at and completed_at timestamps
+      await supabase
+        .from("recruit_phase_progress")
+        .update({
+          started_at: null,
+          completed_at: null,
+        })
+        .eq("user_id", userId)
+        .eq("phase_id", subsequentPhase.id);
+    }
+
+    // Set the target phase back to in_progress
+    const updatedProgress = await this.updatePhaseStatus(
+      userId,
+      phaseId,
+      "in_progress",
+      "Reverted by recruiter",
+    );
+
+    // Reset completed_at for the reverted phase (keep started_at)
+    await supabase
+      .from("recruit_phase_progress")
+      .update({
+        completed_at: null,
+      })
+      .eq("user_id", userId)
+      .eq("phase_id", phaseId);
+
+    // Update user_profiles with the reverted phase's status
+    const revertedPhaseStatus = phaseNameToStatus(phase.phaseName);
+    await supabase
+      .from("user_profiles")
+      .update({
+        onboarding_status: revertedPhaseStatus,
+        current_onboarding_phase: phase.phaseName,
+      })
+      .eq("id", userId);
+
+    // Trigger phase_enter automation for reverted phase (fire-and-forget)
+    triggerAutomationAsync(() =>
+      pipelineAutomationService.triggerPhaseAutomations(
+        phaseId,
+        "phase_enter",
+        userId,
+      ),
+    );
+
+    return updatedProgress;
+  },
+
   // ========================================
   // CHECKLIST ITEM PROGRESS
   // ========================================

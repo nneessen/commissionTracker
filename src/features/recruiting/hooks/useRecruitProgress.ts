@@ -137,6 +137,28 @@ export function useBlockPhase() {
   });
 }
 
+export function useRevertPhase() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ userId, phaseId }: { userId: string; phaseId: string }) =>
+      checklistService.revertPhase(userId, phaseId),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ["recruit-phase-progress", variables.userId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["recruit-current-phase", variables.userId],
+      });
+      // Invalidate all recruits queries (status changed)
+      queryClient.invalidateQueries({
+        predicate: (query) => query.queryKey[0] === "recruits",
+      });
+      queryClient.invalidateQueries({ queryKey: ["recruiting-stats"] });
+    },
+  });
+}
+
 // ========================================
 // CHECKLIST ITEM PROGRESS
 // ========================================

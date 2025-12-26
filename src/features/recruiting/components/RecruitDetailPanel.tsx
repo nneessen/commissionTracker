@@ -33,6 +33,7 @@ import {
   RotateCcw,
   AlertTriangle,
   EyeOff,
+  Undo2,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -56,6 +57,7 @@ import {
   useChecklistProgress,
   useAdvancePhase,
   useBlockPhase,
+  useRevertPhase,
   useUpdatePhaseStatus,
   useInitializeRecruitProgress,
   useUnenrollFromPipeline,
@@ -124,6 +126,7 @@ export function RecruitDetailPanel({
 
   const advancePhase = useAdvancePhase();
   const blockPhase = useBlockPhase();
+  const revertPhase = useRevertPhase();
   const updatePhaseStatus = useUpdatePhaseStatus();
   const initializeProgress = useInitializeRecruitProgress();
   const unenrollPipeline = useUnenrollFromPipeline();
@@ -160,6 +163,56 @@ export function RecruitDetailPanel({
   const handlePhaseClick = (phaseId: string) => {
     setSelectedPhaseId(phaseId);
     setActiveTab("checklist");
+  };
+
+  const handleRevertPhase = async () => {
+    // Find a completed phase to revert - either the one being viewed or the most recent completed one
+    const phaseToRevert = viewingPhaseId
+      ? progressMap?.get(viewingPhaseId)
+      : null;
+
+    // If viewing a completed phase, revert that one
+    if (phaseToRevert?.status === "completed") {
+      const phaseName =
+        sortedPhases.find((p: { id: string }) => p.id === viewingPhaseId)
+          ?.phase_name || "this phase";
+      if (
+        !confirm(
+          `Revert "${phaseName}" back to In Progress? Checklist progress will be preserved.`,
+        )
+      )
+        return;
+      await revertPhase.mutateAsync({
+        userId: recruit.id,
+        phaseId: viewingPhaseId!,
+      });
+      return;
+    }
+
+    // Otherwise, find the most recent completed phase before current
+    const currentIndex = sortedPhases.findIndex(
+      (p: { id: string }) => p.id === currentPhase?.phase_id,
+    );
+    if (currentIndex <= 0) return; // No previous phase to revert
+
+    // Find the last completed phase before current
+    for (let i = currentIndex - 1; i >= 0; i--) {
+      const phase = sortedPhases[i];
+      const progress = progressMap?.get(phase.id);
+      if (progress?.status === "completed") {
+        if (
+          !confirm(
+            `Revert "${phase.phase_name}" back to In Progress? Checklist progress will be preserved.`,
+          )
+        )
+          return;
+        await revertPhase.mutateAsync({
+          userId: recruit.id,
+          phaseId: phase.id,
+        });
+        return;
+      }
+    }
   };
 
   const handleResendInvite = async () => {
@@ -243,6 +296,25 @@ export function RecruitDetailPanel({
   const viewingPhase = sortedPhases.find((p: any) => p.id === viewingPhaseId);
   const viewingChecklistItems = viewingPhase?.checklist_items || [];
 
+  // Check if we can revert: viewing a completed phase OR there's a completed phase before current
+  const viewingPhaseProgress = viewingPhaseId
+    ? progressMap.get(viewingPhaseId)
+    : null;
+  const canRevertViewingPhase = viewingPhaseProgress?.status === "completed";
+  const hasCompletedPhaseBefore = (() => {
+    const currentIndex = sortedPhases.findIndex(
+      (p: { id: string }) => p.id === currentPhase?.phase_id,
+    );
+    if (currentIndex <= 0) return false;
+    for (let i = currentIndex - 1; i >= 0; i--) {
+      const phase = sortedPhases[i];
+      const progress = progressMap.get(phase.id);
+      if (progress?.status === "completed") return true;
+    }
+    return false;
+  })();
+  const canRevert = canRevertViewingPhase || hasCompletedPhaseBefore;
+
   return (
     <div className="h-full flex flex-col bg-zinc-50 dark:bg-zinc-950">
       {/* Compact Header */}
@@ -311,6 +383,22 @@ export function RecruitDetailPanel({
                   <ArrowRight className="h-3 w-3 mr-0.5" />
                   Advance
                 </Button>
+                {canRevert && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleRevertPhase}
+                    disabled={revertPhase.isPending}
+                    className="h-6 text-[10px] px-2"
+                  >
+                    {revertPhase.isPending ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <Undo2 className="h-3 w-3 mr-0.5" />
+                    )}
+                    Revert
+                  </Button>
+                )}
                 {currentPhase?.status === "blocked" ? (
                   <Button
                     size="sm"
