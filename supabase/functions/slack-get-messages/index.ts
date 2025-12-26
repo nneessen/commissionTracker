@@ -124,10 +124,35 @@ serve(async (req) => {
     const messagesData: SlackMessagesResponse = await messagesRes.json();
 
     if (!messagesData.ok) {
+      console.error(
+        "[slack-get-messages] Slack API error:",
+        messagesData.error,
+        "for channel:",
+        channelId,
+      );
+
+      // Map common Slack errors to user-friendly messages
+      let userMessage = messagesData.error || "Failed to fetch messages";
+      if (messagesData.error === "not_in_channel") {
+        userMessage =
+          "Bot is not a member of this channel. Please invite the bot first.";
+      } else if (messagesData.error === "channel_not_found") {
+        userMessage = "Channel not found or has been deleted.";
+      } else if (
+        messagesData.error === "token_revoked" ||
+        messagesData.error === "invalid_auth"
+      ) {
+        userMessage = "Slack connection expired. Please reconnect in Settings.";
+      }
+
       return new Response(
-        JSON.stringify({ ok: false, error: messagesData.error }),
+        JSON.stringify({
+          ok: false,
+          error: userMessage,
+          slackError: messagesData.error,
+        }),
         {
-          status: 400,
+          status: 200, // Return 200 with ok:false so client can handle gracefully
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         },
       );

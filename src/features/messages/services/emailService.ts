@@ -401,9 +401,9 @@ export async function getEmailQuota(userId: string): Promise<EmailQuota> {
     .select("*")
     .eq("user_id", userId)
     .eq("date", today)
-    .single();
+    .maybeSingle();
 
-  if (error && error.code !== "PGRST116") {
+  if (error) {
     console.error("Error fetching quota:", error);
   }
 
@@ -447,9 +447,9 @@ async function incrementQuota(userId: string): Promise<void> {
     .select("id, emails_sent")
     .eq("user_id", userId)
     .eq("date", today)
-    .single();
+    .maybeSingle();
 
-  if (selectError && selectError.code !== "PGRST116") {
+  if (selectError) {
     console.error(
       "[incrementQuota] Error checking existing quota:",
       selectError,
