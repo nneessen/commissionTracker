@@ -7,17 +7,20 @@ import { decrypt } from "../_shared/encryption.ts";
 import { getCorsHeaders, corsResponse } from "../_shared/cors.ts";
 
 interface PolicyNotificationPayload {
-  policyId: string;
+  action?: "post-policy" | "update-leaderboard";
+  policyId?: string;
   policyNumber?: string;
   carrierId?: string;
   productId?: string;
-  agentId: string;
+  agentId?: string;
   clientName?: string;
-  annualPremium: number;
+  annualPremium?: number;
   effectiveDate?: string;
   status?: string;
-  imoId: string;
+  imoId?: string;
   agencyId?: string;
+  // For update-leaderboard action
+  logId?: string;
 }
 
 interface DailyProductionEntry {
@@ -27,6 +30,19 @@ interface DailyProductionEntry {
   slack_member_id: string | null;
   total_annual_premium: number;
   policy_count: number;
+}
+
+/**
+ * Get today's date in US Eastern timezone (YYYY-MM-DD format)
+ * This ensures consistent date handling for US business operations
+ */
+function getTodayDateET(): string {
+  const now = new Date();
+  // Format in Eastern Time
+  const etDate = now.toLocaleDateString("en-CA", {
+    timeZone: "America/New_York",
+  });
+  return etDate; // Returns YYYY-MM-DD format
 }
 
 /**
@@ -85,20 +101,15 @@ function getRankDisplay(rank: number): string {
 }
 
 /**
- * Get default title based on day of week
+ * Get default title based on day of week (Eastern timezone)
  */
 function getDefaultDailyTitle(): string {
-  const dayNames = [
-    "Sunday",
-    "Monday",
-    "Tuesday",
-    "Wednesday",
-    "Thursday",
-    "Friday",
-    "Saturday",
-  ];
   const today = new Date();
-  const dayName = dayNames[today.getDay()];
+  // Get day name in Eastern Time
+  const dayName = today.toLocaleDateString("en-US", {
+    weekday: "long",
+    timeZone: "America/New_York",
+  });
 
   const titles: Record<string, string> = {
     Monday: "Manic Monday Sales",
@@ -164,6 +175,59 @@ function buildSimplePolicyText(
 }
 
 /**
+ * Post a message to Slack and return the response
+ */
+async function postSlackMessage(
+  botToken: string,
+  channelId: string,
+  text: string,
+): Promise<{ ok: boolean; ts?: string; error?: string }> {
+  try {
+    const response = await fetch("https://slack.com/api/chat.postMessage", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${botToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ channel: channelId, text }),
+    });
+    return await response.json();
+  } catch (err) {
+    console.error("[slack-policy-notification] Failed to post message:", err);
+    return { ok: false, error: err instanceof Error ? err.message : "Unknown" };
+  }
+}
+
+/**
+ * Update an existing Slack message
+ */
+async function updateSlackMessage(
+  botToken: string,
+  channelId: string,
+  messageTs: string,
+  text: string,
+): Promise<{ ok: boolean; ts?: string; error?: string }> {
+  try {
+    const response = await fetch("https://slack.com/api/chat.update", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${botToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        channel: channelId,
+        ts: messageTs,
+        text,
+      }),
+    });
+    return await response.json();
+  } catch (err) {
+    console.error("[slack-policy-notification] Failed to update message:", err);
+    return { ok: false, error: err instanceof Error ? err.message : "Unknown" };
+  }
+}
+
+/**
  * Build the daily leaderboard text (simple text format)
  */
 function buildLeaderboardText(
@@ -175,6 +239,7 @@ function buildLeaderboardText(
     weekday: "long",
     month: "short",
     day: "numeric",
+    timeZone: "America/New_York",
   });
 
   let text = `*${title}*\n_${today}_\n\n`;
@@ -203,6 +268,257 @@ function buildLeaderboardText(
   return text;
 }
 
+/**
+ * Handle complete-first-sale action
+ * Posts the pending policy notification and leaderboard after user names (or skips) the leaderboard
+ */
+async function handleCompleteFirstSale(
+  supabase: ReturnType<typeof createClient>,
+  logId: string,
+): Promise<{
+  ok: boolean;
+  error?: string;
+  policyOk?: boolean;
+  leaderboardOk?: boolean;
+}> {
+  console.log(
+    "[slack-policy-notification] Completing first sale for log:",
+    logId,
+  );
+
+  // Fetch the daily log with pending data
+  const { data: log, error: logError } = await supabase
+    .from("daily_sales_logs")
+    .select(
+      `
+      id,
+      imo_id,
+      slack_integration_id,
+      channel_id,
+      log_date,
+      title,
+      pending_policy_data,
+      first_seller_id
+    `,
+    )
+    .eq("id", logId)
+    .single();
+
+  if (logError || !log) {
+    console.error("[slack-policy-notification] Log not found:", logError);
+    return { ok: false, error: "Log not found" };
+  }
+
+  if (!log.pending_policy_data) {
+    console.log(
+      "[slack-policy-notification] No pending data - already completed",
+    );
+    return { ok: true, policyOk: true, leaderboardOk: true };
+  }
+
+  const pendingData = log.pending_policy_data as {
+    policyText: string;
+    carrierName: string;
+    productName: string;
+    agentName: string;
+    agentSlackMemberId: string | null;
+    annualPremium: number;
+    effectiveDate: string;
+    agentId: string;
+  };
+
+  // Get the Slack integration
+  const { data: integration, error: intError } = await supabase
+    .from("slack_integrations")
+    .select("id, bot_token_encrypted, agency_id")
+    .eq("id", log.slack_integration_id)
+    .single();
+
+  if (intError || !integration) {
+    console.error(
+      "[slack-policy-notification] Integration not found:",
+      intError,
+    );
+    return { ok: false, error: "Slack integration not found" };
+  }
+
+  // Decrypt bot token
+  const botToken = await decrypt(integration.bot_token_encrypted);
+
+  // Post the policy notification
+  const policyResult = await postSlackMessage(
+    botToken,
+    log.channel_id,
+    pendingData.policyText,
+  );
+
+  if (!policyResult.ok) {
+    console.error(
+      "[slack-policy-notification] Failed to post policy:",
+      policyResult.error,
+    );
+    return { ok: false, error: "Failed to post policy notification" };
+  }
+
+  // Get today's production for leaderboard
+  const { data: productionData } = await supabase.rpc(
+    "get_daily_production_by_agent",
+    {
+      p_imo_id: log.imo_id,
+      p_agency_id: integration.agency_id,
+    },
+  );
+
+  const production: DailyProductionEntry[] = productionData || [];
+  const totalAP = production.reduce(
+    (sum, e) => sum + (e.total_annual_premium || 0),
+    0,
+  );
+
+  // Build leaderboard with the title (use default if not set)
+  const title = log.title || getDefaultDailyTitle();
+  const leaderboardText = buildLeaderboardText(title, production, totalAP);
+
+  // Post the leaderboard
+  const leaderboardResult = await postSlackMessage(
+    botToken,
+    log.channel_id,
+    leaderboardText,
+  );
+
+  // Update the log: clear pending_policy_data, save leaderboard message_ts
+  const { error: updateError } = await supabase
+    .from("daily_sales_logs")
+    .update({
+      pending_policy_data: null,
+      leaderboard_message_ts: leaderboardResult.ts || null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", logId);
+
+  if (updateError) {
+    console.error(
+      "[slack-policy-notification] Failed to update log:",
+      updateError,
+    );
+  }
+
+  console.log("[slack-policy-notification] First sale completed successfully");
+  return {
+    ok: true,
+    policyOk: policyResult.ok,
+    leaderboardOk: leaderboardResult.ok,
+  };
+}
+
+/**
+ * Handle update-leaderboard action
+ * Updates an existing Slack leaderboard message with a new title
+ */
+async function handleUpdateLeaderboard(
+  supabase: ReturnType<typeof createClient>,
+  logId: string,
+): Promise<{
+  ok: boolean;
+  error?: string;
+  updated?: boolean;
+}> {
+  console.log(
+    "[slack-policy-notification] Updating leaderboard for log:",
+    logId,
+  );
+
+  // Fetch the daily log with integration details
+  const { data: log, error: logError } = await supabase
+    .from("daily_sales_logs")
+    .select(
+      `
+      id,
+      imo_id,
+      slack_integration_id,
+      channel_id,
+      log_date,
+      title,
+      leaderboard_message_ts,
+      first_seller_id
+    `,
+    )
+    .eq("id", logId)
+    .single();
+
+  if (logError || !log) {
+    console.error("[slack-policy-notification] Log not found:", logError);
+    return { ok: false, error: "Log not found" };
+  }
+
+  if (!log.leaderboard_message_ts) {
+    console.error("[slack-policy-notification] No message_ts to update");
+    return { ok: false, error: "No Slack message to update" };
+  }
+
+  // Get the Slack integration
+  const { data: integration, error: intError } = await supabase
+    .from("slack_integrations")
+    .select("id, bot_token_encrypted, agency_id")
+    .eq("id", log.slack_integration_id)
+    .single();
+
+  if (intError || !integration) {
+    console.error(
+      "[slack-policy-notification] Integration not found:",
+      intError,
+    );
+    return { ok: false, error: "Slack integration not found" };
+  }
+
+  // Decrypt bot token
+  const botToken = await decrypt(integration.bot_token_encrypted);
+
+  // Get today's production for leaderboard
+  const { data: productionData } = await supabase.rpc(
+    "get_daily_production_by_agent",
+    {
+      p_imo_id: log.imo_id,
+      p_agency_id: integration.agency_id,
+    },
+  );
+
+  const production: DailyProductionEntry[] = productionData || [];
+  const totalAP = production.reduce(
+    (sum, e) => sum + (e.total_annual_premium || 0),
+    0,
+  );
+
+  // Build leaderboard with the title from database (which was just updated)
+  const title = log.title || getDefaultDailyTitle();
+  const leaderboardText = buildLeaderboardText(title, production, totalAP);
+
+  // Update the Slack message
+  const updateResult = await updateSlackMessage(
+    botToken,
+    log.channel_id,
+    log.leaderboard_message_ts,
+    leaderboardText,
+  );
+
+  if (!updateResult.ok) {
+    console.error(
+      "[slack-policy-notification] Failed to update Slack message:",
+      updateResult.error,
+    );
+    return {
+      ok: false,
+      error: updateResult.error || "Failed to update Slack message",
+    };
+  }
+
+  console.log(
+    "[slack-policy-notification] Leaderboard updated successfully with title:",
+    title,
+  );
+  return { ok: true, updated: true };
+}
+
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
@@ -227,7 +543,48 @@ serve(async (req) => {
       );
     }
 
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const body: PolicyNotificationPayload = await req.json();
+
+    // Handle complete-first-sale action (posts pending notification after naming dialog)
+    if (body.action === "complete-first-sale") {
+      if (!body.logId) {
+        return new Response(
+          JSON.stringify({ ok: false, error: "Missing required field: logId" }),
+          {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          },
+        );
+      }
+
+      const result = await handleCompleteFirstSale(supabase, body.logId);
+      return new Response(JSON.stringify(result), {
+        status: result.ok ? 200 : 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Handle update-leaderboard action (for refreshing Slack message after title is set)
+    if (body.action === "update-leaderboard") {
+      if (!body.logId) {
+        return new Response(
+          JSON.stringify({ ok: false, error: "Missing required field: logId" }),
+          {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          },
+        );
+      }
+
+      const result = await handleUpdateLeaderboard(supabase, body.logId);
+      return new Response(JSON.stringify(result), {
+        status: result.ok ? 200 : 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Default action: post-policy (original behavior)
     const {
       policyId,
       carrierId,
@@ -252,7 +609,9 @@ serve(async (req) => {
       );
     }
 
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    console.log(
+      `[slack-policy-notification] Processing policy ${policyId} for agent ${agentId}, imoId=${imoId}, agencyId=${agencyId}`,
+    );
 
     // =========================================================================
     // Get Slack integrations for the agency hierarchy
@@ -286,6 +645,9 @@ serve(async (req) => {
         );
       } else {
         hierarchyIntegrations = hierarchyData || [];
+        console.log(
+          `[slack-policy-notification] Found ${hierarchyIntegrations.length} integrations for agency ${agencyId}`,
+        );
       }
     } else {
       // Fall back to IMO-level integration
@@ -430,6 +792,8 @@ serve(async (req) => {
       policyOk: boolean;
       leaderboardOk: boolean;
       isFirstSale: boolean;
+      pendingFirstSale?: boolean;
+      logId?: string | null;
       error: string | null;
     }> = [];
 
@@ -468,35 +832,201 @@ serve(async (req) => {
           if (lookedUpId) {
             agentSlackMemberId = lookedUpId;
             // Save it for future use
-            await supabase.from("user_slack_preferences").upsert(
-              {
-                user_id: agentId,
-                imo_id: imoId,
-                slack_member_id: lookedUpId,
-                updated_at: new Date().toISOString(),
-              },
-              {
-                onConflict: "user_id,imo_id",
-              },
-            );
-            console.log(
-              `[slack-policy-notification] Saved Slack member ID for ${agentEmail}: ${lookedUpId}`,
-            );
+            const { error: upsertError } = await supabase
+              .from("user_slack_preferences")
+              .upsert(
+                {
+                  user_id: agentId,
+                  imo_id: imoId,
+                  slack_member_id: lookedUpId,
+                  updated_at: new Date().toISOString(),
+                },
+                {
+                  onConflict: "user_id,imo_id",
+                },
+              );
+
+            if (upsertError) {
+              console.error(
+                `[slack-policy-notification] Failed to save Slack member ID for ${agentEmail}:`,
+                upsertError,
+              );
+            } else {
+              console.log(
+                `[slack-policy-notification] Saved Slack member ID for ${agentEmail}: ${lookedUpId}`,
+              );
+            }
           }
         }
 
         // Build the simple policy notification text
+        // Use Eastern timezone for fallback date display
+        const fallbackDate = new Date().toLocaleDateString("en-CA", {
+          timeZone: "America/New_York",
+        });
         const policyText = buildSimplePolicyText(
           annualPremium,
           carrierName,
           productName,
-          effectiveDate || new Date().toISOString(),
+          effectiveDate || fallbackDate,
           agentSlackMemberId,
           agentName,
         );
 
         // =====================================================================
-        // Post simple policy notification
+        // Check FIRST if this is a first sale - before posting anything
+        // =====================================================================
+        let leaderboardOk = false;
+        let isFirstSale = false;
+
+        // Check if there's already a daily log for today (Eastern timezone)
+        const todayDate = getTodayDateET();
+        const { data: existingLog } = await supabase
+          .from("daily_sales_logs")
+          .select("*")
+          .eq("imo_id", imoId)
+          .eq("slack_integration_id", integration.integration_id)
+          .eq("channel_id", integration.policy_channel_id)
+          .eq("log_date", todayDate)
+          .maybeSingle();
+
+        // Get today's production for leaderboard
+        // Use integration's agency_id so each level shows appropriate scope:
+        // - The Standard's scoreboard shows only The Standard's sales
+        // - Self Made's scoreboard shows Self Made + all child agencies
+        const integrationAgencyId = integration.agency_id;
+        const { data: productionData } = await supabase.rpc(
+          "get_daily_production_by_agent",
+          {
+            p_imo_id: imoId,
+            p_agency_id: integrationAgencyId,
+          },
+        );
+
+        const production: DailyProductionEntry[] = productionData || [];
+        const totalAP = production.reduce(
+          (sum, e) => sum + (e.total_annual_premium || 0),
+          0,
+        );
+
+        // Detect if this is effectively the first sale of the day
+        // More robust check: if log exists, verify the first_seller still has production
+        // This handles the case where policies were deleted
+        let isEffectivelyFirstSale = !existingLog;
+
+        if (existingLog && existingLog.first_seller_id) {
+          // Check if the recorded first_seller still has any production today
+          const firstSellerProduction = production.find(
+            (p) => p.agent_id === existingLog.first_seller_id,
+          );
+          const firstSellerHasProduction =
+            firstSellerProduction && firstSellerProduction.policy_count > 0;
+
+          // If first seller has no production, their policies were deleted - reset
+          if (!firstSellerHasProduction) {
+            isEffectivelyFirstSale = true;
+            console.log(
+              "[slack-policy-notification] First seller has no production, resetting log",
+            );
+          }
+        }
+
+        // Also check if there's a pending first sale that hasn't been completed
+        if (existingLog && existingLog.pending_policy_data) {
+          // There's already a pending first sale - treat this as subsequent sale
+          isEffectivelyFirstSale = false;
+        }
+
+        if (isEffectivelyFirstSale) {
+          // =====================================================================
+          // FIRST SALE - Don't post anything yet, store pending data
+          // =====================================================================
+          isFirstSale = true;
+
+          console.log(
+            "[slack-policy-notification] First sale detected - storing pending data for naming dialog",
+          );
+
+          // Store the policy data for later posting after user names the leaderboard
+          const pendingData = {
+            policyText,
+            carrierName,
+            productName,
+            agentName,
+            agentSlackMemberId,
+            annualPremium,
+            effectiveDate: effectiveDate || fallbackDate,
+            agentId,
+          };
+
+          let savedLogId: string | null = null;
+
+          if (existingLog) {
+            // Log exists but was stale (first seller's policies deleted) - update it
+            const { error: updateError } = await supabase
+              .from("daily_sales_logs")
+              .update({
+                first_seller_id: agentId,
+                pending_policy_data: pendingData,
+                leaderboard_message_ts: null, // Clear old message_ts
+                updated_at: new Date().toISOString(),
+              })
+              .eq("id", existingLog.id);
+
+            if (updateError) {
+              console.error(
+                "[slack-policy-notification] Failed to update daily log:",
+                updateError,
+              );
+            } else {
+              savedLogId = existingLog.id;
+            }
+          } else {
+            // No log exists - create new one with pending data
+            const { data: insertedLog, error: insertError } = await supabase
+              .from("daily_sales_logs")
+              .insert({
+                imo_id: imoId,
+                slack_integration_id: integration.integration_id,
+                channel_id: integration.policy_channel_id,
+                log_date: todayDate,
+                first_seller_id: agentId,
+                pending_policy_data: pendingData,
+              })
+              .select("id")
+              .single();
+
+            if (insertError) {
+              console.error(
+                "[slack-policy-notification] Failed to insert daily log:",
+                insertError,
+              );
+            } else {
+              savedLogId = insertedLog?.id || null;
+            }
+          }
+
+          // Return result indicating pending first sale (no Slack messages sent)
+          results.push({
+            integrationId: integration.integration_id,
+            teamName: integration.team_name,
+            channelName: integration.policy_channel_name,
+            policyOk: false, // Not posted yet
+            leaderboardOk: false, // Not posted yet
+            isFirstSale: true,
+            pendingFirstSale: true,
+            logId: savedLogId,
+            error: null,
+          });
+
+          console.log(
+            `[slack-policy-notification] Pending first sale stored for ${integration.team_name} - awaiting naming dialog`,
+          );
+          continue; // Skip to next integration
+        }
+
+        // =====================================================================
+        // SUBSEQUENT SALE - Post policy notification normally
         // =====================================================================
         const policyResponse = await fetch(
           "https://slack.com/api/chat.postMessage",
@@ -516,174 +1046,78 @@ serve(async (req) => {
         const policyData = await policyResponse.json();
 
         // =====================================================================
-        // Handle daily leaderboard
+        // Handle daily leaderboard for subsequent sales
         // =====================================================================
-        let leaderboardOk = false;
-        let isFirstSale = false;
-
-        // Check if there's already a daily log for today
-        const todayDate = new Date().toISOString().split("T")[0];
-        const { data: existingLog } = await supabase
-          .from("daily_sales_logs")
-          .select("*")
-          .eq("imo_id", imoId)
-          .eq("slack_integration_id", integration.integration_id)
-          .eq("channel_id", integration.policy_channel_id)
-          .eq("log_date", todayDate)
-          .maybeSingle();
-
-        // Get today's production for leaderboard
-        const { data: productionData } = await supabase.rpc(
-          "get_daily_production_by_agent",
-          {
-            p_imo_id: imoId,
-            p_agency_id: agencyId || null,
-          },
-        );
-
-        const production: DailyProductionEntry[] = productionData || [];
-        const totalAP = production.reduce(
-          (sum, e) => sum + (e.total_annual_premium || 0),
-          0,
-        );
-
-        if (!existingLog) {
-          // First sale of the day - create new leaderboard
-          isFirstSale = true;
-          const dailyTitle = getDefaultDailyTitle();
-          const leaderboardText = buildLeaderboardText(
-            dailyTitle,
-            production,
-            totalAP,
-          );
-
-          // Post leaderboard as a new message
-          const leaderboardResponse = await fetch(
-            "https://slack.com/api/chat.postMessage",
-            {
-              method: "POST",
-              headers: {
-                Authorization: `Bearer ${botToken}`,
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                channel: integration.policy_channel_id,
-                text: leaderboardText,
-              }),
-            },
-          );
-
-          const leaderboardData = await leaderboardResponse.json();
-          leaderboardOk = leaderboardData.ok;
-
-          // Save the daily log with message_ts for future updates
-          let savedLogId: string | null = null;
-          if (leaderboardData.ok) {
-            const { data: insertedLog } = await supabase
-              .from("daily_sales_logs")
-              .insert({
-                imo_id: imoId,
-                slack_integration_id: integration.integration_id,
-                channel_id: integration.policy_channel_id,
-                log_date: todayDate,
-                title: dailyTitle,
-                first_seller_id: agentId,
-                leaderboard_message_ts: leaderboardData.ts,
-              })
-              .select("id")
-              .single();
-
-            savedLogId = insertedLog?.id || null;
-
-            // Notify the first seller they can name the leaderboard
-            const appUrl =
-              Deno.env.get("APP_URL") || "https://www.thestandardhq.com";
-            const nameUrl = savedLogId
-              ? `${appUrl}/slack/name-leaderboard?logId=${savedLogId}`
-              : `${appUrl}/slack/name-leaderboard`;
-
-            // Post a message telling the first seller they can name the leaderboard
-            const firstSaleNotice = agentSlackMemberId
-              ? `Congrats <@${agentSlackMemberId}> - you're the first sale of the day! Want to name today's leaderboard? <${nameUrl}|Click here to give it a name>`
-              : `Congrats ${agentName} - you're the first sale of the day! Want to name today's leaderboard? <${nameUrl}|Click here to give it a name>`;
-
-            await fetch("https://slack.com/api/chat.postMessage", {
-              method: "POST",
-              headers: {
-                Authorization: `Bearer ${botToken}`,
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                channel: integration.policy_channel_id,
-                text: firstSaleNotice,
-              }),
-            });
-          }
-        } else {
-          // Update existing leaderboard
+        {
+          // Subsequent sale - delete old leaderboard and post fresh one
+          // This ensures leaderboard always appears AFTER the latest policy notification
           const leaderboardText = buildLeaderboardText(
             existingLog.title || getDefaultDailyTitle(),
             production,
             totalAP,
           );
 
+          // Delete old leaderboard message if it exists (ignore errors - message may be gone)
           if (existingLog.leaderboard_message_ts) {
-            // Update the existing message
-            const updateResponse = await fetch(
-              "https://slack.com/api/chat.update",
-              {
-                method: "POST",
-                headers: {
-                  Authorization: `Bearer ${botToken}`,
-                  "Content-Type": "application/json",
+            try {
+              const deleteResponse = await fetch(
+                "https://slack.com/api/chat.delete",
+                {
+                  method: "POST",
+                  headers: {
+                    Authorization: `Bearer ${botToken}`,
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({
+                    channel: integration.policy_channel_id,
+                    ts: existingLog.leaderboard_message_ts,
+                  }),
                 },
-                body: JSON.stringify({
-                  channel: integration.policy_channel_id,
-                  ts: existingLog.leaderboard_message_ts,
-                  text: leaderboardText,
-                }),
-              },
-            );
-
-            const updateData = await updateResponse.json();
-            leaderboardOk = updateData.ok;
-
-            if (!updateData.ok) {
-              console.error(
-                "[slack-policy-notification] Failed to update leaderboard:",
-                updateData.error,
+              );
+              const deleteData = await deleteResponse.json();
+              if (!deleteData.ok && deleteData.error !== "message_not_found") {
+                console.log(
+                  "[slack-policy-notification] Could not delete old leaderboard:",
+                  deleteData.error,
+                );
+              }
+            } catch (deleteErr) {
+              console.log(
+                "[slack-policy-notification] Error deleting old leaderboard (continuing):",
+                deleteErr,
               );
             }
-          } else {
-            // No message_ts stored, post new message
-            const leaderboardResponse = await fetch(
-              "https://slack.com/api/chat.postMessage",
-              {
-                method: "POST",
-                headers: {
-                  Authorization: `Bearer ${botToken}`,
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                  channel: integration.policy_channel_id,
-                  text: leaderboardText,
-                }),
-              },
-            );
+          }
 
-            const leaderboardData = await leaderboardResponse.json();
-            leaderboardOk = leaderboardData.ok;
+          // Always post fresh leaderboard after the policy notification
+          const leaderboardData = await postSlackMessage(
+            botToken,
+            integration.policy_channel_id,
+            leaderboardText,
+          );
+          leaderboardOk = leaderboardData.ok;
 
-            // Update the log with new message_ts
-            if (leaderboardData.ok) {
-              await supabase
-                .from("daily_sales_logs")
-                .update({
-                  leaderboard_message_ts: leaderboardData.ts,
-                  updated_at: new Date().toISOString(),
-                })
-                .eq("id", existingLog.id);
+          // Update the log with new message_ts
+          if (leaderboardData.ok && leaderboardData.ts) {
+            const { error: updateLogError } = await supabase
+              .from("daily_sales_logs")
+              .update({
+                leaderboard_message_ts: leaderboardData.ts,
+                updated_at: new Date().toISOString(),
+              })
+              .eq("id", existingLog.id);
+
+            if (updateLogError) {
+              console.error(
+                "[slack-policy-notification] Failed to update log with new message_ts:",
+                updateLogError,
+              );
             }
+          } else if (!leaderboardData.ok) {
+            console.error(
+              "[slack-policy-notification] Failed to post new leaderboard:",
+              leaderboardData.error,
+            );
           }
         }
 

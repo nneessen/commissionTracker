@@ -6,6 +6,42 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-12-26 16:32:37
+
+### Changed Files
+- `CHANGELOG.md`
+- `PROJECT_STATS.md`
+- `plans/active/slack-leaderboard-naming-continuation.md`
+- `plans/active/slack-scoreboard-continuation.md`
+- `src/features/policies/PolicyDashboard.tsx`
+- `src/features/policies/components/FirstSellerNamingDialog.tsx`
+- `supabase/functions/slack-policy-notification/index.ts`
+- `supabase/migrations/20251226_011_fix_agency_descendants.sql`
+- `supabase/migrations/20251226_012_first_seller_naming_rpc.sql`
+- `supabase/migrations/20251226_013_pending_first_sale.sql`
+
+### Statistics
+```
+ 10 files changed, 1294 insertions(+), 166 deletions(-)
+```
+
+## [Checkpoint] - 2025-12-26 16:30:02
+
+### Changed Files
+- `plans/active/slack-leaderboard-naming-continuation.md`
+- `plans/active/slack-scoreboard-continuation.md`
+- `src/features/policies/PolicyDashboard.tsx`
+- `src/features/policies/components/FirstSellerNamingDialog.tsx`
+- `supabase/functions/slack-policy-notification/index.ts`
+- `supabase/migrations/20251226_011_fix_agency_descendants.sql`
+- `supabase/migrations/20251226_012_first_seller_naming_rpc.sql`
+- `supabase/migrations/20251226_013_pending_first_sale.sql`
+
+### Statistics
+```
+ 8 files changed, 1274 insertions(+), 161 deletions(-)
+```
+
 ## [Checkpoint] - 2025-12-26 14:19:15
 
 ### Changed Files

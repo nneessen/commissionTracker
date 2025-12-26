@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PolicyDialog } from "./components/PolicyDialog";
+import { FirstSellerNamingDialog } from "./components/FirstSellerNamingDialog";
 import { PolicyList } from "./PolicyList";
 import {
   usePolicies,
@@ -14,6 +15,7 @@ import {
 import { useCarriers } from "../../hooks/carriers";
 import { useAuth } from "../../contexts/AuthContext";
 import { clientService } from "@/services/clients";
+import { supabase } from "@/services/base/supabase";
 import {
   transformFormToCreateData,
   transformFormToUpdateData,
@@ -24,8 +26,38 @@ import { toast } from "sonner";
 export const PolicyDashboard: React.FC = () => {
   const [isPolicyFormOpen, setIsPolicyFormOpen] = useState(false);
   const [editingPolicyId, setEditingPolicyId] = useState<string | undefined>();
+  const [firstSellerDialog, setFirstSellerDialog] = useState<{
+    open: boolean;
+    logId: string;
+    agencyName: string;
+  }>({ open: false, logId: "", agencyName: "" });
 
   const { user } = useAuth();
+
+  // Check if user is first seller and should name the leaderboard
+  const checkFirstSeller = async (userId: string) => {
+    try {
+      const { data, error } = await supabase.rpc("check_first_seller_naming", {
+        p_user_id: userId,
+      });
+
+      if (error) {
+        console.error("Error checking first seller:", error);
+        return;
+      }
+
+      if (data && data.length > 0 && data[0].needs_naming) {
+        // User is first seller and leaderboard needs naming
+        setFirstSellerDialog({
+          open: true,
+          logId: data[0].log_id,
+          agencyName: data[0].agency_name,
+        });
+      }
+    } catch (err) {
+      console.error("Error checking first seller:", err);
+    }
+  };
   const { isLoading, error, refetch } = usePolicies();
   // Fetch the specific policy being edited - this is the reliable data source
   const { data: editingPolicy, isLoading: isEditingPolicyLoading } =
@@ -73,6 +105,16 @@ export const PolicyDashboard: React.FC = () => {
       <PolicyList
         onEditPolicy={handleEditPolicy}
         onNewPolicy={() => setIsPolicyFormOpen(true)}
+      />
+
+      {/* First Seller Naming Dialog */}
+      <FirstSellerNamingDialog
+        open={firstSellerDialog.open}
+        onOpenChange={(open) =>
+          setFirstSellerDialog((prev) => ({ ...prev, open }))
+        }
+        logId={firstSellerDialog.logId}
+        agencyName={firstSellerDialog.agencyName}
       />
 
       {/* Policy Dialog */}
@@ -132,6 +174,11 @@ export const PolicyDashboard: React.FC = () => {
               toast.success(
                 `Policy ${result.policyNumber} created successfully!`,
               );
+
+              // Check if user is first seller immediately
+              // The edge function now stores pending data for first sales instead of posting
+              checkFirstSeller(user.id);
+
               return result;
             }
           } catch (error) {
