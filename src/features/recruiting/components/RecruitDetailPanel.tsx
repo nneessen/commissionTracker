@@ -219,7 +219,7 @@ export function RecruitDetailPanel({
     if (!recruit.email) return;
     setResendingInvite(true);
     try {
-      // Use custom Mailgun edge function instead of Supabase's built-in email
+      // First, try to send password reset (works if auth user exists)
       const { data, error: fnError } = await supabase.functions.invoke(
         "send-password-reset",
         {
@@ -229,6 +229,38 @@ export function RecruitDetailPanel({
           },
         },
       );
+
+      // If user not found (404), create auth user first (sends welcome email with password setup)
+      if (data?.error === "No account found with this email address") {
+        console.log(
+          "[RecruitDetailPanel] Auth user not found, creating one...",
+        );
+        const { data: createData, error: createError } =
+          await supabase.functions.invoke("create-auth-user", {
+            body: {
+              email: recruit.email,
+              fullName:
+                `${recruit.first_name || ""} ${recruit.last_name || ""}`.trim(),
+              roles: (recruit.roles as string[]) || ["recruit"],
+              isAdmin: false,
+              skipPipeline: true, // Pipeline may already exist
+            },
+          });
+
+        if (createError) {
+          toast.error(createError.message || "Failed to create login access");
+        } else if (createData?.error) {
+          toast.error(createData.error);
+        } else if (createData?.emailSent) {
+          toast.success("Login instructions sent!");
+        } else {
+          toast.success(
+            "Account created but email may not have sent. Check edge function logs.",
+          );
+        }
+        return;
+      }
+
       if (fnError) toast.error(fnError.message);
       else if (data?.success === false) toast.error(data.error);
       else toast.success("Invite sent!");

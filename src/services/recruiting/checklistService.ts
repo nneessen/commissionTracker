@@ -13,6 +13,7 @@ import { PipelinePhaseRepository } from "./repositories/PipelinePhaseRepository"
 import { PhaseChecklistItemRepository } from "./repositories/PhaseChecklistItemRepository";
 import { documentService } from "@/services/documents";
 import { pipelineAutomationService } from "./pipelineAutomationService";
+import { createAuthUserWithProfile } from "./authUserService";
 import type {
   RecruitPhaseProgress,
   RecruitChecklistProgress,
@@ -311,6 +312,29 @@ export const checklistService = {
         })
         .eq("id", userId);
       return null;
+    }
+
+    // Check if next phase requires login access (phase 2+)
+    // Phase 1 is for prospects without login, phase 2+ requires auth user
+    if (nextPhase.phaseOrder >= 2) {
+      try {
+        const authResult = await this.ensureRecruitHasAuthUser(userId);
+        if (authResult.created && authResult.emailSent) {
+          console.log(
+            `[checklistService] Login instructions sent to recruit ${userId}`,
+          );
+        }
+      } catch (error) {
+        // Log but don't block phase advancement
+        console.error(
+          "[checklistService] Failed to ensure auth user on phase advance:",
+          error,
+        );
+        // Re-throw to prevent advancing without login access
+        throw new Error(
+          "Could not send login instructions. Please try again or use the Resend Invite button.",
+        );
+      }
     }
 
     // Mark next phase as in_progress
@@ -732,5 +756,74 @@ export const checklistService = {
     );
 
     return { success: true };
+  },
+
+  // ========================================
+  // AUTH USER MANAGEMENT
+  // ========================================
+
+  /**
+   * Ensures recruit has an auth user. Creates one if missing.
+   * Called when advancing to a phase that requires login access (phase 2+).
+   * Returns whether an email was sent (only on new auth user creation).
+   */
+  async ensureRecruitHasAuthUser(
+    userId: string,
+  ): Promise<{ emailSent: boolean; created: boolean }> {
+    // Get recruit profile to check if they need auth user creation
+    const { data: profile, error: profileError } = await supabase
+      .from("user_profiles")
+      .select("id, email, first_name, last_name, roles")
+      .eq("id", userId)
+      .single();
+
+    if (profileError || !profile) {
+      console.error(
+        "[checklistService] Failed to get profile for auth user check:",
+        profileError,
+      );
+      throw new Error("Recruit profile not found");
+    }
+
+    // Check if auth user already exists by trying to query auth.users
+    // Note: This requires checking if the profile was created via auth
+    // If profile.id matches an auth.users.id, then auth user exists
+    // We can check this by trying to call the edge function and handling the "already exists" error
+    try {
+      console.log(
+        `[checklistService] Creating auth user for recruit ${userId} (${profile.email})`,
+      );
+
+      const authResult = await createAuthUserWithProfile({
+        email: profile.email,
+        fullName: `${profile.first_name} ${profile.last_name}`,
+        roles: (profile.roles as string[]) || ["recruit"],
+        isAdmin: false,
+        skipPipeline: true, // Pipeline already exists, just need auth
+      });
+
+      console.log(
+        `[checklistService] Auth user created for ${profile.email}, email sent: ${authResult.emailSent}`,
+      );
+
+      return { emailSent: authResult.emailSent, created: true };
+    } catch (error) {
+      // If error indicates user already exists, that's fine
+      const errorMessage =
+        error instanceof Error ? error.message.toLowerCase() : "";
+      if (
+        errorMessage.includes("already exists") ||
+        errorMessage.includes("already registered")
+      ) {
+        console.log(
+          `[checklistService] Auth user already exists for ${profile.email}`,
+        );
+        return { emailSent: false, created: false };
+      }
+
+      // Re-throw other errors
+      console.error("[checklistService] Failed to create auth user:", error);
+      throw error;
+    }
   },
 };

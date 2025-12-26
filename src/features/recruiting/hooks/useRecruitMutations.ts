@@ -13,20 +13,12 @@ export function useCreateRecruit() {
       recruitingService.createRecruit(recruit),
     onSuccess: (data) => {
       const name = `${data.first_name} ${data.last_name}`.trim() || data.email;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- internal response metadata
-      const emailSent = (data as any)._emailSent;
 
-      if (emailSent) {
-        toast.success(
-          `Successfully added ${name}. A password reset email has been sent to ${data.email}. They should check their inbox (and spam folder) for login instructions.`,
-          { duration: 8000 },
-        );
-      } else {
-        toast.warning(
-          `Added ${name} but the invite email could not be sent. Use the "Resend Invite" button in their profile to send login instructions.`,
-          { duration: 8000 },
-        );
-      }
+      // Simple success message - no email sent at recruit creation
+      // Login instructions will be sent when recruit is advanced to phase 2+
+      toast.success(`Successfully added ${name} as a prospect.`, {
+        duration: 5000,
+      });
 
       queryClient.invalidateQueries({ queryKey: ["recruits"] });
       queryClient.invalidateQueries({ queryKey: ["recruiting-stats"] });

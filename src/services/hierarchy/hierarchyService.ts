@@ -504,6 +504,7 @@ class HierarchyService {
 
   /**
    * Get comprehensive details for a specific agent
+   * Only returns data if caller is admin, self, or upline of the agent
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- hierarchy node can have various shapes
   async getAgentDetails(agentId: string): Promise<any> {
@@ -517,6 +518,32 @@ class HierarchyService {
         throw new ValidationError("AgentId is required", [
           { field: "agentId", message: "Required", value: agentId },
         ]);
+      }
+
+      // Check permission - only admin, self, or upline can view agent details
+      const { data: canView, error: permError } = await supabase.rpc(
+        "can_view_agent_details",
+        { p_agent_id: agentId },
+      );
+
+      if (permError) {
+        logger.error(
+          "HierarchyService.getAgentDetails permission check failed",
+          permError,
+        );
+        throw new Error("Permission check failed");
+      }
+
+      if (!canView) {
+        logger.warn(
+          "Unauthorized attempt to view agent details",
+          { agentId },
+          "HierarchyService",
+        );
+        throw new ValidationError(
+          "You can only view details for your downline agents",
+          [{ field: "agentId", message: "Not authorized", value: agentId }],
+        );
       }
 
       // Get agent profile

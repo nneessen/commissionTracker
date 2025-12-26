@@ -294,21 +294,24 @@ export function AddRecruitDialog({
         referral_source: value.referral_source || undefined,
       });
 
-      if (recruit && recruit.pipeline_template_id) {
+      if (recruit) {
         // Initialize phase progress only if the recruit has a pipeline
-        try {
-          await initializeProgressMutation.mutateAsync({
-            userId: recruit.id,
-            templateId: recruit.pipeline_template_id,
-          });
-        } catch (error) {
-          console.error("Failed to initialize recruit progress:", error);
-          // Don't block the success flow - the recruit was created
+        if (recruit.pipeline_template_id) {
+          try {
+            await initializeProgressMutation.mutateAsync({
+              userId: recruit.id,
+              templateId: recruit.pipeline_template_id,
+            });
+          } catch (error) {
+            console.error("Failed to initialize recruit progress:", error);
+            // Don't block the success flow - the recruit was created
+          }
         }
 
+        // Always close dialog and reset form on successful recruit creation
         onOpenChange(false);
         form.reset();
-        setActiveTab("basic"); // Reset to first tab
+        setActiveTab("basic");
         onSuccess?.(recruit.id);
       }
     },
@@ -810,7 +813,7 @@ export function AddRecruitDialog({
                       Assign Upline/Trainer
                     </Label>
                     <Select
-                      value={field.state.value || undefined}
+                      value={field.state.value ?? ""}
                       onValueChange={(value) =>
                         field.handleChange(value === "none" ? "" : value)
                       }
