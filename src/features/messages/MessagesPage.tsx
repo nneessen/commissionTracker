@@ -1,7 +1,7 @@
 // src/features/messages/MessagesPage.tsx
 // Communications Hub - Redesigned with zinc palette and compact design patterns
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MessagesLayout } from "./components/layout/MessagesLayout";
@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SlackTabContent, SlackSidebar } from "./components/slack";
+import { useUserSlackPreferences, useSlackChannels } from "@/hooks/slack";
 import type { SlackChannel } from "@/types/slack.types";
 
 type TabType =
@@ -46,9 +47,40 @@ export function MessagesPage() {
   const [activeFolder, setActiveFolder] = useState<FolderType>("all");
   const [selectedSlackChannel, setSelectedSlackChannel] =
     useState<SlackChannel | null>(null);
+  const [hasAppliedDefaultChannel, setHasAppliedDefaultChannel] =
+    useState(false);
 
   // Get email quota
   const { remainingDaily, percentUsed, quota } = useEmailQuota();
+
+  // Get user's Slack preferences for default channel
+  const { data: userSlackPrefs } = useUserSlackPreferences();
+  const { data: slackChannels = [] } = useSlackChannels();
+
+  // Apply default channel when switching to Slack tab
+  useEffect(() => {
+    if (
+      activeTab === "slack" &&
+      !selectedSlackChannel &&
+      !hasAppliedDefaultChannel &&
+      userSlackPrefs?.default_view_channel_id &&
+      slackChannels.length > 0
+    ) {
+      const defaultChannel = slackChannels.find(
+        (c: SlackChannel) => c.id === userSlackPrefs.default_view_channel_id,
+      );
+      if (defaultChannel) {
+        setSelectedSlackChannel(defaultChannel);
+        setHasAppliedDefaultChannel(true);
+      }
+    }
+  }, [
+    activeTab,
+    selectedSlackChannel,
+    hasAppliedDefaultChannel,
+    userSlackPrefs?.default_view_channel_id,
+    slackChannels,
+  ]);
 
   // Folder counts and unread
   const { counts, totalUnread } = useFolderCounts();
@@ -168,7 +200,7 @@ export function MessagesPage() {
         </div>
 
         {/* Compact tabs */}
-        <div className="flex items-center gap-0.5 bg-zinc-200/50 dark:bg-zinc-800/50 rounded-md p-0.5">
+        <div className="flex items-center gap-0.5 bg-zinc-200/50 dark:bg-zinc-900/50 rounded-md p-0.5">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -179,8 +211,8 @@ export function MessagesPage() {
                 className={cn(
                   "flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-[11px] font-medium rounded transition-all",
                   isActive
-                    ? "bg-white dark:bg-zinc-900 shadow-sm text-zinc-900 dark:text-zinc-100"
-                    : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300",
+                    ? "bg-white dark:bg-zinc-700 shadow-sm text-zinc-900 dark:text-zinc-100"
+                    : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/50",
                 )}
               >
                 <Icon className="h-3.5 w-3.5" />

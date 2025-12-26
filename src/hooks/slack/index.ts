@@ -1,13 +1,22 @@
 // src/hooks/slack/index.ts
+
+// Multi-workspace integration hooks
 export {
-  // Integration
+  // Multi-workspace
+  useSlackIntegrations,
+  useSlackIntegrationById,
+  useDisconnectSlackById,
+  useTestSlackConnectionById,
+  useUpdateSlackIntegrationSettings,
+  useSlackChannelsById,
+  useJoinSlackChannelById,
+  // Legacy (backward compatibility)
   useSlackIntegration,
   useHasSlackIntegration,
   useConnectSlack,
   useDisconnectSlack,
   useTestSlackConnection,
   useUpdateSlackChannelSettings,
-  // Channels
   useSlackChannels,
   useJoinSlackChannel,
   // Messages
@@ -15,4 +24,26 @@ export {
   useSlackMessageStats,
   useSendTestSlackMessage,
   usePostLeaderboard,
+  // Reactions
+  useAddSlackReaction,
+  useRemoveSlackReaction,
 } from "./useSlackIntegration";
+
+export {
+  // User Preferences
+  useUserSlackPreferences,
+  useUpdateUserSlackPreferences,
+  useSetDefaultSlackChannel,
+  useSetPolicyPostChannels,
+  useTogglePolicyPostChannel,
+  useToggleAutoPost,
+} from "./useUserSlackPreferences";
+
+export {
+  // Webhooks (multi-workspace notifications without OAuth)
+  useSlackWebhooks,
+  useAddSlackWebhook,
+  useUpdateSlackWebhook,
+  useDeleteSlackWebhook,
+  useTestSlackWebhook,
+} from "./useSlackWebhooks";

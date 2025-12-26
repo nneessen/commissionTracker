@@ -164,7 +164,11 @@ serve(async (req) => {
     // Create Supabase client with service role
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // Upsert the integration
+    // Upsert the integration - use team_id as conflict key to support multi-workspace
+    // This allows multiple workspaces per IMO, but prevents the same workspace from being connected twice
+    const teamId = tokenData.team?.id || "";
+    const teamName = tokenData.team?.name || "Unknown Workspace";
+
     const { error: upsertError } = await supabase
       .from("slack_integrations")
       .upsert(
@@ -173,8 +177,9 @@ serve(async (req) => {
           access_token_encrypted: encryptedAccessToken,
           bot_token_encrypted: encryptedBotToken,
           refresh_token_encrypted: encryptedUserToken,
-          team_id: tokenData.team?.id || "",
-          team_name: tokenData.team?.name || "Unknown Workspace",
+          team_id: teamId,
+          team_name: teamName,
+          display_name: teamName, // Set display_name to team_name by default
           bot_user_id: tokenData.bot_user_id || "",
           bot_name: "Commission Tracker",
           scope: tokenData.scope || "",
@@ -188,7 +193,7 @@ serve(async (req) => {
           created_by: userId,
         },
         {
-          onConflict: "imo_id",
+          onConflict: "team_id", // Use team_id to allow multiple workspaces per IMO
         },
       );
 
@@ -200,7 +205,10 @@ serve(async (req) => {
       return Response.redirect(`${redirectUrl}?slack=error&reason=save_failed`);
     }
 
-    console.log("[slack-oauth-callback] Integration saved successfully");
+    console.log(
+      "[slack-oauth-callback] Integration saved successfully for workspace:",
+      teamName,
+    );
 
     // Redirect back to app with success
     return Response.redirect(

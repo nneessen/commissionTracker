@@ -23,6 +23,21 @@ export type SlackMessageRow =
 export type SlackMessageInsert =
   Database["public"]["Tables"]["slack_messages"]["Insert"];
 
+export type UserSlackPreferencesRow =
+  Database["public"]["Tables"]["user_slack_preferences"]["Row"];
+export type UserSlackPreferencesInsert =
+  Database["public"]["Tables"]["user_slack_preferences"]["Insert"];
+export type UserSlackPreferencesUpdate =
+  Database["public"]["Tables"]["user_slack_preferences"]["Update"];
+
+// Slack webhooks (for multi-workspace notifications without OAuth)
+export type SlackWebhookRow =
+  Database["public"]["Tables"]["slack_webhooks"]["Row"];
+export type SlackWebhookInsert =
+  Database["public"]["Tables"]["slack_webhooks"]["Insert"];
+export type SlackWebhookUpdate =
+  Database["public"]["Tables"]["slack_webhooks"]["Update"];
+
 // Enum types from database
 export type SlackNotificationType =
   Database["public"]["Enums"]["slack_notification_type"];
@@ -46,6 +61,24 @@ export interface SlackMessage extends SlackMessageRow {
   // Computed fields for display
   formattedSentAt?: string;
 }
+
+// Multi-workspace channel selection structure
+export interface PolicyPostChannel {
+  integration_id: string;
+  channel_id: string;
+  channel_name: string;
+}
+
+export interface UserSlackPreferences extends Omit<
+  UserSlackPreferencesRow,
+  "policy_post_channels"
+> {
+  // Typed version of policy_post_channels JSONB
+  policy_post_channels: PolicyPostChannel[] | null;
+}
+
+// Slack webhook for multi-workspace notifications (no OAuth needed)
+export type SlackWebhook = SlackWebhookRow;
 
 // Slack API types (from Slack's responses)
 export interface SlackChannel {
@@ -185,12 +218,26 @@ export interface SlackListChannelsResponse {
 // Query key factory
 export const slackKeys = {
   all: ["slack"] as const,
-  integration: (imoId: string) =>
-    [...slackKeys.all, "integration", imoId] as const,
-  channels: (imoId: string) => [...slackKeys.all, "channels", imoId] as const,
+  // Multi-workspace: all integrations for an IMO
+  integrations: (imoId: string) =>
+    [...slackKeys.all, "integrations", imoId] as const,
+  // Single integration by ID
+  integration: (integrationId: string) =>
+    [...slackKeys.all, "integration", integrationId] as const,
+  // Channels for a specific integration
+  channels: (integrationId: string) =>
+    [...slackKeys.all, "channels", integrationId] as const,
+  // All channels across all workspaces for an IMO
+  allChannels: (imoId: string) =>
+    [...slackKeys.all, "allChannels", imoId] as const,
   channelConfigs: (imoId: string) =>
     [...slackKeys.all, "configs", imoId] as const,
   channelConfig: (id: string) => [...slackKeys.all, "config", id] as const,
   messages: (imoId: string) => [...slackKeys.all, "messages", imoId] as const,
   message: (id: string) => [...slackKeys.all, "message", id] as const,
+  userPreferences: (userId: string, imoId: string) =>
+    [...slackKeys.all, "userPrefs", userId, imoId] as const,
+  // Webhooks for multi-workspace notifications
+  webhooks: (imoId: string) => [...slackKeys.all, "webhooks", imoId] as const,
+  webhook: (id: string) => [...slackKeys.all, "webhook", id] as const,
 };

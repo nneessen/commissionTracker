@@ -2,17 +2,43 @@
 // Displays Slack channel messages and message composer
 
 import { useState, useEffect, useRef } from "react";
-import { Hash, Lock, Loader2, Send, AlertCircle, UserPlus } from "lucide-react";
+import {
+  Hash,
+  Lock,
+  Loader2,
+  Send,
+  AlertCircle,
+  UserPlus,
+  SmilePlus,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/services/base/supabase";
 import { useCurrentUserProfile } from "@/hooks/admin/useUserApproval";
-import { useJoinSlackChannel } from "@/hooks/slack";
+import { useJoinSlackChannel, useAddSlackReaction } from "@/hooks/slack";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
+import * as emoji from "node-emoji";
 import type { SlackChannel } from "@/types/slack.types";
+
+// Common emoji reactions for quick access
+const QUICK_REACTIONS = [
+  { name: "thumbsup", emoji: "👍" },
+  { name: "heart", emoji: "❤️" },
+  { name: "fire", emoji: "🔥" },
+  { name: "tada", emoji: "🎉" },
+  { name: "rocket", emoji: "🚀" },
+  { name: "eyes", emoji: "👀" },
+  { name: "clap", emoji: "👏" },
+  { name: "muscle", emoji: "💪" },
+];
 
 interface SlackMessage {
   id: string;
@@ -52,6 +78,7 @@ export function SlackChannelView({ channel }: SlackChannelViewProps) {
     } else {
       setNeedsJoin(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [channel.id, channel.is_member]);
 
   const handleAutoJoin = async () => {
@@ -157,6 +184,31 @@ export function SlackChannelView({ channel }: SlackChannelViewProps) {
       );
     },
   });
+
+  // Add reaction mutation
+  const addReaction = useAddSlackReaction();
+
+  const handleAddReaction = async (messageTs: string, emojiName: string) => {
+    try {
+      const result = await addReaction.mutateAsync({
+        channelId: channel.id,
+        messageTs,
+        emojiName,
+      });
+      if (result.ok || result.alreadyReacted) {
+        // Refetch messages to show updated reactions
+        queryClient.invalidateQueries({
+          queryKey: ["slack-messages", channel.id],
+        });
+      } else if (result.error) {
+        toast.error(`Failed to add reaction: ${result.error}`);
+      }
+    } catch (err) {
+      toast.error(
+        `Failed to add reaction: ${err instanceof Error ? err.message : "Unknown error"}`,
+      );
+    }
+  };
 
   // Scroll to bottom when messages load
   useEffect(() => {
@@ -279,7 +331,12 @@ export function SlackChannelView({ channel }: SlackChannelViewProps) {
         ) : (
           <>
             {messages.map((msg) => (
-              <MessageItem key={msg.id} message={msg} />
+              <MessageItem
+                key={msg.id}
+                message={msg}
+                channelId={channel.id}
+                onReactionAdd={handleAddReaction}
+              />
             ))}
             <div ref={messagesEndRef} />
           </>
@@ -341,22 +398,32 @@ function formatSlackText(text: string): string {
     formatted = formatted.replace(/@user/g, "Someone");
   }
 
-  // Convert common Slack emoji codes
-  formatted = formatted.replace(/:slightly_smiling_face:/g, "🙂");
-  formatted = formatted.replace(/:thumbsup:/g, "👍");
-  formatted = formatted.replace(/:wave:/g, "👋");
-  formatted = formatted.replace(/:rocket:/g, "🚀");
-  formatted = formatted.replace(/:tada:/g, "🎉");
-  formatted = formatted.replace(/:fire:/g, "🔥");
-  formatted = formatted.replace(/:heart:/g, "❤️");
-  formatted = formatted.replace(/:+1:/g, "👍");
-  formatted = formatted.replace(/:white_check_mark:/g, "✅");
-  formatted = formatted.replace(/:x:/g, "❌");
+  // Convert all Slack emoji codes using node-emoji library
+  formatted = emoji.emojify(formatted);
 
   return formatted;
 }
 
-function MessageItem({ message }: { message: SlackMessage }) {
+/**
+ * Convert a single emoji name to its unicode character
+ * Falls back to the :name: format if not found
+ */
+function getEmojiFromName(name: string): string {
+  const result = emoji.get(name);
+  // emoji.get returns undefined if not found
+  return result ?? `:${name}:`;
+}
+
+function MessageItem({
+  message,
+  onReactionAdd,
+}: {
+  message: SlackMessage;
+  channelId?: string;
+  onReactionAdd?: (messageTs: string, emojiName: string) => void;
+}) {
+  const [isReactionPopoverOpen, setIsReactionPopoverOpen] = useState(false);
+
   const userName =
     message.user?.profile?.display_name ||
     message.user?.real_name ||
@@ -376,6 +443,13 @@ function MessageItem({ message }: { message: SlackMessage }) {
     formattedText.includes("set the channel") ||
     formattedText.includes("was added to");
 
+  const handleReaction = (emojiName: string) => {
+    if (onReactionAdd && message.timestamp) {
+      onReactionAdd(message.timestamp, emojiName);
+      setIsReactionPopoverOpen(false);
+    }
+  };
+
   if (isSystemMessage) {
     return (
       <div className="flex items-center justify-center py-1">
@@ -387,7 +461,7 @@ function MessageItem({ message }: { message: SlackMessage }) {
   }
 
   return (
-    <div className="flex gap-2 group hover:bg-zinc-50 dark:hover:bg-zinc-800/50 -mx-2 px-2 py-1 rounded">
+    <div className="flex gap-2 group hover:bg-zinc-50 dark:hover:bg-zinc-800/50 -mx-2 px-2 py-1 rounded relative">
       <Avatar className="h-8 w-8 flex-shrink-0">
         <AvatarImage src={message.user?.profile?.image_48} />
         <AvatarFallback className="text-[10px] bg-zinc-200 dark:bg-zinc-700">
@@ -411,18 +485,54 @@ function MessageItem({ message }: { message: SlackMessage }) {
         </p>
 
         {/* Reactions */}
-        {message.reactions && message.reactions.length > 0 && (
-          <div className="flex flex-wrap gap-1 mt-1">
-            {message.reactions.map((r) => (
-              <span
+        <div className="flex flex-wrap items-center gap-1 mt-1">
+          {message.reactions &&
+            message.reactions.length > 0 &&
+            message.reactions.map((r) => (
+              <button
                 key={r.name}
-                className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-zinc-100 dark:bg-zinc-800 rounded text-[9px]"
+                onClick={() => handleReaction(r.name)}
+                className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded text-[9px] transition-colors cursor-pointer"
+                title={`React with :${r.name}:`}
               >
-                :{r.name}: {r.count}
-              </span>
+                {getEmojiFromName(r.name)} {r.count}
+              </button>
             ))}
-          </div>
-        )}
+
+          {/* Add reaction button */}
+          <Popover
+            open={isReactionPopoverOpen}
+            onOpenChange={setIsReactionPopoverOpen}
+          >
+            <PopoverTrigger asChild>
+              <button
+                className="opacity-0 group-hover:opacity-100 inline-flex items-center justify-center h-5 w-5 rounded hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-all text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
+                title="Add reaction"
+              >
+                <SmilePlus className="h-3.5 w-3.5" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent
+              className="w-auto p-2"
+              side="top"
+              align="start"
+              sideOffset={4}
+            >
+              <div className="flex gap-1">
+                {QUICK_REACTIONS.map((reaction) => (
+                  <button
+                    key={reaction.name}
+                    onClick={() => handleReaction(reaction.name)}
+                    className="p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded transition-colors text-lg"
+                    title={`:${reaction.name}:`}
+                  >
+                    {reaction.emoji}
+                  </button>
+                ))}
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
 
         {/* Thread indicator */}
         {message.replyCount && message.replyCount > 0 && (

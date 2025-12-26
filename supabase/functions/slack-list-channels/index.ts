@@ -55,11 +55,11 @@ serve(async (req) => {
     }
 
     const body = await req.json();
-    const { imoId } = body;
+    const { imoId, integrationId } = body;
 
-    if (!imoId) {
+    if (!imoId && !integrationId) {
       return new Response(
-        JSON.stringify({ ok: false, error: "Missing imoId" }),
+        JSON.stringify({ ok: false, error: "Missing imoId or integrationId" }),
         {
           status: 400,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -67,16 +67,22 @@ serve(async (req) => {
       );
     }
 
-    // Get Slack integration
+    // Get Slack integration - prefer integrationId for multi-workspace support
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    const { data: integration, error: fetchError } = await supabase
+    let query = supabase
       .from("slack_integrations")
       .select("*")
-      .eq("imo_id", imoId)
       .eq("is_active", true)
-      .eq("connection_status", "connected")
-      .maybeSingle();
+      .eq("connection_status", "connected");
+
+    if (integrationId) {
+      query = query.eq("id", integrationId);
+    } else {
+      query = query.eq("imo_id", imoId);
+    }
+
+    const { data: integration, error: fetchError } = await query.maybeSingle();
 
     if (fetchError || !integration) {
       return new Response(

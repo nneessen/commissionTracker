@@ -1,5 +1,5 @@
 // src/hooks/slack/useSlackIntegration.ts
-// TanStack Query hooks for Slack integration
+// TanStack Query hooks for Slack integration (multi-workspace support)
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
@@ -14,18 +14,52 @@ import type {
 } from "@/types/slack.types";
 
 // ============================================================================
-// Integration Hooks
+// Integration Hooks (Multi-Workspace)
 // ============================================================================
 
 /**
- * Get Slack integration status for the current user's IMO
+ * Get all Slack integrations for the current user's IMO
+ */
+export function useSlackIntegrations() {
+  const { data: profile } = useCurrentUserProfile();
+  const imoId = profile?.imo_id;
+
+  return useQuery({
+    queryKey: slackKeys.integrations(imoId ?? ""),
+    queryFn: async (): Promise<SlackIntegration[]> => {
+      if (!imoId) return [];
+      return slackService.getIntegrations(imoId);
+    },
+    enabled: !!imoId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+}
+
+/**
+ * Get a specific Slack integration by ID
+ */
+export function useSlackIntegrationById(integrationId: string | undefined) {
+  return useQuery({
+    queryKey: slackKeys.integration(integrationId ?? ""),
+    queryFn: async (): Promise<SlackIntegration | null> => {
+      if (!integrationId) return null;
+      return slackService.getIntegrationById(integrationId);
+    },
+    enabled: !!integrationId,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+/**
+ * Get first active Slack integration (backward compatibility)
+ * @deprecated Use useSlackIntegrations() for multi-workspace support
  */
 export function useSlackIntegration() {
   const { data: profile } = useCurrentUserProfile();
   const imoId = profile?.imo_id;
 
   return useQuery({
-    queryKey: slackKeys.integration(imoId ?? ""),
+    queryKey: [...slackKeys.integrations(imoId ?? ""), "first"],
     queryFn: async (): Promise<SlackIntegration | null> => {
       if (!imoId) return null;
       return slackService.getIntegration(imoId);
@@ -36,18 +70,18 @@ export function useSlackIntegration() {
 }
 
 /**
- * Check if user's IMO has active Slack integration
+ * Check if user's IMO has at least one active Slack integration
  */
 export function useHasSlackIntegration() {
-  const { data: integration, isLoading } = useSlackIntegration();
+  const { data: integrations = [], isLoading } = useSlackIntegrations();
   return {
-    hasIntegration: integration?.isConnected ?? false,
+    hasIntegration: integrations.some((i) => i.isConnected),
     isLoading,
   };
 }
 
 /**
- * Initiate Slack OAuth connection
+ * Initiate Slack OAuth connection (adds new workspace)
  */
 export function useConnectSlack() {
   const { user } = useAuth();
@@ -69,7 +103,32 @@ export function useConnectSlack() {
 }
 
 /**
- * Disconnect Slack workspace
+ * Disconnect a specific Slack workspace by integration ID
+ */
+export function useDisconnectSlackById() {
+  const queryClient = useQueryClient();
+  const { data: profile } = useCurrentUserProfile();
+
+  return useMutation({
+    mutationFn: async (integrationId: string): Promise<void> => {
+      await slackService.disconnectById(integrationId);
+    },
+    onSuccess: () => {
+      if (profile?.imo_id) {
+        queryClient.invalidateQueries({
+          queryKey: slackKeys.integrations(profile.imo_id),
+        });
+        queryClient.invalidateQueries({
+          queryKey: slackKeys.all,
+        });
+      }
+    },
+  });
+}
+
+/**
+ * Disconnect Slack workspace (deprecated - disconnects first integration)
+ * @deprecated Use useDisconnectSlackById() for multi-workspace support
  */
 export function useDisconnectSlack() {
   const queryClient = useQueryClient();
@@ -85,13 +144,10 @@ export function useDisconnectSlack() {
     onSuccess: () => {
       if (profile?.imo_id) {
         queryClient.invalidateQueries({
-          queryKey: slackKeys.integration(profile.imo_id),
+          queryKey: slackKeys.integrations(profile.imo_id),
         });
         queryClient.invalidateQueries({
-          queryKey: slackKeys.channels(profile.imo_id),
-        });
-        queryClient.invalidateQueries({
-          queryKey: slackKeys.channelConfigs(profile.imo_id),
+          queryKey: slackKeys.all,
         });
       }
     },
@@ -99,7 +155,21 @@ export function useDisconnectSlack() {
 }
 
 /**
- * Test Slack connection
+ * Test Slack connection for a specific integration
+ */
+export function useTestSlackConnectionById() {
+  return useMutation({
+    mutationFn: async (
+      integrationId: string,
+    ): Promise<{ ok: boolean; error?: string }> => {
+      return slackService.testConnectionById(integrationId);
+    },
+  });
+}
+
+/**
+ * Test Slack connection (deprecated)
+ * @deprecated Use useTestSlackConnectionById() for multi-workspace support
  */
 export function useTestSlackConnection() {
   const { data: profile } = useCurrentUserProfile();
@@ -115,7 +185,46 @@ export function useTestSlackConnection() {
 }
 
 /**
- * Update Slack channel settings
+ * Update settings for a specific Slack integration
+ */
+export function useUpdateSlackIntegrationSettings() {
+  const queryClient = useQueryClient();
+  const { data: profile } = useCurrentUserProfile();
+
+  return useMutation({
+    mutationFn: async ({
+      integrationId,
+      settings,
+    }: {
+      integrationId: string;
+      settings: {
+        display_name?: string | null;
+        policy_channel_id?: string | null;
+        policy_channel_name?: string | null;
+        leaderboard_channel_id?: string | null;
+        leaderboard_channel_name?: string | null;
+        include_client_info?: boolean;
+        include_leaderboard_with_policy?: boolean;
+      };
+    }): Promise<SlackIntegration> => {
+      return slackService.updateIntegrationSettings(integrationId, settings);
+    },
+    onSuccess: (_, variables) => {
+      if (profile?.imo_id) {
+        queryClient.invalidateQueries({
+          queryKey: slackKeys.integrations(profile.imo_id),
+        });
+        queryClient.invalidateQueries({
+          queryKey: slackKeys.integration(variables.integrationId),
+        });
+      }
+    },
+  });
+}
+
+/**
+ * Update Slack channel settings (deprecated)
+ * @deprecated Use useUpdateSlackIntegrationSettings() for multi-workspace support
  */
 export function useUpdateSlackChannelSettings() {
   const queryClient = useQueryClient();
@@ -138,7 +247,7 @@ export function useUpdateSlackChannelSettings() {
     onSuccess: () => {
       if (profile?.imo_id) {
         queryClient.invalidateQueries({
-          queryKey: slackKeys.integration(profile.imo_id),
+          queryKey: slackKeys.integrations(profile.imo_id),
         });
       }
     },
@@ -150,14 +259,30 @@ export function useUpdateSlackChannelSettings() {
 // ============================================================================
 
 /**
- * List available Slack channels
+ * List available Slack channels for a specific integration
+ */
+export function useSlackChannelsById(integrationId: string | undefined) {
+  return useQuery({
+    queryKey: slackKeys.channels(integrationId ?? ""),
+    queryFn: async (): Promise<SlackChannel[]> => {
+      if (!integrationId) return [];
+      return slackService.listChannelsById(integrationId);
+    },
+    enabled: !!integrationId,
+    staleTime: 2 * 60 * 1000, // 2 minutes
+  });
+}
+
+/**
+ * List available Slack channels (deprecated - uses first integration)
+ * @deprecated Use useSlackChannelsById() for multi-workspace support
  */
 export function useSlackChannels() {
   const { data: profile } = useCurrentUserProfile();
   const imoId = profile?.imo_id;
 
   return useQuery({
-    queryKey: slackKeys.channels(imoId ?? ""),
+    queryKey: slackKeys.allChannels(imoId ?? ""),
     queryFn: async (): Promise<SlackChannel[]> => {
       if (!imoId) return [];
       return slackService.listChannels(imoId);
@@ -168,7 +293,32 @@ export function useSlackChannels() {
 }
 
 /**
- * Join a Slack channel
+ * Join a Slack channel for a specific integration
+ */
+export function useJoinSlackChannelById() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      integrationId,
+      channelId,
+    }: {
+      integrationId: string;
+      channelId: string;
+    }): Promise<{ ok: boolean; error?: string }> => {
+      return slackService.joinChannelById(integrationId, channelId);
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: slackKeys.channels(variables.integrationId),
+      });
+    },
+  });
+}
+
+/**
+ * Join a Slack channel (deprecated)
+ * @deprecated Use useJoinSlackChannelById() for multi-workspace support
  */
 export function useJoinSlackChannel() {
   const queryClient = useQueryClient();
@@ -186,7 +336,7 @@ export function useJoinSlackChannel() {
     onSuccess: () => {
       if (profile?.imo_id) {
         queryClient.invalidateQueries({
-          queryKey: slackKeys.channels(profile.imo_id),
+          queryKey: slackKeys.allChannels(profile.imo_id),
         });
       }
     },
@@ -290,6 +440,68 @@ export function usePostLeaderboard() {
           queryKey: slackKeys.messages(profile.imo_id),
         });
       }
+    },
+  });
+}
+
+// ============================================================================
+// Message Reactions
+// ============================================================================
+
+/**
+ * Add a reaction to a Slack message
+ */
+export function useAddSlackReaction() {
+  const { data: profile } = useCurrentUserProfile();
+
+  return useMutation({
+    mutationFn: async ({
+      channelId,
+      messageTs,
+      emojiName,
+    }: {
+      channelId: string;
+      messageTs: string;
+      emojiName: string;
+    }): Promise<{ ok: boolean; error?: string; alreadyReacted?: boolean }> => {
+      if (!profile?.imo_id) {
+        throw new Error("No IMO assigned");
+      }
+      return slackService.addReaction(
+        profile.imo_id,
+        channelId,
+        messageTs,
+        emojiName,
+      );
+    },
+  });
+}
+
+/**
+ * Remove a reaction from a Slack message
+ */
+export function useRemoveSlackReaction() {
+  const { data: profile } = useCurrentUserProfile();
+
+  return useMutation({
+    mutationFn: async ({
+      channelId,
+      messageTs,
+      emojiName,
+    }: {
+      channelId: string;
+      messageTs: string;
+      emojiName: string;
+    }): Promise<{ ok: boolean; error?: string; noReaction?: boolean }> => {
+      if (!profile?.imo_id) {
+        throw new Error("No IMO assigned");
+      }
+      return slackService.removeReaction(
+        profile.imo_id,
+        channelId,
+        messageTs,
+        emojiName,
+      );
     },
   });
 }

@@ -37,17 +37,37 @@ function transformMessageRow(row: SlackMessageRow): SlackMessage {
 
 export const slackService = {
   // ============================================================================
-  // Integration Management
+  // Integration Management (Multi-Workspace)
   // ============================================================================
 
   /**
-   * Get Slack integration for an IMO
+   * Get all Slack integrations for an IMO (multi-workspace support)
    */
-  async getIntegration(imoId: string): Promise<SlackIntegration | null> {
+  async getIntegrations(imoId: string): Promise<SlackIntegration[]> {
     const { data, error } = await supabase
       .from("slack_integrations")
       .select("*")
       .eq("imo_id", imoId)
+      .order("created_at", { ascending: true });
+
+    if (error) {
+      console.error("[slackService] Error fetching integrations:", error);
+      throw error;
+    }
+
+    return (data || []).map(transformIntegrationRow);
+  },
+
+  /**
+   * Get a single Slack integration by ID
+   */
+  async getIntegrationById(
+    integrationId: string,
+  ): Promise<SlackIntegration | null> {
+    const { data, error } = await supabase
+      .from("slack_integrations")
+      .select("*")
+      .eq("id", integrationId)
       .maybeSingle();
 
     if (error) {
@@ -59,11 +79,34 @@ export const slackService = {
   },
 
   /**
-   * Check if IMO has active Slack integration
+   * Get the first active Slack integration for an IMO (backward compatibility)
+   * @deprecated Use getIntegrations() for multi-workspace support
+   */
+  async getIntegration(imoId: string): Promise<SlackIntegration | null> {
+    const { data, error } = await supabase
+      .from("slack_integrations")
+      .select("*")
+      .eq("imo_id", imoId)
+      .eq("is_active", true)
+      .eq("connection_status", "connected")
+      .order("created_at", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) {
+      console.error("[slackService] Error fetching integration:", error);
+      throw error;
+    }
+
+    return data ? transformIntegrationRow(data) : null;
+  },
+
+  /**
+   * Check if IMO has at least one active Slack integration
    */
   async hasActiveIntegration(imoId: string): Promise<boolean> {
-    const integration = await this.getIntegration(imoId);
-    return integration?.isConnected ?? false;
+    const integrations = await this.getIntegrations(imoId);
+    return integrations.some((i) => i.isConnected);
   },
 
   /**
@@ -96,7 +139,26 @@ export const slackService = {
   },
 
   /**
-   * Disconnect Slack workspace (deactivate integration)
+   * Disconnect a specific Slack workspace by integration ID
+   */
+  async disconnectById(integrationId: string): Promise<void> {
+    const { error } = await supabase
+      .from("slack_integrations")
+      .update({
+        is_active: false,
+        connection_status: "disconnected",
+      })
+      .eq("id", integrationId);
+
+    if (error) {
+      console.error("[slackService] Error disconnecting:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Disconnect Slack workspace by IMO (deprecated - disconnects first integration)
+   * @deprecated Use disconnectById() for multi-workspace support
    */
   async disconnect(imoId: string): Promise<void> {
     const { error } = await supabase
@@ -114,7 +176,23 @@ export const slackService = {
   },
 
   /**
-   * Delete Slack integration completely
+   * Delete a specific Slack integration by ID
+   */
+  async deleteIntegrationById(integrationId: string): Promise<void> {
+    const { error } = await supabase
+      .from("slack_integrations")
+      .delete()
+      .eq("id", integrationId);
+
+    if (error) {
+      console.error("[slackService] Error deleting integration:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Delete Slack integration by IMO (deprecated)
+   * @deprecated Use deleteIntegrationById() for multi-workspace support
    */
   async deleteIntegration(imoId: string): Promise<void> {
     const { error } = await supabase
@@ -129,7 +207,41 @@ export const slackService = {
   },
 
   /**
-   * Update channel settings on the integration
+   * Update channel settings on a specific integration
+   */
+  async updateIntegrationSettings(
+    integrationId: string,
+    settings: {
+      display_name?: string | null;
+      policy_channel_id?: string | null;
+      policy_channel_name?: string | null;
+      leaderboard_channel_id?: string | null;
+      leaderboard_channel_name?: string | null;
+      include_client_info?: boolean;
+      include_leaderboard_with_policy?: boolean;
+    },
+  ): Promise<SlackIntegration> {
+    const { data, error } = await supabase
+      .from("slack_integrations")
+      .update(settings)
+      .eq("id", integrationId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error(
+        "[slackService] Error updating integration settings:",
+        error,
+      );
+      throw error;
+    }
+
+    return transformIntegrationRow(data);
+  },
+
+  /**
+   * Update channel settings by IMO (deprecated)
+   * @deprecated Use updateIntegrationSettings() for multi-workspace support
    */
   async updateChannelSettings(
     imoId: string,
@@ -158,7 +270,28 @@ export const slackService = {
   },
 
   /**
-   * Test Slack connection by calling edge function
+   * Test Slack connection for a specific integration
+   */
+  async testConnectionById(
+    integrationId: string,
+  ): Promise<{ ok: boolean; error?: string }> {
+    const { data, error } = await supabase.functions.invoke(
+      "slack-test-connection",
+      {
+        body: { integrationId },
+      },
+    );
+
+    if (error) {
+      return { ok: false, error: error.message };
+    }
+
+    return data;
+  },
+
+  /**
+   * Test Slack connection by IMO (deprecated)
+   * @deprecated Use testConnectionById() for multi-workspace support
    */
   async testConnection(
     imoId: string,
@@ -182,7 +315,27 @@ export const slackService = {
   // ============================================================================
 
   /**
-   * List available Slack channels via edge function
+   * List available Slack channels for a specific integration
+   */
+  async listChannelsById(integrationId: string): Promise<SlackChannel[]> {
+    const { data, error } = await supabase.functions.invoke(
+      "slack-list-channels",
+      {
+        body: { integrationId },
+      },
+    );
+
+    if (error) {
+      console.error("[slackService] Error listing channels:", error);
+      throw error;
+    }
+
+    return data?.channels || [];
+  },
+
+  /**
+   * List available Slack channels via edge function (deprecated)
+   * @deprecated Use listChannelsById() for multi-workspace support
    */
   async listChannels(imoId: string): Promise<SlackChannel[]> {
     const { data, error } = await supabase.functions.invoke(
@@ -201,7 +354,29 @@ export const slackService = {
   },
 
   /**
-   * Join a Slack channel via edge function
+   * Join a Slack channel for a specific integration
+   */
+  async joinChannelById(
+    integrationId: string,
+    channelId: string,
+  ): Promise<{ ok: boolean; error?: string }> {
+    const { data, error } = await supabase.functions.invoke(
+      "slack-join-channel",
+      {
+        body: { integrationId, channelId },
+      },
+    );
+
+    if (error) {
+      return { ok: false, error: error.message };
+    }
+
+    return data;
+  },
+
+  /**
+   * Join a Slack channel via edge function (deprecated)
+   * @deprecated Use joinChannelById() for multi-workspace support
    */
   async joinChannel(
     imoId: string,
@@ -377,6 +552,68 @@ export const slackService = {
 
     if (error) {
       return { ok: false, error: error.message };
+    }
+
+    return data;
+  },
+
+  // ============================================================================
+  // Message Reactions
+  // ============================================================================
+
+  /**
+   * Add a reaction (emoji) to a message
+   */
+  async addReaction(
+    imoId: string,
+    channelId: string,
+    messageTs: string,
+    emojiName: string,
+  ): Promise<{ ok: boolean; error?: string; alreadyReacted?: boolean }> {
+    const { data, error } = await supabase.functions.invoke(
+      "slack-add-reaction",
+      {
+        body: {
+          imoId,
+          channelId,
+          messageTs,
+          emojiName,
+        },
+      },
+    );
+
+    if (error) {
+      console.error("[slackService] Error adding reaction:", error);
+      throw error;
+    }
+
+    return data;
+  },
+
+  /**
+   * Remove a reaction (emoji) from a message
+   */
+  async removeReaction(
+    imoId: string,
+    channelId: string,
+    messageTs: string,
+    emojiName: string,
+  ): Promise<{ ok: boolean; error?: string; noReaction?: boolean }> {
+    const { data, error } = await supabase.functions.invoke(
+      "slack-remove-reaction",
+      {
+        body: {
+          imoId,
+          channelId,
+          messageTs,
+          emojiName,
+        },
+      },
+    );
+
+    if (error) {
+      console.error("[slackService] Error removing reaction:", error);
+      throw error;
     }
 
     return data;

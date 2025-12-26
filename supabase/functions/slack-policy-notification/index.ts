@@ -58,7 +58,7 @@ function formatCurrency(amount: number): string {
 }
 
 /**
- * Format date
+ * Format date - short format (e.g., "Dec 25, 2025")
  */
 function formatDate(dateStr: string): string {
   try {
@@ -71,6 +71,35 @@ function formatDate(dateStr: string): string {
   } catch {
     return dateStr;
   }
+}
+
+/**
+ * Format date - compact format (e.g., "12/25/2025")
+ */
+function formatDateCompact(dateStr: string): string {
+  try {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString("en-US", {
+      month: "numeric",
+      day: "numeric",
+      year: "numeric",
+    });
+  } catch {
+    return dateStr;
+  }
+}
+
+/**
+ * Build compact message text for additional channels
+ * Format: "$1,200 Carrier/Product 12/25/2025"
+ */
+function buildCompactPolicyText(
+  annualPremium: number,
+  carrierName: string,
+  productName: string,
+  effectiveDate: string,
+): string {
+  return `${formatCurrency(annualPremium)} ${carrierName}/${productName} ${formatDateCompact(effectiveDate)}`;
 }
 
 /**
@@ -285,7 +314,7 @@ serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // Get Slack integration with channel settings
+    // Get Slack integration with channel settings (for OAuth-based posting)
     const { data: integration, error: integrationError } = await supabase
       .from("slack_integrations")
       .select("*")
@@ -294,16 +323,29 @@ serve(async (req) => {
       .eq("connection_status", "connected")
       .maybeSingle();
 
-    if (integrationError || !integration) {
+    // Get webhooks (for non-OAuth multi-workspace posting)
+    const { data: webhooks } = await supabase
+      .from("slack_webhooks")
+      .select("*")
+      .eq("imo_id", imoId)
+      .eq("is_active", true)
+      .eq("notifications_enabled", true);
+
+    const hasOAuthIntegration =
+      !integrationError && integration && integration.policy_channel_id;
+    const hasWebhooks = webhooks && webhooks.length > 0;
+
+    // Skip if no OAuth integration AND no webhooks
+    if (!hasOAuthIntegration && !hasWebhooks) {
       console.log(
-        "[slack-policy-notification] No active Slack integration for IMO:",
+        "[slack-policy-notification] No active Slack integration or webhooks for IMO:",
         imoId,
       );
       return new Response(
         JSON.stringify({
           ok: true,
           skipped: true,
-          reason: "No active integration",
+          reason: "No active integration or webhooks",
         }),
         {
           status: 200,
@@ -312,47 +354,36 @@ serve(async (req) => {
       );
     }
 
-    // Check if policy channel is configured
-    if (!integration.policy_channel_id) {
-      console.log(
-        "[slack-policy-notification] No policy channel configured for IMO:",
-        imoId,
-      );
-      return new Response(
-        JSON.stringify({
-          ok: true,
-          skipped: true,
-          reason: "No policy channel configured",
-        }),
-        {
-          status: 200,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        },
-      );
-    }
-
-    // Fetch additional data
-    const [agentResult, carrierResult, productResult] = await Promise.all([
-      supabase
-        .from("user_profiles")
-        .select("first_name, last_name, email")
-        .eq("id", agentId)
-        .maybeSingle(),
-      carrierId
-        ? supabase
-            .from("carriers")
-            .select("name")
-            .eq("id", carrierId)
-            .maybeSingle()
-        : Promise.resolve({ data: null }),
-      productId
-        ? supabase
-            .from("products")
-            .select("name")
-            .eq("id", productId)
-            .maybeSingle()
-        : Promise.resolve({ data: null }),
-    ]);
+    // Fetch additional data including user preferences
+    const [agentResult, carrierResult, productResult, userPrefsResult] =
+      await Promise.all([
+        supabase
+          .from("user_profiles")
+          .select("first_name, last_name, email")
+          .eq("id", agentId)
+          .maybeSingle(),
+        carrierId
+          ? supabase
+              .from("carriers")
+              .select("name")
+              .eq("id", carrierId)
+              .maybeSingle()
+          : Promise.resolve({ data: null }),
+        productId
+          ? supabase
+              .from("products")
+              .select("name")
+              .eq("id", productId)
+              .maybeSingle()
+          : Promise.resolve({ data: null }),
+        // Fetch user's Slack preferences for additional channels (multi-workspace format)
+        supabase
+          .from("user_slack_preferences")
+          .select("policy_post_channels, auto_post_enabled")
+          .eq("user_id", agentId)
+          .eq("imo_id", imoId)
+          .maybeSingle(),
+      ]);
 
     const agentName = agentResult.data
       ? `${agentResult.data.first_name || ""} ${agentResult.data.last_name || ""}`.trim() ||
@@ -362,74 +393,130 @@ serve(async (req) => {
     const carrierName = carrierResult.data?.name || "Unknown Carrier";
     const productName = productResult.data?.name || "Unknown Product";
 
-    // Decrypt bot token
-    const botToken = await decrypt(integration.bot_token_encrypted);
+    // Get user's additional channels and auto-post setting (multi-workspace format)
+    const userPrefs = userPrefsResult.data;
+    const autoPostEnabled = userPrefs?.auto_post_enabled ?? true;
 
-    // Build policy notification blocks using integration settings
-    const policyBlocks = buildPolicyNotificationBlocks(
-      agentName,
-      annualPremium,
-      carrierName,
-      productName,
-      effectiveDate || new Date().toISOString(),
-      policyNumber || "N/A",
-      integration.include_client_info || false,
-      clientName,
-    );
+    // policy_post_channels is JSONB: [{ integration_id, channel_id, channel_name }, ...]
+    interface PolicyPostChannel {
+      integration_id: string;
+      channel_id: string;
+      channel_name: string;
+    }
+    const policyPostChannels: PolicyPostChannel[] =
+      (userPrefs?.policy_post_channels as PolicyPostChannel[]) ?? [];
 
-    // Send policy notification to the configured channel
-    const policyResponse = await fetch(
-      "https://slack.com/api/chat.postMessage",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${botToken}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          channel: integration.policy_channel_id,
-          text: `New Policy Sold! ${agentName} - ${formatCurrency(annualPremium)}`,
-          blocks: policyBlocks,
+    // Filter to only channels for the current integration
+    const additionalChannelIds: string[] = policyPostChannels
+      .filter((c) => c.integration_id === integration.id)
+      .map((c) => c.channel_id);
+
+    // If user has disabled auto-posting, skip entirely
+    if (!autoPostEnabled) {
+      console.log(
+        "[slack-policy-notification] Auto-post disabled for user:",
+        agentId,
+      );
+      return new Response(
+        JSON.stringify({
+          ok: true,
+          skipped: true,
+          reason: "User has disabled auto-posting",
         }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
+
+    // Fetch production data (needed for leaderboard in both OAuth and webhooks)
+    let production: LeaderboardEntry[] = [];
+    const { data: prodData } = await supabase.rpc(
+      "get_agency_production_by_agent",
+      {
+        p_agency_id: agencyId || null,
       },
     );
+    if (prodData && prodData.length > 0) {
+      production = prodData;
+    }
 
-    const policyData = await policyResponse.json();
-
-    // Record message
-    await supabase.from("slack_messages").insert({
-      imo_id: imoId,
-      slack_integration_id: integration.id,
-      channel_id: integration.policy_channel_id,
-      notification_type: "policy_created",
-      message_blocks: policyBlocks,
-      message_text: `New Policy Sold! ${agentName} - ${formatCurrency(annualPremium)}`,
-      related_entity_type: "policy",
-      related_entity_id: policyId,
-      status: policyData.ok ? "sent" : "failed",
-      message_ts: policyData.ts || null,
-      error_message: policyData.error || null,
-      sent_at: policyData.ok ? new Date().toISOString() : null,
-    });
-
-    const result = {
-      channel: integration.policy_channel_name,
-      policyNotification: policyData.ok,
-      error: policyData.error,
+    // Initialize result tracking
+    let result = {
+      channel: null as string | null,
+      policyNotification: false,
+      error: null as string | null,
       leaderboard: false,
     };
+    const additionalResults: Array<{ channelId: string; ok: boolean }> = [];
 
-    // Post leaderboard if configured
-    if (integration.include_leaderboard_with_policy !== false) {
-      // Get agency production data
-      const { data: production, error: prodError } = await supabase.rpc(
-        "get_agency_production_by_agent",
+    // =========================================================================
+    // OAuth-based posting (if configured)
+    // =========================================================================
+    if (hasOAuthIntegration && integration) {
+      // Decrypt bot token
+      const botToken = await decrypt(integration.bot_token_encrypted);
+
+      // Build policy notification blocks using integration settings
+      const policyBlocks = buildPolicyNotificationBlocks(
+        agentName,
+        annualPremium,
+        carrierName,
+        productName,
+        effectiveDate || new Date().toISOString(),
+        policyNumber || "N/A",
+        integration.include_client_info || false,
+        clientName,
+      );
+
+      // Send policy notification to the configured channel
+      const policyResponse = await fetch(
+        "https://slack.com/api/chat.postMessage",
         {
-          p_agency_id: agencyId || null,
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${botToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            channel: integration.policy_channel_id,
+            text: `New Policy Sold! ${agentName} - ${formatCurrency(annualPremium)}`,
+            blocks: policyBlocks,
+          }),
         },
       );
 
-      if (!prodError && production && production.length > 0) {
+      const policyData = await policyResponse.json();
+
+      // Record message
+      await supabase.from("slack_messages").insert({
+        imo_id: imoId,
+        slack_integration_id: integration.id,
+        channel_id: integration.policy_channel_id,
+        notification_type: "policy_created",
+        message_blocks: policyBlocks,
+        message_text: `New Policy Sold! ${agentName} - ${formatCurrency(annualPremium)}`,
+        related_entity_type: "policy",
+        related_entity_id: policyId,
+        status: policyData.ok ? "sent" : "failed",
+        message_ts: policyData.ts || null,
+        error_message: policyData.error || null,
+        sent_at: policyData.ok ? new Date().toISOString() : null,
+      });
+
+      result = {
+        channel: integration.policy_channel_name,
+        policyNotification: policyData.ok,
+        error: policyData.error,
+        leaderboard: false,
+      };
+
+      // Post leaderboard if configured
+      if (
+        integration.include_leaderboard_with_policy !== false &&
+        production.length > 0
+      ) {
         // Sort by total premium
         const sortedProduction = production
           .sort(
@@ -488,16 +575,191 @@ serve(async (req) => {
 
         result.leaderboard = leaderboardData.ok;
       }
+
+      console.log(
+        `[slack-policy-notification] Sent notification to #${integration.policy_channel_name}`,
+      );
+
+      // Post to user's additional channels with compact format
+      if (additionalChannelIds.length > 0) {
+        const compactText = buildCompactPolicyText(
+          annualPremium,
+          carrierName,
+          productName,
+          effectiveDate || new Date().toISOString(),
+        );
+
+        for (const channelId of additionalChannelIds) {
+          // Skip if same as master channel
+          if (channelId === integration.policy_channel_id) {
+            continue;
+          }
+
+          try {
+            const additionalResponse = await fetch(
+              "https://slack.com/api/chat.postMessage",
+              {
+                method: "POST",
+                headers: {
+                  Authorization: `Bearer ${botToken}`,
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  channel: channelId,
+                  text: compactText,
+                }),
+              },
+            );
+
+            const additionalData = await additionalResponse.json();
+
+            // Record message
+            await supabase.from("slack_messages").insert({
+              imo_id: imoId,
+              slack_integration_id: integration.id,
+              channel_id: channelId,
+              notification_type: "policy_created",
+              message_blocks: null,
+              message_text: compactText,
+              related_entity_type: "policy",
+              related_entity_id: policyId,
+              status: additionalData.ok ? "sent" : "failed",
+              message_ts: additionalData.ts || null,
+              error_message: additionalData.error || null,
+              sent_at: additionalData.ok ? new Date().toISOString() : null,
+            });
+
+            additionalResults.push({ channelId, ok: additionalData.ok });
+
+            if (additionalData.ok) {
+              console.log(
+                `[slack-policy-notification] Sent compact notification to channel ${channelId}`,
+              );
+            }
+          } catch (err) {
+            console.error(
+              `[slack-policy-notification] Failed to post to channel ${channelId}:`,
+              err,
+            );
+            additionalResults.push({ channelId, ok: false });
+          }
+        }
+      }
+    } // End of OAuth section (hasOAuthIntegration)
+
+    // =========================================================================
+    // POST TO WEBHOOKS (multi-workspace support, no OAuth needed)
+    // =========================================================================
+    const webhookResults: Array<{
+      webhookId: string;
+      channelName: string;
+      ok: boolean;
+      error?: string;
+    }> = [];
+
+    if (hasWebhooks && webhooks && webhooks.length > 0) {
+      console.log(
+        `[slack-policy-notification] Found ${webhooks.length} active webhooks`,
+      );
+
+      for (const webhook of webhooks) {
+        try {
+          // Build message blocks for this webhook based on its settings
+          const webhookBlocks = buildPolicyNotificationBlocks(
+            agentName,
+            annualPremium,
+            carrierName,
+            productName,
+            effectiveDate || new Date().toISOString(),
+            policyNumber || "N/A",
+            webhook.include_client_info || false,
+            clientName,
+          );
+
+          // Post to webhook
+          const webhookResponse = await fetch(webhook.webhook_url, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              text: `New Policy Sold! ${agentName} - ${formatCurrency(annualPremium)}`,
+              blocks: webhookBlocks,
+            }),
+          });
+
+          const webhookOk = webhookResponse.ok;
+          webhookResults.push({
+            webhookId: webhook.id,
+            channelName: webhook.channel_name,
+            ok: webhookOk,
+            error: webhookOk ? undefined : `HTTP ${webhookResponse.status}`,
+          });
+
+          if (webhookOk) {
+            console.log(
+              `[slack-policy-notification] Posted to webhook: ${webhook.channel_name} (${webhook.workspace_name || "unknown workspace"})`,
+            );
+
+            // Post leaderboard as follow-up if enabled
+            if (
+              webhook.include_leaderboard &&
+              production &&
+              production.length > 0
+            ) {
+              const leaderboardBlocks = buildLeaderboardBlocks(
+                production
+                  .sort(
+                    (a: LeaderboardEntry, b: LeaderboardEntry) =>
+                      b.total_annual_premium - a.total_annual_premium,
+                  )
+                  .slice(0, 10),
+                production.reduce(
+                  (sum: number, entry: LeaderboardEntry) =>
+                    sum + (entry.total_annual_premium || 0),
+                  0,
+                ),
+              );
+
+              await fetch(webhook.webhook_url, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  text: "Daily Sales Leaderboard",
+                  blocks: leaderboardBlocks,
+                }),
+              });
+            }
+          }
+        } catch (err) {
+          console.error(
+            `[slack-policy-notification] Webhook error for ${webhook.channel_name}:`,
+            err,
+          );
+          webhookResults.push({
+            webhookId: webhook.id,
+            channelName: webhook.channel_name,
+            ok: false,
+            error: err instanceof Error ? err.message : "Unknown error",
+          });
+        }
+      }
     }
 
-    console.log(
-      `[slack-policy-notification] Sent notification to #${integration.policy_channel_name}`,
+    return new Response(
+      JSON.stringify({
+        ok: true,
+        results: [result],
+        additionalChannels: additionalResults,
+        webhooks: webhookResults,
+      }),
+      {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      },
     );
-
-    return new Response(JSON.stringify({ ok: true, results: [result] }), {
-      status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
   } catch (err) {
     console.error("[slack-policy-notification] Unexpected error:", err);
     return new Response(

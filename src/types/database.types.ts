@@ -4077,6 +4077,7 @@ export type Database = {
           connection_status: Database["public"]["Enums"]["slack_connection_status"];
           created_at: string | null;
           created_by: string | null;
+          display_name: string | null;
           expires_at: string | null;
           id: string;
           imo_id: string;
@@ -4107,6 +4108,7 @@ export type Database = {
           connection_status?: Database["public"]["Enums"]["slack_connection_status"];
           created_at?: string | null;
           created_by?: string | null;
+          display_name?: string | null;
           expires_at?: string | null;
           id?: string;
           imo_id: string;
@@ -4137,6 +4139,7 @@ export type Database = {
           connection_status?: Database["public"]["Enums"]["slack_connection_status"];
           created_at?: string | null;
           created_by?: string | null;
+          display_name?: string | null;
           expires_at?: string | null;
           id?: string;
           imo_id?: string;
@@ -4168,7 +4171,7 @@ export type Database = {
           {
             foreignKeyName: "slack_integrations_imo_id_fkey";
             columns: ["imo_id"];
-            isOneToOne: true;
+            isOneToOne: false;
             referencedRelation: "imos";
             referencedColumns: ["id"];
           },
@@ -4255,6 +4258,66 @@ export type Database = {
             columns: ["slack_integration_id"];
             isOneToOne: false;
             referencedRelation: "slack_integrations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      slack_webhooks: {
+        Row: {
+          channel_name: string;
+          created_at: string | null;
+          created_by: string | null;
+          id: string;
+          imo_id: string;
+          include_client_info: boolean | null;
+          include_leaderboard: boolean | null;
+          is_active: boolean | null;
+          notifications_enabled: boolean | null;
+          updated_at: string | null;
+          webhook_url: string;
+          workspace_name: string | null;
+        };
+        Insert: {
+          channel_name: string;
+          created_at?: string | null;
+          created_by?: string | null;
+          id?: string;
+          imo_id: string;
+          include_client_info?: boolean | null;
+          include_leaderboard?: boolean | null;
+          is_active?: boolean | null;
+          notifications_enabled?: boolean | null;
+          updated_at?: string | null;
+          webhook_url: string;
+          workspace_name?: string | null;
+        };
+        Update: {
+          channel_name?: string;
+          created_at?: string | null;
+          created_by?: string | null;
+          id?: string;
+          imo_id?: string;
+          include_client_info?: boolean | null;
+          include_leaderboard?: boolean | null;
+          is_active?: boolean | null;
+          notifications_enabled?: boolean | null;
+          updated_at?: string | null;
+          webhook_url?: string;
+          workspace_name?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "slack_webhooks_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "slack_webhooks_imo_id_fkey";
+            columns: ["imo_id"];
+            isOneToOne: false;
+            referencedRelation: "imos";
             referencedColumns: ["id"];
           },
         ];
@@ -5403,6 +5466,67 @@ export type Database = {
             columns: ["upline_id"];
             isOneToOne: false;
             referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      user_slack_preferences: {
+        Row: {
+          auto_post_enabled: boolean | null;
+          created_at: string | null;
+          default_view_channel_id: string | null;
+          default_view_channel_name: string | null;
+          default_view_integration_id: string | null;
+          id: string;
+          imo_id: string;
+          policy_post_channels: Json | null;
+          updated_at: string | null;
+          user_id: string;
+        };
+        Insert: {
+          auto_post_enabled?: boolean | null;
+          created_at?: string | null;
+          default_view_channel_id?: string | null;
+          default_view_channel_name?: string | null;
+          default_view_integration_id?: string | null;
+          id?: string;
+          imo_id: string;
+          policy_post_channels?: Json | null;
+          updated_at?: string | null;
+          user_id: string;
+        };
+        Update: {
+          auto_post_enabled?: boolean | null;
+          created_at?: string | null;
+          default_view_channel_id?: string | null;
+          default_view_channel_name?: string | null;
+          default_view_integration_id?: string | null;
+          id?: string;
+          imo_id?: string;
+          policy_post_channels?: Json | null;
+          updated_at?: string | null;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "user_slack_preferences_default_view_integration_id_fkey";
+            columns: ["default_view_integration_id"];
+            isOneToOne: false;
+            referencedRelation: "slack_integrations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "user_slack_preferences_imo_id_fkey";
+            columns: ["imo_id"];
+            isOneToOne: false;
+            referencedRelation: "imos";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "user_slack_preferences_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
             referencedColumns: ["id"];
           },
         ];
