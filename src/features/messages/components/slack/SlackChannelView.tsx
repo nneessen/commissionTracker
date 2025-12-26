@@ -315,6 +315,47 @@ export function SlackChannelView({ channel }: SlackChannelViewProps) {
   );
 }
 
+/**
+ * Parse Slack message text and convert special formatting to readable text
+ * Handles: user mentions, channel mentions, links, and special messages
+ */
+function formatSlackText(text: string): string {
+  if (!text) return "";
+
+  let formatted = text;
+
+  // Convert user mentions <@U123ABC> to @user (just show as mention)
+  formatted = formatted.replace(/<@([A-Z0-9]+)>/g, "@user");
+
+  // Convert channel mentions <#C123ABC|channel-name> to #channel-name
+  formatted = formatted.replace(/<#[A-Z0-9]+\|([^>]+)>/g, "#$1");
+  // Handle channel mentions without name <#C123ABC>
+  formatted = formatted.replace(/<#([A-Z0-9]+)>/g, "#channel");
+
+  // Convert links <https://url|text> to just text, or <https://url> to url
+  formatted = formatted.replace(/<(https?:\/\/[^|>]+)\|([^>]+)>/g, "$2");
+  formatted = formatted.replace(/<(https?:\/\/[^>]+)>/g, "$1");
+
+  // Handle special Slack messages
+  if (formatted.includes("has joined the channel")) {
+    formatted = formatted.replace(/@user/g, "Someone");
+  }
+
+  // Convert common Slack emoji codes
+  formatted = formatted.replace(/:slightly_smiling_face:/g, "🙂");
+  formatted = formatted.replace(/:thumbsup:/g, "👍");
+  formatted = formatted.replace(/:wave:/g, "👋");
+  formatted = formatted.replace(/:rocket:/g, "🚀");
+  formatted = formatted.replace(/:tada:/g, "🎉");
+  formatted = formatted.replace(/:fire:/g, "🔥");
+  formatted = formatted.replace(/:heart:/g, "❤️");
+  formatted = formatted.replace(/:+1:/g, "👍");
+  formatted = formatted.replace(/:white_check_mark:/g, "✅");
+  formatted = formatted.replace(/:x:/g, "❌");
+
+  return formatted;
+}
+
 function MessageItem({ message }: { message: SlackMessage }) {
   const userName =
     message.user?.profile?.display_name ||
@@ -325,6 +366,25 @@ function MessageItem({ message }: { message: SlackMessage }) {
   const timestamp = message.timestamp
     ? new Date(parseFloat(message.timestamp) * 1000)
     : null;
+
+  const formattedText = formatSlackText(message.text);
+
+  // Check if this is a system/bot message (like "has joined the channel")
+  const isSystemMessage =
+    formattedText.includes("has joined the channel") ||
+    formattedText.includes("has left the channel") ||
+    formattedText.includes("set the channel") ||
+    formattedText.includes("was added to");
+
+  if (isSystemMessage) {
+    return (
+      <div className="flex items-center justify-center py-1">
+        <span className="text-[10px] text-zinc-400 dark:text-zinc-500 italic">
+          {formattedText}
+        </span>
+      </div>
+    );
+  }
 
   return (
     <div className="flex gap-2 group hover:bg-zinc-50 dark:hover:bg-zinc-800/50 -mx-2 px-2 py-1 rounded">
@@ -347,7 +407,7 @@ function MessageItem({ message }: { message: SlackMessage }) {
           )}
         </div>
         <p className="text-[11px] text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap break-words">
-          {message.text}
+          {formattedText}
         </p>
 
         {/* Reactions */}
