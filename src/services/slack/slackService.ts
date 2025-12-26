@@ -59,6 +59,61 @@ export const slackService = {
   },
 
   /**
+   * Get integrations for a specific agency
+   */
+  async getIntegrationsByAgency(agencyId: string): Promise<SlackIntegration[]> {
+    const { data, error } = await supabase
+      .from("slack_integrations")
+      .select("*")
+      .eq("agency_id", agencyId)
+      .order("created_at", { ascending: true });
+
+    if (error) {
+      console.error(
+        "[slackService] Error fetching agency integrations:",
+        error,
+      );
+      throw error;
+    }
+
+    return (data || []).map(transformIntegrationRow);
+  },
+
+  /**
+   * Get all integrations in the agency hierarchy (for display purposes)
+   * Returns integrations for the agency, all parent agencies, and IMO-level
+   */
+  async getIntegrationsByAgencyHierarchy(
+    agencyId: string,
+  ): Promise<SlackIntegration[]> {
+    const { data, error } = await supabase.rpc(
+      "get_slack_integrations_for_agency_hierarchy",
+      { p_agency_id: agencyId },
+    );
+
+    if (error) {
+      console.error(
+        "[slackService] Error fetching agency hierarchy integrations:",
+        error,
+      );
+      throw error;
+    }
+
+    if (!data || data.length === 0) return [];
+
+    // Fetch full integration details for each
+    const integrationIds = data.map(
+      (d: { integration_id: string }) => d.integration_id,
+    );
+    const { data: fullIntegrations } = await supabase
+      .from("slack_integrations")
+      .select("*")
+      .in("id", integrationIds);
+
+    return (fullIntegrations || []).map(transformIntegrationRow);
+  },
+
+  /**
    * Get a single Slack integration by ID
    */
   async getIntegrationById(
@@ -129,6 +184,35 @@ export const slackService = {
     if (error) {
       console.error("[slackService] Error initiating OAuth:", error);
       throw new Error("Failed to initiate Slack OAuth");
+    }
+
+    if (!data?.ok || !data?.url) {
+      throw new Error(data?.error || "Failed to generate OAuth URL");
+    }
+
+    return data.url;
+  },
+
+  /**
+   * Initiate Slack OAuth flow for a specific agency
+   * This allows agency-level workspace connections
+   */
+  async initiateOAuthForAgency(
+    agencyId: string,
+    imoId: string,
+    userId: string,
+    returnUrl?: string,
+  ): Promise<string> {
+    const { data, error } = await supabase.functions.invoke(
+      "slack-oauth-init",
+      {
+        body: { imoId, userId, agencyId, returnUrl },
+      },
+    );
+
+    if (error) {
+      console.error("[slackService] Error initiating agency OAuth:", error);
+      throw new Error("Failed to initiate Slack OAuth for agency");
     }
 
     if (!data?.ok || !data?.url) {

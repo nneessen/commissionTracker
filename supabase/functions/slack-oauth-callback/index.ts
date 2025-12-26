@@ -1,9 +1,10 @@
 // supabase/functions/slack-oauth-callback/index.ts
 // Handles Slack OAuth callback, exchanges code for tokens, stores encrypted
+// Supports per-agency Slack app credentials for multi-workspace OAuth
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.0";
-import { encrypt } from "../_shared/encryption.ts";
+import { encrypt, decrypt } from "../_shared/encryption.ts";
 import { parseSignedState } from "../_shared/hmac.ts";
 import { corsResponse } from "../_shared/cors.ts";
 
@@ -30,8 +31,19 @@ interface SlackOAuthResponse {
 interface OAuthState {
   imoId: string;
   userId: string;
+  agencyId?: string | null; // Agency-level integration (null = IMO-level)
   timestamp: number;
   returnUrl?: string;
+}
+
+interface SlackCredentials {
+  credential_id: string;
+  client_id: string;
+  client_secret_encrypted: string;
+  signing_secret_encrypted: string | null;
+  app_name: string | null;
+  source_agency_id: string | null;
+  is_fallback: boolean;
 }
 
 serve(async (req) => {
@@ -46,25 +58,8 @@ serve(async (req) => {
     console.log("[slack-oauth-callback] Function invoked");
 
     // Get environment variables
-    const SLACK_CLIENT_ID = Deno.env.get("SLACK_CLIENT_ID");
-    const SLACK_CLIENT_SECRET = Deno.env.get("SLACK_CLIENT_SECRET");
-    const SLACK_SIGNING_SECRET = Deno.env.get("SLACK_SIGNING_SECRET");
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-
-    if (!SLACK_CLIENT_ID || !SLACK_CLIENT_SECRET) {
-      console.error("[slack-oauth-callback] Missing Slack credentials");
-      return Response.redirect(
-        `${APP_URL}/settings/integrations?slack=error&reason=config`,
-      );
-    }
-
-    if (!SLACK_SIGNING_SECRET) {
-      console.error("[slack-oauth-callback] Missing SLACK_SIGNING_SECRET");
-      return Response.redirect(
-        `${APP_URL}/settings/integrations?slack=error&reason=config`,
-      );
-    }
 
     if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
       console.error("[slack-oauth-callback] Missing Supabase credentials");
@@ -114,14 +109,76 @@ serve(async (req) => {
       );
     }
 
-    const { imoId, userId, returnUrl } = state;
+    const { imoId, userId, agencyId, returnUrl } = state;
     const redirectUrl = returnUrl || `${APP_URL}/settings/integrations`;
 
-    console.log("[slack-oauth-callback] Processing OAuth for IMO:", imoId);
+    console.log(
+      `[slack-oauth-callback] Processing OAuth for IMO: ${imoId}${agencyId ? `, Agency: ${agencyId}` : " (IMO-level)"}`,
+    );
+
+    // Create Supabase client with service role
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+    // =========================================================================
+    // Look up Slack credentials for this agency
+    // =========================================================================
+    let clientId: string | null = null;
+    let clientSecret: string | null = null;
+
+    // Try database credentials first
+    const { data: credentials, error: credError } = await supabase.rpc(
+      "get_agency_slack_credentials",
+      {
+        p_imo_id: imoId,
+        p_agency_id: agencyId || null,
+      },
+    );
+
+    if (credError) {
+      console.error(
+        "[slack-oauth-callback] Error looking up credentials:",
+        credError,
+      );
+    }
+
+    const creds = (credentials as SlackCredentials[] | null)?.[0];
+
+    if (creds?.client_id && creds?.client_secret_encrypted) {
+      clientId = creds.client_id;
+      try {
+        clientSecret = await decrypt(creds.client_secret_encrypted);
+        console.log(
+          `[slack-oauth-callback] Using database credentials${creds.is_fallback ? " (fallback)" : ""} from agency ${creds.source_agency_id || "IMO-level"}`,
+        );
+      } catch (decryptErr) {
+        console.error(
+          "[slack-oauth-callback] Failed to decrypt client secret:",
+          decryptErr,
+        );
+      }
+    }
+
+    // Fall back to environment variables (legacy support)
+    if (!clientId || !clientSecret) {
+      clientId = Deno.env.get("SLACK_CLIENT_ID") || null;
+      clientSecret = Deno.env.get("SLACK_CLIENT_SECRET") || null;
+      if (clientId && clientSecret) {
+        console.log(
+          "[slack-oauth-callback] Using env SLACK_CLIENT_ID/SECRET (legacy)",
+        );
+      }
+    }
+
+    if (!clientId || !clientSecret) {
+      console.error("[slack-oauth-callback] No valid Slack credentials found");
+      return Response.redirect(
+        `${redirectUrl}?slack=error&reason=no_credentials`,
+      );
+    }
 
     // Exchange code for tokens
     const tokenUrl = "https://slack.com/api/oauth.v2.access";
-    const redirectUri = `${SUPABASE_URL}/functions/v1/slack-oauth-callback`;
+    const tokenRedirectUri = `${SUPABASE_URL}/functions/v1/slack-oauth-callback`;
 
     const tokenResponse = await fetch(tokenUrl, {
       method: "POST",
@@ -129,10 +186,10 @@ serve(async (req) => {
         "Content-Type": "application/x-www-form-urlencoded",
       },
       body: new URLSearchParams({
-        client_id: SLACK_CLIENT_ID,
-        client_secret: SLACK_CLIENT_SECRET,
+        client_id: clientId,
+        client_secret: clientSecret,
         code,
-        redirect_uri: redirectUri,
+        redirect_uri: tokenRedirectUri,
       }),
     });
 
@@ -161,41 +218,67 @@ serve(async (req) => {
       ? await encrypt(tokenData.authed_user.access_token)
       : null;
 
-    // Create Supabase client with service role
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-
-    // Upsert the integration - use team_id as conflict key to support multi-workspace
-    // This allows multiple workspaces per IMO, but prevents the same workspace from being connected twice
+    // Upsert the integration - use (team_id, agency_id) as conflict key
+    // This allows:
+    // - Multiple workspaces per IMO (different team_id values)
+    // - Same workspace connected at different agency levels (same team_id, different agency_id)
+    // - But prevents duplicate (team_id, agency_id) pairs
     const teamId = tokenData.team?.id || "";
     const teamName = tokenData.team?.name || "Unknown Workspace";
 
-    const { error: upsertError } = await supabase
+    // First, check if an integration already exists for this team_id + agency_id combination
+    // We do this because Postgres UNIQUE constraints treat NULL as distinct, so we need to handle it manually
+    let existingQuery = supabase
       .from("slack_integrations")
-      .upsert(
-        {
-          imo_id: imoId,
-          access_token_encrypted: encryptedAccessToken,
-          bot_token_encrypted: encryptedBotToken,
-          refresh_token_encrypted: encryptedUserToken,
-          team_id: teamId,
-          team_name: teamName,
-          display_name: teamName, // Set display_name to team_name by default
-          bot_user_id: tokenData.bot_user_id || "",
-          bot_name: "Commission Tracker",
-          scope: tokenData.scope || "",
-          token_type: tokenData.token_type || "bot",
-          authed_user_id: tokenData.authed_user?.id,
-          authed_user_email: null, // Would need separate API call to get email
-          is_active: true,
-          connection_status: "connected",
-          last_error: null,
-          last_connected_at: new Date().toISOString(),
-          created_by: userId,
-        },
-        {
-          onConflict: "team_id", // Use team_id to allow multiple workspaces per IMO
-        },
-      );
+      .select("id")
+      .eq("team_id", teamId);
+
+    // Handle NULL agency_id properly (use .is() for NULL comparison)
+    if (agencyId) {
+      existingQuery = existingQuery.eq("agency_id", agencyId);
+    } else {
+      existingQuery = existingQuery.is("agency_id", null);
+    }
+
+    const { data: existingIntegration } = await existingQuery.maybeSingle();
+
+    const integrationData = {
+      imo_id: imoId,
+      agency_id: agencyId || null, // Agency-level or IMO-level integration
+      access_token_encrypted: encryptedAccessToken,
+      bot_token_encrypted: encryptedBotToken,
+      refresh_token_encrypted: encryptedUserToken,
+      team_id: teamId,
+      team_name: teamName,
+      display_name: teamName, // Set display_name to team_name by default
+      bot_user_id: tokenData.bot_user_id || "",
+      bot_name: "Commission Tracker",
+      scope: tokenData.scope || "",
+      token_type: tokenData.token_type || "bot",
+      authed_user_id: tokenData.authed_user?.id,
+      authed_user_email: null, // Would need separate API call to get email
+      is_active: true,
+      connection_status: "connected",
+      last_error: null,
+      last_connected_at: new Date().toISOString(),
+      created_by: userId,
+    };
+
+    let upsertError;
+    if (existingIntegration) {
+      // Update existing integration
+      const { error } = await supabase
+        .from("slack_integrations")
+        .update(integrationData)
+        .eq("id", existingIntegration.id);
+      upsertError = error;
+    } else {
+      // Insert new integration
+      const { error } = await supabase
+        .from("slack_integrations")
+        .insert(integrationData);
+      upsertError = error;
+    }
 
     if (upsertError) {
       console.error(
@@ -206,8 +289,7 @@ serve(async (req) => {
     }
 
     console.log(
-      "[slack-oauth-callback] Integration saved successfully for workspace:",
-      teamName,
+      `[slack-oauth-callback] Integration saved successfully for workspace: ${teamName}${agencyId ? ` (Agency: ${agencyId})` : " (IMO-level)"}`,
     );
 
     // Redirect back to app with success

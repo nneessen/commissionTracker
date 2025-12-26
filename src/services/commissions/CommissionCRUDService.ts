@@ -84,16 +84,6 @@ class CommissionCRUDService {
     this.repository = new CommissionRepository();
   }
 
-  /**
-   * Handles and transforms errors into structured ServiceError types
-   *
-   * @param error - The error to handle
-   * @param context - The context/method where the error occurred
-   * @param entityId - Optional ID of the entity related to the error
-   * @throws {NotFoundError | DatabaseError | ValidationError} Structured error based on error type
-   *
-   * @private
-   */
   private handleError(
     error: unknown,
     context: string,
@@ -122,18 +112,6 @@ class CommissionCRUDService {
     );
   }
 
-  /**
-   * Retrieves all commissions from the database
-   *
-   * @returns Promise resolving to an array of all commissions
-   * @throws {DatabaseError} If the database query fails
-   *
-   * @example
-   * ```ts
-   * const commissions = await commissionCRUDService.getAll();
-   * console.log(`Found ${commissions.length} commissions`);
-   * ```
-   */
   async getAll(): Promise<Commission[]> {
     try {
       return await withRetry(
@@ -148,23 +126,6 @@ class CommissionCRUDService {
     }
   }
 
-  /**
-   * Retrieves a single commission by its ID
-   *
-   * @param id - The unique identifier of the commission
-   * @returns Promise resolving to the commission or null if not found
-   * @throws {ValidationError} If the ID is invalid or missing
-   * @throws {NotFoundError} If the commission does not exist
-   * @throws {DatabaseError} If the database query fails
-   *
-   * @example
-   * ```ts
-   * const commission = await commissionCRUDService.getById('123e4567-e89b-12d3');
-   * if (commission) {
-   *   console.log(`Found commission for ${commission.client.firstName}`);
-   * }
-   * ```
-   */
   async getById(id: string): Promise<Commission | null> {
     if (!id) {
       throw new ValidationError("Invalid commission ID", [
@@ -192,18 +153,6 @@ class CommissionCRUDService {
     }
   }
 
-  /**
-   * Retrieves all commissions associated with a specific policy
-   *
-   * @param policyId - The unique identifier of the policy
-   * @returns Promise resolving to an array of commissions for the policy
-   * @throws {DatabaseError} If the database query fails
-   *
-   * @example
-   * ```ts
-   * const policyCommissions = await commissionCRUDService.getByPolicyId('POL-12345');
-   * ```
-   */
   async getByPolicyId(policyId: string): Promise<Commission[]> {
     try {
       // Repository already transforms the data
@@ -213,18 +162,6 @@ class CommissionCRUDService {
     }
   }
 
-  /**
-   * Retrieves all commissions for a specific user/agent
-   *
-   * @param userId - The unique identifier of the user
-   * @returns Promise resolving to an array of commissions for the user
-   * @throws {DatabaseError} If the database query fails
-   *
-   * @example
-   * ```ts
-   * const userCommissions = await commissionCRUDService.getCommissionsByUser('user-123');
-   * ```
-   */
   async getCommissionsByUser(userId: string): Promise<Commission[]> {
     try {
       // Repository already transforms the data
@@ -234,27 +171,6 @@ class CommissionCRUDService {
     }
   }
 
-  /**
-   * Creates a new commission record
-   *
-   * @param data - The commission data to create
-   * @returns Promise resolving to the newly created commission
-   * @throws {ValidationError} If required fields are missing or invalid
-   * @throws {DatabaseError} If the database operation fails
-   *
-   * @example
-   * ```ts
-   * const newCommission = await commissionCRUDService.create({
-   *   client: { firstName: 'John', lastName: 'Doe', email: 'john@example.com' },
-   *   carrierId: 'carrier-123',
-   *   product: 'whole_life',
-   *   type: 'new_business',
-   *   status: 'pending',
-   *   calculationBasis: 'annual_premium',
-   *   annualPremium: 12000
-   * });
-   * ```
-   */
   async create(data: CreateCommissionData): Promise<Commission> {
     // Validate required fields
     const errors: Array<{ field: string; message: string; value?: unknown }> =
@@ -313,24 +229,6 @@ class CommissionCRUDService {
     }
   }
 
-  /**
-   * Updates an existing commission record
-   *
-   * @param id - The unique identifier of the commission to update
-   * @param data - Partial commission data with fields to update
-   * @returns Promise resolving to the updated commission
-   * @throws {ValidationError} If the ID is invalid or missing
-   * @throws {NotFoundError} If the commission does not exist
-   * @throws {DatabaseError} If the database operation fails
-   *
-   * @example
-   * ```ts
-   * const updated = await commissionCRUDService.update('123e4567-e89b-12d3', {
-   *   status: 'paid',
-   *   actualDate: new Date()
-   * });
-   * ```
-   */
   async update(
     id: string,
     data: Partial<CreateCommissionData>,
@@ -358,21 +256,6 @@ class CommissionCRUDService {
     }
   }
 
-  /**
-   * Deletes a commission record from the database
-   *
-   * @param id - The unique identifier of the commission to delete
-   * @returns Promise that resolves when deletion is complete
-   * @throws {ValidationError} If the ID is invalid or missing
-   * @throws {NotFoundError} If the commission does not exist
-   * @throws {DatabaseError} If the database operation fails
-   *
-   * @example
-   * ```ts
-   * await commissionCRUDService.delete('123e4567-e89b-12d3');
-   * console.log('Commission deleted successfully');
-   * ```
-   */
   async delete(id: string): Promise<void> {
     if (!id) {
       throw new ValidationError("Invalid commission ID", [
@@ -393,31 +276,6 @@ class CommissionCRUDService {
     }
   }
 
-  /**
-   * Marks an earned commission as paid
-   *
-   * This method validates that:
-   * - Commission exists
-   * - Commission status is 'earned' (not pending or already paid)
-   * - Linked policy status is 'active'
-   *
-   * On success, sets:
-   * - status to 'paid'
-   * - payment_date to current date
-   *
-   * @param id - The unique identifier of the commission to mark as paid
-   * @param paymentDate - Optional payment date (defaults to today)
-   * @returns Promise resolving to the updated commission
-   * @throws {ValidationError} If the ID is invalid or status validation fails
-   * @throws {NotFoundError} If the commission does not exist
-   * @throws {DatabaseError} If the database operation fails
-   *
-   * @example
-   * ```ts
-   * const paidCommission = await commissionCRUDService.markAsPaid('123e4567-e89b-12d3');
-   * console.log(`Commission marked as paid on ${paidCommission.paymentDate}`);
-   * ```
-   */
   async markAsPaid(id: string, paymentDate?: Date): Promise<Commission> {
     if (!id) {
       throw new ValidationError("Invalid commission ID", [
@@ -448,7 +306,6 @@ class CommissionCRUDService {
 
       // Get the linked policy to validate it's active
       if (commission.policyId) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- accessing protected Supabase client
         const { data: policy, error: policyError } = await (
           this.repository as any
         ).client
@@ -482,7 +339,6 @@ class CommissionCRUDService {
         updated_at: new Date(),
       };
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- accessing protected Supabase client
       const { data: updated, error: updateError } = await (
         this.repository as any
       ).client
@@ -518,22 +374,6 @@ class CommissionCRUDService {
     }
   }
 
-  /**
-   * Retrieves commissions filtered by various criteria
-   *
-   * @param filters - Filter criteria for querying commissions
-   * @returns Promise resolving to an array of filtered commissions
-   * @throws {DatabaseError} If the database query fails
-   *
-   * @example
-   * ```ts
-   * const filtered = await commissionCRUDService.getFiltered({
-   *   status: 'paid',
-   *   startDate: new Date('2024-01-01'),
-   *   minAmount: 1000
-   * });
-   * ```
-   */
   async getFiltered(filters: CommissionFilters): Promise<Commission[]> {
     try {
       let commissions = await this.repository.findAll();
@@ -614,14 +454,6 @@ class CommissionCRUDService {
     }
   }
 
-  /**
-   * Transforms a database record to a Commission domain object
-   *
-   * @param dbRecord - The raw database record
-   * @returns Transformed Commission object with camelCase properties
-   *
-   * @private
-   */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DB record has dynamic schema
   private transformFromDB(dbRecord: any): Commission {
     return {
@@ -681,16 +513,6 @@ class CommissionCRUDService {
     };
   }
 
-  /**
-   * Transforms a Commission domain object to database format
-   *
-   * @param data - The commission data to transform
-   * @param isUpdate - Whether this is an update operation (affects timestamp handling)
-   * @returns Transformed object with snake_case properties for database storage
-   *
-   * @private
-   */
-
   private transformToDB(
     data: Partial<CreateCommissionData>,
     isUpdate = false,
@@ -700,21 +522,9 @@ class CommissionCRUDService {
     const dbData: any = {};
 
     if (data.policyId !== undefined) dbData.policy_id = data.policyId;
-    const userId = data.userId;
-    if (userId !== undefined) {
-      dbData.user_id = userId;
-    }
-    if (data.client !== undefined) dbData.client = data.client;
-    if (data.carrierId !== undefined) dbData.carrier_id = data.carrierId;
-    if (data.product !== undefined) dbData.product = data.product;
+    if (data.userId !== undefined) dbData.user_id = data.userId;
     if (data.type !== undefined) dbData.type = data.type;
     if (data.status !== undefined) dbData.status = data.status;
-    if (data.calculationBasis !== undefined)
-      dbData.calculation_basis = data.calculationBasis;
-    if (data.annualPremium !== undefined)
-      dbData.annual_premium = data.annualPremium;
-    if (data.monthlyPremium !== undefined)
-      dbData.monthly_premium = data.monthlyPremium;
 
     // ADVANCE - Note: DB column is 'amount', not 'advance_amount'
     if (data.advanceAmount !== undefined) dbData.amount = data.advanceAmount;
@@ -730,19 +540,13 @@ class CommissionCRUDService {
     if (data.lastPaymentDate !== undefined)
       dbData.last_payment_date = data.lastPaymentDate;
 
-    // COMMISSION RATE
-    if (data.commissionRate !== undefined) dbData.rate = data.commissionRate;
-
-    if (data.contractCompLevel !== undefined)
-      dbData.contract_comp_level = data.contractCompLevel;
-    if (data.isAutoCalculated !== undefined)
-      dbData.is_auto_calculated = data.isAutoCalculated;
-    if (data.expectedDate !== undefined)
-      dbData.expected_date = data.expectedDate;
-    if (data.actualDate !== undefined) dbData.actual_date = data.actualDate;
-    if (data.monthEarned !== undefined) dbData.month_earned = data.monthEarned;
-    if (data.yearEarned !== undefined) dbData.year_earned = data.yearEarned;
     if (data.notes !== undefined) dbData.notes = data.notes;
+
+    // NOTE: The following fields are in CreateCommissionData but NOT in the
+    // commissions table. They're used for calculation but not stored:
+    // - client, carrierId, product, calculationBasis, annualPremium,
+    //   monthlyPremium, commissionRate, contractCompLevel, isAutoCalculated,
+    //   expectedDate, actualDate, monthEarned, yearEarned
 
     if (!isUpdate) {
       dbData.created_at = new Date().toISOString();

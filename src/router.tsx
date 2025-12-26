@@ -42,6 +42,7 @@ import { PipelineAdminPage } from "./features/recruiting/admin/PipelineAdminPage
 import { MyRecruitingPipeline } from "./features/recruiting/pages/MyRecruitingPipeline";
 import { TrainingHubPage } from "./features/training-hub";
 import { MessagesPage } from "./features/messages";
+import { LeaderboardNamingPage } from "./features/messages/components/slack/LeaderboardNamingPage";
 import { TermsPage, PrivacyPage } from "./features/legal";
 
 // Create root route with App layout
@@ -420,6 +421,17 @@ const messagesRoute = createRoute({
   ),
 });
 
+// Slack leaderboard naming route - requires auth, blocks recruits
+const slackNameLeaderboardRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "slack/name-leaderboard",
+  component: () => (
+    <RouteGuard noRecruits>
+      <LeaderboardNamingPage />
+    </RouteGuard>
+  ),
+});
+
 // Legal routes - public, no auth required
 const termsRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -465,6 +477,7 @@ const routeTree = rootRoute.addChildren([
   myPipelineRoute,
   trainingHubRoute,
   messagesRoute,
+  slackNameLeaderboardRoute,
   termsRoute,
   privacyRoute,
 ]);

@@ -130,6 +130,7 @@ export interface SlackOAuthResponse {
 export interface SlackOAuthState {
   imoId: string;
   userId: string;
+  agencyId?: string | null; // Agency-level integration (null = IMO-level)
   timestamp: number;
   returnUrl?: string;
 }

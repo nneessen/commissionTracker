@@ -6,6 +6,84 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-12-26 14:19:15
+
+### Changed Files
+- `CHANGELOG.md`
+- `PROJECT_STATS.md`
+- `docs/billing/subcriptions.md`
+- `docs/hierarchy-guidelines/agencies.md`
+- `docs/hierarchy-guidelines/imo.md`
+- `docs/hierarchy-guidelines/permissions-roles.md`
+- `docs/hierarchy-guidelines/users.md`
+- `plans/active/slack-multi-workspace-continuation.md`
+- `src/features/messages/components/slack/LeaderboardNamingPage.tsx`
+- `src/features/messages/components/slack/SlackChannelView.tsx`
+- `src/features/settings/integrations/components/slack/SlackIntegrationCard.tsx`
+- `src/router.tsx`
+- `src/services/commissions/CommissionCRUDService.ts`
+- `src/services/slack/slackService.ts`
+- `src/types/database.types.ts`
+- `src/types/slack.types.ts`
+- `supabase/functions/slack-oauth-callback/index.ts`
+- `supabase/functions/slack-oauth-init/index.ts`
+- `supabase/functions/slack-policy-notification/index.ts`
+- `supabase/functions/slack-refresh-leaderboard/index.ts`
+- `supabase/functions/slack-store-credentials/config.toml`
+- `supabase/functions/slack-store-credentials/index.ts`
+- `supabase/migrations/20251226_002_agency_slack_integration.sql`
+- `supabase/migrations/20251226_003_fix_slack_trigger_for_hierarchy.sql`
+- `supabase/migrations/20251226_004_fix_slack_trigger_config.sql`
+- `supabase/migrations/20251226_005_fix_policy_imo_trigger.sql`
+- `supabase/migrations/20251226_006_daily_sales_leaderboard.sql`
+- `supabase/migrations/20251226_007_fix_handle_new_user_robust.sql`
+- `supabase/migrations/20251226_008_agency_slack_credentials.sql`
+- `supabase/migrations/20251226_009_rollback_slack_multi_workspace.sql`
+- `supabase/migrations/20251226_010_fix_agency_slack_credentials.sql`
+
+### Statistics
+```
+ 31 files changed, 11781 insertions(+), 8294 deletions(-)
+```
+
+## [Checkpoint] - 2025-12-26 14:18:52
+
+### Changed Files
+- `docs/billing/subcriptions.md`
+- `docs/hierarchy-guidelines/agencies.md`
+- `docs/hierarchy-guidelines/imo.md`
+- `docs/hierarchy-guidelines/permissions-roles.md`
+- `docs/hierarchy-guidelines/users.md`
+- `plans/active/slack-multi-workspace-continuation.md`
+- `src/features/messages/components/slack/LeaderboardNamingPage.tsx`
+- `src/features/messages/components/slack/SlackChannelView.tsx`
+- `src/features/settings/integrations/components/slack/SlackIntegrationCard.tsx`
+- `src/router.tsx`
+- `src/services/commissions/CommissionCRUDService.ts`
+- `src/services/slack/slackService.ts`
+- `src/types/database.types.ts`
+- `src/types/slack.types.ts`
+- `supabase/functions/slack-oauth-callback/index.ts`
+- `supabase/functions/slack-oauth-init/index.ts`
+- `supabase/functions/slack-policy-notification/index.ts`
+- `supabase/functions/slack-refresh-leaderboard/index.ts`
+- `supabase/functions/slack-store-credentials/config.toml`
+- `supabase/functions/slack-store-credentials/index.ts`
+- `supabase/migrations/20251226_002_agency_slack_integration.sql`
+- `supabase/migrations/20251226_003_fix_slack_trigger_for_hierarchy.sql`
+- `supabase/migrations/20251226_004_fix_slack_trigger_config.sql`
+- `supabase/migrations/20251226_005_fix_policy_imo_trigger.sql`
+- `supabase/migrations/20251226_006_daily_sales_leaderboard.sql`
+- `supabase/migrations/20251226_007_fix_handle_new_user_robust.sql`
+- `supabase/migrations/20251226_008_agency_slack_credentials.sql`
+- `supabase/migrations/20251226_009_rollback_slack_multi_workspace.sql`
+- `supabase/migrations/20251226_010_fix_agency_slack_credentials.sql`
+
+### Statistics
+```
+ 29 files changed, 11739 insertions(+), 8289 deletions(-)
+```
+
 ## [Checkpoint] - 2025-12-26 10:08:33
 
 ### Changed Files

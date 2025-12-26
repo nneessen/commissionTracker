@@ -1,7 +1,7 @@
 // src/features/settings/integrations/components/slack/SlackIntegrationCard.tsx
 // Multi-workspace Slack integration UI
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   MessageSquare,
   CheckCircle2,
@@ -16,6 +16,10 @@ import {
   Link2,
   Trash2,
   ExternalLink,
+  Key,
+  Shield,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -53,6 +57,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/services/base/supabase";
+import { useImo } from "@/contexts/ImoContext";
 import type {
   SlackIntegration,
   SlackChannel,
@@ -291,12 +298,21 @@ function WorkspaceCard({
               </Badge>
             )}
           </div>
-          {integration.policy_channel_name && (
-            <p className="text-[10px] text-zinc-500 dark:text-zinc-400 flex items-center gap-1 mt-0.5">
-              <Hash className="h-2.5 w-2.5" />
-              {integration.policy_channel_name}
-            </p>
-          )}
+          <div className="flex items-center gap-2 mt-0.5">
+            {integration.policy_channel_name && (
+              <p className="text-[10px] text-zinc-500 dark:text-zinc-400 flex items-center gap-1">
+                <Hash className="h-2.5 w-2.5" />
+                {integration.policy_channel_name}
+              </p>
+            )}
+            {/* Agency context indicator */}
+            <Badge
+              variant="outline"
+              className="text-[8px] h-3.5 px-1 border-zinc-300 dark:border-zinc-600"
+            >
+              {integration.agency_id ? "Agency" : "IMO-Level"}
+            </Badge>
+          </div>
         </div>
 
         {/* Quick Actions */}
@@ -801,6 +817,342 @@ function AddWebhookDialog({
 }
 
 // ============================================================================
+// Sub-component: Agency Slack Credentials Dialog
+// ============================================================================
+
+interface AgencySlackCredentialsDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  imoId: string;
+  existingCredentials?: {
+    id: string;
+    client_id: string;
+    app_name: string | null;
+    agency_id: string | null;
+  } | null;
+}
+
+function AgencySlackCredentialsDialog({
+  open,
+  onOpenChange,
+  imoId,
+  existingCredentials,
+}: AgencySlackCredentialsDialogProps) {
+  const queryClient = useQueryClient();
+
+  const [selectedAgencyId, setSelectedAgencyId] = useState<string | null>(
+    existingCredentials?.agency_id || null,
+  );
+  const [clientId, setClientId] = useState(
+    existingCredentials?.client_id || "",
+  );
+  const [clientSecret, setClientSecret] = useState("");
+  const [signingSecret, setSigningSecret] = useState("");
+  const [appName, setAppName] = useState(existingCredentials?.app_name || "");
+  const [showSecrets, setShowSecrets] = useState(false);
+  const [error, setError] = useState("");
+
+  // Fetch agencies for the dropdown
+  const { data: agencies = [] } = useQuery({
+    queryKey: ["agencies-for-slack", imoId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("agencies")
+        .select("id, name")
+        .eq("imo_id", imoId)
+        .order("name");
+      if (error) throw error;
+      return data as { id: string; name: string }[];
+    },
+    enabled: open && !!imoId,
+  });
+
+  // Reset form when dialog opens or existingCredentials changes
+  useEffect(() => {
+    if (open) {
+      setSelectedAgencyId(existingCredentials?.agency_id || null);
+      setClientId(existingCredentials?.client_id || "");
+      setClientSecret("");
+      setSigningSecret("");
+      setAppName(existingCredentials?.app_name || "");
+      setError("");
+    }
+  }, [open, existingCredentials]);
+
+  const saveCredentials = useMutation({
+    mutationFn: async () => {
+      // Get the current session to pass the auth token explicitly
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token;
+
+      if (!accessToken) {
+        throw new Error("Not authenticated. Please log in again.");
+      }
+
+      console.log(
+        "[SlackCredentials] Invoking function with token:",
+        accessToken.slice(0, 20) + "...",
+      );
+
+      // Call edge function to encrypt and store credentials
+      const { data, error } = await supabase.functions.invoke(
+        "slack-store-credentials",
+        {
+          body: {
+            imoId,
+            agencyId: selectedAgencyId || null,
+            clientId,
+            clientSecret: clientSecret || undefined, // Only send if provided
+            signingSecret: signingSecret || undefined,
+            appName: appName || undefined,
+            existingId: existingCredentials?.id,
+          },
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        },
+      );
+      // Handle function errors - extract message from response if available
+      if (error) {
+        console.error(
+          "[SlackCredentials] Function error:",
+          error,
+          "Data:",
+          data,
+        );
+        // Try to get the actual error message from the response
+        const errorMessage =
+          data?.error || error.message || "Failed to save credentials";
+        throw new Error(errorMessage);
+      }
+      if (!data?.ok)
+        throw new Error(data?.error || "Failed to save credentials");
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["agency-slack-credentials"] });
+      toast.success("Slack app credentials saved successfully");
+      onOpenChange(false);
+    },
+    onError: (err: Error) => {
+      setError(err.message);
+    },
+  });
+
+  const handleSubmit = async () => {
+    setError("");
+
+    if (!clientId.trim()) {
+      setError("Client ID is required");
+      return;
+    }
+
+    // Require secret on new credentials, optional on update
+    if (!existingCredentials && !clientSecret.trim()) {
+      setError("Client Secret is required for new credentials");
+      return;
+    }
+
+    saveCredentials.mutate();
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="text-sm flex items-center gap-2">
+            <Key className="h-4 w-4 text-purple-500" />
+            {existingCredentials ? "Update" : "Add"} Slack App Credentials
+          </DialogTitle>
+          <DialogDescription className="text-[11px]">
+            Configure Slack app credentials for a specific agency or as IMO
+            default.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-3 py-2">
+          {/* Instructions */}
+          <div className="bg-zinc-50 dark:bg-zinc-800/50 rounded-lg p-3 space-y-2">
+            <p className="text-[10px] font-medium text-zinc-700 dark:text-zinc-300">
+              How to get Slack app credentials:
+            </p>
+            <ol className="text-[9px] text-zinc-500 dark:text-zinc-400 space-y-1 list-decimal list-inside">
+              <li>Go to api.slack.com/apps and create or select your app</li>
+              <li>Find Client ID & Client Secret in "Basic Information"</li>
+              <li>Enable OAuth & add redirect URL</li>
+              <li>
+                Add the Bot Token Scopes: chat:write, channels:read,
+                channels:join, users:read
+              </li>
+            </ol>
+            <a
+              href="https://api.slack.com/apps"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-[9px] text-purple-600 hover:text-purple-700"
+            >
+              Open Slack App Dashboard <ExternalLink className="h-2.5 w-2.5" />
+            </a>
+          </div>
+
+          {/* Form fields */}
+          <div className="space-y-3">
+            {/* Agency Selector */}
+            <div>
+              <Label className="text-[10px] text-zinc-600 dark:text-zinc-400">
+                Agency *
+              </Label>
+              <Select
+                value={selectedAgencyId || "imo-default"}
+                onValueChange={(value) =>
+                  setSelectedAgencyId(value === "imo-default" ? null : value)
+                }
+              >
+                <SelectTrigger className="h-8 text-[11px] mt-1">
+                  <SelectValue placeholder="Select agency..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="imo-default" className="text-[11px]">
+                    IMO Default (all agencies)
+                  </SelectItem>
+                  {agencies.map((agency) => (
+                    <SelectItem
+                      key={agency.id}
+                      value={agency.id}
+                      className="text-[11px]"
+                    >
+                      {agency.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-[8px] text-zinc-400 mt-0.5">
+                Choose a specific agency or set as IMO-wide default
+              </p>
+            </div>
+
+            <div>
+              <Label className="text-[10px] text-zinc-600 dark:text-zinc-400">
+                App Name (optional)
+              </Label>
+              <Input
+                value={appName}
+                onChange={(e) => setAppName(e.target.value)}
+                placeholder="e.g., Self Made Sales Bot"
+                className="h-8 text-[11px] mt-1"
+              />
+            </div>
+
+            <div>
+              <Label className="text-[10px] text-zinc-600 dark:text-zinc-400">
+                Client ID *
+              </Label>
+              <Input
+                value={clientId}
+                onChange={(e) => setClientId(e.target.value)}
+                placeholder="e.g., 1234567890.1234567890"
+                className="h-8 text-[11px] mt-1 font-mono"
+              />
+            </div>
+
+            <div>
+              <Label className="text-[10px] text-zinc-600 dark:text-zinc-400 flex items-center gap-1">
+                Client Secret{" "}
+                {existingCredentials ? "(leave blank to keep existing)" : "*"}
+              </Label>
+              <div className="relative">
+                <Input
+                  type={showSecrets ? "text" : "password"}
+                  value={clientSecret}
+                  onChange={(e) => setClientSecret(e.target.value)}
+                  placeholder={
+                    existingCredentials ? "••••••••••••" : "Enter client secret"
+                  }
+                  className="h-8 text-[11px] mt-1 font-mono pr-8"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowSecrets(!showSecrets)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600"
+                >
+                  {showSecrets ? (
+                    <EyeOff className="h-3.5 w-3.5" />
+                  ) : (
+                    <Eye className="h-3.5 w-3.5" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <Label className="text-[10px] text-zinc-600 dark:text-zinc-400">
+                Signing Secret (optional)
+              </Label>
+              <div className="relative">
+                <Input
+                  type={showSecrets ? "text" : "password"}
+                  value={signingSecret}
+                  onChange={(e) => setSigningSecret(e.target.value)}
+                  placeholder={
+                    existingCredentials
+                      ? "••••••••••••"
+                      : "Enter signing secret"
+                  }
+                  className="h-8 text-[11px] mt-1 font-mono pr-8"
+                />
+              </div>
+              <p className="text-[8px] text-zinc-400 mt-0.5">
+                Used for verifying Slack webhooks (optional)
+              </p>
+            </div>
+          </div>
+
+          {error && (
+            <div className="flex items-center gap-2 text-[10px] text-red-500 bg-red-50 dark:bg-red-900/20 rounded p-2">
+              <XCircle className="h-3 w-3" />
+              {error}
+            </div>
+          )}
+
+          {/* Security note */}
+          <div className="flex items-start gap-2 bg-amber-50 dark:bg-amber-900/20 rounded-lg p-2">
+            <Shield className="h-3.5 w-3.5 text-amber-500 flex-shrink-0 mt-0.5" />
+            <p className="text-[9px] text-amber-700 dark:text-amber-300">
+              Secrets are encrypted before storage and never displayed after
+              saving.
+            </p>
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onOpenChange(false)}
+            className="h-7 text-[10px]"
+          >
+            Cancel
+          </Button>
+          <Button
+            size="sm"
+            onClick={handleSubmit}
+            disabled={saveCredentials.isPending}
+            className="h-7 text-[10px]"
+          >
+            {saveCredentials.isPending ? (
+              <Loader2 className="h-3 w-3 animate-spin mr-1" />
+            ) : (
+              <Key className="h-3 w-3 mr-1" />
+            )}
+            {existingCredentials ? "Update" : "Save"} Credentials
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ============================================================================
 // Main Component
 // ============================================================================
 
@@ -815,8 +1167,45 @@ export function SlackIntegrationCard() {
   const updateWebhook = useUpdateSlackWebhook();
   const deleteWebhook = useDeleteSlackWebhook();
 
+  const { imo, isImoAdmin } = useImo();
+
   const [showUserPrefs, setShowUserPrefs] = useState(false);
   const [showAddWebhook, setShowAddWebhook] = useState(false);
+  const [showCredentialsDialog, setShowCredentialsDialog] = useState(false);
+
+  // Fetch existing Slack app credentials with agency names
+  const { data: slackCredentials, isLoading: credentialsLoading } = useQuery({
+    queryKey: ["agency-slack-credentials", imo?.id],
+    queryFn: async () => {
+      if (!imo?.id) return null;
+      const { data, error } = await supabase
+        .from("agency_slack_credentials")
+        .select(
+          "id, client_id, app_name, agency_id, created_at, agencies(name)",
+        )
+        .eq("imo_id", imo.id)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      // Supabase returns joined table as an array for one-to-many, object for many-to-one
+      // The FK is on agency_slack_credentials, so it's many-to-one (returns object)
+      // But TypeScript sees it as an array, so we handle both cases
+      type CredentialRow = {
+        id: string;
+        client_id: string;
+        app_name: string | null;
+        agency_id: string | null;
+        created_at: string;
+        agencies: { name: string } | { name: string }[] | null;
+      };
+      return (data as CredentialRow[]).map((row) => ({
+        ...row,
+        agencies: Array.isArray(row.agencies)
+          ? row.agencies[0] || null
+          : row.agencies,
+      }));
+    },
+    enabled: !!imo?.id && isImoAdmin,
+  });
 
   const connectedIntegrations = integrations.filter((i) => i.isConnected);
   const hasConnections = connectedIntegrations.length > 0;
@@ -970,6 +1359,99 @@ export function SlackIntegrationCard() {
               />
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Slack App Credentials Section - IMO Admin Only */}
+      {isImoAdmin && (
+        <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-3 space-y-2">
+          <div className="flex items-center justify-between">
+            <div>
+              <h4 className="text-[11px] font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
+                <Key className="h-3.5 w-3.5 text-purple-500" />
+                Slack App Credentials
+              </h4>
+              <p className="text-[9px] text-zinc-400">
+                Configure Slack app credentials for OAuth connections
+              </p>
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-6 px-2 text-[9px]"
+              onClick={() => setShowCredentialsDialog(true)}
+            >
+              <Plus className="h-3 w-3 mr-1" />
+              Add Credentials
+            </Button>
+          </div>
+
+          {credentialsLoading ? (
+            <div className="flex items-center gap-2 py-2">
+              <Loader2 className="h-3 w-3 animate-spin text-zinc-400" />
+              <span className="text-[10px] text-zinc-500">
+                Loading credentials...
+              </span>
+            </div>
+          ) : !slackCredentials || slackCredentials.length === 0 ? (
+            <div className="py-3 text-center">
+              <Shield className="h-5 w-5 text-zinc-300 dark:text-zinc-600 mx-auto mb-1" />
+              <p className="text-[10px] text-zinc-500">
+                No Slack app credentials configured. Add credentials to enable
+                OAuth for your agencies.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-1.5">
+              {slackCredentials.map((cred) => (
+                <div
+                  key={cred.id}
+                  className="flex items-center justify-between py-2 px-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg"
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Key className="h-3.5 w-3.5 text-purple-500 flex-shrink-0" />
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[11px] font-medium text-zinc-900 dark:text-zinc-100 truncate">
+                          {cred.app_name || "Slack App"}
+                        </span>
+                        <Badge
+                          variant="outline"
+                          className="text-[8px] h-3.5 px-1 border-zinc-300 dark:border-zinc-600"
+                        >
+                          {cred.agencies?.name || "IMO Default"}
+                        </Badge>
+                      </div>
+                      <span className="text-[9px] text-zinc-400 font-mono">
+                        {cred.client_id.slice(0, 12)}...
+                      </span>
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 px-2 text-[9px]"
+                    onClick={() => {
+                      // TODO: Open edit dialog with this credential
+                      setShowCredentialsDialog(true);
+                    }}
+                  >
+                    Edit
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Credentials Dialog */}
+          {imo && (
+            <AgencySlackCredentialsDialog
+              open={showCredentialsDialog}
+              onOpenChange={setShowCredentialsDialog}
+              imoId={imo.id}
+              existingCredentials={null}
+            />
+          )}
         </div>
       )}
 
