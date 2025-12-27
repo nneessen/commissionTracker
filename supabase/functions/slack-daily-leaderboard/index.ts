@@ -111,7 +111,7 @@ function buildLeaderboardBlocks(
       elements: [
         {
           type: "mrkdwn",
-          text: `*Total Production:* ${formatCurrency(totalPremium)} | Posted by Commission Tracker`,
+          text: `*Total Production:* ${formatCurrency(totalPremium)} | Posted by The Standard HQ`,
         },
       ],
     },

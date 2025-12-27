@@ -1,8 +1,15 @@
 // src/services/reports/reportBundleService.ts
 
-import {format} from 'date-fns';
-import ExcelJS from 'exceljs';
-import {Report, ReportType, ReportBundleTemplate, BundleTemplateId, BundleExportOptions, BundleCoverPage} from '../../types/reports.types';
+import { format } from "date-fns";
+import ExcelJS from "exceljs";
+import {
+  Report,
+  ReportType,
+  ReportBundleTemplate,
+  BundleTemplateId,
+  BundleExportOptions,
+  BundleCoverPage,
+} from "../../types/reports.types";
 
 // ============================================================================
 // BUNDLE TEMPLATES
@@ -10,52 +17,60 @@ import {Report, ReportType, ReportBundleTemplate, BundleTemplateId, BundleExport
 
 export const BUNDLE_TEMPLATES: ReportBundleTemplate[] = [
   {
-    id: 'weekly-check-in',
-    name: 'Weekly Check-In',
-    description: 'Quick overview: Executive summary + Commission status',
-    reportTypes: ['executive-dashboard', 'commission-performance'],
-    icon: '📅',
+    id: "weekly-check-in",
+    name: "Weekly Check-In",
+    description: "Quick overview: Executive summary + Commission status",
+    reportTypes: ["executive-dashboard", "commission-performance"],
+    icon: "📅",
   },
   {
-    id: 'monthly-comprehensive',
-    name: 'Monthly Comprehensive',
-    description: 'Full business review with all reports',
+    id: "monthly-comprehensive",
+    name: "Monthly Comprehensive",
+    description: "Full business review with all reports",
     reportTypes: [
-      'executive-dashboard',
-      'commission-performance',
-      'policy-performance',
-      'client-relationship',
-      'financial-health',
-      'predictive-analytics',
+      "executive-dashboard",
+      "commission-performance",
+      "policy-performance",
+      "client-relationship",
+      "financial-health",
+      "predictive-analytics",
     ],
-    icon: '📊',
+    icon: "📊",
   },
   {
-    id: 'quarterly-strategic',
-    name: 'Quarterly Strategic',
-    description: 'Strategic planning: Executive + Financial + Predictions',
-    reportTypes: ['executive-dashboard', 'financial-health', 'predictive-analytics'],
-    icon: '📈',
+    id: "quarterly-strategic",
+    name: "Quarterly Strategic",
+    description: "Strategic planning: Executive + Financial + Predictions",
+    reportTypes: [
+      "executive-dashboard",
+      "financial-health",
+      "predictive-analytics",
+    ],
+    icon: "📈",
   },
   {
-    id: 'performance-review',
-    name: 'Performance Review',
-    description: 'Performance focus: Commissions + Policies + Clients',
-    reportTypes: ['commission-performance', 'policy-performance', 'client-relationship'],
-    icon: '🎯',
+    id: "performance-review",
+    name: "Performance Review",
+    description: "Performance focus: Commissions + Policies + Clients",
+    reportTypes: [
+      "commission-performance",
+      "policy-performance",
+      "client-relationship",
+    ],
+    icon: "🎯",
   },
 ];
 
 // Report type display names
 const _REPORT_TYPE_NAMES: Record<ReportType, string> = {
-  'executive-dashboard': 'Executive Dashboard',
-  'commission-performance': 'Commission Performance',
-  'policy-performance': 'Policy Performance',
-  'client-relationship': 'Client Relationship',
-  'financial-health': 'Financial Health',
-  'predictive-analytics': 'Predictive Analytics',
-  'imo-performance': 'IMO Performance',
-  'agency-performance': 'Agency Performance',
+  "executive-dashboard": "Executive Dashboard",
+  "commission-performance": "Commission Performance",
+  "policy-performance": "Policy Performance",
+  "client-relationship": "Client Relationship",
+  "financial-health": "Financial Health",
+  "predictive-analytics": "Predictive Analytics",
+  "imo-performance": "IMO Performance",
+  "agency-performance": "Agency Performance",
 };
 
 // ============================================================================
@@ -68,16 +83,16 @@ export class ReportBundleService {
    */
   static async exportBundle(
     reports: Report[],
-    options: BundleExportOptions
+    options: BundleExportOptions,
   ): Promise<void> {
     if (reports.length === 0) {
-      throw new Error('No reports to export');
+      throw new Error("No reports to export");
     }
 
     switch (options.format) {
-      case 'pdf':
+      case "pdf":
         return this.exportToPDFBundle(reports, options);
-      case 'excel':
+      case "excel":
         return this.exportToExcelBundle(reports, options);
       default:
         throw new Error(`Unsupported format: ${options.format}`);
@@ -88,7 +103,7 @@ export class ReportBundleService {
    * Get bundle template by ID
    */
   static getTemplate(id: BundleTemplateId): ReportBundleTemplate | undefined {
-    return BUNDLE_TEMPLATES.find(t => t.id === id);
+    return BUNDLE_TEMPLATES.find((t) => t.id === id);
   }
 
   /**
@@ -104,10 +119,10 @@ export class ReportBundleService {
 
   private static exportToPDFBundle(
     reports: Report[],
-    options: BundleExportOptions
+    options: BundleExportOptions,
   ): void {
     const html = this.generateBundleHTML(reports, options);
-    const printWindow = window.open('', '_blank');
+    const printWindow = window.open("", "_blank");
 
     if (printWindow) {
       printWindow.document.write(html);
@@ -118,34 +133,43 @@ export class ReportBundleService {
         }, 250);
       };
     } else {
-      console.error('Failed to open print window');
+      console.error("Failed to open print window");
     }
   }
 
   private static generateBundleHTML(
     reports: Report[],
-    options: BundleExportOptions
+    options: BundleExportOptions,
   ): string {
-    const { coverPage, filters, includeTableOfContents = true, includeInsights = true } = options;
-    const dateRangeStr = `${format(filters.startDate, 'MMM d, yyyy')} - ${format(filters.endDate, 'MMM d, yyyy')}`;
+    const {
+      coverPage,
+      filters,
+      includeTableOfContents = true,
+      includeInsights = true,
+    } = options;
+    const dateRangeStr = `${format(filters.startDate, "MMM d, yyyy")} - ${format(filters.endDate, "MMM d, yyyy")}`;
 
     // Generate cover page HTML
     const coverPageHTML = this.generateCoverPageHTML(coverPage, dateRangeStr);
 
     // Generate table of contents HTML
-    const tocHTML = includeTableOfContents ? this.generateTableOfContentsHTML(reports) : '';
+    const tocHTML = includeTableOfContents
+      ? this.generateTableOfContentsHTML(reports)
+      : "";
 
     // Generate report sections HTML
-    const reportsHTML = reports.map((report, index) =>
-      this.generateReportSectionHTML(report, index, includeInsights)
-    ).join('\n');
+    const reportsHTML = reports
+      .map((report, index) =>
+        this.generateReportSectionHTML(report, index, includeInsights),
+      )
+      .join("\n");
 
     return `
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
-  <title>${coverPage?.title || 'Report Bundle'}</title>
+  <title>${coverPage?.title || "Report Bundle"}</title>
   <style>
     ${this.getBundleStyles()}
   </style>
@@ -157,7 +181,7 @@ export class ReportBundleService {
 
   <div class="bundle-footer">
     <p>This report bundle contains confidential business information.</p>
-    <p>Generated: ${format(new Date(), 'MMMM d, yyyy h:mm a')}</p>
+    <p>Generated: ${format(new Date(), "MMMM d, yyyy h:mm a")}</p>
   </div>
 </body>
 </html>
@@ -166,23 +190,23 @@ export class ReportBundleService {
 
   private static generateCoverPageHTML(
     coverPage: BundleCoverPage | undefined,
-    dateRange: string
+    dateRange: string,
   ): string {
-    const title = coverPage?.title || 'Business Report Bundle';
+    const title = coverPage?.title || "Business Report Bundle";
     const subtitle = coverPage?.subtitle || dateRange;
-    const businessName = coverPage?.businessName || '';
-    const preparedFor = coverPage?.preparedFor || '';
+    const businessName = coverPage?.businessName || "";
+    const preparedFor = coverPage?.preparedFor || "";
     const confidential = coverPage?.confidential !== false;
 
     return `
       <div class="cover-page">
         <div class="cover-content">
-          ${businessName ? `<div class="cover-business-name">${businessName}</div>` : ''}
+          ${businessName ? `<div class="cover-business-name">${businessName}</div>` : ""}
           <h1 class="cover-title">${title}</h1>
           <div class="cover-subtitle">${subtitle}</div>
-          ${preparedFor ? `<div class="cover-prepared-for">Prepared for: ${preparedFor}</div>` : ''}
-          <div class="cover-date">${format(new Date(), 'MMMM d, yyyy')}</div>
-          ${confidential ? '<div class="cover-confidential">CONFIDENTIAL</div>' : ''}
+          ${preparedFor ? `<div class="cover-prepared-for">Prepared for: ${preparedFor}</div>` : ""}
+          <div class="cover-date">${format(new Date(), "MMMM d, yyyy")}</div>
+          ${confidential ? '<div class="cover-confidential">CONFIDENTIAL</div>' : ""}
         </div>
         <div class="cover-footer">
           <div class="cover-divider"></div>
@@ -192,14 +216,18 @@ export class ReportBundleService {
   }
 
   private static generateTableOfContentsHTML(reports: Report[]): string {
-    const items = reports.map((report, index) => `
+    const items = reports
+      .map(
+        (report, index) => `
       <div class="toc-item">
         <span class="toc-number">${index + 1}</span>
         <span class="toc-title">${report.title}</span>
         <span class="toc-dots"></span>
         <span class="toc-page">${index + 3}</span>
       </div>
-    `).join('');
+    `,
+      )
+      .join("");
 
     return `
       <div class="toc-page page-break">
@@ -212,87 +240,114 @@ export class ReportBundleService {
   }
 
   private static generateReportSectionHTML(
-    report: Report, _index: number,
-    includeInsights: boolean
+    report: Report,
+    _index: number,
+    includeInsights: boolean,
   ): string {
     // Generate executive summary metrics
-    const metricsHTML = report.summary.keyMetrics.map(m => `
+    const metricsHTML = report.summary.keyMetrics
+      .map(
+        (m) => `
       <div class="metric-card">
         <span class="metric-label">${m.label}</span>
         <span class="metric-value">${m.value}</span>
-        ${m.change ? `<span class="metric-change ${m.trend === 'up' ? 'up' : 'down'}">${m.change > 0 ? '+' : ''}${m.change}%</span>` : ''}
+        ${m.change ? `<span class="metric-change ${m.trend === "up" ? "up" : "down"}">${m.change > 0 ? "+" : ""}${m.change}%</span>` : ""}
       </div>
-    `).join('');
+    `,
+      )
+      .join("");
 
     // Generate sections HTML
-    const sectionsHTML = report.sections.map(section => {
-      let content = '';
+    const sectionsHTML = report.sections
+      .map((section) => {
+        let content = "";
 
-      // Section metrics as table
-      if (section.metrics && section.metrics.length > 0) {
-        content += `
+        // Section metrics as table
+        if (section.metrics && section.metrics.length > 0) {
+          content += `
           <table class="metrics-table">
             <tbody>
-              ${section.metrics.map(m => `
+              ${section.metrics
+                .map(
+                  (m) => `
                 <tr>
                   <td class="metric-name">${m.label}</td>
                   <td class="metric-val">${m.value}</td>
-                  <td class="metric-chg">${m.change !== undefined ? `${m.change > 0 ? '+' : ''}${m.change}%` : ''}</td>
+                  <td class="metric-chg">${m.change !== undefined ? `${m.change > 0 ? "+" : ""}${m.change}%` : ""}</td>
                 </tr>
-              `).join('')}
+              `,
+                )
+                .join("")}
             </tbody>
           </table>
         `;
-      }
+        }
 
-      // Section table data
-      if (section.tableData) {
-        content += `
+        // Section table data
+        if (section.tableData) {
+          content += `
           <table class="data-table">
             <thead>
               <tr>
-                ${section.tableData.headers.map(h => `<th>${h}</th>`).join('')}
+                ${section.tableData.headers.map((h) => `<th>${h}</th>`).join("")}
               </tr>
             </thead>
             <tbody>
-              ${section.tableData.rows.map(row => `
+              ${section.tableData.rows
+                .map(
+                  (row) => `
                 <tr>
-                  ${row.map(cell => `<td>${cell}</td>`).join('')}
+                  ${row.map((cell) => `<td>${cell}</td>`).join("")}
                 </tr>
-              `).join('')}
+              `,
+                )
+                .join("")}
             </tbody>
           </table>
         `;
-      }
+        }
 
-      // Section insights
-      if (includeInsights && section.insights && section.insights.length > 0) {
-        content += `
+        // Section insights
+        if (
+          includeInsights &&
+          section.insights &&
+          section.insights.length > 0
+        ) {
+          content += `
           <div class="insights-container">
             <h4 class="insights-header">Key Findings</h4>
-            ${section.insights.map(insight => `
+            ${section.insights
+              .map(
+                (insight) => `
               <div class="insight ${insight.severity}">
                 <div class="insight-title">${insight.title}</div>
                 <div class="insight-desc">${insight.description}</div>
-                ${insight.recommendedActions?.length ? `
+                ${
+                  insight.recommendedActions?.length
+                    ? `
                   <ul class="insight-actions">
-                    ${insight.recommendedActions.map(a => `<li>${a}</li>`).join('')}
+                    ${insight.recommendedActions.map((a) => `<li>${a}</li>`).join("")}
                   </ul>
-                ` : ''}
+                `
+                    : ""
+                }
               </div>
-            `).join('')}
+            `,
+              )
+              .join("")}
           </div>
         `;
-      }
+        }
 
-      return `
+        return `
         <div class="report-subsection">
           <h3 class="subsection-title">${section.title}</h3>
-          ${section.description ? `<p class="subsection-desc">${section.description}</p>` : ''}
+          ${section.description ? `<p class="subsection-desc">${section.description}</p>` : ""}
           ${content}
         </div>
       `;
-    }).join('');
+      })
+      .join("");
 
     return `
       <div class="report-section page-break">
@@ -308,18 +363,27 @@ export class ReportBundleService {
           </div>
         </div>
 
-        ${includeInsights && report.summary.topInsights.length > 0 ? `
+        ${
+          includeInsights && report.summary.topInsights.length > 0
+            ? `
           <div class="top-insights">
             <h3 class="insights-header">Priority Actions</h3>
-            ${report.summary.topInsights.slice(0, 3).map(insight => `
+            ${report.summary.topInsights
+              .slice(0, 3)
+              .map(
+                (insight) => `
               <div class="insight ${insight.severity}">
                 <span class="insight-severity">${insight.severity.toUpperCase()}</span>
                 <div class="insight-title">${insight.title}</div>
                 <div class="insight-impact">Impact: ${insight.impact}</div>
               </div>
-            `).join('')}
+            `,
+              )
+              .join("")}
           </div>
-        ` : ''}
+        `
+            : ""
+        }
 
         ${sectionsHTML}
       </div>
@@ -705,10 +769,10 @@ export class ReportBundleService {
 
   private static async exportToExcelBundle(
     reports: Report[],
-    options: BundleExportOptions
+    options: BundleExportOptions,
   ): Promise<void> {
     const workbook = new ExcelJS.Workbook();
-    workbook.creator = 'Commission Tracker';
+    workbook.creator = "The Standard HQ";
     workbook.created = new Date();
 
     // Add summary sheet
@@ -722,12 +786,12 @@ export class ReportBundleService {
     // Generate and download
     const buffer = await workbook.xlsx.writeBuffer();
     const blob = new Blob([buffer], {
-      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     });
     const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
+    const link = document.createElement("a");
     link.href = url;
-    link.download = `Report_Bundle_${format(new Date(), 'yyyy-MM-dd')}.xlsx`;
+    link.download = `Report_Bundle_${format(new Date(), "yyyy-MM-dd")}.xlsx`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -737,80 +801,91 @@ export class ReportBundleService {
   private static addSummarySheet(
     workbook: ExcelJS.Workbook,
     reports: Report[],
-    options: BundleExportOptions
+    options: BundleExportOptions,
   ): void {
-    const sheet = workbook.addWorksheet('Summary', {
-      properties: { tabColor: { argb: '1E3A5F' } },
+    const sheet = workbook.addWorksheet("Summary", {
+      properties: { tabColor: { argb: "1E3A5F" } },
     });
 
     // Title
-    sheet.mergeCells('A1:E1');
-    const titleCell = sheet.getCell('A1');
-    titleCell.value = options.coverPage?.title || 'Report Bundle Summary';
-    titleCell.font = { bold: true, size: 18, color: { argb: '1E3A5F' } };
-    titleCell.alignment = { horizontal: 'center' };
+    sheet.mergeCells("A1:E1");
+    const titleCell = sheet.getCell("A1");
+    titleCell.value = options.coverPage?.title || "Report Bundle Summary";
+    titleCell.font = { bold: true, size: 18, color: { argb: "1E3A5F" } };
+    titleCell.alignment = { horizontal: "center" };
 
     // Date range
-    sheet.mergeCells('A2:E2');
-    const dateCell = sheet.getCell('A2');
-    dateCell.value = `${format(options.filters.startDate, 'MMM d, yyyy')} - ${format(options.filters.endDate, 'MMM d, yyyy')}`;
+    sheet.mergeCells("A2:E2");
+    const dateCell = sheet.getCell("A2");
+    dateCell.value = `${format(options.filters.startDate, "MMM d, yyyy")} - ${format(options.filters.endDate, "MMM d, yyyy")}`;
     dateCell.font = { italic: true, size: 11 };
-    dateCell.alignment = { horizontal: 'center' };
+    dateCell.alignment = { horizontal: "center" };
 
     // Reports included
     let row = 4;
-    sheet.getCell(`A${row}`).value = 'Reports Included:';
+    sheet.getCell(`A${row}`).value = "Reports Included:";
     sheet.getCell(`A${row}`).font = { bold: true, size: 12 };
     row++;
 
     reports.forEach((report, index) => {
       sheet.getCell(`A${row}`).value = `${index + 1}. ${report.title}`;
-      sheet.getCell(`B${row}`).value = `(See "${this.getSheetName(report.type)}" tab)`;
-      sheet.getCell(`B${row}`).font = { italic: true, color: { argb: '666666' } };
+      sheet.getCell(`B${row}`).value =
+        `(See "${this.getSheetName(report.type)}" tab)`;
+      sheet.getCell(`B${row}`).font = {
+        italic: true,
+        color: { argb: "666666" },
+      };
       row++;
     });
 
     // Key metrics from all reports
     row += 2;
-    sheet.getCell(`A${row}`).value = 'Key Metrics Across All Reports';
-    sheet.getCell(`A${row}`).font = { bold: true, size: 14, color: { argb: '1E3A5F' } };
+    sheet.getCell(`A${row}`).value = "Key Metrics Across All Reports";
+    sheet.getCell(`A${row}`).font = {
+      bold: true,
+      size: 14,
+      color: { argb: "1E3A5F" },
+    };
     row++;
 
     // Headers
-    sheet.getRow(row).values = ['Report', 'Metric', 'Value', 'Change', 'Trend'];
+    sheet.getRow(row).values = ["Report", "Metric", "Value", "Change", "Trend"];
     sheet.getRow(row).font = { bold: true };
     sheet.getRow(row).fill = {
-      type: 'pattern',
-      pattern: 'solid',
-      fgColor: { argb: 'F1F5F9' },
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: "F1F5F9" },
     };
     row++;
 
     // Metrics from each report
-    reports.forEach(report => {
-      report.summary.keyMetrics.forEach(metric => {
+    reports.forEach((report) => {
+      report.summary.keyMetrics.forEach((metric) => {
         sheet.getRow(row).values = [
           report.title,
           metric.label,
           metric.value,
-          metric.change ? `${metric.change > 0 ? '+' : ''}${metric.change}%` : '',
-          metric.trend || '',
+          metric.change
+            ? `${metric.change > 0 ? "+" : ""}${metric.change}%`
+            : "",
+          metric.trend || "",
         ];
         row++;
       });
     });
 
     // Column widths
-    sheet.getColumn('A').width = 25;
-    sheet.getColumn('B').width = 25;
-    sheet.getColumn('C').width = 15;
-    sheet.getColumn('D').width = 10;
-    sheet.getColumn('E').width = 10;
+    sheet.getColumn("A").width = 25;
+    sheet.getColumn("B").width = 25;
+    sheet.getColumn("C").width = 15;
+    sheet.getColumn("D").width = 10;
+    sheet.getColumn("E").width = 10;
   }
 
   private static addReportSheet(
     workbook: ExcelJS.Workbook,
-    report: Report, _index: number
+    report: Report,
+    _index: number,
   ): void {
     const sheetName = this.getSheetName(report.type);
     const sheet = workbook.addWorksheet(sheetName);
@@ -821,30 +896,30 @@ export class ReportBundleService {
     sheet.mergeCells(`A${row}:F${row}`);
     const titleCell = sheet.getCell(`A${row}`);
     titleCell.value = report.title;
-    titleCell.font = { bold: true, size: 16, color: { argb: '1E3A5F' } };
+    titleCell.font = { bold: true, size: 16, color: { argb: "1E3A5F" } };
     row += 2;
 
     // Executive Summary Metrics
-    sheet.getCell(`A${row}`).value = 'Executive Summary';
+    sheet.getCell(`A${row}`).value = "Executive Summary";
     sheet.getCell(`A${row}`).font = { bold: true, size: 12 };
     row++;
 
     // Metric headers
-    sheet.getRow(row).values = ['Metric', 'Value', 'Change', 'Trend'];
+    sheet.getRow(row).values = ["Metric", "Value", "Change", "Trend"];
     sheet.getRow(row).font = { bold: true };
     sheet.getRow(row).fill = {
-      type: 'pattern',
-      pattern: 'solid',
-      fgColor: { argb: 'F1F5F9' },
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: "F1F5F9" },
     };
     row++;
 
-    report.summary.keyMetrics.forEach(metric => {
+    report.summary.keyMetrics.forEach((metric) => {
       sheet.getRow(row).values = [
         metric.label,
         metric.value,
-        metric.change ? `${metric.change > 0 ? '+' : ''}${metric.change}%` : '',
-        metric.trend || '',
+        metric.change ? `${metric.change > 0 ? "+" : ""}${metric.change}%` : "",
+        metric.trend || "",
       ];
       row++;
     });
@@ -852,7 +927,7 @@ export class ReportBundleService {
     row += 2;
 
     // Sections with table data
-    report.sections.forEach(section => {
+    report.sections.forEach((section) => {
       if (section.tableData) {
         sheet.getCell(`A${row}`).value = section.title;
         sheet.getCell(`A${row}`).font = { bold: true, size: 12 };
@@ -862,14 +937,14 @@ export class ReportBundleService {
         sheet.getRow(row).values = section.tableData.headers;
         sheet.getRow(row).font = { bold: true };
         sheet.getRow(row).fill = {
-          type: 'pattern',
-          pattern: 'solid',
-          fgColor: { argb: 'F1F5F9' },
+          type: "pattern",
+          pattern: "solid",
+          fgColor: { argb: "F1F5F9" },
         };
         row++;
 
         // Data rows
-        section.tableData.rows.forEach(dataRow => {
+        section.tableData.rows.forEach((dataRow) => {
           sheet.getRow(row).values = dataRow;
           row++;
         });
@@ -883,7 +958,7 @@ export class ReportBundleService {
         sheet.getCell(`A${row}`).font = { bold: true, size: 11 };
         row++;
 
-        section.metrics.forEach(metric => {
+        section.metrics.forEach((metric) => {
           sheet.getRow(row).values = [metric.label, metric.value];
           row++;
         });
@@ -893,21 +968,21 @@ export class ReportBundleService {
     });
 
     // Auto-fit columns
-    sheet.columns.forEach(column => {
+    sheet.columns.forEach((column) => {
       column.width = 20;
     });
   }
 
   private static getSheetName(type: ReportType): string {
     const names: Record<ReportType, string> = {
-      'executive-dashboard': 'Executive',
-      'commission-performance': 'Commissions',
-      'policy-performance': 'Policies',
-      'client-relationship': 'Clients',
-      'financial-health': 'Financial',
-      'predictive-analytics': 'Predictions',
-      'imo-performance': 'IMO Performance',
-      'agency-performance': 'Agency Performance',
+      "executive-dashboard": "Executive",
+      "commission-performance": "Commissions",
+      "policy-performance": "Policies",
+      "client-relationship": "Clients",
+      "financial-health": "Financial",
+      "predictive-analytics": "Predictions",
+      "imo-performance": "IMO Performance",
+      "agency-performance": "Agency Performance",
     };
     return names[type] || type;
   }

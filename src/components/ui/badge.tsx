@@ -10,36 +10,34 @@ const badgeVariants = cva(
   {
     variants: {
       variant: {
-        // Default: Black/dark badge
-        default: "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900",
+        // Default: Dark badge with strong contrast
+        default:
+          "bg-zinc-900 text-white shadow-sm dark:bg-zinc-100 dark:text-zinc-900",
 
-        // Secondary: Subtle gray
+        // Secondary: Light slate with visible background
         secondary:
-          "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300",
+          "bg-slate-200 text-slate-800 shadow-sm dark:bg-slate-700 dark:text-slate-100",
 
-        // Success: Green
-        success:
-          "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
+        // Success: VIBRANT green
+        success: "bg-emerald-500 text-white shadow-sm",
 
-        // Warning: Amber
-        warning:
-          "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
+        // Warning: VIBRANT amber/orange
+        warning: "bg-amber-500 text-white shadow-sm",
 
-        // Destructive: Red
-        destructive:
-          "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+        // Destructive: VIBRANT red
+        destructive: "bg-red-500 text-white shadow-sm",
 
-        // Info: Blue
-        info: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+        // Info: VIBRANT blue
+        info: "bg-blue-500 text-white shadow-sm",
 
-        // Outline: Border only
+        // Outline: Visible background instead of transparent
         outline:
-          "bg-transparent border border-zinc-300 text-zinc-700 dark:border-zinc-700 dark:text-zinc-300",
+          "border border-zinc-400 bg-zinc-100 text-zinc-800 shadow-sm dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-200",
 
-        // Ghost: Very subtle
-        ghost: "bg-zinc-50 text-zinc-600 dark:bg-zinc-900 dark:text-zinc-400",
+        // Ghost: Visible subtle background
+        ghost: "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300",
 
-        // Premium: Gradient effect
+        // Premium: Gradient amber to orange
         premium:
           "bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-sm",
       },

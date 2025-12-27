@@ -262,7 +262,7 @@ serve(async (req) => {
       team_name: teamName,
       display_name: teamName, // Set display_name to team_name by default
       bot_user_id: tokenData.bot_user_id || "",
-      bot_name: "Commission Tracker",
+      bot_name: "The Standard HQ",
       scope: tokenData.scope || "",
       token_type: tokenData.token_type || "bot",
       authed_user_id: tokenData.authed_user?.id,

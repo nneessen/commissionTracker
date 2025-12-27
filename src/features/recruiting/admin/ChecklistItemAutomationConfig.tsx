@@ -117,7 +117,7 @@ export function ChecklistItemAutomationConfig({
         </div>
         <Button
           size="sm"
-          variant="ghost"
+          variant="secondary"
           className="h-5 text-[9px] px-1.5"
           onClick={() => {
             setEditingAutomation(null);

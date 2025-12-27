@@ -114,7 +114,7 @@ export function PhaseAutomationConfig({ phaseId }: PhaseAutomationConfigProps) {
         </div>
         <Button
           size="sm"
-          variant="ghost"
+          variant="secondary"
           className="h-6 text-[10px]"
           onClick={() => {
             setEditingAutomation(null);

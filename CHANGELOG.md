@@ -6,6 +6,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-12-27 09:45:23
+
+### Changed Files
+- `scripts/generate-continuation-prompt.sh`
+- `scripts/testing/test-build.sh`
+- `src/App.test.tsx`
+- `src/components/ui/badge.tsx`
+- `src/components/ui/button.tsx`
+- `src/features/dashboard/components/DashboardHeader.tsx`
+- `src/features/recruiting/admin/ChecklistItemAutomationConfig.tsx`
+- `src/features/recruiting/admin/ChecklistItemEditor.tsx`
+- `src/features/recruiting/admin/PhaseAutomationConfig.tsx`
+- `src/features/recruiting/admin/PhaseEditor.tsx`
+- `src/services/reports/reportBundleService.ts`
+- `src/services/slack/webhookService.ts`
+- `src/types/product.types.ts`
+- `supabase/functions/slack-daily-leaderboard/index.ts`
+- `supabase/functions/slack-oauth-callback/index.ts`
+- `supabase/migrations/20251225_001_slack_integration.sql`
+
+### Statistics
+```
+ 16 files changed, 289 insertions(+), 212 deletions(-)
+```
+
 ## [Checkpoint] - 2025-12-26 16:56:13
 
 ### Changed Files

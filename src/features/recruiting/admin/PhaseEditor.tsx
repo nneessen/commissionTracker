@@ -385,7 +385,7 @@ export function PhaseEditor({ templateId }: PhaseEditorProps) {
         </h3>
         <Button
           size="sm"
-          variant="outline"
+          variant="default"
           className="h-7 px-3 text-[11px]"
           onClick={() => setCreateDialogOpen(true)}
         >

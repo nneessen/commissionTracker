@@ -107,7 +107,7 @@ cat >> "$PROMPT_FILE" << 'TEMPLATE'
 ## Copy This Prompt Into New Conversation
 
 ```markdown
-# Continue Commission Tracker Project
+# The Standard HQ 
 
 I was working on the commission tracker project and need to continue in a new conversation.
 

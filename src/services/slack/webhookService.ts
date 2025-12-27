@@ -145,7 +145,7 @@ export const webhookService = {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          text: "Test message from Commission Tracker - webhook is working!",
+          text: "Test message from The Standard HQ - webhook is working!",
         }),
       });
 

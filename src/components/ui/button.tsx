@@ -12,44 +12,44 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        // Default: Black -> Gray on hover -> Darker on click
+        // Default: Dark button with good contrast
         default:
-          "bg-zinc-900 text-white shadow-md hover:bg-zinc-700 hover:shadow-lg hover:scale-[1.02] active:bg-zinc-950 active:shadow-sm active:scale-[0.98]",
+          "bg-zinc-900 text-white shadow-md hover:bg-zinc-700 hover:shadow-lg active:bg-zinc-950 active:shadow-sm dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300",
 
-        // Primary: Same visual as default
+        // Primary: Same as default
         primary:
-          "bg-zinc-900 text-white shadow-md hover:bg-zinc-700 hover:shadow-lg hover:scale-[1.02] active:bg-zinc-950 active:shadow-sm active:scale-[0.98]",
+          "bg-zinc-900 text-white shadow-md hover:bg-zinc-700 hover:shadow-lg active:bg-zinc-950 active:shadow-sm dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300",
 
-        // Secondary: Light gray -> Darker gray on hover
+        // Secondary: Light blue/slate with strong contrast
         secondary:
-          "bg-zinc-200 text-zinc-900 shadow-md hover:bg-zinc-300 hover:shadow-lg hover:scale-[1.02] active:bg-zinc-400 active:shadow-sm active:scale-[0.98] dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700 dark:active:bg-zinc-900",
+          "bg-blue-100 text-blue-900 shadow-md hover:bg-blue-200 hover:shadow-lg active:bg-blue-300 active:shadow-sm dark:bg-blue-900 dark:text-blue-100 dark:hover:bg-blue-800",
 
-        // Success: Green with visible shift
+        // Success: VIBRANT green that stands out
         success:
-          "bg-emerald-600 text-white shadow-md hover:bg-emerald-500 hover:shadow-lg hover:shadow-emerald-500/25 hover:scale-[1.02] active:bg-emerald-700 active:shadow-sm active:scale-[0.98]",
+          "bg-emerald-500 text-white shadow-md hover:bg-emerald-600 hover:shadow-lg active:bg-emerald-700 active:shadow-sm",
 
-        // Warning: Amber with visible shift
+        // Warning: VIBRANT amber/orange that stands out
         warning:
-          "bg-amber-500 text-white shadow-md hover:bg-amber-400 hover:shadow-lg hover:shadow-amber-500/25 hover:scale-[1.02] active:bg-amber-600 active:shadow-sm active:scale-[0.98]",
+          "bg-amber-500 text-white shadow-md hover:bg-amber-600 hover:shadow-lg active:bg-amber-700 active:shadow-sm",
 
-        // Destructive: Red with visible shift
+        // Destructive: VIBRANT red that stands out
         destructive:
-          "bg-red-600 text-white shadow-md hover:bg-red-500 hover:shadow-lg hover:shadow-red-500/25 hover:scale-[1.02] active:bg-red-700 active:shadow-sm active:scale-[0.98]",
+          "bg-red-600 text-white shadow-md hover:bg-red-700 hover:shadow-lg active:bg-red-800 active:shadow-sm",
 
-        // Outline: Transparent -> Filled on hover
+        // Outline: Border with colored background on hover
         outline:
-          "border-2 border-zinc-300 bg-transparent text-foreground hover:bg-zinc-100 hover:border-zinc-400 hover:shadow-md hover:scale-[1.02] active:bg-zinc-200 active:scale-[0.98] dark:border-zinc-700 dark:hover:bg-zinc-800 dark:hover:border-zinc-600 dark:active:bg-zinc-900",
+          "border-2 border-zinc-400 bg-white text-zinc-900 shadow hover:bg-zinc-100 hover:border-zinc-500 hover:shadow-md active:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-100 dark:border-zinc-600 dark:hover:bg-zinc-700",
 
-        // Ghost: Invisible -> Visible on hover
+        // Ghost: VISIBLE background instead of transparent
         ghost:
-          "text-muted-foreground hover:text-foreground hover:bg-zinc-100 hover:shadow-sm active:bg-zinc-200 active:scale-[0.98] dark:hover:bg-zinc-800 dark:active:bg-zinc-900",
+          "bg-slate-100 text-slate-700 hover:bg-slate-200 hover:text-slate-900 hover:shadow-sm active:bg-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700",
 
-        // Muted: Soft gray background
+        // Muted: Subtle but visible
         muted:
-          "bg-zinc-300 text-zinc-600 shadow-sm hover:bg-zinc-200 hover:text-zinc-900 hover:shadow-md active:bg-zinc-300 active:scale-[0.98] dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700 dark:hover:text-zinc-100 dark:active:bg-zinc-900",
+          "bg-zinc-200 text-zinc-700 shadow-sm hover:bg-zinc-300 hover:text-zinc-900 hover:shadow-md active:bg-zinc-400 dark:bg-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-600",
 
-        // Link: Text with underline animation
-        link: "text-foreground underline-offset-4 hover:underline hover:text-zinc-600 active:text-zinc-400 dark:hover:text-zinc-300 dark:active:text-zinc-500",
+        // Link: Text with underline
+        link: "text-zinc-900 underline-offset-4 hover:underline hover:text-zinc-600 dark:text-zinc-100 dark:hover:text-zinc-300",
       },
       size: {
         default: "h-9 px-4 py-2",

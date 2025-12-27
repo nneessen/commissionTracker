@@ -457,7 +457,7 @@ export function ChecklistItemEditor({ phaseId }: ChecklistItemEditorProps) {
         </span>
         <Button
           size="sm"
-          variant="ghost"
+          variant="success"
           className="h-6 text-[10px]"
           onClick={() => setCreateDialogOpen(true)}
         >

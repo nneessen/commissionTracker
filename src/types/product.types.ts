@@ -1,4 +1,4 @@
-// Product-related types for the commission tracker application
+// Product-related types for The Standard HQ application
 
 import { Database } from "./database.types";
 

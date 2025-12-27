@@ -50,7 +50,7 @@ CREATE TABLE IF NOT EXISTS slack_integrations (
 
   -- Bot info
   bot_user_id TEXT NOT NULL,
-  bot_name TEXT DEFAULT 'Commission Tracker',
+  bot_name TEXT DEFAULT 'The Standard HQ',
 
   -- OAuth metadata
   scope TEXT NOT NULL,

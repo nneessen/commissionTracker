@@ -20,7 +20,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-2xl font-bold text-foreground m-0 mb-1">
-              Commission Tracker
+              The Standard HQ
             </h1>
             <div className="text-xs text-muted-foreground/80 flex gap-4">
               <span>

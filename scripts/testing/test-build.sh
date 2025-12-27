@@ -4,7 +4,7 @@
 # Purpose: Validate that the app builds without errors after code changes
 
 echo "========================================="
-echo "Commission Tracker Build Validation"
+echo "The Standard HQ Build Validation"
 echo "========================================="
 
 # Colors for output

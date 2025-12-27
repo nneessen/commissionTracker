@@ -2,9 +2,9 @@ import React from "react";
 import { render, screen } from "@testing-library/react";
 import App from "./App";
 
-test("renders commission tracker header", () => {
+test("renders the standard hq header", () => {
   render(<App />);
-  const headerElement = screen.getByText(/commission tracker/i);
+  const headerElement = screen.getByText(/the standard hq/i);
   expect(headerElement).toBeInTheDocument();
 });
 
