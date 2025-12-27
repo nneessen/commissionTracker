@@ -36,6 +36,34 @@ import type {
   SchedulingChecklistMetadata,
   SchedulingIntegrationType,
 } from "@/types/integration.types";
+import type {
+  VideoEmbedMetadata,
+  BooleanQuestionMetadata,
+  AcknowledgmentMetadata,
+  TextResponseMetadata,
+  MultipleChoiceMetadata,
+  FileDownloadMetadata,
+  ExternalLinkMetadata,
+  QuizMetadata,
+  VideoEmbedResponse,
+  BooleanQuestionResponse,
+  AcknowledgmentResponse,
+  TextResponseData,
+  MultipleChoiceResponse,
+  FileDownloadResponse,
+  ExternalLinkResponse,
+  QuizResponse,
+} from "@/types/recruiting.types";
+import {
+  BooleanQuestionItem,
+  AcknowledgmentItem,
+  TextResponseItem,
+  MultipleChoiceItem,
+  FileDownloadItem,
+  ExternalLinkItem,
+  QuizItem,
+  VideoEmbedItem,
+} from "./interactive";
 import {
   useActiveSchedulingIntegrations,
   useRecruiterSchedulingIntegrations,
@@ -53,6 +81,18 @@ interface PhaseChecklistProps {
   isAdmin?: boolean;
   onPhaseComplete?: () => void;
 }
+
+// Interactive item types that render special UI components
+const INTERACTIVE_ITEM_TYPES = new Set([
+  "video_embed",
+  "boolean_question",
+  "acknowledgment",
+  "text_response",
+  "multiple_choice",
+  "file_download",
+  "external_link",
+  "quiz",
+]);
 
 export function PhaseChecklist({
   userId,
@@ -492,6 +532,100 @@ export function PhaseChecklist({
     return null;
   };
 
+  // Render interactive component based on item type
+  const renderInteractiveComponent = (
+    item: PhaseChecklistItem,
+    progress: RecruitChecklistProgress | undefined,
+    isDisabled: boolean,
+  ) => {
+    if (!INTERACTIVE_ITEM_TYPES.has(item.item_type)) return null;
+    if (!progress?.id) return null;
+
+    const responseData = progress?.response_data;
+    const onComplete = () => {
+      // The mutation will invalidate the query and trigger a refetch
+      // No additional action needed here
+    };
+
+    switch (item.item_type) {
+      case "video_embed":
+        return (
+          <VideoEmbedItem
+            progressId={progress.id}
+            metadata={item.metadata as VideoEmbedMetadata}
+            existingResponse={responseData as VideoEmbedResponse | null}
+            isDisabled={isDisabled}
+            onComplete={onComplete}
+          />
+        );
+      case "boolean_question":
+        return (
+          <BooleanQuestionItem
+            progressId={progress.id}
+            metadata={item.metadata as BooleanQuestionMetadata}
+            existingResponse={responseData as BooleanQuestionResponse | null}
+            onComplete={onComplete}
+          />
+        );
+      case "acknowledgment":
+        return (
+          <AcknowledgmentItem
+            progressId={progress.id}
+            metadata={item.metadata as AcknowledgmentMetadata}
+            existingResponse={responseData as AcknowledgmentResponse | null}
+            onComplete={onComplete}
+          />
+        );
+      case "text_response":
+        return (
+          <TextResponseItem
+            progressId={progress.id}
+            metadata={item.metadata as TextResponseMetadata}
+            existingResponse={responseData as TextResponseData | null}
+            onComplete={onComplete}
+          />
+        );
+      case "multiple_choice":
+        return (
+          <MultipleChoiceItem
+            progressId={progress.id}
+            metadata={item.metadata as MultipleChoiceMetadata}
+            existingResponse={responseData as MultipleChoiceResponse | null}
+            onComplete={onComplete}
+          />
+        );
+      case "file_download":
+        return (
+          <FileDownloadItem
+            progressId={progress.id}
+            metadata={item.metadata as FileDownloadMetadata}
+            existingResponse={responseData as FileDownloadResponse | null}
+            onComplete={onComplete}
+          />
+        );
+      case "external_link":
+        return (
+          <ExternalLinkItem
+            progressId={progress.id}
+            metadata={item.metadata as ExternalLinkMetadata}
+            existingResponse={responseData as ExternalLinkResponse | null}
+            onComplete={onComplete}
+          />
+        );
+      case "quiz":
+        return (
+          <QuizItem
+            progressId={progress.id}
+            metadata={item.metadata as QuizMetadata}
+            existingResponse={responseData as QuizResponse | null}
+            onComplete={onComplete}
+          />
+        );
+      default:
+        return null;
+    }
+  };
+
   if (sortedItems.length === 0) {
     // If recruit has no visible items but there are hidden blocking items
     if (isRecruitViewer && hasHiddenBlockingItems) {
@@ -632,6 +766,17 @@ export function PhaseChecklist({
                       </p>
                     </div>
                   )}
+
+                {/* Interactive component for video, boolean question, acknowledgment, etc. */}
+                {INTERACTIVE_ITEM_TYPES.has(item.item_type) && (
+                  <div className="mt-3">
+                    {renderInteractiveComponent(
+                      item,
+                      progress,
+                      !checkboxState.isEnabled,
+                    )}
+                  </div>
+                )}
 
                 {!checkboxState.isEnabled &&
                   checkboxState.disabledReason &&

@@ -29,6 +29,8 @@ export interface RecruitChecklistProgressEntity {
   notes: string | null;
   rejectionReason: string | null;
   metadata: Json | null;
+  responseData: Json | null;
+  completionDetails: Json | null;
   createdAt: string | null;
   updatedAt: string | null;
 }
@@ -296,6 +298,8 @@ export class RecruitChecklistProgressRepository extends BaseRepository<
       notes: row.notes,
       rejectionReason: row.rejection_reason,
       metadata: row.metadata,
+      responseData: row.response_data,
+      completionDetails: row.completion_details,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
     };

@@ -7,3 +7,4 @@ export { MultipleChoiceItem } from "./MultipleChoiceItem";
 export { FileDownloadItem } from "./FileDownloadItem";
 export { ExternalLinkItem } from "./ExternalLinkItem";
 export { QuizItem } from "./QuizItem";
+export { VideoEmbedItem } from "./VideoEmbedItem";

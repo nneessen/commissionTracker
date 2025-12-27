@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-12-27 13:57:31
+
+### Changed Files
+- `src/features/recruiting/components/PhaseChecklist.tsx`
+- `src/features/recruiting/components/interactive/VideoEmbedItem.tsx`
+- `src/features/recruiting/components/interactive/index.ts`
+- `src/services/recruiting/checklistResponseService.ts`
+- `src/services/recruiting/repositories/RecruitChecklistProgressRepository.ts`
+- `src/types/recruiting.types.ts`
+
+### Statistics
+```
+ 6 files changed, 374 insertions(+), 1 deletion(-)
+```
+
 ## [Checkpoint] - 2025-12-27 12:41:58
 
 ### Changed Files

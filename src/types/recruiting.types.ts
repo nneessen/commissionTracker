@@ -144,6 +144,10 @@ export interface RecruitChecklistProgress {
   document_id?: string | null;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic metadata shape
   metadata?: Record<string, any> | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic response shape
+  response_data?: Record<string, any> | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic completion details shape
+  completion_details?: Record<string, any> | null;
 }
 
 // Type guards
@@ -981,6 +985,14 @@ export interface QuizResponse {
   best_score_percent: number;
   total_attempts: number;
   passed: boolean;
+}
+
+export interface VideoEmbedResponse {
+  watched: boolean;
+  watched_at: string;
+  watch_duration_seconds?: number;
+  watch_percentage?: number;
+  fully_watched?: boolean;
 }
 
 // =============================================================================

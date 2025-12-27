@@ -13,6 +13,8 @@ import type {
   QuizMetadata,
   MultipleChoiceMetadata,
   BooleanQuestionMetadata,
+  VideoEmbedResponse,
+  VideoEmbedMetadata,
 } from "@/types/recruiting.types";
 
 // =============================================================================
@@ -26,7 +28,8 @@ export type ChecklistResponse =
   | MultipleChoiceResponse
   | FileDownloadResponse
   | ExternalLinkResponse
-  | QuizResponse;
+  | QuizResponse
+  | VideoEmbedResponse;
 
 export interface SubmitResponseResult {
   success: boolean;
@@ -445,6 +448,40 @@ export async function submitQuizAttempt(
   };
 }
 
+/**
+ * Submit a video watch response
+ */
+export async function submitVideoWatchResponse(
+  progressId: string,
+  metadata?: VideoEmbedMetadata,
+): Promise<SubmitResponseResult> {
+  const response: VideoEmbedResponse = {
+    watched: true,
+    watched_at: new Date().toISOString(),
+    fully_watched: true, // Honor system for now
+  };
+
+  // Auto-complete if configured (defaults to true for videos)
+  const autoComplete = metadata?.auto_complete !== false;
+
+  const { error } = await supabase
+    .from("recruit_checklist_progress")
+    .update({
+      response_data: response,
+      ...(autoComplete && {
+        status: "completed",
+        completed_at: new Date().toISOString(),
+      }),
+    })
+    .eq("id", progressId);
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  return { success: true, autoComplete };
+}
+
 // =============================================================================
 // Response Retrieval
 // =============================================================================
@@ -606,6 +643,7 @@ export const checklistResponseService = {
   recordExternalLinkClick,
   completeExternalLink,
   submitQuizAttempt,
+  submitVideoWatchResponse,
   getChecklistResponse,
   getPhaseResponses,
   validateTextResponse,
