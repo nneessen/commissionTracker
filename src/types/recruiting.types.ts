@@ -171,6 +171,7 @@ export function shouldSkipPipeline(
 
 // Status color mappings for UI badges
 export const ONBOARDING_STATUS_COLORS: Record<string, string> = {
+  potential_recruit: "bg-pink-100 text-grey-800",
   interview_1: "bg-blue-100 text-blue-800",
   interview_2: "bg-blue-100 text-blue-800",
   contracting: "bg-purple-100 text-purple-800",
@@ -995,6 +996,21 @@ export interface VideoEmbedResponse {
   fully_watched?: boolean;
 }
 
+export interface SignatureResponse {
+  submission_id: string;
+  submission_status:
+    | "pending"
+    | "in_progress"
+    | "completed"
+    | "declined"
+    | "expired"
+    | "voided";
+  initiated_at: string;
+  completed_at?: string;
+  signers_completed: number;
+  signers_total: number;
+}
+
 // =============================================================================
 // Completion Details - Stored in recruit_checklist_progress.completion_details
 // =============================================================================
@@ -1067,6 +1083,7 @@ export const CHECKLIST_TYPES_REQUIRING_METADATA: ChecklistItemType[] = [
   "file_download",
   "external_link",
   "quiz",
+  "signature_required",
 ];
 
 /**
@@ -1081,4 +1098,5 @@ export const INTERACTIVE_CHECKLIST_TYPES: ChecklistItemType[] = [
   "file_download",
   "external_link",
   "quiz",
+  "signature_required",
 ];

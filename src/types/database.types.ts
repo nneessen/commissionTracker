@@ -4163,6 +4163,349 @@ export type Database = {
         };
         Relationships: [];
       };
+      signature_submissions: {
+        Row: {
+          agency_id: string;
+          audit_log_url: string | null;
+          checklist_progress_id: string | null;
+          combined_document_url: string | null;
+          completed_at: string | null;
+          created_at: string | null;
+          declined_at: string | null;
+          docuseal_submission_id: number | null;
+          expires_at: string | null;
+          id: string;
+          imo_id: string | null;
+          initiated_by: string | null;
+          status: string | null;
+          target_user_id: string | null;
+          template_id: string;
+          updated_at: string | null;
+          voided_at: string | null;
+          voided_by: string | null;
+          voided_reason: string | null;
+        };
+        Insert: {
+          agency_id: string;
+          audit_log_url?: string | null;
+          checklist_progress_id?: string | null;
+          combined_document_url?: string | null;
+          completed_at?: string | null;
+          created_at?: string | null;
+          declined_at?: string | null;
+          docuseal_submission_id?: number | null;
+          expires_at?: string | null;
+          id?: string;
+          imo_id?: string | null;
+          initiated_by?: string | null;
+          status?: string | null;
+          target_user_id?: string | null;
+          template_id: string;
+          updated_at?: string | null;
+          voided_at?: string | null;
+          voided_by?: string | null;
+          voided_reason?: string | null;
+        };
+        Update: {
+          agency_id?: string;
+          audit_log_url?: string | null;
+          checklist_progress_id?: string | null;
+          combined_document_url?: string | null;
+          completed_at?: string | null;
+          created_at?: string | null;
+          declined_at?: string | null;
+          docuseal_submission_id?: number | null;
+          expires_at?: string | null;
+          id?: string;
+          imo_id?: string | null;
+          initiated_by?: string | null;
+          status?: string | null;
+          target_user_id?: string | null;
+          template_id?: string;
+          updated_at?: string | null;
+          voided_at?: string | null;
+          voided_by?: string | null;
+          voided_reason?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "signature_submissions_agency_id_fkey";
+            columns: ["agency_id"];
+            isOneToOne: false;
+            referencedRelation: "agencies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "signature_submissions_checklist_progress_id_fkey";
+            columns: ["checklist_progress_id"];
+            isOneToOne: false;
+            referencedRelation: "recruit_checklist_progress";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "signature_submissions_imo_id_fkey";
+            columns: ["imo_id"];
+            isOneToOne: false;
+            referencedRelation: "imos";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "signature_submissions_initiated_by_fkey";
+            columns: ["initiated_by"];
+            isOneToOne: false;
+            referencedRelation: "active_user_profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "signature_submissions_initiated_by_fkey";
+            columns: ["initiated_by"];
+            isOneToOne: false;
+            referencedRelation: "user_management_view";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "signature_submissions_initiated_by_fkey";
+            columns: ["initiated_by"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "signature_submissions_target_user_id_fkey";
+            columns: ["target_user_id"];
+            isOneToOne: false;
+            referencedRelation: "active_user_profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "signature_submissions_target_user_id_fkey";
+            columns: ["target_user_id"];
+            isOneToOne: false;
+            referencedRelation: "user_management_view";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "signature_submissions_target_user_id_fkey";
+            columns: ["target_user_id"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "signature_submissions_template_id_fkey";
+            columns: ["template_id"];
+            isOneToOne: false;
+            referencedRelation: "signature_templates";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "signature_submissions_voided_by_fkey";
+            columns: ["voided_by"];
+            isOneToOne: false;
+            referencedRelation: "active_user_profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "signature_submissions_voided_by_fkey";
+            columns: ["voided_by"];
+            isOneToOne: false;
+            referencedRelation: "user_management_view";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "signature_submissions_voided_by_fkey";
+            columns: ["voided_by"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      signature_submitters: {
+        Row: {
+          created_at: string | null;
+          decline_reason: string | null;
+          declined_at: string | null;
+          docuseal_submitter_id: number | null;
+          email: string;
+          embed_url: string | null;
+          embed_url_expires_at: string | null;
+          id: string;
+          ip_address: string | null;
+          name: string | null;
+          opened_at: string | null;
+          role: string;
+          sent_at: string | null;
+          signed_at: string | null;
+          signing_order: number | null;
+          status: string | null;
+          submission_id: string;
+          updated_at: string | null;
+          user_agent: string | null;
+          user_id: string | null;
+        };
+        Insert: {
+          created_at?: string | null;
+          decline_reason?: string | null;
+          declined_at?: string | null;
+          docuseal_submitter_id?: number | null;
+          email: string;
+          embed_url?: string | null;
+          embed_url_expires_at?: string | null;
+          id?: string;
+          ip_address?: string | null;
+          name?: string | null;
+          opened_at?: string | null;
+          role: string;
+          sent_at?: string | null;
+          signed_at?: string | null;
+          signing_order?: number | null;
+          status?: string | null;
+          submission_id: string;
+          updated_at?: string | null;
+          user_agent?: string | null;
+          user_id?: string | null;
+        };
+        Update: {
+          created_at?: string | null;
+          decline_reason?: string | null;
+          declined_at?: string | null;
+          docuseal_submitter_id?: number | null;
+          email?: string;
+          embed_url?: string | null;
+          embed_url_expires_at?: string | null;
+          id?: string;
+          ip_address?: string | null;
+          name?: string | null;
+          opened_at?: string | null;
+          role?: string;
+          sent_at?: string | null;
+          signed_at?: string | null;
+          signing_order?: number | null;
+          status?: string | null;
+          submission_id?: string;
+          updated_at?: string | null;
+          user_agent?: string | null;
+          user_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "signature_submitters_submission_id_fkey";
+            columns: ["submission_id"];
+            isOneToOne: false;
+            referencedRelation: "signature_submissions";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "signature_submitters_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "active_user_profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "signature_submitters_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "user_management_view";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "signature_submitters_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      signature_templates: {
+        Row: {
+          agency_id: string;
+          created_at: string | null;
+          created_by: string | null;
+          description: string | null;
+          docuseal_template_id: number | null;
+          docuseal_template_slug: string | null;
+          id: string;
+          imo_id: string | null;
+          is_active: boolean | null;
+          name: string;
+          required_signer_roles: string[] | null;
+          signing_order: string | null;
+          template_type: string;
+          updated_at: string | null;
+        };
+        Insert: {
+          agency_id: string;
+          created_at?: string | null;
+          created_by?: string | null;
+          description?: string | null;
+          docuseal_template_id?: number | null;
+          docuseal_template_slug?: string | null;
+          id?: string;
+          imo_id?: string | null;
+          is_active?: boolean | null;
+          name: string;
+          required_signer_roles?: string[] | null;
+          signing_order?: string | null;
+          template_type?: string;
+          updated_at?: string | null;
+        };
+        Update: {
+          agency_id?: string;
+          created_at?: string | null;
+          created_by?: string | null;
+          description?: string | null;
+          docuseal_template_id?: number | null;
+          docuseal_template_slug?: string | null;
+          id?: string;
+          imo_id?: string | null;
+          is_active?: boolean | null;
+          name?: string;
+          required_signer_roles?: string[] | null;
+          signing_order?: string | null;
+          template_type?: string;
+          updated_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "signature_templates_agency_id_fkey";
+            columns: ["agency_id"];
+            isOneToOne: false;
+            referencedRelation: "agencies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "signature_templates_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "active_user_profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "signature_templates_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "user_management_view";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "signature_templates_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "signature_templates_imo_id_fkey";
+            columns: ["imo_id"];
+            isOneToOne: false;
+            referencedRelation: "imos";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       slack_channel_configs: {
         Row: {
           agency_id: string | null;

@@ -12,6 +12,7 @@ import type {
   ExternalLinkMetadata,
   QuizMetadata,
 } from "@/types/recruiting.types";
+import type { SignatureRequiredMetadata } from "@/types/signature.types";
 import { SchedulingItemConfig } from "./SchedulingItemConfig";
 import { VideoItemConfig } from "./VideoItemConfig";
 import { BooleanQuestionConfig } from "./BooleanQuestionConfig";
@@ -21,6 +22,7 @@ import { MultipleChoiceConfig } from "./MultipleChoiceConfig";
 import { FileDownloadConfig } from "./FileDownloadConfig";
 import { ExternalLinkConfig } from "./ExternalLinkConfig";
 import { QuizConfig } from "./QuizConfig";
+import { SignatureRequiredConfig } from "./SignatureRequiredConfig";
 
 interface MetadataConfigSelectorProps {
   itemType: ChecklistItemType;
@@ -47,6 +49,9 @@ interface MetadataConfigSelectorProps {
     | (ExternalLinkMetadata & { _type: "external_link" })
     | null;
   quizMetadata: (QuizMetadata & { _type: "quiz" }) | null;
+  signatureRequiredMetadata:
+    | (SignatureRequiredMetadata & { _type: "signature_required" })
+    | null;
   onSchedulingChange: (
     metadata: SchedulingChecklistMetadata & { _type: "scheduling_booking" },
   ) => void;
@@ -72,6 +77,9 @@ interface MetadataConfigSelectorProps {
     metadata: ExternalLinkMetadata & { _type: "external_link" },
   ) => void;
   onQuizChange: (metadata: QuizMetadata & { _type: "quiz" }) => void;
+  onSignatureRequiredChange: (
+    metadata: SignatureRequiredMetadata & { _type: "signature_required" },
+  ) => void;
 }
 
 /**
@@ -89,6 +97,7 @@ export function MetadataConfigSelector({
   fileDownloadMetadata,
   externalLinkMetadata,
   quizMetadata,
+  signatureRequiredMetadata,
   onSchedulingChange,
   onVideoChange,
   onBooleanQuestionChange,
@@ -98,6 +107,7 @@ export function MetadataConfigSelector({
   onFileDownloadChange,
   onExternalLinkChange,
   onQuizChange,
+  onSignatureRequiredChange,
 }: MetadataConfigSelectorProps) {
   switch (itemType) {
     case "scheduling_booking":
@@ -155,6 +165,13 @@ export function MetadataConfigSelector({
       );
     case "quiz":
       return <QuizConfig metadata={quizMetadata} onChange={onQuizChange} />;
+    case "signature_required":
+      return (
+        <SignatureRequiredConfig
+          metadata={signatureRequiredMetadata}
+          onChange={onSignatureRequiredChange}
+        />
+      );
     default:
       return null;
   }

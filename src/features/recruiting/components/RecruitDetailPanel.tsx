@@ -686,6 +686,8 @@ export function RecruitDetailPanel({
                 viewedPhaseId={viewingPhaseId}
                 isAdmin={currentUserProfile?.is_admin || false}
                 onPhaseComplete={() => {}}
+                recruitEmail={recruit.email || ""}
+                recruitName={displayName}
               />
             ) : (
               <div className="py-8 text-center">

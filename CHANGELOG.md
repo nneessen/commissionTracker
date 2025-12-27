@@ -6,6 +6,88 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-12-27 16:46:33
+
+### Changed Files
+- `CHANGELOG.md`
+- `PROJECT_STATS.md`
+- `package-lock.json`
+- `package.json`
+- `src/features/recruiting/admin/ChecklistItemFormDialog.tsx`
+- `src/features/recruiting/admin/MetadataConfigSelector.tsx`
+- `src/features/recruiting/admin/SignatureRequiredConfig.tsx`
+- `src/features/recruiting/components/PhaseChecklist.tsx`
+- `src/features/recruiting/components/RecruitDetailPanel.tsx`
+- `src/features/recruiting/components/interactive/SignatureRequiredItem.tsx`
+- `src/features/recruiting/components/interactive/index.ts`
+- `src/features/recruiting/pages/MyRecruitingPipeline.tsx`
+- `src/hooks/signatures/index.ts`
+- `src/hooks/signatures/useSignatureSubmissions.ts`
+- `src/hooks/signatures/useSignatureTemplates.ts`
+- `src/services/base/tables.ts`
+- `src/services/recruiting/checklistResponseService.ts`
+- `src/services/signatures/DocuSealApiClient.ts`
+- `src/services/signatures/SignatureSubmissionService.ts`
+- `src/services/signatures/SignatureTemplateService.ts`
+- `src/services/signatures/docusealEdgeFunctionClient.ts`
+- `src/services/signatures/index.ts`
+- `src/services/signatures/repositories/SignatureSubmissionRepository.ts`
+- `src/services/signatures/repositories/SignatureSubmitterRepository.ts`
+- `src/services/signatures/repositories/SignatureTemplateRepository.ts`
+- `src/types/checklist-metadata.types.ts`
+- `src/types/database.types.ts`
+- `src/types/recruiting.types.ts`
+- `src/types/signature.types.ts`
+- `supabase/functions/docuseal-webhook/index.ts`
+- `supabase/functions/docuseal/index.ts`
+- `supabase/migrations/20251227_005_docuseal_signature_tables.sql`
+- `supabase/migrations/20251227_006_fix_signature_fk_constraints.sql`
+
+### Statistics
+```
+ 33 files changed, 13937 insertions(+), 7760 deletions(-)
+```
+
+## [Checkpoint] - 2025-12-27 16:43:03
+
+### Changed Files
+- `package-lock.json`
+- `package.json`
+- `src/features/recruiting/admin/ChecklistItemFormDialog.tsx`
+- `src/features/recruiting/admin/MetadataConfigSelector.tsx`
+- `src/features/recruiting/admin/SignatureRequiredConfig.tsx`
+- `src/features/recruiting/components/PhaseChecklist.tsx`
+- `src/features/recruiting/components/RecruitDetailPanel.tsx`
+- `src/features/recruiting/components/interactive/SignatureRequiredItem.tsx`
+- `src/features/recruiting/components/interactive/index.ts`
+- `src/features/recruiting/pages/MyRecruitingPipeline.tsx`
+- `src/hooks/signatures/index.ts`
+- `src/hooks/signatures/useSignatureSubmissions.ts`
+- `src/hooks/signatures/useSignatureTemplates.ts`
+- `src/services/base/tables.ts`
+- `src/services/recruiting/checklistResponseService.ts`
+- `src/services/signatures/DocuSealApiClient.ts`
+- `src/services/signatures/SignatureSubmissionService.ts`
+- `src/services/signatures/SignatureTemplateService.ts`
+- `src/services/signatures/docusealEdgeFunctionClient.ts`
+- `src/services/signatures/index.ts`
+- `src/services/signatures/repositories/SignatureSubmissionRepository.ts`
+- `src/services/signatures/repositories/SignatureSubmitterRepository.ts`
+- `src/services/signatures/repositories/SignatureTemplateRepository.ts`
+- `src/types/checklist-metadata.types.ts`
+- `src/types/database.types.ts`
+- `src/types/recruiting.types.ts`
+- `src/types/signature.types.ts`
+- `supabase/functions/docuseal-webhook/index.ts`
+- `supabase/functions/docuseal/index.ts`
+- `supabase/migrations/20251227_005_docuseal_signature_tables.sql`
+- `supabase/migrations/20251227_006_fix_signature_fk_constraints.sql`
+
+### Statistics
+```
+ 31 files changed, 13897 insertions(+), 7755 deletions(-)
+```
+
 ## [Checkpoint] - 2025-12-27 13:57:31
 
 ### Changed Files

@@ -38,6 +38,7 @@ import type {
 } from "@/types/recruiting.types";
 import { CHECKLIST_ITEM_TYPE_LABELS } from "@/types/recruiting.types";
 import type { SchedulingChecklistMetadata } from "@/types/integration.types";
+import type { SignatureRequiredMetadata } from "@/types/signature.types";
 import {
   isSchedulingMetadata,
   isVideoMetadata,
@@ -48,6 +49,7 @@ import {
   isFileDownloadMetadata,
   isExternalLinkMetadata,
   isQuizMetadata,
+  isSignatureRequiredMetadata,
 } from "@/types/checklist-metadata.types";
 import { MetadataConfigSelector } from "./MetadataConfigSelector";
 
@@ -190,6 +192,9 @@ function ChecklistItemFormDialogComponent({
   const [quizMetadata, setQuizMetadata] = useState<
     (QuizMetadata & { _type: "quiz" }) | null
   >(null);
+  const [signatureRequiredMetadata, setSignatureRequiredMetadata] = useState<
+    (SignatureRequiredMetadata & { _type: "signature_required" }) | null
+  >(null);
 
   // Helper to initialize metadata based on item type
   const initializeMetadata = useCallback((item: PhaseChecklistItem) => {
@@ -203,6 +208,7 @@ function ChecklistItemFormDialogComponent({
     setFileDownloadMetadata(null);
     setExternalLinkMetadata(null);
     setQuizMetadata(null);
+    setSignatureRequiredMetadata(null);
 
     if (!item.metadata) return;
 
@@ -297,6 +303,16 @@ function ChecklistItemFormDialogComponent({
           });
         }
         break;
+      case "signature_required":
+        if (isSignatureRequiredMetadata(item.metadata)) {
+          setSignatureRequiredMetadata(item.metadata);
+        } else {
+          setSignatureRequiredMetadata({
+            ...(item.metadata as unknown as SignatureRequiredMetadata),
+            _type: "signature_required",
+          });
+        }
+        break;
     }
   }, []);
 
@@ -326,6 +342,7 @@ function ChecklistItemFormDialogComponent({
       setFileDownloadMetadata(null);
       setExternalLinkMetadata(null);
       setQuizMetadata(null);
+      setSignatureRequiredMetadata(null);
       editingItemIdRef.current = null;
     }
   }, [open]);
@@ -356,6 +373,8 @@ function ChecklistItemFormDialogComponent({
           return externalLinkMetadata;
         case "quiz":
           return quizMetadata;
+        case "signature_required":
+          return signatureRequiredMetadata;
         default:
           return undefined;
       }
@@ -370,6 +389,7 @@ function ChecklistItemFormDialogComponent({
       fileDownloadMetadata,
       externalLinkMetadata,
       quizMetadata,
+      signatureRequiredMetadata,
     ],
   );
 
@@ -543,6 +563,7 @@ function ChecklistItemFormDialogComponent({
           fileDownloadMetadata={fileDownloadMetadata}
           externalLinkMetadata={externalLinkMetadata}
           quizMetadata={quizMetadata}
+          signatureRequiredMetadata={signatureRequiredMetadata}
           onSchedulingChange={setSchedulingMetadata}
           onVideoChange={setVideoMetadata}
           onBooleanQuestionChange={setBooleanQuestionMetadata}
@@ -552,6 +573,7 @@ function ChecklistItemFormDialogComponent({
           onFileDownloadChange={setFileDownloadMetadata}
           onExternalLinkChange={setExternalLinkMetadata}
           onQuizChange={setQuizMetadata}
+          onSignatureRequiredChange={setSignatureRequiredMetadata}
         />
 
         <div className="flex items-center gap-4">

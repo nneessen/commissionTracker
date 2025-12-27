@@ -11,6 +11,7 @@ import type {
   ExternalLinkMetadata,
   QuizMetadata,
 } from "./recruiting.types";
+import type { SignatureRequiredMetadata } from "./signature.types";
 
 // =============================================================================
 // Discriminated Union Types
@@ -30,6 +31,7 @@ export type ChecklistMetadata =
   | (FileDownloadMetadata & { _type: "file_download" })
   | (ExternalLinkMetadata & { _type: "external_link" })
   | (QuizMetadata & { _type: "quiz" })
+  | (SignatureRequiredMetadata & { _type: "signature_required" })
   | null;
 
 /**
@@ -155,6 +157,19 @@ export function isQuizMetadata(
   return metadata !== null && "_type" in metadata && metadata._type === "quiz";
 }
 
+/**
+ * Type guard for signature required metadata
+ */
+export function isSignatureRequiredMetadata(
+  metadata: ChecklistMetadata,
+): metadata is SignatureRequiredMetadata & { _type: "signature_required" } {
+  return (
+    metadata !== null &&
+    "_type" in metadata &&
+    metadata._type === "signature_required"
+  );
+}
+
 // =============================================================================
 // Factory Functions
 // =============================================================================
@@ -240,6 +255,15 @@ export function createQuizMetadata(
   return { ...data, _type: "quiz" };
 }
 
+/**
+ * Factory function to create type-safe signature required metadata
+ */
+export function createSignatureRequiredMetadata(
+  data: SignatureRequiredMetadata,
+): SignatureRequiredMetadata & { _type: "signature_required" } {
+  return { ...data, _type: "signature_required" };
+}
+
 // =============================================================================
 // Utility Functions
 // =============================================================================
@@ -283,6 +307,7 @@ export const METADATA_TYPE_GUARDS: Record<
   file_download: isFileDownloadMetadata,
   external_link: isExternalLinkMetadata,
   quiz: isQuizMetadata,
+  signature_required: isSignatureRequiredMetadata,
 };
 
 /**

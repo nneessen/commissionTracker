@@ -469,6 +469,8 @@ export function MyRecruitingPipeline() {
                       });
                     }
                   }}
+                  recruitEmail={profile.email}
+                  recruitName={`${profile.first_name || ""} ${profile.last_name || ""}`.trim()}
                 />
               ) : (
                 <div className="py-6 text-center">

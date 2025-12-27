@@ -53,7 +53,9 @@ import type {
   FileDownloadResponse,
   ExternalLinkResponse,
   QuizResponse,
+  SignatureResponse,
 } from "@/types/recruiting.types";
+import type { SignatureRequiredMetadata } from "@/types/signature.types";
 import {
   BooleanQuestionItem,
   AcknowledgmentItem,
@@ -63,6 +65,7 @@ import {
   ExternalLinkItem,
   QuizItem,
   VideoEmbedItem,
+  SignatureRequiredItem,
 } from "./interactive";
 import {
   useActiveSchedulingIntegrations,
@@ -80,6 +83,9 @@ interface PhaseChecklistProps {
   viewedPhaseId?: string;
   isAdmin?: boolean;
   onPhaseComplete?: () => void;
+  // Recruit info for signature items
+  recruitEmail?: string;
+  recruitName?: string;
 }
 
 // Interactive item types that render special UI components
@@ -92,6 +98,7 @@ const INTERACTIVE_ITEM_TYPES = new Set([
   "file_download",
   "external_link",
   "quiz",
+  "signature_required",
 ]);
 
 export function PhaseChecklist({
@@ -104,6 +111,8 @@ export function PhaseChecklist({
   viewedPhaseId,
   isAdmin = false,
   onPhaseComplete: _onPhaseComplete,
+  recruitEmail,
+  recruitName,
 }: PhaseChecklistProps) {
   const updateItemStatus = useUpdateChecklistItemStatus();
   const [loadingItemIds, setLoadingItemIds] = useState<Set<string>>(new Set());
@@ -621,6 +630,41 @@ export function PhaseChecklist({
             onComplete={onComplete}
           />
         );
+      case "signature_required": {
+        const signatureMetadata =
+          item.metadata as SignatureRequiredMetadata | null;
+        // Guard against null/incomplete metadata
+        if (
+          !signatureMetadata ||
+          !signatureMetadata.template_id ||
+          !signatureMetadata.required_signer_roles
+        ) {
+          return (
+            <div className="p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg">
+              <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
+                <AlertCircle className="h-4 w-4" />
+                <span className="text-sm font-medium">
+                  Signature item not configured
+                </span>
+              </div>
+              <p className="text-xs text-amber-600 dark:text-amber-500 mt-1">
+                This item requires admin configuration before it can be used.
+              </p>
+            </div>
+          );
+        }
+        return (
+          <SignatureRequiredItem
+            progressId={progress.id}
+            metadata={signatureMetadata}
+            existingResponse={responseData as SignatureResponse | null}
+            recruitId={userId}
+            recruitEmail={recruitEmail || ""}
+            recruitName={recruitName || ""}
+            onComplete={onComplete}
+          />
+        );
+      }
       default:
         return null;
     }
