@@ -182,6 +182,81 @@ Call out:
 
 ---
 
+## 9️⃣ DATABASE & MIGRATION REQUIREMENTS
+
+### Migration Scripts (REQUIRED)
+
+When any schema changes are made:
+
+1. **Apply migration:** Run `scripts/apply-migration.sh <path-to-migration.sql>`
+2. **Regenerate types:** Run `npx supabase gen types typescript --project-id <project-id> > src/types/database.types.ts`
+3. **Verify build:** Run `npm run build` with zero errors
+
+### Revert Migration Script
+
+A revert migration script MUST exist for rollback capability:
+- **Script:** `scripts/revert-migration.sh <migration-name>`
+- Each migration should have a corresponding revert SQL or documented rollback steps in `supabase/migrations/reverts/`
+
+### database.types.ts is Source of Truth
+
+- [ ] All entity types MUST derive from database.types.ts
+- [ ] NEVER hardcode types that exist in the DB schema
+- [ ] NEVER create duplicate type files for DB entities
+- [ ] Import types: `import type { Database } from "@/types/database.types"`
+
+### Variable Naming Consistency
+
+DB uses snake_case, TypeScript uses camelCase. The transformation layer handles this:
+
+| DB Field (snake_case) | TS Property (camelCase) | Transform Location |
+|-----------------------|-------------------------|-------------------|
+| `onboarding_status` | `onboardingStatus` | Repository.transformFromDB() |
+| `created_at` | `createdAt` | Repository.transformFromDB() |
+
+**Anti-pattern:** Mixing `onboarding_status` and `onboardingStatus` in the same component/service.
+
+---
+
+## 🔟 SERVICE & REPOSITORY PATTERNS
+
+### Repository Layer Requirements
+
+All data access repositories MUST:
+- Extend `BaseRepository<EntityType, CreateData, UpdateData>`
+- Implement `transformFromDB()` - Convert DB row (snake_case) → TypeScript entity (camelCase)
+- Implement `transformToDB()` - Convert entity (camelCase) → DB format (snake_case)
+- Use structured error handling via `handleError()`
+- One repository per database table
+
+### Service Layer Guidelines
+
+Services should:
+- Use ServiceResponse<T> pattern for consistent error handling
+- Delegate CRUD to repositories
+- Contain business logic and validation
+- NOT use singleton pattern (export simple instance instead)
+
+### Exempt Patterns
+
+The following are acceptable deviations:
+- **Utility services** - Pure functions with no DB access (e.g., FileValidationService)
+- **Calculation services** - Pure math/logic (e.g., CommissionLifecycleService)
+- **Facade services** - Orchestration layers composing multiple services
+
+### Anti-Patterns to Flag
+
+- [ ] Repository not extending BaseRepository
+- [ ] Missing transformFromDB/transformToDB
+- [ ] Direct Supabase calls bypassing repository
+- [ ] Singleton pattern (getInstance()) in services
+- [ ] Deprecated wrapper services (delegation-only)
+- [ ] Mixed CRUD + business logic without separation
+- [ ] Hardcoded types instead of database.types.ts imports
+- [ ] Inconsistent snake_case/camelCase mixing in same file
+
+---
+
 ## OUTPUT FORMAT (STRICT)
 
 Respond using **this exact structure**:

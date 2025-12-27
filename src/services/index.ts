@@ -19,11 +19,7 @@ export * from "./join-request";
 // Individual service exports for backward compatibility
 export { carrierService } from "./settings/carriers";
 export { constantsService } from "./settings/constantsService";
-export {
-  agentService,
-  userService,
-  userApprovalService,
-} from "./users/userService";
+export { userService, userApprovalService } from "./users/userService";
 export { compGuideService } from "./settings/comp-guide";
 export { agentSettingsService } from "./settings/agentSettingsService";
 export { chargebackService } from "./commissions/chargebackService";

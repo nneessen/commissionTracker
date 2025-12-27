@@ -1,8 +1,9 @@
-// src/services/messaging/message/MessagingService.ts
+// src/services/messaging/MessagingService.ts
 
-import { ServiceResponse } from "../../base/BaseService";
-import { MessagingRepository } from "./MessagingRepository";
-import { supabase } from "../../base/supabase";
+import { ServiceResponse } from "../base/BaseService";
+import { MessageThreadRepository } from "./MessageThreadRepository";
+import { MessageRepository } from "./MessageRepository";
+import { supabase } from "../base/supabase";
 import type {
   MessageThread,
   Message,
@@ -11,10 +12,12 @@ import type {
 } from "@/types/messaging.types";
 
 export class MessagingServiceClass {
-  private repository: MessagingRepository;
+  private threadRepository: MessageThreadRepository;
+  private messageRepository: MessageRepository;
 
   constructor() {
-    this.repository = new MessagingRepository();
+    this.threadRepository = new MessageThreadRepository();
+    this.messageRepository = new MessageRepository();
   }
 
   /**
@@ -42,8 +45,8 @@ export class MessagingServiceClass {
   async getThreads(): Promise<ServiceResponse<MessageThread[]>> {
     try {
       const profileId = await this.getCurrentUserProfileId();
-      const threads = await this.repository.findThreadsByParticipant(profileId);
-      return { success: true, data: threads };
+      const threads = await this.threadRepository.findByParticipant(profileId);
+      return { success: true, data: threads as MessageThread[] };
     } catch (error) {
       return {
         success: false,
@@ -59,8 +62,8 @@ export class MessagingServiceClass {
     threadId: string,
   ): Promise<ServiceResponse<Message[]>> {
     try {
-      const messages = await this.repository.findMessagesByThreadId(threadId);
-      return { success: true, data: messages };
+      const messages = await this.messageRepository.findByThreadId(threadId);
+      return { success: true, data: messages as Message[] };
     } catch (error) {
       return {
         success: false,
@@ -79,7 +82,7 @@ export class MessagingServiceClass {
       const profileId = await this.getCurrentUserProfileId();
 
       // Create thread with current user + recipients
-      const thread = await this.repository.createThread({
+      const thread = await this.threadRepository.create({
         subject: request.subject,
         participant_ids: [profileId, ...request.recipient_ids],
         created_by: profileId,
@@ -93,7 +96,7 @@ export class MessagingServiceClass {
         });
       }
 
-      return { success: true, data: thread };
+      return { success: true, data: thread as MessageThread };
     } catch (error) {
       return {
         success: false,
@@ -111,16 +114,16 @@ export class MessagingServiceClass {
     try {
       const profileId = await this.getCurrentUserProfileId();
 
-      const message = await this.repository.createMessage({
+      const message = await this.messageRepository.createWithSender({
         thread_id: request.threadId,
         sender_id: profileId,
         content: request.content,
       });
 
       // Update thread's last_message_at
-      await this.repository.updateThreadLastMessage(request.threadId);
+      await this.threadRepository.updateLastMessage(request.threadId);
 
-      return { success: true, data: message };
+      return { success: true, data: message as Message };
     } catch (error) {
       return {
         success: false,
@@ -137,7 +140,7 @@ export class MessagingServiceClass {
       const profileId = await this.getCurrentUserProfileId();
 
       for (const messageId of messageIds) {
-        await this.repository.markMessageAsRead(messageId, profileId);
+        await this.messageRepository.markAsRead(messageId, profileId);
       }
 
       return { success: true };
@@ -157,10 +160,10 @@ export class MessagingServiceClass {
       const profileId = await this.getCurrentUserProfileId();
 
       // Get all threads user participates in
-      const threads = await this.repository.findThreadsByParticipant(profileId);
+      const threads = await this.threadRepository.findByParticipant(profileId);
       const threadIds = threads.map((t) => t.id);
 
-      const count = await this.repository.countUnreadMessages(
+      const count = await this.messageRepository.countUnread(
         profileId,
         threadIds,
       );

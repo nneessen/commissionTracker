@@ -83,16 +83,7 @@ export interface AtRiskCommission {
  * Commission Status Management Service
  */
 class CommissionStatusService {
-  private static instance: CommissionStatusService;
-
-  private constructor() {}
-
-  public static getInstance(): CommissionStatusService {
-    if (!CommissionStatusService.instance) {
-      CommissionStatusService.instance = new CommissionStatusService();
-    }
-    return CommissionStatusService.instance;
-  }
+  constructor() {}
 
   /**
    * Update months_paid for a commission
@@ -552,8 +543,8 @@ class CommissionStatusService {
   }
 }
 
-// Export singleton instance
-export const commissionStatusService = CommissionStatusService.getInstance();
+// Export service instance
+export const commissionStatusService = new CommissionStatusService();
 
 // Export class for testing
 export { CommissionStatusService };

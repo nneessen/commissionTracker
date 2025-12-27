@@ -8,7 +8,6 @@ export type { UserBaseEntity, UserFilters } from "./UserRepository";
 // Service
 export {
   userService,
-  agentService,
   userApprovalService,
   VALID_CONTRACT_LEVELS,
 } from "./userService";

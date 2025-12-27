@@ -938,8 +938,7 @@ class UserService {
 
 export const userService = new UserService();
 
-// Backward compatibility aliases
-export const agentService = userService;
+// Backward compatibility alias
 export const userApprovalService = userService;
 
 // Re-export types

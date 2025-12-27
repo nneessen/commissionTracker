@@ -1,10 +1,11 @@
 // src/services/messaging/index.ts
 
-export {
-  messagingService,
-  MessagingServiceClass,
-  MessagingRepository,
-} from "./message";
+// Main service
+export { messagingService, MessagingServiceClass } from "./MessagingService";
+
+// Repositories (extending BaseRepository)
+export { MessageThreadRepository } from "./MessageThreadRepository";
+export { MessageRepository } from "./MessageRepository";
 
 // Re-export realtime messaging
 export * from "./realtimeMessaging";

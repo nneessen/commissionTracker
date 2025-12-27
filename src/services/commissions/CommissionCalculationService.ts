@@ -115,7 +115,7 @@ class CommissionCalculationService {
       ]);
     }
 
-    const { compGuideService, agentService, carrierService } =
+    const { compGuideService, userService, carrierService } =
       await import("../index");
 
     try {
@@ -135,9 +135,8 @@ class CommissionCalculationService {
       const userId = data.userId;
       if (!contractCompLevel && userId) {
         try {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Supabase response type
-          const user = await (agentService as any).getAgentById(userId);
-          if (user) {
+          const user = await userService.getById(userId);
+          if (user && user.contract_level !== null) {
             // Database returns snake_case: contract_level (not contractCompLevel)
             contractCompLevel = user.contract_level;
           }

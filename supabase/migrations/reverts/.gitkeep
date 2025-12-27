@@ -1,0 +1,26 @@
+# Migration Revert Files
+
+This directory contains SQL files to revert migrations.
+
+## Naming Convention
+
+Revert files should be named: `<migration-name>_revert.sql`
+
+For example, if your migration is `20251223_001_add_feature.sql`,
+the revert file should be `20251223_001_add_feature_revert.sql`
+
+## Usage
+
+```bash
+./scripts/revert-migration.sh 20251223_001_add_feature
+```
+
+## Best Practices
+
+1. Create a revert file BEFORE applying a migration
+2. Test the revert in a development environment first
+3. Revert files should be idempotent when possible
+4. After reverting, always regenerate types:
+   ```bash
+   npx supabase gen types typescript --project-id pcyaqwodnyrpkaiojnpz > src/types/database.types.ts
+   ```
