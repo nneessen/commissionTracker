@@ -52,7 +52,17 @@ serve(async (req) => {
     return corsResponse(req);
   }
 
-  const APP_URL = Deno.env.get("APP_URL") || "https://www.thestandardhq.com";
+  // APP_URL must be set - no fallback to avoid cross-tenant issues
+  const APP_URL = Deno.env.get("APP_URL");
+  if (!APP_URL) {
+    console.error(
+      "[slack-oauth-callback] APP_URL environment variable not set",
+    );
+    return new Response(
+      JSON.stringify({ error: "Server configuration error: APP_URL not set" }),
+      { status: 500, headers: { "Content-Type": "application/json" } },
+    );
+  }
 
   try {
     console.log("[slack-oauth-callback] Function invoked");

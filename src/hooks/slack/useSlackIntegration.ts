@@ -82,6 +82,7 @@ export function useHasSlackIntegration() {
 
 /**
  * Initiate Slack OAuth connection (adds new workspace)
+ * If user has an agency, uses agency-level OAuth to pick up agency-specific credentials
  */
 export function useConnectSlack() {
   const { user } = useAuth();
@@ -92,11 +93,26 @@ export function useConnectSlack() {
       if (!profile?.imo_id || !user?.id) {
         throw new Error("User not authenticated or no IMO assigned");
       }
-      const oauthUrl = await slackService.initiateOAuth(
-        profile.imo_id,
-        user.id,
-        returnUrl,
-      );
+
+      let oauthUrl: string;
+
+      // If user has an agency, use agency-level OAuth to pick up agency credentials
+      if (profile.agency_id) {
+        oauthUrl = await slackService.initiateOAuthForAgency(
+          profile.agency_id,
+          profile.imo_id,
+          user.id,
+          returnUrl,
+        );
+      } else {
+        // IMO-level connection
+        oauthUrl = await slackService.initiateOAuth(
+          profile.imo_id,
+          user.id,
+          returnUrl,
+        );
+      }
+
       window.location.href = oauthUrl;
     },
   });
