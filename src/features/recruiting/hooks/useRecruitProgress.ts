@@ -205,6 +205,13 @@ export function useUpdateChecklistItemStatus() {
 
       // Invalidate recruits list (phase might have changed)
       queryClient.invalidateQueries({ queryKey: ["recruits"] });
+
+      // Invalidate appointment queries (scheduling items might have been completed)
+      queryClient.invalidateQueries({ queryKey: ["recruit-appointments"] });
+      queryClient.invalidateQueries({ queryKey: ["upcoming-appointments"] });
+      queryClient.invalidateQueries({ queryKey: ["recruiter-appointments"] });
+      queryClient.invalidateQueries({ queryKey: ["my-appointments"] });
+      queryClient.invalidateQueries({ queryKey: ["todays-appointments"] });
     },
   });
 }

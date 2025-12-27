@@ -56,6 +56,15 @@ export async function createAuthUserWithProfile({
       throw new Error(`Failed to create auth user: ${errorMessage}`);
     }
 
+    // Handle case where user already exists (not an error)
+    if (data?.alreadyExists) {
+      return {
+        user: data.user || { id: "existing", email },
+        emailSent: false,
+        message: data.message ?? "User already exists",
+      };
+    }
+
     if (!data?.user) {
       // Edge function returned 200 but no user - check for error in data
       if (data?.error) {

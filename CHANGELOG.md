@@ -6,6 +6,126 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-12-27 12:41:58
+
+### Changed Files
+- `CHANGELOG.md`
+- `PROJECT_STATS.md`
+- `plans/active/create-user-bugs.md`
+- `plans/active/phase4-testing-continuation.md`
+- `src/components/layout/Sidebar.tsx`
+- `src/features/recruiting/admin/AcknowledgmentConfig.tsx`
+- `src/features/recruiting/admin/BooleanQuestionConfig.tsx`
+- `src/features/recruiting/admin/ChecklistItemEditor.tsx`
+- `src/features/recruiting/admin/ChecklistItemFormDialog.tsx`
+- `src/features/recruiting/admin/ChecklistItemList.tsx`
+- `src/features/recruiting/admin/ExternalLinkConfig.tsx`
+- `src/features/recruiting/admin/FileDownloadConfig.tsx`
+- `src/features/recruiting/admin/MetadataConfigSelector.tsx`
+- `src/features/recruiting/admin/MultipleChoiceConfig.tsx`
+- `src/features/recruiting/admin/QuizConfig.tsx`
+- `src/features/recruiting/admin/SchedulingItemConfig.tsx`
+- `src/features/recruiting/admin/SortableChecklistItem.tsx`
+- `src/features/recruiting/admin/TextResponseConfig.tsx`
+- `src/features/recruiting/admin/VideoItemConfig.tsx`
+- `src/features/recruiting/components/SchedulingBookingModal.tsx`
+- `src/features/recruiting/components/VideoModal.tsx`
+- `src/features/recruiting/components/embeds/GoogleMeetEmbed.tsx`
+- `src/features/recruiting/components/embeds/LoomEmbed.tsx`
+- `src/features/recruiting/components/embeds/VimeoEmbed.tsx`
+- `src/features/recruiting/components/embeds/YouTubeEmbed.tsx`
+- `src/features/recruiting/components/embeds/index.ts`
+- `src/features/recruiting/components/interactive/AcknowledgmentItem.tsx`
+- `src/features/recruiting/components/interactive/BooleanQuestionItem.tsx`
+- `src/features/recruiting/components/interactive/ExternalLinkItem.tsx`
+- `src/features/recruiting/components/interactive/FileDownloadItem.tsx`
+- `src/features/recruiting/components/interactive/MultipleChoiceItem.tsx`
+- `src/features/recruiting/components/interactive/QuizItem.tsx`
+- `src/features/recruiting/components/interactive/TextResponseItem.tsx`
+- `src/features/recruiting/components/interactive/index.ts`
+- `src/features/recruiting/hooks/useRecruitProgress.ts`
+- `src/features/settings/integrations/IntegrationsTab.tsx`
+- `src/hooks/recruiting/useAppointments.ts`
+- `src/services/recruiting/appointmentAggregationService.ts`
+- `src/services/recruiting/authUserService.ts`
+- `src/services/recruiting/checklistResponseService.ts`
+- `src/services/recruiting/checklistService.ts`
+- `src/services/recruiting/pipelineService.ts`
+- `src/services/recruiting/videoEmbedService.ts`
+- `src/types/checklist-metadata.types.ts`
+- `src/types/database.types.ts`
+- `src/types/integration.types.ts`
+- `src/types/recruiting.types.ts`
+- `supabase/functions/create-auth-user/index.ts`
+- `supabase/migrations/20251227_001_video_embed_checklist_items.sql`
+- `supabase/migrations/20251227_002_google_meet_integration.sql`
+- `supabase/migrations/20251227_003_add_metadata_type_field.sql`
+- `supabase/migrations/20251227_004_interactive_checklist_types.sql`
+
+### Statistics
+```
+ 52 files changed, 16341 insertions(+), 8589 deletions(-)
+```
+
+## [Checkpoint] - 2025-12-27 12:41:17
+
+### Changed Files
+- `plans/active/create-user-bugs.md`
+- `plans/active/phase4-testing-continuation.md`
+- `src/components/layout/Sidebar.tsx`
+- `src/features/recruiting/admin/AcknowledgmentConfig.tsx`
+- `src/features/recruiting/admin/BooleanQuestionConfig.tsx`
+- `src/features/recruiting/admin/ChecklistItemEditor.tsx`
+- `src/features/recruiting/admin/ChecklistItemFormDialog.tsx`
+- `src/features/recruiting/admin/ChecklistItemList.tsx`
+- `src/features/recruiting/admin/ExternalLinkConfig.tsx`
+- `src/features/recruiting/admin/FileDownloadConfig.tsx`
+- `src/features/recruiting/admin/MetadataConfigSelector.tsx`
+- `src/features/recruiting/admin/MultipleChoiceConfig.tsx`
+- `src/features/recruiting/admin/QuizConfig.tsx`
+- `src/features/recruiting/admin/SchedulingItemConfig.tsx`
+- `src/features/recruiting/admin/SortableChecklistItem.tsx`
+- `src/features/recruiting/admin/TextResponseConfig.tsx`
+- `src/features/recruiting/admin/VideoItemConfig.tsx`
+- `src/features/recruiting/components/SchedulingBookingModal.tsx`
+- `src/features/recruiting/components/VideoModal.tsx`
+- `src/features/recruiting/components/embeds/GoogleMeetEmbed.tsx`
+- `src/features/recruiting/components/embeds/LoomEmbed.tsx`
+- `src/features/recruiting/components/embeds/VimeoEmbed.tsx`
+- `src/features/recruiting/components/embeds/YouTubeEmbed.tsx`
+- `src/features/recruiting/components/embeds/index.ts`
+- `src/features/recruiting/components/interactive/AcknowledgmentItem.tsx`
+- `src/features/recruiting/components/interactive/BooleanQuestionItem.tsx`
+- `src/features/recruiting/components/interactive/ExternalLinkItem.tsx`
+- `src/features/recruiting/components/interactive/FileDownloadItem.tsx`
+- `src/features/recruiting/components/interactive/MultipleChoiceItem.tsx`
+- `src/features/recruiting/components/interactive/QuizItem.tsx`
+- `src/features/recruiting/components/interactive/TextResponseItem.tsx`
+- `src/features/recruiting/components/interactive/index.ts`
+- `src/features/recruiting/hooks/useRecruitProgress.ts`
+- `src/features/settings/integrations/IntegrationsTab.tsx`
+- `src/hooks/recruiting/useAppointments.ts`
+- `src/services/recruiting/appointmentAggregationService.ts`
+- `src/services/recruiting/authUserService.ts`
+- `src/services/recruiting/checklistResponseService.ts`
+- `src/services/recruiting/checklistService.ts`
+- `src/services/recruiting/pipelineService.ts`
+- `src/services/recruiting/videoEmbedService.ts`
+- `src/types/checklist-metadata.types.ts`
+- `src/types/database.types.ts`
+- `src/types/integration.types.ts`
+- `src/types/recruiting.types.ts`
+- `supabase/functions/create-auth-user/index.ts`
+- `supabase/migrations/20251227_001_video_embed_checklist_items.sql`
+- `supabase/migrations/20251227_002_google_meet_integration.sql`
+- `supabase/migrations/20251227_003_add_metadata_type_field.sql`
+- `supabase/migrations/20251227_004_interactive_checklist_types.sql`
+
+### Statistics
+```
+ 50 files changed, 16286 insertions(+), 8584 deletions(-)
+```
+
 ## [Checkpoint] - 2025-12-27 09:45:23
 
 ### Changed Files

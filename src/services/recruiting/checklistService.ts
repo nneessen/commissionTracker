@@ -316,25 +316,29 @@ export const checklistService = {
 
     // Check if next phase requires login access (phase 2+)
     // Phase 1 is for prospects without login, phase 2+ requires auth user
+    // NOTE: Auth user creation is non-blocking - we don't want checkbox operations
+    // to fail just because the invite email couldn't be sent
     if (nextPhase.phaseOrder >= 2) {
-      try {
-        const authResult = await this.ensureRecruitHasAuthUser(userId);
-        if (authResult.created && authResult.emailSent) {
-          console.log(
-            `[checklistService] Login instructions sent to recruit ${userId}`,
+      // Fire-and-forget: attempt to create auth user but don't block phase advancement
+      this.ensureRecruitHasAuthUser(userId)
+        .then((authResult) => {
+          if (authResult.created && authResult.emailSent) {
+            console.log(
+              `[checklistService] Login instructions sent to recruit ${userId}`,
+            );
+          } else if (authResult.created && !authResult.emailSent) {
+            console.warn(
+              `[checklistService] Auth user created for ${userId} but email not sent - admin can use Resend Invite`,
+            );
+          }
+        })
+        .catch((error) => {
+          // Log but don't block - admin can manually resend invite later
+          console.error(
+            "[checklistService] Failed to ensure auth user on phase advance (non-blocking):",
+            error,
           );
-        }
-      } catch (error) {
-        // Log but don't block phase advancement
-        console.error(
-          "[checklistService] Failed to ensure auth user on phase advance:",
-          error,
-        );
-        // Re-throw to prevent advancing without login access
-        throw new Error(
-          "Could not send login instructions. Please try again or use the Resend Invite button.",
-        );
-      }
+        });
     }
 
     // Mark next phase as in_progress
@@ -801,6 +805,18 @@ export const checklistService = {
         isAdmin: false,
         skipPipeline: true, // Pipeline already exists, just need auth
       });
+
+      // Check if user already existed
+      const alreadyExisted = authResult.message
+        ?.toLowerCase()
+        .includes("already exists");
+
+      if (alreadyExisted) {
+        console.log(
+          `[checklistService] Auth user already existed for ${profile.email}`,
+        );
+        return { emailSent: false, created: false };
+      }
 
       console.log(
         `[checklistService] Auth user created for ${profile.email}, email sent: ${authResult.emailSent}`,

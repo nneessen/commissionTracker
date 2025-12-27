@@ -153,6 +153,37 @@ serve(async (req) => {
     // Normalize email to lowercase for consistent checking
     const normalizedEmail = email.toLowerCase().trim();
 
+    // First, check if user already exists
+    const { data: existingUsers, error: listError } =
+      await supabaseAdmin.auth.admin.listUsers();
+
+    if (listError) {
+      console.error("[create-auth-user] Failed to list users:", listError);
+    } else {
+      const existingUser = existingUsers?.users?.find(
+        (u) => u.email?.toLowerCase() === normalizedEmail,
+      );
+      if (existingUser) {
+        console.log(
+          "[create-auth-user] User already exists, returning success:",
+          { email: normalizedEmail, userId: existingUser.id },
+        );
+        // User already exists - return success with existing user info
+        return new Response(
+          JSON.stringify({
+            user: existingUser,
+            message: "User already exists",
+            emailSent: false,
+            alreadyExists: true,
+          }),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200,
+          },
+        );
+      }
+    }
+
     // Generate a secure random password (user will set their own via reset email)
     const tempPassword = crypto.randomUUID() + crypto.randomUUID();
 
@@ -179,16 +210,22 @@ serve(async (req) => {
         errorMsg.includes("already exists") ||
         errorMsg.includes("duplicate")
       ) {
-        // Log detailed info for debugging (visible in Supabase edge function logs)
-        console.error("[create-auth-user] Duplicate user detected:", {
-          email: normalizedEmail,
-          suggestion: `DELETE FROM auth.users WHERE email = '${normalizedEmail}';`,
-        });
-        // Return user-friendly message without exposing SQL
-        throw new Error(
-          `User with email ${normalizedEmail} already exists. ` +
-          `This may be an orphaned auth user without a profile. ` +
-          `Please check Supabase Dashboard > Authentication > Users to resolve.`
+        // User already exists - handle as success (race condition)
+        console.log(
+          "[create-auth-user] Duplicate detected during create, treating as success:",
+          { email: normalizedEmail },
+        );
+        return new Response(
+          JSON.stringify({
+            user: null,
+            message: "User already exists (detected during create)",
+            emailSent: false,
+            alreadyExists: true,
+          }),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200,
+          },
         );
       }
       throw authError;

@@ -1242,6 +1242,7 @@ export type Database = {
           imo_id: string;
           leaderboard_message_ts: string | null;
           log_date: string;
+          pending_policy_data: Json | null;
           slack_integration_id: string | null;
           title: string | null;
           title_set_at: string | null;
@@ -1255,6 +1256,7 @@ export type Database = {
           imo_id: string;
           leaderboard_message_ts?: string | null;
           log_date?: string;
+          pending_policy_data?: Json | null;
           slack_integration_id?: string | null;
           title?: string | null;
           title_set_at?: string | null;
@@ -1268,6 +1270,7 @@ export type Database = {
           imo_id?: string;
           leaderboard_message_ts?: string | null;
           log_date?: string;
+          pending_policy_data?: Json | null;
           slack_integration_id?: string | null;
           title?: string | null;
           title_set_at?: string | null;
@@ -3593,6 +3596,7 @@ export type Database = {
           checklist_item_id: string;
           completed_at: string | null;
           completed_by: string | null;
+          completion_details: Json | null;
           created_at: string | null;
           document_id: string | null;
           id: string;
@@ -3600,6 +3604,7 @@ export type Database = {
           metadata: Json | null;
           notes: string | null;
           rejection_reason: string | null;
+          response_data: Json | null;
           status: string;
           updated_at: string | null;
           user_id: string;
@@ -3611,6 +3616,7 @@ export type Database = {
           checklist_item_id: string;
           completed_at?: string | null;
           completed_by?: string | null;
+          completion_details?: Json | null;
           created_at?: string | null;
           document_id?: string | null;
           id?: string;
@@ -3618,6 +3624,7 @@ export type Database = {
           metadata?: Json | null;
           notes?: string | null;
           rejection_reason?: string | null;
+          response_data?: Json | null;
           status?: string;
           updated_at?: string | null;
           user_id: string;
@@ -3629,6 +3636,7 @@ export type Database = {
           checklist_item_id?: string;
           completed_at?: string | null;
           completed_by?: string | null;
+          completion_details?: Json | null;
           created_at?: string | null;
           document_id?: string | null;
           id?: string;
@@ -3636,6 +3644,7 @@ export type Database = {
           metadata?: Json | null;
           notes?: string | null;
           rejection_reason?: string | null;
+          response_data?: Json | null;
           status?: string;
           updated_at?: string | null;
           user_id?: string;
@@ -7450,6 +7459,10 @@ export type Database = {
         };
         Returns: string;
       };
+      calculate_quiz_score: {
+        Args: { p_answers: Json; p_questions: Json };
+        Returns: Json;
+      };
       calculate_unearned_amount: {
         Args: {
           p_advance_months: number;
@@ -7464,6 +7477,10 @@ export type Database = {
       };
       can_request_agency: { Args: never; Returns: boolean };
       can_submit_join_request: { Args: never; Returns: boolean };
+      can_view_agent_details: {
+        Args: { p_agent_id: string };
+        Returns: boolean;
+      };
       can_workflow_run: {
         Args: { p_recipient_id?: string; p_workflow_id: string };
         Returns: boolean;
@@ -7489,6 +7506,17 @@ export type Database = {
       check_email_quota: {
         Args: { p_limit?: number; p_provider: string; p_user_id: string };
         Returns: boolean;
+      };
+      check_first_seller_naming: {
+        Args: { p_user_id: string };
+        Returns: {
+          agency_id: string;
+          agency_name: string;
+          has_pending_notification: boolean;
+          log_date: string;
+          log_id: string;
+          needs_naming: boolean;
+        }[];
       };
       check_is_imo_admin: { Args: never; Returns: boolean };
       check_team_size_limit: { Args: { p_user_id: string }; Returns: Json };
@@ -8867,6 +8895,10 @@ export type Database = {
       save_workflow_as_org_template: {
         Args: { p_workflow_id: string };
         Returns: string;
+      };
+      set_leaderboard_title: {
+        Args: { p_log_id: string; p_title: string };
+        Returns: boolean;
       };
       show_limit: { Args: never; Returns: number };
       show_trgm: { Args: { "": string }; Returns: string[] };

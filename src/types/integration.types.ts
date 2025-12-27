@@ -8,7 +8,11 @@
 // Integration Types
 // ============================================================================
 
-export type SchedulingIntegrationType = "calendly" | "google_calendar" | "zoom";
+export type SchedulingIntegrationType =
+  | "calendly"
+  | "google_calendar"
+  | "zoom"
+  | "google_meet";
 
 export interface SchedulingIntegration {
   id: string;
@@ -84,6 +88,7 @@ export const INTEGRATION_TYPE_LABELS: Record<
   calendly: "Calendly",
   google_calendar: "Google Calendar",
   zoom: "Zoom",
+  google_meet: "Google Meet",
 };
 
 export const INTEGRATION_TYPE_DESCRIPTIONS: Record<
@@ -93,6 +98,7 @@ export const INTEGRATION_TYPE_DESCRIPTIONS: Record<
   calendly: "Scheduling appointments via Calendly link",
   google_calendar: "Scheduling via Google Calendar appointment link",
   zoom: "Zoom meeting link with optional passcode",
+  google_meet: "Google Meet video conference link",
 };
 
 export const INTEGRATION_TYPE_PLACEHOLDERS: Record<
@@ -102,6 +108,7 @@ export const INTEGRATION_TYPE_PLACEHOLDERS: Record<
   calendly: "https://calendly.com/your-username/30min",
   google_calendar: "https://calendar.google.com/calendar/appointments/...",
   zoom: "https://zoom.us/j/1234567890",
+  google_meet: "https://meet.google.com/abc-defg-hij",
 };
 
 /**
@@ -132,6 +139,8 @@ export function isValidIntegrationUrl(
           parsed.hostname.includes("zoom.us") ||
           parsed.hostname.includes("zoom.com")
         );
+      case "google_meet":
+        return parsed.hostname.includes("meet.google.com");
       default:
         return false;
     }
@@ -152,6 +161,8 @@ export function getIntegrationIconName(
     case "google_calendar":
       return "CalendarDays";
     case "zoom":
+      return "Video";
+    case "google_meet":
       return "Video";
     default:
       return "Calendar";

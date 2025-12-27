@@ -12,7 +12,12 @@ import { Button } from "@/components/ui/button";
 import { AlertCircle, ExternalLink } from "lucide-react";
 import type { SchedulingIntegrationType } from "@/types/integration.types";
 import { INTEGRATION_TYPE_LABELS } from "@/types/integration.types";
-import { CalendlyEmbed, GoogleCalendarEmbed, ZoomEmbed } from "./embeds";
+import {
+  CalendlyEmbed,
+  GoogleCalendarEmbed,
+  ZoomEmbed,
+  GoogleMeetEmbed,
+} from "./embeds";
 
 interface SchedulingBookingModalProps {
   open: boolean;
@@ -81,6 +86,16 @@ export function SchedulingBookingModal({
             url={bookingUrl}
             meetingId={meetingId}
             passcode={passcode}
+            instructions={instructions}
+            className="h-full"
+          />
+        );
+      case "google_meet":
+        return (
+          <GoogleMeetEmbed
+            url={bookingUrl}
+            meetingCode={meetingId}
+            phoneDialIn={passcode}
             instructions={instructions}
             className="h-full"
           />

@@ -46,11 +46,8 @@ interface NavigationItem {
   icon: React.ElementType;
   label: string;
   href: string;
-  /** Permission required to see this nav item */
   permission?: PermissionCode;
-  /** If true, show to everyone (no permission check) */
   public?: boolean;
-  /** Subscription feature required to access this nav item */
   subscriptionFeature?: FeatureKey;
 }
 
@@ -356,7 +353,7 @@ export default function Sidebar({
                   <div className="text-[10px] text-red-400/70 truncate mt-0.5">
                     Organization unavailable
                   </div>
-                ) : (imo || agency) ? (
+                ) : imo || agency ? (
                   <div className="text-[10px] text-muted-foreground/70 truncate mt-0.5 flex items-center gap-1">
                     {imo && (
                       <span
@@ -492,7 +489,7 @@ export default function Sidebar({
               >
                 {({ isActive }) => (
                   <Button
-                    variant={isActive ? "secondary" : "ghost"}
+                    variant={isActive ? "outline" : "muted"}
                     className={`mb-1 h-9 ${isCollapsed ? "w-9 p-0 mx-auto" : "w-full justify-start px-3"}`}
                     title={isCollapsed ? item.label : ""}
                     data-active={isActive}
@@ -509,7 +506,7 @@ export default function Sidebar({
 
           {/* Separator for training/admin section */}
           {(visibleTrainingItems.length > 0 || visibleAdminItems.length > 0) &&
-            !isCollapsed && <div className="my-2 border-t border-border" />}
+            !isCollapsed && <div className="my-4 border-t border-border" />}
 
           {/* Training Hub Navigation Items */}
           {visibleTrainingItems.map((item) => {

@@ -2,6 +2,7 @@
 
 import type { Database } from "./database.types";
 import type { DocumentStatus as DocStatus } from "./documents.types";
+import type { ChecklistMetadata } from "./checklist-metadata.types";
 
 // Re-export document types from dedicated module
 export type {
@@ -102,8 +103,7 @@ export interface PhaseChecklistItem {
   verification_by: string | null;
   document_type?: string | null;
   external_link?: string | null;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic metadata shape
-  metadata?: Record<string, any> | null;
+  metadata?: ChecklistMetadata;
   is_active: boolean;
   visible_to_recruit: boolean;
 }
@@ -240,7 +240,16 @@ export type ChecklistItemType =
   | "manual_approval"
   | "automated_check"
   | "signature_required"
-  | "scheduling_booking";
+  | "scheduling_booking"
+  | "video_embed"
+  // Interactive types
+  | "boolean_question"
+  | "acknowledgment"
+  | "text_response"
+  | "multiple_choice"
+  | "file_download"
+  | "external_link"
+  | "quiz";
 export type CompletedBy = "recruit" | "upline" | "system";
 export type RequiredApproverRole = "upline" | "admin" | "system";
 
@@ -478,6 +487,14 @@ export const CHECKLIST_ITEM_TYPE_DISPLAY_NAMES: Record<
   automated_check: "Automated Check",
   signature_required: "Signature Required",
   scheduling_booking: "Schedule Booking",
+  video_embed: "Video Embed",
+  boolean_question: "Yes/No Question",
+  acknowledgment: "Acknowledgment",
+  text_response: "Text Response",
+  multiple_choice: "Multiple Choice",
+  file_download: "File Download",
+  external_link: "External Link",
+  quiz: "Quiz",
 };
 
 // Status icons
@@ -656,3 +673,400 @@ export const TRIGGER_SHORT_LABELS: Record<string, string> = {
   ...PHASE_TRIGGER_SHORT_LABELS,
   ...ITEM_TRIGGER_SHORT_LABELS,
 };
+
+// =============================================================================
+// Video Embed Types
+// =============================================================================
+
+export type VideoPlatform = "youtube" | "vimeo" | "loom";
+
+export interface VideoEmbedMetadata {
+  platform: VideoPlatform;
+  video_url: string; // Original URL provided by admin
+  video_id: string; // Extracted video ID
+  title?: string; // Optional video title
+  duration?: number; // Optional duration in seconds
+  require_full_watch?: boolean; // If true, recruit must watch entire video
+  auto_complete?: boolean; // Auto-mark complete when video ends
+}
+
+// Display labels
+export const VIDEO_PLATFORM_LABELS: Record<VideoPlatform, string> = {
+  youtube: "YouTube",
+  vimeo: "Vimeo",
+  loom: "Loom",
+};
+
+export const VIDEO_PLATFORM_DESCRIPTIONS: Record<VideoPlatform, string> = {
+  youtube: "Embed YouTube videos for training",
+  vimeo: "Embed Vimeo videos for training",
+  loom: "Embed Loom screen recordings",
+};
+
+export const VIDEO_PLATFORM_PLACEHOLDERS: Record<VideoPlatform, string> = {
+  youtube: "https://www.youtube.com/watch?v=...",
+  vimeo: "https://vimeo.com/...",
+  loom: "https://www.loom.com/share/...",
+};
+
+// =============================================================================
+// Interactive Checklist Item Types - Metadata Interfaces
+// =============================================================================
+
+/**
+ * Boolean Question Metadata
+ * For Yes/No, True/False, Accept/Decline questions
+ */
+export type BooleanQuestionStyle =
+  | "yes_no"
+  | "true_false"
+  | "accept_decline"
+  | "agree_disagree"
+  | "custom";
+
+export interface BooleanQuestionMetadata {
+  question_text: string;
+  question_style: BooleanQuestionStyle;
+  positive_label?: string; // Default based on style (e.g., "Yes", "True", "Accept")
+  negative_label?: string; // Default based on style (e.g., "No", "False", "Decline")
+  require_positive?: boolean; // If true, must select positive option to complete
+  explanation_required?: boolean; // Require text explanation with answer
+  explanation_prompt?: string; // Prompt shown when explanation required
+}
+
+export const BOOLEAN_QUESTION_STYLE_LABELS: Record<
+  BooleanQuestionStyle,
+  string
+> = {
+  yes_no: "Yes / No",
+  true_false: "True / False",
+  accept_decline: "Accept / Decline",
+  agree_disagree: "Agree / Disagree",
+  custom: "Custom Labels",
+};
+
+export const BOOLEAN_QUESTION_DEFAULT_LABELS: Record<
+  BooleanQuestionStyle,
+  { positive: string; negative: string }
+> = {
+  yes_no: { positive: "Yes", negative: "No" },
+  true_false: { positive: "True", negative: "False" },
+  accept_decline: { positive: "Accept", negative: "Decline" },
+  agree_disagree: { positive: "Agree", negative: "Disagree" },
+  custom: { positive: "Yes", negative: "No" },
+};
+
+/**
+ * Acknowledgment Metadata
+ * For read-and-confirm disclosures, policies, terms
+ */
+export type AcknowledgmentContentType =
+  | "inline_text"
+  | "document_url"
+  | "terms_reference";
+
+export interface AcknowledgmentMetadata {
+  content_type: AcknowledgmentContentType;
+  content: string; // HTML/markdown content, URL, or reference ID
+  acknowledgment_text: string; // Checkbox text (e.g., "I have read and understand...")
+  document_title?: string; // Title for document references
+  require_scroll?: boolean; // Must scroll to bottom before acknowledging
+}
+
+export const ACKNOWLEDGMENT_CONTENT_TYPE_LABELS: Record<
+  AcknowledgmentContentType,
+  string
+> = {
+  inline_text: "Inline Text Content",
+  document_url: "Link to Document",
+  terms_reference: "Reference to Terms/Policy",
+};
+
+/**
+ * Text Response Metadata
+ * For short answer or long-form text input
+ */
+export type TextResponseType = "short" | "long";
+
+export interface TextResponseMetadata {
+  prompt: string; // Question or prompt to display
+  response_type: TextResponseType;
+  min_length?: number; // Minimum character count
+  max_length?: number; // Maximum character count
+  placeholder?: string; // Helper text in input
+  validation_pattern?: string; // Regex pattern for validation
+  required_keywords?: string[]; // Must include certain words
+}
+
+export const TEXT_RESPONSE_TYPE_LABELS: Record<TextResponseType, string> = {
+  short: "Short Answer (single line)",
+  long: "Long Answer (multi-line)",
+};
+
+/**
+ * Multiple Choice Metadata
+ * For selecting from predefined options
+ */
+export type MultipleChoiceSelectionType = "single" | "multiple";
+
+export interface MultipleChoiceOption {
+  id: string;
+  label: string;
+  description?: string;
+  is_correct?: boolean; // For quiz-style validation
+  is_disqualifying?: boolean; // Auto-fail/flag if selected
+}
+
+export interface MultipleChoiceMetadata {
+  question_text: string;
+  selection_type: MultipleChoiceSelectionType;
+  options: MultipleChoiceOption[];
+  min_selections?: number; // For multiple selection
+  max_selections?: number;
+  randomize_order?: boolean;
+  require_correct?: boolean; // Must select correct option(s) to complete
+}
+
+export const MULTIPLE_CHOICE_SELECTION_TYPE_LABELS: Record<
+  MultipleChoiceSelectionType,
+  string
+> = {
+  single: "Single Selection (radio buttons)",
+  multiple: "Multiple Selection (checkboxes)",
+};
+
+/**
+ * File Download Metadata
+ * For downloading and reviewing documents
+ */
+export type FileDownloadType = "pdf" | "docx" | "xlsx" | "image" | "other";
+
+export interface FileDownloadMetadata {
+  file_url: string; // URL to download
+  file_name: string; // Display name
+  file_type: FileDownloadType;
+  file_size_bytes?: number;
+  require_download?: boolean; // Track download event before completion
+  minimum_review_time_seconds?: number; // Must wait before completing
+  acknowledgment_text?: string; // Optional confirmation checkbox text
+}
+
+export const FILE_DOWNLOAD_TYPE_LABELS: Record<FileDownloadType, string> = {
+  pdf: "PDF Document",
+  docx: "Word Document",
+  xlsx: "Excel Spreadsheet",
+  image: "Image File",
+  other: "Other File",
+};
+
+/**
+ * External Link Metadata
+ * For completing actions at external URLs
+ */
+export type ExternalLinkCompletionMethod = "manual" | "webhook" | "return_url";
+
+export interface ExternalLinkMetadata {
+  url: string; // Destination URL
+  link_text: string; // Button/link display text
+  description?: string; // Instructions for the recruit
+  open_in_new_tab: boolean;
+  completion_method: ExternalLinkCompletionMethod;
+  expected_duration_minutes?: number; // Set expectations
+  verification_instructions?: string; // How admin verifies completion
+}
+
+export const EXTERNAL_LINK_COMPLETION_LABELS: Record<
+  ExternalLinkCompletionMethod,
+  string
+> = {
+  manual: "Manual Verification (recruit marks complete)",
+  webhook: "Automatic (via webhook callback)",
+  return_url: "Automatic (when recruit returns)",
+};
+
+/**
+ * Quiz Metadata
+ * For knowledge verification with multiple questions
+ */
+export type QuizQuestionType = "single" | "multiple" | "true_false";
+
+export interface QuizQuestionOption {
+  id: string;
+  label: string;
+  is_correct: boolean;
+}
+
+export interface QuizQuestion {
+  id: string;
+  question_text: string;
+  question_type: QuizQuestionType;
+  options: QuizQuestionOption[];
+  points?: number; // Weight for scoring (default 1)
+  explanation?: string; // Shown after answering
+}
+
+export interface QuizMetadata {
+  title: string;
+  description?: string;
+  questions: QuizQuestion[];
+  passing_score_percent: number; // Minimum % to pass
+  allow_retries: boolean;
+  max_retries?: number; // Only if allow_retries is true
+  show_correct_answers: boolean; // Show corrections after completion
+  time_limit_minutes?: number;
+  randomize_questions?: boolean;
+  randomize_options?: boolean;
+}
+
+export const QUIZ_QUESTION_TYPE_LABELS: Record<QuizQuestionType, string> = {
+  single: "Single Answer",
+  multiple: "Multiple Answers",
+  true_false: "True/False",
+};
+
+// =============================================================================
+// Response Data Types - Stored in recruit_checklist_progress.response_data
+// =============================================================================
+
+export interface BooleanQuestionResponse {
+  answer: boolean;
+  explanation?: string;
+  answered_at: string;
+}
+
+export interface AcknowledgmentResponse {
+  acknowledged: boolean;
+  acknowledged_at: string;
+  scroll_completed?: boolean;
+}
+
+export interface TextResponseData {
+  text: string;
+  submitted_at: string;
+  character_count: number;
+}
+
+export interface MultipleChoiceResponse {
+  selected_option_ids: string[];
+  submitted_at: string;
+}
+
+export interface FileDownloadResponse {
+  downloaded: boolean;
+  downloaded_at: string;
+  acknowledged?: boolean;
+  acknowledged_at?: string;
+}
+
+export interface ExternalLinkResponse {
+  clicked: boolean;
+  clicked_at: string;
+  returned?: boolean;
+  returned_at?: string;
+}
+
+export interface QuizAttempt {
+  attempt_number: number;
+  started_at: string;
+  completed_at: string;
+  answers: Record<string, string[]>; // question_id -> selected_option_ids
+  score_percent: number;
+  correct_count: number;
+  total_questions: number;
+  passed: boolean;
+}
+
+export interface QuizResponse {
+  attempts: QuizAttempt[];
+  best_score_percent: number;
+  total_attempts: number;
+  passed: boolean;
+}
+
+// =============================================================================
+// Completion Details - Stored in recruit_checklist_progress.completion_details
+// =============================================================================
+
+export interface QuizCompletionDetails {
+  final_score_percent: number;
+  total_attempts: number;
+  passed: boolean;
+  completed_at: string;
+}
+
+export interface FileDownloadCompletionDetails {
+  downloaded_at: string;
+  review_time_seconds?: number;
+}
+
+// =============================================================================
+// Display Labels for All Checklist Item Types
+// =============================================================================
+
+export const CHECKLIST_ITEM_TYPE_LABELS: Record<ChecklistItemType, string> = {
+  document_upload: "Document Upload",
+  task_completion: "Task Completion",
+  training_module: "Training Module",
+  manual_approval: "Manual Approval",
+  automated_check: "Automated Check",
+  signature_required: "Signature Required",
+  scheduling_booking: "Schedule Meeting",
+  video_embed: "Watch Video",
+  boolean_question: "Yes/No Question",
+  acknowledgment: "Acknowledgment",
+  text_response: "Text Response",
+  multiple_choice: "Multiple Choice",
+  file_download: "File Download",
+  external_link: "External Link",
+  quiz: "Quiz",
+};
+
+export const CHECKLIST_ITEM_TYPE_DESCRIPTIONS: Record<
+  ChecklistItemType,
+  string
+> = {
+  document_upload: "Recruit uploads a required document",
+  task_completion: "Simple task to mark as complete",
+  training_module: "Complete a training module",
+  manual_approval: "Requires approval from upline or admin",
+  automated_check: "System-verified condition",
+  signature_required: "Electronic signature collection",
+  scheduling_booking: "Book an appointment or meeting",
+  video_embed: "Watch an embedded video",
+  boolean_question: "Answer a yes/no or true/false question",
+  acknowledgment: "Read and acknowledge content or policy",
+  text_response: "Provide a written response",
+  multiple_choice: "Select from multiple options",
+  file_download: "Download and review a file",
+  external_link: "Complete an action at an external site",
+  quiz: "Complete a knowledge quiz",
+};
+
+/**
+ * Indicates which types require metadata configuration
+ */
+export const CHECKLIST_TYPES_REQUIRING_METADATA: ChecklistItemType[] = [
+  "scheduling_booking",
+  "video_embed",
+  "boolean_question",
+  "acknowledgment",
+  "text_response",
+  "multiple_choice",
+  "file_download",
+  "external_link",
+  "quiz",
+];
+
+/**
+ * Indicates which types are interactive (recruit provides input)
+ */
+export const INTERACTIVE_CHECKLIST_TYPES: ChecklistItemType[] = [
+  "document_upload",
+  "boolean_question",
+  "acknowledgment",
+  "text_response",
+  "multiple_choice",
+  "file_download",
+  "external_link",
+  "quiz",
+];

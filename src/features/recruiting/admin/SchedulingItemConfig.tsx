@@ -28,16 +28,20 @@ import {
   INTEGRATION_TYPE_LABELS,
   isValidIntegrationUrl,
 } from "@/types/integration.types";
+import { createSchedulingMetadata } from "@/types/checklist-metadata.types";
 
 interface SchedulingItemConfigProps {
   metadata: SchedulingChecklistMetadata | null;
-  onChange: (metadata: SchedulingChecklistMetadata) => void;
+  onChange: (
+    metadata: SchedulingChecklistMetadata & { _type: "scheduling_booking" },
+  ) => void;
 }
 
 const INTEGRATION_ICONS: Record<SchedulingIntegrationType, typeof Calendar> = {
   calendly: Calendar,
   google_calendar: CalendarDays,
   zoom: Video,
+  google_meet: Video,
 };
 
 export function SchedulingItemConfig({
@@ -79,7 +83,7 @@ export function SchedulingItemConfig({
         ? customUrl
         : selectedIntegration?.booking_url || "";
 
-    const newMetadata: SchedulingChecklistMetadata = {
+    const schedulingData: SchedulingChecklistMetadata = {
       scheduling_type: schedulingType,
       // CRITICAL: booking_url must be captured at config time so recruits can access it
       booking_url: resolvedBookingUrl,
@@ -92,6 +96,8 @@ export function SchedulingItemConfig({
       meeting_id: selectedIntegration?.meeting_id || undefined,
       passcode: selectedIntegration?.passcode || undefined,
     };
+
+    const newMetadata = createSchedulingMetadata(schedulingData);
 
     const metadataString = JSON.stringify(newMetadata);
     if (metadataString !== prevMetadataRef.current) {
@@ -179,6 +185,12 @@ export function SchedulingItemConfig({
               <div className="flex items-center gap-2">
                 <Video className="h-3 w-3" />
                 Zoom
+              </div>
+            </SelectItem>
+            <SelectItem value="google_meet" className="text-[11px]">
+              <div className="flex items-center gap-2">
+                <Video className="h-3 w-3" />
+                Google Meet
               </div>
             </SelectItem>
           </SelectContent>

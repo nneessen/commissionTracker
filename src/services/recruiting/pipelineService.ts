@@ -21,6 +21,7 @@ import type {
   PipelinePhase,
   PhaseChecklistItem,
 } from "@/types/recruiting.types";
+import type { ChecklistMetadata } from "@/types/checklist-metadata.types";
 
 // Repository instances
 const templateRepository = new PipelineTemplateRepository();
@@ -403,6 +404,6 @@ function mapChecklistItemEntityToType(
     can_be_completed_by: entity.canBeCompletedBy,
     requires_verification: entity.requiresVerification,
     verification_by: entity.verificationBy,
-    metadata: entity.metadata as Record<string, unknown> | null | undefined,
+    metadata: entity.metadata as ChecklistMetadata,
   };
 }

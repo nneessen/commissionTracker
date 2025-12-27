@@ -32,12 +32,14 @@ const INTEGRATION_ICONS: Record<SchedulingIntegrationType, typeof Calendar> = {
   calendly: Calendar,
   google_calendar: CalendarDays,
   zoom: Video,
+  google_meet: Video,
 };
 
 const INTEGRATION_COLORS: Record<SchedulingIntegrationType, string> = {
   calendly: "text-blue-600 dark:text-blue-400",
   google_calendar: "text-green-600 dark:text-green-400",
   zoom: "text-indigo-600 dark:text-indigo-400",
+  google_meet: "text-purple-600 dark:text-purple-400",
 };
 
 export function IntegrationsTab() {
