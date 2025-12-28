@@ -18,6 +18,7 @@ import EditUserDialog from "@/features/admin/components/EditUserDialog";
 import { GraduateToAgentDialog } from "@/features/admin/components/GraduateToAgentDialog";
 import type { RoleName } from "@/types/permissions.types";
 import type { UserProfile } from "@/services/users/userService";
+import { hasStaffRole } from "@/constants/roles";
 
 interface RecruitingTabProps {
   searchQuery: string;
@@ -39,13 +40,24 @@ export function RecruitingTab({ searchQuery }: RecruitingTabProps) {
     ["admin", "trainer", "contracting_manager"].includes(role as string),
   );
 
-  // Recruits: users WITHOUT 'agent' role AND NOT admins
+  // Pure recruits: have recruit role, no agent/admin/staff roles
   // Training Hub sees ALL recruits (no hierarchy filtering)
   const allRecruits =
-    allUsers?.filter(
-      (u: UserProfile) =>
-        !u.roles?.includes("agent" as RoleName) && u.is_admin !== true,
-    ) || [];
+    allUsers?.filter((u: UserProfile) => {
+      // Must have recruit role
+      if (!u.roles?.includes("recruit" as RoleName)) return false;
+      // Exclude agents
+      if (
+        u.roles?.includes("agent" as RoleName) ||
+        u.roles?.includes("active_agent" as RoleName)
+      )
+        return false;
+      // Exclude admins
+      if (u.is_admin === true) return false;
+      // Exclude staff (trainer, contracting_manager, etc.)
+      if (hasStaffRole(u.roles)) return false;
+      return true;
+    }) || [];
 
   // Apply search filter
   const filteredRecruits = allRecruits.filter((recruit: UserProfile) => {
