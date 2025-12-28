@@ -40,8 +40,7 @@ import type {
   Permission,
   PermissionWithSource,
 } from "@/types/permissions.types";
-import { Checkbox } from "@/components/ui/checkbox";
-import { ScrollArea } from "@/components/ui/scroll-area";
+// Checkbox and ScrollArea moved to RolePermissionEditor component
 import { useAuth } from "@/contexts/AuthContext";
 import { userApprovalService } from "@/services/users/userService";
 import { useQueryClient } from "@tanstack/react-query";
@@ -49,6 +48,7 @@ import { toast } from "sonner";
 import AddUserDialog, { type NewUserData } from "./AddUserDialog";
 import EditUserDialog from "./EditUserDialog";
 import { GraduateToAgentDialog } from "./GraduateToAgentDialog";
+import { RolePermissionEditor } from "./RolePermissionEditor";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -1210,102 +1210,18 @@ export default function AdminControlCenter() {
         </DialogContent>
       </Dialog>
 
-      {/* Edit Role Permissions Dialog */}
-      <Dialog
+      {/* Role Permission Editor Sheet */}
+      <RolePermissionEditor
+        role={selectedRole}
+        allPermissions={allPermissions || []}
         open={isEditRoleDialogOpen}
         onOpenChange={setIsEditRoleDialogOpen}
-      >
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="text-sm flex items-center gap-2">
-              <Shield className="h-4 w-4" />
-              Manage Permissions: {selectedRole?.display_name}
-            </DialogTitle>
-            <DialogDescription className="text-[11px]">
-              {selectedRole?.is_system_role
-                ? "This is a system role. You can modify its permissions."
-                : "Configure which permissions this role has."}
-            </DialogDescription>
-          </DialogHeader>
-
-          {/* Role info */}
-          <div className="flex items-center gap-3 p-2 bg-zinc-100 dark:bg-zinc-800 rounded text-[11px]">
-            <div>
-              <span className="text-zinc-500">Name:</span>{" "}
-              <span className="font-mono">{selectedRole?.name}</span>
-            </div>
-            <div>
-              <span className="text-zinc-500">Current permissions:</span>{" "}
-              <span className="font-medium">
-                {selectedRole?.permissions?.length || 0}
-              </span>
-            </div>
-          </div>
-
-          {/* Permissions list */}
-          <ScrollArea className="h-[300px] border rounded-md p-2">
-            <div className="space-y-1">
-              {allPermissions
-                ?.slice()
-                .sort((a, b) => a.code.localeCompare(b.code))
-                .map((permission) => {
-                  const isChecked = selectedRole?.permissions?.some(
-                    (p) => p.id === permission.id,
-                  );
-                  const isLoading =
-                    assignPermissionMutation.isPending ||
-                    removePermissionMutation.isPending;
-
-                  return (
-                    <div
-                      key={permission.id}
-                      className="flex items-start gap-2 p-2 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 rounded"
-                    >
-                      <Checkbox
-                        id={permission.id}
-                        checked={isChecked}
-                        disabled={isLoading}
-                        onCheckedChange={() =>
-                          handleTogglePermission(permission)
-                        }
-                        className="mt-0.5"
-                      />
-                      <label
-                        htmlFor={permission.id}
-                        className="flex-1 cursor-pointer"
-                      >
-                        <div className="text-[11px] font-medium text-zinc-900 dark:text-zinc-100">
-                          {permission.code}
-                        </div>
-                        {permission.description && (
-                          <div className="text-[10px] text-zinc-500 dark:text-zinc-400">
-                            {permission.description}
-                          </div>
-                        )}
-                      </label>
-                    </div>
-                  );
-                })}
-              {(!allPermissions || allPermissions.length === 0) && (
-                <div className="text-center text-[11px] text-zinc-500 py-4">
-                  No permissions available
-                </div>
-              )}
-            </div>
-          </ScrollArea>
-
-          <DialogFooter>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-7 text-[11px]"
-              onClick={() => setIsEditRoleDialogOpen(false)}
-            >
-              Done
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        onTogglePermission={handleTogglePermission}
+        isLoading={
+          assignPermissionMutation.isPending ||
+          removePermissionMutation.isPending
+        }
+      />
 
       {/* Delete Role Dialog */}
       <Dialog
