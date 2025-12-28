@@ -32,6 +32,7 @@ DROP POLICY IF EXISTS "user_profiles_select_contracting" ON user_profiles;
 
 -- Create new trainer policy: See all users in same IMO who are recruits
 -- This allows trainers to work with any recruit regardless of their specific onboarding_status
+DROP POLICY IF EXISTS "trainers_view_imo_recruits" ON user_profiles;
 CREATE POLICY "trainers_view_imo_recruits"
 ON user_profiles FOR SELECT
 TO authenticated
@@ -43,6 +44,7 @@ USING (
 );
 
 -- Create new contracting manager policy: See all users in same IMO who are recruits
+DROP POLICY IF EXISTS "contracting_managers_view_imo_recruits" ON user_profiles;
 CREATE POLICY "contracting_managers_view_imo_recruits"
 ON user_profiles FOR SELECT
 TO authenticated
@@ -55,6 +57,7 @@ USING (
 
 -- Also allow trainers and contracting managers to view ALL agents in their IMO
 -- (for context when working with recruits who have uplines)
+DROP POLICY IF EXISTS "imo_staff_view_imo_agents" ON user_profiles;
 CREATE POLICY "imo_staff_view_imo_agents"
 ON user_profiles FOR SELECT
 TO authenticated
