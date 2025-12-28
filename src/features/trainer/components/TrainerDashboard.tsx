@@ -135,132 +135,108 @@ export function TrainerDashboard() {
   };
 
   return (
-    <div className="h-[calc(100vh-4rem)] flex flex-col p-4 space-y-4 bg-zinc-50 dark:bg-zinc-950 overflow-auto">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-primary/10 rounded-lg">
-            <GraduationCap className="h-5 w-5 text-primary" />
-          </div>
-          <div>
-            <h1 className="text-xl font-semibold text-foreground">
+    <div className="h-[calc(100vh-4rem)] flex flex-col p-3 space-y-2.5 bg-zinc-50 dark:bg-zinc-950 overflow-auto">
+      {/* Compact Header with inline stats */}
+      <div className="flex items-center justify-between bg-white dark:bg-zinc-900 rounded-lg px-3 py-2 border border-zinc-200 dark:border-zinc-800">
+        <div className="flex items-center gap-5">
+          <div className="flex items-center gap-2">
+            <GraduationCap className="h-4 w-4 text-zinc-900 dark:text-zinc-100" />
+            <h1 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
               Trainer Dashboard
             </h1>
-            <p className="text-sm text-muted-foreground">
-              {imo ? `${imo.name} Training Overview` : "Training Overview"}
-            </p>
+            {imo && (
+              <span className="text-[10px] text-zinc-500 dark:text-zinc-400">
+                {imo.name}
+              </span>
+            )}
+          </div>
+
+          {/* Inline compact stats */}
+          <div className="flex items-center gap-3 text-[11px]">
+            <div className="flex items-center gap-1">
+              <Users className="h-3 w-3 text-blue-500" />
+              <span className="font-medium text-zinc-900 dark:text-zinc-100">
+                {statsLoading ? "..." : recruitStats?.total || 0}
+              </span>
+              <span className="text-zinc-500 dark:text-zinc-400">total</span>
+            </div>
+            <div className="h-3 w-px bg-zinc-200 dark:bg-zinc-700" />
+            <div className="flex items-center gap-1">
+              <Clock className="h-3 w-3 text-yellow-500" />
+              <span className="font-medium text-zinc-900 dark:text-zinc-100">
+                {statsLoading ? "..." : recruitStats?.inProgress || 0}
+              </span>
+              <span className="text-zinc-500 dark:text-zinc-400">active</span>
+            </div>
+            <div className="h-3 w-px bg-zinc-200 dark:bg-zinc-700" />
+            <div className="flex items-center gap-1">
+              <UserCheck className="h-3 w-3 text-emerald-500" />
+              <span className="font-medium text-zinc-900 dark:text-zinc-100">
+                {statsLoading ? "..." : recruitStats?.completed || 0}
+              </span>
+            </div>
+            <div className="h-3 w-px bg-zinc-200 dark:bg-zinc-700" />
+            <div className="flex items-center gap-1">
+              <UserX className="h-3 w-3 text-red-500" />
+              <span className="font-medium text-zinc-900 dark:text-zinc-100">
+                {statsLoading ? "..." : recruitStats?.dropped || 0}
+              </span>
+            </div>
           </div>
         </div>
+
         <Link to="/training-hub">
-          <Button variant="outline" size="sm">
-            <GraduationCap className="h-4 w-4 mr-2" />
+          <Button
+            variant="outline"
+            className="h-6 text-[10px] px-2 border-zinc-200 dark:border-zinc-700"
+          >
+            <GraduationCap className="h-3 w-3 mr-1" />
             Training Hub
-            <ArrowRight className="h-4 w-4 ml-2" />
+            <ArrowRight className="h-3 w-3 ml-1" />
           </Button>
         </Link>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="pt-4 pb-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                <Users className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">
-                  {statsLoading ? "..." : recruitStats?.total || 0}
-                </p>
-                <p className="text-xs text-muted-foreground">Total Recruits</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-4 pb-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg">
-                <Clock className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">
-                  {statsLoading ? "..." : recruitStats?.inProgress || 0}
-                </p>
-                <p className="text-xs text-muted-foreground">In Progress</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-4 pb-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
-                <UserCheck className="h-4 w-4 text-green-600 dark:text-green-400" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">
-                  {statsLoading ? "..." : recruitStats?.completed || 0}
-                </p>
-                <p className="text-xs text-muted-foreground">Completed</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-4 pb-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
-                <UserX className="h-4 w-4 text-red-600 dark:text-red-400" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">
-                  {statsLoading ? "..." : recruitStats?.dropped || 0}
-                </p>
-                <p className="text-xs text-muted-foreground">Dropped</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid md:grid-cols-2 gap-4 flex-1 min-h-0">
+      {/* Main Content Grid */}
+      <div className="grid md:grid-cols-2 gap-2.5 flex-1 min-h-0">
         {/* Pipeline Breakdown */}
-        <Card className="flex flex-col">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <TrendingUp className="h-4 w-4" />
+        <Card className="flex flex-col bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800">
+          <CardHeader className="pb-1.5 pt-2 px-3">
+            <CardTitle className="text-[11px] font-semibold text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5">
+              <TrendingUp className="h-3.5 w-3.5" />
               Pipeline by Phase
             </CardTitle>
           </CardHeader>
-          <CardContent className="flex-1 overflow-auto">
+          <CardContent className="flex-1 overflow-auto px-3 pb-2">
             {recruitStats?.byPhase &&
             Object.keys(recruitStats.byPhase).length > 0 ? (
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 {Object.entries(recruitStats.byPhase)
                   .sort((a, b) => b[1] - a[1])
                   .map(([phase, count]) => (
                     <div
                       key={phase}
-                      className="flex items-center justify-between p-2 bg-muted/50 rounded-lg"
+                      className="flex items-center justify-between py-1.5 px-2 bg-zinc-50 dark:bg-zinc-800/50 rounded"
                     >
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5">
                         <div
-                          className={`w-2 h-2 rounded-full ${getPhaseColor(phase)}`}
+                          className={`w-1.5 h-1.5 rounded-full ${getPhaseColor(phase)}`}
                         />
-                        <span className="text-sm">
+                        <span className="text-[11px] text-zinc-700 dark:text-zinc-300">
                           {formatPhaseLabel(phase)}
                         </span>
                       </div>
-                      <Badge variant="secondary">{count}</Badge>
+                      <Badge
+                        variant="secondary"
+                        className="h-4 px-1.5 text-[10px]"
+                      >
+                        {count}
+                      </Badge>
                     </div>
                   ))}
               </div>
             ) : (
-              <div className="flex items-center justify-center h-32 text-muted-foreground text-sm">
+              <div className="flex items-center justify-center h-20 text-zinc-500 dark:text-zinc-400 text-[11px]">
                 No recruits in pipeline
               </div>
             )}
@@ -268,30 +244,33 @@ export function TrainerDashboard() {
         </Card>
 
         {/* Recent Activity */}
-        <Card className="flex flex-col">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Users className="h-4 w-4" />
+        <Card className="flex flex-col bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800">
+          <CardHeader className="pb-1.5 pt-2 px-3">
+            <CardTitle className="text-[11px] font-semibold text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5">
+              <Users className="h-3.5 w-3.5" />
               Recent Recruit Activity
             </CardTitle>
           </CardHeader>
-          <CardContent className="flex-1 overflow-auto">
+          <CardContent className="flex-1 overflow-auto px-3 pb-2">
             {recentRecruits && recentRecruits.length > 0 ? (
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 {recentRecruits.map((recruit) => (
                   <div
                     key={recruit.id}
-                    className="flex items-center justify-between p-2 bg-muted/50 rounded-lg"
+                    className="flex items-center justify-between py-1.5 px-2 bg-zinc-50 dark:bg-zinc-800/50 rounded"
                   >
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium truncate">
+                      <p className="text-[11px] font-medium text-zinc-900 dark:text-zinc-100 truncate">
                         {recruit.first_name} {recruit.last_name}
                       </p>
-                      <p className="text-xs text-muted-foreground truncate">
+                      <p className="text-[10px] text-zinc-500 dark:text-zinc-400 truncate">
                         {recruit.email}
                       </p>
                     </div>
-                    <Badge variant="outline" className="ml-2 shrink-0">
+                    <Badge
+                      variant="outline"
+                      className="ml-2 shrink-0 h-4 px-1.5 text-[10px] border-zinc-200 dark:border-zinc-700"
+                    >
                       {recruit.onboarding_status
                         ? formatPhaseLabel(recruit.onboarding_status)
                         : "New"}
@@ -300,7 +279,7 @@ export function TrainerDashboard() {
                 ))}
               </div>
             ) : (
-              <div className="flex items-center justify-center h-32 text-muted-foreground text-sm">
+              <div className="flex items-center justify-center h-20 text-zinc-500 dark:text-zinc-400 text-[11px]">
                 No recent activity
               </div>
             )}
@@ -309,16 +288,22 @@ export function TrainerDashboard() {
       </div>
 
       {/* Quick Actions */}
-      <div className="flex gap-3">
+      <div className="flex gap-2">
         <Link to="/training-hub" className="flex-1">
-          <Button variant="outline" className="w-full h-12">
-            <GraduationCap className="h-4 w-4 mr-2" />
+          <Button
+            variant="outline"
+            className="w-full h-8 text-[11px] border-zinc-200 dark:border-zinc-700"
+          >
+            <GraduationCap className="h-3.5 w-3.5 mr-1.5" />
             Manage Training Pipeline
           </Button>
         </Link>
         <Link to="/messages" className="flex-1">
-          <Button variant="outline" className="w-full h-12">
-            <Mail className="h-4 w-4 mr-2" />
+          <Button
+            variant="outline"
+            className="w-full h-8 text-[11px] border-zinc-200 dark:border-zinc-700"
+          >
+            <Mail className="h-3.5 w-3.5 mr-1.5" />
             Communications Hub
           </Button>
         </Link>
