@@ -63,7 +63,7 @@ export function useRecentContacts(limit = 10) {
 
   return useQuery({
     queryKey: ["contacts", "recent", user?.id, limit],
-    queryFn: () => getRecentContacts(user!.id, limit),
+    queryFn: () => getRecentContacts(user!.id!, limit),
     enabled: !!user?.id,
     staleTime: 60000, // 1 minute
   });

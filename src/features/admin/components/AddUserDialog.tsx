@@ -24,10 +24,27 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAllRolesWithPermissions } from "@/hooks/permissions/usePermissions";
 import { useAllUsers } from "@/hooks/admin/useUserApproval";
-import { Mail, User, Phone, Users, Check, ChevronsUpDown } from "lucide-react";
+import { useAllActiveImos, useAgenciesByImo } from "@/hooks/imo/useImoQueries";
+import { useImo } from "@/contexts/ImoContext";
+import {
+  Mail,
+  User,
+  Phone,
+  Users,
+  Check,
+  ChevronsUpDown,
+  Building2,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { RoleName } from "@/types/permissions.types";
 import type { ApprovalStatus } from "@/types/user.types";
@@ -48,6 +65,8 @@ export interface NewUserData {
   roles: RoleName[];
   approval_status: ApprovalStatus;
   onboarding_status?: "lead" | "active" | null;
+  imo_id?: string | null;
+  agency_id?: string | null;
 }
 
 const INITIAL_FORM_DATA: NewUserData = {
@@ -59,6 +78,8 @@ const INITIAL_FORM_DATA: NewUserData = {
   roles: ["recruit"], // Default to recruit since approval_status defaults to "pending"
   approval_status: "pending",
   onboarding_status: null,
+  imo_id: null,
+  agency_id: null,
 };
 
 export default function AddUserDialog({
@@ -69,9 +90,24 @@ export default function AddUserDialog({
   const { data: roles } = useAllRolesWithPermissions();
   const { data: allUsers } = useAllUsers();
 
+  // IMO/Agency hooks
+  const { isSuperAdmin, isImoAdmin, imo: currentImo } = useImo();
+  const { data: allImos, isLoading: isLoadingImos } = useAllActiveImos();
+  const [selectedImoId, setSelectedImoId] = useState<string | null>(null);
+  const { data: agenciesForImo, isLoading: isLoadingAgencies } =
+    useAgenciesByImo(selectedImoId ?? "");
+
   const [formData, setFormData] = useState<NewUserData>(INITIAL_FORM_DATA);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [uplineOpen, setUplineOpen] = useState(false);
+
+  // Initialize selected IMO from context for IMO admins
+  useMemo(() => {
+    if (isImoAdmin && currentImo?.id && !selectedImoId) {
+      setSelectedImoId(currentImo.id);
+      setFormData((prev) => ({ ...prev, imo_id: currentImo.id }));
+    }
+  }, [isImoAdmin, currentImo?.id, selectedImoId]);
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -97,6 +133,10 @@ export default function AddUserDialog({
   const handleReset = () => {
     setFormData(INITIAL_FORM_DATA);
     setErrors({});
+    // Reset IMO selection (unless user is IMO admin, keep their IMO)
+    if (!isImoAdmin) {
+      setSelectedImoId(null);
+    }
   };
 
   const handleRoleToggle = (roleName: RoleName) => {
@@ -315,8 +355,103 @@ export default function AddUserDialog({
             </div>
           </div>
 
+          {/* IMO & Agency Selection */}
+          {(isSuperAdmin || isImoAdmin) && (
+            <div className="grid grid-cols-2 gap-2">
+              {/* IMO Selection - Only for super admins */}
+              {isSuperAdmin && (
+                <div>
+                  <Label className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                    IMO
+                  </Label>
+                  <Select
+                    value={selectedImoId || "none"}
+                    onValueChange={(value) => {
+                      const newImoId = value === "none" ? null : value;
+                      setSelectedImoId(newImoId);
+                      setFormData((prev) => ({
+                        ...prev,
+                        imo_id: newImoId,
+                        agency_id: null, // Reset agency when IMO changes
+                      }));
+                    }}
+                    disabled={isLoadingImos}
+                  >
+                    <SelectTrigger className="h-7 text-[11px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700">
+                      <Building2 className="h-3 w-3 text-zinc-400 mr-1.5" />
+                      <SelectValue placeholder="Select IMO" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none" className="text-[11px]">
+                        No IMO
+                      </SelectItem>
+                      {allImos?.map((imo) => (
+                        <SelectItem
+                          key={imo.id}
+                          value={imo.id}
+                          className="text-[11px]"
+                        >
+                          {imo.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {/* Agency Selection */}
+              <div className={isSuperAdmin ? "" : "col-span-2"}>
+                <Label className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                  Agency
+                </Label>
+                <Select
+                  value={formData.agency_id || "none"}
+                  onValueChange={(value) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      agency_id: value === "none" ? null : value,
+                    }))
+                  }
+                  disabled={
+                    (isSuperAdmin && !selectedImoId) || isLoadingAgencies
+                  }
+                >
+                  <SelectTrigger className="h-7 text-[11px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700">
+                    <Building2 className="h-3 w-3 text-zinc-400 mr-1.5" />
+                    <SelectValue
+                      placeholder={
+                        isSuperAdmin && !selectedImoId
+                          ? "Select IMO first"
+                          : "Select Agency"
+                      }
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none" className="text-[11px]">
+                      No Agency
+                    </SelectItem>
+                    {agenciesForImo?.map((agency) => (
+                      <SelectItem
+                        key={agency.id}
+                        value={agency.id}
+                        className="text-[11px]"
+                      >
+                        {agency.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {isSuperAdmin && !selectedImoId && (
+                  <p className="text-[9px] text-amber-600 dark:text-amber-400 mt-0.5">
+                    Choose an IMO above to see agencies
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Roles - Compact Inline Checkboxes */}
-          {/* Filter out 'recruit' and 'active_agent' - these are managed by the status toggle */}
+          {/* Filter out 'recruit' - this is managed by the status toggle */}
           <div>
             <Label className="text-[11px] text-zinc-500 dark:text-zinc-400">
               Additional Roles
@@ -326,9 +461,7 @@ export default function AddUserDialog({
             </Label>
             <div className="flex flex-wrap gap-x-4 gap-y-1.5 mt-1.5 bg-zinc-100 dark:bg-zinc-800/50 p-2 rounded border border-zinc-200 dark:border-zinc-700/50">
               {roles
-                ?.filter(
-                  (role) => !["recruit", "active_agent"].includes(role.name),
-                )
+                ?.filter((role) => !["recruit"].includes(role.name))
                 .map((role) => (
                   <div key={role.id} className="flex items-center gap-1.5">
                     <Checkbox
@@ -373,7 +506,7 @@ export default function AddUserDialog({
                   setFormData((prev) => {
                     // Remove recruit role, add agent role
                     const filteredRoles: RoleName[] = prev.roles.filter(
-                      (r) => r !== "recruit" && r !== "active_agent",
+                      (r) => r !== "recruit",
                     );
                     const hasAgent = filteredRoles.some((r) => r === "agent");
                     return {
@@ -398,9 +531,9 @@ export default function AddUserDialog({
                 className="h-7 text-[10px]"
                 onClick={() =>
                   setFormData((prev) => {
-                    // Remove agent/active_agent roles, add recruit role
+                    // Remove agent role, add recruit role
                     const filteredRoles: RoleName[] = prev.roles.filter(
-                      (r) => r !== "agent" && r !== "active_agent",
+                      (r) => r !== "agent",
                     );
                     const hasRecruit = filteredRoles.some(
                       (r) => r === "recruit",

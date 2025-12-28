@@ -86,7 +86,7 @@ export function useFolderCounts() {
 
   const { data: counts, isLoading: isLoadingCounts } = useQuery({
     queryKey: ["folderCounts", user?.id],
-    queryFn: () => fetchFolderCounts(user!.id),
+    queryFn: () => fetchFolderCounts(user!.id!),
     enabled: !!user?.id,
     staleTime: 30000, // 30 seconds
     refetchInterval: 60000, // Refetch every minute
@@ -94,7 +94,7 @@ export function useFolderCounts() {
 
   const { data: totalUnread, isLoading: isLoadingUnread } = useQuery({
     queryKey: ["totalUnread", user?.id],
-    queryFn: () => fetchTotalUnread(user!.id),
+    queryFn: () => fetchTotalUnread(user!.id!),
     enabled: !!user?.id,
     staleTime: 30000,
     refetchInterval: 60000,

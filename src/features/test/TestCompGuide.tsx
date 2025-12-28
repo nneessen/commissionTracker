@@ -18,7 +18,7 @@ export const TestCompGuide: React.FC = () => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- test component data
   const [directQuery, setDirectQuery] = useState<any>(null);
 
-  const userContractLevel = user?.contractCompLevel || 100;
+  const userContractLevel = user?.contract_level || 100;
 
   // Use the hook
   const { data: hookData, error: hookError } = useCompGuide(

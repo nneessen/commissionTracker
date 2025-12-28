@@ -14,7 +14,7 @@ import {
   AuthChangeEvent,
 } from "@supabase/supabase-js";
 import { useQueryClient } from "@tanstack/react-query";
-import { User } from "../types";
+import type { UserProfile } from "../types/user.types";
 import { userService } from "../services/settings/userService";
 import { logger } from "../services/base/logger";
 
@@ -24,7 +24,7 @@ export interface SignUpResult {
 }
 
 interface AuthContextType {
-  user: User | null;
+  user: Partial<UserProfile> | null;
   supabaseUser: SupabaseUser | null;
   session: Session | null;
   loading: boolean;
@@ -55,7 +55,7 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<Partial<UserProfile> | null>(null);
   const [supabaseUser, setSupabaseUser] = useState<SupabaseUser | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
@@ -85,7 +85,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setSupabaseUser(newSession?.user ?? null);
 
           if (newSession?.user) {
-            const fullUser = userService.mapAuthUserToUser(newSession.user);
+            const fullUser = userService.mapAuthUserToProfile(newSession.user);
             setUser(fullUser);
           } else {
             setUser(null);
@@ -150,7 +150,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setSupabaseUser(session?.user ?? null);
 
       if (session?.user) {
-        const fullUser = userService.mapAuthUserToUser(session.user);
+        const fullUser = userService.mapAuthUserToProfile(session.user);
         setUser(fullUser);
         // Initialize the ref with current user ID
         previousUserIdRef.current = session.user.id;
@@ -190,7 +190,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setSupabaseUser(session?.user ?? null);
 
       if (session?.user) {
-        const fullUser = userService.mapAuthUserToUser(session.user);
+        const fullUser = userService.mapAuthUserToProfile(session.user);
         setUser(fullUser);
       }
 
@@ -222,7 +222,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setSupabaseUser(data.user);
 
       if (data.user) {
-        const fullUser = userService.mapAuthUserToUser(data.user);
+        const fullUser = userService.mapAuthUserToProfile(data.user);
         setUser(fullUser);
       }
 
@@ -272,7 +272,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setSession(data.session);
         setSupabaseUser(data.user);
 
-        const fullUser = userService.mapAuthUserToUser(data.user);
+        const fullUser = userService.mapAuthUserToProfile(data.user);
         setUser(fullUser);
 
         logger.auth("Sign up successful (auto-confirmed)", {
@@ -396,7 +396,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setError(null);
       setLoading(true);
 
-      const result = await userService.updateUser(user.id, metadata);
+      const result = await userService.updateUser(user.id!, metadata);
       if (result.success && result.data) {
         setUser(result.data);
       } else if (!result.success) {

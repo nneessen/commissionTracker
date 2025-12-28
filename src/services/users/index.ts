@@ -22,6 +22,3 @@ export type {
   ApprovalStatus,
   UserProfileRow,
 } from "../../types/user.types";
-
-// Legacy type exports - deprecated, use types from user.types.ts
-export type { CreateUserData, UpdateUserData } from "../../types/user.types";

@@ -21,26 +21,11 @@
  */
 
 // Commission legacy types
-export type {
-  LegacyClient,
-  LegacyCommission,
-} from './commission-v1.types';
+export type { LegacyClient, LegacyCommission } from "./commission-v1.types";
 
 export {
   migrateLegacyCommission,
   hasLegacyFields,
-} from './commission-v1.types';
+} from "./commission-v1.types";
 
-// User legacy types
-export type {
-  LegacyUser,
-  LegacyAgent,
-  LegacyCreateUserData,
-  LegacyUpdateUserData,
-} from './user-v1.types';
-
-export {
-  migrateLegacyUser,
-  migrateLegacyCreateUserData,
-  isLegacyUser,
-} from './user-v1.types';
+// User legacy types removed - use UserProfile from @/types/user.types

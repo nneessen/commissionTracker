@@ -41,7 +41,7 @@ export function useThreads(options: UseThreadsOptions = {}) {
     queryKey: ["threads", user?.id, search, filter],
     queryFn: () =>
       getThreads({
-        userId: user!.id,
+        userId: user!.id!,
         search,
         filter,
       }),
@@ -137,7 +137,7 @@ export function useThreads(options: UseThreadsOptions = {}) {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (threadId: string) => deleteThread(threadId, user!.id),
+    mutationFn: (threadId: string) => deleteThread(threadId, user!.id!),
     onSuccess: (_data, threadId) => {
       queryClient.invalidateQueries({ queryKey: ["threads"] });
       queryClient.invalidateQueries({ queryKey: ["thread", threadId] });

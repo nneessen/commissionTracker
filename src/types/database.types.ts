@@ -9014,6 +9014,7 @@ export type Database = {
             Args: { role_name: string; target_user_id: string };
             Returns: boolean;
           };
+      has_subscription_bypass: { Args: never; Returns: boolean };
       hierarchy_path_array: { Args: { path: string }; Returns: string[] };
       increment_email_quota: {
         Args: { p_provider: string; p_user_id: string };
@@ -9049,6 +9050,7 @@ export type Database = {
       };
       is_imo_admin: { Args: never; Returns: boolean };
       is_imo_admin_for: { Args: { p_imo_id: string }; Returns: boolean };
+      is_imo_staff_role: { Args: never; Returns: boolean };
       is_same_agency: { Args: { target_user_id: string }; Returns: boolean };
       is_same_imo: { Args: { target_user_id: string }; Returns: boolean };
       is_super_admin: { Args: never; Returns: boolean };

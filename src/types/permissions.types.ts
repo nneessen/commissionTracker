@@ -5,60 +5,64 @@
  * These are the system-defined roles that determine user access levels
  */
 export type RoleName =
-  | 'admin'
-  | 'agent'
-  | 'active_agent'
-  | 'recruit'
-  | 'upline_manager'
-  | 'trainer'
-  | 'recruiter'
-  | 'contracting_manager'
-  | 'office_staff'
-  | 'view_only';
+  | "admin"
+  | "agent"
+  | "recruit"
+  | "upline_manager"
+  | "trainer"
+  | "recruiter"
+  | "contracting_manager"
+  | "office_staff"
+  | "view_only";
 
 /**
  * LOW-2 fix: Role name constants to avoid magic strings
  * Use these instead of hardcoded string literals
  */
 export const ROLES = {
-  ADMIN: 'admin',
-  AGENT: 'agent',
-  ACTIVE_AGENT: 'active_agent',
-  RECRUIT: 'recruit',
-  UPLINE_MANAGER: 'upline_manager',
-  TRAINER: 'trainer',
-  RECRUITER: 'recruiter',
-  CONTRACTING_MANAGER: 'contracting_manager',
-  OFFICE_STAFF: 'office_staff',
-  VIEW_ONLY: 'view_only',
+  ADMIN: "admin",
+  AGENT: "agent",
+  RECRUIT: "recruit",
+  UPLINE_MANAGER: "upline_manager",
+  TRAINER: "trainer",
+  RECRUITER: "recruiter",
+  CONTRACTING_MANAGER: "contracting_manager",
+  OFFICE_STAFF: "office_staff",
+  VIEW_ONLY: "view_only",
 } as const satisfies Record<string, RoleName>;
 
 /**
  * Permission scopes that determine the boundary of data access
  */
-export type PermissionScope = 'own' | 'downline' | 'all' | 'self';
+export type PermissionScope = "own" | "downline" | "all" | "self";
 
 /**
  * Permission actions that can be performed on resources
  */
-export type PermissionAction = 'create' | 'read' | 'update' | 'delete' | 'manage' | 'access';
+export type PermissionAction =
+  | "create"
+  | "read"
+  | "update"
+  | "delete"
+  | "manage"
+  | "access";
 
 /**
  * Resources that permissions apply to
  */
 export type PermissionResource =
-  | 'policies'
-  | 'clients'
-  | 'commissions'
-  | 'commission_overrides'
-  | 'recruiting'
-  | 'expenses'
-  | 'navigation'
-  | 'users'
-  | 'roles'
-  | 'carriers'
-  | 'contracts'
-  | 'documents';
+  | "policies"
+  | "clients"
+  | "commissions"
+  | "commission_overrides"
+  | "recruiting"
+  | "expenses"
+  | "navigation"
+  | "users"
+  | "roles"
+  | "carriers"
+  | "contracts"
+  | "documents";
 
 /**
  * Full permission code format: resource.action.scope
@@ -160,13 +164,13 @@ export interface RoleDisplayInfo {
  * Permission categories for organization in UI
  */
 export type PermissionCategory =
-  | 'policies'
-  | 'clients'
-  | 'commissions'
-  | 'recruiting'
-  | 'expenses'
-  | 'navigation'
-  | 'admin';
+  | "policies"
+  | "clients"
+  | "commissions"
+  | "recruiting"
+  | "expenses"
+  | "navigation"
+  | "admin";
 
 /**
  * Grouped permissions for display in role management UI
@@ -182,6 +186,6 @@ export interface PermissionGroup {
  * Used for role management UI to show where permissions come from
  */
 export interface PermissionWithSource extends Permission {
-  permissionType: 'direct' | 'inherited';
+  permissionType: "direct" | "inherited";
   inheritedFromRoleName?: string;
 }

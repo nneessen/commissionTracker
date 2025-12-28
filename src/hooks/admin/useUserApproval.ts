@@ -196,13 +196,24 @@ export function useSetAdminRole() {
  */
 export function useAuthorizationStatus() {
   const { user, loading: authLoading } = useAuth();
-  const { data: profile, isLoading: profileLoading, isFetching, isPending } = useCurrentUserProfile();
+  const {
+    data: profile,
+    isLoading: profileLoading,
+    isFetching,
+    isPending,
+  } = useCurrentUserProfile();
 
   // Loading if: auth loading, profile loading, fetching, no cached data, OR user exists but profile missing
-  const isLoading = authLoading || profileLoading || isFetching || isPending || (!!user && !profile);
+  const isLoading =
+    authLoading ||
+    profileLoading ||
+    isFetching ||
+    isPending ||
+    (!!user && !profile);
 
   return {
     isAdmin: profile?.is_admin === true,
+    isSuperAdmin: profile?.is_super_admin === true,
     isApproved:
       profile?.approval_status === "approved" || profile?.is_admin === true,
     isPending: profile?.approval_status === "pending",

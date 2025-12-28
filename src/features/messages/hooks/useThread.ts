@@ -29,13 +29,13 @@ export function useThread(threadId: string | null) {
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["thread", threadId],
     queryFn: () =>
-      getThread(threadId!, user!.id, { limit: INITIAL_MESSAGE_LIMIT }),
+      getThread(threadId!, user!.id!, { limit: INITIAL_MESSAGE_LIMIT }),
     enabled: !!threadId && !!user?.id,
     staleTime: 30000,
   });
 
   const markReadMutation = useMutation({
-    mutationFn: () => markThreadAsRead(threadId!, user!.id),
+    mutationFn: () => markThreadAsRead(threadId!, user!.id!),
     onSuccess: () => {
       // Update thread data
       queryClient.setQueryData<ThreadWithMessages | null>(

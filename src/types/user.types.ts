@@ -155,74 +155,8 @@ export interface UserProfileWithDisplay extends UserProfile {
 }
 
 // =============================================================================
-// LEGACY COMPATIBILITY TYPES
+// USER PREFERENCES
 // =============================================================================
-
-/**
- * @deprecated Use UserProfile instead
- * Legacy User interface for backward compatibility
- */
-// TODO: STOP LEAVING DEPRECATED CODE IN THIS APP
-// why are you even creating a User type like this. Why would we not be using the database.types.ts?
-export interface User {
-  id: string;
-  email: string;
-  name?: string;
-  phone?: string;
-  contractCompLevel?: number;
-  isActive?: boolean;
-  agentCode?: string;
-  licenseNumber?: string;
-  licenseState?: string;
-  licenseStates?: string[];
-  notes?: string;
-  hireDate?: Date;
-  ytdCommission?: number;
-  ytdPremium?: number;
-  createdAt?: Date;
-  updatedAt?: Date;
-  preferences?: UserPreferences;
-  rawuser_meta_data?: Record<string, unknown>;
-}
-
-/**
- * @deprecated Use UserProfile instead
- */
-export type Agent = User;
-
-/**
- * @deprecated Use CreateUserProfileData instead
- */
-export interface CreateUserData {
-  name?: string;
-  email: string;
-  phone?: string;
-  contractCompLevel?: number;
-  licenseNumber?: string;
-  licenseStates?: string[];
-  hireDate?: Date;
-  isActive?: boolean;
-  ytdCommission?: number;
-  ytdPremium?: number;
-  roles?: string[];
-}
-
-/**
- * @deprecated Use UpdateUserProfileData instead
- */
-export interface UpdateUserData extends Partial<CreateUserData> {
-  id: string;
-}
-
-/**
- * @deprecated Use CreateUserProfileData instead
- */
-export type CreateAgentData = CreateUserData;
-
-/**
- * @deprecated Use UpdateUserProfileData instead
- */
-export type UpdateAgentData = UpdateUserData;
 
 export interface UserPreferences {
   theme: "light" | "dark";

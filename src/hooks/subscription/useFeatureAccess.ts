@@ -3,11 +3,15 @@
 
 import { useMemo } from "react";
 import { useSubscription } from "./useSubscription";
+import { usePermissionCheck } from "@/hooks/permissions/usePermissions";
 import type { SubscriptionFeatures } from "@/services/subscription/subscriptionService";
 import {
   useOwnerDownlineAccess,
   isOwnerDownlineGrantedFeature,
 } from "./useOwnerDownlineAccess";
+
+// Roles that bypass subscription checks (staff roles)
+const SUBSCRIPTION_BYPASS_ROLES = ["trainer", "contracting_manager"] as const;
 
 export type FeatureKey = keyof SubscriptionFeatures;
 
@@ -96,13 +100,31 @@ export function useFeatureAccess(feature: FeatureKey): UseFeatureAccessResult {
   const { isDirectDownlineOfOwner, isLoading: isLoadingDownlineCheck } =
     useOwnerDownlineAccess();
 
+  // Check if user has a staff role that bypasses subscription
+  const { isAnyRole, isLoading: isLoadingRoles } = usePermissionCheck();
+  const hasStaffBypass = isAnyRole([...SUBSCRIPTION_BYPASS_ROLES]);
+
   return useMemo(() => {
     // While loading, assume no access (will update once loaded)
-    if (isLoading || isLoadingDownlineCheck) {
+    if (isLoading || isLoadingDownlineCheck || isLoadingRoles) {
       return {
         hasAccess: false,
         isLoading: true,
         currentPlan: "Loading...",
+        requiredPlan: FEATURE_PLAN_REQUIREMENTS[feature],
+        upgradeRequired: false,
+        featureName: FEATURE_DISPLAY_NAMES[feature],
+        isGrandfathered: false,
+        grandfatherDaysRemaining: 0,
+      };
+    }
+
+    // Staff roles (trainer, contracting_manager) bypass subscription checks
+    if (hasStaffBypass) {
+      return {
+        hasAccess: true,
+        isLoading: false,
+        currentPlan: "Staff",
         requiredPlan: FEATURE_PLAN_REQUIREMENTS[feature],
         upgradeRequired: false,
         featureName: FEATURE_DISPLAY_NAMES[feature],
@@ -136,7 +158,9 @@ export function useFeatureAccess(feature: FeatureKey): UseFeatureAccessResult {
     subscription,
     isLoading,
     isLoadingDownlineCheck,
+    isLoadingRoles,
     isDirectDownlineOfOwner,
+    hasStaffBypass,
     feature,
     isGrandfathered,
     grandfatherDaysRemaining,
@@ -157,14 +181,26 @@ export function useAnyFeatureAccess(features: FeatureKey[]): {
   const { subscription, isLoading } = useSubscription();
   const { isDirectDownlineOfOwner, isLoading: isLoadingDownlineCheck } =
     useOwnerDownlineAccess();
+  const { isAnyRole, isLoading: isLoadingRoles } = usePermissionCheck();
+  const hasStaffBypass = isAnyRole([...SUBSCRIPTION_BYPASS_ROLES]);
 
   return useMemo(() => {
-    if (isLoading || isLoadingDownlineCheck) {
+    if (isLoading || isLoadingDownlineCheck || isLoadingRoles) {
       return {
         hasAccess: false,
         isLoading: true,
         accessibleFeatures: [],
         lockedFeatures: features,
+      };
+    }
+
+    // Staff roles bypass subscription - all features accessible
+    if (hasStaffBypass) {
+      return {
+        hasAccess: true,
+        isLoading: false,
+        accessibleFeatures: features,
+        lockedFeatures: [],
       };
     }
 
@@ -192,7 +228,9 @@ export function useAnyFeatureAccess(features: FeatureKey[]): {
     subscription,
     isLoading,
     isLoadingDownlineCheck,
+    isLoadingRoles,
     isDirectDownlineOfOwner,
+    hasStaffBypass,
     features,
   ]);
 }
@@ -209,13 +247,24 @@ export function useAllFeaturesAccess(features: FeatureKey[]): {
   const { subscription, isLoading } = useSubscription();
   const { isDirectDownlineOfOwner, isLoading: isLoadingDownlineCheck } =
     useOwnerDownlineAccess();
+  const { isAnyRole, isLoading: isLoadingRoles } = usePermissionCheck();
+  const hasStaffBypass = isAnyRole([...SUBSCRIPTION_BYPASS_ROLES]);
 
   return useMemo(() => {
-    if (isLoading || isLoadingDownlineCheck) {
+    if (isLoading || isLoadingDownlineCheck || isLoadingRoles) {
       return {
         hasAccess: false,
         isLoading: true,
         missingFeatures: features,
+      };
+    }
+
+    // Staff roles bypass subscription - all features accessible
+    if (hasStaffBypass) {
+      return {
+        hasAccess: true,
+        isLoading: false,
+        missingFeatures: [],
       };
     }
 
@@ -237,7 +286,9 @@ export function useAllFeaturesAccess(features: FeatureKey[]): {
     subscription,
     isLoading,
     isLoadingDownlineCheck,
+    isLoadingRoles,
     isDirectDownlineOfOwner,
+    hasStaffBypass,
     features,
   ]);
 }

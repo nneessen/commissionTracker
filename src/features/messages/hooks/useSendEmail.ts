@@ -24,7 +24,7 @@ export function useSendEmail() {
 
   const sendMutation = useMutation({
     mutationFn: (params: Omit<SendEmailParams, "userId">) =>
-      sendEmail({ ...params, userId: user!.id }),
+      sendEmail({ ...params, userId: user!.id! }),
     onSuccess: (result) => {
       // Only invalidate caches if the send was successful
       if (result.success) {
@@ -44,14 +44,14 @@ export function useSendEmail() {
       subject: string;
       bodyHtml: string;
       draftId?: string;
-    }) => saveDraft({ ...params, userId: user!.id }),
+    }) => saveDraft({ ...params, userId: user!.id! }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["drafts"] });
     },
   });
 
   const deleteDraftMutation = useMutation({
-    mutationFn: (draftId: string) => deleteDraft(draftId, user!.id),
+    mutationFn: (draftId: string) => deleteDraft(draftId, user!.id!),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["drafts"] });
     },
@@ -72,7 +72,7 @@ export function useEmailQuota() {
 
   const { data: quota, isLoading } = useQuery({
     queryKey: ["quota", user?.id],
-    queryFn: () => getEmailQuota(user!.id),
+    queryFn: () => getEmailQuota(user!.id!),
     enabled: !!user?.id,
     staleTime: 60000, // 1 minute
     refetchInterval: 300000, // Refetch every 5 minutes
@@ -94,13 +94,13 @@ export function useDrafts() {
 
   const { data: drafts, isLoading } = useQuery({
     queryKey: ["drafts", user?.id],
-    queryFn: () => getDrafts(user!.id),
+    queryFn: () => getDrafts(user!.id!),
     enabled: !!user?.id,
     staleTime: 30000,
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (draftId: string) => deleteDraft(draftId, user!.id),
+    mutationFn: (draftId: string) => deleteDraft(draftId, user!.id!),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["drafts"] });
     },

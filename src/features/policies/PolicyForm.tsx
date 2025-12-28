@@ -53,7 +53,7 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({
   const { user } = useAuth();
   const { data: carriers = [] } = useCarriers();
 
-  const userContractLevel = user?.contractCompLevel || 100;
+  const userContractLevel = user?.contract_level || 100;
 
   const [formData, setFormData] = useState<NewPolicyForm>({
     clientName: "",

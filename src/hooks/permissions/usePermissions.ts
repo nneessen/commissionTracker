@@ -76,7 +76,7 @@ export function useUserPermissions() {
 
   return useQuery({
     queryKey: permissionKeys.userContext(user?.id || ""),
-    queryFn: () => getUserPermissionsContext(user!.id),
+    queryFn: () => getUserPermissionsContext(user!.id!),
     enabled: !!user?.id,
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
   });
@@ -90,7 +90,7 @@ export function useUserPermissionCodes() {
 
   return useQuery({
     queryKey: permissionKeys.userPermissions(user?.id || ""),
-    queryFn: () => getUserPermissions(user!.id),
+    queryFn: () => getUserPermissions(user!.id!),
     enabled: !!user?.id,
     staleTime: 1000 * 60 * 5,
   });
@@ -104,7 +104,7 @@ export function useUserRoles() {
 
   return useQuery({
     queryKey: permissionKeys.userRoles(user?.id || ""),
-    queryFn: () => getUserRoles(user!.id),
+    queryFn: () => getUserRoles(user!.id!),
     enabled: !!user?.id,
     staleTime: 1000 * 60 * 5,
   });
@@ -118,7 +118,7 @@ export function useHasPermission(permissionCode: PermissionCode) {
 
   return useQuery({
     queryKey: permissionKeys.hasPermission(user?.id || "", permissionCode),
-    queryFn: () => hasPermission(user!.id, permissionCode),
+    queryFn: () => hasPermission(user!.id!, permissionCode),
     enabled: !!user?.id && !!permissionCode,
     staleTime: 1000 * 60 * 5,
   });
@@ -132,7 +132,7 @@ export function useHasRole(roleName: RoleName) {
 
   return useQuery({
     queryKey: permissionKeys.hasRole(user?.id || "", roleName),
-    queryFn: () => hasRole(user!.id, roleName),
+    queryFn: () => hasRole(user!.id!, roleName),
     enabled: !!user?.id && !!roleName,
     staleTime: 1000 * 60 * 5,
   });
@@ -159,10 +159,18 @@ export function useIsAdmin() {
  */
 export function usePermissionCheck() {
   const { user, loading: authLoading } = useAuth();
-  const { data: permissionsContext, isPending, isFetching } = useUserPermissions();
+  const {
+    data: permissionsContext,
+    isPending,
+    isFetching,
+  } = useUserPermissions();
 
   // Loading if: auth loading, query pending, query fetching, or user exists but no data yet
-  const isLoading = authLoading || isPending || isFetching || (!!user?.id && !permissionsContext);
+  const isLoading =
+    authLoading ||
+    isPending ||
+    isFetching ||
+    (!!user?.id && !permissionsContext);
 
   const can = (permissionCode: PermissionCode): boolean => {
     if (!permissionsContext) return false;

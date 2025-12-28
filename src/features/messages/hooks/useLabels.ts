@@ -26,8 +26,8 @@ export function useLabels() {
     queryKey: ["labels", user?.id],
     queryFn: async () => {
       // Ensure system labels exist
-      await ensureSystemLabels(user!.id);
-      return getLabels(user!.id);
+      await ensureSystemLabels(user!.id!);
+      return getLabels(user!.id!);
     },
     enabled: !!user?.id,
     staleTime: 60000, // 1 minute
@@ -35,7 +35,7 @@ export function useLabels() {
 
   const createMutation = useMutation({
     mutationFn: ({ name, color }: { name: string; color?: string }) =>
-      createLabel({ userId: user!.id, name, color }),
+      createLabel({ userId: user!.id!, name, color }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["labels"] });
     },
@@ -50,14 +50,14 @@ export function useLabels() {
       labelId: string;
       name?: string;
       color?: string;
-    }) => updateLabel(user!.id, { labelId, name, color }),
+    }) => updateLabel(user!.id!, { labelId, name, color }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["labels"] });
     },
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (labelId: string) => deleteLabel(user!.id, labelId),
+    mutationFn: (labelId: string) => deleteLabel(user!.id!, labelId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["labels"] });
       queryClient.invalidateQueries({ queryKey: ["threads"] });

@@ -76,6 +76,7 @@ export const RouteGuard: React.FC<RouteGuardProps> = ({
     isApproved,
     isPending,
     isDenied,
+    isSuperAdmin,
     profile,
     isLoading: authLoading,
   } = useAuthorizationStatus();
@@ -87,16 +88,9 @@ export const RouteGuard: React.FC<RouteGuardProps> = ({
     isLoading: permLoading,
   } = usePermissionCheck();
 
-
   // Feature access check (only if subscriptionFeature is specified)
   const featureAccess = useFeatureAccess(subscriptionFeature || "dashboard");
   const checkingFeature = subscriptionFeature && featureAccess.isLoading;
-
-  // Admin emails - hardcoded for security (super admins bypass all checks)
-  const ADMIN_EMAILS = [
-    "nick@nickneessen.com",
-    "nickneessen@thestandardhq.com",
-  ];
 
   // Show loading state while checking
   if (authLoading || permLoading || checkingFeature) {
@@ -112,11 +106,12 @@ export const RouteGuard: React.FC<RouteGuardProps> = ({
     );
   }
 
-  // Admin bypass - always allow admin emails
-  const currentEmail = supabaseUser?.email;
-  if (currentEmail && ADMIN_EMAILS.includes(currentEmail)) {
+  // Super admin bypass - users with is_super_admin flag bypass all checks
+  if (isSuperAdmin) {
     return <>{children}</>;
   }
+
+  const currentEmail = supabaseUser?.email;
 
   // Check email requirement for super-admin routes
   if (requireEmail && currentEmail !== requireEmail) {
@@ -126,11 +121,10 @@ export const RouteGuard: React.FC<RouteGuardProps> = ({
   // Role checks
   const isRecruit = is("recruit");
   const isAgent = is("agent");
-  const isActiveAgent = is("active_agent");
   const isAdmin = is("admin");
 
   // Determine if user is ONLY a recruit (not also an agent)
-  const isRecruitOnly = isRecruit && !isAgent && !isActiveAgent && !isAdmin;
+  const isRecruitOnly = isRecruit && !isAgent && !isAdmin;
 
   // Check recruitOnly routes - only recruits can access
   if (recruitOnly && !isRecruitOnly) {

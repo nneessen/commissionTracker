@@ -8,6 +8,7 @@ import { ImoProvider } from "./contexts/ImoContext";
 import { logger } from "./services/base/logger";
 import { ApprovalGuard } from "./components/auth/ApprovalGuard";
 import { CookieConsentBanner } from "./features/legal";
+import { getDisplayName } from "./types/user.types";
 
 function App() {
   const { user, loading, signOut } = useAuth();
@@ -119,7 +120,15 @@ function App() {
           <Sidebar
             isCollapsed={isSidebarCollapsed}
             onToggleCollapse={toggleSidebar}
-            userName={user.name || user.email?.split("@")[0] || "User"}
+            userName={
+              user.first_name && user.last_name
+                ? getDisplayName({
+                    first_name: user.first_name,
+                    last_name: user.last_name,
+                    email: user.email || "",
+                  })
+                : user.email?.split("@")[0] || "User"
+            }
             userEmail={user.email || ""}
             onLogout={handleLogout}
           />

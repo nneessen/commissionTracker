@@ -9,6 +9,7 @@ import { useAuth } from "../../../contexts/AuthContext";
 import { useUpdateUserProfile } from "../../../hooks/settings/useUpdateUserProfile";
 import { useUpdateAgentHierarchy } from "../../../hooks/hierarchy/useUpdateAgentHierarchy";
 import { supabase } from "@/services/base/supabase";
+import { getDisplayName } from "../../../types/user.types";
 
 export function UserProfile() {
   const { user } = useAuth();
@@ -16,7 +17,7 @@ export function UserProfile() {
   const updateHierarchy = useUpdateAgentHierarchy();
 
   const [contractLevel, setContractLevel] = useState<string>(
-    user?.contractCompLevel?.toString() || "100",
+    user?.contract_level?.toString() || "100",
   );
   const [uplineEmail, setUplineEmail] = useState<string>("");
   const [currentUplineEmail, setCurrentUplineEmail] = useState<string>("");
@@ -92,7 +93,7 @@ export function UserProfile() {
 
     try {
       await updateProfile.mutateAsync({
-        contractCompLevel: parseInt(contractLevel, 10),
+        contract_level: parseInt(contractLevel, 10),
       });
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
@@ -195,7 +196,13 @@ export function UserProfile() {
                 Name
               </label>
               <div className="px-2 py-1.5 bg-zinc-50 dark:bg-zinc-800 rounded text-[11px] text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700">
-                {user.name || "Not set"}
+                {user.first_name && user.last_name
+                  ? getDisplayName({
+                      first_name: user.first_name,
+                      last_name: user.last_name,
+                      email: user.email || "",
+                    })
+                  : "Not set"}
               </div>
             </div>
           </div>

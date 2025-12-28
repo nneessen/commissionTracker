@@ -69,7 +69,7 @@ export function useContactBrowser(options: UseContactBrowserOptions = {}) {
   // Query for contacts
   const contactsQuery = useQuery({
     queryKey: ["contacts", "browser", user?.id, filters, page, pageSize],
-    queryFn: () => getPaginatedContacts(user!.id, filters, page, pageSize),
+    queryFn: () => getPaginatedContacts(user!.id!, filters, page, pageSize),
     enabled: !!user?.id,
     staleTime: 30000,
     placeholderData: (prev) => prev,
@@ -85,7 +85,7 @@ export function useContactBrowser(options: UseContactBrowserOptions = {}) {
   // Query to check if user has downlines
   const hasDownlinesQuery = useQuery({
     queryKey: ["contacts", "hasDownlines", user?.id],
-    queryFn: () => userHasDownlines(user!.id),
+    queryFn: () => userHasDownlines(user!.id!),
     enabled: !!user?.id,
     staleTime: 300000,
   });
@@ -98,7 +98,7 @@ export function useContactBrowser(options: UseContactBrowserOptions = {}) {
     }: {
       contactId: string;
       type: ContactType;
-    }) => addFavoriteContact(user!.id, contactId, type),
+    }) => addFavoriteContact(user!.id!, contactId, type),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["contacts", "browser"] });
     },
@@ -112,7 +112,7 @@ export function useContactBrowser(options: UseContactBrowserOptions = {}) {
     }: {
       contactId: string;
       type: ContactType;
-    }) => removeFavoriteContact(user!.id, contactId, type),
+    }) => removeFavoriteContact(user!.id!, contactId, type),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["contacts", "browser"] });
     },

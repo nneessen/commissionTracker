@@ -789,7 +789,9 @@ export default function ActionConfigPanel({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value={user?.id || ""} className="text-sm">
-                    {user?.name || user?.email || "Current User"}
+                    {user?.first_name
+                      ? `${user.first_name} ${user.last_name || ""}`.trim()
+                      : user?.email || "Current User"}
                   </SelectItem>
                   <SelectItem value="manager" className="text-sm">
                     Manager

@@ -51,7 +51,6 @@ export function UserAccessTest() {
       <h3>Role Checks:</h3>
       <ul>
         <li>Is Admin: {is("admin") ? "✅" : "❌"}</li>
-        <li>Is Active Agent: {is("active_agent") ? "✅" : "❌"}</li>
         <li>Is Agent: {is("agent") ? "✅" : "❌"}</li>
         <li>Is Recruit: {is("recruit") ? "✅" : "❌"}</li>
       </ul>

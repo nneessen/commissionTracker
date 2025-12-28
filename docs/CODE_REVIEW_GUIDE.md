@@ -195,6 +195,7 @@ When any schema changes are made:
 ### Revert Migration Script
 
 A revert migration script MUST exist for rollback capability:
+
 - **Script:** `scripts/revert-migration.sh <migration-name>`
 - Each migration should have a corresponding revert SQL or documented rollback steps in `supabase/migrations/reverts/`
 
@@ -209,10 +210,10 @@ A revert migration script MUST exist for rollback capability:
 
 DB uses snake_case, TypeScript uses camelCase. The transformation layer handles this:
 
-| DB Field (snake_case) | TS Property (camelCase) | Transform Location |
-|-----------------------|-------------------------|-------------------|
-| `onboarding_status` | `onboardingStatus` | Repository.transformFromDB() |
-| `created_at` | `createdAt` | Repository.transformFromDB() |
+| DB Field (snake_case) | TS Property (camelCase) | Transform Location           |
+| --------------------- | ----------------------- | ---------------------------- |
+| `onboarding_status`   | `onboardingStatus`      | Repository.transformFromDB() |
+| `created_at`          | `createdAt`             | Repository.transformFromDB() |
 
 **Anti-pattern:** Mixing `onboarding_status` and `onboardingStatus` in the same component/service.
 
@@ -223,6 +224,7 @@ DB uses snake_case, TypeScript uses camelCase. The transformation layer handles 
 ### Repository Layer Requirements
 
 All data access repositories MUST:
+
 - Extend `BaseRepository<EntityType, CreateData, UpdateData>`
 - Implement `transformFromDB()` - Convert DB row (snake_case) → TypeScript entity (camelCase)
 - Implement `transformToDB()` - Convert entity (camelCase) → DB format (snake_case)
@@ -232,6 +234,7 @@ All data access repositories MUST:
 ### Service Layer Guidelines
 
 Services should:
+
 - Use ServiceResponse<T> pattern for consistent error handling
 - Delegate CRUD to repositories
 - Contain business logic and validation
@@ -240,6 +243,7 @@ Services should:
 ### Exempt Patterns
 
 The following are acceptable deviations:
+
 - **Utility services** - Pure functions with no DB access (e.g., FileValidationService)
 - **Calculation services** - Pure math/logic (e.g., CommissionLifecycleService)
 - **Facade services** - Orchestration layers composing multiple services
