@@ -4,6 +4,7 @@ import {
   createRootRoute,
   createRoute,
   createRouter,
+  redirect,
   useNavigate,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
@@ -41,7 +42,6 @@ import { RecruitingDashboard } from "./features/recruiting/RecruitingDashboard";
 import { PipelineAdminPage } from "./features/recruiting/admin/PipelineAdminPage";
 import { MyRecruitingPipeline } from "./features/recruiting/pages/MyRecruitingPipeline";
 import { TrainingHubPage } from "./features/training-hub";
-import { TrainerDashboard } from "./features/trainer";
 import { MessagesPage } from "./features/messages";
 import { LeaderboardNamingPage } from "./features/messages/components/slack/LeaderboardNamingPage";
 import { TermsPage, PrivacyPage } from "./features/legal";
@@ -418,15 +418,14 @@ const trainingHubRoute = createRoute({
   ),
 });
 
-// Trainer Dashboard route - staff-only dashboard for trainers/contracting managers
+// Trainer Dashboard route - redirects to Training Hub (legacy route)
 const trainerDashboardRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "trainer-dashboard",
-  component: () => (
-    <RouteGuard staffOnly noRecruits>
-      <TrainerDashboard />
-    </RouteGuard>
-  ),
+  beforeLoad: () => {
+    throw redirect({ to: "/training-hub" });
+  },
+  component: () => null,
 });
 
 // Messages route - Communications Hub, requires email subscription feature

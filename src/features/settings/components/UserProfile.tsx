@@ -10,11 +10,41 @@ import { useUpdateUserProfile } from "../../../hooks/settings/useUpdateUserProfi
 import { useUpdateAgentHierarchy } from "../../../hooks/hierarchy/useUpdateAgentHierarchy";
 import { supabase } from "@/services/base/supabase";
 import { getDisplayName } from "../../../types/user.types";
+import { useQuery } from "@tanstack/react-query";
+import type { RoleName } from "@/types/permissions.types";
 
 export function UserProfile() {
   const { user } = useAuth();
   const updateProfile = useUpdateUserProfile();
   const updateHierarchy = useUpdateAgentHierarchy();
+
+  // Check user roles to determine if they are staff-only (no commission settings needed)
+  const { data: userRoleData } = useQuery({
+    queryKey: ["profile-user-roles", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      const { data, error } = await supabase
+        .from("user_profiles")
+        .select("roles, is_admin")
+        .eq("id", user.id)
+        .single();
+      if (error) throw error;
+      return data as { roles: RoleName[]; is_admin: boolean | null };
+    },
+    enabled: !!user?.id,
+  });
+
+  const hasRole = (role: RoleName) =>
+    userRoleData?.roles?.includes(role) || false;
+
+  // Staff-only: has trainer/contracting_manager but NOT agent/admin
+  // These users don't need commission settings
+  const isStaffOnly =
+    (hasRole("trainer" as RoleName) ||
+      hasRole("contracting_manager" as RoleName)) &&
+    !hasRole("agent" as RoleName) &&
+    !hasRole("admin" as RoleName) &&
+    !userRoleData?.is_admin;
 
   const [contractLevel, setContractLevel] = useState<string>(
     user?.contract_level?.toString() || "100",
@@ -275,91 +305,95 @@ export function UserProfile() {
         </div>
       </div>
 
-      {/* Commission Settings Card */}
-      <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800">
-        <div className="px-3 py-2 border-b border-zinc-100 dark:border-zinc-800">
-          <h3 className="text-[11px] font-semibold text-zinc-900 dark:text-zinc-100 uppercase tracking-wide">
-            Commission Settings
-          </h3>
-        </div>
-        <div className="p-3">
-          <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mb-2">
-            Your contract level determines your commission rates. This setting
-            only affects new commissions and does not change existing policies
-            or commission calculations.
-          </p>
-
-          <form onSubmit={handleSubmit}>
-            <div className="max-w-xs">
-              <label
-                htmlFor="contractLevel"
-                className="block text-[10px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide mb-1"
-              >
-                Contract Level (80-145)
-              </label>
-              <div className="flex gap-2">
-                <Input
-                  id="contractLevel"
-                  type="number"
-                  min="80"
-                  max="145"
-                  value={contractLevel}
-                  onChange={handleContractLevelChange}
-                  className={`h-7 text-[11px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 w-24 ${
-                    validationError ? "border-red-500" : ""
-                  }`}
-                />
-                <Button
-                  type="submit"
-                  disabled={updateProfile.isPending || !!validationError}
-                  size="sm"
-                  className="h-7 px-2 text-[10px]"
-                >
-                  <Save className="h-3 w-3 mr-1" />
-                  {updateProfile.isPending ? "Saving..." : "Save"}
-                </Button>
-              </div>
-              {validationError && (
-                <div className="mt-1.5 flex items-center gap-1 text-[10px] text-red-600 dark:text-red-400">
-                  <AlertCircle className="h-3 w-3" />
-                  {validationError}
-                </div>
-              )}
-              {showSuccess && (
-                <div className="mt-1.5 flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400">
-                  <CheckCircle2 className="h-3 w-3" />
-                  Contract level updated successfully!
-                </div>
-              )}
-              {updateProfile.isError && (
-                <div className="mt-1.5 flex items-center gap-1 text-[10px] text-red-600 dark:text-red-400">
-                  <AlertCircle className="h-3 w-3" />
-                  Failed to update contract level
-                </div>
-              )}
+      {/* Commission Settings Card - Only show for agents, not staff */}
+      {!isStaffOnly && (
+        <>
+          <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800">
+            <div className="px-3 py-2 border-b border-zinc-100 dark:border-zinc-800">
+              <h3 className="text-[11px] font-semibold text-zinc-900 dark:text-zinc-100 uppercase tracking-wide">
+                Commission Settings
+              </h3>
             </div>
-          </form>
-        </div>
-      </div>
+            <div className="p-3">
+              <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mb-2">
+                Your contract level determines your commission rates. This
+                setting only affects new commissions and does not change
+                existing policies or commission calculations.
+              </p>
 
-      {/* Info Box */}
-      <div className="bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800 p-3">
-        <div className="flex items-start gap-2">
-          <AlertCircle className="h-3.5 w-3.5 text-blue-500 mt-0.5 flex-shrink-0" />
-          <div className="text-[10px]">
-            <p className="font-medium text-blue-700 dark:text-blue-300 mb-0.5">
-              About Contract Levels
-            </p>
-            <p className="text-blue-600 dark:text-blue-400">
-              Your contract level represents your commission tier with insurance
-              carriers. Higher levels typically earn higher commission
-              percentages. When you create new policies or commissions, your
-              current contract level will be used to calculate your earnings
-              from the comp guide.
-            </p>
+              <form onSubmit={handleSubmit}>
+                <div className="max-w-xs">
+                  <label
+                    htmlFor="contractLevel"
+                    className="block text-[10px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide mb-1"
+                  >
+                    Contract Level (80-145)
+                  </label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="contractLevel"
+                      type="number"
+                      min="80"
+                      max="145"
+                      value={contractLevel}
+                      onChange={handleContractLevelChange}
+                      className={`h-7 text-[11px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 w-24 ${
+                        validationError ? "border-red-500" : ""
+                      }`}
+                    />
+                    <Button
+                      type="submit"
+                      disabled={updateProfile.isPending || !!validationError}
+                      size="sm"
+                      className="h-7 px-2 text-[10px]"
+                    >
+                      <Save className="h-3 w-3 mr-1" />
+                      {updateProfile.isPending ? "Saving..." : "Save"}
+                    </Button>
+                  </div>
+                  {validationError && (
+                    <div className="mt-1.5 flex items-center gap-1 text-[10px] text-red-600 dark:text-red-400">
+                      <AlertCircle className="h-3 w-3" />
+                      {validationError}
+                    </div>
+                  )}
+                  {showSuccess && (
+                    <div className="mt-1.5 flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400">
+                      <CheckCircle2 className="h-3 w-3" />
+                      Contract level updated successfully!
+                    </div>
+                  )}
+                  {updateProfile.isError && (
+                    <div className="mt-1.5 flex items-center gap-1 text-[10px] text-red-600 dark:text-red-400">
+                      <AlertCircle className="h-3 w-3" />
+                      Failed to update contract level
+                    </div>
+                  )}
+                </div>
+              </form>
+            </div>
           </div>
-        </div>
-      </div>
+
+          {/* Info Box */}
+          <div className="bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800 p-3">
+            <div className="flex items-start gap-2">
+              <AlertCircle className="h-3.5 w-3.5 text-blue-500 mt-0.5 flex-shrink-0" />
+              <div className="text-[10px]">
+                <p className="font-medium text-blue-700 dark:text-blue-300 mb-0.5">
+                  About Contract Levels
+                </p>
+                <p className="text-blue-600 dark:text-blue-400">
+                  Your contract level represents your commission tier with
+                  insurance carriers. Higher levels typically earn higher
+                  commission percentages. When you create new policies or
+                  commissions, your current contract level will be used to
+                  calculate your earnings from the comp guide.
+                </p>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

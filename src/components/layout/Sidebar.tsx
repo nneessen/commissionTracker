@@ -127,22 +127,16 @@ const navigationItems: NavigationItem[] = [
 // These roles have a separate dashboard and limited access
 const staffNavigationItems: NavigationItem[] = [
   {
-    icon: Home,
-    label: "Dashboard",
-    href: "/trainer-dashboard",
-    public: true,
-  },
-  {
     icon: GraduationCap,
     label: "Training Hub",
     href: "/training-hub",
-    permission: "nav.training_hub",
+    public: true, // Training Hub is the main entry point for staff
   },
   {
     icon: Mail,
     label: "Messages",
     href: "/messages",
-    permission: "nav.messages",
+    public: true, // Staff need unrestricted access to messaging
   },
   { icon: Settings, label: "Settings", href: "/settings", public: true },
 ];
