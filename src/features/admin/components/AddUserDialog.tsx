@@ -109,6 +109,14 @@ export default function AddUserDialog({
     }
   }, [isImoAdmin, currentImo?.id, selectedImoId]);
 
+  // Detect if user is being created as a staff role (trainer, contracting_manager)
+  // Staff roles don't go through the approval pipeline
+  const STAFF_ROLES: RoleName[] = ["trainer", "contracting_manager"];
+  const isStaffRoleSelected = useMemo(
+    () => formData.roles.some((r) => STAFF_ROLES.includes(r)),
+    [formData.roles],
+  );
+
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
 
@@ -140,12 +148,37 @@ export default function AddUserDialog({
   };
 
   const handleRoleToggle = (roleName: RoleName) => {
-    setFormData((prev) => ({
-      ...prev,
-      roles: prev.roles.includes(roleName)
-        ? prev.roles.filter((r) => r !== roleName)
-        : [...prev.roles, roleName],
-    }));
+    setFormData((prev) => {
+      const isAdding = !prev.roles.includes(roleName);
+      let newRoles: RoleName[];
+
+      if (isAdding) {
+        // Adding a role
+        if (STAFF_ROLES.includes(roleName)) {
+          // Staff role selected: remove agent/recruit (they conflict)
+          newRoles = [
+            ...prev.roles.filter((r) => r !== "agent" && r !== "recruit"),
+            roleName,
+          ];
+        } else {
+          newRoles = [...prev.roles, roleName];
+        }
+      } else {
+        // Removing a role
+        newRoles = prev.roles.filter((r) => r !== roleName);
+      }
+
+      // Check if any staff role remains
+      const hasStaffRole = newRoles.some((r) => STAFF_ROLES.includes(r));
+
+      return {
+        ...prev,
+        roles: newRoles,
+        // Staff roles are always approved and don't have onboarding
+        approval_status: hasStaffRole ? "approved" : prev.approval_status,
+        onboarding_status: hasStaffRole ? null : prev.onboarding_status,
+      };
+    });
   };
 
   // Only show approved users as potential uplines
@@ -482,143 +515,162 @@ export default function AddUserDialog({
                   </div>
                 ))}
             </div>
-            <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-0.5">
-              Base role (agent/recruit) is set by status below
-            </p>
+            {!isStaffRoleSelected && (
+              <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-0.5">
+                Base role (agent/recruit) is set by status below
+              </p>
+            )}
           </div>
 
-          {/* Status Toggle Buttons */}
-          <div>
-            <Label className="text-[11px] text-zinc-500 dark:text-zinc-400">
-              Status
-            </Label>
-            <div className="grid grid-cols-2 gap-1 mt-1">
-              <Button
-                type="button"
-                variant={
-                  formData.approval_status === "approved"
-                    ? "default"
-                    : "outline"
-                }
-                size="sm"
-                className="h-7 text-[10px]"
-                onClick={() =>
-                  setFormData((prev) => {
-                    // Remove recruit role, add agent role
-                    const filteredRoles: RoleName[] = prev.roles.filter(
-                      (r) => r !== "recruit",
-                    );
-                    const hasAgent = filteredRoles.some((r) => r === "agent");
-                    return {
-                      ...prev,
-                      approval_status: "approved",
-                      onboarding_status: null,
-                      roles: hasAgent
-                        ? filteredRoles
-                        : [...filteredRoles, "agent" as RoleName],
-                    };
-                  })
-                }
-              >
-                Approved (Agent)
-              </Button>
-              <Button
-                type="button"
-                variant={
-                  formData.approval_status === "pending" ? "default" : "outline"
-                }
-                size="sm"
-                className="h-7 text-[10px]"
-                onClick={() =>
-                  setFormData((prev) => {
-                    // Remove agent role, add recruit role
-                    const filteredRoles: RoleName[] = prev.roles.filter(
-                      (r) => r !== "agent",
-                    );
-                    const hasRecruit = filteredRoles.some(
-                      (r) => r === "recruit",
-                    );
-                    return {
-                      ...prev,
-                      approval_status: "pending",
-                      roles: hasRecruit
-                        ? filteredRoles
-                        : [...filteredRoles, "recruit" as RoleName],
-                    };
-                  })
-                }
-              >
-                Pending (Recruit)
-              </Button>
+          {/* Status Toggle Buttons - Hidden for staff roles */}
+          {isStaffRoleSelected ? (
+            <div className="bg-blue-50 dark:bg-blue-900/20 p-2 rounded border border-blue-200 dark:border-blue-800/50">
+              <p className="text-[10px] text-blue-700 dark:text-blue-300">
+                Staff roles (Trainer, Contracting Manager) are automatically
+                approved and don't require onboarding.
+              </p>
             </div>
-            <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-1">
-              {formData.approval_status === "approved"
-                ? "User appears in Users & Access"
-                : "User appears in Recruiting Pipeline"}
-            </p>
-          </div>
-
-          {/* Onboarding Status - Only when Pending */}
-          {formData.approval_status === "pending" && (
-            <div className="bg-zinc-100 dark:bg-zinc-800/50 p-2 rounded border border-zinc-200 dark:border-zinc-700/50">
-              <Label className="text-[10px] text-zinc-500 dark:text-zinc-400">
-                Onboarding Status
-              </Label>
-              <div className="grid grid-cols-3 gap-1 mt-1">
-                <Button
-                  type="button"
-                  variant={
-                    formData.onboarding_status === null ? "default" : "outline"
-                  }
-                  size="sm"
-                  className="h-6 text-[10px]"
-                  onClick={() =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      onboarding_status: null,
-                    }))
-                  }
-                >
-                  Not set
-                </Button>
-                <Button
-                  type="button"
-                  variant={
-                    formData.onboarding_status === "lead"
-                      ? "default"
-                      : "outline"
-                  }
-                  size="sm"
-                  className="h-6 text-[10px]"
-                  onClick={() =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      onboarding_status: "lead",
-                    }))
-                  }
-                >
-                  Lead
-                </Button>
-                <Button
-                  type="button"
-                  variant={
-                    formData.onboarding_status === "active"
-                      ? "default"
-                      : "outline"
-                  }
-                  size="sm"
-                  className="h-6 text-[10px]"
-                  onClick={() =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      onboarding_status: "active",
-                    }))
-                  }
-                >
-                  Active
-                </Button>
+          ) : (
+            <>
+              <div>
+                <Label className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                  Status
+                </Label>
+                <div className="grid grid-cols-2 gap-1 mt-1">
+                  <Button
+                    type="button"
+                    variant={
+                      formData.approval_status === "approved"
+                        ? "default"
+                        : "outline"
+                    }
+                    size="sm"
+                    className="h-7 text-[10px]"
+                    onClick={() =>
+                      setFormData((prev) => {
+                        // Remove recruit role, add agent role
+                        const filteredRoles: RoleName[] = prev.roles.filter(
+                          (r) => r !== "recruit",
+                        );
+                        const hasAgent = filteredRoles.some(
+                          (r) => r === "agent",
+                        );
+                        return {
+                          ...prev,
+                          approval_status: "approved",
+                          onboarding_status: null,
+                          roles: hasAgent
+                            ? filteredRoles
+                            : [...filteredRoles, "agent" as RoleName],
+                        };
+                      })
+                    }
+                  >
+                    Approved (Agent)
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={
+                      formData.approval_status === "pending"
+                        ? "default"
+                        : "outline"
+                    }
+                    size="sm"
+                    className="h-7 text-[10px]"
+                    onClick={() =>
+                      setFormData((prev) => {
+                        // Remove agent role, add recruit role
+                        const filteredRoles: RoleName[] = prev.roles.filter(
+                          (r) => r !== "agent",
+                        );
+                        const hasRecruit = filteredRoles.some(
+                          (r) => r === "recruit",
+                        );
+                        return {
+                          ...prev,
+                          approval_status: "pending",
+                          roles: hasRecruit
+                            ? filteredRoles
+                            : [...filteredRoles, "recruit" as RoleName],
+                        };
+                      })
+                    }
+                  >
+                    Pending (Recruit)
+                  </Button>
+                </div>
+                <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-1">
+                  {formData.approval_status === "approved"
+                    ? "User appears in Users & Access"
+                    : "User appears in Recruiting Pipeline"}
+                </p>
               </div>
-            </div>
+
+              {/* Onboarding Status - Only when Pending */}
+              {formData.approval_status === "pending" && (
+                <div className="bg-zinc-100 dark:bg-zinc-800/50 p-2 rounded border border-zinc-200 dark:border-zinc-700/50">
+                  <Label className="text-[10px] text-zinc-500 dark:text-zinc-400">
+                    Onboarding Status
+                  </Label>
+                  <div className="grid grid-cols-3 gap-1 mt-1">
+                    <Button
+                      type="button"
+                      variant={
+                        formData.onboarding_status === null
+                          ? "default"
+                          : "outline"
+                      }
+                      size="sm"
+                      className="h-6 text-[10px]"
+                      onClick={() =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          onboarding_status: null,
+                        }))
+                      }
+                    >
+                      Not set
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={
+                        formData.onboarding_status === "lead"
+                          ? "default"
+                          : "outline"
+                      }
+                      size="sm"
+                      className="h-6 text-[10px]"
+                      onClick={() =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          onboarding_status: "lead",
+                        }))
+                      }
+                    >
+                      Lead
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={
+                        formData.onboarding_status === "active"
+                          ? "default"
+                          : "outline"
+                      }
+                      size="sm"
+                      className="h-6 text-[10px]"
+                      onClick={() =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          onboarding_status: "active",
+                        }))
+                      }
+                    >
+                      Active
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
 
