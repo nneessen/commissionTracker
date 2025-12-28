@@ -285,6 +285,8 @@ export class PermissionRepository {
     parent_role_id?: string | null;
     respects_hierarchy?: boolean;
   }): Promise<Role> {
+    logger.info(`Creating role: ${input.name}`, "PermissionRepository");
+
     const { data, error } = await supabase
       .from("roles")
       .insert({
@@ -295,9 +297,24 @@ export class PermissionRepository {
       .single();
 
     if (error) {
+      // Check for specific RLS errors
+      if (
+        error.code === "42501" ||
+        error.message.includes("permission denied")
+      ) {
+        logger.error(
+          `RLS policy blocked role creation. User may not be super admin.`,
+          error,
+          "PermissionRepository",
+        );
+        throw new Error(
+          "Permission denied. Only super admins can create roles.",
+        );
+      }
       throw this.handleError(error, "createRole");
     }
 
+    logger.info(`Role created: ${data.id}`, "PermissionRepository");
     return data;
   }
 
@@ -313,6 +330,8 @@ export class PermissionRepository {
       respects_hierarchy?: boolean;
     },
   ): Promise<Role> {
+    logger.info(`Updating role: ${roleId}`, "PermissionRepository");
+
     const { data, error } = await supabase
       .from("roles")
       .update({
@@ -324,9 +343,23 @@ export class PermissionRepository {
       .single();
 
     if (error) {
+      if (
+        error.code === "42501" ||
+        error.message.includes("permission denied")
+      ) {
+        logger.error(
+          `RLS policy blocked role update. User may not be super admin.`,
+          error,
+          "PermissionRepository",
+        );
+        throw new Error(
+          "Permission denied. Only super admins can update roles.",
+        );
+      }
       throw this.handleError(error, "updateRole");
     }
 
+    logger.info(`Role updated: ${data.id}`, "PermissionRepository");
     return data;
   }
 
@@ -334,11 +367,28 @@ export class PermissionRepository {
    * Delete a role
    */
   async deleteRole(roleId: string): Promise<void> {
+    logger.info(`Deleting role: ${roleId}`, "PermissionRepository");
+
     const { error } = await supabase.from("roles").delete().eq("id", roleId);
 
     if (error) {
+      if (
+        error.code === "42501" ||
+        error.message.includes("permission denied")
+      ) {
+        logger.error(
+          `RLS policy blocked role deletion. User may not be super admin.`,
+          error,
+          "PermissionRepository",
+        );
+        throw new Error(
+          "Permission denied. Only super admins can delete roles.",
+        );
+      }
       throw this.handleError(error, "deleteRole");
     }
+
+    logger.info(`Role deleted: ${roleId}`, "PermissionRepository");
   }
 
   // ---------------------------------------------------------------------------

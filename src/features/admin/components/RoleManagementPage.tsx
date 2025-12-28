@@ -47,6 +47,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Shield, Plus, Edit, Trash2, Lock, Search } from "lucide-react";
+import { toast } from "sonner";
 
 export function RoleManagementPage() {
   const {
@@ -110,32 +111,42 @@ export function RoleManagementPage() {
 
   const handleCreate = async () => {
     if (!formData.name || !formData.display_name) {
-      alert("Name and Display Name are required");
+      toast.error("Name and Display Name are required");
       return;
     }
 
     try {
+      console.log("[RoleManagement] Creating role:", formData);
       await createRole.mutateAsync(formData as CreateRoleInput);
+      toast.success(`Role "${formData.display_name}" created successfully`);
       setIsCreateDialogOpen(false);
     } catch (error) {
-      alert(error instanceof Error ? error.message : "Failed to create role");
+      console.error("[RoleManagement] Create role error:", error);
+      const message =
+        error instanceof Error ? error.message : "Failed to create role";
+      toast.error(message);
     }
   };
 
   const handleUpdate = async () => {
     if (!selectedRole || !formData.display_name) {
-      alert("Display Name is required");
+      toast.error("Display Name is required");
       return;
     }
 
     try {
+      console.log("[RoleManagement] Updating role:", selectedRole.id, formData);
       await updateRole.mutateAsync({
         roleId: selectedRole.id,
         input: formData as UpdateRoleInput,
       });
+      toast.success(`Role "${formData.display_name}" updated successfully`);
       setIsEditDialogOpen(false);
     } catch (error) {
-      alert(error instanceof Error ? error.message : "Failed to update role");
+      console.error("[RoleManagement] Update role error:", error);
+      const message =
+        error instanceof Error ? error.message : "Failed to update role";
+      toast.error(message);
     }
   };
 
@@ -143,10 +154,15 @@ export function RoleManagementPage() {
     if (!selectedRole) return;
 
     try {
+      console.log("[RoleManagement] Deleting role:", selectedRole.id);
       await deleteRole.mutateAsync(selectedRole.id);
+      toast.success(`Role "${selectedRole.display_name}" deleted successfully`);
       setIsDeleteDialogOpen(false);
     } catch (error) {
-      alert(error instanceof Error ? error.message : "Failed to delete role");
+      console.error("[RoleManagement] Delete role error:", error);
+      const message =
+        error instanceof Error ? error.message : "Failed to delete role";
+      toast.error(message);
     }
   };
 

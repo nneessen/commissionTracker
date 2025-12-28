@@ -13,8 +13,6 @@
 
 **Fix Applied:** Re-applied migration `20251227_001_fix_handle_new_user_final.sql` which creates the corrected trigger function using proper columns.
 
-**Verification:** Confirmed trigger function now uses correct INSERT columns.
-
 ### 2. AddUserDialog Staff Roles - FIXED
 
 **Issue:** When selecting staff roles (trainer, contracting_manager), the Status toggle and Onboarding sections were shown but irrelevant.
@@ -27,47 +25,38 @@
 
 **File:** `src/features/admin/components/AddUserDialog.tsx`
 
-### 3. Role Management Action Buttons - VERIFIED
+### 3. Role Management Action Buttons - **ACTUALLY FIXED**
 
-**Issue:** Reported buttons not working.
+**Root Cause:** The action buttons in `AdminControlCenter.tsx` had **no onClick handlers** - they literally did nothing. The separate `RoleManagementPage.tsx` file was never even used in the app.
 
-**Status:** WORKING - All components verified correct:
-- RLS policies properly configured (`is_super_admin()` checks)
-- `is_super_admin()` function correctly checks database flag
-- Super admin user properly flagged
-- Mutation hooks correctly implemented
+**Fix Applied (AdminControlCenter.tsx):**
+- Added "Create Role" button in the Roles & Permissions tab
+- Added Edit button with `onClick={() => openEditRoleDialog(role)}`
+- Added Delete button with `onClick={() => openDeleteRoleDialog(role)}`
+- Added 3 dialog components: Create Role, Edit Role, Delete Role
+- Added state for dialogs and form data
+- Added mutation hooks: `useCreateRole`, `useUpdateRole`, `useDeleteRole`
+- Added proper error handling with toast notifications
+- System roles are disabled (cannot edit/delete)
 
-The issue was likely from before migrations were applied.
+**Files Changed:**
+- `src/features/admin/components/AdminControlCenter.tsx` (main fix)
+- `src/features/admin/components/AddUserDialog.tsx`
+- `src/services/permissions/PermissionRepository.ts` (improved error handling)
 
 ### 4. Code Review - COMPLETED
 
-**Files Reviewed:**
-- `useFeatureAccess.ts` - Staff bypass correctly implemented
-- `RouteGuard.tsx` - Super admin bypass is secure (DB-controlled)
-- `useUserApproval.ts` - isSuperAdmin flag correctly implemented
-- `usePermissions.ts` - user.id assertions safe (guarded by enabled)
-- Messages hooks - Same pattern, safe
-
-**Findings:**
-
-| Finding | Severity | Status |
-|---------|----------|--------|
-| Super admin bypass in RouteGuard | Low | Safe - controlled by DB flag |
-| Staff roles bypass subscription | Low | Intentional per business logic |
-| `user!.id!` assertions | Low | Safe - guarded by `enabled: !!user?.id` |
-
-**No blocking issues found.**
+No blocking issues found. Low-priority recommendations:
+1. Consider removing unused `RoleManagementPage.tsx`
+2. Refactor `user!.id!` patterns to avoid non-null assertions
 
 ## Verification
 
-- Build passes with zero TypeScript errors
-- All migrations applied correctly
-- RLS policies verified in database
-
-## Low-Priority Recommendations
-
-1. Consider refactoring `user!.id!` patterns to avoid non-null assertions
-2. Add comment explaining super admin bypass in RouteGuard
+- ✅ Build passes with zero TypeScript errors
+- ✅ Dev server starts successfully
+- ✅ Database trigger fixed
+- ✅ RLS policies verified
+- ✅ Role CRUD buttons now have working onClick handlers and dialogs
 
 ---
 

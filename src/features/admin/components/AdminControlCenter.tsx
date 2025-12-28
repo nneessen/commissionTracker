@@ -24,7 +24,24 @@ import {
   useAllRolesWithPermissions,
   useUpdateUserRoles,
   useIsAdmin,
+  useCreateRole,
+  useUpdateRole,
+  useDeleteRole,
+  useAllPermissions,
+  useAssignPermissionToRole,
+  useRemovePermissionFromRole,
 } from "@/hooks/permissions/usePermissions";
+import type {
+  CreateRoleInput,
+  UpdateRoleInput,
+} from "@/services/permissions/permissionService";
+import type {
+  Role,
+  Permission,
+  PermissionWithSource,
+} from "@/types/permissions.types";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAuth } from "@/contexts/AuthContext";
 import { userApprovalService } from "@/services/users/userService";
 import { useQueryClient } from "@tanstack/react-query";
@@ -51,6 +68,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import type { RoleName } from "@/types/permissions.types";
 import type { UserProfile } from "@/services/users/userService";
 import { getFullName, getDisplayName } from "@/types/user.types";
@@ -75,6 +102,19 @@ export default function AdminControlCenter() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(50);
 
+  // Role management state
+  const [isCreateRoleDialogOpen, setIsCreateRoleDialogOpen] = useState(false);
+  const [isEditRoleDialogOpen, setIsEditRoleDialogOpen] = useState(false);
+  const [isDeleteRoleDialogOpen, setIsDeleteRoleDialogOpen] = useState(false);
+  const [selectedRole, setSelectedRole] = useState<Role | null>(null);
+  const [roleFormData, setRoleFormData] = useState<
+    Partial<CreateRoleInput & UpdateRoleInput>
+  >({
+    name: "",
+    display_name: "",
+    description: "",
+  });
+
   const { user: currentUser } = useAuth();
   const { data: isAdmin, isLoading: _isAdminLoading } = useIsAdmin();
   const { data: allUsers, isLoading: usersLoading } = useAllUsers();
@@ -82,6 +122,16 @@ export default function AdminControlCenter() {
   const { mutate: _updateUserRoles } = useUpdateUserRoles();
   const deleteUserMutation = useDeleteUser();
   const queryClient = useQueryClient();
+
+  // Role mutation hooks
+  const createRoleMutation = useCreateRole();
+  const _updateRoleMutation = useUpdateRole(); // Available for future role name/description edits
+  const deleteRoleMutation = useDeleteRole();
+  const assignPermissionMutation = useAssignPermissionToRole();
+  const removePermissionMutation = useRemovePermissionFromRole();
+
+  // All available permissions for assignment
+  const { data: allPermissions } = useAllPermissions();
 
   // IMO/Agency data for displaying organization info
   const { isSuperAdmin } = useImo();
@@ -241,6 +291,124 @@ export default function AdminControlCenter() {
         );
       },
     });
+  };
+
+  // Role management handlers
+  const openCreateRoleDialog = () => {
+    setRoleFormData({ name: "", display_name: "", description: "" });
+    setSelectedRole(null);
+    setIsCreateRoleDialogOpen(true);
+  };
+
+  const openEditRoleDialog = (role: Role) => {
+    // Fetch the full role with permissions from the roles list
+    const fullRole = roles?.find((r) => r.id === role.id);
+    setSelectedRole(fullRole || role);
+    setRoleFormData({
+      display_name: role.display_name,
+      description: role.description || "",
+    });
+    setIsEditRoleDialogOpen(true);
+  };
+
+  // Toggle a permission on/off for the selected role
+  const handleTogglePermission = async (permission: Permission) => {
+    if (!selectedRole) return;
+
+    const currentPermissions = selectedRole.permissions || [];
+    const hasPermission = currentPermissions.some(
+      (p) => p.id === permission.id,
+    );
+
+    try {
+      if (hasPermission) {
+        await removePermissionMutation.mutateAsync({
+          roleId: selectedRole.id,
+          permissionId: permission.id,
+        });
+        // Update local state
+        setSelectedRole((prev) =>
+          prev
+            ? {
+                ...prev,
+                permissions: prev.permissions?.filter(
+                  (p) => p.id !== permission.id,
+                ),
+              }
+            : null,
+        );
+        toast.success(`Removed "${permission.code}" from ${selectedRole.name}`);
+      } else {
+        await assignPermissionMutation.mutateAsync({
+          roleId: selectedRole.id,
+          permissionId: permission.id,
+        });
+        // Update local state - add as direct permission
+        const permissionWithSource: PermissionWithSource = {
+          ...permission,
+          permissionType: "direct",
+        };
+        setSelectedRole((prev) =>
+          prev
+            ? {
+                ...prev,
+                permissions: [
+                  ...(prev.permissions || []),
+                  permissionWithSource,
+                ],
+              }
+            : null,
+        );
+        toast.success(`Added "${permission.code}" to ${selectedRole.name}`);
+      }
+    } catch (error) {
+      console.error("[AdminControlCenter] Toggle permission error:", error);
+      toast.error(
+        error instanceof Error ? error.message : "Failed to update permission",
+      );
+    }
+  };
+
+  const openDeleteRoleDialog = (role: Role) => {
+    setSelectedRole(role);
+    setIsDeleteRoleDialogOpen(true);
+  };
+
+  const handleCreateRole = async () => {
+    if (!roleFormData.name || !roleFormData.display_name) {
+      toast.error("Name and Display Name are required");
+      return;
+    }
+
+    try {
+      await createRoleMutation.mutateAsync(roleFormData as CreateRoleInput);
+      toast.success(`Role "${roleFormData.display_name}" created`);
+      setIsCreateRoleDialogOpen(false);
+      setRoleFormData({ name: "", display_name: "", description: "" });
+    } catch (error) {
+      console.error("[AdminControlCenter] Create role error:", error);
+      toast.error(
+        error instanceof Error ? error.message : "Failed to create role",
+      );
+    }
+  };
+
+  // Note: handleUpdateRole removed - permission management now uses handleTogglePermission
+
+  const handleDeleteRole = async () => {
+    if (!selectedRole) return;
+
+    try {
+      await deleteRoleMutation.mutateAsync(selectedRole.id);
+      toast.success(`Role "${selectedRole.display_name}" deleted`);
+      setIsDeleteRoleDialogOpen(false);
+      setSelectedRole(null);
+    } catch (error) {
+      console.error("[AdminControlCenter] Delete role error:", error);
+      toast.error(
+        error instanceof Error ? error.message : "Failed to delete role",
+      );
+    }
   };
 
   return (
@@ -809,6 +977,14 @@ export default function AdminControlCenter() {
                   </span>
                 </div>
               </div>
+              <Button
+                size="sm"
+                className="h-6 text-[10px] px-2"
+                onClick={openCreateRoleDialog}
+              >
+                <Plus className="h-3 w-3 mr-1" />
+                Create Role
+              </Button>
             </div>
 
             <div className="flex-1 overflow-auto rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
@@ -877,13 +1053,29 @@ export default function AdminControlCenter() {
                         )}
                       </TableCell>
                       <TableCell className="py-1.5 text-right">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="h-5 px-1.5 text-zinc-600 dark:text-zinc-400"
-                        >
-                          <Edit className="h-2.5 w-2.5" />
-                        </Button>
+                        <div className="flex items-center justify-end gap-1">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-5 px-1.5 text-[10px] text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
+                            onClick={() => openEditRoleDialog(role)}
+                            title="Manage role permissions"
+                          >
+                            <Edit className="h-2.5 w-2.5 mr-0.5" />
+                            Permissions
+                          </Button>
+                          {!role.is_system_role && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-5 px-1.5 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                              onClick={() => openDeleteRoleDialog(role)}
+                              title="Delete role"
+                            >
+                              <Trash2 className="h-2.5 w-2.5" />
+                            </Button>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -937,6 +1129,229 @@ export default function AdminControlCenter() {
         onOpenChange={setIsAddUserDialogOpen}
         onSave={handleAddUser}
       />
+
+      {/* Create Role Dialog */}
+      <Dialog
+        open={isCreateRoleDialogOpen}
+        onOpenChange={setIsCreateRoleDialogOpen}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-sm">Create New Role</DialogTitle>
+            <DialogDescription className="text-[11px]">
+              Create a custom role with specific permissions.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div className="space-y-1">
+              <Label className="text-[11px]">Role Name (slug)</Label>
+              <Input
+                placeholder="e.g., sales_lead"
+                className="h-8 text-[11px]"
+                value={roleFormData.name || ""}
+                onChange={(e) =>
+                  setRoleFormData((prev) => ({
+                    ...prev,
+                    name: e.target.value.toLowerCase().replace(/\s+/g, "_"),
+                  }))
+                }
+              />
+              <p className="text-[10px] text-zinc-500">
+                Lowercase, underscores only. Used internally.
+              </p>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-[11px]">Display Name</Label>
+              <Input
+                placeholder="e.g., Sales Lead"
+                className="h-8 text-[11px]"
+                value={roleFormData.display_name || ""}
+                onChange={(e) =>
+                  setRoleFormData((prev) => ({
+                    ...prev,
+                    display_name: e.target.value,
+                  }))
+                }
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-[11px]">Description (optional)</Label>
+              <Textarea
+                placeholder="What this role is for..."
+                className="text-[11px] min-h-[60px]"
+                value={roleFormData.description || ""}
+                onChange={(e) =>
+                  setRoleFormData((prev) => ({
+                    ...prev,
+                    description: e.target.value,
+                  }))
+                }
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 text-[11px]"
+              onClick={() => setIsCreateRoleDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              className="h-7 text-[11px]"
+              onClick={handleCreateRole}
+              disabled={createRoleMutation.isPending}
+            >
+              {createRoleMutation.isPending ? "Creating..." : "Create Role"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Role Permissions Dialog */}
+      <Dialog
+        open={isEditRoleDialogOpen}
+        onOpenChange={setIsEditRoleDialogOpen}
+      >
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="text-sm flex items-center gap-2">
+              <Shield className="h-4 w-4" />
+              Manage Permissions: {selectedRole?.display_name}
+            </DialogTitle>
+            <DialogDescription className="text-[11px]">
+              {selectedRole?.is_system_role
+                ? "This is a system role. You can modify its permissions."
+                : "Configure which permissions this role has."}
+            </DialogDescription>
+          </DialogHeader>
+
+          {/* Role info */}
+          <div className="flex items-center gap-3 p-2 bg-zinc-100 dark:bg-zinc-800 rounded text-[11px]">
+            <div>
+              <span className="text-zinc-500">Name:</span>{" "}
+              <span className="font-mono">{selectedRole?.name}</span>
+            </div>
+            <div>
+              <span className="text-zinc-500">Current permissions:</span>{" "}
+              <span className="font-medium">
+                {selectedRole?.permissions?.length || 0}
+              </span>
+            </div>
+          </div>
+
+          {/* Permissions list */}
+          <ScrollArea className="h-[300px] border rounded-md p-2">
+            <div className="space-y-1">
+              {allPermissions
+                ?.slice()
+                .sort((a, b) => a.code.localeCompare(b.code))
+                .map((permission) => {
+                  const isChecked = selectedRole?.permissions?.some(
+                    (p) => p.id === permission.id,
+                  );
+                  const isLoading =
+                    assignPermissionMutation.isPending ||
+                    removePermissionMutation.isPending;
+
+                  return (
+                    <div
+                      key={permission.id}
+                      className="flex items-start gap-2 p-2 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 rounded"
+                    >
+                      <Checkbox
+                        id={permission.id}
+                        checked={isChecked}
+                        disabled={isLoading}
+                        onCheckedChange={() =>
+                          handleTogglePermission(permission)
+                        }
+                        className="mt-0.5"
+                      />
+                      <label
+                        htmlFor={permission.id}
+                        className="flex-1 cursor-pointer"
+                      >
+                        <div className="text-[11px] font-medium text-zinc-900 dark:text-zinc-100">
+                          {permission.code}
+                        </div>
+                        {permission.description && (
+                          <div className="text-[10px] text-zinc-500 dark:text-zinc-400">
+                            {permission.description}
+                          </div>
+                        )}
+                      </label>
+                    </div>
+                  );
+                })}
+              {(!allPermissions || allPermissions.length === 0) && (
+                <div className="text-center text-[11px] text-zinc-500 py-4">
+                  No permissions available
+                </div>
+              )}
+            </div>
+          </ScrollArea>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 text-[11px]"
+              onClick={() => setIsEditRoleDialogOpen(false)}
+            >
+              Done
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Role Dialog */}
+      <Dialog
+        open={isDeleteRoleDialogOpen}
+        onOpenChange={setIsDeleteRoleDialogOpen}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-sm text-red-600">
+              Delete Role
+            </DialogTitle>
+            <DialogDescription className="text-[11px]">
+              This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-3">
+            <p className="text-[11px] text-zinc-700 dark:text-zinc-300">
+              Are you sure you want to delete the role{" "}
+              <strong>"{selectedRole?.display_name}"</strong>?
+            </p>
+            <p className="text-[10px] text-zinc-500 mt-2">
+              Users with this role will lose it. Make sure no users are assigned
+              to this role before deleting.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 text-[11px]"
+              onClick={() => setIsDeleteRoleDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              className="h-7 text-[11px]"
+              onClick={handleDeleteRole}
+              disabled={deleteRoleMutation.isPending}
+            >
+              {deleteRoleMutation.isPending ? "Deleting..." : "Delete Role"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
