@@ -52,6 +52,11 @@ export const permissionKeys = {
   userRoles: (userId: string) => ["permissions", "roles", userId] as const,
   userContext: (userId: string) => ["permissions", "context", userId] as const,
   allRoles: ["permissions", "all-roles"] as const,
+  allRolesWithPermissions: [
+    "permissions",
+    "all-roles",
+    "with-permissions",
+  ] as const,
   allPermissions: ["permissions", "all-permissions"] as const,
   hasPermission: (userId: string, code: PermissionCode) =>
     ["permissions", "has", userId, code] as const,
@@ -239,7 +244,7 @@ export function useAllRoles() {
  */
 export function useAllRolesWithPermissions() {
   return useQuery({
-    queryKey: [...permissionKeys.allRoles, "with-permissions"],
+    queryKey: permissionKeys.allRolesWithPermissions,
     queryFn: getAllRolesWithPermissions,
     staleTime: 1000 * 60 * 10, // Cache for 10 minutes
   });
@@ -363,8 +368,10 @@ export function useAssignPermissionToRole() {
       queryClient.invalidateQueries({
         queryKey: permissionKeys.rolePermissions(roleId),
       });
-      // Invalidate all user permission queries as their effective permissions may have changed
-      queryClient.invalidateQueries({ queryKey: permissionKeys.all });
+      // Invalidate the roles list used by AdminControlCenter
+      queryClient.invalidateQueries({
+        queryKey: permissionKeys.allRolesWithPermissions,
+      });
     },
   });
 }
@@ -425,8 +432,10 @@ export function useRemovePermissionFromRole() {
       queryClient.invalidateQueries({
         queryKey: permissionKeys.rolePermissions(roleId),
       });
-      // Invalidate all user permission queries as their effective permissions may have changed
-      queryClient.invalidateQueries({ queryKey: permissionKeys.all });
+      // Invalidate the roles list used by AdminControlCenter
+      queryClient.invalidateQueries({
+        queryKey: permissionKeys.allRolesWithPermissions,
+      });
     },
   });
 }

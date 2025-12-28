@@ -977,14 +977,16 @@ export default function AdminControlCenter() {
                   </span>
                 </div>
               </div>
-              <Button
-                size="sm"
-                className="h-6 text-[10px] px-2"
-                onClick={openCreateRoleDialog}
-              >
-                <Plus className="h-3 w-3 mr-1" />
-                Create Role
-              </Button>
+              {isSuperAdmin && (
+                <Button
+                  size="sm"
+                  className="h-6 text-[10px] px-2"
+                  onClick={openCreateRoleDialog}
+                >
+                  <Plus className="h-3 w-3 mr-1" />
+                  Create Role
+                </Button>
+              )}
             </div>
 
             <div className="flex-1 overflow-auto rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
@@ -1054,17 +1056,19 @@ export default function AdminControlCenter() {
                       </TableCell>
                       <TableCell className="py-1.5 text-right">
                         <div className="flex items-center justify-end gap-1">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-5 px-1.5 text-[10px] text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
-                            onClick={() => openEditRoleDialog(role)}
-                            title="Manage role permissions"
-                          >
-                            <Edit className="h-2.5 w-2.5 mr-0.5" />
-                            Permissions
-                          </Button>
-                          {!role.is_system_role && (
+                          {isSuperAdmin && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-5 px-1.5 text-[10px] text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
+                              onClick={() => openEditRoleDialog(role)}
+                              title="Manage role permissions"
+                            >
+                              <Edit className="h-2.5 w-2.5 mr-0.5" />
+                              Permissions
+                            </Button>
+                          )}
+                          {isSuperAdmin && !role.is_system_role && (
                             <Button
                               size="sm"
                               variant="ghost"
