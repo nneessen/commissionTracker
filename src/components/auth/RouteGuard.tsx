@@ -10,6 +10,7 @@ import { PendingApproval } from "@/features/auth/PendingApproval";
 import { PermissionDenied } from "@/features/auth";
 import { UpgradePrompt } from "@/components/subscription";
 import type { PermissionCode } from "@/types/permissions.types";
+import { STAFF_ONLY_ROLES } from "@/constants/roles";
 
 interface RouteGuardProps {
   children: React.ReactNode;
@@ -25,6 +26,10 @@ interface RouteGuardProps {
   recruitOnly?: boolean;
   /** If true, recruits are NOT allowed (redirects to pipeline) */
   noRecruits?: boolean;
+  /** If true, staff-only roles (trainer, contracting_manager) are NOT allowed */
+  noStaffRoles?: boolean;
+  /** If true, only staff roles (trainer, contracting_manager) can access */
+  staffOnly?: boolean;
   /** Required email for super-admin routes */
   requireEmail?: string;
   /** Required subscription feature to access this route */
@@ -67,13 +72,15 @@ export const RouteGuard: React.FC<RouteGuardProps> = ({
   allowPending = false,
   recruitOnly = false,
   noRecruits = false,
+  noStaffRoles = false,
+  staffOnly = false,
   requireEmail,
   subscriptionFeature,
   fallback,
 }) => {
   const { supabaseUser } = useAuth();
   const {
-    isApproved,
+    isApproved: _isApproved,
     isPending,
     isDenied,
     isSuperAdmin,
@@ -123,8 +130,14 @@ export const RouteGuard: React.FC<RouteGuardProps> = ({
   const isAgent = is("agent");
   const isAdmin = is("admin");
 
+  // Check if user has any staff-only role using centralized constant
+  const hasStaffOnlyRole = STAFF_ONLY_ROLES.some((role) => is(role));
+
   // Determine if user is ONLY a recruit (not also an agent)
   const isRecruitOnly = isRecruit && !isAgent && !isAdmin;
+
+  // Determine if user is a staff-only role (trainer or contracting_manager, but not admin or agent)
+  const isStaffOnlyRole = hasStaffOnlyRole && !isAgent && !isAdmin;
 
   // Check recruitOnly routes - only recruits can access
   if (recruitOnly && !isRecruitOnly) {
@@ -136,6 +149,18 @@ export const RouteGuard: React.FC<RouteGuardProps> = ({
   if (noRecruits && isRecruitOnly) {
     // Redirect recruits to their pipeline
     return <Navigate to="/recruiting/my-pipeline" replace />;
+  }
+
+  // Check staffOnly routes - only trainers/contracting_managers can access
+  if (staffOnly && !isStaffOnlyRole) {
+    // Non-staff trying to access staff-only route
+    return <>{fallback || <PermissionDenied />}</>;
+  }
+
+  // Check noStaffRoles routes - trainers/contracting_managers are NOT allowed
+  if (noStaffRoles && isStaffOnlyRole) {
+    // Redirect staff to trainer dashboard
+    return <Navigate to="/trainer-dashboard" replace />;
   }
 
   // Check approval status (unless allowPending is true)
@@ -157,8 +182,9 @@ export const RouteGuard: React.FC<RouteGuardProps> = ({
     hasPermission = requireAll ? canAll(permissions) : canAny(permissions);
   }
 
-  // Show permission denied if check fails (and not approved)
-  if (!hasPermission && !isApproved) {
+  // Show permission denied if check fails
+  // FIXED: Previously used `&& !isApproved` which bypassed permission checks for approved users
+  if (!hasPermission) {
     return <>{fallback || <PermissionDenied />}</>;
   }
 

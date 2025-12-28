@@ -49,6 +49,7 @@ import { cn } from "@/lib/utils";
 import type { RoleName } from "@/types/permissions.types";
 import type { ApprovalStatus } from "@/types/user.types";
 import { getDisplayName } from "@/types/user.types";
+import { STAFF_ONLY_ROLES } from "@/constants/roles";
 
 interface AddUserDialogProps {
   open: boolean;
@@ -111,9 +112,11 @@ export default function AddUserDialog({
 
   // Detect if user is being created as a staff role (trainer, contracting_manager)
   // Staff roles don't go through the approval pipeline
-  const STAFF_ROLES: RoleName[] = ["trainer", "contracting_manager"];
   const isStaffRoleSelected = useMemo(
-    () => formData.roles.some((r) => STAFF_ROLES.includes(r)),
+    () =>
+      formData.roles.some((r) =>
+        STAFF_ONLY_ROLES.includes(r as (typeof STAFF_ONLY_ROLES)[number]),
+      ),
     [formData.roles],
   );
 
@@ -152,9 +155,13 @@ export default function AddUserDialog({
       const isAdding = !prev.roles.includes(roleName);
       let newRoles: RoleName[];
 
+      // Helper to check if a role is a staff-only role
+      const isStaffOnlyRole = (r: RoleName) =>
+        STAFF_ONLY_ROLES.includes(r as (typeof STAFF_ONLY_ROLES)[number]);
+
       if (isAdding) {
         // Adding a role
-        if (STAFF_ROLES.includes(roleName)) {
+        if (isStaffOnlyRole(roleName)) {
           // Staff role selected: remove agent/recruit (they conflict)
           newRoles = [
             ...prev.roles.filter((r) => r !== "agent" && r !== "recruit"),
@@ -169,7 +176,7 @@ export default function AddUserDialog({
       }
 
       // Check if any staff role remains
-      const hasStaffRole = newRoles.some((r) => STAFF_ROLES.includes(r));
+      const hasStaffRole = newRoles.some((r) => isStaffOnlyRole(r));
 
       return {
         ...prev,

@@ -84,6 +84,8 @@ export class UserRepository extends BaseRepository<
       "hierarchy_path",
       "hierarchy_depth",
       "pipeline_template_id",
+      "imo_id",
+      "agency_id",
     ];
 
     for (const field of fields) {

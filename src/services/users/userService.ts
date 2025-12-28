@@ -17,6 +17,7 @@ import {
   VALID_CONTRACT_LEVELS,
   isValidContractLevel,
 } from "../../lib/constants";
+import { STAFF_ONLY_ROLES } from "@/constants/roles";
 export { VALID_CONTRACT_LEVELS };
 
 type RoleName = string;
@@ -300,6 +301,15 @@ class UserService {
         lastName = parts.slice(1).join(" ") || "";
       }
 
+      // Staff roles (trainer, contracting_manager) should NEVER have onboarding_status
+      // This enforces business rule: staff don't go through the recruiting pipeline
+      const isStaffRole = STAFF_ONLY_ROLES.some((role) =>
+        assignedRoles.includes(role),
+      );
+      const finalOnboardingStatus = isStaffRole
+        ? null
+        : userData.onboarding_status || null;
+
       // Update the profile created by trigger using repository
       const profileData: Partial<UserProfileRow> = {
         first_name: firstName,
@@ -310,7 +320,7 @@ class UserService {
         roles: assignedRoles,
         agent_status: agentStatus,
         approval_status: approvalStatus,
-        onboarding_status: userData.onboarding_status || null,
+        onboarding_status: finalOnboardingStatus,
         contract_level:
           userData.contractCompLevel || userData.contract_level || null,
         license_number: userData.license_number || null,
@@ -323,6 +333,8 @@ class UserService {
         resident_state: userData.resident_state || null,
         date_of_birth: userData.date_of_birth || null,
         npn: userData.npn || null,
+        imo_id: userData.imo_id || null,
+        agency_id: userData.agency_id || null,
       };
 
       try {
@@ -436,6 +448,15 @@ class UserService {
     // Auto-set agent_status based on roles
     if (updates.roles) {
       dbData.agent_status = this.determineAgentStatusFromRoles(updates.roles);
+
+      // Staff roles should NEVER have onboarding_status
+      // If updating to staff role, nullify onboarding_status
+      const isStaffRole = STAFF_ONLY_ROLES.some((role) =>
+        updates.roles!.includes(role),
+      );
+      if (isStaffRole) {
+        dbData.onboarding_status = null;
+      }
     }
 
     try {

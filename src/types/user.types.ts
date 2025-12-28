@@ -122,6 +122,9 @@ export interface CreateUserProfileData {
   license_number?: string | null;
   npn?: string | null;
   licensing_info?: Json | null;
+  // Organization
+  imo_id?: string | null;
+  agency_id?: string | null;
 }
 
 /**

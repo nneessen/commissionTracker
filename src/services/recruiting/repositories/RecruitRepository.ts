@@ -3,6 +3,7 @@ import { BaseRepository } from "../../base/BaseRepository";
 import type { Database } from "@/types/database.types";
 import type { UserProfile } from "@/types/hierarchy.types";
 import type { RecruitFilters } from "@/types/recruiting.types";
+import { hasStaffRole } from "@/constants/roles";
 
 // Database row types
 type UserProfileRow = Database["public"]["Tables"]["user_profiles"]["Row"];
@@ -56,7 +57,7 @@ export interface PaginatedRecruits {
 }
 
 // Using 'any' for the base entity since UserProfile has string dates, not Date objects
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+
 export class RecruitRepository extends BaseRepository<
   any,
   CreateRecruitData,
@@ -67,23 +68,28 @@ export class RecruitRepository extends BaseRepository<
   }
 
   /**
-   * Filter IDs to only include actual recruits (exclude agents/admins)
+   * Filter IDs to only include actual recruits (exclude agents/admins/staff)
+   * FIXED: Only check for recruit role, not onboarding_status
    */
   private filterRecruitIds(users: UserProfileRow[]): string[] {
     return users
       .filter((u) => {
-        const hasActiveAgentRole = u.roles?.includes("active_agent");
-        const hasAgentRole = u.roles?.includes("agent");
-        const hasAdminRole = u.roles?.includes("admin");
-        const isAdmin = u.is_admin === true;
-
-        // Exclude if they're an active agent, agent, or admin
-        if (hasActiveAgentRole || hasAgentRole || hasAdminRole || isAdmin) {
+        // Must have recruit role
+        if (!u.roles?.includes("recruit")) {
           return false;
         }
 
-        // Include if they have recruit role OR onboarding_status
-        return u.roles?.includes("recruit") || u.onboarding_status !== null;
+        // Exclude if they also have agent, active_agent, admin, or staff roles
+        const hasAgentRole =
+          u.roles?.includes("agent") || u.roles?.includes("active_agent");
+        const hasAdminRole = u.roles?.includes("admin");
+        const isAdmin = u.is_admin === true;
+
+        if (hasAgentRole || hasAdminRole || isAdmin || hasStaffRole(u.roles)) {
+          return false;
+        }
+
+        return true;
       })
       .map((u) => u.id);
   }
@@ -96,11 +102,11 @@ export class RecruitRepository extends BaseRepository<
     page = 1,
     limit = 50,
   ): Promise<PaginatedRecruits> {
-    // First get potential recruit IDs
+    // First get potential recruit IDs - ONLY users with recruit role
     const { data: initialData, error: initialError } = await this.client
       .from(this.tableName)
       .select("*")
-      .or("roles.cs.{recruit},onboarding_status.not.is.null");
+      .contains("roles", ["recruit"]);
 
     if (initialError) {
       throw this.handleError(initialError, "findRecruits");
@@ -201,6 +207,7 @@ export class RecruitRepository extends BaseRepository<
 
   /**
    * Search recruits by name or email
+   * FIXED: Only query users with recruit role
    */
   async searchRecruits(
     searchTerm: string,
@@ -211,7 +218,7 @@ export class RecruitRepository extends BaseRepository<
       .select(
         "id, first_name, last_name, email, profile_photo_url, onboarding_status, agent_status, roles, is_admin",
       )
-      .or("roles.cs.{recruit},onboarding_status.not.is.null")
+      .contains("roles", ["recruit"])
       .or(
         `first_name.ilike.%${searchTerm}%,last_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`,
       )
@@ -221,24 +228,25 @@ export class RecruitRepository extends BaseRepository<
       throw this.handleError(error, "searchRecruits");
     }
 
-    // Filter out agents/admins
+    // Filter out users who also have agent/active_agent/admin/staff roles
     return (data || [])
       .filter((u) => {
-        const hasActiveAgentRole = u.roles?.includes("active_agent");
-        const hasAgentRole = u.roles?.includes("agent");
+        const hasAgentRole =
+          u.roles?.includes("agent") || u.roles?.includes("active_agent");
         const hasAdminRole = u.roles?.includes("admin");
         const isAdmin = u.is_admin === true;
 
-        if (hasActiveAgentRole || hasAgentRole || hasAdminRole || isAdmin) {
+        if (hasAgentRole || hasAdminRole || isAdmin || hasStaffRole(u.roles)) {
           return false;
         }
-        return u.roles?.includes("recruit") || u.onboarding_status !== null;
+        return true;
       })
       .slice(0, limit) as Partial<UserProfile>[];
   }
 
   /**
    * Get recruiting statistics
+   * FIXED: Only query users with recruit role
    */
   async getStats(recruiterId?: string): Promise<{
     total: number;
@@ -250,7 +258,7 @@ export class RecruitRepository extends BaseRepository<
     let query = this.client
       .from(this.tableName)
       .select("*")
-      .or("roles.cs.{recruit},onboarding_status.not.is.null");
+      .contains("roles", ["recruit"]);
 
     if (recruiterId) {
       query = query.eq("recruiter_id", recruiterId);
@@ -262,17 +270,17 @@ export class RecruitRepository extends BaseRepository<
       throw this.handleError(error, "getStats");
     }
 
-    // Filter to actual recruits
+    // Filter to actual recruits (exclude users who also have agent/active_agent/admin/staff roles)
     const recruits = ((data as UserProfileRow[]) || []).filter((u) => {
-      const hasActiveAgentRole = u.roles?.includes("active_agent");
-      const hasAgentRole = u.roles?.includes("agent");
+      const hasAgentRole =
+        u.roles?.includes("agent") || u.roles?.includes("active_agent");
       const hasAdminRole = u.roles?.includes("admin");
       const isAdmin = u.is_admin === true;
 
-      if (hasActiveAgentRole || hasAgentRole || hasAdminRole || isAdmin) {
+      if (hasAgentRole || hasAdminRole || isAdmin || hasStaffRole(u.roles)) {
         return false;
       }
-      return u.roles?.includes("recruit") || u.onboarding_status !== null;
+      return true;
     });
 
     const activePhases = [

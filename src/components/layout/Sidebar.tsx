@@ -123,14 +123,28 @@ const navigationItems: NavigationItem[] = [
   { icon: Settings, label: "Settings", href: "/settings", public: true },
 ];
 
-// Training Hub navigation items (for trainers and contracting managers)
-const trainingNavigationItems: NavigationItem[] = [
+// Staff-only navigation items (for trainers and contracting managers)
+// These roles have a separate dashboard and limited access
+const staffNavigationItems: NavigationItem[] = [
+  {
+    icon: Home,
+    label: "Dashboard",
+    href: "/trainer-dashboard",
+    public: true,
+  },
   {
     icon: GraduationCap,
     label: "Training Hub",
     href: "/training-hub",
     permission: "nav.training_hub",
   },
+  {
+    icon: Mail,
+    label: "Messages",
+    href: "/messages",
+    permission: "nav.messages",
+  },
+  { icon: Settings, label: "Settings", href: "/settings", public: true },
 ];
 
 // Admin-only navigation items
@@ -220,6 +234,12 @@ export default function Sidebar({
   };
 
   const isRecruit = hasRole("recruit" as RoleName);
+  const isTrainerOnly =
+    (hasRole("trainer" as RoleName) ||
+      hasRole("contracting_manager" as RoleName)) &&
+    !hasRole("agent" as RoleName) &&
+    !hasRole("admin" as RoleName) &&
+    !isAdmin;
 
   useEffect(() => {
     const checkMobile = () => {
@@ -260,38 +280,48 @@ export default function Sidebar({
     );
   };
 
-  // If user is a recruit, show ONLY recruit navigation
-  // If user is pending, show ALL items but they will be rendered as locked
+  // Navigation logic:
+  // - Recruits: Show ONLY recruit navigation
+  // - Staff (trainer/contracting_manager only): Show staff navigation (trainer dashboard, training hub, messages, settings)
+  // - Pending users: Show all items but rendered as locked
+  // - Regular users: Show navigation based on permissions
   const visibleNavItems = isRecruit
     ? recruitNavigationItems
-    : isPending
-      ? navigationItems // Show all items for pending users (will be rendered as locked)
-      : navigationItems.filter((item) => {
+    : isTrainerOnly
+      ? staffNavigationItems.filter((item) => {
           if (item.public) return true;
-          if (!item.permission) return false; // DEFAULT TO FALSE FOR SECURITY
-          if (isLoading) return false;
-          return can(item.permission);
-        });
-
-  const visibleTrainingItems = isRecruit
-    ? []
-    : isPending
-      ? trainingNavigationItems // Show all for pending (will be locked)
-      : trainingNavigationItems.filter((item) => {
           if (!item.permission) return false;
           if (isLoading) return false;
           return can(item.permission);
-        });
+        })
+      : isPending
+        ? navigationItems // Show all items for pending users (will be rendered as locked)
+        : navigationItems.filter((item) => {
+            if (item.public) return true;
+            if (!item.permission) return false; // DEFAULT TO FALSE FOR SECURITY
+            if (isLoading) return false;
+            return can(item.permission);
+          });
 
-  const visibleAdminItems = isRecruit
-    ? []
-    : isPending
-      ? adminNavigationItems // Show all for pending (will be locked)
-      : adminNavigationItems.filter((item) => {
-          if (!item.permission) return false;
-          if (isLoading) return false;
-          return can(item.permission);
-        });
+  // Staff-only roles don't see the training items section (it's already in their main nav)
+  // Regular agents with training permissions will still see it
+  const visibleTrainingItems: NavigationItem[] =
+    isRecruit || isTrainerOnly
+      ? []
+      : isPending
+        ? [] // Don't show training items for pending regular users
+        : [];
+
+  const visibleAdminItems =
+    isRecruit || isTrainerOnly
+      ? []
+      : isPending
+        ? adminNavigationItems // Show all for pending (will be locked)
+        : adminNavigationItems.filter((item) => {
+            if (!item.permission) return false;
+            if (isLoading) return false;
+            return can(item.permission);
+          });
 
   return (
     <>

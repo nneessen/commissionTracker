@@ -41,6 +41,7 @@ import { RecruitingDashboard } from "./features/recruiting/RecruitingDashboard";
 import { PipelineAdminPage } from "./features/recruiting/admin/PipelineAdminPage";
 import { MyRecruitingPipeline } from "./features/recruiting/pages/MyRecruitingPipeline";
 import { TrainingHubPage } from "./features/training-hub";
+import { TrainerDashboard } from "./features/trainer";
 import { MessagesPage } from "./features/messages";
 import { LeaderboardNamingPage } from "./features/messages/components/slack/LeaderboardNamingPage";
 import { TermsPage, PrivacyPage } from "./features/legal";
@@ -55,23 +56,23 @@ const rootRoute = createRootRoute({
   ),
 });
 
-// Dashboard/Home route - requires approval, blocks recruits
+// Dashboard/Home route - requires approval, blocks recruits and staff roles
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/",
   component: () => (
-    <RouteGuard permission="nav.dashboard" noRecruits>
+    <RouteGuard permission="nav.dashboard" noRecruits noStaffRoles>
       <DashboardHome />
     </RouteGuard>
   ),
 });
 
-// Dashboard route (alias for home) - requires approval, blocks recruits
+// Dashboard route (alias for home) - requires approval, blocks recruits and staff roles
 const dashboardRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "dashboard",
   component: () => (
-    <RouteGuard permission="nav.dashboard" noRecruits>
+    <RouteGuard permission="nav.dashboard" noRecruits noStaffRoles>
       <DashboardHome />
     </RouteGuard>
   ),
@@ -113,23 +114,23 @@ const verifyEmailRoute = createRoute({
   component: EmailVerificationPending,
 });
 
-// Policies route - requires approval, blocks recruits
+// Policies route - requires approval, blocks recruits and staff roles
 const policiesRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "policies",
   component: () => (
-    <RouteGuard permission="nav.policies" noRecruits>
+    <RouteGuard permission="nav.policies" noRecruits noStaffRoles>
       <PolicyDashboard />
     </RouteGuard>
   ),
 });
 
-// Analytics route - requires approval, blocks recruits
+// Analytics route - requires approval, blocks recruits and staff roles
 const analyticsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "analytics",
   component: () => (
-    <RouteGuard permission="nav.dashboard" noRecruits>
+    <RouteGuard permission="nav.dashboard" noRecruits noStaffRoles>
       <AnalyticsDashboard />
     </RouteGuard>
   ),
@@ -140,7 +141,7 @@ const compGuideRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "comps",
   component: () => (
-    <RouteGuard permission="carriers.manage" noRecruits>
+    <RouteGuard permission="carriers.manage" noRecruits noStaffRoles>
       <CompGuide />
     </RouteGuard>
   ),
@@ -157,7 +158,7 @@ const settingsRoute = createRoute({
   ),
 });
 
-// Targets route - requires approval, blocks recruits, requires targets_basic subscription feature
+// Targets route - requires approval, blocks recruits and staff roles, requires targets_basic subscription feature
 const targetsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "targets",
@@ -165,6 +166,7 @@ const targetsRoute = createRoute({
     <RouteGuard
       permission="nav.dashboard"
       noRecruits
+      noStaffRoles
       subscriptionFeature="targets_basic"
     >
       <TargetsPage />
@@ -172,7 +174,7 @@ const targetsRoute = createRoute({
   ),
 });
 
-// Reports route - requires approval, blocks recruits, requires reports_view subscription feature
+// Reports route - requires approval, blocks recruits and staff roles, requires reports_view subscription feature
 const reportsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "reports",
@@ -180,6 +182,7 @@ const reportsRoute = createRoute({
     <RouteGuard
       permission="nav.downline_reports"
       noRecruits
+      noStaffRoles
       subscriptionFeature="reports_view"
     >
       <ReportsDashboard />
@@ -187,7 +190,7 @@ const reportsRoute = createRoute({
   ),
 });
 
-// Expenses route - requires approval, blocks recruits, requires expenses subscription feature
+// Expenses route - requires approval, blocks recruits and staff roles, requires expenses subscription feature
 const expensesRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "expenses",
@@ -195,6 +198,7 @@ const expensesRoute = createRoute({
     <RouteGuard
       permission="expenses.read.own"
       noRecruits
+      noStaffRoles
       subscriptionFeature="expenses"
     >
       <ExpenseDashboardCompact />
@@ -227,12 +231,12 @@ const deniedAccessRoute = createRoute({
   component: DeniedAccess,
 });
 
-// Admin Control Center route - consolidated admin interface
+// Admin Control Center route - consolidated admin interface, blocks staff roles
 const adminRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "admin",
   component: () => (
-    <RouteGuard permission="nav.user_management" noRecruits>
+    <RouteGuard permission="nav.user_management" noRecruits noStaffRoles>
       <AdminControlCenter />
     </RouteGuard>
   ),
@@ -257,7 +261,7 @@ const authDiagnosticRoute = createRoute({
 });
 
 // Hierarchy routes - Agency hierarchy and override commissions
-// All hierarchy routes require approval, block recruits, and require hierarchy subscription feature
+// All hierarchy routes require approval, block recruits and staff roles, and require hierarchy subscription feature
 const hierarchyIndexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "hierarchy",
@@ -265,6 +269,7 @@ const hierarchyIndexRoute = createRoute({
     <RouteGuard
       permission="nav.team_dashboard"
       noRecruits
+      noStaffRoles
       subscriptionFeature="hierarchy"
     >
       <HierarchyDashboardCompact />
@@ -279,6 +284,7 @@ const hierarchyTreeRoute = createRoute({
     <RouteGuard
       permission="nav.team_dashboard"
       noRecruits
+      noStaffRoles
       subscriptionFeature="hierarchy"
     >
       <HierarchyDashboardCompact />
@@ -293,6 +299,7 @@ const hierarchyOverridesRoute = createRoute({
     <RouteGuard
       permission="nav.team_dashboard"
       noRecruits
+      noStaffRoles
       subscriptionFeature="overrides"
     >
       <OverrideDashboard />
@@ -307,6 +314,7 @@ const hierarchyDownlinesRoute = createRoute({
     <RouteGuard
       permission="nav.team_dashboard"
       noRecruits
+      noStaffRoles
       subscriptionFeature="downline_reports"
     >
       <DownlinePerformance />
@@ -321,6 +329,7 @@ const hierarchyManageRoute = createRoute({
     <RouteGuard
       permission="nav.team_dashboard"
       noRecruits
+      noStaffRoles
       subscriptionFeature="hierarchy"
     >
       <HierarchyManagement />
@@ -336,6 +345,7 @@ const agentDetailRoute = createRoute({
     <RouteGuard
       permission="nav.team_dashboard"
       noRecruits
+      noStaffRoles
       subscriptionFeature="hierarchy"
     >
       <AgentDetailPage />
@@ -351,6 +361,7 @@ const orgChartRoute = createRoute({
     <RouteGuard
       permission="nav.team_dashboard"
       noRecruits
+      noStaffRoles
       subscriptionFeature="hierarchy"
     >
       <OrgChartPage />
@@ -358,7 +369,7 @@ const orgChartRoute = createRoute({
   ),
 });
 
-// Recruiting route - requires approval, blocks recruits (admin/recruiter view), requires recruiting subscription feature
+// Recruiting route - requires approval, blocks recruits and staff roles (admin/recruiter view), requires recruiting subscription feature
 const recruitingRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "recruiting",
@@ -366,6 +377,7 @@ const recruitingRoute = createRoute({
     <RouteGuard
       permission="nav.recruiting_pipeline"
       noRecruits
+      noStaffRoles
       subscriptionFeature="recruiting"
     >
       <RecruitingDashboard />
@@ -402,6 +414,17 @@ const trainingHubRoute = createRoute({
   component: () => (
     <RouteGuard permission="nav.training_hub" noRecruits>
       <TrainingHubPage />
+    </RouteGuard>
+  ),
+});
+
+// Trainer Dashboard route - staff-only dashboard for trainers/contracting managers
+const trainerDashboardRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "trainer-dashboard",
+  component: () => (
+    <RouteGuard staffOnly noRecruits>
+      <TrainerDashboard />
     </RouteGuard>
   ),
 });
@@ -476,6 +499,7 @@ const routeTree = rootRoute.addChildren([
   recruitingAdminRoute,
   myPipelineRoute,
   trainingHubRoute,
+  trainerDashboardRoute,
   messagesRoute,
   slackNameLeaderboardRoute,
   termsRoute,

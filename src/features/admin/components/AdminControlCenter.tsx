@@ -81,6 +81,7 @@ import { Textarea } from "@/components/ui/textarea";
 import type { RoleName } from "@/types/permissions.types";
 import type { UserProfile } from "@/services/users/userService";
 import { getFullName, getDisplayName } from "@/types/user.types";
+import { hasStaffRole } from "@/constants/roles";
 import { useImo } from "@/contexts/ImoContext";
 import {
   useAllActiveImos,
@@ -169,18 +170,29 @@ export default function AdminControlCenter() {
         return false;
       });
 
-  // Separate active agents from recruits based on ROLES
-  // A user is an "active agent" if they have 'agent' OR 'active_agent' role, OR is_admin
-  const isActiveAgent = (u: UserProfile) =>
+  // Helper to check if user is an agent/admin
+  const isAgentOrAdmin = (u: UserProfile) =>
     u.roles?.includes("agent" as RoleName) ||
     u.roles?.includes("active_agent" as RoleName) ||
     u.is_admin === true;
 
-  const activeAgents = hierarchyFilteredUsers?.filter(isActiveAgent);
+  // Helper to check if user is a pure recruit (has recruit role, no agent/admin/staff roles)
+  const isPureRecruit = (u: UserProfile) => {
+    if (!u.roles?.includes("recruit" as RoleName)) return false;
+    if (isAgentOrAdmin(u)) return false;
+    if (hasStaffRole(u.roles)) return false;
+    return true;
+  };
 
-  // Recruits are users who have neither 'agent' nor 'active_agent' role and are not admins
+  // "Users & Access" tab: All users EXCEPT pure recruits
+  // This includes: agents, admins, AND staff (trainers, contracting managers, etc.)
+  const activeAgents = hierarchyFilteredUsers?.filter(
+    (u: UserProfile) => !isPureRecruit(u),
+  );
+
+  // "Recruiting Pipeline" tab: Only pure recruits
   const recruitsInPipeline =
-    hierarchyFilteredUsers?.filter((u: UserProfile) => !isActiveAgent(u)) || [];
+    hierarchyFilteredUsers?.filter((u: UserProfile) => isPureRecruit(u)) || [];
 
   // Calculate stats
   const totalUsers = activeAgents?.length || 0;

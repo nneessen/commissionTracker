@@ -11,7 +11,9 @@ import {
 } from "./useOwnerDownlineAccess";
 
 // Roles that bypass subscription checks (staff roles)
-const SUBSCRIPTION_BYPASS_ROLES = ["trainer", "contracting_manager"] as const;
+// Note: trainer and contracting_manager removed - they should have limited access
+// only to Training Hub, Messages, and Trainer Dashboard
+const SUBSCRIPTION_BYPASS_ROLES = [] as const;
 
 export type FeatureKey = keyof SubscriptionFeatures;
 
