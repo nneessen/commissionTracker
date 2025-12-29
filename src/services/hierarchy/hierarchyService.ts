@@ -441,12 +441,12 @@ class HierarchyService {
         throw new NotFoundError("User profile", user.id);
       }
 
-      // Get all downlines (including pending)
+      // Get all downlines (including pending and archived)
       const allDownlines = await this.getMyDownlines();
 
-      // Filter to only APPROVED downlines for stats
+      // Filter to only APPROVED and ACTIVE (not archived) downlines for stats
       const downlines = allDownlines.filter(
-        (d) => d.approval_status === "approved",
+        (d) => d.approval_status === "approved" && !d.archived_at,
       );
 
       // Calculate date ranges
