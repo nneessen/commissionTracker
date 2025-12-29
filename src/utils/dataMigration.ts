@@ -338,7 +338,7 @@ class DataMigrationService {
   ): Promise<void> {
     for (const carrier of carriers) {
       try {
-        await carrierService.create({
+        await carrierService.createFromForm({
           name: carrier.name,
           is_active: carrier.is_active ?? true,
         });

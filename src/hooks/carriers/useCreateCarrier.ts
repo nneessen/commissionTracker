@@ -8,7 +8,7 @@ export const useCreateCarrier = () => {
 
   return useMutation({
     mutationFn: async (newCarrier: NewCarrierForm) => {
-      const result = await carrierService.create(newCarrier);
+      const result = await carrierService.createFromForm(newCarrier);
       if (!result.success) throw result.error;
       return result.data;
     },

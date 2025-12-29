@@ -136,7 +136,7 @@ export function useCreateCarrier() {
 
   return useMutation({
     mutationFn: async (data: NewCarrierForm) => {
-      const result = await carrierService.create(data);
+      const result = await carrierService.createFromForm(data);
       if (result.success && result.data) {
         return result.data;
       }
@@ -175,7 +175,7 @@ export function useUpdateCarrier() {
       id: string;
       data: Partial<NewCarrierForm>;
     }) => {
-      const result = await carrierService.update(id, data);
+      const result = await carrierService.updateFromForm(id, data);
       if (result.success && result.data) {
         return result.data;
       }

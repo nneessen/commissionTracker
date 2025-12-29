@@ -47,7 +47,7 @@ export function useCarriers() {
         is_active: data.is_active ?? true,
         imo_id: data.imo_id,
       };
-      const result = await carrierService.create(formData);
+      const result = await carrierService.createFromForm(formData);
       if (!result.success) throw new Error(result.error?.message);
       return result.data;
     },
@@ -75,7 +75,7 @@ export function useCarriers() {
         code: data.code,
         is_active: data.is_active,
       };
-      const result = await carrierService.update(id, formData);
+      const result = await carrierService.updateFromForm(id, formData);
       if (!result.success) throw new Error(result.error?.message);
       return result.data;
     },

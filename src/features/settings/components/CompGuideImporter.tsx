@@ -137,7 +137,7 @@ export const CompGuideImporter: React.FC<CompGuideImporterProps> = ({
 
       for (const carrierName of carriersToCreate) {
         try {
-          const result = await carrierService.create({
+          const result = await carrierService.createFromForm({
             name: carrierName,
             code: carrierName,
             is_active: true,

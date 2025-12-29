@@ -14,7 +14,7 @@ export const useUpdateCarrier = () => {
       id: string;
       updates: Partial<NewCarrierForm>;
     }) => {
-      const result = await carrierService.update(id, updates);
+      const result = await carrierService.updateFromForm(id, updates);
       if (!result.success) throw result.error;
       return result.data;
     },
