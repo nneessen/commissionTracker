@@ -441,7 +441,13 @@ class HierarchyService {
         throw new NotFoundError("User profile", user.id);
       }
 
-      const downlines = await this.getMyDownlines();
+      // Get all downlines (including pending)
+      const allDownlines = await this.getMyDownlines();
+
+      // Filter to only APPROVED downlines for stats
+      const downlines = allDownlines.filter(
+        (d) => d.approval_status === "approved",
+      );
 
       // Calculate date ranges
       const now = new Date();
@@ -479,7 +485,7 @@ class HierarchyService {
         0,
       );
 
-      // Calculate direct downlines correctly - checking upline_id directly
+      // Calculate direct downlines - only approved agents with upline_id = current user
       const directDownlines = downlines.filter(
         (d) => d.upline_id === myProfile.id,
       );
@@ -549,9 +555,7 @@ class HierarchyService {
         agentPerformance.sort((a, b) => b.ap - a.ap)[0] || null;
 
       // Calculate avg premium per agent (only agents with production)
-      const activeAgents = downlines.filter(
-        (d) => d.approval_status === "approved",
-      ).length;
+      const activeAgents = downlines.length;
       const avgPremiumPerAgent =
         activeAgents > 0 ? teamAPTotal / activeAgents : 0;
 
@@ -559,14 +563,13 @@ class HierarchyService {
       // Calculate Health Metrics
       // ==========================================
 
-      // Retention rate: Approved agents / Total agents
-      const approvedAgents = downlines.filter(
-        (d) => d.approval_status === "approved",
-      ).length;
+      // Retention rate: Approved agents / Total agents (including pending)
       const retentionRate =
-        downlines.length > 0 ? (approvedAgents / downlines.length) * 100 : 0;
+        allDownlines.length > 0
+          ? (downlines.length / allDownlines.length) * 100
+          : 0;
 
-      // Recruitment rate: Agents created this period / total agents
+      // Recruitment rate: New approved agents this period / total approved agents
       const newAgents = downlines.filter((d) => {
         const createdAt = new Date(d.created_at || "");
         return createdAt >= rangeStart && createdAt <= rangeEnd;
@@ -574,7 +577,7 @@ class HierarchyService {
       const recruitmentRate =
         downlines.length > 0 ? (newAgents / downlines.length) * 100 : 0;
 
-      // Average contract level across team
+      // Average contract level across approved team members
       const contractLevels = downlines
         .filter((d) => d.contract_level != null)
         .map((d) => d.contract_level as number);
@@ -602,10 +605,10 @@ class HierarchyService {
       const relativeMaxDepth = maxDownlineDepth - myDepth;
 
       const result: HierarchyStats = {
-        // Agent counts
-        total_agents: downlines.length + 1, // including self
-        total_downlines: downlines.length,
-        direct_downlines: directDownlines.length,
+        // Agent counts - only approved agents
+        total_agents: downlines.length + 1, // approved downlines + self
+        total_downlines: downlines.length, // approved downlines only
+        direct_downlines: directDownlines.length, // approved direct reports only
         max_depth: relativeMaxDepth,
 
         // Override income
