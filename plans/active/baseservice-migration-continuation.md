@@ -1,6 +1,6 @@
 # BaseService Migration - Session Continuation
 
-**Last Updated:** 2025-12-29T00:00:00Z
+**Last Updated:** 2025-12-29T18:06:29Z
 **Session Age:** <1 hour
 **Migration Strategy:** One service at a time with ultra-detailed attention
 
@@ -8,16 +8,16 @@
 
 ## Progress Summary
 
-### ✅ Completed (1/21 services - 5%)
+### ✅ Completed (3/21 services - 14%)
 1. **ProductService** ✓ (Tier 1 - Very Easy)
+2. **CarrierService** ✓ (Tier 1 - Easy)
+3. **ExpenseCategoryService** ✓ (Tier 1 - Easy)
 
 ### 🔄 Currently In Progress
-**CarrierService** - Next up (Tier 1 - Easy)
+**ExpenseTemplateService** - Next up (Tier 1 - Easy)
 
-### 📋 Remaining Queue (20 services)
+### 📋 Remaining Queue (18 services)
 **Tier 1 (Easy):**
-2. CarrierService
-3. ExpenseCategoryService
 4. ExpenseTemplateService
 5. DocumentExpirationService (if exists)
 
@@ -26,91 +26,119 @@
 
 ---
 
-## Last Service Completed: ProductService
+## Last Service Completed: ExpenseCategoryService
 
 ### Migration Summary
-- **File:** `/home/nneessen/projects/commissionTracker/src/services/settings/products/ProductService.ts`
-- **Repository:** ProductRepository (extends BaseRepository ✓)
-- **Lines Removed:** 82 (CRUD boilerplate)
-- **Lines Added:** 98 (validation rules + business logic)
-- **Net Change:** +55 lines (but eliminated all manual CRUD code)
-- **Complexity:** ⭐ (Very Easy)
+- **File:** `/home/nneessen/projects/commissionTracker/src/services/expenses/categories/ExpenseCategoryService.ts`
+- **Repository:** ExpenseCategoryRepository (extends BaseRepository ✓)
+- **Lines Removed:** 117 (CRUD boilerplate)
+- **Lines Added:** 127 (validation rules + business logic)
+- **Net Change:** +67 lines (but eliminated all manual CRUD code)
+- **Complexity:** ⭐ (Easy)
 
-### Validation Rules Added (8 rules)
-1. carrier_id - required, non-empty string
-2. name - required, non-empty string
-3. product_type - required, valid enum (9 types)
-4. min_premium - optional, non-negative, <= max_premium
-5. max_premium - optional, non-negative, >= min_premium
-6. min_age - optional, 0-120, <= max_age
-7. max_age - optional, 0-120, >= min_age
-8. commission_percentage - optional, 0-100
+### Validation Rules Added (5 rules)
+1. name - required, non-empty string, max 100 chars
+2. name length - max 100 characters
+3. description - optional, max 500 chars
+4. is_active - optional, boolean
+5. sort_order - optional, non-negative integer
 
 ### Edge Cases Handled
 - ✅ Null/undefined for all optional fields
-- ✅ Default is_active = true
-- ✅ Cross-field validation (min <= max for age and premium)
-- ✅ Enum validation with all 9 product types
-- ✅ Maintained bulkCreate() as @deprecated wrapper
+- ✅ Default is_active = true (in repository)
+- ✅ Default sort_order = 0 (in repository)
+- ✅ Unique constraint on name (23505 error handling)
+- ✅ Soft delete vs hard delete distinction
+- ✅ Length limits: name ≤ 100, description ≤ 500
 
 ### Testing Results
 - ✅ Type check: PASSED
-- ✅ Build: PASSED (zero errors)
-- ✅ Linting: PASSED (after fixing unused import)
-- ✅ No existing tests to run
+- ✅ Build: PASSED (16.86s)
+- ✅ Service usage: 6 calls in useExpenseCategories.ts, all compatible
 - ✅ Git commit: SUCCESS
 
 ### Types Used
 - ✅ All from database.types.ts
-- ✅ ProductType enum from Database["public"]["Enums"]["product_type"]
-- ✅ Product entity type (with Date for created_at/updated_at after transform)
-- ✅ ProductFormData for create/update
+- ✅ ExpenseCategory entity type
+- ✅ CreateExpenseCategoryData for create
+- ✅ UpdateExpenseCategoryData for update
 - ✅ Zero `any` types
 
+### Overridden Methods (4)
+1. **getAll()** - Calls findActive() instead of findAll() (active only)
+2. **create()** - Handles unique constraint errors (23505)
+3. **update()** - Handles unique constraint errors (23505)
+4. **delete()** - Uses softDelete() instead of delete()
+
+### Business Methods Preserved (6)
+1. **getAllIncludingInactive()** - Get all categories (active + inactive)
+2. **hardDelete(id)** - Permanent deletion
+3. **restore(id)** - Restore soft-deleted category
+4. **hasCategories()** - Check if user has any categories
+5. **reorder(categoryIds)** - Update sort order for multiple categories
+6. **initializeDefaults()** - Create default categories for new users
+
 ### Lessons Learned
-1. **Unused imports trigger lint errors** - Check all imports before commit
-2. **Repository transforms dates** - Entity can use Date type even though DB uses string
-3. **Cross-field validation works well** - Used `data` parameter to compare min/max
-4. **Override create() for defaults** - Better than modifying constructor
-5. **@deprecated wrapper maintains compatibility** - Good pattern for legacy API
+1. **Pattern A works for method overrides** - Can override base methods for edge cases
+2. **Soft delete pattern** - Override delete() to call softDelete(), add hardDelete() for permanent
+3. **Unique constraints** - Try-catch around super.create/update to handle 23505 errors
+4. **Active filtering** - Override getAll() to filter by is_active, add separate method for all records
 
 ---
 
-## Next Service: CarrierService
+## Next Service: ExpenseTemplateService
 
 ### Pre-Migration Intel
-- **File:** `/home/nneessen/projects/commissionTracker/src/services/settings/carriers/CarrierService.ts`
-- **Repository:** CarrierRepository (need to verify extends BaseRepository)
+- **File:** `/home/nneessen/projects/commissionTracker/src/services/expenses/templates/ExpenseTemplateService.ts`
+- **Repository:** ExpenseTemplateRepository (need to verify extends BaseRepository)
 - **Expected Complexity:** ⭐ (Easy)
-- **Estimated Lines to Remove:** ~85
+- **Estimated Lines to Remove:** ~90
 
 ### Known Business Methods (to preserve)
-- getActive() - Get active carriers only
-- search() - Search carriers by name
-- getByImo() - Get carriers for specific IMO
+- getByCategory() - Get templates by category
+- search() - Search templates by name
 - Possibly others - need to audit
 
 ### Known Edge Cases
-- IMO hierarchy relationships
-- Carrier activation/deactivation
-- Unique carrier codes within IMO
+- Template name uniqueness (per user)
+- Recurring frequency validation
+- Amount validation (must be positive)
+- Category references
 
 ### Database Schema to Review
 ```typescript
-Database["public"]["Tables"]["carriers"]
-Database["public"]["Enums"]["carrier_status"] // if exists
+Database["public"]["Tables"]["expense_templates"]
+Database["public"]["Enums"]["expense_type"]
 ```
 
 ### Validation Rules Expected
-1. name - required
-2. code - optional but unique if provided
-3. imo_id - required (foreign key)
-4. is_active - boolean (default true)
-5. Contact info - emails, phones (format validation)
+1. template_name - required
+2. amount - required, positive number
+3. category - required
+4. expense_type - required, valid enum
+5. is_tax_deductible - boolean (default false)
+6. recurring_frequency - optional, valid enum if provided
 
 ---
 
-## Resume Instructions for Next Session
+## 📖 CRITICAL: Use the Procedure Document
+
+**Before migrating any service, follow the exact procedure in:**
+`plans/active/baseservice-migration-procedure.md`
+
+This document provides:
+- ✅ Copy-paste-able commands
+- ✅ Exact code templates (Pattern A & Pattern B)
+- ✅ Validation rule patterns
+- ✅ Testing checklist
+- ✅ Commit message template
+- ✅ Troubleshooting guide
+
+**DO NOT improvise. Follow the procedure exactly.**
+
+---
+
+## Resume Instructions for Next Session (Quick Reference)
 
 ### Step 1: Pre-Migration Analysis
 ```bash
@@ -212,19 +240,22 @@ export { CarrierService as CarrierServiceClass };
 
 ## Success Metrics Tracking
 
-### Overall Progress: 1/21 services (5%)
+### Overall Progress: 3/21 services (14%)
 
 | Metric | Target | Current | Status |
 |--------|--------|---------|--------|
-| Services Migrated | 21 | 1 | 🟡 In Progress |
-| Lines Removed | 2000-3000 | 82 | 🟢 On Track |
+| Services Migrated | 21 | 3 | 🟡 In Progress |
+| Lines Removed | 2000-3000 | 199 (82+117) | 🟢 On Track |
 | Type Safety | 100% | 100% | ✅ Perfect |
 | Build Errors | 0 | 0 | ✅ Perfect |
 | Test Failures | 0 | 0 | ✅ Perfect |
 
 ### Velocity
 - **Service 1 (ProductService):** ~45 minutes (with detailed validation)
-- **Estimated completion:** 21 services × 45min = ~16 hours (assuming similar complexity)
+- **Service 2 (CarrierService):** ~60 minutes (Pattern B complexity)
+- **Service 3 (ExpenseCategoryService):** ~50 minutes (method overrides + soft delete)
+- **Average:** ~52 minutes per service
+- **Estimated completion:** 18 services × 52min = ~16 hours remaining
 
 ---
 
