@@ -67,11 +67,14 @@ serve(async (req) => {
     }
 
     const body = await req.json();
-    const { imoId, channelId, limit = 50, cursor } = body;
+    const { imoId, integrationId, channelId, limit = 50, cursor } = body;
 
-    if (!imoId || !channelId) {
+    if ((!imoId && !integrationId) || !channelId) {
       return new Response(
-        JSON.stringify({ ok: false, error: "Missing imoId or channelId" }),
+        JSON.stringify({
+          ok: false,
+          error: "Missing integrationId/imoId or channelId",
+        }),
         {
           status: 400,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -81,14 +84,20 @@ serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // Get integration
-    const { data: integration, error: fetchError } = await supabase
+    // Get integration - prefer integrationId, fallback to imoId
+    let query = supabase
       .from("slack_integrations")
       .select("id, bot_token_encrypted")
-      .eq("imo_id", imoId)
       .eq("is_active", true)
-      .eq("connection_status", "connected")
-      .maybeSingle();
+      .eq("connection_status", "connected");
+
+    if (integrationId) {
+      query = query.eq("id", integrationId);
+    } else {
+      query = query.eq("imo_id", imoId);
+    }
+
+    const { data: integration, error: fetchError } = await query.maybeSingle();
 
     if (fetchError || !integration) {
       return new Response(

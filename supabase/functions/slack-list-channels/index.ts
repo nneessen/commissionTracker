@@ -141,10 +141,34 @@ serve(async (req) => {
             .eq("id", integration.id);
         }
 
-        return new Response(JSON.stringify({ ok: false, error: data.error }), {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        // Map common Slack errors to user-friendly messages
+        let userMessage = data.error || "Failed to list channels";
+        if (data.error === "missing_scope") {
+          userMessage =
+            "The Slack app is missing required permissions. Please reinstall the app with 'channels:read' and 'groups:read' scopes.";
+        } else if (
+          data.error === "token_revoked" ||
+          data.error === "invalid_auth"
+        ) {
+          userMessage =
+            "Slack connection expired. Please reconnect in Settings.";
+        } else if (data.error === "not_authed") {
+          userMessage =
+            "Slack authentication failed. Please reconnect in Settings.";
+        }
+
+        // Return 200 with ok:false so client can handle gracefully
+        return new Response(
+          JSON.stringify({
+            ok: false,
+            error: userMessage,
+            slackError: data.error,
+          }),
+          {
+            status: 200,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          },
+        );
       }
 
       if (data.channels) {
@@ -155,7 +179,7 @@ serve(async (req) => {
     } while (cursor);
 
     console.log(
-      `[slack-list-channels] Found ${allChannels.length} channels for IMO ${imoId}`,
+      `[slack-list-channels] Found ${allChannels.length} channels for integration ${integrationId || imoId}`,
     );
 
     return new Response(

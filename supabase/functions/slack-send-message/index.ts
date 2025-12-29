@@ -24,7 +24,8 @@ interface SlackBlock {
 }
 
 interface SendMessageRequest {
-  imoId: string;
+  imoId?: string;
+  integrationId?: string;
   channelId: string;
   text: string;
   blocks?: SlackBlock[];
@@ -75,6 +76,7 @@ serve(async (req) => {
     const body: SendMessageRequest = await req.json();
     const {
       imoId,
+      integrationId,
       channelId,
       text,
       blocks,
@@ -85,11 +87,12 @@ serve(async (req) => {
       channelConfigId,
     } = body;
 
-    if (!imoId || !channelId || !text) {
+    if ((!imoId && !integrationId) || !channelId || !text) {
       return new Response(
         JSON.stringify({
           ok: false,
-          error: "Missing required fields: imoId, channelId, text",
+          error:
+            "Missing required fields: integrationId/imoId, channelId, text",
         }),
         {
           status: 400,
@@ -98,16 +101,22 @@ serve(async (req) => {
       );
     }
 
-    // Get Slack integration
+    // Get Slack integration - prefer integrationId, fallback to imoId
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    const { data: integration, error: fetchError } = await supabase
+    let query = supabase
       .from("slack_integrations")
       .select("*")
-      .eq("imo_id", imoId)
       .eq("is_active", true)
-      .eq("connection_status", "connected")
-      .maybeSingle();
+      .eq("connection_status", "connected");
+
+    if (integrationId) {
+      query = query.eq("id", integrationId);
+    } else {
+      query = query.eq("imo_id", imoId);
+    }
+
+    const { data: integration, error: fetchError } = await query.maybeSingle();
 
     if (fetchError || !integration) {
       return new Response(

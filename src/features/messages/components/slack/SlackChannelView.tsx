@@ -21,8 +21,7 @@ import {
 } from "@/components/ui/popover";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/services/base/supabase";
-import { useCurrentUserProfile } from "@/hooks/admin/useUserApproval";
-import { useJoinSlackChannel, useAddSlackReaction } from "@/hooks/slack";
+import { useJoinSlackChannelById, useAddSlackReaction } from "@/hooks/slack";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import * as emoji from "node-emoji";
@@ -60,16 +59,19 @@ interface SlackMessage {
 
 interface SlackChannelViewProps {
   channel: SlackChannel;
+  integrationId: string;
 }
 
-export function SlackChannelView({ channel }: SlackChannelViewProps) {
-  const { data: profile } = useCurrentUserProfile();
+export function SlackChannelView({
+  channel,
+  integrationId,
+}: SlackChannelViewProps) {
   const queryClient = useQueryClient();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [messageText, setMessageText] = useState("");
   const [isJoining, setIsJoining] = useState(false);
   const [needsJoin, setNeedsJoin] = useState(false);
-  const joinChannel = useJoinSlackChannel();
+  const joinChannel = useJoinSlackChannelById();
 
   // Auto-join channel if bot is not a member
   useEffect(() => {
@@ -82,7 +84,7 @@ export function SlackChannelView({ channel }: SlackChannelViewProps) {
   }, [channel.id, channel.is_member]);
 
   const handleAutoJoin = async () => {
-    if (!profile?.imo_id || channel.is_private) {
+    if (!integrationId || channel.is_private) {
       // Can't auto-join private channels
       if (channel.is_private) {
         setNeedsJoin(true);
@@ -92,10 +94,15 @@ export function SlackChannelView({ channel }: SlackChannelViewProps) {
 
     setIsJoining(true);
     try {
-      const result = await joinChannel.mutateAsync(channel.id);
+      const result = await joinChannel.mutateAsync({
+        integrationId,
+        channelId: channel.id,
+      });
       if (result.ok) {
         // Successfully joined, refetch messages
-        queryClient.invalidateQueries({ queryKey: ["slack-channels"] });
+        queryClient.invalidateQueries({
+          queryKey: ["slack", "channels", integrationId],
+        });
         setNeedsJoin(false);
       } else {
         console.error("Failed to join channel:", result.error);
@@ -116,14 +123,14 @@ export function SlackChannelView({ channel }: SlackChannelViewProps) {
     error,
     refetch,
   } = useQuery({
-    queryKey: ["slack-messages", channel.id],
+    queryKey: ["slack-messages", integrationId, channel.id],
     queryFn: async () => {
-      if (!profile?.imo_id) return { messages: [], hasMore: false };
+      if (!integrationId) return { messages: [], hasMore: false };
 
       const { data, error } = await supabase.functions.invoke(
         "slack-get-messages",
         {
-          body: { imoId: profile.imo_id, channelId: channel.id, limit: 50 },
+          body: { integrationId, channelId: channel.id, limit: 50 },
         },
       );
 
@@ -145,7 +152,7 @@ export function SlackChannelView({ channel }: SlackChannelViewProps) {
         nextCursor?: string;
       };
     },
-    enabled: !!profile?.imo_id && !!channel.id && !isJoining,
+    enabled: !!integrationId && !!channel.id && !isJoining,
     refetchInterval: needsJoin ? false : 30000, // Don't poll if we need to join
     retry: false, // Don't retry on failure
   });
@@ -153,13 +160,13 @@ export function SlackChannelView({ channel }: SlackChannelViewProps) {
   // Send message mutation
   const sendMessage = useMutation({
     mutationFn: async (text: string) => {
-      if (!profile?.imo_id) throw new Error("No IMO");
+      if (!integrationId) throw new Error("No integration selected");
 
       const { data, error } = await supabase.functions.invoke(
         "slack-send-message",
         {
           body: {
-            imoId: profile.imo_id,
+            integrationId,
             channelId: channel.id,
             text,
           },
@@ -175,7 +182,7 @@ export function SlackChannelView({ channel }: SlackChannelViewProps) {
       setMessageText("");
       // Refetch messages after sending
       queryClient.invalidateQueries({
-        queryKey: ["slack-messages", channel.id],
+        queryKey: ["slack-messages", integrationId, channel.id],
       });
     },
     onError: (err) => {
@@ -198,7 +205,7 @@ export function SlackChannelView({ channel }: SlackChannelViewProps) {
       if (result.ok || result.alreadyReacted) {
         // Refetch messages to show updated reactions
         queryClient.invalidateQueries({
-          queryKey: ["slack-messages", channel.id],
+          queryKey: ["slack-messages", integrationId, channel.id],
         });
       } else if (result.error) {
         toast.error(`Failed to add reaction: ${result.error}`);

@@ -414,6 +414,12 @@ export const slackService = {
       throw error;
     }
 
+    // Handle graceful error responses (ok: false with status 200)
+    if (data && !data.ok) {
+      console.error("[slackService] Slack error:", data.error);
+      throw new Error(data.error || "Failed to list channels");
+    }
+
     return data?.channels || [];
   },
 

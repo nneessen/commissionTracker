@@ -4,18 +4,23 @@
 import { MessageSquare, Loader2, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "@tanstack/react-router";
-import { useSlackIntegration, useConnectSlack } from "@/hooks/slack";
+import { useSlackIntegrations, useConnectSlack } from "@/hooks/slack";
 import { SlackChannelView } from "./SlackChannelView";
 import { toast } from "sonner";
 import type { SlackChannel } from "@/types/slack.types";
 
 interface SlackTabContentProps {
   selectedChannel: SlackChannel | null;
+  selectedIntegrationId: string | null;
 }
 
-export function SlackTabContent({ selectedChannel }: SlackTabContentProps) {
-  const { data: integration, isLoading } = useSlackIntegration();
+export function SlackTabContent({
+  selectedChannel,
+  selectedIntegrationId,
+}: SlackTabContentProps) {
+  const { data: integrations = [], isLoading } = useSlackIntegrations();
   const connectSlack = useConnectSlack();
+  const isConnected = integrations.some((i) => i.isConnected);
 
   const handleConnect = async () => {
     try {
@@ -32,8 +37,6 @@ export function SlackTabContent({ selectedChannel }: SlackTabContentProps) {
       </div>
     );
   }
-
-  const isConnected = integration?.isConnected;
 
   // Not connected
   if (!isConnected) {
@@ -100,5 +103,10 @@ export function SlackTabContent({ selectedChannel }: SlackTabContentProps) {
   }
 
   // Show channel view
-  return <SlackChannelView channel={selectedChannel} />;
+  return (
+    <SlackChannelView
+      channel={selectedChannel}
+      integrationId={selectedIntegrationId!}
+    />
+  );
 }

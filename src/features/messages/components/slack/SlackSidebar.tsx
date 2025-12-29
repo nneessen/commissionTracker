@@ -11,22 +11,41 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useSlackChannels, useSlackIntegration } from "@/hooks/slack";
+import { useSlackChannelsById } from "@/hooks/slack";
 import { Button } from "@/components/ui/button";
-import type { SlackChannel } from "@/types/slack.types";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import type { SlackChannel, SlackIntegration } from "@/types/slack.types";
 
 interface SlackSidebarProps {
   selectedChannelId: string | null;
+  selectedIntegrationId: string | null;
+  integrations: SlackIntegration[];
   onChannelSelect: (channel: SlackChannel) => void;
+  onWorkspaceChange: (integrationId: string) => void;
 }
 
 export function SlackSidebar({
   selectedChannelId,
+  selectedIntegrationId,
+  integrations,
   onChannelSelect,
+  onWorkspaceChange,
 }: SlackSidebarProps) {
-  const { data: integration } = useSlackIntegration();
-  const { data: channels, isLoading, refetch } = useSlackChannels();
+  const {
+    data: channels,
+    isLoading,
+    refetch,
+  } = useSlackChannelsById(selectedIntegrationId ?? undefined);
   const [channelsExpanded, setChannelsExpanded] = useState(true);
+  const selectedWorkspace = integrations.find(
+    (i) => i.id === selectedIntegrationId,
+  );
 
   // Separate public and private channels
   const publicChannels =
@@ -45,16 +64,38 @@ export function SlackSidebar({
 
   return (
     <div className="flex flex-col h-full">
-      {/* Workspace name */}
+      {/* Workspace selector / name */}
       <div className="px-2 py-2 border-b border-zinc-200 dark:border-zinc-800">
-        <div className="flex items-center justify-between">
-          <span className="text-[11px] font-semibold text-zinc-900 dark:text-zinc-100 truncate">
-            {integration?.team_name || "Slack"}
-          </span>
+        <div className="flex items-center justify-between gap-1">
+          {integrations.length > 1 ? (
+            <Select
+              value={selectedIntegrationId ?? ""}
+              onValueChange={onWorkspaceChange}
+            >
+              <SelectTrigger className="h-6 text-[10px] flex-1 min-w-0">
+                <SelectValue placeholder="Select workspace">
+                  {selectedWorkspace?.display_name ||
+                    selectedWorkspace?.team_name ||
+                    "Select..."}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {integrations.map((ws) => (
+                  <SelectItem key={ws.id} value={ws.id} className="text-[10px]">
+                    {ws.display_name || ws.team_name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            <span className="text-[11px] font-semibold text-zinc-900 dark:text-zinc-100 truncate">
+              {selectedWorkspace?.team_name || "Slack"}
+            </span>
+          )}
           <Button
             variant="ghost"
             size="icon"
-            className="h-5 w-5"
+            className="h-5 w-5 flex-shrink-0"
             onClick={() => refetch()}
           >
             <RefreshCw className="h-3 w-3" />

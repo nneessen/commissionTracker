@@ -27,7 +27,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SlackTabContent, SlackSidebar } from "./components/slack";
-import { useUserSlackPreferences, useSlackChannels } from "@/hooks/slack";
+import { useUserSlackPreferences, useSlackIntegrations } from "@/hooks/slack";
 import type { SlackChannel } from "@/types/slack.types";
 
 type TabType =
@@ -47,40 +47,46 @@ export function MessagesPage() {
   const [activeFolder, setActiveFolder] = useState<FolderType>("all");
   const [selectedSlackChannel, setSelectedSlackChannel] =
     useState<SlackChannel | null>(null);
-  const [hasAppliedDefaultChannel, setHasAppliedDefaultChannel] =
-    useState(false);
+  const [selectedIntegrationId, setSelectedIntegrationId] = useState<
+    string | null
+  >(null);
+  const [hasAppliedDefaults, setHasAppliedDefaults] = useState(false);
 
   // Get email quota
   const { remainingDaily, percentUsed, quota } = useEmailQuota();
 
-  // Get user's Slack preferences for default channel
+  // Get user's Slack preferences and all integrations
   const { data: userSlackPrefs } = useUserSlackPreferences();
-  const { data: slackChannels = [] } = useSlackChannels();
+  const { data: integrations = [] } = useSlackIntegrations();
+  const connectedIntegrations = integrations.filter((i) => i.isConnected);
 
-  // Apply default channel when switching to Slack tab
+  // Initialize selected integration from user preferences or first available
   useEffect(() => {
-    if (
-      activeTab === "slack" &&
-      !selectedSlackChannel &&
-      !hasAppliedDefaultChannel &&
-      userSlackPrefs?.default_view_channel_id &&
-      slackChannels.length > 0
-    ) {
-      const defaultChannel = slackChannels.find(
-        (c: SlackChannel) => c.id === userSlackPrefs.default_view_channel_id,
-      );
-      if (defaultChannel) {
-        setSelectedSlackChannel(defaultChannel);
-        setHasAppliedDefaultChannel(true);
+    if (!hasAppliedDefaults && connectedIntegrations.length > 0) {
+      // Set workspace from preferences or first available
+      const preferredIntegrationId =
+        userSlackPrefs?.default_view_integration_id;
+      const targetIntegration = preferredIntegrationId
+        ? connectedIntegrations.find((i) => i.id === preferredIntegrationId)
+        : null;
+      const integrationToUse = targetIntegration || connectedIntegrations[0];
+
+      if (integrationToUse) {
+        setSelectedIntegrationId(integrationToUse.id);
       }
+      setHasAppliedDefaults(true);
     }
   }, [
-    activeTab,
-    selectedSlackChannel,
-    hasAppliedDefaultChannel,
-    userSlackPrefs?.default_view_channel_id,
-    slackChannels,
+    connectedIntegrations,
+    hasAppliedDefaults,
+    userSlackPrefs?.default_view_integration_id,
   ]);
+
+  // Handle workspace change
+  const handleWorkspaceChange = (integrationId: string) => {
+    setSelectedIntegrationId(integrationId);
+    setSelectedSlackChannel(null); // Clear channel when workspace changes
+  };
 
   // Folder counts and unread
   const { counts, totalUnread } = useFolderCounts();
@@ -230,7 +236,10 @@ export function MessagesPage() {
               /* Slack channels sidebar */
               <SlackSidebar
                 selectedChannelId={selectedSlackChannel?.id || null}
+                selectedIntegrationId={selectedIntegrationId}
+                integrations={connectedIntegrations}
                 onChannelSelect={setSelectedSlackChannel}
+                onWorkspaceChange={handleWorkspaceChange}
               />
             ) : (
               /* Email folders sidebar */
@@ -318,7 +327,10 @@ export function MessagesPage() {
             )}
 
             {activeTab === "slack" && (
-              <SlackTabContent selectedChannel={selectedSlackChannel} />
+              <SlackTabContent
+                selectedChannel={selectedSlackChannel}
+                selectedIntegrationId={selectedIntegrationId}
+              />
             )}
 
             {activeTab === "instagram" && (

@@ -1,15 +1,15 @@
 # Project Statistics
 
-Last Updated: 2025-12-27 16:46:33
+Last Updated: 2025-12-29 13:25:02
 
 ## Metrics
-- Total Files: 28682
-- Total Lines of Code: 193555
-- Total Commits: 508
+- Total Files: 28687
+- Total Lines of Code: 196945
+- Total Commits: 527
 
 ## Recent Activity
-8858205 docs: multiple changes in .,src/features/recruiting/components,src/features/recruiting/components/interactive
-6575035 fix(auth): resolve user creation failure with robust trigger
-d542282 docs: multiple changes in .,plans/active,src/components/layout
-eb69a84 docs: multiple changes in .,scripts,scripts/testing
-4e8511b fix: Pass agency_id in Slack OAuth flow for multi-workspace support
+92557d7 feat(trainer-dashboard): comprehensive dashboard matching agent DashboardHome
+ad2ccf1 feat(trainer-hub): add Dashboard to staff navigation
+f3a6d26 fix(recruiting): populate NULL imo_id in phase progress records
+d8fb878 fix(trainer-hub): multiple fixes for staff navigation and styling
+ec84389 fix(sidebar): trainer role detection should ignore admin email bypass
