@@ -241,12 +241,14 @@ export default function Sidebar({
   };
 
   const isRecruit = hasRole("recruit" as RoleName);
+  // Staff-only check is based purely on ROLES, not admin email bypass
+  // A user with trainer/contracting_manager roles but NO agent/admin role
+  // should see staff navigation regardless of email
   const isTrainerOnly =
     (hasRole("trainer" as RoleName) ||
       hasRole("contracting_manager" as RoleName)) &&
     !hasRole("agent" as RoleName) &&
-    !hasRole("admin" as RoleName) &&
-    !isAdmin;
+    !hasRole("admin" as RoleName);
 
   useEffect(() => {
     const checkMobile = () => {
