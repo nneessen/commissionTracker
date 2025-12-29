@@ -21,6 +21,7 @@ import {
   Lock,
   Mail,
   Crown,
+  FileCheck,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Button } from "@/components/ui/button";
@@ -131,6 +132,18 @@ const staffNavigationItems: NavigationItem[] = [
     label: "Training Hub",
     href: "/training-hub",
     public: true, // Training Hub is the main entry point for staff
+  },
+  {
+    icon: UserPlus,
+    label: "Recruiting",
+    href: "/recruiting",
+    public: true, // Staff can access all IMO recruits via RLS
+  },
+  {
+    icon: FileCheck,
+    label: "Contracting",
+    href: "/contracting",
+    public: true, // Staff manage carrier contracts
   },
   {
     icon: Mail,

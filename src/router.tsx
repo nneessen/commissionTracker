@@ -42,6 +42,7 @@ import { RecruitingDashboard } from "./features/recruiting/RecruitingDashboard";
 import { PipelineAdminPage } from "./features/recruiting/admin/PipelineAdminPage";
 import { MyRecruitingPipeline } from "./features/recruiting/pages/MyRecruitingPipeline";
 import { TrainingHubPage } from "./features/training-hub";
+import { ContractingPage } from "./features/contracting/ContractingPage";
 import { MessagesPage } from "./features/messages";
 import { LeaderboardNamingPage } from "./features/messages/components/slack/LeaderboardNamingPage";
 import { TermsPage, PrivacyPage } from "./features/legal";
@@ -369,7 +370,8 @@ const orgChartRoute = createRoute({
   ),
 });
 
-// Recruiting route - requires approval, blocks recruits and staff roles (admin/recruiter view), requires recruiting subscription feature
+// Recruiting route - requires approval, blocks recruits, requires recruiting subscription feature
+// Note: Staff roles (trainers, contracting managers) CAN access - they see all IMO recruits via RLS
 const recruitingRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "recruiting",
@@ -377,7 +379,6 @@ const recruitingRoute = createRoute({
     <RouteGuard
       permission="nav.recruiting_pipeline"
       noRecruits
-      noStaffRoles
       subscriptionFeature="recruiting"
     >
       <RecruitingDashboard />
@@ -426,6 +427,18 @@ const trainerDashboardRoute = createRoute({
     throw redirect({ to: "/training-hub" });
   },
   component: () => null,
+});
+
+// Contracting route - for trainers, contracting managers, and admins
+// Staff have IMO-wide contract management access
+const contractingRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "contracting",
+  component: () => (
+    <RouteGuard permission="nav.contracting_hub" noRecruits allowPending>
+      <ContractingPage />
+    </RouteGuard>
+  ),
 });
 
 // Messages route - Communications Hub, requires email subscription feature
@@ -499,6 +512,7 @@ const routeTree = rootRoute.addChildren([
   myPipelineRoute,
   trainingHubRoute,
   trainerDashboardRoute,
+  contractingRoute,
   messagesRoute,
   slackNameLeaderboardRoute,
   termsRoute,

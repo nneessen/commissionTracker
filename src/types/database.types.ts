@@ -786,6 +786,73 @@ export type Database = {
           },
         ];
       };
+      carrier_contracts: {
+        Row: {
+          id: string;
+          agent_id: string;
+          carrier_id: string;
+          status: string;
+          requested_date: string | null;
+          submitted_date: string | null;
+          approved_date: string | null;
+          writing_number: string | null;
+          notes: string | null;
+          created_at: string | null;
+          updated_at: string | null;
+          created_by: string | null;
+        };
+        Insert: {
+          id?: string;
+          agent_id: string;
+          carrier_id: string;
+          status?: string;
+          requested_date?: string | null;
+          submitted_date?: string | null;
+          approved_date?: string | null;
+          writing_number?: string | null;
+          notes?: string | null;
+          created_at?: string | null;
+          updated_at?: string | null;
+          created_by?: string | null;
+        };
+        Update: {
+          id?: string;
+          agent_id?: string;
+          carrier_id?: string;
+          status?: string;
+          requested_date?: string | null;
+          submitted_date?: string | null;
+          approved_date?: string | null;
+          writing_number?: string | null;
+          notes?: string | null;
+          created_at?: string | null;
+          updated_at?: string | null;
+          created_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "carrier_contracts_agent_id_fkey";
+            columns: ["agent_id"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "carrier_contracts_carrier_id_fkey";
+            columns: ["carrier_id"];
+            isOneToOne: false;
+            referencedRelation: "carriers";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "carrier_contracts_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       carriers: {
         Row: {
           code: string | null;

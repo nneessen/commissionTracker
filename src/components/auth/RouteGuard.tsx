@@ -189,7 +189,9 @@ export const RouteGuard: React.FC<RouteGuardProps> = ({
   }
 
   // Check subscription feature access (after permission checks)
-  if (subscriptionFeature && !featureAccess.hasAccess) {
+  // Staff-only roles (trainers, contracting managers) bypass subscription checks
+  // They have IMO-level access and don't need individual subscriptions
+  if (subscriptionFeature && !featureAccess.hasAccess && !isStaffOnlyRole) {
     return (
       <div className="flex items-center justify-center min-h-[60vh] p-4">
         <UpgradePrompt feature={subscriptionFeature} variant="card" />

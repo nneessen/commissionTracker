@@ -1,17 +1,18 @@
 // src/features/training-hub/components/TrainingHubPage.tsx
+// Training Hub for trainers and contracting managers
+// Note: Recruit pipeline management is now via the main /recruiting page
 import { useState, useEffect } from "react";
-import { Users, Mail, Zap, Activity, Search, X } from "lucide-react";
+import { Mail, Zap, Activity, Search, X, GraduationCap } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/services/base/supabase";
-import { RecruitingTab } from "./RecruitingTab";
 import { ActivityTab } from "./ActivityTab";
 import { EmailTemplatesTab } from "./EmailTemplatesTab";
 import AutomationTab from "./AutomationTab";
 
-type TabView = "recruiting" | "templates" | "automation" | "activity";
+type TabView = "templates" | "automation" | "activity";
 
 const TAB_STORAGE_KEY = "training-hub-active-tab";
 
@@ -19,13 +20,10 @@ export default function TrainingHubPage() {
   // Persist tab selection in localStorage
   const [activeView, setActiveView] = useState<TabView>(() => {
     const saved = localStorage.getItem(TAB_STORAGE_KEY);
-    if (
-      saved &&
-      ["recruiting", "templates", "automation", "activity"].includes(saved)
-    ) {
+    if (saved && ["templates", "automation", "activity"].includes(saved)) {
       return saved as TabView;
     }
-    return "recruiting";
+    return "templates";
   });
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -33,31 +31,6 @@ export default function TrainingHubPage() {
   useEffect(() => {
     localStorage.setItem(TAB_STORAGE_KEY, activeView);
   }, [activeView]);
-
-  // Fetch recruits count for stats
-  const { data: recruitStats } = useQuery({
-    queryKey: ["training-hub-recruit-stats"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("user_profiles")
-        .select("id, onboarding_status")
-        .contains("roles", ["recruit"]);
-
-      if (error) throw error;
-
-      const total = data?.length || 0;
-      const inProgress =
-        data?.filter(
-          (r) =>
-            r.onboarding_status &&
-            !["completed", "dropped"].includes(r.onboarding_status),
-        ).length || 0;
-      const completed =
-        data?.filter((r) => r.onboarding_status === "completed").length || 0;
-
-      return { total, inProgress, completed };
-    },
-  });
 
   // Fetch email templates count
   const { data: templateStats } = useQuery({
@@ -75,12 +48,6 @@ export default function TrainingHubPage() {
 
   const tabs = [
     {
-      id: "recruiting" as TabView,
-      label: "Recruiting Pipeline",
-      icon: Users,
-      count: recruitStats?.inProgress,
-    },
-    {
       id: "templates" as TabView,
       label: "Email Templates",
       icon: Mail,
@@ -96,7 +63,7 @@ export default function TrainingHubPage() {
       <div className="flex items-center justify-between bg-white dark:bg-zinc-900 rounded-lg px-3 py-2 border border-zinc-200 dark:border-zinc-800">
         <div className="flex items-center gap-5">
           <div className="flex items-center gap-2">
-            <Users className="h-4 w-4 text-zinc-900 dark:text-zinc-100" />
+            <GraduationCap className="h-4 w-4 text-zinc-900 dark:text-zinc-100" />
             <h1 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
               Training Hub
             </h1>
@@ -104,14 +71,6 @@ export default function TrainingHubPage() {
 
           {/* Inline compact stats */}
           <div className="flex items-center gap-3 text-[11px]">
-            <div className="flex items-center gap-1">
-              <Users className="h-3 w-3 text-amber-500" />
-              <span className="font-medium text-zinc-900 dark:text-zinc-100">
-                {recruitStats?.inProgress || 0}
-              </span>
-              <span className="text-zinc-500 dark:text-zinc-400">recruits</span>
-            </div>
-            <div className="h-3 w-px bg-zinc-200 dark:bg-zinc-700" />
             <div className="flex items-center gap-1">
               <Mail className="h-3 w-3 text-blue-500" />
               <span className="font-medium text-zinc-900 dark:text-zinc-100">
@@ -183,9 +142,6 @@ export default function TrainingHubPage() {
 
       {/* Content */}
       <div className="flex-1 overflow-hidden bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800">
-        {activeView === "recruiting" && (
-          <RecruitingTab searchQuery={searchQuery} />
-        )}
         {activeView === "templates" && (
           <EmailTemplatesTab searchQuery={searchQuery} />
         )}
