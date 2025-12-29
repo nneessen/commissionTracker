@@ -591,15 +591,22 @@ class HierarchyService {
         .eq("inviter_id", myProfile.id)
         .eq("status", "pending");
 
+      // Calculate RELATIVE max depth from user's position
+      // User's depth is myProfile.hierarchy_depth, downlines are at deeper levels
+      // max_depth should show how many levels deep the team goes RELATIVE to user
+      const myDepth = myProfile.hierarchy_depth || 0;
+      const maxDownlineDepth =
+        downlines.length > 0
+          ? Math.max(...downlines.map((d) => d.hierarchy_depth || 0))
+          : myDepth;
+      const relativeMaxDepth = maxDownlineDepth - myDepth;
+
       const result: HierarchyStats = {
         // Agent counts
         total_agents: downlines.length + 1, // including self
         total_downlines: downlines.length,
         direct_downlines: directDownlines.length,
-        max_depth:
-          downlines.length > 0
-            ? Math.max(...downlines.map((d) => d.hierarchy_depth || 0))
-            : 0,
+        max_depth: relativeMaxDepth,
 
         // Override income
         total_override_income_mtd: mtdIncome,
