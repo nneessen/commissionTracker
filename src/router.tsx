@@ -4,7 +4,6 @@ import {
   createRootRoute,
   createRoute,
   createRouter,
-  redirect,
   useNavigate,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
@@ -41,7 +40,7 @@ import { OrgChartPage } from "./features/hierarchy/OrgChartPage";
 import { RecruitingDashboard } from "./features/recruiting/RecruitingDashboard";
 import { PipelineAdminPage } from "./features/recruiting/admin/PipelineAdminPage";
 import { MyRecruitingPipeline } from "./features/recruiting/pages/MyRecruitingPipeline";
-import { TrainingHubPage } from "./features/training-hub";
+import { TrainingHubPage, TrainerDashboard } from "./features/training-hub";
 import { ContractingPage } from "./features/contracting/ContractingPage";
 import { MessagesPage } from "./features/messages";
 import { LeaderboardNamingPage } from "./features/messages/components/slack/LeaderboardNamingPage";
@@ -419,14 +418,15 @@ const trainingHubRoute = createRoute({
   ),
 });
 
-// Trainer Dashboard route - redirects to Training Hub (legacy route)
+// Trainer Dashboard route - Staff-only dashboard with KPIs and quick actions
 const trainerDashboardRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "trainer-dashboard",
-  beforeLoad: () => {
-    throw redirect({ to: "/training-hub" });
-  },
-  component: () => null,
+  component: () => (
+    <RouteGuard staffOnly allowPending>
+      <TrainerDashboard />
+    </RouteGuard>
+  ),
 });
 
 // Contracting route - for trainers, contracting managers, and admins
