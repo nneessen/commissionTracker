@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-12-29 16:29:00
+
+### Changed Files
+- `src/services/commissions/CommissionCalculationService.ts`
+- `src/services/policies/policyService.ts`
+- `src/types/database.types.ts`
+- `supabase/migrations/20251229_004_create_override_commissions_trigger.sql`
+- `supabase/migrations/20251229_005_create_as_earned_commission_trigger.sql`
+
+### Statistics
+```
+ 5 files changed, 8839 insertions(+), 8127 deletions(-)
+```
+
 ## [Checkpoint] - 2025-12-29 13:58:23
 
 ### Changed Files

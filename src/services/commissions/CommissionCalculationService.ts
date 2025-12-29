@@ -193,7 +193,9 @@ class CommissionCalculationService {
       // This is the upfront payment, NOT annual commission
       // The advance is earned month-by-month as client pays
       const advanceMonths = data.advanceMonths || 9; // Industry standard
-      const commissionRate = rateResult.data / 100; // Convert percentage to decimal
+      // IMPORTANT: comp_guide stores rates as decimals (e.g., 0.95 = 95%, 1.1 = 110%)
+      // Do NOT divide by 100 - the rate is already in the correct format
+      const commissionRate = rateResult.data;
 
       const commissionCalculation = {
         amount: data.monthlyPremium * advanceMonths * commissionRate,
@@ -294,36 +296,19 @@ class CommissionCalculationService {
             advanceMonths: commissionData.advanceMonths || 9,
           };
         } else {
-          // Fall back to manual calculation if auto-calculation fails
-          finalData.isAutoCalculated = false;
+          // CRITICAL: comp_guide lookup failed - DO NOT fall back to a wrong rate
+          // This means there's no comp_guide entry for this carrier/product/contract_level combination
+          throw new CalculationError(
+            "Commission",
+            "No comp_guide entry found for this carrier/product/contract_level combination. " +
+              "Please add a comp_guide entry before creating policies.",
+            {
+              carrierId: commissionData.carrierId,
+              product: commissionData.product,
+              userId: commissionData.userId,
+            },
+          );
         }
-      }
-
-      // Ensure required fields are set
-      // BUSINESS RULE: If advance amount not calculated, use the ONE formula
-      // Advance = Monthly Premium × Advance Months × Commission Rate
-      if (
-        !finalData.advanceAmount &&
-        finalData.monthlyPremium &&
-        finalData.commissionRate
-      ) {
-        const advanceMonths = finalData.advanceMonths || 9;
-        // commissionRate is already a percentage (e.g., 102.5), so divide by 100
-        finalData.advanceAmount =
-          finalData.monthlyPremium *
-          advanceMonths *
-          (finalData.commissionRate / 100);
-
-        logger.info(
-          "CommissionCalculation",
-          "Advance calculated using fallback formula",
-          JSON.stringify({
-            monthlyPremium: finalData.monthlyPremium,
-            advanceMonths,
-            commissionRate: finalData.commissionRate,
-            advanceAmount: finalData.advanceAmount,
-          }),
-        );
       }
 
       if (!finalData.advanceMonths) {

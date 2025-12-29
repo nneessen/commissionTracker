@@ -309,6 +309,203 @@ export type Database = {
           },
         ];
       };
+      agent_contracts: {
+        Row: {
+          agent_id: string;
+          contract_level: number;
+          contract_type: string;
+          created_at: string | null;
+          created_by: string | null;
+          effective_date: string;
+          expiration_date: string | null;
+          id: string;
+          imo_id: string | null;
+          notes: string | null;
+          status: string;
+          updated_at: string | null;
+        };
+        Insert: {
+          agent_id: string;
+          contract_level?: number;
+          contract_type: string;
+          created_at?: string | null;
+          created_by?: string | null;
+          effective_date: string;
+          expiration_date?: string | null;
+          id?: string;
+          imo_id?: string | null;
+          notes?: string | null;
+          status?: string;
+          updated_at?: string | null;
+        };
+        Update: {
+          agent_id?: string;
+          contract_level?: number;
+          contract_type?: string;
+          created_at?: string | null;
+          created_by?: string | null;
+          effective_date?: string;
+          expiration_date?: string | null;
+          id?: string;
+          imo_id?: string | null;
+          notes?: string | null;
+          status?: string;
+          updated_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "agent_contracts_agent_id_fkey";
+            columns: ["agent_id"];
+            isOneToOne: false;
+            referencedRelation: "active_user_profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "agent_contracts_agent_id_fkey";
+            columns: ["agent_id"];
+            isOneToOne: false;
+            referencedRelation: "user_management_view";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "agent_contracts_agent_id_fkey";
+            columns: ["agent_id"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "agent_contracts_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "active_user_profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "agent_contracts_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "user_management_view";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "agent_contracts_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "agent_contracts_imo_id_fkey";
+            columns: ["imo_id"];
+            isOneToOne: false;
+            referencedRelation: "imos";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      agent_writing_numbers: {
+        Row: {
+          agent_id: string;
+          carrier_id: string;
+          created_at: string | null;
+          created_by: string | null;
+          effective_date: string | null;
+          id: string;
+          imo_id: string | null;
+          notes: string | null;
+          status: string;
+          termination_date: string | null;
+          updated_at: string | null;
+          writing_number: string;
+        };
+        Insert: {
+          agent_id: string;
+          carrier_id: string;
+          created_at?: string | null;
+          created_by?: string | null;
+          effective_date?: string | null;
+          id?: string;
+          imo_id?: string | null;
+          notes?: string | null;
+          status?: string;
+          termination_date?: string | null;
+          updated_at?: string | null;
+          writing_number: string;
+        };
+        Update: {
+          agent_id?: string;
+          carrier_id?: string;
+          created_at?: string | null;
+          created_by?: string | null;
+          effective_date?: string | null;
+          id?: string;
+          imo_id?: string | null;
+          notes?: string | null;
+          status?: string;
+          termination_date?: string | null;
+          updated_at?: string | null;
+          writing_number?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "agent_writing_numbers_agent_id_fkey";
+            columns: ["agent_id"];
+            isOneToOne: false;
+            referencedRelation: "active_user_profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "agent_writing_numbers_agent_id_fkey";
+            columns: ["agent_id"];
+            isOneToOne: false;
+            referencedRelation: "user_management_view";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "agent_writing_numbers_agent_id_fkey";
+            columns: ["agent_id"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "agent_writing_numbers_carrier_id_fkey";
+            columns: ["carrier_id"];
+            isOneToOne: false;
+            referencedRelation: "carriers";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "agent_writing_numbers_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "active_user_profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "agent_writing_numbers_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "user_management_view";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "agent_writing_numbers_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "agent_writing_numbers_imo_id_fkey";
+            columns: ["imo_id"];
+            isOneToOne: false;
+            referencedRelation: "imos";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       alert_rule_evaluations: {
         Row: {
           affected_entity_id: string | null;
@@ -788,48 +985,62 @@ export type Database = {
       };
       carrier_contracts: {
         Row: {
-          id: string;
           agent_id: string;
-          carrier_id: string;
-          status: string;
-          requested_date: string | null;
-          submitted_date: string | null;
           approved_date: string | null;
-          writing_number: string | null;
-          notes: string | null;
+          carrier_id: string;
           created_at: string | null;
-          updated_at: string | null;
           created_by: string | null;
+          id: string;
+          notes: string | null;
+          requested_date: string | null;
+          status: string;
+          submitted_date: string | null;
+          updated_at: string | null;
+          writing_number: string | null;
         };
         Insert: {
-          id?: string;
           agent_id: string;
-          carrier_id: string;
-          status?: string;
-          requested_date?: string | null;
-          submitted_date?: string | null;
           approved_date?: string | null;
-          writing_number?: string | null;
-          notes?: string | null;
+          carrier_id: string;
           created_at?: string | null;
-          updated_at?: string | null;
           created_by?: string | null;
+          id?: string;
+          notes?: string | null;
+          requested_date?: string | null;
+          status?: string;
+          submitted_date?: string | null;
+          updated_at?: string | null;
+          writing_number?: string | null;
         };
         Update: {
-          id?: string;
           agent_id?: string;
-          carrier_id?: string;
-          status?: string;
-          requested_date?: string | null;
-          submitted_date?: string | null;
           approved_date?: string | null;
-          writing_number?: string | null;
-          notes?: string | null;
+          carrier_id?: string;
           created_at?: string | null;
-          updated_at?: string | null;
           created_by?: string | null;
+          id?: string;
+          notes?: string | null;
+          requested_date?: string | null;
+          status?: string;
+          submitted_date?: string | null;
+          updated_at?: string | null;
+          writing_number?: string | null;
         };
         Relationships: [
+          {
+            foreignKeyName: "carrier_contracts_agent_id_fkey";
+            columns: ["agent_id"];
+            isOneToOne: false;
+            referencedRelation: "active_user_profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "carrier_contracts_agent_id_fkey";
+            columns: ["agent_id"];
+            isOneToOne: false;
+            referencedRelation: "user_management_view";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "carrier_contracts_agent_id_fkey";
             columns: ["agent_id"];
@@ -842,6 +1053,20 @@ export type Database = {
             columns: ["carrier_id"];
             isOneToOne: false;
             referencedRelation: "carriers";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "carrier_contracts_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "active_user_profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "carrier_contracts_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "user_management_view";
             referencedColumns: ["id"];
           },
           {
@@ -1012,10 +1237,12 @@ export type Database = {
           id: string;
           imo_id: string | null;
           last_payment_date: string | null;
+          month_number: number | null;
           months_paid: number;
           notes: string | null;
           payment_date: string | null;
           policy_id: string | null;
+          related_advance_id: string | null;
           status: string;
           type: string;
           unearned_amount: number | null;
@@ -1033,10 +1260,12 @@ export type Database = {
           id?: string;
           imo_id?: string | null;
           last_payment_date?: string | null;
+          month_number?: number | null;
           months_paid?: number;
           notes?: string | null;
           payment_date?: string | null;
           policy_id?: string | null;
+          related_advance_id?: string | null;
           status?: string;
           type: string;
           unearned_amount?: number | null;
@@ -1054,10 +1283,12 @@ export type Database = {
           id?: string;
           imo_id?: string | null;
           last_payment_date?: string | null;
+          month_number?: number | null;
           months_paid?: number;
           notes?: string | null;
           payment_date?: string | null;
           policy_id?: string | null;
+          related_advance_id?: string | null;
           status?: string;
           type?: string;
           unearned_amount?: number | null;
@@ -1077,6 +1308,27 @@ export type Database = {
             columns: ["policy_id"];
             isOneToOne: false;
             referencedRelation: "policies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "commissions_related_advance_id_fkey";
+            columns: ["related_advance_id"];
+            isOneToOne: false;
+            referencedRelation: "commission_earning_detail";
+            referencedColumns: ["commission_id"];
+          },
+          {
+            foreignKeyName: "commissions_related_advance_id_fkey";
+            columns: ["related_advance_id"];
+            isOneToOne: false;
+            referencedRelation: "commission_earning_status";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "commissions_related_advance_id_fkey";
+            columns: ["related_advance_id"];
+            isOneToOne: false;
+            referencedRelation: "commissions";
             referencedColumns: ["id"];
           },
         ];
@@ -1296,6 +1548,147 @@ export type Database = {
             columns: ["user_id"];
             isOneToOne: false;
             referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      contract_documents: {
+        Row: {
+          agent_id: string;
+          contract_id: string | null;
+          created_at: string | null;
+          document_name: string;
+          document_type: string;
+          expires_at: string | null;
+          file_path: string;
+          file_size: number | null;
+          id: string;
+          imo_id: string | null;
+          mime_type: string | null;
+          notes: string | null;
+          review_notes: string | null;
+          reviewed_at: string | null;
+          reviewed_by: string | null;
+          status: string | null;
+          updated_at: string | null;
+          uploaded_by: string | null;
+        };
+        Insert: {
+          agent_id: string;
+          contract_id?: string | null;
+          created_at?: string | null;
+          document_name: string;
+          document_type: string;
+          expires_at?: string | null;
+          file_path: string;
+          file_size?: number | null;
+          id?: string;
+          imo_id?: string | null;
+          mime_type?: string | null;
+          notes?: string | null;
+          review_notes?: string | null;
+          reviewed_at?: string | null;
+          reviewed_by?: string | null;
+          status?: string | null;
+          updated_at?: string | null;
+          uploaded_by?: string | null;
+        };
+        Update: {
+          agent_id?: string;
+          contract_id?: string | null;
+          created_at?: string | null;
+          document_name?: string;
+          document_type?: string;
+          expires_at?: string | null;
+          file_path?: string;
+          file_size?: number | null;
+          id?: string;
+          imo_id?: string | null;
+          mime_type?: string | null;
+          notes?: string | null;
+          review_notes?: string | null;
+          reviewed_at?: string | null;
+          reviewed_by?: string | null;
+          status?: string | null;
+          updated_at?: string | null;
+          uploaded_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "contract_documents_agent_id_fkey";
+            columns: ["agent_id"];
+            isOneToOne: false;
+            referencedRelation: "active_user_profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "contract_documents_agent_id_fkey";
+            columns: ["agent_id"];
+            isOneToOne: false;
+            referencedRelation: "user_management_view";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "contract_documents_agent_id_fkey";
+            columns: ["agent_id"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "contract_documents_contract_id_fkey";
+            columns: ["contract_id"];
+            isOneToOne: false;
+            referencedRelation: "agent_contracts";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "contract_documents_imo_id_fkey";
+            columns: ["imo_id"];
+            isOneToOne: false;
+            referencedRelation: "imos";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "contract_documents_reviewed_by_fkey";
+            columns: ["reviewed_by"];
+            isOneToOne: false;
+            referencedRelation: "active_user_profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "contract_documents_reviewed_by_fkey";
+            columns: ["reviewed_by"];
+            isOneToOne: false;
+            referencedRelation: "user_management_view";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "contract_documents_reviewed_by_fkey";
+            columns: ["reviewed_by"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "contract_documents_uploaded_by_fkey";
+            columns: ["uploaded_by"];
+            isOneToOne: false;
+            referencedRelation: "active_user_profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "contract_documents_uploaded_by_fkey";
+            columns: ["uploaded_by"];
+            isOneToOne: false;
+            referencedRelation: "user_management_view";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "contract_documents_uploaded_by_fkey";
+            columns: ["uploaded_by"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
             referencedColumns: ["id"];
           },
         ];
@@ -6795,6 +7188,108 @@ export type Database = {
           },
         ];
       };
+      writing_number_history: {
+        Row: {
+          agent_id: string;
+          carrier_id: string;
+          change_notes: string | null;
+          change_type: string;
+          changed_by: string | null;
+          created_at: string | null;
+          effective_date: string | null;
+          id: string;
+          status: string;
+          termination_date: string | null;
+          writing_number: string;
+          writing_number_id: string;
+        };
+        Insert: {
+          agent_id: string;
+          carrier_id: string;
+          change_notes?: string | null;
+          change_type: string;
+          changed_by?: string | null;
+          created_at?: string | null;
+          effective_date?: string | null;
+          id?: string;
+          status: string;
+          termination_date?: string | null;
+          writing_number: string;
+          writing_number_id: string;
+        };
+        Update: {
+          agent_id?: string;
+          carrier_id?: string;
+          change_notes?: string | null;
+          change_type?: string;
+          changed_by?: string | null;
+          created_at?: string | null;
+          effective_date?: string | null;
+          id?: string;
+          status?: string;
+          termination_date?: string | null;
+          writing_number?: string;
+          writing_number_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "writing_number_history_agent_id_fkey";
+            columns: ["agent_id"];
+            isOneToOne: false;
+            referencedRelation: "active_user_profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "writing_number_history_agent_id_fkey";
+            columns: ["agent_id"];
+            isOneToOne: false;
+            referencedRelation: "user_management_view";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "writing_number_history_agent_id_fkey";
+            columns: ["agent_id"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "writing_number_history_carrier_id_fkey";
+            columns: ["carrier_id"];
+            isOneToOne: false;
+            referencedRelation: "carriers";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "writing_number_history_changed_by_fkey";
+            columns: ["changed_by"];
+            isOneToOne: false;
+            referencedRelation: "active_user_profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "writing_number_history_changed_by_fkey";
+            columns: ["changed_by"];
+            isOneToOne: false;
+            referencedRelation: "user_management_view";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "writing_number_history_changed_by_fkey";
+            columns: ["changed_by"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "writing_number_history_writing_number_id_fkey";
+            columns: ["writing_number_id"];
+            isOneToOne: false;
+            referencedRelation: "agent_writing_numbers";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: {
       active_user_profiles: {
@@ -8199,6 +8694,17 @@ export type Database = {
           source_agency_id: string;
         }[];
       };
+      get_agent_contract_summary: {
+        Args: { p_agent_id: string };
+        Returns: {
+          current_contract_id: string;
+          current_contract_level: number;
+          current_contract_status: string;
+          documents_count: number;
+          pending_documents: number;
+          writing_numbers_count: number;
+        }[];
+      };
       get_alert_rule_history: {
         Args: { p_limit?: number; p_rule_id: string };
         Returns: {
@@ -8539,6 +9045,16 @@ export type Database = {
           total_premium: number;
           updated_at: string;
           user_id: string;
+        }[];
+      };
+      get_imo_contract_stats: {
+        Args: { p_imo_id: string };
+        Returns: {
+          active_contracts: number;
+          expiring_soon: number;
+          pending_contracts: number;
+          pending_documents: number;
+          total_contracts: number;
         }[];
       };
       get_imo_dashboard_metrics: {

@@ -80,6 +80,8 @@ class PolicyService {
             lastName: "Client",
           };
 
+      // DO NOT pass commissionRate - it MUST be looked up from comp_guide
+      // using the user's contract_level, not the policy's stored percentage
       await commissionService.createWithAutoCalculation({
         policyId: policy.id,
         userId: policy.userId,
@@ -89,7 +91,7 @@ class PolicyService {
         calculationBasis: "annual_premium",
         annualPremium: policy.annualPremium,
         monthlyPremium: policy.monthlyPremium,
-        commissionRate: policy.commissionPercentage,
+        // commissionRate intentionally NOT passed - must come from comp_guide lookup
         advanceMonths: 9, // Standard advance period
         status: "pending",
         type: "advance",
