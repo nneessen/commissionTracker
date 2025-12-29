@@ -42,16 +42,16 @@ export function TeamMetricsCard({
       ? ((mtdOverride - lastMonthOverride) / lastMonthOverride) * 100
       : 0;
 
-  // Real calculations from actual data (would need to be passed in or fetched)
-  const teamAPTotal = 0; // Sum of all agent AP for the month
-  const teamPoliciesMTD = 0; // Sum of all policies written this month
-  const avgPremiumPerAgent = directAgents > 0 ? teamAPTotal / directAgents : 0;
-  const topPerformerName = "No data"; // Would come from actual agent performance data
-  const topPerformerAmount = 0; // Would come from actual AP data
-  const recruitmentRate = 0; // Calculate from new agents / total agents
-  const retentionRate = directAgents > 0 ? 100 : 0; // Calculate from active / total
-  const avgContractLevel = 0; // Would need contract level data
-  const pendingInvitations = 0; // Would come from invitations table
+  // Team performance metrics from stats
+  const teamAPTotal = stats?.team_ap_total || 0;
+  const teamPoliciesMTD = stats?.team_policies_count || 0;
+  const avgPremiumPerAgent = stats?.avg_premium_per_agent || 0;
+  const topPerformerName = stats?.top_performer_name || "No data";
+  const topPerformerAmount = stats?.top_performer_ap || 0;
+  const recruitmentRate = stats?.recruitment_rate || 0;
+  const retentionRate = stats?.retention_rate || 0;
+  const avgContractLevel = stats?.avg_contract_level || 0;
+  const pendingInvitations = stats?.pending_invitations || 0;
 
   return (
     <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800">

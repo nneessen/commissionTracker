@@ -1,12 +1,12 @@
 // src/types/hierarchy.types.ts
 // Type definitions for insurance agency hierarchy system
 
-import type { CommissionStatus } from './commission.types';
-import type { UserProfile } from './user.types';
+import type { CommissionStatus } from "./commission.types";
+import type { UserProfile } from "./user.types";
 
 // Re-export UserProfile for backward compatibility
 // All new code should import directly from user.types.ts
-export type { UserProfile } from './user.types';
+export type { UserProfile } from "./user.types";
 
 /**
  * Hierarchical tree node representing an agent and their downlines
@@ -178,12 +178,31 @@ export interface HierarchyValidationResult {
  * Hierarchy statistics
  */
 export interface HierarchyStats {
+  // Agent counts
   total_agents: number;
   total_downlines: number;
   direct_downlines: number;
   max_depth: number;
+
+  // Override income
   total_override_income_mtd: number;
   total_override_income_ytd: number;
+
+  // Team performance metrics (for selected period)
+  team_ap_total: number; // Sum of all downline annual premiums
+  team_policies_count: number; // Count of policies written by team
+  avg_premium_per_agent: number; // team_ap_total / active_agents
+
+  // Top performer
+  top_performer_id: string | null;
+  top_performer_name: string | null;
+  top_performer_ap: number;
+
+  // Health metrics
+  recruitment_rate: number; // New agents this period / total agents
+  retention_rate: number; // Approved agents / total agents
+  avg_contract_level: number; // Average contract_level across team
+  pending_invitations: number; // Count from invitations table
 }
 
 /**
@@ -208,12 +227,12 @@ export interface OverrideCommissionSummaryView {
 /**
  * Scope for org chart view
  */
-export type OrgChartScope = 'imo' | 'agency' | 'agent' | 'auto';
+export type OrgChartScope = "imo" | "agency" | "agent" | "auto";
 
 /**
  * Node type in org chart
  */
-export type OrgChartNodeType = 'imo' | 'agency' | 'agent';
+export type OrgChartNodeType = "imo" | "agency" | "agent";
 
 /**
  * Performance metrics for org chart nodes
@@ -263,7 +282,7 @@ export interface OrgChartRequest {
 /**
  * Flattened node for list/table views
  */
-export interface FlatOrgChartNode extends Omit<OrgChartNode, 'children'> {
+export interface FlatOrgChartNode extends Omit<OrgChartNode, "children"> {
   parentId?: string;
   depth: number;
   path: string[];

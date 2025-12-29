@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-12-29 13:58:23
+
+### Changed Files
+- `src/features/hierarchy/HierarchyDashboardCompact.tsx`
+- `src/features/hierarchy/components/AgentTable.tsx`
+- `src/features/hierarchy/components/TeamMetricsCard.tsx`
+- `src/hooks/hierarchy/useMyHierarchyStats.ts`
+- `src/services/hierarchy/hierarchyService.ts`
+- `src/types/hierarchy.types.ts`
+
+### Statistics
+```
+ 6 files changed, 252 insertions(+), 30 deletions(-)
+```
+
 ## [Checkpoint] - 2025-12-29 13:25:02
 
 ### Changed Files

@@ -31,6 +31,10 @@ import { TeamActivityFeed } from "./components/TeamActivityFeed";
 import { toast } from "sonner";
 import { downloadCSV } from "@/utils/exportHelpers";
 import type { UserProfile } from "@/types/hierarchy.types";
+import { TimePeriodSwitcher } from "@/features/dashboard/components/TimePeriodSwitcher";
+import { PeriodNavigator } from "@/features/dashboard/components/PeriodNavigator";
+import { DateRangeDisplay } from "@/features/dashboard/components/DateRangeDisplay";
+import { getDateRange, type TimePeriod } from "@/utils/dateRange";
 
 // Extended agent type with additional fields
 interface Agent extends UserProfile {
@@ -50,8 +54,28 @@ export function HierarchyDashboardCompact() {
   const navigate = useNavigate();
   const { data: downlinesRaw = [], isLoading: downlinesLoading } =
     useMyDownlines();
-  const { data: stats, isLoading: statsLoading } = useMyHierarchyStats();
   const { data: _hierarchyTree = [] } = useHierarchyTree();
+
+  // Timeframe state
+  const [timePeriod, setTimePeriod] = useState<TimePeriod>("monthly");
+  const [periodOffset, setPeriodOffset] = useState<number>(0);
+
+  // Calculate date range from timeframe
+  const dateRange = getDateRange(timePeriod, periodOffset);
+  const startDate = dateRange.startDate.toISOString();
+  const endDate = dateRange.endDate.toISOString();
+
+  // Handler for changing time period (resets offset)
+  const handleTimePeriodChange = (newPeriod: TimePeriod) => {
+    setTimePeriod(newPeriod);
+    setPeriodOffset(0); // Reset to current period when granularity changes
+  };
+
+  // Fetch stats with date range
+  const { data: stats, isLoading: statsLoading } = useMyHierarchyStats({
+    startDate,
+    endDate,
+  });
 
   // Transform UserProfile to Agent type
   const downlines: Agent[] = downlinesRaw.map((profile) => ({
@@ -201,6 +225,26 @@ export function HierarchyDashboardCompact() {
           {/* Pending Invitation Banner (for invitees) */}
           <PendingInvitationBanner />
 
+          {/* Timeframe Selector */}
+          <div className="flex flex-wrap items-center justify-between gap-2 bg-white dark:bg-zinc-900 rounded-lg px-3 py-2 border border-zinc-200 dark:border-zinc-800">
+            <div className="text-[10px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
+              Team Metrics
+            </div>
+            <div className="flex items-center gap-2">
+              <TimePeriodSwitcher
+                timePeriod={timePeriod}
+                onTimePeriodChange={handleTimePeriodChange}
+              />
+              <PeriodNavigator
+                timePeriod={timePeriod}
+                periodOffset={periodOffset}
+                onOffsetChange={setPeriodOffset}
+                dateRange={dateRange}
+              />
+              <DateRangeDisplay timePeriod={timePeriod} dateRange={dateRange} />
+            </div>
+          </div>
+
           {/* Team Metrics Card */}
           <TeamMetricsCard
             stats={stats}
@@ -285,7 +329,11 @@ export function HierarchyDashboardCompact() {
           )}
 
           {/* Agent Table */}
-          <AgentTable agents={filteredAgents} isLoading={isLoading} />
+          <AgentTable
+            agents={filteredAgents}
+            isLoading={isLoading}
+            dateRange={{ start: startDate, end: endDate }}
+          />
 
           {/* Bottom Grid: Invitations and Activity */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">

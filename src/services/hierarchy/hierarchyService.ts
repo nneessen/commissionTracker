@@ -411,8 +411,13 @@ class HierarchyService {
   /**
    * Get hierarchy statistics for current user
    * CRITICAL FIX: Include team leader's own data in team metrics
+   * @param startDate - Optional start date for filtering (ISO string)
+   * @param endDate - Optional end date for filtering (ISO string)
    */
-  async getMyHierarchyStats(): Promise<HierarchyStats> {
+  async getMyHierarchyStats(
+    startDate?: string,
+    endDate?: string,
+  ): Promise<HierarchyStats> {
     try {
       const {
         data: { user },
@@ -438,13 +443,12 @@ class HierarchyService {
 
       const downlines = await this.getMyDownlines();
 
-      // Get override income MTD
+      // Calculate date ranges
       const now = new Date();
-      const mtdStart = new Date(
-        now.getFullYear(),
-        now.getMonth(),
-        1,
-      ).toISOString();
+      const mtdStart =
+        startDate ||
+        new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+      const mtdEnd = endDate || now.toISOString();
 
       // Get overrides where current user is EITHER the override_agent OR the base_agent
       const mtdOverrides = await this.overrideRepo.findForAgentInRange(
@@ -480,7 +484,115 @@ class HierarchyService {
         (d) => d.upline_id === myProfile.id,
       );
 
-      const result = {
+      // ==========================================
+      // Calculate Team Performance Metrics
+      // ==========================================
+
+      // Get all downline IDs for policy aggregation
+      const downlineIds = downlines.map((d) => d.id);
+
+      // Fetch policies for all downlines in the period
+      let teamAPTotal = 0;
+      let teamPoliciesCount = 0;
+      const agentPerformance: Array<{
+        id: string;
+        name: string;
+        ap: number;
+      }> = [];
+
+      // Parse date range for filtering
+      const rangeStart = new Date(mtdStart);
+      const rangeEnd = new Date(mtdEnd);
+
+      // Aggregate policies for all downlines
+      for (const downlineId of downlineIds) {
+        const policyData = await this.getAgentPolicies(downlineId);
+        const policies = policyData.policies || [];
+
+        // Filter policies created in the period with status="active"
+        const periodPolicies = policies.filter(
+          (p: { createdAt?: string; status?: string }) => {
+            const createdDate = new Date(p.createdAt || "");
+            return (
+              createdDate >= rangeStart &&
+              createdDate <= rangeEnd &&
+              p.status === "active"
+            );
+          },
+        );
+
+        // Sum AP for this agent
+        const agentAP = periodPolicies.reduce(
+          (sum: number, p: { annualPremium?: number | string }) =>
+            sum + parseFloat(String(p.annualPremium) || "0"),
+          0,
+        );
+
+        teamAPTotal += agentAP;
+        teamPoliciesCount += periodPolicies.length;
+
+        // Track agent performance for top performer
+        const downline = downlines.find((d) => d.id === downlineId);
+        if (downline && agentAP > 0) {
+          agentPerformance.push({
+            id: downlineId,
+            name:
+              `${downline.first_name || ""} ${downline.last_name || ""}`.trim() ||
+              downline.email,
+            ap: agentAP,
+          });
+        }
+      }
+
+      // Find top performer
+      const topPerformer =
+        agentPerformance.sort((a, b) => b.ap - a.ap)[0] || null;
+
+      // Calculate avg premium per agent (only agents with production)
+      const activeAgents = downlines.filter(
+        (d) => d.approval_status === "approved",
+      ).length;
+      const avgPremiumPerAgent =
+        activeAgents > 0 ? teamAPTotal / activeAgents : 0;
+
+      // ==========================================
+      // Calculate Health Metrics
+      // ==========================================
+
+      // Retention rate: Approved agents / Total agents
+      const approvedAgents = downlines.filter(
+        (d) => d.approval_status === "approved",
+      ).length;
+      const retentionRate =
+        downlines.length > 0 ? (approvedAgents / downlines.length) * 100 : 0;
+
+      // Recruitment rate: Agents created this period / total agents
+      const newAgents = downlines.filter((d) => {
+        const createdAt = new Date(d.created_at || "");
+        return createdAt >= rangeStart && createdAt <= rangeEnd;
+      }).length;
+      const recruitmentRate =
+        downlines.length > 0 ? (newAgents / downlines.length) * 100 : 0;
+
+      // Average contract level across team
+      const contractLevels = downlines
+        .filter((d) => d.contract_level != null)
+        .map((d) => d.contract_level as number);
+      const avgContractLevel =
+        contractLevels.length > 0
+          ? contractLevels.reduce((sum, lvl) => sum + lvl, 0) /
+            contractLevels.length
+          : 0;
+
+      // Count pending invitations
+      const { count: pendingInvitations } = await supabase
+        .from("invitations")
+        .select("*", { count: "exact", head: true })
+        .eq("inviter_id", myProfile.id)
+        .eq("status", "pending");
+
+      const result: HierarchyStats = {
+        // Agent counts
         total_agents: downlines.length + 1, // including self
         total_downlines: downlines.length,
         direct_downlines: directDownlines.length,
@@ -488,8 +600,26 @@ class HierarchyService {
           downlines.length > 0
             ? Math.max(...downlines.map((d) => d.hierarchy_depth || 0))
             : 0,
+
+        // Override income
         total_override_income_mtd: mtdIncome,
         total_override_income_ytd: ytdIncome,
+
+        // Team performance
+        team_ap_total: teamAPTotal,
+        team_policies_count: teamPoliciesCount,
+        avg_premium_per_agent: avgPremiumPerAgent,
+
+        // Top performer
+        top_performer_id: topPerformer?.id || null,
+        top_performer_name: topPerformer?.name || null,
+        top_performer_ap: topPerformer?.ap || 0,
+
+        // Health metrics
+        recruitment_rate: recruitmentRate,
+        retention_rate: retentionRate,
+        avg_contract_level: avgContractLevel,
+        pending_invitations: pendingInvitations || 0,
       };
 
       return result;
@@ -647,6 +777,10 @@ class HierarchyService {
           carrier: p.carrier?.name || p.carrier_id,
           annualPremium: p.annual_premium,
           status: p.status,
+          // Include both dates for proper filtering
+          createdAt: p.created_at || new Date().toISOString(),
+          effectiveDate: p.effective_date,
+          // Keep issueDate for backward compatibility
           issueDate:
             p.effective_date || p.created_at || new Date().toISOString(),
         })),

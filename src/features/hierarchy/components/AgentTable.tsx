@@ -58,30 +58,43 @@ interface AgentWithMetrics extends UserProfile {
   upline_contract_level?: number;
 }
 
+interface DateRangeFilter {
+  start: string;
+  end: string;
+}
+
 interface AgentTableProps {
   agents: UserProfile[];
   isLoading?: boolean;
   onRefresh?: () => void;
+  dateRange?: DateRangeFilter;
 }
 
 // Fetch real metrics for an agent using service layer
-async function fetchAgentMetrics(agentId: string): Promise<{
+async function fetchAgentMetrics(
+  agentId: string,
+  dateRange?: DateRangeFilter,
+): Promise<{
   mtd_ap: number;
   mtd_policies: number;
   override_amount: number;
 }> {
+  // Use provided date range or default to current month
   const now = new Date();
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const endOfMonth = now;
+  const startOfMonth = dateRange
+    ? new Date(dateRange.start)
+    : new Date(now.getFullYear(), now.getMonth(), 1);
+  const endOfMonth = dateRange ? new Date(dateRange.end) : now;
 
-  // Get policies for this agent for the current month
+  // Get policies for this agent for the selected period
   const policyData = await hierarchyService.getAgentPolicies(agentId);
   const policies = policyData.policies || [];
 
+  // Filter policies by createdAt (when policy was written) - NOT issueDate/effectiveDate
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- policy data type
   const mtdPolicies = policies.filter((p: any) => {
-    const pDate = new Date(p.issueDate || "");
-    return pDate >= startOfMonth && pDate <= endOfMonth;
+    const createdDate = new Date(p.createdAt || "");
+    return createdDate >= startOfMonth && createdDate <= endOfMonth;
   });
 
   const mtdMetrics = mtdPolicies.reduce(
@@ -116,6 +129,7 @@ function AgentRow({
   hasChildren,
   uplineContractLevel,
   onRemove,
+  dateRange,
 }: {
   agent: AgentWithMetrics;
   depth: number;
@@ -124,6 +138,7 @@ function AgentRow({
   hasChildren: boolean;
   uplineContractLevel: number | null;
   onRemove: (agent: AgentWithMetrics) => void;
+  dateRange?: DateRangeFilter;
 }) {
   const navigate = useNavigate();
   const [metrics, setMetrics] = useState({
@@ -132,10 +147,10 @@ function AgentRow({
     override_amount: 0,
   });
 
-  // Fetch real metrics for this agent
+  // Fetch real metrics for this agent with date range
   useEffect(() => {
-    fetchAgentMetrics(agent.id).then(setMetrics);
-  }, [agent.id]);
+    fetchAgentMetrics(agent.id, dateRange).then(setMetrics);
+  }, [agent.id, dateRange]);
 
   // Calculate real override spread
   // If viewing from upline's perspective: spread = upline level - agent level
@@ -341,7 +356,12 @@ function AgentRow({
   );
 }
 
-export function AgentTable({ agents, isLoading, onRefresh }: AgentTableProps) {
+export function AgentTable({
+  agents,
+  isLoading,
+  onRefresh,
+  dateRange,
+}: AgentTableProps) {
   const _navigate = useNavigate();
   const [expandedAgents, setExpandedAgents] = useState<Set<string>>(new Set());
   const [agentToRemove, setAgentToRemove] = useState<AgentWithMetrics | null>(
@@ -483,6 +503,7 @@ export function AgentTable({ agents, isLoading, onRefresh }: AgentTableProps) {
           hasChildren={children.length > 0}
           uplineContractLevel={agent.upline_contract_level || null}
           onRemove={setAgentToRemove}
+          dateRange={dateRange}
         />,
       );
 
