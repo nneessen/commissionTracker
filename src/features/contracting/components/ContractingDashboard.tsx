@@ -1,5 +1,5 @@
 // src/features/contracting/components/ContractingDashboard.tsx
-// Dashboard for managing carrier contracts - zinc palette styling
+// Dashboard for managing carrier contracts - matches RecruitingDashboard pattern
 
 import { useState, useMemo } from "react";
 import {
@@ -39,6 +39,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { formatDistanceToNow, format } from "date-fns";
+import { toast } from "sonner";
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50];
 
@@ -97,164 +98,132 @@ export function ContractingDashboard() {
     currentPage,
     pageSize,
   );
-  const { data: stats, isLoading: statsLoading } = useContractStats();
+  const { data: stats } = useContractStats();
 
   const contracts = contractsData?.data || [];
   const totalCount = contractsData?.count || 0;
   const totalPages = contractsData?.totalPages || 1;
 
+  const handleExport = () => {
+    toast.success("Export feature coming soon!");
+  };
+
+  const handleAddContract = () => {
+    toast.success("Add contract feature coming soon!");
+  };
+
   return (
-    <div className="h-[calc(100vh-4rem)] flex flex-col p-3 bg-zinc-50 dark:bg-zinc-950">
-      {/* Header */}
-      <div className="flex items-center justify-between bg-white dark:bg-zinc-900 rounded-lg px-3 py-2 border border-zinc-200 dark:border-zinc-800 mb-2.5">
-        <div className="flex items-center gap-2">
-          <FileCheck className="h-4 w-4 text-zinc-900 dark:text-zinc-100" />
-          <h1 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-            Contracting Hub
-          </h1>
+    <div className="h-[calc(100vh-4rem)] flex flex-col p-3 space-y-2.5 bg-zinc-50 dark:bg-zinc-950">
+      {/* Compact Header with inline stats */}
+      <div className="flex items-center justify-between bg-white dark:bg-zinc-900 rounded-lg px-3 py-2 border border-zinc-200 dark:border-zinc-800">
+        <div className="flex items-center gap-5">
+          <div className="flex items-center gap-2">
+            <FileCheck className="h-4 w-4 text-zinc-900 dark:text-zinc-100" />
+            <h1 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+              Contracting Hub
+            </h1>
+          </div>
+
+          {/* Inline compact stats */}
+          <div className="flex items-center gap-3 text-[11px]">
+            <div className="flex items-center gap-1">
+              <span className="font-medium text-zinc-900 dark:text-zinc-100">
+                {stats?.total || 0}
+              </span>
+              <span className="text-zinc-500 dark:text-zinc-400">total</span>
+            </div>
+            <div className="h-3 w-px bg-zinc-200 dark:bg-zinc-700" />
+            <div className="flex items-center gap-1">
+              <Clock className="h-3 w-3 text-zinc-500" />
+              <span className="font-medium text-zinc-900 dark:text-zinc-100">
+                {stats?.pending || 0}
+              </span>
+              <span className="text-zinc-500 dark:text-zinc-400">pending</span>
+            </div>
+            <div className="h-3 w-px bg-zinc-200 dark:bg-zinc-700" />
+            <div className="flex items-center gap-1">
+              <Send className="h-3 w-3 text-blue-500" />
+              <span className="font-medium text-blue-600 dark:text-blue-400">
+                {stats?.submitted || 0}
+              </span>
+              <span className="text-zinc-500 dark:text-zinc-400">
+                submitted
+              </span>
+            </div>
+            <div className="h-3 w-px bg-zinc-200 dark:bg-zinc-700" />
+            <div className="flex items-center gap-1">
+              <CheckCircle2 className="h-3 w-3 text-emerald-500" />
+              <span className="font-medium text-emerald-600 dark:text-emerald-400">
+                {stats?.approved || 0}
+              </span>
+              <span className="text-zinc-500 dark:text-zinc-400">approved</span>
+            </div>
+            <div className="h-3 w-px bg-zinc-200 dark:bg-zinc-700" />
+            <div className="flex items-center gap-1">
+              <XCircle className="h-3 w-3 text-red-500" />
+              <span className="font-medium text-red-600 dark:text-red-400">
+                {stats?.rejected || 0}
+              </span>
+              <span className="text-zinc-500 dark:text-zinc-400">rejected</span>
+            </div>
+          </div>
         </div>
-        <Button size="sm" className="h-7 text-[11px] px-2">
-          <Plus className="h-3 w-3 mr-1" />
-          New Contract
-        </Button>
+
+        {/* Action Buttons */}
+        <div className="flex items-center gap-1.5">
+          <div className="relative">
+            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-zinc-400" />
+            <Input
+              placeholder="Search..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="h-6 w-32 pl-7 text-[10px] border-zinc-200 dark:border-zinc-700"
+            />
+          </div>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="h-6 w-24 text-[10px] border-zinc-200 dark:border-zinc-700">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all" className="text-[11px]">
+                All
+              </SelectItem>
+              <SelectItem value="pending" className="text-[11px]">
+                Pending
+              </SelectItem>
+              <SelectItem value="submitted" className="text-[11px]">
+                Submitted
+              </SelectItem>
+              <SelectItem value="approved" className="text-[11px]">
+                Approved
+              </SelectItem>
+              <SelectItem value="rejected" className="text-[11px]">
+                Rejected
+              </SelectItem>
+            </SelectContent>
+          </Select>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={handleExport}
+            className="h-6 text-[10px] px-2 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
+          >
+            <Download className="h-3 w-3 mr-1" />
+            Export
+          </Button>
+          <Button
+            size="sm"
+            onClick={handleAddContract}
+            className="h-6 text-[10px] px-2"
+          >
+            <Plus className="h-3 w-3 mr-1" />
+            Add Contract
+          </Button>
+        </div>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-2.5">
-        <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-2.5">
-          <div className="flex items-center gap-1.5 mb-1">
-            <FileCheck className="h-3.5 w-3.5 text-zinc-500 dark:text-zinc-400" />
-            <span className="text-[10px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
-              Total
-            </span>
-          </div>
-          {statsLoading ? (
-            <Skeleton className="h-6 w-10" />
-          ) : (
-            <p className="text-xl font-bold text-zinc-900 dark:text-zinc-100">
-              {stats?.total || 0}
-            </p>
-          )}
-        </div>
-
-        <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-2.5">
-          <div className="flex items-center gap-1.5 mb-1">
-            <Clock className="h-3.5 w-3.5 text-zinc-500 dark:text-zinc-400" />
-            <span className="text-[10px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
-              Pending
-            </span>
-          </div>
-          {statsLoading ? (
-            <Skeleton className="h-6 w-10" />
-          ) : (
-            <p className="text-xl font-bold text-zinc-900 dark:text-zinc-100">
-              {stats?.pending || 0}
-            </p>
-          )}
-        </div>
-
-        <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-2.5">
-          <div className="flex items-center gap-1.5 mb-1">
-            <Send className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
-            <span className="text-[10px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
-              Submitted
-            </span>
-          </div>
-          {statsLoading ? (
-            <Skeleton className="h-6 w-10" />
-          ) : (
-            <p className="text-xl font-bold text-blue-600 dark:text-blue-400">
-              {stats?.submitted || 0}
-            </p>
-          )}
-        </div>
-
-        <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-2.5">
-          <div className="flex items-center gap-1.5 mb-1">
-            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
-            <span className="text-[10px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
-              Approved
-            </span>
-          </div>
-          {statsLoading ? (
-            <Skeleton className="h-6 w-10" />
-          ) : (
-            <p className="text-xl font-bold text-emerald-600 dark:text-emerald-400">
-              {stats?.approved || 0}
-            </p>
-          )}
-        </div>
-
-        <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-2.5">
-          <div className="flex items-center gap-1.5 mb-1">
-            <XCircle className="h-3.5 w-3.5 text-red-600 dark:text-red-400" />
-            <span className="text-[10px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
-              Rejected
-            </span>
-          </div>
-          {statsLoading ? (
-            <Skeleton className="h-6 w-10" />
-          ) : (
-            <p className="text-xl font-bold text-red-600 dark:text-red-400">
-              {stats?.rejected || 0}
-            </p>
-          )}
-        </div>
-      </div>
-
-      {/* Filters */}
-      <div className="flex items-center gap-2 bg-white dark:bg-zinc-900 rounded-lg px-3 py-2 border border-zinc-200 dark:border-zinc-800 mb-2.5">
-        <div className="relative flex-1 max-w-xs">
-          <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-zinc-400" />
-          <Input
-            placeholder="Search agent or carrier..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="h-7 pl-7 text-[11px] border-zinc-200 dark:border-zinc-700"
-          />
-        </div>
-
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="h-7 w-28 text-[11px] border-zinc-200 dark:border-zinc-700">
-            <SelectValue placeholder="Status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all" className="text-[11px]">
-              All Status
-            </SelectItem>
-            <SelectItem value="pending" className="text-[11px]">
-              Pending
-            </SelectItem>
-            <SelectItem value="submitted" className="text-[11px]">
-              Submitted
-            </SelectItem>
-            <SelectItem value="approved" className="text-[11px]">
-              Approved
-            </SelectItem>
-            <SelectItem value="rejected" className="text-[11px]">
-              Rejected
-            </SelectItem>
-          </SelectContent>
-        </Select>
-
-        <div className="flex-1" />
-
-        <span className="text-[10px] text-zinc-500 dark:text-zinc-400">
-          {totalCount} contracts
-        </span>
-
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-7 text-[10px] text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
-        >
-          <Download className="h-3 w-3 mr-1" />
-          Export
-        </Button>
-      </div>
-
-      {/* Table */}
-      <div className="flex-1 bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 overflow-hidden">
+      {/* Main Content - Table */}
+      <div className="flex-1 overflow-hidden bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800">
         <div className="overflow-auto h-full">
           {isLoading ? (
             <div className="p-3 space-y-1">
@@ -377,9 +346,9 @@ export function ContractingDashboard() {
         </div>
       </div>
 
-      {/* Pagination */}
+      {/* Pagination Footer */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between mt-2.5 bg-white dark:bg-zinc-900 rounded-lg px-3 py-2 border border-zinc-200 dark:border-zinc-800">
+        <div className="flex items-center justify-between bg-white dark:bg-zinc-900 rounded-lg px-3 py-1.5 border border-zinc-200 dark:border-zinc-800">
           <div className="flex items-center gap-2">
             <span className="text-[10px] text-zinc-500 dark:text-zinc-400">
               Rows:
@@ -391,7 +360,7 @@ export function ContractingDashboard() {
                 setCurrentPage(1);
               }}
             >
-              <SelectTrigger className="h-6 w-14 text-[10px] border-zinc-200 dark:border-zinc-700">
+              <SelectTrigger className="h-5 w-12 text-[10px] border-zinc-200 dark:border-zinc-700">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -406,13 +375,16 @@ export function ContractingDashboard() {
                 ))}
               </SelectContent>
             </Select>
+            <span className="text-[10px] text-zinc-500 dark:text-zinc-400">
+              of {totalCount}
+            </span>
           </div>
 
           <div className="flex items-center gap-1">
             <Button
               size="sm"
-              variant="outline"
-              className="h-6 w-6 p-0 border-zinc-200 dark:border-zinc-700"
+              variant="ghost"
+              className="h-5 w-5 p-0"
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
               disabled={currentPage === 1}
             >
@@ -423,8 +395,8 @@ export function ContractingDashboard() {
             </span>
             <Button
               size="sm"
-              variant="outline"
-              className="h-6 w-6 p-0 border-zinc-200 dark:border-zinc-700"
+              variant="ghost"
+              className="h-5 w-5 p-0"
               onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
               disabled={currentPage === totalPages}
             >
