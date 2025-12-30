@@ -1,15 +1,15 @@
 # Project Statistics
 
-Last Updated: 2025-12-29 18:23:55
+Last Updated: 2025-12-30 12:25:16
 
 ## Metrics
-- Total Files: 28687
-- Total Lines of Code: 197952
-- Total Commits: 537
+- Total Files: 28879
+- Total Lines of Code: 358205
+- Total Commits: 553
 
 ## Recent Activity
-f1e78fd fix(services): critical fixes for ExpenseCategoryService code review issues
-565ca7d refactor(services): migrate ExpenseCategoryService to BaseService
-fb479ee refactor(services): migrate CarrierService to BaseService
-1a788f8 refactor(services): migrate ProductService to BaseService
-c22d67a docs: multiple changes in .,src/services/commissions,src/services/policies
+79d2d60 docs(migration): finalize BaseService migration prioritization document
+b523463 feat(auth): redesign login/auth pages with split-screen branding layout
+0d850e0 Merge remote-tracking branch 'origin/fix/expense-delete-dialog-styling'
+9720c8c Merge remote-tracking branch 'origin/feature/resizable-sidebars'
+b5edc66 refactor(services): migrate CompGuideService to BaseService

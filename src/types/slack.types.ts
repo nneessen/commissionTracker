@@ -96,6 +96,24 @@ export interface SlackChannel {
   };
 }
 
+export interface SlackUser {
+  id: string;
+  name: string; // Username (e.g., "john.doe")
+  real_name?: string; // Full name (e.g., "John Doe")
+  profile?: {
+    display_name?: string;
+    image_48?: string;
+    image_72?: string;
+    email?: string;
+  };
+  is_bot?: boolean;
+  deleted?: boolean;
+}
+
+// SlackChannelMember is an alias for SlackUser
+// Reserved for future channel-specific member fields
+export type SlackChannelMember = SlackUser;
+
 export interface SlackTeam {
   id: string;
   name: string;

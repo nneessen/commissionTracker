@@ -73,6 +73,7 @@
     "date-fns": "^4.1.0",
     "dompurify": "^3.3.0",
     "dotenv": "^17.2.3",
+    "emoji-picker-react": "^4.16.1",
     "exceljs": "^4.4.0",
     "html-to-text": "^9.0.5",
     "lucide-react": "^0.468.0",

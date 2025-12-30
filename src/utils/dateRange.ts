@@ -1,6 +1,6 @@
 // src/utils/dateRange.ts
 
-import {parseLocalDate} from "../lib/date";
+import { parseLocalDate } from "../lib/date";
 
 export type TimePeriod = "daily" | "weekly" | "monthly" | "yearly";
 
@@ -8,26 +8,19 @@ export interface DateRange {
   startDate: Date;
   endDate: Date;
 }
-
-/**
- * Get the date range for a given time period with optional offset
- * @param period The time period to get the range for
- * @param offset Number of periods to offset (negative = past, 0 = current, positive = future)
- * @returns DateRange with start and end dates
- */
-export function getDateRange(period: TimePeriod, offset: number = 0): DateRange {
+export function getDateRange(
+  period: TimePeriod,
+  offset: number = 0,
+): DateRange {
   const now = new Date();
   let endDate: Date;
   let startDate: Date;
 
-  // Create a reference date adjusted by the offset
   const referenceDate = new Date(now);
 
   switch (period) {
     case "daily":
-      // Adjust reference date by offset days
       referenceDate.setDate(referenceDate.getDate() + offset);
-      // Get that specific day from 00:00:00 to 23:59:59
       startDate = new Date(
         referenceDate.getFullYear(),
         referenceDate.getMonth(),
@@ -50,7 +43,7 @@ export function getDateRange(period: TimePeriod, offset: number = 0): DateRange 
 
     case "weekly":
       // Adjust reference date by offset weeks
-      referenceDate.setDate(referenceDate.getDate() + (offset * 7));
+      referenceDate.setDate(referenceDate.getDate() + offset * 7);
       // Last 7 days from reference date
       startDate = new Date(referenceDate);
       startDate.setDate(startDate.getDate() - 7);
@@ -146,8 +139,7 @@ export function getPeriodDescriptor(
       if (offset === 0) return `This Month - ${monthYear}`;
       if (offset === -1) return `Last Month - ${monthYear}`;
       if (offset === 1) return `Next Month - ${monthYear}`;
-      if (offset < 0)
-        return `${Math.abs(offset)} Months Ago - ${monthYear}`;
+      if (offset < 0) return `${Math.abs(offset)} Months Ago - ${monthYear}`;
       return `In ${offset} Months - ${monthYear}`;
 
     case "yearly":
@@ -238,13 +230,14 @@ export function getTimeRemaining(period: TimePeriod): {
       );
       break;
 
-    case "weekly": {
-      // 7 days from start of period
-      const weekStart = new Date(now);
-      weekStart.setDate(weekStart.getDate() - 7);
-      endOfPeriod = new Date(weekStart);
-      endOfPeriod.setDate(endOfPeriod.getDate() + 7);
-    }
+    case "weekly":
+      {
+        // 7 days from start of period
+        const weekStart = new Date(now);
+        weekStart.setDate(weekStart.getDate() - 7);
+        endOfPeriod = new Date(weekStart);
+        endOfPeriod.setDate(endOfPeriod.getDate() + 7);
+      }
       break;
 
     case "monthly":

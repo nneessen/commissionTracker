@@ -9,6 +9,7 @@ import { slackKeys } from "@/types/slack.types";
 import type {
   SlackIntegration,
   SlackChannel,
+  SlackUser,
   SlackMessage,
   SlackNotificationType,
 } from "@/types/slack.types";
@@ -333,6 +334,25 @@ export function useJoinSlackChannelById() {
 }
 
 /**
+ * Get members of a Slack channel for mention autocomplete
+ */
+export function useSlackChannelMembers(
+  integrationId: string | null,
+  channelId: string | null,
+) {
+  return useQuery({
+    queryKey: ["slack-channel-members", integrationId, channelId],
+    queryFn: async (): Promise<SlackUser[]> => {
+      if (!integrationId || !channelId) return [];
+      return slackService.getChannelMembers(integrationId, channelId);
+    },
+    enabled: !!integrationId && !!channelId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes (formerly cacheTime)
+  });
+}
+
+/**
  * Join a Slack channel (deprecated)
  * @deprecated Use useJoinSlackChannelById() for multi-workspace support
  */
@@ -465,30 +485,44 @@ export function usePostLeaderboard() {
 // ============================================================================
 
 /**
- * Add a reaction to a Slack message
+ * Add a reaction to a Slack message (supports multi-workspace)
  */
 export function useAddSlackReaction() {
   const { data: profile } = useCurrentUserProfile();
 
   return useMutation({
     mutationFn: async ({
+      integrationId,
       channelId,
       messageTs,
       emojiName,
     }: {
+      integrationId?: string;
       channelId: string;
       messageTs: string;
       emojiName: string;
     }): Promise<{ ok: boolean; error?: string; alreadyReacted?: boolean }> => {
-      if (!profile?.imo_id) {
-        throw new Error("No IMO assigned");
+      // Use integrationId if provided, otherwise fall back to imo_id (legacy)
+      if (integrationId) {
+        return slackService.addReaction(
+          integrationId,
+          channelId,
+          messageTs,
+          emojiName,
+          true, // useIntegrationId = true
+        );
+      } else {
+        if (!profile?.imo_id) {
+          throw new Error("No IMO assigned");
+        }
+        return slackService.addReaction(
+          profile.imo_id,
+          channelId,
+          messageTs,
+          emojiName,
+          false, // useIntegrationId = false
+        );
       }
-      return slackService.addReaction(
-        profile.imo_id,
-        channelId,
-        messageTs,
-        emojiName,
-      );
     },
   });
 }

@@ -1,7 +1,7 @@
 // src/features/messages/components/slack/SlackChannelView.tsx
 // Displays Slack channel messages and message composer
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import {
   Hash,
   Lock,
@@ -11,8 +11,13 @@ import {
   UserPlus,
   SmilePlus,
 } from "lucide-react";
+import EmojiPicker, {
+  EmojiClickData,
+  Theme,
+  EmojiStyle,
+  Categories,
+} from "emoji-picker-react";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Popover,
@@ -25,19 +30,86 @@ import { useJoinSlackChannelById, useAddSlackReaction } from "@/hooks/slack";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import * as emoji from "node-emoji";
-import type { SlackChannel } from "@/types/slack.types";
+import type { SlackChannel, SlackUser } from "@/types/slack.types";
+import { MentionTextarea } from "./MentionTextarea";
+import { useSlackChannelMembers } from "@/hooks/slack/useSlackIntegration";
 
-// Common emoji reactions for quick access
-const QUICK_REACTIONS = [
-  { name: "thumbsup", emoji: "👍" },
-  { name: "heart", emoji: "❤️" },
-  { name: "fire", emoji: "🔥" },
-  { name: "tada", emoji: "🎉" },
-  { name: "rocket", emoji: "🚀" },
-  { name: "eyes", emoji: "👀" },
-  { name: "clap", emoji: "👏" },
-  { name: "muscle", emoji: "💪" },
-];
+// Emoji-to-Slack-name mapping for common emojis
+// This maps unicode emoji to Slack's emoji names
+const EMOJI_TO_SLACK_NAME: Record<string, string> = {
+  "👍": "thumbsup",
+  "👎": "thumbsdown",
+  "❤️": "heart",
+  "🔥": "fire",
+  "🎉": "tada",
+  "🚀": "rocket",
+  "👀": "eyes",
+  "👏": "clap",
+  "💪": "muscle",
+  "😂": "joy",
+  "😊": "blush",
+  "😍": "heart_eyes",
+  "🤔": "thinking_face",
+  "👌": "ok_hand",
+  "🙏": "pray",
+  "✅": "white_check_mark",
+  "❌": "x",
+  "⭐": "star",
+  "💯": "100",
+  "🎯": "dart",
+  "💡": "bulb",
+  "⚡": "zap",
+  "🔴": "red_circle",
+  "🟢": "large_green_circle",
+  "🟡": "large_yellow_circle",
+  "🔵": "large_blue_circle",
+  "😄": "smile",
+  "😃": "smiley",
+  "😁": "grin",
+  "😆": "laughing",
+  "🤣": "rofl",
+  "😉": "wink",
+  "😌": "relieved",
+  "😘": "kissing_heart",
+  "😋": "yum",
+  "😛": "stuck_out_tongue",
+  "😜": "stuck_out_tongue_winking_eye",
+  "🤪": "zany_face",
+  "😐": "neutral_face",
+  "😑": "expressionless",
+  "😏": "smirk",
+  "😒": "unamused",
+  "🙄": "roll_eyes",
+  "😬": "grimacing",
+  "😳": "flushed",
+  "😞": "disappointed",
+  "😟": "worried",
+  "😠": "angry",
+  "😡": "rage",
+  "😔": "pensive",
+  "😕": "confused",
+  "😣": "persevere",
+  "😖": "confounded",
+  "😫": "tired_face",
+  "😩": "weary",
+  "😢": "cry",
+  "😭": "sob",
+  "😤": "triumph",
+  "💀": "skull",
+  "👻": "ghost",
+  "👽": "alien",
+  "🤖": "robot",
+  "🎃": "jack_o_lantern",
+  "🐱": "cat",
+  "🐶": "dog",
+  "🦄": "unicorn",
+  "🌈": "rainbow",
+  "☀️": "sunny",
+  "☁️": "cloud",
+  "❄️": "snowflake",
+  "⚠️": "warning",
+  "🚫": "no_entry_sign",
+};
 
 interface SlackMessage {
   id: string;
@@ -198,6 +270,7 @@ export function SlackChannelView({
   const handleAddReaction = async (messageTs: string, emojiName: string) => {
     try {
       const result = await addReaction.mutateAsync({
+        integrationId,
         channelId: channel.id,
         messageTs,
         emojiName,
@@ -227,15 +300,39 @@ export function SlackChannelView({
     sendMessage.mutate(messageText.trim());
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  };
-
   // Messages are returned newest first, reverse for display
   const messages = [...(messagesData?.messages || [])].reverse();
+
+  // Fetch channel members for mention resolution
+  const { data: channelMembers = [] } = useSlackChannelMembers(
+    integrationId,
+    channel.id,
+  );
+
+  // Create a map of user IDs to user objects for mention resolution
+  // Include both users from messages AND all channel members
+  const userMap = useMemo(() => {
+    const map = new Map<string, SlackUser>();
+
+    // First, add all channel members
+    channelMembers.forEach((member) => {
+      map.set(member.id, member);
+    });
+
+    // Then, overlay with users from messages (in case of newer data)
+    messages.forEach((msg) => {
+      if (msg.user) {
+        map.set(msg.user.id, {
+          id: msg.user.id,
+          name: msg.user.name,
+          real_name: msg.user.real_name,
+          profile: msg.user.profile,
+        });
+      }
+    });
+
+    return map;
+  }, [messages, channelMembers]);
 
   return (
     <div className="h-full flex flex-col bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 overflow-hidden">
@@ -341,6 +438,7 @@ export function SlackChannelView({
               <MessageItem
                 key={msg.id}
                 message={msg}
+                userMap={userMap}
                 channelId={channel.id}
                 onReactionAdd={handleAddReaction}
               />
@@ -353,13 +451,13 @@ export function SlackChannelView({
       {/* Message composer */}
       <div className="p-2 border-t border-zinc-200 dark:border-zinc-800">
         <div className="flex items-end gap-2">
-          <Textarea
+          <MentionTextarea
             value={messageText}
-            onChange={(e) => setMessageText(e.target.value)}
-            onKeyDown={handleKeyDown}
+            onChange={setMessageText}
+            onSubmit={handleSend}
+            integrationId={integrationId}
+            channelId={channel.id}
             placeholder={`Message #${channel.name}`}
-            className="min-h-[36px] max-h-24 text-[11px] resize-none"
-            rows={1}
           />
           <Button
             size="sm"
@@ -383,13 +481,39 @@ export function SlackChannelView({
  * Parse Slack message text and convert special formatting to readable text
  * Handles: user mentions, channel mentions, links, and special messages
  */
-function formatSlackText(text: string): string {
+function formatSlackText(
+  text: string,
+  userMap?: Map<string, SlackUser>,
+): string {
   if (!text) return "";
 
   let formatted = text;
 
-  // Convert user mentions <@U123ABC> to @user (just show as mention)
-  formatted = formatted.replace(/<@([A-Z0-9]+)>/g, "@user");
+  // Step 1: Convert Slack-specific emoji codes using SLACK_EMOJI_MAP
+  // This handles Slack's custom emoji names (e.g., :clap:, :first_place_medal:)
+  formatted = formatted.replace(/:([a-z0-9_+-]+):/g, (match, name) => {
+    return SLACK_EMOJI_MAP[name] || match; // Fallback to original if not found
+  });
+
+  // Step 2: Convert standard emoji codes using node-emoji library
+  // This handles any remaining standard emoji names
+  formatted = emoji.emojify(formatted);
+
+  // Step 3: Convert user mentions with actual usernames if available
+  if (userMap) {
+    formatted = formatted.replace(/<@([A-Z0-9]+)>/g, (_match, userId) => {
+      const user = userMap.get(userId);
+      if (user) {
+        const displayName =
+          user.profile?.display_name || user.real_name || user.name;
+        return `@${displayName}`;
+      }
+      return "@user"; // Fallback if user not found
+    });
+  } else {
+    // No userMap provided - just show generic @user
+    formatted = formatted.replace(/<@([A-Z0-9]+)>/g, "@user");
+  }
 
   // Convert channel mentions <#C123ABC|channel-name> to #channel-name
   formatted = formatted.replace(/<#[A-Z0-9]+\|([^>]+)>/g, "#$1");
@@ -404,9 +528,6 @@ function formatSlackText(text: string): string {
   if (formatted.includes("has joined the channel")) {
     formatted = formatted.replace(/@user/g, "Someone");
   }
-
-  // Convert all Slack emoji codes using node-emoji library
-  formatted = emoji.emojify(formatted);
 
   return formatted;
 }
@@ -713,9 +834,11 @@ function getEmojiFromName(name: string): string {
 
 function MessageItem({
   message,
+  userMap,
   onReactionAdd,
 }: {
   message: SlackMessage;
+  userMap?: Map<string, SlackUser>;
   channelId?: string;
   onReactionAdd?: (messageTs: string, emojiName: string) => void;
 }) {
@@ -731,7 +854,7 @@ function MessageItem({
     ? new Date(parseFloat(message.timestamp) * 1000)
     : null;
 
-  const formattedText = formatSlackText(message.text);
+  const formattedText = formatSlackText(message.text, userMap);
 
   // Check if this is a system/bot message (like "has joined the channel")
   const isSystemMessage =
@@ -810,23 +933,66 @@ function MessageItem({
               </button>
             </PopoverTrigger>
             <PopoverContent
-              className="w-auto p-2"
+              className="w-auto p-0 border-0"
               side="top"
               align="start"
               sideOffset={4}
+              onOpenAutoFocus={(e) => e.preventDefault()}
             >
-              <div className="flex gap-1">
-                {QUICK_REACTIONS.map((reaction) => (
-                  <button
-                    key={reaction.name}
-                    onClick={() => handleReaction(reaction.name)}
-                    className="p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded transition-colors text-lg"
-                    title={`:${reaction.name}:`}
-                  >
-                    {reaction.emoji}
-                  </button>
-                ))}
-              </div>
+              <EmojiPicker
+                onEmojiClick={(emojiData: EmojiClickData) => {
+                  // Convert emoji to Slack name or use the unified code
+                  const slackName =
+                    EMOJI_TO_SLACK_NAME[emojiData.emoji] ||
+                    emojiData.names?.[0] ||
+                    emojiData.unified.toLowerCase();
+                  handleReaction(slackName);
+                }}
+                theme={Theme.AUTO}
+                emojiStyle={EmojiStyle.NATIVE}
+                width={350}
+                height={400}
+                previewConfig={{ showPreview: false }}
+                searchPlaceHolder="Search emojis..."
+                categories={[
+                  {
+                    category: Categories.SUGGESTED,
+                    name: "Recently Used",
+                  },
+                  {
+                    category: Categories.SMILEYS_PEOPLE,
+                    name: "Smileys & People",
+                  },
+                  {
+                    category: Categories.ANIMALS_NATURE,
+                    name: "Animals & Nature",
+                  },
+                  {
+                    category: Categories.FOOD_DRINK,
+                    name: "Food & Drink",
+                  },
+                  {
+                    category: Categories.TRAVEL_PLACES,
+                    name: "Travel & Places",
+                  },
+                  {
+                    category: Categories.ACTIVITIES,
+                    name: "Activities",
+                  },
+                  {
+                    category: Categories.OBJECTS,
+                    name: "Objects",
+                  },
+                  {
+                    category: Categories.SYMBOLS,
+                    name: "Symbols",
+                  },
+                  {
+                    category: Categories.FLAGS,
+                    name: "Flags",
+                  },
+                ]}
+              />
             </PopoverContent>
           </Popover>
         </div>

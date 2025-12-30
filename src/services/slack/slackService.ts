@@ -8,6 +8,7 @@ import type {
   SlackMessage,
   SlackMessageRow,
   SlackChannel,
+  SlackUser,
   SlackNotificationType,
 } from "@/types/slack.types";
 
@@ -486,6 +487,39 @@ export const slackService = {
     return data;
   },
 
+  /**
+   * Get channel members for mention autocomplete
+   */
+  async getChannelMembers(
+    integrationId: string,
+    channelId: string,
+  ): Promise<SlackUser[]> {
+    const { data, error } = await supabase.functions.invoke(
+      "slack-get-channel-members",
+      {
+        body: { integrationId, channelId },
+      },
+    );
+
+    if (error) {
+      console.error("[slackService] Error getting channel members:", error);
+      throw error;
+    }
+
+    // Handle graceful error responses (ok: false with status 200)
+    if (data && !data.ok) {
+      console.error("[slackService] Slack error:", data.error);
+      throw new Error(data.error || "Failed to get channel members");
+    }
+
+    console.log(
+      `[slackService] Fetched ${data?.members?.length || 0} channel members`,
+      data?.members,
+    );
+
+    return data?.members || [];
+  },
+
   // ============================================================================
   // Message History
   // ============================================================================
@@ -655,16 +689,19 @@ export const slackService = {
    * Add a reaction (emoji) to a message
    */
   async addReaction(
-    imoId: string,
+    integrationIdOrImoId: string,
     channelId: string,
     messageTs: string,
     emojiName: string,
+    useIntegrationId: boolean = true,
   ): Promise<{ ok: boolean; error?: string; alreadyReacted?: boolean }> {
     const { data, error } = await supabase.functions.invoke(
       "slack-add-reaction",
       {
         body: {
-          imoId,
+          ...(useIntegrationId
+            ? { integrationId: integrationIdOrImoId }
+            : { imoId: integrationIdOrImoId }),
           channelId,
           messageTs,
           emojiName,

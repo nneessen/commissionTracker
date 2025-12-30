@@ -7,7 +7,8 @@ import { decrypt } from "../_shared/encryption.ts";
 import { getCorsHeaders, corsResponse } from "../_shared/cors.ts";
 
 interface AddReactionPayload {
-  imoId: string;
+  imoId?: string; // Legacy support
+  integrationId?: string; // New multi-workspace support
   channelId: string;
   messageTs: string;
   emojiName: string; // e.g., "thumbsup", "heart", "rocket"
@@ -38,14 +39,14 @@ serve(async (req) => {
     }
 
     const body: AddReactionPayload = await req.json();
-    const { imoId, channelId, messageTs, emojiName } = body;
+    const { imoId, integrationId, channelId, messageTs, emojiName } = body;
 
-    if (!imoId || !channelId || !messageTs || !emojiName) {
+    if ((!imoId && !integrationId) || !channelId || !messageTs || !emojiName) {
       return new Response(
         JSON.stringify({
           ok: false,
           error:
-            "Missing required fields: imoId, channelId, messageTs, emojiName",
+            "Missing required fields: integrationId/imoId, channelId, messageTs, emojiName",
         }),
         {
           status: 400,
@@ -56,14 +57,21 @@ serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // Get Slack integration
-    const { data: integration, error: integrationError } = await supabase
+    // Get Slack integration (prioritize integrationId for multi-workspace support)
+    let query = supabase
       .from("slack_integrations")
       .select("*")
-      .eq("imo_id", imoId)
       .eq("is_active", true)
-      .eq("connection_status", "connected")
-      .maybeSingle();
+      .eq("connection_status", "connected");
+
+    if (integrationId) {
+      query = query.eq("id", integrationId);
+    } else {
+      query = query.eq("imo_id", imoId);
+    }
+
+    const { data: integration, error: integrationError } =
+      await query.maybeSingle();
 
     if (integrationError || !integration) {
       return new Response(
