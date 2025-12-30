@@ -1,14 +1,13 @@
 // src/features/auth/EmailVerificationPending.tsx
 
 import React from "react";
-import {Button} from "../../components/ui";
-import {Card, CardContent} from "@/components/ui/card";
-import {Separator} from "@/components/ui/separator";
-import {MAX_RESEND_ATTEMPTS} from "../../constants/auth.constants";
-import {useEmailVerification} from "./hooks/useEmailVerification";
-import {EmailIcon} from "./components/EmailIcon";
-import {AuthErrorDisplay} from "./components/AuthErrorDisplay";
-import {AuthSuccessMessage} from "./components/AuthSuccessMessage";
+import { Button } from "../../components/ui";
+import { Separator } from "@/components/ui/separator";
+import { MAX_RESEND_ATTEMPTS } from "../../constants/auth.constants";
+import { useEmailVerification } from "./hooks/useEmailVerification";
+import { AuthErrorDisplay } from "./components/AuthErrorDisplay";
+import { AuthSuccessMessage } from "./components/AuthSuccessMessage";
+import { Mail, Loader2, ArrowLeft } from "lucide-react";
 
 export const EmailVerificationPending: React.FC = () => {
   const {
@@ -24,32 +23,114 @@ export const EmailVerificationPending: React.FC = () => {
   } = useEmailVerification();
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary text-primary-foreground text-2xl font-bold mb-4 shadow-lg">
-            CT
-          </div>
-          <h2 className="text-3xl font-bold text-foreground mb-2">
-            Check your email
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            We sent a verification link to
-          </p>
-          {email && (
-            <p className="text-sm font-semibold text-foreground mt-1">{email}</p>
-          )}
+    <div className="min-h-screen flex bg-background">
+      {/* Left Panel - Branding */}
+      <div className="hidden lg:flex lg:w-1/2 xl:w-[55%] bg-foreground relative overflow-hidden">
+        {/* Geometric background pattern */}
+        <div className="absolute inset-0 opacity-[0.03]">
+          <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <pattern
+                id="grid"
+                width="60"
+                height="60"
+                patternUnits="userSpaceOnUse"
+              >
+                <path
+                  d="M 60 0 L 0 0 0 60"
+                  fill="none"
+                  stroke="white"
+                  strokeWidth="1"
+                />
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#grid)" />
+          </svg>
         </div>
 
-        <Card className="shadow-xl">
-          <CardContent className="p-8 space-y-6">
-            <EmailIcon />
+        {/* Content */}
+        <div className="relative z-10 flex flex-col justify-between p-12 xl:p-16 w-full">
+          {/* Logo and brand */}
+          <div>
+            <div className="flex items-center gap-4 mb-4">
+              <img
+                src="/logos/LetterLogo.png"
+                alt="The Standard"
+                className="h-12 w-12 invert"
+              />
+              <span className="text-background text-2xl font-semibold tracking-tight">
+                THE STANDARD
+              </span>
+            </div>
+          </div>
 
+          {/* Middle - Main messaging */}
+          <div className="space-y-6">
+            <div className="w-20 h-20 rounded-2xl bg-background/10 flex items-center justify-center">
+              <Mail className="h-10 w-10 text-background" />
+            </div>
+            <h1 className="text-4xl xl:text-5xl font-bold text-background leading-tight">
+              Almost there.
+            </h1>
+            <p className="text-background/60 text-lg max-w-md">
+              We just need to verify your email address before you can start
+              using the platform.
+            </p>
+          </div>
+
+          {/* Bottom */}
+          <div className="text-background/40 text-sm">
+            © {new Date().getFullYear()} The Standard Holdings. All rights
+            reserved.
+          </div>
+        </div>
+      </div>
+
+      {/* Right Panel - Content */}
+      <div className="flex-1 flex items-center justify-center p-6 sm:p-12">
+        <div className="w-full max-w-[400px]">
+          {/* Mobile logo */}
+          <div className="lg:hidden flex items-center justify-center gap-3 mb-10">
+            <img
+              src="/logos/LetterLogo.png"
+              alt="The Standard"
+              className="h-10 w-10"
+            />
+            <span className="text-foreground text-xl font-semibold tracking-tight">
+              THE STANDARD
+            </span>
+          </div>
+
+          {/* Header */}
+          <div className="mb-8">
+            <h2 className="text-2xl font-bold text-foreground mb-2">
+              Check your email
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              We sent a verification link to
+            </p>
+            {email && (
+              <p className="text-sm font-semibold text-foreground mt-1">
+                {email}
+              </p>
+            )}
+          </div>
+
+          {/* Messages */}
+          <div className="space-y-4 mb-6">
             {message && <AuthSuccessMessage message={message} />}
+            {error && (
+              <AuthErrorDisplay
+                error={error}
+                mode="signin"
+                onSwitchToSignup={() => {}}
+              />
+            )}
+          </div>
 
-            {error && <AuthErrorDisplay error={error} mode="signin" onSwitchToSignup={() => {}} />}
-
-            <div className="text-center space-y-3">
+          {/* Content */}
+          <div className="space-y-6">
+            <div className="space-y-3">
               <p className="text-sm text-foreground">
                 Click the link in the email to verify your account and get
                 started.
@@ -62,10 +143,17 @@ export const EmailVerificationPending: React.FC = () => {
             <Button
               onClick={handleResend}
               disabled={isResendDisabled}
-              className="w-full py-3 text-base font-semibold rounded-xl"
+              className="w-full h-11"
               aria-label={getResendButtonText()}
             >
-              {loading ? "Sending..." : getResendButtonText()}
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Sending...
+                </>
+              ) : (
+                getResendButtonText()
+              )}
             </Button>
 
             {resendCount > 0 && resendCount < MAX_RESEND_ATTEMPTS && (
@@ -78,8 +166,8 @@ export const EmailVerificationPending: React.FC = () => {
               <div className="absolute inset-0 flex items-center">
                 <Separator className="w-full" />
               </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-4 bg-card text-muted-foreground">
+              <div className="relative flex justify-center text-xs">
+                <span className="px-3 bg-background text-muted-foreground">
                   Didn't receive the email?
                 </span>
               </div>
@@ -93,17 +181,19 @@ export const EmailVerificationPending: React.FC = () => {
             <Button
               type="button"
               onClick={handleBackToLogin}
-              variant="link"
-              className="w-full text-center text-sm font-medium h-auto py-2"
+              variant="ghost"
+              className="w-full h-10"
             >
+              <ArrowLeft className="mr-2 h-4 w-4" />
               Back to login
             </Button>
-          </CardContent>
-        </Card>
+          </div>
 
-        <p className="mt-8 text-center text-xs text-muted-foreground">
-          Need help? Contact support at support@commissiontracker.com
-        </p>
+          {/* Footer */}
+          <p className="mt-8 text-center text-xs text-muted-foreground">
+            Need help? Contact support at support@thestandard.com
+          </p>
+        </div>
       </div>
     </div>
   );

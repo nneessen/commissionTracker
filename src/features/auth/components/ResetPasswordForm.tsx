@@ -1,11 +1,11 @@
 // src/features/auth/components/ResetPasswordForm.tsx
 
 import React from "react";
-import {Input} from "@/components/ui/input";
-import {Label} from "@/components/ui/label";
-import {Button} from "@/components/ui/button";
-import {FormErrors} from "../hooks/useAuthValidation";
-import {AlertCircle} from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { FormErrors } from "../hooks/useAuthValidation";
+import { AlertCircle, Loader2 } from "lucide-react";
 
 interface ResetPasswordFormProps {
   email: string;
@@ -23,9 +23,11 @@ export const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
   onSubmit,
 }) => {
   return (
-    <form className="space-y-5" onSubmit={onSubmit}>
-      <div className="space-y-2">
-        <Label htmlFor="email">Email address</Label>
+    <form className="space-y-4" onSubmit={onSubmit}>
+      <div className="space-y-1.5">
+        <Label htmlFor="email" className="text-sm font-medium">
+          Email
+        </Label>
         <Input
           id="email"
           type="email"
@@ -34,12 +36,13 @@ export const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
           onChange={(e) => onEmailChange(e.target.value)}
           required
           disabled={loading}
-          className={formErrors.email ? "border-destructive" : ""}
+          autoComplete="email"
+          className={`h-11 ${formErrors.email ? "border-destructive focus-visible:ring-destructive/50" : ""}`}
         />
         {formErrors.email && (
-          <div className="flex items-center gap-1 text-xs text-destructive">
-            <AlertCircle className="h-3 w-3" />
-            {formErrors.email}
+          <div className="flex items-center gap-1.5 text-xs text-destructive mt-1">
+            <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" />
+            <span>{formErrors.email}</span>
           </div>
         )}
       </div>
@@ -47,9 +50,16 @@ export const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
       <Button
         type="submit"
         disabled={loading}
-        className="w-full py-3 text-base font-semibold rounded-xl"
+        className="w-full h-11 text-sm font-medium mt-2"
       >
-        {loading ? "Please wait..." : "Send reset link"}
+        {loading ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Sending...
+          </>
+        ) : (
+          "Send reset link"
+        )}
       </Button>
     </form>
   );
