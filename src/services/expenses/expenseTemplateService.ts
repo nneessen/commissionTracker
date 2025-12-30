@@ -52,10 +52,12 @@ export class ExpenseTemplateService extends BaseService<
 
   /**
    * Initialize validation rules
+   * Note: These rules are used for both create and update operations.
+   * For updates, use validateForUpdate() which skips undefined fields.
    */
   protected initializeValidationRules(): void {
     this.validationRules = [
-      // template_name - required, non-empty string
+      // template_name - required on create, valid if provided on update
       {
         field: "template_name",
         validate: (value) => {
@@ -65,7 +67,7 @@ export class ExpenseTemplateService extends BaseService<
         },
         message: "Template name is required and must be 100 characters or less",
       },
-      // amount - required, positive number
+      // amount - required on create, valid if provided on update
       {
         field: "amount",
         validate: (value) => {
@@ -76,7 +78,7 @@ export class ExpenseTemplateService extends BaseService<
         },
         message: "Amount is required and must be a positive number",
       },
-      // category - required, non-empty string
+      // category - required on create, valid if provided on update
       {
         field: "category",
         validate: (value) => {
@@ -86,7 +88,7 @@ export class ExpenseTemplateService extends BaseService<
         },
         message: "Category is required",
       },
-      // expense_type - required, valid enum
+      // expense_type - required on create, valid if provided on update
       {
         field: "expense_type",
         validate: (value) => {
@@ -139,6 +141,33 @@ export class ExpenseTemplateService extends BaseService<
   }
 
   /**
+   * Validate data for update operations.
+   * Only validates fields that are present (not undefined).
+   * This allows partial updates without requiring all fields.
+   */
+  private validateForUpdate(
+    data: Record<string, unknown>,
+  ): Array<{ field: string; message: string }> {
+    const errors: Array<{ field: string; message: string }> = [];
+
+    for (const rule of this.validationRules) {
+      const value = data[rule.field];
+
+      // Skip validation for undefined fields (not provided in update)
+      if (value === undefined) {
+        continue;
+      }
+
+      // Validate the field if it was provided
+      if (!rule.validate(value)) {
+        errors.push({ field: rule.field, message: rule.message });
+      }
+    }
+
+    return errors;
+  }
+
+  /**
    * Helper method to normalize errors
    */
   private normalizeError(error: unknown): Error {
@@ -185,6 +214,14 @@ export class ExpenseTemplateService extends BaseService<
         recurring_frequency: data.recurring_frequency ?? null,
         notes: data.notes ?? null,
       });
+
+      // Verify template was created
+      if (!template) {
+        return {
+          success: false,
+          error: new Error("Failed to create expense template"),
+        };
+      }
 
       return { success: true, data: template };
     } catch (error) {
@@ -241,8 +278,8 @@ export class ExpenseTemplateService extends BaseService<
     updates: UpdateExpenseTemplateData,
   ): Promise<ServiceResponse<ExpenseTemplate>> {
     try {
-      // Validate updates
-      const errors = this.validate(
+      // Validate only the fields being updated (partial validation)
+      const errors = this.validateForUpdate(
         updates as unknown as Record<string, unknown>,
       );
       if (errors.length > 0) {
@@ -253,7 +290,41 @@ export class ExpenseTemplateService extends BaseService<
       }
 
       const template = await this._repository.updateRaw(id, updates);
+
+      // Verify template was updated
+      if (!template) {
+        return {
+          success: false,
+          error: new Error("Expense template not found or update failed"),
+        };
+      }
+
       return { success: true, data: template };
+    } catch (error) {
+      return {
+        success: false,
+        error: this.normalizeError(error),
+      };
+    }
+  }
+
+  /**
+   * Override delete to use _repository directly
+   * This ensures we use the correctly-typed repository instance
+   */
+  async delete(id: string): Promise<ServiceResponse<void>> {
+    try {
+      // Verify template exists before attempting delete
+      const existing = await this._repository.findByIdRaw(id);
+      if (!existing) {
+        return {
+          success: false,
+          error: new Error("Expense template not found"),
+        };
+      }
+
+      await this._repository.delete(id);
+      return { success: true };
     } catch (error) {
       return {
         success: false,
@@ -344,13 +415,15 @@ export class ExpenseTemplateService extends BaseService<
   }
 
   // ============================================================================
-  // INHERITED FROM BaseService (no code needed):
+  // INHERITED FROM BaseService (available but may need testing due to any cast):
   // ============================================================================
-  // - delete(id: string): Promise<ServiceResponse<void>>
   // - createMany(items: CreateExpenseTemplateData[]): Promise<ServiceResponse<ExpenseTemplate[]>>
   // - getPaginated(page, pageSize, filters?, orderBy?, orderDirection?): Promise<ServiceResponse<ListResponse<ExpenseTemplate>>>
   // - exists(id: string): Promise<boolean>
   // - count(filters?): Promise<number>
+  //
+  // Note: These inherited methods use the any-casted repository. If used,
+  // verify they work correctly with the ExpenseTemplateRepository's type structure.
 }
 
 // Singleton instance

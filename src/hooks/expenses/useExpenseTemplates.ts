@@ -16,6 +16,13 @@ export const expenseTemplateKeys = {
 };
 
 /**
+ * Helper to ensure we always throw an Error object
+ */
+function ensureError(error: Error | undefined, fallbackMessage: string): Error {
+  return error ?? new Error(fallbackMessage);
+}
+
+/**
  * Hook to fetch all expense templates for the current user
  */
 export function useExpenseTemplates() {
@@ -23,8 +30,10 @@ export function useExpenseTemplates() {
     queryKey: expenseTemplateKeys.all,
     queryFn: async (): Promise<ExpenseTemplate[]> => {
       const result = await expenseTemplateService.getAll();
-      if (!result.success) throw result.error;
-      return result.data || [];
+      if (!result.success) {
+        throw ensureError(result.error, "Failed to fetch expense templates");
+      }
+      return result.data ?? [];
     },
   });
 }
@@ -37,8 +46,13 @@ export function useExpenseTemplatesGrouped() {
     queryKey: expenseTemplateKeys.grouped,
     queryFn: async (): Promise<Record<string, ExpenseTemplate[]>> => {
       const result = await expenseTemplateService.getGroupedByFrequency();
-      if (!result.success) throw result.error;
-      return result.data || {};
+      if (!result.success) {
+        throw ensureError(
+          result.error,
+          "Failed to fetch grouped expense templates",
+        );
+      }
+      return result.data ?? {};
     },
   });
 }
@@ -52,7 +66,9 @@ export function useCreateExpenseTemplate() {
   return useMutation({
     mutationFn: async (data: CreateExpenseTemplateData) => {
       const result = await expenseTemplateService.create(data);
-      if (!result.success) throw result.error;
+      if (!result.success) {
+        throw ensureError(result.error, "Failed to create expense template");
+      }
       return result.data;
     },
     onSuccess: () => {
@@ -81,7 +97,9 @@ export function useUpdateExpenseTemplate() {
       updates: UpdateExpenseTemplateData;
     }) => {
       const result = await expenseTemplateService.update(id, updates);
-      if (!result.success) throw result.error;
+      if (!result.success) {
+        throw ensureError(result.error, "Failed to update expense template");
+      }
       return result.data;
     },
     onSuccess: () => {
@@ -104,7 +122,9 @@ export function useDeleteExpenseTemplate() {
   return useMutation({
     mutationFn: async (id: string) => {
       const result = await expenseTemplateService.delete(id);
-      if (!result.success) throw result.error;
+      if (!result.success) {
+        throw ensureError(result.error, "Failed to delete expense template");
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: expenseTemplateKeys.all });
