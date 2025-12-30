@@ -200,11 +200,7 @@ export default function Sidebar({
   // LOW-4 fix: Also get loading/error states for graceful handling
   const { imo, agency, loading: imoLoading, error: imoError } = useImo();
 
-  // Admin email bypass - matches ADMIN_EMAILS in RouteGuard
-  const ADMIN_EMAILS = [
-    "nick@nickneessen.com",
-    "nickneessen@thestandardhq.com",
-  ];
+  const ADMIN_EMAILS = ["nickneessen@thestandardhq.com"];
   const isAdmin =
     supabaseUser?.email && ADMIN_EMAILS.includes(supabaseUser.email);
 
@@ -212,7 +208,10 @@ export default function Sidebar({
   const hasFeature = (feature: FeatureKey | undefined): boolean => {
     if (!feature) return true; // No feature required
     if (isAdmin) return true; // Admin bypass
-    if (subLoading || downlineLoading) return true; // Assume access while loading to avoid flickering
+
+    // SECURITY: During loading, deny access to prevent exposure of premium features
+    // UI should show loading skeleton instead of hiding/showing features
+    if (subLoading || downlineLoading) return false;
 
     // Check subscription plan features
     const features = subscription?.plan?.features;
@@ -227,6 +226,7 @@ export default function Sidebar({
   };
 
   // Fetch user roles from profile
+  // TODO: WHY IS THIS NOT A HOOK, useRoles?
   const { data: userProfile } = useQuery({
     queryKey: ["user-profile-roles", user?.id],
     queryFn: async () => {
@@ -247,9 +247,7 @@ export default function Sidebar({
   };
 
   const isRecruit = hasRole("recruit" as RoleName);
-  // Staff-only check is based purely on ROLES, not admin email bypass
-  // A user with trainer/contracting_manager roles but NO agent/admin role
-  // should see staff navigation regardless of email
+
   const isTrainerOnly =
     (hasRole("trainer" as RoleName) ||
       hasRole("contracting_manager" as RoleName)) &&

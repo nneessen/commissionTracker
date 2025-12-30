@@ -28,7 +28,7 @@ export const useExpenses = (options?: UseExpensesOptions) => {
   return useQuery({
     queryKey: ["expenses", options?.filters],
     queryFn: async () => {
-      const result = await expenseService.getAll(options?.filters);
+      const result = await expenseService.getAllFiltered(options?.filters);
       if (!result.success) {
         throw result.error;
       }

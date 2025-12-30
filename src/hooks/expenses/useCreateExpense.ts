@@ -4,19 +4,33 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { expenseService } from "@/services/expenses";
 import type { CreateExpenseData, Expense } from "@/types/expense.types";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
 
 /**
  * Hook for creating a new expense with optimistic updates
  */
 export const useCreateExpense = () => {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   return useMutation({
     mutationFn: async (newExpense: CreateExpenseData): Promise<Expense> => {
-      const result = await expenseService.create(newExpense);
+      if (!user?.id) {
+        throw new Error("User must be authenticated to create expenses");
+      }
+
+      const result = await expenseService.create(newExpense, user.id);
       if (!result.success) {
         throw result.error;
       }
+
+      // Display warnings if any (e.g., recurring expense generation partial failures)
+      if (result.warnings && result.warnings.length > 0) {
+        result.warnings.forEach((warning) => {
+          toast.warning(warning);
+        });
+      }
+
       return result.data!;
     },
     onSuccess: (_data, variables) => {
