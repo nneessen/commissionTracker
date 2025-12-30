@@ -657,17 +657,20 @@ class AgencyService {
       // Validate date range to prevent abuse (max 24 months)
       validateReportDateRange(dateRange);
 
-      const params: {
-        p_agency_id: string | null;
-        p_start_date?: string;
-        p_end_date?: string;
-      } = {
+      // Always provide dates - use defaults if no range specified
+      const now = new Date();
+      const twelveMonthsAgo = new Date();
+      twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
+
+      const params = {
         p_agency_id: agencyId ?? null,
+        p_start_date: dateRange
+          ? formatDateForQuery(dateRange.startDate)
+          : formatDateForQuery(twelveMonthsAgo),
+        p_end_date: dateRange
+          ? formatDateForQuery(dateRange.endDate)
+          : formatDateForQuery(now),
       };
-      if (dateRange) {
-        params.p_start_date = formatDateForQuery(dateRange.startDate);
-        params.p_end_date = formatDateForQuery(dateRange.endDate);
-      }
 
       const { data, error } = await supabase.rpc(
         "get_agency_performance_report",

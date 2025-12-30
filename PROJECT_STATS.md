@@ -1,15 +1,15 @@
 # Project Statistics
 
-Last Updated: 2025-12-30 12:25:16
+Last Updated: 2025-12-30 14:48:19
 
 ## Metrics
 - Total Files: 28879
-- Total Lines of Code: 358205
-- Total Commits: 553
+- Total Lines of Code: 358481
+- Total Commits: 556
 
 ## Recent Activity
+78bab2f fix(reports): handle missing RPC functions gracefully
+e8fc43b fix(reports): fix 400 error and stale MV data issues
+ee32017 docs: multiple changes in .,.serena/memories,plans/active
 79d2d60 docs(migration): finalize BaseService migration prioritization document
 b523463 feat(auth): redesign login/auth pages with split-screen branding layout
-0d850e0 Merge remote-tracking branch 'origin/fix/expense-delete-dialog-styling'
-9720c8c Merge remote-tracking branch 'origin/feature/resizable-sidebars'
-b5edc66 refactor(services): migrate CompGuideService to BaseService

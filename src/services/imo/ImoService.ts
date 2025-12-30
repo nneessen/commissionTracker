@@ -396,11 +396,19 @@ class ImoService {
       // Validate date range to prevent abuse (max 24 months)
       validateReportDateRange(dateRange);
 
-      const params: { p_start_date?: string; p_end_date?: string } = {};
-      if (dateRange) {
-        params.p_start_date = formatDateForQuery(dateRange.startDate);
-        params.p_end_date = formatDateForQuery(dateRange.endDate);
-      }
+      // Always provide dates - use defaults if no range specified
+      const now = new Date();
+      const twelveMonthsAgo = new Date();
+      twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
+
+      const params = {
+        p_start_date: dateRange
+          ? formatDateForQuery(dateRange.startDate)
+          : formatDateForQuery(twelveMonthsAgo),
+        p_end_date: dateRange
+          ? formatDateForQuery(dateRange.endDate)
+          : formatDateForQuery(now),
+      };
 
       const { data, error } = await supabase.rpc(
         "get_imo_performance_report",
@@ -489,11 +497,19 @@ class ImoService {
       // Validate date range to prevent abuse (max 24 months)
       validateReportDateRange(dateRange);
 
-      const params: { p_start_date?: string; p_end_date?: string } = {};
-      if (dateRange) {
-        params.p_start_date = formatDateForQuery(dateRange.startDate);
-        params.p_end_date = formatDateForQuery(dateRange.endDate);
-      }
+      // Always provide dates - use defaults if no range specified
+      const now = new Date();
+      const twelveMonthsAgo = new Date();
+      twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
+
+      const params = {
+        p_start_date: dateRange
+          ? formatDateForQuery(dateRange.startDate)
+          : formatDateForQuery(twelveMonthsAgo),
+        p_end_date: dateRange
+          ? formatDateForQuery(dateRange.endDate)
+          : formatDateForQuery(now),
+      };
 
       const { data, error } = await supabase.rpc(
         "get_team_comparison_report",
@@ -584,17 +600,20 @@ class ImoService {
       // Limit the number of results to prevent abuse
       const safeLimit = Math.min(Math.max(1, limit), 100);
 
-      const params: {
-        p_limit: number;
-        p_start_date?: string;
-        p_end_date?: string;
-      } = {
+      // Always provide dates - use defaults if no range specified
+      const now = new Date();
+      const twelveMonthsAgo = new Date();
+      twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
+
+      const params = {
         p_limit: safeLimit,
+        p_start_date: dateRange
+          ? formatDateForQuery(dateRange.startDate)
+          : formatDateForQuery(twelveMonthsAgo),
+        p_end_date: dateRange
+          ? formatDateForQuery(dateRange.endDate)
+          : formatDateForQuery(now),
       };
-      if (dateRange) {
-        params.p_start_date = formatDateForQuery(dateRange.startDate);
-        params.p_end_date = formatDateForQuery(dateRange.endDate);
-      }
 
       const { data, error } = await supabase.rpc(
         "get_top_performers_report",

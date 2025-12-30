@@ -1,22 +1,9 @@
 // src/features/reports/components/ImoPerformanceReport.tsx
 
 import { useMemo, useCallback } from "react";
-import {
-  Loader2,
-  TrendingUp,
-  TrendingDown,
-  Users,
-  FileText,
-  DollarSign,
-  Building2,
-} from "lucide-react";
+import { Loader2, TrendingUp, TrendingDown, AlertCircle } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "../../../components/ui/card";
+import { cn } from "../../../lib/utils";
 import {
   Table,
   TableBody,
@@ -26,7 +13,6 @@ import {
   TableRow,
 } from "../../../components/ui/table";
 import { TrendLineChart } from "./charts/TrendLineChart";
-import { BarComparisonChart } from "./charts/BarComparisonChart";
 import {
   useImoPerformanceReport,
   useTeamComparisonReport,
@@ -68,21 +54,17 @@ function ImoPerformanceReportContent({ dateRange }: ImoPerformanceReportProps) {
 
   const isLoading = isLoadingPerformance || isLoadingTeam || isLoadingTop;
 
-  // Check for critical error (primary data failed)
   const hasCriticalError = errorPerformance !== null;
 
-  // Check for secondary errors (supplementary data failed)
   const secondaryErrors = [
     { name: "Team Comparison", error: errorTeam },
     { name: "Top Performers", error: errorTop },
   ].filter((e) => e.error !== null);
 
-  // Retry handler
   const handleRetry = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: imoKeys.all });
   }, [queryClient]);
 
-  // Transform data for charts
   const trendData = useMemo(() => {
     if (!performanceReport?.months) return [];
     return performanceReport.months.map((month) => ({
@@ -93,30 +75,17 @@ function ImoPerformanceReportContent({ dateRange }: ImoPerformanceReportProps) {
     }));
   }, [performanceReport]);
 
-  const agencyComparisonData = useMemo(() => {
-    if (!teamComparison?.agencies) return [];
-    return teamComparison.agencies.slice(0, 10).map((agency) => ({
-      label:
-        agency.agency_name.length > 15
-          ? agency.agency_name.substring(0, 15) + "..."
-          : agency.agency_name,
-      premium: agency.new_premium,
-      agents: agency.agent_count,
-    }));
-  }, [teamComparison]);
-
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center p-8">
-        <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
-        <span className="ml-2 text-sm text-zinc-500">
+      <div className="flex items-center justify-center p-8 bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800">
+        <Loader2 className="w-5 h-5 animate-spin text-blue-600 dark:text-blue-400" />
+        <span className="ml-2 text-[11px] text-zinc-500 dark:text-zinc-400">
           Loading IMO performance data...
         </span>
       </div>
     );
   }
 
-  // Critical error - primary data failed
   if (hasCriticalError) {
     return (
       <ReportQueryError
@@ -132,15 +101,15 @@ function ImoPerformanceReportContent({ dateRange }: ImoPerformanceReportProps) {
 
   if (!performanceReport) {
     return (
-      <div className="p-6 text-center bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800">
-        <div className="text-zinc-500 dark:text-zinc-400 space-y-2">
-          <p className="text-sm font-medium">
+      <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-4">
+        <div className="flex flex-col items-center justify-center text-center py-4">
+          <AlertCircle className="h-6 w-6 text-zinc-400 dark:text-zinc-500 mb-2" />
+          <p className="text-[11px] font-medium text-zinc-900 dark:text-zinc-100">
             IMO Performance Report Unavailable
           </p>
-          <p className="text-xs">
+          <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-1 max-w-[300px]">
             This report requires database features that may not be available
-            yet. Please contact your administrator if you believe you should
-            have access.
+            yet.
           </p>
         </div>
       </div>
@@ -151,8 +120,7 @@ function ImoPerformanceReportContent({ dateRange }: ImoPerformanceReportProps) {
   const netGrowthPositive = summary.net_growth >= 0;
 
   return (
-    <div className="space-y-4">
-      {/* Show warning for partial failures */}
+    <div className="space-y-2">
       {secondaryErrors.length > 0 && (
         <QueryErrorAlert
           title="Some data failed to load"
@@ -160,132 +128,99 @@ function ImoPerformanceReportContent({ dateRange }: ImoPerformanceReportProps) {
           onRetry={handleRetry}
         />
       )}
-      {/* Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-        <Card className="bg-white dark:bg-zinc-900">
-          <CardContent className="p-3">
-            <div className="flex items-center gap-2">
-              <div className="p-1.5 bg-blue-100 dark:bg-blue-900/30 rounded">
-                <DollarSign className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-              </div>
-              <div>
-                <p className="text-[10px] text-zinc-500 uppercase">
-                  New Premium
-                </p>
-                <p className="text-sm font-semibold">
-                  {formatCurrency(summary.total_new_premium)}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
 
-        <Card className="bg-white dark:bg-zinc-900">
-          <CardContent className="p-3">
-            <div className="flex items-center gap-2">
-              <div className="p-1.5 bg-green-100 dark:bg-green-900/30 rounded">
-                <TrendingUp className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
-              </div>
-              <div>
-                <p className="text-[10px] text-zinc-500 uppercase">
-                  Commissions
-                </p>
-                <p className="text-sm font-semibold">
-                  {formatCurrency(summary.total_commissions)}
-                </p>
-              </div>
+      {/* Main Grid Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-2">
+        {/* Summary Stats Card */}
+        <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-3">
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+              Performance Summary
             </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-white dark:bg-zinc-900">
-          <CardContent className="p-3">
-            <div className="flex items-center gap-2">
-              <div className="p-1.5 bg-purple-100 dark:bg-purple-900/30 rounded">
-                <FileText className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
-              </div>
-              <div>
-                <p className="text-[10px] text-zinc-500 uppercase">
-                  New Policies
-                </p>
-                <p className="text-sm font-semibold">
-                  {summary.total_new_policies.toLocaleString()}
-                </p>
-              </div>
+            <div
+              className={cn(
+                "px-1.5 py-0.5 rounded text-[9px] font-medium",
+                netGrowthPositive
+                  ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                  : "bg-red-500/10 text-red-600 dark:text-red-400",
+              )}
+            >
+              {netGrowthPositive ? "GROWTH" : "DECLINE"}
             </div>
-          </CardContent>
-        </Card>
+          </div>
 
-        <Card className="bg-white dark:bg-zinc-900">
-          <CardContent className="p-3">
-            <div className="flex items-center gap-2">
-              <div className="p-1.5 bg-amber-100 dark:bg-amber-900/30 rounded">
-                <Users className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-              </div>
-              <div>
-                <p className="text-[10px] text-zinc-500 uppercase">
-                  New Agents
-                </p>
-                <p className="text-sm font-semibold">
-                  {summary.total_new_agents.toLocaleString()}
-                </p>
-              </div>
+          <div className="space-y-1">
+            <div className="flex items-center justify-between text-[11px]">
+              <span className="text-zinc-500 dark:text-zinc-400">
+                New Premium
+              </span>
+              <span className="font-mono font-bold text-zinc-900 dark:text-zinc-100">
+                {formatCurrency(summary.total_new_premium)}
+              </span>
             </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-white dark:bg-zinc-900">
-          <CardContent className="p-3">
-            <div className="flex items-center gap-2">
-              <div className="p-1.5 bg-red-100 dark:bg-red-900/30 rounded">
-                <TrendingDown className="w-3.5 h-3.5 text-red-600 dark:text-red-400" />
-              </div>
-              <div>
-                <p className="text-[10px] text-zinc-500 uppercase">Lapsed</p>
-                <p className="text-sm font-semibold">
-                  {summary.total_lapsed.toLocaleString()}
-                </p>
-              </div>
+            <div className="flex items-center justify-between text-[11px]">
+              <span className="text-zinc-500 dark:text-zinc-400">
+                Commissions
+              </span>
+              <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                {formatCurrency(summary.total_commissions)}
+              </span>
             </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-white dark:bg-zinc-900">
-          <CardContent className="p-3">
-            <div className="flex items-center gap-2">
-              <div
-                className={`p-1.5 rounded ${netGrowthPositive ? "bg-emerald-100 dark:bg-emerald-900/30" : "bg-red-100 dark:bg-red-900/30"}`}
-              >
+            <div className="flex items-center justify-between text-[11px]">
+              <span className="text-zinc-500 dark:text-zinc-400">
+                New Policies
+              </span>
+              <span className="font-mono font-bold text-zinc-900 dark:text-zinc-100">
+                {summary.total_new_policies.toLocaleString()}
+              </span>
+            </div>
+            <div className="h-px bg-zinc-200 dark:bg-zinc-800 my-1" />
+            <div className="flex items-center justify-between text-[11px]">
+              <span className="text-zinc-500 dark:text-zinc-400">
+                New Agents
+              </span>
+              <span className="font-mono font-bold text-zinc-900 dark:text-zinc-100">
+                {summary.total_new_agents.toLocaleString()}
+              </span>
+            </div>
+            <div className="flex items-center justify-between text-[11px]">
+              <span className="text-zinc-500 dark:text-zinc-400">Lapsed</span>
+              <span className="font-mono font-bold text-red-600 dark:text-red-400">
+                {summary.total_lapsed.toLocaleString()}
+              </span>
+            </div>
+            <div className="h-px bg-zinc-200 dark:bg-zinc-800 my-1" />
+            <div className="flex items-center justify-between text-[11px]">
+              <span className="text-zinc-500 dark:text-zinc-400 uppercase">
+                Net Growth
+              </span>
+              <div className="flex items-center gap-1">
                 {netGrowthPositive ? (
-                  <TrendingUp className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                  <TrendingUp className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
                 ) : (
-                  <TrendingDown className="w-3.5 h-3.5 text-red-600 dark:text-red-400" />
+                  <TrendingDown className="w-3 h-3 text-red-600 dark:text-red-400" />
                 )}
-              </div>
-              <div>
-                <p className="text-[10px] text-zinc-500 uppercase">
-                  Net Growth
-                </p>
-                <p
-                  className={`text-sm font-semibold ${netGrowthPositive ? "text-emerald-600" : "text-red-600"}`}
+                <span
+                  className={cn(
+                    "font-mono font-bold",
+                    netGrowthPositive
+                      ? "text-emerald-600 dark:text-emerald-400"
+                      : "text-red-600 dark:text-red-400",
+                  )}
                 >
                   {netGrowthPositive ? "+" : ""}
                   {formatCurrency(summary.net_growth)}
-                </p>
+                </span>
               </div>
             </div>
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+        </div>
 
-      {/* Monthly Trend Chart */}
-      <Card>
-        <CardHeader className="py-3 px-4">
-          <CardTitle className="text-sm font-semibold">
+        {/* Monthly Trend Chart */}
+        <div className="lg:col-span-2 bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-3">
+          <div className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-2">
             Monthly Production Trend
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="px-4 pb-4">
+          </div>
           <TrendLineChart
             data={trendData}
             lines={[
@@ -302,161 +237,200 @@ function ImoPerformanceReportContent({ dateRange }: ImoPerformanceReportProps) {
                 format: "currency",
               },
             ]}
-            height={250}
+            height={200}
           />
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Agency Comparison */}
       {teamComparison && teamComparison.agencies.length > 0 && (
-        <Card>
-          <CardHeader className="py-3 px-4">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <Building2 className="w-4 h-4" />
-                Agency Comparison
-              </CardTitle>
-              <span className="text-xs text-zinc-500">
-                {teamComparison.summary.total_agencies} agencies |{" "}
-                {teamComparison.summary.total_agents} agents
-              </span>
+        <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-3">
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+              Agency Comparison
             </div>
-          </CardHeader>
-          <CardContent className="px-4 pb-4">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <div>
-                <p className="text-xs text-zinc-500 mb-2">
-                  Top 10 Agencies by Premium
-                </p>
-                <BarComparisonChart
-                  data={agencyComparisonData}
-                  bars={[
-                    {
-                      dataKey: "premium",
-                      name: "Premium",
-                      color: "#3b82f6",
-                      format: "currency",
-                    },
-                  ]}
-                  height={200}
-                  layout="vertical"
-                  showLegend={false}
-                />
-              </div>
-              <div className="overflow-x-auto">
-                <p className="text-xs text-zinc-500 mb-2">Agency Rankings</p>
-                <Table>
-                  <TableHeader>
-                    <TableRow className="text-xs">
-                      <TableHead className="py-2">Rank</TableHead>
-                      <TableHead className="py-2">Agency</TableHead>
-                      <TableHead className="py-2 text-right">Premium</TableHead>
-                      <TableHead className="py-2 text-right">
-                        Retention
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {teamComparison.agencies.slice(0, 5).map((agency) => (
-                      <TableRow key={agency.agency_id} className="text-xs">
-                        <TableCell className="py-1.5 font-medium">
-                          #{agency.rank_by_premium}
-                        </TableCell>
-                        <TableCell className="py-1.5">
+            <span className="text-[10px] text-zinc-400 dark:text-zinc-500">
+              {teamComparison.summary.total_agencies} agencies •{" "}
+              {teamComparison.summary.total_agents} agents
+            </span>
+          </div>
+
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow className="border-zinc-200 dark:border-zinc-800">
+                  <TableHead className="text-[10px] text-zinc-500 dark:text-zinc-400 py-1.5 h-auto w-12">
+                    #
+                  </TableHead>
+                  <TableHead className="text-[10px] text-zinc-500 dark:text-zinc-400 py-1.5 h-auto">
+                    Agency
+                  </TableHead>
+                  <TableHead className="text-[10px] text-zinc-500 dark:text-zinc-400 py-1.5 h-auto text-right">
+                    Agents
+                  </TableHead>
+                  <TableHead className="text-[10px] text-zinc-500 dark:text-zinc-400 py-1.5 h-auto text-right">
+                    Policies
+                  </TableHead>
+                  <TableHead className="text-[10px] text-zinc-500 dark:text-zinc-400 py-1.5 h-auto text-right">
+                    Premium
+                  </TableHead>
+                  <TableHead className="text-[10px] text-zinc-500 dark:text-zinc-400 py-1.5 h-auto text-right">
+                    Retention
+                  </TableHead>
+                  <TableHead className="text-[10px] text-zinc-500 dark:text-zinc-400 py-1.5 h-auto text-right">
+                    % Share
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {teamComparison.agencies.slice(0, 10).map((agency, index) => (
+                  <TableRow
+                    key={agency.agency_id}
+                    className="border-zinc-200 dark:border-zinc-800"
+                  >
+                    <TableCell className="text-[11px] py-1.5">
+                      <div
+                        className={cn(
+                          "w-5 h-5 rounded flex items-center justify-center text-[10px] font-bold",
+                          index === 0
+                            ? "bg-amber-500/20 text-amber-600 dark:text-amber-400"
+                            : index === 1
+                              ? "bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300"
+                              : index === 2
+                                ? "bg-orange-500/20 text-orange-600 dark:text-orange-400"
+                                : "bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400",
+                        )}
+                      >
+                        {agency.rank_by_premium}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-[11px] py-1.5">
+                      <div>
+                        <p className="font-medium text-zinc-900 dark:text-zinc-100">
                           {agency.agency_name}
-                        </TableCell>
-                        <TableCell className="py-1.5 text-right">
-                          {formatCurrency(agency.new_premium)}
-                        </TableCell>
-                        <TableCell className="py-1.5 text-right">
-                          <span
-                            className={
-                              agency.retention_rate >= 80
-                                ? "text-green-600"
-                                : agency.retention_rate >= 60
-                                  ? "text-amber-600"
-                                  : "text-red-600"
-                            }
-                          >
-                            {agency.retention_rate}%
-                          </span>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+                        </p>
+                        <p className="text-[9px] text-zinc-500 dark:text-zinc-400">
+                          {agency.owner_name}
+                        </p>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-[11px] py-1.5 text-right font-mono text-zinc-900 dark:text-zinc-100">
+                      {agency.agent_count}
+                    </TableCell>
+                    <TableCell className="text-[11px] py-1.5 text-right font-mono text-zinc-900 dark:text-zinc-100">
+                      {agency.new_policies}
+                    </TableCell>
+                    <TableCell className="text-[11px] py-1.5 text-right font-mono font-bold text-zinc-900 dark:text-zinc-100">
+                      {formatCurrency(agency.new_premium)}
+                    </TableCell>
+                    <TableCell className="text-[11px] py-1.5 text-right">
+                      <span
+                        className={cn(
+                          "font-mono",
+                          agency.retention_rate >= 80
+                            ? "text-emerald-600 dark:text-emerald-400"
+                            : agency.retention_rate >= 60
+                              ? "text-amber-600 dark:text-amber-400"
+                              : "text-red-600 dark:text-red-400",
+                        )}
+                      >
+                        {agency.retention_rate}%
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-[11px] py-1.5 text-right font-mono text-zinc-500 dark:text-zinc-400">
+                      {agency.pct_of_imo_premium}%
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </div>
       )}
 
       {/* Top Performers */}
       {topPerformers && topPerformers.performers.length > 0 && (
-        <Card>
-          <CardHeader className="py-3 px-4">
-            <CardTitle className="text-sm font-semibold flex items-center gap-2">
-              <Users className="w-4 h-4" />
-              Top Performers
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="px-4 pb-4">
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow className="text-xs">
-                    <TableHead className="py-2">Rank</TableHead>
-                    <TableHead className="py-2">Agent</TableHead>
-                    <TableHead className="py-2">Agency</TableHead>
-                    <TableHead className="py-2 text-right">Policies</TableHead>
-                    <TableHead className="py-2 text-right">Premium</TableHead>
-                    <TableHead className="py-2 text-right">
-                      Commissions
-                    </TableHead>
+        <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-3">
+          <div className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-2">
+            Top Performers
+          </div>
+
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow className="border-zinc-200 dark:border-zinc-800">
+                  <TableHead className="text-[10px] text-zinc-500 dark:text-zinc-400 py-1.5 h-auto w-12">
+                    #
+                  </TableHead>
+                  <TableHead className="text-[10px] text-zinc-500 dark:text-zinc-400 py-1.5 h-auto">
+                    Agent
+                  </TableHead>
+                  <TableHead className="text-[10px] text-zinc-500 dark:text-zinc-400 py-1.5 h-auto">
+                    Agency
+                  </TableHead>
+                  <TableHead className="text-[10px] text-zinc-500 dark:text-zinc-400 py-1.5 h-auto text-right">
+                    Policies
+                  </TableHead>
+                  <TableHead className="text-[10px] text-zinc-500 dark:text-zinc-400 py-1.5 h-auto text-right">
+                    Premium
+                  </TableHead>
+                  <TableHead className="text-[10px] text-zinc-500 dark:text-zinc-400 py-1.5 h-auto text-right">
+                    Commissions
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {topPerformers.performers.map((performer, index) => (
+                  <TableRow
+                    key={performer.agent_id}
+                    className="border-zinc-200 dark:border-zinc-800"
+                  >
+                    <TableCell className="text-[11px] py-1.5">
+                      <div
+                        className={cn(
+                          "w-5 h-5 rounded flex items-center justify-center text-[10px] font-bold",
+                          index === 0
+                            ? "bg-amber-500/20 text-amber-600 dark:text-amber-400"
+                            : index === 1
+                              ? "bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300"
+                              : index === 2
+                                ? "bg-orange-500/20 text-orange-600 dark:text-orange-400"
+                                : "bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400",
+                        )}
+                      >
+                        {performer.rank_in_imo}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-[11px] py-1.5 font-medium text-zinc-900 dark:text-zinc-100">
+                      {performer.agent_name}
+                    </TableCell>
+                    <TableCell className="text-[11px] py-1.5 text-zinc-500 dark:text-zinc-400">
+                      {performer.agency_name}
+                    </TableCell>
+                    <TableCell className="text-[11px] py-1.5 text-right font-mono text-zinc-900 dark:text-zinc-100">
+                      {performer.new_policies}
+                    </TableCell>
+                    <TableCell className="text-[11px] py-1.5 text-right font-mono font-bold text-zinc-900 dark:text-zinc-100">
+                      {formatCurrency(performer.new_premium)}
+                    </TableCell>
+                    <TableCell className="text-[11px] py-1.5 text-right font-mono text-emerald-600 dark:text-emerald-400">
+                      {formatCurrency(performer.commissions_earned)}
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {topPerformers.performers.map((performer) => (
-                    <TableRow key={performer.agent_id} className="text-xs">
-                      <TableCell className="py-1.5 font-medium">
-                        #{performer.rank_in_imo}
-                      </TableCell>
-                      <TableCell className="py-1.5">
-                        {performer.agent_name}
-                      </TableCell>
-                      <TableCell className="py-1.5 text-zinc-500">
-                        {performer.agency_name}
-                      </TableCell>
-                      <TableCell className="py-1.5 text-right">
-                        {performer.new_policies}
-                      </TableCell>
-                      <TableCell className="py-1.5 text-right">
-                        {formatCurrency(performer.new_premium)}
-                      </TableCell>
-                      <TableCell className="py-1.5 text-right">
-                        {formatCurrency(performer.commissions_earned)}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </div>
       )}
     </div>
   );
 }
 
-/**
- * IMO Performance Report with error boundary wrapper.
- * Catches render errors and displays user-friendly error state.
- */
 export function ImoPerformanceReport(props: ImoPerformanceReportProps) {
   const queryClient = useQueryClient();
 
   const handleBoundaryRetry = useCallback(() => {
-    // Invalidate all IMO queries to ensure fresh data after render error
     queryClient.invalidateQueries({ queryKey: imoKeys.all });
   }, [queryClient]);
 

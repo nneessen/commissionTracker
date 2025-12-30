@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-12-30 14:48:19
+
+### Changed Files
+- `src/features/reports/components/AgencyPerformanceReport.tsx`
+- `src/features/reports/components/ImoPerformanceReport.tsx`
+- `src/hooks/reports/useReport.ts`
+- `src/services/agency/AgencyService.ts`
+- `src/services/imo/ImoService.ts`
+- `supabase/migrations/20251230_001_fix_status_change_date_column.sql`
+
+### Statistics
+```
+ 6 files changed, 921 insertions(+), 594 deletions(-)
+```
+
 ## [Checkpoint] - 2025-12-30 12:25:16
 
 ### Changed Files
