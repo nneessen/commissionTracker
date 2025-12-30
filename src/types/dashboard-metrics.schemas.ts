@@ -2,7 +2,7 @@
 // Zod schemas for dashboard metrics RPC responses
 // Provides runtime type validation for database responses
 
-import { z } from 'zod';
+import { z } from "zod";
 
 /**
  * Schema for IMO Dashboard Metrics RPC response row
@@ -20,7 +20,9 @@ export const ImoDashboardMetricsRowSchema = z.object({
   avg_production_per_agent: z.coerce.number().nonnegative(),
 });
 
-export type ImoDashboardMetricsRow = z.infer<typeof ImoDashboardMetricsRowSchema>;
+export type ImoDashboardMetricsRow = z.infer<
+  typeof ImoDashboardMetricsRowSchema
+>;
 
 /**
  * Schema for Agency Dashboard Metrics RPC response row
@@ -41,7 +43,9 @@ export const AgencyDashboardMetricsRowSchema = z.object({
   top_producer_premium: z.coerce.number().nonnegative(),
 });
 
-export type AgencyDashboardMetricsRow = z.infer<typeof AgencyDashboardMetricsRowSchema>;
+export type AgencyDashboardMetricsRow = z.infer<
+  typeof AgencyDashboardMetricsRowSchema
+>;
 
 /**
  * Schema for IMO Production by Agency RPC response row
@@ -59,7 +63,9 @@ export const ImoProductionByAgencyRowSchema = z.object({
   pct_of_imo_production: z.coerce.number().nonnegative(),
 });
 
-export type ImoProductionByAgencyRow = z.infer<typeof ImoProductionByAgencyRowSchema>;
+export type ImoProductionByAgencyRow = z.infer<
+  typeof ImoProductionByAgencyRowSchema
+>;
 
 /**
  * Schema for Agency Production by Agent RPC response row
@@ -78,7 +84,9 @@ export const AgencyProductionByAgentRowSchema = z.object({
   joined_date: z.string(), // ISO timestamp string
 });
 
-export type AgencyProductionByAgentRow = z.infer<typeof AgencyProductionByAgentRowSchema>;
+export type AgencyProductionByAgentRow = z.infer<
+  typeof AgencyProductionByAgentRowSchema
+>;
 
 /**
  * Schema for IMO Override Summary RPC response row
@@ -119,7 +127,9 @@ export const AgencyOverrideSummaryRowSchema = z.object({
   top_earner_amount: z.coerce.number().nonnegative(),
 });
 
-export type AgencyOverrideSummaryRow = z.infer<typeof AgencyOverrideSummaryRowSchema>;
+export type AgencyOverrideSummaryRow = z.infer<
+  typeof AgencyOverrideSummaryRowSchema
+>;
 
 /**
  * Schema for Override by Agency RPC response row
@@ -160,7 +170,9 @@ export type OverrideByAgentRow = z.infer<typeof OverrideByAgentRowSchema>;
  * Parse and validate IMO dashboard metrics response
  * @throws ZodError if validation fails
  */
-export function parseImoDashboardMetrics(data: unknown[]): ImoDashboardMetricsRow[] {
+export function parseImoDashboardMetrics(
+  data: unknown[],
+): ImoDashboardMetricsRow[] {
   return z.array(ImoDashboardMetricsRowSchema).parse(data);
 }
 
@@ -168,7 +180,9 @@ export function parseImoDashboardMetrics(data: unknown[]): ImoDashboardMetricsRo
  * Parse and validate Agency dashboard metrics response
  * @throws ZodError if validation fails
  */
-export function parseAgencyDashboardMetrics(data: unknown[]): AgencyDashboardMetricsRow[] {
+export function parseAgencyDashboardMetrics(
+  data: unknown[],
+): AgencyDashboardMetricsRow[] {
   return z.array(AgencyDashboardMetricsRowSchema).parse(data);
 }
 
@@ -176,7 +190,9 @@ export function parseAgencyDashboardMetrics(data: unknown[]): AgencyDashboardMet
  * Parse and validate IMO production by agency response
  * @throws ZodError if validation fails
  */
-export function parseImoProductionByAgency(data: unknown[]): ImoProductionByAgencyRow[] {
+export function parseImoProductionByAgency(
+  data: unknown[],
+): ImoProductionByAgencyRow[] {
   return z.array(ImoProductionByAgencyRowSchema).parse(data);
 }
 
@@ -184,7 +200,9 @@ export function parseImoProductionByAgency(data: unknown[]): ImoProductionByAgen
  * Parse and validate Agency production by agent response
  * @throws ZodError if validation fails
  */
-export function parseAgencyProductionByAgent(data: unknown[]): AgencyProductionByAgentRow[] {
+export function parseAgencyProductionByAgent(
+  data: unknown[],
+): AgencyProductionByAgentRow[] {
   return z.array(AgencyProductionByAgentRowSchema).parse(data);
 }
 
@@ -192,37 +210,71 @@ export function parseAgencyProductionByAgent(data: unknown[]): AgencyProductionB
  * PostgreSQL error codes used by dashboard metrics RPC functions
  */
 export const RPC_ERROR_CODES = {
-  INSUFFICIENT_PRIVILEGE: '42501',
-  INVALID_PARAMETER_VALUE: '22023',
-  NO_DATA_FOUND: 'P0002',
+  INSUFFICIENT_PRIVILEGE: "42501",
+  INVALID_PARAMETER_VALUE: "22023",
+  NO_DATA_FOUND: "P0002",
+  FUNCTION_NOT_FOUND: "PGRST202", // PostgREST: function not found
 } as const;
 
 /**
  * Check if a Supabase error is an access denied error
  */
-export function isAccessDeniedError(error: { code?: string; message?: string }): boolean {
+export function isAccessDeniedError(error: {
+  code?: string;
+  message?: string;
+}): boolean {
   return error.code === RPC_ERROR_CODES.INSUFFICIENT_PRIVILEGE;
 }
 
 /**
  * Check if a Supabase error is a not found error
  */
-export function isNotFoundError(error: { code?: string; message?: string }): boolean {
+export function isNotFoundError(error: {
+  code?: string;
+  message?: string;
+}): boolean {
   return error.code === RPC_ERROR_CODES.NO_DATA_FOUND;
 }
 
 /**
  * Check if a Supabase error is an invalid parameter error
  */
-export function isInvalidParameterError(error: { code?: string; message?: string }): boolean {
+export function isInvalidParameterError(error: {
+  code?: string;
+  message?: string;
+}): boolean {
   return error.code === RPC_ERROR_CODES.INVALID_PARAMETER_VALUE;
+}
+
+/**
+ * Check if a Supabase error indicates the RPC function doesn't exist
+ * This happens when migrations haven't been applied to the database
+ */
+export function isFunctionNotFoundError(error: {
+  code?: string;
+  message?: string;
+}): boolean {
+  // Check for PostgREST "function not found" error code
+  if (error.code === RPC_ERROR_CODES.FUNCTION_NOT_FOUND) {
+    return true;
+  }
+  // Also check message for 404-style "not found" errors
+  if (
+    error.message?.toLowerCase().includes("function") &&
+    error.message?.toLowerCase().includes("not found")
+  ) {
+    return true;
+  }
+  return false;
 }
 
 /**
  * Parse and validate IMO override summary response
  * @throws ZodError if validation fails
  */
-export function parseImoOverrideSummary(data: unknown[]): ImoOverrideSummaryRow[] {
+export function parseImoOverrideSummary(
+  data: unknown[],
+): ImoOverrideSummaryRow[] {
   return z.array(ImoOverrideSummaryRowSchema).parse(data);
 }
 
@@ -230,7 +282,9 @@ export function parseImoOverrideSummary(data: unknown[]): ImoOverrideSummaryRow[
  * Parse and validate Agency override summary response
  * @throws ZodError if validation fails
  */
-export function parseAgencyOverrideSummary(data: unknown[]): AgencyOverrideSummaryRow[] {
+export function parseAgencyOverrideSummary(
+  data: unknown[],
+): AgencyOverrideSummaryRow[] {
   return z.array(AgencyOverrideSummaryRowSchema).parse(data);
 }
 
@@ -257,7 +311,10 @@ export function parseOverrideByAgent(data: unknown[]): OverrideByAgentRow[] {
 /**
  * Schema for status counts (flexible object with string keys and number values)
  */
-export const RecruitingStatusCountsSchema = z.record(z.string(), z.coerce.number().int().nonnegative());
+export const RecruitingStatusCountsSchema = z.record(
+  z.string(),
+  z.coerce.number().int().nonnegative(),
+);
 
 /**
  * Schema for IMO Recruiting Summary RPC response (JSONB)
@@ -273,7 +330,9 @@ export const ImoRecruitingSummarySchema = z.object({
   dropped_count: z.coerce.number().int().nonnegative(),
 });
 
-export type ImoRecruitingSummaryRow = z.infer<typeof ImoRecruitingSummarySchema>;
+export type ImoRecruitingSummaryRow = z.infer<
+  typeof ImoRecruitingSummarySchema
+>;
 
 /**
  * Schema for Agency Recruiting Summary RPC response (JSONB)
@@ -289,7 +348,9 @@ export const AgencyRecruitingSummarySchema = z.object({
   dropped_count: z.coerce.number().int().nonnegative(),
 });
 
-export type AgencyRecruitingSummaryRow = z.infer<typeof AgencyRecruitingSummarySchema>;
+export type AgencyRecruitingSummaryRow = z.infer<
+  typeof AgencyRecruitingSummarySchema
+>;
 
 /**
  * Schema for Recruiting by Agency RPC response row
@@ -324,13 +385,17 @@ export const RecruitingByRecruiterRowSchema = z.object({
   licensed_count: z.coerce.number().int().nonnegative(),
 });
 
-export type RecruitingByRecruiterRow = z.infer<typeof RecruitingByRecruiterRowSchema>;
+export type RecruitingByRecruiterRow = z.infer<
+  typeof RecruitingByRecruiterRowSchema
+>;
 
 /**
  * Parse and validate IMO recruiting summary response (JSONB)
  * @throws ZodError if validation fails
  */
-export function parseImoRecruitingSummary(data: unknown): ImoRecruitingSummaryRow {
+export function parseImoRecruitingSummary(
+  data: unknown,
+): ImoRecruitingSummaryRow {
   return ImoRecruitingSummarySchema.parse(data);
 }
 
@@ -338,7 +403,9 @@ export function parseImoRecruitingSummary(data: unknown): ImoRecruitingSummaryRo
  * Parse and validate Agency recruiting summary response (JSONB)
  * @throws ZodError if validation fails
  */
-export function parseAgencyRecruitingSummary(data: unknown): AgencyRecruitingSummaryRow {
+export function parseAgencyRecruitingSummary(
+  data: unknown,
+): AgencyRecruitingSummaryRow {
   return AgencyRecruitingSummarySchema.parse(data);
 }
 
@@ -346,7 +413,9 @@ export function parseAgencyRecruitingSummary(data: unknown): AgencyRecruitingSum
  * Parse and validate Recruiting by Agency response (JSONB array)
  * @throws ZodError if validation fails
  */
-export function parseRecruitingByAgency(data: unknown): RecruitingByAgencyRow[] {
+export function parseRecruitingByAgency(
+  data: unknown,
+): RecruitingByAgencyRow[] {
   return z.array(RecruitingByAgencyRowSchema).parse(data);
 }
 
@@ -354,6 +423,8 @@ export function parseRecruitingByAgency(data: unknown): RecruitingByAgencyRow[] 
  * Parse and validate Recruiting by Recruiter response (JSONB array)
  * @throws ZodError if validation fails
  */
-export function parseRecruitingByRecruiter(data: unknown): RecruitingByRecruiterRow[] {
+export function parseRecruitingByRecruiter(
+  data: unknown,
+): RecruitingByRecruiterRow[] {
   return z.array(RecruitingByRecruiterRowSchema).parse(data);
 }

@@ -26,6 +26,7 @@ import {
   parseRecruitingByAgency,
   isAccessDeniedError,
   isInvalidParameterError,
+  isFunctionNotFoundError,
 } from "../../types/dashboard-metrics.schemas";
 import {
   parseImoPerformanceReport,
@@ -415,6 +416,14 @@ class ImoService {
           );
           return null;
         }
+        if (isFunctionNotFoundError(error)) {
+          logger.warn(
+            "IMO performance report function not found - migration may be pending",
+            { code: error.code },
+            "ImoService",
+          );
+          return null;
+        }
         throw error;
       }
 
@@ -495,6 +504,14 @@ class ImoService {
         if (isAccessDeniedError(error) || isInvalidParameterError(error)) {
           logger.warn(
             "Access denied or invalid params for team comparison report",
+            { code: error.code },
+            "ImoService",
+          );
+          return null;
+        }
+        if (isFunctionNotFoundError(error)) {
+          logger.warn(
+            "Team comparison report function not found - migration may be pending",
             { code: error.code },
             "ImoService",
           );
@@ -588,6 +605,14 @@ class ImoService {
         if (isAccessDeniedError(error) || isInvalidParameterError(error)) {
           logger.warn(
             "Access denied or invalid params for top performers report",
+            { code: error.code },
+            "ImoService",
+          );
+          return null;
+        }
+        if (isFunctionNotFoundError(error)) {
+          logger.warn(
+            "Top performers report function not found - migration may be pending",
             { code: error.code },
             "ImoService",
           );

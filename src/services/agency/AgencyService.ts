@@ -28,6 +28,7 @@ import {
   isAccessDeniedError,
   isInvalidParameterError,
   isNotFoundError,
+  isFunctionNotFoundError,
 } from "../../types/dashboard-metrics.schemas";
 import {
   parseAgencyPerformanceReport,
@@ -677,10 +678,11 @@ class AgencyService {
         if (
           isAccessDeniedError(error) ||
           isInvalidParameterError(error) ||
-          isNotFoundError(error)
+          isNotFoundError(error) ||
+          isFunctionNotFoundError(error)
         ) {
           logger.warn(
-            "Access denied or invalid params for agency performance report",
+            "Access denied, invalid params, or function not found for agency performance report",
             { agencyId, code: error.code },
             "AgencyService",
           );
