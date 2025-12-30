@@ -19,6 +19,11 @@ export const expenseTemplateKeys = {
  * Helper to ensure we always throw an Error object
  */
 function ensureError(error: Error | undefined, fallbackMessage: string): Error {
+  if (!error) {
+    console.warn(
+      `[useExpenseTemplates] ServiceResponse.error was undefined: ${fallbackMessage}`,
+    );
+  }
   return error ?? new Error(fallbackMessage);
 }
 

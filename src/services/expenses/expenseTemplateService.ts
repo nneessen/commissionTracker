@@ -1,6 +1,10 @@
 // src/services/expenses/expenseTemplateService.ts
 
-import { BaseService, type ServiceResponse } from "../base/BaseService";
+import {
+  BaseService,
+  type ServiceResponse,
+  type ListResponse,
+} from "../base/BaseService";
 import { ExpenseTemplateRepository } from "./ExpenseTemplateRepository";
 import { supabase } from "../base/supabase";
 import type {
@@ -12,11 +16,14 @@ import type {
   CreateExpenseData,
 } from "@/types/expense.types";
 
-// Valid values for expense_type enum
-const VALID_EXPENSE_TYPES: ExpenseType[] = ["personal", "business"];
+// Valid values for expense_type enum - type-safe to catch mismatches
+const VALID_EXPENSE_TYPES = [
+  "personal",
+  "business",
+] as const satisfies readonly ExpenseType[];
 
-// Valid values for recurring_frequency enum
-const VALID_RECURRING_FREQUENCIES: RecurringFrequency[] = [
+// Valid values for recurring_frequency enum - type-safe to catch mismatches
+const VALID_RECURRING_FREQUENCIES = [
   "daily",
   "weekly",
   "biweekly",
@@ -24,7 +31,18 @@ const VALID_RECURRING_FREQUENCIES: RecurringFrequency[] = [
   "quarterly",
   "semiannually",
   "annually",
-];
+] as const satisfies readonly RecurringFrequency[];
+
+// Display labels for recurring frequency
+const FREQUENCY_DISPLAY_MAP: Record<RecurringFrequency, string> = {
+  daily: "Daily",
+  weekly: "Weekly",
+  biweekly: "Bi-Weekly",
+  monthly: "Monthly",
+  quarterly: "Quarterly",
+  semiannually: "Semi-Annually",
+  annually: "Annually",
+};
 
 /**
  * Service for expense template business logic
@@ -389,10 +407,8 @@ export class ExpenseTemplateService extends BaseService<
         if (!template.recurring_frequency) {
           grouped["No Frequency"].push(template);
         } else {
-          const key =
-            template.recurring_frequency.charAt(0).toUpperCase() +
-            template.recurring_frequency.slice(1).replace("_", "-");
-          if (grouped[key]) {
+          const key = FREQUENCY_DISPLAY_MAP[template.recurring_frequency];
+          if (key && grouped[key]) {
             grouped[key].push(template);
           }
         }
@@ -415,15 +431,66 @@ export class ExpenseTemplateService extends BaseService<
   }
 
   // ============================================================================
-  // INHERITED FROM BaseService (available but may need testing due to any cast):
+  // OVERRIDE INHERITED METHODS
+  // These methods use this.repository (any-casted) in BaseService.
+  // Override them to either implement correctly or throw explicit errors.
   // ============================================================================
-  // - createMany(items: CreateExpenseTemplateData[]): Promise<ServiceResponse<ExpenseTemplate[]>>
-  // - getPaginated(page, pageSize, filters?, orderBy?, orderDirection?): Promise<ServiceResponse<ListResponse<ExpenseTemplate>>>
-  // - exists(id: string): Promise<boolean>
-  // - count(filters?): Promise<number>
-  //
-  // Note: These inherited methods use the any-casted repository. If used,
-  // verify they work correctly with the ExpenseTemplateRepository's type structure.
+
+  /**
+   * NOT IMPLEMENTED - createMany uses BaseService's this.repository which has type mismatch
+   */
+  async createMany(
+    _items: CreateExpenseTemplateData[],
+  ): Promise<ServiceResponse<ExpenseTemplate[]>> {
+    return {
+      success: false,
+      error: new Error(
+        "ExpenseTemplateService.createMany() is not implemented. Use create() in a loop instead.",
+      ),
+    };
+  }
+
+  /**
+   * NOT IMPLEMENTED - getPaginated uses BaseService's this.repository which has type mismatch
+   */
+  async getPaginated(
+    _page?: number,
+    _pageSize?: number,
+    _filters?: Record<string, unknown>,
+    _orderBy?: string,
+    _orderDirection?: "asc" | "desc",
+  ): Promise<ServiceResponse<ListResponse<ExpenseTemplate>>> {
+    return {
+      success: false,
+      error: new Error(
+        "ExpenseTemplateService.getPaginated() is not implemented. Use getAll() instead.",
+      ),
+    };
+  }
+
+  /**
+   * Override exists to use our correctly-typed _repository
+   */
+  async exists(id: string): Promise<boolean> {
+    try {
+      const template = await this._repository.findByIdRaw(id);
+      return template !== null;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Override count to use getAll (simple implementation)
+   */
+  async count(_filters?: Record<string, unknown>): Promise<number> {
+    try {
+      const result = await this.getAll();
+      return result.success && result.data ? result.data.length : 0;
+    } catch {
+      return 0;
+    }
+  }
 }
 
 // Singleton instance
