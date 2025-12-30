@@ -1,9 +1,9 @@
 // src/services/settings/comp-guide/CompGuideService.ts
-import { ServiceResponse } from "../../base/BaseService";
+import { BaseService, type ServiceResponse } from "../../base/BaseService";
 import {
   CompGuideRepository,
-  CompGuideEntry,
-  CompGuideFormData,
+  type CompGuideEntry,
+  type CompGuideFormData,
 } from "./CompGuideRepository";
 import { supabase } from "../../base/supabase";
 import type { Database } from "@/types/database.types";
@@ -12,21 +12,149 @@ type CompGuideInsert = Database["public"]["Tables"]["comp_guide"]["Insert"];
 
 /**
  * Service for comp guide business logic
+ * Extends BaseService for standard CRUD operations
  * Uses CompGuideRepository for data access
  */
-class CompGuideServiceClass {
-  private repository: CompGuideRepository;
-
+class CompGuideServiceClass extends BaseService<
+  CompGuideEntry,
+  CompGuideFormData,
+  Partial<CompGuideFormData>
+> {
   constructor() {
-    this.repository = new CompGuideRepository();
+    const repository = new CompGuideRepository();
+    super(repository);
+  }
+
+  /**
+   * Initialize validation rules
+   */
+  protected initializeValidationRules(): void {
+    this.validationRules = [
+      {
+        field: "commission_percentage",
+        validate: (value) => {
+          if (value === undefined || value === null) return false;
+          if (typeof value !== "number") return false;
+          return value >= 0 && value <= 100;
+        },
+        message:
+          "Commission percentage is required and must be between 0 and 100",
+      },
+      {
+        field: "contract_level",
+        validate: (value) => {
+          if (value === undefined || value === null) return false;
+          if (typeof value !== "number") return false;
+          return Number.isInteger(value) && value > 0;
+        },
+        message: "Contract level is required and must be a positive integer",
+      },
+      {
+        field: "effective_date",
+        validate: (value) => {
+          if (value === undefined || value === null) return false;
+          if (typeof value !== "string" || value.trim() === "") return false;
+          const date = new Date(value);
+          return !isNaN(date.getTime());
+        },
+        message: "Effective date is required and must be a valid date",
+      },
+      {
+        field: "product_type",
+        validate: (value) => {
+          if (value === undefined || value === null) return false;
+          return typeof value === "string" && value.trim().length > 0;
+        },
+        message: "Product type is required",
+      },
+      {
+        field: "bonus_percentage",
+        validate: (value) => {
+          if (value === null || value === undefined) return true; // Optional
+          if (typeof value !== "number") return false;
+          return value >= 0 && value <= 100;
+        },
+        message: "Bonus percentage must be between 0 and 100 if provided",
+      },
+      {
+        field: "expiration_date",
+        validate: (value, data) => {
+          if (!value) return true; // Optional
+          if (typeof value !== "string") return false;
+          const expirationDate = new Date(value);
+          if (isNaN(expirationDate.getTime())) return false;
+
+          // Validate expiration_date >= effective_date
+          const effectiveDate = data?.effective_date
+            ? new Date(data.effective_date as string)
+            : null;
+          if (effectiveDate && expirationDate < effectiveDate) {
+            return false;
+          }
+          return true;
+        },
+        message:
+          "Expiration date must be a valid date and after effective date if provided",
+      },
+      {
+        field: "minimum_premium",
+        validate: (value) => {
+          if (value === null || value === undefined) return true; // Optional
+          if (typeof value !== "number") return false;
+          return value > 0;
+        },
+        message: "Minimum premium must be a positive number if provided",
+      },
+      {
+        field: "maximum_premium",
+        validate: (value, data) => {
+          if (value === null || value === undefined) return true; // Optional
+          if (typeof value !== "number") return false;
+          if (value <= 0) return false;
+
+          // Validate maximum_premium > minimum_premium
+          const minPremium = data?.minimum_premium as number | undefined;
+          if (minPremium && value <= minPremium) {
+            return false;
+          }
+          return true;
+        },
+        message:
+          "Maximum premium must be a positive number and greater than minimum premium if both provided",
+      },
+      {
+        field: "carrier_id",
+        validate: (value) => {
+          if (!value) return true; // Optional
+          if (typeof value !== "string") return false;
+          const uuidRegex =
+            /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+          return uuidRegex.test(value);
+        },
+        message: "Carrier ID must be a valid UUID if provided",
+      },
+      {
+        field: "product_id",
+        validate: (value) => {
+          if (!value) return true; // Optional
+          if (typeof value !== "string") return false;
+          const uuidRegex =
+            /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+          return uuidRegex.test(value);
+        },
+        message: "Product ID must be a valid UUID if provided",
+      },
+    ];
   }
 
   /**
    * Get all entries with carrier details
+   * Overrides base getAll to use custom repository method
    */
   async getAll(): Promise<ServiceResponse<CompGuideEntry[]>> {
     try {
-      const entries = await this.repository.findAllWithCarrier();
+      const repository = this.repository as CompGuideRepository;
+      const entries = await repository.findAllWithCarrier();
       return { success: true, data: entries as CompGuideEntry[] };
     } catch (error) {
       return {
@@ -38,64 +166,16 @@ class CompGuideServiceClass {
 
   /**
    * Get entry by ID with carrier details
+   * Overrides base getById to use custom repository method
    */
   async getById(id: string): Promise<ServiceResponse<CompGuideEntry>> {
     try {
-      const entry = await this.repository.findByIdWithCarrier(id);
+      const repository = this.repository as CompGuideRepository;
+      const entry = await repository.findByIdWithCarrier(id);
       if (!entry) {
         return { success: false, error: new Error("Entry not found") };
       }
       return { success: true, data: entry as CompGuideEntry };
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error : new Error(String(error)),
-      };
-    }
-  }
-
-  /**
-   * Create a new entry
-   */
-  async create(
-    data: CompGuideFormData,
-  ): Promise<ServiceResponse<CompGuideEntry>> {
-    try {
-      const entry = await this.repository.create(data);
-      return { success: true, data: entry as CompGuideEntry };
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error : new Error(String(error)),
-      };
-    }
-  }
-
-  /**
-   * Update an entry
-   */
-  async update(
-    id: string,
-    data: Partial<CompGuideFormData>,
-  ): Promise<ServiceResponse<CompGuideEntry>> {
-    try {
-      const entry = await this.repository.update(id, data);
-      return { success: true, data: entry as CompGuideEntry };
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error : new Error(String(error)),
-      };
-    }
-  }
-
-  /**
-   * Delete an entry
-   */
-  async delete(id: string): Promise<ServiceResponse<void>> {
-    try {
-      await this.repository.delete(id);
-      return { success: true };
     } catch (error) {
       return {
         success: false,
@@ -111,7 +191,8 @@ class CompGuideServiceClass {
     carrierId: string,
   ): Promise<ServiceResponse<CompGuideEntry[]>> {
     try {
-      const entries = await this.repository.findByCarrier(carrierId);
+      const repository = this.repository as CompGuideRepository;
+      const entries = await repository.findByCarrier(carrierId);
       return { success: true, data: entries as CompGuideEntry[] };
     } catch (error) {
       return {
@@ -128,7 +209,8 @@ class CompGuideServiceClass {
     productId: string,
   ): Promise<ServiceResponse<CompGuideEntry[]>> {
     try {
-      const entries = await this.repository.findByProduct(productId);
+      const repository = this.repository as CompGuideRepository;
+      const entries = await repository.findByProduct(productId);
       return { success: true, data: entries as CompGuideEntry[] };
     } catch (error) {
       return {
@@ -143,7 +225,8 @@ class CompGuideServiceClass {
    */
   async getActive(): Promise<ServiceResponse<CompGuideEntry[]>> {
     try {
-      const entries = await this.repository.findActive();
+      const repository = this.repository as CompGuideRepository;
+      const entries = await repository.findActive();
       return { success: true, data: entries as CompGuideEntry[] };
     } catch (error) {
       return {
@@ -158,7 +241,8 @@ class CompGuideServiceClass {
    */
   async search(query: string): Promise<ServiceResponse<CompGuideEntry[]>> {
     try {
-      const entries = await this.repository.search(query);
+      const repository = this.repository as CompGuideRepository;
+      const entries = await repository.search(query);
       return { success: true, data: entries as CompGuideEntry[] };
     } catch (error) {
       return {
@@ -175,6 +259,7 @@ class CompGuideServiceClass {
     entries: CompGuideFormData[],
   ): Promise<ServiceResponse<CompGuideEntry[]>> {
     try {
+      const repository = this.repository as CompGuideRepository;
       const insertData: CompGuideInsert[] = entries.map((entry) => ({
         carrier_id: entry.carrier_id,
         product_id: entry.product_id,
@@ -188,7 +273,7 @@ class CompGuideServiceClass {
         maximum_premium: entry.maximum_premium,
       }));
 
-      const created = await this.repository.bulkCreate(insertData);
+      const created = await repository.bulkCreate(insertData);
       return { success: true, data: created as CompGuideEntry[] };
     } catch (error) {
       return {
@@ -222,7 +307,8 @@ class CompGuideServiceClass {
         };
       }
 
-      const rate = await this.repository.getCommissionRate(
+      const repository = this.repository as CompGuideRepository;
+      const rate = await repository.getCommissionRate(
         carrier.id,
         productType,
         contractLevel,
@@ -456,7 +542,8 @@ class CompGuideServiceClass {
 
   /** @deprecated Use bulkImport instead */
   async createBulkEntries(entries: CompGuideInsert[]) {
-    const created = await this.repository.bulkCreate(entries);
+    const repository = this.repository as CompGuideRepository;
+    const created = await repository.bulkCreate(entries);
     return { data: created, error: null };
   }
 
