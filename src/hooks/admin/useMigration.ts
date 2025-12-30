@@ -1,5 +1,9 @@
-import {useState} from 'react';
-import {dataMigrationService, MigrationResult} from '../../utils/dataMigration';
+import { useState } from "react";
+import {
+  dataMigrationService,
+  MigrationResult,
+} from "../../utils/dataMigration";
+import { useAuth } from "@/contexts/AuthContext";
 
 export interface UseMigrationResult {
   migrate: () => Promise<MigrationResult>;
@@ -13,21 +17,29 @@ export interface UseMigrationResult {
 export function useMigration(): UseMigrationResult {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { user } = useAuth();
 
   const migrate = async (): Promise<MigrationResult> => {
     setIsLoading(true);
     setError(null);
 
     try {
-      const result = await dataMigrationService.migrateFromLocalStorage();
+      if (!user?.id) {
+        throw new Error("User must be authenticated to migrate data");
+      }
+
+      const result = await dataMigrationService.migrateFromLocalStorage(
+        user.id,
+      );
 
       if (!result.success && result.errors.length > 0) {
-        setError(result.errors.join('; '));
+        setError(result.errors.join("; "));
       }
 
       return result;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Migration failed';
+      const errorMessage =
+        err instanceof Error ? err.message : "Migration failed";
       setError(errorMessage);
 
       return {

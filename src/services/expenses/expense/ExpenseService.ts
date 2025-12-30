@@ -1,7 +1,6 @@
 // src/services/expenses/expense/ExpenseService.ts
-import { ServiceResponse } from "../../base/BaseService";
-import { ExpenseRepository } from "./ExpenseRepository";
-import { supabase } from "../../base/supabase";
+import { BaseService, ServiceResponse } from "../../base/BaseService";
+import { ExpenseRepository, ExpenseBaseEntity } from "./ExpenseRepository";
 import { isSameMonth, isSameYear } from "@/lib/date";
 import type {
   Expense,
@@ -19,21 +18,154 @@ import type {
 
 /**
  * Service for expense business logic
- * Uses ExpenseRepository for data access
+ * Extends BaseService for standard CRUD operations with validation
  */
-class ExpenseServiceClass {
-  private repository: ExpenseRepository;
+class ExpenseServiceClass extends BaseService<
+  ExpenseBaseEntity,
+  CreateExpenseData,
+  UpdateExpenseData
+> {
+  // Store typed repository reference for custom methods
+  private _repository: ExpenseRepository;
 
-  constructor() {
-    this.repository = new ExpenseRepository();
+  constructor(repository: ExpenseRepository) {
+    super(repository);
+    this._repository = repository;
   }
 
   /**
-   * Get all expenses with optional filtering
+   * Initialize validation rules for expense data
    */
-  async getAll(filters?: ExpenseFilters): Promise<ServiceResponse<Expense[]>> {
+  protected initializeValidationRules(): void {
+    this.validationRules = [
+      // Required fields
+      {
+        field: "name",
+        validate: (value) =>
+          typeof value === "string" && value.trim().length > 0,
+        message: "Expense name is required",
+      },
+      {
+        field: "amount",
+        validate: (value) => typeof value === "number" && value > 0,
+        message: "Amount must be a positive number",
+      },
+      {
+        field: "date",
+        validate: (value) => {
+          if (typeof value !== "string" || !value.trim()) return false;
+          const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+          return dateRegex.test(value);
+        },
+        message: "Valid date is required (YYYY-MM-DD format)",
+      },
+      {
+        field: "category",
+        validate: (value) =>
+          typeof value === "string" && value.trim().length > 0,
+        message: "Category is required",
+      },
+      {
+        field: "expense_type",
+        validate: (value) => {
+          const validTypes: ("personal" | "business")[] = [
+            "personal",
+            "business",
+          ];
+          return validTypes.includes(value as "personal" | "business");
+        },
+        message: "Expense type must be 'personal' or 'business'",
+      },
+      // Optional fields with constraints
+      {
+        field: "description",
+        validate: (value) => {
+          if (value === undefined || value === null || value === "")
+            return true;
+          return typeof value === "string" && value.length <= 500;
+        },
+        message: "Description must be 500 characters or less",
+      },
+      {
+        field: "notes",
+        validate: (value) => {
+          if (value === undefined || value === null || value === "")
+            return true;
+          return typeof value === "string" && value.length <= 1000;
+        },
+        message: "Notes must be 1000 characters or less",
+      },
+      {
+        field: "is_tax_deductible",
+        validate: (value) => {
+          if (value === undefined || value === null) return true;
+          return typeof value === "boolean";
+        },
+        message: "Tax deductible must be a boolean",
+      },
+      {
+        field: "is_recurring",
+        validate: (value) => {
+          if (value === undefined || value === null) return true;
+          return typeof value === "boolean";
+        },
+        message: "Recurring flag must be a boolean",
+      },
+      {
+        field: "recurring_frequency",
+        validate: (value, data) => {
+          // If not recurring, frequency should be null/undefined
+          const isRecurring = data?.is_recurring;
+          if (!isRecurring) return true;
+          // If recurring, validate frequency value
+          if (!value) return false;
+          const validFrequencies = [
+            "daily",
+            "weekly",
+            "biweekly",
+            "monthly",
+            "quarterly",
+            "annually",
+          ];
+          return validFrequencies.includes(value as string);
+        },
+        message: "Recurring frequency is required when is_recurring is true",
+      },
+    ];
+  }
+
+  /**
+   * Validate only provided fields for partial updates
+   */
+  private validateForUpdate(data: Record<string, unknown>): Error[] {
+    const errors: Error[] = [];
+
+    for (const rule of this.validationRules) {
+      const value = data[rule.field];
+      // Skip validation for fields not in the update
+      if (value === undefined) continue;
+
+      if (!rule.validate(value, data)) {
+        errors.push(new Error(rule.message));
+      }
+    }
+
+    return errors;
+  }
+
+  // ============================================================================
+  // CRUD METHODS
+  // ============================================================================
+
+  /**
+   * Get all expenses with optional filtering
+   * Custom method using ExpenseFilters (not BaseService.getAll)
+   */
+  async getAllFiltered(
+    filters?: ExpenseFilters,
+  ): Promise<ServiceResponse<Expense[]>> {
     try {
-      const expenses = await this.repository.findWithFilters(filters);
+      const expenses = await this._repository.findWithFilters(filters);
       return { success: true, data: expenses as Expense[] };
     } catch (error) {
       return {
@@ -44,35 +176,44 @@ class ExpenseServiceClass {
   }
 
   /**
-   * Get expense by ID
+   * @deprecated Use getAllFiltered() instead.
+   * This override prevents accidental use of BaseService.getAll() which has an incompatible signature.
+   * @throws Error directing users to use getAllFiltered()
    */
-  async getById(id: string): Promise<ServiceResponse<Expense>> {
-    try {
-      const expense = await this.repository.findById(id);
-      if (!expense) {
-        return { success: false, error: new Error("Expense not found") };
-      }
-      return { success: true, data: expense as Expense };
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error : new Error(String(error)),
-      };
-    }
+  async getAll(): Promise<ServiceResponse<Expense[]>> {
+    throw new Error(
+      "ExpenseService.getAll() is not supported. Use getAllFiltered(filters?: ExpenseFilters) instead.",
+    );
   }
 
   /**
    * Create a new expense
+   * Override to handle user authentication and recurring expense generation
+   * @param data Expense data to create
+   * @param userId User ID who owns this expense (required)
    */
-  async create(data: CreateExpenseData): Promise<ServiceResponse<Expense>> {
+  async create(
+    data: CreateExpenseData,
+    userId?: string,
+  ): Promise<ServiceResponse<Expense>> {
     try {
-      // Get current user
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      // Validate user ID
+      if (!userId) {
+        return {
+          success: false,
+          error: new Error(
+            "User ID is required. This should be provided by the authentication layer.",
+          ),
+        };
+      }
 
-      if (!user) {
-        return { success: false, error: new Error("User not authenticated") };
+      // Validate input
+      const errors = this.validate(data as unknown as Record<string, unknown>);
+      if (errors.length > 0) {
+        return {
+          success: false,
+          error: new Error(errors.map((e) => e.message).join(", ")),
+        };
       }
 
       // Generate recurring_group_id if this is a recurring expense
@@ -82,43 +223,44 @@ class ExpenseServiceClass {
           ? crypto.randomUUID()
           : data.recurring_group_id;
 
-      // Insert expense with user_id
-      const { data: result, error } = await supabase
-        .from("expenses")
-        .insert({
-          ...data,
-          user_id: user.id,
-          is_recurring: isRecurring,
-          recurring_frequency: data.recurring_frequency || null,
-          recurring_group_id: recurringGroupId,
-          recurring_end_date: data.recurring_end_date || null,
-          is_tax_deductible: data.is_tax_deductible || false,
-        })
-        .select()
-        .single();
+      // Prepare data with defaults and generated values
+      const expenseData: CreateExpenseData = {
+        ...data,
+        is_recurring: isRecurring,
+        recurring_frequency: data.recurring_frequency || null,
+        recurring_group_id: recurringGroupId,
+        recurring_end_date: data.recurring_end_date || null,
+        is_tax_deductible: data.is_tax_deductible || false,
+      };
 
-      if (error) {
-        return { success: false, error: new Error(error.message) };
-      }
+      // Use repository to create expense (respects transformToDB)
+      const expense = await this._repository.createWithUserId(
+        userId,
+        expenseData,
+      );
 
       // AUTO-GENERATE future recurring expenses
+      const warnings: string[] = [];
       if (isRecurring && data.recurring_frequency) {
         try {
           const { recurringExpenseService } =
             await import("../recurringExpenseService");
-          const batchResult = await recurringExpenseService.generateRecurringExpenses(
-            { ...data, recurring_group_id: recurringGroupId },
-            user.id,
-          );
-
-          // Log partial failures if any occurred
-          if (batchResult.failureCount > 0) {
-            console.warn(
-              `Recurring expense generation: ${batchResult.successCount} created, ${batchResult.failureCount} failed`,
-              batchResult.errors,
+          const batchResult =
+            await recurringExpenseService.generateRecurringExpenses(
+              { ...data, recurring_group_id: recurringGroupId },
+              userId,
             );
+
+          // Report partial failures as warnings
+          if (batchResult.failureCount > 0) {
+            const warningMsg = `Recurring expense created, but ${batchResult.failureCount} future instances failed to generate. Successfully created ${batchResult.successCount} future instances.`;
+            warnings.push(warningMsg);
+            console.warn(warningMsg, batchResult.errors);
           }
         } catch (recurringError) {
+          const errorMsg =
+            "Recurring expense created, but failed to generate future instances. You may need to create them manually.";
+          warnings.push(errorMsg);
           console.error(
             "Failed to generate recurring expenses:",
             recurringError,
@@ -126,7 +268,11 @@ class ExpenseServiceClass {
         }
       }
 
-      return { success: true, data: result as Expense };
+      return {
+        success: true,
+        data: expense as Expense,
+        warnings: warnings.length > 0 ? warnings : undefined,
+      };
     } catch (error) {
       return {
         success: false,
@@ -137,13 +283,23 @@ class ExpenseServiceClass {
 
   /**
    * Update an expense
+   * Override to use partial validation
    */
   async update(
     id: string,
     updates: UpdateExpenseData,
   ): Promise<ServiceResponse<Expense>> {
     try {
-      const expense = await this.repository.update(id, updates);
+      // Use partial validation for updates
+      const errors = this.validateForUpdate(updates as Record<string, unknown>);
+      if (errors.length > 0) {
+        return {
+          success: false,
+          error: new Error(errors.map((e) => e.message).join(", ")),
+        };
+      }
+
+      const expense = await this._repository.update(id, updates);
       return { success: true, data: expense as Expense };
     } catch (error) {
       return {
@@ -155,10 +311,11 @@ class ExpenseServiceClass {
 
   /**
    * Delete an expense
+   * Uses repository directly
    */
   async delete(id: string): Promise<ServiceResponse<void>> {
     try {
-      await this.repository.delete(id);
+      await this._repository.delete(id);
       return { success: true };
     } catch (error) {
       return {
@@ -168,6 +325,10 @@ class ExpenseServiceClass {
     }
   }
 
+  // ============================================================================
+  // BUSINESS LOGIC METHODS
+  // ============================================================================
+
   /**
    * Get expenses by date range
    */
@@ -176,7 +337,7 @@ class ExpenseServiceClass {
     endDate: string,
   ): Promise<ServiceResponse<Expense[]>> {
     try {
-      const expenses = await this.repository.findByDateRange(
+      const expenses = await this._repository.findByDateRange(
         startDate,
         endDate,
       );
@@ -196,7 +357,7 @@ class ExpenseServiceClass {
     filters?: ExpenseFilters,
   ): Promise<ServiceResponse<ExpenseTotals>> {
     try {
-      const result = await this.getAll(filters);
+      const result = await this.getAllFiltered(filters);
       if (!result.success) {
         return { success: false, error: result.error };
       }
@@ -428,19 +589,19 @@ class ExpenseServiceClass {
   }
 
   // ============================================================================
-  // Hierarchy/Team Methods
+  // HIERARCHY/TEAM METHODS
   // ============================================================================
 
   /**
    * Get expenses from downline agents
    */
   async getDownlineExpenses(
-    dateRange?: ExpenseDateRange
+    dateRange?: ExpenseDateRange,
   ): Promise<ServiceResponse<DownlineExpense[]>> {
     try {
-      const expenses = await this.repository.findDownlineExpenses(
+      const expenses = await this._repository.findDownlineExpenses(
         dateRange?.startDate,
-        dateRange?.endDate
+        dateRange?.endDate,
       );
       return { success: true, data: expenses };
     } catch (error) {
@@ -455,12 +616,12 @@ class ExpenseServiceClass {
    * Get expense summary by downline agent
    */
   async getDownlineExpenseSummary(
-    dateRange?: ExpenseDateRange
+    dateRange?: ExpenseDateRange,
   ): Promise<ServiceResponse<AgentExpenseSummary[]>> {
     try {
-      const summary = await this.repository.getDownlineExpenseSummary(
+      const summary = await this._repository.getDownlineExpenseSummary(
         dateRange?.startDate,
-        dateRange?.endDate
+        dateRange?.endDate,
       );
       return { success: true, data: summary };
     } catch (error) {
@@ -475,12 +636,12 @@ class ExpenseServiceClass {
    * Get expense summary for entire IMO (admin only)
    */
   async getImoExpenseSummary(
-    dateRange?: ExpenseDateRange
+    dateRange?: ExpenseDateRange,
   ): Promise<ServiceResponse<AgentExpenseSummary[]>> {
     try {
-      const summary = await this.repository.getImoExpenseSummary(
+      const summary = await this._repository.getImoExpenseSummary(
         dateRange?.startDate,
-        dateRange?.endDate
+        dateRange?.endDate,
       );
       return { success: true, data: summary };
     } catch (error) {
@@ -495,12 +656,12 @@ class ExpenseServiceClass {
    * Get expense totals by category for IMO (admin only)
    */
   async getImoExpenseByCategory(
-    dateRange?: ExpenseDateRange
+    dateRange?: ExpenseDateRange,
   ): Promise<ServiceResponse<CategoryExpenseSummary[]>> {
     try {
-      const summary = await this.repository.getImoExpenseByCategory(
+      const summary = await this._repository.getImoExpenseByCategory(
         dateRange?.startDate,
-        dateRange?.endDate
+        dateRange?.endDate,
       );
       return { success: true, data: summary };
     } catch (error) {
@@ -512,12 +673,21 @@ class ExpenseServiceClass {
   }
 
   // ============================================================================
-  // Legacy API for backward compatibility
+  // INHERITED FROM BaseService (available without code):
+  // ============================================================================
+  // - getById(id: string): Promise<ServiceResponse<Expense>>
+  // - getPaginated(page, pageSize, filters?, orderBy?, orderDirection?): Promise<ServiceResponse<ListResponse<Expense>>>
+  // - createMany(items: CreateExpenseData[]): Promise<ServiceResponse<Expense[]>>
+  // - exists(id: string): Promise<boolean>
+  // - count(filters?): Promise<number>
+
+  // ============================================================================
+  // LEGACY API FOR BACKWARD COMPATIBILITY
   // ============================================================================
 
-  /** @deprecated Use getAll instead */
+  /** @deprecated Use getAllFiltered instead */
   async getAllExpenses(filters?: ExpenseFilters): Promise<Expense[]> {
-    const result = await this.getAll(filters);
+    const result = await this.getAllFiltered(filters);
     if (!result.success) {
       throw result.error;
     }
@@ -534,8 +704,11 @@ class ExpenseServiceClass {
   }
 
   /** @deprecated Use create instead */
-  async createExpense(data: CreateExpenseData): Promise<Expense> {
-    const result = await this.create(data);
+  async createExpense(
+    data: CreateExpenseData,
+    userId?: string,
+  ): Promise<Expense> {
+    const result = await this.create(data, userId);
     if (!result.success) {
       throw result.error;
     }
@@ -604,5 +777,9 @@ class ExpenseServiceClass {
   }
 }
 
-export const expenseService = new ExpenseServiceClass();
+// Create singleton with repository injection
+const expenseRepository = new ExpenseRepository();
+export const expenseService = new ExpenseServiceClass(expenseRepository);
+
+// Export class for testing
 export { ExpenseServiceClass };

@@ -58,7 +58,7 @@ describe("ExpenseService", () => {
     vi.clearAllMocks();
   });
 
-  describe("getAll", () => {
+  describe("getAllFiltered", () => {
     it("should fetch all expenses successfully", async () => {
       const mockFrom = vi.fn().mockReturnValue({
         select: vi.fn().mockReturnValue({
@@ -70,7 +70,7 @@ describe("ExpenseService", () => {
       });
       (supabase.from as ReturnType<typeof vi.fn>) = mockFrom;
 
-      const result = await expenseService.getAll();
+      const result = await expenseService.getAllFiltered();
 
       expect(result.success).toBe(true);
       expect(result.data).toHaveLength(1);
@@ -98,7 +98,7 @@ describe("ExpenseService", () => {
 
       (supabase.from as ReturnType<typeof vi.fn>) = mockFrom;
 
-      await expenseService.getAll({ expenseType: "business" });
+      await expenseService.getAllFiltered({ expenseType: "business" });
 
       expect(mockQuery.eq).toHaveBeenCalledWith("expense_type", "business");
     });
@@ -114,7 +114,7 @@ describe("ExpenseService", () => {
       });
       (supabase.from as ReturnType<typeof vi.fn>) = mockFrom;
 
-      const result = await expenseService.getAll();
+      const result = await expenseService.getAllFiltered();
 
       expect(result.success).toBe(false);
       expect(result.error).toBeDefined();
@@ -145,7 +145,7 @@ describe("ExpenseService", () => {
       });
       (supabase.from as ReturnType<typeof vi.fn>) = mockFrom;
 
-      const result = await expenseService.create(newExpenseData);
+      const result = await expenseService.create(newExpenseData, "user-1");
 
       expect(result.success).toBe(true);
       expect(result.data).toMatchObject(mockExpense);
@@ -173,10 +173,26 @@ describe("ExpenseService", () => {
       });
       (supabase.from as ReturnType<typeof vi.fn>) = mockFrom;
 
-      const result = await expenseService.create(newExpenseData);
+      const result = await expenseService.create(newExpenseData, "user-1");
 
       expect(result.success).toBe(false);
       expect(result.error).toBeDefined();
+    });
+
+    it("should fail without userId", async () => {
+      const newExpenseData: CreateExpenseData = {
+        name: "Office Supplies",
+        description: "Pens and paper",
+        amount: 45.99,
+        category: "office",
+        expense_type: "business",
+        date: "2025-01-15",
+      };
+
+      const result = await expenseService.create(newExpenseData);
+
+      expect(result.success).toBe(false);
+      expect(result.error?.message).toContain("User ID is required");
     });
   });
 

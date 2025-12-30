@@ -52,7 +52,7 @@ interface LocalStorageData {
 }
 
 class DataMigrationService {
-  async migrateFromLocalStorage(): Promise<MigrationResult> {
+  async migrateFromLocalStorage(userId: string): Promise<MigrationResult> {
     const result: MigrationResult = {
       success: false,
       message: "",
@@ -71,9 +71,9 @@ class DataMigrationService {
       const localData = this.getLocalStorageData();
 
       // Migrate each entity type
-      await this.migratePolicies(localData.policies || [], result);
+      await this.migratePolicies(localData.policies || [], result, userId);
       await this.migrateCommissions(localData.commissions || [], result);
-      await this.migrateExpenses(localData.expenses, result);
+      await this.migrateExpenses(localData.expenses, result, userId);
       await this.migrateCarriers(localData.carriers || [], result);
       await this.migrateConstants(localData.constants, result);
 
@@ -104,7 +104,7 @@ class DataMigrationService {
         await Promise.all([
           policyService.getAll(),
           commissionService.getAll(),
-          expenseService.getAll(),
+          expenseService.getAllFiltered(),
           carrierService.getAll(),
         ]);
 
@@ -222,6 +222,7 @@ class DataMigrationService {
   private async migratePolicies(
     policies: Policy[],
     result: MigrationResult,
+    userId: string,
   ): Promise<void> {
     for (const policy of policies) {
       try {
@@ -230,7 +231,7 @@ class DataMigrationService {
         await policyService.create({
           policyNumber: policy.policyNumber,
           clientId: "", // TODO: Need to create client first and use its ID
-          userId: "", // TODO: Need current user ID
+          userId: userId,
           carrierId: policy.carrierId,
           product: policy.product,
           effectiveDate: new Date(policy.effectiveDate),
@@ -296,6 +297,7 @@ class DataMigrationService {
   private async migrateExpenses(
     expenseData: LegacyExpenseData | undefined,
     result: MigrationResult,
+    userId: string,
   ): Promise<void> {
     if (!expenseData) return;
 
@@ -322,7 +324,7 @@ class DataMigrationService {
           expense_type: expense.expense_type,
           date: new Date().toISOString().split("T")[0], // Use current date for legacy data
         };
-        await expenseService.create(createData);
+        await expenseService.create(createData, userId);
         result.details.expenses++;
       } catch (error) {
         result.errors.push(
