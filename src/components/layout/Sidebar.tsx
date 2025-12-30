@@ -171,7 +171,7 @@ const adminNavigationItems: NavigationItem[] = [
   },
 ];
 
-// Super-admin-only navigation items (nick@nickneessen.com only)
+// Super-admin-only navigation items (nickneessen@thestandardhq.com only)
 const superAdminNavigationItems: NavigationItem[] = [
   {
     icon: Workflow,
@@ -195,7 +195,7 @@ export default function Sidebar({
   isCollapsed,
   onToggleCollapse,
   userName = "Nick Neessen",
-  userEmail = "nick@nickneessen.com",
+  userEmail = "nickneessen@thestandardhq.com",
   onLogout,
 }: SidebarProps) {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
@@ -215,9 +215,10 @@ export default function Sidebar({
   const isAdmin =
     supabaseUser?.email && ADMIN_EMAILS.includes(supabaseUser.email);
 
-  // Super-admin check (nick@nickneessen.com only)
-  const SUPER_ADMIN_EMAIL = "nick@nickneessen.com";
-  const isSuperAdmin = supabaseUser?.email === SUPER_ADMIN_EMAIL;
+  // Super-admin check (nickneessen@thestandardhq.com only)
+  const SUPER_ADMIN_EMAIL = "nickneessen@thestandardhq.com";
+  const isSuperAdmin =
+    supabaseUser?.email?.toLowerCase() === SUPER_ADMIN_EMAIL.toLowerCase();
 
   // Check if a subscription feature is available
   const hasFeature = (feature: FeatureKey | undefined): boolean => {
@@ -263,7 +264,9 @@ export default function Sidebar({
 
   const isRecruit = hasRole("recruit" as RoleName);
 
+  // Super-admin always gets full access regardless of roles
   const isTrainerOnly =
+    !isSuperAdmin &&
     (hasRole("trainer" as RoleName) ||
       hasRole("contracting_manager" as RoleName)) &&
     !hasRole("agent" as RoleName) &&
@@ -351,7 +354,8 @@ export default function Sidebar({
             return can(item.permission);
           });
 
-  // Super-admin items - only visible to nick@nickneessen.com
+  // Super-admin items - ONLY visible to nickneessen@thestandardhq.com
+  // Check email directly - no role dependencies, super-admin sees these regardless of any roles
   const visibleSuperAdminItems = isSuperAdmin ? superAdminNavigationItems : [];
 
   return (

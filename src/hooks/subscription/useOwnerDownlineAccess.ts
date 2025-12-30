@@ -10,10 +10,7 @@ import { supabase } from "@/services/base/supabase";
  * (excludes admin features like Admin page, Training Hub)
  * IMPORTANT: Store in lowercase for case-insensitive comparison
  */
-export const OWNER_EMAILS = [
-  "nick@nickneessen.com",
-  "nickneessen@thestandardhq.com",
-];
+export const OWNER_EMAILS = ["nickneessen@thestandardhq.com"];
 
 // Lowercase version for case-insensitive comparisons
 const OWNER_EMAILS_LOWER = OWNER_EMAILS.map((e) => e.toLowerCase());

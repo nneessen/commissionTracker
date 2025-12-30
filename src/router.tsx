@@ -212,7 +212,7 @@ const testCompGuideRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "test-comp",
   component: () => (
-    <RouteGuard requireEmail="nick@nickneessen.com">
+    <RouteGuard requireEmail="nickneessen@thestandardhq.com">
       <TestCompGuide />
     </RouteGuard>
   ),
@@ -254,7 +254,7 @@ const authDiagnosticRoute = createRoute({
       })),
     );
     return (
-      <RouteGuard requireEmail="nick@nickneessen.com">
+      <RouteGuard requireEmail="nickneessen@thestandardhq.com">
         <AuthDiagnostic />
       </RouteGuard>
     );
@@ -391,7 +391,7 @@ const recruitingAdminRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "recruiting/admin/pipelines",
   component: () => (
-    <RouteGuard requireEmail="nick@nickneessen.com">
+    <RouteGuard requireEmail="nickneessen@thestandardhq.com">
       <PipelineAdminPage />
     </RouteGuard>
   ),
@@ -402,7 +402,7 @@ const workflowAdminRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "system/workflows",
   component: () => (
-    <RouteGuard requireEmail="nick@nickneessen.com">
+    <RouteGuard requireEmail="nickneessen@thestandardhq.com">
       <WorkflowAdminPage />
     </RouteGuard>
   ),

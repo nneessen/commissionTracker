@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-12-30 18:38:47
+
+### Changed Files
+- `src/components/auth/ApprovalGuard.tsx`
+- `src/components/layout/Sidebar.tsx`
+- `src/features/training-hub/components/ActionConfigPanel.tsx`
+- `src/features/training-hub/components/WorkflowDialog.tsx`
+- `src/hooks/dashboard/useDashboardFeatures.ts`
+- `src/hooks/subscription/useOwnerDownlineAccess.ts`
+- `src/router.tsx`
+
+### Statistics
+```
+ 7 files changed, 19 insertions(+), 2072 deletions(-)
+```
+
 ## [Checkpoint] - 2025-12-30 16:58:47
 
 ### Changed Files

@@ -11,7 +11,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useImo } from "@/contexts/ImoContext";
 
 // Admin emails that bypass all gating
-const ADMIN_EMAILS = ["nick@nickneessen.com", "nickneessen@thestandardhq.com"];
+const ADMIN_EMAILS = ["nickneessen@thestandardhq.com"];
 
 export interface DashboardFeatures {
   // Expense-related features (Starter+)
@@ -52,7 +52,11 @@ export function useDashboardFeatures(): DashboardFeatures {
   const { supabaseUser } = useAuth();
   const { isDirectDownlineOfOwner, isLoading: downlineLoading } =
     useOwnerDownlineAccess();
-  const { isImoAdmin: imoAdminFlag, isAgencyOwner: agencyOwnerFlag, isSuperAdmin } = useImo();
+  const {
+    isImoAdmin: imoAdminFlag,
+    isAgencyOwner: agencyOwnerFlag,
+    isSuperAdmin,
+  } = useImo();
 
   return useMemo(() => {
     // Check if user is admin (bypass all gating)

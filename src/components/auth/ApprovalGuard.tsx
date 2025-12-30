@@ -37,7 +37,7 @@ export const ApprovalGuard: React.FC<ApprovalGuardProps> = ({ children }) => {
   const isAdmin = is("admin");
 
   // Admin email - hardcoded for security
-  const ADMIN_EMAIL = "nick@nickneessen.com";
+  const ADMIN_EMAIL = "nickneessen@thestandardhq.com";
 
   useEffect(() => {
     // Get the current auth user email directly
