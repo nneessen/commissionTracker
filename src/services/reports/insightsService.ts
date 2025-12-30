@@ -206,9 +206,10 @@ export class InsightsService {
 
       // Check average premium opportunity
       // Get policies that are not cancelled (active policies)
+      // Join with carriers to get carrier name
       const { data: policies } = await supabase
         .from("policies")
-        .select("annual_premium, product, carrier")
+        .select("annual_premium, product, carrier_id, carriers(name)")
         .eq("user_id", context.userId)
         .is("cancellation_date", null);
 
@@ -237,7 +238,9 @@ export class InsightsService {
           const topProducts = new Map();
           // eslint-disable-next-line @typescript-eslint/no-explicit-any -- report data has dynamic shape
           topQuartilePolicies.forEach((p: any) => {
-            const key = `${p.carrier} - ${p.product}`;
+            // carriers is a joined object with name property
+            const carrierName = p.carriers?.name || "Unknown Carrier";
+            const key = `${carrierName} - ${p.product}`;
             topProducts.set(key, (topProducts.get(key) || 0) + 1);
           });
 

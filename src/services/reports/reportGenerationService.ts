@@ -140,6 +140,14 @@ export class ReportGenerationService {
     userId: string,
     filters: ReportFilters,
   ): Promise<Report> {
+    // First check if user has any actual policies to avoid showing stale MV data
+    const { count: policyCount } = await supabase
+      .from("policies")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", userId);
+
+    const hasNoPolicies = (policyCount ?? 0) === 0;
+
     // Fetch MVs for deep analysis
     const [chargebackSummaryResult, carrierPerformance, commissionAging] =
       await Promise.all([
@@ -148,8 +156,12 @@ export class ReportGenerationService {
           .select("*")
           .eq("user_id", userId)
           .maybeSingle(),
-        this.fetchCarrierPerformance(userId),
-        this.fetchCommissionAging(userId),
+        // Only fetch carrier performance if user has policies
+        hasNoPolicies
+          ? Promise.resolve([])
+          : this.fetchCarrierPerformance(userId),
+        // Only fetch commission aging if user has policies
+        hasNoPolicies ? Promise.resolve([]) : this.fetchCommissionAging(userId),
       ]);
 
     if (chargebackSummaryResult.error) {
@@ -206,8 +218,20 @@ export class ReportGenerationService {
       bucket.risk_level || "Unknown",
     ]);
 
-    const sections: ReportSection[] = [
-      {
+    // Build sections conditionally based on available data
+    const sections: ReportSection[] = [];
+
+    // Risk summary section - always show but with empty state message if no data
+    if (hasNoPolicies) {
+      sections.push({
+        id: "no-data",
+        title: "No Data Available",
+        description:
+          "You have no policies in the system. Add policies to see commission risk analysis.",
+        metrics: [],
+      });
+    } else {
+      sections.push({
         id: "risk-summary",
         title: "Chargeback Risk Summary",
         metrics: [
@@ -225,32 +249,39 @@ export class ReportGenerationService {
             ),
           },
         ],
-      },
-      {
-        id: "commission-aging",
-        title: "Risk by Policy Age",
-        description: "Younger policies = higher chargeback risk",
-        tableData: {
-          headers: ["Age Bucket", "Count", "At-Risk Amount", "Risk Level"],
-          rows: agingTableRows,
-        },
-      },
-      {
-        id: "carrier-profitability",
-        title: "Carrier Profitability",
-        description: "Commission rates and persistency by carrier",
-        tableData: {
-          headers: [
-            "Carrier",
-            "Commission",
-            "Comm Rate",
-            "Persistency",
-            "Policies",
-          ],
-          rows: carrierTableRows,
-        },
-      },
-    ];
+      });
+
+      // Only add aging and profitability sections if there's data
+      if (agingTableRows.length > 0) {
+        sections.push({
+          id: "commission-aging",
+          title: "Risk by Policy Age",
+          description: "Younger policies = higher chargeback risk",
+          tableData: {
+            headers: ["Age Bucket", "Count", "At-Risk Amount", "Risk Level"],
+            rows: agingTableRows,
+          },
+        });
+      }
+
+      if (carrierTableRows.length > 0) {
+        sections.push({
+          id: "carrier-profitability",
+          title: "Carrier Profitability",
+          description: "Commission rates and persistency by carrier",
+          tableData: {
+            headers: [
+              "Carrier",
+              "Commission",
+              "Comm Rate",
+              "Persistency",
+              "Policies",
+            ],
+            rows: carrierTableRows,
+          },
+        });
+      }
+    }
 
     const insights = await InsightsService.generateInsights({
       userId,
@@ -302,10 +333,20 @@ export class ReportGenerationService {
     userId: string,
     filters: ReportFilters,
   ): Promise<Report> {
+    // First check if user has any actual policies to avoid showing stale MV data
+    const { count: policyCount } = await supabase
+      .from("policies")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", userId);
+
+    const hasNoPolicies = (policyCount ?? 0) === 0;
+
     // Fetch cohort retention MV + carrier performance for persistency breakdown
     const [cohortRetention, carrierPerformance, insights] = await Promise.all([
-      this.fetchCohortRetention(userId),
-      this.fetchCarrierPerformance(userId),
+      hasNoPolicies ? Promise.resolve([]) : this.fetchCohortRetention(userId),
+      hasNoPolicies
+        ? Promise.resolve([])
+        : this.fetchCarrierPerformance(userId),
       InsightsService.generateInsights({
         userId,
         startDate: filters.startDate,
@@ -355,8 +396,19 @@ export class ReportGenerationService {
         carrier.lapsed_policies || 0,
       ]);
 
-    const sections: ReportSection[] = [
-      {
+    // Build sections conditionally based on available data
+    const sections: ReportSection[] = [];
+
+    if (hasNoPolicies) {
+      sections.push({
+        id: "no-data",
+        title: "No Data Available",
+        description:
+          "You have no policies in the system. Add policies to see persistency analysis.",
+        metrics: [],
+      });
+    } else {
+      sections.push({
         id: "persistency-summary",
         title: "Persistency Overview",
         metrics: [
@@ -366,26 +418,32 @@ export class ReportGenerationService {
           },
           { label: "Total Cohorts Tracked", value: uniqueCohorts.length },
         ],
-      },
-      {
-        id: "cohort-retention",
-        title: "Cohort Retention",
-        description: "How each month's policies retain over time",
-        tableData: {
-          headers: ["Cohort Month", "Initial", "Active", "Retention"],
-          rows: cohortTableRows,
-        },
-      },
-      {
-        id: "persistency-by-carrier",
-        title: "Persistency by Carrier",
-        description: "Which carriers have the best retention",
-        tableData: {
-          headers: ["Carrier", "Persistency", "Active", "Lapsed"],
-          rows: persistencyByCarrier,
-        },
-      },
-    ];
+      });
+
+      if (cohortTableRows.length > 0) {
+        sections.push({
+          id: "cohort-retention",
+          title: "Cohort Retention",
+          description: "How each month's policies retain over time",
+          tableData: {
+            headers: ["Cohort Month", "Initial", "Active", "Retention"],
+            rows: cohortTableRows,
+          },
+        });
+      }
+
+      if (persistencyByCarrier.length > 0) {
+        sections.push({
+          id: "persistency-by-carrier",
+          title: "Persistency by Carrier",
+          description: "Which carriers have the best retention",
+          tableData: {
+            headers: ["Carrier", "Persistency", "Active", "Lapsed"],
+            rows: persistencyByCarrier,
+          },
+        });
+      }
+    }
 
     const totalPolicies = carrierPerformance.reduce(
       (sum, c) => sum + (c.total_policies || 0),
@@ -430,9 +488,17 @@ export class ReportGenerationService {
     userId: string,
     filters: ReportFilters,
   ): Promise<Report> {
+    // First check if user has any clients to avoid showing stale MV data
+    const { count: clientCount } = await supabase
+      .from("clients")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", userId);
+
+    const hasNoClients = (clientCount ?? 0) === 0;
+
     // Fetch client LTV from MV
     const [clientLTV, insights] = await Promise.all([
-      this.fetchClientLTV(userId),
+      hasNoClients ? Promise.resolve([]) : this.fetchClientLTV(userId),
       InsightsService.generateInsights({
         userId,
         startDate: filters.startDate,
@@ -490,8 +556,19 @@ export class ReportGenerationService {
         "Single policy",
       ]);
 
-    const sections: ReportSection[] = [
-      {
+    // Build sections conditionally based on available data
+    const sections: ReportSection[] = [];
+
+    if (hasNoClients) {
+      sections.push({
+        id: "no-data",
+        title: "No Data Available",
+        description:
+          "You have no clients in the system. Add clients to see client analysis.",
+        metrics: [],
+      });
+    } else {
+      sections.push({
         id: "client-overview",
         title: "Client Overview",
         metrics: [
@@ -502,36 +579,42 @@ export class ReportGenerationService {
           },
           { label: "Cross-Sell Opportunities", value: crossSellOpportunities },
         ],
-      },
-      {
-        id: "client-tiers",
-        title: "Client Segmentation",
-        tableData: {
-          headers: ["Tier", "Count", "Premium Range"],
-          rows: tierTableRows,
-        },
-      },
-      {
-        id: "top-clients",
-        title: "Top Clients",
-        tableData: {
-          headers: ["Client", "Premium", "Policies", "Tier"],
-          rows: topClientsRows,
-        },
-      },
-      {
-        id: "cross-sell",
-        title: "Cross-Sell Targets",
-        description: "High-value clients with only one policy",
-        tableData:
-          crossSellClients.length > 0
-            ? {
-                headers: ["Client", "Premium", "Status"],
-                rows: crossSellClients,
-              }
-            : undefined,
-      },
-    ];
+      });
+
+      if (tierTableRows.some((row) => (row[1] as number) > 0)) {
+        sections.push({
+          id: "client-tiers",
+          title: "Client Segmentation",
+          tableData: {
+            headers: ["Tier", "Count", "Premium Range"],
+            rows: tierTableRows,
+          },
+        });
+      }
+
+      if (topClientsRows.length > 0) {
+        sections.push({
+          id: "top-clients",
+          title: "Top Clients",
+          tableData: {
+            headers: ["Client", "Premium", "Policies", "Tier"],
+            rows: topClientsRows,
+          },
+        });
+      }
+
+      if (crossSellClients.length > 0) {
+        sections.push({
+          id: "cross-sell",
+          title: "Cross-Sell Targets",
+          description: "High-value clients with only one policy",
+          tableData: {
+            headers: ["Client", "Premium", "Status"],
+            rows: crossSellClients,
+          },
+        });
+      }
+    }
 
     const totalPolicies = clientLTV.reduce(
       (sum, c) => sum + (c.total_policies || 0),
