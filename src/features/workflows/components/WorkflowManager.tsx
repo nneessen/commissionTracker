@@ -1,4 +1,4 @@
-// src/features/training-hub/components/AutomationTab.tsx
+// src/features/workflows/components/WorkflowManager.tsx
 
 import { useState } from "react";
 import {
@@ -66,7 +66,7 @@ import { useImo } from "@/contexts/ImoContext";
 import { cn } from "@/lib/utils";
 import { useCurrentUserProfile } from "@/hooks/admin/useUserApproval";
 
-export default function AutomationTab() {
+export default function WorkflowManager() {
   const { user } = useAuth();
   const { data: profile } = useCurrentUserProfile();
   const { isImoAdmin, imo } = useImo();
@@ -81,9 +81,10 @@ export default function AutomationTab() {
 
   const { data: workflows = [], isLoading, error } = useWorkflows();
   const { data: runs = [] } = useWorkflowRuns(undefined, 5); // Only fetch 5 most recent
-  const { data: orgTemplates = [], isLoading: templatesLoading } = useImoWorkflowTemplates({
-    enabled: !!imo,
-  });
+  const { data: orgTemplates = [], isLoading: templatesLoading } =
+    useImoWorkflowTemplates({
+      enabled: !!imo,
+    });
   const updateStatus = useUpdateWorkflowStatus();
   const deleteWorkflow = useDeleteWorkflow();
   const triggerWorkflow = useTriggerWorkflow();
@@ -493,7 +494,9 @@ export default function AutomationTab() {
                                 </DropdownMenuItem>
                                 {isImoAdmin && !workflow.isOrgTemplate && (
                                   <DropdownMenuItem
-                                    onClick={() => saveAsOrgTemplate.mutate(workflow.id)}
+                                    onClick={() =>
+                                      saveAsOrgTemplate.mutate(workflow.id)
+                                    }
                                     className="text-xs"
                                     disabled={saveAsOrgTemplate.isPending}
                                   >
@@ -560,7 +563,8 @@ export default function AutomationTab() {
                     </p>
                     {isImoAdmin && (
                       <p className="text-[10px] text-zinc-400 dark:text-zinc-500">
-                        Create a workflow and select "Save as Org Template" to share it
+                        Create a workflow and select "Save as Org Template" to
+                        share it
                       </p>
                     )}
                   </div>

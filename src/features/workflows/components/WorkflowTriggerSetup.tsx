@@ -1,4 +1,4 @@
-// src/features/training-hub/components/workflow-wizard/WorkflowTriggerSetup.tsx
+// src/features/workflows/components/WorkflowTriggerSetup.tsx
 
 import { useState, useEffect } from "react";
 import { Play, Calendar, Zap, Webhook } from "lucide-react";

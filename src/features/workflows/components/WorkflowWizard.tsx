@@ -1,4 +1,4 @@
-// src/features/training-hub/components/WorkflowWizard.tsx
+// src/features/workflows/components/WorkflowWizard.tsx
 
 import { useState, useEffect, useCallback } from "react";
 import { ArrowLeft, ArrowRight, Check, Save, TestTube } from "lucide-react";

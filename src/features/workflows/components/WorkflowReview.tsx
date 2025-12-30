@@ -1,4 +1,4 @@
-// src/features/training-hub/components/workflow-wizard/WorkflowReview.tsx
+// src/features/workflows/components/WorkflowReview.tsx
 
 import {
   Edit2,
@@ -179,8 +179,8 @@ export default function WorkflowReview({ data, onEdit }: WorkflowReviewProps) {
         {data.actions.length === 0 ? (
           <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
             <p className="text-sm text-amber-600 dark:text-amber-400">
-              ⚠️ No actions configured. Add at least one action to define
-              workflow behavior.
+              No actions configured. Add at least one action to define workflow
+              behavior.
             </p>
           </div>
         ) : (
@@ -347,7 +347,7 @@ export default function WorkflowReview({ data, onEdit }: WorkflowReviewProps) {
       {data.actions.length === 0 && (
         <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20">
           <p className="text-sm text-destructive font-medium">
-            ⚠️ Workflow incomplete - add at least one action to continue
+            Workflow incomplete - add at least one action to continue
           </p>
         </div>
       )}

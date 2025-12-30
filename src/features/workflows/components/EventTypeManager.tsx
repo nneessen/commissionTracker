@@ -1,4 +1,4 @@
-// File: /home/nneessen/projects/commissionTracker/src/features/training-hub/components/EventTypeManager.tsx
+// src/features/workflows/components/EventTypeManager.tsx
 
 import { useState, useCallback } from "react";
 import {

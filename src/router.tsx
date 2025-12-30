@@ -45,6 +45,7 @@ import { ContractingPage } from "./features/contracting/ContractingPage";
 import { MessagesPage } from "./features/messages";
 import { LeaderboardNamingPage } from "./features/messages/components/slack/LeaderboardNamingPage";
 import { TermsPage, PrivacyPage } from "./features/legal";
+import { WorkflowAdminPage } from "./features/workflows";
 
 // Create root route with App layout
 const rootRoute = createRootRoute({
@@ -396,6 +397,17 @@ const recruitingAdminRoute = createRoute({
   ),
 });
 
+// Workflow admin route - workflow/automation management - Super-admin only
+const workflowAdminRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "system/workflows",
+  component: () => (
+    <RouteGuard requireEmail="nick@nickneessen.com">
+      <WorkflowAdminPage />
+    </RouteGuard>
+  ),
+});
+
 // My Pipeline route - Recruit-only dashboard (allows pending, recruit access only)
 const myPipelineRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -509,6 +521,7 @@ const routeTree = rootRoute.addChildren([
   orgChartRoute,
   recruitingRoute,
   recruitingAdminRoute,
+  workflowAdminRoute,
   myPipelineRoute,
   trainingHubRoute,
   trainerDashboardRoute,

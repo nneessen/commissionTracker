@@ -1,4 +1,4 @@
-// /home/nneessen/projects/commissionTracker/src/features/training-hub/components/WorkflowDiagnostic.tsx
+// src/features/workflows/components/WorkflowDiagnostic.tsx
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";

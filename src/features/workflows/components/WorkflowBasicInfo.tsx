@@ -1,13 +1,22 @@
-// src/features/training-hub/components/workflow-wizard/WorkflowBasicInfo.tsx
+// src/features/workflows/components/WorkflowBasicInfo.tsx
 
-import {AlertCircle} from 'lucide-react';
-import {Input} from '@/components/ui/input';
-import {Label} from '@/components/ui/label';
-import {Textarea} from '@/components/ui/textarea';
-import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '@/components/ui/select';
-import {Slider} from '@/components/ui/slider';
-import {cn} from '@/lib/utils';
-import type {WorkflowFormData, WorkflowCategory} from '@/types/workflow.types';
+import { AlertCircle } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
+import { cn } from "@/lib/utils";
+import type {
+  WorkflowFormData,
+  WorkflowCategory,
+} from "@/types/workflow.types";
 
 interface WorkflowBasicInfoProps {
   data: WorkflowFormData;
@@ -17,28 +26,32 @@ interface WorkflowBasicInfoProps {
 
 const WORKFLOW_CATEGORIES = [
   {
-    value: 'email' as WorkflowCategory,
-    label: 'Email',
-    description: 'Email campaigns and communications'
+    value: "email" as WorkflowCategory,
+    label: "Email",
+    description: "Email campaigns and communications",
   },
   {
-    value: 'recruiting' as WorkflowCategory,
-    label: 'Recruiting',
-    description: 'Candidate and recruit management'
+    value: "recruiting" as WorkflowCategory,
+    label: "Recruiting",
+    description: "Candidate and recruit management",
   },
   {
-    value: 'commission' as WorkflowCategory,
-    label: 'Commission',
-    description: 'Commission tracking and alerts'
+    value: "commission" as WorkflowCategory,
+    label: "Commission",
+    description: "Commission tracking and alerts",
   },
   {
-    value: 'general' as WorkflowCategory,
-    label: 'General',
-    description: 'Other automation workflows'
-  }
+    value: "general" as WorkflowCategory,
+    label: "General",
+    description: "Other automation workflows",
+  },
 ];
 
-export default function WorkflowBasicInfo({ data, onChange, errors }: WorkflowBasicInfoProps) {
+export default function WorkflowBasicInfo({
+  data,
+  onChange,
+  errors,
+}: WorkflowBasicInfoProps) {
   return (
     <div className="w-full space-y-3">
       {/* Workflow Name */}
@@ -52,7 +65,7 @@ export default function WorkflowBasicInfo({ data, onChange, errors }: WorkflowBa
           placeholder="e.g., Welcome Email Series"
           className={cn(
             "h-8 text-xs mt-1 bg-background",
-            errors.name && "border-destructive focus-visible:ring-destructive"
+            errors.name && "border-destructive focus-visible:ring-destructive",
           )}
           maxLength={100}
         />
@@ -64,10 +77,11 @@ export default function WorkflowBasicInfo({ data, onChange, errors }: WorkflowBa
       {/* Description */}
       <div className="p-2 rounded-md bg-muted/30">
         <Label className="text-xs font-medium text-muted-foreground">
-          Description <span className="text-xs text-muted-foreground/70">(optional)</span>
+          Description{" "}
+          <span className="text-xs text-muted-foreground/70">(optional)</span>
         </Label>
         <Textarea
-          value={data.description || ''}
+          value={data.description || ""}
           onChange={(e) => onChange({ description: e.target.value })}
           placeholder="Briefly describe what this workflow does..."
           className="h-16 text-xs resize-none mt-1 bg-background"
@@ -83,7 +97,9 @@ export default function WorkflowBasicInfo({ data, onChange, errors }: WorkflowBa
         </Label>
         <Select
           value={data.category}
-          onValueChange={(value) => onChange({ category: value as WorkflowCategory })}
+          onValueChange={(value) =>
+            onChange({ category: value as WorkflowCategory })
+          }
         >
           <SelectTrigger className="h-8 text-xs mt-1 bg-background">
             <SelectValue placeholder="Select a category..." />
@@ -97,7 +113,9 @@ export default function WorkflowBasicInfo({ data, onChange, errors }: WorkflowBa
               >
                 <div>
                   <div className="font-medium">{category.label}</div>
-                  <div className="text-[10px] text-muted-foreground">{category.description}</div>
+                  <div className="text-[10px] text-muted-foreground">
+                    {category.description}
+                  </div>
                 </div>
               </SelectItem>
             ))}
@@ -114,7 +132,8 @@ export default function WorkflowBasicInfo({ data, onChange, errors }: WorkflowBa
               Execution Priority
             </Label>
             <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-0.5">
-              Controls the order of execution when multiple workflows are triggered simultaneously
+              Controls the order of execution when multiple workflows are
+              triggered simultaneously
             </p>
           </div>
         </div>
@@ -126,11 +145,11 @@ export default function WorkflowBasicInfo({ data, onChange, errors }: WorkflowBa
             <span className="text-sm font-bold text-amber-700 dark:text-amber-300">
               {(() => {
                 const priority = data.settings?.priority || 50;
-                if (priority >= 80) return 'High Priority';
-                if (priority >= 60) return 'Medium-High';
-                if (priority >= 40) return 'Normal';
-                if (priority >= 20) return 'Low Priority';
-                return 'Very Low';
+                if (priority >= 80) return "High Priority";
+                if (priority >= 60) return "Medium-High";
+                if (priority >= 40) return "Normal";
+                if (priority >= 20) return "Low Priority";
+                return "Very Low";
               })()}
             </span>
             <span className="text-[10px] text-muted-foreground">High</span>
@@ -138,12 +157,14 @@ export default function WorkflowBasicInfo({ data, onChange, errors }: WorkflowBa
 
           <Slider
             value={[data.settings?.priority || 50]}
-            onValueChange={([value]) => onChange({
-              settings: {
-                ...data.settings,
-                priority: value
-              }
-            })}
+            onValueChange={([value]) =>
+              onChange({
+                settings: {
+                  ...data.settings,
+                  priority: value,
+                },
+              })
+            }
             min={1}
             max={100}
             step={10}
@@ -159,15 +180,17 @@ export default function WorkflowBasicInfo({ data, onChange, errors }: WorkflowBa
           </div>
 
           {/* Priority Explanation */}
-          <div className={cn(
-            "p-2 rounded text-[10px] mt-2",
-            "bg-amber-50 dark:bg-amber-950/20 border",
-            data.settings?.priority && data.settings.priority >= 80
-              ? "border-amber-600 text-amber-700 dark:text-amber-300"
-              : data.settings?.priority && data.settings.priority <= 20
-              ? "border-amber-400 text-amber-600 dark:text-amber-400"
-              : "border-amber-500/30 text-amber-600 dark:text-amber-400"
-          )}>
+          <div
+            className={cn(
+              "p-2 rounded text-[10px] mt-2",
+              "bg-amber-50 dark:bg-amber-950/20 border",
+              data.settings?.priority && data.settings.priority >= 80
+                ? "border-amber-600 text-amber-700 dark:text-amber-300"
+                : data.settings?.priority && data.settings.priority <= 20
+                  ? "border-amber-400 text-amber-600 dark:text-amber-400"
+                  : "border-amber-500/30 text-amber-600 dark:text-amber-400",
+            )}
+          >
             <p className="font-medium mb-0.5">
               Current: {data.settings?.priority || 50}/100
               {data.settings?.priority === 50 && " (Default)"}
@@ -175,10 +198,14 @@ export default function WorkflowBasicInfo({ data, onChange, errors }: WorkflowBa
             <p>
               {(() => {
                 const priority = data.settings?.priority || 50;
-                if (priority >= 80) return "🚀 High priority workflows execute first. Use for critical automations like welcome emails or urgent alerts.";
-                if (priority >= 60) return "⬆️ Slightly elevated priority. Executes before normal workflows but after high priority ones.";
-                if (priority >= 40) return "➡️ Normal priority (default). Standard execution order with other normal workflows.";
-                if (priority >= 20) return "⬇️ Low priority. Executes after normal and high priority workflows. Good for non-urgent tasks.";
+                if (priority >= 80)
+                  return "🚀 High priority workflows execute first. Use for critical automations like welcome emails or urgent alerts.";
+                if (priority >= 60)
+                  return "⬆️ Slightly elevated priority. Executes before normal workflows but after high priority ones.";
+                if (priority >= 40)
+                  return "➡️ Normal priority (default). Standard execution order with other normal workflows.";
+                if (priority >= 20)
+                  return "⬇️ Low priority. Executes after normal and high priority workflows. Good for non-urgent tasks.";
                 return "🐌 Lowest priority. Only executes after all other workflows complete. Use for background tasks.";
               })()}
             </p>

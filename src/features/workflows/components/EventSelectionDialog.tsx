@@ -1,13 +1,26 @@
-// File: /home/nneessen/projects/commissionTracker/src/features/training-hub/components/EventSelectionDialog.tsx
+// src/features/workflows/components/EventSelectionDialog.tsx
 
-import {useState} from 'react';
-import {Search, Zap, Users, FileText, DollarSign, Mail, User} from 'lucide-react';
-import {Button} from '@/components/ui/button';
-import {Dialog, DialogContent, DialogHeader, DialogTitle} from '@/components/ui/dialog';
-import {Input} from '@/components/ui/input';
-import {ScrollArea} from '@/components/ui/scroll-area';
-import {cn} from '@/lib/utils';
-import type {TriggerEventType} from '@/types/workflow.types';
+import { useState } from "react";
+import {
+  Search,
+  Zap,
+  Users,
+  FileText,
+  DollarSign,
+  Mail,
+  User,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { cn } from "@/lib/utils";
+import type { TriggerEventType } from "@/types/workflow.types";
 
 interface EventSelectionDialogProps {
   open: boolean;
@@ -21,34 +34,38 @@ interface EventSelectionDialogProps {
 const CATEGORY_CONFIG = {
   recruit: {
     icon: Users,
-    color: 'text-blue-600 dark:text-blue-400 bg-blue-500/10 border-blue-500/20',
-    label: 'Recruiting'
+    color: "text-blue-600 dark:text-blue-400 bg-blue-500/10 border-blue-500/20",
+    label: "Recruiting",
   },
   policy: {
     icon: FileText,
-    color: 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/20',
-    label: 'Policies'
+    color:
+      "text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/20",
+    label: "Policies",
   },
   commission: {
     icon: DollarSign,
-    color: 'text-green-600 dark:text-green-400 bg-green-500/10 border-green-500/20',
-    label: 'Commissions'
+    color:
+      "text-green-600 dark:text-green-400 bg-green-500/10 border-green-500/20",
+    label: "Commissions",
   },
   email: {
     icon: Mail,
-    color: 'text-purple-600 dark:text-purple-400 bg-purple-500/10 border-purple-500/20',
-    label: 'Emails'
+    color:
+      "text-purple-600 dark:text-purple-400 bg-purple-500/10 border-purple-500/20",
+    label: "Emails",
   },
   user: {
     icon: User,
-    color: 'text-amber-600 dark:text-amber-400 bg-amber-500/10 border-amber-500/20',
-    label: 'Users'
+    color:
+      "text-amber-600 dark:text-amber-400 bg-amber-500/10 border-amber-500/20",
+    label: "Users",
   },
   general: {
     icon: Zap,
-    color: 'text-gray-600 dark:text-gray-400 bg-gray-500/10 border-gray-500/20',
-    label: 'General'
-  }
+    color: "text-gray-600 dark:text-gray-400 bg-gray-500/10 border-gray-500/20",
+    label: "General",
+  },
 } as const;
 
 export default function EventSelectionDialog({
@@ -56,38 +73,47 @@ export default function EventSelectionDialog({
   onOpenChange,
   eventTypes,
   selectedEvent,
-  onSelectEvent
+  onSelectEvent,
 }: EventSelectionDialogProps) {
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
   // Filter events based on search and category
-  const filteredEvents = eventTypes.filter(event => {
-    const matchesSearch = searchQuery === '' ||
+  const filteredEvents = eventTypes.filter((event) => {
+    const matchesSearch =
+      searchQuery === "" ||
       event.eventName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (event.description?.toLowerCase() || '').includes(searchQuery.toLowerCase());
+      (event.description?.toLowerCase() || "").includes(
+        searchQuery.toLowerCase(),
+      );
 
-    const matchesCategory = selectedCategory === null || event.category === selectedCategory;
+    const matchesCategory =
+      selectedCategory === null || event.category === selectedCategory;
 
     return matchesSearch && matchesCategory;
   });
 
   // Group events by category
-  const groupedEvents = filteredEvents.reduce((acc, event) => {
-    const category = event.category || 'general';
-    if (!acc[category]) acc[category] = [];
-    acc[category].push(event);
-    return acc;
-  }, {} as Record<string, TriggerEventType[]>);
+  const groupedEvents = filteredEvents.reduce(
+    (acc, event) => {
+      const category = event.category || "general";
+      if (!acc[category]) acc[category] = [];
+      acc[category].push(event);
+      return acc;
+    },
+    {} as Record<string, TriggerEventType[]>,
+  );
 
   // Get unique categories for filter buttons
-  const categories = [...new Set(eventTypes.map(e => e.category || 'general'))];
+  const categories = [
+    ...new Set(eventTypes.map((e) => e.category || "general")),
+  ];
 
   const handleSelectEvent = (eventName: string) => {
     onSelectEvent(eventName);
     onOpenChange(false);
     // Reset filters
-    setSearchQuery('');
+    setSearchQuery("");
     setSelectedCategory(null);
   };
 
@@ -125,18 +151,22 @@ export default function EventSelectionDialog({
             >
               All Categories
             </Button>
-            {categories.map(category => {
-              const config = CATEGORY_CONFIG[category as keyof typeof CATEGORY_CONFIG] || CATEGORY_CONFIG.general;
+            {categories.map((category) => {
+              const config =
+                CATEGORY_CONFIG[category as keyof typeof CATEGORY_CONFIG] ||
+                CATEGORY_CONFIG.general;
               const Icon = config.icon;
               return (
                 <Button
                   key={category}
-                  variant={selectedCategory === category ? "default" : "outline"}
+                  variant={
+                    selectedCategory === category ? "default" : "outline"
+                  }
                   size="sm"
                   onClick={() => setSelectedCategory(category)}
                   className={cn(
                     "h-6 px-2 text-xs",
-                    selectedCategory === category ? "" : "hover:bg-muted"
+                    selectedCategory === category ? "" : "hover:bg-muted",
                   )}
                 >
                   <Icon className="h-3 w-3 mr-1" />
@@ -153,29 +183,39 @@ export default function EventSelectionDialog({
             <div className="py-8 text-center text-muted-foreground">
               <Zap className="h-8 w-8 mx-auto mb-2 opacity-50" />
               <p className="text-sm">No events found</p>
-              <p className="text-xs mt-1">Try adjusting your search or filters</p>
+              <p className="text-xs mt-1">
+                Try adjusting your search or filters
+              </p>
             </div>
           ) : (
             <div className="space-y-4">
               {Object.entries(groupedEvents).map(([category, events]) => {
-                const config = CATEGORY_CONFIG[category as keyof typeof CATEGORY_CONFIG] || CATEGORY_CONFIG.general;
+                const config =
+                  CATEGORY_CONFIG[category as keyof typeof CATEGORY_CONFIG] ||
+                  CATEGORY_CONFIG.general;
                 const Icon = config.icon;
 
                 return (
                   <div key={category}>
                     {/* Category Header */}
-                    <div className={cn(
-                      "flex items-center gap-2 px-2 py-1.5 rounded-md mb-2 border",
-                      config.color
-                    )}>
+                    <div
+                      className={cn(
+                        "flex items-center gap-2 px-2 py-1.5 rounded-md mb-2 border",
+                        config.color,
+                      )}
+                    >
                       <Icon className="h-3.5 w-3.5" />
-                      <span className="text-xs font-semibold uppercase">{config.label}</span>
-                      <span className="text-xs opacity-60">({events.length})</span>
+                      <span className="text-xs font-semibold uppercase">
+                        {config.label}
+                      </span>
+                      <span className="text-xs opacity-60">
+                        ({events.length})
+                      </span>
                     </div>
 
                     {/* Events in Category */}
                     <div className="space-y-1">
-                      {events.map(event => (
+                      {events.map((event) => (
                         <button
                           key={event.id}
                           onClick={() => handleSelectEvent(event.eventName)}
@@ -184,15 +224,18 @@ export default function EventSelectionDialog({
                             "hover:bg-muted/50 border",
                             selectedEvent === event.eventName
                               ? "bg-primary/10 border-primary/50"
-                              : "border-transparent hover:border-border"
+                              : "border-transparent hover:border-border",
                           )}
                         >
                           <div className="flex items-start justify-between gap-2">
                             <div className="flex-1 min-w-0">
-                              <p className={cn(
-                                "text-xs font-medium",
-                                selectedEvent === event.eventName && "text-primary"
-                              )}>
+                              <p
+                                className={cn(
+                                  "text-xs font-medium",
+                                  selectedEvent === event.eventName &&
+                                    "text-primary",
+                                )}
+                              >
                                 {event.eventName}
                               </p>
                               {event.description && (
@@ -207,26 +250,36 @@ export default function EventSelectionDialog({
                           </div>
 
                           {/* Show available variables on hover/focus */}
-                          {event.availableVariables && Object.keys(event.availableVariables).length > 0 && (
-                            <div className="mt-1.5 pt-1.5 border-t border-border/50">
-                              <p className="text-[9px] text-muted-foreground mb-1">Available variables:</p>
-                              <div className="flex flex-wrap gap-1">
-                                {Object.entries(event.availableVariables).slice(0, 4).map(([key, type]) => (
-                                  <span
-                                    key={key}
-                                    className="inline-flex items-center px-1.5 py-0.5 rounded bg-muted text-[9px] text-muted-foreground"
-                                  >
-                                    {key}: {type as string}
-                                  </span>
-                                ))}
-                                {Object.keys(event.availableVariables).length > 4 && (
-                                  <span className="text-[9px] text-muted-foreground">
-                                    +{Object.keys(event.availableVariables).length - 4} more
-                                  </span>
-                                )}
+                          {event.availableVariables &&
+                            Object.keys(event.availableVariables).length >
+                              0 && (
+                              <div className="mt-1.5 pt-1.5 border-t border-border/50">
+                                <p className="text-[9px] text-muted-foreground mb-1">
+                                  Available variables:
+                                </p>
+                                <div className="flex flex-wrap gap-1">
+                                  {Object.entries(event.availableVariables)
+                                    .slice(0, 4)
+                                    .map(([key, type]) => (
+                                      <span
+                                        key={key}
+                                        className="inline-flex items-center px-1.5 py-0.5 rounded bg-muted text-[9px] text-muted-foreground"
+                                      >
+                                        {key}: {type as string}
+                                      </span>
+                                    ))}
+                                  {Object.keys(event.availableVariables)
+                                    .length > 4 && (
+                                    <span className="text-[9px] text-muted-foreground">
+                                      +
+                                      {Object.keys(event.availableVariables)
+                                        .length - 4}{" "}
+                                      more
+                                    </span>
+                                  )}
+                                </div>
                               </div>
-                            </div>
-                          )}
+                            )}
                         </button>
                       ))}
                     </div>

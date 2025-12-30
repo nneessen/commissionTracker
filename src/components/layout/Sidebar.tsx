@@ -22,6 +22,7 @@ import {
   Mail,
   Crown,
   FileCheck,
+  Workflow,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Button } from "@/components/ui/button";
@@ -170,6 +171,16 @@ const adminNavigationItems: NavigationItem[] = [
   },
 ];
 
+// Super-admin-only navigation items (nick@nickneessen.com only)
+const superAdminNavigationItems: NavigationItem[] = [
+  {
+    icon: Workflow,
+    label: "Workflows",
+    href: "/system/workflows",
+    public: true,
+  },
+];
+
 // Recruit-only navigation items
 const recruitNavigationItems: NavigationItem[] = [
   {
@@ -203,6 +214,10 @@ export default function Sidebar({
   const ADMIN_EMAILS = ["nickneessen@thestandardhq.com"];
   const isAdmin =
     supabaseUser?.email && ADMIN_EMAILS.includes(supabaseUser.email);
+
+  // Super-admin check (nick@nickneessen.com only)
+  const SUPER_ADMIN_EMAIL = "nick@nickneessen.com";
+  const isSuperAdmin = supabaseUser?.email === SUPER_ADMIN_EMAIL;
 
   // Check if a subscription feature is available
   const hasFeature = (feature: FeatureKey | undefined): boolean => {
@@ -335,6 +350,9 @@ export default function Sidebar({
             if (isLoading) return false;
             return can(item.permission);
           });
+
+  // Super-admin items - only visible to nick@nickneessen.com
+  const visibleSuperAdminItems = isSuperAdmin ? superAdminNavigationItems : [];
 
   return (
     <>
@@ -547,8 +565,10 @@ export default function Sidebar({
             );
           })}
 
-          {/* Separator for training/admin section */}
-          {(visibleTrainingItems.length > 0 || visibleAdminItems.length > 0) &&
+          {/* Separator for training/admin/super-admin section */}
+          {(visibleTrainingItems.length > 0 ||
+            visibleAdminItems.length > 0 ||
+            visibleSuperAdminItems.length > 0) &&
             !isCollapsed && <div className="my-4 border-t border-border" />}
 
           {/* Training Hub Navigation Items */}
@@ -646,6 +666,39 @@ export default function Sidebar({
               );
             }
 
+            return (
+              <Link
+                key={item.href}
+                to={item.href}
+                onClick={() => {
+                  if (isMobile) closeMobile();
+                }}
+              >
+                {({ isActive }) => (
+                  <Button
+                    variant={isActive ? "secondary" : "ghost"}
+                    className={`mb-1 h-9 ${isCollapsed ? "w-9 p-0 mx-auto" : "w-full justify-start px-3"}`}
+                    title={isCollapsed ? item.label : ""}
+                    data-active={isActive}
+                  >
+                    <Icon size={16} className={isCollapsed ? "" : "mr-2.5"} />
+                    {!isCollapsed && (
+                      <span className="text-sm">{item.label}</span>
+                    )}
+                  </Button>
+                )}
+              </Link>
+            );
+          })}
+
+          {/* Super Admin Navigation Items */}
+          {visibleSuperAdminItems.length > 0 && !isCollapsed && (
+            <div className="mt-2 mb-1 px-2 text-[10px] font-medium uppercase text-muted-foreground/60">
+              System
+            </div>
+          )}
+          {visibleSuperAdminItems.map((item) => {
+            const Icon = item.icon;
             return (
               <Link
                 key={item.href}

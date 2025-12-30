@@ -1,8 +1,9 @@
 // src/features/training-hub/components/TrainingHubPage.tsx
 // Training Hub for trainers and contracting managers
 // Note: Recruit pipeline management is now via the main /recruiting page
+// Note: Automation/workflows moved to super-admin-only /system/workflows page
 import { useState, useEffect } from "react";
-import { Mail, Zap, Activity, Search, X, GraduationCap } from "lucide-react";
+import { Mail, Activity, Search, X, GraduationCap } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -10,9 +11,8 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/services/base/supabase";
 import { ActivityTab } from "./ActivityTab";
 import { EmailTemplatesTab } from "./EmailTemplatesTab";
-import AutomationTab from "./AutomationTab";
 
-type TabView = "templates" | "automation" | "activity";
+type TabView = "templates" | "activity";
 
 const TAB_STORAGE_KEY = "training-hub-active-tab";
 
@@ -20,7 +20,7 @@ export default function TrainingHubPage() {
   // Persist tab selection in localStorage
   const [activeView, setActiveView] = useState<TabView>(() => {
     const saved = localStorage.getItem(TAB_STORAGE_KEY);
-    if (saved && ["templates", "automation", "activity"].includes(saved)) {
+    if (saved && ["templates", "activity"].includes(saved)) {
       return saved as TabView;
     }
     return "templates";
@@ -53,7 +53,6 @@ export default function TrainingHubPage() {
       icon: Mail,
       count: templateStats?.count,
     },
-    { id: "automation" as TabView, label: "Automation", icon: Zap },
     { id: "activity" as TabView, label: "Activity", icon: Activity },
   ];
 
@@ -145,7 +144,6 @@ export default function TrainingHubPage() {
         {activeView === "templates" && (
           <EmailTemplatesTab searchQuery={searchQuery} />
         )}
-        {activeView === "automation" && <AutomationTab />}
         {activeView === "activity" && <ActivityTab searchQuery={searchQuery} />}
       </div>
     </div>
