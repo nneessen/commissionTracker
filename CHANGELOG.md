@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-12-31 09:33:04
+
+### Changed Files
+- `src/features/recruiting/admin/PipelineTemplatesList.tsx`
+- `src/types/database.types.ts`
+- `supabase/migrations/20251231_003_cascade_pipeline_template_delete.sql`
+
+### Statistics
+```
+ 3 files changed, 8598 insertions(+), 8578 deletions(-)
+```
+
 ## [Checkpoint] - 2025-12-31 08:50:21
 
 ### Changed Files

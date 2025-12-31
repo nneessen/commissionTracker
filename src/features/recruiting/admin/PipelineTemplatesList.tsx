@@ -340,8 +340,9 @@ export function PipelineTemplatesList({
             <DialogTitle className="text-sm">Delete Template?</DialogTitle>
           </DialogHeader>
           <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
-            This will permanently delete this template and all its phases. This
-            action cannot be undone.
+            This will permanently delete this template including all phases,
+            checklist items, and recruit progress records. Users will be
+            un-enrolled from this pipeline. This action cannot be undone.
           </p>
           <DialogFooter>
             <Button
