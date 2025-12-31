@@ -280,6 +280,62 @@ export class OverrideRepository extends BaseRepository<
   }
 
   /**
+   * Find overrides by override agent ID within date range (income agent earns)
+   * Used for agent detail page to show "Override Income"
+   * Only counts overrides with status 'earned' or 'paid' (base commission must be paid)
+   */
+  async findByOverrideAgentIdInRange(
+    overrideAgentId: string,
+    startDate: string,
+  ): Promise<OverrideMetricRow[]> {
+    try {
+      const { data, error } = await this.client
+        .from(this.tableName)
+        .select("override_commission_amount")
+        .eq("override_agent_id", overrideAgentId)
+        .gte("created_at", startDate)
+        .in("status", ["earned", "paid"]); // Only count earned/paid overrides
+
+      if (error) {
+        throw this.handleError(error, "findByOverrideAgentIdInRange");
+      }
+
+      return (data as OverrideMetricRow[]) || [];
+    } catch (error) {
+      throw this.wrapError(error, "findByOverrideAgentIdInRange");
+    }
+  }
+
+  /**
+   * Find overrides where a specific override agent earns from a specific base agent
+   * Used for team table to show "Overrides I earn from this agent"
+   * Only counts overrides with status 'earned' or 'paid' (base commission must be paid)
+   */
+  async findByOverrideAndBaseAgentInRange(
+    overrideAgentId: string,
+    baseAgentId: string,
+    startDate: string,
+  ): Promise<OverrideMetricRow[]> {
+    try {
+      const { data, error } = await this.client
+        .from(this.tableName)
+        .select("override_commission_amount")
+        .eq("override_agent_id", overrideAgentId)
+        .eq("base_agent_id", baseAgentId)
+        .gte("created_at", startDate)
+        .in("status", ["earned", "paid"]); // Only count earned/paid overrides
+
+      if (error) {
+        throw this.handleError(error, "findByOverrideAndBaseAgentInRange");
+      }
+
+      return (data as OverrideMetricRow[]) || [];
+    } catch (error) {
+      throw this.wrapError(error, "findByOverrideAndBaseAgentInRange");
+    }
+  }
+
+  /**
    * Find overrides by policy ID
    */
   async findByPolicyId(policyId: string): Promise<OverrideCommission[]> {

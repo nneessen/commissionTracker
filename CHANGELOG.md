@@ -6,6 +6,40 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-12-31 08:25:04
+
+### Changed Files
+- `CHANGELOG.md`
+- `PROJECT_STATS.md`
+- `plans/todo/team-page-table-issue.md`
+- `src/features/hierarchy/AgentDetailPage.tsx`
+- `src/features/hierarchy/components/AgentTable.tsx`
+- `src/features/workflows/components/WorkflowManager.tsx`
+- `src/services/hierarchy/hierarchyService.ts`
+- `src/services/overrides/OverrideRepository.ts`
+- `supabase/migrations/20251231_001_sync_override_status_with_commission.sql`
+
+### Statistics
+```
+ 9 files changed, 487 insertions(+), 274 deletions(-)
+```
+
+## [Checkpoint] - 2025-12-31 08:24:36
+
+### Changed Files
+- `plans/todo/team-page-table-issue.md`
+- `src/features/hierarchy/AgentDetailPage.tsx`
+- `src/features/hierarchy/components/AgentTable.tsx`
+- `src/features/workflows/components/WorkflowManager.tsx`
+- `src/services/hierarchy/hierarchyService.ts`
+- `src/services/overrides/OverrideRepository.ts`
+- `supabase/migrations/20251231_001_sync_override_status_with_commission.sql`
+
+### Statistics
+```
+ 7 files changed, 463 insertions(+), 266 deletions(-)
+```
+
 ## [Checkpoint] - 2025-12-30 18:38:47
 
 ### Changed Files

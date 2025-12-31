@@ -27,6 +27,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { hierarchyService } from "@/services/hierarchy/hierarchyService";
+import { supabase } from "@/services/base/supabase";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -58,9 +59,20 @@ export function AgentDetailPage() {
     enabled: !!agentId,
   });
 
+  // Get current user for viewer override calculations
+  const { data: currentUser } = useQuery({
+    queryKey: ["current-user"],
+    queryFn: async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      return user;
+    },
+  });
+
   const { data: overrides } = useQuery({
-    queryKey: ["agent-overrides", agentId],
-    queryFn: () => hierarchyService.getAgentOverrides(agentId),
+    queryKey: ["agent-overrides", agentId, currentUser?.id],
+    queryFn: () => hierarchyService.getAgentOverrides(agentId, currentUser?.id),
     enabled: !!agentId,
   });
 
@@ -145,10 +157,20 @@ export function AgentDetailPage() {
     chargebacks: commissions?.chargebacks || 0,
   };
 
-  const overrideMetrics = {
-    mtd: overrides?.mtd || 0,
-    ytd: overrides?.ytd || 0,
+  // Agent's own override earnings from their downlines
+  const agentOverrideEarnings = {
+    mtd: overrides?.agentEarnings?.mtd || overrides?.mtd || 0,
+    ytd: overrides?.agentEarnings?.ytd || overrides?.ytd || 0,
   };
+
+  // What the viewer (current user) earns from this agent
+  const viewerEarningsFromAgent = {
+    mtd: overrides?.viewerEarningsFromAgent?.mtd || 0,
+    ytd: overrides?.viewerEarningsFromAgent?.ytd || 0,
+  };
+
+  // For backward compatibility (used in header display)
+  const _overrideMetrics = agentOverrideEarnings;
 
   const agentName =
     agentData.first_name && agentData.last_name
@@ -578,48 +600,104 @@ export function AgentDetailPage() {
               <div className="flex items-center gap-4 text-[11px]">
                 <div className="flex items-center gap-1">
                   <span className="text-zinc-500 dark:text-zinc-400">
-                    MTD Overrides:
+                    Their MTD Earnings:
                   </span>
                   <span className="font-semibold text-emerald-600">
-                    {formatCurrency(overrideMetrics.mtd)}
+                    {formatCurrency(agentOverrideEarnings.mtd)}
                   </span>
                 </div>
                 <div className="h-3 w-px bg-zinc-200 dark:bg-zinc-700" />
                 <div className="flex items-center gap-1">
                   <span className="text-zinc-500 dark:text-zinc-400">
-                    YTD Overrides:
+                    Their YTD Earnings:
                   </span>
                   <span className="font-semibold text-emerald-600">
-                    {formatCurrency(overrideMetrics.ytd)}
+                    {formatCurrency(agentOverrideEarnings.ytd)}
                   </span>
                 </div>
+                {/* Show viewer's overrides from this agent if not viewing own profile */}
+                {currentUser?.id !== agentId && (
+                  <>
+                    <div className="h-3 w-px bg-zinc-200 dark:bg-zinc-700" />
+                    <div className="flex items-center gap-1">
+                      <span className="text-zinc-500 dark:text-zinc-400">
+                        Your MTD from them:
+                      </span>
+                      <span className="font-semibold text-blue-600">
+                        {formatCurrency(viewerEarningsFromAgent.mtd)}
+                      </span>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
 
-            <div className="rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-4">
-              {overrideMetrics.mtd > 0 || overrideMetrics.ytd > 0 ? (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-[11px]">
-                    <span className="text-zinc-500 dark:text-zinc-400">
-                      MTD Override Income:
-                    </span>
-                    <span className="font-semibold text-emerald-600">
-                      {formatCurrency(overrideMetrics.mtd)}
-                    </span>
+            {/* Two-column layout for override details */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              {/* Agent's Override Earnings from Downlines */}
+              <div className="rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-4">
+                <h4 className="text-[11px] font-semibold text-zinc-700 dark:text-zinc-300 mb-3">
+                  Their Override Earnings
+                </h4>
+                {agentOverrideEarnings.mtd > 0 ||
+                agentOverrideEarnings.ytd > 0 ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="text-zinc-500 dark:text-zinc-400">
+                        MTD Override Income:
+                      </span>
+                      <span className="font-semibold text-emerald-600">
+                        {formatCurrency(agentOverrideEarnings.mtd)}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="text-zinc-500 dark:text-zinc-400">
+                        YTD Override Income:
+                      </span>
+                      <span className="font-semibold text-emerald-600">
+                        {formatCurrency(agentOverrideEarnings.ytd)}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex items-center justify-between text-[11px]">
-                    <span className="text-zinc-500 dark:text-zinc-400">
-                      YTD Override Income:
-                    </span>
-                    <span className="font-semibold text-emerald-600">
-                      {formatCurrency(overrideMetrics.ytd)}
-                    </span>
-                  </div>
+                ) : (
+                  <p className="text-[11px] text-zinc-500 dark:text-zinc-400 text-center py-2">
+                    No override earnings yet
+                  </p>
+                )}
+              </div>
+
+              {/* Your Overrides from This Agent (only if not viewing own profile) */}
+              {currentUser?.id !== agentId && (
+                <div className="rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-4">
+                  <h4 className="text-[11px] font-semibold text-zinc-700 dark:text-zinc-300 mb-3">
+                    Your Overrides from This Agent
+                  </h4>
+                  {viewerEarningsFromAgent.mtd > 0 ||
+                  viewerEarningsFromAgent.ytd > 0 ? (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-[11px]">
+                        <span className="text-zinc-500 dark:text-zinc-400">
+                          MTD Override Income:
+                        </span>
+                        <span className="font-semibold text-blue-600">
+                          {formatCurrency(viewerEarningsFromAgent.mtd)}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-[11px]">
+                        <span className="text-zinc-500 dark:text-zinc-400">
+                          YTD Override Income:
+                        </span>
+                        <span className="font-semibold text-blue-600">
+                          {formatCurrency(viewerEarningsFromAgent.ytd)}
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-[11px] text-zinc-500 dark:text-zinc-400 text-center py-2">
+                      No overrides from this agent yet
+                    </p>
+                  )}
                 </div>
-              ) : (
-                <p className="text-[11px] text-zinc-500 dark:text-zinc-400 text-center py-4">
-                  No override commissions yet
-                </p>
               )}
             </div>
           </div>

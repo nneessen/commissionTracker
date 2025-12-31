@@ -70,9 +70,13 @@ interface AgentTableProps {
   dateRange?: DateRangeFilter;
 }
 
+// Statuses that count toward MTD AP (active and issued)
+const AP_COUNTABLE_STATUSES = ["active", "issued"];
+
 // Fetch real metrics for an agent using service layer
 async function fetchAgentMetrics(
   agentId: string,
+  viewerId?: string,
   dateRange?: DateRangeFilter,
 ): Promise<{
   mtd_ap: number;
@@ -101,7 +105,8 @@ async function fetchAgentMetrics(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- policy data type
     (acc: { policies: number; ap: number }, policy: any) => {
       acc.policies++;
-      if (policy.status === "active") {
+      // Count AP for policies with status "active" or "issued"
+      if (AP_COUNTABLE_STATUSES.includes(policy.status)) {
         acc.ap += parseFloat(String(policy.annualPremium) || "0");
       }
       return acc;
@@ -109,10 +114,17 @@ async function fetchAgentMetrics(
     { policies: 0, ap: 0 },
   );
 
-  // Get override commissions for this month
-  // getAgentOverrides returns { mtd, ytd } not an array
-  const overrides = await hierarchyService.getAgentOverrides(agentId);
-  const overrideAmount = overrides.mtd || 0;
+  // Get override commissions - what the VIEWER earns from this agent
+  // If viewerId is provided, get viewer's overrides from this agent
+  // Otherwise fall back to legacy behavior
+  let overrideAmount = 0;
+  if (viewerId && viewerId !== agentId) {
+    const viewerOverrides = await hierarchyService.getViewerOverridesFromAgent(
+      viewerId,
+      agentId,
+    );
+    overrideAmount = viewerOverrides.mtd || 0;
+  }
 
   return {
     mtd_ap: mtdMetrics.ap,
@@ -130,6 +142,7 @@ function AgentRow({
   uplineContractLevel,
   onRemove,
   dateRange,
+  viewerId,
 }: {
   agent: AgentWithMetrics;
   depth: number;
@@ -139,6 +152,7 @@ function AgentRow({
   uplineContractLevel: number | null;
   onRemove: (agent: AgentWithMetrics) => void;
   dateRange?: DateRangeFilter;
+  viewerId?: string;
 }) {
   const navigate = useNavigate();
   const [metrics, setMetrics] = useState({
@@ -148,9 +162,10 @@ function AgentRow({
   });
 
   // Fetch real metrics for this agent with date range
+  // Pass viewerId to get overrides the viewer earns from this agent
   useEffect(() => {
-    fetchAgentMetrics(agent.id, dateRange).then(setMetrics);
-  }, [agent.id, dateRange]);
+    fetchAgentMetrics(agent.id, viewerId, dateRange).then(setMetrics);
+  }, [agent.id, viewerId, dateRange]);
 
   // Calculate real override spread
   // If viewing from upline's perspective: spread = upline level - agent level
@@ -504,6 +519,7 @@ export function AgentTable({
           uplineContractLevel={agent.upline_contract_level || null}
           onRemove={setAgentToRemove}
           dateRange={dateRange}
+          viewerId={currentUser?.id}
         />,
       );
 

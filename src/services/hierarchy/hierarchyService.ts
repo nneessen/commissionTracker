@@ -863,9 +863,12 @@ class HierarchyService {
 
   /**
    * Get override commission data for a specific agent
+   * Returns both: agent's override earnings from downlines AND viewer's overrides from this agent
+   * @param agentId - The agent to get override data for
+   * @param viewerId - Optional viewer ID to get their overrides from this agent
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Supabase response type
-  async getAgentOverrides(agentId: string): Promise<any> {
+  async getAgentOverrides(agentId: string, viewerId?: string): Promise<any> {
     try {
       const now = new Date();
       const mtdStart = new Date(
@@ -875,28 +878,109 @@ class HierarchyService {
       ).toISOString();
       const ytdStart = new Date(now.getFullYear(), 0, 1).toISOString();
 
-      // Get MTD and YTD overrides in parallel
-      const [mtdOverrides, ytdOverrides] = await Promise.all([
-        this.overrideRepo.findByBaseAgentIdInRange(agentId, mtdStart),
-        this.overrideRepo.findByBaseAgentIdInRange(agentId, ytdStart),
-      ]);
+      // Build parallel queries
+      const queries: Promise<
+        { override_commission_amount: number | string | null }[]
+      >[] = [
+        // Agent's earnings from their downlines (by override_agent_id)
+        this.overrideRepo.findByOverrideAgentIdInRange(agentId, mtdStart),
+        this.overrideRepo.findByOverrideAgentIdInRange(agentId, ytdStart),
+      ];
 
-      const mtd = mtdOverrides.reduce(
-        (sum, o) =>
-          sum + parseFloat(String(o.override_commission_amount) || "0"),
-        0,
-      );
+      // If viewerId provided, also get viewer's overrides from this agent
+      if (viewerId && viewerId !== agentId) {
+        queries.push(
+          this.overrideRepo.findByOverrideAndBaseAgentInRange(
+            viewerId,
+            agentId,
+            mtdStart,
+          ),
+          this.overrideRepo.findByOverrideAndBaseAgentInRange(
+            viewerId,
+            agentId,
+            ytdStart,
+          ),
+        );
+      }
 
-      const ytd = ytdOverrides.reduce(
-        (sum, o) =>
-          sum + parseFloat(String(o.override_commission_amount) || "0"),
-        0,
-      );
+      const results = await Promise.all(queries);
 
-      return { mtd, ytd };
+      const sumOverrides = (
+        arr: { override_commission_amount: number | string | null }[],
+      ) =>
+        arr.reduce(
+          (sum, o) =>
+            sum + parseFloat(String(o.override_commission_amount) || "0"),
+          0,
+        );
+
+      // Agent's override earnings from their downlines
+      const agentEarnings = {
+        mtd: sumOverrides(results[0]),
+        ytd: sumOverrides(results[1]),
+      };
+
+      // Viewer's overrides earned from this agent (if viewerId was provided)
+      const viewerEarningsFromAgent =
+        viewerId && viewerId !== agentId
+          ? {
+              mtd: sumOverrides(results[2]),
+              ytd: sumOverrides(results[3]),
+            }
+          : { mtd: 0, ytd: 0 };
+
+      return {
+        // Agent's own override earnings from their downlines
+        agentEarnings,
+        // What the viewer earns from this agent
+        viewerEarningsFromAgent,
+        // Keep legacy fields for backward compatibility
+        mtd: agentEarnings.mtd,
+        ytd: agentEarnings.ytd,
+      };
     } catch (error) {
       logger.error(
         "HierarchyService.getAgentOverrides",
+        error instanceof Error ? error : new Error(String(error)),
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Get override amount the viewer earns from a specific agent (for team table)
+   * @param viewerId - The logged-in user viewing the team table
+   * @param baseAgentId - The team member (row agent)
+   */
+  async getViewerOverridesFromAgent(
+    viewerId: string,
+    baseAgentId: string,
+  ): Promise<{ mtd: number }> {
+    try {
+      const now = new Date();
+      const mtdStart = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        1,
+      ).toISOString();
+
+      const overrides =
+        await this.overrideRepo.findByOverrideAndBaseAgentInRange(
+          viewerId,
+          baseAgentId,
+          mtdStart,
+        );
+
+      const mtd = overrides.reduce(
+        (sum, o) =>
+          sum + parseFloat(String(o.override_commission_amount) || "0"),
+        0,
+      );
+
+      return { mtd };
+    } catch (error) {
+      logger.error(
+        "HierarchyService.getViewerOverridesFromAgent",
         error instanceof Error ? error : new Error(String(error)),
       );
       throw error;

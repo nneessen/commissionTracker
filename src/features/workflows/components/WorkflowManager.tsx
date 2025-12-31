@@ -12,9 +12,7 @@ import {
   Zap,
   Mail,
   AlertCircle,
-  Bug,
   Shield,
-  Building2,
   Copy,
   Share2,
 } from "lucide-react";
@@ -56,12 +54,9 @@ import {
   useImoWorkflowTemplates,
   useSaveAsOrgTemplate,
   useCloneOrgTemplate,
-  useCreateOrgTemplate,
-  useUpdateOrgTemplate,
   useDeleteOrgTemplate,
 } from "@/hooks/workflows";
 import WorkflowWizard from "./WorkflowWizard";
-import WorkflowDiagnostic from "./WorkflowDiagnostic";
 import EventTypeManager from "./EventTypeManager";
 import type { Workflow } from "@/types/workflow.types";
 import { useAuth } from "@/contexts/AuthContext";
@@ -74,7 +69,6 @@ export default function WorkflowManager() {
   const { data: profile } = useCurrentUserProfile();
   const { isImoAdmin, imo } = useImo();
   const [showDialog, setShowDialog] = useState(false);
-  const [showDiagnostic, setShowDiagnostic] = useState(false);
   const [editingWorkflow, setEditingWorkflow] = useState<Workflow | null>(null);
   const [deleteWorkflowId, setDeleteWorkflowId] = useState<string | null>(null);
   const [showRecentRuns, setShowRecentRuns] = useState(false);
@@ -82,21 +76,17 @@ export default function WorkflowManager() {
   const [cloneTemplateId, setCloneTemplateId] = useState<string | null>(null);
   const [cloneName, setCloneName] = useState("");
   const [deleteTemplateId, setDeleteTemplateId] = useState<string | null>(null);
-  const [editingTemplate, setEditingTemplate] = useState<Workflow | null>(null);
 
   const { data: workflows = [], isLoading, error } = useWorkflows();
   const { data: runs = [] } = useWorkflowRuns(undefined, 5); // Only fetch 5 most recent
-  const { data: orgTemplates = [], isLoading: templatesLoading } =
-    useImoWorkflowTemplates({
-      enabled: !!imo,
-    });
+  const { data: orgTemplates = [] } = useImoWorkflowTemplates({
+    enabled: !!imo,
+  });
   const updateStatus = useUpdateWorkflowStatus();
   const deleteWorkflow = useDeleteWorkflow();
   const triggerWorkflow = useTriggerWorkflow();
   const saveAsOrgTemplate = useSaveAsOrgTemplate();
   const cloneOrgTemplate = useCloneOrgTemplate();
-  const _createOrgTemplate = useCreateOrgTemplate();
-  const _updateOrgTemplate = useUpdateOrgTemplate();
   const deleteOrgTemplate = useDeleteOrgTemplate();
 
   const isAdmin = profile?.is_admin === true;
@@ -109,7 +99,8 @@ export default function WorkflowManager() {
   };
 
   const templateToDelete = deleteTemplateId
-    ? orgTemplates.find((t) => t.id === deleteTemplateId)
+    ? orgTemplates.find((t) => t.id === deleteTemplateId) ||
+      workflows.find((w) => w.id === deleteTemplateId)
     : null;
 
   if (!user) {
@@ -193,15 +184,6 @@ export default function WorkflowManager() {
             >
               Workflows
             </TabsTrigger>
-            {imo && (
-              <TabsTrigger
-                value="org-templates"
-                className="text-[11px] h-6 data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900"
-              >
-                <Building2 className="h-3 w-3 mr-1" />
-                Org Templates
-              </TabsTrigger>
-            )}
             {isAdmin && (
               <TabsTrigger
                 value="events"
@@ -214,41 +196,16 @@ export default function WorkflowManager() {
           </TabsList>
 
           {activeTab === "workflows" && (
-            <div className="flex items-center gap-1.5">
-              <Button
-                size="sm"
-                variant="outline"
-                className="h-6 text-[10px] border-zinc-200 dark:border-zinc-700"
-                onClick={() => setShowDiagnostic(!showDiagnostic)}
-              >
-                <Bug className="h-3 w-3 mr-1" />
-                Diagnostic
-              </Button>
-              <Button
-                size="sm"
-                className="h-6 text-[10px]"
-                onClick={() => {
-                  setEditingWorkflow(null);
-                  setShowDialog(true);
-                }}
-              >
-                <Plus className="h-3 w-3 mr-1" />
-                Create Workflow
-              </Button>
-            </div>
-          )}
-
-          {activeTab === "org-templates" && isImoAdmin && (
             <Button
               size="sm"
               className="h-6 text-[10px]"
               onClick={() => {
-                setEditingTemplate(null);
+                setEditingWorkflow(null);
                 setShowDialog(true);
               }}
             >
               <Plus className="h-3 w-3 mr-1" />
-              New Org Template
+              Create Workflow
             </Button>
           )}
         </div>
@@ -285,13 +242,6 @@ export default function WorkflowManager() {
                 </>
               )}
             </div>
-
-            {/* Show diagnostic if enabled */}
-            {showDiagnostic && (
-              <div className="mb-3">
-                <WorkflowDiagnostic />
-              </div>
-            )}
 
             {/* Recent Runs - Collapsible inline view */}
             {showRecentRuns && runs.length > 0 && (
@@ -398,8 +348,18 @@ export default function WorkflowManager() {
                           className="h-8 border-b border-zinc-100 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
                         >
                           <TableCell className="py-1">
-                            <div className="text-[11px] font-medium text-zinc-900 dark:text-zinc-100">
-                              {workflow.name}
+                            <div className="flex items-center gap-1.5">
+                              {workflow.isOrgTemplate && (
+                                <Badge
+                                  variant="outline"
+                                  className="text-[9px] px-1 py-0 bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800"
+                                >
+                                  Template
+                                </Badge>
+                              )}
+                              <span className="text-[11px] font-medium text-zinc-900 dark:text-zinc-100">
+                                {workflow.name}
+                              </span>
                             </div>
                           </TableCell>
                           <TableCell className="py-1">
@@ -537,11 +497,25 @@ export default function WorkflowManager() {
                                     Save as Org Template
                                   </DropdownMenuItem>
                                 )}
+                                {workflow.isOrgTemplate && (
+                                  <DropdownMenuItem
+                                    onClick={() => {
+                                      setCloneTemplateId(workflow.id);
+                                      setCloneName(`${workflow.name} (Copy)`);
+                                    }}
+                                    className="text-xs"
+                                  >
+                                    <Copy className="h-3 w-3 mr-1" />
+                                    Clone
+                                  </DropdownMenuItem>
+                                )}
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
                                   className="text-xs text-red-600"
                                   onClick={() =>
-                                    setDeleteWorkflowId(workflow.id)
+                                    workflow.isOrgTemplate
+                                      ? setDeleteTemplateId(workflow.id)
+                                      : setDeleteWorkflowId(workflow.id)
                                   }
                                 >
                                   <Trash2 className="h-3 w-3 mr-1" />
@@ -560,158 +534,6 @@ export default function WorkflowManager() {
           </div>
         </TabsContent>
 
-        {/* Org Templates Tab Content */}
-        {imo && (
-          <TabsContent value="org-templates" className="flex-1 mt-0">
-            <div className="h-full flex flex-col">
-              {/* Header */}
-              <div className="flex items-center justify-between mb-2 text-[11px]">
-                <div className="flex items-center gap-1">
-                  <Building2 className="h-3 w-3 text-zinc-400" />
-                  <span className="font-medium text-zinc-900 dark:text-zinc-100">
-                    {orgTemplates.length}
-                  </span>
-                  <span className="text-zinc-500 dark:text-zinc-400">
-                    org template{orgTemplates.length !== 1 ? "s" : ""}
-                  </span>
-                  <span className="text-zinc-400 dark:text-zinc-500 ml-1">
-                    in {imo.name}
-                  </span>
-                </div>
-              </div>
-
-              {/* Org Templates Table */}
-              <div className="flex-1 rounded-lg border border-zinc-200 dark:border-zinc-700 overflow-auto">
-                {templatesLoading ? (
-                  <div className="text-center py-8">
-                    <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                      Loading org templates...
-                    </p>
-                  </div>
-                ) : orgTemplates.length === 0 ? (
-                  <div className="text-center py-8">
-                    <Building2 className="h-6 w-6 mx-auto mb-2 text-zinc-400" />
-                    <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mb-1">
-                      No org templates yet
-                    </p>
-                    {isImoAdmin && (
-                      <p className="text-[10px] text-zinc-400 dark:text-zinc-500">
-                        Create a workflow and select "Save as Org Template" to
-                        share it
-                      </p>
-                    )}
-                  </div>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="h-7 bg-zinc-50 dark:bg-zinc-800/50 border-b border-zinc-200 dark:border-zinc-700">
-                        <TableHead className="text-[10px] font-semibold text-zinc-600 dark:text-zinc-300 py-1">
-                          Name
-                        </TableHead>
-                        <TableHead className="text-[10px] font-semibold text-zinc-600 dark:text-zinc-300 py-1">
-                          Description
-                        </TableHead>
-                        <TableHead className="text-[10px] font-semibold text-zinc-600 dark:text-zinc-300 py-1">
-                          Type
-                        </TableHead>
-                        <TableHead className="text-[10px] font-semibold text-zinc-600 dark:text-zinc-300 py-1">
-                          Created By
-                        </TableHead>
-                        <TableHead className="text-[10px] py-1 w-24 text-right">
-                          Actions
-                        </TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {orgTemplates.map((template) => (
-                        <TableRow
-                          key={template.id}
-                          className="h-8 border-b border-zinc-100 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
-                        >
-                          <TableCell className="py-1">
-                            <div className="flex items-center gap-1.5">
-                              <Badge
-                                variant="outline"
-                                className="text-[9px] px-1 py-0 bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800"
-                              >
-                                Template
-                              </Badge>
-                              <span className="text-[11px] font-medium text-zinc-900 dark:text-zinc-100">
-                                {template.name}
-                              </span>
-                            </div>
-                          </TableCell>
-                          <TableCell className="py-1">
-                            <div className="text-[10px] text-zinc-500 dark:text-zinc-400 truncate max-w-[300px]">
-                              {template.description || "—"}
-                            </div>
-                          </TableCell>
-                          <TableCell className="py-1">
-                            <div className="flex items-center gap-1 text-zinc-600 dark:text-zinc-400">
-                              {triggerIcons[template.triggerType]}
-                              <span className="text-[10px]">
-                                {template.triggerType}
-                              </span>
-                            </div>
-                          </TableCell>
-                          <TableCell className="py-1">
-                            <span className="text-[10px] text-zinc-500 dark:text-zinc-400">
-                              {template.createdByName || "Unknown"}
-                            </span>
-                          </TableCell>
-                          <TableCell className="py-1">
-                            <div className="flex items-center justify-end gap-1">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-6 text-[10px] px-2"
-                                onClick={() => {
-                                  setCloneTemplateId(template.id);
-                                  setCloneName(`${template.name} (Copy)`);
-                                }}
-                              >
-                                <Copy className="h-3 w-3 mr-1" />
-                                Clone
-                              </Button>
-                              {isImoAdmin && (
-                                <>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-6 text-[10px] px-2"
-                                    onClick={() => {
-                                      setEditingTemplate(template);
-                                      setShowDialog(true);
-                                    }}
-                                  >
-                                    <Edit className="h-3 w-3 mr-1" />
-                                    Edit
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-6 text-[10px] px-2 text-destructive hover:text-destructive"
-                                    onClick={() =>
-                                      setDeleteTemplateId(template.id)
-                                    }
-                                  >
-                                    <Trash2 className="h-3 w-3 mr-1" />
-                                    Delete
-                                  </Button>
-                                </>
-                              )}
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
-              </div>
-            </div>
-          </TabsContent>
-        )}
-
         {/* Event Types Tab Content (Admin Only) */}
         {isAdmin && (
           <TabsContent value="events" className="flex-1 mt-0">
@@ -725,13 +547,11 @@ export default function WorkflowManager() {
         open={showDialog}
         onOpenChange={(open) => {
           setShowDialog(open);
-          // CRITICAL: Reset editing workflow/template when dialog closes
           if (!open) {
             setEditingWorkflow(null);
-            setEditingTemplate(null);
           }
         }}
-        workflow={editingWorkflow || editingTemplate}
+        workflow={editingWorkflow}
       />
 
       {/* Delete Confirmation Dialog */}
