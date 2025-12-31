@@ -1,16 +1,9 @@
 // src/features/recruiting/admin/AutomationDialog.tsx
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -28,7 +21,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Loader2, X, Mail, Bell, MessageSquare, Copy } from "lucide-react";
+import { Loader2, X, Mail, Bell, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
 import {
   useCreateAutomation,
@@ -382,6 +375,23 @@ export function AutomationDialog({
   const isPhaseLevel = !!phaseId && !checklistItemId;
   const triggers = isPhaseLevel ? PHASE_TRIGGERS : ITEM_TRIGGERS;
 
+  // Refs for text inputs to enable insert-at-cursor
+  const emailSubjectRef = useRef<HTMLInputElement>(null);
+  const emailBodyRef = useRef<HTMLTextAreaElement>(null);
+  const notificationTitleRef = useRef<HTMLInputElement>(null);
+  const notificationMessageRef = useRef<HTMLTextAreaElement>(null);
+  const smsMessageRef = useRef<HTMLTextAreaElement>(null);
+
+  // Track which field was last focused for variable insertion
+  const [lastFocusedField, setLastFocusedField] = useState<
+    | "emailSubject"
+    | "emailBody"
+    | "notificationTitle"
+    | "notificationMessage"
+    | "smsMessage"
+    | null
+  >(null);
+
   // Form state
   const [triggerType, setTriggerType] = useState<AutomationTriggerType>(
     triggers[0].value,
@@ -493,11 +503,95 @@ export function AutomationDialog({
     triggerType === "phase_stall" ||
     triggerType === "item_deadline_approaching";
 
-  // Copy variable to clipboard
-  const copyVariable = useCallback((variable: string) => {
-    navigator.clipboard.writeText(variable);
-    toast.success("Copied to clipboard");
-  }, []);
+  // Insert variable at cursor position in the last focused field
+  const insertVariable = useCallback(
+    (variable: string) => {
+      const insertIntoField = (
+        ref: React.RefObject<HTMLInputElement | HTMLTextAreaElement | null>,
+        value: string,
+        setValue: (v: string) => void,
+      ) => {
+        const el = ref.current;
+        if (!el) return false;
+
+        const start = el.selectionStart ?? value.length;
+        const end = el.selectionEnd ?? value.length;
+        const newValue = value.slice(0, start) + variable + value.slice(end);
+        setValue(newValue);
+
+        // Restore focus and set cursor position after the inserted variable
+        requestAnimationFrame(() => {
+          el.focus();
+          const newPos = start + variable.length;
+          el.setSelectionRange(newPos, newPos);
+        });
+        return true;
+      };
+
+      // Try to insert into the last focused field
+      let inserted = false;
+      switch (lastFocusedField) {
+        case "emailSubject":
+          inserted = insertIntoField(
+            emailSubjectRef,
+            emailSubject,
+            setEmailSubject,
+          );
+          break;
+        case "emailBody":
+          inserted = insertIntoField(emailBodyRef, emailBody, setEmailBody);
+          break;
+        case "notificationTitle":
+          inserted = insertIntoField(
+            notificationTitleRef,
+            notificationTitle,
+            setNotificationTitle,
+          );
+          break;
+        case "notificationMessage":
+          inserted = insertIntoField(
+            notificationMessageRef,
+            notificationMessage,
+            setNotificationMessage,
+          );
+          break;
+        case "smsMessage":
+          inserted = insertIntoField(smsMessageRef, smsMessage, setSmsMessage);
+          break;
+      }
+
+      // If no field was focused or insertion failed, default to email body based on active tab
+      if (!inserted) {
+        if (activeTab === "email" && showEmail) {
+          insertIntoField(emailBodyRef, emailBody, setEmailBody);
+        } else if (activeTab === "notification" && showNotification) {
+          insertIntoField(
+            notificationMessageRef,
+            notificationMessage,
+            setNotificationMessage,
+          );
+        } else if (activeTab === "sms" && showSms) {
+          insertIntoField(smsMessageRef, smsMessage, setSmsMessage);
+        } else {
+          // Fallback: copy to clipboard
+          navigator.clipboard.writeText(variable);
+          toast.success("Copied to clipboard");
+        }
+      }
+    },
+    [
+      lastFocusedField,
+      activeTab,
+      showEmail,
+      showNotification,
+      showSms,
+      emailSubject,
+      emailBody,
+      notificationTitle,
+      notificationMessage,
+      smsMessage,
+    ],
+  );
 
   const handleSave = async () => {
     // Validation
@@ -656,411 +750,436 @@ export function AutomationDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto p-4">
-        <DialogHeader className="pb-2">
-          <DialogTitle className="text-xs font-medium">
-            {isEditing ? "Edit Automation" : "Add Automation"}
-          </DialogTitle>
-          <DialogDescription className="text-[10px] text-zinc-500">
-            Configure automated {isPhaseLevel ? "phase" : "item"}-level
-            notifications
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="max-w-6xl p-0">
+        <div className="flex">
+          {/* LEFT COLUMN - Settings */}
+          <div className="w-72 shrink-0 border-r border-border p-4 space-y-3 bg-muted/30">
+            <div>
+              <h3 className="text-sm font-semibold text-foreground">
+                {isEditing ? "Edit Automation" : "Add Automation"}
+              </h3>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {isPhaseLevel ? "Phase" : "Item"}-level trigger
+              </p>
+            </div>
 
-        <div className="space-y-3">
-          {/* Trigger Type */}
-          <div className="space-y-1">
-            <Label className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
-              Trigger Event
-            </Label>
-            <Select
-              value={triggerType}
-              onValueChange={(v: AutomationTriggerType) => setTriggerType(v)}
-            >
-              <SelectTrigger className="h-7 text-[11px] bg-zinc-50 dark:bg-zinc-800/50 border-zinc-200 dark:border-zinc-700">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {triggers.map(({ value, label, description }) => (
-                  <SelectItem key={value} value={value} className="text-[11px]">
-                    <div className="flex flex-col">
-                      <span>{label}</span>
-                      <span className="text-[9px] text-zinc-500">
-                        {description}
-                      </span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Delay Days (for stall/deadline triggers) */}
-          {needsDelayDays && (
-            <div className="space-y-1">
-              <Label className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
-                {triggerType === "phase_stall"
-                  ? "Days After No Progress"
-                  : "Days Before Deadline"}
+            {/* Trigger Type */}
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-foreground">
+                Trigger Event
               </Label>
-              <Input
-                type="number"
-                min={1}
-                max={365}
-                value={delayDays}
-                onChange={(e) =>
-                  setDelayDays(Math.max(1, parseInt(e.target.value) || 7))
-                }
-                className="h-7 text-[11px] w-20 bg-zinc-50 dark:bg-zinc-800/50 border-zinc-200 dark:border-zinc-700"
-              />
+              <Select
+                value={triggerType}
+                onValueChange={(v: AutomationTriggerType) => setTriggerType(v)}
+              >
+                <SelectTrigger className="h-9 text-sm bg-background border-input shadow-sm hover:shadow-md transition-shadow">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {triggers.map(({ value, label }) => (
+                    <SelectItem key={value} value={value} className="text-sm">
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-          )}
 
-          {/* Recipients */}
-          <div className="space-y-1">
-            <Label className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
-              Recipients
-            </Label>
-            <div className="flex flex-wrap gap-1.5">
-              {RECIPIENT_OPTIONS.map(({ value, label, description }) => {
-                const isSelected = recipients.some((r) => r.type === value);
-                return (
-                  <TooltipProvider key={value}>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Badge
-                          variant={isSelected ? "default" : "outline"}
-                          className={`text-[10px] cursor-pointer transition-all h-5 px-1.5 ${
-                            isSelected
-                              ? "bg-blue-600 hover:bg-blue-700 text-white border-blue-600"
-                              : "hover:bg-zinc-100 dark:hover:bg-zinc-800 border-zinc-300 dark:border-zinc-600"
-                          }`}
-                          onClick={() => handleRecipientToggle(value)}
-                        >
-                          {label}
-                          {isSelected && <X className="h-2.5 w-2.5 ml-0.5" />}
-                        </Badge>
-                      </TooltipTrigger>
-                      <TooltipContent side="bottom" className="text-[10px]">
-                        {description}
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Custom Emails */}
-          {recipients.some((r) => r.type === "custom_email") && (
-            <div className="space-y-1">
-              <Label className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
-                Custom Emails (comma-separated)
-              </Label>
-              <Input
-                value={customEmails}
-                onChange={(e) => setCustomEmails(e.target.value)}
-                placeholder="email1@example.com, email2@example.com"
-                className="h-7 text-[11px] bg-zinc-50 dark:bg-zinc-800/50 border-zinc-200 dark:border-zinc-700"
-              />
-            </div>
-          )}
-
-          {/* Communication Type */}
-          <div className="space-y-1">
-            <Label className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
-              Communication Channel
-            </Label>
-            <div className="flex flex-wrap gap-1.5">
-              {COMMUNICATION_OPTIONS.map(({ value, label, icon }) => (
-                <Badge
-                  key={value}
-                  variant={communicationType === value ? "default" : "outline"}
-                  className={`text-[10px] cursor-pointer transition-all h-5 px-1.5 ${
-                    communicationType === value
-                      ? "bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600"
-                      : "hover:bg-zinc-100 dark:hover:bg-zinc-800 border-zinc-300 dark:border-zinc-600"
-                  }`}
-                  onClick={() => setCommunicationType(value)}
-                >
-                  {icon && <span className="mr-1">{icon}</span>}
-                  {label}
-                </Badge>
-              ))}
-            </div>
-          </div>
-
-          {/* Sender Configuration */}
-          <div className="space-y-1">
-            <Label className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
-              Send From
-            </Label>
-            <Select
-              value={senderType}
-              onValueChange={(v: AutomationSenderType) => setSenderType(v)}
-            >
-              <SelectTrigger className="h-7 text-[11px] bg-zinc-50 dark:bg-zinc-800/50 border-zinc-200 dark:border-zinc-700">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {SENDER_OPTIONS.map(({ value, label, description }) => (
-                  <SelectItem key={value} value={value} className="text-[11px]">
-                    <div className="flex flex-col">
-                      <span>{label}</span>
-                      <span className="text-[9px] text-zinc-500">
-                        {description}
-                      </span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Custom Sender Fields */}
-          {senderType === "custom" && (
-            <div className="grid grid-cols-2 gap-2">
-              <div className="space-y-1">
-                <Label className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
-                  Sender Email *
+            {/* Delay Days */}
+            {needsDelayDays && (
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium text-foreground">
+                  {triggerType === "phase_stall"
+                    ? "Days After No Progress"
+                    : "Days Before Deadline"}
                 </Label>
                 <Input
-                  type="email"
-                  value={senderEmail}
-                  onChange={(e) => setSenderEmail(e.target.value)}
-                  placeholder="sender@example.com"
-                  className="h-7 text-[11px] bg-zinc-50 dark:bg-zinc-800/50 border-zinc-200 dark:border-zinc-700"
+                  type="number"
+                  min={1}
+                  max={365}
+                  value={delayDays}
+                  onChange={(e) =>
+                    setDelayDays(Math.max(1, parseInt(e.target.value) || 7))
+                  }
+                  className="h-9 text-sm w-24 bg-background border-input shadow-sm hover:shadow-md transition-shadow"
                 />
               </div>
-              <div className="space-y-1">
-                <Label className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
-                  Sender Name
+            )}
+
+            {/* Recipients */}
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-foreground">
+                Recipients
+              </Label>
+              <div className="flex flex-wrap gap-1.5">
+                {RECIPIENT_OPTIONS.map(({ value, label, description }) => {
+                  const isSelected = recipients.some((r) => r.type === value);
+                  return (
+                    <TooltipProvider key={value}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Badge
+                            variant={isSelected ? "default" : "outline"}
+                            className={`text-xs cursor-pointer h-6 px-2 shadow-sm hover:shadow-md transition-all ${
+                              isSelected
+                                ? "bg-foreground text-background hover:bg-foreground/90"
+                                : "bg-background border-input hover:bg-accent hover:text-accent-foreground"
+                            }`}
+                            onClick={() => handleRecipientToggle(value)}
+                          >
+                            {label}
+                            {isSelected && <X className="h-3 w-3 ml-1" />}
+                          </Badge>
+                        </TooltipTrigger>
+                        <TooltipContent side="right" className="text-xs">
+                          {description}
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Custom Emails */}
+            {recipients.some((r) => r.type === "custom_email") && (
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium text-foreground">
+                  Custom Emails
+                </Label>
+                <Input
+                  value={customEmails}
+                  onChange={(e) => setCustomEmails(e.target.value)}
+                  placeholder="email1@example.com"
+                  className="h-9 text-sm bg-background border-input shadow-sm hover:shadow-md transition-shadow"
+                />
+              </div>
+            )}
+
+            {/* Communication Channel */}
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-foreground">
+                Channel
+              </Label>
+              <div className="flex flex-wrap gap-1.5">
+                {COMMUNICATION_OPTIONS.map(({ value, label, icon }) => (
+                  <Badge
+                    key={value}
+                    variant={
+                      communicationType === value ? "default" : "outline"
+                    }
+                    className={`text-xs cursor-pointer h-6 px-2 shadow-sm hover:shadow-md transition-all ${
+                      communicationType === value
+                        ? "bg-foreground text-background hover:bg-foreground/90"
+                        : "bg-background border-input hover:bg-accent hover:text-accent-foreground"
+                    }`}
+                    onClick={() => setCommunicationType(value)}
+                  >
+                    {icon && <span className="mr-1">{icon}</span>}
+                    {label}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+
+            {/* Sender */}
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-foreground">
+                Send From
+              </Label>
+              <Select
+                value={senderType}
+                onValueChange={(v: AutomationSenderType) => setSenderType(v)}
+              >
+                <SelectTrigger className="h-9 text-sm bg-background border-input shadow-sm hover:shadow-md transition-shadow">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {SENDER_OPTIONS.map(({ value, label, description }) => (
+                    <SelectItem key={value} value={value} className="text-sm">
+                      <div className="flex flex-col">
+                        <span>{label}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {description}
+                        </span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Custom Sender Fields */}
+            {senderType === "custom" && (
+              <div className="space-y-2">
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium text-foreground">
+                    Sender Email *
+                  </Label>
+                  <Input
+                    type="email"
+                    value={senderEmail}
+                    onChange={(e) => setSenderEmail(e.target.value)}
+                    placeholder="sender@example.com"
+                    className="h-9 text-sm bg-background border-input shadow-sm hover:shadow-md transition-shadow"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium text-foreground">
+                    Sender Name
+                  </Label>
+                  <Input
+                    value={senderName}
+                    onChange={(e) => setSenderName(e.target.value)}
+                    placeholder="John Smith"
+                    className="h-9 text-sm bg-background border-input shadow-sm hover:shadow-md transition-shadow"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Display Name Override */}
+            {senderType !== "custom" && senderType !== "system" && (
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium text-foreground">
+                  Display Name Override
                 </Label>
                 <Input
                   value={senderName}
                   onChange={(e) => setSenderName(e.target.value)}
-                  placeholder="John Smith"
-                  className="h-7 text-[11px] bg-zinc-50 dark:bg-zinc-800/50 border-zinc-200 dark:border-zinc-700"
+                  placeholder="Leave blank for default"
+                  className="h-9 text-sm bg-background border-input shadow-sm hover:shadow-md transition-shadow"
                 />
               </div>
+            )}
+
+            {/* Footer in left column */}
+            <div className="pt-3 mt-auto border-t border-border flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-9 text-sm flex-1"
+                onClick={() => onOpenChange(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                className="h-9 text-sm flex-1"
+                onClick={handleSave}
+                disabled={isPending}
+              >
+                {isPending && (
+                  <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                )}
+                {isEditing ? "Save" : "Add"}
+              </Button>
             </div>
-          )}
+          </div>
 
-          {/* Optional Sender Name for non-custom types */}
-          {senderType !== "custom" && senderType !== "system" && (
-            <div className="space-y-1">
-              <Label className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
-                Display Name Override (optional)
-              </Label>
-              <Input
-                value={senderName}
-                onChange={(e) => setSenderName(e.target.value)}
-                placeholder="Leave blank to use default name"
-                className="h-7 text-[11px] bg-zinc-50 dark:bg-zinc-800/50 border-zinc-200 dark:border-zinc-700"
-              />
-            </div>
-          )}
-
-          {/* Content Tabs */}
-          {availableTabs.length > 0 && (
-            <Tabs
-              value={activeTab}
-              onValueChange={setActiveTab}
-              className="w-full"
-            >
-              <TabsList className="h-7 w-full bg-zinc-100 dark:bg-zinc-800 p-0.5">
-                {availableTabs.map(({ value, label, icon }) => (
-                  <TabsTrigger
-                    key={value}
-                    value={value}
-                    className="h-6 text-[10px] data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 flex-1"
-                  >
-                    {icon}
-                    <span className="ml-1">{label}</span>
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-
-              {/* Email Tab */}
-              {showEmail && (
-                <TabsContent value="email" className="mt-2 space-y-2">
-                  <div className="space-y-1">
-                    <Label className="text-[10px] text-zinc-500 dark:text-zinc-400">
-                      Subject
-                    </Label>
-                    <Input
-                      value={emailSubject}
-                      onChange={(e) => setEmailSubject(e.target.value)}
-                      placeholder="e.g., Welcome to {{phase_name}}!"
-                      className="h-7 text-[11px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-[10px] text-zinc-500 dark:text-zinc-400">
-                      Body (HTML supported)
-                    </Label>
-                    <Textarea
-                      value={emailBody}
-                      onChange={(e) => setEmailBody(e.target.value)}
-                      placeholder="<p>Hello {{recruit_first_name}},</p><p>...</p>"
-                      className="text-[11px] min-h-20 font-mono bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700"
-                    />
-                  </div>
-                </TabsContent>
-              )}
-
-              {/* Notification Tab */}
-              {showNotification && (
-                <TabsContent value="notification" className="mt-2 space-y-2">
-                  <div className="space-y-1">
-                    <Label className="text-[10px] text-zinc-500 dark:text-zinc-400">
-                      Title
-                    </Label>
-                    <Input
-                      value={notificationTitle}
-                      onChange={(e) => setNotificationTitle(e.target.value)}
-                      placeholder="e.g., Phase Started"
-                      className="h-7 text-[11px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-[10px] text-zinc-500 dark:text-zinc-400">
-                      Message
-                    </Label>
-                    <Textarea
-                      value={notificationMessage}
-                      onChange={(e) => setNotificationMessage(e.target.value)}
-                      placeholder="{{recruit_name}} has entered {{phase_name}}"
-                      className="text-[11px] min-h-14 bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700"
-                    />
-                  </div>
-                </TabsContent>
-              )}
-
-              {/* SMS Tab */}
-              {showSms && (
-                <TabsContent value="sms" className="mt-2 space-y-2">
-                  <div className="space-y-1">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-[10px] text-zinc-500 dark:text-zinc-400">
-                        SMS Message
-                      </Label>
-                      <span className="text-[9px] text-zinc-400">
-                        {smsMessage.length}/160 chars
-                      </span>
-                    </div>
-                    <Textarea
-                      value={smsMessage}
-                      onChange={(e) => setSmsMessage(e.target.value)}
-                      placeholder="Hi {{recruit_first_name}}, reminder about {{phase_name}}..."
-                      className="text-[11px] min-h-16 bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700"
-                      maxLength={320}
-                    />
-                    <p className="text-[9px] text-zinc-400">
-                      Keep under 160 chars for single SMS. Longer messages may
-                      be split.
-                    </p>
-                  </div>
-                </TabsContent>
-              )}
-            </Tabs>
-          )}
-
-          {/* Template Variables & Emojis */}
-          <div className="p-2 bg-zinc-50 dark:bg-zinc-800/30 rounded border border-zinc-200 dark:border-zinc-700 space-y-2">
-            {/* Template Variables by Category */}
-            <div>
-              <span className="text-[9px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide block mb-1.5">
-                Template Variables
-              </span>
-              <div className="space-y-1.5 max-h-32 overflow-y-auto">
-                {TEMPLATE_VARIABLE_CATEGORIES.map(({ category, variables }) => (
-                  <div
-                    key={category}
-                    className="flex flex-wrap items-center gap-1"
-                  >
-                    <span className="text-[8px] font-medium text-zinc-400 dark:text-zinc-500 w-16 shrink-0">
-                      {category}:
-                    </span>
-                    {variables.map(({ variable, description }) => (
-                      <TooltipProvider key={variable}>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <button
-                              type="button"
-                              onClick={() => copyVariable(variable)}
-                              className="inline-flex items-center gap-0.5 px-1 py-0.5 text-[8px] font-mono bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
-                            >
-                              {variable.replace(/\{\{|\}\}/g, "")}
-                              <Copy className="h-2 w-2 text-zinc-400" />
-                            </button>
-                          </TooltipTrigger>
-                          <TooltipContent side="bottom" className="text-[10px]">
-                            <p className="font-mono text-zinc-300">
-                              {variable}
-                            </p>
-                            <p>{description}</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
+          {/* RIGHT SECTION - Content & Variables */}
+          <div className="flex-1 flex">
+            {/* CENTER - Message Content */}
+            <div className="flex-1 p-4 space-y-3">
+              {availableTabs.length > 0 && (
+                <Tabs
+                  value={activeTab}
+                  onValueChange={setActiveTab}
+                  className="w-full"
+                >
+                  <TabsList className="h-10 w-full bg-muted/50 p-1 border border-border rounded-lg">
+                    {availableTabs.map(({ value, label, icon }) => (
+                      <TabsTrigger
+                        key={value}
+                        value={value}
+                        className="h-8 text-sm flex-1 rounded-md text-muted-foreground data-[state=active]:bg-foreground data-[state=active]:text-background data-[state=active]:shadow-sm hover:text-foreground transition-all"
+                      >
+                        {icon}
+                        <span className="ml-1.5">{label}</span>
+                      </TabsTrigger>
                     ))}
-                  </div>
-                ))}
-              </div>
+                  </TabsList>
+
+                  {/* Email Tab */}
+                  {showEmail && (
+                    <TabsContent value="email" className="mt-3 space-y-3">
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-medium text-foreground">
+                          Subject
+                        </Label>
+                        <Input
+                          ref={emailSubjectRef}
+                          value={emailSubject}
+                          onChange={(e) => setEmailSubject(e.target.value)}
+                          onFocus={() => setLastFocusedField("emailSubject")}
+                          placeholder="e.g., Welcome to {{phase_name}}!"
+                          className="h-9 text-sm bg-background border-input shadow-sm hover:shadow-md focus:shadow-md transition-shadow"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-medium text-foreground">
+                          Body (HTML supported)
+                        </Label>
+                        <Textarea
+                          ref={emailBodyRef}
+                          value={emailBody}
+                          onChange={(e) => setEmailBody(e.target.value)}
+                          onFocus={() => setLastFocusedField("emailBody")}
+                          placeholder="<p>Hello {{recruit_first_name}},</p><p>Welcome! 🎉</p>"
+                          className="text-sm min-h-[180px] font-mono bg-background border-input shadow-sm hover:shadow-md focus:shadow-md transition-shadow"
+                        />
+                      </div>
+                    </TabsContent>
+                  )}
+
+                  {/* Notification Tab */}
+                  {showNotification && (
+                    <TabsContent
+                      value="notification"
+                      className="mt-3 space-y-3"
+                    >
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-medium text-foreground">
+                          Title
+                        </Label>
+                        <Input
+                          ref={notificationTitleRef}
+                          value={notificationTitle}
+                          onChange={(e) => setNotificationTitle(e.target.value)}
+                          onFocus={() =>
+                            setLastFocusedField("notificationTitle")
+                          }
+                          placeholder="e.g., Phase Started"
+                          className="h-9 text-sm bg-background border-input shadow-sm hover:shadow-md focus:shadow-md transition-shadow"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-medium text-foreground">
+                          Message
+                        </Label>
+                        <Textarea
+                          ref={notificationMessageRef}
+                          value={notificationMessage}
+                          onChange={(e) =>
+                            setNotificationMessage(e.target.value)
+                          }
+                          onFocus={() =>
+                            setLastFocusedField("notificationMessage")
+                          }
+                          placeholder="{{recruit_name}} has entered {{phase_name}}"
+                          className="text-sm min-h-[140px] bg-background border-input shadow-sm hover:shadow-md focus:shadow-md transition-shadow"
+                        />
+                      </div>
+                    </TabsContent>
+                  )}
+
+                  {/* SMS Tab */}
+                  {showSms && (
+                    <TabsContent value="sms" className="mt-3 space-y-3">
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-xs font-medium text-foreground">
+                            SMS Message
+                          </Label>
+                          <span className="text-xs text-muted-foreground">
+                            {smsMessage.length}/160
+                          </span>
+                        </div>
+                        <Textarea
+                          ref={smsMessageRef}
+                          value={smsMessage}
+                          onChange={(e) => setSmsMessage(e.target.value)}
+                          onFocus={() => setLastFocusedField("smsMessage")}
+                          placeholder="Hi {{recruit_first_name}}, reminder about {{phase_name}}..."
+                          className="text-sm min-h-[140px] bg-background border-input shadow-sm hover:shadow-md focus:shadow-md transition-shadow"
+                          maxLength={320}
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          Keep under 160 chars for single SMS
+                        </p>
+                      </div>
+                    </TabsContent>
+                  )}
+                </Tabs>
+              )}
             </div>
 
-            {/* Emoji Shortcuts */}
-            <div>
-              <span className="text-[9px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide block mb-1">
-                Emoji Shortcodes
-              </span>
-              <div className="flex flex-wrap gap-1">
-                {EMOJI_SHORTCUTS.map(({ code, emoji, label }) => (
-                  <TooltipProvider key={code}>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <button
-                          type="button"
-                          onClick={() => copyVariable(code)}
-                          className="inline-flex items-center gap-0.5 px-1 py-0.5 text-[10px] bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
-                        >
-                          {emoji}
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent side="bottom" className="text-[10px]">
-                        <p className="font-mono">{code}</p>
-                        <p className="text-zinc-400">{label}</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                ))}
+            {/* RIGHT - Template Variables & Emojis Sidebar */}
+            <div className="w-64 shrink-0 border-l border-border p-3 bg-muted/30 space-y-3">
+              <div className="text-xs text-muted-foreground text-center font-medium">
+                Click to insert at cursor
               </div>
-              <p className="text-[8px] text-zinc-400 mt-1">
-                Use :emoji_name: syntax in your message (e.g., :tada: :rocket:)
-              </p>
+
+              {/* Template Variables */}
+              <div className="space-y-2">
+                <span className="text-xs font-semibold text-foreground uppercase tracking-wide">
+                  Variables
+                </span>
+                <div className="space-y-2">
+                  {TEMPLATE_VARIABLE_CATEGORIES.map(
+                    ({ category, variables }) => (
+                      <div key={category}>
+                        <span className="text-xs font-medium text-muted-foreground block mb-1">
+                          {category}
+                        </span>
+                        <div className="flex flex-wrap gap-1">
+                          {variables.map(({ variable, description }) => (
+                            <TooltipProvider key={variable}>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <button
+                                    type="button"
+                                    onClick={() => insertVariable(variable)}
+                                    className="px-1.5 py-0.5 text-xs font-mono bg-background border border-input rounded shadow-sm hover:shadow-md hover:bg-accent hover:text-accent-foreground active:shadow-none transition-all"
+                                  >
+                                    {variable.replace(/\{\{|\}\}/g, "")}
+                                  </button>
+                                </TooltipTrigger>
+                                <TooltipContent side="left" className="text-xs">
+                                  <p className="font-mono">{variable}</p>
+                                  <p className="text-muted-foreground">
+                                    {description}
+                                  </p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          ))}
+                        </div>
+                      </div>
+                    ),
+                  )}
+                </div>
+              </div>
+
+              {/* Emoji Shortcuts */}
+              <div className="pt-2 border-t border-border">
+                <span className="text-xs font-semibold text-foreground uppercase tracking-wide block mb-2">
+                  Emojis
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {EMOJI_SHORTCUTS.map(({ emoji, label }) => (
+                    <TooltipProvider key={emoji}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button
+                            type="button"
+                            onClick={() => insertVariable(emoji)}
+                            className="w-8 h-8 text-lg flex items-center justify-center bg-background border border-input rounded shadow-sm hover:shadow-md hover:bg-accent active:shadow-none transition-all"
+                          >
+                            {emoji}
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent side="left" className="text-xs">
+                          {label}
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         </div>
-
-        <DialogFooter className="pt-3 border-t border-zinc-100 dark:border-zinc-800 mt-3">
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-7 text-[11px] px-3"
-            onClick={() => onOpenChange(false)}
-          >
-            Cancel
-          </Button>
-          <Button
-            size="sm"
-            className="h-7 text-[11px] px-3"
-            onClick={handleSave}
-            disabled={isPending}
-          >
-            {isPending && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}
-            {isEditing ? "Save Changes" : "Add Automation"}
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
