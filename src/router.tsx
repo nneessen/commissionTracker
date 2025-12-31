@@ -424,7 +424,7 @@ const myPipelineRoute = createRoute({
 // Public Join route - public recruiting funnel landing page (NO AUTH)
 const publicJoinRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: "join-$recruiterId",
+  path: "join/$recruiterId",
   component: PublicJoinPage,
 });
 
