@@ -6,6 +6,64 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-12-31 14:46:15
+
+### Changed Files
+- `CHANGELOG.md`
+- `PROJECT_STATS.md`
+- `src/App.tsx`
+- `src/features/recruiting/RecruitingDashboard.tsx`
+- `src/features/recruiting/components/LeadDetailPanel.tsx`
+- `src/features/recruiting/components/LeadsQueueDashboard.tsx`
+- `src/features/recruiting/components/public/LeadInterestForm.tsx`
+- `src/features/recruiting/components/public/LeadSubmissionConfirmation.tsx`
+- `src/features/recruiting/components/public/index.ts`
+- `src/features/recruiting/hooks/index.ts`
+- `src/features/recruiting/hooks/useLeads.ts`
+- `src/features/recruiting/pages/PublicJoinPage.tsx`
+- `src/features/settings/components/UserProfile.tsx`
+- `src/hooks/admin/__tests__/useUsersView.role-based-filter.test.ts`
+- `src/router.tsx`
+- `src/services/leads/index.ts`
+- `src/services/leads/leadsService.ts`
+- `src/types/database.types.ts`
+- `src/types/leads.types.ts`
+- `src/types/user.types.ts`
+- `supabase/migrations/20251231_004_recruiting_leads.sql`
+
+### Statistics
+```
+ 21 files changed, 12372 insertions(+), 8589 deletions(-)
+```
+
+## [Checkpoint] - 2025-12-31 14:45:37
+
+### Changed Files
+- `src/App.tsx`
+- `src/features/recruiting/RecruitingDashboard.tsx`
+- `src/features/recruiting/components/LeadDetailPanel.tsx`
+- `src/features/recruiting/components/LeadsQueueDashboard.tsx`
+- `src/features/recruiting/components/public/LeadInterestForm.tsx`
+- `src/features/recruiting/components/public/LeadSubmissionConfirmation.tsx`
+- `src/features/recruiting/components/public/index.ts`
+- `src/features/recruiting/hooks/index.ts`
+- `src/features/recruiting/hooks/useLeads.ts`
+- `src/features/recruiting/pages/PublicJoinPage.tsx`
+- `src/features/settings/components/UserProfile.tsx`
+- `src/hooks/admin/__tests__/useUsersView.role-based-filter.test.ts`
+- `src/router.tsx`
+- `src/services/leads/index.ts`
+- `src/services/leads/leadsService.ts`
+- `src/types/database.types.ts`
+- `src/types/leads.types.ts`
+- `src/types/user.types.ts`
+- `supabase/migrations/20251231_004_recruiting_leads.sql`
+
+### Statistics
+```
+ 19 files changed, 12338 insertions(+), 8584 deletions(-)
+```
+
 ## [Checkpoint] - 2025-12-31 10:54:47
 
 ### Changed Files

@@ -1,0 +1,474 @@
+// src/features/recruiting/components/LeadDetailPanel.tsx
+// Slide-out panel showing lead details with accept/reject actions
+
+import { useState } from "react";
+import {
+  X,
+  Mail,
+  Phone,
+  MapPin,
+  Briefcase,
+  Clock,
+  Calendar,
+  Target,
+  MessageSquare,
+  UserPlus,
+  XCircle,
+  CheckCircle2,
+  Loader2,
+  ExternalLink,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  STATUS_COLORS,
+  STATUS_LABELS,
+  AVAILABILITY_LABELS,
+  EXPERIENCE_LABELS,
+  type LeadStatus,
+  type EnrichedLead,
+} from "@/types/leads.types";
+import { format, formatDistanceToNow } from "date-fns";
+
+interface LeadDetailPanelProps {
+  lead: EnrichedLead;
+  onClose: () => void;
+  onAccept: () => void;
+  onReject: (reason?: string) => void;
+  isAccepting: boolean;
+  isRejecting: boolean;
+}
+
+export function LeadDetailPanel({
+  lead,
+  onClose,
+  onAccept,
+  onReject,
+  isAccepting,
+  isRejecting,
+}: LeadDetailPanelProps) {
+  const [showRejectDialog, setShowRejectDialog] = useState(false);
+  const [rejectReason, setRejectReason] = useState("");
+  const [showAcceptDialog, setShowAcceptDialog] = useState(false);
+
+  const isPending = lead.status === "pending";
+  const statusColors = STATUS_COLORS[lead.status as LeadStatus];
+
+  const handleConfirmReject = () => {
+    onReject(rejectReason || undefined);
+    setShowRejectDialog(false);
+    setRejectReason("");
+  };
+
+  return (
+    <>
+      <Sheet open={true} onOpenChange={onClose}>
+        <SheetContent className="w-[450px] p-0 overflow-hidden">
+          <SheetHeader className="p-4 border-b border-zinc-200 dark:border-zinc-800">
+            <div className="flex items-start justify-between">
+              <div>
+                <SheetTitle className="text-base font-semibold">
+                  {lead.first_name} {lead.last_name}
+                </SheetTitle>
+                <div className="flex items-center gap-2 mt-1">
+                  <Badge
+                    variant="outline"
+                    className={`text-[9px] ${statusColors?.bg} ${statusColors?.text} ${statusColors?.border}`}
+                  >
+                    {STATUS_LABELS[lead.status as LeadStatus]}
+                  </Badge>
+                  <span className="text-[10px] text-zinc-500">
+                    Submitted{" "}
+                    {formatDistanceToNow(new Date(lead.submitted_at), {
+                      addSuffix: true,
+                    })}
+                  </span>
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onClose}
+                className="h-7 w-7 p-0"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </SheetHeader>
+
+          <div className="overflow-y-auto h-[calc(100vh-180px)]">
+            {/* Contact Info */}
+            <div className="p-4 border-b border-zinc-200 dark:border-zinc-800">
+              <h3 className="text-[11px] font-semibold text-zinc-500 uppercase mb-3">
+                Contact Information
+              </h3>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="h-7 w-7 rounded-md bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center flex-shrink-0">
+                    <Mail className="h-3.5 w-3.5 text-zinc-500" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-zinc-500">Email</p>
+                    <a
+                      href={`mailto:${lead.email}`}
+                      className="text-[12px] text-zinc-900 dark:text-zinc-100 hover:underline"
+                    >
+                      {lead.email}
+                    </a>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="h-7 w-7 rounded-md bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center flex-shrink-0">
+                    <Phone className="h-3.5 w-3.5 text-zinc-500" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-zinc-500">Phone</p>
+                    <a
+                      href={`tel:${lead.phone}`}
+                      className="text-[12px] text-zinc-900 dark:text-zinc-100 hover:underline"
+                    >
+                      {lead.phone}
+                    </a>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="h-7 w-7 rounded-md bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center flex-shrink-0">
+                    <MapPin className="h-3.5 w-3.5 text-zinc-500" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-zinc-500">Location</p>
+                    <p className="text-[12px] text-zinc-900 dark:text-zinc-100">
+                      {lead.city}, {lead.state}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Qualification Info */}
+            <div className="p-4 border-b border-zinc-200 dark:border-zinc-800">
+              <h3 className="text-[11px] font-semibold text-zinc-500 uppercase mb-3">
+                Qualification Details
+              </h3>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="h-7 w-7 rounded-md bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center flex-shrink-0">
+                    <Clock className="h-3.5 w-3.5 text-zinc-500" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-zinc-500">Availability</p>
+                    <p className="text-[12px] text-zinc-900 dark:text-zinc-100">
+                      {
+                        AVAILABILITY_LABELS[
+                          lead.availability as keyof typeof AVAILABILITY_LABELS
+                        ]
+                      }
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="h-7 w-7 rounded-md bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center flex-shrink-0">
+                    <Briefcase className="h-3.5 w-3.5 text-zinc-500" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-zinc-500">
+                      Insurance Experience
+                    </p>
+                    <p className="text-[12px] text-zinc-900 dark:text-zinc-100">
+                      {
+                        EXPERIENCE_LABELS[
+                          lead.insurance_experience as keyof typeof EXPERIENCE_LABELS
+                        ]
+                      }
+                    </p>
+                  </div>
+                </div>
+                {lead.income_goals && (
+                  <div className="flex items-center gap-3">
+                    <div className="h-7 w-7 rounded-md bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center flex-shrink-0">
+                      <Target className="h-3.5 w-3.5 text-zinc-500" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-zinc-500">Income Goals</p>
+                      <p className="text-[12px] text-zinc-900 dark:text-zinc-100">
+                        {lead.income_goals}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Why Interested */}
+            <div className="p-4 border-b border-zinc-200 dark:border-zinc-800">
+              <h3 className="text-[11px] font-semibold text-zinc-500 uppercase mb-3">
+                Why They&apos;re Interested
+              </h3>
+              <div className="flex items-start gap-3">
+                <div className="h-7 w-7 rounded-md bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <MessageSquare className="h-3.5 w-3.5 text-zinc-500" />
+                </div>
+                <p className="text-[12px] text-zinc-700 dark:text-zinc-300 leading-relaxed">
+                  {lead.why_interested}
+                </p>
+              </div>
+            </div>
+
+            {/* Timeline */}
+            <div className="p-4 border-b border-zinc-200 dark:border-zinc-800">
+              <h3 className="text-[11px] font-semibold text-zinc-500 uppercase mb-3">
+                Timeline
+              </h3>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="h-7 w-7 rounded-md bg-emerald-100 dark:bg-emerald-950/50 flex items-center justify-center flex-shrink-0">
+                    <Calendar className="h-3.5 w-3.5 text-emerald-600" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-zinc-500">Submitted</p>
+                    <p className="text-[12px] text-zinc-900 dark:text-zinc-100">
+                      {format(
+                        new Date(lead.submitted_at),
+                        "MMM d, yyyy 'at' h:mm a",
+                      )}
+                    </p>
+                  </div>
+                </div>
+                {lead.discovery_call_scheduled &&
+                  lead.discovery_call_scheduled_at && (
+                    <div className="flex items-center gap-3">
+                      <div className="h-7 w-7 rounded-md bg-blue-100 dark:bg-blue-950/50 flex items-center justify-center flex-shrink-0">
+                        <Phone className="h-3.5 w-3.5 text-blue-600" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-zinc-500">
+                          Discovery Call Scheduled
+                        </p>
+                        <p className="text-[12px] text-zinc-900 dark:text-zinc-100">
+                          {format(
+                            new Date(lead.discovery_call_scheduled_at),
+                            "MMM d, yyyy 'at' h:mm a",
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                {lead.reviewed_at && (
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`h-7 w-7 rounded-md flex items-center justify-center flex-shrink-0 ${
+                        lead.status === "accepted"
+                          ? "bg-emerald-100 dark:bg-emerald-950/50"
+                          : "bg-red-100 dark:bg-red-950/50"
+                      }`}
+                    >
+                      {lead.status === "accepted" ? (
+                        <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                      ) : (
+                        <XCircle className="h-3.5 w-3.5 text-red-600" />
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-zinc-500">
+                        {lead.status === "accepted" ? "Accepted" : "Rejected"}
+                      </p>
+                      <p className="text-[12px] text-zinc-900 dark:text-zinc-100">
+                        {format(
+                          new Date(lead.reviewed_at),
+                          "MMM d, yyyy 'at' h:mm a",
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Rejection Reason */}
+            {lead.status === "rejected" && lead.rejection_reason && (
+              <div className="p-4 border-b border-zinc-200 dark:border-zinc-800">
+                <h3 className="text-[11px] font-semibold text-zinc-500 uppercase mb-3">
+                  Rejection Reason
+                </h3>
+                <p className="text-[12px] text-zinc-700 dark:text-zinc-300 bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/50 rounded-md p-3">
+                  {lead.rejection_reason}
+                </p>
+              </div>
+            )}
+
+            {/* Converted Recruit Link */}
+            {lead.status === "accepted" && lead.converted_recruit_id && (
+              <div className="p-4 border-b border-zinc-200 dark:border-zinc-800">
+                <h3 className="text-[11px] font-semibold text-zinc-500 uppercase mb-3">
+                  Converted Recruit
+                </h3>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-[11px]"
+                  onClick={() => {
+                    // Navigate to recruit detail - would need to implement
+                    onClose();
+                  }}
+                >
+                  <ExternalLink className="h-3 w-3 mr-1.5" />
+                  View Recruit Profile
+                </Button>
+              </div>
+            )}
+
+            {/* UTM Tracking */}
+            {(lead.utm_source || lead.utm_medium || lead.utm_campaign) && (
+              <div className="p-4">
+                <h3 className="text-[11px] font-semibold text-zinc-500 uppercase mb-3">
+                  Source Tracking
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {lead.utm_source && (
+                    <Badge variant="secondary" className="text-[9px]">
+                      Source: {lead.utm_source}
+                    </Badge>
+                  )}
+                  {lead.utm_medium && (
+                    <Badge variant="secondary" className="text-[9px]">
+                      Medium: {lead.utm_medium}
+                    </Badge>
+                  )}
+                  {lead.utm_campaign && (
+                    <Badge variant="secondary" className="text-[9px]">
+                      Campaign: {lead.utm_campaign}
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Actions Footer */}
+          {isPending && (
+            <div className="absolute bottom-0 left-0 right-0 p-4 bg-white dark:bg-zinc-900 border-t border-zinc-200 dark:border-zinc-800">
+              <div className="flex gap-2">
+                <Button
+                  className="flex-1 h-9"
+                  onClick={() => setShowAcceptDialog(true)}
+                  disabled={isAccepting || isRejecting}
+                >
+                  {isAccepting ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : (
+                    <UserPlus className="h-4 w-4 mr-2" />
+                  )}
+                  Accept Lead
+                </Button>
+                <Button
+                  variant="outline"
+                  className="flex-1 h-9 text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
+                  onClick={() => setShowRejectDialog(true)}
+                  disabled={isAccepting || isRejecting}
+                >
+                  {isRejecting ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : (
+                    <XCircle className="h-4 w-4 mr-2" />
+                  )}
+                  Reject
+                </Button>
+              </div>
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
+
+      {/* Accept Confirmation Dialog */}
+      <AlertDialog open={showAcceptDialog} onOpenChange={setShowAcceptDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-base">
+              Accept Lead?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-[12px]">
+              This will create a new recruit record for{" "}
+              <strong>
+                {lead.first_name} {lead.last_name}
+              </strong>{" "}
+              and add them to your recruiting pipeline as a prospect.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="h-8 text-[11px]">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="h-8 text-[11px]"
+              onClick={() => {
+                onAccept();
+                setShowAcceptDialog(false);
+              }}
+            >
+              Accept Lead
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Reject Confirmation Dialog */}
+      <AlertDialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-base">
+              Reject Lead?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-[12px]">
+              This will reject the lead from{" "}
+              <strong>
+                {lead.first_name} {lead.last_name}
+              </strong>
+              . You can optionally add a reason for your records.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="py-4">
+            <Label htmlFor="rejectReason" className="text-[11px]">
+              Reason (Optional)
+            </Label>
+            <Textarea
+              id="rejectReason"
+              placeholder="e.g., Not a good fit, location too far, etc."
+              className="mt-1.5 text-[12px] min-h-[80px]"
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="h-8 text-[11px]">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="h-8 text-[11px] bg-red-600 hover:bg-red-700"
+              onClick={handleConfirmReject}
+            >
+              Reject Lead
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+}

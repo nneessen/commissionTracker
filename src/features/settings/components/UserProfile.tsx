@@ -2,7 +2,16 @@
 // Redesigned with zinc palette and compact design patterns
 
 import React, { useState, useEffect } from "react";
-import { User, Save, AlertCircle, CheckCircle2, Users } from "lucide-react";
+import {
+  User,
+  Save,
+  AlertCircle,
+  CheckCircle2,
+  Users,
+  Link2,
+  Copy,
+  Check,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "../../../contexts/AuthContext";
@@ -10,11 +19,12 @@ import { useUpdateUserProfile } from "../../../hooks/settings/useUpdateUserProfi
 import { useUpdateAgentHierarchy } from "../../../hooks/hierarchy/useUpdateAgentHierarchy";
 import { supabase } from "@/services/base/supabase";
 import { getDisplayName } from "../../../types/user.types";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { RoleName } from "@/types/permissions.types";
 
 export function UserProfile() {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const updateProfile = useUpdateUserProfile();
   const updateHierarchy = useUpdateAgentHierarchy();
 
@@ -56,17 +66,31 @@ export function UserProfile() {
   const [showSuccess, setShowSuccess] = useState(false);
   const [showUplineSuccess, setShowUplineSuccess] = useState(false);
 
-  // Load current upline email on mount
+  // Recruiter slug state
+  const [recruiterSlug, setRecruiterSlug] = useState<string>("");
+  const [currentSlug, setCurrentSlug] = useState<string>("");
+  const [slugError, setSlugError] = useState<string>("");
+  const [showSlugSuccess, setShowSlugSuccess] = useState(false);
+  const [slugCopied, setSlugCopied] = useState(false);
+
+  // Load current upline email and recruiter slug on mount
   useEffect(() => {
-    const loadUplineInfo = async () => {
+    const loadUserInfo = async () => {
       if (!user?.id) return;
 
       const { data: profile } = await supabase
         .from("user_profiles")
-        .select("upline_id")
+        .select("upline_id, recruiter_slug")
         .eq("id", user.id)
         .single();
 
+      // Load recruiter slug
+      if (profile?.recruiter_slug) {
+        setCurrentSlug(profile.recruiter_slug);
+        setRecruiterSlug(profile.recruiter_slug);
+      }
+
+      // Load upline info
       if (profile?.upline_id) {
         const { data: upline } = await supabase
           .from("user_profiles")
@@ -81,7 +105,7 @@ export function UserProfile() {
       }
     };
 
-    loadUplineInfo();
+    loadUserInfo();
   }, [user?.id]);
 
   const validateContractLevel = (value: string): boolean => {
@@ -190,6 +214,103 @@ export function UserProfile() {
     }
   };
 
+  // Slug validation and handlers
+  const validateSlug = (value: string): boolean => {
+    if (!value.trim()) {
+      setSlugError("Please enter a URL slug");
+      return false;
+    }
+    if (value.length < 3) {
+      setSlugError("Slug must be at least 3 characters");
+      return false;
+    }
+    if (value.length > 50) {
+      setSlugError("Slug must be 50 characters or less");
+      return false;
+    }
+    if (!/^[a-z0-9-]+$/.test(value)) {
+      setSlugError("Only lowercase letters, numbers, and hyphens allowed");
+      return false;
+    }
+    if (value.startsWith("-") || value.endsWith("-")) {
+      setSlugError("Slug cannot start or end with a hyphen");
+      return false;
+    }
+    setSlugError("");
+    return true;
+  };
+
+  const handleSlugChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "");
+    setRecruiterSlug(value);
+    setShowSlugSuccess(false);
+    if (value) validateSlug(value);
+  };
+
+  const handleSlugSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setShowSlugSuccess(false);
+    setSlugError("");
+
+    if (!validateSlug(recruiterSlug)) {
+      return;
+    }
+
+    try {
+      // Check if slug is already taken (use maybeSingle to avoid error on 0 rows)
+      const { data: existing, error: checkError } = await supabase
+        .from("user_profiles")
+        .select("id")
+        .eq("recruiter_slug", recruiterSlug)
+        .neq("id", user?.id || "")
+        .maybeSingle();
+
+      if (checkError) {
+        console.error("Error checking slug:", checkError);
+        setSlugError("Failed to check availability. Please try again.");
+        return;
+      }
+
+      if (existing) {
+        setSlugError("This URL is already taken. Try a different one.");
+        return;
+      }
+
+      // Update directly via supabase since userService may have issues
+      const { error: updateError } = await supabase
+        .from("user_profiles")
+        .update({ recruiter_slug: recruiterSlug })
+        .eq("id", user?.id || "");
+
+      if (updateError) {
+        console.error("Error updating slug:", updateError);
+        setSlugError("Failed to save. Please try again.");
+        return;
+      }
+
+      // Invalidate cache so other components get updated slug
+      await queryClient.invalidateQueries({ queryKey: ["recruiter-slug"] });
+
+      setCurrentSlug(recruiterSlug);
+      setShowSlugSuccess(true);
+      setTimeout(() => setShowSlugSuccess(false), 3000);
+    } catch (error) {
+      console.error("Failed to update recruiter slug:", error);
+      setSlugError("Failed to save. Please try again.");
+    }
+  };
+
+  const handleCopyLink = async () => {
+    const url = `https://www.thestandardhq.com/join/${currentSlug}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setSlugCopied(true);
+      setTimeout(() => setSlugCopied(false), 2000);
+    } catch (error) {
+      console.error("Failed to copy:", error);
+    }
+  };
+
   if (!user) {
     return (
       <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-6">
@@ -236,6 +357,110 @@ export function UserProfile() {
               </div>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Personal Recruiting Link Card */}
+      <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800">
+        <div className="flex items-center gap-2 px-3 py-2 border-b border-zinc-100 dark:border-zinc-800">
+          <Link2 className="h-3.5 w-3.5 text-zinc-400" />
+          <h3 className="text-[11px] font-semibold text-zinc-900 dark:text-zinc-100 uppercase tracking-wide">
+            Personal Recruiting Link
+          </h3>
+        </div>
+        <div className="p-3">
+          <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mb-2">
+            Create your personal recruiting URL to share on social media.
+            Prospects who submit through your link will appear in your leads
+            queue.
+          </p>
+
+          {/* Show current link if set */}
+          {currentSlug && (
+            <div className="mb-3 p-2 bg-emerald-50 dark:bg-emerald-950/30 rounded border border-emerald-200 dark:border-emerald-800">
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0 flex-1">
+                  <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium mb-0.5">
+                    Your recruiting link:
+                  </p>
+                  <p className="text-[11px] text-emerald-700 dark:text-emerald-300 font-mono truncate">
+                    www.thestandardhq.com/join/{currentSlug}
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={handleCopyLink}
+                  className="h-7 px-2 text-[10px] border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 flex-shrink-0"
+                >
+                  {slugCopied ? (
+                    <>
+                      <Check className="h-3 w-3 mr-1" />
+                      Copied!
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="h-3 w-3 mr-1" />
+                      Copy
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          <form onSubmit={handleSlugSubmit}>
+            <div className="max-w-md">
+              <label
+                htmlFor="recruiterSlug"
+                className="block text-[10px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide mb-1"
+              >
+                {currentSlug ? "Change URL Slug" : "Choose Your URL Slug"}
+              </label>
+              <div className="flex gap-2 items-center">
+                <span className="text-[11px] text-zinc-400 dark:text-zinc-500 flex-shrink-0">
+                  /join/
+                </span>
+                <Input
+                  id="recruiterSlug"
+                  type="text"
+                  value={recruiterSlug}
+                  onChange={handleSlugChange}
+                  placeholder="john-smith"
+                  className={`h-7 text-[11px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 ${
+                    slugError ? "border-red-500" : ""
+                  }`}
+                />
+                <Button
+                  type="submit"
+                  disabled={updateProfile.isPending || !!slugError}
+                  size="sm"
+                  variant="outline"
+                  className="h-7 px-2 text-[10px] border-zinc-200 dark:border-zinc-700"
+                >
+                  <Save className="h-3 w-3 mr-1" />
+                  {updateProfile.isPending ? "Saving..." : "Save"}
+                </Button>
+              </div>
+              {slugError && (
+                <div className="mt-1.5 flex items-center gap-1 text-[10px] text-red-600 dark:text-red-400">
+                  <AlertCircle className="h-3 w-3" />
+                  {slugError}
+                </div>
+              )}
+              {showSlugSuccess && (
+                <div className="mt-1.5 flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400">
+                  <CheckCircle2 className="h-3 w-3" />
+                  Recruiting link saved successfully!
+                </div>
+              )}
+              <p className="mt-1.5 text-[9px] text-zinc-400 dark:text-zinc-500">
+                Use lowercase letters, numbers, and hyphens only. Example:
+                john-smith, jsmith2025
+              </p>
+            </div>
+          </form>
         </div>
       </div>
 

@@ -40,6 +40,8 @@ import { OrgChartPage } from "./features/hierarchy/OrgChartPage";
 import { RecruitingDashboard } from "./features/recruiting/RecruitingDashboard";
 import { PipelineAdminPage } from "./features/recruiting/admin/PipelineAdminPage";
 import { MyRecruitingPipeline } from "./features/recruiting/pages/MyRecruitingPipeline";
+import { PublicJoinPage } from "./features/recruiting/pages/PublicJoinPage";
+import { LeadsQueueDashboard } from "./features/recruiting/components/LeadsQueueDashboard";
 import { TrainingHubPage, TrainerDashboard } from "./features/training-hub";
 import { ContractingPage } from "./features/contracting/ContractingPage";
 import { MessagesPage } from "./features/messages";
@@ -419,6 +421,28 @@ const myPipelineRoute = createRoute({
   ),
 });
 
+// Public Join route - public recruiting funnel landing page (NO AUTH)
+const publicJoinRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "join/$recruiterId",
+  component: PublicJoinPage,
+});
+
+// Leads Queue route - manage incoming leads from public funnel
+const leadsQueueRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "recruiting/leads",
+  component: () => (
+    <RouteGuard
+      permission="nav.recruiting_pipeline"
+      noRecruits
+      subscriptionFeature="recruiting"
+    >
+      <LeadsQueueDashboard />
+    </RouteGuard>
+  ),
+});
+
 // Training Hub route - for trainers and contracting managers
 const trainingHubRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -523,6 +547,8 @@ const routeTree = rootRoute.addChildren([
   recruitingAdminRoute,
   workflowAdminRoute,
   myPipelineRoute,
+  publicJoinRoute,
+  leadsQueueRoute,
   trainingHubRoute,
   trainerDashboardRoute,
   contractingRoute,

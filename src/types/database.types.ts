@@ -4303,6 +4303,165 @@ export type Database = {
           },
         ];
       };
+      recruiting_leads: {
+        Row: {
+          agency_id: string | null;
+          availability: string;
+          city: string;
+          converted_at: string | null;
+          converted_recruit_id: string | null;
+          created_at: string;
+          discovery_call_scheduled: boolean | null;
+          discovery_call_scheduled_at: string | null;
+          discovery_call_url: string | null;
+          email: string;
+          first_name: string;
+          id: string;
+          imo_id: string;
+          income_goals: string | null;
+          insurance_experience: string;
+          ip_address: unknown;
+          last_name: string;
+          phone: string;
+          recruiter_id: string;
+          referrer_url: string | null;
+          rejection_reason: string | null;
+          reviewed_at: string | null;
+          state: string;
+          status: string;
+          submitted_at: string;
+          updated_at: string;
+          user_agent: string | null;
+          utm_campaign: string | null;
+          utm_medium: string | null;
+          utm_source: string | null;
+          why_interested: string;
+        };
+        Insert: {
+          agency_id?: string | null;
+          availability: string;
+          city: string;
+          converted_at?: string | null;
+          converted_recruit_id?: string | null;
+          created_at?: string;
+          discovery_call_scheduled?: boolean | null;
+          discovery_call_scheduled_at?: string | null;
+          discovery_call_url?: string | null;
+          email: string;
+          first_name: string;
+          id?: string;
+          imo_id: string;
+          income_goals?: string | null;
+          insurance_experience: string;
+          ip_address?: unknown;
+          last_name: string;
+          phone: string;
+          recruiter_id: string;
+          referrer_url?: string | null;
+          rejection_reason?: string | null;
+          reviewed_at?: string | null;
+          state: string;
+          status?: string;
+          submitted_at?: string;
+          updated_at?: string;
+          user_agent?: string | null;
+          utm_campaign?: string | null;
+          utm_medium?: string | null;
+          utm_source?: string | null;
+          why_interested: string;
+        };
+        Update: {
+          agency_id?: string | null;
+          availability?: string;
+          city?: string;
+          converted_at?: string | null;
+          converted_recruit_id?: string | null;
+          created_at?: string;
+          discovery_call_scheduled?: boolean | null;
+          discovery_call_scheduled_at?: string | null;
+          discovery_call_url?: string | null;
+          email?: string;
+          first_name?: string;
+          id?: string;
+          imo_id?: string;
+          income_goals?: string | null;
+          insurance_experience?: string;
+          ip_address?: unknown;
+          last_name?: string;
+          phone?: string;
+          recruiter_id?: string;
+          referrer_url?: string | null;
+          rejection_reason?: string | null;
+          reviewed_at?: string | null;
+          state?: string;
+          status?: string;
+          submitted_at?: string;
+          updated_at?: string;
+          user_agent?: string | null;
+          utm_campaign?: string | null;
+          utm_medium?: string | null;
+          utm_source?: string | null;
+          why_interested?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "recruiting_leads_agency_id_fkey";
+            columns: ["agency_id"];
+            isOneToOne: false;
+            referencedRelation: "agencies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "recruiting_leads_converted_recruit_id_fkey";
+            columns: ["converted_recruit_id"];
+            isOneToOne: false;
+            referencedRelation: "active_user_profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "recruiting_leads_converted_recruit_id_fkey";
+            columns: ["converted_recruit_id"];
+            isOneToOne: false;
+            referencedRelation: "user_management_view";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "recruiting_leads_converted_recruit_id_fkey";
+            columns: ["converted_recruit_id"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "recruiting_leads_imo_id_fkey";
+            columns: ["imo_id"];
+            isOneToOne: false;
+            referencedRelation: "imos";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "recruiting_leads_recruiter_id_fkey";
+            columns: ["recruiter_id"];
+            isOneToOne: false;
+            referencedRelation: "active_user_profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "recruiting_leads_recruiter_id_fkey";
+            columns: ["recruiter_id"];
+            isOneToOne: false;
+            referencedRelation: "user_management_view";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "recruiting_leads_recruiter_id_fkey";
+            columns: ["recruiter_id"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       role_permissions: {
         Row: {
           created_at: string | null;
@@ -6259,6 +6418,7 @@ export type Database = {
           pipeline_template_id: string | null;
           profile_photo_url: string | null;
           recruiter_id: string | null;
+          recruiter_slug: string | null;
           referral_source: string | null;
           resident_state: string | null;
           roles: string[] | null;
@@ -6312,6 +6472,7 @@ export type Database = {
           pipeline_template_id?: string | null;
           profile_photo_url?: string | null;
           recruiter_id?: string | null;
+          recruiter_slug?: string | null;
           referral_source?: string | null;
           resident_state?: string | null;
           roles?: string[] | null;
@@ -6365,6 +6526,7 @@ export type Database = {
           pipeline_template_id?: string | null;
           profile_photo_url?: string | null;
           recruiter_id?: string | null;
+          recruiter_slug?: string | null;
           referral_source?: string | null;
           resident_state?: string | null;
           roles?: string[] | null;
@@ -8159,6 +8321,10 @@ export type Database = {
       };
     };
     Functions: {
+      accept_recruiting_lead: {
+        Args: { p_lead_id: string; p_pipeline_template_id?: string };
+        Returns: Json;
+      };
       add_to_read_by: {
         Args: { message_id: string; user_id: string };
         Returns: undefined;
@@ -9489,9 +9655,27 @@ export type Database = {
         };
         Returns: number;
       };
+      get_public_recruiter_info: {
+        Args: { p_slug: string };
+        Returns: {
+          calendly_url: string;
+          imo_description: string;
+          imo_logo_url: string;
+          imo_name: string;
+          imo_primary_color: string;
+          is_active: boolean;
+          recruiter_first_name: string;
+          recruiter_id: string;
+          recruiter_last_name: string;
+        }[];
+      };
       get_recruiting_by_agency: { Args: { p_imo_id: string }; Returns: Json };
       get_recruiting_by_recruiter: {
         Args: { p_agency_id: string };
+        Returns: Json;
+      };
+      get_recruiting_leads_stats: {
+        Args: { p_recruiter_id?: string };
         Returns: Json;
       };
       get_role_permissions_with_inheritance: {
@@ -9887,6 +10071,10 @@ export type Database = {
         Args: { p_reason?: string; p_request_id: string };
         Returns: undefined;
       };
+      reject_recruiting_lead: {
+        Args: { p_lead_id: string; p_reason?: string };
+        Returns: Json;
+      };
       release_alert_rules: { Args: { p_rule_ids: string[] }; Returns: number };
       resolve_join_request_approver: {
         Args: { p_agency_id?: string; p_imo_id: string; p_upline_id?: string };
@@ -9903,6 +10091,28 @@ export type Database = {
       };
       show_limit: { Args: never; Returns: number };
       show_trgm: { Args: { "": string }; Returns: string[] };
+      submit_recruiting_lead: {
+        Args: {
+          p_availability: string;
+          p_city: string;
+          p_email: string;
+          p_first_name: string;
+          p_income_goals?: string;
+          p_insurance_experience?: string;
+          p_ip_address?: unknown;
+          p_last_name: string;
+          p_phone: string;
+          p_recruiter_slug: string;
+          p_referrer_url?: string;
+          p_state: string;
+          p_user_agent?: string;
+          p_utm_campaign?: string;
+          p_utm_medium?: string;
+          p_utm_source?: string;
+          p_why_interested?: string;
+        };
+        Returns: Json;
+      };
       test_rls_for_user: {
         Args: { test_user_id: string };
         Returns: {
@@ -10001,6 +10211,14 @@ export type Database = {
       update_daily_leaderboard_title: {
         Args: { p_log_id: string; p_title: string; p_user_id: string };
         Returns: boolean;
+      };
+      update_lead_discovery_call: {
+        Args: {
+          p_call_url?: string;
+          p_lead_id: string;
+          p_scheduled_at: string;
+        };
+        Returns: Json;
       };
       update_my_notification_preferences: {
         Args: {

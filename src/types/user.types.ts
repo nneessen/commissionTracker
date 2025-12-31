@@ -125,6 +125,8 @@ export interface CreateUserProfileData {
   // Organization
   imo_id?: string | null;
   agency_id?: string | null;
+  // Recruiting
+  recruiter_slug?: string | null;
 }
 
 /**
