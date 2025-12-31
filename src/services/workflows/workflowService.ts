@@ -442,6 +442,46 @@ class WorkflowService {
     return this.repository.cloneOrgTemplate(templateId, newName);
   }
 
+  /**
+   * Create a new org template directly (IMO admin only)
+   * Note: created_by will be set by the database function using auth.uid()
+   */
+  async createOrgTemplate(data: Workflow): Promise<string> {
+    const insertData: WorkflowInsertData = {
+      name: data.name,
+      description: data.description,
+      category: data.category,
+      trigger_type: data.triggerType,
+      status: data.status || "draft",
+      config: data.config,
+      conditions: data.conditions || [],
+      actions: data.actions,
+      max_runs_per_day: data.maxRunsPerDay,
+      max_runs_per_recipient: data.maxRunsPerRecipient,
+      cooldown_minutes: data.cooldownMinutes,
+      priority: data.priority,
+      created_by: "", // Will be set by DB function using auth.uid()
+    };
+    return this.repository.createOrgTemplate(insertData);
+  }
+
+  /**
+   * Update an existing org template (IMO admin only)
+   */
+  async updateOrgTemplate(
+    id: string,
+    data: Partial<Workflow>,
+  ): Promise<Workflow> {
+    return this.repository.updateOrgTemplate(id, data);
+  }
+
+  /**
+   * Delete an org template (IMO admin only)
+   */
+  async deleteOrgTemplate(id: string): Promise<void> {
+    return this.repository.deleteOrgTemplate(id);
+  }
+
   // =====================================================
   // PRIVATE HELPERS
   // =====================================================

@@ -7,6 +7,7 @@ import type {
   WorkflowFormData,
   WorkflowStatus,
   TriggerEventType,
+  Workflow,
 } from "@/types/workflow.types";
 
 // =====================================================
@@ -175,13 +176,12 @@ export function useTriggerWorkflow() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic context data
     mutationFn: ({
       workflowId,
       context,
     }: {
       workflowId: string;
-      context?: Record<string, any>;
+      context?: Record<string, unknown>;
     }) => workflowService.triggerWorkflow(workflowId, context),
     onSuccess: (data) => {
       queryClient.invalidateQueries({
@@ -404,6 +404,67 @@ export function useCloneOrgTemplate() {
     },
     onError: (error: Error) => {
       toast.error(`Failed to clone org template: ${error.message}`);
+    },
+  });
+}
+
+/**
+ * Create a new org template directly (IMO admin only)
+ */
+export function useCreateOrgTemplate() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: Workflow) => workflowService.createOrgTemplate(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: QUERY_KEYS.imoWorkflowTemplates,
+      });
+      toast.success("Org template created successfully");
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to create org template: ${error.message}`);
+    },
+  });
+}
+
+/**
+ * Update an existing org template (IMO admin only)
+ */
+export function useUpdateOrgTemplate() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Partial<Workflow> }) =>
+      workflowService.updateOrgTemplate(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: QUERY_KEYS.imoWorkflowTemplates,
+      });
+      toast.success("Org template updated successfully");
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to update org template: ${error.message}`);
+    },
+  });
+}
+
+/**
+ * Delete an org template (IMO admin only)
+ */
+export function useDeleteOrgTemplate() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => workflowService.deleteOrgTemplate(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: QUERY_KEYS.imoWorkflowTemplates,
+      });
+      toast.success("Org template deleted successfully");
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to delete org template: ${error.message}`);
     },
   });
 }

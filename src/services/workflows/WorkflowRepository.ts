@@ -650,14 +650,16 @@ export class WorkflowRepository extends BaseRepository<
    */
   async findImoTemplates(): Promise<Workflow[]> {
     try {
-      const { data, error } = await this.client.rpc("get_imo_workflow_templates");
+      const { data, error } = await this.client.rpc(
+        "get_imo_workflow_templates",
+      );
 
       if (error) {
         throw this.handleError(error, "findImoTemplates");
       }
 
       return (data || []).map((row: Record<string, unknown>) =>
-        this.transformWorkflowFromDB(row)
+        this.transformWorkflowFromDB(row),
       );
     } catch (error) {
       throw this.wrapError(error, "findImoTemplates");
@@ -669,9 +671,12 @@ export class WorkflowRepository extends BaseRepository<
    */
   async saveAsOrgTemplate(workflowId: string): Promise<string> {
     try {
-      const { data, error } = await this.client.rpc("save_workflow_as_org_template", {
-        p_workflow_id: workflowId,
-      });
+      const { data, error } = await this.client.rpc(
+        "save_workflow_as_org_template",
+        {
+          p_workflow_id: workflowId,
+        },
+      );
 
       if (error) {
         throw this.handleError(error, "saveAsOrgTemplate");
@@ -701,6 +706,55 @@ export class WorkflowRepository extends BaseRepository<
     } catch (error) {
       throw this.wrapError(error, "cloneOrgTemplate");
     }
+  }
+
+  /**
+   * Create a new org template directly (IMO admin only)
+   */
+  async createOrgTemplate(data: WorkflowInsertData): Promise<string> {
+    try {
+      const { data: templateId, error } = await this.client.rpc(
+        "create_org_workflow_template",
+        {
+          p_name: data.name,
+          p_description: data.description || null,
+          p_category: data.category,
+          p_trigger_type: data.trigger_type,
+          p_config: data.config,
+          p_conditions: data.conditions || [],
+          p_actions: data.actions,
+          p_max_runs_per_day: data.max_runs_per_day || 50,
+          p_max_runs_per_recipient: data.max_runs_per_recipient || null,
+          p_cooldown_minutes: data.cooldown_minutes || null,
+          p_priority: data.priority || 50,
+        },
+      );
+
+      if (error) {
+        throw this.handleError(error, "createOrgTemplate");
+      }
+
+      return templateId as string;
+    } catch (error) {
+      throw this.wrapError(error, "createOrgTemplate");
+    }
+  }
+
+  /**
+   * Update an existing org template (IMO admin only)
+   */
+  async updateOrgTemplate(
+    id: string,
+    data: WorkflowUpdateData,
+  ): Promise<Workflow> {
+    return this.updateWorkflow(id, data);
+  }
+
+  /**
+   * Delete an org template (IMO admin only)
+   */
+  async deleteOrgTemplate(id: string): Promise<void> {
+    return this.deleteWorkflow(id);
   }
 
   // ============================================

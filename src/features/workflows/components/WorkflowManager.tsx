@@ -56,6 +56,9 @@ import {
   useImoWorkflowTemplates,
   useSaveAsOrgTemplate,
   useCloneOrgTemplate,
+  useCreateOrgTemplate,
+  useUpdateOrgTemplate,
+  useDeleteOrgTemplate,
 } from "@/hooks/workflows";
 import WorkflowWizard from "./WorkflowWizard";
 import WorkflowDiagnostic from "./WorkflowDiagnostic";
@@ -78,6 +81,8 @@ export default function WorkflowManager() {
   const [activeTab, setActiveTab] = useState<string>("workflows");
   const [cloneTemplateId, setCloneTemplateId] = useState<string | null>(null);
   const [cloneName, setCloneName] = useState("");
+  const [deleteTemplateId, setDeleteTemplateId] = useState<string | null>(null);
+  const [editingTemplate, setEditingTemplate] = useState<Workflow | null>(null);
 
   const { data: workflows = [], isLoading, error } = useWorkflows();
   const { data: runs = [] } = useWorkflowRuns(undefined, 5); // Only fetch 5 most recent
@@ -90,8 +95,22 @@ export default function WorkflowManager() {
   const triggerWorkflow = useTriggerWorkflow();
   const saveAsOrgTemplate = useSaveAsOrgTemplate();
   const cloneOrgTemplate = useCloneOrgTemplate();
+  const _createOrgTemplate = useCreateOrgTemplate();
+  const _updateOrgTemplate = useUpdateOrgTemplate();
+  const deleteOrgTemplate = useDeleteOrgTemplate();
 
   const isAdmin = profile?.is_admin === true;
+
+  const handleDeleteTemplateConfirm = () => {
+    if (deleteTemplateId) {
+      deleteOrgTemplate.mutate(deleteTemplateId);
+      setDeleteTemplateId(null);
+    }
+  };
+
+  const templateToDelete = deleteTemplateId
+    ? orgTemplates.find((t) => t.id === deleteTemplateId)
+    : null;
 
   if (!user) {
     return (
@@ -217,6 +236,20 @@ export default function WorkflowManager() {
                 Create Workflow
               </Button>
             </div>
+          )}
+
+          {activeTab === "org-templates" && isImoAdmin && (
+            <Button
+              size="sm"
+              className="h-6 text-[10px]"
+              onClick={() => {
+                setEditingTemplate(null);
+                setShowDialog(true);
+              }}
+            >
+              <Plus className="h-3 w-3 mr-1" />
+              New Org Template
+            </Button>
           )}
         </div>
 
@@ -584,7 +617,9 @@ export default function WorkflowManager() {
                         <TableHead className="text-[10px] font-semibold text-zinc-600 dark:text-zinc-300 py-1">
                           Created By
                         </TableHead>
-                        <TableHead className="text-[10px] py-1 w-8"></TableHead>
+                        <TableHead className="text-[10px] py-1 w-24 text-right">
+                          Actions
+                        </TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -625,18 +660,47 @@ export default function WorkflowManager() {
                             </span>
                           </TableCell>
                           <TableCell className="py-1">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 text-[10px] px-2"
-                              onClick={() => {
-                                setCloneTemplateId(template.id);
-                                setCloneName(`${template.name} (Copy)`);
-                              }}
-                            >
-                              <Copy className="h-3 w-3 mr-1" />
-                              Clone
-                            </Button>
+                            <div className="flex items-center justify-end gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 text-[10px] px-2"
+                                onClick={() => {
+                                  setCloneTemplateId(template.id);
+                                  setCloneName(`${template.name} (Copy)`);
+                                }}
+                              >
+                                <Copy className="h-3 w-3 mr-1" />
+                                Clone
+                              </Button>
+                              {isImoAdmin && (
+                                <>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-6 text-[10px] px-2"
+                                    onClick={() => {
+                                      setEditingTemplate(template);
+                                      setShowDialog(true);
+                                    }}
+                                  >
+                                    <Edit className="h-3 w-3 mr-1" />
+                                    Edit
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-6 text-[10px] px-2 text-destructive hover:text-destructive"
+                                    onClick={() =>
+                                      setDeleteTemplateId(template.id)
+                                    }
+                                  >
+                                    <Trash2 className="h-3 w-3 mr-1" />
+                                    Delete
+                                  </Button>
+                                </>
+                              )}
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -661,12 +725,13 @@ export default function WorkflowManager() {
         open={showDialog}
         onOpenChange={(open) => {
           setShowDialog(open);
-          // CRITICAL: Reset editing workflow when dialog closes
+          // CRITICAL: Reset editing workflow/template when dialog closes
           if (!open) {
             setEditingWorkflow(null);
+            setEditingTemplate(null);
           }
         }}
-        workflow={editingWorkflow}
+        workflow={editingWorkflow || editingTemplate}
       />
 
       {/* Delete Confirmation Dialog */}
@@ -746,6 +811,36 @@ export default function WorkflowManager() {
               className="h-7 text-xs"
             >
               {cloneOrgTemplate.isPending ? "Cloning..." : "Clone"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Org Template Confirmation Dialog */}
+      <AlertDialog
+        open={!!deleteTemplateId}
+        onOpenChange={(open) => !open && setDeleteTemplateId(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-sm">
+              Delete Org Template
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-xs">
+              Are you sure you want to delete "{templateToDelete?.name}"? This
+              action cannot be undone. This will remove the template for all
+              members of your organization.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="h-7 text-xs">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteTemplateConfirm}
+              className="h-7 text-xs bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
