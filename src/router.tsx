@@ -431,18 +431,11 @@ const publicJoinRoute = createRoute({
 
 // Alternative join route - catches /join-* pattern using splat
 // This handles URLs like /join-the-standard without redirect
+// Note: Must use a stable component reference, not inline function, for React Query to work
 const publicJoinAltRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: "$slug",
-  component: () => {
-    // Only render PublicJoinPage if the slug starts with "join-"
-    const pathname = window.location.pathname;
-    if (pathname.startsWith("/join-")) {
-      return <PublicJoinPage />;
-    }
-    // Otherwise, render nothing (let 404 handle it)
-    return null;
-  },
+  path: "join-$slug",
+  component: PublicJoinPage,
 });
 
 // Leads Queue route - manage incoming leads from public funnel

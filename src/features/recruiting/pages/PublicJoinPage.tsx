@@ -1,43 +1,27 @@
 // src/features/recruiting/pages/PublicJoinPage.tsx
 // Public landing page for recruiting funnel - v2
 
-import { useState, useMemo } from "react";
-import { useLocation } from "@tanstack/react-router";
+import { useState } from "react";
+import { useParams } from "@tanstack/react-router";
 import { Loader2, AlertCircle, Building2 } from "lucide-react";
 import { usePublicRecruiterInfo } from "../hooks/useLeads";
 import { LeadInterestForm } from "../components/public/LeadInterestForm";
 import { LeadSubmissionConfirmation } from "../components/public/LeadSubmissionConfirmation";
 
-/**
- * Extract recruiter slug from pathname
- * Handles both /join/slug and /join-slug patterns
- */
-function extractSlugFromPath(pathname: string): string | null {
-  // Pattern 1: /join/slug (standard route)
-  const slashMatch = pathname.match(/^\/join\/([^/]+)$/);
-  if (slashMatch) return slashMatch[1];
-
-  // Pattern 2: /join-slug (hyphenated URL)
-  const hyphenMatch = pathname.match(/^\/join-([^/]+)$/);
-  if (hyphenMatch) return hyphenMatch[1];
-
-  return null;
-}
-
 export function PublicJoinPage() {
-  const location = useLocation();
+  // Get slug from route params - supports both /join/$recruiterId and /join-$slug patterns
+  const params = useParams({ strict: false }) as {
+    recruiterId?: string;
+    slug?: string;
+  };
+  const recruiterId = params.recruiterId || params.slug || null;
 
-  // Extract slug from pathname - handles both /join/slug and /join-slug patterns
-  const recruiterId = useMemo(() => {
-    const extracted = extractSlugFromPath(location.pathname);
-    console.log(
-      "[PublicJoinPage] pathname:",
-      location.pathname,
-      "-> extracted slug:",
-      extracted,
-    );
-    return extracted;
-  }, [location.pathname]);
+  console.log(
+    "[PublicJoinPage] Route params:",
+    params,
+    "-> recruiterId:",
+    recruiterId,
+  );
 
   const [submittedLeadId, setSubmittedLeadId] = useState<string | null>(null);
 
