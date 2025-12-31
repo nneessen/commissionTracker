@@ -80,7 +80,7 @@ function RecruitingDashboardContent() {
 
   const handleCopyLink = async () => {
     if (!recruiterSlug) return;
-    const url = `https://www.thestandardhq.com/join/${recruiterSlug}`;
+    const url = `https://www.thestandardhq.com/join-${recruiterSlug}`;
     try {
       await navigator.clipboard.writeText(url);
       setLinkCopied(true);
@@ -267,7 +267,7 @@ function RecruitingDashboardContent() {
               Your link:
             </span>
             <span className="text-[11px] font-mono text-emerald-800 dark:text-emerald-200">
-              www.thestandardhq.com/join/{recruiterSlug}
+              www.thestandardhq.com/join-{recruiterSlug}
             </span>
           </div>
           <Button

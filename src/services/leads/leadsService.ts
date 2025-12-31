@@ -31,26 +31,69 @@ export const leadsService = {
     slug: string,
   ): Promise<PublicRecruiterInfo | null> {
     try {
-      // supabase client uses anon key so this works for public access
-      const { data, error } = await supabase.rpc("get_public_recruiter_info", {
-        p_slug: slug,
-      });
+      // Try RPC first (if migration is applied)
+      const { data: rpcData, error: rpcError } = await supabase.rpc(
+        "get_public_recruiter_info",
+        { p_slug: slug },
+      );
 
-      if (error) {
+      if (!rpcError && Array.isArray(rpcData) && rpcData.length > 0) {
+        return rpcData[0] as PublicRecruiterInfo;
+      }
+
+      // Fallback: query directly if RPC doesn't exist or fails
+      logger.info(
+        `RPC fallback for slug ${slug}: ${rpcError?.message || "no data"}`,
+        "leadsService",
+      );
+
+      const { data, error } = await supabase
+        .from("user_profiles")
+        .select(
+          `
+          id,
+          first_name,
+          last_name,
+          approval_status,
+          custom_permissions,
+          imo_id,
+          imos!inner (
+            id,
+            name,
+            logo_url,
+            primary_color,
+            description,
+            is_active
+          )
+        `,
+        )
+        .eq("recruiter_slug", slug)
+        .single();
+
+      if (error || !data) {
         logger.error(
-          "Failed to get public recruiter info",
-          error,
+          "Failed to get public recruiter info via fallback",
+          error || "No data found",
           "leadsService",
         );
         return null;
       }
 
-      // RPC returns array, get first item
-      if (Array.isArray(data) && data.length > 0) {
-        return data[0] as PublicRecruiterInfo;
-      }
-
-      return null;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const imo = data.imos as any;
+      return {
+        recruiter_id: data.id,
+        recruiter_first_name: data.first_name,
+        recruiter_last_name: data.last_name,
+        imo_name: imo?.name || null,
+        imo_logo_url: imo?.logo_url || null,
+        imo_primary_color: imo?.primary_color || null,
+        imo_description: imo?.description || null,
+        calendly_url:
+          (data.custom_permissions as { calendly_url?: string })
+            ?.calendly_url || null,
+        is_active: imo?.is_active && data.approval_status === "approved",
+      };
     } catch (error) {
       logger.error(
         "Error getting public recruiter info",

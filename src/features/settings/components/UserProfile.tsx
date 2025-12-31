@@ -301,7 +301,7 @@ export function UserProfile() {
   };
 
   const handleCopyLink = async () => {
-    const url = `https://www.thestandardhq.com/join/${currentSlug}`;
+    const url = `https://www.thestandardhq.com/join-${currentSlug}`;
     try {
       await navigator.clipboard.writeText(url);
       setSlugCopied(true);
@@ -384,7 +384,7 @@ export function UserProfile() {
                     Your recruiting link:
                   </p>
                   <p className="text-[11px] text-emerald-700 dark:text-emerald-300 font-mono truncate">
-                    www.thestandardhq.com/join/{currentSlug}
+                    www.thestandardhq.com/join-{currentSlug}
                   </p>
                 </div>
                 <Button
@@ -420,7 +420,7 @@ export function UserProfile() {
               </label>
               <div className="flex gap-2 items-center">
                 <span className="text-[11px] text-zinc-400 dark:text-zinc-500 flex-shrink-0">
-                  /join/
+                  /join-
                 </span>
                 <Input
                   id="recruiterSlug"

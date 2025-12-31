@@ -9,7 +9,7 @@ import { LeadInterestForm } from "../components/public/LeadInterestForm";
 import { LeadSubmissionConfirmation } from "../components/public/LeadSubmissionConfirmation";
 
 export function PublicJoinPage() {
-  const { recruiterId } = useParams({ from: "/join/$recruiterId" });
+  const { recruiterId } = useParams({ from: "/join-$recruiterId" });
   const [submittedLeadId, setSubmittedLeadId] = useState<string | null>(null);
 
   const {

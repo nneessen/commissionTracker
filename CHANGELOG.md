@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-12-31 15:13:32
+
+### Changed Files
+- `src/App.tsx`
+- `src/features/recruiting/RecruitingDashboard.tsx`
+- `src/features/recruiting/components/LeadsQueueDashboard.tsx`
+- `src/features/recruiting/pages/PublicJoinPage.tsx`
+- `src/features/settings/components/UserProfile.tsx`
+- `src/router.tsx`
+- `src/services/leads/leadsService.ts`
+
+### Statistics
+```
+ 7 files changed, 66 insertions(+), 23 deletions(-)
+```
+
 ## [Checkpoint] - 2025-12-31 14:46:15
 
 ### Changed Files

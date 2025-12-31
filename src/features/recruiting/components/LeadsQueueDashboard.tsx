@@ -91,7 +91,7 @@ export function LeadsQueueDashboard() {
   });
 
   const shareableUrl = recruiterSlug
-    ? `https://www.thestandardhq.com/join/${recruiterSlug}`
+    ? `https://www.thestandardhq.com/join-${recruiterSlug}`
     : null;
 
   const handleCopyLink = () => {
@@ -172,7 +172,7 @@ export function LeadsQueueDashboard() {
               <div className="flex items-center gap-1.5 px-2 py-1 bg-emerald-50 dark:bg-emerald-950/30 rounded-md border border-emerald-200 dark:border-emerald-800">
                 <Link2 className="h-3 w-3 text-emerald-500" />
                 <span className="text-[10px] text-emerald-700 dark:text-emerald-300 max-w-[200px] truncate">
-                  www.thestandardhq.com/join/{recruiterSlug}
+                  www.thestandardhq.com/join-{recruiterSlug}
                 </span>
               </div>
               <Button

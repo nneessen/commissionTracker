@@ -26,7 +26,7 @@ function App() {
     "/auth/denied",
     "/terms",
     "/privacy",
-    "/join/",
+    "/join-",
   ];
   const isPublicPath = publicPaths.some((path) =>
     location.pathname.startsWith(path),
