@@ -32,6 +32,15 @@ export type LeadIncomeGoal =
   | "$150k+"
   | "";
 
+// Product specialty options for licensed agents
+export type LeadSpecialty =
+  | "mortgage_protection"
+  | "veterans"
+  | "advanced_markets"
+  | "final_expense"
+  | "iuls_terms"
+  | "other";
+
 // Public form submission input
 export interface SubmitLeadInput {
   recruiterSlug: string;
@@ -49,6 +58,9 @@ export interface SubmitLeadInput {
   utmMedium?: string;
   utmCampaign?: string;
   referrerUrl?: string;
+  isLicensed?: boolean;
+  currentImoName?: string;
+  specialties?: LeadSpecialty[];
 }
 
 // RPC response for submit_recruiting_lead
@@ -227,3 +239,23 @@ export const INCOME_GOAL_OPTIONS = [
   { value: "$100k-150k", label: "$100,000 - $150,000" },
   { value: "$150k+", label: "$150,000+" },
 ] as const;
+
+// Product specialty options for form (multi-select)
+export const SPECIALTY_OPTIONS: { value: LeadSpecialty; label: string }[] = [
+  { value: "mortgage_protection", label: "Mortgage Protection" },
+  { value: "veterans", label: "Veterans/Military" },
+  { value: "advanced_markets", label: "Advanced Markets" },
+  { value: "final_expense", label: "Final Expense" },
+  { value: "iuls_terms", label: "IULs/Terms" },
+  { value: "other", label: "Other" },
+];
+
+// Specialty labels for display
+export const SPECIALTY_LABELS: Record<LeadSpecialty, string> = {
+  mortgage_protection: "Mortgage Protection",
+  veterans: "Veterans/Military",
+  advanced_markets: "Advanced Markets",
+  final_expense: "Final Expense",
+  iuls_terms: "IULs/Terms",
+  other: "Other",
+};

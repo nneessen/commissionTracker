@@ -1,15 +1,15 @@
 # Project Statistics
 
-Last Updated: 2025-12-31 15:13:32
+Last Updated: 2025-12-31 18:05:46
 
 ## Metrics
-- Total Files: 28893
-- Total Lines of Code: 362865
-- Total Commits: 570
+- Total Files: 28894
+- Total Lines of Code: 363359
+- Total Commits: 578
 
 ## Recent Activity
-4d9ffe5 docs: multiple changes in .,src,src/features/recruiting
-3ec27d8 docs: multiple changes in .,plans/active,src/features/recruiting/admin
-e2117c7 docs: CHANGELOG.md,PROJECT_STATS.md,AutomationDialog.tsx
-075d37e docs: CHANGELOG.md,PROJECT_STATS.md,AutomationDialog.tsx
-a9dce68 docs: multiple changes in .,src/features/messages/components/slack,src/features/recruiting/admin
+ee3c22a fix: bypass React Query - use simple useState/useEffect for public join page
+6e5be90 fix: use stable wrapper component for join-* URL pattern
+d36df49 fix: use stable component reference for join route to fix React Query state updates
+b24e06c debug: add console logging to trace join page issue
+8ebfad9 fix(routing): handle /join-slug URL pattern natively

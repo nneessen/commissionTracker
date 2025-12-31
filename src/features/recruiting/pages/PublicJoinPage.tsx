@@ -1,9 +1,19 @@
 // src/features/recruiting/pages/PublicJoinPage.tsx
-// Public landing page for recruiting funnel - v2
+// Public landing page for recruiting funnel - Visual redesign v4
 
 import { useState, useEffect, useMemo } from "react";
 import { useParams, useLocation } from "@tanstack/react-router";
-import { Loader2, AlertCircle, Building2 } from "lucide-react";
+import {
+  Loader2,
+  AlertCircle,
+  DollarSign,
+  BookOpen,
+  Clock,
+  Rocket,
+  Users,
+  MapPin,
+  Zap,
+} from "lucide-react";
 import { leadsService } from "@/services/leads";
 import type { PublicRecruiterInfo } from "@/types/leads.types";
 import { LeadInterestForm } from "../components/public/LeadInterestForm";
@@ -16,17 +26,13 @@ function extractSlug(
   pathname: string,
   params: { recruiterId?: string },
 ): string | null {
-  // First check route params (for /join/$recruiterId route)
   if (params.recruiterId) {
     return params.recruiterId;
   }
-
-  // Otherwise extract from pathname (for /join-slug pattern)
   const hyphenMatch = pathname.match(/^\/join-([^/]+)$/);
   if (hyphenMatch) {
     return hyphenMatch[1];
   }
-
   return null;
 }
 
@@ -34,23 +40,12 @@ export function PublicJoinPage() {
   const location = useLocation();
   const params = useParams({ strict: false }) as { recruiterId?: string };
 
-  // Extract slug from route params or pathname
   const recruiterId = useMemo(() => {
     const slug = extractSlug(location.pathname, params);
-    console.log(
-      "[PublicJoinPage] pathname:",
-      location.pathname,
-      "params:",
-      params,
-      "-> slug:",
-      slug,
-    );
     return slug;
   }, [location.pathname, params]);
 
   const [submittedLeadId, setSubmittedLeadId] = useState<string | null>(null);
-
-  // Bypass React Query - use simple state instead
   const [recruiterInfo, setRecruiterInfo] =
     useState<PublicRecruiterInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -65,21 +60,16 @@ export function PublicJoinPage() {
     let cancelled = false;
 
     async function fetchRecruiter() {
-      console.log("[PublicJoinPage] Fetching recruiter info for:", recruiterId);
       setIsLoading(true);
       setError(null);
 
       try {
         const data = await leadsService.getPublicRecruiterInfo(recruiterId!);
-        console.log("[PublicJoinPage] Fetch complete, data:", data);
-
         if (!cancelled) {
           setRecruiterInfo(data);
           setIsLoading(false);
-          console.log("[PublicJoinPage] State updated, isLoading:", false);
         }
       } catch (err) {
-        console.error("[PublicJoinPage] Fetch error:", err);
         if (!cancelled) {
           setError(err instanceof Error ? err : new Error("Failed to fetch"));
           setIsLoading(false);
@@ -88,27 +78,18 @@ export function PublicJoinPage() {
     }
 
     fetchRecruiter();
-
     return () => {
       cancelled = true;
     };
   }, [recruiterId]);
 
-  // Debug logging
-  console.log("[PublicJoinPage] Render state:", {
-    recruiterId,
-    isLoading,
-    hasData: !!recruiterInfo,
-    error: error?.message,
-  });
-
   // Loading state
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin text-zinc-400 mx-auto" />
-          <p className="text-[11px] text-zinc-500 mt-2">Loading...</p>
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground mx-auto" />
+          <p className="text-xs text-muted-foreground mt-2">Loading...</p>
         </div>
       </div>
     );
@@ -117,13 +98,13 @@ export function PublicJoinPage() {
   // Error or not found state
   if (error || !recruiterInfo || !recruiterInfo.is_active) {
     return (
-      <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-6 text-center">
-          <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-          <h1 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-2">
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-card rounded-lg border border-border p-6 text-center">
+          <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+          <h1 className="text-lg font-semibold text-foreground mb-2">
             Link Not Found
           </h1>
-          <p className="text-[13px] text-zinc-500 dark:text-zinc-400">
+          <p className="text-sm text-muted-foreground">
             This recruiting link is no longer active or doesn&apos;t exist.
             Please contact your recruiter for a valid link.
           </p>
@@ -142,117 +123,223 @@ export function PublicJoinPage() {
     );
   }
 
-  // Main landing page with form
+  // Main landing page with split-panel layout
   return (
-    <div className="min-h-screen bg-gradient-to-b from-zinc-50 to-zinc-100 dark:from-zinc-950 dark:to-zinc-900">
-      {/* Header */}
-      <header className="bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800">
-        <div className="max-w-4xl mx-auto px-4 py-4">
-          <div className="flex items-center gap-3">
-            {recruiterInfo.imo_logo_url ? (
+    <div className="h-screen flex flex-col lg:flex-row bg-background overflow-hidden">
+      {/* Left Panel - Dark Hero */}
+      <div className="lg:w-1/2 xl:w-[50%] bg-foreground relative hidden lg:block overflow-hidden">
+        {/* Animated grid background */}
+        <div className="absolute inset-0 opacity-[0.04]">
+          <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <pattern
+                id="grid"
+                width="40"
+                height="40"
+                patternUnits="userSpaceOnUse"
+              >
+                <path
+                  d="M 40 0 L 0 0 0 40"
+                  fill="none"
+                  stroke="white"
+                  strokeWidth="0.5"
+                />
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#grid)" />
+          </svg>
+        </div>
+
+        {/* Animated glow orbs */}
+        <div className="absolute top-1/4 -left-20 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl animate-pulse" />
+        <div
+          className="absolute bottom-1/4 -right-20 w-80 h-80 bg-amber-400/5 rounded-full blur-3xl animate-pulse"
+          style={{ animationDelay: "1s" }}
+        />
+
+        {/* Content */}
+        <div className="relative z-10 flex flex-col justify-between p-8 xl:p-10 h-full">
+          {/* Logo and brand - Enhanced */}
+          <div className="flex items-center gap-4 group">
+            <div className="relative">
+              <div className="absolute inset-0 bg-amber-500/20 rounded-xl blur-xl group-hover:bg-amber-500/30 transition-all duration-500" />
               <img
-                src={recruiterInfo.imo_logo_url}
-                alt={recruiterInfo.imo_name || "Company"}
-                className="h-10 w-auto object-contain"
+                src="/logos/LetterLogo.png"
+                alt="The Standard"
+                className="relative h-14 w-14 invert dark:invert-0 drop-shadow-2xl"
               />
-            ) : (
-              <div className="h-10 w-10 rounded-lg bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center">
-                <Building2 className="h-5 w-5 text-zinc-400" />
-              </div>
-            )}
+            </div>
+            <div className="flex flex-col">
+              <span
+                className="text-white dark:text-black text-2xl font-bold tracking-wide"
+                style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+              >
+                THE STANDARD
+              </span>
+              <span className="text-amber-400 text-[10px] uppercase tracking-[0.3em] font-medium">
+                Financial Group
+              </span>
+            </div>
+          </div>
+
+          {/* Middle - Main messaging */}
+          <div className="space-y-4">
             <div>
-              <h1 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-                {recruiterInfo.imo_name || "Join Our Team"}
+              <h1
+                className="text-4xl xl:text-5xl font-bold leading-tight mb-3"
+                style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+              >
+                <span className="text-white dark:text-black">Join </span>
+                <span className="bg-gradient-to-r from-amber-400 via-amber-500 to-amber-400 bg-clip-text text-transparent">
+                  The Standard
+                </span>
               </h1>
-              <p className="text-[10px] text-zinc-500">Career Opportunity</p>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="max-w-4xl mx-auto px-4 py-8">
-        <div className="grid lg:grid-cols-5 gap-8">
-          {/* Left Column - Hero Content */}
-          <div className="lg:col-span-2 space-y-6">
-            <div>
-              <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 mb-3">
-                Start Your Career in Insurance
-              </h2>
-              <p className="text-[13px] text-zinc-600 dark:text-zinc-400 leading-relaxed">
-                {recruiterInfo.imo_description ||
-                  "Join a team of dedicated professionals helping families protect what matters most. Whether you're new to insurance or an experienced agent, we provide the training, support, and resources you need to succeed."}
+              <p className="text-white/80 dark:text-black/70 text-sm max-w-sm leading-relaxed">
+                Ready to take control of your future? We&apos;re building
+                something different—a tech-forward insurance agency where
+                ambition meets opportunity.
               </p>
             </div>
 
-            {/* Benefits */}
-            <div className="space-y-3">
-              <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-                What We Offer
-              </h3>
-              <ul className="space-y-2">
-                {[
-                  "Comprehensive training program",
-                  "Competitive commission structure",
-                  "Flexible schedule",
-                  "Unlimited income potential",
-                  "Ongoing mentorship and support",
-                ].map((benefit, index) => (
-                  <li
-                    key={index}
-                    className="flex items-center gap-2 text-[12px] text-zinc-600 dark:text-zinc-400"
-                  >
-                    <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                    {benefit}
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Social Proof */}
-            <div className="bg-zinc-100 dark:bg-zinc-800/50 rounded-lg p-4">
-              <p className="text-[12px] text-zinc-600 dark:text-zinc-400 italic">
-                &quot;I started with no experience and within my first year, I
-                was able to replace my previous income. The training and support
-                made all the difference.&quot;
-              </p>
-              <p className="text-[11px] text-zinc-500 mt-2">
-                — Recent Team Member
-              </p>
-            </div>
-          </div>
-
-          {/* Right Column - Form */}
-          <div className="lg:col-span-3">
-            <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-6">
-              <div className="mb-6">
-                <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
-                  Express Your Interest
-                </h3>
-                <p className="text-[12px] text-zinc-500 mt-1">
-                  Fill out the form below and we&apos;ll be in touch within
-                  24-48 hours.
-                </p>
+            {/* Mission Statement */}
+            <div className="bg-white/5 dark:bg-black/10 border border-white/10 dark:border-black/10 rounded-lg p-3 max-w-sm">
+              <div className="flex items-center gap-2 mb-2">
+                <MapPin className="h-3.5 w-3.5 text-amber-400" />
+                <span className="text-[10px] text-white/60 dark:text-black/60 uppercase tracking-wider">
+                  Saint Petersburg, FL
+                </span>
               </div>
+              <p className="text-xs text-white/90 dark:text-black/80 leading-relaxed">
+                Founded by{" "}
+                <span className="text-white dark:text-black font-medium">
+                  Nick Neessen
+                </span>
+                —20 years in sales, full-stack developer, and agency owner. We
+                leverage the latest technology to help agents build real
+                businesses, not just jobs.
+              </p>
+            </div>
 
-              <LeadInterestForm
-                recruiterSlug={recruiterId || ""}
-                onSuccess={(leadId) => setSubmittedLeadId(leadId)}
-              />
+            {/* Stats highlight */}
+            <div className="relative bg-gradient-to-r from-amber-500/20 to-amber-600/10 border border-amber-400/30 rounded-lg p-4 max-w-sm overflow-hidden">
+              <div className="absolute top-0 right-0 w-20 h-20 bg-amber-500/10 rounded-full blur-2xl" />
+              <p
+                className="relative text-3xl font-bold bg-gradient-to-r from-amber-300 to-amber-500 bg-clip-text text-transparent"
+                style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+              >
+                $20,000+
+              </p>
+              <p className="relative text-white/80 dark:text-black/70 text-xs mt-1">
+                Average monthly commissions for our agents
+              </p>
+            </div>
+
+            {/* Feature highlights - 2 columns */}
+            <div className="grid grid-cols-2 gap-2 max-w-sm">
+              <div className="flex items-center gap-2 text-white/90 dark:text-black/80">
+                <div className="flex items-center justify-center w-7 h-7 rounded bg-white/10 dark:bg-black/10">
+                  <DollarSign className="h-3.5 w-3.5" />
+                </div>
+                <span className="text-xs">Uncapped earnings</span>
+              </div>
+              <div className="flex items-center gap-2 text-white/90 dark:text-black/80">
+                <div className="flex items-center justify-center w-7 h-7 rounded bg-white/10 dark:bg-black/10">
+                  <Zap className="h-3.5 w-3.5" />
+                </div>
+                <span className="text-xs">Latest tech</span>
+              </div>
+              <div className="flex items-center gap-2 text-white/90 dark:text-black/80">
+                <div className="flex items-center justify-center w-7 h-7 rounded bg-white/10 dark:bg-black/10">
+                  <BookOpen className="h-3.5 w-3.5" />
+                </div>
+                <span className="text-xs">Full training</span>
+              </div>
+              <div className="flex items-center gap-2 text-white/90 dark:text-black/80">
+                <div className="flex items-center justify-center w-7 h-7 rounded bg-white/10 dark:bg-black/10">
+                  <Clock className="h-3.5 w-3.5" />
+                </div>
+                <span className="text-xs">Flexible schedule</span>
+              </div>
+              <div className="flex items-center gap-2 text-white/90 dark:text-black/80">
+                <div className="flex items-center justify-center w-7 h-7 rounded bg-white/10 dark:bg-black/10">
+                  <Rocket className="h-3.5 w-3.5" />
+                </div>
+                <span className="text-xs">Build a business</span>
+              </div>
+              <div className="flex items-center gap-2 text-white/90 dark:text-black/80">
+                <div className="flex items-center justify-center w-7 h-7 rounded bg-white/10 dark:bg-black/10">
+                  <Users className="h-3.5 w-3.5" />
+                </div>
+                <span className="text-xs">Mentorship</span>
+              </div>
             </div>
           </div>
-        </div>
-      </main>
 
-      {/* Footer */}
-      <footer className="border-t border-zinc-200 dark:border-zinc-800 mt-12">
-        <div className="max-w-4xl mx-auto px-4 py-6">
-          <p className="text-[10px] text-zinc-400 text-center">
-            &copy; {new Date().getFullYear()}{" "}
-            {recruiterInfo.imo_name || "Company"}. All rights reserved.
+          {/* Bottom */}
+          <div className="text-white/50 dark:text-black/50 text-xs">
+            &copy; {new Date().getFullYear()} The Standard Financial Group
+          </div>
+        </div>
+      </div>
+
+      {/* Right Panel - Form */}
+      <div className="flex-1 flex items-center justify-center p-4 lg:p-6 overflow-y-auto">
+        <div className="w-full max-w-[420px]">
+          {/* Mobile Logo */}
+          <div className="lg:hidden flex flex-col items-center mb-4">
+            <div className="flex items-center gap-3">
+              <img
+                src="/logos/LetterLogo.png"
+                alt="The Standard"
+                className="h-10 w-10"
+              />
+              <div className="flex flex-col">
+                <span
+                  className="text-foreground text-xl font-bold tracking-wide"
+                  style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+                >
+                  THE STANDARD
+                </span>
+                <span className="text-amber-500 text-[9px] uppercase tracking-[0.25em] font-medium">
+                  Financial Group
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Header */}
+          <div className="mb-3 text-center lg:text-left">
+            <h2
+              className="text-lg font-bold text-foreground mb-1"
+              style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+            >
+              Express Your Interest
+            </h2>
+            <p className="text-xs text-muted-foreground">
+              Fill out the form below and we&apos;ll be in touch within 24-48
+              hours.
+            </p>
+          </div>
+
+          {/* Form Card */}
+          <div className="bg-card/50 backdrop-blur-sm rounded-lg border border-border/50 shadow-xl p-4">
+            <LeadInterestForm
+              recruiterSlug={recruiterId || ""}
+              onSuccess={(leadId) => setSubmittedLeadId(leadId)}
+            />
+          </div>
+
+          {/* Footer */}
+          <p className="mt-3 text-center text-[10px] text-muted-foreground">
+            By submitting, you agree to be contacted about career opportunities.
+          </p>
+
+          {/* Mobile footer */}
+          <p className="lg:hidden mt-4 text-center text-[10px] text-muted-foreground">
+            &copy; {new Date().getFullYear()} The Standard Financial Group
           </p>
         </div>
-      </footer>
+      </div>
     </div>
   );
 }

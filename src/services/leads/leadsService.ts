@@ -136,6 +136,9 @@ export const leadsService = {
         p_utm_medium: input.utmMedium || null,
         p_utm_campaign: input.utmCampaign || null,
         p_referrer_url: input.referrerUrl || null,
+        p_is_licensed: input.isLicensed || false,
+        p_current_imo_name: input.currentImoName || null,
+        p_specialties: input.specialties || null,
       });
 
       if (error) {

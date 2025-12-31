@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-12-31 18:05:46
+
+### Changed Files
+- `plans/active/public-join-page-redesign.md`
+- `src/features/recruiting/components/public/LeadInterestForm.tsx`
+- `src/features/recruiting/components/public/LeadSubmissionConfirmation.tsx`
+- `src/features/recruiting/pages/PublicJoinPage.tsx`
+- `src/index.css`
+- `src/services/leads/leadsService.ts`
+- `src/types/database.types.ts`
+- `src/types/leads.types.ts`
+- `supabase/migrations/20251231_005_add_lead_licensing_fields.sql`
+
+### Statistics
+```
+ 9 files changed, 951 insertions(+), 336 deletions(-)
+```
+
 ## [Checkpoint] - 2025-12-31 15:13:32
 
 ### Changed Files

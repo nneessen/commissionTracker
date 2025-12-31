@@ -4336,6 +4336,9 @@ export type Database = {
           utm_medium: string | null;
           utm_source: string | null;
           why_interested: string;
+          is_licensed: boolean | null;
+          current_imo_name: string | null;
+          specialties: string[] | null;
         };
         Insert: {
           agency_id?: string | null;
@@ -4369,6 +4372,9 @@ export type Database = {
           utm_medium?: string | null;
           utm_source?: string | null;
           why_interested: string;
+          is_licensed?: boolean | null;
+          current_imo_name?: string | null;
+          specialties?: string[] | null;
         };
         Update: {
           agency_id?: string | null;
@@ -4402,6 +4408,9 @@ export type Database = {
           utm_medium?: string | null;
           utm_source?: string | null;
           why_interested?: string;
+          is_licensed?: boolean | null;
+          current_imo_name?: string | null;
+          specialties?: string[] | null;
         };
         Relationships: [
           {
@@ -10110,6 +10119,9 @@ export type Database = {
           p_utm_medium?: string;
           p_utm_source?: string;
           p_why_interested?: string;
+          p_is_licensed?: boolean;
+          p_current_imo_name?: string;
+          p_specialties?: string[];
         };
         Returns: Json;
       };
