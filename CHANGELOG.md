@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Checkpoint] - 2025-12-31 10:35:23
+
+### Changed Files
+- `src/features/recruiting/admin/AutomationDialog.tsx`
+
+### Statistics
+```
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+```
+
 ## [Checkpoint] - 2025-12-31 10:32:02
 
 ### Changed Files

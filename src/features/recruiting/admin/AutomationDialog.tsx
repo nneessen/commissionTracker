@@ -1026,7 +1026,7 @@ export function AutomationDialog({
                           onChange={(e) => setEmailBody(e.target.value)}
                           onFocus={() => setLastFocusedField("emailBody")}
                           placeholder="<p>Hello {{recruit_first_name}},</p><p>Welcome! 🎉</p>"
-                          className="text-sm min-h-[180px] font-mono bg-background border-input shadow-sm hover:shadow-md focus:shadow-md transition-shadow"
+                          className="text-sm min-h-[320px] font-mono bg-background border-input shadow-sm hover:shadow-md focus:shadow-md transition-shadow"
                         />
                       </div>
                     </TabsContent>
@@ -1067,7 +1067,7 @@ export function AutomationDialog({
                             setLastFocusedField("notificationMessage")
                           }
                           placeholder="{{recruit_name}} has entered {{phase_name}}"
-                          className="text-sm min-h-[140px] bg-background border-input shadow-sm hover:shadow-md focus:shadow-md transition-shadow"
+                          className="text-sm min-h-[280px] bg-background border-input shadow-sm hover:shadow-md focus:shadow-md transition-shadow"
                         />
                       </div>
                     </TabsContent>
@@ -1091,7 +1091,7 @@ export function AutomationDialog({
                           onChange={(e) => setSmsMessage(e.target.value)}
                           onFocus={() => setLastFocusedField("smsMessage")}
                           placeholder="Hi {{recruit_first_name}}, reminder about {{phase_name}}..."
-                          className="text-sm min-h-[140px] bg-background border-input shadow-sm hover:shadow-md focus:shadow-md transition-shadow"
+                          className="text-sm min-h-[280px] bg-background border-input shadow-sm hover:shadow-md focus:shadow-md transition-shadow"
                           maxLength={320}
                         />
                         <p className="text-xs text-muted-foreground">
