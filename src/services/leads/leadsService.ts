@@ -30,6 +30,10 @@ export const leadsService = {
   async getPublicRecruiterInfo(
     slug: string,
   ): Promise<PublicRecruiterInfo | null> {
+    console.log(
+      "[leadsService] getPublicRecruiterInfo called with slug:",
+      slug,
+    );
     try {
       // Try RPC first (if migration is applied)
       const { data: rpcData, error: rpcError } = await supabase.rpc(
@@ -37,7 +41,13 @@ export const leadsService = {
         { p_slug: slug },
       );
 
+      console.log("[leadsService] RPC result:", {
+        rpcData,
+        rpcError: rpcError?.message,
+      });
+
       if (!rpcError && Array.isArray(rpcData) && rpcData.length > 0) {
+        console.log("[leadsService] Returning RPC data:", rpcData[0]);
         return rpcData[0] as PublicRecruiterInfo;
       }
 

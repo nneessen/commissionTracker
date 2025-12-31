@@ -29,7 +29,14 @@ export function PublicJoinPage() {
 
   // Extract slug from pathname - handles both /join/slug and /join-slug patterns
   const recruiterId = useMemo(() => {
-    return extractSlugFromPath(location.pathname);
+    const extracted = extractSlugFromPath(location.pathname);
+    console.log(
+      "[PublicJoinPage] pathname:",
+      location.pathname,
+      "-> extracted slug:",
+      extracted,
+    );
+    return extracted;
   }, [location.pathname]);
 
   const [submittedLeadId, setSubmittedLeadId] = useState<string | null>(null);
@@ -38,7 +45,19 @@ export function PublicJoinPage() {
     data: recruiterInfo,
     isLoading,
     error,
+    status,
+    fetchStatus,
   } = usePublicRecruiterInfo(recruiterId || "");
+
+  // Debug logging
+  console.log("[PublicJoinPage] Query state:", {
+    recruiterId,
+    isLoading,
+    status,
+    fetchStatus,
+    hasData: !!recruiterInfo,
+    error: error?.message,
+  });
 
   // Loading state
   if (isLoading) {
