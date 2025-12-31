@@ -1,10 +1,11 @@
 // src/features/recruiting/pages/PublicJoinPage.tsx
 // Public landing page for recruiting funnel - v2
 
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams, useLocation } from "@tanstack/react-router";
 import { Loader2, AlertCircle, Building2 } from "lucide-react";
-import { usePublicRecruiterInfo } from "../hooks/useLeads";
+import { leadsService } from "@/services/leads";
+import type { PublicRecruiterInfo } from "@/types/leads.types";
 import { LeadInterestForm } from "../components/public/LeadInterestForm";
 import { LeadSubmissionConfirmation } from "../components/public/LeadSubmissionConfirmation";
 
@@ -49,20 +50,54 @@ export function PublicJoinPage() {
 
   const [submittedLeadId, setSubmittedLeadId] = useState<string | null>(null);
 
-  const {
-    data: recruiterInfo,
-    isLoading,
-    error,
-    status,
-    fetchStatus,
-  } = usePublicRecruiterInfo(recruiterId || "");
+  // Bypass React Query - use simple state instead
+  const [recruiterInfo, setRecruiterInfo] =
+    useState<PublicRecruiterInfo | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    if (!recruiterId) {
+      setIsLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    async function fetchRecruiter() {
+      console.log("[PublicJoinPage] Fetching recruiter info for:", recruiterId);
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const data = await leadsService.getPublicRecruiterInfo(recruiterId!);
+        console.log("[PublicJoinPage] Fetch complete, data:", data);
+
+        if (!cancelled) {
+          setRecruiterInfo(data);
+          setIsLoading(false);
+          console.log("[PublicJoinPage] State updated, isLoading:", false);
+        }
+      } catch (err) {
+        console.error("[PublicJoinPage] Fetch error:", err);
+        if (!cancelled) {
+          setError(err instanceof Error ? err : new Error("Failed to fetch"));
+          setIsLoading(false);
+        }
+      }
+    }
+
+    fetchRecruiter();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [recruiterId]);
 
   // Debug logging
-  console.log("[PublicJoinPage] Query state:", {
+  console.log("[PublicJoinPage] Render state:", {
     recruiterId,
     isLoading,
-    status,
-    fetchStatus,
     hasData: !!recruiterInfo,
     error: error?.message,
   });
