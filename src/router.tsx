@@ -41,6 +41,7 @@ import { RecruitingDashboard } from "./features/recruiting/RecruitingDashboard";
 import { PipelineAdminPage } from "./features/recruiting/admin/PipelineAdminPage";
 import { MyRecruitingPipeline } from "./features/recruiting/pages/MyRecruitingPipeline";
 import { PublicJoinPage } from "./features/recruiting/pages/PublicJoinPage";
+import { PublicJoinWrapper } from "./features/recruiting/pages/PublicJoinWrapper";
 import { LeadsQueueDashboard } from "./features/recruiting/components/LeadsQueueDashboard";
 import { TrainingHubPage, TrainerDashboard } from "./features/training-hub";
 import { ContractingPage } from "./features/contracting/ContractingPage";
@@ -429,13 +430,13 @@ const publicJoinRoute = createRoute({
   component: PublicJoinPage,
 });
 
-// Alternative join route - catches /join-* pattern using splat
+// Alternative join route - catches /join-* pattern using catch-all
 // This handles URLs like /join-the-standard without redirect
-// Note: Must use a stable component reference, not inline function, for React Query to work
+// Uses stable wrapper component (not inline function) so React Query works correctly
 const publicJoinAltRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: "join-$slug",
-  component: PublicJoinPage,
+  path: "$slug",
+  component: PublicJoinWrapper,
 });
 
 // Leads Queue route - manage incoming leads from public funnel

@@ -1,27 +1,51 @@
 // src/features/recruiting/pages/PublicJoinPage.tsx
 // Public landing page for recruiting funnel - v2
 
-import { useState } from "react";
-import { useParams } from "@tanstack/react-router";
+import { useState, useMemo } from "react";
+import { useParams, useLocation } from "@tanstack/react-router";
 import { Loader2, AlertCircle, Building2 } from "lucide-react";
 import { usePublicRecruiterInfo } from "../hooks/useLeads";
 import { LeadInterestForm } from "../components/public/LeadInterestForm";
 import { LeadSubmissionConfirmation } from "../components/public/LeadSubmissionConfirmation";
 
-export function PublicJoinPage() {
-  // Get slug from route params - supports both /join/$recruiterId and /join-$slug patterns
-  const params = useParams({ strict: false }) as {
-    recruiterId?: string;
-    slug?: string;
-  };
-  const recruiterId = params.recruiterId || params.slug || null;
+/**
+ * Extract recruiter slug from pathname or route params
+ */
+function extractSlug(
+  pathname: string,
+  params: { recruiterId?: string },
+): string | null {
+  // First check route params (for /join/$recruiterId route)
+  if (params.recruiterId) {
+    return params.recruiterId;
+  }
 
-  console.log(
-    "[PublicJoinPage] Route params:",
-    params,
-    "-> recruiterId:",
-    recruiterId,
-  );
+  // Otherwise extract from pathname (for /join-slug pattern)
+  const hyphenMatch = pathname.match(/^\/join-([^/]+)$/);
+  if (hyphenMatch) {
+    return hyphenMatch[1];
+  }
+
+  return null;
+}
+
+export function PublicJoinPage() {
+  const location = useLocation();
+  const params = useParams({ strict: false }) as { recruiterId?: string };
+
+  // Extract slug from route params or pathname
+  const recruiterId = useMemo(() => {
+    const slug = extractSlug(location.pathname, params);
+    console.log(
+      "[PublicJoinPage] pathname:",
+      location.pathname,
+      "params:",
+      params,
+      "-> slug:",
+      slug,
+    );
+    return slug;
+  }, [location.pathname, params]);
 
   const [submittedLeadId, setSubmittedLeadId] = useState<string | null>(null);
 
