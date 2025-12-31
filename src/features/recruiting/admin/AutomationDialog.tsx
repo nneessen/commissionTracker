@@ -237,6 +237,11 @@ const TEMPLATE_VARIABLE_CATEGORIES = [
         description: "License state",
         example: "TX",
       },
+      {
+        variable: "{{contract_level}}",
+        description: "Contract level",
+        example: "75",
+      },
     ],
   },
   {

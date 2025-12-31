@@ -46,6 +46,7 @@ export interface AutomationContext {
   recruitLicenseNumber?: string;
   recruitNpn?: string;
   recruitLicenseState?: string;
+  contractLevel?: number;
   // Organization info
   agencyName?: string;
   imoName?: string;
@@ -425,6 +426,7 @@ export const pipelineAutomationService = {
         license_number,
         npn,
         resident_state,
+        contract_level,
         created_at,
         upline_id,
         agency_id,
@@ -587,6 +589,7 @@ export const pipelineAutomationService = {
       recruitLicenseNumber: recruit?.license_number || undefined,
       recruitNpn: recruit?.npn || undefined,
       recruitLicenseState: recruit?.resident_state || undefined,
+      contractLevel: recruit?.contract_level ?? undefined,
       // Organization
       agencyName,
       imoName,
@@ -796,6 +799,7 @@ export const pipelineAutomationService = {
       "{{recruit_license_number}}": context.recruitLicenseNumber || "",
       "{{recruit_npn}}": context.recruitNpn || "",
       "{{recruit_license_state}}": context.recruitLicenseState || "",
+      "{{contract_level}}": context.contractLevel?.toString() || "",
       // Organization
       "{{agency_name}}": context.agencyName || "",
       "{{imo_name}}": context.imoName || "",
