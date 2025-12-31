@@ -1,5 +1,5 @@
 // src/features/recruiting/pages/PublicJoinPage.tsx
-// Public landing page for recruiting funnel
+// Public landing page for recruiting funnel - v2
 
 import { useState } from "react";
 import { useParams } from "@tanstack/react-router";
