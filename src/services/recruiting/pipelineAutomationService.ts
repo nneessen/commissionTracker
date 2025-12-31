@@ -22,6 +22,7 @@ import { emailService } from "@/services/email";
 import { notificationService } from "@/services/notifications/notification/NotificationService";
 import { smsService, isValidPhoneNumber } from "@/services/sms";
 import { supabase } from "@/services/base/supabase";
+import { processEmojiShortcodes } from "@/lib/emoji";
 
 // Repository instances
 const automationRepository = new PipelineAutomationRepository();
@@ -29,17 +30,38 @@ const automationLogRepository = new PipelineAutomationLogRepository();
 
 // Context for variable substitution
 export interface AutomationContext {
+  // Recruit basic info
   recruitId: string;
   recruitName: string;
   recruitFirstName: string;
+  recruitLastName: string;
   recruitEmail: string;
   recruitPhone?: string;
+  // Recruit location
+  recruitCity?: string;
+  recruitState?: string;
+  recruitZip?: string;
+  recruitAddress?: string;
+  // Recruit professional info
+  recruitLicenseNumber?: string;
+  recruitNpn?: string;
+  recruitLicenseState?: string;
+  // Organization info
+  agencyName?: string;
+  imoName?: string;
+  // Pipeline info
   phaseName?: string;
+  templateName?: string;
   itemName?: string;
+  // Upline info
   uplineName?: string;
+  uplineFirstName?: string;
   uplineEmail?: string;
   uplinePhone?: string;
+  // Calculated values
   daysInPhase?: number;
+  daysSinceSignup?: number;
+  currentDate?: string;
   portalLink?: string;
 }
 
@@ -380,13 +402,14 @@ export const pipelineAutomationService = {
 
   /**
    * Build context for variable substitution
+   * Fetches all relevant data for template variable replacement
    */
   async buildContext(
     recruitId: string,
     phaseId?: string | null,
     itemName?: string,
   ): Promise<AutomationContext> {
-    // Get recruit info with upline in single query to reduce N+1
+    // Get recruit info with upline, agency, and IMO in single query
     const { data: recruit } = await supabase
       .from("user_profiles")
       .select(
@@ -395,19 +418,32 @@ export const pipelineAutomationService = {
         last_name,
         email,
         phone,
+        city,
+        state,
+        zip,
+        street_address,
+        license_number,
+        npn,
+        resident_state,
+        created_at,
         upline_id,
-        upline:user_profiles!upline_id(first_name, last_name, email, phone)
+        agency_id,
+        imo_id,
+        pipeline_template_id,
+        upline:user_profiles!upline_id(first_name, last_name, email, phone),
+        agency:agencies!agency_id(name),
+        imo:imos!imo_id(name)
       `,
       )
       .eq("id", recruitId)
       .single();
 
     let uplineName: string | undefined;
+    let uplineFirstName: string | undefined;
     let uplineEmail: string | undefined;
     let uplinePhone: string | undefined;
 
     // Extract upline info from joined query
-    // The join returns an array for to-one relationships in some cases
     if (recruit?.upline) {
       const uplineData = Array.isArray(recruit.upline)
         ? recruit.upline[0]
@@ -420,20 +456,42 @@ export const pipelineAutomationService = {
           phone: string | null;
         };
         uplineName = `${upline.first_name} ${upline.last_name}`;
+        uplineFirstName = upline.first_name;
         uplineEmail = upline.email;
         uplinePhone = upline.phone || undefined;
       }
     }
 
+    // Extract agency name
+    let agencyName: string | undefined;
+    if (recruit?.agency) {
+      const agencyData = Array.isArray(recruit.agency)
+        ? recruit.agency[0]
+        : recruit.agency;
+      if (agencyData && typeof agencyData === "object") {
+        agencyName = (agencyData as { name: string }).name;
+      }
+    }
+
+    // Extract IMO name
+    let imoName: string | undefined;
+    if (recruit?.imo) {
+      const imoData = Array.isArray(recruit.imo) ? recruit.imo[0] : recruit.imo;
+      if (imoData && typeof imoData === "object") {
+        imoName = (imoData as { name: string }).name;
+      }
+    }
+
     let phaseName: string | undefined;
+    let templateName: string | undefined;
     let daysInPhase: number | undefined;
 
-    // Get phase info with progress in single query
+    // Get phase info with progress and template name
     if (phaseId) {
       const [phaseResult, progressResult] = await Promise.all([
         supabase
           .from("pipeline_phases")
-          .select("phase_name")
+          .select("phase_name, template:pipeline_templates!template_id(name)")
           .eq("id", phaseId)
           .single(),
         supabase
@@ -446,6 +504,16 @@ export const pipelineAutomationService = {
 
       phaseName = phaseResult.data?.phase_name;
 
+      // Extract template name
+      if (phaseResult.data?.template) {
+        const templateData = Array.isArray(phaseResult.data.template)
+          ? phaseResult.data.template[0]
+          : phaseResult.data.template;
+        if (templateData && typeof templateData === "object") {
+          templateName = (templateData as { name: string }).name;
+        }
+      }
+
       if (progressResult.data?.started_at) {
         const startDate = new Date(progressResult.data.started_at);
         const now = new Date();
@@ -453,6 +521,45 @@ export const pipelineAutomationService = {
           (now.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
         );
       }
+    } else if (recruit?.pipeline_template_id) {
+      // If no phaseId, try to get template name from recruit's assigned template
+      const { data: template } = await supabase
+        .from("pipeline_templates")
+        .select("name")
+        .eq("id", recruit.pipeline_template_id)
+        .single();
+      templateName = template?.name;
+    }
+
+    // Calculate days since signup
+    let daysSinceSignup: number | undefined;
+    if (recruit?.created_at) {
+      const createdDate = new Date(recruit.created_at);
+      const now = new Date();
+      daysSinceSignup = Math.floor(
+        (now.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24),
+      );
+    }
+
+    // Format current date
+    const currentDate = new Date().toLocaleDateString("en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+
+    // Build full address if components exist
+    let recruitAddress: string | undefined;
+    if (recruit?.street_address || recruit?.city || recruit?.state) {
+      const parts = [
+        recruit.street_address,
+        recruit.city,
+        recruit.state && recruit.zip
+          ? `${recruit.state} ${recruit.zip}`
+          : recruit.state || recruit.zip,
+      ].filter(Boolean);
+      recruitAddress = parts.join(", ");
     }
 
     // Use environment variable for base URL, fallback to relative path
@@ -468,14 +575,34 @@ export const pipelineAutomationService = {
         ? `${recruit.first_name} ${recruit.last_name}`
         : "Recruit",
       recruitFirstName: recruit?.first_name || "Recruit",
+      recruitLastName: recruit?.last_name || "",
       recruitEmail: recruit?.email || "",
       recruitPhone: recruit?.phone || undefined,
+      // Location
+      recruitCity: recruit?.city || undefined,
+      recruitState: recruit?.state || undefined,
+      recruitZip: recruit?.zip || undefined,
+      recruitAddress,
+      // Professional
+      recruitLicenseNumber: recruit?.license_number || undefined,
+      recruitNpn: recruit?.npn || undefined,
+      recruitLicenseState: recruit?.resident_state || undefined,
+      // Organization
+      agencyName,
+      imoName,
+      // Pipeline
       phaseName,
+      templateName,
       itemName,
+      // Upline
       uplineName,
+      uplineFirstName,
       uplineEmail,
       uplinePhone,
+      // Calculated
       daysInPhase,
+      daysSinceSignup,
+      currentDate,
       portalLink,
     };
   },
@@ -648,27 +775,53 @@ export const pipelineAutomationService = {
 
   /**
    * Substitute template variables in content
+   * Supports {{variable}} syntax and :emoji: shortcodes
    */
   substituteVariables(template: string, context: AutomationContext): string {
     let result = template;
 
     const replacements: Record<string, string> = {
+      // Recruit basic info
       "{{recruit_name}}": context.recruitName,
       "{{recruit_first_name}}": context.recruitFirstName,
+      "{{recruit_last_name}}": context.recruitLastName,
       "{{recruit_email}}": context.recruitEmail,
       "{{recruit_phone}}": context.recruitPhone || "",
+      // Recruit location
+      "{{recruit_city}}": context.recruitCity || "",
+      "{{recruit_state}}": context.recruitState || "",
+      "{{recruit_zip}}": context.recruitZip || "",
+      "{{recruit_address}}": context.recruitAddress || "",
+      // Recruit professional
+      "{{recruit_license_number}}": context.recruitLicenseNumber || "",
+      "{{recruit_npn}}": context.recruitNpn || "",
+      "{{recruit_license_state}}": context.recruitLicenseState || "",
+      // Organization
+      "{{agency_name}}": context.agencyName || "",
+      "{{imo_name}}": context.imoName || "",
+      // Pipeline
       "{{phase_name}}": context.phaseName || "",
+      "{{template_name}}": context.templateName || "",
       "{{item_name}}": context.itemName || "",
+      // Upline
       "{{upline_name}}": context.uplineName || "",
+      "{{upline_first_name}}": context.uplineFirstName || "",
       "{{upline_email}}": context.uplineEmail || "",
       "{{upline_phone}}": context.uplinePhone || "",
+      // Calculated
       "{{days_in_phase}}": context.daysInPhase?.toString() || "0",
+      "{{days_since_signup}}": context.daysSinceSignup?.toString() || "0",
+      "{{current_date}}": context.currentDate || "",
       "{{portal_link}}": context.portalLink || "",
     };
 
+    // Replace all template variables
     for (const [variable, value] of Object.entries(replacements)) {
       result = result.replace(new RegExp(variable, "g"), value);
     }
+
+    // Process emoji shortcodes (:emoji: syntax)
+    result = processEmojiShortcodes(result);
 
     return result;
   },

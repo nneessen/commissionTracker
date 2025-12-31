@@ -29,8 +29,8 @@ import { supabase } from "@/services/base/supabase";
 import { useJoinSlackChannelById, useAddSlackReaction } from "@/hooks/slack";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
-import * as emoji from "node-emoji";
 import type { SlackChannel, SlackUser } from "@/types/slack.types";
+import { getEmoji, processEmojiShortcodes } from "@/lib/emoji";
 import { MentionTextarea } from "./MentionTextarea";
 import { useSlackChannelMembers } from "@/hooks/slack/useSlackIntegration";
 
@@ -479,7 +479,7 @@ export function SlackChannelView({
 
 /**
  * Parse Slack message text and convert special formatting to readable text
- * Handles: user mentions, channel mentions, links, and special messages
+ * Handles: user mentions, channel mentions, links, emojis, and special messages
  */
 function formatSlackText(
   text: string,
@@ -489,17 +489,10 @@ function formatSlackText(
 
   let formatted = text;
 
-  // Step 1: Convert Slack-specific emoji codes using SLACK_EMOJI_MAP
-  // This handles Slack's custom emoji names (e.g., :clap:, :first_place_medal:)
-  formatted = formatted.replace(/:([a-z0-9_+-]+):/g, (match, name) => {
-    return SLACK_EMOJI_MAP[name] || match; // Fallback to original if not found
-  });
+  // Step 1: Convert emoji shortcodes (:emoji:) to Unicode using shared utility
+  formatted = processEmojiShortcodes(formatted);
 
-  // Step 2: Convert standard emoji codes using node-emoji library
-  // This handles any remaining standard emoji names
-  formatted = emoji.emojify(formatted);
-
-  // Step 3: Convert user mentions with actual usernames if available
+  // Step 2: Convert user mentions with actual usernames if available
   if (userMap) {
     formatted = formatted.replace(/<@([A-Z0-9]+)>/g, (_match, userId) => {
       const user = userMap.get(userId);
@@ -532,304 +525,14 @@ function formatSlackText(
   return formatted;
 }
 
-/**
- * Slack-to-standard emoji name mapping
- * Slack uses some different names than the standard emoji library
- */
-const SLACK_EMOJI_MAP: Record<string, string> = {
-  raised_hands: "🙌",
-  raising_hand: "🙋",
-  ok_hand: "👌",
-  point_up: "☝️",
-  point_down: "👇",
-  point_left: "👈",
-  point_right: "👉",
-  thumbsup: "👍",
-  thumbsdown: "👎",
-  punch: "👊",
-  fist: "✊",
-  wave: "👋",
-  clap: "👏",
-  open_hands: "👐",
-  pray: "🙏",
-  handshake: "🤝",
-  muscle: "💪",
-  metal: "🤘",
-  crossed_fingers: "🤞",
-  v: "✌️",
-  writing_hand: "✍️",
-  selfie: "🤳",
-  nail_care: "💅",
-  ring: "💍",
-  lipstick: "💄",
-  kiss: "💋",
-  lips: "👄",
-  tongue: "👅",
-  ear: "👂",
-  nose: "👃",
-  footprints: "👣",
-  eye: "👁️",
-  eyes: "👀",
-  brain: "🧠",
-  bone: "🦴",
-  tooth: "🦷",
-  speaking_head: "🗣️",
-  bust_in_silhouette: "👤",
-  busts_in_silhouette: "👥",
-  baby: "👶",
-  girl: "👧",
-  boy: "👦",
-  woman: "👩",
-  man: "👨",
-  // Common Slack emojis
-  white_check_mark: "✅",
-  heavy_check_mark: "✔️",
-  x: "❌",
-  negative_squared_cross_mark: "❎",
-  exclamation: "❗",
-  question: "❓",
-  grey_exclamation: "❕",
-  grey_question: "❔",
-  heavy_plus_sign: "➕",
-  heavy_minus_sign: "➖",
-  heavy_division_sign: "➗",
-  curly_loop: "➰",
-  loop: "➿",
-  arrow_heading_up: "⤴️",
-  arrow_heading_down: "⤵️",
-  star: "⭐",
-  star2: "🌟",
-  sparkles: "✨",
-  dizzy: "💫",
-  boom: "💥",
-  fire: "🔥",
-  droplet: "💧",
-  sweat_drops: "💦",
-  dash: "💨",
-  poop: "💩",
-  // First/second/third place
-  first_place_medal: "🥇",
-  second_place_medal: "🥈",
-  third_place_medal: "🥉",
-  trophy: "🏆",
-  sports_medal: "🏅",
-  medal: "🎖️",
-  military_medal: "🎖️",
-  // Other common ones
-  heart: "❤️",
-  heartpulse: "💗",
-  heartbeat: "💓",
-  sparkling_heart: "💖",
-  two_hearts: "💕",
-  revolving_hearts: "💞",
-  cupid: "💘",
-  gift_heart: "💝",
-  broken_heart: "💔",
-  heart_exclamation: "❣️",
-  heavy_heart_exclamation: "❣️",
-  tada: "🎉",
-  confetti_ball: "🎊",
-  party_popper: "🎉",
-  rocket: "🚀",
-  100: "💯",
-  zzz: "💤",
-  money_mouth_face: "🤑",
-  thinking: "🤔",
-  thinking_face: "🤔",
-  face_with_monocle: "🧐",
-  sunglasses: "😎",
-  nerd_face: "🤓",
-  cowboy_hat_face: "🤠",
-  partying_face: "🥳",
-  wink: "😉",
-  smile: "😄",
-  grin: "😁",
-  grinning: "😀",
-  smiley: "😃",
-  laughing: "😆",
-  joy: "😂",
-  rofl: "🤣",
-  rolling_on_the_floor_laughing: "🤣",
-  slightly_smiling_face: "🙂",
-  upside_down_face: "🙃",
-  relieved: "😌",
-  heart_eyes: "😍",
-  smiling_face_with_three_hearts: "🥰",
-  kissing_heart: "😘",
-  yum: "😋",
-  stuck_out_tongue: "😛",
-  stuck_out_tongue_winking_eye: "😜",
-  stuck_out_tongue_closed_eyes: "😝",
-  zany_face: "🤪",
-  face_with_raised_eyebrow: "🤨",
-  neutral_face: "😐",
-  expressionless: "😑",
-  no_mouth: "😶",
-  smirk: "😏",
-  unamused: "😒",
-  roll_eyes: "🙄",
-  grimacing: "😬",
-  lying_face: "🤥",
-  shushing_face: "🤫",
-  zipper_mouth_face: "🤐",
-  face_with_symbols_on_mouth: "🤬",
-  exploding_head: "🤯",
-  flushed: "😳",
-  disappointed: "😞",
-  worried: "😟",
-  angry: "😠",
-  rage: "😡",
-  pensive: "😔",
-  confused: "😕",
-  slightly_frowning_face: "🙁",
-  frowning_face: "☹️",
-  persevere: "😣",
-  confounded: "😖",
-  tired_face: "😫",
-  weary: "😩",
-  pleading_face: "🥺",
-  cry: "😢",
-  sob: "😭",
-  triumph: "😤",
-  face_with_steam_from_nose: "😤",
-  angry_face_with_horns: "👿",
-  skull: "💀",
-  skull_and_crossbones: "☠️",
-  ghost: "👻",
-  alien: "👽",
-  robot: "🤖",
-  pumpkin: "🎃",
-  smiling_imp: "😈",
-  imp: "👿",
-  japanese_ogre: "👹",
-  japanese_goblin: "👺",
-  clown_face: "🤡",
-  see_no_evil: "🙈",
-  hear_no_evil: "🙉",
-  speak_no_evil: "🙊",
-  cat: "🐱",
-  dog: "🐶",
-  unicorn: "🦄",
-  rainbow: "🌈",
-  sun_with_face: "🌞",
-  full_moon_with_face: "🌝",
-  new_moon_with_face: "🌚",
-  sunny: "☀️",
-  cloud: "☁️",
-  umbrella: "☂️",
-  snowflake: "❄️",
-  zap: "⚡",
-  hourglass: "⌛",
-  watch: "⌚",
-  alarm_clock: "⏰",
-  stopwatch: "⏱️",
-  timer_clock: "⏲️",
-  clock: "🕐",
-  bell: "🔔",
-  no_bell: "🔕",
-  mega: "📣",
-  loudspeaker: "📢",
-  mute: "🔇",
-  sound: "🔉",
-  loud_sound: "🔊",
-  phone: "📱",
-  telephone_receiver: "📞",
-  email: "📧",
-  envelope: "✉️",
-  incoming_envelope: "📨",
-  e_mail: "📧",
-  mailbox: "📫",
-  mailbox_closed: "📪",
-  mailbox_with_mail: "📬",
-  mailbox_with_no_mail: "📭",
-  postbox: "📮",
-  memo: "📝",
-  pencil: "✏️",
-  pencil2: "✏️",
-  black_nib: "✒️",
-  pen: "🖊️",
-  lower_left_fountain_pen: "🖋️",
-  lower_left_ballpoint_pen: "🖊️",
-  lower_left_paintbrush: "🖌️",
-  lower_left_crayon: "🖍️",
-  book: "📖",
-  books: "📚",
-  notebook: "📓",
-  ledger: "📒",
-  page_facing_up: "📄",
-  page_with_curl: "📃",
-  bookmark_tabs: "📑",
-  bookmark: "🔖",
-  label: "🏷️",
-  money_with_wings: "💸",
-  moneybag: "💰",
-  dollar: "💵",
-  yen: "💴",
-  euro: "💶",
-  pound: "💷",
-  credit_card: "💳",
-  chart: "💹",
-  chart_with_upwards_trend: "📈",
-  chart_with_downwards_trend: "📉",
-  bar_chart: "📊",
-  calendar: "📅",
-  date: "📅",
-  spiral_calendar: "🗓️",
-  card_index: "📇",
-  card_file_box: "🗃️",
-  ballot_box: "🗳️",
-  file_cabinet: "🗄️",
-  clipboard: "📋",
-  file_folder: "📁",
-  open_file_folder: "📂",
-  dividers: "🗂️",
-  newspaper: "📰",
-  rolled_up_newspaper: "🗞️",
-  spiral_notepad: "🗒️",
-  closed_book: "📕",
-  green_book: "📗",
-  blue_book: "📘",
-  orange_book: "📙",
-  notebook_with_decorative_cover: "📔",
-  // Arrows
-  arrow_up: "⬆️",
-  arrow_down: "⬇️",
-  arrow_left: "⬅️",
-  arrow_right: "➡️",
-  arrow_upper_right: "↗️",
-  arrow_lower_right: "↘️",
-  arrow_lower_left: "↙️",
-  arrow_upper_left: "↖️",
-  arrow_up_down: "↕️",
-  left_right_arrow: "↔️",
-  arrows_counterclockwise: "🔄",
-  arrow_backward: "◀️",
-  arrow_forward: "▶️",
-  arrow_up_small: "🔼",
-  arrow_down_small: "🔽",
-  leftwards_arrow_with_hook: "↩️",
-  arrow_right_hook: "↪️",
-};
+// Note: Emoji map moved to shared utility at src/lib/emoji.ts
 
 /**
  * Convert a single emoji name to its unicode character
- * Falls back to the :name: format if not found
+ * Uses shared emoji utility, falls back to :name: format if not found
  */
 function getEmojiFromName(name: string): string {
-  // Check Slack-specific mapping first
-  if (SLACK_EMOJI_MAP[name]) {
-    return SLACK_EMOJI_MAP[name];
-  }
-
-  // Try node-emoji with colons
-  const result = emoji.get(`:${name}:`);
-  // emoji.get returns the input if not found
-  if (result && result !== `:${name}:`) {
-    return result;
-  }
-
-  // Return the colon format as fallback
-  return `:${name}:`;
+  return getEmoji(name) || `:${name}:`;
 }
 
 function MessageItem({

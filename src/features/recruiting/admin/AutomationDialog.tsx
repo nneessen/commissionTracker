@@ -181,63 +181,186 @@ const SENDER_OPTIONS: {
   },
 ];
 
-// Template variables with descriptions
-const TEMPLATE_VARIABLES = [
+// Template variable categories for organized display
+const TEMPLATE_VARIABLE_CATEGORIES = [
   {
-    variable: "{{recruit_name}}",
-    description: "Full name of recruit",
-    example: "John Smith",
+    category: "Recruit Info",
+    variables: [
+      {
+        variable: "{{recruit_name}}",
+        description: "Full name",
+        example: "John Smith",
+      },
+      {
+        variable: "{{recruit_first_name}}",
+        description: "First name",
+        example: "John",
+      },
+      {
+        variable: "{{recruit_last_name}}",
+        description: "Last name",
+        example: "Smith",
+      },
+      {
+        variable: "{{recruit_email}}",
+        description: "Email address",
+        example: "john@email.com",
+      },
+      {
+        variable: "{{recruit_phone}}",
+        description: "Phone number",
+        example: "(555) 123-4567",
+      },
+    ],
   },
   {
-    variable: "{{recruit_first_name}}",
-    description: "First name only",
-    example: "John",
+    category: "Location",
+    variables: [
+      { variable: "{{recruit_city}}", description: "City", example: "Dallas" },
+      { variable: "{{recruit_state}}", description: "State", example: "TX" },
+      {
+        variable: "{{recruit_zip}}",
+        description: "ZIP code",
+        example: "75001",
+      },
+      {
+        variable: "{{recruit_address}}",
+        description: "Full address",
+        example: "123 Main St, Dallas, TX 75001",
+      },
+    ],
   },
   {
-    variable: "{{recruit_email}}",
-    description: "Recruit's email",
-    example: "john@email.com",
+    category: "Professional",
+    variables: [
+      {
+        variable: "{{recruit_license_number}}",
+        description: "License number",
+        example: "1234567",
+      },
+      { variable: "{{recruit_npn}}", description: "NPN", example: "9876543" },
+      {
+        variable: "{{recruit_license_state}}",
+        description: "License state",
+        example: "TX",
+      },
+    ],
   },
   {
-    variable: "{{recruit_phone}}",
-    description: "Recruit's phone",
-    example: "(555) 123-4567",
+    category: "Organization",
+    variables: [
+      {
+        variable: "{{agency_name}}",
+        description: "Agency name",
+        example: "ABC Insurance",
+      },
+      {
+        variable: "{{imo_name}}",
+        description: "IMO name",
+        example: "Premier IMO",
+      },
+    ],
   },
   {
-    variable: "{{phase_name}}",
-    description: "Current phase name",
-    example: "Contracting",
+    category: "Pipeline",
+    variables: [
+      {
+        variable: "{{phase_name}}",
+        description: "Current phase",
+        example: "Contracting",
+      },
+      {
+        variable: "{{template_name}}",
+        description: "Pipeline template",
+        example: "New Agent Onboarding",
+      },
+      {
+        variable: "{{item_name}}",
+        description: "Checklist item",
+        example: "Submit W-9",
+      },
+    ],
   },
   {
-    variable: "{{item_name}}",
-    description: "Checklist item name",
-    example: "Submit W-9",
+    category: "Upline",
+    variables: [
+      {
+        variable: "{{upline_name}}",
+        description: "Full name",
+        example: "Jane Doe",
+      },
+      {
+        variable: "{{upline_first_name}}",
+        description: "First name",
+        example: "Jane",
+      },
+      {
+        variable: "{{upline_email}}",
+        description: "Email",
+        example: "jane@email.com",
+      },
+      {
+        variable: "{{upline_phone}}",
+        description: "Phone",
+        example: "(555) 987-6543",
+      },
+    ],
   },
   {
-    variable: "{{upline_name}}",
-    description: "Upline's name",
-    example: "Jane Doe",
+    category: "Dates & Numbers",
+    variables: [
+      {
+        variable: "{{current_date}}",
+        description: "Today's date",
+        example: "Monday, January 15, 2025",
+      },
+      {
+        variable: "{{days_in_phase}}",
+        description: "Days in current phase",
+        example: "5",
+      },
+      {
+        variable: "{{days_since_signup}}",
+        description: "Days since signup",
+        example: "30",
+      },
+    ],
   },
   {
-    variable: "{{upline_email}}",
-    description: "Upline's email",
-    example: "jane@email.com",
+    category: "Links",
+    variables: [
+      {
+        variable: "{{portal_link}}",
+        description: "Recruit portal link",
+        example: "https://...",
+      },
+    ],
   },
-  {
-    variable: "{{upline_phone}}",
-    description: "Upline's phone",
-    example: "(555) 987-6543",
-  },
-  {
-    variable: "{{days_in_phase}}",
-    description: "Days since phase started",
-    example: "5",
-  },
-  {
-    variable: "{{portal_link}}",
-    description: "Link to recruit portal",
-    example: "https://...",
-  },
+];
+
+// Flat list for backward compatibility (used by other components that import this)
+const _TEMPLATE_VARIABLES = TEMPLATE_VARIABLE_CATEGORIES.flatMap(
+  (cat) => cat.variables,
+);
+export { _TEMPLATE_VARIABLES as TEMPLATE_VARIABLES };
+
+// Common emoji shortcodes for quick reference
+const EMOJI_SHORTCUTS = [
+  { code: ":tada:", emoji: "🎉", label: "Celebration" },
+  { code: ":fire:", emoji: "🔥", label: "Fire" },
+  { code: ":rocket:", emoji: "🚀", label: "Rocket" },
+  { code: ":star:", emoji: "⭐", label: "Star" },
+  { code: ":sparkles:", emoji: "✨", label: "Sparkles" },
+  { code: ":100:", emoji: "💯", label: "100" },
+  { code: ":thumbsup:", emoji: "👍", label: "Thumbs up" },
+  { code: ":clap:", emoji: "👏", label: "Clap" },
+  { code: ":wave:", emoji: "👋", label: "Wave" },
+  { code: ":trophy:", emoji: "🏆", label: "Trophy" },
+  { code: ":white_check_mark:", emoji: "✅", label: "Check" },
+  { code: ":bell:", emoji: "🔔", label: "Bell" },
+  { code: ":moneybag:", emoji: "💰", label: "Money bag" },
+  { code: ":handshake:", emoji: "🤝", label: "Handshake" },
+  { code: ":chart_with_upwards_trend:", emoji: "📈", label: "Chart up" },
 ];
 
 // Email validation
@@ -843,34 +966,78 @@ export function AutomationDialog({
             </Tabs>
           )}
 
-          {/* Template Variables */}
-          <div className="p-2 bg-zinc-50 dark:bg-zinc-800/30 rounded border border-zinc-200 dark:border-zinc-700">
-            <div className="flex items-center justify-between mb-1.5">
-              <span className="text-[9px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
+          {/* Template Variables & Emojis */}
+          <div className="p-2 bg-zinc-50 dark:bg-zinc-800/30 rounded border border-zinc-200 dark:border-zinc-700 space-y-2">
+            {/* Template Variables by Category */}
+            <div>
+              <span className="text-[9px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide block mb-1.5">
                 Template Variables
               </span>
+              <div className="space-y-1.5 max-h-32 overflow-y-auto">
+                {TEMPLATE_VARIABLE_CATEGORIES.map(({ category, variables }) => (
+                  <div
+                    key={category}
+                    className="flex flex-wrap items-center gap-1"
+                  >
+                    <span className="text-[8px] font-medium text-zinc-400 dark:text-zinc-500 w-16 shrink-0">
+                      {category}:
+                    </span>
+                    {variables.map(({ variable, description }) => (
+                      <TooltipProvider key={variable}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <button
+                              type="button"
+                              onClick={() => copyVariable(variable)}
+                              className="inline-flex items-center gap-0.5 px-1 py-0.5 text-[8px] font-mono bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                            >
+                              {variable.replace(/\{\{|\}\}/g, "")}
+                              <Copy className="h-2 w-2 text-zinc-400" />
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent side="bottom" className="text-[10px]">
+                            <p className="font-mono text-zinc-300">
+                              {variable}
+                            </p>
+                            <p>{description}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    ))}
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className="flex flex-wrap gap-1">
-              {TEMPLATE_VARIABLES.map(({ variable, description }) => (
-                <TooltipProvider key={variable}>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button
-                        type="button"
-                        onClick={() => copyVariable(variable)}
-                        className="inline-flex items-center gap-0.5 px-1 py-0.5 text-[9px] font-mono bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
-                      >
-                        {variable}
-                        <Copy className="h-2 w-2 text-zinc-400" />
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom" className="text-[10px]">
-                      <p>{description}</p>
-                      <p className="text-zinc-400">Click to copy</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              ))}
+
+            {/* Emoji Shortcuts */}
+            <div>
+              <span className="text-[9px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide block mb-1">
+                Emoji Shortcodes
+              </span>
+              <div className="flex flex-wrap gap-1">
+                {EMOJI_SHORTCUTS.map(({ code, emoji, label }) => (
+                  <TooltipProvider key={code}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          type="button"
+                          onClick={() => copyVariable(code)}
+                          className="inline-flex items-center gap-0.5 px-1 py-0.5 text-[10px] bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                        >
+                          {emoji}
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom" className="text-[10px]">
+                        <p className="font-mono">{code}</p>
+                        <p className="text-zinc-400">{label}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                ))}
+              </div>
+              <p className="text-[8px] text-zinc-400 mt-1">
+                Use :emoji_name: syntax in your message (e.g., :tada: :rocket:)
+              </p>
             </div>
           </div>
         </div>
