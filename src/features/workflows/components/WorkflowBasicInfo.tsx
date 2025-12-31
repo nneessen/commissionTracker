@@ -68,6 +68,10 @@ export default function WorkflowBasicInfo({
             errors.name && "border-destructive focus-visible:ring-destructive",
           )}
           maxLength={100}
+          autoComplete="off"
+          data-bwignore="true"
+          data-1p-ignore="true"
+          data-lpignore="true"
         />
         {errors.name && (
           <p className="text-xs text-destructive mt-1">{errors.name}</p>
@@ -87,6 +91,10 @@ export default function WorkflowBasicInfo({
           className="h-16 text-xs resize-none mt-1 bg-background"
           rows={3}
           maxLength={500}
+          autoComplete="off"
+          data-bwignore="true"
+          data-1p-ignore="true"
+          data-lpignore="true"
         />
       </div>
 

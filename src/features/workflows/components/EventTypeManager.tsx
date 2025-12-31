@@ -10,17 +10,10 @@ import {
   Power,
   PowerOff,
   Zap,
+  Search,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Table,
@@ -32,7 +25,9 @@ import {
 } from "@/components/ui/table";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
+import EventTypeFormDialog from "./EventTypeFormDialog";
 import {
   useEventTypes,
   useCreateEventType,
@@ -80,6 +75,9 @@ export default function EventTypeManager() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editData, setEditData] = useState<EditableEventType | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   // Start editing an event
   const handleEdit = useCallback((event: TriggerEventType) => {
@@ -89,6 +87,7 @@ export default function EventTypeManager() {
       availableVariables: event.availableVariables || {},
     });
     setErrors({});
+    setIsDialogOpen(true);
   }, []);
 
   // Start creating a new event
@@ -105,6 +104,7 @@ export default function EventTypeManager() {
     setEditingId("new");
     setEditData(newEvent);
     setErrors({});
+    setIsDialogOpen(true);
   }, []);
 
   // Cancel editing
@@ -112,6 +112,7 @@ export default function EventTypeManager() {
     setEditingId(null);
     setEditData(null);
     setErrors({});
+    setIsDialogOpen(false);
   }, []);
 
   // Validate event data
@@ -229,6 +230,37 @@ export default function EventTypeManager() {
     }
   };
 
+  // Filter events based on search and category (must be before early returns)
+  const filteredEvents = eventTypes.filter((event) => {
+    const matchesSearch =
+      searchQuery === "" ||
+      event.eventName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (event.description?.toLowerCase() || "").includes(
+        searchQuery.toLowerCase(),
+      ) ||
+      (event.category?.toLowerCase() || "").includes(searchQuery.toLowerCase());
+
+    const matchesCategory =
+      selectedCategory === null || event.category === selectedCategory;
+
+    return matchesSearch && matchesCategory;
+  });
+
+  // Group filtered events by category
+  const groupedEvents = filteredEvents.reduce(
+    (acc, event) => {
+      const category = event.category || "custom";
+      if (!acc[category]) acc[category] = [];
+      acc[category].push(event);
+      return acc;
+    },
+    {} as Record<string, typeof filteredEvents>,
+  );
+
+  // Count active filters
+  const filterCount =
+    (searchQuery ? 1 : 0) + (selectedCategory !== null ? 1 : 0);
+
   if (isLoading) {
     return (
       <div className="p-3 text-[11px] text-zinc-500 dark:text-zinc-400">
@@ -237,19 +269,8 @@ export default function EventTypeManager() {
     );
   }
 
-  // Group events by category
-  const groupedEvents = eventTypes.reduce(
-    (acc, event) => {
-      const category = event.category || "custom";
-      if (!acc[category]) acc[category] = [];
-      acc[category].push(event);
-      return acc;
-    },
-    {} as Record<string, typeof eventTypes>,
-  );
-
   return (
-    <div className="space-y-3">
+    <div className="space-y-2.5">
       {/* Header */}
       <div className="flex items-center justify-between p-2.5 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg border border-zinc-200 dark:border-zinc-700">
         <div>
@@ -260,330 +281,275 @@ export default function EventTypeManager() {
             Define events that can trigger workflows
           </p>
         </div>
-        <Button
-          size="sm"
-          onClick={handleCreate}
-          disabled={editingId === "new"}
-          className="h-6 text-[10px]"
-        >
+        <Button size="sm" onClick={handleCreate} className="h-6 text-[10px]">
           <Plus className="h-3 w-3 mr-1" />
           Add Event
         </Button>
       </div>
 
-      {/* New Event Form */}
-      {editingId === "new" && editData && (
-        <div className="p-3 space-y-2 bg-zinc-50 dark:bg-zinc-800/30 rounded-lg border border-zinc-200 dark:border-zinc-700">
-          <div className="flex items-center justify-between mb-2">
-            <h4 className="text-[11px] font-semibold text-zinc-900 dark:text-zinc-100">
-              Create New Event Type
-            </h4>
-            <div className="flex gap-1">
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={handleSave}
-                className="h-5 px-1.5 text-[10px]"
-                disabled={createEvent.isPending}
-              >
-                <Save className="h-3 w-3 mr-1" />
-                Save
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={handleCancel}
-                className="h-5 px-1.5 text-[10px]"
-              >
-                <X className="h-3 w-3" />
-              </Button>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <Label className="text-[10px] text-zinc-600 dark:text-zinc-400">
-                Event Name
-              </Label>
-              <Input
-                className={cn(
-                  "h-6 text-[11px] border-zinc-200 dark:border-zinc-700",
-                  errors.eventName && "border-red-400 dark:border-red-600",
-                )}
-                placeholder="category.action_name"
-                value={editData.eventName}
-                onChange={(e) => updateEditField("eventName", e.target.value)}
-              />
-              {errors.eventName && (
-                <p className="text-[10px] text-red-600 dark:text-red-400 mt-0.5">
-                  {errors.eventName}
-                </p>
-              )}
-            </div>
-            <div>
-              <Label className="text-[10px] text-zinc-600 dark:text-zinc-400">
-                Category
-              </Label>
-              <Select
-                value={editData.category}
-                onValueChange={(value) => updateEditField("category", value)}
-              >
-                <SelectTrigger
-                  className={cn(
-                    "h-6 text-[11px] border-zinc-200 dark:border-zinc-700",
-                    errors.category && "border-red-400 dark:border-red-600",
-                  )}
-                >
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {EVENT_CATEGORIES.map((cat) => (
-                    <SelectItem key={cat} value={cat} className="text-[11px]">
-                      {cat}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div>
-            <Label className="text-[10px] text-zinc-600 dark:text-zinc-400">
-              Description
-            </Label>
-            <Input
-              className={cn(
-                "h-6 text-[11px] border-zinc-200 dark:border-zinc-700",
-                errors.description && "border-red-400 dark:border-red-600",
-              )}
-              placeholder="Brief description of when this event fires"
-              value={editData.description}
-              onChange={(e) => updateEditField("description", e.target.value)}
-            />
-            {errors.description && (
-              <p className="text-[10px] text-red-600 dark:text-red-400 mt-0.5">
-                {errors.description}
-              </p>
-            )}
-          </div>
-
-          <div>
-            <Label className="text-[10px] text-zinc-600 dark:text-zinc-400">
-              Available Variables (JSON)
-            </Label>
-            <Textarea
-              className={cn(
-                "min-h-[60px] text-[11px] font-mono border-zinc-200 dark:border-zinc-700",
-                errors.availableVariables &&
-                  "border-red-400 dark:border-red-600",
-              )}
-              placeholder='{"userId": "UUID", "userName": "string"}'
-              value={JSON.stringify(editData.availableVariables, null, 2)}
-              onChange={(e) => {
-                try {
-                  updateEditField(
-                    "availableVariables",
-                    JSON.parse(e.target.value),
-                  );
-                } catch {
-                  updateEditField("availableVariables", e.target.value);
-                }
-              }}
-            />
-            {errors.availableVariables && (
-              <p className="text-[10px] text-red-600 dark:text-red-400 mt-0.5">
-                {errors.availableVariables}
-              </p>
-            )}
-          </div>
-
-          {errors.submit && (
-            <p className="text-[11px] text-red-600 dark:text-red-400">
-              {errors.submit}
-            </p>
-          )}
+      {/* Search and Filter Bar */}
+      <div className="space-y-2">
+        {/* Search Input */}
+        <div className="relative">
+          <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-zinc-500 dark:text-zinc-400" />
+          <Input
+            type="text"
+            placeholder="Search events by name, description, or category..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-8 h-8 text-xs border-zinc-200 dark:border-zinc-700"
+          />
         </div>
+
+        {/* Category Filter Buttons & Event Count */}
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex flex-wrap gap-1.5">
+            <Button
+              variant={selectedCategory === null ? "default" : "outline"}
+              size="sm"
+              onClick={() => setSelectedCategory(null)}
+              className="h-6 px-2 text-xs"
+            >
+              All Categories
+            </Button>
+            {EVENT_CATEGORIES.map((category) => (
+              <Button
+                key={category}
+                variant={selectedCategory === category ? "default" : "outline"}
+                size="sm"
+                onClick={() => setSelectedCategory(category)}
+                className="h-6 px-2 text-xs"
+              >
+                {category}
+              </Button>
+            ))}
+          </div>
+          <span className="text-[10px] text-zinc-500 dark:text-zinc-400 whitespace-nowrap">
+            Showing {filteredEvents.length} of {eventTypes.length} events
+            {filterCount > 0 &&
+              ` • ${filterCount} filter${filterCount > 1 ? "s" : ""} active`}
+          </span>
+        </div>
+      </div>
+
+      {/* Event Categories - Wrapped in ScrollArea */}
+      {Object.keys(groupedEvents).length === 0 ? (
+        <div className="py-12 text-center">
+          <Zap className="h-10 w-10 mx-auto mb-3 text-zinc-400 dark:text-zinc-500" />
+          <p className="text-sm text-zinc-600 dark:text-zinc-400 font-medium">
+            No events found
+          </p>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+            {searchQuery || selectedCategory
+              ? "Try adjusting your search or filters"
+              : "Create your first event type to get started"}
+          </p>
+        </div>
+      ) : (
+        <ScrollArea className="h-[calc(100vh-20rem)] pr-2">
+          <div className="space-y-2">
+            {/* Event Categories */}
+            {Object.entries(groupedEvents).map(([category, events]) => (
+              <div key={category} className="space-y-2">
+                <div className="flex items-center gap-2 px-2">
+                  <Badge
+                    className={cn(
+                      "text-[10px] px-2 py-0",
+                      CATEGORY_COLORS[category],
+                    )}
+                  >
+                    {category}
+                  </Badge>
+                  <span className="text-[10px] text-zinc-500 dark:text-zinc-400">
+                    {events.length} event{events.length !== 1 ? "s" : ""}
+                  </span>
+                </div>
+
+                <div className="rounded-lg border border-zinc-200 dark:border-zinc-700 overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="h-6 bg-zinc-50 dark:bg-zinc-800/50">
+                        <TableHead className="text-[10px] font-semibold text-zinc-600 dark:text-zinc-300">
+                          Event Name
+                        </TableHead>
+                        <TableHead className="text-[10px] font-semibold text-zinc-600 dark:text-zinc-300">
+                          Description
+                        </TableHead>
+                        <TableHead className="text-[10px] font-semibold text-zinc-600 dark:text-zinc-300">
+                          Variables
+                        </TableHead>
+                        <TableHead className="text-[10px] font-semibold text-zinc-600 dark:text-zinc-300 text-center">
+                          Status
+                        </TableHead>
+                        <TableHead className="text-[10px] font-semibold text-zinc-600 dark:text-zinc-300 text-right">
+                          Actions
+                        </TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {events.map((event) => (
+                        <TableRow
+                          key={event.id}
+                          className="h-8 border-b border-zinc-100 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
+                        >
+                          {editingId === event.id && editData ? (
+                            <>
+                              <TableCell className="py-1">
+                                <Input
+                                  className="h-5 text-[11px] border-zinc-200 dark:border-zinc-700"
+                                  value={editData.eventName}
+                                  onChange={(e) =>
+                                    updateEditField("eventName", e.target.value)
+                                  }
+                                />
+                              </TableCell>
+                              <TableCell className="py-1">
+                                <Input
+                                  className="h-5 text-[11px] border-zinc-200 dark:border-zinc-700"
+                                  value={editData.description}
+                                  onChange={(e) =>
+                                    updateEditField(
+                                      "description",
+                                      e.target.value,
+                                    )
+                                  }
+                                />
+                              </TableCell>
+                              <TableCell className="py-1">
+                                <Textarea
+                                  className="h-5 text-[10px] font-mono p-1 border-zinc-200 dark:border-zinc-700"
+                                  value={JSON.stringify(
+                                    editData.availableVariables,
+                                    null,
+                                    0,
+                                  )}
+                                  onChange={(e) => {
+                                    try {
+                                      updateEditField(
+                                        "availableVariables",
+                                        JSON.parse(e.target.value),
+                                      );
+                                    } catch {
+                                      updateEditField(
+                                        "availableVariables",
+                                        e.target.value,
+                                      );
+                                    }
+                                  }}
+                                />
+                              </TableCell>
+                              <TableCell className="text-center py-1">
+                                <Switch
+                                  checked={editData.isActive ?? false}
+                                  onCheckedChange={(checked) =>
+                                    updateEditField("isActive", checked)
+                                  }
+                                />
+                              </TableCell>
+                              <TableCell className="text-right py-1">
+                                <div className="flex justify-end gap-1">
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={handleSave}
+                                    className="h-5 px-1"
+                                    disabled={updateEvent.isPending}
+                                  >
+                                    <Save className="h-3 w-3" />
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={handleCancel}
+                                    className="h-5 px-1"
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </>
+                          ) : (
+                            <>
+                              <TableCell className="text-[11px] font-mono">
+                                <div className="flex items-center gap-1 text-zinc-900 dark:text-zinc-100">
+                                  <Zap className="h-3 w-3 text-amber-500" />
+                                  {event.eventName}
+                                </div>
+                              </TableCell>
+                              <TableCell className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                                {event.description}
+                              </TableCell>
+                              <TableCell className="text-[10px] font-mono text-zinc-500 dark:text-zinc-400">
+                                {event.availableVariables
+                                  ? Object.keys(
+                                      event.availableVariables as object,
+                                    ).length + " vars"
+                                  : "None"}
+                              </TableCell>
+                              <TableCell className="text-center">
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => handleToggleActive(event)}
+                                  className={cn(
+                                    "h-5 px-1",
+                                    event.isActive
+                                      ? "text-emerald-600 dark:text-emerald-400"
+                                      : "text-zinc-400 dark:text-zinc-500",
+                                  )}
+                                >
+                                  {event.isActive ? (
+                                    <Power className="h-3 w-3" />
+                                  ) : (
+                                    <PowerOff className="h-3 w-3" />
+                                  )}
+                                </Button>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex justify-end gap-1">
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => handleEdit(event)}
+                                    className="h-5 px-1 text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
+                                  >
+                                    <Edit2 className="h-3 w-3" />
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => handleDelete(event.id)}
+                                    className="h-5 px-1 text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300"
+                                  >
+                                    <Trash2 className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </>
+                          )}
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            ))}
+          </div>
+        </ScrollArea>
       )}
 
-      {/* Event Categories */}
-      {Object.entries(groupedEvents).map(([category, events]) => (
-        <div key={category} className="space-y-2">
-          <div className="flex items-center gap-2 px-2">
-            <Badge
-              className={cn("text-[10px] px-2 py-0", CATEGORY_COLORS[category])}
-            >
-              {category}
-            </Badge>
-            <span className="text-[10px] text-zinc-500 dark:text-zinc-400">
-              {events.length} event{events.length !== 1 ? "s" : ""}
-            </span>
-          </div>
-
-          <div className="rounded-lg border border-zinc-200 dark:border-zinc-700 overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow className="h-6 bg-zinc-50 dark:bg-zinc-800/50">
-                  <TableHead className="text-[10px] font-semibold text-zinc-600 dark:text-zinc-300">
-                    Event Name
-                  </TableHead>
-                  <TableHead className="text-[10px] font-semibold text-zinc-600 dark:text-zinc-300">
-                    Description
-                  </TableHead>
-                  <TableHead className="text-[10px] font-semibold text-zinc-600 dark:text-zinc-300">
-                    Variables
-                  </TableHead>
-                  <TableHead className="text-[10px] font-semibold text-zinc-600 dark:text-zinc-300 text-center">
-                    Status
-                  </TableHead>
-                  <TableHead className="text-[10px] font-semibold text-zinc-600 dark:text-zinc-300 text-right">
-                    Actions
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {events.map((event) => (
-                  <TableRow
-                    key={event.id}
-                    className="h-8 border-b border-zinc-100 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
-                  >
-                    {editingId === event.id && editData ? (
-                      <>
-                        <TableCell className="py-1">
-                          <Input
-                            className="h-5 text-[11px] border-zinc-200 dark:border-zinc-700"
-                            value={editData.eventName}
-                            onChange={(e) =>
-                              updateEditField("eventName", e.target.value)
-                            }
-                          />
-                        </TableCell>
-                        <TableCell className="py-1">
-                          <Input
-                            className="h-5 text-[11px] border-zinc-200 dark:border-zinc-700"
-                            value={editData.description}
-                            onChange={(e) =>
-                              updateEditField("description", e.target.value)
-                            }
-                          />
-                        </TableCell>
-                        <TableCell className="py-1">
-                          <Textarea
-                            className="h-5 text-[10px] font-mono p-1 border-zinc-200 dark:border-zinc-700"
-                            value={JSON.stringify(
-                              editData.availableVariables,
-                              null,
-                              0,
-                            )}
-                            onChange={(e) => {
-                              try {
-                                updateEditField(
-                                  "availableVariables",
-                                  JSON.parse(e.target.value),
-                                );
-                              } catch {
-                                updateEditField(
-                                  "availableVariables",
-                                  e.target.value,
-                                );
-                              }
-                            }}
-                          />
-                        </TableCell>
-                        <TableCell className="text-center py-1">
-                          <Switch
-                            checked={editData.isActive ?? false}
-                            onCheckedChange={(checked) =>
-                              updateEditField("isActive", checked)
-                            }
-                          />
-                        </TableCell>
-                        <TableCell className="text-right py-1">
-                          <div className="flex justify-end gap-1">
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={handleSave}
-                              className="h-5 px-1"
-                              disabled={updateEvent.isPending}
-                            >
-                              <Save className="h-3 w-3" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={handleCancel}
-                              className="h-5 px-1"
-                            >
-                              <X className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </>
-                    ) : (
-                      <>
-                        <TableCell className="text-[11px] font-mono">
-                          <div className="flex items-center gap-1 text-zinc-900 dark:text-zinc-100">
-                            <Zap className="h-3 w-3 text-amber-500" />
-                            {event.eventName}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                          {event.description}
-                        </TableCell>
-                        <TableCell className="text-[10px] font-mono text-zinc-500 dark:text-zinc-400">
-                          {event.availableVariables
-                            ? Object.keys(event.availableVariables as object)
-                                .length + " vars"
-                            : "None"}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleToggleActive(event)}
-                            className={cn(
-                              "h-5 px-1",
-                              event.isActive
-                                ? "text-emerald-600 dark:text-emerald-400"
-                                : "text-zinc-400 dark:text-zinc-500",
-                            )}
-                          >
-                            {event.isActive ? (
-                              <Power className="h-3 w-3" />
-                            ) : (
-                              <PowerOff className="h-3 w-3" />
-                            )}
-                          </Button>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-1">
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => handleEdit(event)}
-                              className="h-5 px-1 text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
-                            >
-                              <Edit2 className="h-3 w-3" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => handleDelete(event.id)}
-                              className="h-5 px-1 text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300"
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </>
-                    )}
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        </div>
-      ))}
+      {/* Event Type Form Dialog */}
+      <EventTypeFormDialog
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+        editData={editData}
+        onSave={handleSave}
+        onCancel={handleCancel}
+        updateEditField={updateEditField}
+        errors={errors}
+        isSaving={createEvent.isPending || updateEvent.isPending}
+        isNew={editData?.isNew || false}
+      />
     </div>
   );
 }
